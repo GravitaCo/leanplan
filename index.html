@@ -553,6 +553,7 @@ function load(){
   if(!s.target) s.target={...DEFAULT_TARGET};
   if(!s.schedule) s.schedule={...DEFAULT_SCHEDULE};
   if(!Array.isArray(s.customFoods)) s.customFoods=[];
+  if(!Array.isArray(s.recipes)) s.recipes=[];
   return s;
 }
 /* built-in foods + the user's saved custom foods, in a stable order */
@@ -595,21 +596,31 @@ function ensureMeta(migrate){
   }
   if(!state._meta.days) state._meta.days={};
   if(!Array.isArray(state._meta.foodDeletes)) state._meta.foodDeletes=[];
+  if(!Array.isArray(state._meta.recipeDeletes)) state._meta.recipeDeletes=[];
   // ensure every custom food carries an id (+ dirty if migrating)
   (state.customFoods||[]).forEach(f=>{
     if(!f.id) f.id = (crypto.randomUUID ? crypto.randomUUID() : "f"+Date.now()+Math.random().toString(16).slice(2));
     if(migrate){ f._dirty=true; f._u=nowIso(); }
+  });
+  // ensure every recipe carries an id (+ dirty if migrating)
+  (state.recipes||[]).forEach(r=>{
+    if(!r.id) r.id = (crypto.randomUUID ? crypto.randomUUID() : "r"+Date.now()+Math.random().toString(16).slice(2));
+    if(migrate){ r._dirty=true; r._u=nowIso(); }
   });
 }
 function markSettingsDirty(){ ensureMeta(); state._meta.settings={u:nowIso(),dirty:true}; save(); scheduleSync(); }
 function markDayDirty(d){ ensureMeta(); state._meta.days[d]={u:nowIso(),dirty:true}; save(); scheduleSync(); }
 function markFoodDirty(f){ ensureMeta(); f._dirty=true; f._u=nowIso(); save(); scheduleSync(); }
 function queueFoodDelete(id){ ensureMeta(); if(id) state._meta.foodDeletes.push(id); save(); scheduleSync(); }
+function markRecipeDirty(r){ ensureMeta(); r._dirty=true; r._u=nowIso(); save(); scheduleSync(); }
+function queueRecipeDelete(id){ ensureMeta(); if(id) state._meta.recipeDeletes.push(id); save(); scheduleSync(); }
 
 /* ---- client <-> server row mapping ---- */
 function toServerFood(f){ return {id:f.id, user_id:LOCAL_USER, name:f.n, kcal:+f.k||0, protein:+f.p||0, carbs:+f.c||0, fat:+f.f||0, grams:+f.g||100}; }
 function fromServerFood(r){ return {id:r.id, n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, g:r.grams, _u:r.updated_at, _dirty:false}; }
 function toServerDay(d){ const x=state.days[d]||{}; return {user_id:LOCAL_USER, log_date:d, foods:x.foods||[], supps:x.supps||{}, weight:(x.weight??null), workout:x.workout??null}; }
+function toServerRecipe(r){ return {id:r.id, user_id:LOCAL_USER, name:r.name, items:r.items||[], servings:(+r.servings||1)}; }
+function fromServerRecipe(r){ return {id:r.id, name:r.name, items:r.items||[], servings:(+r.servings||1), _u:r.updated_at, _dirty:false}; }
 
 /* ---- REST helpers ---- */
 function sbFetch(path, opts){
@@ -652,6 +663,15 @@ async function pushDirty(){
     await sbDelete("custom_foods", "id=eq."+id);
     m.foodDeletes = m.foodDeletes.filter(x=>x!==id);
   }
+  const dirtyRecipes = (state.recipes||[]).filter(r=>r._dirty);
+  if(dirtyRecipes.length){
+    await sbUpsert("recipes", dirtyRecipes.map(toServerRecipe), "id");
+    dirtyRecipes.forEach(r=>r._dirty=false);
+  }
+  for(const id of [...m.recipeDeletes]){
+    await sbDelete("recipes", "id=eq."+id);
+    m.recipeDeletes = m.recipeDeletes.filter(x=>x!==id);
+  }
   const dirtyDays = Object.keys(m.days).filter(d=>m.days[d].dirty);
   if(dirtyDays.length){
     await sbUpsert("day_logs", dirtyDays.map(toServerDay), "user_id,log_date");
@@ -673,6 +693,11 @@ async function pullAll(){
   cf.map(fromServerFood).forEach(f=>{ byId[f.id]=f; });
   (state.customFoods||[]).filter(f=>f._dirty).forEach(f=>{ byId[f.id]=f; }); // unpushed local edits win
   state.customFoods = Object.values(byId);
+  const rc = await sbGet("/recipes?user_id=eq."+LOCAL_USER+"&select=*");
+  const rById = {};
+  rc.map(fromServerRecipe).forEach(r=>{ rById[r.id]=r; });
+  (state.recipes||[]).filter(r=>r._dirty).forEach(r=>{ rById[r.id]=r; }); // unpushed local edits win
+  state.recipes = Object.values(rById);
   const dl = await sbGet("/day_logs?user_id=eq."+LOCAL_USER+"&select=*");
   dl.forEach(row=>{
     const d = row.log_date;
@@ -870,7 +895,15 @@ function wireFoodResults(scope){
     if(state.customFoods && state.customFoods[ci]){ const gone=state.customFoods.splice(ci,1)[0]; if(gone&&gone.id) queueFoodDelete(gone.id); else save(); toast("Removed from saved"); render(); }
   });
 }
+let foodSub = "foods";     // "foods" | "meals"
 function viewFood(){
+  const seg = `<div class="seg">
+    <button data-foodsub="foods" class="${foodSub==='foods'?'on':''}">Foods</button>
+    <button data-foodsub="meals" class="${foodSub==='meals'?'on':''}">Meals</button>
+  </div>`;
+  return seg + (foodSub==='meals' ? viewMeals() : viewFoodsList());
+}
+function viewFoodsList(){
   const q=foodQuery.trim().toLowerCase();
   const t=totals(cur), tg=state.target;
   const savedCount=(state.customFoods||[]).length;
@@ -903,6 +936,117 @@ function viewFood(){
   <h2 class="sec">Eaten today</h2>
   <div class="card">${foodListHtml(cur) || '<div class="empty">Nothing yet.</div>'}</div>
   `;
+}
+
+/* ---------- MEALS / RECIPES ---------- */
+function escAttr(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
+function recipeTotals(r){
+  const t={k:0,p:0,c:0,f:0,g:0};
+  (r.items||[]).forEach(i=>{ const m=(+i.grams||0)/100;
+    t.k+=(+i.k||0)*m; t.p+=(+i.p||0)*m; t.c+=(+i.c||0)*m; t.f+=(+i.f||0)*m; t.g+=(+i.grams||0); });
+  return t;
+}
+function recipePer(r){ const t=recipeTotals(r); const s=(+r.servings||1)||1; return {k:t.k/s,p:t.p/s,c:t.c/s,f:t.f/s,g:t.g/s}; }
+
+let mealBuilder = null;   // {id?, name, servings, items:[{n,k,p,c,f,grams}]}
+let mealQuery = "";
+function viewMeals(){
+  let html = "";
+  if(mealBuilder){
+    html += builderHtml();
+  } else {
+    html += `<button class="btn" id="newMeal" style="margin-bottom:14px">+ New meal</button>`;
+  }
+  const rs = state.recipes||[];
+  html += `<h2 class="sec">Your meals</h2>`;
+  if(!rs.length){
+    html += `<div class="card"><div class="empty">No meals yet. Tap <b>New meal</b> to build one from your foods — then log the whole thing in one go.</div></div>`;
+  } else {
+    html += `<div class="card">`+ rs.map((r,ri)=>{
+      const per=recipePer(r);
+      return `<div class="row">
+        <div class="grow"><div class="name">${r.name}</div>
+          <div class="meta">${(+r.servings>1)?(r.servings+" servings · "):""}per serving: ${r0(per.k)} kcal · ${r0(per.p)}p ${r0(per.c)}c ${r0(per.f)}f</div></div>
+        <button class="pill kcal" data-logmeal="${ri}">+ log</button>
+        <button class="pill" data-editmeal="${ri}">edit</button>
+        <button class="x" data-delmeal="${ri}">×</button>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+  html += `<h2 class="sec">Eaten today</h2><div class="card">${foodListHtml(cur)||'<div class="empty">Nothing yet.</div>'}</div>`;
+  return html;
+}
+function mealResultsHtml(q){
+  const DB=allFoods();
+  let matches = q ? DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,40)
+                  : (state.customFoods||[]).slice().concat(FOODS.slice(0,8));
+  if(!matches.length) return '<div class="empty">No match.</div>';
+  return matches.map(f=>{ const idx=DB.indexOf(f);
+    return `<div class="foodopt" data-adding="${idx}">
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <span class="pill">+ add</span></div>`;
+  }).join("");
+}
+function builderTotalsText(){
+  const b=mealBuilder; if(!b) return "";
+  const t=recipeTotals(b); const s=(+b.servings||1)||1;
+  return `Whole meal: <b>${r0(t.k)} kcal</b> · ${r0(t.p)}p ${r0(t.c)}c ${r0(t.f)}f<br>Per serving (÷${s}): <b>${r0(t.k/s)} kcal</b> · ${r0(t.p/s)}p ${r0(t.c/s)}c ${r0(t.f/s)}f`;
+}
+function builderHtml(){
+  const b=mealBuilder;
+  const ing = (b.items||[]).map((i,ii)=>`<div class="row">
+      <div class="grow"><div class="name">${i.n}</div><div class="meta">per 100g: ${i.k} kcal · ${i.p}p ${i.c}c ${i.f}f</div></div>
+      <input class="bgram" data-ig="${ii}" type="number" inputmode="decimal" value="${i.grams}" style="width:70px;text-align:right;padding:8px">
+      <span class="u">g</span>
+      <button class="x" data-rming="${ii}">×</button>
+    </div>`).join("");
+  return `<div class="card">
+    <div class="field"><label>Meal name</label><input id="mealName" placeholder="e.g. Chicken &amp; rice bowl" value="${escAttr(b.name)}"></div>
+    <div class="field"><label>Servings this batch makes</label><input id="mealServings" type="number" inputmode="decimal" value="${b.servings}"></div>
+    <h2 class="sec" style="margin-top:6px">Add ingredients</h2>
+    <div class="search"><input id="mealSearch" placeholder="Search foods to add" value="${escAttr(mealQuery)}"></div>
+    <div class="results" id="mealResults">${mealResultsHtml(mealQuery.trim().toLowerCase())}</div>
+    <h2 class="sec">In this meal</h2>
+    <div id="mealIngList">${ing||'<div class="empty">No ingredients yet — search above to add.</div>'}</div>
+    <div class="note" id="mealTotals" style="margin-top:12px">${builderTotalsText()}</div>
+    <button class="btn" id="saveMeal">${b.id?"Save changes":"Save meal"}</button>
+    <button class="btn ghost" id="cancelMeal" style="margin-top:8px">Cancel</button>
+  </div>`;
+}
+function wireMealAdds(scope){
+  const root=scope||document;
+  root.querySelectorAll("[data-adding]").forEach(el=>el.onclick=()=>{
+    if(!mealBuilder) return;
+    const f=allFoods()[+el.dataset.adding]; if(!f) return;
+    mealBuilder.items.push({n:f.n,k:f.k,p:f.p,c:f.c,f:f.f,grams:f.g});
+    render();
+  });
+}
+function openMealLog(ri){
+  const r=state.recipes[ri]; if(!r) return;
+  const per=recipePer(r);
+  const v=document.getElementById("view");
+  const panel=document.createElement("div");
+  panel.className="card"; panel.id="mealLogPanel";
+  panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
+      <div class="grow"><div class="name">${r.name}</div><div class="meta">per serving: ${r0(per.k)} kcal · ${r0(per.p)}p ${r0(per.c)}c ${r0(per.f)}f</div></div>
+      <button class="x" id="closeMealLog">×</button></div>
+    <div class="field"><label>How many servings?</label><input id="ml_s" type="number" inputmode="decimal" value="1"></div>
+    <div class="mini" id="ml_prev" style="margin-bottom:12px"></div>
+    <button class="btn" id="ml_add">Add to today</button>`;
+  v.insertBefore(panel, v.firstChild);
+  const si=document.getElementById("ml_s");
+  const prev=()=>{ const q=parseFloat(si.value)||0;
+    document.getElementById("ml_prev").innerHTML=`= <b>${r0(per.k*q)} kcal</b> · ${r1(per.p*q)}p ${r1(per.c*q)}c ${r1(per.f*q)}f`; };
+  prev(); si.addEventListener("input",prev); si.focus();
+  document.getElementById("closeMealLog").onclick=()=>panel.remove();
+  document.getElementById("ml_add").onclick=()=>{
+    const q=parseFloat(si.value)||0; if(q<=0) return;
+    const nm = r.name + (q!==1? " ("+(+q.toFixed(2))+"×)" : "");
+    day(cur).foods.push({n:nm, grams:r0(per.g*q), k:per.k*q, p:per.p*q, c:per.c*q, f:per.f*q});
+    markDayDirty(cur); toast(r.name+" added"); render();
+  };
+  window.scrollTo(0,0);
 }
 
 /* food add modal-ish: pick grams via prompt-replacement panel */
@@ -1172,6 +1316,49 @@ function bind(){
     });
   }
   wireFoodResults(document);
+  // ----- meals / recipes -----
+  document.querySelectorAll("[data-foodsub]").forEach(el=>el.onclick=()=>{ foodSub=el.dataset.foodsub; render(); });
+  const nm=document.getElementById("newMeal");
+  if(nm) nm.onclick=()=>{ mealBuilder={name:"",servings:1,items:[]}; mealQuery=""; render(); };
+  const ms=document.getElementById("mealSearch");
+  if(ms){ ms.addEventListener("input",e=>{ mealQuery=e.target.value;
+      const r=document.getElementById("mealResults");
+      if(r){ r.innerHTML=mealResultsHtml(mealQuery.trim().toLowerCase()); wireMealAdds(r); }
+    });
+  }
+  wireMealAdds(document);
+  document.querySelectorAll("[data-rming]").forEach(el=>el.onclick=()=>{
+    if(!mealBuilder) return; mealBuilder.items.splice(+el.dataset.rming,1); render();
+  });
+  document.querySelectorAll(".bgram").forEach(el=>el.addEventListener("input",()=>{
+    if(!mealBuilder) return; mealBuilder.items[+el.dataset.ig].grams = parseFloat(el.value)||0;
+    const mt=document.getElementById("mealTotals"); if(mt) mt.innerHTML=builderTotalsText();
+  }));
+  const svm=document.getElementById("saveMeal");
+  if(svm) svm.onclick=()=>{
+    if(!mealBuilder) return;
+    const name=val("mealName"); const servings=parseFloat(val("mealServings"))||1;
+    if(!name){ toast("Give the meal a name"); return; }
+    if(!mealBuilder.items.length){ toast("Add at least one ingredient"); return; }
+    if(!Array.isArray(state.recipes)) state.recipes=[];
+    let r;
+    if(mealBuilder.id){ r=state.recipes.find(x=>x.id===mealBuilder.id); }
+    if(!r){ r=state.recipes.find(x=>x.name.toLowerCase()===name.toLowerCase()); }
+    if(r){ r.name=name; r.servings=servings; r.items=mealBuilder.items; }
+    else { r={id:(crypto.randomUUID?crypto.randomUUID():"r"+Date.now()+Math.random().toString(16).slice(2)), name, servings, items:mealBuilder.items}; state.recipes.push(r); }
+    markRecipeDirty(r); mealBuilder=null; mealQuery=""; toast("Meal saved"); render();
+  };
+  const cm=document.getElementById("cancelMeal");
+  if(cm) cm.onclick=()=>{ mealBuilder=null; mealQuery=""; render(); };
+  document.querySelectorAll("[data-logmeal]").forEach(el=>el.onclick=()=>openMealLog(+el.dataset.logmeal));
+  document.querySelectorAll("[data-editmeal]").forEach(el=>el.onclick=()=>{
+    const r=state.recipes[+el.dataset.editmeal]; if(!r) return;
+    mealBuilder={id:r.id, name:r.name, servings:r.servings, items:(r.items||[]).map(i=>({...i}))}; mealQuery=""; render();
+  });
+  document.querySelectorAll("[data-delmeal]").forEach(el=>el.onclick=()=>{
+    const ri=+el.dataset.delmeal; const r=state.recipes[ri]; if(!r) return;
+    state.recipes.splice(ri,1); if(r.id) queueRecipeDelete(r.id); else save(); toast("Meal deleted"); render();
+  });
   const ac=document.getElementById("addCustom");
   if(ac) ac.onclick=()=>{
     const n=val("cf_n")||"Custom food"; const g=parseFloat(val("cf_g"))||0;
@@ -1276,7 +1463,7 @@ function importData(file){
     try{
       const s=JSON.parse(r.result);
       if(s&&s.days&&typeof s.days==="object"){
-        state=s; if(!state.target) state.target={...DEFAULT_TARGET}; if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE}; if(!Array.isArray(state.customFoods)) state.customFoods=[];
+        state=s; if(!state.target) state.target={...DEFAULT_TARGET}; if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE}; if(!Array.isArray(state.customFoods)) state.customFoods=[]; if(!Array.isArray(state.recipes)) state.recipes=[];
         state._meta=null; ensureMeta(true); save(); cur=todayStr(); toast("Backup loaded"); render(); scheduleSync();
       } else toast("That isn't a valid backup file");
     }catch(e){ toast("Could not read that file"); }
