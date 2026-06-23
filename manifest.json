@@ -1,0 +1,9 @@
+{
+  "name": "Lean Plan",
+  "short_name": "Lean Plan",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e"
+}

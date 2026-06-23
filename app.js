@@ -1,0 +1,958 @@
+"use strict";
+function scheduledFor(d){ return (state.schedule && state.schedule[fmtDate(d).idx]) || "Rest"; }
+function howToLink(name){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(name+" exercise proper form technique"); }
+
+/* ---------- state / storage ---------- */
+const KEY="leanplan.v1";
+let state = load();
+let cur = todayStr();
+let tab = "today";
+
+function load(){
+  let s=null;
+  try{ s=JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if(!s||!s.days) s={ target:{...DEFAULT_TARGET}, days:{} };
+  if(!s.target) s.target={...DEFAULT_TARGET};
+  if(!s.schedule) s.schedule={...DEFAULT_SCHEDULE};
+  if(!Array.isArray(s.customFoods)) s.customFoods=[];
+  if(!Array.isArray(s.recipes)) s.recipes=[];
+  return s;
+}
+/* built-in foods + the user's saved custom foods, in a stable order */
+function allFoods(){ return FOODS.concat(state.customFoods||[]); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+function day(d){ if(!state.days[d]) state.days[d]={foods:[],supps:{},weight:null,workout:null}; return state.days[d]; }
+function todayStr(){ const t=new Date(); return ymd(t); }
+function ymd(t){ return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"); }
+function shiftDay(n){ const p=cur.split("-"); const t=new Date(+p[0],+p[1]-1,+p[2]); t.setDate(t.getDate()+n); cur=ymd(t); }
+function fmtDate(d){
+  const p=d.split("-"); const t=new Date(+p[0],+p[1]-1,+p[2]);
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const mon=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return {dow:days[t.getDay()], full:t.getDate()+" "+mon[t.getMonth()]+" "+t.getFullYear(), idx:t.getDay()};
+}
+function r0(x){ return Math.round(x); }
+function r1(x){ return Math.round(x*10)/10; }
+
+/* ===================== SUPABASE SYNC =====================
+   Offline-first: localStorage stays the instant working store. Writes mark records
+   dirty; when online they upsert to Supabase. On load/reconnect we pull and merge,
+   last-write-wins per record (settings, each day, each custom food).
+   No auth yet — RLS is open and the publishable key below is public by design. */
+const SB_URL  = "https://exvblofwiwbvycomxvmj.supabase.co";
+const SB_KEY  = "sb_publishable_l-XOQOrSJ6sRGEwaRR8rrg_pXukGtET";
+const SB_REST = SB_URL + "/rest/v1";
+const LOCAL_USER = "00000000-0000-0000-0000-000000000001"; // placeholder until auth is added
+
+function nowIso(){ return new Date().toISOString(); }
+
+/* ---- metadata: per-record dirty flags + timestamps, persisted inside state ---- */
+function ensureMeta(migrate){
+  if(!state._meta){
+    state._meta = { settings:{u:nowIso(),dirty:false}, days:{}, foodDeletes:[], lastPull:null };
+    if(migrate){
+      // existing local data predates sync: flag everything so it pushes up once
+      state._meta.settings.dirty = true;
+      Object.keys(state.days||{}).forEach(d=>{ state._meta.days[d]={u:nowIso(),dirty:true}; });
+    }
+  }
+  if(!state._meta.days) state._meta.days={};
+  if(!Array.isArray(state._meta.foodDeletes)) state._meta.foodDeletes=[];
+  if(!Array.isArray(state._meta.recipeDeletes)) state._meta.recipeDeletes=[];
+  // ensure every custom food carries an id (+ dirty if migrating)
+  (state.customFoods||[]).forEach(f=>{
+    if(!f.id) f.id = (crypto.randomUUID ? crypto.randomUUID() : "f"+Date.now()+Math.random().toString(16).slice(2));
+    if(migrate){ f._dirty=true; f._u=nowIso(); }
+  });
+  // ensure every recipe carries an id (+ dirty if migrating)
+  (state.recipes||[]).forEach(r=>{
+    if(!r.id) r.id = (crypto.randomUUID ? crypto.randomUUID() : "r"+Date.now()+Math.random().toString(16).slice(2));
+    if(migrate){ r._dirty=true; r._u=nowIso(); }
+  });
+}
+function markSettingsDirty(){ ensureMeta(); state._meta.settings={u:nowIso(),dirty:true}; save(); scheduleSync(); }
+function markDayDirty(d){ ensureMeta(); state._meta.days[d]={u:nowIso(),dirty:true}; save(); scheduleSync(); }
+function markFoodDirty(f){ ensureMeta(); f._dirty=true; f._u=nowIso(); save(); scheduleSync(); }
+function queueFoodDelete(id){ ensureMeta(); if(id) state._meta.foodDeletes.push(id); save(); scheduleSync(); }
+function markRecipeDirty(r){ ensureMeta(); r._dirty=true; r._u=nowIso(); save(); scheduleSync(); }
+function queueRecipeDelete(id){ ensureMeta(); if(id) state._meta.recipeDeletes.push(id); save(); scheduleSync(); }
+
+/* ---- client <-> server row mapping ---- */
+function toServerFood(f){ return {id:f.id, user_id:LOCAL_USER, name:f.n, kcal:+f.k||0, protein:+f.p||0, carbs:+f.c||0, fat:+f.f||0, grams:+f.g||100}; }
+function fromServerFood(r){ return {id:r.id, n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, g:r.grams, _u:r.updated_at, _dirty:false}; }
+function toServerDay(d){ const x=state.days[d]||{}; return {user_id:LOCAL_USER, log_date:d, foods:x.foods||[], supps:x.supps||{}, weight:(x.weight??null), workout:x.workout??null}; }
+function toServerRecipe(r){ return {id:r.id, user_id:LOCAL_USER, name:r.name, items:r.items||[], servings:(+r.servings||1)}; }
+function fromServerRecipe(r){ return {id:r.id, name:r.name, items:r.items||[], servings:(+r.servings||1), _u:r.updated_at, _dirty:false}; }
+
+/* ---- REST helpers ---- */
+function sbFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ apikey:SB_KEY, Authorization:"Bearer "+SB_KEY }, opts.headers||{});
+  return fetch(SB_REST + path, opts);
+}
+async function sbGet(path){
+  const r = await sbFetch(path, {});
+  if(!r.ok) throw new Error("GET "+path+" -> "+r.status);
+  return r.json();
+}
+async function sbUpsert(table, rows, onConflict){
+  if(!rows.length) return;
+  const r = await sbFetch("/"+table+"?on_conflict="+onConflict, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify(rows)
+  });
+  if(!r.ok) throw new Error("UPSERT "+table+" -> "+r.status);
+}
+async function sbDelete(table, filter){
+  const r = await sbFetch("/"+table+"?"+filter, { method:"DELETE", headers:{ "Prefer":"return=minimal" } });
+  if(!r.ok && r.status!==404) throw new Error("DELETE "+table+" -> "+r.status);
+}
+
+/* ---- push local changes up ---- */
+async function pushDirty(){
+  const m = state._meta;
+  if(m.settings.dirty){
+    await sbUpsert("settings", [{user_id:LOCAL_USER, target:state.target, schedule:state.schedule}], "user_id");
+    m.settings.dirty = false;
+  }
+  const dirtyFoods = (state.customFoods||[]).filter(f=>f._dirty);
+  if(dirtyFoods.length){
+    await sbUpsert("custom_foods", dirtyFoods.map(toServerFood), "id");
+    dirtyFoods.forEach(f=>f._dirty=false);
+  }
+  for(const id of [...m.foodDeletes]){
+    await sbDelete("custom_foods", "id=eq."+id);
+    m.foodDeletes = m.foodDeletes.filter(x=>x!==id);
+  }
+  const dirtyRecipes = (state.recipes||[]).filter(r=>r._dirty);
+  if(dirtyRecipes.length){
+    await sbUpsert("recipes", dirtyRecipes.map(toServerRecipe), "id");
+    dirtyRecipes.forEach(r=>r._dirty=false);
+  }
+  for(const id of [...m.recipeDeletes]){
+    await sbDelete("recipes", "id=eq."+id);
+    m.recipeDeletes = m.recipeDeletes.filter(x=>x!==id);
+  }
+  const dirtyDays = Object.keys(m.days).filter(d=>m.days[d].dirty);
+  if(dirtyDays.length){
+    await sbUpsert("day_logs", dirtyDays.map(toServerDay), "user_id,log_date");
+    dirtyDays.forEach(d=>{ m.days[d].dirty=false; });
+  }
+  save();
+}
+
+/* ---- pull remote changes down (server wins for anything not locally dirty) ---- */
+async function pullAll(){
+  const m = state._meta;
+  const s = await sbGet("/settings?user_id=eq."+LOCAL_USER+"&select=*");
+  if(s.length && !m.settings.dirty){
+    state.target = s[0].target; state.schedule = s[0].schedule;
+    m.settings.u = s[0].updated_at;
+  }
+  const cf = await sbGet("/custom_foods?user_id=eq."+LOCAL_USER+"&select=*");
+  const byId = {};
+  cf.map(fromServerFood).forEach(f=>{ byId[f.id]=f; });
+  (state.customFoods||[]).filter(f=>f._dirty).forEach(f=>{ byId[f.id]=f; }); // unpushed local edits win
+  state.customFoods = Object.values(byId);
+  const rc = await sbGet("/recipes?user_id=eq."+LOCAL_USER+"&select=*");
+  const rById = {};
+  rc.map(fromServerRecipe).forEach(r=>{ rById[r.id]=r; });
+  (state.recipes||[]).filter(r=>r._dirty).forEach(r=>{ rById[r.id]=r; }); // unpushed local edits win
+  state.recipes = Object.values(rById);
+  const dl = await sbGet("/day_logs?user_id=eq."+LOCAL_USER+"&select=*");
+  dl.forEach(row=>{
+    const d = row.log_date;
+    if(m.days[d] && m.days[d].dirty) return; // keep unpushed local day
+    state.days[d] = { foods:row.foods||[], supps:row.supps||{}, weight:(row.weight??null), workout:row.workout||null };
+    m.days[d] = { u:row.updated_at, dirty:false };
+  });
+  m.lastPull = nowIso();
+  save();
+}
+
+/* ---- orchestration + status ---- */
+let _syncing=false, _syncTimer=null;
+function setSync(txt, color){
+  const el=document.getElementById("syncStatus");
+  if(el){ el.textContent=txt; el.style.color = color || "var(--muted)"; }
+}
+function maybeRender(){
+  const a=document.activeElement;
+  if(a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return; // don't clobber typing
+  render();
+}
+async function sync(){
+  if(_syncing) return;
+  ensureMeta();
+  if(!navigator.onLine){ setSync("offline"); return; }
+  _syncing=true; setSync("syncing…");
+  try{
+    await pushDirty();
+    await pullAll();
+    setSync("synced");
+    maybeRender();
+  }catch(e){
+    setSync("sync error", "var(--amber)");
+    console.warn("sync failed:", e);
+  }finally{ _syncing=false; }
+}
+function scheduleSync(){ clearTimeout(_syncTimer); _syncTimer=setTimeout(sync, 800); }
+function initSync(){
+  ensureMeta(!state._meta && (Object.keys(state.days||{}).length>0 || (state.customFoods||[]).length>0 || (state.recipes||[]).length>0));
+  window.addEventListener("online", sync);
+  // re-pull whenever the app is brought back to the foreground (key for iOS home-screen apps)
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) sync(); });
+  // let the user force a pull by tapping the sync indicator
+  const ss=document.getElementById("syncStatus");
+  if(ss){ ss.style.cursor="pointer"; ss.title="Tap to sync now"; ss.onclick=()=>sync(); }
+  // register the service worker so updates land without re-installing, and offline works
+  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+  sync();
+}
+/* =================== END SUPABASE SYNC =================== */
+
+/* ---------- supplement schedule per day ---------- */
+function suppsForDay(d){
+  const sched=scheduledFor(d);
+  const isLiftDay = LIFTS.includes(sched) || (day(d).workout && LIFTS.includes(day(d).workout.type));
+  const list = [];
+  if(isLiftDay) list.push({id:"preworkout", name:"ON Pre-Workout", meta:"~20–30 min before your lift. Has caffeine — fine in the morning."});
+  list.push({id:"creatine", name:"Creatine monohydrate 3–5g", meta:"Any time, every day. Consistency matters more than timing. (Optional add — see Guide.)"});
+  list.push({id:"vitd", name:"Vitamin D 10µg / 400IU", meta:"With a meal. NHS advises this for all UK adults Oct–Mar. (Recommended add.)"});
+  list.push({id:"probiotic", name:"100 Billion probiotic", meta:"Per pack instructions. Evidence is weak/strain-specific — optional, not essential."});
+  list.push({id:"mag", name:"Magnesium glycinate", meta:"Evening, with/after dinner. CHECK the ELEMENTAL dose on your label — see Guide."});
+  return list;
+}
+
+/* ===================== RENDER ===================== */
+function render(){
+  const dl=document.getElementById("dateLabel");
+  const f=fmtDate(cur);
+  dl.innerHTML = (cur===todayStr()? "Today" : f.dow)+"<small>"+f.full+"</small>";
+  const v=document.getElementById("view");
+  if(tab==="today") v.innerHTML=viewToday();
+  else if(tab==="food") v.innerHTML=viewFood();
+  else if(tab==="train") v.innerHTML=viewTrain();
+  else if(tab==="plan") v.innerHTML=viewPlan();
+  else if(tab==="info") v.innerHTML=viewInfo();
+  bind();
+  window.scrollTo(0,0);
+}
+
+function totals(d){
+  const t={k:0,p:0,c:0,f:0};
+  day(d).foods.forEach(x=>{t.k+=x.k;t.p+=x.p;t.c+=x.c;t.f+=x.f;});
+  return t;
+}
+
+function macroBlock(lab,val,goal,unit){
+  const pct=Math.min(100, goal? (val/goal*100):0);
+  return `<div class="macro"><div class="lab">${lab}</div>
+    <div class="val">${r0(val)}<small> / ${goal}${unit}</small></div>
+    <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+
+function viewToday(){
+  const t=totals(cur), tg=state.target;
+  const left=tg.kcal - t.k;
+  const pct=Math.min(140, tg.kcal? t.k/tg.kcal*100:0);
+  let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
+  const w=day(cur);
+  const wk = w.workout;
+  let trainLine;
+  if(wk && wk.type) trainLine = `<b>${wk.type==="Cardio"?"Cardio logged":wk.type+" session logged"}</b> — open Train to edit`;
+  else { const s=scheduledFor(cur);
+    trainLine = `Scheduled today: <b>${s==="Rest"?"Rest day":WORKOUTS[s]?WORKOUTS[s].title:s}</b> — open <b>Train</b> to log it (or pick another)`; }
+
+  const supps=suppsForDay(cur);
+  const done = supps.filter(s=>w.supps[s.id]).length;
+
+  return `
+  <div class="card">
+    <div class="ringwrap">
+      <svg viewBox="0 0 160 160">
+        <circle class="ring-track" cx="80" cy="80" r="70"/>
+        <circle class="ring-prog ${cls}" cx="80" cy="80" r="70" style="stroke-dashoffset:${(440*(1-Math.min(pct,100)/100)).toFixed(1)}"/>
+      </svg>
+      <div class="ringctr">
+        <div class="kcalbig" style="color:${left<0?'var(--red)':'var(--ink)'}">${r0(Math.abs(left))}</div>
+        <div class="lbl">${left<0?'over':'left'}</div>
+      </div>
+    </div>
+    <div class="kcalsub">of <b>${tg.kcal} kcal</b> · eaten <b>${r0(t.k)}</b></div>
+    <div class="macros">
+      ${macroBlock("Protein",t.p,tg.p,"g")}
+      ${macroBlock("Carbs",t.c,tg.c,"g")}
+      ${macroBlock("Fat",t.f,tg.f,"g")}
+    </div>
+  </div>
+
+  <h2 class="sec">Today's training</h2>
+  <div class="card tight"><div class="row"><div class="grow"><div class="meta" style="font-size:14px;color:var(--ink)">${trainLine}</div></div>
+    <button class="pill kcal" data-go="train">Open</button></div></div>
+
+  <h2 class="sec">Supplements · ${done}/${supps.length}</h2>
+  <div class="card">
+    ${supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
+      <div class="box">${w.supps[s.id]?'✓':''}</div>
+      <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.meta}</div></div>
+    </div>`).join("")}
+  </div>
+
+  <h2 class="sec">Body weight</h2>
+  <div class="card tight">
+    <div class="row">
+      <div class="grow"><input id="bw" type="number" inputmode="decimal" placeholder="Weight in kg" value="${w.weight??""}"></div>
+      <button class="pill kcal" id="saveBw">Save</button>
+    </div>
+    <div class="mini" style="margin-top:8px">Weigh yourself ~once a week, same time (morning, after the toilet, before eating). Day-to-day swings are water, not fat. ${weightTrend()}</div>
+  </div>
+
+  <h2 class="sec">Eaten today</h2>
+  <div class="card">${foodListHtml(cur) || '<div class="empty">No food logged. Tap <b>Food</b> below to add some.</div>'}</div>
+  `;
+}
+
+function weightTrend(){
+  const arr=Object.keys(state.days).filter(d=>state.days[d].weight).sort();
+  if(arr.length<2) return "Log it over time to see your trend here.";
+  const first=state.days[arr[0]].weight, last=state.days[arr[arr.length-1]].weight;
+  const diff=r1(last-first);
+  return `Since your first entry: <b>${diff>0?'+':''}${diff} kg</b>.`;
+}
+
+function foodListHtml(d){
+  const fs=day(d).foods;
+  if(!fs.length) return "";
+  return fs.map((x,i)=>`<div class="row">
+    <div class="grow"><div class="name">${x.n}</div><div class="meta">${x.grams}g · ${r0(x.p)}p ${r0(x.c)}c ${r0(x.f)}f</div></div>
+    <span class="pill kcal">${r0(x.k)} kcal</span>
+    <button class="x" data-del="${i}">×</button>
+  </div>`).join("");
+}
+
+/* ---------- FOOD tab ---------- */
+let foodQuery="";
+/* build the searchable results list (built-ins + saved custom foods). When no query,
+   show the user's saved foods first, then a handful of common items. */
+function foodResultsHtml(q){
+  const DB=allFoods();
+  let matches;
+  if(q) matches = DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,60);
+  else matches = (state.customFoods||[]).slice().concat(FOODS.slice(0,12));
+  if(!matches.length) return '<div class="empty">No match. Use <b>Add custom food</b> below.</div>';
+  return matches.map(f=>{
+    const idx=DB.indexOf(f);
+    const isCustom = idx>=FOODS.length;
+    return `<div class="foodopt" data-food="${idx}">
+      <div class="grow"><div class="name">${f.n}${isCustom?' <span class="savedtag">saved</span>':''}</div>
+      <div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      ${isCustom?`<button class="x" data-delcustom="${idx-FOODS.length}" title="Remove from saved">×</button>`:'<span class="pill">+ add</span>'}</div>`;
+  }).join("");
+}
+function wireFoodResults(scope){
+  const root=scope||document;
+  root.querySelectorAll(".foodopt[data-food]").forEach(el=>el.onclick=(ev)=>{
+    if(ev.target.closest("[data-delcustom]")) return;
+    openFoodAdd(+el.dataset.food);
+  });
+  root.querySelectorAll("[data-delcustom]").forEach(el=>el.onclick=(ev)=>{
+    ev.stopPropagation();
+    const ci=+el.dataset.delcustom;
+    if(state.customFoods && state.customFoods[ci]){ const gone=state.customFoods.splice(ci,1)[0]; if(gone&&gone.id) queueFoodDelete(gone.id); else save(); toast("Removed from saved"); render(); }
+  });
+}
+let foodSub = "foods";     // "foods" | "meals"
+function viewFood(){
+  const seg = `<div class="seg">
+    <button data-foodsub="foods" class="${foodSub==='foods'?'on':''}">Foods</button>
+    <button data-foodsub="meals" class="${foodSub==='meals'?'on':''}">Meals</button>
+  </div>`;
+  return seg + (foodSub==='meals' ? viewMeals() : viewFoodsList());
+}
+function viewFoodsList(){
+  const q=foodQuery.trim().toLowerCase();
+  const t=totals(cur), tg=state.target;
+  const savedCount=(state.customFoods||[]).length;
+  return `
+  <div class="card tight">
+    <div class="mini" style="margin-bottom:8px">Today: <b>${r0(t.k)}</b>/${tg.kcal} kcal · ${r0(t.p)}g protein</div>
+    <div class="search"><input id="foodSearch" placeholder="Search foods (e.g. chicken, noodles, banana)" value="${foodQuery}"></div>
+    <div class="results">
+      ${foodResultsHtml(q)}
+    </div>
+  </div>
+  ${q? "" : '<div class="mini" style="margin:0 4px 12px">'+(savedCount?'Your saved foods show first. ':'')+'Type to search all '+allFoods().length+' foods.</div>'}
+
+  <h2 class="sec">Add custom food</h2>
+  <div class="card">
+    <div class="field"><label>Name</label><input id="cf_n" placeholder="e.g. Mum's chilli"></div>
+    <div class="grid2">
+      <div class="field"><label>Amount (g)</label><input id="cf_g" type="number" inputmode="decimal" placeholder="grams" value="100"></div>
+      <div class="field"><label>Kcal (per 100g)</label><input id="cf_k" type="number" inputmode="decimal" placeholder="kcal"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Prot</label><input id="cf_p" type="number" inputmode="decimal" placeholder="g"></div>
+      <div class="field"><label>Carb</label><input id="cf_c" type="number" inputmode="decimal" placeholder="g"></div>
+      <div class="field"><label>Fat</label><input id="cf_f" type="number" inputmode="decimal" placeholder="g"></div>
+    </div>
+    <button class="btn" id="addCustom">Add to today &amp; save</button>
+    <div class="mini" style="margin-top:8px">Read the "per 100g" column on the packet and copy those four numbers. Once saved, the food appears in search above so you never have to type it again. Per-serving labels work too — just enter that serving's grams and its per-100g values.</div>
+  </div>
+
+  <h2 class="sec">Eaten today</h2>
+  <div class="card">${foodListHtml(cur) || '<div class="empty">Nothing yet.</div>'}</div>
+  `;
+}
+
+/* ---------- MEALS / RECIPES ---------- */
+function escAttr(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
+function recipeTotals(r){
+  const t={k:0,p:0,c:0,f:0,g:0};
+  (r.items||[]).forEach(i=>{ const m=(+i.grams||0)/100;
+    t.k+=(+i.k||0)*m; t.p+=(+i.p||0)*m; t.c+=(+i.c||0)*m; t.f+=(+i.f||0)*m; t.g+=(+i.grams||0); });
+  return t;
+}
+function recipePer(r){ const t=recipeTotals(r); const s=(+r.servings||1)||1; return {k:t.k/s,p:t.p/s,c:t.c/s,f:t.f/s,g:t.g/s}; }
+
+let mealBuilder = null;   // {id?, name, servings, items:[{n,k,p,c,f,grams}]}
+let mealQuery = "";
+function viewMeals(){
+  let html = "";
+  if(mealBuilder){
+    html += builderHtml();
+  } else {
+    html += `<button class="btn" id="newMeal" style="margin-bottom:14px">+ New meal</button>`;
+  }
+  const rs = state.recipes||[];
+  html += `<h2 class="sec">Your meals</h2>`;
+  if(!rs.length){
+    html += `<div class="card"><div class="empty">No meals yet. Tap <b>New meal</b> to build one from your foods — then log the whole thing in one go.</div></div>`;
+  } else {
+    html += `<div class="card">`+ rs.map((r,ri)=>{
+      const per=recipePer(r);
+      return `<div class="row">
+        <div class="grow"><div class="name">${r.name}</div>
+          <div class="meta">${(+r.servings>1)?(r.servings+" servings · "):""}per serving: ${r0(per.k)} kcal · ${r0(per.p)}p ${r0(per.c)}c ${r0(per.f)}f</div></div>
+        <button class="pill kcal" data-logmeal="${ri}">+ log</button>
+        <button class="pill" data-editmeal="${ri}">edit</button>
+        <button class="x" data-delmeal="${ri}">×</button>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+  html += `<h2 class="sec">Eaten today</h2><div class="card">${foodListHtml(cur)||'<div class="empty">Nothing yet.</div>'}</div>`;
+  return html;
+}
+function mealResultsHtml(q){
+  const DB=allFoods();
+  let matches = q ? DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,40)
+                  : (state.customFoods||[]).slice().concat(FOODS.slice(0,8));
+  if(!matches.length) return '<div class="empty">No match.</div>';
+  return matches.map(f=>{ const idx=DB.indexOf(f);
+    return `<div class="foodopt" data-adding="${idx}">
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <span class="pill">+ add</span></div>`;
+  }).join("");
+}
+function builderTotalsText(){
+  const b=mealBuilder; if(!b) return "";
+  const t=recipeTotals(b); const s=(+b.servings||1)||1;
+  return `Whole meal: <b>${r0(t.k)} kcal</b> · ${r0(t.p)}p ${r0(t.c)}c ${r0(t.f)}f<br>Per serving (÷${s}): <b>${r0(t.k/s)} kcal</b> · ${r0(t.p/s)}p ${r0(t.c/s)}c ${r0(t.f/s)}f`;
+}
+function builderHtml(){
+  const b=mealBuilder;
+  const ing = (b.items||[]).map((i,ii)=>`<div class="row">
+      <div class="grow"><div class="name">${i.n}</div><div class="meta">per 100g: ${i.k} kcal · ${i.p}p ${i.c}c ${i.f}f</div></div>
+      <input class="bgram" data-ig="${ii}" type="number" inputmode="decimal" value="${i.grams}" style="width:70px;text-align:right;padding:8px">
+      <span class="u">g</span>
+      <button class="x" data-rming="${ii}">×</button>
+    </div>`).join("");
+  return `<div class="card">
+    <div class="field"><label>Meal name</label><input id="mealName" placeholder="e.g. Chicken &amp; rice bowl" value="${escAttr(b.name)}"></div>
+    <div class="field"><label>Servings this batch makes</label><input id="mealServings" type="number" inputmode="decimal" value="${b.servings}"></div>
+    <h2 class="sec" style="margin-top:6px">Add ingredients</h2>
+    <div class="search"><input id="mealSearch" placeholder="Search foods to add" value="${escAttr(mealQuery)}"></div>
+    <div class="results" id="mealResults">${mealResultsHtml(mealQuery.trim().toLowerCase())}</div>
+    <h2 class="sec">In this meal</h2>
+    <div id="mealIngList">${ing||'<div class="empty">No ingredients yet — search above to add.</div>'}</div>
+    <div class="note" id="mealTotals" style="margin-top:12px">${builderTotalsText()}</div>
+    <button class="btn" id="saveMeal">${b.id?"Save changes":"Save meal"}</button>
+    <button class="btn ghost" id="cancelMeal" style="margin-top:8px">Cancel</button>
+  </div>`;
+}
+function wireMealAdds(scope){
+  const root=scope||document;
+  root.querySelectorAll("[data-adding]").forEach(el=>el.onclick=()=>{
+    if(!mealBuilder) return;
+    const f=allFoods()[+el.dataset.adding]; if(!f) return;
+    mealBuilder.items.push({n:f.n,k:f.k,p:f.p,c:f.c,f:f.f,grams:f.g});
+    render();
+  });
+}
+function openMealLog(ri){
+  const r=state.recipes[ri]; if(!r) return;
+  const per=recipePer(r);
+  const v=document.getElementById("view");
+  const panel=document.createElement("div");
+  panel.className="card"; panel.id="mealLogPanel";
+  panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
+      <div class="grow"><div class="name">${r.name}</div><div class="meta">per serving: ${r0(per.k)} kcal · ${r0(per.p)}p ${r0(per.c)}c ${r0(per.f)}f</div></div>
+      <button class="x" id="closeMealLog">×</button></div>
+    <div class="field"><label>How many servings?</label><input id="ml_s" type="number" inputmode="decimal" value="1"></div>
+    <div class="mini" id="ml_prev" style="margin-bottom:12px"></div>
+    <button class="btn" id="ml_add">Add to today</button>`;
+  v.insertBefore(panel, v.firstChild);
+  const si=document.getElementById("ml_s");
+  const prev=()=>{ const q=parseFloat(si.value)||0;
+    document.getElementById("ml_prev").innerHTML=`= <b>${r0(per.k*q)} kcal</b> · ${r1(per.p*q)}p ${r1(per.c*q)}c ${r1(per.f*q)}f`; };
+  prev(); si.addEventListener("input",prev); si.focus();
+  document.getElementById("closeMealLog").onclick=()=>panel.remove();
+  document.getElementById("ml_add").onclick=()=>{
+    const q=parseFloat(si.value)||0; if(q<=0) return;
+    const nm = r.name + (q!==1? " ("+(+q.toFixed(2))+"×)" : "");
+    day(cur).foods.push({n:nm, grams:r0(per.g*q), k:per.k*q, p:per.p*q, c:per.c*q, f:per.f*q});
+    markDayDirty(cur); toast(r.name+" added"); render();
+  };
+  window.scrollTo(0,0);
+}
+
+/* food add modal-ish: pick grams via prompt-replacement panel */
+let pendingFood=null;
+function openFoodAdd(idx){
+  pendingFood=idx;
+  const f=allFoods()[idx];
+  const v=document.getElementById("view");
+  const panel=document.createElement("div");
+  panel.className="card";
+  panel.id="addPanel";
+  panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <button class="x" id="closePanel">×</button></div>
+    <div class="field"><label>How much? (grams)</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
+    <div class="mini" id="fa_preview" style="margin-bottom:12px"></div>
+    <button class="btn" id="fa_add">Add to today</button>`;
+  v.insertBefore(panel, v.firstChild);
+  const gi=document.getElementById("fa_g");
+  const prev=()=>{const g=parseFloat(gi.value)||0;const m=g/100;
+    document.getElementById("fa_preview").innerHTML=`= <b>${r0(f.k*m)} kcal</b> · ${r1(f.p*m)}p ${r1(f.c*m)}c ${r1(f.f*m)}f`;};
+  prev(); gi.addEventListener("input",prev); gi.focus();
+  document.getElementById("closePanel").onclick=()=>panel.remove();
+  document.getElementById("fa_add").onclick=()=>{
+    const g=parseFloat(gi.value)||0; if(g<=0) return; const m=g/100;
+    day(cur).foods.push({n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m});
+    markDayDirty(cur); toast(f.n+" added"); render();
+  };
+  window.scrollTo(0,0);
+}
+
+/* ---------- TRAIN tab ---------- */
+let trainSel=null;
+let trainShown=null;
+function lastSession(type){
+  const ds=Object.keys(state.days).filter(d=>d!==cur && state.days[d].workout && state.days[d].workout.type===type).sort();
+  return ds.length? state.days[ds[ds.length-1]].workout : null;
+}
+function viewTrain(){
+  const w=day(cur);
+  const logged = w.workout && w.workout.type;
+  const sched = scheduledFor(cur);
+  let sel = trainSel || logged || (LIFTS.includes(sched)?sched:"Cardio");
+  trainShown = sel;
+  const segBtn=(id,label)=>`<button data-wsel="${id}" class="${sel===id?'on':''}">${label}</button>`;
+  const dayName = fmtDate(cur).dow;
+  let banner;
+  if(logged){
+    banner = `<div class="note"><b>Logged ${dayName}: ${logged==="Cardio"?"Cardio":WORKOUTS[logged].title}.</b> Tap a different session below to change what you did today.</div>`;
+  } else if(sched==="Rest"){
+    banner = `<div class="note"><b>${dayName} is a rest day in your schedule.</b> Recover — a gentle walk is fine. You can still log a session below, or rearrange your week in the Plan tab.</div>`;
+  } else {
+    banner = `<div class="note"><b>${dayName}'s plan: ${WORKOUTS[sched].title}.</b> Doing something else today? Tap any session below — it only changes today. To change your weekly plan, edit it in the Plan tab.</div>`;
+  }
+  let body="";
+  if(sel==="Cardio"){
+    const c=(w.workout&&w.workout.type==="Cardio")?w.workout:{cardioType:"Walk",mins:""};
+    const e=WORKOUTS.Cardio.ex[0];
+    body=`<div class="ex"><div class="h"><div class="name">${e.title||e.n}</div><span class="target">${e.t}</span></div>
+      <div class="cue">${e.cue}</div></div>
+      <div class="field"><label>Type</label><select id="c_type">
+        ${["Walk","Incline treadmill","Stationary bike","Cross-trainer","Rower","Other"].map(o=>`<option ${c.cardioType===o?'selected':''}>${o}</option>`).join("")}
+      </select></div>
+      <div class="field"><label>Minutes</label><input id="c_min" type="number" inputmode="numeric" value="${c.mins||""}" placeholder="e.g. 25"></div>
+      <button class="btn amber" id="saveCardio">Save cardio</button>`;
+  } else {
+    const wk=WORKOUTS[sel];
+    const last=lastSession(sel);
+    const logged=(w.workout&&w.workout.type===sel)?w.workout.ex:null;
+    body=`<h2 class="sec" style="margin-top:4px">${wk.title}</h2>`+wk.ex.map((e,ei)=>{
+      const lastEx = last&&last.ex&&last.ex[ei]?last.ex[ei]:null;
+      const lastTxt = lastEx&&lastEx.sets&&lastEx.sets.length?
+        ("Last: "+lastEx.sets.map(s=>(s.w?s.w+"kg":"")+(s.w&&s.reps?"×":"")+(s.reps?s.reps:"")).filter(Boolean).join(", ")) : "";
+      const cur = logged&&logged[ei]?logged[ei].sets : [ {w:"",reps:""},{w:"",reps:""} ];
+      const isPlank=e.n.toLowerCase().includes("plank");
+      return `<div class="ex" data-ex="${ei}">
+        <div class="h"><div class="name">${e.n}</div><span class="target">${e.t}</span></div>
+        <div class="cue">${e.cue}</div>
+        <a class="howto" href="${howToLink(e.n)}" target="_blank" rel="noopener">▶ Watch how to perform</a>
+        ${lastTxt?`<div class="last">${lastTxt}</div>`:""}
+        <div class="sets" id="sets_${ei}">
+          ${cur.map((s,si)=>setRow(ei,si,s,isPlank)).join("")}
+        </div>
+        <button class="addset" data-addset="${ei}" data-plank="${isPlank?1:0}">+ add set</button>
+      </div>`;
+    }).join("") + `<button class="btn" id="saveWorkout">Save ${sel} session</button>`;
+  }
+  return `
+  ${banner}
+  <div class="seg">${segBtn("Legs","Legs")}${segBtn("Push","Push")}${segBtn("Pull","Pull")}${segBtn("Cardio","Cardio")}</div>
+  ${body}
+  <div class="note" style="margin-top:14px"><b>How to progress:</b> keep ~2–3 reps "in the tank" each set (don't grind to failure — that's also what triggers the sick feeling). When you hit the top of the rep range on all sets with good form, add a small amount of weight next time. Rest ~90 seconds between sets.</div>
+  `;
+}
+function setRow(ei,si,s,isPlank){
+  if(isPlank) return `<div class="setrow" data-set="${si}"><span class="n">Set ${si+1}</span>
+    <input data-f="reps" type="number" inputmode="numeric" placeholder="seconds" value="${s.reps||""}"><span class="u">sec</span></div>`;
+  return `<div class="setrow" data-set="${si}"><span class="n">Set ${si+1}</span>
+    <input data-f="w" type="number" inputmode="decimal" placeholder="kg" value="${s.w||""}"><span class="u">kg</span>
+    <input data-f="reps" type="number" inputmode="numeric" placeholder="reps" value="${s.reps||""}"><span class="u">reps</span></div>`;
+}
+function collectWorkout(sel){
+  const exs=[];
+  document.querySelectorAll(".ex[data-ex]").forEach(exEl=>{
+    const sets=[];
+    exEl.querySelectorAll(".setrow").forEach(sr=>{
+      const o={w:"",reps:""};
+      sr.querySelectorAll("input").forEach(inp=>{o[inp.dataset.f]=inp.value;});
+      if(o.w!==""||o.reps!=="") sets.push(o);
+    });
+    exs.push({name:WORKOUTS[sel].ex[+exEl.dataset.ex].n, sets});
+  });
+  return exs;
+}
+
+/* ---------- PLAN tab ---------- */
+function viewPlan(){
+  const days=[["Mon",1],["Tue",2],["Wed",3],["Thu",4],["Fri",5],["Sat",6],["Sun",0]];
+  const badgeFor=v=>LIFTS.includes(v)?"lift":(v==="Cardio"?"cardio":"rest");
+  const badgeTxt=v=>v==="Cardio"?"Cardio":LIFTS.includes(v)?"Lift":"Rest";
+  return `
+  <h2 class="sec">Your weekly schedule</h2>
+  <div class="card">
+    <div class="mini" style="margin-bottom:10px">Change any day to whatever you want — set Tuesday to Pull, move your rest day, anything. This is your recurring plan, and the Train tab opens to whatever's set here each day.</div>
+    ${days.map(([nm,idx])=>{
+      const v=(state.schedule&&state.schedule[idx])||"Rest";
+      return `<div class="wkdayrow">
+        <div class="day">${nm}</div>
+        <div class="what" style="flex:1"><select data-schedday="${idx}">${SESSIONS.map(s=>`<option value="${s}" ${s===v?"selected":""}>${s==="Legs"?"Legs & Core":s}</option>`).join("")}</select></div>
+        <span class="badge ${badgeFor(v)}" id="badge_${idx}">${badgeTxt(v)}</span>
+      </div>`;
+    }).join("")}
+    <div class="mini" style="margin-top:10px">Aim for 3 lifts a week with a rest day between where you can, so a sore muscle group recovers before you train it again. Daily steps (~7,000–10,000) burn more over a week than the gym sessions do.</div>
+  </div>
+  <div class="card body">
+    <p class="mini">Lifts rotate best as Legs → Push → Pull (back-to-back sessions then hit different muscles). What each covers: <b>Legs &amp; Core</b> — leg press, RDL, extensions, calves, core. <b>Push</b> — chest, shoulders, triceps. <b>Pull</b> — back, rear delts, biceps, core.</p>
+  </div>
+
+  <h2 class="sec">Daily eating template</h2>
+  <div class="card body">
+    <p>You skip breakfast and that's fine — there's nothing magic about it, what matters is the daily total and getting enough protein. Aim ~<b>${state.target.p}g protein</b> and ~<b>${state.target.kcal} kcal</b> across the day.</p>
+    <h3>Late morning / lunch</h3>
+    <p>First real food. Lead with protein: eggs, chicken, tuna, Greek yogurt, or a protein shake, plus some carbs and veg. A protein coffee or shake works if you're not hungry for solid food.</p>
+    <h3>Dinner (the noodle slot)</h3>
+    <p>Keep noodles if you like them, but upgrade: <b>one</b> pack, not two, and throw in a protein (a couple of eggs, chicken, prawns, or tofu) and some frozen veg. That turns a 380-kcal protein-free meal into a balanced one for not many more calories.</p>
+    <h3>Evening — the snack window (8–11:30pm)</h3>
+    <p>This is your biggest leak: 2–3 bags of crisps + a chocolate bar is easily 700–1,000 kcal of food that doesn't fill you up. You don't have to quit snacking — swap it:</p>
+    <ul>
+      <li>Crisps → plain popcorn, or Greek yogurt with berries</li>
+      <li>Whole chocolate bar → two squares of dark chocolate, or a hot chocolate made with milk</li>
+      <li>Still hungry → protein shake, or wholemeal toast with peanut butter</li>
+    </ul>
+    <p>Log the swap in <b>Food</b> and watch the calorie gap close. This single change will likely do more than anything else on this page.</p>
+    <p class="mini">No avocado or peas used anywhere in this plan, and everything here is cookable for a shared household.</p>
+  </div>
+
+  <h2 class="sec">Supplement timing</h2>
+  <div class="card body">
+    <p><b>On the days you lift:</b> ON Pre-Workout ~20–30 min before. The caffeine is fine first thing; skip it on rest days.</p>
+    <p><b>Every day:</b> creatine (any time), vitamin D with a meal.</p>
+    <p><b>Evening:</b> magnesium glycinate with or after dinner.</p>
+    <p><b>Probiotic:</b> per the pack — but see the Guide, the evidence is weak.</p>
+    <p class="mini">Full reasoning, doses, and one important correction about your magnesium are in the <b>Guide</b> tab.</p>
+  </div>
+  `;
+}
+
+/* ---------- INFO / GUIDE tab ---------- */
+function viewInfo(){
+  return `
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">The honest basics</h2>
+    <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
+    <p><b>The deficit is what loses fat.</b> Lifting and cardio help, but you cannot out-train the evening snacking. Food is ~80% of the result.</p>
+    <p><b>Lifting protects muscle.</b> In a calorie deficit you'd otherwise lose some muscle along with fat. Resistance training + high protein keeps the muscle, so the weight you lose is mostly fat. That's why the plan is lifting-led.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Your numbers</h2>
+    <ul>
+      <li>Estimated maintenance: ~2,300–2,400 kcal/day</li>
+      <li>Target for fat loss: ~<b>${state.target.kcal} kcal/day</b> (a ~500 kcal deficit ≈ <b>0.5 kg / 1 lb a week</b>)</li>
+      <li>Protein: ~<b>${state.target.p}g/day</b> (≈1.8g per kg) — preserves muscle and keeps you full</li>
+      <li>Fat ~${state.target.f}g, carbs ~${state.target.c}g — flexible, hit calories and protein first</li>
+    </ul>
+    <p class="mini">These are estimates from standard equations (Mifflin-St Jeor), not exact. If after 3–4 weeks your weekly weight isn't trending down, drop the target by ~150 kcal. If you feel wrecked or aren't recovering, eat a bit more.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Your current supplements</h2>
+    <h3>ON Pre-Workout (creatine)</h3>
+    <p>Fine to use before training. It contains caffeine and usually a small dose of creatine. Caffeine genuinely helps performance and morning training won't wreck your sleep. You don't <i>need</i> a pre-workout though — see creatine below.</p>
+    <div class="note warnote"><b>Magnesium glycinate "6000mg" — check this.</b> The 6,000mg almost certainly refers to the whole compound, not the magnesium itself. Magnesium glycinate is only ~14% actual ("elemental") magnesium by weight. What matters for dosing is the <b>elemental magnesium per serving</b> printed on the label. UK guidance puts the upper safe amount from supplements at ~400mg elemental/day (daily reference value 375mg). Find the "elemental magnesium" figure on your tub and make sure a serving isn't over ~400mg. I can't read your label, so I won't guess the number — but it's worth a 30-second check. Glycinate is well absorbed and gentle on the stomach; taking it in the evening is reasonable.</div>
+    <h3>100 Billion probiotic</h3>
+    <p>Straight answer: for a generally healthy adult the evidence for daily probiotics is <b>weak and very strain-specific</b> — a high CFU count on the label doesn't equal proven benefit. It's not harmful. If you notice nothing after a month, it's reasonable to stop and save the money. Real gut benefits come more reliably from fibre and variety in your actual diet.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Worth adding (evidence-backed)</h2>
+    <h3>Vitamin D — 10µg (400 IU)/day</h3>
+    <p>The NHS recommends this for all UK adults from October to March (and year-round if you get little sun). Cheap, well-evidenced for bone/immune health. The clearest "yes" on this list.</p>
+    <h3>Creatine monohydrate — 3–5g/day</h3>
+    <p>The most-studied, most-proven sports supplement there is, for strength and muscle. Plain monohydrate is cheap and identical to the fancy versions. Take it daily, any time — timing doesn't matter. One heads-up: it pulls a little water into your muscles, so the scale may rise ~0.5–1kg in the first week or two. That's water, not fat — don't panic.</p>
+    <h3>Protein powder (whey or plant)</h3>
+    <p>Not magic — just a convenient, cheap way to hit your protein target on busy days or in the evening instead of crisps. Useful given your current diet is low on protein.</p>
+    <h3>Optional: omega-3 / fish oil</h3>
+    <p>Modest general-health evidence. Fine to take, not essential. Eating oily fish (salmon, mackerel) a couple of times a week does the same job.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Don't bother with</h2>
+    <p>Fat burners, "detox" teas, CLA, raspberry ketones, apple cider vinegar pills, BCAAs (redundant if your protein is adequate). The evidence is absent or trivial and they're a waste of money. There is no supplement that burns belly fat.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Feeling sick with exercise</h2>
+    <p>You said intense workouts make you feel sick. The plan is built to avoid that: moderate effort, stopping 2–3 reps short of failure, and cardio only at a conversational pace. A few practical things:</p>
+    <ul>
+      <li>Don't train completely empty if mornings make you queasy — a banana or a small bit of toast 30–45 min before can settle it.</li>
+      <li>Hydrate before and during.</li>
+      <li>Build minutes and reps before you push weight or speed.</li>
+      <li>If a stimulant pre-workout adds to the nausea, skip it and just have a coffee — or nothing.</li>
+    </ul>
+    <p class="mini">If the sick feeling is severe, happens at low effort, or comes with chest pain, dizziness or breathlessness, get it checked by a GP before continuing. This app is general information, not medical advice — worth a quick word with your GP before starting given you mention poor health.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Exercise demonstrations</h2>
+    <p>Every movement in the <b>Train</b> tab has a "▶ Watch how to perform" link — it opens a video search for that exact exercise. Pick a demo from a qualified coach or physiotherapist, and prioritise the ones showing the same setup as the cue text. Watch once before your first time doing a movement; getting the pattern right early prevents the aches that come from poor form.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Your data &amp; backups</h2>
+    <p>Your log is saved in this browser <b>and</b> synced to your private cloud database when you're online — so it survives across devices and a browser-data wipe. The sync indicator top-right shows <b>synced</b>, <b>syncing…</b>, or <b>offline</b> (offline edits sync automatically once you reconnect). Export is still worth keeping as a belt-and-braces backup:</p>
+    <button class="btn ghost" id="exportData" style="margin-bottom:8px">Export a backup file</button>
+    <label class="btn ghost" for="importFile" style="display:block;text-align:center;margin-bottom:6px">Import a backup file</label>
+    <input id="importFile" type="file" accept="application/json,.json" style="display:none">
+    <p class="mini">Export saves a small file. To move your history to another phone or laptop, open the app there and Import that file. Do an export every week or two.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Put this online (free)</h2>
+    <p>Hosting it gives you a stable web address you can open anywhere and "Add to Home Screen". Two easy free routes:</p>
+    <ul>
+      <li><b>Fastest — Netlify Drop:</b> rename this file to <b>index.html</b>, go to <b>app.netlify.com/drop</b> and drag it into the page. You get a live link in seconds (free account to keep it).</li>
+      <li><b>Permanent — GitHub Pages:</b> free GitHub account → make a repository → upload the file as <b>index.html</b> → Settings → Pages → set the source to your main branch. Live at <i>yourname.github.io/repo</i> within a few minutes, free for good.</li>
+    </ul>
+    <p class="mini">Important: your logged data is tied to the web address. If you move from the file to a hosted link, use Export then Import to carry your history across.</p>
+  </div>
+
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Add to your phone &amp; settings</h2>
+    <p><b>iPhone (Safari):</b> Share button → "Add to Home Screen". <b>Android (Chrome):</b> ⋮ menu → "Add to Home screen". It then opens like a normal app and works offline.</p>
+    <button class="btn ghost" id="editTargets">Adjust calorie / protein targets</button>
+  </div>
+  `;
+}
+
+/* ===================== EVENTS ===================== */
+function bind(){
+  // food
+  const fs=document.getElementById("foodSearch");
+  if(fs){ fs.addEventListener("input",e=>{ foodQuery=e.target.value;
+      // re-render only results to keep focus
+      const r=document.querySelector(".results");
+      if(r){ r.innerHTML = foodResultsHtml(foodQuery.trim().toLowerCase()); wireFoodResults(r); }
+    });
+  }
+  wireFoodResults(document);
+  // ----- meals / recipes -----
+  document.querySelectorAll("[data-foodsub]").forEach(el=>el.onclick=()=>{ foodSub=el.dataset.foodsub; render(); });
+  const nm=document.getElementById("newMeal");
+  if(nm) nm.onclick=()=>{ mealBuilder={name:"",servings:1,items:[]}; mealQuery=""; render(); };
+  const ms=document.getElementById("mealSearch");
+  if(ms){ ms.addEventListener("input",e=>{ mealQuery=e.target.value;
+      const r=document.getElementById("mealResults");
+      if(r){ r.innerHTML=mealResultsHtml(mealQuery.trim().toLowerCase()); wireMealAdds(r); }
+    });
+  }
+  wireMealAdds(document);
+  document.querySelectorAll("[data-rming]").forEach(el=>el.onclick=()=>{
+    if(!mealBuilder) return; mealBuilder.items.splice(+el.dataset.rming,1); render();
+  });
+  document.querySelectorAll(".bgram").forEach(el=>el.addEventListener("input",()=>{
+    if(!mealBuilder) return; mealBuilder.items[+el.dataset.ig].grams = parseFloat(el.value)||0;
+    const mt=document.getElementById("mealTotals"); if(mt) mt.innerHTML=builderTotalsText();
+  }));
+  const svm=document.getElementById("saveMeal");
+  if(svm) svm.onclick=()=>{
+    if(!mealBuilder) return;
+    const name=val("mealName"); const servings=parseFloat(val("mealServings"))||1;
+    if(!name){ toast("Give the meal a name"); return; }
+    if(!mealBuilder.items.length){ toast("Add at least one ingredient"); return; }
+    if(!Array.isArray(state.recipes)) state.recipes=[];
+    let r;
+    if(mealBuilder.id){ r=state.recipes.find(x=>x.id===mealBuilder.id); }
+    if(!r){ r=state.recipes.find(x=>x.name.toLowerCase()===name.toLowerCase()); }
+    if(r){ r.name=name; r.servings=servings; r.items=mealBuilder.items; }
+    else { r={id:(crypto.randomUUID?crypto.randomUUID():"r"+Date.now()+Math.random().toString(16).slice(2)), name, servings, items:mealBuilder.items}; state.recipes.push(r); }
+    markRecipeDirty(r); mealBuilder=null; mealQuery=""; toast("Meal saved"); render();
+  };
+  const cm=document.getElementById("cancelMeal");
+  if(cm) cm.onclick=()=>{ mealBuilder=null; mealQuery=""; render(); };
+  document.querySelectorAll("[data-logmeal]").forEach(el=>el.onclick=()=>openMealLog(+el.dataset.logmeal));
+  document.querySelectorAll("[data-editmeal]").forEach(el=>el.onclick=()=>{
+    const r=state.recipes[+el.dataset.editmeal]; if(!r) return;
+    mealBuilder={id:r.id, name:r.name, servings:r.servings, items:(r.items||[]).map(i=>({...i}))}; mealQuery=""; render();
+  });
+  document.querySelectorAll("[data-delmeal]").forEach(el=>el.onclick=()=>{
+    const ri=+el.dataset.delmeal; const r=state.recipes[ri]; if(!r) return;
+    state.recipes.splice(ri,1); if(r.id) queueRecipeDelete(r.id); else save(); toast("Meal deleted"); render();
+  });
+  const ac=document.getElementById("addCustom");
+  if(ac) ac.onclick=()=>{
+    const n=val("cf_n")||"Custom food"; const g=parseFloat(val("cf_g"))||0;
+    const k=parseFloat(val("cf_k"))||0,p=parseFloat(val("cf_p"))||0,c=parseFloat(val("cf_c"))||0,f=parseFloat(val("cf_f"))||0;
+    if(g<=0){toast("Enter an amount in grams");return;}
+    if(!Array.isArray(state.customFoods)) state.customFoods=[];
+    // save (or update) the food definition so it can be reused
+    const ex=state.customFoods.find(x=>x.n.toLowerCase()===n.toLowerCase());
+    if(ex){ ex.k=k; ex.p=p; ex.c=c; ex.f=f; ex.g=r0(g); markFoodDirty(ex); }
+    else { const def={n,k,p,c,f,g:r0(g),id:(crypto.randomUUID?crypto.randomUUID():"f"+Date.now()+Math.random().toString(16).slice(2))}; state.customFoods.push(def); markFoodDirty(def); }
+    // log today's portion
+    const m=g/100;
+    day(cur).foods.push({n,grams:r0(g),k:k*m,p:p*m,c:c*m,f:f*m});
+    markDayDirty(cur); toast(n+" added & saved"); render();
+  };
+  document.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
+    day(cur).foods.splice(+el.dataset.del,1); markDayDirty(cur); render();
+  });
+  // supps
+  document.querySelectorAll("[data-supp]").forEach(el=>el.onclick=()=>{
+    const id=el.dataset.supp; const w=day(cur); w.supps[id]=!w.supps[id]; markDayDirty(cur); render();
+  });
+  // bodyweight
+  const sb=document.getElementById("saveBw");
+  if(sb) sb.onclick=()=>{ const v=parseFloat(val("bw")); if(!v){toast("Enter a weight");return;}
+    day(cur).weight=v; markDayDirty(cur); toast("Weight saved"); render(); };
+  // quick go to train
+  document.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{ setTab(el.dataset.go); });
+  // train segmented
+  document.querySelectorAll("[data-wsel]").forEach(el=>el.onclick=()=>{ trainSel=el.dataset.wsel; render(); });
+  // weekly schedule editor (Plan tab)
+  document.querySelectorAll("[data-schedday]").forEach(sel=>sel.onchange=()=>{
+    const idx=+sel.dataset.schedday, v=sel.value;
+    if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE};
+    state.schedule[idx]=v; markSettingsDirty();
+    const b=document.getElementById("badge_"+idx);
+    if(b){ const cls=LIFTS.includes(v)?"lift":(v==="Cardio"?"cardio":"rest");
+      b.className="badge "+cls; b.textContent=v==="Cardio"?"Cardio":LIFTS.includes(v)?"Lift":"Rest"; }
+    toast("Schedule updated");
+  });
+  // add set
+  document.querySelectorAll("[data-addset]").forEach(el=>el.onclick=()=>{
+    const ei=+el.dataset.addset; const isPlank=el.dataset.plank==="1";
+    const cont=document.getElementById("sets_"+ei);
+    const si=cont.querySelectorAll(".setrow").length;
+    const div=document.createElement("div"); div.innerHTML=setRow(ei,si,{w:"",reps:""},isPlank);
+    cont.appendChild(div.firstElementChild);
+  });
+  const sw=document.getElementById("saveWorkout");
+  if(sw) sw.onclick=()=>{ const sel=trainShown; const ex=collectWorkout(sel);
+    day(cur).workout={type:sel,ex}; markDayDirty(cur); toast(sel+" session saved"); render(); };
+  const sc=document.getElementById("saveCardio");
+  if(sc) sc.onclick=()=>{ day(cur).workout={type:"Cardio",cardioType:val("c_type"),mins:val("c_min")};
+    markDayDirty(cur); toast("Cardio saved"); render(); };
+  // targets editor
+  const et=document.getElementById("editTargets");
+  if(et) et.onclick=()=>targetEditor();
+  // data backup
+  const ex=document.getElementById("exportData");
+  if(ex) ex.onclick=()=>exportData();
+  const imp=document.getElementById("importFile");
+  if(imp) imp.onchange=e=>{ if(e.target.files&&e.target.files[0]) importData(e.target.files[0]); };
+}
+function val(id){ const e=document.getElementById(id); return e?e.value.trim():""; }
+
+function targetEditor(){
+  const v=document.getElementById("view");
+  const t=state.target;
+  const panel=document.createElement("div");
+  panel.className="card"; panel.style.position="relative";
+  panel.innerHTML=`<div class="row" style="border:0;padding-top:0"><div class="grow"><div class="name">Adjust targets</div></div><button class="x" id="closeT">×</button></div>
+    <div class="grid2">
+      <div class="field"><label>Calories</label><input id="t_k" type="number" value="${t.kcal}"></div>
+      <div class="field"><label>Protein (g)</label><input id="t_p" type="number" value="${t.p}"></div>
+      <div class="field"><label>Carbs (g)</label><input id="t_c" type="number" value="${t.c}"></div>
+      <div class="field"><label>Fat (g)</label><input id="t_f" type="number" value="${t.f}"></div>
+    </div>
+    <button class="btn" id="saveT">Save targets</button>`;
+  v.insertBefore(panel,v.firstChild);
+  document.getElementById("closeT").onclick=()=>panel.remove();
+  document.getElementById("saveT").onclick=()=>{
+    state.target={kcal:parseInt(val("t_k"))||t.kcal,p:parseInt(val("t_p"))||t.p,c:parseInt(val("t_c"))||t.c,f:parseInt(val("t_f"))||t.f};
+    markSettingsDirty(); toast("Targets updated"); render();
+  };
+  window.scrollTo(0,0);
+}
+
+/* ---------- data backup ---------- */
+function exportData(){
+  try{
+    const blob=new Blob([JSON.stringify(state)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="leanplan-backup-"+todayStr()+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    toast("Backup downloaded");
+  }catch(e){ toast("Could not export"); }
+}
+function importData(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(s&&s.days&&typeof s.days==="object"){
+        state=s; if(!state.target) state.target={...DEFAULT_TARGET}; if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE}; if(!Array.isArray(state.customFoods)) state.customFoods=[]; if(!Array.isArray(state.recipes)) state.recipes=[];
+        state._meta=null; ensureMeta(true); save(); cur=todayStr(); toast("Backup loaded"); render(); scheduleSync();
+      } else toast("That isn't a valid backup file");
+    }catch(e){ toast("Could not read that file"); }
+  };
+  r.readAsText(file);
+}
+
+/* tabs + date */
+function setTab(t){ tab=t; trainSel=null;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  render();
+}
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-tab]"); if(b) setTab(b.dataset.tab);
+});
+document.getElementById("prevDay").onclick=()=>{ shiftDay(-1); render(); };
+document.getElementById("nextDay").onclick=()=>{ shiftDay(1); render(); };
+
+let toastTimer=null;
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1600); }
+
+render();
+initSync();
