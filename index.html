@@ -168,7 +168,7 @@
 <body>
 <div id="app">
   <header class="top">
-    <div class="brand"><h1>Lean Plan</h1><span class="tag">fat loss · lift · simple</span></div>
+    <div class="brand"><h1>Lean Plan</h1><span class="tag">fat loss · lift · simple</span><span class="tag" id="syncStatus" style="margin-left:auto"></span></div>
     <div class="datebar">
       <button id="prevDay">‹</button>
       <div class="d" id="dateLabel"></div>
@@ -571,6 +571,154 @@ function fmtDate(d){
 function r0(x){ return Math.round(x); }
 function r1(x){ return Math.round(x*10)/10; }
 
+/* ===================== SUPABASE SYNC =====================
+   Offline-first: localStorage stays the instant working store. Writes mark records
+   dirty; when online they upsert to Supabase. On load/reconnect we pull and merge,
+   last-write-wins per record (settings, each day, each custom food).
+   No auth yet — RLS is open and the publishable key below is public by design. */
+const SB_URL  = "https://exvblofwiwbvycomxvmj.supabase.co";
+const SB_KEY  = "sb_publishable_l-XOQOrSJ6sRGEwaRR8rrg_pXukGtET";
+const SB_REST = SB_URL + "/rest/v1";
+const LOCAL_USER = "00000000-0000-0000-0000-000000000001"; // placeholder until auth is added
+
+function nowIso(){ return new Date().toISOString(); }
+
+/* ---- metadata: per-record dirty flags + timestamps, persisted inside state ---- */
+function ensureMeta(migrate){
+  if(!state._meta){
+    state._meta = { settings:{u:nowIso(),dirty:false}, days:{}, foodDeletes:[], lastPull:null };
+    if(migrate){
+      // existing local data predates sync: flag everything so it pushes up once
+      state._meta.settings.dirty = true;
+      Object.keys(state.days||{}).forEach(d=>{ state._meta.days[d]={u:nowIso(),dirty:true}; });
+    }
+  }
+  if(!state._meta.days) state._meta.days={};
+  if(!Array.isArray(state._meta.foodDeletes)) state._meta.foodDeletes=[];
+  // ensure every custom food carries an id (+ dirty if migrating)
+  (state.customFoods||[]).forEach(f=>{
+    if(!f.id) f.id = (crypto.randomUUID ? crypto.randomUUID() : "f"+Date.now()+Math.random().toString(16).slice(2));
+    if(migrate){ f._dirty=true; f._u=nowIso(); }
+  });
+}
+function markSettingsDirty(){ ensureMeta(); state._meta.settings={u:nowIso(),dirty:true}; save(); scheduleSync(); }
+function markDayDirty(d){ ensureMeta(); state._meta.days[d]={u:nowIso(),dirty:true}; save(); scheduleSync(); }
+function markFoodDirty(f){ ensureMeta(); f._dirty=true; f._u=nowIso(); save(); scheduleSync(); }
+function queueFoodDelete(id){ ensureMeta(); if(id) state._meta.foodDeletes.push(id); save(); scheduleSync(); }
+
+/* ---- client <-> server row mapping ---- */
+function toServerFood(f){ return {id:f.id, user_id:LOCAL_USER, name:f.n, kcal:+f.k||0, protein:+f.p||0, carbs:+f.c||0, fat:+f.f||0, grams:+f.g||100}; }
+function fromServerFood(r){ return {id:r.id, n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, g:r.grams, _u:r.updated_at, _dirty:false}; }
+function toServerDay(d){ const x=state.days[d]||{}; return {user_id:LOCAL_USER, log_date:d, foods:x.foods||[], supps:x.supps||{}, weight:(x.weight??null), workout:x.workout??null}; }
+
+/* ---- REST helpers ---- */
+function sbFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ apikey:SB_KEY, Authorization:"Bearer "+SB_KEY }, opts.headers||{});
+  return fetch(SB_REST + path, opts);
+}
+async function sbGet(path){
+  const r = await sbFetch(path, {});
+  if(!r.ok) throw new Error("GET "+path+" -> "+r.status);
+  return r.json();
+}
+async function sbUpsert(table, rows, onConflict){
+  if(!rows.length) return;
+  const r = await sbFetch("/"+table+"?on_conflict="+onConflict, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify(rows)
+  });
+  if(!r.ok) throw new Error("UPSERT "+table+" -> "+r.status);
+}
+async function sbDelete(table, filter){
+  const r = await sbFetch("/"+table+"?"+filter, { method:"DELETE", headers:{ "Prefer":"return=minimal" } });
+  if(!r.ok && r.status!==404) throw new Error("DELETE "+table+" -> "+r.status);
+}
+
+/* ---- push local changes up ---- */
+async function pushDirty(){
+  const m = state._meta;
+  if(m.settings.dirty){
+    await sbUpsert("settings", [{user_id:LOCAL_USER, target:state.target, schedule:state.schedule}], "user_id");
+    m.settings.dirty = false;
+  }
+  const dirtyFoods = (state.customFoods||[]).filter(f=>f._dirty);
+  if(dirtyFoods.length){
+    await sbUpsert("custom_foods", dirtyFoods.map(toServerFood), "id");
+    dirtyFoods.forEach(f=>f._dirty=false);
+  }
+  for(const id of [...m.foodDeletes]){
+    await sbDelete("custom_foods", "id=eq."+id);
+    m.foodDeletes = m.foodDeletes.filter(x=>x!==id);
+  }
+  const dirtyDays = Object.keys(m.days).filter(d=>m.days[d].dirty);
+  if(dirtyDays.length){
+    await sbUpsert("day_logs", dirtyDays.map(toServerDay), "user_id,log_date");
+    dirtyDays.forEach(d=>{ m.days[d].dirty=false; });
+  }
+  save();
+}
+
+/* ---- pull remote changes down (server wins for anything not locally dirty) ---- */
+async function pullAll(){
+  const m = state._meta;
+  const s = await sbGet("/settings?user_id=eq."+LOCAL_USER+"&select=*");
+  if(s.length && !m.settings.dirty){
+    state.target = s[0].target; state.schedule = s[0].schedule;
+    m.settings.u = s[0].updated_at;
+  }
+  const cf = await sbGet("/custom_foods?user_id=eq."+LOCAL_USER+"&select=*");
+  const byId = {};
+  cf.map(fromServerFood).forEach(f=>{ byId[f.id]=f; });
+  (state.customFoods||[]).filter(f=>f._dirty).forEach(f=>{ byId[f.id]=f; }); // unpushed local edits win
+  state.customFoods = Object.values(byId);
+  const dl = await sbGet("/day_logs?user_id=eq."+LOCAL_USER+"&select=*");
+  dl.forEach(row=>{
+    const d = row.log_date;
+    if(m.days[d] && m.days[d].dirty) return; // keep unpushed local day
+    state.days[d] = { foods:row.foods||[], supps:row.supps||{}, weight:(row.weight??null), workout:row.workout||null };
+    m.days[d] = { u:row.updated_at, dirty:false };
+  });
+  m.lastPull = nowIso();
+  save();
+}
+
+/* ---- orchestration + status ---- */
+let _syncing=false, _syncTimer=null;
+function setSync(txt, color){
+  const el=document.getElementById("syncStatus");
+  if(el){ el.textContent=txt; el.style.color = color || "var(--muted)"; }
+}
+function maybeRender(){
+  const a=document.activeElement;
+  if(a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return; // don't clobber typing
+  render();
+}
+async function sync(){
+  if(_syncing) return;
+  ensureMeta();
+  if(!navigator.onLine){ setSync("offline"); return; }
+  _syncing=true; setSync("syncing…");
+  try{
+    await pushDirty();
+    await pullAll();
+    setSync("synced");
+    maybeRender();
+  }catch(e){
+    setSync("sync error", "var(--amber)");
+    console.warn("sync failed:", e);
+  }finally{ _syncing=false; }
+}
+function scheduleSync(){ clearTimeout(_syncTimer); _syncTimer=setTimeout(sync, 800); }
+function initSync(){
+  ensureMeta(!state._meta && (Object.keys(state.days||{}).length>0 || (state.customFoods||[]).length>0));
+  // first run on fresh state still needs a settings row eventually; a write will create it.
+  window.addEventListener("online", sync);
+  sync();
+}
+/* =================== END SUPABASE SYNC =================== */
+
 /* ---------- supplement schedule per day ---------- */
 function suppsForDay(d){
   const sched=scheduledFor(d);
@@ -719,7 +867,7 @@ function wireFoodResults(scope){
   root.querySelectorAll("[data-delcustom]").forEach(el=>el.onclick=(ev)=>{
     ev.stopPropagation();
     const ci=+el.dataset.delcustom;
-    if(state.customFoods && state.customFoods[ci]){ state.customFoods.splice(ci,1); save(); toast("Removed from saved"); render(); }
+    if(state.customFoods && state.customFoods[ci]){ const gone=state.customFoods.splice(ci,1)[0]; if(gone&&gone.id) queueFoodDelete(gone.id); else save(); toast("Removed from saved"); render(); }
   });
 }
 function viewFood(){
@@ -781,7 +929,7 @@ function openFoodAdd(idx){
   document.getElementById("fa_add").onclick=()=>{
     const g=parseFloat(gi.value)||0; if(g<=0) return; const m=g/100;
     day(cur).foods.push({n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m});
-    save(); toast(f.n+" added"); render();
+    markDayDirty(cur); toast(f.n+" added"); render();
   };
   window.scrollTo(0,0);
 }
@@ -988,7 +1136,7 @@ function viewInfo(){
 
   <div class="card body">
     <h2 class="sec" style="margin-top:0">Your data &amp; backups</h2>
-    <p>Everything you log is saved in <b>this</b> browser, on <b>this</b> device. It stays between visits, but it does <b>not</b> sync to other devices, and clearing your browser data would wipe it. So back it up:</p>
+    <p>Your log is saved in this browser <b>and</b> synced to your private cloud database when you're online — so it survives across devices and a browser-data wipe. The sync indicator top-right shows <b>synced</b>, <b>syncing…</b>, or <b>offline</b> (offline edits sync automatically once you reconnect). Export is still worth keeping as a belt-and-braces backup:</p>
     <button class="btn ghost" id="exportData" style="margin-bottom:8px">Export a backup file</button>
     <label class="btn ghost" for="importFile" style="display:block;text-align:center;margin-bottom:6px">Import a backup file</label>
     <input id="importFile" type="file" accept="application/json,.json" style="display:none">
@@ -1031,26 +1179,25 @@ function bind(){
     if(g<=0){toast("Enter an amount in grams");return;}
     if(!Array.isArray(state.customFoods)) state.customFoods=[];
     // save (or update) the food definition so it can be reused
-    const def={n,k,p,c,f,g:r0(g)};
     const ex=state.customFoods.find(x=>x.n.toLowerCase()===n.toLowerCase());
-    if(ex){ ex.k=k; ex.p=p; ex.c=c; ex.f=f; ex.g=r0(g); }
-    else state.customFoods.push(def);
+    if(ex){ ex.k=k; ex.p=p; ex.c=c; ex.f=f; ex.g=r0(g); markFoodDirty(ex); }
+    else { const def={n,k,p,c,f,g:r0(g),id:(crypto.randomUUID?crypto.randomUUID():"f"+Date.now()+Math.random().toString(16).slice(2))}; state.customFoods.push(def); markFoodDirty(def); }
     // log today's portion
     const m=g/100;
     day(cur).foods.push({n,grams:r0(g),k:k*m,p:p*m,c:c*m,f:f*m});
-    save(); toast(n+" added & saved"); render();
+    markDayDirty(cur); toast(n+" added & saved"); render();
   };
   document.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
-    day(cur).foods.splice(+el.dataset.del,1); save(); render();
+    day(cur).foods.splice(+el.dataset.del,1); markDayDirty(cur); render();
   });
   // supps
   document.querySelectorAll("[data-supp]").forEach(el=>el.onclick=()=>{
-    const id=el.dataset.supp; const w=day(cur); w.supps[id]=!w.supps[id]; save(); render();
+    const id=el.dataset.supp; const w=day(cur); w.supps[id]=!w.supps[id]; markDayDirty(cur); render();
   });
   // bodyweight
   const sb=document.getElementById("saveBw");
   if(sb) sb.onclick=()=>{ const v=parseFloat(val("bw")); if(!v){toast("Enter a weight");return;}
-    day(cur).weight=v; save(); toast("Weight saved"); render(); };
+    day(cur).weight=v; markDayDirty(cur); toast("Weight saved"); render(); };
   // quick go to train
   document.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{ setTab(el.dataset.go); });
   // train segmented
@@ -1059,7 +1206,7 @@ function bind(){
   document.querySelectorAll("[data-schedday]").forEach(sel=>sel.onchange=()=>{
     const idx=+sel.dataset.schedday, v=sel.value;
     if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE};
-    state.schedule[idx]=v; save();
+    state.schedule[idx]=v; markSettingsDirty();
     const b=document.getElementById("badge_"+idx);
     if(b){ const cls=LIFTS.includes(v)?"lift":(v==="Cardio"?"cardio":"rest");
       b.className="badge "+cls; b.textContent=v==="Cardio"?"Cardio":LIFTS.includes(v)?"Lift":"Rest"; }
@@ -1075,10 +1222,10 @@ function bind(){
   });
   const sw=document.getElementById("saveWorkout");
   if(sw) sw.onclick=()=>{ const sel=trainShown; const ex=collectWorkout(sel);
-    day(cur).workout={type:sel,ex}; save(); toast(sel+" session saved"); render(); };
+    day(cur).workout={type:sel,ex}; markDayDirty(cur); toast(sel+" session saved"); render(); };
   const sc=document.getElementById("saveCardio");
   if(sc) sc.onclick=()=>{ day(cur).workout={type:"Cardio",cardioType:val("c_type"),mins:val("c_min")};
-    save(); toast("Cardio saved"); render(); };
+    markDayDirty(cur); toast("Cardio saved"); render(); };
   // targets editor
   const et=document.getElementById("editTargets");
   if(et) et.onclick=()=>targetEditor();
@@ -1107,7 +1254,7 @@ function targetEditor(){
   document.getElementById("closeT").onclick=()=>panel.remove();
   document.getElementById("saveT").onclick=()=>{
     state.target={kcal:parseInt(val("t_k"))||t.kcal,p:parseInt(val("t_p"))||t.p,c:parseInt(val("t_c"))||t.c,f:parseInt(val("t_f"))||t.f};
-    save(); toast("Targets updated"); render();
+    markSettingsDirty(); toast("Targets updated"); render();
   };
   window.scrollTo(0,0);
 }
@@ -1130,7 +1277,7 @@ function importData(file){
       const s=JSON.parse(r.result);
       if(s&&s.days&&typeof s.days==="object"){
         state=s; if(!state.target) state.target={...DEFAULT_TARGET}; if(!state.schedule) state.schedule={...DEFAULT_SCHEDULE}; if(!Array.isArray(state.customFoods)) state.customFoods=[];
-        save(); cur=todayStr(); toast("Backup loaded"); render();
+        state._meta=null; ensureMeta(true); save(); cur=todayStr(); toast("Backup loaded"); render(); scheduleSync();
       } else toast("That isn't a valid backup file");
     }catch(e){ toast("Could not read that file"); }
   };
@@ -1153,6 +1300,7 @@ function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1600); }
 
 render();
+initSync();
 </script>
 </body>
 </html>
