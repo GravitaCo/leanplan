@@ -342,7 +342,7 @@ function foodListHtml(d){
   const fs=day(d).foods;
   if(!fs.length) return "";
   return fs.map((x,i)=>`<div class="row">
-    <div class="grow"><div class="name">${x.n}</div><div class="meta">${x.grams}g · ${r0(x.p)}p ${r0(x.c)}c ${r0(x.f)}f</div></div>
+    <div class="grow"><div class="name">${x.n}</div><div class="meta">${x.grams}${x.unit||'g'} · ${r0(x.p)}p ${r0(x.c)}c ${r0(x.f)}f</div></div>
     <span class="pill kcal">${r0(x.k)} kcal</span>
     <button class="x" data-del="${i}">×</button>
   </div>`).join("");
@@ -386,7 +386,7 @@ function foodResultsHtml(q){
       const isCustom=idx>=FOODS.length;
       return `<div class="foodopt" data-food="${idx}">
         <div class="grow"><div class="name">${f.n}${isCustom?' <span class="savedtag">saved</span>':''}</div>
-        <div class="meta">per 100g · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+        <div class="meta">per 100${f.ml?'ml':'g'} · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
         ${isCustom?`<button class="x" data-delcustom="${idx-FOODS.length}" title="Remove">×</button>`:'<span class="pill">+ add</span>'}</div>`;
     }).join("");
     return (sec.label?`<div class="mini" style="padding:8px 0 4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${sec.label}</div>`:'')+rows;
@@ -503,7 +503,7 @@ function mealResultsHtml(q){
   if(!matches.length) return '<div class="empty">No match.</div>';
   return matches.map(f=>{ const idx=DB.indexOf(f);
     return `<div class="foodopt" data-adding="${idx}">
-      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100${f.ml?'ml':'g'}: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
       <span class="pill">+ add</span></div>`;
   }).join("");
 }
@@ -515,7 +515,7 @@ function builderTotalsText(){
 function builderHtml(){
   const b=mealBuilder;
   const ing = (b.items||[]).map((i,ii)=>`<div class="row">
-      <div class="grow"><div class="name">${i.n}</div><div class="meta">per 100g: ${i.k} kcal · ${i.p}p ${i.c}c ${i.f}f</div></div>
+      <div class="grow"><div class="name">${i.n}</div><div class="meta">per 100${i.ml?'ml':'g'}: ${i.k} kcal · ${i.p}p ${i.c}c ${i.f}f</div></div>
       <input class="bgram" data-ig="${ii}" type="number" inputmode="decimal" value="${i.grams}" style="width:70px;text-align:right;padding:8px">
       <span class="u">g</span>
       <button class="x" data-rming="${ii}">×</button>
@@ -578,16 +578,17 @@ function openFoodAdd(idx){
   const panel=document.createElement("div");
   panel.className="card";
   panel.id="addPanel";
+  const u = f.ml ? 'ml' : 'g';
   const half=Math.round(f.g*0.5), dbl=Math.round(f.g*2);
   panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
-      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100${u} · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
       <button class="x" id="closePanel">×</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
-      <button class="btn ghost" id="fp_half" style="padding:9px 4px;font-size:13px">½ serve<br><small style="color:var(--muted);font-size:11px;font-weight:400">${half}g</small></button>
-      <button class="btn" id="fp_one" style="padding:9px 4px;font-size:13px">1 serve<br><small style="color:var(--bg);font-size:11px;font-weight:400">${f.g}g</small></button>
-      <button class="btn ghost" id="fp_dbl" style="padding:9px 4px;font-size:13px">2 serves<br><small style="color:var(--muted);font-size:11px;font-weight:400">${dbl}g</small></button>
+      <button class="btn ghost" id="fp_half" style="padding:9px 4px;font-size:13px">½ serve<br><small style="color:var(--muted);font-size:11px;font-weight:400">${half}${u}</small></button>
+      <button class="btn" id="fp_one" style="padding:9px 4px;font-size:13px">1 serve<br><small style="color:var(--bg);font-size:11px;font-weight:400">${f.g}${u}</small></button>
+      <button class="btn ghost" id="fp_dbl" style="padding:9px 4px;font-size:13px">2 serves<br><small style="color:var(--muted);font-size:11px;font-weight:400">${dbl}${u}</small></button>
     </div>
-    <div class="field"><label>Or enter grams</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
+    <div class="field"><label>Or enter ${u}</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
     <div class="mini" id="fa_preview" style="margin-bottom:12px"></div>
     <button class="btn" id="fa_add">Add to today</button>`;
   v.insertBefore(panel, v.firstChild);
@@ -602,7 +603,9 @@ function openFoodAdd(idx){
   document.getElementById("closePanel").onclick=()=>panel.remove();
   document.getElementById("fa_add").onclick=()=>{
     const g=parseFloat(gi.value)||0; if(g<=0) return; const m=g/100;
-    day(cur).foods.push({n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m});
+    const entry={n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m};
+    if(f.ml) entry.unit='ml';
+    day(cur).foods.push(entry);
     markDayDirty(cur); toast(f.n+" added"); render();
   };
   window.scrollTo(0,0);
