@@ -692,46 +692,67 @@ function viewPlan(){
 }
 
 /* ---------- SETTINGS tab ---------- */
-let _guideOpen = false;
-function msjSuggested(){
+const SETT_SECTIONS = ['profile','metrics','targets','account','backup','about','guide'];
+let _sett = { profile:true, metrics:true, targets:false, account:false, backup:false, about:false, guide:false };
+
+function profileWeight(){
+  // most recent logged weight: today first, then scan backwards up to 30 days
+  if(state.days[cur]?.weight) return state.days[cur].weight;
+  if(state.profile.weight) return state.profile.weight;
+  const dates = Object.keys(state.days).sort().reverse();
+  for(const d of dates){ if(state.days[d]?.weight) return state.days[d].weight; }
+  return null;
+}
+
+function msjSuggested(w){
   const p = state.profile;
-  if(!p.age || !p.height) return null;
-  const w = state.days[cur]?.weight || 80;
+  if(!p.age || !p.height || !w) return null;
   const bmr = p.sex==='F'
     ? 10*w + 6.25*p.height - 5*p.age - 161
     : 10*w + 6.25*p.height - 5*p.age + 5;
   const mult = (ACTIVITY[p.activityLevel]||ACTIVITY.light).mult;
-  const maint = Math.round(bmr * mult / 50) * 50;
-  const deficit = maint - 500;
+  const maint = Math.round(bmr * mult);
+  const kcal  = Math.max(1200, maint - 500);
   const protein = Math.round(w * 1.8);
-  const fat = Math.round(deficit * 0.27 / 9);
-  const carbs = Math.round((deficit - protein*4 - fat*9) / 4);
-  return { maint, kcal:deficit, p:protein, c:Math.max(carbs,0), f:fat };
+  const carbs = Math.round(kcal * 0.40 / 4);
+  const fat   = Math.round((kcal - protein*4 - carbs*4) / 9);
+  return { maint, kcal, p:protein, c:Math.max(carbs,0), f:Math.max(fat,0) };
 }
+
+function settAccordion(key, label, content){
+  const open = _sett[key];
+  return `<div class="acc-wrap">
+    <div class="acc-hd" onclick="toggleSett('${key}')">
+      <span>${label}</span><span class="acc-ic">${open?'▲':'▼'}</span>
+    </div>
+    ${open ? `<div class="acc-bd">${content}</div>` : ''}
+  </div>`;
+}
+
+function toggleSett(key){ _sett[key]=!_sett[key]; render(); }
 function viewInfo(){
   const email = currentSession?.user?.email || '';
   const pr = state.profile;
-  const sug = msjSuggested();
-  return `
-  <h2 class="sec" style="margin-top:6px">Profile</h2>
-  <div class="card">
+  const w = profileWeight();
+  const sug = msjSuggested(w);
+
+  const profileContent = `
     <div class="field"><label>Display name</label><input id="profName" type="text" value="${pr.name||''}" placeholder="Your name" autocomplete="name"></div>
     <div class="field"><label>Email address</label><input id="profEmail" type="email" value="${email}" autocomplete="email"></div>
-    <button class="btn" id="saveProfile">Save profile</button>
-  </div>
+    <button class="btn" id="saveProfile">Save profile</button>`;
 
-  <h2 class="sec">My metrics</h2>
-  <div class="card">
-    <div class="grid2" style="margin-bottom:10px">
-      <div class="field" style="margin:0"><label>Sex</label>
+  const metricsContent = `
+    <div class="grid2">
+      <div class="field"><label>Sex</label>
         <select id="profSex">
           <option value="M" ${pr.sex==='M'?'selected':''}>Male</option>
           <option value="F" ${pr.sex==='F'?'selected':''}>Female</option>
         </select>
       </div>
-      <div class="field" style="margin:0"><label>Age</label><input id="profAge" type="number" min="16" max="99" value="${pr.age||''}" placeholder="e.g. 35"></div>
+      <div class="field"><label>Age</label><input id="profAge" type="number" min="16" max="99" value="${pr.age||''}" placeholder="e.g. 35"></div>
+      <div class="field"><label>Height (cm)</label><input id="profHeight" type="number" min="100" max="250" value="${pr.height||''}" placeholder="e.g. 178"></div>
+      <div class="field"><label>Current weight (kg)</label><input id="profWeight" type="number" min="30" max="300" step="0.1" value="${w||''}" placeholder="e.g. 82.5"></div>
     </div>
-    <div class="field"><label>Height (cm)</label><input id="profHeight" type="number" min="100" max="250" value="${pr.height||''}" placeholder="e.g. 178"></div>
     <div class="field"><label>Activity level</label>
       <select id="profActivity">
         ${Object.entries(ACTIVITY).map(([k,v])=>`<option value="${k}" ${pr.activityLevel===k?'selected':''}>${v.label}</option>`).join('')}
@@ -740,165 +761,78 @@ function viewInfo(){
     <button class="btn ghost" id="saveMetrics">Save metrics</button>
     ${sug ? `
     <div class="note" style="margin-top:12px">
-      <b>Suggested targets</b> based on your metrics &amp; today's weight (${state.days[cur]?.weight||'—'}kg):<br>
-      Maintenance ~${sug.maint} kcal · Fat-loss target ~${sug.kcal} kcal · Protein ~${sug.p}g
-      <br><button class="btn" id="applySuggested" style="margin-top:10px">Apply suggested targets</button>
-    </div>` : `<p class="mini" style="margin-top:10px">Fill in age and height above to see Mifflin-St Jeor suggested targets.</p>`}
-  </div>
+      <b>Suggested targets</b> (Mifflin-St Jeor, ${w}kg)<br>
+      Maintenance: <b>${sug.maint} kcal</b> · Fat-loss deficit: <b>${sug.kcal} kcal</b><br>
+      Protein <b>${sug.p}g</b> · Carbs <b>${sug.c}g</b> · Fat <b>${sug.f}g</b>
+      <br><button class="btn" id="applySuggested" style="margin-top:10px">Apply to targets</button>
+    </div>` : `<p class="mini" style="margin-top:10px">Fill in age, height and weight to see suggested targets.</p>`}`;
 
-  <h2 class="sec">Calorie &amp; macro targets</h2>
-  <div class="card">
+  const targetsContent = `
     <div class="grid2">
       <div class="field"><label>Calories</label><input id="tKcal" type="number" value="${state.target.kcal}"></div>
       <div class="field"><label>Protein (g)</label><input id="tProt" type="number" value="${state.target.p}"></div>
       <div class="field"><label>Carbs (g)</label><input id="tCarb" type="number" value="${state.target.c}"></div>
       <div class="field"><label>Fat (g)</label><input id="tFat"  type="number" value="${state.target.f}"></div>
     </div>
-    <button class="btn" id="saveTargets">Save targets</button>
-  </div>
+    <button class="btn" id="saveTargets">Save targets</button>`;
 
-  <h2 class="sec">Account</h2>
-  <div class="card tight">
-    <div style="display:flex;align-items:center;justify-content:space-between">
+  const accountContent = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
       <div>
         <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Signed in as</div>
         <div style="font-size:14px;font-weight:600;margin-top:2px">${email}</div>
       </div>
       <button class="btn ghost" style="width:auto;padding:8px 16px;font-size:13px" onclick="doSignOut()">Sign out</button>
-    </div>
-  </div>
+    </div>`;
 
-  <h2 class="sec">Data &amp; backup</h2>
-  <div class="card body">
-    <p>Your log is saved in this browser <b>and</b> synced to your private cloud database. The sync indicator top-right shows the status. Export a backup periodically as a belt-and-braces copy.</p>
+  const backupContent = `
+    <p class="mini">Your log is stored locally and synced to your private cloud database. Export a backup periodically as a safety copy.</p>
     <button class="btn ghost" id="exportData" style="margin-bottom:8px">Export backup file</button>
-    <label class="btn ghost" for="importFile" style="display:block;text-align:center;margin-bottom:6px">Import backup file</label>
-    <input id="importFile" type="file" accept="application/json,.json" style="display:none">
-  </div>
+    <label class="btn ghost" for="importFile" style="display:block;text-align:center">Import backup file</label>
+    <input id="importFile" type="file" accept="application/json,.json" style="display:none">`;
 
-  <h2 class="sec">About</h2>
-  <div class="card body">
-    <p class="mini" style="margin:0"><b>Lean Plan</b> v1.1.0 — personal fat-loss tracker. Built for single-user use.</p>
-    <p class="mini"><b>Data use:</b> Your data is stored locally on this device and synced to a private Supabase database accessible only to your account. It is never shared, sold, or used for any purpose other than running this app.</p>
-    <p class="mini"><b>Terms:</b> This app provides general fitness information only and is not medical advice. Consult a GP before starting a new diet or exercise programme, especially if you have any health conditions. Use at your own risk.</p>
-    <p class="mini"><b>Add to home screen — iPhone (Safari):</b> Share → "Add to Home Screen". <b>Android (Chrome):</b> ⋮ → "Add to Home screen".</p>
-  </div>
+  const aboutContent = `
+    <p class="mini" style="margin:0 0 8px"><b>Lean Plan</b> v1.2.0 — personal fat-loss tracker.</p>
+    <p class="mini"><b>Data use:</b> Your data is stored on this device and synced to a private database tied to your account only. It is never shared or sold.</p>
+    <p class="mini"><b>Terms:</b> General fitness information only — not medical advice. Consult a GP before starting a new diet or exercise programme. Use at your own risk.</p>
+    <p class="mini" style="margin-bottom:0"><b>Install:</b> iPhone (Safari) → Share → "Add to Home Screen". Android (Chrome) → ⋮ → "Add to Home screen".</p>`;
 
-  <h2 class="sec" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" id="guideToggle">
-    Nutrition guide <span style="font-size:16px;color:var(--muted)">${_guideOpen?'▲':'▼'}</span>
-  </h2>
-  ${_guideOpen ? `
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">The honest basics</h2>
-    <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
-    <p><b>The deficit is what loses fat.</b> Lifting and cardio help, but you cannot out-train the evening snacking. Food is ~80% of the result.</p>
-    <p><b>Lifting protects muscle.</b> In a calorie deficit you'd otherwise lose some muscle along with fat. Resistance training + high protein keeps the muscle, so the weight you lose is mostly fat. That's why the plan is lifting-led.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Your numbers</h2>
-    <ul>
-      <li>Target for fat loss: ~<b>${state.target.kcal} kcal/day</b> (a ~500 kcal deficit ≈ <b>0.5 kg / 1 lb a week</b>)</li>
-      <li>Protein: ~<b>${state.target.p}g/day</b> (≈1.8g per kg) — preserves muscle and keeps you full</li>
-      <li>Fat ~${state.target.f}g, carbs ~${state.target.c}g — flexible, hit calories and protein first</li>
-    </ul>
-    <p class="mini">These are estimates from standard equations (Mifflin-St Jeor), not exact. If after 3–4 weeks your weekly weight isn't trending down, drop the target by ~150 kcal.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Supplements</h2>
-    <h3>ON Pre-Workout</h3>
-    <p>Fine to use before training. It contains caffeine — morning training won't wreck your sleep. You don't need a pre-workout; see creatine below.</p>
-    <div class="note warnote"><b>Magnesium glycinate "6000mg" — check this.</b> 6,000mg almost certainly refers to the whole compound. Magnesium glycinate is only ~14% actual (elemental) magnesium by weight. Find the "elemental magnesium per serving" on your tub and make sure it's under ~400mg/day. I can't read your label — worth a 30-second check.</div>
-    <h3>100 Billion probiotic</h3>
-    <p>For a generally healthy adult the evidence for daily probiotics is <b>weak and very strain-specific</b>. Not harmful. If you notice nothing after a month, it's reasonable to stop.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Worth adding (evidence-backed)</h2>
-    <h3>Vitamin D — 10µg (400 IU)/day</h3>
-    <p>NHS-recommended for all UK adults October–March. Cheap, well-evidenced for bone/immune health.</p>
-    <h3>Creatine monohydrate — 3–5g/day</h3>
-    <p>The most-studied sports supplement there is. Plain monohydrate is cheap and identical to the fancy versions. Take daily, any time — timing doesn't matter. May cause a 0.5–1kg scale rise in week one (water, not fat).</p>
-    <h3>Protein powder (whey or plant)</h3>
-    <p>Convenient way to hit your protein target. Useful when your diet is low on protein.</p>
-    <h3>Optional: omega-3 / fish oil</h3>
-    <p>Modest general-health evidence. Eating oily fish (salmon, mackerel) twice a week does the same job.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Don't bother with</h2>
-    <p>Fat burners, "detox" teas, CLA, raspberry ketones, apple cider vinegar pills, BCAAs (redundant if protein is adequate). No evidence, waste of money. There is no supplement that burns belly fat.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Feeling sick with exercise</h2>
-    <p>The plan uses moderate effort, stopping 2–3 reps short of failure, and cardio at a conversational pace to avoid this.</p>
-    <ul>
-      <li>Don't train completely empty — a banana 30–45 min before can help.</li>
-      <li>Hydrate before and during.</li>
-      <li>Build minutes and reps before pushing weight or speed.</li>
-      <li>If a stimulant pre-workout adds to the nausea, skip it and have a coffee instead.</li>
-    </ul>
-    <p class="mini">If the sick feeling is severe, happens at low effort, or comes with chest pain or dizziness, check with a GP before continuing. This app is general information, not medical advice.</p>
-  </div>
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Exercise demonstrations</h2>
-    <p>Every movement in the <b>Train</b> tab has a "▶ Watch how to perform" link. Pick a demo from a qualified coach and get the form right early — poor form causes the aches that slow progress.</p>
-  </div>` : ''}
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">The honest basics</h2>
-    <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
-    <p><b>The deficit is what loses fat.</b> Lifting and cardio help, but you cannot out-train the evening snacking. Food is ~80% of the result.</p>
-    <p><b>Lifting protects muscle.</b> In a calorie deficit you'd otherwise lose some muscle along with fat. Resistance training + high protein keeps the muscle, so the weight you lose is mostly fat. That's why the plan is lifting-led.</p>
-  </div>
+  const guideContent = `
+    <div class="card body" style="margin-bottom:10px">
+      <h3 style="margin-top:0">The honest basics</h3>
+      <p><b>You can't spot-reduce.</b> Fat comes off your whole body when you eat fewer calories than you burn. As overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out.</p>
+      <p><b>The deficit is what loses fat.</b> Lifting and cardio help, but you cannot out-train the evening snacking. Food is ~80% of the result.</p>
+      <p style="margin-bottom:0"><b>Lifting protects muscle.</b> Resistance training + high protein keeps the muscle, so the weight you lose is mostly fat.</p>
+    </div>
+    <div class="card body" style="margin-bottom:10px">
+      <h3 style="margin-top:0">Supplements</h3>
+      <p><b>ON Pre-Workout</b> — fine before training. Contains caffeine; morning use won't wreck sleep. Not essential.</p>
+      <div class="note warnote" style="margin-bottom:10px"><b>Magnesium glycinate "6000mg" — check this.</b> 6,000mg almost certainly refers to the whole compound, not the magnesium itself (~14% elemental by weight). Find the elemental magnesium per serving on your tub — it should be under ~400mg/day.</div>
+      <p style="margin-bottom:0"><b>100 Billion probiotic</b> — evidence for daily probiotics is weak and strain-specific for healthy adults. Not harmful; if you notice nothing after a month, stop.</p>
+    </div>
+    <div class="card body" style="margin-bottom:10px">
+      <h3 style="margin-top:0">Worth adding</h3>
+      <p><b>Vitamin D 10µg/day</b> — NHS-recommended for UK adults Oct–Mar. Clear benefit for bone/immune health.</p>
+      <p><b>Creatine monohydrate 3–5g/day</b> — the most-evidenced sports supplement. Take daily, any time. Expect 0.5–1kg scale rise in week one (water, not fat).</p>
+      <p style="margin-bottom:0"><b>Don't bother with</b> fat burners, detox teas, CLA, raspberry ketones, BCAAs (redundant if protein is adequate), or ACV pills. No meaningful evidence.</p>
+    </div>
+    <div class="card body">
+      <h3 style="margin-top:0">Feeling sick with exercise</h3>
+      <p>The plan uses moderate effort, stopping 2–3 reps short of failure, and conversational-pace cardio. Eat a small snack 30–45 min before if training empty makes you queasy. Hydrate.</p>
+      <p class="mini" style="margin-bottom:0">If nausea is severe or comes with chest pain/dizziness, stop and see a GP. This is general information, not medical advice.</p>
+    </div>`;
 
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Your numbers</h2>
-    <ul>
-      <li>Estimated maintenance: ~2,300–2,400 kcal/day</li>
-      <li>Target for fat loss: ~<b>${state.target.kcal} kcal/day</b> (a ~500 kcal deficit ≈ <b>0.5 kg / 1 lb a week</b>)</li>
-      <li>Protein: ~<b>${state.target.p}g/day</b> (≈1.8g per kg) — preserves muscle and keeps you full</li>
-      <li>Fat ~${state.target.f}g, carbs ~${state.target.c}g — flexible, hit calories and protein first</li>
-    </ul>
-    <p class="mini">These are estimates from standard equations (Mifflin-St Jeor), not exact. If after 3–4 weeks your weekly weight isn't trending down, drop the target by ~150 kcal. If you feel wrecked or aren't recovering, eat a bit more.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Your current supplements</h2>
-    <h3>ON Pre-Workout (creatine)</h3>
-    <p>Fine to use before training. It contains caffeine and usually a small dose of creatine. Caffeine genuinely helps performance and morning training won't wreck your sleep. You don't <i>need</i> a pre-workout though — see creatine below.</p>
-    <div class="note warnote"><b>Magnesium glycinate "6000mg" — check this.</b> The 6,000mg almost certainly refers to the whole compound, not the magnesium itself. Magnesium glycinate is only ~14% actual ("elemental") magnesium by weight. What matters for dosing is the <b>elemental magnesium per serving</b> printed on the label. UK guidance puts the upper safe amount from supplements at ~400mg elemental/day (daily reference value 375mg). Find the "elemental magnesium" figure on your tub and make sure a serving isn't over ~400mg. I can't read your label, so I won't guess the number — but it's worth a 30-second check. Glycinate is well absorbed and gentle on the stomach; taking it in the evening is reasonable.</div>
-    <h3>100 Billion probiotic</h3>
-    <p>Straight answer: for a generally healthy adult the evidence for daily probiotics is <b>weak and very strain-specific</b> — a high CFU count on the label doesn't equal proven benefit. It's not harmful. If you notice nothing after a month, it's reasonable to stop and save the money. Real gut benefits come more reliably from fibre and variety in your actual diet.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Worth adding (evidence-backed)</h2>
-    <h3>Vitamin D — 10µg (400 IU)/day</h3>
-    <p>The NHS recommends this for all UK adults from October to March (and year-round if you get little sun). Cheap, well-evidenced for bone/immune health. The clearest "yes" on this list.</p>
-    <h3>Creatine monohydrate — 3–5g/day</h3>
-    <p>The most-studied, most-proven sports supplement there is, for strength and muscle. Plain monohydrate is cheap and identical to the fancy versions. Take it daily, any time — timing doesn't matter. One heads-up: it pulls a little water into your muscles, so the scale may rise ~0.5–1kg in the first week or two. That's water, not fat — don't panic.</p>
-    <h3>Protein powder (whey or plant)</h3>
-    <p>Not magic — just a convenient, cheap way to hit your protein target on busy days or in the evening instead of crisps. Useful given your current diet is low on protein.</p>
-    <h3>Optional: omega-3 / fish oil</h3>
-    <p>Modest general-health evidence. Fine to take, not essential. Eating oily fish (salmon, mackerel) a couple of times a week does the same job.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Don't bother with</h2>
-    <p>Fat burners, "detox" teas, CLA, raspberry ketones, apple cider vinegar pills, BCAAs (redundant if your protein is adequate). The evidence is absent or trivial and they're a waste of money. There is no supplement that burns belly fat.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Feeling sick with exercise</h2>
-    <p>You said intense workouts make you feel sick. The plan is built to avoid that: moderate effort, stopping 2–3 reps short of failure, and cardio only at a conversational pace. A few practical things:</p>
-    <ul>
-      <li>Don't train completely empty if mornings make you queasy — a banana or a small bit of toast 30–45 min before can settle it.</li>
-      <li>Hydrate before and during.</li>
-      <li>Build minutes and reps before you push weight or speed.</li>
-      <li>If a stimulant pre-workout adds to the nausea, skip it and just have a coffee — or nothing.</li>
-    </ul>
-    <p class="mini">If the sick feeling is severe, happens at low effort, or comes with chest pain, dizziness or breathlessness, get it checked by a GP before continuing. This app is general information, not medical advice — worth a quick word with your GP before starting given you mention poor health.</p>
-  </div>
-
-  `;
+  return `<div style="padding-top:6px">
+    ${settAccordion('profile','Profile', profileContent)}
+    ${settAccordion('metrics','My Metrics', metricsContent)}
+    ${settAccordion('targets','Calorie & Macro Targets', targetsContent)}
+    ${settAccordion('account','Account', accountContent)}
+    ${settAccordion('backup','Data & Backup', backupContent)}
+    ${settAccordion('about','About', aboutContent)}
+    ${settAccordion('guide','Nutrition Guide', guideContent)}
+  </div>`;
 }
+
 
 /* ===================== EVENTS ===================== */
 function bind(){
@@ -1028,19 +962,22 @@ function bind(){
     }
     render();
   };
-  // settings: save metrics
+  // settings: save metrics (weight also updates today's day log)
   const sm=document.getElementById("saveMetrics");
   if(sm) sm.onclick=()=>{
     state.profile.sex=val("profSex")||'M';
     state.profile.age=parseInt(val("profAge"))||null;
     state.profile.height=parseInt(val("profHeight"))||null;
     state.profile.activityLevel=val("profActivity")||'light';
+    const wt=parseFloat(document.getElementById("profWeight")?.value)||null;
+    if(wt){ state.profile.weight=wt; day(cur).weight=wt; markDayDirty(cur); }
     markSettingsDirty(); toast("Metrics saved"); render();
   };
   // settings: apply suggested targets
   const as=document.getElementById("applySuggested");
   if(as) as.onclick=()=>{
-    const sug=msjSuggested(); if(!sug) return;
+    const w=profileWeight();
+    const sug=msjSuggested(w); if(!sug) return;
     state.target={kcal:sug.kcal,p:sug.p,c:sug.c,f:sug.f};
     markSettingsDirty(); toast("Targets updated"); render();
   };
@@ -1055,9 +992,6 @@ function bind(){
     };
     markSettingsDirty(); toast("Targets saved"); render();
   };
-  // settings: guide toggle
-  const gt=document.getElementById("guideToggle");
-  if(gt) gt.onclick=()=>{ _guideOpen=!_guideOpen; render(); };
 }
 function val(id){ const e=document.getElementById(id); return e?e.value.trim():""; }
 

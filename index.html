@@ -164,6 +164,15 @@
   .badge.cardio{background:#2a2212;color:#e8b964}
   .badge.rest{background:var(--soft);color:var(--muted)}
   a{color:var(--green-d)}
+  /* accordions */
+  .acc-wrap{border-bottom:1px solid var(--line)}
+  .acc-wrap:last-child{border-bottom:0}
+  .acc-hd{display:flex;justify-content:space-between;align-items:center;
+    padding:14px 2px;cursor:pointer;font-size:13px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.8px;color:var(--muted);user-select:none}
+  .acc-hd:active{color:var(--ink)}
+  .acc-ic{font-size:11px;color:var(--muted)}
+  .acc-bd{padding-bottom:14px}
   /* auth overlay */
   #authOverlay{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);
     flex-direction:column;align-items:center;justify-content:center;

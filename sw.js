@@ -1,5 +1,5 @@
 /* Lean Plan service worker — bump CACHE on each deploy to force-refresh clients */
-const CACHE = "leanplan-v3";
+const CACHE = "leanplan-v4";
 const ASSETS = ["./", "./index.html", "./data.js", "./app.js", "./manifest.json"];
 
 self.addEventListener("install", e => {
