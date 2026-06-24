@@ -37,6 +37,19 @@ function fmtDate(d){
 function r0(x){ return Math.round(x); }
 function r1(x){ return Math.round(x*10)/10; }
 
+/* ---------- workout calorie burn ---------- */
+const CARDIO_MET = { 'Walk':3.8, 'Incline treadmill':5.0, 'Stationary bike':5.5, 'Cross-trainer':5.5, 'Rower':6.0, 'Other':4.5 };
+function workoutBurn(wk){
+  if(!wk || !wk.type) return 0;
+  const kg = profileWeight() || 75;
+  if(wk.type === 'Cardio'){
+    const mins = parseFloat(wk.mins) || 25;
+    const met = CARDIO_MET[wk.cardioType] || 4.0;
+    return Math.round(met * kg * (mins / 60));
+  }
+  return Math.round(3.5 * kg * 0.75); // ~45 min strength session
+}
+
 /* ---------- auth session state (set by initApp before any sync) ---------- */
 let currentSession = null;
 function getToken(){ return currentSession?.access_token || SB_KEY; }
@@ -256,11 +269,13 @@ function macroBlock(lab,val,goal,unit){
 
 function viewToday(){
   const t=totals(cur), tg=state.target;
-  const left=tg.kcal - t.k;
-  const pct=Math.min(140, tg.kcal? t.k/tg.kcal*100:0);
-  let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
   const w=day(cur);
   const wk = w.workout;
+  const burn = workoutBurn(wk);
+  const budget = tg.kcal + burn;
+  const left = budget - t.k;
+  const pct=Math.min(140, budget? t.k/budget*100:0);
+  let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
   let trainLine;
   if(wk && wk.type) trainLine = `<b>${wk.type==="Cardio"?"Cardio logged":wk.type+" session logged"}</b> — open Train to edit`;
   else { const s=scheduledFor(cur);
@@ -281,7 +296,7 @@ function viewToday(){
         <div class="lbl">${left<0?'over':'left'}</div>
       </div>
     </div>
-    <div class="kcalsub">of <b>${tg.kcal} kcal</b> · eaten <b>${r0(t.k)}</b></div>
+    <div class="kcalsub">of <b>${budget} kcal</b> · eaten <b>${r0(t.k)}</b>${burn?` · <span style="color:var(--amber)">+${burn} workout</span>`:''}</div>
     <div class="macros">
       ${macroBlock("Protein",t.p,tg.p,"g")}
       ${macroBlock("Carbs",t.c,tg.c,"g")}
@@ -335,21 +350,46 @@ function foodListHtml(d){
 
 /* ---------- FOOD tab ---------- */
 let foodQuery="";
+let customFoodOpen=false;
+
+function recentFoods(){
+  const all=allFoods(); const seen=new Set(), recent=[];
+  const dates=Object.keys(state.days).sort().reverse().slice(0,14);
+  for(const d of dates){
+    for(const f of (state.days[d].foods||[])){
+      if(!seen.has(f.n)){ seen.add(f.n); const m=all.find(x=>x.n===f.n); if(m) recent.push(m); if(recent.length>=8) return recent; }
+    }
+  }
+  return recent;
+}
+
 /* build the searchable results list (built-ins + saved custom foods). When no query,
-   show the user's saved foods first, then a handful of common items. */
+   show recent foods first, then a handful of common items. */
 function foodResultsHtml(q){
   const DB=allFoods();
-  let matches;
-  if(q) matches = DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,60);
-  else matches = (state.customFoods||[]).slice().concat(FOODS.slice(0,12));
-  if(!matches.length) return '<div class="empty">No match. Use <b>Add custom food</b> below.</div>';
-  return matches.map(f=>{
-    const idx=DB.indexOf(f);
-    const isCustom = idx>=FOODS.length;
-    return `<div class="foodopt" data-food="${idx}">
-      <div class="grow"><div class="name">${f.n}${isCustom?' <span class="savedtag">saved</span>':''}</div>
-      <div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
-      ${isCustom?`<button class="x" data-delcustom="${idx-FOODS.length}" title="Remove from saved">×</button>`:'<span class="pill">+ add</span>'}</div>`;
+  let sections=[];
+  if(q){
+    const matches=DB.filter(f=>f.n.toLowerCase().includes(q)).slice(0,60);
+    if(!matches.length) return '<div class="empty">No match — try a different word, or create a custom food below.</div>';
+    sections=[{label:null,items:matches}];
+  } else {
+    const recent=recentFoods();
+    const custom=state.customFoods||[];
+    if(recent.length) sections.push({label:'Recent',items:recent});
+    if(custom.length) sections.push({label:'My foods',items:custom});
+    const common=FOODS.slice(0,8);
+    sections.push({label:recent.length||custom.length?'Common':'',items:common});
+  }
+  return sections.map(sec=>{
+    const rows=sec.items.map(f=>{
+      const idx=DB.indexOf(f);
+      const isCustom=idx>=FOODS.length;
+      return `<div class="foodopt" data-food="${idx}">
+        <div class="grow"><div class="name">${f.n}${isCustom?' <span class="savedtag">saved</span>':''}</div>
+        <div class="meta">per 100g · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+        ${isCustom?`<button class="x" data-delcustom="${idx-FOODS.length}" title="Remove">×</button>`:'<span class="pill">+ add</span>'}</div>`;
+    }).join("");
+    return (sec.label?`<div class="mini" style="padding:8px 0 4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${sec.label}</div>`:'')+rows;
   }).join("");
 }
 function wireFoodResults(scope){
@@ -375,19 +415,28 @@ function viewFood(){
 function viewFoodsList(){
   const q=foodQuery.trim().toLowerCase();
   const t=totals(cur), tg=state.target;
-  const savedCount=(state.customFoods||[]).length;
+  const burn=workoutBurn(day(cur).workout);
+  const budget=tg.kcal+burn;
+  const left=budget-t.k;
   return `
   <div class="card tight">
-    <div class="mini" style="margin-bottom:8px">Today: <b>${r0(t.k)}</b>/${tg.kcal} kcal · ${r0(t.p)}g protein</div>
-    <div class="search"><input id="foodSearch" placeholder="Search foods (e.g. chicken, noodles, banana)" value="${foodQuery}"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px">${r0(t.k)} <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ${budget} kcal</span></div>
+        <div class="mini" style="margin-top:1px">${r0(t.p)}g protein${burn?` · +${burn} workout`:''}${left>=0?` · <b>${r0(left)} left</b>`:` · <span style="color:var(--red)">${r0(-left)} over</span>`}</div>
+      </div>
+    </div>
+    <div class="search"><input id="foodSearch" placeholder="Search ${allFoods().length} foods…" value="${foodQuery}"></div>
     <div class="results">
       ${foodResultsHtml(q)}
     </div>
   </div>
-  ${q? "" : '<div class="mini" style="margin:0 4px 12px">'+(savedCount?'Your saved foods show first. ':'')+'Type to search all '+allFoods().length+' foods.</div>'}
 
-  <h2 class="sec">Add custom food</h2>
-  <div class="card">
+  <h2 class="sec" style="display:flex;justify-content:space-between;align-items:center">
+    <span>Custom food</span>
+    <button class="pill kcal" id="toggleCustomForm" style="font-size:11px">${customFoodOpen?'Cancel':'+ Create'}</button>
+  </h2>
+  ${customFoodOpen ? `<div class="card">
     <div class="field"><label>Name</label><input id="cf_n" placeholder="e.g. Mum's chilli"></div>
     <div class="grid2">
       <div class="field"><label>Amount (g)</label><input id="cf_g" type="number" inputmode="decimal" placeholder="grams" value="100"></div>
@@ -399,11 +448,11 @@ function viewFoodsList(){
       <div class="field"><label>Fat</label><input id="cf_f" type="number" inputmode="decimal" placeholder="g"></div>
     </div>
     <button class="btn" id="addCustom">Add to today &amp; save</button>
-    <div class="mini" style="margin-top:8px">Read the "per 100g" column on the packet and copy those four numbers. Once saved, the food appears in search above so you never have to type it again. Per-serving labels work too — just enter that serving's grams and its per-100g values.</div>
-  </div>
+    <div class="mini" style="margin-top:8px">Read the "per 100g" column on the packet and copy those four numbers. Once saved the food appears in search above.</div>
+  </div>` : ''}
 
   <h2 class="sec">Eaten today</h2>
-  <div class="card">${foodListHtml(cur) || '<div class="empty">Nothing yet.</div>'}</div>
+  <div class="card">${foodListHtml(cur) || '<div class="empty">Nothing logged yet.</div>'}</div>
   `;
 }
 
@@ -529,17 +578,27 @@ function openFoodAdd(idx){
   const panel=document.createElement("div");
   panel.className="card";
   panel.id="addPanel";
+  const half=Math.round(f.g*0.5), dbl=Math.round(f.g*2);
   panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
-      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g: ${f.k} kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
+      <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100g · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
       <button class="x" id="closePanel">×</button></div>
-    <div class="field"><label>How much? (grams)</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+      <button class="btn ghost" id="fp_half" style="padding:9px 4px;font-size:13px">½ serve<br><small style="color:var(--muted);font-size:11px;font-weight:400">${half}g</small></button>
+      <button class="btn" id="fp_one" style="padding:9px 4px;font-size:13px">1 serve<br><small style="color:var(--bg);font-size:11px;font-weight:400">${f.g}g</small></button>
+      <button class="btn ghost" id="fp_dbl" style="padding:9px 4px;font-size:13px">2 serves<br><small style="color:var(--muted);font-size:11px;font-weight:400">${dbl}g</small></button>
+    </div>
+    <div class="field"><label>Or enter grams</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
     <div class="mini" id="fa_preview" style="margin-bottom:12px"></div>
     <button class="btn" id="fa_add">Add to today</button>`;
   v.insertBefore(panel, v.firstChild);
   const gi=document.getElementById("fa_g");
   const prev=()=>{const g=parseFloat(gi.value)||0;const m=g/100;
     document.getElementById("fa_preview").innerHTML=`= <b>${r0(f.k*m)} kcal</b> · ${r1(f.p*m)}p ${r1(f.c*m)}c ${r1(f.f*m)}f`;};
+  const setG=(g)=>{ gi.value=g; prev(); };
   prev(); gi.addEventListener("input",prev); gi.focus();
+  document.getElementById("fp_half").onclick=()=>setG(half);
+  document.getElementById("fp_one").onclick=()=>setG(f.g);
+  document.getElementById("fp_dbl").onclick=()=>setG(dbl);
   document.getElementById("closePanel").onclick=()=>panel.remove();
   document.getElementById("fa_add").onclick=()=>{
     const g=parseFloat(gi.value)||0; if(g<=0) return; const m=g/100;
@@ -922,6 +981,8 @@ function bind(){
     const ri=+el.dataset.delmeal; const r=state.recipes[ri]; if(!r) return;
     state.recipes.splice(ri,1); if(r.id) queueRecipeDelete(r.id); else save(); toast("Meal deleted"); render();
   });
+  const tcf=document.getElementById("toggleCustomForm");
+  if(tcf) tcf.onclick=()=>{ customFoodOpen=!customFoodOpen; render(); };
   const ac=document.getElementById("addCustom");
   if(ac) ac.onclick=()=>{
     const n=val("cf_n")||"Custom food"; const g=parseFloat(val("cf_g"))||0;
@@ -935,7 +996,7 @@ function bind(){
     // log today's portion
     const m=g/100;
     day(cur).foods.push({n,grams:r0(g),k:k*m,p:p*m,c:c*m,f:f*m});
-    markDayDirty(cur); toast(n+" added & saved"); render();
+    customFoodOpen=false; markDayDirty(cur); toast(n+" added & saved"); render();
   };
   document.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
     day(cur).foods.splice(+el.dataset.del,1); markDayDirty(cur); render();
