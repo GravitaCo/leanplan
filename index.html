@@ -164,9 +164,34 @@
   .badge.cardio{background:#2a2212;color:#e8b964}
   .badge.rest{background:var(--soft);color:var(--muted)}
   a{color:var(--green-d)}
+  /* auth overlay */
+  #authOverlay{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);
+    flex-direction:column;align-items:center;justify-content:center;
+    padding:24px 20px calc(24px + env(safe-area-inset-bottom))}
+  .auth-card{width:100%;max-width:400px;background:var(--paper);border:1px solid var(--line);
+    border-radius:24px;padding:28px 24px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+  .auth-brand{text-align:center;margin-bottom:28px}
+  .auth-brand h1{font-size:28px;font-weight:800;letter-spacing:-.8px;margin:0 0 4px}
+  .auth-brand p{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:0}
+  .auth-title{font-size:20px;font-weight:800;margin:0 0 18px;letter-spacing:-.4px}
+  .auth-err{background:#2d1a1a;border:1px solid var(--red);border-radius:10px;
+    color:var(--red);font-size:13px;padding:10px 12px;margin-bottom:12px}
+  .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
+  .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .auth-google{background:var(--soft)!important;color:var(--ink)!important;
+    display:flex;align-items:center;justify-content:center;gap:8px}
+  .auth-link{background:none;border:0;color:var(--green-d);font-size:13px;cursor:pointer;padding:0;font-family:inherit}
+  .auth-icon{font-size:40px;text-align:center;margin-bottom:12px}
 </style>
 </head>
 <body>
+<div id="authOverlay">
+  <div class="auth-brand">
+    <h1>Lean Plan</h1>
+    <p>fat loss · lift · simple</p>
+  </div>
+  <div class="auth-card" id="authBox"></div>
+</div>
 <div id="app">
   <header class="top">
     <div class="brand"><h1>Lean Plan</h1><span class="tag">fat loss · lift · simple</span><span class="tag" id="syncStatus" style="margin-left:auto"></span></div>
@@ -187,6 +212,7 @@
   </nav>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

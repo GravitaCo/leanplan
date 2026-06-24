@@ -34,6 +34,11 @@ function fmtDate(d){
 function r0(x){ return Math.round(x); }
 function r1(x){ return Math.round(x*10)/10; }
 
+/* ---------- auth session state (set by initApp before any sync) ---------- */
+let currentSession = null;
+function getToken(){ return currentSession?.access_token || SB_KEY; }
+function getUid(){ return currentSession?.user?.id || LOCAL_USER; }
+
 /* ===================== SUPABASE SYNC =====================
    Offline-first: localStorage stays the instant working store. Writes mark records
    dirty; when online they upsert to Supabase. On load/reconnect we pull and merge,
@@ -42,7 +47,8 @@ function r1(x){ return Math.round(x*10)/10; }
 const SB_URL  = "https://exvblofwiwbvycomxvmj.supabase.co";
 const SB_KEY  = "sb_publishable_l-XOQOrSJ6sRGEwaRR8rrg_pXukGtET";
 const SB_REST = SB_URL + "/rest/v1";
-const LOCAL_USER = "00000000-0000-0000-0000-000000000001"; // placeholder until auth is added
+const LOCAL_USER = "00000000-0000-0000-0000-000000000001"; // fallback until first sign-in
+const supaAuth = window.supabase.createClient(SB_URL, SB_KEY);
 
 function nowIso(){ return new Date().toISOString(); }
 
@@ -78,16 +84,16 @@ function markRecipeDirty(r){ ensureMeta(); r._dirty=true; r._u=nowIso(); save();
 function queueRecipeDelete(id){ ensureMeta(); if(id) state._meta.recipeDeletes.push(id); save(); scheduleSync(); }
 
 /* ---- client <-> server row mapping ---- */
-function toServerFood(f){ return {id:f.id, user_id:LOCAL_USER, name:f.n, kcal:+f.k||0, protein:+f.p||0, carbs:+f.c||0, fat:+f.f||0, grams:+f.g||100}; }
+function toServerFood(f){ return {id:f.id, user_id:getUid(), name:f.n, kcal:+f.k||0, protein:+f.p||0, carbs:+f.c||0, fat:+f.f||0, grams:+f.g||100}; }
 function fromServerFood(r){ return {id:r.id, n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, g:r.grams, _u:r.updated_at, _dirty:false}; }
-function toServerDay(d){ const x=state.days[d]||{}; return {user_id:LOCAL_USER, log_date:d, foods:x.foods||[], supps:x.supps||{}, weight:(x.weight??null), workout:x.workout??null}; }
-function toServerRecipe(r){ return {id:r.id, user_id:LOCAL_USER, name:r.name, items:r.items||[], servings:(+r.servings||1)}; }
+function toServerDay(d){ const x=state.days[d]||{}; return {user_id:getUid(), log_date:d, foods:x.foods||[], supps:x.supps||{}, weight:(x.weight??null), workout:x.workout??null}; }
+function toServerRecipe(r){ return {id:r.id, user_id:getUid(), name:r.name, items:r.items||[], servings:(+r.servings||1)}; }
 function fromServerRecipe(r){ return {id:r.id, name:r.name, items:r.items||[], servings:(+r.servings||1), _u:r.updated_at, _dirty:false}; }
 
 /* ---- REST helpers ---- */
 function sbFetch(path, opts){
   opts = opts || {};
-  opts.headers = Object.assign({ apikey:SB_KEY, Authorization:"Bearer "+SB_KEY }, opts.headers||{});
+  opts.headers = Object.assign({ apikey:SB_KEY, Authorization:"Bearer "+getToken() }, opts.headers||{});
   return fetch(SB_REST + path, opts);
 }
 async function sbGet(path){
@@ -113,7 +119,7 @@ async function sbDelete(table, filter){
 async function pushDirty(){
   const m = state._meta;
   if(m.settings.dirty){
-    await sbUpsert("settings", [{user_id:LOCAL_USER, target:state.target, schedule:state.schedule}], "user_id");
+    await sbUpsert("settings", [{user_id:getUid(), target:state.target, schedule:state.schedule}], "user_id");
     m.settings.dirty = false;
   }
   const dirtyFoods = (state.customFoods||[]).filter(f=>f._dirty);
@@ -145,22 +151,23 @@ async function pushDirty(){
 /* ---- pull remote changes down (server wins for anything not locally dirty) ---- */
 async function pullAll(){
   const m = state._meta;
-  const s = await sbGet("/settings?user_id=eq."+LOCAL_USER+"&select=*");
+  const uid = getUid();
+  const s = await sbGet("/settings?user_id=eq."+uid+"&select=*");
   if(s.length && !m.settings.dirty){
     state.target = s[0].target; state.schedule = s[0].schedule;
     m.settings.u = s[0].updated_at;
   }
-  const cf = await sbGet("/custom_foods?user_id=eq."+LOCAL_USER+"&select=*");
+  const cf = await sbGet("/custom_foods?user_id=eq."+uid+"&select=*");
   const byId = {};
   cf.map(fromServerFood).forEach(f=>{ byId[f.id]=f; });
   (state.customFoods||[]).filter(f=>f._dirty).forEach(f=>{ byId[f.id]=f; }); // unpushed local edits win
   state.customFoods = Object.values(byId);
-  const rc = await sbGet("/recipes?user_id=eq."+LOCAL_USER+"&select=*");
+  const rc = await sbGet("/recipes?user_id=eq."+uid+"&select=*");
   const rById = {};
   rc.map(fromServerRecipe).forEach(r=>{ rById[r.id]=r; });
   (state.recipes||[]).filter(r=>r._dirty).forEach(r=>{ rById[r.id]=r; }); // unpushed local edits win
   state.recipes = Object.values(rById);
-  const dl = await sbGet("/day_logs?user_id=eq."+LOCAL_USER+"&select=*");
+  const dl = await sbGet("/day_logs?user_id=eq."+uid+"&select=*");
   dl.forEach(row=>{
     const d = row.log_date;
     if(m.days[d] && m.days[d].dirty) return; // keep unpushed local day
@@ -684,7 +691,17 @@ function viewPlan(){
 
 /* ---------- INFO / GUIDE tab ---------- */
 function viewInfo(){
+  const email = currentSession?.user?.email || '';
   return `
+  <div class="card tight" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Signed in as</div>
+        <div style="font-size:14px;font-weight:600;margin-top:2px">${email}</div>
+      </div>
+      <button class="btn ghost" style="width:auto;padding:8px 16px;font-size:13px" onclick="doSignOut()">Sign out</button>
+    </div>
+  </div>
   <div class="card body">
     <h2 class="sec" style="margin-top:0">The honest basics</h2>
     <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
@@ -954,5 +971,179 @@ let toastTimer=null;
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1600); }
 
-render();
-initSync();
+/* ===================== AUTH ===================== */
+
+function authRedirectUrl(){
+  return window.location.origin + window.location.pathname;
+}
+
+function showAuth(mode){
+  document.getElementById('authOverlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  renderAuthForm(mode || 'signin');
+}
+
+function hideAuth(){
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('app').style.display = '';
+}
+
+function authErr(msg){
+  const el = document.getElementById('authErr');
+  if(el){ el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+}
+
+function renderAuthForm(mode){
+  const box = document.getElementById('authBox');
+  if(!box) return;
+
+  if(mode === 'check-email'){
+    box.innerHTML = `
+      <div class="auth-icon">✉️</div>
+      <h2 class="auth-title" style="text-align:center">Check your email</h2>
+      <p style="color:var(--muted);font-size:14px;text-align:center;margin:0 0 20px">We sent a link to your inbox. Click it to continue.</p>
+      <button class="btn ghost" onclick="renderAuthForm('signin')">Back to sign in</button>`;
+    return;
+  }
+
+  if(mode === 'set-password'){
+    box.innerHTML = `
+      <h2 class="auth-title">Set new password</h2>
+      <div id="authErr" class="auth-err" style="display:none"></div>
+      <div class="field"><label>New password</label><input type="password" id="authPw" placeholder="At least 8 characters" autocomplete="new-password"></div>
+      <div class="field"><label>Confirm password</label><input type="password" id="authPw2" placeholder="Repeat password" autocomplete="new-password"></div>
+      <button class="btn" onclick="doSetPassword()">Update password</button>`;
+    return;
+  }
+
+  if(mode === 'forgot'){
+    box.innerHTML = `
+      <h2 class="auth-title">Reset password</h2>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 16px">Enter your email and we'll send a reset link.</p>
+      <div id="authErr" class="auth-err" style="display:none"></div>
+      <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"></div>
+      <button class="btn" onclick="doForgot()">Send reset link</button>
+      <button class="btn ghost" style="margin-top:8px" onclick="renderAuthForm('signin')">Back to sign in</button>`;
+    return;
+  }
+
+  const isSignup = mode === 'signup';
+  box.innerHTML = `
+    <h2 class="auth-title">${isSignup ? 'Create account' : 'Sign in'}</h2>
+    <div id="authErr" class="auth-err" style="display:none"></div>
+    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPw" placeholder="${isSignup ? 'At least 8 characters' : 'Your password'}" autocomplete="${isSignup ? 'new-password' : 'current-password'}">
+    </div>
+    ${isSignup ? '<div class="field"><label>Confirm password</label><input type="password" id="authPw2" placeholder="Repeat password" autocomplete="new-password"></div>' : ''}
+    <button class="btn" id="authSubmit" onclick="${isSignup ? 'doSignup()' : 'doSignin()'}">
+      ${isSignup ? 'Create account' : 'Sign in'}
+    </button>
+    ${!isSignup ? '<div style="text-align:right;margin-top:8px"><button class="auth-link" onclick="renderAuthForm(\'forgot\')">Forgot password?</button></div>' : ''}
+    <div class="auth-divider"><span>or</span></div>
+    <button class="btn auth-google" onclick="doGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+    <p style="text-align:center;margin-top:20px;font-size:13px;color:var(--muted)">
+      ${isSignup ? 'Already have an account?' : "Don't have an account?"}
+      <button class="auth-link" onclick="renderAuthForm('${isSignup ? 'signin' : 'signup'}')">${isSignup ? 'Sign in' : 'Sign up'}</button>
+    </p>`;
+}
+
+async function doSignin(){
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const pw = document.getElementById('authPw')?.value;
+  if(!email || !pw){ authErr('Please fill in all fields.'); return; }
+  authErr('');
+  const btn = document.getElementById('authSubmit');
+  if(btn){ btn.disabled = true; btn.textContent = 'Signing in…'; }
+  const { error } = await supaAuth.auth.signInWithPassword({ email, password: pw });
+  if(error){ authErr(error.message); if(btn){ btn.disabled=false; btn.textContent='Sign in'; } }
+}
+
+async function doSignup(){
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const pw = document.getElementById('authPw')?.value;
+  const pw2 = document.getElementById('authPw2')?.value;
+  if(!email || !pw || !pw2){ authErr('Please fill in all fields.'); return; }
+  if(pw !== pw2){ authErr('Passwords do not match.'); return; }
+  if(pw.length < 8){ authErr('Password must be at least 8 characters.'); return; }
+  authErr('');
+  const btn = document.getElementById('authSubmit');
+  if(btn){ btn.disabled = true; btn.textContent = 'Creating account…'; }
+  const { error } = await supaAuth.auth.signUp({ email, password: pw, options:{ emailRedirectTo: authRedirectUrl() } });
+  if(error){ authErr(error.message); if(btn){ btn.disabled=false; btn.textContent='Create account'; } }
+  else { renderAuthForm('check-email'); }
+}
+
+async function doForgot(){
+  const email = document.getElementById('authEmail')?.value?.trim();
+  if(!email){ authErr('Please enter your email.'); return; }
+  authErr('');
+  const btn = document.querySelector('#authBox .btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Sending…'; }
+  const { error } = await supaAuth.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
+  if(error){ authErr(error.message); if(btn){ btn.disabled=false; btn.textContent='Send reset link'; } }
+  else { renderAuthForm('check-email'); }
+}
+
+async function doSetPassword(){
+  const pw = document.getElementById('authPw')?.value;
+  const pw2 = document.getElementById('authPw2')?.value;
+  if(!pw || !pw2){ authErr('Please fill in both fields.'); return; }
+  if(pw !== pw2){ authErr('Passwords do not match.'); return; }
+  if(pw.length < 8){ authErr('Password must be at least 8 characters.'); return; }
+  authErr('');
+  const btn = document.querySelector('#authBox .btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Updating…'; }
+  const { error } = await supaAuth.auth.updateUser({ password: pw });
+  if(error){ authErr(error.message); if(btn){ btn.disabled=false; btn.textContent='Update password'; } }
+}
+
+async function doGoogle(){
+  await supaAuth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: authRedirectUrl() } });
+}
+
+async function doSignOut(){
+  await supaAuth.auth.signOut();
+  location.reload();
+}
+
+let _appStarted = false;
+
+async function initApp(){
+  const { data: { session } } = await supaAuth.auth.getSession();
+  currentSession = session;
+
+  supaAuth.auth.onAuthStateChange((event, session) => {
+    currentSession = session;
+    if(event === 'PASSWORD_RECOVERY'){
+      showAuth('set-password');
+      return;
+    }
+    if(session && !_appStarted){
+      _appStarted = true;
+      hideAuth();
+      render();
+      initSync();
+    } else if(session && _appStarted){
+      hideAuth();
+    } else if(!session){
+      _appStarted = false;
+      showAuth('signin');
+    }
+  });
+
+  if(session){
+    _appStarted = true;
+    render();
+    initSync();
+  } else {
+    showAuth('signin');
+  }
+}
+/* =================== END AUTH =================== */
+
+initApp();
