@@ -1,6 +1,16 @@
-/* ---------- targets (computed for: male, 46, 180cm, 82.5kg) ---------- */
-/* BMR Mifflin-St Jeor ~1727 kcal; TDEE light activity ~2350; ~500 deficit -> ~1850 */
+/* ---------- targets ---------- */
 const DEFAULT_TARGET = { kcal:1850, p:150, c:175, f:60 };
+
+/* ---------- profile defaults ---------- */
+const DEFAULT_PROFILE = { name:'', sex:'M', age:null, height:null, activityLevel:'light' };
+
+/* ---------- activity multipliers (Mifflin-St Jeor TDEE) ---------- */
+const ACTIVITY = {
+  sedentary: { label:'Sedentary (desk job, little exercise)', mult:1.2 },
+  light:     { label:'Lightly active (1–3 days/week)',        mult:1.375 },
+  moderate:  { label:'Moderately active (3–5 days/week)',     mult:1.55 },
+  active:    { label:'Very active (6–7 days/week)',           mult:1.725 },
+};
 
 /* ---------- food database (per 100g; values are standard reference figures, approximate) ---------- */
 const FOODS = [

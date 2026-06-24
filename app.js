@@ -14,6 +14,7 @@ function load(){
   if(!s||!s.days) s={ target:{...DEFAULT_TARGET}, days:{} };
   if(!s.target) s.target={...DEFAULT_TARGET};
   if(!s.schedule) s.schedule={...DEFAULT_SCHEDULE};
+  if(!s.profile) s.profile={...DEFAULT_PROFILE};
   if(!Array.isArray(s.customFoods)) s.customFoods=[];
   if(!Array.isArray(s.recipes)) s.recipes=[];
   return s;
@@ -119,7 +120,7 @@ async function sbDelete(table, filter){
 async function pushDirty(){
   const m = state._meta;
   if(m.settings.dirty){
-    await sbUpsert("settings", [{user_id:getUid(), target:state.target, schedule:state.schedule}], "user_id");
+    await sbUpsert("settings", [{user_id:getUid(), target:state.target, schedule:state.schedule, profile:state.profile}], "user_id");
     m.settings.dirty = false;
   }
   const dirtyFoods = (state.customFoods||[]).filter(f=>f._dirty);
@@ -155,6 +156,7 @@ async function pullAll(){
   const s = await sbGet("/settings?user_id=eq."+uid+"&select=*");
   if(s.length && !m.settings.dirty){
     state.target = s[0].target; state.schedule = s[0].schedule;
+    if(s[0].profile) state.profile = s[0].profile;
     m.settings.u = s[0].updated_at;
   }
   const cf = await sbGet("/custom_foods?user_id=eq."+uid+"&select=*");
@@ -684,16 +686,79 @@ function viewPlan(){
     <p><b>Every day:</b> creatine (any time), vitamin D with a meal.</p>
     <p><b>Evening:</b> magnesium glycinate with or after dinner.</p>
     <p><b>Probiotic:</b> per the pack — but see the Guide, the evidence is weak.</p>
-    <p class="mini">Full reasoning, doses, and one important correction about your magnesium are in the <b>Guide</b> tab.</p>
+    <p class="mini">Full reasoning, doses, and one important correction about your magnesium are in the <b>Settings → Nutrition guide</b> section.</p>
   </div>
   `;
 }
 
-/* ---------- INFO / GUIDE tab ---------- */
+/* ---------- SETTINGS tab ---------- */
+let _guideOpen = false;
+function msjSuggested(){
+  const p = state.profile;
+  if(!p.age || !p.height) return null;
+  const w = state.days[cur]?.weight || 80;
+  const bmr = p.sex==='F'
+    ? 10*w + 6.25*p.height - 5*p.age - 161
+    : 10*w + 6.25*p.height - 5*p.age + 5;
+  const mult = (ACTIVITY[p.activityLevel]||ACTIVITY.light).mult;
+  const maint = Math.round(bmr * mult / 50) * 50;
+  const deficit = maint - 500;
+  const protein = Math.round(w * 1.8);
+  const fat = Math.round(deficit * 0.27 / 9);
+  const carbs = Math.round((deficit - protein*4 - fat*9) / 4);
+  return { maint, kcal:deficit, p:protein, c:Math.max(carbs,0), f:fat };
+}
 function viewInfo(){
   const email = currentSession?.user?.email || '';
+  const pr = state.profile;
+  const sug = msjSuggested();
   return `
-  <div class="card tight" style="margin-bottom:12px">
+  <h2 class="sec" style="margin-top:6px">Profile</h2>
+  <div class="card">
+    <div class="field"><label>Display name</label><input id="profName" type="text" value="${pr.name||''}" placeholder="Your name" autocomplete="name"></div>
+    <div class="field"><label>Email address</label><input id="profEmail" type="email" value="${email}" autocomplete="email"></div>
+    <button class="btn" id="saveProfile">Save profile</button>
+  </div>
+
+  <h2 class="sec">My metrics</h2>
+  <div class="card">
+    <div class="grid2" style="margin-bottom:10px">
+      <div class="field" style="margin:0"><label>Sex</label>
+        <select id="profSex">
+          <option value="M" ${pr.sex==='M'?'selected':''}>Male</option>
+          <option value="F" ${pr.sex==='F'?'selected':''}>Female</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0"><label>Age</label><input id="profAge" type="number" min="16" max="99" value="${pr.age||''}" placeholder="e.g. 35"></div>
+    </div>
+    <div class="field"><label>Height (cm)</label><input id="profHeight" type="number" min="100" max="250" value="${pr.height||''}" placeholder="e.g. 178"></div>
+    <div class="field"><label>Activity level</label>
+      <select id="profActivity">
+        ${Object.entries(ACTIVITY).map(([k,v])=>`<option value="${k}" ${pr.activityLevel===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn ghost" id="saveMetrics">Save metrics</button>
+    ${sug ? `
+    <div class="note" style="margin-top:12px">
+      <b>Suggested targets</b> based on your metrics &amp; today's weight (${state.days[cur]?.weight||'—'}kg):<br>
+      Maintenance ~${sug.maint} kcal · Fat-loss target ~${sug.kcal} kcal · Protein ~${sug.p}g
+      <br><button class="btn" id="applySuggested" style="margin-top:10px">Apply suggested targets</button>
+    </div>` : `<p class="mini" style="margin-top:10px">Fill in age and height above to see Mifflin-St Jeor suggested targets.</p>`}
+  </div>
+
+  <h2 class="sec">Calorie &amp; macro targets</h2>
+  <div class="card">
+    <div class="grid2">
+      <div class="field"><label>Calories</label><input id="tKcal" type="number" value="${state.target.kcal}"></div>
+      <div class="field"><label>Protein (g)</label><input id="tProt" type="number" value="${state.target.p}"></div>
+      <div class="field"><label>Carbs (g)</label><input id="tCarb" type="number" value="${state.target.c}"></div>
+      <div class="field"><label>Fat (g)</label><input id="tFat"  type="number" value="${state.target.f}"></div>
+    </div>
+    <button class="btn" id="saveTargets">Save targets</button>
+  </div>
+
+  <h2 class="sec">Account</h2>
+  <div class="card tight">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Signed in as</div>
@@ -702,6 +767,80 @@ function viewInfo(){
       <button class="btn ghost" style="width:auto;padding:8px 16px;font-size:13px" onclick="doSignOut()">Sign out</button>
     </div>
   </div>
+
+  <h2 class="sec">Data &amp; backup</h2>
+  <div class="card body">
+    <p>Your log is saved in this browser <b>and</b> synced to your private cloud database. The sync indicator top-right shows the status. Export a backup periodically as a belt-and-braces copy.</p>
+    <button class="btn ghost" id="exportData" style="margin-bottom:8px">Export backup file</button>
+    <label class="btn ghost" for="importFile" style="display:block;text-align:center;margin-bottom:6px">Import backup file</label>
+    <input id="importFile" type="file" accept="application/json,.json" style="display:none">
+  </div>
+
+  <h2 class="sec">About</h2>
+  <div class="card body">
+    <p class="mini" style="margin:0"><b>Lean Plan</b> v1.1.0 — personal fat-loss tracker. Built for single-user use.</p>
+    <p class="mini"><b>Data use:</b> Your data is stored locally on this device and synced to a private Supabase database accessible only to your account. It is never shared, sold, or used for any purpose other than running this app.</p>
+    <p class="mini"><b>Terms:</b> This app provides general fitness information only and is not medical advice. Consult a GP before starting a new diet or exercise programme, especially if you have any health conditions. Use at your own risk.</p>
+    <p class="mini"><b>Add to home screen — iPhone (Safari):</b> Share → "Add to Home Screen". <b>Android (Chrome):</b> ⋮ → "Add to Home screen".</p>
+  </div>
+
+  <h2 class="sec" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" id="guideToggle">
+    Nutrition guide <span style="font-size:16px;color:var(--muted)">${_guideOpen?'▲':'▼'}</span>
+  </h2>
+  ${_guideOpen ? `
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">The honest basics</h2>
+    <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
+    <p><b>The deficit is what loses fat.</b> Lifting and cardio help, but you cannot out-train the evening snacking. Food is ~80% of the result.</p>
+    <p><b>Lifting protects muscle.</b> In a calorie deficit you'd otherwise lose some muscle along with fat. Resistance training + high protein keeps the muscle, so the weight you lose is mostly fat. That's why the plan is lifting-led.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Your numbers</h2>
+    <ul>
+      <li>Target for fat loss: ~<b>${state.target.kcal} kcal/day</b> (a ~500 kcal deficit ≈ <b>0.5 kg / 1 lb a week</b>)</li>
+      <li>Protein: ~<b>${state.target.p}g/day</b> (≈1.8g per kg) — preserves muscle and keeps you full</li>
+      <li>Fat ~${state.target.f}g, carbs ~${state.target.c}g — flexible, hit calories and protein first</li>
+    </ul>
+    <p class="mini">These are estimates from standard equations (Mifflin-St Jeor), not exact. If after 3–4 weeks your weekly weight isn't trending down, drop the target by ~150 kcal.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Supplements</h2>
+    <h3>ON Pre-Workout</h3>
+    <p>Fine to use before training. It contains caffeine — morning training won't wreck your sleep. You don't need a pre-workout; see creatine below.</p>
+    <div class="note warnote"><b>Magnesium glycinate "6000mg" — check this.</b> 6,000mg almost certainly refers to the whole compound. Magnesium glycinate is only ~14% actual (elemental) magnesium by weight. Find the "elemental magnesium per serving" on your tub and make sure it's under ~400mg/day. I can't read your label — worth a 30-second check.</div>
+    <h3>100 Billion probiotic</h3>
+    <p>For a generally healthy adult the evidence for daily probiotics is <b>weak and very strain-specific</b>. Not harmful. If you notice nothing after a month, it's reasonable to stop.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Worth adding (evidence-backed)</h2>
+    <h3>Vitamin D — 10µg (400 IU)/day</h3>
+    <p>NHS-recommended for all UK adults October–March. Cheap, well-evidenced for bone/immune health.</p>
+    <h3>Creatine monohydrate — 3–5g/day</h3>
+    <p>The most-studied sports supplement there is. Plain monohydrate is cheap and identical to the fancy versions. Take daily, any time — timing doesn't matter. May cause a 0.5–1kg scale rise in week one (water, not fat).</p>
+    <h3>Protein powder (whey or plant)</h3>
+    <p>Convenient way to hit your protein target. Useful when your diet is low on protein.</p>
+    <h3>Optional: omega-3 / fish oil</h3>
+    <p>Modest general-health evidence. Eating oily fish (salmon, mackerel) twice a week does the same job.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Don't bother with</h2>
+    <p>Fat burners, "detox" teas, CLA, raspberry ketones, apple cider vinegar pills, BCAAs (redundant if protein is adequate). No evidence, waste of money. There is no supplement that burns belly fat.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Feeling sick with exercise</h2>
+    <p>The plan uses moderate effort, stopping 2–3 reps short of failure, and cardio at a conversational pace to avoid this.</p>
+    <ul>
+      <li>Don't train completely empty — a banana 30–45 min before can help.</li>
+      <li>Hydrate before and during.</li>
+      <li>Build minutes and reps before pushing weight or speed.</li>
+      <li>If a stimulant pre-workout adds to the nausea, skip it and have a coffee instead.</li>
+    </ul>
+    <p class="mini">If the sick feeling is severe, happens at low effort, or comes with chest pain or dizziness, check with a GP before continuing. This app is general information, not medical advice.</p>
+  </div>
+  <div class="card body">
+    <h2 class="sec" style="margin-top:0">Exercise demonstrations</h2>
+    <p>Every movement in the <b>Train</b> tab has a "▶ Watch how to perform" link. Pick a demo from a qualified coach and get the form right early — poor form causes the aches that slow progress.</p>
+  </div>` : ''}
   <div class="card body">
     <h2 class="sec" style="margin-top:0">The honest basics</h2>
     <p><b>You can't spot-reduce.</b> No exercise or food burns fat from your belly or face specifically. Fat comes off your whole body when you eat fewer calories than you burn. As your overall body fat drops, the belly and face follow — for most men the belly is one of the last places to lean out, so be patient with it.</p>
@@ -758,35 +897,6 @@ function viewInfo(){
     <p class="mini">If the sick feeling is severe, happens at low effort, or comes with chest pain, dizziness or breathlessness, get it checked by a GP before continuing. This app is general information, not medical advice — worth a quick word with your GP before starting given you mention poor health.</p>
   </div>
 
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Exercise demonstrations</h2>
-    <p>Every movement in the <b>Train</b> tab has a "▶ Watch how to perform" link — it opens a video search for that exact exercise. Pick a demo from a qualified coach or physiotherapist, and prioritise the ones showing the same setup as the cue text. Watch once before your first time doing a movement; getting the pattern right early prevents the aches that come from poor form.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Your data &amp; backups</h2>
-    <p>Your log is saved in this browser <b>and</b> synced to your private cloud database when you're online — so it survives across devices and a browser-data wipe. The sync indicator top-right shows <b>synced</b>, <b>syncing…</b>, or <b>offline</b> (offline edits sync automatically once you reconnect). Export is still worth keeping as a belt-and-braces backup:</p>
-    <button class="btn ghost" id="exportData" style="margin-bottom:8px">Export a backup file</button>
-    <label class="btn ghost" for="importFile" style="display:block;text-align:center;margin-bottom:6px">Import a backup file</label>
-    <input id="importFile" type="file" accept="application/json,.json" style="display:none">
-    <p class="mini">Export saves a small file. To move your history to another phone or laptop, open the app there and Import that file. Do an export every week or two.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Put this online (free)</h2>
-    <p>Hosting it gives you a stable web address you can open anywhere and "Add to Home Screen". Two easy free routes:</p>
-    <ul>
-      <li><b>Fastest — Netlify Drop:</b> rename this file to <b>index.html</b>, go to <b>app.netlify.com/drop</b> and drag it into the page. You get a live link in seconds (free account to keep it).</li>
-      <li><b>Permanent — GitHub Pages:</b> free GitHub account → make a repository → upload the file as <b>index.html</b> → Settings → Pages → set the source to your main branch. Live at <i>yourname.github.io/repo</i> within a few minutes, free for good.</li>
-    </ul>
-    <p class="mini">Important: your logged data is tied to the web address. If you move from the file to a hosted link, use Export then Import to carry your history across.</p>
-  </div>
-
-  <div class="card body">
-    <h2 class="sec" style="margin-top:0">Add to your phone &amp; settings</h2>
-    <p><b>iPhone (Safari):</b> Share button → "Add to Home Screen". <b>Android (Chrome):</b> ⋮ menu → "Add to Home screen". It then opens like a normal app and works offline.</p>
-    <button class="btn ghost" id="editTargets">Adjust calorie / protein targets</button>
-  </div>
   `;
 }
 
@@ -898,38 +1008,58 @@ function bind(){
   const sc=document.getElementById("saveCardio");
   if(sc) sc.onclick=()=>{ day(cur).workout={type:"Cardio",cardioType:val("c_type"),mins:val("c_min")};
     markDayDirty(cur); toast("Cardio saved"); render(); };
-  // targets editor
-  const et=document.getElementById("editTargets");
-  if(et) et.onclick=()=>targetEditor();
   // data backup
   const ex=document.getElementById("exportData");
   if(ex) ex.onclick=()=>exportData();
   const imp=document.getElementById("importFile");
   if(imp) imp.onchange=e=>{ if(e.target.files&&e.target.files[0]) importData(e.target.files[0]); };
-}
-function val(id){ const e=document.getElementById(id); return e?e.value.trim():""; }
-
-function targetEditor(){
-  const v=document.getElementById("view");
-  const t=state.target;
-  const panel=document.createElement("div");
-  panel.className="card"; panel.style.position="relative";
-  panel.innerHTML=`<div class="row" style="border:0;padding-top:0"><div class="grow"><div class="name">Adjust targets</div></div><button class="x" id="closeT">×</button></div>
-    <div class="grid2">
-      <div class="field"><label>Calories</label><input id="t_k" type="number" value="${t.kcal}"></div>
-      <div class="field"><label>Protein (g)</label><input id="t_p" type="number" value="${t.p}"></div>
-      <div class="field"><label>Carbs (g)</label><input id="t_c" type="number" value="${t.c}"></div>
-      <div class="field"><label>Fat (g)</label><input id="t_f" type="number" value="${t.f}"></div>
-    </div>
-    <button class="btn" id="saveT">Save targets</button>`;
-  v.insertBefore(panel,v.firstChild);
-  document.getElementById("closeT").onclick=()=>panel.remove();
-  document.getElementById("saveT").onclick=()=>{
-    state.target={kcal:parseInt(val("t_k"))||t.kcal,p:parseInt(val("t_p"))||t.p,c:parseInt(val("t_c"))||t.c,f:parseInt(val("t_f"))||t.f};
+  // settings: save profile (name + email)
+  const sp=document.getElementById("saveProfile");
+  if(sp) sp.onclick=async()=>{
+    const name=val("profName");
+    const email=document.getElementById("profEmail")?.value?.trim();
+    state.profile.name=name; markSettingsDirty(); toast("Profile saved");
+    if(email && email!==currentSession?.user?.email){
+      sp.disabled=true; sp.textContent="Sending confirmation…";
+      const {error}=await supaAuth.auth.updateUser({email});
+      sp.disabled=false; sp.textContent="Save profile";
+      if(error) toast("Email error: "+error.message);
+      else toast("Check your email to confirm the new address");
+    }
+    render();
+  };
+  // settings: save metrics
+  const sm=document.getElementById("saveMetrics");
+  if(sm) sm.onclick=()=>{
+    state.profile.sex=val("profSex")||'M';
+    state.profile.age=parseInt(val("profAge"))||null;
+    state.profile.height=parseInt(val("profHeight"))||null;
+    state.profile.activityLevel=val("profActivity")||'light';
+    markSettingsDirty(); toast("Metrics saved"); render();
+  };
+  // settings: apply suggested targets
+  const as=document.getElementById("applySuggested");
+  if(as) as.onclick=()=>{
+    const sug=msjSuggested(); if(!sug) return;
+    state.target={kcal:sug.kcal,p:sug.p,c:sug.c,f:sug.f};
     markSettingsDirty(); toast("Targets updated"); render();
   };
-  window.scrollTo(0,0);
+  // settings: save targets manually
+  const st=document.getElementById("saveTargets");
+  if(st) st.onclick=()=>{
+    state.target={
+      kcal:parseInt(val("tKcal"))||state.target.kcal,
+      p:parseInt(val("tProt"))||state.target.p,
+      c:parseInt(val("tCarb"))||state.target.c,
+      f:parseInt(val("tFat"))||state.target.f
+    };
+    markSettingsDirty(); toast("Targets saved"); render();
+  };
+  // settings: guide toggle
+  const gt=document.getElementById("guideToggle");
+  if(gt) gt.onclick=()=>{ _guideOpen=!_guideOpen; render(); };
 }
+function val(id){ const e=document.getElementById(id); return e?e.value.trim():""; }
 
 /* ---------- data backup ---------- */
 function exportData(){
