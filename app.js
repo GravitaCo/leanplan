@@ -15,6 +15,8 @@ function load(){
   if(!s.target) s.target={...DEFAULT_TARGET};
   if(!s.schedule) s.schedule={...DEFAULT_SCHEDULE};
   if(!s.profile) s.profile={...DEFAULT_PROFILE};
+  if(!Array.isArray(s.profile.supplements)) s.profile.supplements=[];
+  if(s.profile.notificationsEnabled===undefined) s.profile.notificationsEnabled=false;
   if(!Array.isArray(s.customFoods)) s.customFoods=[];
   if(!Array.isArray(s.recipes)) s.recipes=[];
   return s;
@@ -221,18 +223,8 @@ function initSync(){
 }
 /* =================== END SUPABASE SYNC =================== */
 
-/* ---------- supplement schedule per day ---------- */
-function suppsForDay(d){
-  const sched=scheduledFor(d);
-  const isLiftDay = LIFTS.includes(sched) || (day(d).workout && LIFTS.includes(day(d).workout.type));
-  const list = [];
-  if(isLiftDay) list.push({id:"preworkout", name:"ON Pre-Workout", meta:"~20–30 min before your lift. Has caffeine — fine in the morning."});
-  list.push({id:"creatine", name:"Creatine monohydrate 3–5g", meta:"Any time, every day. Consistency matters more than timing. (Optional add — see Guide.)"});
-  list.push({id:"vitd", name:"Vitamin D 10µg / 400IU", meta:"With a meal. NHS advises this for all UK adults Oct–Mar. (Recommended add.)"});
-  list.push({id:"probiotic", name:"100 Billion probiotic", meta:"Per pack instructions. Evidence is weak/strain-specific — optional, not essential."});
-  list.push({id:"mag", name:"Magnesium glycinate", meta:"Evening, with/after dinner. CHECK the ELEMENTAL dose on your label — see Guide."});
-  return list;
-}
+/* ---------- supplement schedule ---------- */
+function suppsForDay(){ return state.profile.supplements || []; }
 
 /* ===================== RENDER ===================== */
 function render(){
@@ -301,12 +293,12 @@ function viewToday(){
   <div class="card tight"><div class="row"><div class="grow"><div class="meta" style="font-size:14px;color:var(--ink)">${trainLine}</div></div>
     <button class="pill kcal" data-go="train">Open</button></div></div>
 
-  <h2 class="sec">Supplements · ${done}/${supps.length}</h2>
+  <h2 class="sec">Supplements${supps.length ? ` · ${done}/${supps.length}` : ''}</h2>
   <div class="card">
-    ${supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
+    ${supps.length ? supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
       <div class="box">${w.supps[s.id]?'✓':''}</div>
-      <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.meta}</div></div>
-    </div>`).join("")}
+      <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.time}</div></div>
+    </div>`).join("") : '<div class="empty" style="padding:14px 8px">Add supplements in <b>Settings</b> to track them here.</div>'}
   </div>
 
   <h2 class="sec">Body weight</h2>
@@ -426,6 +418,8 @@ function recipeTotals(r){
 function recipePer(r){ const t=recipeTotals(r); const s=(+r.servings||1)||1; return {k:t.k/s,p:t.p/s,c:t.c/s,f:t.f/s,g:t.g/s}; }
 
 let mealBuilder = null;   // {id?, name, servings, items:[{n,k,p,c,f,grams}]}
+let suppEditor = null;    // {mode:'add'|'edit', id, name, time}
+const VAPID_PUBLIC_KEY = 'BOvtsDXhc-q8UtjBcaCY7iydSF_-xKRHoIR8YsOqdGXvYl4HUMlaeWsCsNf5ZTNMAh-9wQwEfmu4Kgcg6_WnGlU';
 let mealQuery = "";
 function viewMeals(){
   let html = "";
@@ -693,7 +687,7 @@ function viewPlan(){
 
 /* ---------- SETTINGS tab ---------- */
 const SETT_SECTIONS = ['profile','metrics','targets','account','backup','about','guide'];
-let _sett = { profile:true, metrics:true, targets:false, account:false, backup:false, about:false, guide:false };
+let _sett = { profile:true, metrics:true, targets:false, account:false, backup:false, about:false, guide:false, supplements:false, notifications:false };
 
 function profileWeight(){
   // most recent logged weight: today first, then scan backwards up to 30 days
@@ -822,10 +816,50 @@ function viewInfo(){
       <p class="mini" style="margin-bottom:0">If nausea is severe or comes with chest pain/dizziness, stop and see a GP. This is general information, not medical advice.</p>
     </div>`;
 
+  const supps = state.profile.supplements || [];
+  const suppListHtml = supps.length
+    ? supps.map(s=>`<div class="row" style="align-items:center">
+        <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.time}</div></div>
+        <button class="pill kcal" data-edsupp="${s.id}" style="margin-right:6px">Edit</button>
+        <button class="x" data-delsupp="${s.id}">✕</button>
+      </div>`).join('')
+    : `<p class="mini" style="margin:0 0 10px">No supplements added yet.</p>`;
+  const suppFormHtml = suppEditor ? `
+    <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:6px">
+      <div class="field"><label>Name</label><input id="suppName" type="text" value="${suppEditor.name.replace(/"/g,'&quot;')}" placeholder="e.g. Creatine 5g" autocomplete="off"></div>
+      <div class="field"><label>Time</label><input id="suppTime" type="time" value="${suppEditor.time}"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="saveSupp" style="flex:1">${suppEditor.mode==='edit'?'Update':'Add'}</button>
+        <button class="btn ghost" id="cancelSupp" style="flex:1">Cancel</button>
+      </div>
+    </div>` : `<button class="btn ghost" id="addSupp" style="margin-top:${supps.length?'10px':'0'}">+ Add supplement</button>`;
+  const supplementsContent = `
+    <p class="mini" style="margin:0 0 12px">Add each supplement with a time. Notifications send a reminder at that time every day.</p>
+    ${suppListHtml}${suppFormHtml}`;
+
+  const notifSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  const notifStatus = !notifSupported ? 'Not supported in this browser'
+    : Notification.permission === 'denied' ? 'Blocked — enable in your browser or phone settings'
+    : state.profile.notificationsEnabled ? 'Enabled' : 'Disabled';
+  const notificationsContent = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px">
+      <div>
+        <div style="font-weight:600;font-size:15px">Supplement reminders</div>
+        <div class="mini" style="margin-top:2px">${notifStatus}</div>
+      </div>
+      <label class="tog-wrap">
+        <input type="checkbox" id="notifToggle" ${state.profile.notificationsEnabled?'checked':''} ${!notifSupported?'disabled':''}>
+        <span class="tog-slider"></span>
+      </label>
+    </div>
+    <p class="mini" style="margin:0">iPhone: requires iOS 16.4+ with Lean Plan added to your Home Screen via Safari.</p>`;
+
   return `<div style="padding-top:6px">
     ${settAccordion('profile','Profile', profileContent)}
     ${settAccordion('metrics','My Metrics', metricsContent)}
     ${settAccordion('targets','Calorie & Macro Targets', targetsContent)}
+    ${settAccordion('supplements','Supplements', supplementsContent)}
+    ${settAccordion('notifications','Notifications', notificationsContent)}
     ${settAccordion('account','Account', accountContent)}
     ${settAccordion('backup','Data & Backup', backupContent)}
     ${settAccordion('about','About', aboutContent)}
@@ -942,6 +976,46 @@ function bind(){
   const sc=document.getElementById("saveCardio");
   if(sc) sc.onclick=()=>{ day(cur).workout={type:"Cardio",cardioType:val("c_type"),mins:val("c_min")};
     markDayDirty(cur); toast("Cardio saved"); render(); };
+  // supplements
+  const as2=document.getElementById("addSupp");
+  if(as2) as2.onclick=()=>{ suppEditor={mode:'add',id:null,name:'',time:'08:00'}; render(); };
+  const ss=document.getElementById("saveSupp");
+  if(ss) ss.onclick=()=>{
+    const name=val("suppName"); const time=val("suppTime");
+    if(!name){ toast("Enter a supplement name"); return; }
+    if(!time){ toast("Enter a time"); return; }
+    if(!Array.isArray(state.profile.supplements)) state.profile.supplements=[];
+    if(suppEditor.mode==='edit'){
+      const s=state.profile.supplements.find(x=>x.id===suppEditor.id);
+      if(s){ s.name=name; s.time=time; }
+    } else {
+      state.profile.supplements.push({ id:crypto.randomUUID?crypto.randomUUID():'s'+Date.now(), name, time });
+    }
+    suppEditor=null; markSettingsDirty(); save(); toast("Saved"); render();
+  };
+  const cs=document.getElementById("cancelSupp");
+  if(cs) cs.onclick=()=>{ suppEditor=null; render(); };
+  document.querySelectorAll("[data-edsupp]").forEach(el=>el.onclick=()=>{
+    const s=(state.profile.supplements||[]).find(x=>x.id===el.dataset.edsupp);
+    if(s){ suppEditor={mode:'edit',id:s.id,name:s.name,time:s.time}; render(); }
+  });
+  document.querySelectorAll("[data-delsupp]").forEach(el=>el.onclick=()=>{
+    state.profile.supplements=(state.profile.supplements||[]).filter(x=>x.id!==el.dataset.delsupp);
+    markSettingsDirty(); save(); render();
+  });
+  // notifications toggle
+  const nt=document.getElementById("notifToggle");
+  if(nt) nt.onchange=async()=>{
+    if(nt.checked){
+      const ok=await subscribePush();
+      if(ok){ state.profile.notificationsEnabled=true; markSettingsDirty(); save(); toast("Notifications enabled"); }
+      else { nt.checked=false; }
+    } else {
+      await unsubscribePush();
+      state.profile.notificationsEnabled=false; markSettingsDirty(); save(); toast("Notifications disabled");
+    }
+    render();
+  };
   // data backup
   const ex=document.getElementById("exportData");
   if(ex) ex.onclick=()=>exportData();
@@ -994,6 +1068,45 @@ function bind(){
   };
 }
 function val(id){ const e=document.getElementById(id); return e?e.value.trim():""; }
+
+/* ---------- push notifications ---------- */
+function urlBase64ToUint8Array(b64){
+  const pad='='.repeat((4-b64.length%4)%4);
+  const base64=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
+async function subscribePush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){ toast('Push not supported'); return false; }
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){ toast('Permission denied'); return false; }
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const j=sub.toJSON();
+    await fetch(SB_REST+'/push_subscriptions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken(),'apikey':SB_KEY,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({ user_id:getUid(), endpoint:j.endpoint, p256dh:j.keys.p256dh, auth_key:j.keys.auth })
+    });
+    return true;
+  }catch(e){ console.error('Push subscribe failed:',e); toast('Could not enable notifications'); return false; }
+}
+
+async function unsubscribePush(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){
+      const endpoint=sub.endpoint;
+      await sub.unsubscribe();
+      await fetch(SB_REST+'/push_subscriptions?endpoint=eq.'+encodeURIComponent(endpoint)+'&user_id=eq.'+getUid(),{
+        method:'DELETE', headers:{'Authorization':'Bearer '+getToken(),'apikey':SB_KEY}
+      });
+    }
+  }catch(e){ console.error('Push unsubscribe failed:',e); }
+}
 
 /* ---------- data backup ---------- */
 function exportData(){

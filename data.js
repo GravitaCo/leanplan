@@ -2,7 +2,7 @@
 const DEFAULT_TARGET = { kcal:1850, p:150, c:175, f:60 };
 
 /* ---------- profile defaults ---------- */
-const DEFAULT_PROFILE = { name:'', sex:'M', age:null, height:null, activityLevel:'light' };
+const DEFAULT_PROFILE = { name:'', sex:'M', age:null, height:null, activityLevel:'light', supplements:[], notificationsEnabled:false };
 
 /* ---------- activity multipliers (Mifflin-St Jeor TDEE) ---------- */
 const ACTIVITY = {

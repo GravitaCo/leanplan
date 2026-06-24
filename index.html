@@ -164,6 +164,14 @@
   .badge.cardio{background:#2a2212;color:#e8b964}
   .badge.rest{background:var(--soft);color:var(--muted)}
   a{color:var(--green-d)}
+  /* toggle switch */
+  .tog-wrap{position:relative;display:inline-block;width:48px;height:28px;flex:none}
+  .tog-wrap input{opacity:0;width:0;height:0;position:absolute}
+  .tog-slider{position:absolute;inset:0;background:var(--soft);border-radius:28px;transition:.2s;cursor:pointer}
+  .tog-slider::before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.2s}
+  .tog-wrap input:checked+.tog-slider{background:var(--green)}
+  .tog-wrap input:checked+.tog-slider::before{transform:translateX(20px);background:var(--bg)}
+  .tog-wrap input:disabled+.tog-slider{opacity:.4;cursor:not-allowed}
   /* accordions */
   .acc-wrap{border-bottom:1px solid var(--line)}
   .acc-wrap:last-child{border-bottom:0}

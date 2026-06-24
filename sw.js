@@ -1,5 +1,5 @@
 /* Lean Plan service worker — bump CACHE on each deploy to force-refresh clients */
-const CACHE = "leanplan-v4";
+const CACHE = "leanplan-v5";
 const ASSETS = ["./", "./index.html", "./data.js", "./app.js", "./manifest.json"];
 
 self.addEventListener("install", e => {
@@ -12,6 +12,23 @@ self.addEventListener("activate", e => {
       .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("push", e => {
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || "Lean Plan", {
+      body: data.body || "",
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      tag: data.tag || "leanplan-supp",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow("./"));
 });
 
 self.addEventListener("fetch", e => {
