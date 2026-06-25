@@ -260,60 +260,117 @@ function totals(d){
   return t;
 }
 
-function macroBlock(lab,val,goal,unit){
+function macroBlock(lab,val,goal,unit,color){
   const pct=Math.min(100, goal? (val/goal*100):0);
+  const c=color?`background:${color}`:'';
   return `<div class="macro"><div class="lab">${lab}</div>
     <div class="val">${r0(val)}<small> / ${goal}${unit}</small></div>
-    <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+    <div class="bar"><i style="width:${pct}%;${c}"></i></div></div>`;
+}
+
+function weekStrip(){
+  const p=cur.split('-');
+  const curDate=new Date(+p[0],+p[1]-1,+p[2]);
+  const dow=curDate.getDay(); // 0=Sun
+  const mondayOff=dow===0?-6:1-dow;
+  const todayYmd=todayStr();
+  const labels=['M','T','W','T','F','S','S'];
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(curDate);
+    d.setDate(curDate.getDate()+mondayOff+i);
+    const dStr=ymd(d);
+    const isViewing=dStr===cur;
+    const isToday=dStr===todayYmd;
+    const hasWorkout=!!(state.days[dStr]?.workout?.type);
+    const schedIdx=d.getDay();
+    const sched=(state.schedule&&state.schedule[schedIdx])||'Rest';
+    let ballStyle=isViewing?'background:var(--green);color:#fff':
+      isToday?'background:var(--soft);color:var(--ink);box-shadow:0 0 0 2px var(--green)':
+      'background:var(--soft);color:var(--muted)';
+    const dotColor=hasWorkout?'var(--green)':(sched!=='Rest'?'var(--line)':'transparent');
+    html+=`<div class="wkday" onclick="goToDay('${dStr}')">
+      <div class="wdlbl">${labels[i]}</div>
+      <div class="wdball" style="${ballStyle}">${d.getDate()}</div>
+      <div class="wddot" style="background:${dotColor}"></div>
+    </div>`;
+  }
+  return `<div class="weekstrip">${html}</div>`;
 }
 
 function viewToday(){
   const t=totals(cur), tg=state.target;
   const w=day(cur);
-  const wk = w.workout;
-  const burn = workoutBurn(wk);
-  const budget = tg.kcal + burn;
-  const left = budget - t.k;
+  const wk=w.workout;
+  const burn=workoutBurn(wk);
+  const budget=tg.kcal+burn;
+  const left=budget-t.k;
   const pct=Math.min(140, budget? t.k/budget*100:0);
   let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
-  let trainLine;
-  if(wk && wk.type) trainLine = `<b>${wk.type==="Cardio"?"Cardio logged":wk.type+" session logged"}</b> — open Train to edit`;
-  else { const s=scheduledFor(cur);
-    trainLine = `Scheduled today: <b>${s==="Rest"?"Rest day":WORKOUTS[s]?WORKOUTS[s].title:s}</b> — open <b>Train</b> to log it (or pick another)`; }
+
+  const hr=new Date().getHours();
+  const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  const firstName=(state.profile?.name||'').split(' ')[0];
+
+  const sched=scheduledFor(cur);
+  const wkLogged=wk&&wk.type;
+  const schedTitle=sched==='Rest'?'Rest day':(WORKOUTS[sched]?WORKOUTS[sched].title:sched);
+  const wkTitle=wkLogged?(wk.type==='Cardio'?'Cardio session':(WORKOUTS[wk.type]?.title||wk.type)):schedTitle;
+  const wkBadgeType=wkLogged?wk.type:sched;
+  const isRest=!wkLogged&&sched==='Rest';
 
   const supps=suppsForDay(cur);
-  const done = supps.filter(s=>w.supps[s.id]).length;
+  const done=supps.filter(s=>w.supps[s.id]).length;
+
+  const wkDesc=wkLogged
+    ?(wk.type==='Cardio'?`${wk.mins||'?'} min ${wk.cardioType||'cardio'} logged — tap to edit`
+      :`Session logged — open Train to see your sets`)
+    :(isRest?'Recovery is when your body adapts. A gentle walk is fine.'
+      :'Open Train to log your sets for today.');
 
   return `
+  ${firstName?`<div class="greeting"><div class="greeting-main">${greet}, ${firstName}</div></div>`:''}
+  ${weekStrip()}
+
   <div class="card">
-    <div class="ringwrap">
-      <svg viewBox="0 0 160 160">
-        <circle class="ring-track" cx="80" cy="80" r="70"/>
-        <circle class="ring-prog ${cls}" cx="80" cy="80" r="70" style="stroke-dashoffset:${(440*(1-Math.min(pct,100)/100)).toFixed(1)}"/>
-      </svg>
-      <div class="ringctr">
-        <div class="kcalbig" style="color:${left<0?'var(--red)':'var(--ink)'}">${r0(Math.abs(left))}</div>
-        <div class="lbl">${left<0?'over':'left'}</div>
+    <div class="kcalbar-wrap">
+      <div class="kcalbar-hdr">
+        <div>
+          <div class="kcalbar-big" style="color:${left<0?'var(--red)':'var(--ink)'}">${r0(Math.abs(left))}</div>
+          <div class="kcalbar-lbl">kcal ${left<0?'over':'remaining'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">${r0(t.k)} kcal eaten</div>
+          <div class="mini" style="margin-top:1px">${budget} kcal budget${burn?` · <span style="color:var(--amber)">+${burn}</span>`:''}</div>
+        </div>
       </div>
+      <div class="kcalbar-track"><div class="kcalbar-prog ${cls}" style="width:${Math.min(100,pct).toFixed(1)}%"></div></div>
     </div>
-    <div class="kcalsub">of <b>${budget} kcal</b> · eaten <b>${r0(t.k)}</b>${burn?` · <span style="color:var(--amber)">+${burn} workout</span>`:''}</div>
     <div class="macros">
-      ${macroBlock("Protein",t.p,tg.p,"g")}
-      ${macroBlock("Carbs",t.c,tg.c,"g")}
-      ${macroBlock("Fat",t.f,tg.f,"g")}
+      ${macroBlock("Protein",t.p,tg.p,"g","var(--blue)")}
+      ${macroBlock("Carbs",t.c,tg.c,"g","var(--green)")}
+      ${macroBlock("Fat",t.f,tg.f,"g","var(--amber)")}
     </div>
   </div>
 
   <h2 class="sec">Today's training</h2>
-  <div class="card tight"><div class="row"><div class="grow"><div class="meta" style="font-size:14px;color:var(--ink)">${trainLine}</div></div>
-    <button class="pill kcal" data-go="train">Open</button></div></div>
+  <div class="card tight">
+    <div class="wkcard">
+      <div class="wktype" style="${wkLogged?'color:var(--amber)':isRest?'color:var(--muted)':''}">
+        ${wkLogged?'Logged':isRest?'Rest':'Scheduled'} · ${wkBadgeType==='Cardio'?'Cardio':isRest?'Rest':'Strength'}
+      </div>
+      <div class="wktitle">${wkTitle}</div>
+      <div class="wkdesc">${wkDesc}</div>
+    </div>
+    ${!isRest?`<button class="btn" data-go="train">${wkLogged?'View session':'▶ Start workout'}</button>`:''}
+  </div>
 
-  <h2 class="sec">Supplements${supps.length ? ` · ${done}/${supps.length}` : ''}</h2>
+  <h2 class="sec">Supplements${supps.length?` · ${done}/${supps.length}`:''}</h2>
   <div class="card">
-    ${supps.length ? supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
+    ${supps.length?supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
       <div class="box">${w.supps[s.id]?'✓':''}</div>
       <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.time}</div></div>
-    </div>`).join("") : '<div class="empty" style="padding:14px 8px">Add supplements in <b>Settings</b> to track them here.</div>'}
+    </div>`).join(""):'<div class="empty" style="padding:14px 8px">Add supplements in <b>Settings</b> to track them here.</div>'}
   </div>
 
   <h2 class="sec">Body weight</h2>
@@ -322,11 +379,11 @@ function viewToday(){
       <div class="grow"><input id="bw" type="number" inputmode="decimal" placeholder="Weight in kg" value="${w.weight??""}"></div>
       <button class="pill kcal" id="saveBw">Save</button>
     </div>
-    <div class="mini" style="margin-top:8px">Weigh yourself ~once a week, same time (morning, after the toilet, before eating). Day-to-day swings are water, not fat. ${weightTrend()}</div>
+    <div class="mini" style="margin-top:8px">${weightTrend()}</div>
   </div>
 
   <h2 class="sec">Eaten today</h2>
-  <div class="card">${foodListHtml(cur) || '<div class="empty">No food logged. Tap <b>Food</b> below to add some.</div>'}</div>
+  <div class="card">${foodListHtml(cur)||'<div class="empty">No food logged. Tap <b>Food</b> below to add some.</div>'}</div>
   `;
 }
 
@@ -351,6 +408,18 @@ function foodListHtml(d){
 /* ---------- FOOD tab ---------- */
 let foodQuery="";
 let customFoodOpen=false;
+let pendingMeal=null; // set when user taps "+ Add [meal]" so panel pre-selects that meal
+
+function defaultMeal(){
+  if(pendingMeal) return pendingMeal;
+  const h=new Date().getHours();
+  if(h<11) return 'breakfast';
+  if(h<15) return 'lunch';
+  if(h<20) return 'dinner';
+  return 'snack';
+}
+
+function goToDay(dStr){ cur=dStr; render(); }
 
 function recentFoods(){
   const all=allFoods(); const seen=new Set(), recent=[];
@@ -412,6 +481,46 @@ function viewFood(){
   </div>`;
   return seg + (foodSub==='meals' ? viewMeals() : viewFoodsList());
 }
+function mealGroupHtml(d){
+  const fs=day(d).foods;
+  if(!fs.length) return '';
+  const MEALS=['breakfast','lunch','dinner','snack'];
+  const LABELS={breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snack:'Snacks'};
+  const groups={breakfast:[],lunch:[],dinner:[],snack:[],_other:[]};
+  fs.forEach((x,i)=>{ const m=x.meal&&groups[x.meal]!==undefined?x.meal:'_other'; groups[m].push({...x,_i:i}); });
+  let html='';
+  MEALS.forEach(m=>{
+    const items=groups[m];
+    const mkcal=r0(items.reduce((s,x)=>s+x.k,0));
+    html+=`<div class="meal-sec">
+      <div class="meal-hdr">
+        <span class="mname">${LABELS[m]}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          ${items.length?`<span class="mkcal">${mkcal} kcal</span>`:''}
+          <button class="madd" data-addmeal="${m}">+ Add</button>
+        </span>
+      </div>
+      ${items.length?`<div class="card" style="padding:0 16px;margin-bottom:4px">
+        ${items.map(x=>`<div class="row">
+          <div class="grow"><div class="name">${x.n}</div><div class="meta">${x.grams}${x.unit||'g'} · ${r0(x.p)}p ${r0(x.c)}c ${r0(x.f)}f</div></div>
+          <span class="pill kcal">${r0(x.k)} kcal</span>
+          <button class="x" data-del="${x._i}">×</button>
+        </div>`).join('')}
+      </div>`:''}</div>`;
+  });
+  if(groups._other.length){
+    html+=`<div class="meal-sec"><div class="meal-hdr"><span class="mname">Other</span></div>
+      <div class="card" style="padding:0 16px;margin-bottom:4px">
+        ${groups._other.map(x=>`<div class="row">
+          <div class="grow"><div class="name">${x.n}</div><div class="meta">${x.grams}${x.unit||'g'} · ${r0(x.p)}p ${r0(x.c)}c ${r0(x.f)}f</div></div>
+          <span class="pill kcal">${r0(x.k)} kcal</span>
+          <button class="x" data-del="${x._i}">×</button>
+        </div>`).join('')}
+      </div></div>`;
+  }
+  return html;
+}
+
 function viewFoodsList(){
   const q=foodQuery.trim().toLowerCase();
   const t=totals(cur), tg=state.target;
@@ -419,24 +528,25 @@ function viewFoodsList(){
   const budget=tg.kcal+burn;
   const left=budget-t.k;
   return `
-  <div class="card tight">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px">${r0(t.k)} <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ${budget} kcal</span></div>
-        <div class="mini" style="margin-top:1px">${r0(t.p)}g protein${burn?` · +${burn} workout`:''}${left>=0?` · <b>${r0(left)} left</b>`:` · <span style="color:var(--red)">${r0(-left)} over</span>`}</div>
-      </div>
-    </div>
-    <div class="search"><input id="foodSearch" placeholder="Search ${allFoods().length} foods…" value="${foodQuery}"></div>
-    <div class="results">
-      ${foodResultsHtml(q)}
-    </div>
+  <div style="padding:4px 0 12px">
+    <div style="font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1">${r0(t.k)}</div>
+    <div class="mini" style="margin-top:3px">of ${budget} kcal${burn?` · <span style="color:var(--amber)">+${burn} workout</span>`:''} · <b style="color:${left<0?'var(--red)':'var(--ink)'}">${left<0?`${r0(-left)} over`:`${r0(left)} left`}</b></div>
   </div>
+
+  <div class="card tight">
+    <div class="search" style="margin-bottom:8px"><input id="foodSearch" placeholder="Search ${allFoods().length} foods…" value="${foodQuery}"></div>
+    <div class="results">${foodResultsHtml(q)}</div>
+  </div>
+
+  ${mealGroupHtml(cur)||`<div class="meal-sec">
+    <div class="meal-hdr" style="padding-top:16px"><span class="mname" style="color:var(--muted)">Nothing logged yet</span></div>
+  </div>`}
 
   <h2 class="sec" style="display:flex;justify-content:space-between;align-items:center">
     <span>Custom food</span>
     <button class="pill kcal" id="toggleCustomForm" style="font-size:11px">${customFoodOpen?'Cancel':'+ Create'}</button>
   </h2>
-  ${customFoodOpen ? `<div class="card">
+  ${customFoodOpen?`<div class="card">
     <div class="field"><label>Name</label><input id="cf_n" placeholder="e.g. Mum's chilli"></div>
     <div class="grid2">
       <div class="field"><label>Amount (g)</label><input id="cf_g" type="number" inputmode="decimal" placeholder="grams" value="100"></div>
@@ -449,10 +559,7 @@ function viewFoodsList(){
     </div>
     <button class="btn" id="addCustom">Add to today &amp; save</button>
     <div class="mini" style="margin-top:8px">Read the "per 100g" column on the packet and copy those four numbers. Once saved the food appears in search above.</div>
-  </div>` : ''}
-
-  <h2 class="sec">Eaten today</h2>
-  <div class="card">${foodListHtml(cur) || '<div class="empty">Nothing logged yet.</div>'}</div>
+  </div>`:''}
   `;
 }
 
@@ -569,7 +676,7 @@ function openMealLog(ri){
   window.scrollTo(0,0);
 }
 
-/* food add modal-ish: pick grams via prompt-replacement panel */
+/* food add panel */
 let pendingFood=null;
 function openFoodAdd(idx){
   pendingFood=idx;
@@ -578,11 +685,18 @@ function openFoodAdd(idx){
   const panel=document.createElement("div");
   panel.className="card";
   panel.id="addPanel";
-  const u = f.ml ? 'ml' : 'g';
+  const u=f.ml?'ml':'g';
   const half=Math.round(f.g*0.5), dbl=Math.round(f.g*2);
+  const dm=defaultMeal();
+  pendingMeal=null; // consume
+  const MLABELS={breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snack:'Snack'};
+  const mealBtns=['breakfast','lunch','dinner','snack'].map(m=>
+    `<button class="_mb btn ${m===dm?'':'ghost'}" data-meal="${m}" style="flex:1;padding:7px 2px;font-size:11px;font-weight:700">${MLABELS[m]}</button>`
+  ).join('');
   panel.innerHTML=`<div class="row" style="border:0;padding-top:0">
       <div class="grow"><div class="name">${f.n}</div><div class="meta">per 100${u} · <b>${f.k}</b> kcal · ${f.p}p ${f.c}c ${f.f}f</div></div>
       <button class="x" id="closePanel">×</button></div>
+    <div style="display:flex;gap:5px;margin-bottom:12px">${mealBtns}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
       <button class="btn ghost" id="fp_half" style="padding:9px 4px;font-size:13px">½ serve<br><small style="color:var(--muted);font-size:11px;font-weight:400">${half}${u}</small></button>
       <button class="btn" id="fp_one" style="padding:9px 4px;font-size:13px">1 serve<br><small style="color:var(--bg);font-size:11px;font-weight:400">${f.g}${u}</small></button>
@@ -591,7 +705,17 @@ function openFoodAdd(idx){
     <div class="field"><label>Or enter ${u}</label><input id="fa_g" type="number" inputmode="decimal" value="${f.g}"></div>
     <div class="mini" id="fa_preview" style="margin-bottom:12px"></div>
     <button class="btn" id="fa_add">Add to today</button>`;
-  v.insertBefore(panel, v.firstChild);
+  v.insertBefore(panel,v.firstChild);
+  let selMeal=dm;
+  panel.querySelectorAll('._mb').forEach(btn=>{
+    btn.onclick=()=>{
+      selMeal=btn.dataset.meal;
+      panel.querySelectorAll('._mb').forEach(b=>{
+        b.className=`_mb btn ${b.dataset.meal===selMeal?'':'ghost'}`;
+        b.style='flex:1;padding:7px 2px;font-size:11px;font-weight:700';
+      });
+    };
+  });
   const gi=document.getElementById("fa_g");
   const prev=()=>{const g=parseFloat(gi.value)||0;const m=g/100;
     document.getElementById("fa_preview").innerHTML=`= <b>${r0(f.k*m)} kcal</b> · ${r1(f.p*m)}p ${r1(f.c*m)}c ${r1(f.f*m)}f`;};
@@ -603,7 +727,7 @@ function openFoodAdd(idx){
   document.getElementById("closePanel").onclick=()=>panel.remove();
   document.getElementById("fa_add").onclick=()=>{
     const g=parseFloat(gi.value)||0; if(g<=0) return; const m=g/100;
-    const entry={n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m};
+    const entry={n:f.n,grams:r0(g),k:f.k*m,p:f.p*m,c:f.c*m,f:f.f*m,meal:selMeal};
     if(f.ml) entry.unit='ml';
     day(cur).foods.push(entry);
     markDayDirty(cur); toast(f.n+" added"); render();
@@ -941,6 +1065,12 @@ function bind(){
     });
   }
   wireFoodResults(document);
+  // meal quick-add buttons
+  document.querySelectorAll("[data-addmeal]").forEach(el=>el.onclick=()=>{
+    pendingMeal=el.dataset.addmeal;
+    window.scrollTo(0,0);
+    setTimeout(()=>{ const fs=document.getElementById('foodSearch'); if(fs) fs.focus(); },80);
+  });
   // ----- meals / recipes -----
   document.querySelectorAll("[data-foodsub]").forEach(el=>el.onclick=()=>{ foodSub=el.dataset.foodsub; render(); });
   const nm=document.getElementById("newMeal");

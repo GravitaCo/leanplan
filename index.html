@@ -13,8 +13,9 @@
 <style>
   :root{
     --bg:#0c0c0e; --paper:#161618; --ink:#f4f4f6; --muted:#8b8b92;
-    --line:#28282e; --green:#ededf2; --green-d:#c7c7cf; --amber:#e0a23c;
+    --line:#28282e; --green:#E8774D; --green-d:#d4683c; --amber:#e0a23c;
     --red:#e06a52; --soft:#222227; --shadow:0 1px 2px rgba(0,0,0,.4);
+    --blue:#6B9FE8; --teal:#4DB8A0;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
@@ -199,6 +200,36 @@
     display:flex;align-items:center;justify-content:center;gap:8px}
   .auth-link{background:none;border:0;color:var(--green-d);font-size:13px;cursor:pointer;padding:0;font-family:inherit}
   .auth-icon{font-size:40px;text-align:center;margin-bottom:12px}
+  /* greeting */
+  .greeting{padding:6px 0 2px}
+  .greeting-main{font-size:24px;font-weight:800;letter-spacing:-.5px}
+  .greeting-date{font-size:13px;color:var(--muted);margin-top:1px}
+  /* week strip */
+  .weekstrip{display:flex;gap:2px;margin:10px 0 14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .weekstrip::-webkit-scrollbar{display:none}
+  .wkday{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:40px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .wkday .wdlbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .wkday .wdball{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--soft);color:var(--muted);transition:.15s}
+  .wkday .wddot{width:5px;height:5px;border-radius:50%;background:transparent}
+  /* horizontal calorie bar */
+  .kcalbar-wrap{padding:2px 0 10px}
+  .kcalbar-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .kcalbar-big{font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+  .kcalbar-lbl{font-size:12px;color:var(--muted);margin-top:3px}
+  .kcalbar-track{height:11px;background:var(--soft);border-radius:8px;overflow:hidden;margin-bottom:6px}
+  .kcalbar-prog{height:100%;background:var(--green);border-radius:8px;transition:width .35s}
+  .kcalbar-prog.warn{background:var(--amber)} .kcalbar-prog.over{background:var(--red)}
+  /* today workout card */
+  .wkcard{background:var(--soft);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+  .wkcard .wktype{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--green);margin-bottom:5px}
+  .wkcard .wktitle{font-size:17px;font-weight:700;margin-bottom:4px}
+  .wkcard .wkdesc{font-size:13px;color:var(--muted);line-height:1.4}
+  /* meal sections */
+  .meal-sec{margin-bottom:4px}
+  .meal-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 2px 6px}
+  .meal-hdr .mname{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+  .meal-hdr .mkcal{font-size:12px;color:var(--muted)}
+  .meal-hdr .madd{background:none;border:0;color:var(--green);font-size:13px;font-weight:700;padding:0;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
