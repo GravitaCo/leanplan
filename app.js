@@ -64,7 +64,8 @@ const SB_URL  = "https://exvblofwiwbvycomxvmj.supabase.co";
 const SB_KEY  = "sb_publishable_l-XOQOrSJ6sRGEwaRR8rrg_pXukGtET";
 const SB_REST = SB_URL + "/rest/v1";
 const LOCAL_USER = "00000000-0000-0000-0000-000000000001"; // fallback until first sign-in
-const supaAuth = window.supabase.createClient(SB_URL, SB_KEY);
+const _stubAuth = { onAuthStateChange:(cb)=>{ cb('SIGNED_OUT',null); return {data:{subscription:{unsubscribe:()=>{}}}}; }, getSession:async()=>({data:{session:null}}), signInWithPassword:async()=>({error:{message:'Offline — sign in unavailable'}}), signUp:async()=>({error:{message:'Offline — sign up unavailable'}}), signInWithOAuth:async()=>({error:{message:'Offline — OAuth unavailable'}}), resetPasswordForEmail:async()=>({error:{message:'Offline'}}), updateUser:async()=>({error:null}), signOut:async()=>({}) };
+const supaAuth = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : { auth: _stubAuth };
 
 function nowIso(){ return new Date().toISOString(); }
 
@@ -475,22 +476,19 @@ function wireFoodResults(scope){
 }
 let foodSub = "foods";     // "foods" | "meals"
 function viewFood(){
-  const seg = `<div class="seg">
-    <button data-foodsub="foods" class="${foodSub==='foods'?'on':''}">Foods</button>
-    <button data-foodsub="meals" class="${foodSub==='meals'?'on':''}">Meals</button>
-  </div>`;
-  return seg + (foodSub==='meals' ? viewMeals() : viewFoodsList());
+  // recipes sub-tab is now behind a "Saved meals" link rather than a top segment
+  if(foodSub==='meals') return `<button class="btn ghost" id="backToFoods" style="margin-bottom:14px">← Back to food log</button>` + viewMeals();
+  return viewFoodsList();
 }
 function mealGroupHtml(d){
   const fs=day(d).foods;
-  if(!fs.length) return '';
   const MEALS=['breakfast','lunch','dinner','snack'];
   const LABELS={breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snack:'Snacks'};
   const groups={breakfast:[],lunch:[],dinner:[],snack:[],_other:[]};
   fs.forEach((x,i)=>{ const m=x.meal&&groups[x.meal]!==undefined?x.meal:'_other'; groups[m].push({...x,_i:i}); });
   let html='';
   MEALS.forEach(m=>{
-    const items=groups[m];
+    const items=groups[m]||[];
     const mkcal=r0(items.reduce((s,x)=>s+x.k,0));
     html+=`<div class="meal-sec">
       <div class="meal-hdr">
@@ -506,9 +504,9 @@ function mealGroupHtml(d){
           <span class="pill kcal">${r0(x.k)} kcal</span>
           <button class="x" data-del="${x._i}">×</button>
         </div>`).join('')}
-      </div>`:''}</div>`;
+      </div>`:`<div style="padding:0 2px 10px"><span style="font-size:13px;color:var(--muted)">Nothing here yet</span></div>`}</div>`;
   });
-  if(groups._other.length){
+  if(groups._other&&groups._other.length){
     html+=`<div class="meal-sec"><div class="meal-hdr"><span class="mname">Other</span></div>
       <div class="card" style="padding:0 16px;margin-bottom:4px">
         ${groups._other.map(x=>`<div class="row">
@@ -538,13 +536,14 @@ function viewFoodsList(){
     <div class="results">${foodResultsHtml(q)}</div>
   </div>
 
-  ${mealGroupHtml(cur)||`<div class="meal-sec">
-    <div class="meal-hdr" style="padding-top:16px"><span class="mname" style="color:var(--muted)">Nothing logged yet</span></div>
-  </div>`}
+  ${mealGroupHtml(cur)}
 
   <h2 class="sec" style="display:flex;justify-content:space-between;align-items:center">
     <span>Custom food</span>
-    <button class="pill kcal" id="toggleCustomForm" style="font-size:11px">${customFoodOpen?'Cancel':'+ Create'}</button>
+    <div style="display:flex;gap:6px">
+      <button class="pill" data-foodsub="meals" style="font-size:11px">Saved meals</button>
+      <button class="pill kcal" id="toggleCustomForm" style="font-size:11px">${customFoodOpen?'Cancel':'+ Create'}</button>
+    </div>
   </h2>
   ${customFoodOpen?`<div class="card">
     <div class="field"><label>Name</label><input id="cf_n" placeholder="e.g. Mum's chilli"></div>
@@ -1073,6 +1072,7 @@ function bind(){
   });
   // ----- meals / recipes -----
   document.querySelectorAll("[data-foodsub]").forEach(el=>el.onclick=()=>{ foodSub=el.dataset.foodsub; render(); });
+  const btf=document.getElementById("backToFoods"); if(btf) btf.onclick=()=>{ foodSub='foods'; render(); };
   const nm=document.getElementById("newMeal");
   if(nm) nm.onclick=()=>{ mealBuilder={name:"",servings:1,items:[]}; mealQuery=""; render(); };
   const ms=document.getElementById("mealSearch");
@@ -1485,6 +1485,14 @@ async function doSignOut(){
 let _appStarted = false;
 
 async function initApp(){
+  // If Supabase CDN failed to load, run in local-only mode — no auth required
+  if(!window.supabase){
+    _appStarted = true;
+    currentSession = null;
+    render();
+    return;
+  }
+
   const { data: { session } } = await supaAuth.auth.getSession();
   currentSession = session;
 

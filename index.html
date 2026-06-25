@@ -58,15 +58,15 @@
   .ring-prog.warn{stroke:var(--amber)} .ring-prog.over{stroke:var(--red)}
   .ringctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .ringctr .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
-  .bar{height:9px;background:var(--soft);border-radius:6px;overflow:hidden;margin-top:6px}
+  .bar{height:8px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin-top:6px}
   .bar > i{display:block;height:100%;background:var(--green);border-radius:6px;transition:width .25s}
   .bar.warn > i{background:var(--amber)} .bar.over > i{background:var(--red)}
-  .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-  .macro{background:var(--soft);border-radius:12px;padding:10px}
-  .macro .lab{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
-  .macro .val{font-size:15px;font-weight:700;margin-top:2px}
-  .macro .val small{color:var(--muted);font-weight:500}
-  .macro .bar{margin-top:7px}
+  .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+  .macro{background:var(--soft);border-radius:14px;padding:12px 10px}
+  .macro .lab{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+  .macro .val{font-size:16px;font-weight:800;margin-top:3px;letter-spacing:-.3px}
+  .macro .val small{color:var(--muted);font-weight:500;font-size:11px}
+  .macro .bar{margin-top:8px;background:rgba(255,255,255,.08)}
   /* generic rows */
   .row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:0}
@@ -152,7 +152,7 @@
     display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600}
   nav.tabs button .ic{height:22px;display:flex;align-items:center}
   nav.tabs button .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  nav.tabs button.on{color:var(--ink)}
+  nav.tabs button.on{color:var(--green)}
   .mini{font-size:12px;color:var(--muted)}
   .wkdayrow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
   .wkdayrow:last-child{border-bottom:0}
@@ -209,14 +209,14 @@
   .weekstrip::-webkit-scrollbar{display:none}
   .wkday{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:40px;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .wkday .wdlbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
-  .wkday .wdball{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--soft);color:var(--muted);transition:.15s}
-  .wkday .wddot{width:5px;height:5px;border-radius:50%;background:transparent}
+  .wkday .wdball{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;background:var(--soft);color:var(--muted);transition:.15s}
+  .wkday .wddot{width:6px;height:6px;border-radius:50%;background:transparent}
   /* horizontal calorie bar */
   .kcalbar-wrap{padding:2px 0 10px}
   .kcalbar-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
   .kcalbar-big{font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1}
   .kcalbar-lbl{font-size:12px;color:var(--muted);margin-top:3px}
-  .kcalbar-track{height:11px;background:var(--soft);border-radius:8px;overflow:hidden;margin-bottom:6px}
+  .kcalbar-track{height:11px;background:rgba(255,255,255,.1);border-radius:8px;overflow:hidden;margin-bottom:6px}
   .kcalbar-prog{height:100%;background:var(--green);border-radius:8px;transition:width .35s}
   .kcalbar-prog.warn{background:var(--amber)} .kcalbar-prog.over{background:var(--red)}
   /* today workout card */
