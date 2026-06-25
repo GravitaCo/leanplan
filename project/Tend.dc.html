@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  ::-webkit-scrollbar{display:none;}
+</style>
+</helmet>
+
+<div style="position:absolute;left:80px;top:30px;width:1830px;display:flex;align-items:baseline;gap:18px;">
+  <span style="font-family:'Hanken Grotesk',sans-serif;font-size:23px;font-weight:700;color:#26261f;letter-spacing:-.01em;">Tend</span>
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6f6d68;">Health &amp; Fitness PWA · 15 screens · dark + light · 2 session variations</span>
+</div>
+
+<!-- ============ R0 c0 — COVER ============ -->
+<div style="position:absolute;left:80px;top:100px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="00 · System" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">00 · System</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="flex:1;display:flex;flex-direction:column;padding:42px 34px 34px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;color:#6e6c67;">HEALTH &amp; FITNESS · PWA</div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+        <div style="width:34px;height:34px;border-radius:11px;background:var(--accent,#E8835E);margin-bottom:24px;"></div>
+        <div style="font-size:88px;font-weight:700;letter-spacing:-.035em;line-height:.88;">Tend</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6e6c67;margin-top:16px;">WORKING NAME</div>
+        <div style="font-size:22px;line-height:1.4;color:#cfcdc8;margin-top:30px;max-width:300px;">Look after yourself — a little each day.</div>
+      </div>
+      <div style="display:flex;gap:9px;margin-bottom:20px;">
+        <div style="flex:1;height:50px;border-radius:11px;background:#0c0c0e;border:1px solid rgba(255,255,255,.12);"></div>
+        <div style="flex:1;height:50px;border-radius:11px;background:#f4f2ed;"></div>
+        <div style="flex:1;height:50px;border-radius:11px;background:var(--accent,#E8835E);"></div>
+        <div style="flex:1;height:50px;border-radius:11px;background:#7FA98C;"></div>
+        <div style="flex:1;height:50px;border-radius:11px;background:#9a9893;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#6e6c67;">
+        <span>Aa · HANKEN GROTESK</span><span>01 · IBM PLEX MONO</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ R0 c1 — WELCOME ============ -->
+<div style="position:absolute;left:560px;top:100px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="01 · Welcome" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">01 · Welcome</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="height:404px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#18181c,#18181c 11px,#141417 11px,#141417 22px);">
+      <div style="position:absolute;top:24px;left:26px;width:28px;height:28px;border-radius:9px;background:var(--accent,#E8835E);"></div>
+      <span style="position:absolute;bottom:22px;right:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6a6864;">LIFESTYLE PHOTO</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;padding:32px 28px 30px;">
+      <div style="font-size:31px;font-weight:600;line-height:1.12;letter-spacing:-.02em;text-wrap:pretty;">A calmer way to look after your health.</div>
+      <div style="font-size:16px;color:#9a9893;line-height:1.5;margin-top:14px;">Meals, training, and how you feel — all in one simple place. No jargon, no pressure.</div>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;">
+        <button style="all:unset;cursor:pointer;background:var(--accent,#E8835E);color:#231206;height:56px;border-radius:16px;font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;">Get started <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></button>
+        <button style="all:unset;cursor:pointer;height:50px;color:#cfcdc8;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;">I already have an account</button>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R0 c2 — SIGN IN ============ -->
+<div style="position:absolute;left:1040px;top:100px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="02 · Sign in" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">02 · Sign in</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="flex:1;display:flex;flex-direction:column;padding:18px 28px 30px;">
+      <div style="width:28px;height:28px;border-radius:9px;background:var(--accent,#E8835E);margin-bottom:38px;"></div>
+      <div style="font-size:32px;font-weight:600;letter-spacing:-.02em;">Welcome back</div>
+      <div style="font-size:16px;color:#9a9893;margin-top:8px;">Sign in to pick up where you left off.</div>
+      <div style="margin-top:36px;display:flex;flex-direction:column;gap:26px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">EMAIL</span>
+          <div style="border-bottom:1.5px solid rgba(255,255,255,.14);padding-bottom:10px;font-size:16px;">alex@email.com</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">PASSWORD</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:var(--accent,#E8835E);">FORGOT?</span></div>
+          <div style="border-bottom:1.5px solid rgba(255,255,255,.14);padding-bottom:10px;font-size:20px;letter-spacing:3px;color:#cfcdc8;">••••••••</div>
+        </div>
+      </div>
+      <button style="all:unset;cursor:pointer;margin-top:32px;background:var(--accent,#E8835E);color:#231206;height:56px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;">Sign in <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></button>
+      <div style="display:flex;align-items:center;gap:14px;margin:22px 0;color:#6e6c67;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;"><div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>OR<div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div></div>
+      <div style="display:flex;flex-direction:column;gap:11px;">
+        <button style="all:unset;cursor:pointer;border:1px solid rgba(255,255,255,.14);height:52px;border-radius:14px;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;">Continue with Apple</button>
+        <button style="all:unset;cursor:pointer;border:1px solid rgba(255,255,255,.14);height:52px;border-radius:14px;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;">Continue with Google</button>
+      </div>
+      <div style="margin-top:auto;text-align:center;color:#9a9893;font-size:14px;">New here? <span style="color:#f2f0ed;font-weight:600;">Create an account</span></div>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R0 c3 — BASELINE ONBOARDING ============ -->
+<div style="position:absolute;left:1520px;top:100px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="03 · Baseline" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">03 · Onboarding baseline</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="flex:1;display:flex;flex-direction:column;padding:14px 26px 28px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">STEP 2 OF 4</span>
+        <div style="margin-left:auto;display:flex;gap:5px;"><div style="width:22px;height:4px;border-radius:2px;background:var(--accent,#E8835E);"></div><div style="width:22px;height:4px;border-radius:2px;background:var(--accent,#E8835E);"></div><div style="width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);"></div><div style="width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);"></div></div>
+      </div>
+      <div style="font-size:28px;font-weight:600;margin-top:24px;letter-spacing:-.02em;line-height:1.15;">Let's set your baseline.</div>
+      <div style="font-size:15px;color:#9a9893;margin-top:8px;">This stays private — you can change it anytime.</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:30px;margin-bottom:12px;">YOUR GOAL</div>
+      <div style="display:flex;gap:8px;background:rgba(255,255,255,.05);padding:5px;border-radius:14px;">
+        <div style="flex:1;text-align:center;padding:11px 4px;border-radius:10px;font-size:14px;font-weight:500;color:#9a9893;">Lose fat</div>
+        <div style="flex:1;text-align:center;padding:11px 4px;border-radius:10px;font-size:14px;font-weight:600;background:var(--accent,#E8835E);color:#231206;">Maintain</div>
+        <div style="flex:1;text-align:center;padding:11px 4px;border-radius:10px;font-size:14px;font-weight:500;color:#9a9893;">Build</div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:26px;margin-bottom:12px;">ABOUT YOU</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#16161a;border-radius:16px;padding:14px 16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">HEIGHT</div><div style="font-size:22px;font-weight:600;margin-top:4px;">175<span style="font-size:13px;color:#8a8884;font-weight:500;"> cm</span></div></div>
+        <div style="background:#16161a;border-radius:16px;padding:14px 16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">WEIGHT</div><div style="font-size:22px;font-weight:600;margin-top:4px;">74<span style="font-size:13px;color:#8a8884;font-weight:500;"> kg</span></div></div>
+        <div style="background:#16161a;border-radius:16px;padding:14px 16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">AGE</div><div style="font-size:22px;font-weight:600;margin-top:4px;">29</div></div>
+        <div style="background:#16161a;border-radius:16px;padding:14px 16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">SEX</div><div style="font-size:15px;font-weight:600;margin-top:7px;">Prefer not to say</div></div>
+      </div>
+      <button style="all:unset;cursor:pointer;margin-top:auto;background:var(--accent,#E8835E);color:#231206;height:56px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;">Continue <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></button>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R1 c0 — TODAY ============ -->
+<div style="position:absolute;left:80px;top:1064px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="04 · Today" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">04 · Today · home</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="padding:10px 24px 0;display:flex;justify-content:space-between;align-items:flex-start;flex:none;">
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">TUESDAY · 25 JUN</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Good morning, Alex</div></div>
+      <div style="width:42px;height:42px;border-radius:50%;background:repeating-linear-gradient(45deg,#222228,#222228 6px,#1b1b20 6px,#1b1b20 12px);flex:none;"></div>
+    </div>
+    <div style="flex:1;overflow:hidden;padding:22px 24px 0;display:flex;flex-direction:column;gap:13px;">
+      <div style="background:#f4f2ed;color:#1b1b1d;border-radius:24px;padding:21px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#8a8884;">ENERGY LEFT</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">1,580 / 2,200</span></div>
+        <div style="font-size:46px;font-weight:600;letter-spacing:-.02em;margin-top:6px;">620<span style="font-size:17px;color:#8a8884;font-weight:500;"> kcal left</span></div>
+        <div style="height:7px;border-radius:4px;background:rgba(0,0,0,.08);margin-top:14px;overflow:hidden;"><div style="width:72%;height:100%;border-radius:4px;background:var(--accent,#E8835E);"></div></div>
+        <div style="display:flex;gap:16px;margin-top:18px;">
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Protein</span><span style="font-weight:600;">96g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:64%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Carbs</span><span style="font-weight:600;">180g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:58%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Fat</span><span style="font-weight:600;">52g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:48%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+        </div>
+      </div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:46px;height:46px;border-radius:13px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></div>
+        <div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">NEXT WORKOUT</div><div style="font-size:16px;font-weight:600;margin-top:3px;">Upper body · 5 exercises</div></div>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+      </div>
+      <div style="display:flex;gap:13px;">
+        <div style="flex:1;background:#16161a;border-radius:18px;padding:16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">SUPPLEMENTS</div><div style="font-size:18px;font-weight:600;margin-top:8px;">2 of 3</div><div style="display:flex;gap:5px;margin-top:10px;"><div style="width:18px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div><div style="width:18px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div><div style="width:18px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);"></div></div></div>
+        <div style="flex:1;background:#16161a;border-radius:18px;padding:16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">WEIGHT</div><div style="font-size:18px;font-weight:600;margin-top:8px;">74.2 kg</div><div style="font-size:12px;color:#7FA98C;margin-top:8px;font-weight:600;">Steady this week</div></div>
+      </div>
+    </div>
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);">
+      <a style="color:var(--accent,#E8835E);text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"></path><path d="M5 9v11h14V9"></path><path d="M9.5 20v-6h5v6"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"></path><path d="M6 11v10"></path><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg></a>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R1 c1 — BODY STATS ============ -->
+<div style="position:absolute;left:560px;top:1064px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="05 · Body" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">05 · Body stats</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:8px 24px 8px;flex:none;"><div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></div><span style="font-size:19px;font-weight:600;">Body</span></div>
+    <div style="flex:1;overflow:hidden;padding:8px 24px 0;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">WEIGHT · 7-DAY AVG</div><div style="font-size:48px;font-weight:600;letter-spacing:-.025em;margin-top:4px;">74.2<span style="font-size:18px;color:#8a8884;font-weight:500;"> kg</span></div></div>
+        <div style="text-align:right;padding-top:18px;"><span style="color:#7FA98C;font-size:16px;font-weight:600;">−0.3 kg</span><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#6e6c67;margin-top:2px;">THIS WEEK</div></div>
+      </div>
+      <div data-om-raster="" style="background:#16161a;border-radius:20px;padding:16px 14px 12px;margin-top:18px;">
+        <svg viewBox="0 0 320 140" width="100%" height="140" preserveAspectRatio="none">
+          <defs><linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent,#E8835E)" stop-opacity="0.28"></stop><stop offset="1" stop-color="var(--accent,#E8835E)" stop-opacity="0"></stop></linearGradient></defs>
+          <line x1="0" y1="35" x2="320" y2="35" stroke="rgba(255,255,255,.06)" stroke-width="1"></line>
+          <line x1="0" y1="75" x2="320" y2="75" stroke="rgba(255,255,255,.06)" stroke-width="1"></line>
+          <line x1="0" y1="115" x2="320" y2="115" stroke="rgba(255,255,255,.06)" stroke-width="1"></line>
+          <path d="M10,40 C45,46 60,44 96,52 C130,60 150,55 180,66 C212,78 235,72 264,82 C290,90 305,92 310,96 L310,140 L10,140 Z" fill="url(#wfill)"></path>
+          <path d="M10,40 C45,46 60,44 96,52 C130,60 150,55 180,66 C212,78 235,72 264,82 C290,90 305,92 310,96" fill="none" stroke="var(--accent,#E8835E)" stroke-width="2.5" stroke-linecap="round"></path>
+          <circle cx="310" cy="96" r="4.5" fill="var(--accent,#E8835E)"></circle>
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:#6e6c67;margin-top:6px;padding:0 4px;"><span>4 WK AGO</span><span>3 WK</span><span>2 WK</span><span>LAST</span><span>TODAY</span></div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:24px;margin-bottom:6px;">MEASUREMENTS</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid rgba(255,255,255,.07);"><span style="font-size:15px;">Body fat</span><div style="display:flex;align-items:center;gap:12px;"><span style="font-size:15px;font-weight:600;">18.4%</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;border-bottom:1px solid rgba(255,255,255,.07);"><span style="font-size:15px;">Waist</span><div style="display:flex;align-items:center;gap:12px;"><span style="font-size:15px;font-weight:600;">81 cm</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 2px;"><span style="font-size:15px;">Resting heart rate</span><div style="display:flex;align-items:center;gap:12px;"><span style="font-size:15px;font-weight:600;">58 bpm</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      <button style="all:unset;cursor:pointer;margin-top:auto;margin-bottom:22px;background:var(--accent,#E8835E);color:#231206;height:54px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;">Log today's weight</button>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R1 c2 — FOOD LOG ============ -->
+<div style="position:absolute;left:1040px;top:1064px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="06 · Food" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">06 · Food log</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="padding:10px 24px 0;display:flex;justify-content:space-between;align-items:center;flex:none;"><div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">TUESDAY · 25 JUN</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Food</div></div><div style="width:40px;height:40px;border-radius:13px;background:var(--accent,#E8835E);color:#231206;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div></div>
+    <div style="flex:1;overflow:hidden;padding:20px 24px 0;display:flex;flex-direction:column;gap:13px;">
+      <div style="background:#f4f2ed;color:#1b1b1d;border-radius:24px;padding:20px;">
+        <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:38px;font-weight:600;letter-spacing:-.02em;">1,580</span><span style="font-size:15px;color:#8a8884;">/ 2,200 kcal</span></div>
+        <div style="height:7px;border-radius:4px;background:rgba(0,0,0,.08);margin-top:12px;overflow:hidden;"><div style="width:72%;height:100%;border-radius:4px;background:var(--accent,#E8835E);"></div></div>
+        <div style="display:flex;gap:16px;margin-top:16px;">
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Protein</span><span style="font-weight:600;">96/130g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:74%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Carbs</span><span style="font-weight:600;">180/240g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:75%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+          <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Fat</span><span style="font-weight:600;">52/70g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;"><div style="width:74%;height:100%;border-radius:2px;background:#1b1b1d;"></div></div></div>
+        </div>
+      </div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">BREAKFAST</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">425 kcal</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0 0;font-size:14px;"><span>Greek yogurt &amp; berries</span><span style="color:#8a8884;">220</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0 0;font-size:14px;border-top:1px solid rgba(255,255,255,.06);margin-top:9px;"><span>Granola</span><span style="color:#8a8884;">205</span></div>
+      </div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">LUNCH</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">540 kcal</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0 0;font-size:14px;"><span>Chicken &amp; quinoa bowl</span><span style="color:#8a8884;">540</span></div>
+      </div>
+      <div style="border:1px dashed rgba(255,255,255,.14);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:9px;color:#9a9893;font-size:14px;font-weight:500;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg> Add dinner</div>
+    </div>
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);">
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"></path><path d="M5 9v11h14V9"></path><path d="M9.5 20v-6h5v6"></path></svg></a>
+      <a style="color:var(--accent,#E8835E);text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"></path><path d="M6 11v10"></path><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg></a>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R1 c3 — MEAL BUILDER ============ -->
+<div style="position:absolute;left:1520px;top:1064px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="07 · Meal" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">07 · Meal builder</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:8px 24px 6px;flex:none;"><div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></div><span style="font-size:19px;font-weight:600;">Build a meal</span></div>
+    <div style="flex:1;overflow:hidden;padding:10px 24px 0;display:flex;flex-direction:column;">
+      <div style="height:96px;border-radius:18px;background:repeating-linear-gradient(45deg,#18181c,#18181c 10px,#141417 10px,#141417 20px);display:flex;align-items:center;justify-content:center;flex:none;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6a6864;">MEAL PHOTO</span></div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:18px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">MEAL NAME</span><div style="border-bottom:1.5px solid rgba(255,255,255,.14);padding-bottom:9px;font-size:18px;font-weight:600;">High-protein lunch</div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:22px;margin-bottom:8px;">INGREDIENTS</div>
+      <div style="background:#16161a;border-radius:18px;padding:4px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><div style="font-size:15px;">Chicken breast</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">165 g</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfcdc8;">270</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><div style="font-size:15px;">Brown rice</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">150 g</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfcdc8;">195</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><div style="font-size:15px;">Avocado</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">½ fruit</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfcdc8;">120</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;"><div><div style="font-size:15px;">Mixed greens</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">1 cup</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfcdc8;">25</span></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;margin-top:14px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg> Add ingredient</div>
+      <div style="background:#f4f2ed;color:#1b1b1d;border-radius:18px;padding:16px 18px;margin-top:auto;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#8a8884;">TOTAL</span><span style="font-size:24px;font-weight:600;">610 kcal</span></div>
+        <div style="display:flex;gap:14px;margin-top:12px;font-size:12px;color:#6f6d68;"><span><b style="color:#1b1b1d;">58g</b> protein</span><span><b style="color:#1b1b1d;">42g</b> carbs</span><span><b style="color:#1b1b1d;">22g</b> fat</span></div>
+      </div>
+      <button style="all:unset;cursor:pointer;background:var(--accent,#E8835E);color:#231206;height:54px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-bottom:24px;">Save meal</button>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R2 c0 — WORKOUT PLAN ============ -->
+<div style="position:absolute;left:80px;top:2028px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="08 · Plan" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">08 · Workout plan</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="padding:10px 24px 0;flex:none;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">THIS WEEK</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Your plan</div></div>
+    <div style="flex:1;overflow:hidden;padding:22px 24px 0;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">M</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(232,131,94,.18);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent,#E8835E);">T</span><div style="width:38px;height:38px;border-radius:13px;background:var(--accent,#E8835E);border:2px solid var(--accent,#E8835E);"></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">W</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(255,255,255,.05);"></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">T</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(232,131,94,.18);"></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">F</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(255,255,255,.05);"></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">S</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(232,131,94,.18);"></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:9px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">S</span><div style="width:38px;height:38px;border-radius:13px;background:rgba(255,255,255,.05);"></div></div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:8px;">SESSIONS</div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;opacity:.7;"><div style="width:34px;height:34px;border-radius:11px;background:rgba(127,169,140,.18);color:#7FA98C;display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div><div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#6e6c67;">MON</div><div style="font-size:16px;font-weight:600;margin-top:2px;">Lower body</div></div><span style="font-size:12px;color:#7FA98C;font-weight:600;">Done</span></div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;border:1px solid var(--accent,#E8835E);"><div style="width:34px;height:34px;border-radius:11px;background:rgba(232,131,94,.18);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></div><div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--accent,#E8835E);">TODAY · TUE</div><div style="font-size:16px;font-weight:600;margin-top:2px;">Upper body</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#9a9893" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);color:#9a9893;display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></div><div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#6e6c67;">THU</div><div style="font-size:16px;font-weight:600;margin-top:2px;">Full body</div></div><span style="font-size:12px;color:#9a9893;">Upcoming</span></div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);color:#9a9893;display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div><div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#6e6c67;">SAT</div><div style="font-size:16px;font-weight:600;margin-top:2px;">Mobility &amp; core</div></div><span style="font-size:12px;color:#9a9893;">Upcoming</span></div>
+    </div>
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);">
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"></path><path d="M5 9v11h14V9"></path><path d="M9.5 20v-6h5v6"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"></path><path d="M6 11v10"></path><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"></path></svg></a>
+      <a style="color:var(--accent,#E8835E);text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg></a>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R2 c1 — TODAY'S WORKOUT ============ -->
+<div style="position:absolute;left:560px;top:2028px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="09 · Workout" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">09 · Today's workout</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:8px 24px 4px;flex:none;"><div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></div><span style="font-size:19px;font-weight:600;">Upper body</span></div>
+    <div style="flex:1;overflow:hidden;padding:6px 24px 0;display:flex;flex-direction:column;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;color:#6e6c67;margin:6px 0 16px;">TODAY · ~45 MIN · 5 EXERCISES</div>
+      <div style="display:flex;flex-direction:column;gap:11px;">
+        <div style="background:#16161a;border-radius:18px;padding:11px;display:flex;align-items:center;gap:13px;"><video src="uploads/Incline-Dumbell-Press.mp4" autoplay="" muted="" loop="" playsinline="" style="width:54px;height:54px;border-radius:13px;object-fit:cover;flex:none;background:#000;"></video><div style="flex:1;"><div style="font-size:15px;font-weight:600;">Incline Dumbbell Press</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:3px;">3 × 10 · 22 KG</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="background:#16161a;border-radius:18px;padding:11px;display:flex;align-items:center;gap:13px;"><div style="width:54px;height:54px;border-radius:13px;background:repeating-linear-gradient(45deg,#1d1d22,#1d1d22 7px,#18181c 7px,#18181c 14px);flex:none;"></div><div style="flex:1;"><div style="font-size:15px;font-weight:600;">Lat Pulldown</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:3px;">3 × 12 · 45 KG</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="background:#16161a;border-radius:18px;padding:11px;display:flex;align-items:center;gap:13px;"><div style="width:54px;height:54px;border-radius:13px;background:repeating-linear-gradient(45deg,#1d1d22,#1d1d22 7px,#18181c 7px,#18181c 14px);flex:none;"></div><div style="flex:1;"><div style="font-size:15px;font-weight:600;">Seated Shoulder Press</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:3px;">3 × 10 · 14 KG</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="background:#16161a;border-radius:18px;padding:11px;display:flex;align-items:center;gap:13px;"><div style="width:54px;height:54px;border-radius:13px;background:repeating-linear-gradient(45deg,#1d1d22,#1d1d22 7px,#18181c 7px,#18181c 14px);flex:none;"></div><div style="flex:1;"><div style="font-size:15px;font-weight:600;">Cable Row</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:3px;">3 × 12 · 40 KG</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="background:#16161a;border-radius:18px;padding:11px;display:flex;align-items:center;gap:13px;"><div style="width:54px;height:54px;border-radius:13px;background:repeating-linear-gradient(45deg,#1d1d22,#1d1d22 7px,#18181c 7px,#18181c 14px);flex:none;"></div><div style="flex:1;"><div style="font-size:15px;font-weight:600;">Face Pull</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:3px;">3 × 15 · 20 KG</div></div><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+      </div>
+      <button style="all:unset;cursor:pointer;margin-top:auto;margin-bottom:24px;background:var(--accent,#E8835E);color:#231206;height:56px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;">Start workout <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></button>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R2 c2 — SESSION A (dark) ============ -->
+<div style="position:absolute;left:1040px;top:2028px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="10 · Session A" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">10 · Active session · A (dark)</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px 8px;flex:none;">
+      <div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#9a9893;">EXERCISE 1 / 5</span>
+      <div style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent,#E8835E);"></div>12:48</div>
+    </div>
+    <div style="margin:6px 22px 0;border-radius:22px;overflow:hidden;position:relative;height:284px;flex:none;background:#000;"><video src="uploads/Incline-Dumbell-Press.mp4" autoplay="" muted="" loop="" playsinline="" style="width:100%;height:100%;object-fit:cover;"></video></div>
+    <div style="padding:16px 24px 12px;flex:none;"><div style="font-size:23px;font-weight:600;letter-spacing:-.01em;">Incline Dumbbell Press</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;color:#8a8884;margin-top:5px;">CHEST · 3 SETS · 22 KG</div></div>
+    <div style="flex:1;background:#f4f2ed;color:#1b1b1d;border-radius:26px 26px 0 0;padding:20px 22px 0;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#8a8884;">SETS</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent,#E8835E);font-weight:500;">{{ doneLabel }}</span></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(0,0,0,.08);">
+        <button onClick="{{ toggle0 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ set0Done }}" hint-placeholder-val="{{ true }}"><div style="width:32px;height:32px;border-radius:10px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></sc-if><sc-if value="{{ set0Off }}" hint-placeholder-val="{{ false }}"><div style="width:32px;height:32px;border-radius:10px;border:1.7px solid rgba(0,0,0,.18);"></div></sc-if></button>
+        <div style="flex:1;"><div style="font-size:16px;font-weight:600;">Set 1</div><div style="font-size:12px;color:#8a8884;">Working set</div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;">22 kg</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8a8884;">10 reps</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(0,0,0,.08);">
+        <button onClick="{{ toggle1 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ set1Done }}" hint-placeholder-val="{{ false }}"><div style="width:32px;height:32px;border-radius:10px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></sc-if><sc-if value="{{ set1Off }}" hint-placeholder-val="{{ true }}"><div style="width:32px;height:32px;border-radius:10px;border:1.7px solid rgba(0,0,0,.18);"></div></sc-if></button>
+        <div style="flex:1;"><div style="font-size:16px;font-weight:600;">Set 2</div><div style="font-size:12px;color:#8a8884;">Working set</div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;">22 kg</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8a8884;">10 reps</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:15px 0;">
+        <button onClick="{{ toggle2 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ set2Done }}" hint-placeholder-val="{{ false }}"><div style="width:32px;height:32px;border-radius:10px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></sc-if><sc-if value="{{ set2Off }}" hint-placeholder-val="{{ true }}"><div style="width:32px;height:32px;border-radius:10px;border:1.7px solid rgba(0,0,0,.18);"></div></sc-if></button>
+        <div style="flex:1;"><div style="font-size:16px;font-weight:600;">Set 3</div><div style="font-size:12px;color:#8a8884;">Working set</div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;">22 kg</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8a8884;">10 reps</span>
+      </div>
+      <div style="margin-top:auto;display:flex;gap:11px;align-items:center;padding-bottom:26px;">
+        <div style="height:54px;padding:0 18px;border-radius:16px;background:rgba(0,0,0,.05);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#6f6d68;flex:none;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Rest 90s</div>
+        <button style="all:unset;cursor:pointer;flex:1;background:var(--accent,#E8835E);color:#231206;height:54px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;">Next exercise <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></button>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1b1b1d;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R2 c3 — SESSION B (light) ============ -->
+<div style="position:absolute;left:1520px;top:2028px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="11 · Session B" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">11 · Active session · B (light)</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#f3f1ec;color:#1a1a1c;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(0,0,0,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="position:relative;height:470px;flex:none;background:#000;">
+      <video src="uploads/Incline-Dumbell-Press.mp4" autoplay="" muted="" loop="" playsinline="" style="width:100%;height:100%;object-fit:cover;"></video>
+      <div style="position:absolute;top:16px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 22px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:#fff;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></div>
+        <div style="height:38px;padding:0 14px;border-radius:19px;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);display:flex;align-items:center;gap:7px;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent,#E8835E);"></div>12:48</div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:40px 22px 18px;background:linear-gradient(to top,rgba(0,0,0,.7),transparent);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:rgba(255,255,255,.75);">EXERCISE 1 / 5</div>
+        <div style="font-size:24px;font-weight:600;color:#fff;margin-top:5px;">Incline Dumbbell Press</div>
+      </div>
+    </div>
+    <div style="flex:1;padding:22px 24px 0;display:flex;flex-direction:column;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#8a8884;">CURRENT SET</div>
+      <div style="font-size:26px;font-weight:600;letter-spacing:-.01em;margin-top:5px;">Set 2 of 3</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#8a8884;margin-bottom:8px;">WEIGHT</div><div style="display:flex;align-items:center;justify-content:space-between;background:#fbfaf7;border:1px solid rgba(0,0,0,.07);border-radius:16px;padding:8px;"><div style="width:34px;height:34px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1a1a1c" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></div><div style="text-align:center;"><span style="font-size:24px;font-weight:600;">22</span><span style="font-size:12px;color:#8a8884;"> kg</span></div><div style="width:34px;height:34px;border-radius:10px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div></div></div>
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#8a8884;margin-bottom:8px;">REPS</div><div style="display:flex;align-items:center;justify-content:space-between;background:#fbfaf7;border:1px solid rgba(0,0,0,.07);border-radius:16px;padding:8px;"><div style="width:34px;height:34px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1a1a1c" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg></div><div style="text-align:center;"><span style="font-size:24px;font-weight:600;">10</span></div><div style="width:34px;height:34px;border-radius:10px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></div></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;margin-top:24px;"><div style="width:30px;height:8px;border-radius:4px;background:var(--accent,#E8835E);"></div><div style="width:30px;height:8px;border-radius:4px;background:var(--accent,#E8835E);opacity:.45;"></div><div style="width:30px;height:8px;border-radius:4px;background:rgba(0,0,0,.1);"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;margin-left:6px;">1 of 3 done</span></div>
+      <button style="all:unset;cursor:pointer;margin-top:auto;margin-bottom:26px;background:var(--accent,#E8835E);color:#231206;height:58px;border-radius:18px;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg> Complete set</button>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1a1a1c;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R3 c0 — SUPPLEMENTS ============ -->
+<div style="position:absolute;left:80px;top:2992px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="12 · Supplements" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">12 · Supplements</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="padding:10px 24px 0;flex:none;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">TUESDAY · 25 JUN</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Supplements</div><div style="font-size:14px;color:#9a9893;margin-top:6px;">2 of 3 taken today · <span style="color:#7FA98C;font-weight:600;">7-day streak</span></div></div>
+    <div style="flex:1;overflow:hidden;padding:22px 24px 0;display:flex;flex-direction:column;gap:12px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">MORNING</div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Vitamin D</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">1000 IU · 08:00</div></div><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);color:#231206;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Creatine</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">5 g · 08:00</div></div><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);color:#231206;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-top:6px;">EVENING</div>
+      <div style="background:#16161a;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);color:#9a9893;display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Magnesium</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">200 mg · 21:00</div></div><div style="width:30px;height:30px;border-radius:9px;border:1.7px solid rgba(255,255,255,.18);"></div></div>
+      <div style="border:1px dashed rgba(255,255,255,.14);border-radius:18px;padding:15px;display:flex;align-items:center;justify-content:center;gap:9px;color:#9a9893;font-size:14px;font-weight:500;margin-top:2px;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg> Add supplement</div>
+    </div>
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);">
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"></path><path d="M5 9v11h14V9"></path><path d="M9.5 20v-6h5v6"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"></path><path d="M6 11v10"></path><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></a>
+      <a style="color:var(--accent,#E8835E);text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg></a>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R3 c1 — PROFILE ============ -->
+<div style="position:absolute;left:560px;top:2992px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="13 · Profile" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">13 · Profile</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="display:flex;justify-content:flex-end;padding:6px 24px 0;flex:none;"><div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"></path><path d="M4 10V3"></path><path d="M12 21v-9"></path><path d="M12 8V3"></path><path d="M20 21v-5"></path><path d="M20 12V3"></path><path d="M2 14h4"></path><path d="M10 8h4"></path><path d="M18 16h4"></path></svg></div></div>
+    <div style="flex:1;overflow:hidden;padding:8px 24px 0;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:16px;"><div style="width:66px;height:66px;border-radius:50%;background:repeating-linear-gradient(45deg,#222228,#222228 7px,#1b1b20 7px,#1b1b20 14px);flex:none;"></div><div><div style="font-size:23px;font-weight:600;">Alex Morgan</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;color:#6e6c67;margin-top:4px;">MEMBER SINCE 2024</div></div></div>
+      <div style="display:flex;gap:11px;margin-top:22px;">
+        <div style="flex:1;background:#16161a;border-radius:16px;padding:15px;text-align:center;"><div style="font-size:22px;font-weight:600;">128</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:#6e6c67;margin-top:4px;">WORKOUTS</div></div>
+        <div style="flex:1;background:#16161a;border-radius:16px;padding:15px;text-align:center;"><div style="font-size:22px;font-weight:600;">12</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:#6e6c67;margin-top:4px;">DAY STREAK</div></div>
+        <div style="flex:1;background:#16161a;border-radius:16px;padding:15px;text-align:center;"><div style="font-size:22px;font-weight:600;color:#7FA98C;">−4.2</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:#6e6c67;margin-top:4px;">KG · 90D</div></div>
+      </div>
+      <div style="margin-top:26px;background:#16161a;border-radius:18px;padding:4px 18px;">
+        <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.06);"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg><span style="flex:1;font-size:15px;">Goals &amp; baseline</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.06);"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg><span style="flex:1;font-size:15px;">Units</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">kg / cm</span></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.06);"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M9 9h6v6H9z"></path></svg><span style="flex:1;font-size:15px;">Connected apps</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.06);"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"></path></svg><span style="flex:1;font-size:15px;">Reminders &amp; alerts</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:15px 0;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"></path><path d="M12 17h.01"></path></svg><span style="flex:1;font-size:15px;">Help &amp; support</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6e6c67" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div>
+      </div>
+      <div style="margin-top:auto;margin-bottom:22px;text-align:center;font-size:15px;font-weight:600;color:var(--accent,#E8835E);">Sign out</div>
+    </div>
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);">
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"></path><path d="M5 9v11h14V9"></path><path d="M9.5 20v-6h5v6"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"></path><path d="M6 11v10"></path><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 7-7"></path><path d="m14 21 7-7"></path></svg></a>
+      <a style="color:#5e5c58;text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg></a>
+      <a style="color:var(--accent,#E8835E);text-decoration:none;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg></a>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+
+<!-- ============ R3 c2 — NOTIFICATIONS ============ -->
+<div style="position:absolute;left:1040px;top:2992px;width:390px;">
+  <div data-drags-parent="1" data-screen-label="14 · Notifications" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d7b76;margin:0 0 13px 4px;">14 · Notifications &amp; settings</div>
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);font-family:'Hanken Grotesk',sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:8px 24px 6px;flex:none;"><div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></div><span style="font-size:19px;font-weight:600;">Notifications</span></div>
+    <div style="flex:1;overflow:hidden;padding:14px 24px 0;display:flex;flex-direction:column;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-bottom:6px;">REMINDERS</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Meal logging</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">A gentle nudge at meal times</div></div><div style="width:46px;height:28px;border-radius:14px;background:var(--accent,#E8835E);position:relative;flex:none;"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Supplement times</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">Morning &amp; evening</div></div><div style="width:46px;height:28px;border-radius:14px;background:var(--accent,#E8835E);position:relative;flex:none;"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Workout reminders</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">On your training days</div></div><div style="width:46px;height:28px;border-radius:14px;background:var(--accent,#E8835E);position:relative;flex:none;"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Weigh-in</div><div style="font-size:12px;color:#8a8884;margin-top:2px;">Weekly, Sunday morning</div></div><div style="width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.12);position:relative;flex:none;"><div style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#8a8884;"></div></div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin:18px 0 6px;">UPDATES</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Streak milestones</div></div><div style="width:46px;height:28px;border-radius:14px;background:var(--accent,#E8835E);position:relative;flex:none;"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Weekly summary</div></div><div style="width:46px;height:28px;border-radius:14px;background:var(--accent,#E8835E);position:relative;flex:none;"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;"><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Tips &amp; ideas</div></div><div style="width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.12);position:relative;flex:none;"><div style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#8a8884;"></div></div></div>
+      <div style="margin-top:14px;background:#16161a;border-radius:16px;padding:15px 16px;display:flex;align-items:center;gap:12px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg><div style="flex:1;"><div style="font-size:15px;font-weight:500;">Quiet hours</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">22:00 – 07:00</span></div>
+    </div>
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#E8835E&quot;,&quot;options&quot;:[&quot;#E8835E&quot;,&quot;#E0A458&quot;,&quot;#7FA98C&quot;,&quot;#7B93B8&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { done: [true, false, false] };
+  componentDidMount() { this.applyAccent(); }
+  componentDidUpdate(prev) { if (prev.accent !== this.props.accent) this.applyAccent(); }
+  applyAccent() {
+    document.documentElement.style.setProperty('--accent', this.props.accent || '#E8835E');
+  }
+  toggle(i) {
+    this.setState(s => { const d = s.done.slice(); d[i] = !d[i]; return { done: d }; });
+  }
+  renderVals() {
+    const d = this.state.done;
+    const n = d.filter(Boolean).length;
+    return {
+      set0Done: d[0], set0Off: !d[0],
+      set1Done: d[1], set1Off: !d[1],
+      set2Done: d[2], set2Off: !d[2],
+      doneLabel: n + ' of 3 done',
+      toggle0: () => this.toggle(0),
+      toggle1: () => this.toggle(1),
+      toggle2: () => this.toggle(2),
+    };
+  }
+}
+</script>
+</body>
+</html>

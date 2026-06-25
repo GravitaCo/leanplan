@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#1b1b1d;}
+  ::-webkit-scrollbar{display:none;}
+  input::placeholder{color:#6e6c67;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;font-family:'Hanken Grotesk',sans-serif;">
+<div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:#0c0c0e;color:#f2f0ed;box-shadow:0 14px 44px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.05);">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 28px 4px;font-size:14px;font-weight:600;flex:none;"><span>9:41</span><div style="display:flex;gap:7px;align-items:center;opacity:.9;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;">5G</span><div style="width:25px;height:12px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85;"><div style="position:absolute;top:2px;left:2px;bottom:2px;right:6px;background:currentColor;border-radius:1px;"></div></div></div></div>
+
+  <!-- ============================ HOME ============================ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="Today · home" style="flex:1;min-height:0;overflow-y:auto;padding:10px 24px 0;display:flex;flex-direction:column;gap:13px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex:none;">
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">WEDNESDAY · 25 JUN</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Good morning, Alex</div></div>
+      <div style="width:42px;height:42px;border-radius:50%;background:repeating-linear-gradient(45deg,#222228,#222228 6px,#1b1b20 6px,#1b1b20 12px);flex:none;"></div>
+    </div>
+
+    <!-- WEEK STRIP -->
+    <div style="background:#16161a;border-radius:20px;padding:16px 14px 15px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;margin:0 0 14px 2px;">THIS WEEK</div>
+      <div style="display:flex;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">M</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(232,131,94,.18);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><span style="font-size:11px;color:#6e6c67;">Push</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">T</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(232,131,94,.18);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><span style="font-size:11px;color:#6e6c67;">Pull</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent,#E8835E);">W</span><div style="width:34px;height:34px;border-radius:12px;background:var(--accent,#E8835E);color:#231206;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">25</div><span style="font-size:11px;color:#f2f0ed;font-weight:600;">Legs</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">T</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#6e6c67;font-size:13px;font-weight:600;">26</div><span style="font-size:11px;color:#6e6c67;">Rest</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">F</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#9a9893;font-size:13px;font-weight:600;">27</div><span style="font-size:11px;color:#9a9893;">Push</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">S</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#9a9893;font-size:13px;font-weight:600;">28</div><span style="font-size:11px;color:#9a9893;">Pull</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6e6c67;">S</span><div style="width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#6e6c67;font-size:13px;font-weight:600;">29</div><span style="font-size:11px;color:#6e6c67;">Rest</span></div>
+      </div>
+    </div>
+
+    <!-- TODAY'S WORKOUT -->
+    <div style="background:#f4f2ed;color:#1b1b1d;border-radius:24px;padding:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#8a8884;">TODAY'S WORKOUT</span>
+        <div style="width:38px;height:38px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
+      </div>
+      <div style="font-size:25px;font-weight:600;margin-top:9px;letter-spacing:-.02em;">Leg day</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;color:#8a8884;margin-top:5px;">5 EXERCISES · ~50 MIN</div>
+      <div style="font-size:14px;color:#6f6d68;margin-top:12px;line-height:1.5;text-wrap:pretty;">Back Squat · Romanian Deadlift · Leg Press <span style="color:#a8a6a0;">+2 more</span></div>
+      <button onClick="{{ startWorkout }}" style="all:unset;cursor:pointer;box-sizing:border-box;margin-top:16px;width:100%;background:var(--accent,#E8835E);color:#231206;height:54px;border-radius:16px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#231206"><path d="M6 4l14 8-14 8z"/></svg> Start workout</button>
+    </div>
+
+    <!-- ENERGY -->
+    <div onClick="{{ navFood }}" style="background:#16161a;border-radius:20px;padding:18px 18px 16px;cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">ENERGY LEFT</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">{{ kcal }} / {{ goal }} kcal</span></div>
+      <div style="font-size:40px;font-weight:600;letter-spacing:-.02em;margin-top:4px;">{{ remaining }}<span style="font-size:15px;color:#8a8884;font-weight:500;"> kcal left</span></div>
+      <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:13px;overflow:hidden;">{{ kcalBar }}</div>
+    </div>
+
+    <!-- SUPPLEMENTS + WEIGHT -->
+    <div style="display:flex;gap:13px;padding-bottom:16px;">
+      <div onClick="{{ openSupps }}" style="flex:1;background:#16161a;border-radius:18px;padding:16px;cursor:pointer;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">SUPPLEMENTS</div><div style="font-size:18px;font-weight:600;margin-top:8px;">{{ suppShort }}</div><div style="display:flex;gap:5px;margin-top:10px;">
+        <sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}"><div style="width:16px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div></sc-if><sc-if value="{{ s0off }}" hint-placeholder-val="{{ false }}"><div style="width:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);"></div></sc-if>
+        <sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}"><div style="width:16px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div></sc-if><sc-if value="{{ s1off }}" hint-placeholder-val="{{ false }}"><div style="width:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);"></div></sc-if>
+        <sc-if value="{{ s2 }}" hint-placeholder-val="{{ true }}"><div style="width:16px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div></sc-if><sc-if value="{{ s2off }}" hint-placeholder-val="{{ false }}"><div style="width:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);"></div></sc-if>
+        <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}"><div style="width:16px;height:5px;border-radius:3px;background:var(--accent,#E8835E);"></div></sc-if><sc-if value="{{ s3off }}" hint-placeholder-val="{{ true }}"><div style="width:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);"></div></sc-if>
+      </div></div>
+      <div style="flex:1;background:#16161a;border-radius:18px;padding:16px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">WEIGHT</div><div style="font-size:18px;font-weight:600;margin-top:8px;">74.2 kg</div><div style="font-size:12px;color:#7FA98C;margin-top:8px;font-weight:600;">Steady this week</div></div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- ============================ FOOD ============================ -->
+  <sc-if value="{{ isFood }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Food log" style="flex:1;min-height:0;overflow-y:auto;padding:10px 24px 0;display:flex;flex-direction:column;gap:13px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex:none;"><div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;">WEDNESDAY · 25 JUN</div><div style="font-size:26px;font-weight:600;margin-top:5px;letter-spacing:-.02em;">Food</div></div></div>
+
+    <!-- summary -->
+    <div style="background:#f4f2ed;color:#1b1b1d;border-radius:24px;padding:20px;">
+      <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:38px;font-weight:600;letter-spacing:-.02em;">{{ kcal }}</span><span style="font-size:15px;color:#8a8884;">/ {{ goal }} kcal</span></div>
+      <div style="height:7px;border-radius:4px;background:rgba(0,0,0,.08);margin-top:12px;overflow:hidden;">{{ kcalBar }}</div>
+      <div style="display:flex;gap:16px;margin-top:16px;">
+        <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Protein</span><span style="font-weight:600;">{{ pVal }}/{{ pGoal }}g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;overflow:hidden;">{{ pBar }}</div></div>
+        <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Carbs</span><span style="font-weight:600;">{{ cVal }}/{{ cGoal }}g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;overflow:hidden;">{{ cBar }}</div></div>
+        <div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#6f6d68;">Fat</span><span style="font-weight:600;">{{ fVal }}/{{ fGoal }}g</span></div><div style="height:4px;border-radius:2px;background:rgba(0,0,0,.08);margin-top:7px;overflow:hidden;">{{ fBar }}</div></div>
+      </div>
+    </div>
+
+    <!-- BREAKFAST -->
+    <div style="background:#16161a;border-radius:18px;padding:15px 16px 7px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">BREAKFAST</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">{{ bKcal }} kcal</span></div>
+      <sc-for list="{{ breakfastItems }}" as="item" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><span style="font-size:14px;">{{ item.name }}</span><div style="display:flex;align-items:center;gap:13px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">{{ item.kcal }}</span><button onClick="{{ item.onRemove }}" style="all:unset;cursor:pointer;color:#5e5c58;display:flex;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+      </sc-for>
+      <button onClick="{{ addBreakfast }}" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:7px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;padding:13px 0 11px;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add food</button>
+    </div>
+
+    <!-- LUNCH -->
+    <div style="background:#16161a;border-radius:18px;padding:15px 16px 7px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">LUNCH</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">{{ lKcal }} kcal</span></div>
+      <sc-for list="{{ lunchItems }}" as="item" hint-placeholder-count="1">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><span style="font-size:14px;">{{ item.name }}</span><div style="display:flex;align-items:center;gap:13px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">{{ item.kcal }}</span><button onClick="{{ item.onRemove }}" style="all:unset;cursor:pointer;color:#5e5c58;display:flex;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+      </sc-for>
+      <button onClick="{{ addLunch }}" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:7px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;padding:13px 0 11px;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add food</button>
+    </div>
+
+    <!-- SNACK -->
+    <div style="background:#16161a;border-radius:18px;padding:15px 16px 7px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">SNACK</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">{{ sKcal }} kcal</span></div>
+      <sc-for list="{{ snackItems }}" as="item" hint-placeholder-count="0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><span style="font-size:14px;">{{ item.name }}</span><div style="display:flex;align-items:center;gap:13px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">{{ item.kcal }}</span><button onClick="{{ item.onRemove }}" style="all:unset;cursor:pointer;color:#5e5c58;display:flex;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+      </sc-for>
+      <button onClick="{{ addSnack }}" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:7px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;padding:13px 0 11px;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add food</button>
+    </div>
+
+    <!-- DINNER -->
+    <div style="background:#16161a;border-radius:18px;padding:15px 16px 7px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#9a9893;">DINNER</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;">{{ dKcal }} kcal</span></div>
+      <sc-for list="{{ dinnerItems }}" as="item" hint-placeholder-count="0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><span style="font-size:14px;">{{ item.name }}</span><div style="display:flex;align-items:center;gap:13px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">{{ item.kcal }}</span><button onClick="{{ item.onRemove }}" style="all:unset;cursor:pointer;color:#5e5c58;display:flex;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+      </sc-for>
+      <button onClick="{{ addDinner }}" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:7px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;padding:13px 0 11px;border-top:1px solid rgba(255,255,255,.06);margin-top:11px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add food</button>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- ============================ NAV ============================ -->
+  <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 26px;border-top:1px solid rgba(255,255,255,.07);background:#0c0c0e;">
+    <button onClick="{{ navHome }}" style="all:unset;cursor:pointer;display:flex;color:{{ homeColor }};"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 3l9 7.2"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/></svg></button>
+    <button onClick="{{ navFood }}" style="all:unset;cursor:pointer;display:flex;color:{{ foodColor }};"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6a2 2 0 0 0 4 0V3"/><path d="M6 11v10"/><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"/></svg></button>
+    <button onClick="{{ navOther }}" style="all:unset;cursor:pointer;display:flex;color:#5e5c58;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></button>
+    <button onClick="{{ navOther }}" style="all:unset;cursor:pointer;display:flex;color:#5e5c58;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></button>
+    <button onClick="{{ navOther }}" style="all:unset;cursor:pointer;display:flex;color:#5e5c58;"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></button>
+  </div>
+
+  <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:currentColor;opacity:.22;z-index:90;"></div>
+
+  <!-- ============================ TOAST ============================ -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;bottom:104px;left:50%;transform:translateX(-50%);z-index:120;background:#f4f2ed;color:#1b1b1d;padding:11px 20px;border-radius:14px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.4);white-space:nowrap;">{{ toast }}</div>
+  </sc-if>
+
+  <!-- ============================ SHEET ============================ -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:100;">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55);"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:90%;background:#0c0c0e;border-radius:28px 28px 0 0;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:center;padding-top:10px;flex:none;"><div style="width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.16);"></div></div>
+
+      <!-- ADD -->
+      <sc-if value="{{ sheetAdd }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 8px;flex:none;">
+          <span style="font-size:20px;font-weight:600;">{{ sheetTitle }}</span>
+          <button onClick="{{ closeSheet }}" style="all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#9a9893;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div style="padding:4px 22px 14px;flex:none;">
+          <div style="display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:13px;padding:4px;">
+            <sc-if value="{{ tabFoods }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ setFoods }}" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13.5px;background:var(--accent,#E8835E);color:#231206;font-weight:600;">Foods</button>
+              <button onClick="{{ setMeals }}" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13.5px;background:transparent;color:#9a9893;font-weight:500;">Meals</button>
+            </sc-if>
+            <sc-if value="{{ tabMeals }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ setFoods }}" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13.5px;background:transparent;color:#9a9893;font-weight:500;">Foods</button>
+              <button onClick="{{ setMeals }}" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13.5px;background:var(--accent,#E8835E);color:#231206;font-weight:600;">Meals</button>
+            </sc-if>
+          </div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:0 22px 24px;">
+
+          <sc-if value="{{ tabFoods }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative;margin-bottom:12px;">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#6e6c67" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:15px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input value="{{ search }}" onChange="{{ onSearch }}" placeholder="Search foods" style="width:100%;box-sizing:border-box;border:none;border-radius:14px;background:#16161a;padding:13px 14px 13px 42px;font-size:15px;font-family:inherit;color:#f2f0ed;outline:none;">
+            </div>
+            <button onClick="{{ openCustom }}" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--accent,#E8835E);font-size:14px;font-weight:600;padding:4px 2px 8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add a custom food</button>
+            <sc-if value="{{ customOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#16161a;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+                <input value="{{ customName }}" onChange="{{ onCustomName }}" placeholder="Food name" style="width:100%;box-sizing:border-box;border:none;border-bottom:1.5px solid rgba(255,255,255,.12);background:transparent;padding:8px 2px;font-size:15px;font-family:inherit;color:#f2f0ed;outline:none;">
+                <div style="display:flex;gap:10px;">
+                  <input value="{{ customKcal }}" onChange="{{ onCustomKcal }}" inputmode="numeric" placeholder="Calories" style="flex:1;box-sizing:border-box;border:none;border-bottom:1.5px solid rgba(255,255,255,.12);background:transparent;padding:8px 2px;font-size:15px;font-family:inherit;color:#f2f0ed;outline:none;">
+                  <button onClick="{{ saveCustom }}" style="all:unset;cursor:pointer;background:var(--accent,#E8835E);color:#231206;padding:0 20px;height:42px;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;">Add</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin:14px 0 10px;">RECENT</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <sc-for list="{{ recentRows }}" as="item" hint-placeholder-count="4">
+                <button onClick="{{ item.onAdd }}" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:7px;background:#16161a;border-radius:11px;padding:9px 13px;font-size:13.5px;color:#f2f0ed;">{{ item.name }} <span style="color:#8a8884;font-family:'IBM Plex Mono',monospace;font-size:11px;">{{ item.kcal }}</span></button>
+              </sc-for>
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin:18px 0 10px;">ALL FOODS</div>
+            <div style="background:#16161a;border-radius:16px;padding:0 14px;">
+              <sc-for list="{{ foodRows }}" as="item" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-top:1px solid rgba(255,255,255,.06);"><div><div style="font-size:15px;">{{ item.name }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;margin-top:2px;">{{ item.kcal }} kcal</div></div><button onClick="{{ item.onAdd }}" style="all:unset;cursor:pointer;width:32px;height:32px;border-radius:10px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ tabMeals }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ openBuilder }}" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;margin:4px 0 16px;background:var(--accent,#E8835E);color:#231206;height:48px;border-radius:14px;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Create a meal</button>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin-bottom:10px;">YOUR MEALS</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ mealRows }}" as="item" hint-placeholder-count="3">
+                <div style="background:#16161a;border-radius:16px;padding:15px 16px;display:flex;align-items:center;gap:13px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18l-1.5 8.5a2 2 0 0 1-2 1.5h-11a2 2 0 0 1-2-1.5Z"/><path d="M7 11a5 5 0 0 1 10 0"/></svg></div><div style="flex:1;"><div style="font-size:15px;font-weight:600;">{{ item.name }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;margin-top:3px;">{{ item.meta }}</div></div><button onClick="{{ item.onAdd }}" style="all:unset;cursor:pointer;width:34px;height:34px;border-radius:11px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- BUILDER -->
+      <sc-if value="{{ sheetBuilder }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 22px 10px;flex:none;">
+          <button onClick="{{ backToAdd }}" style="all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#9a9893;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+          <span style="font-size:20px;font-weight:600;">New meal</span>
+          <button onClick="{{ closeSheet }}" style="all:unset;cursor:pointer;margin-left:auto;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#9a9893;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:0 22px 14px;">
+          <input value="{{ draftName }}" onChange="{{ onDraftName }}" placeholder="Meal name" style="width:100%;box-sizing:border-box;border:none;border-bottom:1.5px solid rgba(255,255,255,.14);background:transparent;padding:10px 2px;font-size:18px;font-weight:600;font-family:inherit;color:#f2f0ed;outline:none;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin:18px 0 8px;">INGREDIENTS</div>
+          <sc-if value="{{ draftEmpty }}" hint-placeholder-val="{{ true }}">
+            <div style="color:#6e6c67;font-size:14px;padding:4px 2px;">No foods yet — add some below.</div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;">
+            <sc-for list="{{ draftItems }}" as="item" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-size:15px;">{{ item.name }}</span><div style="display:flex;align-items:center;gap:13px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8884;">{{ item.kcal }}</span><button onClick="{{ item.onRemove }}" style="all:unset;cursor:pointer;color:#5e5c58;display:flex;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+            </sc-for>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6e6c67;margin:18px 0 8px;">ADD FOODS</div>
+          <div style="background:#16161a;border-radius:16px;padding:0 14px;">
+            <sc-for list="{{ builderFoodRows }}" as="item" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-top:1px solid rgba(255,255,255,.06);"><div><div style="font-size:15px;">{{ item.name }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8884;margin-top:2px;">{{ item.kcal }} kcal</div></div><button onClick="{{ item.onAdd }}" style="all:unset;cursor:pointer;width:32px;height:32px;border-radius:10px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:none;padding:14px 22px 24px;border-top:1px solid rgba(255,255,255,.07);background:#0c0c0e;display:flex;align-items:center;gap:14px;">
+          <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#6e6c67;">TOTAL</div><div style="font-size:22px;font-weight:600;margin-top:2px;">{{ draftKcal }}<span style="font-size:13px;color:#8a8884;font-weight:500;"> kcal</span></div></div>
+          <button onClick="{{ saveMeal }}" style="all:unset;cursor:pointer;margin-left:auto;background:var(--accent,#E8835E);color:#231206;height:50px;padding:0 26px;border-radius:15px;font-size:16px;font-weight:600;display:flex;align-items:center;">Save meal</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- SUPPLEMENTS -->
+      <sc-if value="{{ sheetSupps }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 4px;flex:none;">
+          <span style="font-size:20px;font-weight:600;">Supplements</span>
+          <button onClick="{{ closeSheet }}" style="all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#9a9893;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div style="padding:0 22px 4px;flex:none;font-size:14px;color:#9a9893;">{{ suppLabel }} today</div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 22px 24px;display:flex;flex-direction:column;gap:10px;">
+          <div style="background:#16161a;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Vitamin D</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">1000 IU · 08:00</div></div><button onClick="{{ toggle0 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}"><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></sc-if><sc-if value="{{ s0off }}" hint-placeholder-val="{{ false }}"><div style="width:30px;height:30px;border-radius:9px;border:1.7px solid rgba(255,255,255,.18);"></div></sc-if></button></div>
+          <div style="background:#16161a;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Creatine</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">5 g · 08:00</div></div><button onClick="{{ toggle1 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}"><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></sc-if><sc-if value="{{ s1off }}" hint-placeholder-val="{{ false }}"><div style="width:30px;height:30px;border-radius:9px;border:1.7px solid rgba(255,255,255,.18);"></div></sc-if></button></div>
+          <div style="background:#16161a;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(232,131,94,.15);color:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Omega-3</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">1000 mg · 13:00</div></div><button onClick="{{ toggle2 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ s2 }}" hint-placeholder-val="{{ true }}"><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></sc-if><sc-if value="{{ s2off }}" hint-placeholder-val="{{ false }}"><div style="width:30px;height:30px;border-radius:9px;border:1.7px solid rgba(255,255,255,.18);"></div></sc-if></button></div>
+          <div style="background:#16161a;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);color:#9a9893;display:flex;align-items:center;justify-content:center;flex:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div><div style="flex:1;"><div style="font-size:16px;font-weight:600;">Magnesium</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8884;margin-top:2px;">200 mg · 21:00</div></div><button onClick="{{ toggle3 }}" style="all:unset;cursor:pointer;flex:none;"><sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}"><div style="width:30px;height:30px;border-radius:9px;background:var(--accent,#E8835E);display:flex;align-items:center;justify-content:center;color:#231206;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></sc-if><sc-if value="{{ s3off }}" hint-placeholder-val="{{ true }}"><div style="width:30px;height:30px;border-radius:9px;border:1.7px solid rgba(255,255,255,.18);"></div></sc-if></button></div>
+          <div style="border:1px dashed rgba(255,255,255,.14);border-radius:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:9px;color:#9a9893;font-size:14px;font-weight:500;margin-top:2px;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add supplement</div>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:446,&quot;height&quot;:900},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#E8835E&quot;,&quot;options&quot;:[&quot;#E8835E&quot;,&quot;#E0A458&quot;,&quot;#7FA98C&quot;,&quot;#7B93B8&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;goal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2200,&quot;min&quot;:1200,&quot;max&quot;:4000,&quot;step&quot;:50,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  FOODS = [
+    { name: 'Greek yogurt', kcal: 120, p: 17, c: 7, f: 0 },
+    { name: 'Granola', kcal: 205, p: 5, c: 32, f: 7 },
+    { name: 'Banana', kcal: 90, p: 1, c: 23, f: 0 },
+    { name: 'Chicken breast', kcal: 270, p: 50, c: 0, f: 6 },
+    { name: 'Brown rice', kcal: 195, p: 4, c: 41, f: 2 },
+    { name: 'Avocado', kcal: 120, p: 1, c: 6, f: 11 },
+    { name: 'Eggs (2)', kcal: 140, p: 12, c: 1, f: 10 },
+    { name: 'Salmon fillet', kcal: 280, p: 34, c: 0, f: 16 },
+    { name: 'Almonds (30g)', kcal: 175, p: 6, c: 6, f: 15 },
+    { name: 'Apple', kcal: 80, p: 0, c: 21, f: 0 },
+    { name: 'Protein shake', kcal: 160, p: 30, c: 5, f: 2 },
+    { name: 'Oatmeal', kcal: 190, p: 6, c: 33, f: 4 },
+    { name: 'Mixed greens', kcal: 25, p: 2, c: 4, f: 0 },
+    { name: 'Sweet potato', kcal: 130, p: 2, c: 30, f: 0 },
+    { name: 'Cottage cheese', kcal: 110, p: 13, c: 4, f: 4 },
+  ];
+
+  state = {
+    page: 'home',
+    log: {
+      breakfast: [
+        { name: 'Greek yogurt & berries', kcal: 220, p: 18, c: 30, f: 4 },
+        { name: 'Granola', kcal: 205, p: 5, c: 32, f: 7 },
+      ],
+      lunch: [{ name: 'Chicken & quinoa bowl', kcal: 540, p: 45, c: 55, f: 15 }],
+      snack: [],
+      dinner: [],
+    },
+    supps: [true, true, true, false],
+    meals: [
+      { name: 'High-protein lunch', kcal: 610, items: [
+        { name: 'Chicken breast', kcal: 270, p: 50, c: 0, f: 6 },
+        { name: 'Brown rice', kcal: 195, p: 4, c: 41, f: 2 },
+        { name: 'Avocado', kcal: 120, p: 1, c: 6, f: 11 },
+        { name: 'Mixed greens', kcal: 25, p: 2, c: 4, f: 0 },
+      ] },
+      { name: 'Oats & yogurt', kcal: 400, items: [
+        { name: 'Oatmeal', kcal: 190, p: 6, c: 33, f: 4 },
+        { name: 'Banana', kcal: 90, p: 1, c: 23, f: 0 },
+        { name: 'Greek yogurt', kcal: 120, p: 17, c: 7, f: 0 },
+      ] },
+      { name: 'Salmon dinner', kcal: 435, items: [
+        { name: 'Salmon fillet', kcal: 280, p: 34, c: 0, f: 16 },
+        { name: 'Sweet potato', kcal: 130, p: 2, c: 30, f: 0 },
+        { name: 'Mixed greens', kcal: 25, p: 2, c: 4, f: 0 },
+      ] },
+    ],
+    sheet: null,
+    sheetSection: 'breakfast',
+    sheetTab: 'foods',
+    search: '',
+    builderOpen: false,
+    draft: { name: '', items: [] },
+    customOpen: false,
+    custom: { name: '', kcal: '' },
+    toast: null,
+  };
+
+  componentDidMount() { this.applyAccent(); }
+  componentDidUpdate(prev) { if (prev.accent !== this.props.accent) this.applyAccent(); }
+  applyAccent() { document.documentElement.style.setProperty('--accent', this.props.accent || '#E8835E'); }
+
+  cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  go(p) { this.setState({ page: p }); }
+  showToast(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 1800); }
+
+  toggleSupp(i) { this.setState(s => { const a = s.supps.slice(); a[i] = !a[i]; return { supps: a }; }); }
+
+  openAdd(section) { this.setState({ sheet: 'add', sheetSection: section, sheetTab: 'foods', search: '', builderOpen: false, customOpen: false, custom: { name: '', kcal: '' } }); }
+  openSheet(t) { this.setState({ sheet: t }); }
+  closeSheet() { this.setState({ sheet: null, builderOpen: false, search: '', customOpen: false, custom: { name: '', kcal: '' }, draft: { name: '', items: [] } }); }
+  setTab(t) { this.setState({ sheetTab: t, search: '' }); }
+
+  logFood(fd) {
+    this.setState(s => { const log = { ...s.log }; log[s.sheetSection] = [...log[s.sheetSection], { name: fd.name, kcal: fd.kcal, p: fd.p || 0, c: fd.c || 0, f: fd.f || 0 }]; return { log }; });
+    this.showToast(fd.name + ' added');
+  }
+  removeItem(section, i) { this.setState(s => { const log = { ...s.log }; const arr = log[section].slice(); arr.splice(i, 1); log[section] = arr; return { log }; }); }
+
+  saveCustom() {
+    const c = this.state.custom; const kcal = parseInt(c.kcal, 10);
+    if (!c.name.trim() || !kcal) { this.showToast('Enter a name & calories'); return; }
+    this.logFood({ name: c.name.trim(), kcal });
+    this.setState({ custom: { name: '', kcal: '' }, customOpen: false });
+  }
+
+  addMeal(m) {
+    this.setState(s => { const log = { ...s.log }; log[s.sheetSection] = [...log[s.sheetSection], ...m.items.map(it => ({ ...it }))]; return { log }; });
+    this.showToast(m.name + ' added');
+  }
+
+  openBuilder() { this.setState({ builderOpen: true, draft: { name: '', items: [] }, search: '' }); }
+  addToDraft(fd) { this.setState(s => ({ draft: { ...s.draft, items: [...s.draft.items, { name: fd.name, kcal: fd.kcal, p: fd.p, c: fd.c, f: fd.f }] } })); }
+  removeFromDraft(i) { this.setState(s => { const items = s.draft.items.slice(); items.splice(i, 1); return { draft: { ...s.draft, items } }; }); }
+  saveMeal() {
+    const d = this.state.draft;
+    if (!d.name.trim() || d.items.length === 0) { this.showToast('Name it & add foods'); return; }
+    const kcal = d.items.reduce((a, b) => a + b.kcal, 0);
+    const meal = { name: d.name.trim(), kcal, items: d.items.map(it => ({ ...it })) };
+    this.setState(s => { const log = { ...s.log }; log[s.sheetSection] = [...log[s.sheetSection], ...meal.items.map(it => ({ ...it }))]; return { meals: [meal, ...s.meals], log, builderOpen: false, draft: { name: '', items: [] } }; });
+    this.showToast('Meal saved & added');
+  }
+
+  renderVals() {
+    const S = this.state;
+    const accent = this.props.accent || '#E8835E';
+    const log = S.log;
+    const all = [...log.breakfast, ...log.lunch, ...log.snack, ...log.dinner];
+    const sum = (arr, k) => arr.reduce((a, b) => a + (b[k] || 0), 0);
+    const kcal = sum(all, 'kcal');
+    const goal = this.props.goal ?? 2200;
+    const pVal = sum(all, 'p'), cVal = sum(all, 'c'), fVal = sum(all, 'f');
+    const pGoal = 130, cGoal = 240, fGoal = 70;
+    const pct = (v, g) => Math.min(100, Math.round((v / g) * 100)) + '%';
+    const fill = (w, color) => React.createElement('div', { style: { width: w, height: '100%', borderRadius: 'inherit', background: color, transition: 'width .35s ease' } });
+
+    const mk = (section) => log[section].map((it, i) => ({ ...it, onRemove: () => this.removeItem(section, i) }));
+
+    const q = S.search.trim().toLowerCase();
+    const match = (fd) => !q || fd.name.toLowerCase().includes(q);
+    const foodRows = this.FOODS.filter(match).map(fd => ({ ...fd, onAdd: () => this.logFood(fd) }));
+    const recentRows = [this.FOODS[10], this.FOODS[2], this.FOODS[6], this.FOODS[0]].map(fd => ({ ...fd, onAdd: () => this.logFood(fd) }));
+    const builderFoodRows = this.FOODS.map(fd => ({ ...fd, onAdd: () => this.addToDraft(fd) }));
+    const mealRows = S.meals.map(m => ({ name: m.name, meta: m.items.length + ' items · ' + m.kcal + ' kcal', onAdd: () => this.addMeal(m) }));
+    const draftItems = S.draft.items.map((it, i) => ({ ...it, onRemove: () => this.removeFromDraft(i) }));
+
+    const sp = S.supps;
+    const taken = sp.filter(Boolean).length;
+
+    return {
+      isHome: S.page === 'home', isFood: S.page === 'food',
+      navHome: () => this.go('home'), navFood: () => this.go('food'), navOther: () => this.showToast('Not in this prototype'),
+      homeColor: S.page === 'home' ? accent : '#5e5c58',
+      foodColor: S.page === 'food' ? accent : '#5e5c58',
+      startWorkout: () => this.showToast('Workout started — Leg day'),
+
+      kcal, goal, remaining: Math.max(0, goal - kcal),
+      kcalBar: fill(pct(kcal, goal), accent),
+      pVal, cVal, fVal, pGoal, cGoal, fGoal,
+      pBar: fill(pct(pVal, pGoal), '#1b1b1d'), cBar: fill(pct(cVal, cGoal), '#1b1b1d'), fBar: fill(pct(fVal, fGoal), '#1b1b1d'),
+
+      breakfastItems: mk('breakfast'), lunchItems: mk('lunch'), snackItems: mk('snack'), dinnerItems: mk('dinner'),
+      bKcal: sum(log.breakfast, 'kcal'), lKcal: sum(log.lunch, 'kcal'), sKcal: sum(log.snack, 'kcal'), dKcal: sum(log.dinner, 'kcal'),
+      addBreakfast: () => this.openAdd('breakfast'), addLunch: () => this.openAdd('lunch'), addSnack: () => this.openAdd('snack'), addDinner: () => this.openAdd('dinner'),
+
+      suppLabel: taken + ' of ' + sp.length + ' taken',
+      suppShort: taken + ' of ' + sp.length,
+      openSupps: () => this.openSheet('supps'),
+      s0: sp[0], s0off: !sp[0], s1: sp[1], s1off: !sp[1], s2: sp[2], s2off: !sp[2], s3: sp[3], s3off: !sp[3],
+      toggle0: () => this.toggleSupp(0), toggle1: () => this.toggleSupp(1), toggle2: () => this.toggleSupp(2), toggle3: () => this.toggleSupp(3),
+
+      sheetOpen: !!S.sheet,
+      sheetAdd: S.sheet === 'add' && !S.builderOpen,
+      sheetBuilder: S.sheet === 'add' && S.builderOpen,
+      sheetSupps: S.sheet === 'supps',
+      closeSheet: () => this.closeSheet(),
+      sheetTitle: 'Add to ' + this.cap(S.sheetSection),
+      tabFoods: S.sheetTab === 'foods', tabMeals: S.sheetTab === 'meals',
+      setFoods: () => this.setTab('foods'), setMeals: () => this.setTab('meals'),
+      search: S.search, onSearch: (e) => this.setState({ search: e.target.value }),
+      foodRows, recentRows, mealRows, builderFoodRows,
+      customOpen: S.customOpen, openCustom: () => this.setState(s => ({ customOpen: !s.customOpen })),
+      customName: S.custom.name, customKcal: S.custom.kcal,
+      onCustomName: (e) => this.setState(s => ({ custom: { ...s.custom, name: e.target.value } })),
+      onCustomKcal: (e) => this.setState(s => ({ custom: { ...s.custom, kcal: e.target.value } })),
+      saveCustom: () => this.saveCustom(),
+      openBuilder: () => this.openBuilder(), backToAdd: () => this.setState({ builderOpen: false }),
+      draftName: S.draft.name, onDraftName: (e) => this.setState(s => ({ draft: { ...s.draft, name: e.target.value } })),
+      draftItems, draftEmpty: S.draft.items.length === 0, draftKcal: sum(S.draft.items, 'kcal'),
+      saveMeal: () => this.saveMeal(),
+
+      toast: S.toast, hasToast: !!S.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
