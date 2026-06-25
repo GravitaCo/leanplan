@@ -242,9 +242,11 @@ function suppsForDay(){ return state.profile.supplements || []; }
 
 /* ===================== RENDER ===================== */
 function render(){
+  // Show sticky header only for train tab; all other tabs use inline headers
+  const hdr=document.getElementById("appHeader");
+  if(hdr) hdr.classList.toggle("show", tab==="train");
   const dl=document.getElementById("dateLabel");
-  const f=fmtDate(cur);
-  dl.innerHTML = (cur===todayStr()? "Today" : f.dow)+"<small>"+f.full+"</small>";
+  if(dl){ const f=fmtDate(cur); dl.innerHTML=(cur===todayStr()?"Today":f.dow)+"<small>"+f.full+"</small>"; }
   const v=document.getElementById("view");
   if(tab==="today") v.innerHTML=viewToday();
   else if(tab==="food") v.innerHTML=viewFood();
@@ -272,10 +274,11 @@ function macroBlock(lab,val,goal,unit,color){
 function weekStrip(){
   const p=cur.split('-');
   const curDate=new Date(+p[0],+p[1]-1,+p[2]);
-  const dow=curDate.getDay(); // 0=Sun
+  const dow=curDate.getDay();
   const mondayOff=dow===0?-6:1-dow;
   const todayYmd=todayStr();
   const labels=['M','T','W','T','F','S','S'];
+  const TYPE_COLOR={Push:'var(--blue)',Pull:'var(--teal)',Legs:'var(--green)',Cardio:'var(--amber)',Rest:'var(--muted)'};
   let html='';
   for(let i=0;i<7;i++){
     const d=new Date(curDate);
@@ -283,17 +286,18 @@ function weekStrip(){
     const dStr=ymd(d);
     const isViewing=dStr===cur;
     const isToday=dStr===todayYmd;
-    const hasWorkout=!!(state.days[dStr]?.workout?.type);
+    const wkDone=!!(state.days[dStr]?.workout?.type);
     const schedIdx=d.getDay();
     const sched=(state.schedule&&state.schedule[schedIdx])||'Rest';
     let ballStyle=isViewing?'background:var(--green);color:#fff':
       isToday?'background:var(--soft);color:var(--ink);box-shadow:0 0 0 2px var(--green)':
+      wkDone?'background:var(--soft);color:var(--green)':
       'background:var(--soft);color:var(--muted)';
-    const dotColor=hasWorkout?'var(--green)':(sched!=='Rest'?'var(--line)':'transparent');
+    const typeColor=isViewing?'var(--green)':(wkDone?'var(--green)':(TYPE_COLOR[sched]||'var(--muted)'));
     html+=`<div class="wkday" onclick="goToDay('${dStr}')">
       <div class="wdlbl">${labels[i]}</div>
-      <div class="wdball" style="${ballStyle}">${d.getDate()}</div>
-      <div class="wddot" style="background:${dotColor}"></div>
+      <div class="wdball" style="${ballStyle}">${wkDone?'✓':d.getDate()}</div>
+      <div class="wkday-tp" style="color:${typeColor}">${sched}</div>
     </div>`;
   }
   return `<div class="weekstrip">${html}</div>`;
@@ -306,85 +310,89 @@ function viewToday(){
   const burn=workoutBurn(wk);
   const budget=tg.kcal+burn;
   const left=budget-t.k;
-  const pct=Math.min(140, budget? t.k/budget*100:0);
+  const pct=Math.min(100, budget? t.k/budget*100:0);
   let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
 
   const hr=new Date().getHours();
   const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
   const firstName=(state.profile?.name||'').split(' ')[0];
+  const fd=fmtDate(cur);
 
   const sched=scheduledFor(cur);
   const wkLogged=wk&&wk.type;
   const schedTitle=sched==='Rest'?'Rest day':(WORKOUTS[sched]?WORKOUTS[sched].title:sched);
   const wkTitle=wkLogged?(wk.type==='Cardio'?'Cardio session':(WORKOUTS[wk.type]?.title||wk.type)):schedTitle;
-  const wkBadgeType=wkLogged?wk.type:sched;
+  const wkType=wkLogged?wk.type:sched;
   const isRest=!wkLogged&&sched==='Rest';
 
   const supps=suppsForDay(cur);
-  const done=supps.filter(s=>w.supps[s.id]).length;
+  const suppDone=supps.filter(s=>w.supps[s.id]).length;
+  const bw=w.weight;
 
   const wkDesc=wkLogged
-    ?(wk.type==='Cardio'?`${wk.mins||'?'} min ${wk.cardioType||'cardio'} logged — tap to edit`
-      :`Session logged — open Train to see your sets`)
-    :(isRest?'Recovery is when your body adapts. A gentle walk is fine.'
-      :'Open Train to log your sets for today.');
+    ?(wk.type==='Cardio'?`${wk.mins||'?'} min ${wk.cardioType||'cardio'} · tap to edit`
+      :`Session logged · open Train to see sets`)
+    :(isRest?'Recovery day — your body adapts at rest'
+      :'Open Train to log your sets for today');
 
   return `
-  ${firstName?`<div class="greeting"><div class="greeting-main">${greet}, ${firstName}</div></div>`:''}
+  <div class="page-hdr">
+    <div class="page-date">${fd.dow}, ${fd.full}</div>
+    <div class="page-title">${greet}${firstName?`, ${firstName}`:''}</div>
+  </div>
+
   ${weekStrip()}
 
   <div class="card">
-    <div class="kcalbar-wrap">
-      <div class="kcalbar-hdr">
-        <div>
-          <div class="kcalbar-big" style="color:${left<0?'var(--red)':'var(--ink)'}">${r0(Math.abs(left))}</div>
-          <div class="kcalbar-lbl">kcal ${left<0?'over':'remaining'}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:13px;font-weight:600;color:var(--ink)">${r0(t.k)} kcal eaten</div>
-          <div class="mini" style="margin-top:1px">${budget} kcal budget${burn?` · <span style="color:var(--amber)">+${burn}</span>`:''}</div>
-        </div>
-      </div>
-      <div class="kcalbar-track"><div class="kcalbar-prog ${cls}" style="width:${Math.min(100,pct).toFixed(1)}%"></div></div>
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:2px">Energy left</div>
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+      <div class="kcalbar-big" style="color:${left<0?'var(--red)':'var(--ink)'}">${r0(Math.abs(left))}</div>
+      <div style="font-size:16px;font-weight:600;color:var(--muted)">kcal</div>
     </div>
-    <div class="macros">
+    <div class="mini" style="margin-bottom:10px">${r0(t.k)} eaten · ${budget} target${burn?` · <span style="color:var(--amber)">+${burn} workout</span>`:''}</div>
+    <div class="kcalbar-track"><div class="kcalbar-prog ${cls}" style="width:${Math.min(100,pct).toFixed(1)}%"></div></div>
+    <div class="macros" style="margin-top:12px">
       ${macroBlock("Protein",t.p,tg.p,"g","var(--blue)")}
       ${macroBlock("Carbs",t.c,tg.c,"g","var(--green)")}
       ${macroBlock("Fat",t.f,tg.f,"g","var(--amber)")}
     </div>
   </div>
 
-  <h2 class="sec">Today's training</h2>
-  <div class="card tight">
-    <div class="wkcard">
-      <div class="wktype" style="${wkLogged?'color:var(--amber)':isRest?'color:var(--muted)':''}">
-        ${wkLogged?'Logged':isRest?'Rest':'Scheduled'} · ${wkBadgeType==='Cardio'?'Cardio':isRest?'Rest':'Strength'}
+  <div class="wkcard-light">
+    <div class="wkt">${wkType} · ${wkLogged?'Logged':isRest?'Rest day':'Scheduled'}</div>
+    <div class="wkname">${wkTitle}</div>
+    <div class="wkinfo">${wkDesc}</div>
+    ${!isRest?`<button class="btn-dark" data-go="train">${wkLogged?'View session':'▶ Start workout'}</button>`:''}
+  </div>
+
+  <div class="bottom-grid">
+    <div class="bc">
+      <div class="bc-lbl">Supplements${supps.length?` · ${suppDone}/${supps.length}`:''}</div>
+      ${supps.length
+        ?`<div class="bc-val">${suppDone}<span style="color:var(--muted);font-size:16px;font-weight:500"> / ${supps.length}</span></div>
+          <div class="bc-sub" style="margin-bottom:8px">${suppDone===supps.length?'All done ✓':'tap to check off'}</div>
+          ${supps.slice(0,3).map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}" style="padding:6px 0;border-color:var(--line)">
+            <div class="box" style="width:22px;height:22px;border-radius:6px">${w.supps[s.id]?'✓':''}</div>
+            <div class="grow" style="min-width:0;overflow:hidden"><div class="name" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div></div>
+          </div>`).join('')}
+          ${supps.length>3?`<div class="mini" style="margin-top:4px">+${supps.length-3} more</div>`:''}`
+        :`<div class="mini" style="margin-top:4px;line-height:1.5">No supplements.<br>Add them in Settings.</div>`}
+    </div>
+    <div class="bc">
+      <div class="bc-lbl">Body weight</div>
+      ${bw
+        ?`<div class="bc-val">${r1(bw)}<span style="color:var(--muted);font-size:14px;font-weight:500"> kg</span></div>
+          <div class="bc-sub" style="margin-bottom:8px">${weightTrendShort()}</div>`
+        :`<div class="mini" style="margin-top:4px;margin-bottom:8px">Not logged today</div>`}
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="bw" type="number" inputmode="decimal" placeholder="kg" value="${bw??""}" style="padding:8px 10px;font-size:14px">
+        <button class="pill kcal" id="saveBw" style="white-space:nowrap;flex:none">Save</button>
       </div>
-      <div class="wktitle">${wkTitle}</div>
-      <div class="wkdesc">${wkDesc}</div>
     </div>
-    ${!isRest?`<button class="btn" data-go="train">${wkLogged?'View session':'▶ Start workout'}</button>`:''}
-  </div>
-
-  <h2 class="sec">Supplements${supps.length?` · ${done}/${supps.length}`:''}</h2>
-  <div class="card">
-    ${supps.length?supps.map(s=>`<div class="chk ${w.supps[s.id]?'on':''}" data-supp="${s.id}">
-      <div class="box">${w.supps[s.id]?'✓':''}</div>
-      <div class="grow"><div class="name">${s.name}</div><div class="meta">${s.time}</div></div>
-    </div>`).join(""):'<div class="empty" style="padding:14px 8px">Add supplements in <b>Settings</b> to track them here.</div>'}
-  </div>
-
-  <h2 class="sec">Body weight</h2>
-  <div class="card tight">
-    <div class="row">
-      <div class="grow"><input id="bw" type="number" inputmode="decimal" placeholder="Weight in kg" value="${w.weight??""}"></div>
-      <button class="pill kcal" id="saveBw">Save</button>
-    </div>
-    <div class="mini" style="margin-top:8px">${weightTrend()}</div>
   </div>
 
   <h2 class="sec">Eaten today</h2>
-  <div class="card">${foodListHtml(cur)||'<div class="empty">No food logged. Tap <b>Food</b> below to add some.</div>'}</div>
+  <div class="card">${foodListHtml(cur)||'<div class="empty">No food logged yet — tap <b>Food</b> to add some.</div>'}</div>
   `;
 }
 
@@ -394,6 +402,13 @@ function weightTrend(){
   const first=state.days[arr[0]].weight, last=state.days[arr[arr.length-1]].weight;
   const diff=r1(last-first);
   return `Since your first entry: <b>${diff>0?'+':''}${diff} kg</b>.`;
+}
+function weightTrendShort(){
+  const arr=Object.keys(state.days).filter(d=>state.days[d].weight).sort();
+  if(arr.length<2) return 'Log daily to track';
+  const first=state.days[arr[0]].weight, last=state.days[arr[arr.length-1]].weight;
+  const diff=r1(last-first);
+  return `${diff>0?'+':''}${diff} kg total`;
 }
 
 function foodListHtml(d){
@@ -410,6 +425,7 @@ function foodListHtml(d){
 let foodQuery="";
 let customFoodOpen=false;
 let pendingMeal=null; // set when user taps "+ Add [meal]" so panel pre-selects that meal
+let foodSearchOpen=false;
 
 function defaultMeal(){
   if(pendingMeal) return pendingMeal;
@@ -525,16 +541,35 @@ function viewFoodsList(){
   const burn=workoutBurn(day(cur).workout);
   const budget=tg.kcal+burn;
   const left=budget-t.k;
+  const pct=Math.min(100, budget? t.k/budget*100:0);
+  let cls=""; if(pct>=90&&pct<=100) cls="warn"; if(pct>100) cls="over";
+  const showSearch=foodSearchOpen||q.length>0;
+
   return `
-  <div style="padding:4px 0 12px">
-    <div style="font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1">${r0(t.k)}</div>
-    <div class="mini" style="margin-top:3px">of ${budget} kcal${burn?` · <span style="color:var(--amber)">+${burn} workout</span>`:''} · <b style="color:${left<0?'var(--red)':'var(--ink)'}">${left<0?`${r0(-left)} over`:`${r0(left)} left`}</b></div>
+  <div class="food-tab-hdr">
+    <h2>Food</h2>
+    <button class="food-add" id="toggleFoodSearch" title="${showSearch?'Close search':'Add food'}">${showSearch?'×':'+'}</button>
   </div>
 
-  <div class="card tight">
+  <div class="card" style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px">
+      <div>
+        <div class="kcalbar-big">${r0(t.k)}<span style="font-size:16px;font-weight:500;color:var(--muted);letter-spacing:0"> / ${budget}</span></div>
+        <div class="mini" style="margin-top:2px">${burn?`<span style="color:var(--amber)">+${burn} workout · </span>`:''}${left<0?`<b style="color:var(--red)">${r0(-left)} over</b>`:`<b style="color:var(--ink)">${r0(left)} kcal left</b>`}</div>
+      </div>
+    </div>
+    <div class="kcalbar-track" style="margin-bottom:10px"><div class="kcalbar-prog ${cls}" style="width:${Math.min(100,pct).toFixed(1)}%"></div></div>
+    <div class="mpills">
+      <div class="mpill" style="background:rgba(107,159,232,.15);color:var(--blue)">${r0(t.p)}g <em>Protein</em></div>
+      <div class="mpill" style="background:rgba(232,119,77,.15);color:var(--green)">${r0(t.c)}g <em>Carbs</em></div>
+      <div class="mpill" style="background:rgba(224,162,60,.15);color:var(--amber)">${r0(t.f)}g <em>Fat</em></div>
+    </div>
+  </div>
+
+  ${showSearch?`<div class="card tight" id="foodSearchCard" style="margin-bottom:10px">
     <div class="search" style="margin-bottom:8px"><input id="foodSearch" placeholder="Search ${allFoods().length} foods…" value="${foodQuery}"></div>
     <div class="results">${foodResultsHtml(q)}</div>
-  </div>
+  </div>`:''}
 
   ${mealGroupHtml(cur)}
 
@@ -1058,15 +1093,19 @@ function bind(){
   // food
   const fs=document.getElementById("foodSearch");
   if(fs){ fs.addEventListener("input",e=>{ foodQuery=e.target.value;
-      // re-render only results to keep focus
       const r=document.querySelector(".results");
       if(r){ r.innerHTML = foodResultsHtml(foodQuery.trim().toLowerCase()); wireFoodResults(r); }
     });
   }
   wireFoodResults(document);
+  // food search toggle
+  const tfs=document.getElementById("toggleFoodSearch");
+  if(tfs) tfs.onclick=()=>{ foodSearchOpen=!foodSearchOpen; if(!foodSearchOpen) foodQuery=''; render(); setTimeout(()=>{ const fs=document.getElementById('foodSearch'); if(fs) fs.focus(); },60); };
   // meal quick-add buttons
   document.querySelectorAll("[data-addmeal]").forEach(el=>el.onclick=()=>{
     pendingMeal=el.dataset.addmeal;
+    foodSearchOpen=true;
+    render();
     window.scrollTo(0,0);
     setTimeout(()=>{ const fs=document.getElementById('foodSearch'); if(fs) fs.focus(); },80);
   });
@@ -1328,7 +1367,7 @@ function importData(file){
 }
 
 /* tabs + date */
-function setTab(t){ tab=t; trainSel=null;
+function setTab(t){ tab=t; trainSel=null; foodSearchOpen=false; foodQuery='';
   document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   render();
 }
