@@ -20,9 +20,10 @@ import type {
 } from '@/core/types'
 import { todayStr, shiftDay } from '@/core/domain/date'
 import { scaleFood, recipePerServing } from '@/core/domain/nutrition'
-import { loadState, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, loadStateFrom, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { subscribePush, unsubscribePush } from '@/data/push'
 
 enableMapSet()
 
@@ -66,6 +67,9 @@ interface StoreState {
   addSupplement: (name: string, time: string) => void
   updateSupplement: (id: string, name: string, time: string) => void
   removeSupplement: (id: string) => void
+  updateEmail: (email: string) => Promise<string | null>
+  setNotifications: (enabled: boolean) => Promise<boolean>
+  importBackup: (state: PersistedState) => void
 
   // sync / auth
   initAuth: () => Promise<void>
@@ -296,6 +300,37 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         persist(); get().scheduleSync()
+      },
+
+      updateEmail: async (email) => {
+        const { error } = await supabase.auth.updateUser({ email })
+        return error ? error.message : null
+      },
+
+      setNotifications: async (enabled) => {
+        if (enabled) {
+          const ok = await subscribePush()
+          if (!ok) return false
+        } else {
+          await unsubscribePush()
+        }
+        set((st) => {
+          st.data.profile.notificationsEnabled = enabled
+          meta(st.data).settings = { u: nowIso(), dirty: true }
+        })
+        saveState(get().data)
+        get().scheduleSync()
+        return true
+      },
+
+      importBackup: (incoming) => {
+        const fresh = loadStateFrom(incoming)
+        ensureMeta(fresh, true)
+        set((st) => { st.data = fresh })
+        saveState(get().data)
+        set((st) => { st.cur = todayStr() })
+        get().showToast('Backup loaded')
+        get().scheduleSync()
       },
 
       initAuth: async () => {

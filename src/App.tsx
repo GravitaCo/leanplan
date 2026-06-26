@@ -5,7 +5,8 @@ import { AuthScreen } from './screens/AuthScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FoodScreen } from './screens/FoodScreen'
 import { TrainScreen } from './screens/TrainScreen'
-import { PlaceholderScreen } from './screens/PlaceholderScreen'
+import { PlanScreen } from './screens/PlanScreen'
+import { ProfileScreen } from './screens/ProfileScreen'
 
 export default function App() {
   const authReady = useStore((s) => s.authReady)
@@ -42,10 +43,8 @@ export default function App() {
       {tab === 'today' && <TodayScreen />}
       {tab === 'food' && <FoodScreen />}
       {tab === 'train' && <TrainScreen />}
-      {tab === 'plan' && <PlaceholderScreen title="Plan" subtitle="Your weekly schedule lands here next." />}
-      {tab === 'profile' && (
-        <PlaceholderScreen title="Profile" subtitle="Profile, metrics, supplements & settings land here next." />
-      )}
+      {tab === 'plan' && <PlanScreen />}
+      {tab === 'profile' && <ProfileScreen />}
 
       <div className={'toast' + (toast ? ' show' : '')}>{toast}</div>
       <BottomNav active={tab} onChange={setTab} />

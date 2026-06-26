@@ -6,6 +6,7 @@ import { workoutBurn } from '@/core/domain/workout'
 import { WORKOUTS } from '@/core/data/workouts'
 import { WeekStrip } from '@/ui/WeekStrip'
 import { MacroBlock, CheckRow } from '@/ui/primitives'
+import { WeightSheet } from './body/WeightSheet'
 
 function profileWeight(days: Record<string, { weight: number | null }>, cur: string, fallback?: number | null) {
   if (days[cur]?.weight) return days[cur].weight
@@ -23,6 +24,7 @@ export function TodayScreen() {
   const setWeight = useStore((s) => s.setWeight)
 
   const [bw, setBw] = useState('')
+  const [showWeight, setShowWeight] = useState(false)
 
   const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
   const t = dayTotals(day)
@@ -158,8 +160,13 @@ export function TodayScreen() {
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
-          <div className="mono" style={{ marginBottom: 8 }}>
-            Body weight
+          <div
+            className="mono"
+            style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}
+            onClick={() => setShowWeight(true)}
+          >
+            <span>Body weight</span>
+            <span style={{ color: 'var(--accent)' }}>Trend ›</span>
           </div>
           {weight ? (
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1, marginBottom: 10 }}>
@@ -219,6 +226,8 @@ export function TodayScreen() {
           </div>
         )}
       </div>
+
+      {showWeight && <WeightSheet onClose={() => setShowWeight(false)} />}
     </div>
   )
 }

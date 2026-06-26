@@ -25,13 +25,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Assemble the published site:
-      #   /            -> existing LeanPlan (legacy/, untouched during migration)
-      #   /app/        -> the new merged Tend app (Vite build output)
+      # Publish the new Tend app at the site root, with the previous LeanPlan
+      # build parked at /legacy/ as a fallback during the transition.
       - run: |
-          mkdir -p _site/app
-          cp -r legacy/* _site/
-          cp -r dist/* _site/app/
+          mkdir -p _site/legacy
+          cp -r dist/* _site/
+          cp -r legacy/* _site/legacy/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

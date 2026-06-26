@@ -29,14 +29,9 @@ function emptyState(): AppState {
   }
 }
 
-/** Load persisted state, applying defaults/migrations for older or partial saves. */
-export function loadState(): PersistedState {
-  let s: PersistedState | null = null
-  try {
-    s = JSON.parse(localStorage.getItem(KEY) || 'null')
-  } catch {
-    /* ignore corrupt storage */
-  }
+/** Apply defaults/migrations to an arbitrary (possibly partial/legacy) state object. */
+export function loadStateFrom(input: PersistedState | null): PersistedState {
+  let s = input
   if (!s || !s.days) s = emptyState()
   if (!s.target) s.target = { ...DEFAULT_TARGET }
   if (!s.schedule) s.schedule = { ...DEFAULT_SCHEDULE }
@@ -46,6 +41,17 @@ export function loadState(): PersistedState {
   if (!Array.isArray(s.customFoods)) s.customFoods = []
   if (!Array.isArray(s.recipes)) s.recipes = []
   return s
+}
+
+/** Load persisted state from localStorage. */
+export function loadState(): PersistedState {
+  let s: PersistedState | null = null
+  try {
+    s = JSON.parse(localStorage.getItem(KEY) || 'null')
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return loadStateFrom(s)
 }
 
 export function saveState(s: PersistedState): void {

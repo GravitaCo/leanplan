@@ -5,6 +5,7 @@ import { r0 } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { workoutBurn } from '@/core/domain/workout'
 import { AddFoodSheet } from './food/AddFoodSheet'
+import { MealsSheet } from './food/MealsSheet'
 
 const MEAL_ORDER: { id: MealSlot; label: string }[] = [
   { id: 'breakfast', label: 'Breakfast' },
@@ -20,6 +21,7 @@ export function FoodScreen() {
 
   const [sheetMeal, setSheetMeal] = useState<MealSlot | undefined>()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [mealsOpen, setMealsOpen] = useState(false)
 
   const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
   const t = dayTotals(day)
@@ -104,6 +106,10 @@ export function FoodScreen() {
         </div>
       </div>
 
+      <button className="btn ghost sm" style={{ width: '100%', marginBottom: 4 }} onClick={() => setMealsOpen(true)}>
+        🍲 Saved meals
+      </button>
+
       {/* meal groups */}
       {MEAL_ORDER.map(({ id, label }) => {
         const items = grouped[id]
@@ -177,6 +183,7 @@ export function FoodScreen() {
       )}
 
       {sheetOpen && <AddFoodSheet initialMeal={sheetMeal} onClose={() => setSheetOpen(false)} />}
+      {mealsOpen && <MealsSheet onClose={() => setMealsOpen(false)} />}
     </div>
   )
 }

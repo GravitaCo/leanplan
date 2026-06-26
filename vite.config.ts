@@ -2,10 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
-// During migration the new app is published at /leanplan/app/ so the existing LeanPlan
-// stays live at /leanplan/. At cutover, change this to '/leanplan/' and drop legacy/.
+// Served from https://<user>.github.io/leanplan/. The previous LeanPlan build is parked
+// at /leanplan/legacy/ as a fallback and can be removed once the new app is settled.
 export default defineConfig({
-  base: '/leanplan/app/',
+  base: '/leanplan/',
   plugins: [react()],
   resolve: {
     alias: {

@@ -1,5 +1,41 @@
 /** Small presentational primitives shared across screens. */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+
+export function Accordion({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ borderBottom: '1px solid var(--line)' }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 2px',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: open ? 'var(--ink)' : 'var(--muted)',
+          userSelect: 'none',
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && <div style={{ paddingBottom: 16 }}>{children}</div>}
+    </div>
+  )
+}
 
 export function ProgressBar({
   pct,
