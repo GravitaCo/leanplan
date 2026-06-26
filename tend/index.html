@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c0e">
+  <title>Tend</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #1b1b1d; font-family: 'Hanken Grotesk', sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 28px 16px; }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+    input, button { font-family: 'Hanken Grotesk', sans-serif; }
+    input::placeholder { color: #6e6c67; }
+    input:focus { outline: none; }
+    @media (max-width: 420px) {
+      body { padding: 0; align-items: stretch; }
+      #root > div { border-radius: 0 !important; width: 100% !important; height: 100vh !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <script type="text/babel">
+  const { useState, useEffect, useReducer } = React;
+
+  const ACCENT = '#E8835E';
+  const MONO = "'IBM Plex Mono', monospace";
+
+  const FOODS = [
+    { name: 'Greek yogurt',    kcal: 120, p: 17, c: 7,  f: 0  },
+    { name: 'Granola',         kcal: 205, p: 5,  c: 32, f: 7  },
+    { name: 'Banana',          kcal: 90,  p: 1,  c: 23, f: 0  },
+    { name: 'Chicken breast',  kcal: 270, p: 50, c: 0,  f: 6  },
+    { name: 'Brown rice',      kcal: 195, p: 4,  c: 41, f: 2  },
+    { name: 'Avocado',         kcal: 120, p: 1,  c: 6,  f: 11 },
+    { name: 'Eggs (2)',        kcal: 140, p: 12, c: 1,  f: 10 },
+    { name: 'Salmon fillet',   kcal: 280, p: 34, c: 0,  f: 16 },
+    { name: 'Almonds (30g)',   kcal: 175, p: 6,  c: 6,  f: 15 },
+    { name: 'Apple',           kcal: 80,  p: 0,  c: 21, f: 0  },
+    { name: 'Protein shake',   kcal: 160, p: 30, c: 5,  f: 2  },
+    { name: 'Oatmeal',         kcal: 190, p: 6,  c: 33, f: 4  },
+    { name: 'Mixed greens',    kcal: 25,  p: 2,  c: 4,  f: 0  },
+    { name: 'Sweet potato',    kcal: 130, p: 2,  c: 30, f: 0  },
+    { name: 'Cottage cheese',  kcal: 110, p: 13, c: 4,  f: 4  },
+  ];
+
+  /* ─── Icons ─────────────────────────────────────────────────────────── */
+  const IcoCheck = ({ size = 15 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </svg>
+  );
+  const IcoClose = ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+    </svg>
+  );
+  const IcoPlus = ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14"/><path d="M5 12h14"/>
+    </svg>
+  );
+  const IcoPlay = ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M6 4l14 8-14 8z"/>
+    </svg>
+  );
+  const IcoHome = ({ size = 23 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.2 12 3l9 7.2"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>
+    </svg>
+  );
+  const IcoFood = ({ size = 23 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 3v6a2 2 0 0 0 4 0V3"/><path d="M6 11v10"/><path d="M18 3c-1.7 0-3 2-3 5s1 4 3 4v9"/>
+    </svg>
+  );
+  const IcoDumbbell = ({ size = 23 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/>
+      <path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>
+    </svg>
+  );
+  const IcoPill = ({ size = 23 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m10.5 20.5 10-10a5 5 0 0 0-7-7l-10 10a5 5 0 0 0 7 7Z"/>
+      <path d="m8.5 8.5 7 7"/>
+    </svg>
+  );
+  const IcoProfile = ({ size = 23 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>
+    </svg>
+  );
+  const IcoBack = ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+  );
+  const IcoSearch = ({ size = 17 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#6e6c67" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+  );
+  const IcoMeal = ({ size = 19 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11h18l-1.5 8.5a2 2 0 0 1-2 1.5h-11a2 2 0 0 1-2-1.5Z"/>
+      <path d="M7 11a5 5 0 0 1 10 0"/>
+    </svg>
+  );
+  const IcoChevRight = ({ size = 18, color = '#6e6c67' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m9 18 6-6-6-6"/>
+    </svg>
+  );
+  const IcoClock = ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+    </svg>
+  );
+  const IcoArrowRight = ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+    </svg>
+  );
+  const IcoBell = ({ size = 19 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      <path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/>
+    </svg>
+  );
+  const IcoMoon = ({ size = 19 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+    </svg>
+  );
+  const IcoSettings = ({ size = 18 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/>
+      <path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/>
+    </svg>
+  );
+
+  /* ─── Shared primitives ──────────────────────────────────────────────── */
+  const Bar = ({ value, goal, fillColor = ACCENT, trackColor = 'rgba(255,255,255,.08)', height = 7, radius = 4 }) => {
+    const pct = Math.min(100, (value / goal) * 100);
+    return (
+      <div style={{ height, borderRadius: radius, background: trackColor, overflow: 'hidden' }}>
+        <div style={{ width: pct + '%', height: '100%', borderRadius: radius, background: fillColor, transition: 'width .35s ease' }} />
+      </div>
+    );
+  };
+
+  const StatusBar = () => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 28px 4px', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
+      <span>9:41</span>
+      <div style={{ display: 'flex', gap: 7, alignItems: 'center', opacity: .9 }}>
+        <span style={{ fontFamily: MONO, fontSize: 10 }}>5G</span>
+        <div style={{ width: 25, height: 12, border: '1.4px solid currentColor', borderRadius: 3, position: 'relative', opacity: .85 }}>
+          <div style={{ position: 'absolute', top: 2, left: 2, bottom: 2, right: 6, background: 'currentColor', borderRadius: 1 }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const IconBtn = ({ onClick, children, style }) => (
+    <button onClick={onClick} style={{ all: 'unset', cursor: 'pointer', width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9a9893', ...style }}>
+      {children}
+    </button>
+  );
+
+  const Toggle = ({ on, onToggle }) => (
+    <div onClick={onToggle} style={{ width: 46, height: 28, borderRadius: 14, background: on ? ACCENT : 'rgba(255,255,255,.12)', position: 'relative', flexShrink: 0, cursor: 'pointer' }}>
+      <div style={{ position: 'absolute', top: 3, ...(on ? { right: 3 } : { left: 3 }), width: 22, height: 22, borderRadius: '50%', background: on ? '#fff' : '#8a8884', transition: 'all .18s ease' }} />
+    </div>
+  );
+
+  /* ─── Reducer ────────────────────────────────────────────────────────── */
+  const INITIAL = {
+    page: 'welcome',
+    log: {
+      breakfast: [
+        { name: 'Greek yogurt & berries', kcal: 220, p: 18, c: 30, f: 4 },
+        { name: 'Granola',                kcal: 205, p: 5,  c: 32, f: 7 },
+      ],
+      lunch:  [{ name: 'Chicken & quinoa bowl', kcal: 540, p: 45, c: 55, f: 15 }],
+      snack:  [],
+      dinner: [],
+    },
+    supps: [true, true, true, false],
+    meals: [
+      { name: 'High-protein lunch', kcal: 610, items: [
+        { name: 'Chicken breast', kcal: 270, p: 50, c: 0,  f: 6  },
+        { name: 'Brown rice',     kcal: 195, p: 4,  c: 41, f: 2  },
+        { name: 'Avocado',        kcal: 120, p: 1,  c: 6,  f: 11 },
+        { name: 'Mixed greens',   kcal: 25,  p: 2,  c: 4,  f: 0  },
+      ]},
+      { name: 'Oats & yogurt', kcal: 400, items: [
+        { name: 'Oatmeal',      kcal: 190, p: 6,  c: 33, f: 4 },
+        { name: 'Banana',       kcal: 90,  p: 1,  c: 23, f: 0 },
+        { name: 'Greek yogurt', kcal: 120, p: 17, c: 7,  f: 0 },
+      ]},
+      { name: 'Salmon dinner', kcal: 435, items: [
+        { name: 'Salmon fillet', kcal: 280, p: 34, c: 0,  f: 16 },
+        { name: 'Sweet potato',  kcal: 130, p: 2,  c: 30, f: 0  },
+        { name: 'Mixed greens',  kcal: 25,  p: 2,  c: 4,  f: 0  },
+      ]},
+    ],
+    sheet: null,
+    sheetSection: 'breakfast',
+    sheetTab: 'foods',
+    search: '',
+    builderOpen: false,
+    draft: { name: '', items: [] },
+    customOpen: false,
+    custom: { name: '', kcal: '' },
+    toast: null,
+    _ts: 0,
+
+    // onboarding
+    onboardGoal: 'maintain',
+
+    // session A set tracking
+    sessionSets: [false, false, false],
+
+    // notifications
+    notifs: { meals: true, supps: true, workout: true, weighin: false, streaks: true, weekly: true, tips: false },
+  };
+
+  function reducer(s, a) {
+    switch (a.type) {
+      case 'PAGE':        return { ...s, page: a.page };
+      case 'OPEN_ADD':    return { ...s, sheet: 'add', sheetSection: a.section, sheetTab: 'foods', search: '', builderOpen: false, customOpen: false, custom: { name: '', kcal: '' } };
+      case 'OPEN_SUPPS':  return { ...s, sheet: 'supps' };
+      case 'CLOSE_SHEET': return { ...s, sheet: null, builderOpen: false, search: '', customOpen: false, custom: { name: '', kcal: '' }, draft: { name: '', items: [] } };
+      case 'TAB':         return { ...s, sheetTab: a.tab, search: '' };
+      case 'SEARCH':      return { ...s, search: a.val };
+      case 'CUSTOM_OPEN': return { ...s, customOpen: !s.customOpen };
+      case 'CUSTOM_NAME': return { ...s, custom: { ...s.custom, name: a.val } };
+      case 'CUSTOM_KCAL': return { ...s, custom: { ...s.custom, kcal: a.val } };
+      case 'SAVE_CUSTOM': {
+        const kcal = parseInt(s.custom.kcal, 10);
+        if (!s.custom.name.trim() || !kcal) return toast(s, 'Enter a name & calories');
+        const food = { name: s.custom.name.trim(), kcal, p: 0, c: 0, f: 0 };
+        return toast(addFood(s, food), food.name + ' added', { custom: { name: '', kcal: '' }, customOpen: false });
+      }
+      case 'LOG_FOOD':    return toast(addFood(s, a.food), a.food.name + ' added');
+      case 'REMOVE_FOOD': {
+        const log = { ...s.log };
+        log[a.section] = log[a.section].filter((_, i) => i !== a.idx);
+        return { ...s, log };
+      }
+      case 'ADD_MEAL': {
+        const log = { ...s.log };
+        log[s.sheetSection] = [...log[s.sheetSection], ...a.meal.items.map(it => ({ ...it }))];
+        return toast({ ...s, log }, a.meal.name + ' added');
+      }
+      case 'OPEN_BUILDER':    return { ...s, builderOpen: true, draft: { name: '', items: [] } };
+      case 'CLOSE_BUILDER':   return { ...s, builderOpen: false };
+      case 'DRAFT_NAME':      return { ...s, draft: { ...s.draft, name: a.val } };
+      case 'DRAFT_ADD':       return { ...s, draft: { ...s.draft, items: [...s.draft.items, { ...a.food }] } };
+      case 'DRAFT_REMOVE':    return { ...s, draft: { ...s.draft, items: s.draft.items.filter((_, i) => i !== a.idx) } };
+      case 'SAVE_MEAL': {
+        if (!s.draft.name.trim() || s.draft.items.length === 0) return toast(s, 'Name it & add foods');
+        const kcal = s.draft.items.reduce((a, b) => a + b.kcal, 0);
+        const meal = { name: s.draft.name.trim(), kcal, items: s.draft.items.map(it => ({ ...it })) };
+        const log = { ...s.log };
+        log[s.sheetSection] = [...log[s.sheetSection], ...meal.items.map(it => ({ ...it }))];
+        return toast({ ...s, meals: [meal, ...s.meals], log, builderOpen: false, draft: { name: '', items: [] } }, 'Meal saved & added');
+      }
+      case 'TOGGLE_SUPP': {
+        const supps = s.supps.slice();
+        supps[a.idx] = !supps[a.idx];
+        return { ...s, supps };
+      }
+      case 'SET_GOAL':    return { ...s, onboardGoal: a.goal };
+      case 'TOGGLE_SESSION_SET': {
+        const sessionSets = s.sessionSets.slice();
+        sessionSets[a.idx] = !sessionSets[a.idx];
+        return { ...s, sessionSets };
+      }
+      case 'TOGGLE_NOTIF': return { ...s, notifs: { ...s.notifs, [a.key]: !s.notifs[a.key] } };
+      case 'TOAST':       return toast(s, a.msg);
+      case 'CLEAR_TOAST': return { ...s, toast: null };
+      default: return s;
+    }
+  }
+  const addFood = (s, food) => {
+    const log = { ...s.log };
+    log[s.sheetSection] = [...log[s.sheetSection], { name: food.name, kcal: food.kcal, p: food.p || 0, c: food.c || 0, f: food.f || 0 }];
+    return { ...s, log };
+  };
+  const toast = (s, msg, extra = {}) => ({ ...s, toast: msg, _ts: (s._ts || 0) + 1, ...extra });
+
+  /* ─── Onboarding screens ─────────────────────────────────────────────── */
+  function WelcomeScreen({ dispatch }) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ height: 400, flexShrink: 0, position: 'relative', background: 'repeating-linear-gradient(45deg,#18181c,#18181c 11px,#141417 11px,#141417 22px)' }}>
+          <div style={{ position: 'absolute', top: 24, left: 26, width: 28, height: 28, borderRadius: 9, background: ACCENT }} />
+          <span style={{ position: 'absolute', bottom: 22, right: 24, fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6a6864' }}>LIFESTYLE PHOTO</span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 28px 30px' }}>
+          <div style={{ fontSize: 31, fontWeight: 600, lineHeight: 1.12, letterSpacing: '-.02em' }}>A calmer way to look after your health.</div>
+          <div style={{ fontSize: 16, color: '#9a9893', lineHeight: 1.5, marginTop: 14 }}>Meals, training, and how you feel — all in one simple place. No jargon, no pressure.</div>
+          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'baseline' })}
+              style={{ all: 'unset', cursor: 'pointer', background: ACCENT, color: '#231206', height: 56, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+              Get started <IcoArrowRight size={18} />
+            </button>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'signin' })}
+              style={{ all: 'unset', cursor: 'pointer', height: 50, color: '#cfcdc8', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              I already have an account
+            </button>
+          </div>
+        </div>
+        <div style={{ position: 'absolute', bottom: 9, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 3, background: 'currentColor', opacity: .22, pointerEvents: 'none' }} />
+      </div>
+    );
+  }
+
+  function SignInScreen({ dispatch }) {
+    const [email, setEmail] = useState('');
+    const [pw, setPw] = useState('');
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '18px 28px 30px', minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ width: 28, height: 28, borderRadius: 9, background: ACCENT, marginBottom: 38, flexShrink: 0 }} />
+        <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-.02em', flexShrink: 0 }}>Welcome back</div>
+        <div style={{ fontSize: 16, color: '#9a9893', marginTop: 8, flexShrink: 0 }}>Sign in to pick up where you left off.</div>
+        <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 26, flexShrink: 0 }}>
+          <div>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginBottom: 10 }}>EMAIL</div>
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" type="email"
+              style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.14)', background: 'transparent', paddingBottom: 10, fontSize: 16, color: '#f2f0ed' }} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>PASSWORD</span>
+              <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.1em', color: ACCENT, cursor: 'pointer' }}>FORGOT?</span>
+            </div>
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••"
+              style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.14)', background: 'transparent', paddingBottom: 10, fontSize: 16, color: '#f2f0ed' }} />
+          </div>
+        </div>
+        <button onClick={() => dispatch({ type: 'PAGE', page: 'home' })}
+          style={{ all: 'unset', cursor: 'pointer', marginTop: 32, background: ACCENT, color: '#231206', height: 56, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, flexShrink: 0 }}>
+          Sign in <IcoArrowRight size={18} />
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0', color: '#6e6c67', fontFamily: MONO, fontSize: 10, letterSpacing: '.1em', flexShrink: 0 }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />OR<div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flexShrink: 0 }}>
+          <button onClick={() => dispatch({ type: 'PAGE', page: 'home' })} style={{ all: 'unset', cursor: 'pointer', border: '1px solid rgba(255,255,255,.14)', height: 52, borderRadius: 14, fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Continue with Apple</button>
+          <button onClick={() => dispatch({ type: 'PAGE', page: 'home' })} style={{ all: 'unset', cursor: 'pointer', border: '1px solid rgba(255,255,255,.14)', height: 52, borderRadius: 14, fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Continue with Google</button>
+        </div>
+        <div style={{ marginTop: 'auto', paddingTop: 20, textAlign: 'center', color: '#9a9893', fontSize: 14, flexShrink: 0 }}>
+          New here? <span style={{ color: '#f2f0ed', fontWeight: 600, cursor: 'pointer' }} onClick={() => dispatch({ type: 'PAGE', page: 'baseline' })}>Create an account</span>
+        </div>
+      </div>
+    );
+  }
+
+  function BaselineScreen({ s, dispatch }) {
+    const goals = [
+      { key: 'lose', label: 'Lose fat' },
+      { key: 'maintain', label: 'Maintain' },
+      { key: 'build', label: 'Build' },
+    ];
+    const fields = [
+      { label: 'HEIGHT', value: '175', unit: ' cm' },
+      { label: 'WEIGHT', value: '74',  unit: ' kg' },
+      { label: 'AGE',    value: '29',  unit: '' },
+      { label: 'SEX',    value: 'Prefer not to say', unit: '', small: true },
+    ];
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px 26px 28px', minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+          <IconBtn onClick={() => dispatch({ type: 'PAGE', page: 'welcome' })}><IcoBack size={18} /></IconBtn>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>STEP 2 OF 4</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 5 }}>
+            {[0,1,2,3].map(i => <div key={i} style={{ width: 22, height: 4, borderRadius: 2, background: i < 2 ? ACCENT : 'rgba(255,255,255,.12)' }} />)}
+          </div>
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 600, marginTop: 24, letterSpacing: '-.02em', lineHeight: 1.15, flexShrink: 0 }}>Let's set your baseline.</div>
+        <div style={{ fontSize: 15, color: '#9a9893', marginTop: 8, flexShrink: 0 }}>This stays private — you can change it anytime.</div>
+        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginTop: 30, marginBottom: 12, flexShrink: 0 }}>YOUR GOAL</div>
+        <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,.05)', padding: 5, borderRadius: 14, flexShrink: 0 }}>
+          {goals.map(g => (
+            <button key={g.key} onClick={() => dispatch({ type: 'SET_GOAL', goal: g.key })}
+              style={{ all: 'unset', cursor: 'pointer', flex: 1, textAlign: 'center', padding: '11px 4px', borderRadius: 10, fontSize: 14, fontWeight: s.onboardGoal === g.key ? 600 : 500, background: s.onboardGoal === g.key ? ACCENT : 'transparent', color: s.onboardGoal === g.key ? '#231206' : '#9a9893', transition: 'all .15s ease' }}>
+              {g.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginTop: 26, marginBottom: 12, flexShrink: 0 }}>ABOUT YOU</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, flexShrink: 0 }}>
+          {fields.map(f => (
+            <div key={f.label} style={{ background: '#16161a', borderRadius: 16, padding: '14px 16px' }}>
+              <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6e6c67' }}>{f.label}</div>
+              <div style={{ fontSize: f.small ? 15 : 22, fontWeight: 600, marginTop: f.small ? 7 : 4 }}>
+                {f.value}{f.unit && <span style={{ fontSize: 13, color: '#8a8884', fontWeight: 500 }}>{f.unit}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => dispatch({ type: 'PAGE', page: 'home' })}
+          style={{ all: 'unset', cursor: 'pointer', marginTop: 'auto', paddingTop: 28, background: ACCENT, color: '#231206', height: 56, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, flexShrink: 0 }}>
+          Continue <IcoArrowRight size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  /* ─── Main screens ───────────────────────────────────────────────────── */
+  const WEEK = [
+    { d: 'M', label: 'Push', done: true },
+    { d: 'T', label: 'Pull', done: true },
+    { d: 'W', date: 25, label: 'Legs', today: true },
+    { d: 'T', date: 26, label: 'Rest' },
+    { d: 'F', date: 27, label: 'Push', future: true },
+    { d: 'S', date: 28, label: 'Pull', future: true },
+    { d: 'S', date: 29, label: 'Rest' },
+  ];
+
+  function HomeScreen({ s, dispatch }) {
+    const GOAL = 2200;
+    const all = [...s.log.breakfast, ...s.log.lunch, ...s.log.snack, ...s.log.dinner];
+    const totalKcal = all.reduce((a, b) => a + b.kcal, 0);
+    const remaining = Math.max(0, GOAL - totalKcal);
+    const taken = s.supps.filter(Boolean).length;
+
+    return (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 24px 0', display: 'flex', flexDirection: 'column', gap: 13 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>WEDNESDAY · 25 JUN</div>
+            <div style={{ fontSize: 26, fontWeight: 600, marginTop: 5, letterSpacing: '-.02em' }}>Good morning, Alex</div>
+          </div>
+          <div style={{ width: 42, height: 42, borderRadius: '50%', flexShrink: 0, background: 'repeating-linear-gradient(45deg,#222228,#222228 6px,#1b1b20 6px,#1b1b20 12px)' }} />
+        </div>
+
+        {/* Week strip */}
+        <div style={{ background: '#16161a', borderRadius: 20, padding: '16px 14px 15px', flexShrink: 0 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6e6c67', marginBottom: 14 }}>THIS WEEK</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {WEEK.map((day, i) => {
+              const dotBg = day.done ? 'rgba(232,131,94,.18)' : day.today ? ACCENT : 'rgba(255,255,255,.05)';
+              const dotColor = day.done ? ACCENT : day.today ? '#231206' : day.future ? '#9a9893' : '#6e6c67';
+              const labelColor = day.today ? '#f2f0ed' : day.future ? '#9a9893' : '#6e6c67';
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: day.today ? ACCENT : '#6e6c67' }}>{day.d}</span>
+                  <div style={{ width: 34, height: 34, borderRadius: 12, background: dotBg, color: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {day.done ? <IcoCheck size={15} /> : <span style={{ fontSize: 13, fontWeight: day.today ? 700 : 600 }}>{day.date}</span>}
+                  </div>
+                  <span style={{ fontSize: 11, color: labelColor, fontWeight: day.today ? 600 : 400 }}>{day.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Today's workout */}
+        <div style={{ background: '#f4f2ed', color: '#1b1b1d', borderRadius: 24, padding: 20, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#8a8884' }}>TODAY'S WORKOUT</span>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <IcoDumbbell size={19} />
+            </div>
+          </div>
+          <div style={{ fontSize: 25, fontWeight: 600, marginTop: 9, letterSpacing: '-.02em' }}>Leg day</div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.13em', color: '#8a8884', marginTop: 5 }}>5 EXERCISES · ~50 MIN</div>
+          <div style={{ fontSize: 14, color: '#6f6d68', marginTop: 12, lineHeight: 1.5 }}>
+            Back Squat · Romanian Deadlift · Leg Press <span style={{ color: '#a8a6a0' }}>+2 more</span>
+          </div>
+          <button onClick={() => dispatch({ type: 'PAGE', page: 'workout_detail' })}
+            style={{ all: 'unset', cursor: 'pointer', boxSizing: 'border-box', marginTop: 16, width: '100%', background: ACCENT, color: '#231206', height: 54, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+            <IcoPlay size={16} /> Start workout
+          </button>
+        </div>
+
+        {/* Energy */}
+        <div onClick={() => dispatch({ type: 'PAGE', page: 'food' })}
+          style={{ background: '#16161a', borderRadius: 20, padding: '18px 18px 16px', cursor: 'pointer', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>ENERGY LEFT</span>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884' }}>{totalKcal} / {GOAL} kcal</span>
+          </div>
+          <div style={{ fontSize: 40, fontWeight: 600, letterSpacing: '-.02em', marginTop: 4 }}>
+            {remaining}<span style={{ fontSize: 15, color: '#8a8884', fontWeight: 500 }}> kcal left</span>
+          </div>
+          <div style={{ marginTop: 13 }}>
+            <Bar value={totalKcal} goal={GOAL} />
+          </div>
+        </div>
+
+        {/* Supplements + Weight */}
+        <div style={{ display: 'flex', gap: 13, paddingBottom: 16, flexShrink: 0 }}>
+          <div onClick={() => dispatch({ type: 'OPEN_SUPPS' })}
+            style={{ flex: 1, background: '#16161a', borderRadius: 18, padding: 16, cursor: 'pointer' }}>
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6e6c67' }}>SUPPLEMENTS</div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginTop: 8 }}>{taken} of {s.supps.length}</div>
+            <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
+              {s.supps.map((on, i) => <div key={i} style={{ width: 16, height: 5, borderRadius: 3, background: on ? ACCENT : 'rgba(255,255,255,.12)' }} />)}
+            </div>
+          </div>
+          <div onClick={() => dispatch({ type: 'PAGE', page: 'body' })}
+            style={{ flex: 1, background: '#16161a', borderRadius: 18, padding: 16, cursor: 'pointer' }}>
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6e6c67' }}>WEIGHT</div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginTop: 8 }}>74.2 kg</div>
+            <div style={{ fontSize: 12, color: '#7FA98C', marginTop: 8, fontWeight: 600 }}>Steady this week</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function FoodScreen({ s, dispatch }) {
+    const GOAL = 2200, PG = 130, CG = 240, FG = 70;
+    const sum = (arr, k) => arr.reduce((a, b) => a + (b[k] || 0), 0);
+    const all = [...s.log.breakfast, ...s.log.lunch, ...s.log.snack, ...s.log.dinner];
+    const kc = sum(all, 'kcal'), pv = sum(all, 'p'), cv = sum(all, 'c'), fv = sum(all, 'f');
+
+    const Section = ({ section, label }) => (
+      <div style={{ background: '#16161a', borderRadius: 18, padding: '15px 16px 7px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#9a9893' }}>{label}</span>
+          <span style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884' }}>{sum(s.log[section], 'kcal')} kcal</span>
+        </div>
+        {s.log[section].map((item, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderTop: '1px solid rgba(255,255,255,.06)', marginTop: 11 }}>
+            <span style={{ fontSize: 14 }}>{item.name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: '#8a8884' }}>{item.kcal}</span>
+              <button onClick={() => dispatch({ type: 'REMOVE_FOOD', section, idx: i })} style={{ all: 'unset', cursor: 'pointer', color: '#5e5c58', display: 'flex' }}>
+                <IcoClose size={15} />
+              </button>
+            </div>
+          </div>
+        ))}
+        <button onClick={() => dispatch({ type: 'OPEN_ADD', section })}
+          style={{ all: 'unset', cursor: 'pointer', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 7, color: ACCENT, fontSize: 14, fontWeight: 600, padding: '13px 0 11px', borderTop: '1px solid rgba(255,255,255,.06)', marginTop: 11 }}>
+          <IcoPlus size={16} /> Add food
+        </button>
+      </div>
+    );
+
+    return (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 24px 0', display: 'flex', flexDirection: 'column', gap: 13 }}>
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>WEDNESDAY · 25 JUN</div>
+          <div style={{ fontSize: 26, fontWeight: 600, marginTop: 5, letterSpacing: '-.02em' }}>Food</div>
+        </div>
+        <div style={{ background: '#f4f2ed', color: '#1b1b1d', borderRadius: 24, padding: 20, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 38, fontWeight: 600, letterSpacing: '-.02em' }}>{kc}</span>
+            <span style={{ fontSize: 15, color: '#8a8884' }}>/ {GOAL} kcal</span>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <Bar value={kc} goal={GOAL} fillColor={ACCENT} trackColor="rgba(0,0,0,.08)" />
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+            {[{ l: 'Protein', v: pv, g: PG }, { l: 'Carbs', v: cv, g: CG }, { l: 'Fat', v: fv, g: FG }].map(m => (
+              <div key={m.l} style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span style={{ color: '#6f6d68' }}>{m.l}</span>
+                  <span style={{ fontWeight: 600 }}>{m.v}/{m.g}g</span>
+                </div>
+                <Bar value={m.v} goal={m.g} fillColor="#1b1b1d" trackColor="rgba(0,0,0,.08)" height={4} radius={2} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <Section section="breakfast" label="BREAKFAST" />
+        <Section section="lunch"     label="LUNCH" />
+        <Section section="snack"     label="SNACK" />
+        <div style={{ marginBottom: 16 }}>
+          <Section section="dinner" label="DINNER" />
+        </div>
+      </div>
+    );
+  }
+
+  function BodyScreen({ dispatch }) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 24px 8px', flexShrink: 0 }}>
+          <IconBtn onClick={() => dispatch({ type: 'PAGE', page: 'home' })}><IcoBack size={18} /></IconBtn>
+          <span style={{ fontSize: 19, fontWeight: 600 }}>Body</span>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 24px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>WEIGHT · 7-DAY AVG</div>
+              <div style={{ fontSize: 48, fontWeight: 600, letterSpacing: '-.025em', marginTop: 4 }}>74.2<span style={{ fontSize: 18, color: '#8a8884', fontWeight: 500 }}> kg</span></div>
+            </div>
+            <div style={{ textAlign: 'right', paddingTop: 18 }}>
+              <span style={{ color: '#7FA98C', fontSize: 16, fontWeight: 600 }}>−0.3 kg</span>
+              <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.1em', color: '#6e6c67', marginTop: 2 }}>THIS WEEK</div>
+            </div>
+          </div>
+          <div style={{ background: '#16161a', borderRadius: 20, padding: '16px 14px 12px', marginTop: 18 }}>
+            <svg viewBox="0 0 320 140" width="100%" height="140" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor={ACCENT} stopOpacity="0.28" />
+                  <stop offset="1" stopColor={ACCENT} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="35" x2="320" y2="35" stroke="rgba(255,255,255,.06)" strokeWidth="1" />
+              <line x1="0" y1="75" x2="320" y2="75" stroke="rgba(255,255,255,.06)" strokeWidth="1" />
+              <line x1="0" y1="115" x2="320" y2="115" stroke="rgba(255,255,255,.06)" strokeWidth="1" />
+              <path d="M10,40 C45,46 60,44 96,52 C130,60 150,55 180,66 C212,78 235,72 264,82 C290,90 305,92 310,96 L310,140 L10,140 Z" fill="url(#wfill)" />
+              <path d="M10,40 C45,46 60,44 96,52 C130,60 150,55 180,66 C212,78 235,72 264,82 C290,90 305,92 310,96" fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="310" cy="96" r="4.5" fill={ACCENT} />
+            </svg>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 9.5, letterSpacing: '.06em', color: '#6e6c67', marginTop: 6, padding: '0 4px' }}>
+              <span>4 WK AGO</span><span>3 WK</span><span>2 WK</span><span>LAST</span><span>TODAY</span>
+            </div>
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginTop: 24, marginBottom: 6 }}>MEASUREMENTS</div>
+          {[
+            { label: 'Body fat',           value: '18.4%' },
+            { label: 'Waist',              value: '81 cm' },
+            { label: 'Resting heart rate', value: '58 bpm' },
+          ].map((m, i, arr) => (
+            <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 2px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,.07)' : 'none' }}>
+              <span style={{ fontSize: 15 }}>{m.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>{m.value}</span>
+                <IcoChevRight size={18} />
+              </div>
+            </div>
+          ))}
+          <button onClick={() => dispatch({ type: 'TOAST', msg: 'Weight logged — 74.2 kg' })}
+            style={{ all: 'unset', cursor: 'pointer', marginTop: 'auto', paddingTop: 24, background: ACCENT, color: '#231206', height: 54, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            Log today's weight
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const SESSIONS = [
+    { day: 'MON',   name: 'Lower body',    status: 'done',     icon: 'check' },
+    { day: 'TODAY · WED', name: 'Leg day', status: 'today',    icon: 'dumbbell' },
+    { day: 'FRI',   name: 'Push',          status: 'upcoming', icon: 'dumbbell' },
+    { day: 'SAT',   name: 'Pull',          status: 'upcoming', icon: 'dumbbell' },
+  ];
+
+  function WorkoutPlanScreen({ dispatch }) {
+    const days = ['M','T','W','T','F','S','S'];
+    const dayStates = ['done','done','today','rest','upcoming','upcoming','rest'];
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '10px 24px 0', flexShrink: 0 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>THIS WEEK</div>
+          <div style={{ fontSize: 26, fontWeight: 600, marginTop: 5, letterSpacing: '-.02em' }}>Your plan</div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Mini week strip */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+            {days.map((d, i) => {
+              const st = dayStates[i];
+              const bg = st === 'done' ? 'rgba(232,131,94,.18)' : st === 'today' ? ACCENT : 'rgba(255,255,255,.05)';
+              const color = st === 'done' ? ACCENT : st === 'today' ? '#231206' : '#9a9893';
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: st === 'today' ? ACCENT : '#6e6c67' }}>{d}</span>
+                  <div style={{ width: 38, height: 38, borderRadius: 13, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {st === 'done' && <IcoCheck size={15} />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginTop: 8 }}>SESSIONS</div>
+          {SESSIONS.map((sess, i) => {
+            const isToday = sess.status === 'today';
+            const isDone = sess.status === 'done';
+            return (
+              <div key={i} onClick={isToday ? () => dispatch({ type: 'PAGE', page: 'workout_detail' }) : undefined}
+                style={{ background: '#16161a', borderRadius: 18, padding: '15px 16px', display: 'flex', alignItems: 'center', gap: 14, opacity: isDone ? .7 : 1, border: isToday ? `1px solid ${ACCENT}` : '1px solid transparent', cursor: isToday ? 'pointer' : 'default' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 11, background: isDone ? 'rgba(127,169,140,.18)' : isToday ? `rgba(232,131,94,.18)` : 'rgba(255,255,255,.06)', color: isDone ? '#7FA98C' : isToday ? ACCENT : '#9a9893', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isDone ? <IcoCheck size={16} /> : <IcoDumbbell size={16} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.1em', color: isToday ? ACCENT : '#6e6c67' }}>{sess.day}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2 }}>{sess.name}</div>
+                </div>
+                {isDone && <span style={{ fontSize: 12, color: '#7FA98C', fontWeight: 600 }}>Done</span>}
+                {isToday && <IcoChevRight size={20} />}
+                {sess.status === 'upcoming' && <span style={{ fontSize: 12, color: '#9a9893' }}>Upcoming</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const EXERCISES = [
+    { name: 'Incline Dumbbell Press', spec: '3 × 10 · 22 KG', hasVideo: true },
+    { name: 'Lat Pulldown',           spec: '3 × 12 · 45 KG', hasVideo: false },
+    { name: 'Seated Shoulder Press',  spec: '3 × 10 · 14 KG', hasVideo: false },
+    { name: 'Cable Row',              spec: '3 × 12 · 40 KG', hasVideo: false },
+    { name: 'Face Pull',              spec: '3 × 15 · 20 KG', hasVideo: false },
+  ];
+
+  function WorkoutDetailScreen({ dispatch }) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 24px 4px', flexShrink: 0 }}>
+          <IconBtn onClick={() => dispatch({ type: 'PAGE', page: 'workout_plan' })}><IcoBack size={18} /></IconBtn>
+          <span style={{ fontSize: 19, fontWeight: 600 }}>Upper body</span>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 24px 0', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.13em', color: '#6e6c67', margin: '6px 0 16px' }}>TODAY · ~45 MIN · 5 EXERCISES</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            {EXERCISES.map((ex, i) => (
+              <div key={i} style={{ background: '#16161a', borderRadius: 18, padding: 11, display: 'flex', alignItems: 'center', gap: 13 }}>
+                {ex.hasVideo
+                  ? <video src="../project/uploads/Incline-Dumbell-Press.mp4" autoPlay muted loop playsInline style={{ width: 54, height: 54, borderRadius: 13, objectFit: 'cover', flexShrink: 0, background: '#000' }} />
+                  : <div style={{ width: 54, height: 54, borderRadius: 13, background: 'repeating-linear-gradient(45deg,#1d1d22,#1d1d22 7px,#18181c 7px,#18181c 14px)', flexShrink: 0 }} />
+                }
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{ex.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: '#8a8884', marginTop: 3 }}>{ex.spec}</div>
+                </div>
+                <IcoChevRight size={20} />
+              </div>
+            ))}
+          </div>
+          <button onClick={() => dispatch({ type: 'PAGE', page: 'session_a' })}
+            style={{ all: 'unset', cursor: 'pointer', marginTop: 'auto', marginBottom: 24, paddingTop: 22, background: ACCENT, color: '#231206', height: 56, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+            Start workout <IcoArrowRight size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function SessionAScreen({ s, dispatch }) {
+    const done = s.sessionSets.filter(Boolean).length;
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Custom header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px 8px', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            onClick={() => dispatch({ type: 'PAGE', page: 'workout_detail' })}>
+            <IcoClose size={17} />
+          </div>
+          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '.14em', color: '#9a9893' }}>EXERCISE 1 / 5</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: MONO, fontSize: 14, fontWeight: 500 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: ACCENT }} />
+            12:48
+          </div>
+        </div>
+        {/* Video */}
+        <div style={{ margin: '6px 22px 0', borderRadius: 22, overflow: 'hidden', height: 264, flexShrink: 0, background: '#000' }}>
+          <video src="../project/uploads/Incline-Dumbell-Press.mp4" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        {/* Exercise info */}
+        <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+          <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-.01em' }}>Incline Dumbbell Press</div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.13em', color: '#8a8884', marginTop: 5 }}>CHEST · 3 SETS · 22 KG</div>
+        </div>
+        {/* White card */}
+        <div style={{ flex: 1, background: '#f4f2ed', color: '#1b1b1d', borderRadius: '26px 26px 0 0', padding: '20px 22px 0', marginTop: 14, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#8a8884' }}>SETS</span>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: ACCENT, fontWeight: 500 }}>{done} of 3 done</span>
+          </div>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: i < 2 ? '1px solid rgba(0,0,0,.08)' : 'none' }}>
+              <button onClick={() => dispatch({ type: 'TOGGLE_SESSION_SET', idx: i })} style={{ all: 'unset', cursor: 'pointer', flexShrink: 0 }}>
+                {s.sessionSets[i]
+                  ? <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#231206' }}><IcoCheck size={17} /></div>
+                  : <div style={{ width: 32, height: 32, borderRadius: 10, border: '1.7px solid rgba(0,0,0,.18)' }} />
+                }
+              </button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Set {i + 1}</div>
+                <div style={{ fontSize: 12, color: '#8a8884' }}>Working set</div>
+              </div>
+              <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 500 }}>22 kg</span>
+              <span style={{ fontFamily: MONO, fontSize: 14, color: '#8a8884' }}>10 reps</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 'auto', display: 'flex', gap: 11, alignItems: 'center', paddingBottom: 26, paddingTop: 14 }}>
+            <div style={{ height: 54, padding: '0 18px', borderRadius: 16, background: 'rgba(0,0,0,.05)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#6f6d68', flexShrink: 0 }}>
+              <IcoClock size={16} /> Rest 90s
+            </div>
+            <button onClick={() => dispatch({ type: 'TOAST', msg: 'Next exercise: Lat Pulldown' })}
+              style={{ all: 'unset', cursor: 'pointer', flex: 1, background: ACCENT, color: '#231206', height: 54, borderRadius: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+              Next exercise <IcoArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function SuppsPageScreen({ s, dispatch }) {
+    const SUPPS = [
+      { name: 'Vitamin D',  dose: '1000 IU · 08:00', morning: true  },
+      { name: 'Creatine',   dose: '5 g · 08:00',     morning: true  },
+      { name: 'Omega-3',    dose: '1000 mg · 13:00', morning: true  },
+      { name: 'Magnesium',  dose: '200 mg · 21:00',  morning: false },
+    ];
+    const taken = s.supps.filter(Boolean).length;
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '10px 24px 0', flexShrink: 0 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>WEDNESDAY · 25 JUN</div>
+          <div style={{ fontSize: 26, fontWeight: 600, marginTop: 5, letterSpacing: '-.02em' }}>Supplements</div>
+          <div style={{ fontSize: 14, color: '#9a9893', marginTop: 6 }}>
+            {taken} of {SUPPS.length} taken today · <span style={{ color: '#7FA98C', fontWeight: 600 }}>7-day streak</span>
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67' }}>MORNING</div>
+          {SUPPS.filter(sp => sp.morning).map((sup, ri) => {
+            const i = SUPPS.indexOf(sup);
+            const on = s.supps[i];
+            return (
+              <div key={i} style={{ background: '#16161a', borderRadius: 18, padding: '15px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IcoPill size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{sup.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: '#8a8884', marginTop: 2 }}>{sup.dose}</div>
+                </div>
+                <button onClick={() => dispatch({ type: 'TOGGLE_SUPP', idx: i })} style={{ all: 'unset', cursor: 'pointer', flexShrink: 0 }}>
+                  {on
+                    ? <div style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#231206' }}><IcoCheck size={17} /></div>
+                    : <div style={{ width: 30, height: 30, borderRadius: 9, border: '1.7px solid rgba(255,255,255,.18)' }} />
+                  }
+                </button>
+              </div>
+            );
+          })}
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginTop: 6 }}>EVENING</div>
+          {SUPPS.filter(sp => !sp.morning).map((sup, ri) => {
+            const i = SUPPS.indexOf(sup);
+            const on = s.supps[i];
+            return (
+              <div key={i} style={{ background: '#16161a', borderRadius: 18, padding: '15px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,.06)', color: '#9a9893', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IcoPill size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{sup.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: '#8a8884', marginTop: 2 }}>{sup.dose}</div>
+                </div>
+                <button onClick={() => dispatch({ type: 'TOGGLE_SUPP', idx: i })} style={{ all: 'unset', cursor: 'pointer', flexShrink: 0 }}>
+                  {on
+                    ? <div style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#231206' }}><IcoCheck size={17} /></div>
+                    : <div style={{ width: 30, height: 30, borderRadius: 9, border: '1.7px solid rgba(255,255,255,.18)' }} />
+                  }
+                </button>
+              </div>
+            );
+          })}
+          <div style={{ border: '1px dashed rgba(255,255,255,.14)', borderRadius: 18, padding: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, color: '#9a9893', fontSize: 14, fontWeight: 500, marginTop: 2, cursor: 'pointer' }}
+            onClick={() => dispatch({ type: 'TOAST', msg: 'Add supplement — coming soon' })}>
+            <IcoPlus size={17} /> Add supplement
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function ProfileScreen({ dispatch }) {
+    const menuItems = [
+      { label: 'Goals & baseline',    right: null,       icon: <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> },
+      { label: 'Units',               right: 'kg / cm',  icon: <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg> },
+      { label: 'Connected apps',      right: null,       icon: <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9z"/></svg> },
+      { label: 'Reminders & alerts',  right: null,       icon: <IcoBell size={19} />, action: () => dispatch({ type: 'PAGE', page: 'notifications' }) },
+      { label: 'Help & support',      right: null,       icon: <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#9a9893" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><path d="M12 17h.01"/></svg> },
+    ];
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 24px 0', flexShrink: 0 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <IcoSettings size={18} />
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 24px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 66, height: 66, borderRadius: '50%', background: 'repeating-linear-gradient(45deg,#222228,#222228 7px,#1b1b20 7px,#1b1b20 14px)', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 23, fontWeight: 600 }}>Alex Morgan</div>
+              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.13em', color: '#6e6c67', marginTop: 4 }}>MEMBER SINCE 2024</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 11, marginTop: 22 }}>
+            {[
+              { n: '128', label: 'WORKOUTS' },
+              { n: '12',  label: 'DAY STREAK' },
+              { n: '−4.2', label: 'KG · 90D', green: true },
+            ].map(st => (
+              <div key={st.label} style={{ flex: 1, background: '#16161a', borderRadius: 16, padding: 15, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 600, color: st.green ? '#7FA98C' : undefined }}>{st.n}</div>
+                <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '.1em', color: '#6e6c67', marginTop: 4 }}>{st.label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 26, background: '#16161a', borderRadius: 18, padding: '4px 18px' }}>
+            {menuItems.map((item, i) => (
+              <div key={item.label} onClick={item.action || (() => dispatch({ type: 'TOAST', msg: item.label }))}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '15px 0', borderBottom: i < menuItems.length - 1 ? '1px solid rgba(255,255,255,.06)' : 'none', cursor: 'pointer' }}>
+                {item.icon}
+                <span style={{ flex: 1, fontSize: 15 }}>{item.label}</span>
+                {item.right
+                  ? <span style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884' }}>{item.right}</span>
+                  : <IcoChevRight size={18} />
+                }
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 'auto', paddingTop: 28, textAlign: 'center', fontSize: 15, fontWeight: 600, color: ACCENT, cursor: 'pointer' }}
+            onClick={() => dispatch({ type: 'PAGE', page: 'welcome' })}>
+            Sign out
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function NotificationsScreen({ s, dispatch }) {
+    const reminders = [
+      { key: 'meals',   label: 'Meal logging',       sub: 'A gentle nudge at meal times' },
+      { key: 'supps',   label: 'Supplement times',   sub: 'Morning & evening' },
+      { key: 'workout', label: 'Workout reminders',  sub: 'On your training days' },
+      { key: 'weighin', label: 'Weigh-in',           sub: 'Weekly, Sunday morning' },
+    ];
+    const updates = [
+      { key: 'streaks', label: 'Streak milestones' },
+      { key: 'weekly',  label: 'Weekly summary' },
+      { key: 'tips',    label: 'Tips & ideas' },
+    ];
+    const Row = ({ item }) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>{item.label}</div>
+          {item.sub && <div style={{ fontSize: 12, color: '#8a8884', marginTop: 2 }}>{item.sub}</div>}
+        </div>
+        <Toggle on={s.notifs[item.key]} onToggle={() => dispatch({ type: 'TOGGLE_NOTIF', key: item.key })} />
+      </div>
+    );
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 24px 6px', flexShrink: 0 }}>
+          <IconBtn onClick={() => dispatch({ type: 'PAGE', page: 'profile' })}><IcoBack size={18} /></IconBtn>
+          <span style={{ fontSize: 19, fontWeight: 600 }}>Notifications</span>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 24px 24px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginBottom: 6 }}>REMINDERS</div>
+          <div style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+            {reminders.map((item, i) => (
+              <div key={item.key} style={{ borderBottom: i < reminders.length - 1 ? '1px solid rgba(255,255,255,.07)' : 'none' }}>
+                <Row item={item} />
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', margin: '18px 0 6px' }}>UPDATES</div>
+          <div>
+            {updates.map((item, i) => (
+              <div key={item.key} style={{ borderBottom: i < updates.length - 1 ? '1px solid rgba(255,255,255,.07)' : 'none' }}>
+                <Row item={item} />
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, background: '#16161a', borderRadius: 16, padding: '15px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <IcoMoon size={19} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 500 }}>Quiet hours</div>
+            </div>
+            <span style={{ fontFamily: MONO, fontSize: 12, color: '#8a8884' }}>22:00 – 07:00</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Sheets ─────────────────────────────────────────────────────────── */
+  function AddFoodsTab({ s, dispatch }) {
+    const q = s.search.trim().toLowerCase();
+    const filtered = FOODS.filter(fd => !q || fd.name.toLowerCase().includes(q));
+    const recent = [FOODS[10], FOODS[2], FOODS[6], FOODS[0]];
+    return (
+      <>
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <div style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <IcoSearch size={17} />
+          </div>
+          <input value={s.search} onChange={e => dispatch({ type: 'SEARCH', val: e.target.value })}
+            placeholder="Search foods"
+            style={{ width: '100%', border: 'none', borderRadius: 14, background: '#16161a', padding: '13px 14px 13px 42px', fontSize: 15, color: '#f2f0ed' }} />
+        </div>
+        <button onClick={() => dispatch({ type: 'CUSTOM_OPEN' })}
+          style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, color: ACCENT, fontSize: 14, fontWeight: 600, padding: '4px 2px 8px' }}>
+          <IcoPlus size={16} /> Add a custom food
+        </button>
+        {s.customOpen && (
+          <div style={{ background: '#16161a', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
+            <input value={s.custom.name} onChange={e => dispatch({ type: 'CUSTOM_NAME', val: e.target.value })}
+              placeholder="Food name"
+              style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.12)', background: 'transparent', padding: '8px 2px', fontSize: 15, color: '#f2f0ed' }} />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input value={s.custom.kcal} onChange={e => dispatch({ type: 'CUSTOM_KCAL', val: e.target.value })}
+                inputMode="numeric" placeholder="Calories"
+                style={{ flex: 1, border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.12)', background: 'transparent', padding: '8px 2px', fontSize: 15, color: '#f2f0ed' }} />
+              <button onClick={() => dispatch({ type: 'SAVE_CUSTOM' })}
+                style={{ all: 'unset', cursor: 'pointer', background: ACCENT, color: '#231206', padding: '0 20px', height: 42, borderRadius: 12, fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                Add
+              </button>
+            </div>
+          </div>
+        )}
+        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', margin: '14px 0 10px' }}>RECENT</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {recent.map((fd, i) => (
+            <button key={i} onClick={() => dispatch({ type: 'LOG_FOOD', food: fd })}
+              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, background: '#16161a', borderRadius: 11, padding: '9px 13px', fontSize: 13.5, color: '#f2f0ed' }}>
+              {fd.name} <span style={{ color: '#8a8884', fontFamily: MONO, fontSize: 11 }}>{fd.kcal}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', margin: '18px 0 10px' }}>ALL FOODS</div>
+        <div style={{ background: '#16161a', borderRadius: 16, padding: '0 14px' }}>
+          {filtered.map((fd, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 0', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+              <div>
+                <div style={{ fontSize: 15 }}>{fd.name}</div>
+                <div style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884', marginTop: 2 }}>{fd.kcal} kcal</div>
+              </div>
+              <button onClick={() => dispatch({ type: 'LOG_FOOD', food: fd })}
+                style={{ all: 'unset', cursor: 'pointer', width: 32, height: 32, borderRadius: 10, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IcoPlus size={17} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  function AddMealsTab({ s, dispatch }) {
+    return (
+      <>
+        <button onClick={() => dispatch({ type: 'OPEN_BUILDER' })}
+          style={{ all: 'unset', cursor: 'pointer', boxSizing: 'border-box', width: '100%', margin: '4px 0 16px', background: ACCENT, color: '#231206', height: 48, borderRadius: 14, fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <IcoPlus size={17} /> Create a meal
+        </button>
+        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', marginBottom: 10 }}>YOUR MEALS</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {s.meals.map((m, i) => (
+            <div key={i} style={{ background: '#16161a', borderRadius: 16, padding: '15px 16px', display: 'flex', alignItems: 'center', gap: 13 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <IcoMeal size={19} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{m.name}</div>
+                <div style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884', marginTop: 3 }}>{m.items.length} items · {m.kcal} kcal</div>
+              </div>
+              <button onClick={() => dispatch({ type: 'ADD_MEAL', meal: m })}
+                style={{ all: 'unset', cursor: 'pointer', width: 34, height: 34, borderRadius: 11, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IcoPlus size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  function BuilderSheet({ s, dispatch }) {
+    const draftKcal = s.draft.items.reduce((a, b) => a + b.kcal, 0);
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 22px 10px', flexShrink: 0 }}>
+          <IconBtn onClick={() => dispatch({ type: 'CLOSE_BUILDER' })}><IcoBack size={18} /></IconBtn>
+          <span style={{ fontSize: 20, fontWeight: 600 }}>New meal</span>
+          <IconBtn onClick={() => dispatch({ type: 'CLOSE_SHEET' })} style={{ marginLeft: 'auto' }}><IcoClose size={16} /></IconBtn>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 22px 14px' }}>
+          <input value={s.draft.name} onChange={e => dispatch({ type: 'DRAFT_NAME', val: e.target.value })}
+            placeholder="Meal name"
+            style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.14)', background: 'transparent', padding: '10px 2px', fontSize: 18, fontWeight: 600, color: '#f2f0ed' }} />
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', margin: '18px 0 8px' }}>INGREDIENTS</div>
+          {s.draft.items.length === 0 && (
+            <div style={{ color: '#6e6c67', fontSize: 14, padding: '4px 2px' }}>No foods yet — add some below.</div>
+          )}
+          {s.draft.items.map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+              <span style={{ fontSize: 15 }}>{item.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: '#8a8884' }}>{item.kcal}</span>
+                <button onClick={() => dispatch({ type: 'DRAFT_REMOVE', idx: i })} style={{ all: 'unset', cursor: 'pointer', color: '#5e5c58', display: 'flex' }}>
+                  <IcoClose size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+          <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.14em', color: '#6e6c67', margin: '18px 0 8px' }}>ADD FOODS</div>
+          <div style={{ background: '#16161a', borderRadius: 16, padding: '0 14px' }}>
+            {FOODS.map((fd, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 0', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                <div>
+                  <div style={{ fontSize: 15 }}>{fd.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#8a8884', marginTop: 2 }}>{fd.kcal} kcal</div>
+                </div>
+                <button onClick={() => dispatch({ type: 'DRAFT_ADD', food: fd })}
+                  style={{ all: 'unset', cursor: 'pointer', width: 32, height: 32, borderRadius: 10, background: 'rgba(232,131,94,.15)', color: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <IcoPlus size={17} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ flexShrink: 0, padding: '14px 22px 24px', borderTop: '1px solid rgba(255,255,255,.07)', background: '#0c0c0e', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div>
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '.12em', color: '#6e6c67' }}>TOTAL</div>
+            <div style={{ fontSize: 22, fontWeight: 600, marginTop: 2 }}>
+              {draftKcal}<span style={{ fontSize: 13, color: '#8a8884', fontWeight: 500 }}> kcal</span>
+            </div>
+          </div>
+          <button onClick={() => dispatch({ type: 'SAVE_MEAL' })}
+            style={{ all: 'unset', cursor: 'pointer', marginLeft: 'auto', background: ACCENT, color: '#231206', height: 50, padding: '0 26px', borderRadius: 15, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+            Save meal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function SuppsSheet({ s, dispatch }) {
+    const SUPPS = [
+      { name: 'Vitamin D',  dose: '1000 IU · 08:00', morning: true  },
+      { name: 'Creatine',   dose: '5 g · 08:00',     morning: true  },
+      { name: 'Omega-3',    dose: '1000 mg · 13:00', morning: true  },
+      { name: 'Magnesium',  dose: '200 mg · 21:00',  morning: false },
+    ];
+    const taken = s.supps.filter(Boolean).length;
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 22px 4px', flexShrink: 0 }}>
+          <span style={{ fontSize: 20, fontWeight: 600 }}>Supplements</span>
+          <IconBtn onClick={() => dispatch({ type: 'CLOSE_SHEET' })}><IcoClose size={16} /></IconBtn>
+        </div>
+        <div style={{ padding: '0 22px 4px', flexShrink: 0, fontSize: 14, color: '#9a9893' }}>{taken} of {s.supps.length} taken today</div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 22px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {SUPPS.map((sup, i) => {
+            const on = s.supps[i];
+            return (
+              <div key={i} style={{ background: '#16161a', borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: sup.morning ? 'rgba(232,131,94,.15)' : 'rgba(255,255,255,.06)', color: sup.morning ? ACCENT : '#9a9893', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IcoPill size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{sup.name}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: '#8a8884', marginTop: 2 }}>{sup.dose}</div>
+                </div>
+                <button onClick={() => dispatch({ type: 'TOGGLE_SUPP', idx: i })} style={{ all: 'unset', cursor: 'pointer', flexShrink: 0 }}>
+                  {on
+                    ? <div style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#231206' }}><IcoCheck size={17} /></div>
+                    : <div style={{ width: 30, height: 30, borderRadius: 9, border: '1.7px solid rgba(255,255,255,.18)' }} />
+                  }
+                </button>
+              </div>
+            );
+          })}
+          <div style={{ border: '1px dashed rgba(255,255,255,.14)', borderRadius: 16, padding: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, color: '#9a9893', fontSize: 14, fontWeight: 500 }}>
+            <IcoPlus size={17} /> Add supplement
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function AddSheet({ s, dispatch }) {
+    if (s.builderOpen) return <BuilderSheet s={s} dispatch={dispatch} />;
+    const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 22px 8px', flexShrink: 0 }}>
+          <span style={{ fontSize: 20, fontWeight: 600 }}>Add to {cap(s.sheetSection)}</span>
+          <IconBtn onClick={() => dispatch({ type: 'CLOSE_SHEET' })}><IcoClose size={16} /></IconBtn>
+        </div>
+        <div style={{ padding: '4px 22px 14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,.05)', borderRadius: 13, padding: 4 }}>
+            {['foods', 'meals'].map(tab => (
+              <button key={tab} onClick={() => dispatch({ type: 'TAB', tab })}
+                style={{ all: 'unset', cursor: 'pointer', flex: 1, textAlign: 'center', padding: 9, borderRadius: 10, fontSize: 13.5, fontWeight: s.sheetTab === tab ? 600 : 500, background: s.sheetTab === tab ? ACCENT : 'transparent', color: s.sheetTab === tab ? '#231206' : '#9a9893' }}>
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 22px 24px' }}>
+          {s.sheetTab === 'foods' ? <AddFoodsTab s={s} dispatch={dispatch} /> : <AddMealsTab s={s} dispatch={dispatch} />}
+        </div>
+      </div>
+    );
+  }
+
+  function Sheet({ s, dispatch }) {
+    if (!s.sheet) return null;
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 100 }}>
+        <div onClick={() => dispatch({ type: 'CLOSE_SHEET' })} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.55)' }} />
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '90%', background: '#0c0c0e', borderRadius: '28px 28px 0 0', borderTop: '1px solid rgba(255,255,255,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, flexShrink: 0 }}>
+            <div style={{ width: 40, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.16)' }} />
+          </div>
+          {s.sheet === 'add'   && <AddSheet   s={s} dispatch={dispatch} />}
+          {s.sheet === 'supps' && <SuppsSheet s={s} dispatch={dispatch} />}
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── App ─────────────────────────────────────────────────────────────── */
+  function App() {
+    const [s, dispatch] = useReducer(reducer, INITIAL);
+
+    useEffect(() => {
+      if (!s.toast) return;
+      const id = setTimeout(() => dispatch({ type: 'CLEAR_TOAST' }), 1800);
+      return () => clearTimeout(id);
+    }, [s._ts]);
+
+    const noNavPages = ['welcome', 'signin', 'baseline', 'session_a'];
+    const showNav = !noNavPages.includes(s.page);
+    const noStatusPages = ['welcome', 'session_a'];
+    const showStatus = !noStatusPages.includes(s.page);
+
+    const navSection = () => {
+      if (['workout_plan','workout_detail'].includes(s.page)) return 'workout';
+      if (s.page === 'food') return 'food';
+      if (s.page === 'supps_page') return 'supps';
+      if (['profile','notifications'].includes(s.page)) return 'profile';
+      return 'home';
+    };
+    const navColor = section => navSection() === section ? ACCENT : '#5e5c58';
+
+    return (
+      <div style={{
+        width: 390, height: 844,
+        borderRadius: 44, overflow: 'hidden',
+        position: 'relative', display: 'flex', flexDirection: 'column',
+        background: '#0c0c0e', color: '#f2f0ed',
+        boxShadow: '0 14px 44px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.16)',
+        border: '1px solid rgba(255,255,255,.05)',
+      }}>
+        {showStatus && <StatusBar />}
+
+        {s.page === 'welcome'        && <WelcomeScreen  dispatch={dispatch} />}
+        {s.page === 'signin'         && <SignInScreen   dispatch={dispatch} />}
+        {s.page === 'baseline'       && <BaselineScreen s={s} dispatch={dispatch} />}
+        {s.page === 'home'           && <HomeScreen     s={s} dispatch={dispatch} />}
+        {s.page === 'food'           && <FoodScreen     s={s} dispatch={dispatch} />}
+        {s.page === 'body'           && <BodyScreen     dispatch={dispatch} />}
+        {s.page === 'workout_plan'   && <WorkoutPlanScreen  dispatch={dispatch} />}
+        {s.page === 'workout_detail' && <WorkoutDetailScreen dispatch={dispatch} />}
+        {s.page === 'session_a'      && <SessionAScreen s={s} dispatch={dispatch} />}
+        {s.page === 'supps_page'     && <SuppsPageScreen s={s} dispatch={dispatch} />}
+        {s.page === 'profile'        && <ProfileScreen  dispatch={dispatch} />}
+        {s.page === 'notifications'  && <NotificationsScreen s={s} dispatch={dispatch} />}
+
+        {/* Bottom nav */}
+        {showNav && (
+          <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 34px 26px', borderTop: '1px solid rgba(255,255,255,.07)', background: '#0c0c0e' }}>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'home' })} style={{ all: 'unset', cursor: 'pointer', display: 'flex', color: navColor('home') }}><IcoHome size={23} /></button>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'food' })} style={{ all: 'unset', cursor: 'pointer', display: 'flex', color: navColor('food') }}><IcoFood size={23} /></button>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'workout_plan' })} style={{ all: 'unset', cursor: 'pointer', display: 'flex', color: navColor('workout') }}><IcoDumbbell size={23} /></button>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'supps_page' })} style={{ all: 'unset', cursor: 'pointer', display: 'flex', color: navColor('supps') }}><IcoPill size={23} /></button>
+            <button onClick={() => dispatch({ type: 'PAGE', page: 'profile' })} style={{ all: 'unset', cursor: 'pointer', display: 'flex', color: navColor('profile') }}><IcoProfile size={23} /></button>
+          </div>
+        )}
+
+        {/* Home indicator pill */}
+        {showNav && (
+          <div style={{ position: 'absolute', bottom: 9, left: '50%', transform: 'translateX(-50%)', width: 134, height: 5, borderRadius: 3, background: 'currentColor', opacity: .22, zIndex: 90, pointerEvents: 'none' }} />
+        )}
+
+        {/* Toast */}
+        {s.toast && (
+          <div style={{ position: 'absolute', bottom: showNav ? 104 : 44, left: '50%', transform: 'translateX(-50%)', zIndex: 120, background: '#f4f2ed', color: '#1b1b1d', padding: '11px 20px', borderRadius: 14, fontSize: 14, fontWeight: 600, boxShadow: '0 10px 30px rgba(0,0,0,.4)', whiteSpace: 'nowrap' }}>
+            {s.toast}
+          </div>
+        )}
+
+        <Sheet s={s} dispatch={dispatch} />
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
