@@ -1,5 +1,5 @@
-/* Tend service worker — bump CACHE on each deploy to refresh clients. */
-const CACHE = 'tend-v1'
+/* Talli service worker — bump CACHE on each deploy to refresh clients. */
+const CACHE = 'talli-v1'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(() => self.skipWaiting()))
@@ -17,9 +17,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {}
   e.waitUntil(
-    self.registration.showNotification(data.title || 'Tend', {
+    self.registration.showNotification(data.title || 'Talli', {
       body: data.body || '',
-      tag: data.tag || 'tend-supp',
+      tag: data.tag || 'talli-supp',
     }),
   )
 })

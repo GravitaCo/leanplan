@@ -271,7 +271,7 @@ export function ProfileScreen() {
             />
           </div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            iPhone: requires iOS 16.4+ with Tend added to your Home Screen via Safari.
+            iPhone: requires iOS 16.4+ with Talli added to your Home Screen via Safari.
           </div>
         </Accordion>
 
@@ -317,7 +317,7 @@ export function ProfileScreen() {
         <Accordion title="About">
           <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
             <p style={{ marginTop: 0 }}>
-              <b style={{ color: 'var(--ink)' }}>Tend</b> — personal health &amp; fitness tracker.
+              <b style={{ color: 'var(--ink)' }}>Talli</b> — personal health &amp; fitness tracker.
             </p>
             <p>
               <b style={{ color: 'var(--ink)' }}>Data:</b> stored on this device and synced to a private database tied to

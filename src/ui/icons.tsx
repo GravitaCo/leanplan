@@ -1,4 +1,4 @@
-/** Line icons, stroked with currentColor — matches the Tend visual weight. */
+/** Line icons, stroked with currentColor — matches the Talli visual weight. */
 import type { SVGProps } from 'react'
 
 const base = (props: SVGProps<SVGSVGElement>) => ({

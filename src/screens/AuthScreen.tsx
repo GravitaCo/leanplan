@@ -63,7 +63,7 @@ export function AuthScreen() {
       }}
     >
       <div style={{ textAlign: 'center', marginBottom: 34 }}>
-        <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px' }}>Tend</div>
+        <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px' }}>Talli</div>
         <div className="mono" style={{ marginTop: 6 }}>
           eat well · move often · feel better
         </div>

@@ -1,6 +1,6 @@
 /* ============================================================
-   Tend design tokens + base styles
-   The visual language from the Tend design: near-black shell,
+   Talli design tokens + base styles
+   The visual language from the Talli design: near-black shell,
    warm cream hero cards, coral accent, Hanken Grotesk + IBM Plex Mono.
    ============================================================ */
 :root {
@@ -64,7 +64,7 @@ button {
   font-family: inherit;
 }
 
-/* mono micro-labels — the Tend signature */
+/* mono micro-labels — the Talli signature */
 .mono {
   font-family: var(--font-mono);
   font-size: 10px;
