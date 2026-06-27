@@ -1,5 +1,5 @@
 /* Tali service worker — bump CACHE on each deploy to refresh clients. */
-const CACHE = 'tali-v1'
+const CACHE = 'tali-v2'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(() => self.skipWaiting()))
