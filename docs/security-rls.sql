@@ -1,5 +1,5 @@
 -- ============================================================================
--- Talli — Row Level Security lockdown
+-- Tali — Row Level Security lockdown
 -- Run this ONCE in the Supabase dashboard → SQL Editor → New query → Run.
 --
 -- Before this, the tables were readable/writable by anyone holding the public

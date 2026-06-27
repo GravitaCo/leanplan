@@ -1,5 +1,5 @@
-/* Talli service worker — bump CACHE on each deploy to refresh clients. */
-const CACHE = 'talli-v1'
+/* Tali service worker — bump CACHE on each deploy to refresh clients. */
+const CACHE = 'tali-v1'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(() => self.skipWaiting()))
@@ -17,9 +17,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {}
   e.waitUntil(
-    self.registration.showNotification(data.title || 'Talli', {
+    self.registration.showNotification(data.title || 'Tali', {
       body: data.body || '',
-      tag: data.tag || 'talli-supp',
+      tag: data.tag || 'tali-supp',
     }),
   )
 })

@@ -7,7 +7,7 @@ export function exportBackup(state: PersistedState): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'talli-backup-' + todayStr() + '.json'
+  a.download = 'tali-backup-' + todayStr() + '.json'
   document.body.appendChild(a)
   a.click()
   a.remove()
