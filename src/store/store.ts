@@ -37,6 +37,8 @@ interface StoreState {
   email: string | null
   authReady: boolean
   signedIn: boolean
+  /** true only when a real Supabase session exists (not guest/local-only mode) */
+  authed: boolean
   toast: string | null
 
   // navigation
@@ -112,6 +114,7 @@ export const useStore = create<StoreState>()(
       email: null,
       authReady: false,
       signedIn: false,
+      authed: false,
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),
@@ -337,18 +340,18 @@ export const useStore = create<StoreState>()(
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           setSession(session.access_token, session.user.id)
-          set((st) => { st.signedIn = true; st.email = session.user.email ?? null })
+          set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
         }
         set((st) => { st.authReady = true })
 
         supabase.auth.onAuthStateChange((_event, session) => {
           if (session) {
             setSession(session.access_token, session.user.id)
-            set((st) => { st.signedIn = true; st.email = session.user.email ?? null })
+            set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
             get().runSync()
           } else {
             setSession(null, null)
-            set((st) => { st.signedIn = false; st.email = null })
+            set((st) => { st.signedIn = false; st.authed = false; st.email = null })
           }
         })
 
@@ -370,12 +373,16 @@ export const useStore = create<StoreState>()(
       },
 
       continueAsGuest: () => {
-        // Local-only mode: no account, data lives on this device (and syncs under the
-        // shared local user id, mirroring LeanPlan's offline fallback).
-        set((st) => { st.signedIn = true; st.email = null })
+        // Local-only mode: no account, data stays on this device only. Cloud sync is
+        // disabled (authed stays false) so we never touch the database without a real
+        // authenticated session — the database is locked to auth.uid() by RLS.
+        set((st) => { st.signedIn = true; st.authed = false; st.email = null })
       },
 
       runSync: async () => {
+        // Only sync with a real authenticated session. Guests are local-only; the
+        // database rejects anything without a JWT matching the row's user_id.
+        if (!get().authed) return
         if (syncing) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         syncing = true
