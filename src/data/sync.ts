@@ -19,10 +19,11 @@ function toServerFood(f: Food, uid: string) {
     carbs: +f.c || 0,
     fat: +f.f || 0,
     grams: +f.g || 100,
+    ml: !!f.ml,
   }
 }
 function fromServerFood(r: any): Food {
-  return { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, _u: r.updated_at, _dirty: false }
+  return { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
 }
 function toServerDay(s: PersistedState, d: string, uid: string) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }

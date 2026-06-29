@@ -19,7 +19,7 @@ import type {
   Profile,
 } from '@/core/types'
 import { todayStr, shiftDay } from '@/core/domain/date'
-import { scaleFood, recipePerServing } from '@/core/domain/nutrition'
+import { scaleFood, recipePerServing, unitOf } from '@/core/domain/nutrition'
 import { loadState, loadStateFrom, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
@@ -140,7 +140,8 @@ export const useStore = create<StoreState>()(
             f: scaled.f,
             meal: mealSlot,
           }
-          if (food.ml) entry.unit = 'ml'
+          const unit = unitOf(food)
+          if (unit === 'ml') entry.unit = unit
           d.foods.push(entry)
           markDayDirty(st.data, st.cur)
         })
@@ -169,7 +170,10 @@ export const useStore = create<StoreState>()(
           }
           const d = ensureDay(st.data, st.cur)
           const scaled = scaleFood({ ...def, g: grams } as Food, grams)
-          d.foods.push({ n: def.n, grams: Math.round(grams), k: scaled.k, p: scaled.p, c: scaled.c, f: scaled.f })
+          const entry: LoggedFood = { n: def.n, grams: Math.round(grams), k: scaled.k, p: scaled.p, c: scaled.c, f: scaled.f }
+          const unit = unitOf(def)
+          if (unit === 'ml') entry.unit = unit
+          d.foods.push(entry)
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Saved & added')

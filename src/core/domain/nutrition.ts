@@ -20,6 +20,11 @@ export function dayTotals(day: DayLog | undefined): MacroTotals {
   return t
 }
 
+/** The measurement unit a food is logged in — millilitres for liquids, otherwise grams. */
+export function unitOf(f: Pick<Food, 'ml'>): 'g' | 'ml' {
+  return f.ml ? 'ml' : 'g'
+}
+
 /** Scale a per-100g food to a portion in grams, producing an absolute macro entry. */
 export function scaleFood(f: Food, grams: number): MacroTotals & { g: number } {
   const m = grams / 100

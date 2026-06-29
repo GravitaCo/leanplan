@@ -3,6 +3,7 @@ import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { r0, r1 } from '@/core/domain/date'
+import { unitOf } from '@/core/domain/nutrition'
 import { Sheet } from '@/ui/primitives'
 
 const MEALS: { id: MealSlot; label: string }[] = [
@@ -34,6 +35,7 @@ export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot;
   const [meal, setMeal] = useState<MealSlot>(initialMeal || defaultMeal())
   const [creating, setCreating] = useState(false)
   const [cf, setCf] = useState({ n: '', g: '100', k: '', p: '', c: '', f: '' })
+  const [cfUnit, setCfUnit] = useState<'g' | 'ml'>('g')
 
   // recently logged foods for the empty state
   const recent = useMemo(() => {
@@ -59,7 +61,7 @@ export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot;
   // ---- portion view ----
   if (selected) {
     const f = selected
-    const unit = f.ml ? 'ml' : 'g'
+    const unit = unitOf(f)
     const m = grams / 100
     const half = Math.round(f.g * 0.5)
     const dbl = Math.round(f.g * 2)
@@ -144,7 +146,7 @@ export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot;
         <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
           <div className="grow">
             <div className="name">Create a custom food</div>
-            <div className="meta">Copy the “per 100g” numbers off the packet.</div>
+            <div className="meta">Copy the “per 100{cfUnit}” numbers off the packet.</div>
           </div>
           <button className="x-btn" onClick={() => setCreating(false)}>
             ←
@@ -154,13 +156,28 @@ export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot;
           <label>Name</label>
           <input value={cf.n} onChange={(e) => setCf({ ...cf, n: e.target.value })} placeholder="e.g. Mum's chilli" />
         </div>
+        <div className="field">
+          <label>Measured in</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['g', 'ml'] as const).map((u) => (
+              <button
+                key={u}
+                className={'btn' + (u === cfUnit ? '' : ' ghost')}
+                style={{ flex: 1, padding: '8px 2px' }}
+                onClick={() => setCfUnit(u)}
+              >
+                {u === 'g' ? 'Grams (g)' : 'Millilitres (ml)'}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid2">
           <div className="field">
-            <label>Amount (g)</label>
+            <label>Amount ({cfUnit})</label>
             <input type="number" inputMode="decimal" value={cf.g} onChange={(e) => setCf({ ...cf, g: e.target.value })} />
           </div>
           <div className="field">
-            <label>Kcal /100g</label>
+            <label>Kcal /100{cfUnit}</label>
             <input type="number" inputMode="decimal" value={cf.k} onChange={(e) => setCf({ ...cf, k: e.target.value })} />
           </div>
         </div>
@@ -191,6 +208,7 @@ export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot;
                 c: parseFloat(cf.c) || 0,
                 f: parseFloat(cf.f) || 0,
                 g,
+                ml: cfUnit === 'ml',
               },
               g,
             )
