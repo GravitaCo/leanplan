@@ -50,11 +50,13 @@ reintroduced, and `src/core/` stays framework-agnostic.**
   cardio sessions (vs `ex?: LoggedExercise[]` for strength). So cardio logging is partly
   there, but cardio has **no library, no typed sub-variations** (running/swimming/etc.), and
   no place in the recommender. We promote it to a first-class category (see §2.1, §5).
-- **"Goal" does not exist as a concept.** The only stated-intent signal today is
-  `suggestedTargets()` (`nutrition.ts`), which hardcodes a **−500 kcal fat-loss deficit**.
-  `Profile` carries `name, sex, age, height, weight?, activityLevel, supplements,
-  notificationsEnabled` — no training goal, experience level, equipment access, or
-  preferred days/week.
+- **"Goal" now exists as a shared top-level field.** *(Updated after onboarding-contract
+  Phases 1–2 shipped.)* `Profile.goal` carries the canonical four-value enum (de-dupe
+  ruling 1 in `onboarding-and-data-flow.md`), and `suggestedTargets()` (`nutrition.ts`)
+  is goal-aware — the old hardcoded −500 kcal deficit is gone. `Profile` also gained
+  optional `bodyFat`, `targetRate` and `training?: TrainingPrefs` (types only so far);
+  experience level, equipment access and days/week have no capture UI until the Phase-3
+  questionnaire.
 
 ### Persistence & sync (the constraints we design around)
 - localStorage key `leanplan.v1` (`persistence.ts`) holds `PersistedState` = `AppState`
@@ -220,7 +222,7 @@ export interface TrainingPlan {
   baseTemplateId?: string
   /** if this plan was cloned (re-used) from another, the source plan id — provenance only */
   clonedFromId?: string
-  goal?: TrainingGoal             // the goal this plan was built/recommended for
+  goal?: Goal                     // the goal this plan was built/recommended for
   days: PlanDay[]                 // the day-templates (NOT the weekday calendar)
   /** when the plan was marked completed (lifecycle audit / "reuse" UX) */
   completedAt?: string
@@ -246,21 +248,29 @@ way. At most one `'active'` plan exists per user (enforced in the store/domain, 
 
 ### 2.3 Profile additions (the *preferences* ride existing `settings.profile` JSON — no migration)
 
-The four goals (Benn's decision). The app's overall focus stays hypertrophy, but all four
-are supported properly with distinct programming (see §3):
+The four goals (Benn's decision). **`goal` is the shared cross-domain field** — captured once
+in onboarding, consumed by *both* the fitness recommender (§3) and the nutrition target
+engine (the deficit/surplus direction). The fitness domain owns its **canonical definition**;
+nutrition consumes the same enum and aligns its energy-balance direction to it. The enum
+values below are the contract — do not fork or rename them per domain. Per de-dupe ruling 1
+in `onboarding-and-data-flow.md`, **`goal` lives at top-level `Profile.goal`, NOT inside
+`TrainingPrefs`** — one whole-person field both domains read. See §4.0 for the full shared
+`goal` contract table (fitness action + the energy-balance direction nutrition keys off).
+The app's overall focus stays hypertrophy, but all four are supported properly with
+distinct programming (see §3). *(Updated: `Goal`, `TrainingPrefs` and the `Profile`
+additions below shipped in `src/core/types.ts` — all fields optional/additive.)*
 
 ```ts
-export type TrainingGoal =
+export type Goal =                 // canonical shared enum (was TrainingGoal in early drafts)
   | 'lose-fat'             // hypertrophy retention in a deficit + conditioning emphasis
   | 'increase-strength'    // lower reps, higher intensity, longer rest on key compounds
   | 'build-muscle'         // hypertrophy — the app's headline focus
   | 'increase-endurance'   // higher reps / circuits + cardio emphasis (may map to cardio plans)
 
-export interface TrainingPrefs {
-  goal: TrainingGoal
-  experience: Experience
-  daysPerWeek: 2 | 3 | 4 | 5 | 6
-  equipment: Equipment[]          // what they can access; filters the library
+export interface TrainingPrefs {   // all optional/additive — no goal here (it's Profile.goal)
+  experience?: Experience
+  daysPerWeek?: 2 | 3 | 4 | 5 | 6
+  equipment?: Equipment[]         // what they can access; filters the library
   /** muscles to bias extra volume toward (optional power-user knob) */
   emphasis?: MuscleGroup[]
   /** preferred cardio variations (esp. for increase-endurance), drives cardio-day selection */
@@ -269,6 +279,8 @@ export interface TrainingPrefs {
 
 export interface Profile {
   // ...existing fields unchanged...
+  /** shared whole-person goal — read by both the recommender and nutrition */
+  goal?: Goal
   /** optional so existing rows/migrations load fine; absent = not yet onboarded */
   training?: TrainingPrefs
   /**
@@ -313,7 +325,7 @@ create table public.training_plans (
   name        text not null,
   source      text not null,                     -- 'recommended' | 'custom' | 'edited-recommended'
   state       text not null default 'active',    -- 'active' | 'completed' | 'archived' | 'template'
-  goal        text,                              -- TrainingGoal this plan serves
+  goal        text,                              -- Goal this plan serves
   base_template_id text,                          -- blueprint provenance ("reset to recommended")
   cloned_from_id   uuid,                          -- re-use provenance (nullable)
   days        jsonb not null,                     -- PlanDay[] body (the day-templates)
@@ -425,14 +437,118 @@ All citations live as comments in `recommend.ts` and as plain-English "why" copy
 Two audiences, one surface, governed by progressive disclosure: **the recommended plan is
 the default; building/editing is opt-in and never blocks the simple path.**
 
-### 4.1 Onboarding → goal capture + first plan (new, lightweight)
+---
+
+## 4.0 Onboarding is the driver (input → recommender → plan)
+
+**Framing.** Onboarding is the upstream source of truth. Every recommender decision must
+trace to a captured answer — the recommender never guesses a value the questionnaire could
+have asked for. The questionnaire captures `TrainingPrefs` (§2.3); the recommender (§3)
+consumes it; a `TrainingPlan` row is the output. Data flows **down the chain**: *answer →
+`TrainingPrefs` field → recommender decision → plan.*
+
+Each input below is labelled **SHARED** (also consumed by the nutrition target engine — Benn
+de-dupes these into one canonical questionnaire) or **FITNESS** (this domain only).
+`TrainingPrefs` additions are **additive only**: new optional fields on the existing
+`settings.profile` JSON, no `leanplan.v1` rename, no Supabase column rename, core stays
+framework-agnostic (§2.3).
+
+### 4.0.1 The shared `goal` contract (fitness owns; nutrition consumes)
+
+`goal` is captured once and read by both engines. The fitness domain owns the canonical enum;
+the nutrition engine keys its energy-balance direction off the **same values**. This table is
+the contract — the "Nutrition direction" column is descriptive of what nutrition should do so
+it aligns to the same enum; it is **not** a nutrition design (that's the nutrition
+specialist's spec).
+
+| `goal` value | Meaning (canonical) | What the **recommender** does (fitness) | Energy-balance direction (for nutrition to align) |
+|---|---|---|---|
+| `lose-fat` | Reduce body fat while retaining muscle | Hypertrophy rep bands (6–15) to retain muscle in a deficit; volume trimmed toward the low end (recovery is harder in a deficit); added conditioning/cardio for expenditure | **Deficit** (below TDEE); high protein to spare lean mass |
+| `build-muscle` | Add muscle mass (headline focus) | Hypertrophy default: 6–15 reps, 1–3 min rest, 2–3 RIR; full MEV→MAV volume | **Slight surplus** (above TDEE) or maintenance |
+| `increase-strength` | Get stronger on key lifts | Main compounds 3–6 reps at higher relative intensity, longer rest 2–4 min; accessories 6–12 | **Maintenance / slight surplus** (fuel performance) |
+| `increase-endurance` | Improve cardiovascular & muscular endurance | Cardio-led split; higher-rep (12–20+) / circuit resistance with short rest; progressive cardio by experience | **Maintenance** (fuel volume; not a fat-loss deficit by default) |
+
+The energy-balance column is the coupling point — now **wired** *(updated: onboarding
+contract Phase 2 shipped)*: `suggestedTargets()` reads `profile.goal` and applies the
+agreed direction per value (deficit band for lose-fat, lean surplus for build-muscle,
+~maintenance for strength/endurance). The old hardcoded −500 kcal deficit is gone. Same
+enum, same field, both engines — the cross-domain bug this table existed to prevent is
+structurally closed.
+
+### 4.0.2 Fitness onboarding inputs (the questionnaire slice)
+
+Each row: the question (label + answer type + options), the `TrainingPrefs` field it
+populates, whether it is SHARED or FITNESS-only, and exactly what it drives in the recommender.
+
+| # | Question (label) | Answer type / options | Populates | Scope | Drives in the recommender |
+|---|---|---|---|---|---|
+| 1 | "What's your main goal right now?" | Single-select: Lose fat · Build muscle · Increase strength · Improve endurance | `profile.goal` (top-level, per de-dupe ruling 1) | **SHARED** | Rep/rest/intensity scheme + volume skew + whether the split is cardio-led (§3 step 2–3; §4.0.1). Also the nutrition deficit/surplus direction. |
+| 2 | "How would you describe your training experience?" | Single-select: Beginner · Intermediate · Advanced | `training.experience` | **FITNESS** | Weekly sets/muscle band — MEV→MAV→MRV: beginner ≈10, intermediate ≈12–16, advanced ≈16–20 sets/muscle/week (§3 step 3); also gates exercise `difficulty` filtering. |
+| 3 | "How many days a week can you train?" | Single-select: 2 · 3 · 4 · 5 · 6 | `training.daysPerWeek` | **FITNESS** | Split selection: 2–3 → full-body, 4 → upper/lower, 5–6 → PPL (Legs→Push→Pull preserved) (§3 step 1). Determines how many `PlanDay`s and their frequency. |
+| 4 | "What equipment can you use?" | Multi-select: Barbell · Dumbbells · Machines · Cables · Bodyweight only · Kettlebell · Resistance bands · Cardio machines | `training.equipment` | **FITNESS** | Exercise filter/substitution: drops or swaps any library exercise whose `equipment` doesn't intersect the selection, keeping same `pattern`/`primary` (§3 step 4). Empty-ish access still resolves via bodyweight variants. |
+| 5 | "Any preferred cardio?" (shown when goal = endurance, or optionally always) | Multi-select: Running · Walking · Cycling · Rowing · Swimming · Elliptical · Stair · Jump rope · HIIT · No preference | `training.cardioPrefs` | **FITNESS** | Which `CardioVariation` days the recommender builds; respects available `cardio-machine` equipment (no pool → not swimming). Central for `increase-endurance` cardio-led plans (§3 step 1). |
+| 6 | "Anything we should train around?" (injuries / limitations) | Multi-select of common areas: Lower back · Knees · Shoulders · Elbows · Wrists · Neck · None + optional free-text note | `training.limitations` | **FITNESS** *(new field, additive)* | Exercise exclusion/substitution: filters out contraindicated `pattern`/`primary` exercises and prefers safer same-slot alternatives (e.g. lower-back flag → deprioritise barbell hinge/loaded spinal-flexion, prefer machine/supported variants). Safety-first: never programs a flagged-risky movement. |
+| 7 | "Focus areas?" (optional power-user knob) | Multi-select of `MuscleGroup`s | `training.emphasis` | **FITNESS** | Adds +2–4 sets/week to emphasised muscles, capped at MRV (§3 step 3). Optional; skippable. |
+
+**Body metrics are SHARED — flagged, not redesigned here.** Sex, age, height, weight, and
+activity level already live on `Profile` (`sex`, `age`, `height`, `weight?`, `activityLevel`)
+and are consumed by nutrition for TDEE. The recommender does **not** re-ask or redesign them;
+it may *read* them (e.g. bodyweight for load hints later) but they are owned by the shared
+body-metrics section of the canonical questionnaire, not by this fitness slice. Listed here
+only so Benn can de-dupe: **do not duplicate sex/age/height/weight/activity into
+`TrainingPrefs`.**
+
+One additive field is introduced by this reframing — `limitations` on `TrainingPrefs`:
+
+```ts
+// src/core/types.ts — TrainingPrefs (shipped, additive; all fields optional).
+// Note: goal is NOT here — it lives at top-level Profile.goal (de-dupe ruling 1).
+export type BodyArea =
+  | 'lower-back' | 'knees' | 'shoulders' | 'elbows' | 'wrists' | 'neck'
+
+export interface TrainingPrefs {
+  experience?: Experience
+  daysPerWeek?: 2 | 3 | 4 | 5 | 6
+  equipment?: Equipment[]
+  emphasis?: MuscleGroup[]
+  cardioPrefs?: CardioVariation[]
+  /** areas to train around; drives exercise exclusion/substitution (safety-first) */
+  limitations?: BodyArea[]
+  /** optional free-text detail on limitations (informational; not parsed by the recommender) */
+  limitationsNote?: string
+}
+```
+
+### 4.0.3 Recommender consumption map (data flowing down the chain)
+
+A concise input→output summary of §3, framed as onboarding driving the recommender. Every
+output traces to a captured answer:
+
+- **Split** ← `daysPerWeek` (+ `goal` for the cardio-led case). 2–3 → full-body · 4 →
+  upper/lower · 5–6 → PPL (Legs→Push→Pull adjacency preserved). `goal = increase-endurance`
+  overrides toward a cardio-led split.
+- **Weekly volume (sets/muscle)** ← `experience` sets the MEV→MAV→MRV band (≈10 / 12–16 /
+  16–20); `goal` skews within it (`lose-fat` low end; `increase-endurance` spends part of the
+  budget on cardio); `emphasis` adds +2–4 sets, capped at MRV.
+- **Rep / rest / intensity scheme** ← `goal`. `build-muscle` 6–15 / 1–3 min / 2–3 RIR ·
+  `increase-strength` 3–6 heavy / 2–4 min on main lifts · `lose-fat` 6–15 (retain) +
+  conditioning · `increase-endurance` 12–20+ / circuits / short rest + cardio.
+- **Exercise selection & filtering** ← `equipment` (drop/swap by `equipment` intersection,
+  same `pattern`/`primary`) ∩ `limitations` (exclude contraindicated movements, prefer safer
+  substitutes) ∩ `experience` (respect `difficulty`). Cardio days ← `cardioPrefs` ∩ available
+  `cardio-machine` equipment.
+- **Output** → one `TrainingPlan` row cloned from a §2.4 blueprint, `source:'recommended'`,
+  `state:'active'`, `goal` stamped on it, `profile.activePlanId` pointed at it.
+
+### 4.1 Onboarding flow → goal capture + first plan (new, lightweight)
 Users **set a plan during onboarding** (Benn's decision). A short, skippable flow (or a "Set
-up my training" card on `PlanScreen` / Today) collects `TrainingPrefs`: goal (one of the
-four), experience, days/week, equipment, and — when relevant — cardio preferences. It writes
-`profile.training`, calls the recommender, persists the recommended plan as a
-`training_plans` row (`source:'recommended'`, `state:'active'`), and sets
-`profile.activePlanId`. If skipped, fall back to today's PPL default (no regression). Reuses
-existing `field`/`select` primitives and the design tokens.
+up my training" card on `PlanScreen` / Today) asks the §4.0.2 questions, writing
+`profile.training` (`TrainingPrefs`), then calls the recommender (§4.0.3), persists the
+recommended plan as a `training_plans` row (`source:'recommended'`, `state:'active'`), and
+sets `profile.activePlanId`. If skipped, fall back to today's PPL default (no regression).
+Reuses existing `field`/`select` primitives and the design tokens. The shared fields
+(`goal` + body metrics) are asked once in the canonical questionnaire; this fitness slice
+contributes questions 1–7 above (goal being the shared one).
 
 ### 4.1a Plan lifecycle UX (Benn's decision)
 - **Active plan** is what Train/Plan render from. At most one active at a time.
@@ -538,7 +654,8 @@ Re-sequenced so the **table-backed model is foundational (P0/P1)**, not deferred
 
 - **Phase 0 — Library data model & types (no UI change).** Add the §2.1–2.2 core types
   (`Exercise` with `kind` + cardio fields, `PlanExercise`/`PlanDay`/`TrainingPlan` with
-  lifecycle, the four-goal `TrainingGoal`, `CardioVariation`); create the **broad**
+  lifecycle, `CardioVariation`; the four-goal `Goal` already shipped with the onboarding
+  contract); create the **broad**
   `exercises.ts` (seeded from `WORKOUTS` + breadth + cardio slice) and `plans.ts` blueprints
   referencing exercise ids. `TrainScreen` reads through a resolver but renders identically.
   Pure groundwork; `npm run typecheck` green; zero behaviour change. *Ships invisibly.*
@@ -597,11 +714,11 @@ Everything after is additive and independently reviewable.
    itself is planned separately and not decided in this plan** (§4.3a).
 
 ### Still open
-1. **Goal vs. nutrition coupling (deferred cross-domain integration).** Should
-   `training.goal = 'lose-fat'` also drive the nutrition `suggestedTargets` deficit (currently
-   always −500 kcal)? This crosses from the fitness domain into nutrition and is a genuine
-   cross-domain integration point — **deliberately deferred and documented here, not designed
-   now.** Owned jointly with the nutrition specialist when picked up.
+1. **Goal vs. nutrition coupling — RESOLVED** *(onboarding contract Phases 1–2 shipped)*.
+   `profile.goal` (top-level, per de-dupe ruling 1 — not `training.goal`) now drives the
+   nutrition `suggestedTargets` energy direction: the −500 kcal hardcoded deficit is
+   replaced by the goal-aware band engine (§4.0.1's directions, implemented in
+   `src/core/domain/nutrition.ts`). Both engines key off the same enum and the same field.
 2. **Onboarding placement (minor UX).** Dedicated first-run flow vs. a dismissible "Set up
    training" card on Plan/Today. The plan is set during onboarding either way; the card is
    lower-friction and avoids a gated wall — leaning that way, but a UX call to confirm.

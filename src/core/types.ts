@@ -98,6 +98,54 @@ export interface MacroTarget {
 export type Sex = 'M' | 'F'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active'
 
+/**
+ * The user's main goal (onboarding question #6). Canonical enum owned by the fitness
+ * domain; nutrition consumes the same values to set energy direction. Lives at the top
+ * level of Profile (not TrainingPrefs) because both domains read it — one field, one
+ * write path, so training plan and calorie direction can never silently disagree.
+ */
+export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance'
+
+/** How fast the user wants to progress (onboarding #8). Default: 'standard'. */
+export type TargetRate = 'steady' | 'standard' | 'aggressive'
+
+export type Experience = 'beginner' | 'intermediate' | 'advanced'
+
+export type Equipment =
+  | 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band'
+  | 'cardio-machine'
+
+/** Cardio as a first-class category with typed sub-variations. */
+export type CardioVariation =
+  | 'running' | 'walking' | 'cycling' | 'rowing' | 'swimming'
+  | 'elliptical' | 'stair' | 'jump-rope' | 'hiit' | 'other'
+
+/** Body areas the user needs to train around (onboarding #13, safety-first). */
+export type BodyArea = 'lower-back' | 'knees' | 'shoulders' | 'elbows' | 'wrists' | 'neck'
+
+export type MuscleGroup =
+  | 'chest' | 'back' | 'quads' | 'hamstrings' | 'glutes' | 'shoulders'
+  | 'biceps' | 'triceps' | 'calves' | 'core' | 'forearms'
+
+/**
+ * Fitness-only onboarding preferences (questions #9–14). All optional/additive —
+ * rides the existing settings.profile JSON, no migration needed.
+ */
+export interface TrainingPrefs {
+  experience?: Experience
+  daysPerWeek?: 2 | 3 | 4 | 5 | 6
+  /** what the user can access; filters exercise selection & substitution */
+  equipment?: Equipment[]
+  /** preferred cardio variations (esp. for increase-endurance) */
+  cardioPrefs?: CardioVariation[]
+  /** areas to train around; only ever excludes/substitutes movements, never programs risky ones */
+  limitations?: BodyArea[]
+  /** optional free-text detail on limitations (informational; not parsed) */
+  limitationsNote?: string
+  /** muscles to bias extra volume toward (optional power-user knob) */
+  emphasis?: MuscleGroup[]
+}
+
 export interface Supplement {
   id: string
   name: string
@@ -113,6 +161,14 @@ export interface Profile {
   activityLevel: ActivityLevel
   supplements: Supplement[]
   notificationsEnabled: boolean
+  /** main goal (#6) — shared by nutrition & fitness; absent = not yet chosen */
+  goal?: Goal
+  /** body-fat % (#7) — optional; nutrition assumes 15% when absent */
+  bodyFat?: number
+  /** desired pace (#8) — nutrition; treated as 'standard' when absent */
+  targetRate?: TargetRate
+  /** fitness-only onboarding preferences (#9–14) */
+  training?: TrainingPrefs
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { ActivityLevel, Sex } from '@/core/types'
+import type { ActivityLevel, Goal, Sex } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { pushSupported } from '@/data/push'
@@ -10,6 +10,26 @@ import { Accordion, Toggle } from '@/ui/primitives'
 function latestWeight(days: Record<string, { weight: number | null }>, profileWeight?: number | null) {
   for (const d of Object.keys(days).sort().reverse()) if (days[d]?.weight) return days[d].weight
   return profileWeight ?? null
+}
+
+const GOALS: { value: Goal; label: string }[] = [
+  { value: 'lose-fat', label: 'Lose fat' },
+  { value: 'build-muscle', label: 'Build muscle' },
+  { value: 'increase-strength', label: 'Increase strength' },
+  { value: 'increase-endurance', label: 'Improve endurance' },
+]
+
+const GOAL_TARGET_LABEL: Record<Goal, string> = {
+  'lose-fat': 'Fat loss',
+  'build-muscle': 'Muscle gain',
+  'increase-strength': 'Strength',
+  'increase-endurance': 'Endurance',
+}
+
+function directionLabel(pct: number): string {
+  if (pct < 0) return `${-pct}% below maintenance`
+  if (pct > 0) return `${pct}% above maintenance`
+  return 'at maintenance'
 }
 
 export function ProfileScreen() {
@@ -146,20 +166,47 @@ export function ProfileScreen() {
               style={{ background: 'var(--card-2)', borderRadius: 12, padding: '12px 14px', marginTop: 12, fontSize: 13, lineHeight: 1.5 }}
             >
               <b>Suggested targets</b> (Mifflin–St Jeor, {metrics.weight}kg)
-              <br />
-              Maintenance: <b>{sug.maint} kcal</b> · Fat-loss: <b>{sug.kcal} kcal</b>
-              <br />
-              Protein <b>{sug.p}g</b> · Carbs <b>{sug.c}g</b> · Fat <b>{sug.f}g</b>
-              <button
-                className="btn"
-                style={{ marginTop: 10 }}
-                onClick={() => {
-                  saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
-                  setTargets({ kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })
-                }}
-              >
-                Apply to targets
-              </button>
+              <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 8px' }}>Main goal</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                {GOALS.map((g) => (
+                  <button
+                    key={g.value}
+                    className={pr.goal === g.value ? 'pill accent' : 'pill'}
+                    onClick={() => saveProfileMetrics({ goal: g.value })}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+              {'goalNeeded' in sug ? (
+                <>
+                  Maintenance: <b>{sug.maint} kcal</b>
+                  <br />
+                  <span style={{ color: 'var(--muted)' }}>Choose your main goal to see a suggested daily target.</span>
+                </>
+              ) : (
+                <>
+                  Maintenance: <b>{sug.maint} kcal</b> · {GOAL_TARGET_LABEL[sug.goal]}: <b>{sug.kcal} kcal</b>{' '}
+                  <span style={{ color: 'var(--muted)' }}>({directionLabel(sug.adjustPct)})</span>
+                  <br />
+                  Protein <b>{sug.p}g</b> · Carbs <b>{sug.c}g</b> · Fat <b>{sug.f}g</b>
+                  {sug.floored ? (
+                    <div style={{ fontSize: 12, color: 'var(--warn)', marginTop: 6 }}>
+                      Held at a safe minimum — we never suggest eating below your resting metabolic rate.
+                    </div>
+                  ) : null}
+                  <button
+                    className="btn"
+                    style={{ marginTop: 10 }}
+                    onClick={() => {
+                      saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
+                      setTargets({ kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })
+                    }}
+                  >
+                    Apply to targets
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
