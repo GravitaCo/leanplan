@@ -8,8 +8,8 @@ import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { fmt } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
-import { portionText } from '@/core/domain/estimate'
-import { MEAL_LABEL, mealNow, recentFoods, usualEntries, usuals } from '@/core/domain/insights'
+import { frac, portionText } from '@/core/domain/estimate'
+import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
 import { Sheet, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
@@ -48,6 +48,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
   const logEntries = useStore((s) => s.logEntries)
+  const logRecipe = useStore((s) => s.logRecipe)
   const removeCustomFood = useStore((s) => s.removeCustomFood)
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const query = q.trim().toLowerCase()
@@ -62,16 +63,21 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
   )
+  // Recipes: tap the row to choose servings, tap + to log your usual serving in one go.
   const recipeRow = (ri: number) => {
     const r = data.recipes[ri]
     const per = recipePerServing(r)
+    const serv = recipeServing(data, r.name)
     return (
       <div className="li" key={r.id} {...pressable(() => go({ kind: 'recipe', index: ri }))}>
         <div className="m">
-          <div className="t">{r.name}<span className="tag">Recipe</span></div>
-          <div className="s num">{gentle ? '' : `${fmt(per.k)} kcal · `}{Math.round(per.p)} g protein per serving</div>
+          <div className="t">{r.name}</div>
+          <div className="s num">{frac(serv)} serving{serv !== 1 ? 's' : ''} · {gentle ? '' : `${fmt(per.k * serv)} kcal · `}{Math.round(per.p * serv)} g protein</div>
         </div>
-        <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+        <button className="addc" aria-label={`Log ${frac(serv)} serving of ${r.name}`}
+          onClick={(e) => { e.stopPropagation(); logRecipe(r, serv, meal); onClose() }}>
+          <Icon name="plus" size={16} stroke={2.8} />
+        </button>
       </div>
     )
   }
@@ -81,8 +87,10 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const us = usuals(data, cur, meal)
     const rc = recentFoods(data, all)
     const cf = data.customFoods || []
+    const byUse = recipesByUse(data)
     body = (
       <>
+        {byUse.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{byUse.map(recipeRow)}</div></>}
         {us.length > 0 && (
           <>
             <div className="lbl">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
@@ -97,7 +105,6 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
           </>
         )}
         {rc.length > 0 && <><div className="lbl">Recent</div><div className="list">{rc.map((f) => foodRow(f, all.indexOf(f)))}</div></>}
-        {data.recipes.length > 0 && <><div className="lbl">Recipes</div><div className="list">{data.recipes.map((_, ri) => recipeRow(ri))}</div></>}
         {cf.length > 0 && (
           <>
             <div className="lbl">My foods</div>
@@ -114,15 +121,17 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
       </>
     )
   } else {
-    const words = query.split(/\s+/).filter(Boolean)
-    const recipes = data.recipes.map((r, ri) => ({ r, ri })).filter((o) => o.r.name.toLowerCase().includes(query))
+    const meaningful = queryWords(query)
+    const words = meaningful.length ? meaningful : [query]
+    const recipes = recipesByUse(data).map((ri) => ({ r: data.recipes[ri], ri }))
+      .filter((o) => words.every((w) => o.r.name.toLowerCase().includes(w)))
     const foods = all.map((f, i) => ({ f, i }))
       .filter((o) => words.every((w) => o.f.n.toLowerCase().includes(w)))
       .sort((a, b) => a.f.n.toLowerCase().indexOf(words[0]) - b.f.n.toLowerCase().indexOf(words[0]))
       .slice(0, 50)
     body = (
       <>
-        {recipes.length > 0 && <><div className="lbl">Recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}
+        {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}
         {foods.length > 0 && <><div className="lbl">Foods</div><div className="list">{foods.map((o) => foodRow(o.f, o.i))}</div></>}
         {!recipes.length && !foods.length && (
           <div className="empty">Nothing matches “{q.trim()}”.<br />Eating out? A quick estimate is better than nothing.</div>

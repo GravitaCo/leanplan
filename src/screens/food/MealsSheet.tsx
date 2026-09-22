@@ -12,7 +12,8 @@ import { RecipeLogView } from './RecipeLogView'
 
 interface Draft { id?: string; name: string; servings: string; items: RecipeItem[] }
 
-export function MealsSheet({ onClose }: { onClose: () => void }) {
+/** `initialDraft` opens straight into the builder, e.g. "Save as recipe" from a logged meal. */
+export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; initialDraft?: { name: string; items: RecipeItem[] } }) {
   const recipes = useStore((s) => s.data.recipes)
   const customFoods = useStore((s) => s.data.customFoods)
   const saveRecipe = useStore((s) => s.saveRecipe)
@@ -21,7 +22,7 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
   const gentle = useStore((s) => !!s.data.profile.gentle)
   const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
 
-  const [draft, setDraft] = useState<Draft | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)
   const [logging, setLogging] = useState<number | null>(null)
   const [meal, setMeal] = useState<MealSlot>(mealNow())
   const [q, setQ] = useState('')
@@ -39,11 +40,18 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
       if (!draft.items.length) { showToast('Add at least one ingredient'); return }
       saveRecipe({ id: draft.id, name: draft.name.trim(), servings: s, items: draft.items })
-      setDraft(null)
+      if (initialDraft) onClose()
+      else setDraft(null)
     }
     return (
       <Sheet title={draft.id ? 'Edit recipe' : 'New recipe'} tall animate={false} onClose={onClose}
-        left={<BackButton onClick={() => setDraft(null)} label="Recipes" />} right={<button className="navbtn b" onClick={save}>Save</button>}>
+        left={initialDraft ? undefined : <BackButton onClick={() => setDraft(null)} label="Recipes" />}
+        right={<button className="navbtn b" onClick={save}>Save</button>}>
+        {initialDraft && (
+          <div className="sub" style={{ padding: '0 4px 12px' }}>
+            Everything you logged, cooking fat included. Name it once and next time it's one tap.
+          </div>
+        )}
         <div className="list">
           <div className="frow"><label htmlFor="rc_n">Name</label>
             <input id="rc_n" value={draft.name} placeholder="Chicken curry" onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
@@ -54,7 +62,7 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
         <div className="list">
           {draft.items.length ? draft.items.map((it, ii) => (
             <div className="li" key={ii}>
-              <div className="m"><div className="t">{it.n}</div><div className="s">{it.k} kcal per 100 {it.ml ? 'ml' : 'g'}</div></div>
+              <div className="m"><div className="t">{it.n}</div>{!gentle && <div className="s">{it.k} kcal per 100 {it.ml ? 'ml' : 'g'}</div>}</div>
               <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
                 style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
                 onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
@@ -65,8 +73,12 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
           )) : <div className="empty">Add what went in. Don't forget the oil. It's the part photos never see.</div>}
         </div>
         <div className="card" style={{ fontSize: 15, lineHeight: 1.5 }}>
-          Whole recipe <b className="num">{fmt(totals.k)} kcal</b> · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F<br />
-          Per serving <b className="num">{fmt(totals.k / s)} kcal</b> · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F
+          {gentle ? (
+            <>Per serving <b className="num">{r0(totals.p / s)} g protein</b></>
+          ) : (
+            <>Whole recipe <b className="num">{fmt(totals.k)} kcal</b> · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F<br />
+              Per serving <b className="num">{fmt(totals.k / s)} kcal</b> · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F</>
+          )}
         </div>
         <div className="lbl">Add ingredients</div>
         <div className="searchbar"><Icon name="search" size={17} />
@@ -75,7 +87,7 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
           <div className="list" style={{ marginTop: 8 }}>
             {matches.map((f, i) => (
               <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml }] })}>
-                <div className="m"><div className="t">{f.n}</div><div className="s">{f.k} kcal per 100 {f.ml ? 'ml' : 'g'}</div></div>
+                <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${f.p} g protein` : `${f.k} kcal`} per 100 {f.ml ? 'ml' : 'g'}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
               </button>
             ))}

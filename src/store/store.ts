@@ -231,7 +231,7 @@ export const useStore = create<StoreState>()(
             st.data.recipes.push({ id: uuid('r'), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
           }
         })
-        persist(); get().scheduleSync(); get().showToast('Meal saved')
+        persist(); get().scheduleSync(); get().showToast('Recipe saved')
       },
 
       deleteRecipe: (index) => {
@@ -241,7 +241,7 @@ export const useStore = create<StoreState>()(
           st.data.recipes.splice(index, 1)
           if (r.id) meta(st.data).recipeDeletes.push(r.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Meal deleted')
+        persist(); get().scheduleSync(); get().showToast('Recipe deleted')
       },
 
       logRecipe: (recipe, servings, meal) => {
@@ -337,13 +337,16 @@ export const useStore = create<StoreState>()(
 
       saveTargets: (t, rangeWidth) => {
         const floored = t.kcal < KCAL_FLOOR
+        // when the floor lifts calories, top up carbs so the macros still add up to it
+        const macroKcal = t.p * 4 + t.c * 4 + t.f * 9
+        const c = floored && macroKcal < KCAL_FLOOR ? t.c + Math.round((KCAL_FLOOR - macroKcal) / 4) : t.c
         set((st) => {
-          st.data.target = { ...t, kcal: Math.max(KCAL_FLOOR, t.kcal) }
+          st.data.target = { ...t, c, kcal: Math.max(KCAL_FLOOR, t.kcal) }
           if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
           markSettingsDirty(st.data)
         })
         persist(); get().scheduleSync()
-        get().showToast(floored ? 'Kept at 1,200 kcal. Going lower needs medical support.' : 'Targets saved')
+        get().showToast(floored ? `Kept at 1,200 kcal${c !== t.c ? ', with carbs raised to match' : ''}. Going lower needs medical support.` : 'Targets saved')
       },
 
       saveProfileMetrics: (patch) => {

@@ -1,11 +1,11 @@
 /** Food: the day against its range (with an honest ± margin), then meals as grouped lists. */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import type { LoggedFood, MealSlot } from '@/core/types'
+import type { LoggedFood, MealSlot, RecipeItem } from '@/core/types'
 import { fmt, shiftDay } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
-import { dayMargin, isEstimate, portionText } from '@/core/domain/estimate'
-import { MEALS, MEAL_LABEL, dayOf, energyStatus, mealEntries, rangeFor } from '@/core/domain/insights'
+import { dayMargin, frac, isEstimate, portionText } from '@/core/domain/estimate'
+import { MEALS, MEAL_LABEL, dayOf, energyStatus, mealEntries, mealNow, rangeFor, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
 import { PageHeader } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { RangeBar, MacroCol } from '@/ui/charts'
@@ -17,12 +17,13 @@ import { MarginSheet } from './food/MarginSheet'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
-  | { k: 'recipes' } | { k: 'edit'; i: number } | { k: 'margin' } | null
+  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | null
 
 export function FoodScreen() {
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
   const repeatYesterday = useStore((s) => s.repeatYesterday)
+  const logRecipe = useStore((s) => s.logRecipe)
   const [sheet, setSheet] = useState<SheetKind>(null)
 
   const gentle = !!data.profile.gentle
@@ -69,6 +70,26 @@ export function FoodScreen() {
         </div>
       </div>
 
+      {data.recipes.length > 0 && (
+        <>
+          <div className="grp-h"><span>Your recipes</span>
+            <button className="navbtn" style={{ fontSize: 15 }} onClick={() => setSheet({ k: 'recipes' })}>Manage</button></div>
+          <div className="list">
+            {recipesByUse(data).slice(0, 4).map((ri) => {
+              const r = data.recipes[ri]
+              const serv = recipeServing(data, r.name)
+              return (
+                <button className="li" key={r.id} onClick={() => logRecipe(r, serv, mealNow())}>
+                  <div className="m"><div className="t">{r.name}</div>
+                    <div className="s">{frac(serv)} serving{serv !== 1 ? 's' : ''} · adds to {MEAL_LABEL[mealNow()].toLowerCase()}</div></div>
+                  <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
       {MEALS.map((m) => {
         const items = groups[m]
         const kcal = items.reduce((s, x) => s + x.k, 0)
@@ -86,6 +107,12 @@ export function FoodScreen() {
                 </button>
               )}
               <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} /><span>Add food</span></button>
+              {items.length > 1 && (
+                <button className="li act" onClick={() => setSheet({ k: 'recipes', draft: { name: '', items: recipeItemsFrom(items) } })}>
+                  <Icon name="book" size={17} /><div className="m"><div className="t">Save as recipe</div>
+                    <div className="s">Log all of this in one tap next time</div></div>
+                </button>
+              )}
             </div>
           </div>
         )
@@ -114,7 +141,7 @@ export function FoodScreen() {
       <div className="foot">Numbers marked ≈ are estimates. Your day total shows a ± margin so it stays honest about what it knows.</div>
 
       {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
-      {sheet?.k === 'recipes' && <MealsSheet onClose={() => setSheet(null)} />}
+      {sheet?.k === 'recipes' && <MealsSheet initialDraft={sheet.draft} onClose={() => setSheet(null)} />}
       {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
     </div>

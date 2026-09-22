@@ -6,7 +6,7 @@
  * range not a limit, wording is neutral, consistency is days logged (never a streak to
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
-import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile } from '@/core/types'
+import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
@@ -89,6 +89,63 @@ export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedF
   return []
 }
 
+/* ---- recipes: the user's own meals come first ----
+   Home-cooked meals are where the user holds the ground truth, so once a meal is a
+   recipe, logging it again should take one tap (or, later, just saying its name). */
+
+/** Date a recipe was last logged, or '' if never. */
+function recipeLastLogged(s: AppState, name: string): string {
+  for (const d of Object.keys(s.days).sort().reverse()) {
+    if ((s.days[d].foods || []).some((x) => x.src === 'recipe' && x.n === name)) return d
+  }
+  return ''
+}
+/** Recipe indexes, most recently logged first, then alphabetical. */
+export function recipesByUse(s: AppState): number[] {
+  const last = s.recipes.map((r) => recipeLastLogged(s, r.name))
+  return s.recipes.map((_, i) => i).sort((a, b) => last[b].localeCompare(last[a]) || s.recipes[a].name.localeCompare(s.recipes[b].name))
+}
+/** How many servings the user usually has of this recipe (last time), default 1. */
+export function recipeServing(s: AppState, name: string): number {
+  for (const d of Object.keys(s.days).sort().reverse()) {
+    const hit = (s.days[d].foods || []).filter((x) => x.src === 'recipe' && x.n === name).pop()
+    if (hit) return hit.serv ?? 1
+  }
+  return 1
+}
+/** Words that carry no meaning in a food query ("my curry", "a bowl of the chilli"). */
+const FILLER = new Set(['my', 'the', 'a', 'an', 'some', 'of', 'bowl', 'plate', 'usual', 'i', 'had'])
+/** Split a free-text food query into meaningful words. */
+export function queryWords(text: string): string[] {
+  return text.trim().toLowerCase().split(/\s+/).filter((w) => w && !FILLER.has(w))
+}
+/**
+ * Resolve free text ("my curry", "chicken curry") to a saved recipe: exact name, then all
+ * words present, most recently used first. This is the hook a conversational or voice
+ * logger uses so a repeat meal needs only its name.
+ */
+export function findRecipe(s: AppState, text: string): Recipe | null {
+  const words = queryWords(text)
+  if (!words.length) return null
+  const order = recipesByUse(s).map((i) => s.recipes[i])
+  const exact = order.find((r) => r.name.toLowerCase() === text.trim().toLowerCase())
+  return exact ?? order.find((r) => words.every((w) => r.name.toLowerCase().includes(w))) ?? null
+}
+/**
+ * Turn logged entries (e.g. tonight's dinner, oil included) into recipe ingredients so a
+ * meal already logged never has to be typed in again. Quick estimates without a weight
+ * become a 100 g item whose per-100 values are the whole estimate.
+ */
+export function recipeItemsFrom(entries: LoggedFood[]): RecipeItem[] {
+  return entries.map((x) => {
+    if (!x.grams) return { n: x.n, grams: 100, k: x.k, p: x.p, c: x.c, f: x.f }
+    const m = 100 / x.grams
+    const item: RecipeItem = { n: x.n, grams: x.grams, k: +(x.k * m).toFixed(1), p: +(x.p * m).toFixed(1), c: +(x.c * m).toFixed(1), f: +(x.f * m).toFixed(1) }
+    if (x.unit === 'ml') item.ml = true
+    return item
+  })
+}
+
 export interface Usual { n: string; count: number; last: LoggedFood }
 /** Foods eaten in this meal slot on 2+ of the 21 days before `cur`, not yet logged on `cur`. */
 export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
@@ -167,7 +224,8 @@ export function weekSummary(s: AppState, rows: DayStat[]): WeekSummary {
     inRange: lg.filter((x) => x.inRange).length,
     prevAvgP: prev.length >= 2 ? avg(prev.map((x) => x.t.p)) : null,
     planned: rows.filter((x) => x.planned).length,
-    done: rows.filter((x) => x.done).length,
+    // sessions done on planned days, so an extra walk doesn't read as a planned lift
+    done: rows.filter((x) => x.planned && x.done).length,
   }
 }
 

@@ -4,7 +4,7 @@ import type { MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, frac } from '@/core/domain/estimate'
-import { MEAL_LABEL } from '@/core/domain/insights'
+import { MEAL_LABEL, recipeServing } from '@/core/domain/insights'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 
@@ -15,7 +15,8 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
   const recipe = useStore((s) => s.data.recipes[index])
   const logRecipe = useStore((s) => s.logRecipe)
   const gentle = useStore((s) => !!s.data.profile.gentle)
-  const [q, setQ] = useState(1)
+  // start from the servings the user had last time
+  const [q, setQ] = useState(() => (recipe ? recipeServing(useStore.getState().data, recipe.name) : 1))
   if (!recipe) return null
   const per = recipePerServing(recipe)
   const commit = () => { logRecipe(recipe, q, meal); onClose() }
@@ -25,7 +26,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
       <MealSeg value={meal} onChange={setMeal} />
       <div className="lbl">Servings</div>
       <div className="scale">
-        {[0.5, 1, 1.5, 2, 3].map((v) => (
+        {([0.5, 1, 1.5, 2, 3].includes(q) ? [0.5, 1, 1.5, 2, 3] : [0.5, 1, 1.5, 2, q].sort((a, b) => a - b)).map((v) => (
           <button key={v} className={q === v ? 'on' : ''} onClick={() => setQ(v)}>
             <b className="num">{frac(v)}</b>{gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal`}
           </button>
