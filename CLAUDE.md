@@ -56,8 +56,8 @@ build can reuse it. Keep React/DOM out of `core/` and `data/`.
 Tokens live in `src/styles/theme.css` (`:root` CSS variables). Use these, don't hardcode:
 
 Apple Health / Fitbit-inspired (replaced the earlier dark coral / Hanken Grotesk look in
-Sept 2026, at Benn's request). Light and dark themes: automatic, or forced via
-`html[data-theme]` from Profile → Appearance.
+Sept 2026, at Benn's request). Light or dark always follows the device's appearance
+setting (`prefers-color-scheme`); there is no in-app override.
 
 - Surfaces & labels follow iOS system colours: `--bg`, `--card`, `--elev`, `--sheet`,
   `--fill`/`--fill2`/`--fill3`, `--label`/`--label2`/`--label3`, `--sep`. Interactive: `--tint`.

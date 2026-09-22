@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, ActivityLevel, Goal, HandPortion, Sex, ThemePref } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, Goal, HandPortion, Sex } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
@@ -103,11 +103,6 @@ export function ProfileScreen() {
           {pr.gentle ? 'Calorie numbers are hidden while you log and review your day, and body weight is off your Summary. You see how the day is going in words, and protein stays visible. Targets stay editable here.'
             : 'Full numbers, with a ± margin on anything estimated.'}
         </div>
-      </div></div>
-      <div className="list"><div style={{ padding: '12px 16px' }}>
-        <div style={{ marginBottom: 8 }}>Appearance</div>
-        <Seg<ThemePref> options={[['system', 'Automatic'], ['light', 'Light'], ['dark', 'Dark']]} value={pr.theme ?? 'system'}
-          onChange={(v) => setPrefs({ theme: v })} />
       </div></div>
       <div className="list icons">
         <button className="li" onClick={() => setHandsOpen(true)}>

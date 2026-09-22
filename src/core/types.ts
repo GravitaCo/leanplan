@@ -191,8 +191,6 @@ export interface TrainingPrefs {
 /** How much the app asks to tighten estimates. */
 export type AccuracyMode = 'relaxed' | 'balanced' | 'precise'
 
-export type ThemePref = 'system' | 'light' | 'dark'
-
 /** Cooking-fat answer, remembered as the next default. */
 export type FatChoice = 'none' | 'spray' | 'tsp' | 'tbsp' | 'butter' | 'unsure'
 
@@ -240,7 +238,6 @@ export interface Profile {
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
   plans?: IfThenPlan[]
-  theme?: ThemePref
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

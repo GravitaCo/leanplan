@@ -2,7 +2,7 @@
    Tali design tokens + base styles
    Apple Health / Fitbit-inspired: iOS system surfaces and type scale,
    inset grouped lists, bottom sheets, and one category colour per data
-   type. Light and dark themes (automatic, or forced via data-theme).
+   type. Light and dark themes follow the device's appearance setting.
    "-ink" variants are the contrast-safe versions for text on light.
    ============================================================ */
 :root {
@@ -62,7 +62,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root {
     --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
     --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
     --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
@@ -77,21 +77,6 @@
     --supps: #ff375f;    --supps-ink: #ff375f;
     --mind: #40c8e0;     --mind-ink: #40c8e0;
   }
-}
-:root[data-theme='dark'] {
-  --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
-  --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
-  --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
-  --label: #ffffff; --label2: rgba(235, 235, 245, 0.6); --label3: rgba(235, 235, 245, 0.3); --sep: rgba(84, 84, 88, 0.65);
-  --tint: #0a84ff; --red: #ff453a;
-  --energy: #30d158;   --energy-ink: #30d158;
-  --activity: #ff9f0a; --activity-ink: #ff9f0a;
-  --protein: #64d2ff;  --protein-ink: #64d2ff;
-  --carbs: #7d7aff;    --carbs-ink: #7d7aff;
-  --fat: #ffd60a;      --fat-ink: #ffd60a;
-  --body: #bf5af2;     --body-ink: #bf5af2;
-  --supps: #ff375f;    --supps-ink: #ff375f;
-  --mind: #40c8e0;     --mind-ink: #40c8e0;
 }
 
 /* ===================== BASE ===================== */

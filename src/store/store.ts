@@ -84,7 +84,7 @@ interface StoreState {
   setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
-  /** quiet profile update for preferences (accuracy, display, theme, hands…) */
+  /** quiet profile update for preferences (accuracy, display, hands…) */
   setPrefs: (patch: Partial<Profile>) => void
   addSupplement: (name: string, time: string) => void
   updateSupplement: (id: string, name: string, time: string) => void
