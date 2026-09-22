@@ -1,9 +1,13 @@
 # Tali — project brief for Claude Code
 
 Tali is a personal **health & fitness PWA** — tracking fitness, diet/nutrition, body
-stats, workouts and supplements in one place. "Health" here means fitness + diet +
-nutrition (not medical/wellbeing). Tone: simple, approachable, gender-neutral, no
-gym-bro language.
+stats, workouts and supplements in one place. Tone: simple, approachable, gender-neutral,
+no gym-bro language.
+
+**Product frame:** good mental performance → good nutrition → good fitness. Sleep, stress,
+mood and motivation come first because they decide whether someone can eat well and train
+consistently. Tali offers **general wellness guidance, never medical advice or therapy**:
+see `docs/plans/ai-platform-plan.md` §4 and the `mental-performance` agent.
 
 - **Live:** https://tali.fit/ (GitHub Pages custom domain; the repo is named `leanplan` for
   historical reasons; the app is **Tali**). Previous vanilla app is parked at `/legacy/`.
