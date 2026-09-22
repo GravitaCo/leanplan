@@ -1,58 +1,28 @@
 import type { Tab } from '@/store/store'
-import { IcoHome, IcoFood, IcoDumbbell, IcoCalendar, IcoProfile } from './icons'
+import { Icon, type IconName } from './icons'
 
-const TABS: { id: Tab; label: string; Icon: typeof IcoHome }[] = [
-  { id: 'today', label: 'Today', Icon: IcoHome },
-  { id: 'food', label: 'Food', Icon: IcoFood },
-  { id: 'train', label: 'Train', Icon: IcoDumbbell },
-  { id: 'plan', label: 'Plan', Icon: IcoCalendar },
-  { id: 'profile', label: 'Profile', Icon: IcoProfile },
+const TABS: { id: Tab; label: string; icon: IconName }[] = [
+  { id: 'today', label: 'Summary', icon: 'heart' },
+  { id: 'food', label: 'Food', icon: 'fork' },
+  { id: 'train', label: 'Train', icon: 'dumbbell' },
+  { id: 'plan', label: 'Plan', icon: 'calendar' },
+  { id: 'profile', label: 'Profile', icon: 'person' },
 ]
 
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   return (
-    <nav
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        background: 'rgba(12,12,14,.9)',
-        backdropFilter: 'blur(12px)',
-        borderTop: '1px solid var(--line)',
-        display: 'flex',
-        maxWidth: 480,
-        margin: '0 auto',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-    >
-      {TABS.map(({ id, label, Icon }) => {
-        const on = active === id
-        return (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 0,
-              padding: '11px 2px 9px',
-              color: on ? 'var(--accent)' : 'var(--muted)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 10.5,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Icon width={22} height={22} />
-            {label}
-          </button>
-        )
-      })}
+    <nav className="tabbar" aria-label="Main">
+      <div className="in">
+        {TABS.map(({ id, label, icon }) => {
+          const on = active === id
+          return (
+            <button key={id} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined} onClick={() => onChange(id)}>
+              <Icon name={icon} size={25} stroke={on ? 2.3 : 1.9} />
+              {label}
+            </button>
+          )
+        })}
+      </div>
     </nav>
   )
 }

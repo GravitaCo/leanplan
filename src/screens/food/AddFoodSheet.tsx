@@ -1,283 +1,154 @@
-import { useMemo, useState } from 'react'
+/**
+ * The add-food flow in one sheet: search → portion, plus quick estimate, create-a-food and
+ * recipe logging. Views swap inside the open sheet without replaying the slide-up.
+ */
+import { useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { r0, r1 } from '@/core/domain/date'
-import { unitOf } from '@/core/domain/nutrition'
-import { Sheet } from '@/ui/primitives'
+import { fmt } from '@/core/domain/date'
+import { recipePerServing } from '@/core/domain/nutrition'
+import { portionText } from '@/core/domain/estimate'
+import { MEAL_LABEL, mealNow, recentFoods, relog, usuals } from '@/core/domain/insights'
+import { Sheet, pressable } from '@/ui/primitives'
+import { Icon, Chevron } from '@/ui/icons'
+import { MealSeg } from './common'
+import { PortionView } from './PortionView'
+import { RecipeLogView } from './RecipeLogView'
+import { QuickEstimateView } from './QuickEstimateView'
+import { CreateFoodView } from './CreateFoodView'
 
-const MEALS: { id: MealSlot; label: string }[] = [
-  { id: 'breakfast', label: 'Breakfast' },
-  { id: 'lunch', label: 'Lunch' },
-  { id: 'dinner', label: 'Dinner' },
-  { id: 'snack', label: 'Snack' },
-]
+type View =
+  | { kind: 'search' }
+  | { kind: 'portion'; food: Food; custom: boolean }
+  | { kind: 'recipe'; index: number }
+  | { kind: 'quick' }
+  | { kind: 'create' }
 
-function defaultMeal(): MealSlot {
-  const h = new Date().getHours()
-  if (h < 11) return 'breakfast'
-  if (h < 15) return 'lunch'
-  if (h < 20) return 'dinner'
-  return 'snack'
+export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create'; onClose: () => void }) {
+  const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
+  const [view, setView] = useState<View>(initialView ? { kind: initialView } : { kind: 'search' })
+  const [q, setQ] = useState('')
+  const [moved, setMoved] = useState(false)
+  const go = (v: View) => { setMoved(true); setView(v) }
+  const back = initialView ? undefined : () => go({ kind: 'search' })
+  const common = { meal, setMeal, onBack: back, onClose, animate: !moved }
+
+  if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
+  if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
+  if (view.kind === 'quick') return <QuickEstimateView {...common} />
+  if (view.kind === 'create') return <CreateFoodView {...common} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />
 }
 
-export function AddFoodSheet({ initialMeal, onClose }: { initialMeal?: MealSlot; onClose: () => void }) {
-  const customFoods = useStore((s) => s.data.customFoods)
-  const days = useStore((s) => s.data.days)
-  const logFood = useStore((s) => s.logFood)
-  const addCustomFood = useStore((s) => s.addCustomFood)
-
-  const allFoods = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
-
-  const [q, setQ] = useState('')
-  const [selected, setSelected] = useState<Food | null>(null)
-  const [grams, setGrams] = useState(0)
-  const [meal, setMeal] = useState<MealSlot>(initialMeal || defaultMeal())
-  const [creating, setCreating] = useState(false)
-  const [cf, setCf] = useState({ n: '', g: '100', k: '', p: '', c: '', f: '' })
-  const [cfUnit, setCfUnit] = useState<'g' | 'ml'>('g')
-
-  // recently logged foods for the empty state
-  const recent = useMemo(() => {
-    const seen = new Set<string>()
-    const out: Food[] = []
-    const dates = Object.keys(days).sort().reverse().slice(0, 14)
-    for (const d of dates) {
-      for (const fEntry of days[d].foods || []) {
-        if (!seen.has(fEntry.n)) {
-          seen.add(fEntry.n)
-          const m = allFoods.find((x) => x.n === fEntry.n)
-          if (m) out.push(m)
-          if (out.length >= 8) return out
-        }
-      }
-    }
-    return out
-  }, [days, allFoods])
-
+function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
+  meal: MealSlot; setMeal: (m: MealSlot) => void; q: string; setQ: (q: string) => void
+  go: (v: View) => void; onClose: () => void; animate: boolean
+}) {
+  const data = useStore((s) => s.data)
+  const cur = useStore((s) => s.cur)
+  const logEntries = useStore((s) => s.logEntries)
+  const removeCustomFood = useStore((s) => s.removeCustomFood)
+  const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const query = q.trim().toLowerCase()
-  const results = query ? allFoods.filter((f) => f.n.toLowerCase().includes(query)).slice(0, 60) : []
 
-  // ---- portion view ----
-  if (selected) {
-    const f = selected
-    const unit = unitOf(f)
-    const m = grams / 100
-    const half = Math.round(f.g * 0.5)
-    const dbl = Math.round(f.g * 2)
-    const portionBtn = (label: string, g: number, primary = false) => (
-      <button
-        className={'btn' + (primary ? '' : ' ghost')}
-        style={{ padding: '9px 4px', fontSize: 13, flexDirection: 'column', gap: 2 }}
-        onClick={() => setGrams(g)}
-      >
-        {label}
-        <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.8 }}>
-          {g}
-          {unit}
-        </span>
-      </button>
-    )
-    return (
-      <Sheet onClose={onClose}>
-        <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-          <div className="grow">
-            <div className="name">{f.n}</div>
-            <div className="meta">
-              per 100{unit} · <b style={{ color: 'var(--ink)' }}>{f.k}</b> kcal · {f.p}p {f.c}c {f.f}f
-            </div>
-          </div>
-          <button className="x-btn" onClick={() => setSelected(null)}>
-            ←
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: 5, margin: '8px 0 14px' }}>
-          {MEALS.map((mm) => (
-            <button
-              key={mm.id}
-              className={'btn' + (mm.id === meal ? '' : ' ghost')}
-              style={{ flex: 1, padding: '8px 2px', fontSize: 11 }}
-              onClick={() => setMeal(mm.id)}
-            >
-              {mm.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 12 }}>
-          {portionBtn('½ serve', half)}
-          {portionBtn('1 serve', f.g, grams === f.g)}
-          {portionBtn('2 serves', dbl)}
-        </div>
-
-        <div className="field">
-          <label>Or enter {unit}</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={grams || ''}
-            onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
-          />
-        </div>
-
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-          = <b style={{ color: 'var(--ink)' }}>{r0(f.k * m)} kcal</b> · {r1(f.p * m)}p {r1(f.c * m)}c {r1(f.f * m)}f
-        </div>
-
-        <button
-          className="btn"
-          disabled={grams <= 0}
-          onClick={() => {
-            logFood(f, grams, meal)
-            onClose()
-          }}
-        >
-          Add to {MEALS.find((mm) => mm.id === meal)?.label.toLowerCase()}
-        </button>
-      </Sheet>
-    )
-  }
-
-  // ---- create custom view ----
-  if (creating) {
-    return (
-      <Sheet onClose={onClose}>
-        <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-          <div className="grow">
-            <div className="name">Create a custom food</div>
-            <div className="meta">Copy the “per 100{cfUnit}” numbers off the packet.</div>
-          </div>
-          <button className="x-btn" onClick={() => setCreating(false)}>
-            ←
-          </button>
-        </div>
-        <div className="field">
-          <label>Name</label>
-          <input value={cf.n} onChange={(e) => setCf({ ...cf, n: e.target.value })} placeholder="e.g. Mum's chilli" />
-        </div>
-        <div className="field">
-          <label>Measured in</label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['g', 'ml'] as const).map((u) => (
-              <button
-                key={u}
-                className={'btn' + (u === cfUnit ? '' : ' ghost')}
-                style={{ flex: 1, padding: '8px 2px' }}
-                onClick={() => setCfUnit(u)}
-              >
-                {u === 'g' ? 'Grams (g)' : 'Millilitres (ml)'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid2">
-          <div className="field">
-            <label>Amount ({cfUnit})</label>
-            <input type="number" inputMode="decimal" value={cf.g} onChange={(e) => setCf({ ...cf, g: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Kcal /100{cfUnit}</label>
-            <input type="number" inputMode="decimal" value={cf.k} onChange={(e) => setCf({ ...cf, k: e.target.value })} />
-          </div>
-        </div>
-        <div className="grid3">
-          <div className="field">
-            <label>Prot</label>
-            <input type="number" inputMode="decimal" value={cf.p} onChange={(e) => setCf({ ...cf, p: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Carb</label>
-            <input type="number" inputMode="decimal" value={cf.c} onChange={(e) => setCf({ ...cf, c: e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Fat</label>
-            <input type="number" inputMode="decimal" value={cf.f} onChange={(e) => setCf({ ...cf, f: e.target.value })} />
-          </div>
-        </div>
-        <button
-          className="btn"
-          onClick={() => {
-            const g = parseFloat(cf.g) || 0
-            if (g <= 0) return
-            addCustomFood(
-              {
-                n: cf.n || 'Custom food',
-                k: parseFloat(cf.k) || 0,
-                p: parseFloat(cf.p) || 0,
-                c: parseFloat(cf.c) || 0,
-                f: parseFloat(cf.f) || 0,
-                g,
-                ml: cfUnit === 'ml',
-              },
-              g,
-            )
-            onClose()
-          }}
-        >
-          Add to today &amp; save
-        </button>
-      </Sheet>
-    )
-  }
-
-  // ---- search view ----
-  const list = query ? results : recent
-  return (
-    <Sheet onClose={onClose}>
-      <div className="field" style={{ marginBottom: 10 }}>
-        <input
-          autoFocus
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={`Search ${allFoods.length} foods…`}
-        />
+  const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
+    <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
+      <div className="m">
+        <div className="t">{f.n}</div>
+        <div className="s num">{f.k} kcal · {f.p} g protein per 100 {f.ml ? 'ml' : 'g'}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
       </div>
-
-      {!query && recent.length > 0 && <div className="mono" style={{ margin: '4px 2px 6px' }}>Recent</div>}
-
-      {list.length ? (
-        list.map((f, i) => {
-          const isCustom = !!f.id
-          return (
-            <div
-              className="row"
-              key={f.n + i}
-              onClick={() => {
-                setSelected(f)
-                setGrams(f.g)
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="grow">
-                <div className="name">
-                  {f.n}
-                  {isCustom && (
-                    <span
-                      className="mono"
-                      style={{ marginLeft: 6, color: 'var(--accent)', fontSize: 9 }}
-                    >
-                      saved
-                    </span>
-                  )}
-                </div>
-                <div className="meta">
-                  per 100{f.ml ? 'ml' : 'g'} · <b>{f.k}</b> kcal · {f.p}p {f.c}c {f.f}f
-                </div>
-              </div>
-              <span className="pill accent">+ add</span>
-            </div>
-          )
-        })
-      ) : (
-        <div className="empty">
-          {query ? 'No match — create a custom food below.' : 'Search to find a food, or create your own.'}
+      {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
+    </div>
+  )
+  const recipeRow = (ri: number) => {
+    const r = data.recipes[ri]
+    const per = recipePerServing(r)
+    return (
+      <div className="li" key={r.id} {...pressable(() => go({ kind: 'recipe', index: ri }))}>
+        <div className="m">
+          <div className="t">{r.name}<span className="tag">Recipe</span></div>
+          <div className="s num">{fmt(per.k)} kcal · {Math.round(per.p)} g protein per serving</div>
         </div>
-      )}
+        <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+      </div>
+    )
+  }
 
-      <button className="btn ghost" style={{ marginTop: 14 }} onClick={() => setCreating(true)}>
-        + Create custom food
-      </button>
+  let body: ReactNode
+  if (!query) {
+    const us = usuals(data, cur, meal)
+    const rc = recentFoods(data, all)
+    const cf = data.customFoods || []
+    body = (
+      <>
+        {us.length > 0 && (
+          <>
+            <div className="lbl">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
+            <div className="list">
+              {us.map((u) => (
+                <div className="li" key={u.n} {...pressable(() => { logEntries([relog(u.last, meal)]); onClose() })}>
+                  <div className="m"><div className="t">{u.n}</div><div className="s">{portionText(u.last)} · one tap</div></div>
+                  <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {rc.length > 0 && <><div className="lbl">Recent</div><div className="list">{rc.map((f) => foodRow(f, all.indexOf(f)))}</div></>}
+        {data.recipes.length > 0 && <><div className="lbl">Recipes</div><div className="list">{data.recipes.map((_, ri) => recipeRow(ri))}</div></>}
+        {cf.length > 0 && (
+          <>
+            <div className="lbl">My foods</div>
+            <div className="list">
+              {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
+                <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={`Delete ${f.n}`}
+                  onClick={(e) => { e.stopPropagation(); removeCustomFood(ci) }}>
+                  <Icon name="x" size={17} />
+                </button>))}
+            </div>
+          </>
+        )}
+        {!rc.length && !cf.length && <><div className="lbl">Common</div><div className="list">{FOODS.slice(0, 8).map((f, i) => foodRow(f, i))}</div></>}
+      </>
+    )
+  } else {
+    const words = query.split(/\s+/).filter(Boolean)
+    const recipes = data.recipes.map((r, ri) => ({ r, ri })).filter((o) => o.r.name.toLowerCase().includes(query))
+    const foods = all.map((f, i) => ({ f, i }))
+      .filter((o) => words.every((w) => o.f.n.toLowerCase().includes(w)))
+      .sort((a, b) => a.f.n.toLowerCase().indexOf(words[0]) - b.f.n.toLowerCase().indexOf(words[0]))
+      .slice(0, 50)
+    body = (
+      <>
+        {recipes.length > 0 && <><div className="lbl">Recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}
+        {foods.length > 0 && <><div className="lbl">Foods</div><div className="list">{foods.map((o) => foodRow(o.f, o.i))}</div></>}
+        {!recipes.length && !foods.length && (
+          <div className="empty">Nothing matches “{q.trim()}”.<br />Eating out? A quick estimate is better than nothing.</div>
+        )}
+      </>
+    )
+  }
+
+  return (
+    <Sheet title="Add food" tall onClose={onClose} animate={animate}>
+      <div className="searchbar">
+        <Icon name="search" size={17} />
+        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
+          autoComplete="off" enterKeyHint="search" aria-label="Search foods" />
+      </div>
+      <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>
+      {body}
+      <div className="list icons" style={{ marginTop: 18 }}>
+        <button className="li" onClick={() => go({ kind: 'quick' })}>
+          <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="bolt" size={18} /></span>
+          <div className="m"><div className="t">Quick estimate</div><div className="s">Restaurant or unknown food</div></div><Chevron />
+        </button>
+        <button className="li" onClick={() => go({ kind: 'create' })}>
+          <span className="ico" style={{ background: 'var(--energy)' }}><Icon name="plus" size={18} /></span>
+          <div className="m"><div className="t">Create a food</div><div className="s">From the label on the packet</div></div><Chevron />
+        </button>
+      </div>
     </Sheet>
   )
 }

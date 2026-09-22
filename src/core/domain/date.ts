@@ -44,3 +44,8 @@ export function r0(x: number): number {
 export function r1(x: number): number {
   return Math.round(x * 10) / 10
 }
+
+/** Whole number with thousands separators, e.g. 1,850. */
+export function fmt(x: number): string {
+  return Math.round(x || 0).toLocaleString('en-GB')
+}

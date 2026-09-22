@@ -1,231 +1,115 @@
+/** Recipes: build once from ingredients (you know exactly what went in), log a serving in a tap. */
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { Recipe, RecipeItem } from '@/core/types'
+import type { MealSlot, RecipeItem } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { r0, r1 } from '@/core/domain/date'
-import { recipeTotals, recipePerServing } from '@/core/domain/nutrition'
-import { Sheet } from '@/ui/primitives'
+import { fmt, r0 } from '@/core/domain/date'
+import { recipePerServing, recipeTotals } from '@/core/domain/nutrition'
+import { mealNow } from '@/core/domain/insights'
+import { Sheet, BackButton } from '@/ui/primitives'
+import { Icon } from '@/ui/icons'
+import { RecipeLogView } from './RecipeLogView'
 
-interface Draft {
-  id?: string
-  name: string
-  servings: string
-  items: RecipeItem[]
-}
+interface Draft { id?: string; name: string; servings: string; items: RecipeItem[] }
 
 export function MealsSheet({ onClose }: { onClose: () => void }) {
   const recipes = useStore((s) => s.data.recipes)
   const customFoods = useStore((s) => s.data.customFoods)
   const saveRecipe = useStore((s) => s.saveRecipe)
   const deleteRecipe = useStore((s) => s.deleteRecipe)
-  const logRecipe = useStore((s) => s.logRecipe)
+  const showToast = useStore((s) => s.showToast)
+  const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
 
-  const allFoods = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
   const [draft, setDraft] = useState<Draft | null>(null)
-  const [logging, setLogging] = useState<{ recipe: Recipe; servings: string } | null>(null)
+  const [logging, setLogging] = useState<number | null>(null)
+  const [meal, setMeal] = useState<MealSlot>(mealNow())
   const [q, setQ] = useState('')
+  const [moved, setMoved] = useState(false)
 
-  // ---- log a saved meal ----
-  if (logging) {
-    const per = recipePerServing(logging.recipe)
-    const n = parseFloat(logging.servings) || 0
-    return (
-      <Sheet onClose={onClose}>
-        <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-          <div className="grow">
-            <div className="name">{logging.recipe.name}</div>
-            <div className="meta">
-              per serving: {r0(per.k)} kcal · {r0(per.p)}p {r0(per.c)}c {r0(per.f)}f
-            </div>
-          </div>
-          <button className="x-btn" onClick={() => setLogging(null)}>
-            ←
-          </button>
-        </div>
-        <div className="field">
-          <label>How many servings?</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={logging.servings}
-            onChange={(e) => setLogging({ ...logging, servings: e.target.value })}
-          />
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-          = <b style={{ color: 'var(--ink)' }}>{r0(per.k * n)} kcal</b> · {r1(per.p * n)}p {r1(per.c * n)}c {r1(per.f * n)}f
-        </div>
-        <button
-          className="btn"
-          disabled={n <= 0}
-          onClick={() => {
-            logRecipe(logging.recipe, n)
-            onClose()
-          }}
-        >
-          Add to today
-        </button>
-      </Sheet>
-    )
-  }
+  if (logging != null) return <RecipeLogView index={logging} meal={meal} setMeal={setMeal} onBack={() => setLogging(null)} onClose={onClose} animate={false} />
 
-  // ---- builder ----
   if (draft) {
-    const totals = recipeTotals({ ...draft, servings: parseFloat(draft.servings) || 1 } as Recipe)
     const s = parseFloat(draft.servings) || 1
+    const totals = recipeTotals({ id: '', name: draft.name, servings: s, items: draft.items })
     const query = q.trim().toLowerCase()
-    const matches = query ? allFoods.filter((f) => f.n.toLowerCase().includes(query)).slice(0, 30) : []
+    const matches = query ? all.filter((f) => f.n.toLowerCase().includes(query)).slice(0, 30) : []
+    const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
+    const save = () => {
+      if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
+      if (!draft.items.length) { showToast('Add at least one ingredient'); return }
+      saveRecipe({ id: draft.id, name: draft.name.trim(), servings: s, items: draft.items })
+      setDraft(null)
+    }
     return (
-      <Sheet onClose={onClose}>
-        <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-          <div className="grow">
-            <div className="name">{draft.id ? 'Edit meal' : 'New meal'}</div>
-          </div>
-          <button className="x-btn" onClick={() => setDraft(null)}>
-            ←
-          </button>
+      <Sheet title={draft.id ? 'Edit recipe' : 'New recipe'} tall animate={false} onClose={onClose}
+        left={<BackButton onClick={() => setDraft(null)} label="Recipes" />} right={<button className="navbtn b" onClick={save}>Save</button>}>
+        <div className="list">
+          <div className="frow"><label htmlFor="rc_n">Name</label>
+            <input id="rc_n" value={draft.name} placeholder="Chicken curry" onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
+          <div className="frow"><label htmlFor="rc_s">Servings</label>
+            <input id="rc_s" type="number" inputMode="decimal" value={draft.servings} onChange={(e) => setDraft({ ...draft, servings: e.target.value })} /></div>
         </div>
-
-        <div className="field">
-          <label>Meal name</label>
-          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Chicken & rice bowl" />
-        </div>
-        <div className="field">
-          <label>Servings this batch makes</label>
-          <input type="number" inputMode="decimal" value={draft.servings} onChange={(e) => setDraft({ ...draft, servings: e.target.value })} />
-        </div>
-
-        <div className="mono" style={{ margin: '8px 0 6px' }}>
-          Add ingredients
-        </div>
-        <div className="field">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search foods to add" />
-        </div>
-        {query && (
-          <div style={{ marginBottom: 8 }}>
-            {matches.length ? (
-              matches.map((f, i) => (
-                <div
-                  className="row"
-                  key={f.n + i}
-                  onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml }] })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="grow">
-                    <div className="name">{f.n}</div>
-                    <div className="meta">
-                      per 100{f.ml ? 'ml' : 'g'}: {f.k} kcal · {f.p}p {f.c}c {f.f}f
-                    </div>
-                  </div>
-                  <span className="pill accent">+ add</span>
-                </div>
-              ))
-            ) : (
-              <div className="empty">No match.</div>
-            )}
-          </div>
-        )}
-
-        <div className="mono" style={{ margin: '8px 0 6px' }}>
-          In this meal
-        </div>
-        {draft.items.length ? (
-          draft.items.map((it, ii) => (
-            <div className="row" key={ii}>
-              <div className="grow">
-                <div className="name">{it.n}</div>
-                <div className="meta">per 100{it.ml ? 'ml' : 'g'}: {it.k} kcal</div>
-              </div>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={it.grams}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)),
-                  })
-                }
-                style={{ width: 70, textAlign: 'right', padding: 8 }}
-              />
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>g</span>
-              <button className="x-btn" onClick={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== ii) })}>
-                ×
-              </button>
+        <div className="lbl">Ingredients</div>
+        <div className="list">
+          {draft.items.length ? draft.items.map((it, ii) => (
+            <div className="li" key={ii}>
+              <div className="m"><div className="t">{it.n}</div><div className="s">{it.k} kcal per 100 {it.ml ? 'ml' : 'g'}</div></div>
+              <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
+                style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
+                onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
+              <span className="muted">{it.ml ? 'ml' : 'g'}</span>
+              <button className="navbtn" style={{ color: 'var(--red)' }} aria-label={`Remove ${it.n}`}
+                onClick={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== ii) })}><Icon name="x" size={17} /></button>
             </div>
-          ))
-        ) : (
-          <div className="empty">No ingredients yet — search above to add.</div>
-        )}
-
-        <div style={{ background: 'var(--card-2)', borderRadius: 12, padding: '12px 14px', margin: '12px 0', fontSize: 13, lineHeight: 1.5 }}>
-          Whole meal: <b>{r0(totals.k)} kcal</b> · {r0(totals.p)}p {r0(totals.c)}c {r0(totals.f)}f
-          <br />
-          Per serving (÷{s}): <b>{r0(totals.k / s)} kcal</b> · {r0(totals.p / s)}p {r0(totals.c / s)}c {r0(totals.f / s)}f
+          )) : <div className="empty">Add what went in. Don't forget the oil. It's the part photos never see.</div>}
         </div>
-
-        <button
-          className="btn"
-          onClick={() => {
-            if (!draft.name) return
-            if (!draft.items.length) return
-            saveRecipe({ id: draft.id, name: draft.name, servings: parseFloat(draft.servings) || 1, items: draft.items })
-            setDraft(null)
-          }}
-        >
-          {draft.id ? 'Save changes' : 'Save meal'}
-        </button>
+        <div className="card" style={{ fontSize: 15, lineHeight: 1.5 }}>
+          Whole recipe <b className="num">{fmt(totals.k)} kcal</b> · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F<br />
+          Per serving <b className="num">{fmt(totals.k / s)} kcal</b> · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F
+        </div>
+        <div className="lbl">Add ingredients</div>
+        <div className="searchbar"><Icon name="search" size={17} />
+          <input value={q} placeholder="Search foods" aria-label="Search ingredients" onChange={(e) => setQ(e.target.value)} /></div>
+        {matches.length > 0 && (
+          <div className="list" style={{ marginTop: 8 }}>
+            {matches.map((f, i) => (
+              <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml }] })}>
+                <div className="m"><div className="t">{f.n}</div><div className="s">{f.k} kcal per 100 {f.ml ? 'ml' : 'g'}</div></div>
+                <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+              </button>
+            ))}
+          </div>
+        )}
+        {idx >= 0 && (
+          <div className="stack"><button className="btn danger" onClick={() => { deleteRecipe(idx); setDraft(null) }}>Delete recipe</button></div>
+        )}
       </Sheet>
     )
   }
 
-  // ---- list ----
   return (
-    <Sheet onClose={onClose}>
-      <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-        <div className="grow">
-          <div className="name" style={{ fontSize: 20, fontWeight: 800 }}>
-            Saved meals
-          </div>
-          <div className="meta">Build a meal once, log the whole thing in a tap.</div>
-        </div>
-        <button className="x-btn" onClick={onClose}>
-          ×
-        </button>
+    <Sheet title="Recipes" tall onClose={onClose} left={null} animate={!moved}
+      right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+      <div className="sub" style={{ padding: '0 4px 12px' }}>
+        Cooked it yourself? You know exactly what went in. Build it once, then log a bowl in one tap.
       </div>
-
-      <button className="btn" style={{ margin: '6px 0 14px' }} onClick={() => setDraft({ name: '', servings: '1', items: [] })}>
-        + New meal
-      </button>
-
-      {(recipes || []).length ? (
-        (recipes || []).map((r, ri) => {
-          const per = recipePerServing(r)
-          return (
-            <div className="row" key={r.id}>
-              <div className="grow">
-                <div className="name">{r.name}</div>
-                <div className="meta">
-                  {+r.servings > 1 ? r.servings + ' servings · ' : ''}per serving: {r0(per.k)} kcal · {r0(per.p)}p {r0(per.c)}c {r0(per.f)}f
-                </div>
+      {recipes.length ? (
+        <div className="list">
+          {recipes.map((r, ri) => {
+            const per = recipePerServing(r)
+            return (
+              <div className="li" key={r.id}>
+                <div className="m"><div className="t">{r.name}</div>
+                  <div className="s num">{+r.servings > 1 ? r.servings + ' servings · ' : ''}{fmt(per.k)} kcal · {r0(per.p)} g protein per serving</div></div>
+                <button className="btn sm tinted" onClick={() => { setMoved(true); setLogging(ri) }}>Log</button>
+                <button className="navbtn" style={{ marginLeft: 6 }}
+                  onClick={() => { setMoved(true); setDraft({ id: r.id, name: r.name, servings: String(r.servings), items: r.items.map((i) => ({ ...i })) }) }}>Edit</button>
               </div>
-              <button className="pill accent" onClick={() => setLogging({ recipe: r, servings: '1' })}>
-                + log
-              </button>
-              <button
-                className="pill"
-                onClick={() => setDraft({ id: r.id, name: r.name, servings: String(r.servings), items: r.items.map((i) => ({ ...i })) })}
-              >
-                edit
-              </button>
-              <button className="x-btn" onClick={() => deleteRecipe(ri)}>
-                ×
-              </button>
-            </div>
-          )
-        })
-      ) : (
-        <div className="empty">No meals yet. Tap “New meal” to build one from your foods.</div>
-      )}
+            )
+          })}
+        </div>
+      ) : <div className="card empty">No recipes yet. Build one from its ingredients below.</div>}
+      <div className="stack"><button className="btn" onClick={() => { setMoved(true); setDraft({ name: '', servings: '1', items: [] }) }}>New recipe</button></div>
     </Sheet>
   )
 }

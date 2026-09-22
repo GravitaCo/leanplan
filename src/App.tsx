@@ -15,10 +15,23 @@ export default function App() {
   const setTab = useStore((s) => s.setTab)
   const toast = useStore((s) => s.toast)
   const initAuth = useStore((s) => s.initAuth)
+  const theme = useStore((s) => s.data.profile.theme)
 
   useEffect(() => {
     initAuth()
   }, [initAuth])
+
+  // Each tab opens at the top, like a native tab bar.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab])
+
+  // Appearance preference: automatic follows the OS; light/dark force the palette.
+  useEffect(() => {
+    const el = document.documentElement
+    if (theme === 'light' || theme === 'dark') el.dataset.theme = theme
+    else delete el.dataset.theme
+  }, [theme])
 
   if (!authReady) {
     return (
@@ -40,6 +53,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <div className="status-shim" />
       {tab === 'today' && <TodayScreen />}
       {tab === 'food' && <FoodScreen />}
       {tab === 'train' && <TrainScreen />}

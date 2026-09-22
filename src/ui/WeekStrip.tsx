@@ -1,88 +1,50 @@
 import { useStore } from '@/store/store'
-import { ymd, todayStr, parseYmd } from '@/core/domain/date'
+import { fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
+import { dayStat, weekOf } from '@/core/domain/insights'
+import { Rings } from './charts'
+import { Icon } from './icons'
 
-const LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const TYPE_COLOR: Record<string, string> = {
-  Push: 'var(--protein)',
-  Pull: 'var(--good)',
-  Legs: 'var(--accent)',
-  Cardio: 'var(--carbs)',
-  Rest: 'var(--muted)',
-}
+const DOW = 'MTWTFSS'
 
+/** Monday–Sunday strip: each day shows a mini energy ring and its planned session. */
 export function WeekStrip() {
   const cur = useStore((s) => s.cur)
-  const days = useStore((s) => s.data.days)
-  const schedule = useStore((s) => s.data.schedule)
+  const data = useStore((s) => s.data)
   const setDate = useStore((s) => s.setDate)
-
-  const curDate = parseYmd(cur)
-  const dow = curDate.getDay()
-  const mondayOff = dow === 0 ? -6 : 1 - dow
   const today = todayStr()
-
   return (
-    <div style={{ display: 'flex', gap: 2, margin: '14px 0 4px' }}>
-      {Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(curDate)
-        d.setDate(curDate.getDate() + mondayOff + i)
-        const dStr = ymd(d)
-        const isViewing = dStr === cur
-        const isToday = dStr === today
-        const wkDone = !!days[dStr]?.workout?.type
-        const sched = schedule[d.getDay()] || 'Rest'
-        const typeColor = isViewing ? 'var(--accent)' : wkDone ? 'var(--accent)' : TYPE_COLOR[sched] || 'var(--muted)'
-
+    <div className="week">
+      {weekOf(cur).map((d, i) => {
+        const st = dayStat(data, d)
+        const sched = data.schedule[parseYmd(d).getDay()] || 'Rest'
+        const f = fmtDate(d)
         return (
-          <div
-            key={i}
-            onClick={() => setDate(dStr)}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 5,
-              cursor: 'pointer',
-            }}
-          >
-            <div className="mono" style={{ fontSize: 9 }}>
-              {LABELS[i]}
-            </div>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14,
-                fontWeight: 700,
-                background: isViewing ? 'var(--accent)' : 'var(--card-2)',
-                color: isViewing ? '#fff' : wkDone ? 'var(--accent)' : 'var(--muted)',
-                boxShadow: isToday && !isViewing ? '0 0 0 2px var(--accent)' : 'none',
-              }}
-            >
-              {wkDone ? '✓' : d.getDate()}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                color: typeColor,
-                maxWidth: 42,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-              }}
-            >
-              {sched}
-            </div>
-          </div>
+          <button key={d} className={'wd' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '') + (st.future ? ' future' : '')}
+            onClick={() => setDate(d)} aria-label={`${f.dow} ${f.full}`} aria-pressed={d === cur}>
+            <span className="l">{DOW[i]}</span>
+            <span className="rw">
+              <Rings items={[{ pct: st.t.k / st.r.mid, color: 'var(--energy)' }]} size={34} stroke={3.5} />
+              <span className="num">{parseYmd(d).getDate()}</span>
+            </span>
+            <span className={'t' + (st.done ? ' done' : '')}>{st.done ? '✓ Done' : sched}</span>
+          </button>
         )
       })}
     </div>
+  )
+}
+
+/** "‹ Today · 22 Sep ›" day switcher for the page eyebrow. */
+export function DayNav() {
+  const cur = useStore((s) => s.cur)
+  const setDate = useStore((s) => s.setDate)
+  const f = fmtDate(cur)
+  const short = f.full.split(' ').slice(0, 2).join(' ')
+  return (
+    <span className="daynav">
+      <button onClick={() => setDate(shiftDay(cur, -1))} aria-label="Previous day"><Icon name="chevL" size={16} stroke={2.6} /></button>
+      <span>{cur === todayStr() ? 'Today' : f.dow} · {short}</span>
+      <button onClick={() => setDate(shiftDay(cur, 1))} aria-label="Next day"><Icon name="chevR" size={16} stroke={2.6} /></button>
+    </span>
   )
 }

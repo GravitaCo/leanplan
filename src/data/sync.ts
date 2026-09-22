@@ -4,7 +4,7 @@
  * merge with last-write-wins per record. Ported from the LeanPlan vanilla app and kept
  * framework-agnostic so it can back a native client later.
  */
-import type { Food, Recipe } from '@/core/types'
+import type { DayLog, Food, Recipe } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 
@@ -25,9 +25,17 @@ function toServerFood(f: Food, uid: string) {
 function fromServerFood(r: any): Food {
   return { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
 }
+/* day_logs has no check-in column, so the check-in travels inside the supps jsonb under a
+   reserved key and is unpacked on pull. Additive: no table or column changes. */
+const CHECKIN_KEY = '_checkin'
 function toServerDay(s: PersistedState, d: string, uid: string) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }
-  return { user_id: uid, log_date: d, foods: x.foods || [], supps: x.supps || {}, weight: x.weight ?? null, workout: x.workout ?? null }
+  const supps = x.checkin ? { ...(x.supps || {}), [CHECKIN_KEY]: x.checkin } : x.supps || {}
+  return { user_id: uid, log_date: d, foods: x.foods || [], supps, weight: x.weight ?? null, workout: x.workout ?? null }
+}
+function fromServerDay(row: any): DayLog {
+  const { [CHECKIN_KEY]: checkin, ...supps } = row.supps || {}
+  return { foods: row.foods || [], supps, weight: row.weight ?? null, workout: row.workout || null, checkin: checkin || null }
 }
 function toServerRecipe(r: Recipe, uid: string) {
   return { id: r.id, user_id: uid, name: r.name, items: r.items || [], servings: +r.servings || 1 }
@@ -92,7 +100,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   dl.forEach((row) => {
     const d = row.log_date
     if (meta.days[d] && meta.days[d].dirty) return // keep unpushed local day
-    s.days[d] = { foods: row.foods || [], supps: row.supps || {}, weight: row.weight ?? null, workout: row.workout || null }
+    s.days[d] = fromServerDay(row)
     meta.days[d] = { u: row.updated_at, dirty: false }
   })
   meta.lastPull = nowIso()

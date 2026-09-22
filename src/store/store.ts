@@ -7,8 +7,10 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { enableMapSet } from 'immer'
 import type {
+  CheckIn,
   DayLog,
   Food,
+  IfThenPlan,
   LoggedFood,
   MealSlot,
   Recipe,
@@ -19,7 +21,9 @@ import type {
   Profile,
 } from '@/core/types'
 import { todayStr, shiftDay } from '@/core/domain/date'
-import { scaleFood, recipePerServing, unitOf } from '@/core/domain/nutrition'
+import { recipePerServing } from '@/core/domain/nutrition'
+import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
+import { relog } from '@/core/domain/insights'
 import { loadState, loadStateFrom, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
@@ -48,13 +52,27 @@ interface StoreState {
   showToast: (msg: string) => void
 
   // food
-  logFood: (food: Food, grams: number, meal: MealSlot) => void
+  /** log one or more entries on the current day (e.g. a food plus its cooking fat) */
+  logEntries: (entries: LoggedFood[], toast?: string) => void
+  /** correct an entry's portion by a multiplier and/or move it to another meal */
+  updateEntry: (index: number, mult: number, meal: MealSlot) => void
+  /** mark an estimate as confirmed so it isn't surfaced for a check again */
+  confirmEntry: (index: number) => void
   removeFood: (index: number) => void
-  addCustomFood: (def: Omit<Food, 'id'>, grams: number) => void
+  /** copy yesterday's entries for a meal onto the current day */
+  repeatYesterday: (meal: MealSlot) => void
+  /** save (or update by name) a custom food definition; returns the saved food */
+  saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
-  logRecipe: (recipe: Recipe, servings: number) => void
+  logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
+
+  // wellbeing & plans
+  setCheckin: (c: CheckIn | null) => void
+  savePlan: (p: { id?: string; when: string; then: string; cope?: string }) => void
+  deletePlan: (id: string) => void
+  reviewPlans: (outcomes: Record<string, IfThenPlan['reviews'][number]['r']>) => void
 
   // supplements / weight / workout
   toggleSupp: (id: string) => void
@@ -64,8 +82,10 @@ interface StoreState {
 
   // plan / settings
   setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
-  saveTargets: (t: MacroTarget) => void
+  saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
+  /** quiet profile update for preferences (accuracy, display, theme, hands…) */
+  setPrefs: (patch: Partial<Profile>) => void
   addSupplement: (name: string, time: string) => void
   updateSupplement: (id: string, name: string, time: string) => void
   removeSupplement: (id: string) => void
@@ -85,6 +105,9 @@ function ensureDay(s: PersistedState, d: string): DayLog {
   if (!s.days[d]) s.days[d] = { foods: [], supps: {}, weight: null, workout: null }
   return s.days[d]
 }
+
+/** Lowest calorie target the app will set without medical support. */
+const KCAL_FLOOR = 1200
 
 function meta(s: PersistedState): SyncMeta {
   return ensureMeta(s, false)
@@ -127,25 +150,34 @@ export const useStore = create<StoreState>()(
         toastTimer = setTimeout(() => set((st) => { st.toast = null }), 1600)
       },
 
-      logFood: (food, grams, mealSlot) => {
+      logEntries: (entries, toast) => {
+        if (!entries.length) return
         set((st) => {
-          const d = ensureDay(st.data, st.cur)
-          const scaled = scaleFood(food, grams)
-          const entry: LoggedFood = {
-            n: food.n,
-            grams: Math.round(grams),
-            k: scaled.k,
-            p: scaled.p,
-            c: scaled.c,
-            f: scaled.f,
-            meal: mealSlot,
-          }
-          const unit = unitOf(food)
-          if (unit === 'ml') entry.unit = unit
-          d.foods.push(entry)
+          ensureDay(st.data, st.cur).foods.push(...entries)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(food.n + ' added')
+        persist(); get().scheduleSync(); get().showToast(toast ?? entries[0].n + ' added')
+      },
+
+      updateEntry: (index, mult, meal) => {
+        set((st) => {
+          const d = ensureDay(st.data, st.cur)
+          const x = d.foods[index]
+          if (!x) return
+          d.foods[index] = { ...scaleEntry(x, mult), meal }
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync()
+      },
+
+      confirmEntry: (index) => {
+        set((st) => {
+          const x = ensureDay(st.data, st.cur).foods[index]
+          if (!x) return
+          x.ok = true
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast('Thanks, noted')
       },
 
       removeFood: (index) => {
@@ -157,26 +189,25 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync()
       },
 
-      addCustomFood: (def, grams) => {
+      repeatYesterday: (meal) => {
+        const { data, cur } = get()
+        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
+        if (!prev.length) return
+        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+      },
+
+      saveCustomFood: (def) => {
+        const existing = get().data.customFoods.find((x) => x.n.toLowerCase() === def.n.toLowerCase())
+        const id = existing?.id ?? uuid('f')
+        const food: Food = { ...def, g: Math.round(def.g), id }
         set((st) => {
           if (!Array.isArray(st.data.customFoods)) st.data.customFoods = []
-          const existing = st.data.customFoods.find((x) => x.n.toLowerCase() === def.n.toLowerCase())
-          if (existing) {
-            Object.assign(existing, def, { g: Math.round(grams) })
-            existing._dirty = true; existing._u = nowIso()
-          } else {
-            const food: Food = { ...def, g: Math.round(grams), id: uuid('f'), _dirty: true, _u: nowIso() }
-            st.data.customFoods.push(food)
-          }
-          const d = ensureDay(st.data, st.cur)
-          const scaled = scaleFood({ ...def, g: grams } as Food, grams)
-          const entry: LoggedFood = { n: def.n, grams: Math.round(grams), k: scaled.k, p: scaled.p, c: scaled.c, f: scaled.f }
-          const unit = unitOf(def)
-          if (unit === 'ml') entry.unit = unit
-          d.foods.push(entry)
-          markDayDirty(st.data, st.cur)
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, food, { _dirty: true, _u: nowIso() })
+          else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
-        persist(); get().scheduleSync(); get().showToast('Saved & added')
+        persist(); get().scheduleSync(); get().showToast('Food saved')
+        return food
       },
 
       removeCustomFood: (index) => {
@@ -213,18 +244,54 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Meal deleted')
       },
 
-      logRecipe: (recipe, servings) => {
+      logRecipe: (recipe, servings, meal) => {
+        const per = recipePerServing(recipe)
+        get().logEntries([{
+          n: recipe.name, grams: Math.round(per.g * servings),
+          k: per.k * servings, p: per.p * servings, c: per.c * servings, f: per.f * servings,
+          meal, src: 'recipe', how: 'recipe', err: CAPTURE_ERR.recipe, serv: servings,
+        }], recipe.name + ' added')
+      },
+
+      setCheckin: (c) => {
         set((st) => {
-          const per = recipePerServing(recipe)
-          const name = recipe.name + (servings !== 1 ? ' (' + +servings.toFixed(2) + '×)' : '')
-          const d = ensureDay(st.data, st.cur)
-          d.foods.push({
-            n: name, grams: Math.round(per.g * servings),
-            k: per.k * servings, p: per.p * servings, c: per.c * servings, f: per.f * servings,
-          })
+          ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(recipe.name + ' added')
+        persist(); get().scheduleSync(); get().showToast('Check-in saved')
+      },
+
+      savePlan: ({ id, when, then, cope }) => {
+        set((st) => {
+          const plans = (st.data.profile.plans ??= [])
+          const existing = id ? plans.find((p) => p.id === id) : undefined
+          if (existing) Object.assign(existing, { when, then, cope })
+          else plans.push({ id: uuid('p'), when, then, cope, created: todayStr(), reviews: [] })
+          markSettingsDirty(st.data)
+        })
+        persist(); get().scheduleSync(); get().showToast('Plan saved')
+      },
+
+      deletePlan: (id) => {
+        set((st) => {
+          st.data.profile.plans = (st.data.profile.plans ?? []).filter((p) => p.id !== id)
+          markSettingsDirty(st.data)
+        })
+        persist(); get().scheduleSync()
+      },
+
+      reviewPlans: (outcomes) => {
+        const t = todayStr()
+        set((st) => {
+          for (const pl of st.data.profile.plans ?? []) {
+            const r = outcomes[pl.id]
+            if (!r) continue
+            pl.reviews.push({ d: t, r })
+            pl.lastReview = t
+          }
+          markSettingsDirty(st.data)
+        })
+        persist(); get().scheduleSync(); get().showToast('Thanks for checking in')
       },
 
       toggleSupp: (id) => {
@@ -268,9 +335,15 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Schedule updated')
       },
 
-      saveTargets: (t) => {
-        set((st) => { st.data.target = t; markSettingsDirty(st.data) })
-        persist(); get().scheduleSync(); get().showToast('Targets saved')
+      saveTargets: (t, rangeWidth) => {
+        const floored = t.kcal < KCAL_FLOOR
+        set((st) => {
+          st.data.target = { ...t, kcal: Math.max(KCAL_FLOOR, t.kcal) }
+          if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
+          markSettingsDirty(st.data)
+        })
+        persist(); get().scheduleSync()
+        get().showToast(floored ? 'Kept at 1,200 kcal. Going lower needs medical support.' : 'Targets saved')
       },
 
       saveProfileMetrics: (patch) => {
@@ -281,6 +354,11 @@ export const useStore = create<StoreState>()(
           if (patch.weight) markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Saved')
+      },
+
+      setPrefs: (patch) => {
+        set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
+        persist(); get().scheduleSync()
       },
 
       addSupplement: (name, time) => {

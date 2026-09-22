@@ -1,6 +1,7 @@
 import type { Food } from '@/core/types'
 
-/** Built-in food database — values per 100g (or 100ml when `ml` is set). */
+/** Built-in food database — values per 100g (or 100ml when `ml` is set). `cat` drives the
+ *  cooking-fat question and the default hand portion. */
 export const FOODS: Food[] = [
   {
     "n": "Chicken breast, cooked",
@@ -8,7 +9,8 @@ export const FOODS: Food[] = [
     "p": 31,
     "c": 0,
     "f": 3.6,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Chicken thigh, cooked",
@@ -16,7 +18,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 0,
     "f": 11,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Chicken, roast (with skin)",
@@ -24,7 +27,8 @@ export const FOODS: Food[] = [
     "p": 27,
     "c": 0,
     "f": 12,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Turkey breast, cooked",
@@ -32,7 +36,8 @@ export const FOODS: Food[] = [
     "p": 30,
     "c": 0,
     "f": 1,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Turkey mince, cooked",
@@ -40,7 +45,8 @@ export const FOODS: Food[] = [
     "p": 27,
     "c": 0,
     "f": 7,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Beef mince 5% fat, cooked",
@@ -48,7 +54,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 0,
     "f": 7,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Beef mince 20% fat, cooked",
@@ -56,7 +63,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0,
     "f": 17,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Beef steak (sirloin), cooked",
@@ -64,7 +72,8 @@ export const FOODS: Food[] = [
     "p": 29,
     "c": 0,
     "f": 10,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Beef, roast",
@@ -72,7 +81,8 @@ export const FOODS: Food[] = [
     "p": 27,
     "c": 0,
     "f": 8,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Beef burger patty, cooked",
@@ -80,7 +90,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 0,
     "f": 17,
-    "g": 120
+    "g": 120,
+    "cat": "meat"
   },
   {
     "n": "Pork chop, cooked",
@@ -88,7 +99,8 @@ export const FOODS: Food[] = [
     "p": 28,
     "c": 0,
     "f": 13,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Pork loin, cooked",
@@ -96,7 +108,8 @@ export const FOODS: Food[] = [
     "p": 30,
     "c": 0,
     "f": 9,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Gammon / ham steak, cooked",
@@ -104,7 +117,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0,
     "f": 10,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Lamb chop, cooked",
@@ -112,7 +126,8 @@ export const FOODS: Food[] = [
     "p": 25,
     "c": 0,
     "f": 20,
-    "g": 120
+    "g": 120,
+    "cat": "meat"
   },
   {
     "n": "Lamb mince, cooked",
@@ -120,7 +135,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0,
     "f": 19,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Duck breast, cooked",
@@ -128,7 +144,8 @@ export const FOODS: Food[] = [
     "p": 27,
     "c": 0,
     "f": 10,
-    "g": 150
+    "g": 150,
+    "cat": "meat"
   },
   {
     "n": "Pork sausage, cooked (1 ~50g)",
@@ -136,7 +153,8 @@ export const FOODS: Food[] = [
     "p": 14,
     "c": 10,
     "f": 22,
-    "g": 50
+    "g": 50,
+    "cat": "meat"
   },
   {
     "n": "Chicken sausage, cooked (1 ~50g)",
@@ -144,7 +162,8 @@ export const FOODS: Food[] = [
     "p": 16,
     "c": 5,
     "f": 10,
-    "g": 50
+    "g": 50,
+    "cat": "meat"
   },
   {
     "n": "Bacon, grilled",
@@ -152,7 +171,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0.5,
     "f": 26,
-    "g": 50
+    "g": 50,
+    "cat": "meat"
   },
   {
     "n": "Bacon medallion, grilled",
@@ -160,7 +180,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 0.5,
     "f": 6,
-    "g": 40
+    "g": 40,
+    "cat": "meat"
   },
   {
     "n": "Black pudding",
@@ -168,7 +189,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 15,
     "f": 22,
-    "g": 60
+    "g": 60,
+    "cat": "meat"
   },
   {
     "n": "Ham, sliced",
@@ -176,7 +198,8 @@ export const FOODS: Food[] = [
     "p": 18,
     "c": 1,
     "f": 4,
-    "g": 40
+    "g": 40,
+    "cat": "meat"
   },
   {
     "n": "Chorizo",
@@ -184,7 +207,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 2,
     "f": 38,
-    "g": 30
+    "g": 30,
+    "cat": "meat"
   },
   {
     "n": "Salami",
@@ -192,7 +216,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 1,
     "f": 32,
-    "g": 30
+    "g": 30,
+    "cat": "meat"
   },
   {
     "n": "Pepperoni",
@@ -200,7 +225,8 @@ export const FOODS: Food[] = [
     "p": 20,
     "c": 1,
     "f": 44,
-    "g": 20
+    "g": 20,
+    "cat": "meat"
   },
   {
     "n": "Corned beef",
@@ -208,7 +234,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 1,
     "f": 11,
-    "g": 50
+    "g": 50,
+    "cat": "meat"
   },
   {
     "n": "Sausage roll",
@@ -216,7 +243,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 26,
     "f": 21,
-    "g": 60
+    "g": 60,
+    "cat": "meat"
   },
   {
     "n": "Scotch egg",
@@ -224,7 +252,8 @@ export const FOODS: Food[] = [
     "p": 12,
     "c": 15,
     "f": 15,
-    "g": 120
+    "g": 120,
+    "cat": "meat"
   },
   {
     "n": "Chicken nuggets, cooked",
@@ -232,7 +261,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 18,
     "f": 18,
-    "g": 100
+    "g": 100,
+    "cat": "meat"
   },
   {
     "n": "Breaded chicken, cooked",
@@ -240,7 +270,8 @@ export const FOODS: Food[] = [
     "p": 18,
     "c": 14,
     "f": 12,
-    "g": 130
+    "g": 130,
+    "cat": "meat"
   },
   {
     "n": "Salmon fillet, cooked",
@@ -248,7 +279,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 0,
     "f": 13,
-    "g": 130
+    "g": 130,
+    "cat": "fish"
   },
   {
     "n": "Smoked salmon",
@@ -256,7 +288,8 @@ export const FOODS: Food[] = [
     "p": 25,
     "c": 0,
     "f": 9,
-    "g": 50
+    "g": 50,
+    "cat": "fish"
   },
   {
     "n": "Tuna, canned in water",
@@ -264,7 +297,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 0,
     "f": 1,
-    "g": 100
+    "g": 100,
+    "cat": "fish"
   },
   {
     "n": "Tuna steak, cooked",
@@ -272,7 +306,8 @@ export const FOODS: Food[] = [
     "p": 28,
     "c": 0,
     "f": 1,
-    "g": 130
+    "g": 130,
+    "cat": "fish"
   },
   {
     "n": "Cod, cooked",
@@ -280,7 +315,8 @@ export const FOODS: Food[] = [
     "p": 23,
     "c": 0,
     "f": 0.9,
-    "g": 130
+    "g": 130,
+    "cat": "fish"
   },
   {
     "n": "Haddock, cooked",
@@ -288,7 +324,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0,
     "f": 1,
-    "g": 130
+    "g": 130,
+    "cat": "fish"
   },
   {
     "n": "Sea bass, cooked",
@@ -296,7 +333,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0,
     "f": 3,
-    "g": 130
+    "g": 130,
+    "cat": "fish"
   },
   {
     "n": "Mackerel, cooked",
@@ -304,7 +342,8 @@ export const FOODS: Food[] = [
     "p": 19,
     "c": 0,
     "f": 20,
-    "g": 120
+    "g": 120,
+    "cat": "fish"
   },
   {
     "n": "Sardines, canned in oil",
@@ -312,7 +351,8 @@ export const FOODS: Food[] = [
     "p": 25,
     "c": 0,
     "f": 12,
-    "g": 90
+    "g": 90,
+    "cat": "fish"
   },
   {
     "n": "Sardines, canned in tomato",
@@ -320,7 +360,8 @@ export const FOODS: Food[] = [
     "p": 20,
     "c": 2,
     "f": 10,
-    "g": 90
+    "g": 90,
+    "cat": "fish"
   },
   {
     "n": "Prawns, cooked",
@@ -328,7 +369,8 @@ export const FOODS: Food[] = [
     "p": 24,
     "c": 0.2,
     "f": 0.3,
-    "g": 100
+    "g": 100,
+    "cat": "fish"
   },
   {
     "n": "Fish fingers, cooked (3)",
@@ -336,7 +378,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 20,
     "f": 11,
-    "g": 90
+    "g": 90,
+    "cat": "fish"
   },
   {
     "n": "Breaded fish, cooked",
@@ -344,7 +387,8 @@ export const FOODS: Food[] = [
     "p": 14,
     "c": 15,
     "f": 10,
-    "g": 120
+    "g": 120,
+    "cat": "fish"
   },
   {
     "n": "Egg, whole (1 = 50g)",
@@ -352,7 +396,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 0.7,
     "f": 9.5,
-    "g": 50
+    "g": 50,
+    "cat": "eggs"
   },
   {
     "n": "Egg white",
@@ -360,7 +405,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 0.7,
     "f": 0.2,
-    "g": 33
+    "g": 33,
+    "cat": "eggs"
   },
   {
     "n": "Egg, fried",
@@ -368,7 +414,8 @@ export const FOODS: Food[] = [
     "p": 14,
     "c": 0.8,
     "f": 14,
-    "g": 50
+    "g": 50,
+    "cat": "eggs"
   },
   {
     "n": "Tofu, firm",
@@ -376,7 +423,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 3,
     "f": 9,
-    "g": 100
+    "g": 100,
+    "cat": "eggs"
   },
   {
     "n": "Quorn mince",
@@ -384,7 +432,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 4,
     "f": 2,
-    "g": 100
+    "g": 100,
+    "cat": "eggs"
   },
   {
     "n": "Quorn pieces",
@@ -392,7 +441,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 4.5,
     "f": 2,
-    "g": 100
+    "g": 100,
+    "cat": "eggs"
   },
   {
     "n": "Tempeh",
@@ -400,7 +450,8 @@ export const FOODS: Food[] = [
     "p": 19,
     "c": 9,
     "f": 11,
-    "g": 100
+    "g": 100,
+    "cat": "eggs"
   },
   {
     "n": "Falafel",
@@ -408,7 +459,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 32,
     "f": 18,
-    "g": 100
+    "g": 100,
+    "cat": "eggs"
   },
   {
     "n": "Edamame beans",
@@ -416,7 +468,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 9,
     "f": 5,
-    "g": 80
+    "g": 80,
+    "cat": "eggs"
   },
   {
     "n": "Lentils, cooked",
@@ -424,7 +477,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 20,
     "f": 0.4,
-    "g": 150
+    "g": 150,
+    "cat": "eggs"
   },
   {
     "n": "Chickpeas, cooked",
@@ -432,7 +486,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 27,
     "f": 2.6,
-    "g": 150
+    "g": 150,
+    "cat": "eggs"
   },
   {
     "n": "Kidney beans, cooked",
@@ -440,7 +495,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 22,
     "f": 0.5,
-    "g": 150
+    "g": 150,
+    "cat": "eggs"
   },
   {
     "n": "Black beans, cooked",
@@ -448,7 +504,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 24,
     "f": 0.5,
-    "g": 150
+    "g": 150,
+    "cat": "eggs"
   },
   {
     "n": "Baked beans",
@@ -456,7 +513,8 @@ export const FOODS: Food[] = [
     "p": 4.7,
     "c": 13,
     "f": 0.2,
-    "g": 200
+    "g": 200,
+    "cat": "eggs"
   },
   {
     "n": "Hummus",
@@ -464,7 +522,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 14,
     "f": 10,
-    "g": 50
+    "g": 50,
+    "cat": "eggs"
   },
   {
     "n": "Whey protein powder (scoop ~30g)",
@@ -472,7 +531,8 @@ export const FOODS: Food[] = [
     "p": 78,
     "c": 8,
     "f": 5,
-    "g": 30
+    "g": 30,
+    "cat": "eggs"
   },
   {
     "n": "Milk, whole",
@@ -480,7 +540,8 @@ export const FOODS: Food[] = [
     "p": 3.4,
     "c": 4.7,
     "f": 3.6,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Milk, semi-skimmed",
@@ -488,7 +549,8 @@ export const FOODS: Food[] = [
     "p": 3.6,
     "c": 4.8,
     "f": 1.8,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Milk, skimmed",
@@ -496,7 +558,8 @@ export const FOODS: Food[] = [
     "p": 3.5,
     "c": 5,
     "f": 0.2,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Almond milk, unsweetened",
@@ -504,7 +567,8 @@ export const FOODS: Food[] = [
     "p": 0.5,
     "c": 0.3,
     "f": 1.1,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Oat milk",
@@ -512,7 +576,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 6.6,
     "f": 1.5,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Soya milk",
@@ -520,7 +585,8 @@ export const FOODS: Food[] = [
     "p": 3.3,
     "c": 1.2,
     "f": 1.8,
-    "g": 200
+    "g": 200,
+    "cat": "dairy"
   },
   {
     "n": "Greek yogurt, 0% fat",
@@ -528,7 +594,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 3.6,
     "f": 0.4,
-    "g": 170
+    "g": 170,
+    "cat": "dairy"
   },
   {
     "n": "Greek yogurt, 5% fat",
@@ -536,7 +603,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 3.6,
     "f": 5,
-    "g": 170
+    "g": 170,
+    "cat": "dairy"
   },
   {
     "n": "Natural yogurt",
@@ -544,7 +612,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 7,
     "f": 3,
-    "g": 170
+    "g": 170,
+    "cat": "dairy"
   },
   {
     "n": "Low-fat fruit yogurt",
@@ -552,7 +621,8 @@ export const FOODS: Food[] = [
     "p": 4,
     "c": 15,
     "f": 1.5,
-    "g": 125
+    "g": 125,
+    "cat": "dairy"
   },
   {
     "n": "Skyr",
@@ -560,7 +630,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 4,
     "f": 0.2,
-    "g": 150
+    "g": 150,
+    "cat": "dairy"
   },
   {
     "n": "Cottage cheese",
@@ -568,7 +639,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 3.4,
     "f": 4.3,
-    "g": 100
+    "g": 100,
+    "cat": "dairy"
   },
   {
     "n": "Cheddar cheese",
@@ -576,7 +648,8 @@ export const FOODS: Food[] = [
     "p": 25,
     "c": 0.1,
     "f": 34,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Mozzarella",
@@ -584,7 +657,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 2,
     "f": 21,
-    "g": 50
+    "g": 50,
+    "cat": "dairy"
   },
   {
     "n": "Feta",
@@ -592,7 +666,8 @@ export const FOODS: Food[] = [
     "p": 14,
     "c": 1.5,
     "f": 22,
-    "g": 40
+    "g": 40,
+    "cat": "dairy"
   },
   {
     "n": "Parmesan",
@@ -600,7 +675,8 @@ export const FOODS: Food[] = [
     "p": 38,
     "c": 0,
     "f": 29,
-    "g": 15
+    "g": 15,
+    "cat": "dairy"
   },
   {
     "n": "Cream cheese",
@@ -608,7 +684,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 4,
     "f": 24,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Soft cheese, light",
@@ -616,7 +693,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 4,
     "f": 6,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Brie",
@@ -624,7 +702,8 @@ export const FOODS: Food[] = [
     "p": 20,
     "c": 0.5,
     "f": 28,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Halloumi",
@@ -632,7 +711,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 2,
     "f": 25,
-    "g": 60
+    "g": 60,
+    "cat": "dairy"
   },
   {
     "n": "Babybel",
@@ -640,7 +720,8 @@ export const FOODS: Food[] = [
     "p": 23,
     "c": 0,
     "f": 24,
-    "g": 20
+    "g": 20,
+    "cat": "dairy"
   },
   {
     "n": "Butter",
@@ -648,7 +729,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 0.1,
     "f": 81,
-    "g": 10
+    "g": 10,
+    "cat": "dairy"
   },
   {
     "n": "Margarine / spread",
@@ -656,7 +738,8 @@ export const FOODS: Food[] = [
     "p": 0.2,
     "c": 0.7,
     "f": 66,
-    "g": 10
+    "g": 10,
+    "cat": "dairy"
   },
   {
     "n": "Double cream",
@@ -664,7 +747,8 @@ export const FOODS: Food[] = [
     "p": 1.7,
     "c": 2.7,
     "f": 48,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Single cream",
@@ -672,7 +756,8 @@ export const FOODS: Food[] = [
     "p": 2.6,
     "c": 4,
     "f": 19,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Creme fraiche",
@@ -680,7 +765,8 @@ export const FOODS: Food[] = [
     "p": 2.4,
     "c": 3,
     "f": 30,
-    "g": 30
+    "g": 30,
+    "cat": "dairy"
   },
   {
     "n": "Custard",
@@ -688,7 +774,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 16,
     "f": 3,
-    "g": 120
+    "g": 120,
+    "cat": "dairy"
   },
   {
     "n": "Rice pudding",
@@ -696,7 +783,8 @@ export const FOODS: Food[] = [
     "p": 3.4,
     "c": 15,
     "f": 2,
-    "g": 150
+    "g": 150,
+    "cat": "dairy"
   },
   {
     "n": "Ice cream, vanilla",
@@ -704,7 +792,8 @@ export const FOODS: Food[] = [
     "p": 3.5,
     "c": 24,
     "f": 11,
-    "g": 60
+    "g": 60,
+    "cat": "dairy"
   },
   {
     "n": "White rice, cooked",
@@ -712,7 +801,8 @@ export const FOODS: Food[] = [
     "p": 2.7,
     "c": 28,
     "f": 0.3,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Brown rice, cooked",
@@ -720,7 +810,8 @@ export const FOODS: Food[] = [
     "p": 2.7,
     "c": 26,
     "f": 1,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Basmati rice, cooked",
@@ -728,7 +819,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 25,
     "f": 0.4,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Egg fried rice",
@@ -736,7 +828,8 @@ export const FOODS: Food[] = [
     "p": 4,
     "c": 24,
     "f": 6,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Pilau rice",
@@ -744,7 +837,8 @@ export const FOODS: Food[] = [
     "p": 3.5,
     "c": 30,
     "f": 5,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Pasta, cooked",
@@ -752,7 +846,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 25,
     "f": 1.1,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Wholewheat pasta, cooked",
@@ -760,7 +855,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 26,
     "f": 1.4,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Egg noodles, cooked",
@@ -768,7 +864,8 @@ export const FOODS: Food[] = [
     "p": 4.5,
     "c": 25,
     "f": 2,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Rice noodles, cooked",
@@ -776,7 +873,8 @@ export const FOODS: Food[] = [
     "p": 2,
     "c": 25,
     "f": 0.2,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Instant noodles, dry pack (~85g)",
@@ -784,7 +882,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 60,
     "f": 17,
-    "g": 85
+    "g": 85,
+    "cat": "grains"
   },
   {
     "n": "Gnocchi, cooked",
@@ -792,7 +891,8 @@ export const FOODS: Food[] = [
     "p": 3.5,
     "c": 30,
     "f": 1,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Couscous, cooked",
@@ -800,7 +900,8 @@ export const FOODS: Food[] = [
     "p": 3.8,
     "c": 23,
     "f": 0.2,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Quinoa, cooked",
@@ -808,7 +909,8 @@ export const FOODS: Food[] = [
     "p": 4.4,
     "c": 21,
     "f": 1.9,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Bulgur wheat, cooked",
@@ -816,7 +918,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 19,
     "f": 0.2,
-    "g": 180
+    "g": 180,
+    "cat": "grains"
   },
   {
     "n": "Oats, dry",
@@ -824,7 +927,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 67,
     "f": 7,
-    "g": 50
+    "g": 50,
+    "cat": "grains"
   },
   {
     "n": "Porridge, made with water",
@@ -832,7 +936,8 @@ export const FOODS: Food[] = [
     "p": 2.4,
     "c": 12,
     "f": 1.4,
-    "g": 250
+    "g": 250,
+    "cat": "grains"
   },
   {
     "n": "Porridge, made with milk",
@@ -840,7 +945,8 @@ export const FOODS: Food[] = [
     "p": 4.5,
     "c": 15,
     "f": 3.5,
-    "g": 250
+    "g": 250,
+    "cat": "grains"
   },
   {
     "n": "White bread (slice ~36g)",
@@ -848,7 +954,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 49,
     "f": 3.2,
-    "g": 36
+    "g": 36,
+    "cat": "grains"
   },
   {
     "n": "Wholemeal bread (slice ~36g)",
@@ -856,7 +963,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 41,
     "f": 3.4,
-    "g": 36
+    "g": 36,
+    "cat": "grains"
   },
   {
     "n": "Brown bread (slice)",
@@ -864,7 +972,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 46,
     "f": 2.5,
-    "g": 36
+    "g": 36,
+    "cat": "grains"
   },
   {
     "n": "Sourdough bread",
@@ -872,7 +981,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 52,
     "f": 1.5,
-    "g": 50
+    "g": 50,
+    "cat": "grains"
   },
   {
     "n": "Bagel",
@@ -880,7 +990,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 53,
     "f": 1.5,
-    "g": 85
+    "g": 85,
+    "cat": "grains"
   },
   {
     "n": "Crumpet",
@@ -888,7 +999,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 35,
     "f": 1,
-    "g": 50
+    "g": 50,
+    "cat": "grains"
   },
   {
     "n": "English muffin",
@@ -896,7 +1008,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 44,
     "f": 2,
-    "g": 60
+    "g": 60,
+    "cat": "grains"
   },
   {
     "n": "Pitta bread",
@@ -904,7 +1017,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 55,
     "f": 1.2,
-    "g": 60
+    "g": 60,
+    "cat": "grains"
   },
   {
     "n": "Naan bread",
@@ -912,7 +1026,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 50,
     "f": 9,
-    "g": 90
+    "g": 90,
+    "cat": "grains"
   },
   {
     "n": "Tortilla wrap (1 ~60g)",
@@ -920,7 +1035,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 50,
     "f": 8,
-    "g": 60
+    "g": 60,
+    "cat": "grains"
   },
   {
     "n": "Chapati / roti",
@@ -928,7 +1044,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 46,
     "f": 9,
-    "g": 60
+    "g": 60,
+    "cat": "grains"
   },
   {
     "n": "Baguette",
@@ -936,7 +1053,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 52,
     "f": 2.5,
-    "g": 70
+    "g": 70,
+    "cat": "grains"
   },
   {
     "n": "Croissant",
@@ -944,7 +1062,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 45,
     "f": 21,
-    "g": 60
+    "g": 60,
+    "cat": "grains"
   },
   {
     "n": "Pain au chocolat",
@@ -952,7 +1071,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 45,
     "f": 24,
-    "g": 65
+    "g": 65,
+    "cat": "grains"
   },
   {
     "n": "Cornflakes",
@@ -960,7 +1080,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 84,
     "f": 0.9,
-    "g": 30
+    "g": 30,
+    "cat": "grains"
   },
   {
     "n": "Weetabix (2 ~38g)",
@@ -968,7 +1089,8 @@ export const FOODS: Food[] = [
     "p": 12,
     "c": 69,
     "f": 2,
-    "g": 38
+    "g": 38,
+    "cat": "grains"
   },
   {
     "n": "Muesli",
@@ -976,7 +1098,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 66,
     "f": 6,
-    "g": 50
+    "g": 50,
+    "cat": "grains"
   },
   {
     "n": "Granola",
@@ -984,7 +1107,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 64,
     "f": 17,
-    "g": 50
+    "g": 50,
+    "cat": "grains"
   },
   {
     "n": "Pancakes",
@@ -992,7 +1116,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 28,
     "f": 11,
-    "g": 80
+    "g": 80,
+    "cat": "grains"
   },
   {
     "n": "Waffles",
@@ -1000,7 +1125,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 33,
     "f": 14,
-    "g": 80
+    "g": 80,
+    "cat": "grains"
   },
   {
     "n": "Potato, boiled",
@@ -1008,7 +1134,8 @@ export const FOODS: Food[] = [
     "p": 1.9,
     "c": 20,
     "f": 0.1,
-    "g": 200
+    "g": 200,
+    "cat": "potato"
   },
   {
     "n": "Jacket potato, baked",
@@ -1016,7 +1143,8 @@ export const FOODS: Food[] = [
     "p": 2.5,
     "c": 21,
     "f": 0.1,
-    "g": 250
+    "g": 250,
+    "cat": "potato"
   },
   {
     "n": "Mashed potato",
@@ -1024,7 +1152,8 @@ export const FOODS: Food[] = [
     "p": 2,
     "c": 16,
     "f": 4,
-    "g": 200
+    "g": 200,
+    "cat": "potato"
   },
   {
     "n": "Roast potatoes",
@@ -1032,7 +1161,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 24,
     "f": 5,
-    "g": 150
+    "g": 150,
+    "cat": "potato"
   },
   {
     "n": "Chips, oven",
@@ -1040,7 +1170,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 30,
     "f": 6,
-    "g": 150
+    "g": 150,
+    "cat": "potato"
   },
   {
     "n": "Fries, fast food",
@@ -1048,7 +1179,8 @@ export const FOODS: Food[] = [
     "p": 3.4,
     "c": 41,
     "f": 15,
-    "g": 120
+    "g": 120,
+    "cat": "potato"
   },
   {
     "n": "Hash brown",
@@ -1056,7 +1188,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 26,
     "f": 13,
-    "g": 50
+    "g": 50,
+    "cat": "potato"
   },
   {
     "n": "Potato wedges",
@@ -1064,7 +1197,8 @@ export const FOODS: Food[] = [
     "p": 2.5,
     "c": 27,
     "f": 6,
-    "g": 150
+    "g": 150,
+    "cat": "potato"
   },
   {
     "n": "Sweet potato, baked",
@@ -1072,7 +1206,8 @@ export const FOODS: Food[] = [
     "p": 2,
     "c": 21,
     "f": 0.2,
-    "g": 200
+    "g": 200,
+    "cat": "potato"
   },
   {
     "n": "Broccoli",
@@ -1080,7 +1215,8 @@ export const FOODS: Food[] = [
     "p": 2.8,
     "c": 7,
     "f": 0.4,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Cauliflower",
@@ -1088,7 +1224,8 @@ export const FOODS: Food[] = [
     "p": 2,
     "c": 5,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Carrots",
@@ -1096,7 +1233,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 10,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Spinach",
@@ -1104,7 +1242,8 @@ export const FOODS: Food[] = [
     "p": 2.9,
     "c": 3.6,
     "f": 0.4,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Kale",
@@ -1112,7 +1251,8 @@ export const FOODS: Food[] = [
     "p": 4.3,
     "c": 9,
     "f": 0.9,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Cabbage",
@@ -1120,7 +1260,8 @@ export const FOODS: Food[] = [
     "p": 1.3,
     "c": 6,
     "f": 0.1,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Green beans",
@@ -1128,7 +1269,8 @@ export const FOODS: Food[] = [
     "p": 1.8,
     "c": 7,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Courgette",
@@ -1136,7 +1278,8 @@ export const FOODS: Food[] = [
     "p": 1.2,
     "c": 3.1,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Aubergine",
@@ -1144,7 +1287,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 6,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Mushrooms",
@@ -1152,7 +1296,8 @@ export const FOODS: Food[] = [
     "p": 3.1,
     "c": 3.3,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Tomato",
@@ -1160,7 +1305,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 3.9,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Cherry tomatoes",
@@ -1168,7 +1314,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 3.9,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Tinned tomatoes",
@@ -1176,7 +1323,8 @@ export const FOODS: Food[] = [
     "p": 1.3,
     "c": 3.4,
     "f": 0.2,
-    "g": 200
+    "g": 200,
+    "cat": "veg"
   },
   {
     "n": "Passata",
@@ -1184,7 +1332,8 @@ export const FOODS: Food[] = [
     "p": 1.5,
     "c": 6,
     "f": 0.2,
-    "g": 100
+    "g": 100,
+    "cat": "veg"
   },
   {
     "n": "Cucumber",
@@ -1192,7 +1341,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 3.6,
     "f": 0.1,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Lettuce",
@@ -1200,7 +1350,8 @@ export const FOODS: Food[] = [
     "p": 1.4,
     "c": 2.9,
     "f": 0.2,
-    "g": 50
+    "g": 50,
+    "cat": "veg"
   },
   {
     "n": "Rocket",
@@ -1208,7 +1359,8 @@ export const FOODS: Food[] = [
     "p": 2.6,
     "c": 3.7,
     "f": 0.7,
-    "g": 30
+    "g": 30,
+    "cat": "veg"
   },
   {
     "n": "Mixed salad leaves",
@@ -1216,7 +1368,8 @@ export const FOODS: Food[] = [
     "p": 1.4,
     "c": 2.9,
     "f": 0.2,
-    "g": 50
+    "g": 50,
+    "cat": "veg"
   },
   {
     "n": "Onion",
@@ -1224,7 +1377,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 9,
     "f": 0.1,
-    "g": 60
+    "g": 60,
+    "cat": "veg"
   },
   {
     "n": "Spring onion",
@@ -1232,7 +1386,8 @@ export const FOODS: Food[] = [
     "p": 1.8,
     "c": 7,
     "f": 0.4,
-    "g": 15
+    "g": 15,
+    "cat": "veg"
   },
   {
     "n": "Garlic",
@@ -1240,7 +1395,8 @@ export const FOODS: Food[] = [
     "p": 6.4,
     "c": 33,
     "f": 0.5,
-    "g": 5
+    "g": 5,
+    "cat": "veg"
   },
   {
     "n": "Bell pepper",
@@ -1248,7 +1404,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 6,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Leek",
@@ -1256,7 +1413,8 @@ export const FOODS: Food[] = [
     "p": 1.5,
     "c": 7,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Celery",
@@ -1264,7 +1422,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 3,
     "f": 0.2,
-    "g": 40
+    "g": 40,
+    "cat": "veg"
   },
   {
     "n": "Asparagus",
@@ -1272,7 +1431,8 @@ export const FOODS: Food[] = [
     "p": 2.2,
     "c": 3.9,
     "f": 0.1,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Beetroot",
@@ -1280,7 +1440,8 @@ export const FOODS: Food[] = [
     "p": 1.6,
     "c": 10,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Butternut squash",
@@ -1288,7 +1449,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 12,
     "f": 0.1,
-    "g": 120
+    "g": 120,
+    "cat": "veg"
   },
   {
     "n": "Parsnip",
@@ -1296,7 +1458,8 @@ export const FOODS: Food[] = [
     "p": 1.2,
     "c": 18,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Brussels sprouts",
@@ -1304,7 +1467,8 @@ export const FOODS: Food[] = [
     "p": 3.4,
     "c": 9,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Sweetcorn, tinned",
@@ -1312,7 +1476,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 19,
     "f": 1.2,
-    "g": 80
+    "g": 80,
+    "cat": "veg"
   },
   {
     "n": "Coleslaw",
@@ -1320,7 +1485,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 8,
     "f": 13,
-    "g": 50
+    "g": 50,
+    "cat": "veg"
   },
   {
     "n": "Olives",
@@ -1328,7 +1494,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 6,
     "f": 15,
-    "g": 30
+    "g": 30,
+    "cat": "veg"
   },
   {
     "n": "Sundried tomatoes",
@@ -1336,7 +1503,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 24,
     "f": 11,
-    "g": 20
+    "g": 20,
+    "cat": "veg"
   },
   {
     "n": "Banana (1 ~118g)",
@@ -1344,7 +1512,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 23,
     "f": 0.3,
-    "g": 118
+    "g": 118,
+    "cat": "fruit"
   },
   {
     "n": "Apple (1 ~150g)",
@@ -1352,7 +1521,8 @@ export const FOODS: Food[] = [
     "p": 0.3,
     "c": 14,
     "f": 0.2,
-    "g": 150
+    "g": 150,
+    "cat": "fruit"
   },
   {
     "n": "Orange (1 ~130g)",
@@ -1360,7 +1530,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 12,
     "f": 0.1,
-    "g": 130
+    "g": 130,
+    "cat": "fruit"
   },
   {
     "n": "Pear",
@@ -1368,7 +1539,8 @@ export const FOODS: Food[] = [
     "p": 0.4,
     "c": 15,
     "f": 0.1,
-    "g": 150
+    "g": 150,
+    "cat": "fruit"
   },
   {
     "n": "Peach",
@@ -1376,7 +1548,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 10,
     "f": 0.3,
-    "g": 120
+    "g": 120,
+    "cat": "fruit"
   },
   {
     "n": "Plum",
@@ -1384,7 +1557,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 11,
     "f": 0.3,
-    "g": 60
+    "g": 60,
+    "cat": "fruit"
   },
   {
     "n": "Kiwi",
@@ -1392,7 +1566,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 15,
     "f": 0.5,
-    "g": 75
+    "g": 75,
+    "cat": "fruit"
   },
   {
     "n": "Pineapple",
@@ -1400,7 +1575,8 @@ export const FOODS: Food[] = [
     "p": 0.5,
     "c": 13,
     "f": 0.1,
-    "g": 100
+    "g": 100,
+    "cat": "fruit"
   },
   {
     "n": "Mango",
@@ -1408,7 +1584,8 @@ export const FOODS: Food[] = [
     "p": 0.8,
     "c": 15,
     "f": 0.4,
-    "g": 120
+    "g": 120,
+    "cat": "fruit"
   },
   {
     "n": "Melon",
@@ -1416,7 +1593,8 @@ export const FOODS: Food[] = [
     "p": 0.8,
     "c": 8,
     "f": 0.2,
-    "g": 150
+    "g": 150,
+    "cat": "fruit"
   },
   {
     "n": "Watermelon",
@@ -1424,7 +1602,8 @@ export const FOODS: Food[] = [
     "p": 0.6,
     "c": 8,
     "f": 0.2,
-    "g": 200
+    "g": 200,
+    "cat": "fruit"
   },
   {
     "n": "Strawberries",
@@ -1432,7 +1611,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 8,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Blueberries",
@@ -1440,7 +1620,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 14,
     "f": 0.3,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Raspberries",
@@ -1448,7 +1629,8 @@ export const FOODS: Food[] = [
     "p": 1.2,
     "c": 12,
     "f": 0.7,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Mixed berries",
@@ -1456,7 +1638,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 10,
     "f": 0.5,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Grapes",
@@ -1464,7 +1647,8 @@ export const FOODS: Food[] = [
     "p": 0.7,
     "c": 18,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Cherries",
@@ -1472,7 +1656,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 16,
     "f": 0.2,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Pomegranate",
@@ -1480,7 +1665,8 @@ export const FOODS: Food[] = [
     "p": 1.7,
     "c": 19,
     "f": 1.2,
-    "g": 80
+    "g": 80,
+    "cat": "fruit"
   },
   {
     "n": "Dates",
@@ -1488,7 +1674,8 @@ export const FOODS: Food[] = [
     "p": 1.8,
     "c": 75,
     "f": 0.2,
-    "g": 25
+    "g": 25,
+    "cat": "fruit"
   },
   {
     "n": "Raisins / sultanas",
@@ -1496,7 +1683,8 @@ export const FOODS: Food[] = [
     "p": 3,
     "c": 79,
     "f": 0.5,
-    "g": 30
+    "g": 30,
+    "cat": "fruit"
   },
   {
     "n": "Dried apricots",
@@ -1504,7 +1692,8 @@ export const FOODS: Food[] = [
     "p": 3.4,
     "c": 63,
     "f": 0.5,
-    "g": 30
+    "g": 30,
+    "cat": "fruit"
   },
   {
     "n": "Lemon",
@@ -1512,7 +1701,8 @@ export const FOODS: Food[] = [
     "p": 1.1,
     "c": 9,
     "f": 0.3,
-    "g": 60
+    "g": 60,
+    "cat": "fruit"
   },
   {
     "n": "Grapefruit",
@@ -1520,7 +1710,8 @@ export const FOODS: Food[] = [
     "p": 0.8,
     "c": 11,
     "f": 0.1,
-    "g": 120
+    "g": 120,
+    "cat": "fruit"
   },
   {
     "n": "Peanut butter",
@@ -1528,7 +1719,8 @@ export const FOODS: Food[] = [
     "p": 25,
     "c": 20,
     "f": 50,
-    "g": 20
+    "g": 20,
+    "cat": "fats"
   },
   {
     "n": "Almonds",
@@ -1536,7 +1728,8 @@ export const FOODS: Food[] = [
     "p": 21,
     "c": 22,
     "f": 50,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Walnuts",
@@ -1544,7 +1737,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 14,
     "f": 65,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Cashews",
@@ -1552,7 +1746,8 @@ export const FOODS: Food[] = [
     "p": 18,
     "c": 30,
     "f": 44,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Pistachios",
@@ -1560,7 +1755,8 @@ export const FOODS: Food[] = [
     "p": 20,
     "c": 28,
     "f": 45,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Mixed nuts",
@@ -1568,7 +1764,8 @@ export const FOODS: Food[] = [
     "p": 20,
     "c": 20,
     "f": 54,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Peanuts",
@@ -1576,7 +1773,8 @@ export const FOODS: Food[] = [
     "p": 26,
     "c": 16,
     "f": 49,
-    "g": 25
+    "g": 25,
+    "cat": "fats"
   },
   {
     "n": "Sunflower seeds",
@@ -1584,7 +1782,8 @@ export const FOODS: Food[] = [
     "p": 21,
     "c": 20,
     "f": 51,
-    "g": 15
+    "g": 15,
+    "cat": "fats"
   },
   {
     "n": "Pumpkin seeds",
@@ -1592,7 +1791,8 @@ export const FOODS: Food[] = [
     "p": 30,
     "c": 11,
     "f": 49,
-    "g": 15
+    "g": 15,
+    "cat": "fats"
   },
   {
     "n": "Chia seeds",
@@ -1600,7 +1800,8 @@ export const FOODS: Food[] = [
     "p": 17,
     "c": 42,
     "f": 31,
-    "g": 15
+    "g": 15,
+    "cat": "fats"
   },
   {
     "n": "Tahini",
@@ -1608,7 +1809,8 @@ export const FOODS: Food[] = [
     "p": 17,
     "c": 21,
     "f": 54,
-    "g": 15
+    "g": 15,
+    "cat": "fats"
   },
   {
     "n": "Olive oil (tbsp ~14g)",
@@ -1616,7 +1818,8 @@ export const FOODS: Food[] = [
     "p": 0,
     "c": 0,
     "f": 100,
-    "g": 14
+    "g": 14,
+    "cat": "fats"
   },
   {
     "n": "Vegetable oil (tbsp ~14g)",
@@ -1624,7 +1827,8 @@ export const FOODS: Food[] = [
     "p": 0,
     "c": 0,
     "f": 100,
-    "g": 14
+    "g": 14,
+    "cat": "fats"
   },
   {
     "n": "Coconut oil (tbsp ~14g)",
@@ -1632,7 +1836,8 @@ export const FOODS: Food[] = [
     "p": 0,
     "c": 0,
     "f": 100,
-    "g": 14
+    "g": 14,
+    "cat": "fats"
   },
   {
     "n": "Ketchup (tbsp ~17g)",
@@ -1640,7 +1845,8 @@ export const FOODS: Food[] = [
     "p": 1.2,
     "c": 24,
     "f": 0.1,
-    "g": 17
+    "g": 17,
+    "cat": "sauces"
   },
   {
     "n": "Mayonnaise",
@@ -1648,7 +1854,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 1.3,
     "f": 75,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Light mayonnaise",
@@ -1656,7 +1863,8 @@ export const FOODS: Food[] = [
     "p": 0.9,
     "c": 9,
     "f": 27,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Brown sauce",
@@ -1664,7 +1872,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 28,
     "f": 0.1,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "BBQ sauce",
@@ -1672,7 +1881,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 40,
     "f": 0.5,
-    "g": 20
+    "g": 20,
+    "cat": "sauces"
   },
   {
     "n": "Mustard",
@@ -1680,7 +1890,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 15,
     "f": 9,
-    "g": 10
+    "g": 10,
+    "cat": "sauces"
   },
   {
     "n": "Sweet chilli sauce",
@@ -1688,7 +1899,8 @@ export const FOODS: Food[] = [
     "p": 0.5,
     "c": 56,
     "f": 0.1,
-    "g": 20
+    "g": 20,
+    "cat": "sauces"
   },
   {
     "n": "Soy sauce (tbsp ~16g)",
@@ -1696,7 +1908,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 5,
     "f": 0,
-    "g": 16
+    "g": 16,
+    "cat": "sauces"
   },
   {
     "n": "Sriracha",
@@ -1704,7 +1917,8 @@ export const FOODS: Food[] = [
     "p": 2,
     "c": 19,
     "f": 1,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Pesto",
@@ -1712,7 +1926,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 6,
     "f": 45,
-    "g": 20
+    "g": 20,
+    "cat": "sauces"
   },
   {
     "n": "Gravy (made)",
@@ -1720,7 +1935,8 @@ export const FOODS: Food[] = [
     "p": 0.8,
     "c": 5,
     "f": 1.3,
-    "g": 70
+    "g": 70,
+    "cat": "sauces"
   },
   {
     "n": "Salad dressing / vinaigrette",
@@ -1728,7 +1944,8 @@ export const FOODS: Food[] = [
     "p": 0.5,
     "c": 8,
     "f": 35,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Honey (tbsp ~21g)",
@@ -1736,7 +1953,8 @@ export const FOODS: Food[] = [
     "p": 0.3,
     "c": 82,
     "f": 0,
-    "g": 21
+    "g": 21,
+    "cat": "sauces"
   },
   {
     "n": "Jam",
@@ -1744,7 +1962,8 @@ export const FOODS: Food[] = [
     "p": 0.4,
     "c": 64,
     "f": 0,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Marmalade",
@@ -1752,7 +1971,8 @@ export const FOODS: Food[] = [
     "p": 0.2,
     "c": 65,
     "f": 0,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Nutella",
@@ -1760,7 +1980,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 57,
     "f": 31,
-    "g": 15
+    "g": 15,
+    "cat": "sauces"
   },
   {
     "n": "Maple syrup",
@@ -1768,7 +1989,8 @@ export const FOODS: Food[] = [
     "p": 0,
     "c": 67,
     "f": 0,
-    "g": 20
+    "g": 20,
+    "cat": "sauces"
   },
   {
     "n": "Marmite",
@@ -1776,7 +1998,8 @@ export const FOODS: Food[] = [
     "p": 34,
     "c": 24,
     "f": 0.1,
-    "g": 4
+    "g": 4,
+    "cat": "sauces"
   },
   {
     "n": "Sugar (tsp ~4g)",
@@ -1784,7 +2007,8 @@ export const FOODS: Food[] = [
     "p": 0,
     "c": 100,
     "f": 0,
-    "g": 4
+    "g": 4,
+    "cat": "sauces"
   },
   {
     "n": "Pizza, cheese & tomato",
@@ -1792,7 +2016,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 30,
     "f": 9,
-    "g": 250
+    "g": 250,
+    "cat": "ready"
   },
   {
     "n": "Pizza, pepperoni",
@@ -1800,7 +2025,8 @@ export const FOODS: Food[] = [
     "p": 12,
     "c": 30,
     "f": 13,
-    "g": 250
+    "g": 250,
+    "cat": "ready"
   },
   {
     "n": "Lasagne (ready meal)",
@@ -1808,7 +2034,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 12,
     "f": 6,
-    "g": 400
+    "g": 400,
+    "cat": "ready"
   },
   {
     "n": "Shepherd's / cottage pie",
@@ -1816,7 +2043,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 11,
     "f": 5,
-    "g": 400
+    "g": 400,
+    "cat": "ready"
   },
   {
     "n": "Macaroni cheese",
@@ -1824,7 +2052,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 16,
     "f": 8,
-    "g": 300
+    "g": 300,
+    "cat": "ready"
   },
   {
     "n": "Spaghetti bolognese",
@@ -1832,7 +2061,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 13,
     "f": 4,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Chicken tikka masala",
@@ -1840,7 +2070,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 6,
     "f": 9,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Chicken korma",
@@ -1848,7 +2079,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 8,
     "f": 12,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Beef curry",
@@ -1856,7 +2088,8 @@ export const FOODS: Food[] = [
     "p": 12,
     "c": 6,
     "f": 10,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Chicken jalfrezi",
@@ -1864,7 +2097,8 @@ export const FOODS: Food[] = [
     "p": 12,
     "c": 7,
     "f": 5,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Chow mein",
@@ -1872,7 +2106,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 18,
     "f": 4,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Sweet & sour chicken",
@@ -1880,7 +2115,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 22,
     "f": 4,
-    "g": 350
+    "g": 350,
+    "cat": "ready"
   },
   {
     "n": "Spring roll",
@@ -1888,7 +2124,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 25,
     "f": 11,
-    "g": 50
+    "g": 50,
+    "cat": "ready"
   },
   {
     "n": "Samosa",
@@ -1896,7 +2133,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 28,
     "f": 14,
-    "g": 60
+    "g": 60,
+    "cat": "ready"
   },
   {
     "n": "Onion bhaji",
@@ -1904,7 +2142,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 30,
     "f": 16,
-    "g": 50
+    "g": 50,
+    "cat": "ready"
   },
   {
     "n": "Doner kebab meat",
@@ -1912,7 +2151,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 5,
     "f": 15,
-    "g": 150
+    "g": 150,
+    "cat": "ready"
   },
   {
     "n": "Cheeseburger, fast food",
@@ -1920,7 +2160,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 30,
     "f": 9,
-    "g": 120
+    "g": 120,
+    "cat": "ready"
   },
   {
     "n": "Chicken burger, fast food",
@@ -1928,7 +2169,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 26,
     "f": 10,
-    "g": 150
+    "g": 150,
+    "cat": "ready"
   },
   {
     "n": "Hot dog (sausage + bun)",
@@ -1936,7 +2178,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 22,
     "f": 14,
-    "g": 100
+    "g": 100,
+    "cat": "ready"
   },
   {
     "n": "Meatballs (in sauce)",
@@ -1944,7 +2187,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 8,
     "f": 10,
-    "g": 150
+    "g": 150,
+    "cat": "ready"
   },
   {
     "n": "Fish & chips",
@@ -1952,7 +2196,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 24,
     "f": 12,
-    "g": 300
+    "g": 300,
+    "cat": "ready"
   },
   {
     "n": "Sushi, salmon set",
@@ -1960,7 +2205,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 30,
     "f": 1,
-    "g": 150
+    "g": 150,
+    "cat": "ready"
   },
   {
     "n": "Tomato soup",
@@ -1968,7 +2214,8 @@ export const FOODS: Food[] = [
     "p": 1,
     "c": 8,
     "f": 2,
-    "g": 300
+    "g": 300,
+    "cat": "ready"
   },
   {
     "n": "Chicken soup",
@@ -1976,7 +2223,8 @@ export const FOODS: Food[] = [
     "p": 2.5,
     "c": 5,
     "f": 2.5,
-    "g": 300
+    "g": 300,
+    "cat": "ready"
   },
   {
     "n": "McDonald's Big Mac",
@@ -1984,7 +2232,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 26,
     "f": 11,
-    "g": 209
+    "g": 209,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's McChicken Sandwich",
@@ -1992,7 +2241,8 @@ export const FOODS: Food[] = [
     "p": 16,
     "c": 33,
     "f": 7,
-    "g": 167
+    "g": 167,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's Chicken McNuggets (6)",
@@ -2000,7 +2250,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 17,
     "f": 15,
-    "g": 96
+    "g": 96,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's Large Fries",
@@ -2008,7 +2259,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 41,
     "f": 16,
-    "g": 154
+    "g": 154,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's Egg McMuffin",
@@ -2016,7 +2268,8 @@ export const FOODS: Food[] = [
     "p": 17,
     "c": 28,
     "f": 11,
-    "g": 136
+    "g": 136,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's Filet-O-Fish",
@@ -2024,7 +2277,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 31,
     "f": 9,
-    "g": 140
+    "g": 140,
+    "cat": "fastfood"
   },
   {
     "n": "McDonald's Cheeseburger",
@@ -2032,7 +2286,8 @@ export const FOODS: Food[] = [
     "p": 15,
     "c": 32,
     "f": 9,
-    "g": 115
+    "g": 115,
+    "cat": "fastfood"
   },
   {
     "n": "Nando's Quarter Chicken (plain)",
@@ -2040,7 +2295,8 @@ export const FOODS: Food[] = [
     "p": 32,
     "c": 0,
     "f": 9,
-    "g": 230
+    "g": 230,
+    "cat": "fastfood"
   },
   {
     "n": "Nando's Half Chicken (plain)",
@@ -2048,7 +2304,8 @@ export const FOODS: Food[] = [
     "p": 32,
     "c": 0,
     "f": 9,
-    "g": 460
+    "g": 460,
+    "cat": "fastfood"
   },
   {
     "n": "Nando's Peri-Peri Chips",
@@ -2056,7 +2313,8 @@ export const FOODS: Food[] = [
     "p": 4,
     "c": 28,
     "f": 10,
-    "g": 200
+    "g": 200,
+    "cat": "fastfood"
   },
   {
     "n": "Nando's Chicken Pitta",
@@ -2064,7 +2322,8 @@ export const FOODS: Food[] = [
     "p": 27,
     "c": 27,
     "f": 5,
-    "g": 287
+    "g": 287,
+    "cat": "fastfood"
   },
   {
     "n": "KFC Original Recipe Chicken piece",
@@ -2072,7 +2331,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 13,
     "f": 16,
-    "g": 152
+    "g": 152,
+    "cat": "fastfood"
   },
   {
     "n": "KFC Zinger Burger",
@@ -2080,7 +2340,8 @@ export const FOODS: Food[] = [
     "p": 21,
     "c": 36,
     "f": 9,
-    "g": 197
+    "g": 197,
+    "cat": "fastfood"
   },
   {
     "n": "KFC Fries (regular)",
@@ -2088,7 +2349,8 @@ export const FOODS: Food[] = [
     "p": 4,
     "c": 37,
     "f": 16,
-    "g": 92
+    "g": 92,
+    "cat": "fastfood"
   },
   {
     "n": "Greggs Sausage Roll",
@@ -2096,7 +2358,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 27,
     "f": 19,
-    "g": 106
+    "g": 106,
+    "cat": "fastfood"
   },
   {
     "n": "Greggs Steak Bake",
@@ -2104,7 +2367,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 30,
     "f": 21,
-    "g": 117
+    "g": 117,
+    "cat": "fastfood"
   },
   {
     "n": "Greggs Cheese & Onion Bake",
@@ -2112,7 +2376,8 @@ export const FOODS: Food[] = [
     "p": 11,
     "c": 33,
     "f": 23,
-    "g": 111
+    "g": 111,
+    "cat": "fastfood"
   },
   {
     "n": "Greggs Yum Yum",
@@ -2120,7 +2385,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 44,
     "f": 22,
-    "g": 81
+    "g": 81,
+    "cat": "fastfood"
   },
   {
     "n": "Pot Noodle Chicken & Mushroom",
@@ -2128,7 +2394,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 58,
     "f": 14,
-    "g": 90
+    "g": 90,
+    "cat": "fastfood"
   },
   {
     "n": "Pot Noodle Beef & Tomato",
@@ -2136,7 +2403,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 57,
     "f": 13,
-    "g": 90
+    "g": 90,
+    "cat": "fastfood"
   },
   {
     "n": "Subway 6-inch Chicken Tikka",
@@ -2144,7 +2412,8 @@ export const FOODS: Food[] = [
     "p": 22,
     "c": 47,
     "f": 7,
-    "g": 230
+    "g": 230,
+    "cat": "fastfood"
   },
   {
     "n": "Subway 6-inch Italian BMT",
@@ -2152,7 +2421,8 @@ export const FOODS: Food[] = [
     "p": 21,
     "c": 46,
     "f": 14,
-    "g": 230
+    "g": 230,
+    "cat": "fastfood"
   },
   {
     "n": "Burger King Whopper",
@@ -2160,7 +2430,8 @@ export const FOODS: Food[] = [
     "p": 29,
     "c": 51,
     "f": 36,
-    "g": 290
+    "g": 290,
+    "cat": "fastfood"
   },
   {
     "n": "Burger King Chicken Royale",
@@ -2168,7 +2439,8 @@ export const FOODS: Food[] = [
     "p": 21,
     "c": 44,
     "f": 20,
-    "g": 210
+    "g": 210,
+    "cat": "fastfood"
   },
   {
     "n": "Domino's Margherita slice",
@@ -2176,7 +2448,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 31,
     "f": 7,
-    "g": 97
+    "g": 97,
+    "cat": "fastfood"
   },
   {
     "n": "Domino's Pepperoni slice",
@@ -2184,7 +2457,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 31,
     "f": 11,
-    "g": 100
+    "g": 100,
+    "cat": "fastfood"
   },
   {
     "n": "Crisps (bag ~25g)",
@@ -2192,7 +2466,8 @@ export const FOODS: Food[] = [
     "p": 6.6,
     "c": 53,
     "f": 34,
-    "g": 25
+    "g": 25,
+    "cat": "snacks"
   },
   {
     "n": "Tortilla chips",
@@ -2200,7 +2475,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 63,
     "f": 23,
-    "g": 30
+    "g": 30,
+    "cat": "snacks"
   },
   {
     "n": "Pretzels",
@@ -2208,7 +2484,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 80,
     "f": 3,
-    "g": 30
+    "g": 30,
+    "cat": "snacks"
   },
   {
     "n": "Popcorn, plain",
@@ -2216,7 +2493,8 @@ export const FOODS: Food[] = [
     "p": 13,
     "c": 78,
     "f": 4,
-    "g": 20
+    "g": 20,
+    "cat": "snacks"
   },
   {
     "n": "Milk chocolate (small bar ~45g)",
@@ -2224,7 +2502,8 @@ export const FOODS: Food[] = [
     "p": 7.6,
     "c": 59,
     "f": 30,
-    "g": 45
+    "g": 45,
+    "cat": "snacks"
   },
   {
     "n": "Dark chocolate 70% (2 squares ~20g)",
@@ -2232,7 +2511,8 @@ export const FOODS: Food[] = [
     "p": 7.8,
     "c": 46,
     "f": 43,
-    "g": 20
+    "g": 20,
+    "cat": "snacks"
   },
   {
     "n": "Maltesers",
@@ -2240,7 +2520,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 63,
     "f": 24,
-    "g": 37
+    "g": 37,
+    "cat": "snacks"
   },
   {
     "n": "Wine gums / Haribo",
@@ -2248,7 +2529,8 @@ export const FOODS: Food[] = [
     "p": 6.9,
     "c": 77,
     "f": 0.2,
-    "g": 30
+    "g": 30,
+    "cat": "snacks"
   },
   {
     "n": "Jaffa cake (1)",
@@ -2256,7 +2538,8 @@ export const FOODS: Food[] = [
     "p": 4,
     "c": 72,
     "f": 8,
-    "g": 12
+    "g": 12,
+    "cat": "snacks"
   },
   {
     "n": "Digestive biscuit",
@@ -2264,7 +2547,8 @@ export const FOODS: Food[] = [
     "p": 6.5,
     "c": 63,
     "f": 21,
-    "g": 15
+    "g": 15,
+    "cat": "snacks"
   },
   {
     "n": "Chocolate digestive",
@@ -2272,7 +2556,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 64,
     "f": 23,
-    "g": 17
+    "g": 17,
+    "cat": "snacks"
   },
   {
     "n": "Hobnob",
@@ -2280,7 +2565,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 64,
     "f": 21,
-    "g": 18
+    "g": 18,
+    "cat": "snacks"
   },
   {
     "n": "Rich tea biscuit",
@@ -2288,7 +2574,8 @@ export const FOODS: Food[] = [
     "p": 7,
     "c": 75,
     "f": 14,
-    "g": 8
+    "g": 8,
+    "cat": "snacks"
   },
   {
     "n": "Shortbread",
@@ -2296,7 +2583,8 @@ export const FOODS: Food[] = [
     "p": 5.5,
     "c": 60,
     "f": 29,
-    "g": 20
+    "g": 20,
+    "cat": "snacks"
   },
   {
     "n": "Cream cracker",
@@ -2304,7 +2592,8 @@ export const FOODS: Food[] = [
     "p": 9,
     "c": 68,
     "f": 13,
-    "g": 16
+    "g": 16,
+    "cat": "snacks"
   },
   {
     "n": "Oatcakes",
@@ -2312,7 +2601,8 @@ export const FOODS: Food[] = [
     "p": 10,
     "c": 60,
     "f": 18,
-    "g": 30
+    "g": 30,
+    "cat": "snacks"
   },
   {
     "n": "Rice cakes",
@@ -2320,7 +2610,8 @@ export const FOODS: Food[] = [
     "p": 8,
     "c": 81,
     "f": 3,
-    "g": 10
+    "g": 10,
+    "cat": "snacks"
   },
   {
     "n": "Flapjack",
@@ -2328,7 +2619,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 60,
     "f": 22,
-    "g": 60
+    "g": 60,
+    "cat": "snacks"
   },
   {
     "n": "Cereal bar",
@@ -2336,7 +2628,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 68,
     "f": 11,
-    "g": 30
+    "g": 30,
+    "cat": "snacks"
   },
   {
     "n": "Protein bar",
@@ -2344,7 +2637,8 @@ export const FOODS: Food[] = [
     "p": 30,
     "c": 35,
     "f": 9,
-    "g": 60
+    "g": 60,
+    "cat": "snacks"
   },
   {
     "n": "Doughnut",
@@ -2352,7 +2646,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 50,
     "f": 20,
-    "g": 60
+    "g": 60,
+    "cat": "snacks"
   },
   {
     "n": "Blueberry muffin",
@@ -2360,7 +2655,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 50,
     "f": 18,
-    "g": 70
+    "g": 70,
+    "cat": "snacks"
   },
   {
     "n": "Brownie",
@@ -2368,7 +2664,8 @@ export const FOODS: Food[] = [
     "p": 6,
     "c": 55,
     "f": 25,
-    "g": 50
+    "g": 50,
+    "cat": "snacks"
   },
   {
     "n": "Cookie",
@@ -2376,7 +2673,8 @@ export const FOODS: Food[] = [
     "p": 5,
     "c": 65,
     "f": 22,
-    "g": 40
+    "g": 40,
+    "cat": "snacks"
   },
   {
     "n": "Water",
@@ -2385,7 +2683,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Coffee, black",
@@ -2394,7 +2693,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 240,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Latte (with milk)",
@@ -2403,7 +2703,8 @@ export const FOODS: Food[] = [
     "c": 5,
     "f": 2,
     "g": 240,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Cappuccino",
@@ -2412,7 +2713,8 @@ export const FOODS: Food[] = [
     "c": 4,
     "f": 1.8,
     "g": 180,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Hot chocolate (with milk)",
@@ -2421,7 +2723,8 @@ export const FOODS: Food[] = [
     "c": 12,
     "f": 3,
     "g": 240,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Tea, no milk",
@@ -2430,7 +2733,8 @@ export const FOODS: Food[] = [
     "c": 0.2,
     "f": 0,
     "g": 240,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Tea with milk",
@@ -2439,7 +2743,8 @@ export const FOODS: Food[] = [
     "c": 1,
     "f": 0.5,
     "g": 240,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Milkshake",
@@ -2448,7 +2753,8 @@ export const FOODS: Food[] = [
     "c": 13,
     "f": 3,
     "g": 300,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Fruit smoothie",
@@ -2457,7 +2763,8 @@ export const FOODS: Food[] = [
     "c": 13,
     "f": 0.2,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Orange juice",
@@ -2466,7 +2773,8 @@ export const FOODS: Food[] = [
     "c": 10,
     "f": 0.2,
     "g": 200,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Apple juice",
@@ -2475,7 +2783,8 @@ export const FOODS: Food[] = [
     "c": 11,
     "f": 0.1,
     "g": 200,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Cola",
@@ -2484,7 +2793,8 @@ export const FOODS: Food[] = [
     "c": 10.6,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Diet cola",
@@ -2493,7 +2803,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Lemonade",
@@ -2502,7 +2813,8 @@ export const FOODS: Food[] = [
     "c": 10,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Energy drink",
@@ -2511,7 +2823,8 @@ export const FOODS: Food[] = [
     "c": 11,
     "f": 0,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Sports drink",
@@ -2520,7 +2833,8 @@ export const FOODS: Food[] = [
     "c": 6,
     "f": 0,
     "g": 500,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Squash, diluted",
@@ -2529,7 +2843,8 @@ export const FOODS: Food[] = [
     "c": 5,
     "f": 0,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Tonic water",
@@ -2538,7 +2853,8 @@ export const FOODS: Food[] = [
     "c": 8.5,
     "f": 0,
     "g": 150,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Lager",
@@ -2547,7 +2863,8 @@ export const FOODS: Food[] = [
     "c": 3.6,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Red wine",
@@ -2556,7 +2873,8 @@ export const FOODS: Food[] = [
     "c": 2.6,
     "f": 0,
     "g": 175,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "White wine",
@@ -2565,7 +2883,8 @@ export const FOODS: Food[] = [
     "c": 2.6,
     "f": 0,
     "g": 175,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Prosecco",
@@ -2574,7 +2893,8 @@ export const FOODS: Food[] = [
     "c": 3,
     "f": 0,
     "g": 125,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Spirits, vodka/gin",
@@ -2583,7 +2903,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 25,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Coca-Cola",
@@ -2592,7 +2913,8 @@ export const FOODS: Food[] = [
     "c": 10.6,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Coca-Cola Zero Sugar",
@@ -2601,7 +2923,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Diet Coke",
@@ -2610,7 +2933,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Pepsi",
@@ -2619,7 +2943,8 @@ export const FOODS: Food[] = [
     "c": 10.7,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Pepsi Max",
@@ -2628,7 +2953,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Fanta Orange",
@@ -2637,7 +2963,8 @@ export const FOODS: Food[] = [
     "c": 11,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Sprite",
@@ -2646,7 +2973,8 @@ export const FOODS: Food[] = [
     "c": 10,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Irn-Bru",
@@ -2655,7 +2983,8 @@ export const FOODS: Food[] = [
     "c": 9,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Lucozade Original",
@@ -2664,7 +2993,8 @@ export const FOODS: Food[] = [
     "c": 17,
     "f": 0,
     "g": 500,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Red Bull",
@@ -2673,7 +3003,8 @@ export const FOODS: Food[] = [
     "c": 11,
     "f": 0,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Monster Energy",
@@ -2682,7 +3013,8 @@ export const FOODS: Food[] = [
     "c": 11,
     "f": 0,
     "g": 500,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Oasis",
@@ -2691,7 +3023,8 @@ export const FOODS: Food[] = [
     "c": 8.5,
     "f": 0,
     "g": 330,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "J2O",
@@ -2700,7 +3033,8 @@ export const FOODS: Food[] = [
     "c": 10,
     "f": 0,
     "g": 275,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Innocent orange juice",
@@ -2709,7 +3043,8 @@ export const FOODS: Food[] = [
     "c": 10.5,
     "f": 0.1,
     "g": 250,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Ribena (undiluted)",
@@ -2718,7 +3053,8 @@ export const FOODS: Food[] = [
     "c": 64,
     "f": 0,
     "g": 30,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   },
   {
     "n": "Volvic Touch of Fruit",
@@ -2727,6 +3063,7 @@ export const FOODS: Food[] = [
     "c": 4,
     "f": 0,
     "g": 500,
-    "ml": true
+    "ml": true,
+    "cat": "drinks"
   }
 ]

@@ -1,0 +1,168 @@
+/**
+ * Read-only views over the log: target ranges, neutral day status, learned habits
+ * (usual portions and meals) and weekly trends. Pure TS, no framework.
+ *
+ * Framing rules (from the product's psychological-safety principles): targets are a
+ * range not a limit, wording is neutral, consistency is days logged (never a streak to
+ * lose), and weight is shown as a weekly trend rather than the daily bounce.
+ */
+import type { AppState, DayLog, Food, IfThenPlan, LoggedFood, MealSlot, Profile } from '@/core/types'
+import { parseYmd, shiftDay, todayStr, ymd } from './date'
+import { dayTotals, type MacroTotals } from './nutrition'
+import { workoutBurn } from './workout'
+
+export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
+export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
+
+export const MOODS = ['Rough', 'Low', 'Okay', 'Good', 'Great']
+export const HUNGER = ['Starving', 'Hungry', 'Satisfied', 'Full', 'Stuffed']
+
+const DEFAULT_RANGE = 100
+const EMPTY_DAY: DayLog = { foods: [], supps: {}, weight: null, workout: null, checkin: null }
+
+export function dayOf(s: AppState, d: string): DayLog {
+  return s.days[d] || EMPTY_DAY
+}
+export function rangeWidth(p: Profile): number {
+  return p.rangeWidth != null && p.rangeWidth >= 0 ? p.rangeWidth : DEFAULT_RANGE
+}
+export function mealNow(): MealSlot {
+  const h = new Date().getHours()
+  return h < 11 ? 'breakfast' : h < 15 ? 'lunch' : h < 20 ? 'dinner' : 'snack'
+}
+
+/** Most recent logged bodyweight on or before `d` (falls back to the profile). */
+export function latestWeight(s: AppState, d: string): number | null {
+  if (s.days[d]?.weight) return s.days[d].weight
+  for (const k of Object.keys(s.days).sort().reverse()) if (k <= d && s.days[k]?.weight) return s.days[k].weight
+  return s.profile.weight ?? null
+}
+
+export interface Range { mid: number; lo: number; hi: number }
+/** The day's target (plus workout burn) ± the user's range width. */
+export function rangeFor(s: AppState, d: string): Range {
+  const mid = s.target.kcal + workoutBurn(dayOf(s, d).workout, latestWeight(s, d))
+  const w = rangeWidth(s.profile)
+  return { mid, lo: mid - w, hi: mid + w }
+}
+
+export interface DayStatus { word: string; short: string; gentle: string }
+export function energyStatus(k: number, r: Range): DayStatus {
+  const fmt = (x: number) => Math.round(x).toLocaleString('en-GB')
+  if (k <= 0) return { word: 'Nothing logged yet', short: 'Not started', gentle: 'Nothing logged yet' }
+  if (k < r.lo) {
+    const lots = k < r.lo - 500
+    return { word: `About ${fmt(r.mid - k)} kcal to go`, short: lots ? 'Plenty of room' : 'Some room', gentle: lots ? 'Plenty of room left' : 'Some room left' }
+  }
+  if (k <= r.hi) return { word: 'In your range', short: 'In range', gentle: 'In your range' }
+  return { word: `${fmt(k - r.hi)} kcal above your range`, short: 'Above range', gentle: 'Above your range, and that’s okay' }
+}
+
+/** The most recent time this food was logged — drives "your usual" portions. */
+export function lastUse(s: AppState, name: string): LoggedFood | null {
+  for (const d of Object.keys(s.days).sort().reverse()) {
+    const fs = s.days[d].foods || []
+    for (let i = fs.length - 1; i >= 0; i--) if (fs[i].n === name && fs[i].src !== 'fat') return fs[i]
+  }
+  return null
+}
+
+export interface Usual { n: string; count: number; last: LoggedFood }
+/** Foods eaten in this meal slot on 2+ of the 21 days before `cur`, not yet logged on `cur`. */
+export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
+  const days = Object.keys(s.days).filter((d) => d < cur).sort().reverse().slice(0, 21)
+  const counts: Record<string, Usual> = {}
+  for (const d of days) {
+    const seen = new Set<string>()
+    for (const x of s.days[d].foods || []) {
+      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n)) continue
+      seen.add(x.n)
+      if (!counts[x.n]) counts[x.n] = { n: x.n, count: 0, last: x }
+      counts[x.n].count++
+    }
+  }
+  const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
+  return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
+}
+/** Copy of an entry for re-logging: keeps the portion, drops per-day confirmation state. */
+export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
+  const { ok: _ok, ...rest } = x
+  return { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+}
+export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[] {
+  return dayOf(s, d).foods.filter((x) => x.meal === meal)
+}
+export function recentFoods(s: AppState, all: Food[], limit = 8): Food[] {
+  const seen = new Set<string>()
+  const out: Food[] = []
+  for (const d of Object.keys(s.days).sort().reverse().slice(0, 14)) {
+    for (const x of s.days[d].foods || []) {
+      if (seen.has(x.n)) continue
+      seen.add(x.n)
+      const m = all.find((f) => f.n === x.n)
+      if (m) out.push(m)
+      if (out.length >= limit) return out
+    }
+  }
+  return out
+}
+
+/** Monday–Sunday of the week containing `d`. */
+export function weekOf(d: string): string[] {
+  const b = parseYmd(d)
+  const off = (b.getDay() + 6) % 7
+  return Array.from({ length: 7 }, (_, i) => { const x = new Date(b); x.setDate(b.getDate() + i - off); return ymd(x) })
+}
+
+export interface DayStat { d: string; t: MacroTotals; r: Range; logged: boolean; future: boolean; done: boolean; planned: boolean; inRange: boolean }
+export function dayStat(s: AppState, d: string): DayStat {
+  const x = dayOf(s, d)
+  const t = dayTotals(x)
+  const r = rangeFor(s, d)
+  return {
+    d, t, r,
+    logged: x.foods.length > 0,
+    future: d > todayStr(),
+    done: !!x.workout?.type,
+    planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
+    inRange: t.k >= r.lo && t.k <= r.hi,
+  }
+}
+export function avg(a: number[]): number {
+  return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0
+}
+
+export interface WeekSummary { avgK: number; avgP: number; logged: number; inRange: number; prevAvgP: number | null; planned: number; done: number }
+export function weekSummary(s: AppState, rows: DayStat[]): WeekSummary {
+  const lg = rows.filter((x) => x.logged)
+  const prev = weekOf(shiftDay(rows[0].d, -7)).map((d) => dayStat(s, d)).filter((x) => x.logged)
+  return {
+    avgK: avg(lg.map((x) => x.t.k)),
+    avgP: avg(lg.map((x) => x.t.p)),
+    logged: lg.length,
+    inRange: lg.filter((x) => x.inRange).length,
+    prevAvgP: prev.length >= 2 ? avg(prev.map((x) => x.t.p)) : null,
+    planned: rows.filter((x) => x.planned).length,
+    done: rows.filter((x) => x.done).length,
+  }
+}
+
+export function weightSeries(s: AppState, upTo: string, n: number): number[] {
+  return Object.keys(s.days).filter((d) => s.days[d].weight && d <= upTo).sort().slice(-n).map((d) => s.days[d].weight as number)
+}
+/** Weekly average vs the week before — the trend, not the daily bounce. */
+export function weightWeekDelta(s: AppState, cur: string): number | null {
+  const pick = (from: number, to: number) => {
+    const v: number[] = []
+    for (let i = from; i < to; i++) { const w = dayOf(s, shiftDay(cur, -i)).weight; if (w) v.push(w) }
+    return v
+  }
+  const a = pick(0, 7), b = pick(7, 14)
+  return a.length && b.length ? Math.round((avg(a) - avg(b)) * 10) / 10 : null
+}
+
+/** Plans not reviewed (or created) within the last week. */
+export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
+  const days = (a: string) => Math.round((parseYmd(today).getTime() - parseYmd(a).getTime()) / 864e5)
+  return (p.plans ?? []).filter((pl) => days(pl.lastReview || pl.created || today) >= 7)
+}

@@ -2,10 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
-import { fmtDate } from '@/core/domain/date'
-import { howToLink } from '@/core/domain/workout'
+import { CARDIO_MET } from '@/core/data/constants'
+import { fmt, fmtDate } from '@/core/domain/date'
+import { howToLink, workoutBurn } from '@/core/domain/workout'
+import { latestWeight } from '@/core/domain/insights'
+import { PageHeader, Seg } from '@/ui/primitives'
+import { Icon } from '@/ui/icons'
+import { DayNav } from '@/ui/WeekStrip'
 
-const TABS: WorkoutType[] = ['Legs', 'Push', 'Pull', 'Cardio']
+const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
 
 function lastSessionOf(days: Record<string, { workout: { type: string; ex?: { name: string; sets: SetEntry[] }[] } | null }>, cur: string, type: string) {
   const ds = Object.keys(days)
@@ -24,6 +29,7 @@ export function TrainScreen() {
   const logged = day.workout
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
+  const burn = workoutBurn(logged, latestWeight(data, cur))
 
   const initial: WorkoutType =
     (logged?.type as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
@@ -43,10 +49,7 @@ export function TrainScreen() {
     wk.ex.forEach((_, i) => {
       next[i] = loggedSets?.[i]?.sets?.length
         ? loggedSets[i].sets.map((s) => ({ ...s }))
-        : [
-            { w: '', reps: '' },
-            { w: '', reps: '' },
-          ]
+        : [{ w: '', reps: '' }, { w: '', reps: '' }]
     })
     setSets(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,210 +68,92 @@ export function TrainScreen() {
   const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
   const dayName = fd.dow
-  const banner = logged
-    ? `Logged ${dayName}: ${logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}. Tap a different session below to change it.`
-    : sched === 'Rest'
-      ? `${dayName} is a rest day. Recover — a walk is fine. You can still log a session below.`
-      : `${dayName}'s plan: ${WORKOUTS[sched]?.title || sched}. Doing something else? Tap any session — it only changes today.`
+  const banner = logged ? (
+    <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b> logged for {dayName}.
+      {burn ? <> That gives you about <b className="num">{fmt(burn)} kcal</b> more room today.</> : null}</>
+  ) : sched === 'Rest' ? (
+    <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
+  ) : (
+    <><b>{dayName}: {WORKOUTS[sched]?.title || sched}.</b> Doing something else? Pick it below. It only changes today.</>
+  )
 
   function updateSet(exi: number, si: number, field: keyof SetEntry, value: string) {
-    setSets((prev) => {
-      const copy = { ...prev, [exi]: prev[exi].map((s, i) => (i === si ? { ...s, [field]: value } : s)) }
-      return copy
-    })
+    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s, i) => (i === si ? { ...s, [field]: value } : s)) }))
   }
   function addSet(exi: number) {
     setSets((prev) => ({ ...prev, [exi]: [...prev[exi], { w: '', reps: '' }] }))
   }
-
   function commitLift() {
     if (!wk) return
-    const ex = wk.ex.map((e, i) => ({
-      name: e.n,
-      sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== ''),
-    }))
-    saveWorkout(sel, ex)
+    saveWorkout(sel, wk.ex.map((e, i) => ({ name: e.n, sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '') })))
   }
 
   return (
     <div className="screen">
-      <div className="page-hdr">
-        <div className="page-date">{fd.dow}, {fd.full}</div>
-        <h1 className="page-title">Train</h1>
-      </div>
+      <PageHeader eyebrow={<DayNav />} title="Train" />
 
-      {/* segmented */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 13, padding: 4, marginBottom: 14 }}>
-        {TABS.map((tb) => (
-          <button
-            key={tb}
-            onClick={() => setSel(tb)}
-            style={{
-              flex: 1,
-              border: 0,
-              background: sel === tb ? 'var(--accent)' : 'transparent',
-              color: sel === tb ? '#fff' : 'var(--muted)',
-              padding: '9px 4px',
-              borderRadius: 9,
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            {tb}
-          </button>
-        ))}
+      <div className="banner">
+        <span style={{ color: 'var(--activity-ink)' }}><Icon name="dumbbell" /></span>
+        <div>{banner}</div>
       </div>
-
-      <div
-        style={{
-          fontSize: 13,
-          color: 'var(--muted)',
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 14,
-          padding: '12px 14px',
-          marginBottom: 14,
-          lineHeight: 1.45,
-        }}
-      >
-        {banner}
-      </div>
+      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={setSel} /></div>
 
       {sel === 'Cardio' ? (
         <>
-          <div className="card">
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{WORKOUTS.Cardio.ex[0].n}</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 14 }}>{WORKOUTS.Cardio.ex[0].cue}</div>
-            <div className="field">
-              <label>Type</label>
-              <select value={cardioType} onChange={(e) => setCardioType(e.target.value)}>
-                {['Walk', 'Incline treadmill', 'Stationary bike', 'Cross-trainer', 'Rower', 'Other'].map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Minutes</label>
-              <input type="number" inputMode="numeric" value={mins} onChange={(e) => setMins(e.target.value)} placeholder="e.g. 25" />
-            </div>
-            <button className="btn" onClick={() => saveCardio(cardioType, mins)}>
-              Save cardio
-            </button>
+          <div className="card ex">
+            <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{WORKOUTS.Cardio.ex[0].t}</span></div>
+            <div className="cue">{WORKOUTS.Cardio.ex[0].cue}</div>
           </div>
+          <div className="list">
+            <div className="frow"><label htmlFor="c_type">Type</label>
+              <select id="c_type" value={cardioType} onChange={(e) => setCardioType(e.target.value)}>
+                {Object.keys(CARDIO_MET).map((o) => <option key={o}>{o}</option>)}
+              </select></div>
+            <div className="frow"><label htmlFor="c_min">Minutes</label>
+              <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
+          </div>
+          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins)}>Save cardio</button></div>
         </>
       ) : (
         <>
           {wk!.ex.map((e, exi) => {
             const isPlank = e.n.toLowerCase().includes('plank')
             const lastEx = last?.ex?.[exi]
-            const lastTxt =
-              lastEx?.sets?.length
-                ? 'Last: ' +
-                  lastEx.sets
-                    .map((s) => (s.w ? s.w + 'kg' : '') + (s.w && s.reps ? '×' : '') + (s.reps || ''))
-                    .filter(Boolean)
-                    .join(', ')
-                : ''
+            const lastTxt = lastEx?.sets?.length
+              ? 'Last time: ' + lastEx.sets.map((s) => (s.w ? s.w + ' kg' : '') + (s.w && s.reps ? ' × ' : '') + (s.reps || '')).filter(Boolean).join(', ')
+              : ''
             return (
-              <div className="card" key={exi}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{e.n}</div>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: 'var(--card-2)',
-                      padding: '3px 8px',
-                      borderRadius: 8,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {e.t}
-                  </span>
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', margin: '6px 0 10px' }}>{e.cue}</div>
-                <a
-                  href={howToLink(e.n)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-block',
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    color: 'var(--ink)',
-                    textDecoration: 'none',
-                    background: 'var(--card-2)',
-                    padding: '5px 11px',
-                    borderRadius: 8,
-                    marginBottom: 10,
-                  }}
-                >
-                  ▶ Watch how to perform
-                </a>
-                {lastTxt && (
-                  <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.4px' }}>
-                    {lastTxt}
+              <div className="card ex" key={exi}>
+                <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
+                <div className="cue">{e.cue}</div>
+                <a className="howto" href={howToLink(e.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>
+                {lastTxt && <div className="last num">{lastTxt}</div>}
+                {(sets[exi] || []).map((s, si) => (
+                  <div className="setrow" key={si}>
+                    <span className="n">Set {si + 1}</span>
+                    {!isPlank && (
+                      <>
+                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={s.w} aria-label={`Set ${si + 1} weight`}
+                          onChange={(ev) => updateSet(exi, si, 'w', ev.target.value)} />
+                        <span className="u">kg</span>
+                      </>
+                    )}
+                    <input className="num" type="number" inputMode="numeric" placeholder={isPlank ? 'sec' : 'reps'} value={s.reps}
+                      aria-label={`Set ${si + 1} ${isPlank ? 'seconds' : 'reps'}`} onChange={(ev) => updateSet(exi, si, 'reps', ev.target.value)} />
+                    <span className="u">{isPlank ? 'sec' : 'reps'}</span>
                   </div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {(sets[exi] || []).map((s, si) => (
-                    <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 46, fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>Set {si + 1}</span>
-                      {!isPlank && (
-                        <>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            placeholder="kg"
-                            value={s.w}
-                            onChange={(ev) => updateSet(exi, si, 'w', ev.target.value)}
-                            style={{ padding: '9px 10px' }}
-                          />
-                          <span style={{ fontSize: 12, color: 'var(--muted)', width: 30 }}>kg</span>
-                        </>
-                      )}
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        placeholder={isPlank ? 'seconds' : 'reps'}
-                        value={s.reps}
-                        onChange={(ev) => updateSet(exi, si, 'reps', ev.target.value)}
-                        style={{ padding: '9px 10px' }}
-                      />
-                      <span style={{ fontSize: 12, color: 'var(--muted)', width: 34 }}>{isPlank ? 'sec' : 'reps'}</span>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => addSet(exi)}
-                  style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 0, padding: '8px 0', cursor: 'pointer' }}
-                >
-                  + add set
-                </button>
+                ))}
+                <button className="addset" onClick={() => addSet(exi)}>Add set</button>
               </div>
             )
           })}
-          <button className="btn" onClick={commitLift}>
-            Save {sel} session
-          </button>
+          <div className="stack"><button className="btn" onClick={commitLift}>Save {sel} session</button></div>
         </>
       )}
 
-      <div
-        style={{
-          fontSize: 13,
-          color: 'var(--muted)',
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 14,
-          padding: '12px 14px',
-          margin: '16px 0',
-          lineHeight: 1.45,
-        }}
-      >
-        <b style={{ color: 'var(--ink)' }}>How to progress:</b> keep ~2–3 reps in the tank each set. When you hit the top
-        of the rep range on all sets with good form, add a little weight next time. Rest ~90 seconds between sets.
+      <div className="foot" style={{ padding: '12px 4px 0' }}>
+        Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little
+        weight next time. Rest about 90 seconds between sets.
       </div>
     </div>
   )

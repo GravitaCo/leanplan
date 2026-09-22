@@ -1,221 +1,130 @@
-/** Small presentational primitives shared across screens. */
-import { useState, type ReactNode } from 'react'
+/** Presentational primitives shared across screens (iOS grouped-list idiom). */
+import { useEffect, type ReactNode, type KeyboardEvent } from 'react'
+import { Icon, Chevron, type IconName } from './icons'
 
-export function Accordion({
-  title,
-  defaultOpen = false,
-  children,
-}: {
-  title: string
-  defaultOpen?: boolean
-  children: ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
+/** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
+export type Category = 'energy' | 'activity' | 'protein' | 'carbs' | 'fat' | 'body' | 'supps' | 'mind'
+
+export function PageHeader({ eyebrow, title, right }: { eyebrow?: ReactNode; title: string; right?: ReactNode }) {
   return (
-    <div style={{ borderBottom: '1px solid var(--line)' }}>
-      <div
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 2px',
-          cursor: 'pointer',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 11,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: open ? 'var(--ink)' : 'var(--muted)',
-          userSelect: 'none',
-        }}
-      >
-        <span>{title}</span>
-        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{open ? '▲' : '▼'}</span>
+    <header className="hdr">
+      <div>
+        <div className="eyebrow">{eyebrow}</div>
+        <h1 className="ltitle">{title}</h1>
       </div>
-      {open && <div style={{ paddingBottom: 16 }}>{children}</div>}
-    </div>
+      {right}
+    </header>
   )
 }
 
-export function ProgressBar({
-  pct,
-  variant = '',
-  height = 11,
-  track = 'rgba(255,255,255,.1)',
-}: {
-  pct: number
-  variant?: '' | 'warn' | 'over'
-  height?: number
-  track?: string
-}) {
-  const color = variant === 'over' ? 'var(--over)' : variant === 'warn' ? 'var(--warn)' : 'var(--accent)'
+/** Health-style card heading: category icon + label in the category colour. */
+export function CatHead({ color, icon, label, meta }: { color: Category; icon: IconName; label: string; meta?: ReactNode }) {
   return (
-    <div style={{ height, background: track, borderRadius: 8, overflow: 'hidden' }}>
-      <div
-        style={{
-          height: '100%',
-          width: Math.min(100, Math.max(0, pct)) + '%',
-          background: color,
-          borderRadius: 8,
-          transition: 'width .35s',
-        }}
-      />
-    </div>
-  )
-}
-
-export function MacroBlock({
-  label,
-  value,
-  goal,
-  unit = 'g',
-  color,
-}: {
-  label: string
-  value: number
-  goal: number
-  unit?: string
-  color: string
-}) {
-  const pct = Math.min(100, goal ? (value / goal) * 100 : 0)
-  return (
-    <div style={{ background: 'var(--card-2)', borderRadius: 14, padding: '12px 11px' }}>
-      <div className="mono" style={{ marginBottom: 4 }}>
+    <div className="hk-h">
+      <div className="hk-c" style={{ color: `var(--${color}-ink)` }}>
+        <Icon name={icon} size={17} />
         {label}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.3px' }}>
-        {Math.round(value)}
-        <span style={{ color: 'var(--muted)', fontWeight: 500, fontSize: 11 }}>
-          {' '}
-          / {goal}
-          {unit}
-        </span>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <div style={{ height: 6, background: 'rgba(255,255,255,.08)', borderRadius: 6, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: pct + '%', background: color, borderRadius: 6 }} />
-        </div>
-      </div>
+      {meta != null && <div className="hk-m">{meta}</div>}
     </div>
   )
 }
 
-export function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
-  return (
-    <div
-      onClick={onChange}
-      style={{
-        width: 46,
-        height: 28,
-        borderRadius: 14,
-        background: on ? 'var(--accent)' : 'rgba(255,255,255,.12)',
-        position: 'relative',
-        flexShrink: 0,
-        cursor: 'pointer',
-        transition: 'background .18s',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: 3,
-          left: on ? 21 : 3,
-          width: 22,
-          height: 22,
-          borderRadius: '50%',
-          background: on ? '#fff' : '#8a8884',
-          transition: 'left .18s ease',
-        }}
-      />
-    </div>
-  )
+/** Enter/Space activate a div acting as a button, matching native button behaviour. */
+export function pressable(onPress: () => void) {
+  return {
+    role: 'button' as const,
+    tabIndex: 0,
+    onClick: onPress,
+    onKeyDown: (e: KeyboardEvent) => {
+      // only when the row itself has focus, not a nested button
+      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onPress() }
+    },
+  }
 }
 
-export function CheckRow({
-  on,
-  label,
-  sublabel,
-  onClick,
-}: {
-  on: boolean
-  label: string
-  sublabel?: string
-  onClick: () => void
+export function Tile({ color, icon, label, value, sub, extra, onPress }: {
+  color: Category; icon: IconName; label: string; value: ReactNode; sub?: ReactNode; extra?: ReactNode; onPress: () => void
 }) {
   return (
-    <div
-      className="row"
-      onClick={onClick}
-      style={{ cursor: 'pointer' }}
-    >
-      <div
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 8,
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: on ? 'var(--accent)' : 'transparent',
-          border: on ? '2px solid var(--accent)' : '2px solid var(--line-strong)',
-          color: '#fff',
-        }}
-      >
-        {on ? '✓' : ''}
-      </div>
-      <div className="grow">
-        <div
-          className="name"
-          style={{ color: on ? 'var(--muted)' : 'var(--ink)', textDecoration: on ? 'line-through' : 'none' }}
-        >
+    <div className="tile" {...pressable(onPress)}>
+      <CatHead color={color} icon={icon} label={label} meta={<Chevron />} />
+      <div className="v num">{value}</div>
+      {extra}
+      {sub && <div className="s">{sub}</div>}
+    </div>
+  )
+}
+
+export function Seg<T extends string>({ options, value, onChange }: { options: [T, string][]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="seg" role="radiogroup">
+      {options.map(([v, label]) => (
+        <button key={v} role="radio" aria-checked={v === value} className={v === value ? 'on' : ''} onClick={() => onChange(v)}>
           {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function Toggle({ on, onChange, disabled, label }: { on: boolean; onChange: () => void; disabled?: boolean; label: string }) {
+  return <button className={'toggle' + (on ? ' on' : '')} role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={onChange} />
+}
+
+/** Grouped-list row that expands in place (settings sections). */
+export function Disclosure({ icon, color, label, open, onToggle, children }: {
+  icon: IconName; color: string; label: string; open: boolean; onToggle: () => void; children: ReactNode
+}) {
+  return (
+    <>
+      <button className="li" onClick={onToggle} aria-expanded={open}>
+        <span className="ico" style={{ background: color }}><Icon name={icon} size={18} /></span>
+        <div className="m"><div className="t">{label}</div></div>
+        <Chevron rotate={open ? 90 : 0} />
+      </button>
+      {open && <div className="acc-bd">{children}</div>}
+    </>
+  )
+}
+
+/**
+ * Bottom sheet with an iOS navigation header (left action · title · right action).
+ * `left` defaults to Cancel; pass null for nothing. Locks page scroll while open.
+ */
+export function Sheet({ title, onClose, left, right, tall, animate = true, children }: {
+  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean
+  /** false when swapping views inside an already-open sheet, so it doesn't slide up again */
+  animate?: boolean
+  children: ReactNode
+}) {
+  useEffect(() => {
+    document.body.classList.add('noscroll')
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => { document.body.classList.remove('noscroll'); window.removeEventListener('keydown', onKey) }
+  }, [onClose])
+  return (
+    <div className="sheet-root">
+      <div className="sheet-bg" onClick={onClose} style={animate ? undefined : { animation: 'none' }} />
+      <div className={'sheet' + (tall ? ' tall' : '')} role="dialog" aria-modal="true" aria-label={title} style={animate ? undefined : { animation: 'none' }}>
+        <div className="grabber" />
+        <div className="sheet-hd">
+          <div>{left === undefined ? <button className="navbtn" onClick={onClose}>Cancel</button> : left}</div>
+          <div className="sh-t">{title}</div>
+          <div className="sh-r">{right}</div>
         </div>
-        {sublabel ? <div className="meta">{sublabel}</div> : null}
+        <div className="sheet-bd">{children}</div>
       </div>
     </div>
   )
 }
 
-export function Sheet({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+export function BackButton({ onClick, label = 'Back' }: { onClick: () => void; label?: string }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 70,
-        background: 'rgba(0,0,0,.55)',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          maxHeight: '88vh',
-          overflowY: 'auto',
-          background: 'var(--bg)',
-          borderTopLeftRadius: 26,
-          borderTopRightRadius: 26,
-          borderTop: '1px solid var(--line-strong)',
-          padding: '10px 18px calc(24px + env(safe-area-inset-bottom))',
-        }}
-      >
-        <div
-          style={{
-            width: 38,
-            height: 4,
-            borderRadius: 2,
-            background: 'var(--line-strong)',
-            margin: '6px auto 14px',
-          }}
-        />
-        {children}
-      </div>
-    </div>
+    <button className="navbtn" onClick={onClick}>
+      <Icon name="chevL" size={20} stroke={2.6} />
+      {label}
+    </button>
   )
 }

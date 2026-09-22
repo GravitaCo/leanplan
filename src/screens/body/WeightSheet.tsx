@@ -1,145 +1,76 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
+import { weightWeekDelta } from '@/core/domain/insights'
 import { Sheet } from '@/ui/primitives'
 
-interface Point {
-  d: string
-  w: number
-}
+interface Point { d: string; w: number }
 
 function buildPath(points: Point[], w: number, h: number, pad: number) {
   if (points.length < 2) return { line: '', area: '', dots: [] as { x: number; y: number }[] }
   const weights = points.map((p) => p.w)
   const min = Math.min(...weights)
-  const max = Math.max(...weights)
-  const range = max - min || 1
-  const innerW = w - pad * 2
-  const innerH = h - pad * 2
-  const coords = points.map((p, i) => {
-    const x = pad + (i / (points.length - 1)) * innerW
-    const y = pad + (1 - (p.w - min) / range) * innerH
-    return { x, y }
-  })
+  const range = Math.max(...weights) - min || 1
+  const coords = points.map((p, i) => ({
+    x: pad + (i / (points.length - 1)) * (w - pad * 2),
+    y: pad + (1 - (p.w - min) / range) * (h - pad * 2),
+  }))
   const line = coords.map((c, i) => (i === 0 ? `M${c.x},${c.y}` : `L${c.x},${c.y}`)).join(' ')
   const area = `${line} L${coords[coords.length - 1].x},${h} L${coords[0].x},${h} Z`
   return { line, area, dots: coords }
 }
 
+/** Log today's weight and see the trend. Framed as a weekly average, not the daily bounce. */
 export function WeightSheet({ onClose }: { onClose: () => void }) {
-  const days = useStore((s) => s.data.days)
+  const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
   const setWeight = useStore((s) => s.setWeight)
-  const [bw, setBw] = useState('')
+  const today = data.days[cur]?.weight
+  const [bw, setBw] = useState(today ? String(today) : '')
 
-  const points: Point[] = Object.keys(days)
-    .filter((d) => days[d].weight != null)
-    .sort()
-    .map((d) => ({ d, w: days[d].weight as number }))
-
-  const W = 320
-  const H = 150
-  const { line, area, dots } = buildPath(points, W, H, 14)
-
-  const first = points[0]?.w
-  const last = points[points.length - 1]?.w
-  const diff = first != null && last != null ? r1(last - first) : null
+  const points: Point[] = Object.keys(data.days).filter((d) => data.days[d].weight != null).sort().slice(-30)
+    .map((d) => ({ d, w: data.days[d].weight as number }))
+  const W = 320, H = 130
+  const { line, area, dots } = buildPath(points, W, H, 12)
+  const delta = weightWeekDelta(data, cur)
+  const save = () => { const v = parseFloat(bw); if (v) { setWeight(v); onClose() } }
 
   return (
-    <Sheet onClose={onClose}>
-      <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
-        <div className="grow">
-          <div className="name" style={{ fontSize: 20, fontWeight: 800 }}>
-            Body weight
-          </div>
-          <div className="meta">{points.length ? `${points.length} entries logged` : 'No entries yet'}</div>
-        </div>
-        <button className="x-btn" onClick={onClose}>
-          ×
-        </button>
-      </div>
-
-      {/* current + trend */}
-      <div className="card cream" style={{ marginTop: 6 }}>
-        <div className="mono" style={{ marginBottom: 4 }}>
-          Latest
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-1.2px' }}>{last != null ? r1(last) : '—'}</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--cream-sub)' }}>kg</div>
-          {diff != null && (
-            <div style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: diff <= 0 ? '#2f8f63' : '#c0603f' }}>
-              {diff > 0 ? '+' : ''}
-              {diff} kg total
-            </div>
-          )}
+    <Sheet title="Body weight" tall onClose={onClose} right={<button className="navbtn b" onClick={save}>Save</button>}>
+      <div className="card">
+        <div className="gram">
+          <input autoFocus className="num" type="number" inputMode="decimal" step="0.1" placeholder="0.0" value={bw}
+            aria-label={`Weight for ${fmtDate(cur).dow} in kg`} onChange={(e) => setBw(e.target.value)} />
+          <span>kg</span>
         </div>
       </div>
-
-      {/* chart */}
-      {points.length >= 2 ? (
+      <div className="foot" style={{ paddingBottom: 8 }}>
+        Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.
+      </div>
+      {points.length >= 2 && (
         <div className="card">
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+          <div className="hk-h">
+            <div className="hk-c" style={{ color: 'var(--body-ink)' }}>Last {points.length} entries</div>
+            {delta != null && <div className="hk-m num">{delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta)} kg vs last week</div>}
+          </div>
+          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" aria-label="Weight trend">
             <defs>
               <linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="var(--accent)" stopOpacity="0.28" />
-                <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
+                <stop offset="0" stopColor="var(--body)" stopOpacity="0.28" />
+                <stop offset="1" stopColor="var(--body)" stopOpacity="0" />
               </linearGradient>
             </defs>
-            {[0.25, 0.5, 0.75].map((g) => (
-              <line key={g} x1="0" y1={H * g} x2={W} y2={H * g} stroke="rgba(255,255,255,.06)" strokeWidth="1" />
-            ))}
             <path d={area} fill="url(#wfill)" />
-            <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--accent)" />}
+            <path d={line} fill="none" stroke="var(--body)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--body)" />}
           </svg>
         </div>
-      ) : (
-        <div className="card">
-          <div className="empty">Log your weight over a few days to see your trend here.</div>
-        </div>
       )}
-
-      {/* quick log */}
-      <div className="card">
-        <div className="mono" style={{ marginBottom: 8 }}>
-          Log weight for {fmtDate(cur).dow}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input type="number" inputMode="decimal" placeholder="kg" value={bw} onChange={(e) => setBw(e.target.value)} />
-          <button
-            className="btn"
-            style={{ width: 'auto', padding: '12px 20px' }}
-            onClick={() => {
-              const v = parseFloat(bw)
-              if (v) {
-                setWeight(v)
-                setBw('')
-              }
-            }}
-          >
-            Save
-          </button>
-        </div>
-      </div>
-
-      {/* history */}
       {points.length > 0 && (
-        <div className="card">
-          {points
-            .slice()
-            .reverse()
-            .slice(0, 14)
-            .map((p) => (
-              <div className="row" key={p.d}>
-                <div className="grow">
-                  <div className="name" style={{ fontSize: 14 }}>
-                    {fmtDate(p.d).full}
-                  </div>
-                </div>
-                <span style={{ fontWeight: 700 }}>{r1(p.w)} kg</span>
-              </div>
-            ))}
+        <div className="list">
+          {points.slice().reverse().slice(0, 14).map((p) => (
+            <div className="li" key={p.d}><div className="m"><div className="t">{fmtDate(p.d).full}</div></div><span className="tr num">{r1(p.w)} kg</span></div>
+          ))}
         </div>
       )}
     </Sheet>

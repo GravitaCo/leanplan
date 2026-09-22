@@ -22,12 +22,29 @@ export interface Food {
   g: number
   /** true when the food is measured in millilitres rather than grams */
   ml?: boolean
+  /** category — drives the cooking-fat question and the default hand portion */
+  cat?: FoodCategory
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
 }
 
+export type FoodCategory =
+  | 'meat' | 'fish' | 'eggs' | 'dairy' | 'grains' | 'potato' | 'veg' | 'fruit'
+  | 'fats' | 'sauces' | 'ready' | 'fastfood' | 'snacks' | 'drinks'
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+/**
+ * How a logged amount was captured. Each has a typical relative error, so the app can
+ * show an honest ± margin instead of false precision (see core/domain/estimate.ts).
+ */
+export type CaptureMethod = 'g' | 'serv' | 'usual' | 'recipe' | 'hand' | 'quick' | 'fat'
+
+export type HandPortion = 'palm' | 'cupped' | 'fist' | 'thumb'
+
+/** Where an entry's numbers came from. */
+export type EntrySource = 'db' | 'custom' | 'recipe' | 'quick' | 'fat'
 
 /** A single logged food entry for a given day (absolute macros, already scaled to portion). */
 export interface LoggedFood {
@@ -39,6 +56,18 @@ export interface LoggedFood {
   f: number
   meal?: MealSlot
   unit?: 'g' | 'ml'
+  /** capture metadata — all optional so entries logged before it existed stay valid */
+  src?: EntrySource
+  how?: CaptureMethod
+  /** typical relative error of this entry, 0–1 */
+  err?: number
+  hand?: { type: HandPortion; count: number }
+  /** servings, for serving- and recipe-based entries */
+  serv?: number
+  /** the user confirmed or corrected this entry, so it isn't flagged again */
+  ok?: boolean
+  /** cooking fat: the food it was cooked with */
+  fatFor?: string
 }
 
 export interface RecipeItem {
@@ -81,11 +110,20 @@ export interface Workout {
   mins?: string
 }
 
+/** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
+export interface CheckIn {
+  mood: number
+  hunger: number
+  note?: string
+  t?: string
+}
+
 export interface DayLog {
   foods: LoggedFood[]
   supps: Record<string, boolean>
   weight: number | null
   workout: Workout | null
+  checkin?: CheckIn | null
 }
 
 export interface MacroTarget {
@@ -146,6 +184,26 @@ export interface TrainingPrefs {
   emphasis?: MuscleGroup[]
 }
 
+/** How much the app asks to tighten estimates. */
+export type AccuracyMode = 'relaxed' | 'balanced' | 'precise'
+
+export type ThemePref = 'system' | 'light' | 'dark'
+
+/** Cooking-fat answer, remembered as the next default. */
+export type FatChoice = 'none' | 'spray' | 'tsp' | 'tbsp' | 'butter' | 'unsure'
+
+/** An if–then (implementation intention) plan, revisited weekly. */
+export interface IfThenPlan {
+  id: string
+  when: string
+  then: string
+  /** optional barrier-coping plan */
+  cope?: string
+  created: string
+  lastReview?: string
+  reviews: { d: string; r: 'worked' | 'mixed' | 'no' }[]
+}
+
 export interface Supplement {
   id: string
   name: string
@@ -169,6 +227,17 @@ export interface Profile {
   targetRate?: TargetRate
   /** fitness-only onboarding preferences (#9–14) */
   training?: TrainingPrefs
+  /** tracking preferences — all optional, read through core/domain/prefs defaults */
+  accuracy?: AccuracyMode
+  /** hides calorie numbers and body weight; shows the day in words */
+  gentle?: boolean
+  /** ± kcal around the calorie target that counts as "in range" */
+  rangeWidth?: number
+  /** personal hand-portion calibration in grams */
+  hands?: Partial<Record<HandPortion, number>>
+  lastFat?: FatChoice
+  plans?: IfThenPlan[]
+  theme?: ThemePref
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */
