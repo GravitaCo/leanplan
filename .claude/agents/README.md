@@ -8,6 +8,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `nutrition-db` | Food database, meals/recipes, nutrition maths | Sourced, sanity-checked macros |
 | `fitness-workouts` | Workout templates, exercises, cues, programming | Safe, evidence-based, no gym-bro |
 | `security-data` | RLS, auth/OAuth, sync, Supabase schema | Skeptical, protective |
+| `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them
