@@ -34,7 +34,8 @@ export function PlanScreen() {
           return (
             <button className="li" key={pl.id} onClick={() => setEditing({ id: pl.id })}>
               <div className="m"><div className="t">When {pl.when}</div>
-                <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div></div>
+                <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div>
+                {pl.cope && <div className="s">Backup: {pl.cope}</div>}</div>
               <Chevron />
             </button>
           )

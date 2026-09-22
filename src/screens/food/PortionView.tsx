@@ -6,7 +6,7 @@ import { unitOf } from '@/core/domain/nutrition'
 import {
   CAPTURE_LABEL, FAT_OPTIONS, HANDS, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
 } from '@/core/domain/estimate'
-import { MEAL_LABEL, lastUse } from '@/core/domain/insights'
+import { MEAL_LABEL, lastFatFor, lastUse } from '@/core/domain/insights'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 
@@ -22,8 +22,8 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
 }) {
   const data = useStore((s) => s.data)
   const logEntries = useStore((s) => s.logEntries)
-  const setPrefs = useStore((s) => s.setPrefs)
   const profile = data.profile
+  const gentle = !!profile.gentle
   const u = unitOf(food)
 
   const last = lastUse(data, food.n)
@@ -32,18 +32,19 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const [serv, setServ] = useState(1)
   const [grams, setGrams] = useState<number>(learned ?? food.g)
   const [hand, setHand] = useState<{ type: HandPortion; count: number }>(last?.hand ? { ...last.hand } : { type: handFor(food), count: 1 })
-  const askFat = accuracyOf(profile).askFat && isCookable(food)
-  const [fat, setFat] = useState<FatChoice | null>(profile.lastFat ?? null)
+  // remembered per food: last time's answer for this food, never another food's
+  const [fat, setFat] = useState<FatChoice | null>(() => lastFatFor(data, food.n))
 
   const portion: Portion =
     mode === 'serv' ? { mode, serv } : mode === 'hand' ? { mode, type: hand.type, count: hand.count } : { mode, grams, learned }
+  const sized = buildEntry(food, portion, meal, profile, { custom, fat: null, askFat: false }).entry.grams
+  const askFat = accuracyOf(profile).askFat && isCookable(food, sized)
   const { entry, fat: fatEntry } = buildEntry(food, portion, meal, profile, { custom, fat, askFat })
   const kcal = entry.k + (fatEntry?.k ?? 0)
 
   const commit = () => {
     if (!entry.grams) return
     logEntries(fatEntry ? [entry, fatEntry] : [entry], `${food.n} added`)
-    if (askFat && fat && fat !== profile.lastFat) setPrefs({ lastFat: fat })
     onClose()
   }
 
@@ -52,12 +53,13 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
-        {food.k} kcal · {food.p} P · {food.c} C · {food.f} F per 100 {u}{custom ? ' · your food' : ''}
+        {gentle ? `${food.p} g protein` : `${food.k} kcal · ${food.p} P · ${food.c} C · ${food.f} F`} per 100 {u}{custom ? ' · your food' : ''}
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">How much?</div>
-      <Seg<Mode> options={[['serv', 'Servings'], ['g', u === 'ml' ? 'Millilitres' : 'Grams'], ['hand', 'Hands']]} value={mode} onChange={setMode} />
+      <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
+        value={mode} onChange={setMode} />
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
@@ -120,18 +122,18 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
           </div>
           <div className="foot">
             {fat ? "Cooking fat is the part food logs miss most, so it's added separately and you can change it."
-              : "Skip this and we'll assume a teaspoon of oil, with a wider margin."}
+              : "Cooking fat is the part food logs miss most. Skip it and nothing is added, we just widen the margin."}
           </div>
         </>
       )}
 
       <div className="card" style={{ marginTop: 14 }}>
-        <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {combinedMargin(entry, fatEntry)}</span></div>
-        <div className="sub num" style={{ marginTop: 4 }}>
+        {!gentle && <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {combinedMargin(entry, fatEntry)}</span></div>}
+        <div className={gentle ? 'big num' : 'sub num'} style={gentle ? { fontSize: 22 } : { marginTop: 4 }}>
           {r1(entry.p + (fatEntry?.p ?? 0))} g protein · {r1(entry.c)} g carbs · {r1(entry.f + (fatEntry?.f ?? 0))} g fat
         </div>
         <div className="sub" style={{ fontSize: 13, marginTop: 4 }}>
-          {CAPTURE_LABEL[entry.how!]}{fatEntry ? ` + ${fatEntry.n.replace(' · cooking', '')} (${fatEntry.k} kcal)` : ''}
+          {CAPTURE_LABEL[entry.how!]}{fatEntry ? ` + ${fatEntry.n.replace(' · cooking', '').toLowerCase()}${gentle ? '' : ` (${fatEntry.k} kcal)`}` : ''}
         </div>
       </div>
       <button className="btn" onClick={commit} disabled={!entry.grams}>Add to {MEAL_LABEL[meal]}</button>

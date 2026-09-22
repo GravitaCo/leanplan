@@ -4,6 +4,7 @@ import { Seg } from '@/ui/primitives'
 
 const MEAL_OPTIONS: [MealSlot, string][] = MEALS.map((m) => [m, m === 'snack' ? 'Snack' : MEAL_LABEL[m]])
 
-export function MealSeg({ value, onChange }: { value: MealSlot; onChange: (m: MealSlot) => void }) {
+/** Meal picker. `value` may be undefined for legacy entries logged without a meal. */
+export function MealSeg({ value, onChange }: { value: MealSlot | undefined; onChange: (m: MealSlot) => void }) {
   return <Seg options={MEAL_OPTIONS} value={value} onChange={onChange} />
 }

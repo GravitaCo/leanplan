@@ -6,7 +6,7 @@
  * range not a limit, wording is neutral, consistency is days logged (never a streak to
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
-import type { AppState, DayLog, Food, IfThenPlan, LoggedFood, MealSlot, Profile } from '@/core/types'
+import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
@@ -65,6 +65,28 @@ export function lastUse(s: AppState, name: string): LoggedFood | null {
     for (let i = fs.length - 1; i >= 0; i--) if (fs[i].n === name && fs[i].src !== 'fat') return fs[i]
   }
   return null
+}
+
+/**
+ * How this food was cooked last time it was logged with a cooking-fat answer — remembered
+ * per food, so "1 tbsp oil" for chicken never becomes the default for a salad.
+ */
+export function lastFatFor(s: AppState, name: string): FatChoice | null {
+  return lastUse(s, name)?.fatChoice ?? null
+}
+/** A usual food plus the cooking fat it was logged with, ready to re-log. */
+export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedFood[] {
+  for (const d of Object.keys(s.days).sort().reverse()) {
+    const fs = s.days[d].foods || []
+    for (let i = fs.length - 1; i >= 0; i--) {
+      if (fs[i].n !== name || fs[i].src === 'fat') continue
+      // a cooking-fat entry is logged straight after its food
+      const next = fs[i + 1]
+      const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
+      return [relog(fs[i], meal), ...fat]
+    }
+  }
+  return []
 }
 
 export interface Usual { n: string; count: number; last: LoggedFood }
@@ -133,9 +155,11 @@ export function avg(a: number[]): number {
 }
 
 export interface WeekSummary { avgK: number; avgP: number; logged: number; inRange: number; prevAvgP: number | null; planned: number; done: number }
+/** Averages use finished days only — today is still in progress and shouldn't count as a miss. */
 export function weekSummary(s: AppState, rows: DayStat[]): WeekSummary {
-  const lg = rows.filter((x) => x.logged)
-  const prev = weekOf(shiftDay(rows[0].d, -7)).map((d) => dayStat(s, d)).filter((x) => x.logged)
+  const today = todayStr()
+  const lg = rows.filter((x) => x.logged && x.d < today)
+  const prev = weekOf(shiftDay(rows[0].d, -7)).map((d) => dayStat(s, d)).filter((x) => x.logged && x.d < today)
   return {
     avgK: avg(lg.map((x) => x.t.k)),
     avgP: avg(lg.map((x) => x.t.p)),

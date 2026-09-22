@@ -201,14 +201,6 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
   return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: Math.round(adjustPct), floored, bodyFatAssumed }
 }
 
-/** Progress class for a calorie bar: '' under, 'warn' near, 'over' past budget. */
-export function budgetClass(eaten: number, budget: number): '' | 'warn' | 'over' {
-  const pct = budget ? (eaten / budget) * 100 : 0
-  if (pct > 100) return 'over'
-  if (pct >= 90) return 'warn'
-  return ''
-}
-
 export function macroPct(value: number, goal: number): number {
   return Math.min(100, goal ? (value / goal) * 100 : 0)
 }

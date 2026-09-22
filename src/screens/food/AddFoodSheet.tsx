@@ -9,7 +9,7 @@ import { FOODS } from '@/core/data/foods'
 import { fmt } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { portionText } from '@/core/domain/estimate'
-import { MEAL_LABEL, mealNow, recentFoods, relog, usuals } from '@/core/domain/insights'
+import { MEAL_LABEL, mealNow, recentFoods, usualEntries, usuals } from '@/core/domain/insights'
 import { Sheet, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
@@ -51,12 +51,13 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   const removeCustomFood = useStore((s) => s.removeCustomFood)
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const query = q.trim().toLowerCase()
+  const gentle = !!data.profile.gentle
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
     <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
       <div className="m">
         <div className="t">{f.n}</div>
-        <div className="s num">{f.k} kcal · {f.p} g protein per 100 {f.ml ? 'ml' : 'g'}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
+        <div className="s num">{gentle ? '' : `${f.k} kcal · `}{f.p} g protein per 100 {f.ml ? 'ml' : 'g'}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
       </div>
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
@@ -68,7 +69,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
       <div className="li" key={r.id} {...pressable(() => go({ kind: 'recipe', index: ri }))}>
         <div className="m">
           <div className="t">{r.name}<span className="tag">Recipe</span></div>
-          <div className="s num">{fmt(per.k)} kcal · {Math.round(per.p)} g protein per serving</div>
+          <div className="s num">{gentle ? '' : `${fmt(per.k)} kcal · `}{Math.round(per.p)} g protein per serving</div>
         </div>
         <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
       </div>
@@ -87,7 +88,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             <div className="lbl">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
             <div className="list">
               {us.map((u) => (
-                <div className="li" key={u.n} {...pressable(() => { logEntries([relog(u.last, meal)]); onClose() })}>
+                <div className="li" key={u.n} {...pressable(() => { logEntries(usualEntries(data, u.n, meal)); onClose() })}>
                   <div className="m"><div className="t">{u.n}</div><div className="s">{portionText(u.last)} · one tap</div></div>
                   <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
                 </div>
@@ -103,7 +104,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             <div className="list">
               {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
                 <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={`Delete ${f.n}`}
-                  onClick={(e) => { e.stopPropagation(); removeCustomFood(ci) }}>
+                  onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete "${f.n}" from your foods?`)) removeCustomFood(ci) }}>
                   <Icon name="x" size={17} />
                 </button>))}
             </div>

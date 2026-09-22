@@ -10,8 +10,8 @@ import { dayTotals } from '@/core/domain/nutrition'
 import { workoutBurn } from '@/core/domain/workout'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
-  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, latestWeight, mealNow, plansDue, rangeFor, rangeWidth, relog,
-  usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
+  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, latestWeight, mealNow, plansDue, rangeFor, rangeWidth,
+  usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, Tile, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
@@ -125,7 +125,7 @@ export function TodayScreen() {
           </div>
         </div>
         <div className="hero-f">
-          <span className="grow">{gentle ? st.gentle : st.word}</span>
+          <span className="grow">{gentle ? 'See your meals' : st.word}</span>
           {t.k > 0 && !gentle && (
             <button className="pm num" aria-label="About this estimate" onClick={(e) => { e.stopPropagation(); setSheet({ k: 'margin' }) }}>± {margin}</button>
           )}
@@ -162,7 +162,7 @@ export function TodayScreen() {
           <div className="sec-t">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
           <div className="list">
             {us.map((u) => (
-              <div className="li" key={u.n} {...pressable(() => logEntries([relog(u.last, meal)]))}>
+              <div className="li" key={u.n} {...pressable(() => logEntries(usualEntries(data, u.n, meal)))}>
                 <div className="m"><div className="t">{u.n}</div>
                   <div className="s">{portionText(u.last)}{gentle ? '' : ` · ${fmt(u.last.k)} kcal`}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
@@ -177,7 +177,7 @@ export function TodayScreen() {
       <div className="tiles">
         <Tile color="activity" icon="dumbbell" label="Workout" onPress={() => setTab('train')}
           value={<span className="w">{logged ? wk!.type : isRest ? 'Rest' : sched}</span>}
-          sub={logged ? (burn ? `+${fmt(burn)} kcal of room` : 'Logged') : isRest ? 'Recovery counts too' : 'Tap to start'} />
+          sub={logged ? (burn && !gentle ? `+${fmt(burn)} kcal of room` : 'Logged') : isRest ? 'Recovery counts too' : 'Tap to start'} />
         <Tile color="mind" icon="smile" label="Check-in" onPress={() => setSheet({ k: 'checkin' })}
           value={<span className="w">{day.checkin?.mood ? MOODS[day.checkin.mood - 1] : 'How are you?'}</span>}
           sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : 'Mood and hunger'} />

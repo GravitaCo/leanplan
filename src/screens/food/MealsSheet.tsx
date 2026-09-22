@@ -18,6 +18,7 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
   const saveRecipe = useStore((s) => s.saveRecipe)
   const deleteRecipe = useStore((s) => s.deleteRecipe)
   const showToast = useStore((s) => s.showToast)
+  const gentle = useStore((s) => !!s.data.profile.gentle)
   const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
 
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -100,7 +101,7 @@ export function MealsSheet({ onClose }: { onClose: () => void }) {
             return (
               <div className="li" key={r.id}>
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s num">{+r.servings > 1 ? r.servings + ' servings · ' : ''}{fmt(per.k)} kcal · {r0(per.p)} g protein per serving</div></div>
+                  <div className="s num">{+r.servings > 1 ? r.servings + ' servings · ' : ''}{gentle ? '' : `${fmt(per.k)} kcal · `}{r0(per.p)} g protein per serving</div></div>
                 <button className="btn sm tinted" onClick={() => { setMoved(true); setLogging(ri) }}>Log</button>
                 <button className="navbtn" style={{ marginLeft: 6 }}
                   onClick={() => { setMoved(true); setDraft({ id: r.id, name: r.name, servings: String(r.servings), items: r.items.map((i) => ({ ...i })) }) }}>Edit</button>

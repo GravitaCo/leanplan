@@ -22,8 +22,10 @@ export interface Food {
   g: number
   /** true when the food is measured in millilitres rather than grams */
   ml?: boolean
-  /** category — drives the cooking-fat question and the default hand portion */
+  /** category — sets the default hand portion */
   cat?: FoodCategory
+  /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
+  cook?: boolean
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
@@ -68,6 +70,8 @@ export interface LoggedFood {
   ok?: boolean
   /** cooking fat: the food it was cooked with */
   fatFor?: string
+  /** the cooking-fat answer given for this food, remembered as its next default */
+  fatChoice?: FatChoice
 }
 
 export interface RecipeItem {
@@ -235,7 +239,6 @@ export interface Profile {
   rangeWidth?: number
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
-  lastFat?: FatChoice
   plans?: IfThenPlan[]
   theme?: ThemePref
 }

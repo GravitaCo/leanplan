@@ -16,6 +16,10 @@ import type {
 } from '@/core/types'
 import { scaleFood, unitOf } from './nutrition'
 
+/** Extra relative error when the cooking-fat question is skipped: we don't add fat we
+ *  weren't told about, we just say we're less sure. */
+const SKIPPED_FAT_ERR = 0.1
+
 /** Typical relative error by capture method. */
 export const CAPTURE_ERR: Record<CaptureMethod, number> = {
   g: 0.08,
@@ -66,11 +70,10 @@ const HAND_FOR_CAT: Partial<Record<FoodCategory, HandPortion>> = {
   fats: 'thumb', sauces: 'thumb',
 }
 
-/* Cooking fat is the biggest systematic miss in food logging, so for foods usually cooked
-   in fat we ask one question. Excluded: preparations whose values already include fat, or
-   that are cooked without it. */
-const COOK_CATS: ReadonlySet<FoodCategory> = new Set<FoodCategory>(['meat', 'fish', 'eggs', 'veg', 'potato'])
-const COOK_EXCLUDE = /boiled|steamed|raw|poached|tinned|canned|smoked|in water|chips|roast|fried|crisp|jacket|mash|salad|pickled/i
+/* Cooking fat is the biggest systematic miss in food logging, so for plain foods usually
+   cooked in fat (flagged `cook` in the database) we ask one question. Portions this small
+   are garnish; the question wouldn't be worth the tap. */
+const MIN_COOK_GRAMS = 30
 
 export interface FatOption {
   id: FatChoice
@@ -130,9 +133,10 @@ export function handGrams(p: Profile, type: HandPortion): number {
 export function handFor(f: Food): HandPortion {
   return (f.cat && HAND_FOR_CAT[f.cat]) || 'cupped'
 }
-export function isCookable(f: Food): boolean {
-  return !!f.cat && COOK_CATS.has(f.cat) && !COOK_EXCLUDE.test(f.n)
+export function isCookable(f: Food, grams: number): boolean {
+  return !!f.cook && grams >= MIN_COOK_GRAMS
 }
+
 
 /** Portion as chosen in the add-food flow. */
 export type Portion =
@@ -163,8 +167,10 @@ export function buildEntry(
   if (portion.mode === 'serv') entry.serv = portion.serv
 
   let fat: LoggedFood | null = null
-  if (opts.askFat) {
-    const o = FAT_OPTIONS.find((x) => x.id === (opts.fat ?? 'unsure'))
+  if (opts.askFat && opts.fat == null) entry.err = +(entry.err! + SKIPPED_FAT_ERR).toFixed(2)
+  if (opts.askFat && opts.fat != null) {
+    entry.fatChoice = opts.fat
+    const o = FAT_OPTIONS.find((x) => x.id === opts.fat)
     if (o?.entry) {
       const e = o.entry
       fat = { n: e.n + ' · cooking', grams: e.g, k: e.k, p: e.p ?? 0, c: 0, f: e.f, meal, src: 'fat', how: 'fat', err: e.err ?? CAPTURE_ERR.fat, fatFor: food.n }
@@ -179,15 +185,14 @@ export function combinedMargin(...xs: (LoggedFood | null)[]): number {
 }
 
 /**
- * Scale an entry by a correction multiplier. A correction is the user telling us what
- * they know, so it tightens the error and clears any flag.
+ * Scale an entry by a correction multiplier. The user has looked at it, so it's no longer
+ * surfaced for a check, but a slider nudge is still a guess: the error class is unchanged.
  */
 export function scaleEntry(x: LoggedFood, mult: number): LoggedFood {
   if (Math.abs(mult - 1) < 0.001) return x
   const out: LoggedFood = { ...x, k: x.k * mult, p: x.p * mult, c: x.c * mult, f: x.f * mult, grams: Math.round((x.grams || 0) * mult), ok: true }
   if (x.hand) out.hand = { ...x.hand, count: Math.round(x.hand.count * mult * 10) / 10 }
   if (x.serv) out.serv = Math.round(x.serv * mult * 10) / 10
-  out.err = Math.min(entryErr(x), CAPTURE_ERR.usual)
   return out
 }
 

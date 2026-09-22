@@ -391,3 +391,9 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
   font-size: 15px; font-weight: 500; opacity: 0; transition: 0.25s; pointer-events: none; max-width: 88%; text-align: center;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===================== REDUCED MOTION ===================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+.navbtn:disabled { color: var(--label3); }

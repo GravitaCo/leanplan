@@ -100,7 +100,7 @@ export function ProfileScreen() {
         <Seg<'std' | 'gentle'> options={[['std', 'Standard'], ['gentle', 'Gentle']]} value={pr.gentle ? 'gentle' : 'std'}
           onChange={(v) => setPrefs({ gentle: v === 'gentle' })} />
         <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>
-          {pr.gentle ? 'Calorie numbers and body weight are hidden. You see how the day is going in words, and protein stays visible.'
+          {pr.gentle ? 'Calorie numbers are hidden while you log and review your day, and body weight is off your Summary. You see how the day is going in words, and protein stays visible. Targets stay editable here.'
             : 'Full numbers, with a ± margin on anything estimated.'}
         </div>
       </div></div>
@@ -180,12 +180,17 @@ export function ProfileScreen() {
             {field('Carbs (g)', <input type="number" value={targets.c} onChange={(e) => setTargets({ ...targets, c: e.target.value })} />)}
             {field('Fat (g)', <input type="number" value={targets.f} onChange={(e) => setTargets({ ...targets, f: e.target.value })} />)}
           </div>
-          <button className="btn" onClick={() => saveTargets({
-            kcal: parseInt(targets.kcal) || data.target.kcal, p: parseInt(targets.p) || data.target.p,
-            c: parseInt(targets.c) || data.target.c, f: parseInt(targets.f) || data.target.f,
-          }, parseInt(targets.range))}>Save targets</button>
+          <button className="btn" onClick={() => {
+            saveTargets({
+              kcal: parseInt(targets.kcal) || data.target.kcal, p: parseInt(targets.p) || data.target.p,
+              c: parseInt(targets.c) || data.target.c, f: parseInt(targets.f) || data.target.f,
+            }, parseInt(targets.range))
+            // show what was actually stored (the calorie floor and range cap may have applied)
+            const st = useStore.getState().data
+            setTargets({ kcal: String(st.target.kcal), p: String(st.target.p), c: String(st.target.c), f: String(st.target.f), range: String(rangeWidth(st.profile)) })
+          }}>Save targets</button>
           <div className="foot" style={{ padding: '10px 0 0' }}>
-            Your day is judged against a range, not a single number. Calories won't go below 1,200 here. Going lower is something to do with medical support.
+            Your day is judged against a range (up to ± 400), not a single number. Calories won't go below 1,200 here. Going lower is something to do with medical support.
           </div>
         </Disclosure>
 

@@ -14,6 +14,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
 }) {
   const recipe = useStore((s) => s.data.recipes[index])
   const logRecipe = useStore((s) => s.logRecipe)
+  const gentle = useStore((s) => !!s.data.profile.gentle)
   const [q, setQ] = useState(1)
   if (!recipe) return null
   const per = recipePerServing(recipe)
@@ -26,7 +27,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
       <div className="scale">
         {[0.5, 1, 1.5, 2, 3].map((v) => (
           <button key={v} className={q === v ? 'on' : ''} onClick={() => setQ(v)}>
-            <b className="num">{frac(v)}</b>{fmt(per.k * v)} kcal
+            <b className="num">{frac(v)}</b>{gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal`}
           </button>
         ))}
       </div>
@@ -34,7 +35,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
         The recipe makes {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}. It's worked out from its ingredients, so it's more accurate than a photo of the plate.
       </div>
       <div className="card" style={{ marginTop: 14 }}>
-        <div className="big num">{fmt(per.k * q)}<small>kcal</small><span className="pm">± {fmt(per.k * q * CAPTURE_ERR.recipe)}</span></div>
+        {!gentle && <div className="big num">{fmt(per.k * q)}<small>kcal</small><span className="pm">± {fmt(per.k * q * CAPTURE_ERR.recipe)}</span></div>}
         <div className="sub num" style={{ marginTop: 4 }}>{r1(per.p * q)} g protein · {r1(per.c * q)} g carbs · {r1(per.f * q)} g fat</div>
       </div>
       <button className="btn" onClick={commit}>Add to {MEAL_LABEL[meal]}</button>

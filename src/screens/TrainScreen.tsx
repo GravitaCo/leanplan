@@ -30,6 +30,7 @@ export function TrainScreen() {
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
   const burn = workoutBurn(logged, latestWeight(data, cur))
+  const gentle = !!data.profile.gentle
 
   const initial: WorkoutType =
     (logged?.type as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
@@ -70,7 +71,7 @@ export function TrainScreen() {
   const dayName = fd.dow
   const banner = logged ? (
     <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b> logged for {dayName}.
-      {burn ? <> That gives you about <b className="num">{fmt(burn)} kcal</b> more room today.</> : null}</>
+      {burn && !gentle ? <> That gives you about <b className="num">{fmt(burn)} kcal</b> more room today.</> : null}</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (

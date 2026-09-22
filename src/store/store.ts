@@ -55,7 +55,7 @@ interface StoreState {
   /** log one or more entries on the current day (e.g. a food plus its cooking fat) */
   logEntries: (entries: LoggedFood[], toast?: string) => void
   /** correct an entry's portion by a multiplier and/or move it to another meal */
-  updateEntry: (index: number, mult: number, meal: MealSlot) => void
+  updateEntry: (index: number, mult: number, meal: MealSlot | undefined) => void
   /** mark an estimate as confirmed so it isn't surfaced for a check again */
   confirmEntry: (index: number) => void
   removeFood: (index: number) => void
@@ -164,7 +164,7 @@ export const useStore = create<StoreState>()(
           const d = ensureDay(st.data, st.cur)
           const x = d.foods[index]
           if (!x) return
-          d.foods[index] = { ...scaleEntry(x, mult), meal }
+          d.foods[index] = { ...scaleEntry(x, mult), meal: meal ?? x.meal }
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync()

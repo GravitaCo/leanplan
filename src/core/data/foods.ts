@@ -1,7 +1,8 @@
 import type { Food } from '@/core/types'
 
-/** Built-in food database — values per 100g (or 100ml when `ml` is set). `cat` drives the
- *  cooking-fat question and the default hand portion. */
+/** Built-in food database — values per 100g (or 100ml when `ml` is set). `cat` sets the
+ *  default hand portion; `cook` marks plain foods usually cooked in fat, which get the one
+ *  cooking-fat question. */
 export const FOODS: Food[] = [
   {
     "n": "Chicken breast, cooked",
@@ -10,7 +11,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 3.6,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Chicken thigh, cooked",
@@ -19,7 +21,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 11,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Chicken, roast (with skin)",
@@ -37,7 +40,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 1,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Turkey mince, cooked",
@@ -46,7 +50,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 7,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Beef mince 5% fat, cooked",
@@ -55,7 +60,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 7,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Beef mince 20% fat, cooked",
@@ -64,7 +70,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 17,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Beef steak (sirloin), cooked",
@@ -73,7 +80,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 10,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Beef, roast",
@@ -91,7 +99,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 17,
     "g": 120,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Pork chop, cooked",
@@ -100,7 +109,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 13,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Pork loin, cooked",
@@ -109,7 +119,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 9,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Gammon / ham steak, cooked",
@@ -118,7 +129,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 10,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Lamb chop, cooked",
@@ -127,7 +139,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 20,
     "g": 120,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Lamb mince, cooked",
@@ -136,7 +149,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 19,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Duck breast, cooked",
@@ -145,7 +159,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 10,
     "g": 150,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Pork sausage, cooked (1 ~50g)",
@@ -154,7 +169,8 @@ export const FOODS: Food[] = [
     "c": 10,
     "f": 22,
     "g": 50,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Chicken sausage, cooked (1 ~50g)",
@@ -163,7 +179,8 @@ export const FOODS: Food[] = [
     "c": 5,
     "f": 10,
     "g": 50,
-    "cat": "meat"
+    "cat": "meat",
+    "cook": true
   },
   {
     "n": "Bacon, grilled",
@@ -280,7 +297,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 13,
     "g": 130,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Smoked salmon",
@@ -307,7 +325,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 1,
     "g": 130,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Cod, cooked",
@@ -316,7 +335,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 0.9,
     "g": 130,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Haddock, cooked",
@@ -325,7 +345,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 1,
     "g": 130,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Sea bass, cooked",
@@ -334,7 +355,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 3,
     "g": 130,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Mackerel, cooked",
@@ -343,7 +365,8 @@ export const FOODS: Food[] = [
     "c": 0,
     "f": 20,
     "g": 120,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Sardines, canned in oil",
@@ -370,7 +393,8 @@ export const FOODS: Food[] = [
     "c": 0.2,
     "f": 0.3,
     "g": 100,
-    "cat": "fish"
+    "cat": "fish",
+    "cook": true
   },
   {
     "n": "Fish fingers, cooked (3)",
@@ -397,7 +421,8 @@ export const FOODS: Food[] = [
     "c": 0.7,
     "f": 9.5,
     "g": 50,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Egg white",
@@ -406,7 +431,8 @@ export const FOODS: Food[] = [
     "c": 0.7,
     "f": 0.2,
     "g": 33,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Egg, fried",
@@ -424,7 +450,8 @@ export const FOODS: Food[] = [
     "c": 3,
     "f": 9,
     "g": 100,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Quorn mince",
@@ -433,7 +460,8 @@ export const FOODS: Food[] = [
     "c": 4,
     "f": 2,
     "g": 100,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Quorn pieces",
@@ -442,7 +470,8 @@ export const FOODS: Food[] = [
     "c": 4.5,
     "f": 2,
     "g": 100,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Tempeh",
@@ -451,7 +480,8 @@ export const FOODS: Food[] = [
     "c": 9,
     "f": 11,
     "g": 100,
-    "cat": "eggs"
+    "cat": "eggs",
+    "cook": true
   },
   {
     "n": "Falafel",
@@ -1216,7 +1246,8 @@ export const FOODS: Food[] = [
     "c": 7,
     "f": 0.4,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Cauliflower",
@@ -1225,7 +1256,8 @@ export const FOODS: Food[] = [
     "c": 5,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Carrots",
@@ -1243,7 +1275,8 @@ export const FOODS: Food[] = [
     "c": 3.6,
     "f": 0.4,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Kale",
@@ -1252,7 +1285,8 @@ export const FOODS: Food[] = [
     "c": 9,
     "f": 0.9,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Cabbage",
@@ -1261,7 +1295,8 @@ export const FOODS: Food[] = [
     "c": 6,
     "f": 0.1,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Green beans",
@@ -1270,7 +1305,8 @@ export const FOODS: Food[] = [
     "c": 7,
     "f": 0.2,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Courgette",
@@ -1279,7 +1315,8 @@ export const FOODS: Food[] = [
     "c": 3.1,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Aubergine",
@@ -1288,7 +1325,8 @@ export const FOODS: Food[] = [
     "c": 6,
     "f": 0.2,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Mushrooms",
@@ -1297,7 +1335,8 @@ export const FOODS: Food[] = [
     "c": 3.3,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Tomato",
@@ -1378,7 +1417,8 @@ export const FOODS: Food[] = [
     "c": 9,
     "f": 0.1,
     "g": 60,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Spring onion",
@@ -1405,7 +1445,8 @@ export const FOODS: Food[] = [
     "c": 6,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Leek",
@@ -1414,7 +1455,8 @@ export const FOODS: Food[] = [
     "c": 7,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Celery",
@@ -1432,7 +1474,8 @@ export const FOODS: Food[] = [
     "c": 3.9,
     "f": 0.1,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Beetroot",
@@ -1450,7 +1493,8 @@ export const FOODS: Food[] = [
     "c": 12,
     "f": 0.1,
     "g": 120,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Parsnip",
@@ -1459,7 +1503,8 @@ export const FOODS: Food[] = [
     "c": 18,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Brussels sprouts",
@@ -1468,7 +1513,8 @@ export const FOODS: Food[] = [
     "c": 9,
     "f": 0.3,
     "g": 80,
-    "cat": "veg"
+    "cat": "veg",
+    "cook": true
   },
   {
     "n": "Sweetcorn, tinned",

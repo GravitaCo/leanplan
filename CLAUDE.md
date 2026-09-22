@@ -41,22 +41,36 @@ build can reuse it. Keep React/DOM out of `core/` and `data/`.
   `push.ts` (Web Push), `backup.ts` (JSON export/import).
 - `src/store/store.ts` — Zustand + Immer store; wires core/data to React; owns the
   debounced sync loop.
-- `src/ui/` — design-system primitives (Card/Button/Pill via theme classes, `Toggle`,
-  `Accordion`, `BottomNav`, `WeekStrip`, icons).
-- `src/screens/` — Today, Food (+ `food/AddFoodSheet`, `food/MealsSheet`), Train, Plan,
-  Profile, AuthScreen, `body/WeightSheet`.
+- `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `Seg`, `Toggle`,
+  `Disclosure`, `Tile`, `CatHead`, `PageHeader`, `pressable`), `charts.tsx` (`Rings`,
+  `RangeBar`, `MacroCol`, `Sparkline`, `WeekBars`), `WeekStrip` + `DayNav`, `BottomNav`, `icons`.
+- `src/screens/` — Today (Summary), Food (+ `food/AddFoodSheet` → Portion / RecipeLog /
+  QuickEstimate / CreateFood views, `food/EditEntrySheet`, `food/MealsSheet`, `food/MarginSheet`),
+  Train, Plan (+ `plan/PlanSheets`), Profile, AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
+- Logging model: `core/domain/estimate.ts` gives every entry a capture method + typical
+  error (days show a ± margin; the cooking-fat question only for foods flagged `cook`);
+  `core/domain/insights.ts` holds ranges, neutral status copy, usuals and weekly trends.
 
 ## Design system
 
 Tokens live in `src/styles/theme.css` (`:root` CSS variables). Use these, don't hardcode:
 
-- Surfaces: `--bg #0c0c0e`, `--card #16161a`, `--card-2 #1c1c21`, `--cream #f4f2ed`.
-- Accent: `--accent #e8835e` (coral). Macro hues: `--protein #6b9fe8`, `--carbs #e8a34d`,
-  `--fat #c98ad6`. Status: `--good`, `--warn`, `--over`.
-- Type: `--font-sans` Hanken Grotesk, `--font-mono` IBM Plex Mono (mono = small uppercase
-  micro-labels, the Tali signature). Radius `--radius 22px`.
-- Shared classes: `.card`, `.card.cream`, `.btn`/`.btn.ghost`/`.btn.sm`, `.pill`,
-  `.field`, `.row`, `.section-label`, `.mono`, `.toast`.
+Apple Health / Fitbit-inspired (replaced the earlier dark coral / Hanken Grotesk look in
+Sept 2026, at Benn's request). Light and dark themes: automatic, or forced via
+`html[data-theme]` from Profile → Appearance.
+
+- Surfaces & labels follow iOS system colours: `--bg`, `--card`, `--elev`, `--sheet`,
+  `--fill`/`--fill2`/`--fill3`, `--label`/`--label2`/`--label3`, `--sep`. Interactive: `--tint`.
+- One category colour per data type, each with a contrast-safe `-ink` text variant:
+  `--energy`, `--activity`, `--protein`, `--carbs`, `--fat`, `--body`, `--supps`, `--mind`.
+  No status red/amber for eating — targets are ranges and copy stays neutral.
+- Type: system font (`--font-sans`, SF Pro on iOS); numbers use `.num` (SF Pro Rounded,
+  tabular). iOS scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
+- Shared classes: `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.sec-t`, `.lbl`,
+  `.foot`, `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`,
+  `.frow` (form rows), `.tile`, `.banner`, `.toast`.
+- Legacy token names (`--accent`, `--muted`, `--line`, `--card-2`, …) remain as aliases
+  so older markup (AuthScreen) keeps rendering; prefer the new names in new code.
 - App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
   are generated from it.
 

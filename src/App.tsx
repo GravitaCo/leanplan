@@ -31,6 +31,13 @@ export default function App() {
     const el = document.documentElement
     if (theme === 'light' || theme === 'dark') el.dataset.theme = theme
     else delete el.dataset.theme
+    // keep the browser/status-bar colour in step with a forced theme
+    const forced = theme === 'light' || theme === 'dark'
+    document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+      if (m.dataset.content == null) { m.dataset.content = m.content; m.dataset.media = m.media }
+      m.content = forced ? (theme === 'dark' ? '#000000' : '#f2f2f7') : m.dataset.content!
+      m.media = forced ? 'all' : m.dataset.media!
+    })
   }, [theme])
 
   if (!authReady) {

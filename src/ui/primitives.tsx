@@ -56,7 +56,7 @@ export function Tile({ color, icon, label, value, sub, extra, onPress }: {
   )
 }
 
-export function Seg<T extends string>({ options, value, onChange }: { options: [T, string][]; value: T; onChange: (v: T) => void }) {
+export function Seg<T extends string>({ options, value, onChange }: { options: [T, string][]; value: T | undefined; onChange: (v: T) => void }) {
   return (
     <div className="seg" role="radiogroup">
       {options.map(([v, label]) => (
