@@ -156,7 +156,7 @@ export function TrainScreen() {
 
       <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={pickTab} /></div>
 
-      {!logged && (offer || askLighter) && (
+      {!logged && sched !== 'Rest' && (offer || askLighter) && (
         <div className="card dayopt">
           <div className="t">{offer
             ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
