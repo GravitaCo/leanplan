@@ -44,6 +44,17 @@ Values are per 100 g, per 100 ml when `ml` is set, or **per item** when `each` i
 4. Have `nutrition-accuracy` review anything over ~20 rows; record audits in `docs/data/`.
 5. Bump the SW `CACHE` in `public/sw.js` so installed apps pick up the new bundle.
 
+### Chain menus (e.g. Greggs)
+Each chain's own published nutrition file is imported by a script in `scripts/import/` that
+writes a generated file in `src/core/data/chains/`. Nothing is typed by hand.
+- **Greggs:** `python3 scripts/import/greggs.py <nutrition PDF>`. It parses deterministically,
+  with no AI, and cross-checks every row (per-portion kcal = per-100 g × portion). It drops
+  multi-item boxes, drinks' syrup and cream add-ons, decaf duplicates and hospital-shop items.
+  It keeps existing Tali names so learned usuals still match.
+- **Every refresh:** re-run when the chain publishes a new file, review the diff, then run
+  `npm run check:foods`. Chains whose files are scanned images need an AI reading step instead
+  (not built yet).
+
 ## 3. Growing past the bundle: food packs (designed, not built)
 
 The bundled database is about 32 KB for 336 foods, so a few thousand foods can still ship in the app.

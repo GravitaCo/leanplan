@@ -28,6 +28,7 @@ export const SOURCES: Record<string, Source> = {
   'subway-uk': { label: 'Subway UK, Sep 2026', url: 'https://www.subway.com/en-GB/MenuNutrition/Nutrition', err: MENU_ERR },
   'bk-gb': { label: 'Burger King UK, Sep 2026', url: 'https://www.burgerking.co.uk/', err: MENU_ERR },
   'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/', err: MENU_ERR },
+  'greggs-uk': { label: 'Greggs UK, Sep 2026', url: 'https://www.greggs.com/nutrition', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
 }
 

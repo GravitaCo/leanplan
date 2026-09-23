@@ -4,6 +4,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
+import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { fmt } from '@/core/domain/date'
@@ -125,10 +126,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const words = meaningful.length ? meaningful : [query]
     const recipes = recipesByUse(data).map((ri) => ({ r: data.recipes[ri], ri }))
       .filter((o) => words.every((w) => o.r.name.toLowerCase().includes(w)))
-    const foods = all.map((f, i) => ({ f, i }))
-      .filter((o) => words.every((w) => o.f.n.toLowerCase().includes(w)))
-      .sort((a, b) => a.f.n.toLowerCase().indexOf(words[0]) - b.f.n.toLowerCase().indexOf(words[0]))
-      .slice(0, 50)
+    const foods = rankByName(all.map((f, i) => ({ f, i })), (o) => o.f.n, words).slice(0, 50)
     body = (
       <>
         {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}

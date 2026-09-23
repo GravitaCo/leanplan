@@ -1,10 +1,11 @@
 import type { Food } from '@/core/types'
+import { GREGGS } from './chains/greggs'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
  *  `each` is set). `src` cites where the values come from (see `sources.ts`); every change
  *  must pass `npm run check:foods`. `cat` sets the default hand portion; `cook` marks plain
  *  foods usually cooked in fat, which get the one cooking-fat question. */
-export const FOODS: Food[] = [
+const BASE: Food[] = [
   {
     "n": "Chicken breast, cooked",
     "k": 148,
@@ -2637,42 +2638,6 @@ export const FOODS: Food[] = [
     "src": "cofid:13-486"
   },
   {
-    "n": "Greggs Sausage Roll",
-    "k": 318,
-    "p": 11,
-    "c": 27,
-    "f": 19,
-    "g": 106,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Steak Bake",
-    "k": 347,
-    "p": 13,
-    "c": 30,
-    "f": 21,
-    "g": 117,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Cheese & Onion Bake",
-    "k": 373,
-    "p": 11,
-    "c": 33,
-    "f": 23,
-    "g": 111,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Yum Yum",
-    "k": 384,
-    "p": 5,
-    "c": 44,
-    "f": 22,
-    "g": 81,
-    "cat": "fastfood"
-  },
-  {
     "n": "Pot Noodle Chicken & Mushroom",
     "k": 406,
     "p": 9,
@@ -3407,3 +3372,6 @@ export const FOODS: Food[] = [
     "src": "off:3057640578113"
   }
 ]
+
+/** Chain menus are generated files in `chains/` (see scripts/import/). */
+export const FOODS: Food[] = BASE.concat(GREGGS)
