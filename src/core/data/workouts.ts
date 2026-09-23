@@ -117,6 +117,44 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
 
 export const LIFTS: WorkoutType[] = ["Legs","Push","Pull"]
 
+/**
+ * Gentle swaps offered on a tough day instead of the planned session (workout plan §0.2). Mat
+ * only, nothing face-down, nothing from the plan's "left out on purpose" list. The mobility
+ * routine is about 10 minutes including changeovers (an estimate: ~520 s of moves + ~90 s).
+ */
+export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string; cardioType: string }> = {
+  "mobility": {
+    "title": "10-minute mobility · hips, back and shoulders",
+    "mins": "10",
+    "cardioType": "Mobility",
+    "ex": [
+      { "n": "March on the spot with arm swings", "t": "1 × 60 sec",
+        "cue": "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast." },
+      { "n": "Shoulder rolls", "t": "10 each way",
+        "cue": "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush." },
+      { "n": "Cat–cow", "t": "1 × 10 slow reps",
+        "cue": "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms." },
+      { "n": "Half-kneeling hip flexor stretch", "t": "45 sec each side",
+        "cue": "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride." },
+      { "n": "Lying hamstring stretch", "t": "45 sec each side",
+        "cue": "Lie on your back with both knees bent. Lift one leg and hold behind the thigh, then straighten the knee until you feel a gentle stretch along the back of the leg. Keep your head and lower back on the mat. Don't pull hard or yank the leg towards you." },
+      { "n": "Lying knee rolls", "t": "8 each side",
+        "cue": "Lie on your back with knees bent, feet flat and arms out wide. Let both knees lower slowly to one side, then bring them back through the middle to the other. Keep both shoulders on the mat and only go as far as feels easy. Move slowly, don't let the knees drop." },
+      { "n": "Glute bridge", "t": "2 × 10",
+        "cue": "Lie on your back with knees bent and feet hip-width, close to your bottom. Press through your heels and lift your hips until they're in line with your knees and shoulders, squeeze your glutes, then lower slowly. Keep your weight on your upper back, not your neck, and don't over-arch at the top." }
+    ]
+  },
+  "walk": {
+    "title": "Easy walk",
+    "mins": "15",
+    "cardioType": "Easy walk",
+    "ex": [
+      { "n": "Easy walk", "t": "10–20 min",
+        "cue": "Walk at a relaxed, conversational pace, one where you could chat in full sentences. Outside, indoors or on a flat treadmill all count. The most common mistake is speeding up to make it 'worth it', so keep it easy. Stop whenever you've had enough." }
+    ]
+  }
+}
+
 /** Any of these can be assigned to any weekday. */
 export const SESSIONS = ["Legs","Push","Pull","Cardio","Rest"] as const
 

@@ -11,6 +11,8 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEMOS } from '@/core/data/media'
 import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
+import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
+import { SWAPS } from '@/core/data/workouts'
 import { rangeFor, showBurnNote } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
@@ -218,5 +220,32 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '336 350 420 210 117 16'
   const ok = !noSource.length && !noCode.length && !badOpt.length && !lost.length && got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'cardio MET sources', JSON.stringify(got), noSource, noCode, badOpt, lost)
+}
+// day-of choices (plan §0.2, §4.0.5): own-pattern comparison, the 2-low rule, no score, and the
+// shorter-version maths on every built-in prescription
+{
+  const ci = (x: any) => ({ mood: 0, hunger: 0, ...x })
+  const week = (x: any) => Array.from({ length: 8 }, () => ci(x))
+  const got = [
+    lowSignals(ci({ sleep: 1, stress: 3 }), []).join('+'),              // no history: only the worst step counts
+    lowSignals(ci({ sleep: 2, stress: 2 }), []).join('+') || '-',       // middling answers aren't low without history
+    lowSignals(ci({ sleep: 2, energy: 2 }), week({ sleep: 3, energy: 3 })).join('+'), // worse than their usual
+    lowSignals(ci({ sleep: 1, stress: 3 }), week({ sleep: 1, stress: 3 })).join('+') || '-', // their usual isn't flagged
+    String(offerLighter(ci({ sleep: 1 }), [])), String(offerLighter(ci({ sleep: 1, energy: 1 }), [])),
+    String(offerLighter(null, [])),
+  ].join(' ')
+  const want = 'sleep+stress - sleep+energy - false true false'
+  const noScore = !('score' in (require('@/core/domain/dayOptions') as object))
+  const ok = got === want && noScore; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'day-of signals', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  const ts = [...new Set([...Object.values(WORKOUTS).flatMap((w) => w.ex.map((e) => e.t))])].sort()
+  const table = ts.map((t) => t + ' -> ' + shorterPrescription(t)).join('; ')
+  const wantT = '20–30 min -> 12–18 min; 2–3 × 12 -> 2 × 12; 2–3 × 12–15 -> 2 × 12–15; 2–3 × 15 -> 2 × 15; 3 × 10 -> 2 × 10; 3 × 10–12 -> 2 × 10–12; 3 × 12–15 -> 2 × 12–15; 3 × 20–40 sec -> 2 × 20–40 sec'
+  const edge = [shorterSets('2 × 8'), shorterSets('1 × 5'), shorterSets('5 × 5'), shorterPrescription('10 each way')].join(' ')
+  const ok2 = table === wantT && edge === '1 1 3 10 each way'; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'shorter version', ok2 ? '' : JSON.stringify(table) + ' ' + edge)
+  const ok3 = SWAPS.mobility.ex.length === 7 && SWAPS.mobility.cardioType === 'Mobility' && CARDIO_MET[SWAPS.walk.cardioType] === 3.0
+  if (!ok3) bad++
+  console.log(ok3 ? 'PASS' : 'FAIL', 'swap routines use sourced cardio keys')
 }
 process.exit(bad ? 1 : 0)

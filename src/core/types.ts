@@ -127,12 +127,20 @@ export interface Workout {
   /** cardio sessions */
   cardioType?: string
   mins?: string
+  /** the day-of choice taken instead of the plan as written (plan §0.2); absent = as planned */
+  option?: 'shorter' | 'swap'
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
 export interface CheckIn {
   mood: number
   hunger: number
+  /** optional day-of signals (1–3; 0 or absent = not answered); see insights SLEEP/STRESS/… */
+  sleep?: number
+  stress?: number
+  energy?: number
+  /** only asked on lifting days */
+  sore?: number
   note?: string
   t?: string
 }

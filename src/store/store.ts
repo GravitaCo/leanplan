@@ -82,8 +82,8 @@ interface StoreState {
   // supplements / weight / workout
   toggleSupp: (id: string) => void
   setWeight: (kg: number) => void
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>) => void
-  saveCardio: (cardioType: string, mins: string) => void
+  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
+  saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
 
   // plan / settings
   setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
@@ -336,17 +336,17 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
 
-      saveWorkout: (type, ex) => {
+      saveWorkout: (type, ex, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = { type, ex }
+          ensureDay(st.data, st.cur).workout = option ? { type, ex, option } : { type, ex }
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast(type + ' session saved')
       },
 
-      saveCardio: (cardioType, mins) => {
+      saveCardio: (cardioType, mins, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = { type: 'Cardio', cardioType, mins }
+          ensureDay(st.data, st.cur).workout = option ? { type: 'Cardio', cardioType, mins, option } : { type: 'Cardio', cardioType, mins }
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Cardio saved')

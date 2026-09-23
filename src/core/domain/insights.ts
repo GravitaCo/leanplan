@@ -20,6 +20,11 @@ export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lu
 
 export const MOODS = ['Rough', 'Low', 'Okay', 'Good', 'Great']
 export const HUNGER = ['Starving', 'Hungry', 'Satisfied', 'Full', 'Stuffed']
+/** Day-of check-in signals (plan §0.2): three steps each, all optional. */
+export const SLEEP = ['Poor', 'OK', 'Good']
+export const STRESS = ['Low', 'Some', 'High']
+export const ENERGY = ['Low', 'OK', 'Good']
+export const SORE = ['Not sore', 'A bit', 'Very sore']
 
 const DEFAULT_RANGE = 100
 const EMPTY_DAY: DayLog = { foods: [], supps: {}, weight: null, workout: null, checkin: null }

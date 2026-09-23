@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS } from '@/core/data/workouts'
+import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { fmtDate } from '@/core/domain/date'
 import { howToLink } from '@/core/domain/workout'
+import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
 import { PageHeader, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
 import { DemoPlayer } from './train/DemoPlayer'
 
 const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
+
+/** Day-of choices (plan §0.2): equal options, the planned session always one tap away. */
+type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
+const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
 
 function lastSessionOf(days: Record<string, { workout: { type: string; ex?: { name: string; sets: SetEntry[] }[] } | null }>, cur: string, type: string) {
   const ds = Object.keys(days)
@@ -64,15 +69,28 @@ export function TrainScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur])
 
+  // day-of choices: offered when two or more check-in signals are low for this person, and
+  // always available from a quiet link; never applied automatically
+  const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
+  const low = lowSignals(day.checkin, recent)
+  const offer = !logged && low.length >= 2
+  const [choice, setChoice] = useState<Choice>('planned')
+  const [askLighter, setAskLighter] = useState(false)
+  useEffect(() => { setChoice('planned'); setAskLighter(false) }, [cur])
+  const shorter = choice === 'shorter'
+  const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
+  const [walkMins, setWalkMins] = useState('')
+
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
 
   const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
   const dayName = fd.dow
-  const banner = logged ? (
-    <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b> logged for {dayName}.
-</>
+  const banner = logged?.option === 'swap' ? (
+    <><b>{logged.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk'}</b> logged for {dayName}. Nice choice. Moving gently still counts.</>
+  ) : logged ? (
+    <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b>{logged.option === 'shorter' ? ' (shorter)' : ''} logged for {dayName}.</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (
@@ -87,7 +105,7 @@ export function TrainScreen() {
   }
   function commitLift() {
     if (!wk) return
-    saveWorkout(sel, wk.ex.map((e, i) => ({ name: e.n, sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '') })))
+    saveWorkout(sel, wk.ex.map((e, i) => ({ name: e.n, sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '') })), shorter ? 'shorter' : undefined)
   }
 
   return (
@@ -100,10 +118,45 @@ export function TrainScreen() {
       </div>
       <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={setSel} /></div>
 
-      {sel === 'Cardio' ? (
+      {!logged && (offer || askLighter) && (
+        <div className="card dayopt">
+          <div className="t">{offer
+            ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
+            : 'Here are a few options for today. All of them count.'}</div>
+          <div className="chips" role="radiogroup" aria-label="Today's session">
+            {CHOICES.map(([k, label]) => (
+              <button key={k} role="radio" aria-checked={choice === k} className={'chip' + (choice === k ? ' on' : '')} onClick={() => setChoice(k)}>{label}</button>
+            ))}
+          </div>
+          {swap && <div className="foot">Your plan picks up where you left off.</div>}
+        </div>
+      )}
+      {!logged && !offer && !askLighter && (
+        <button className="linkbtn muted dayopt-link" onClick={() => setAskLighter(true)}>Want a lighter option?</button>
+      )}
+
+      {swap ? (
+        <>
+          <div className="grp-h">{swap.title}</div>
+          {swap.ex.map((e) => (
+            <div className="card ex" key={e.n}>
+              <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
+              <div className="cue">{e.cue}</div>
+            </div>
+          ))}
+          {choice === 'walk' && (
+            <div className="list">
+              <div className="frow"><label htmlFor="w_min">Minutes</label>
+                <input id="w_min" type="number" inputMode="numeric" value={walkMins} placeholder={swap.mins} onChange={(e) => setWalkMins(e.target.value)} /></div>
+            </div>
+          )}
+          <div className="stack"><button className="btn" onClick={() => saveCardio(swap.cardioType, choice === 'walk' ? walkMins || swap.mins : swap.mins, 'swap')}>
+            Save {choice === 'walk' ? 'walk' : 'mobility'}</button></div>
+        </>
+      ) : sel === 'Cardio' ? (
         <>
           <div className="card ex">
-            <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{WORKOUTS.Cardio.ex[0].t}</span></div>
+            <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}</span></div>
             <div className="cue">{WORKOUTS.Cardio.ex[0].cue}</div>
           </div>
           <div className="list">
@@ -115,7 +168,7 @@ export function TrainScreen() {
             <div className="frow"><label htmlFor="c_min">Minutes</label>
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
           </div>
-          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins)}>Save cardio</button></div>
+          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, shorter ? 'shorter' : undefined)}>Save cardio</button></div>
         </>
       ) : (
         <>
@@ -127,7 +180,7 @@ export function TrainScreen() {
               : ''
             return (
               <div className="card ex" key={exi}>
-                <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
+                <div className="h"><div className="n">{e.n}</div><span className="tg">{shorter ? shorterPrescription(e.t) : e.t}</span></div>
                 <div className="cue">{e.cue}</div>
                 {e.video
                   ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
@@ -152,7 +205,7 @@ export function TrainScreen() {
               </div>
             )
           })}
-          <div className="stack"><button className="btn" onClick={commitLift}>Save {sel} session</button></div>
+          <div className="stack"><button className="btn" onClick={commitLift}>Save {shorter ? 'shorter ' : ''}{sel} session</button></div>
         </>
       )}
 
