@@ -1457,9 +1457,9 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
 ### 7.3a Benn's answers (September 2026)
 - **D4:** plans slide as an offer; the calendar never moves. As recommended.
 - **D5:** stop adding workout burn to the food range. As recommended, with nutrition-accuracy's
-  conditions. Sub-choices recommended and pending Benn's confirmation: **D5a** keep net burn for
-  sedentary users only (rather than rewording the level labels, which would silently change what
-  existing users chose); **D5b** freeze history before the switch date.
+  conditions. Sub-choices, confirmed by Benn: **D5a** keep net burn for sedentary users only
+  (rather than rewording the level labels, which would silently change what existing users
+  chose); **D5b** freeze history before the switch date.
 - **D6:** add the fifth goal **in Phase 1** (not P6 as recommended). Phase 1 grows accordingly.
 - **D10:** both. The tailoring questions appear during onboarding, every one skippable, and can be
   answered later from a "Set up my training" card or from Profile. A fuller onboarding redesign
