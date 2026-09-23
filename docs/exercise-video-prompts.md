@@ -12,12 +12,12 @@ From `src/core/data/workouts.ts`. File names are the ones the clip will get in `
 
 | # | Workout | Exercise (as named in the app) | Clip file | Status |
 |---|---|---|---|---|
-| 1 | Legs | Leg press | `leg-press.mp4` | needed |
+| 1 | Legs | Barbell squat | Bunny `736acf7f…` | **done** (1 rep) |
 | 2 | Legs | Romanian deadlift (dumbbell or barbell) | `romanian-deadlift.mp4` | **done** |
 | 3 | Legs | Leg extension (machine) | `leg-extension.mp4` | needed |
 | 4 | Legs | Seated or standing calf raise | `calf-raise.mp4` | needed |
 | 5 | Legs | Plank | `plank.mp4` | needed (hold) |
-| 6 | Push | Chest press (machine or dumbbell) | `chest-press.mp4` | needed |
+| 6 | Push | Barbell bench press | Bunny `df890da8…` | **done** |
 | 7 | Push | Incline dumbbell press | `incline-dumbbell-press.mp4` | needed |
 | 8 | Push | Dumbbell shoulder press (seated) | `shoulder-press.mp4` | needed |
 | 9 | Push | Lateral raise | `lateral-raise.mp4` | needed |
@@ -35,9 +35,14 @@ From `src/core/data/workouts.ts`. File names are the ones the clip will get in `
 | 17d | Cardio | Cross-trainer (in the cardio type list) | `cross-trainer.mp4` | optional |
 | 17e | Cardio | Rower (in the cardio type list) | `rower.mp4` | optional |
 
-Two exercises from the first prompt set, the **barbell back squat** and **flat barbell bench
-press**, are not in the app's workouts today. Their prompts are kept at the end for when the
-exercise library grows (see the workout plan, §5).
+The **barbell squat** and **barbell bench press** clips are hosted on Bunny Stream. They replaced
+the leg press and chest press in Legs and Push for now; those two come back with the exercise
+library (workout plan phase 3), and their prompts are kept below for then.
+
+**New clips can go straight to Bunny Stream.** The app plays each video's MP4 fallback
+(`https://vz-36841ffb-54c.b-cdn.net/<video id>/play_720p.mp4`) with its `thumbnail.jpg` as the
+poster, so MP4 fallback must stay switched on in the library. The library refuses requests with no
+referrer, so the links don't open on their own but do play inside the app.
 
 **How the app will use each kind of clip.** Rep clips (most of the list) get the tempo counter
 that the curl and deadlift already have. The plank is a hold: until the planned hold timer is
@@ -49,8 +54,9 @@ no counter; they are there to show posture and set-up.
 - **Vertical 9:16.** The player fills a phone screen.
 - **Two full reps.** Video models keep an exact rep count and tempo more reliably over two reps
   than over longer sets. Expect to regenerate a few times to get the count right.
-- **Start and end in the same position.** The app loops the clip, so it should start and end in
-  the same pose. Otherwise the loop visibly jumps.
+- **Start and end in the same position, with a static camera.** The app loops the clip, so it
+  should start and end in the same pose and framing. Otherwise the loop visibly jumps (the bench
+  clip's camera push-in does this).
 - **No audio needed.** The app plays clips muted, and audio is stripped when a clip is added.
 - **Every clip gets re-timed and form-checked.** The on-screen counter uses timings measured from
   each clip, not the tempo written in the prompt, and every clip is checked frame by frame for
@@ -65,7 +71,7 @@ no counter; they are there to show posture and set-up.
 > Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal leggings,
 > sage-green sports bra, open cropped tank, flat training shoes. Calm, focused expression.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
-> colour grade, no text. Vertical 9:16 framing.
+> colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
 
 **For machine and cable exercises, add:**
 
@@ -86,7 +92,7 @@ These are typical coaching tempos (judgement calls), not measurements.
 
 ## Legs
 
-### 1. Leg press (needed)
+### Leg press (for phase 3)
 
 Add the machine line with "45-degree leg press machine".
 
@@ -156,7 +162,7 @@ end."
 
 ## Push
 
-### 6. Chest press (needed)
+### Chest press (for phase 3)
 
 The app allows machine or dumbbell. The dumbbell version uses the studio's flat bench.
 
@@ -362,9 +368,9 @@ judgement call, not a measurement.)
 
 ---
 
-## Not in the app yet (for the future library)
+## Squat, bench press and deadlift variants
 
-### Barbell back squat
+### Barbell back squat (done: Bunny, one rep)
 
 > Medium-wide shot from a front three-quarter angle. The bar rests across her upper back, her
 > feet are shoulder-width apart and her toes slightly turned out. She sits down slowly over
@@ -375,9 +381,9 @@ judgement call, not a measurement.)
 Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 3-second descent, a 1-second
 pause below parallel, a 1.5-second drive up, and a 1-second breath at the top."
 
-### Flat barbell bench press
+### Flat barbell bench press (done: Bunny)
 
-> Low side angle, then a slow push-in. She lies on the flat bench with her shoulder blades
+> Low side angle, static camera. She lies on the flat bench with her shoulder blades
 > pulled back and down, a slight natural arch, feet flat on the floor and a grip slightly wider
 > than her shoulders. She lowers the bar under control over three seconds to her lower chest,
 > elbows at about 45 degrees. She pauses lightly with a deep chest stretch and no bounce, then

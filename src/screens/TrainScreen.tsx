@@ -204,7 +204,8 @@ export function TrainScreen() {
         <>
           {wk!.ex.map((e, exi) => {
             const isPlank = e.n.toLowerCase().includes('plank')
-            const lastEx = last?.ex?.[exi]
+            // same slot AND same exercise: a replaced move (leg press → squat) never shows the old weights
+            const lastEx = last?.ex?.[exi]?.name === e.n ? last.ex[exi] : undefined
             const lastTxt = lastEx?.sets?.length
               ? 'Last time: ' + lastEx.sets.map((s) => (s.w ? s.w + ' kg' : '') + (s.w && s.reps ? ' × ' : '') + (s.reps || '')).filter(Boolean).join(', ')
               : ''

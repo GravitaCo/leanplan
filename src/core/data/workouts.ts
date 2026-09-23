@@ -10,9 +10,10 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
     "title": "Legs & Core",
     "ex": [
       {
-        "n": "Leg press",
+        "n": "Barbell squat",
         "t": "3 × 10–12",
-        "cue": "Feet shoulder-width on the platform. Lower until knees ~90°, keep your lower back on the pad. Push through mid-foot. Don't slam the knees straight at the top."
+        "cue": "Bar across your upper back, feet shoulder-width, toes slightly out. Sit down slowly between your heels with your chest up and knees tracking over your toes, as low as you can keep a flat back and heels down. Pause, then push through mid-foot to stand. Don't lock the knees hard at the top.",
+        "video": DEMOS.barbellSquat
       },
       {
         "n": "Romanian deadlift (dumbbell or barbell)",
@@ -41,9 +42,10 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
     "title": "Push · chest / shoulders / triceps",
     "ex": [
       {
-        "n": "Chest press (machine or dumbbell)",
+        "n": "Barbell bench press",
         "t": "3 × 10–12",
-        "cue": "Handles level with mid-chest. Press smoothly, stop just short of locking the elbows. Lower under control for ~2 seconds."
+        "cue": "Shoulder blades back and down, feet flat, grip a little wider than your shoulders. Lower the bar under control to your lower chest, pause lightly without bouncing, then press up to straight arms over your shoulders.",
+        "video": DEMOS.barbellBench
       },
       {
         "n": "Incline dumbbell press",
