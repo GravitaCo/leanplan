@@ -5,8 +5,9 @@ stats, workouts and supplements in one place. "Health" here means fitness + diet
 nutrition (not medical/wellbeing). Tone: simple, approachable, gender-neutral, no
 gym-bro language.
 
-- **Live:** https://tali.fit/ (GitHub Pages custom domain; the repo is named `leanplan` for
-  historical reasons; the app is **Tali**). Previous vanilla app is parked at `/legacy/`.
+- **Live:** https://app.tali.fit/ (GitHub Pages custom domain; the marketing site is Webflow
+  on www.tali.fit; the repo is named `leanplan` for historical reasons; the app is **Tali**).
+  Previous vanilla app is parked at `/legacy/`.
 - **Repo:** GravitaCo/leanplan, default branch `main`.
 
 ## Run / build / deploy
@@ -22,8 +23,8 @@ npm run typecheck
   builds and publishes to GitHub Pages. Pages source is **GitHub Actions** (build_type
   `workflow`) — do NOT switch it back to "deploy from a branch" or it serves raw source
   and the page goes blank.
-- Vite `base` is `/` (see `vite.config.ts`) since the app serves from the `tali.fit` root.
-  Reference public assets with **relative** paths. `public/CNAME` (`tali.fit`) is copied
+- Vite `base` is `/` (see `vite.config.ts`) since the app serves from the `app.tali.fit` root.
+  Reference public assets with **relative** paths. `public/CNAME` (`app.tali.fit`) is copied
   into `dist/` on every build so the custom domain survives each Pages deploy — don't
   remove it. Don't commit `dist/`.
 - Bump the service-worker `CACHE` name in `public/sw.js` whenever you change shipped
