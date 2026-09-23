@@ -235,7 +235,7 @@ export function ProfileScreen() {
           </div>
         </Disclosure>
         <Disclosure icon="cloud" color="var(--mind)" label="Data & backup" open={open === 'backup'} onToggle={() => toggle('backup')}>
-          <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. You’re offline: changes sync when you’re back online' : ''}. Export a copy now and then.</div>
+          <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</div>
           <div className="grid2">
             <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
             <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>

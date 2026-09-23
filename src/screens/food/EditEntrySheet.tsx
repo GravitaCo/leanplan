@@ -3,6 +3,7 @@ import { useStore } from '@/store/store'
 import type { MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { CAPTURE_LABEL, entryErr, isFlagged } from '@/core/domain/estimate'
+import { amountText, roundAmount } from '@/core/domain/nutrition'
 import { Sheet } from '@/ui/primitives'
 import { MealSeg } from './common'
 
@@ -21,18 +22,21 @@ export function EditEntrySheet({ index, onClose }: { index: number; onClose: () 
   if (!x) return null
   const gentle = !!profile.gentle
   const u = x.unit ?? 'g'
+  // items snap to quarters, and the multiplier follows the snapped count so kcal and count agree
+  const amount = roundAmount((x.grams || 0) * mult, u)
+  const m = u === 'item' && x.grams ? amount / x.grams : mult
   const flagged = isFlagged(x, profile)
-  const save = () => { updateEntry(index, mult, meal); onClose() }
+  const save = () => { updateEntry(index, m, meal); onClose() }
 
   return (
     <Sheet title={x.n} onClose={onClose} right={<button className="navbtn b" onClick={save}>Done</button>}>
       <div className="card" style={{ textAlign: 'center' }}>
         {gentle ? (
-          <div className="big num">{x.grams ? <>{Math.round(x.grams * mult)}<small>{u}</small></> : <>×{mult}</>}</div>
+          <div className="big num">{x.grams ? <>{amountText(amount, u)}</> : <>×{mult}</>}</div>
         ) : (
-          <div className="big num">{fmt(x.k * mult)}<small>kcal</small></div>
+          <div className="big num">{fmt(x.k * m)}<small>kcal</small></div>
         )}
-        <div className="sub num">{!gentle && x.grams ? `${Math.round(x.grams * mult)} ${u} · ` : ''}{r1(x.p * mult)} g protein</div>
+        <div className="sub num">{!gentle && x.grams ? `${amountText(amount, u)} · ` : ''}{r1(x.p * m)} g protein</div>
         <input type="range" min={0.25} max={3} step={0.05} value={mult} style={{ marginTop: 12 }} aria-label="Portion size"
           onChange={(e) => setMult(+e.target.value)} />
         <div className="chips" style={{ justifyContent: 'center', marginTop: 8 }}>

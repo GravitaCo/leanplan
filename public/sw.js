@@ -5,27 +5,41 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v9'
+const CACHE = 'tali-v10'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
-/** The shell plus every same-origin asset it references (scripts, styles, icons, manifest). */
-async function precache() {
-  const c = await caches.open(CACHE)
-  const res = await fetch(SHELL, { cache: 'no-cache' })
-  if (!res.ok) return
-  const html = await res.clone().text()
-  await c.put(SHELL, res)
-  const urls = new Set(['manifest.webmanifest'])
+/** Same-origin assets a page references (scripts, styles, icons, manifest). */
+function assetsOf(html) {
+  const urls = new Set([new URL('manifest.webmanifest', self.location.href).href])
   for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
     const u = new URL(m[1], self.location.href)
     if (u.origin === self.location.origin && u.pathname !== '/') urls.add(u.href)
   }
-  await Promise.all([...urls].map((u) => c.add(u).catch(() => {})))
+  return [...urls]
+}
+
+/**
+ * Store a shell page only once every asset it needs is cached, so the cached page can never
+ * point at files we don't have (which would open to a blank screen offline). Throws if any
+ * asset can't be fetched; the previous shell then stays in place.
+ */
+async function storeShell(res) {
+  const c = await caches.open(CACHE)
+  const html = await res.clone().text()
+  const missing = []
+  for (const u of assetsOf(html)) if (!(await c.match(u))) missing.push(u)
+  await c.addAll(missing)
+  await c.put(SHELL, res)
 }
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(precache().catch(() => {}).then(() => self.skipWaiting()))
+  // No catch: if the shell or any asset fails to download, the install fails and the
+  // current, complete version keeps serving. The browser retries on a later visit.
+  e.waitUntil(fetch(SHELL, { cache: 'no-cache' }).then((res) => {
+    if (!res.ok) throw new Error('shell ' + res.status)
+    return storeShell(res)
+  }).then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (e) => {
@@ -59,7 +73,10 @@ function put(req, res) {
 
 /** Network with a timeout; the cached shell if the network is slow or down. */
 function navigate(req) {
-  const net = fetch(req).then((res) => put(SHELL, res))
+  const net = fetch(req).then((res) => {
+    if (res.ok) storeShell(res.clone()).catch(() => {}) // only if its assets cache too
+    return res
+  })
   const timeout = new Promise((resolve) => setTimeout(resolve, NAV_TIMEOUT_MS))
   return Promise.race([net, timeout])
     .then((res) => res || caches.match(SHELL).then((c) => c || net))
@@ -71,6 +88,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
+  // the parked vanilla app has its own worker; never let it replace Tali's cached shell
+  if (url.pathname.startsWith('/legacy/')) return
   if (req.mode === 'navigate') { e.respondWith(navigate(req)); return }
   if (url.pathname.startsWith('/assets/')) {
     // content-hashed: never changes, so the cache is always right

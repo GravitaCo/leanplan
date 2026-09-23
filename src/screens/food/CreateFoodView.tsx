@@ -29,7 +29,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
     <div className="frow">
       <label htmlFor={'cf_' + key}>{label}</label>
       <input id={'cf_' + key} type={key === 'n' ? 'text' : 'number'} inputMode={key === 'n' ? 'text' : 'decimal'} placeholder={ph}
-        value={f[key]} onChange={(e) => setF({ ...f, [key]: e.target.value })} />
+        value={f[key]} onChange={(e) => { setF({ ...f, [key]: e.target.value }); setWarned(false) }} />
       {u && <span className="u">{u}</span>}
     </div>
   )

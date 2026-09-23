@@ -115,6 +115,13 @@ function meta(s: PersistedState): SyncMeta {
   return ensureMeta(s, false)
 }
 
+/** Remove Supabase's saved session (\`sb-<project>-auth-token\`) from this device. */
+function clearSavedSession() {
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token')).forEach((k) => localStorage.removeItem(k))
+  } catch { /* storage blocked */ }
+}
+
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
@@ -445,8 +452,9 @@ export const useStore = create<StoreState>()(
         }
         if (session) live(session)
         else if (mode === 'guest') get().continueAsGuest()
-        else if (mode === 'account' && !navigator.onLine) {
-          // offline: open the account's local data now; sync resumes when the session does
+        else if (mode === 'account') {
+          // offline or a weak signal: open the account's local data now; sync resumes when the
+          // session does. Only an explicit sign-out leads back to the sign-in screen.
           set((st) => { st.signedIn = true; st.authed = false; st.syncPaused = true })
         }
         set((st) => { st.authReady = true })
@@ -479,7 +487,7 @@ export const useStore = create<StoreState>()(
           if (get().syncPaused) {
             const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
             if (session) live(session)
-            else { set((st) => { st.signedIn = false; st.syncPaused = false }); return } // needs a fresh sign-in; local data stays and uploads after
+            else { get().showToast('Not syncing: sign in again from Profile › Account'); return } // local data stays and uploads after sign-in
           }
           get().runSync()
         })
@@ -527,7 +535,10 @@ export const useStore = create<StoreState>()(
 
       /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
       signOut: async () => {
-        if (get().authed) await supabase.auth.signOut().catch(() => {})
+        // Supabase keeps the saved session if its sign-out call can't reach the server
+        // (offline), which would sign the user straight back in: clear it locally as well.
+        await Promise.race([supabase.auth.signOut().catch(() => {}), new Promise((r) => setTimeout(r, 3000))])
+        clearSavedSession()
         setSession(null, null)
         saveMode(null)
         set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
