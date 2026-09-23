@@ -161,7 +161,9 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
    - A validated screener (e.g. IOI-S) in onboarding can route higher-risk users to the gentle
      experience. This needs clinical sign-off before use.
 4. **Numbers stay honest:** the model cannot emit calorie or macro values into the log. Only
-   `core/` computes them. Photo and quick estimates always show their ± margin.
+   `core/` computes them. Photo and quick estimates always show their ± margin. Published photo
+   estimates are about 35% off and run low on big portions (`nutrition-accuracy-research.md` §1.3),
+   so photo entries start at about ±35% and always get a portion question.
 5. **Gentle mode is respected by AI:** in gentle mode, prompts forbid calorie numbers and weight
    talk, and output is checked for digits followed by "kcal".
 6. **Confirmation before writes:** AI output is a proposal. Prompt injection in user text can at

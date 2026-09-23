@@ -31,7 +31,9 @@ not good enough", or "we can't know this, so the margin must be wider".
 1. **Reference value error:** wrong or outdated composition data, crowdsourced typos, US values
    used for UK products, per-serving vs per-100 g confusion, kJ/kcal mix-ups.
 2. **Label tolerance:** EU/UK and US labelling law allow declared values to differ from the true
-   content (e.g. EU guidance tolerances of roughly ±20% for many nutrients; US FDA rules differ).
+   content. The EC's 2012 tolerance guidance for Reg. 1169/2011 (still used in the UK) allows
+   carbohydrate and protein ±2 g below 10 g/100 g, **±20% at 10–40 g**, and ±8 g above 40 g. Fat and
+   energy bands aren't confirmed yet; check the guidance before quoting them. US FDA rules differ.
    A "verified" label is a legal declaration, not a measurement.
 3. **Energy conversion:** Atwater general factors (4/4/9) vs specific factors; fibre, polyols and
    alcohol (7 kcal/g) handling; kcal ≈ 4P + 4C + 9F should hold within ~10–15% unless fibre,
@@ -46,6 +48,16 @@ not good enough", or "we can't know this, so the margin must be wider".
    was what got split; water loss not accounted for.
 8. **Bioavailability and processing** (e.g. nuts' measured energy below Atwater estimates):
    note where the literature shows systematic bias, but don't overclaim precision.
+
+## Benchmarks verified so far (see the research doc for sources and caveats)
+- **UK menu labels:** 21% mean absolute error per item; 35% of items are more than 20% off.
+  Treat restaurant entries as about ±20%.
+- **AI photo estimates (2024 models):** about 35% MAPE, and they **underestimate large portions**.
+  Treat them as about ±35% and always ask about portion; never add a silent correction.
+- **App databases vs a research database (whole foods):** close for good apps (ICC ≥ 0.89), but fibre is weak.
+  This is agreement between databases, not accuracy.
+Many areas are still unresearched (composition-table provenance, real label accuracy, Atwater
+factors, yields); §4 of the research doc lists them. Say "unknown" rather than filling gaps from memory.
 
 ## Quality bar
 - **Cite a primary source for every factual claim or value**: UK CoFID (McCance & Widdowson),
