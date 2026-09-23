@@ -9,7 +9,7 @@ import { latestWeight } from '@/core/domain/insights'
 import { PageHeader, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
-import { DemoSheet } from './train/DemoSheet'
+import { DemoPlayer } from './train/DemoPlayer'
 
 const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
 
@@ -157,7 +157,7 @@ export function TrainScreen() {
         </>
       )}
 
-      {wk && demo != null && wk.ex[demo]?.video && <DemoSheet ex={wk.ex[demo]} onClose={() => setDemo(null)} />}
+      {wk && demo != null && wk.ex[demo]?.video && <DemoPlayer ex={wk.ex[demo]} onClose={() => setDemo(null)} />}
 
       <div className="foot" style={{ padding: '12px 4px 0' }}>
         Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little

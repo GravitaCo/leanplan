@@ -105,7 +105,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
   Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
 - Each clip carries a **tempo timeline measured from the footage**; the Train screen's
-  "Watch example" sheet shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
+  "Watch example" full-screen player shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
   changes; `npm test` checks the files exist and the timeline is ordered.
 - The service worker leaves `/videos/` to the network (Safari streams video with Range
   requests), so clips need a connection; logging never does.

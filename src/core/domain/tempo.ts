@@ -8,6 +8,15 @@ export const PHASE_LABEL: Record<TempoPhaseKind, string> = {
   stretch: 'Hold the stretch',
 }
 
+/** One-word names for the pace row, where four phases share the width. */
+export const PHASE_SHORT: Record<TempoPhaseKind, string> = {
+  ready: 'Ready',
+  lift: 'Lift',
+  squeeze: 'Squeeze',
+  lower: 'Lower',
+  stretch: 'Stretch',
+}
+
 export interface TempoState {
   kind: TempoPhaseKind
   rep: number | null
