@@ -19,7 +19,6 @@ const PATHS = {
   search: <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></>,
   x: <path d="M6 6l12 12M18 6L6 18" />,
   play: <path d="M8 5.5v13l10.5-6.5z" />,
-  pause: <path d="M8.5 5.5v13M15.5 5.5v13" />,
   target: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r=".8" /></>,
   bolt: <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />,
   book: <><path d="M5 5.5a2 2 0 0 1 2-2h11.5v14H7a2 2 0 0 0-2 2z" /><path d="M5 19.5a2 2 0 0 0 2 2h11.5v-4" /></>,

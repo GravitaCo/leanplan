@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
@@ -68,6 +68,7 @@ export function TrainScreen() {
   }, [cur])
 
   const [demo, setDemo] = useState<number | null>(null)
+  const closeDemo = useCallback(() => setDemo(null), [])
 
   const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
@@ -157,7 +158,7 @@ export function TrainScreen() {
         </>
       )}
 
-      {wk && demo != null && wk.ex[demo]?.video && <DemoPlayer ex={wk.ex[demo]} onClose={() => setDemo(null)} />}
+      {wk && demo != null && wk.ex[demo]?.video && <DemoPlayer ex={wk.ex[demo]} onClose={closeDemo} />}
 
       <div className="foot" style={{ padding: '12px 4px 0' }}>
         Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little

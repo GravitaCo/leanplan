@@ -430,8 +430,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 /* Exercise demo: full-screen clip with the tempo counter laid over it (screens/train/DemoPlayer).
    No panels: gradients keep white type legible over the footage. Type uses the iOS scale
    (13 / 17 / 28) plus one hero numeral for the count. */
-button.howto { background: none; border: 0; padding: 0; font: inherit; font-size: 15px; display: inline-flex; align-items: center; gap: 5px; }
-button.howto .i { fill: currentColor; }
+.ex button.howto { background: none; border: 0; padding: 0; font: inherit; font-size: 15px; display: inline-flex; align-items: center; gap: 5px; }
+.ex button.howto svg.i { width: 15px; height: 15px; fill: currentColor; }
 .demo-full { position: fixed; inset: 0; z-index: 70; background: #000; color: #fff; animation: sheet-fade 0.2s ease; }
 .demo-full video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 @media (min-aspect-ratio: 3/4) { .demo-full video { object-fit: contain; } }
@@ -458,5 +458,5 @@ button.howto .i { fill: currentColor; }
 .demo-pace .k { font-size: 13px; font-weight: 500; }
 .demo-pace .v { font-size: 17px; font-weight: 600; margin-top: 1px; }
 .demo-play { position: absolute; inset: 0; margin: auto; width: 72px; height: 72px; border: 0; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; }
-.demo-play .i { fill: currentColor; margin-left: 4px; }
+.demo-play svg.i { width: 32px; height: 32px; fill: currentColor; margin-left: 4px; }
 .demo-msg { position: absolute; inset: 0; margin: auto; height: fit-content; padding: 0 32px; text-align: center; font-size: 17px; line-height: 1.4; }

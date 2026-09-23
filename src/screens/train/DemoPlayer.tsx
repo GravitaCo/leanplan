@@ -12,10 +12,12 @@ import { Icon } from '@/ui/icons'
 export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () => void }) {
   const m = ex.video!
   const vid = useRef<HTMLVideoElement>(null)
+  const root = useRef<HTMLDivElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)
   const [t, setT] = useState(0)
   const [playing, setPlaying] = useState(false)
-  const [failed, setFailed] = useState(false)
+  // offline vs a device that can't decode the clip: the copy differs
+  const [failed, setFailed] = useState<'offline' | 'format' | null>(null)
 
   useEffect(() => {
     let raf = 0
@@ -25,11 +27,20 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
   }, [])
 
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
     document.body.classList.add('noscroll')
     closeBtn.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Tab' || !root.current) return
+      // keep focus inside the overlay (aria-modal): cycle through its buttons
+      const btns = [...root.current.querySelectorAll('button')]
+      const i = btns.indexOf(document.activeElement as HTMLButtonElement)
+      e.preventDefault()
+      btns[(i + (e.shiftKey ? btns.length - 1 : 1)) % btns.length]?.focus()
+    }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.classList.remove('noscroll'); window.removeEventListener('keydown', onKey) }
+    return () => { document.body.classList.remove('noscroll'); window.removeEventListener('keydown', onKey); opener?.focus() }
   }, [onClose])
 
   function toggle() {
@@ -45,9 +56,11 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
   const pace = m.tempo.filter((p) => p.rep === 1).map((p) => ({ kind: p.kind, sec: tempoAt(m, p.at).lengthSec }))
 
   return (
-    <div className="demo-full" role="dialog" aria-modal="true" aria-label={`Example: ${ex.n}`}>
+    <div ref={root} className="demo-full" role="dialog" aria-modal="true" aria-label={`Example: ${ex.n}`}>
       {failed ? (
-        <div className="demo-msg">This example needs a connection. You can still log your sets offline.</div>
+        <div className="demo-msg">
+          {failed === 'format' ? "This example can't play on this device." : 'This example needs a connection. You can still log your sets offline.'}
+        </div>
       ) : (
         <video
           ref={vid}
@@ -60,7 +73,7 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
           preload="auto"
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
-          onError={() => setFailed(true)}
+          onError={(e) => setFailed(navigator.onLine && e.currentTarget.error?.code === 4 ? 'format' : 'offline')}
           onClick={toggle}
           aria-label={playing ? 'Pause example' : 'Play example'}
         />
