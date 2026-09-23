@@ -53,7 +53,7 @@ export function rangeExtra(s: AppState, d: string): number {
   const wk = dayOf(s, d).workout
   const kg = latestWeight(s, d)
   const sw = s.profile.burnSwitch
-  if (!sw || d < sw) return workoutBurn(wk, kg)
+  if (!sw || d < sw) return workoutBurn(wk, kg, true)
   return s.profile.activityLevel === 'sedentary' ? workoutNetBurn(wk, kg) : 0
 }
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
-import { CARDIO_MET } from '@/core/data/constants'
+import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { fmtDate } from '@/core/domain/date'
 import { howToLink } from '@/core/domain/workout'
 import { PageHeader, Seg } from '@/ui/primitives'
@@ -56,10 +56,10 @@ export function TrainScreen() {
 
   // cardio state
   const cardio = logged?.type === 'Cardio' ? logged : null
-  const [cardioType, setCardioType] = useState(cardio?.cardioType || 'Walk')
+  const [cardioType, setCardioType] = useState(cardio?.cardioType || 'Brisk walk')
   const [mins, setMins] = useState(cardio?.mins || '')
   useEffect(() => {
-    setCardioType(cardio?.cardioType || 'Walk')
+    setCardioType(cardio?.cardioType || 'Brisk walk')
     setMins(cardio?.mins || '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur])
@@ -109,7 +109,8 @@ export function TrainScreen() {
           <div className="list">
             <div className="frow"><label htmlFor="c_type">Type</label>
               <select id="c_type" value={cardioType} onChange={(e) => setCardioType(e.target.value)}>
-                {Object.keys(CARDIO_MET).map((o) => <option key={o}>{o}</option>)}
+                {/* a retired type from an older log still shows as saved */}
+                {(CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]).map((o) => <option key={o}>{o}</option>)}
               </select></div>
             <div className="frow"><label htmlFor="c_min">Minutes</label>
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>

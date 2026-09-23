@@ -1,20 +1,25 @@
 import type { Workout } from '@/core/types'
-import { CARDIO_MET } from '@/core/data/constants'
+import { CARDIO_MET, LEGACY_CARDIO_MET } from '@/core/data/constants'
 
-/** MET and hours for a logged workout (Compendium MET × time; see constants.ts). */
-function metHours(wk: Workout): { met: number; hours: number } {
+/**
+ * MET and hours for a logged workout (Compendium MET × time; see constants.ts). A blank or
+ * unknown cardio type counts as 'Other'. `legacy` reproduces the pre-audit values exactly, for
+ * days before the switch.
+ */
+function metHours(wk: Workout, legacy = false): { met: number; hours: number } {
   if (wk.type === 'Cardio') {
     const mins = parseFloat(wk.mins || '') || 25
-    return { met: CARDIO_MET[wk.cardioType || ''] || 4.0, hours: mins / 60 }
+    const t = wk.cardioType || ''
+    return { met: legacy ? LEGACY_CARDIO_MET[t] || 4.0 : CARDIO_MET[t] ?? CARDIO_MET.Other, hours: mins / 60 }
   }
   // ~45 min strength session
   return { met: 3.5, hours: 0.75 }
 }
 
 /** Estimated gross calories burned for a logged workout (MET × kg × hours). */
-export function workoutBurn(wk: Workout | null | undefined, bodyKg: number | null): number {
+export function workoutBurn(wk: Workout | null | undefined, bodyKg: number | null, legacy = false): number {
   if (!wk || !wk.type) return 0
-  const { met, hours } = metHours(wk)
+  const { met, hours } = metHours(wk, legacy)
   return Math.round(met * (bodyKg || 75) * hours)
 }
 

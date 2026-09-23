@@ -13,6 +13,7 @@ import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
 import { rangeFor, showBurnNote } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
+import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -200,5 +201,22 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const hits = walk('src').filter((f) => /\.tsx?$/.test(f) && /kcal of room|more room today/.test(readFileSync(f, 'utf8')))
   const ok2 = hits.length === 0; if (!ok2) bad++
   console.log(ok2 ? 'PASS' : 'FAIL', 'no "earn food" copy', hits.join(', '))
+}
+// cardio MET values (plan D11): every key has a 2024 Compendium code or a stated reason, the
+// picker only offers real keys, old keys still resolve, and pre-switch days use the old values
+{
+  const noSource = Object.keys(CARDIO_MET).filter((k) => !MET_SOURCES[k])
+  const noCode = Object.entries(MET_SOURCES).filter(([k, v]) => k !== 'Other' && !/^\d{5} /.test(v)).map(([k]) => k)
+  const badOpt = CARDIO_OPTIONS.filter((k) => CARDIO_MET[k] == null)
+  const lost = Object.keys(LEGACY_CARDIO_MET).filter((k) => CARDIO_MET[k] == null)
+  const cardio = (cardioType: string, mins = '60') => ({ type: 'Cardio' as const, cardioType, mins })
+  const got = [
+    workoutBurn(cardio('Brisk walk'), 70), workoutBurn(cardio('Rower'), 70), workoutBurn(cardio('Rower'), 70, true),
+    workoutBurn(cardio(''), 70), workoutBurn(cardio('', ''), 70, true), workoutNetBurn(cardio('Mobility', '10'), 75),
+  ].join(' ')
+  // 4.8×70=336; 5.0×70=350; legacy 6.0×70=420; blank → Other 3.0×70=210; legacy blank 4.0×70×25/60=117; (2.3−1)×75/6=16
+  const want = '336 350 420 210 117 16'
+  const ok = !noSource.length && !noCode.length && !badOpt.length && !lost.length && got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'cardio MET sources', JSON.stringify(got), noSource, noCode, badOpt, lost)
 }
 process.exit(bad ? 1 : 0)
