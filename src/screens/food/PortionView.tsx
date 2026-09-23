@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
-import { unitOf } from '@/core/domain/nutrition'
+import { amountText, perText, unitOf } from '@/core/domain/nutrition'
+import { sourceOf } from '@/core/data/sources'
 import {
   CAPTURE_LABEL, FAT_OPTIONS, HANDS, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
 } from '@/core/domain/estimate'
@@ -28,7 +29,10 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
 
   const last = lastUse(data, food.n)
   const learned = last ? last.grams : null
-  const [mode, setMode] = useState<Mode>(last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  const each = u === 'item'
+  // per-item foods are counted, never weighed or hand-sized
+  const [mode, setMode] = useState<Mode>(each ? 'serv' : last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  const source = sourceOf(food)
   const [serv, setServ] = useState(1)
   const [grams, setGrams] = useState<number>(learned ?? food.g)
   const [hand, setHand] = useState<{ type: HandPortion; count: number }>(last?.hand ? { ...last.hand } : { type: handFor(food), count: 1 })
@@ -53,24 +57,27 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
-        {gentle ? `${food.p} g protein` : `${food.k} kcal · ${food.p} P · ${food.c} C · ${food.f} F`} per 100 {u}{custom ? ' · your food' : ''}
+        {gentle ? `${food.p} g protein` : `${food.k} kcal · ${food.p} P · ${food.c} C · ${food.f} F`} {perText(food)}
+        <div style={{ fontSize: 13, marginTop: 2 }}>
+          {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
+        </div>
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">How much?</div>
-      <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
-        value={mode} onChange={setMode} />
+      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
+        value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
             <div className="scale">
               {[0.5, 1, 1.5, 2, 3].map((v) => (
                 <button key={v} className={serv === v ? 'on' : ''} onClick={() => setServ(v)}>
-                  <b className="num">{frac(v)}</b>{Math.round(food.g * v)} {u}
+                  <b className="num">{frac(v)}</b>{each ? (gentle ? `${Math.round(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${Math.round(food.g * v)} ${u}`}
                 </button>
               ))}
             </div>
-            <div className="foot">One serving is {food.g} {u}.</div>
+            <div className="foot">{each ? `Values are for one item, as ${source?.text.split(',')[0] ?? 'the maker'} publishes them.` : `One serving is ${amountText(food.g, u)}.`}</div>
           </>
         )}
         {mode === 'hand' && (

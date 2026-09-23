@@ -4,7 +4,7 @@ import { useStore } from '@/store/store'
 import type { MealSlot, RecipeItem } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { fmt, r0 } from '@/core/domain/date'
-import { recipePerServing, recipeTotals } from '@/core/domain/nutrition'
+import { perText, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
 import { mealNow } from '@/core/domain/insights'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
@@ -66,11 +66,11 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
           {draft.items.length ? draft.items.map((it, ii) => (
             <div className="li" key={ii}>
               <div className="m"><div className="t">{it.n}</div>
-                <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${it.k} kcal per 100 ${it.ml ? 'ml' : 'g'}`].filter(Boolean).join(' · ')}</div></div>
+                <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${it.k} kcal ${perText(it)}`].filter(Boolean).join(' · ')}</div></div>
               <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
                 style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
                 onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
-              <span className="muted">{it.ml ? 'ml' : 'g'}</span>
+              <span className="muted">{it.each ? 'item' : it.ml ? 'ml' : 'g'}</span>
               <button className="navbtn" style={{ color: 'var(--red)' }} aria-label={`Remove ${it.n}`}
                 onClick={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== ii) })}><Icon name="x" size={17} /></button>
             </div>
@@ -91,8 +91,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
         {matches.length > 0 && (
           <div className="list" style={{ marginTop: 8 }}>
             {matches.map((f, i) => (
-              <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml }] })}>
-                <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${f.p} g protein` : `${f.k} kcal`} per 100 {f.ml ? 'ml' : 'g'}</div></div>
+              <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml, each: f.each }] })}>
+                <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${f.p} g protein` : `${f.k} kcal`} {perText(f)}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
               </button>
             ))}

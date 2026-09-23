@@ -20,6 +20,8 @@ npm install
 npm run dev        # Vite dev server → http://localhost:5173/
 npm run build      # tsc -b && vite build → dist/
 npm run typecheck
+npm test           # core unit tests (checks, unit maths)
+npm run check:foods  # validates every built-in food; must pass before shipping food data
 ```
 
 - **Deploy = push to `main`.** A GitHub Actions workflow (`.github/workflows/deploy.yml`)
@@ -77,6 +79,15 @@ setting (`prefers-color-scheme`); there is no in-app override.
   so older markup (AuthScreen) keeps rendering; prefer the new names in new code.
 - App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
   are generated from it.
+
+## Food data & offline (important)
+
+- **Offline-first:** Tali must open, search, log and save with no connection. Never add a
+  launch or save path that waits on the network. See `docs/plans/food-data-offline.md`.
+- Every food cites its source (`src`, keys in `src/core/data/sources.ts`); foods are per 100 g,
+  per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
+  the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.
+- Food names are stable IDs (learned usuals match by name): don't rename casually.
 
 ## Backend & data (important)
 

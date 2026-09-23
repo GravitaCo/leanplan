@@ -1,0 +1,10094 @@
+[
+ {
+  "n": "Chicken breast, cooked",
+  "tali": {
+   "k": 165,
+   "p": 31,
+   "c": 0,
+   "f": 3.6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-323",
+   "name": "Chicken, breast, grilled without skin, meat only",
+   "k": 148.0,
+   "p": 32.0,
+   "c": 0.0,
+   "f": 2.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 11.5,
+   "kcal_abs": 17.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 26,
+  "flags": [],
+  "note": "Grilled, skinless. Tali 165/31/3.6 is USDA roasted breast. CoFID roasted light meat 18-330 is 153."
+ },
+ {
+  "n": "Chicken thigh, cooked",
+  "tali": {
+   "k": 209,
+   "p": 26,
+   "c": 0,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-329",
+   "name": "Chicken, dark meat, roasted",
+   "k": 196.0,
+   "p": 24.4,
+   "c": 0.0,
+   "f": 10.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.6,
+   "kcal_abs": 13.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 20,
+  "flags": [],
+  "note": "Thigh = dark meat; CoFID has no roasted thigh-only row. Casseroled thigh meat only (18-319) is 180."
+ },
+ {
+  "n": "Chicken, roast (with skin)",
+  "tali": {
+   "k": 215,
+   "p": 27,
+   "c": 0,
+   "f": 12
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-341",
+   "name": "Chicken, whole, roasted, meat and skin",
+   "k": 218.0,
+   "p": 26.3,
+   "c": 0.0,
+   "f": 12.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.4,
+   "kcal_abs": -3.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -4,
+  "flags": [],
+  "note": "Whole bird meat+skin. Specify 'weighed off the bone' (with bone 18-342 = 138)."
+ },
+ {
+  "n": "Turkey breast, cooked",
+  "tali": {
+   "k": 135,
+   "p": 30,
+   "c": 0,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-356",
+   "name": "Turkey, breast, fillet, grilled, meat only",
+   "k": 155.0,
+   "p": 35.0,
+   "c": 0.0,
+   "f": 1.7
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -12.9,
+   "kcal_abs": -20.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -30,
+  "flags": [],
+  "note": "Grilled fillet. Tali protein 30 vs 35."
+ },
+ {
+  "n": "Turkey mince, cooked",
+  "tali": {
+   "k": 175,
+   "p": 27,
+   "c": 0,
+   "f": 7
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-354",
+   "name": "Turkey, mince, stewed",
+   "k": 176.0,
+   "p": 28.6,
+   "c": 0.0,
+   "f": 6.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.6,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Stewed."
+ },
+ {
+  "n": "Beef mince 5% fat, cooked",
+  "tali": {
+   "k": 170,
+   "p": 26,
+   "c": 0,
+   "f": 7
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-507",
+   "name": "Beef, mince, extra lean, stewed",
+   "k": 137.0,
+   "p": 24.7,
+   "c": 0.0,
+   "f": 4.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 24.1,
+   "kcal_abs": 33.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 50,
+  "flags": [],
+  "note": "CoFID extra-lean mince stewed. Tali (fat 7) looks like USDA 95% lean pan-browned; fat retained depends on draining."
+ },
+ {
+  "n": "Beef mince 20% fat, cooked",
+  "tali": {
+   "k": 250,
+   "p": 24,
+   "c": 0,
+   "f": 17
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-470",
+   "name": "Beef, mince, stewed",
+   "k": 209.0,
+   "p": 21.8,
+   "c": 0.0,
+   "f": 13.5
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 19.6,
+   "kcal_abs": 41.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 62,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "CoFID average mince is ~16% fat raw (18-469), not 20%; microwaved 18-037 = 263. Product mismatch: keep a 20%-fat value only if sourced (USDA 80/20 pan-browned)."
+ },
+ {
+  "n": "Beef steak (sirloin), cooked",
+  "tali": {
+   "k": 210,
+   "p": 29,
+   "c": 0,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-071",
+   "name": "Beef, sirloin steak, grilled medium-rare, lean and fat",
+   "k": 213.0,
+   "p": 24.8,
+   "c": 0.0,
+   "f": 12.6
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -1.4,
+   "kcal_abs": -3.0,
+   "macros_out": [
+    "p",
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -4,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Grilled medium-rare, lean+fat. Lean only 18-070 = 176; well-done lean+fat 18-073 = 257. Doneness moves kcal +/-20%."
+ },
+ {
+  "n": "Beef, roast",
+  "tali": {
+   "k": 180,
+   "p": 27,
+   "c": 0,
+   "f": 8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-089",
+   "name": "Beef, topside, roasted medium-rare, lean and fat",
+   "k": 222.0,
+   "p": 29.9,
+   "c": 0.0,
+   "f": 11.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -18.9,
+   "kcal_abs": -42.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -63,
+  "flags": [],
+  "note": "Topside roasted medium-rare, lean+fat. Lean only 18-088 = 175. Name should say lean vs lean+fat."
+ },
+ {
+  "n": "Beef burger patty, cooked",
+  "tali": {
+   "k": 250,
+   "p": 26,
+   "c": 0,
+   "f": 17
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-491",
+   "name": "Burger, beef, 98-99% beef, grilled",
+   "k": 326.0,
+   "p": 26.5,
+   "c": 0.1,
+   "f": 24.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -23.3,
+   "kcal_abs": -76.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -91,
+  "flags": [],
+  "note": "Retail 98-99% beef burger, grilled. CoFID range 229 (62-85% beef, 19-546) to 326; homemade grilled 19-555 = 288."
+ },
+ {
+  "n": "Pork chop, cooked",
+  "tali": {
+   "k": 230,
+   "p": 28,
+   "c": 0,
+   "f": 13
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-535",
+   "name": "Pork, loin chops, grilled, lean and fat",
+   "k": 237.0,
+   "p": 33.3,
+   "c": 0.0,
+   "f": 11.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -3.0,
+   "kcal_abs": -7.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -10,
+  "flags": [],
+  "note": "Loin chop grilled lean+fat."
+ },
+ {
+  "n": "Pork loin, cooked",
+  "tali": {
+   "k": 200,
+   "p": 30,
+   "c": 0,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-525",
+   "name": "Pork, loin steaks, grilled, lean and fat, trimmed",
+   "k": 210.0,
+   "p": 34.4,
+   "c": 0.0,
+   "f": 8.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.8,
+   "kcal_abs": -10.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -15,
+  "flags": [],
+  "note": "Loin steak grilled, lean+fat trimmed. Untrimmed 18-526 = 247."
+ },
+ {
+  "n": "Gammon / ham steak, cooked",
+  "tali": {
+   "k": 190,
+   "p": 24,
+   "c": 0,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-505",
+   "name": "Ham, gammon rashers, grilled",
+   "k": 199.0,
+   "p": 27.5,
+   "c": 0.0,
+   "f": 9.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.5,
+   "kcal_abs": -9.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -14,
+  "flags": [],
+  "note": "Gammon rashers grilled."
+ },
+ {
+  "n": "Lamb chop, cooked",
+  "tali": {
+   "k": 280,
+   "p": 25,
+   "c": 0,
+   "f": 20
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-477",
+   "name": "Lamb, loin chops, grilled, lean and fat",
+   "k": 305.0,
+   "p": 26.5,
+   "c": 0.0,
+   "f": 22.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -8.2,
+   "kcal_abs": -25.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -30,
+  "flags": [
+   "bone-or-skin-basis-unclear"
+  ],
+  "note": "Loin chops grilled lean+fat, weighed without bone. Default 120 g must be edible meat, not with bone (18-142 lean weighed w/ bone = 130)."
+ },
+ {
+  "n": "Lamb mince, cooked",
+  "tali": {
+   "k": 270,
+   "p": 24,
+   "c": 0,
+   "f": 19
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-159",
+   "name": "Lamb, mince, stewed",
+   "k": 208.0,
+   "p": 24.4,
+   "c": 0.0,
+   "f": 12.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 29.8,
+   "kcal_abs": 62.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 93,
+  "flags": [],
+  "note": "Stewed lamb mince. NZ frozen mince stewed (18-198) = 243."
+ },
+ {
+  "n": "Duck breast, cooked",
+  "tali": {
+   "k": 200,
+   "p": 27,
+   "c": 0,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-372",
+   "name": "Duck, roasted, meat only",
+   "k": 195.0,
+   "p": 25.3,
+   "c": 0.0,
+   "f": 10.4
+  },
+  "status": "ok",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 2.6,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 8,
+  "flags": [
+   "bone-or-skin-basis-unclear"
+  ],
+  "note": "Roast duck meat only. With fat and skin 18-374 = 423: name must say skinless."
+ },
+ {
+  "n": "Pork sausage, cooked (1 ~50g)",
+  "tali": {
+   "k": 290,
+   "p": 14,
+   "c": 10,
+   "f": 22
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-509",
+   "name": "Sausages, pork, chilled, grilled",
+   "k": 294.0,
+   "p": 14.5,
+   "c": 9.8,
+   "f": 22.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.4,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Chilled pork sausage, grilled."
+ },
+ {
+  "n": "Chicken sausage, cooked (1 ~50g)",
+  "tali": {
+   "k": 175,
+   "p": 16,
+   "c": 5,
+   "f": 10
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 50,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "No CoFID chicken sausage; USDA SR only has an Italian-style lower-sodium chicken/turkey sausage (not comparable). Use pack label."
+ },
+ {
+  "n": "Bacon, grilled",
+  "tali": {
+   "k": 330,
+   "p": 24,
+   "c": 0.5,
+   "f": 26
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-500",
+   "name": "Bacon rashers, back, grilled",
+   "k": 287.0,
+   "p": 23.2,
+   "c": 0.0,
+   "f": 21.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 15.0,
+   "kcal_abs": 43.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 22,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "UK default is back bacon (287). Tali 330/24/26 matches STREAKY grilled (19-018 = 337). Rename or split back/streaky."
+ },
+ {
+  "n": "Bacon medallion, grilled",
+  "tali": {
+   "k": 145,
+   "p": 22,
+   "c": 0.5,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-644",
+   "name": "Bacon loin steaks, lean, grilled",
+   "k": 158.0,
+   "p": 28.9,
+   "c": 1.1,
+   "f": 4.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -8.2,
+   "kcal_abs": -13.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 40,
+  "kcal_per_serving_delta": -5,
+  "flags": [],
+  "note": "Bacon loin steaks lean grilled (closest to medallions). Protein 22 vs 28.9."
+ },
+ {
+  "n": "Black pudding",
+  "tali": {
+   "k": 290,
+   "p": 13,
+   "c": 15,
+   "f": 22
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-114",
+   "name": "Black pudding, dry-fried",
+   "k": 297.0,
+   "p": 10.3,
+   "c": 16.6,
+   "f": 21.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -2.4,
+   "kcal_abs": -7.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": -4,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Dry-fried. Raw 19-113 = 277. Name should state cooked state."
+ },
+ {
+  "n": "Ham, sliced",
+  "tali": {
+   "k": 110,
+   "p": 18,
+   "c": 1,
+   "f": 4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-496",
+   "name": "Ham",
+   "k": 107.0,
+   "p": 18.4,
+   "c": 1.0,
+   "f": 3.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.8,
+   "kcal_abs": 3.0,
+   "macros_out": []
+  },
+  "serving_g": 40,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chorizo",
+  "tali": {
+   "k": 450,
+   "p": 24,
+   "c": 2,
+   "f": 38
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-516",
+   "name": "Chorizo",
+   "k": 395.0,
+   "p": 24.0,
+   "c": 2.4,
+   "f": 32.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 13.9,
+   "kcal_abs": 55.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 16,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Salami",
+  "tali": {
+   "k": 380,
+   "p": 22,
+   "c": 1,
+   "f": 32
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-517",
+   "name": "Salami",
+   "k": 438.0,
+   "p": 20.9,
+   "c": 0.5,
+   "f": 39.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -13.2,
+   "kcal_abs": -58.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -17,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pepperoni",
+  "tali": {
+   "k": 490,
+   "p": 20,
+   "c": 1,
+   "f": 44
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 174575 (SR Legacy)",
+   "name": "Pepperoni, beef and pork, sliced",
+   "k": 504.0,
+   "p": 19.2,
+   "c": 1.2,
+   "f": 46.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -2.8,
+   "kcal_abs": -14.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": "No CoFID pepperoni; USDA SR Legacy (US product)."
+ },
+ {
+  "n": "Corned beef",
+  "tali": {
+   "k": 205,
+   "p": 26,
+   "c": 1,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-128",
+   "name": "Corned beef, canned",
+   "k": 205.0,
+   "p": 25.9,
+   "c": 1.0,
+   "f": 10.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Sausage roll",
+  "tali": {
+   "k": 320,
+   "p": 9,
+   "c": 26,
+   "f": 21
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-468",
+   "name": "Sausage roll, flaky pastry, ready-to-eat, retail",
+   "k": 352.0,
+   "p": 8.4,
+   "c": 27.0,
+   "f": 24.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -9.1,
+   "kcal_abs": -32.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": -19,
+  "flags": [],
+  "note": "Retail flaky pastry. Homemade short pastry 19-643 = 395."
+ },
+ {
+  "n": "Scotch egg",
+  "tali": {
+   "k": 240,
+   "p": 12,
+   "c": 15,
+   "f": 15
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-518",
+   "name": "Scotch eggs, retail",
+   "k": 241.0,
+   "p": 12.0,
+   "c": 13.1,
+   "f": 16.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.4,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chicken nuggets, cooked",
+  "tali": {
+   "k": 290,
+   "p": 15,
+   "c": 18,
+   "f": 18
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-503",
+   "name": "Chicken/turkey pieces, coated, baked",
+   "k": 256.0,
+   "p": 14.4,
+   "c": 19.6,
+   "f": 13.9
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 13.3,
+   "kcal_abs": 34.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 34,
+  "flags": [],
+  "note": "Chicken/turkey pieces, coated, baked. Takeaway coated pieces 18-501 = 267."
+ },
+ {
+  "n": "Breaded chicken, cooked",
+  "tali": {
+   "k": 240,
+   "p": 18,
+   "c": 14,
+   "f": 12
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "18-504",
+   "name": "Chicken breast/steak, coated, baked",
+   "k": 234.0,
+   "p": 17.7,
+   "c": 15.8,
+   "f": 11.6
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.6,
+   "kcal_abs": 6.0,
+   "macros_out": []
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "Coated breast, baked."
+ },
+ {
+  "n": "Salmon fillet, cooked",
+  "tali": {
+   "k": 206,
+   "p": 22,
+   "c": 0,
+   "f": 13
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-359",
+   "name": "Salmon, farmed, flesh only, baked",
+   "k": 232.0,
+   "p": 25.2,
+   "c": 0.0,
+   "f": 14.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -11.2,
+   "kcal_abs": -26.0,
+   "macros_out": []
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": -34,
+  "flags": [],
+  "note": "Farmed salmon baked (grilled 16-357 = 239; wild baked 16-485 = 215). Tali 206 is USDA farmed Atlantic cooked."
+ },
+ {
+  "n": "Smoked salmon",
+  "tali": {
+   "k": 180,
+   "p": 25,
+   "c": 0,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-412",
+   "name": "Salmon, smoked (cold-smoked)",
+   "k": 184.0,
+   "p": 22.8,
+   "c": 0.5,
+   "f": 10.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -2.2,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Cold-smoked."
+ },
+ {
+  "n": "Tuna, canned in water",
+  "tali": {
+   "k": 116,
+   "p": 26,
+   "c": 0,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-416",
+   "name": "Tuna, canned in brine, drained",
+   "k": 109.0,
+   "p": 24.9,
+   "c": 0.0,
+   "f": 1.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.4,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 7,
+  "flags": [],
+  "note": "Canned in brine, drained (UK 'in spring water' equivalent)."
+ },
+ {
+  "n": "Tuna steak, cooked",
+  "tali": {
+   "k": 130,
+   "p": 28,
+   "c": 0,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-400",
+   "name": "Tuna, flesh only, baked",
+   "k": 136.0,
+   "p": 32.3,
+   "c": 0.0,
+   "f": 0.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.4,
+   "kcal_abs": -6.0,
+   "macros_out": []
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": -8,
+  "flags": [],
+  "note": "Baked."
+ },
+ {
+  "n": "Cod, cooked",
+  "tali": {
+   "k": 105,
+   "p": 23,
+   "c": 0,
+   "f": 0.9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-373",
+   "name": "Cod, flesh only, baked",
+   "k": 100.0,
+   "p": 23.9,
+   "c": 0.0,
+   "f": 0.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.0,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Baked."
+ },
+ {
+  "n": "Haddock, cooked",
+  "tali": {
+   "k": 110,
+   "p": 24,
+   "c": 0,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-376",
+   "name": "Haddock, flesh only, grilled",
+   "k": 98.0,
+   "p": 23.9,
+   "c": 0.0,
+   "f": 0.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 12.2,
+   "kcal_abs": 12.0,
+   "macros_out": []
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": 16,
+  "flags": [],
+  "note": "Grilled; poached 16-473 = 96."
+ },
+ {
+  "n": "Sea bass, cooked",
+  "tali": {
+   "k": 125,
+   "p": 24,
+   "c": 0,
+   "f": 3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-386",
+   "name": "Bass, sea, flesh only, baked",
+   "k": 154.0,
+   "p": 23.2,
+   "c": 0.0,
+   "f": 6.8
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -18.8,
+   "kcal_abs": -29.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": -38,
+  "flags": [],
+  "note": "Baked sea bass; fat 6.8 vs Tali 3."
+ },
+ {
+  "n": "Mackerel, cooked",
+  "tali": {
+   "k": 260,
+   "p": 19,
+   "c": 0,
+   "f": 20
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-394",
+   "name": "Mackerel, flesh only, grilled",
+   "k": 283.0,
+   "p": 20.3,
+   "c": 0.0,
+   "f": 22.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -8.1,
+   "kcal_abs": -23.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -28,
+  "flags": [],
+  "note": "Grilled. Smoked mackerel (16-414 = 301) is the common UK form: consider a separate entry."
+ },
+ {
+  "n": "Sardines, canned in oil",
+  "tali": {
+   "k": 210,
+   "p": 25,
+   "c": 0,
+   "f": 12
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-440",
+   "name": "Sardines, canned in olive oil, drained",
+   "k": 220.0,
+   "p": 23.3,
+   "c": 0.0,
+   "f": 14.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.5,
+   "kcal_abs": -10.0,
+   "macros_out": []
+  },
+  "serving_g": 90,
+  "kcal_per_serving_delta": -9,
+  "flags": [],
+  "note": "Drained."
+ },
+ {
+  "n": "Sardines, canned in tomato",
+  "tali": {
+   "k": 180,
+   "p": 20,
+   "c": 2,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-422",
+   "name": "Sardines, canned in tomato sauce, whole contents",
+   "k": 175.0,
+   "p": 18.5,
+   "c": 0.9,
+   "f": 10.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.9,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 90,
+  "kcal_per_serving_delta": 4,
+  "flags": [],
+  "note": "Whole contents."
+ },
+ {
+  "n": "Prawns, cooked",
+  "tali": {
+   "k": 99,
+   "p": 24,
+   "c": 0.2,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-384",
+   "name": "Prawns, standard, purchased cooked",
+   "k": 70.0,
+   "p": 15.4,
+   "c": 0.0,
+   "f": 0.9
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 41.4,
+   "kcal_abs": 29.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 29,
+  "flags": [],
+  "note": "UK purchased-cooked prawns 70/15.4 (king 16-389 = 68). Tali 99/24 is USDA cooked-from-raw (CoFID king grilled from raw 16-388 = 102). OFF UK cooked prawn labels 61-91 kcal support CoFID."
+ },
+ {
+  "n": "Fish fingers, cooked (3)",
+  "tali": {
+   "k": 220,
+   "p": 13,
+   "c": 20,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-405",
+   "name": "Fish fingers, cod, grilled/baked",
+   "k": 223.0,
+   "p": 14.3,
+   "c": 22.0,
+   "f": 9.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.3,
+   "kcal_abs": -3.0,
+   "macros_out": []
+  },
+  "serving_g": 90,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": "Cod fingers grilled/baked. Fried 16-444 = 240."
+ },
+ {
+  "n": "Breaded fish, cooked",
+  "tali": {
+   "k": 200,
+   "p": 14,
+   "c": 15,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-370",
+   "name": "Cod, in breadcrumbs, baked",
+   "k": 204.0,
+   "p": 13.7,
+   "c": 19.8,
+   "f": 8.3
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -2.0,
+   "kcal_abs": -4.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -5,
+  "flags": [],
+  "note": "Cod in breadcrumbs, baked."
+ },
+ {
+  "n": "Egg, whole (1 = 50g)",
+  "tali": {
+   "k": 143,
+   "p": 13,
+   "c": 0.7,
+   "f": 9.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-937",
+   "name": "Eggs, chicken, whole, raw",
+   "k": 131.0,
+   "p": 12.6,
+   "c": 0.0,
+   "f": 9.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 9.2,
+   "kcal_abs": 12.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Raw whole egg (item is flagged cook, so raw basis is right). Tali 143 = USDA raw / CoFID boiled (12-940 = 143)."
+ },
+ {
+  "n": "Egg white",
+  "tali": {
+   "k": 52,
+   "p": 11,
+   "c": 0.7,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-938",
+   "name": "Eggs, chicken, white, raw",
+   "k": 43.0,
+   "p": 10.8,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 20.9,
+   "kcal_abs": 9.0,
+   "macros_out": []
+  },
+  "serving_g": 33,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": "Raw egg white. Boiled 12-941 = 52 matches Tali; item is flagged cook, so the raw basis applies."
+ },
+ {
+  "n": "Egg, fried",
+  "tali": {
+   "k": 180,
+   "p": 14,
+   "c": 0.8,
+   "f": 14
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-944",
+   "name": "Eggs, chicken, whole, fried in sunflower oil",
+   "k": 200.0,
+   "p": 14.7,
+   "c": 0.0,
+   "f": 15.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -10.0,
+   "kcal_abs": -20.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -10,
+  "flags": [],
+  "note": "Fried in sunflower oil (includes absorbed oil; must NOT also get the cooking-fat question)."
+ },
+ {
+  "n": "Tofu, firm",
+  "tali": {
+   "k": 144,
+   "p": 15,
+   "c": 3,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-570",
+   "name": "Tofu, soya bean, steamed",
+   "k": 73.0,
+   "p": 8.1,
+   "c": 0.7,
+   "f": 4.2
+  },
+  "status": "fix",
+  "recommend": "keep-label",
+  "diff": {
+   "kcal_pct": 97.3,
+   "kcal_abs": 71.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 71,
+  "flags": [],
+  "note": "CoFID steamed tofu is a soft curd (7 samples). UK firm tofu labels: Tofoo Naked 145/16.5/1.1/7.8 (OFF 5034467000216), Cauldron 118/13/1/7.1 (OFF 5013683305442). Tali 144 (USDA raw firm, CaSO4) fits UK firm tofu. Rename 'Tofu, firm, raw'; do not use CoFID here."
+ },
+ {
+  "n": "Quorn mince",
+  "tali": {
+   "k": 105,
+   "p": 15,
+   "c": 4,
+   "f": 2
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 100,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Quorn mince not in CoFID. OFF label 5019503036961: 105/14/4.5/2 matches Tali; another listing (5019503002157) shows 92/18/2.3/1.7, so the recipe may have changed. Check pack."
+ },
+ {
+  "n": "Quorn pieces",
+  "tali": {
+   "k": 115,
+   "p": 15,
+   "c": 4.5,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-574",
+   "name": "Quorn, pieces, as purchased",
+   "k": 73.0,
+   "p": 14.0,
+   "c": 1.1,
+   "f": 1.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 57.5,
+   "kcal_abs": 42.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 42,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "CoFID Quorn pieces (older) 73. Current OFF labels 5019503045802: 99/14/1.7/2.6. Tali 115/15/4.5 is high vs both; kcal also exceeds 4P+4C+9F by 17% (fibre unexplained)."
+ },
+ {
+  "n": "Tempeh",
+  "tali": {
+   "k": 190,
+   "p": 19,
+   "c": 9,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-118",
+   "name": "Tempeh",
+   "k": 166.0,
+   "p": 20.7,
+   "c": 6.4,
+   "f": 6.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 14.5,
+   "kcal_abs": 24.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 24,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Falafel",
+  "tali": {
+   "k": 330,
+   "p": 13,
+   "c": 32,
+   "f": 18
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "15-795",
+   "name": "Falafel, fried in rapeseed oil, homemade",
+   "k": 183.0,
+   "p": 6.4,
+   "c": 15.9,
+   "f": 11.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 80.3,
+   "kcal_abs": 147.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 147,
+  "flags": [],
+  "note": "CoFID homemade fried falafel 183. UK retail labels (OFF) 222-253 kcal. Tali 330 = USDA home-prepared (333): too high for UK products."
+ },
+ {
+  "n": "Edamame beans",
+  "tali": {
+   "k": 120,
+   "p": 11,
+   "c": 9,
+   "f": 5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-667",
+   "name": "Beans, edamame, frozen, boiled in unsalted water",
+   "k": 142.0,
+   "p": 12.2,
+   "c": 6.5,
+   "f": 7.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -15.5,
+   "kcal_abs": -22.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -18,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Frozen, boiled. Name should say cooked/shelled."
+ },
+ {
+  "n": "Lentils, cooked",
+  "tali": {
+   "k": 116,
+   "p": 9,
+   "c": 20,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-661",
+   "name": "Lentils, green and brown, whole, dried, boiled in unsalted water",
+   "k": 92.0,
+   "p": 7.8,
+   "c": 14.5,
+   "f": 0.7
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 26.1,
+   "kcal_abs": 24.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 36,
+  "flags": [],
+  "note": "Green/brown, boiled. Red split boiled 13-658 = 102. Tali 116/9/20 = USDA (carbs incl. ~8 g fibre)."
+ },
+ {
+  "n": "Chickpeas, cooked",
+  "tali": {
+   "k": 164,
+   "p": 9,
+   "c": 27,
+   "f": 2.6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-662",
+   "name": "Beans, chick peas, Kabuli, whole, dried, boiled in unsalted water",
+   "k": 129.0,
+   "p": 8.4,
+   "c": 18.3,
+   "f": 3.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 27.1,
+   "kcal_abs": 35.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 52,
+  "flags": [],
+  "note": "Boiled from dried; canned drained 13-670 identical (129)."
+ },
+ {
+  "n": "Kidney beans, cooked",
+  "tali": {
+   "k": 127,
+   "p": 9,
+   "c": 22,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-659",
+   "name": "Beans, red kidney, dried, boiled in unsalted water",
+   "k": 100.0,
+   "p": 8.6,
+   "c": 15.1,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 27.0,
+   "kcal_abs": 27.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 40,
+  "flags": [],
+  "note": "Boiled from dried; canned drained 13-660 identical (100)."
+ },
+ {
+  "n": "Black beans, cooked",
+  "tali": {
+   "k": 132,
+   "p": 9,
+   "c": 24,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 173735 (SR Legacy)",
+   "name": "Beans, black, mature seeds, cooked, boiled, without salt",
+   "k": 132.0,
+   "p": 8.9,
+   "c": 23.7,
+   "f": 0.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "No black beans in CoFID. USDA carbs 23.7 include 8.7 g fibre; UK-label-style available carbs ~15 g."
+ },
+ {
+  "n": "Baked beans",
+  "tali": {
+   "k": 78,
+   "p": 4.7,
+   "c": 13,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-532",
+   "name": "Baked beans, canned in tomato sauce",
+   "k": 81.0,
+   "p": 5.0,
+   "c": 15.0,
+   "f": 0.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.7,
+   "kcal_abs": -3.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": -6,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Hummus",
+  "tali": {
+   "k": 177,
+   "p": 8,
+   "c": 14,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-556",
+   "name": "Houmous",
+   "k": 307.0,
+   "p": 6.8,
+   "c": 10.5,
+   "f": 26.7
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -42.3,
+   "kcal_abs": -130.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -65,
+  "flags": [],
+  "note": "CoFID houmous 307/6.8/10.5/26.7. UK retail labels (OFF) 230-340. Tali 177 = USDA home-prepared hummus: about 40% low for UK shop houmous."
+ },
+ {
+  "n": "Whey protein powder (scoop ~30g)",
+  "tali": {
+   "k": 380,
+   "p": 78,
+   "c": 8,
+   "f": 5
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 173180 (SR Legacy)",
+   "name": "Beverages, Protein powder whey based",
+   "k": 352.0,
+   "p": 78.1,
+   "c": 6.2,
+   "f": 1.6
+  },
+  "status": "fix",
+  "recommend": "keep-label",
+  "diff": {
+   "kcal_pct": 8.0,
+   "kcal_abs": 28.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "Generic whey powder; brands vary 350-400 kcal. Prefer the label."
+ },
+ {
+  "n": "Milk, whole",
+  "tali": {
+   "k": 64,
+   "p": 3.4,
+   "c": 4.7,
+   "f": 3.6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-596",
+   "name": "Milk, whole, pasteurised, average",
+   "k": 63.0,
+   "p": 3.4,
+   "c": 4.6,
+   "f": 3.6
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.6,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": "ml item: CoFID is per 100 g; milk density ~1.03 g/ml, so per 100 ml ~ +3%."
+ },
+ {
+  "n": "Milk, semi-skimmed",
+  "tali": {
+   "k": 50,
+   "p": 3.6,
+   "c": 4.8,
+   "f": 1.8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-313",
+   "name": "Milk, semi-skimmed, pasteurised, average",
+   "k": 46.0,
+   "p": 3.5,
+   "c": 4.7,
+   "f": 1.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 8.7,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "ml item: per 100 ml ~47 kcal (density 1.03). Tali 50 slightly high."
+ },
+ {
+  "n": "Milk, skimmed",
+  "tali": {
+   "k": 35,
+   "p": 3.5,
+   "c": 5,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-307",
+   "name": "Milk, skimmed, pasteurised, average",
+   "k": 34.0,
+   "p": 3.5,
+   "c": 4.8,
+   "f": 0.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.9,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Almond milk, unsweetened",
+  "tali": {
+   "k": 15,
+   "p": 0.5,
+   "c": 0.3,
+   "f": 1.1
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 174832 (SR Legacy)",
+   "name": "Beverages, almond milk, unsweetened, shelf stable",
+   "k": 15.0,
+   "p": 0.4,
+   "c": 1.3,
+   "f": 1.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Not in CoFID. OFF Alpro unsweetened 13/0.4/0/1.1."
+ },
+ {
+  "n": "Oat milk",
+  "tali": {
+   "k": 45,
+   "p": 1,
+   "c": 6.6,
+   "f": 1.5
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "keep",
+  "diff": null,
+  "serving_g": 200,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Oat drink not in CoFID or USDA SR. OFF Oatly Semi 48/1.1/7/1.5 (19826230); Oatly Whole 60/1.1/7.1/2.8."
+ },
+ {
+  "n": "Soya milk",
+  "tali": {
+   "k": 33,
+   "p": 3.3,
+   "c": 1.2,
+   "f": 1.8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-524",
+   "name": "Milk, soya, non-dairy alternative to milk, unsweetened, fortified",
+   "k": 26.0,
+   "p": 2.4,
+   "c": 0.5,
+   "f": 1.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 26.9,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 14,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Unsweetened fortified 26; sweetened 12-523 = 43. Tali 33 is neither: split into two entries."
+ },
+ {
+  "n": "Greek yogurt, 0% fat",
+  "tali": {
+   "k": 59,
+   "p": 10,
+   "c": 3.6,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170894 (SR Legacy)",
+   "name": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+   "k": 59.0,
+   "p": 10.2,
+   "c": 3.6,
+   "f": 0.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 170,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "True Greek 0%. CoFID only has full-fat 'Greek style' (12-555)."
+ },
+ {
+  "n": "Greek yogurt, 5% fat",
+  "tali": {
+   "k": 97,
+   "p": 9,
+   "c": 3.6,
+   "f": 5
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 171304 (SR Legacy)",
+   "name": "Yogurt, Greek, plain, whole milk",
+   "k": 97.0,
+   "p": 9.0,
+   "c": 4.0,
+   "f": 5.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 170,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "True Greek whole-milk 5%. CoFID 'Greek style' 12-555 is ~10% fat (133 kcal): UK 'Greek-style' tubs differ; name the type."
+ },
+ {
+  "n": "Natural yogurt",
+  "tali": {
+   "k": 79,
+   "p": 5,
+   "c": 7,
+   "f": 3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-184",
+   "name": "Yogurt, whole milk, plain",
+   "k": 79.0,
+   "p": 5.7,
+   "c": 7.8,
+   "f": 3.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 170,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Whole milk plain. Low fat plain 12-379 = 57."
+ },
+ {
+  "n": "Low-fat fruit yogurt",
+  "tali": {
+   "k": 90,
+   "p": 4,
+   "c": 15,
+   "f": 1.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-380",
+   "name": "Yogurt, low fat, fruit",
+   "k": 78.0,
+   "p": 4.2,
+   "c": 13.7,
+   "f": 1.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 15.4,
+   "kcal_abs": 12.0,
+   "macros_out": []
+  },
+  "serving_g": 125,
+  "kcal_per_serving_delta": 15,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Skyr",
+  "tali": {
+   "k": 63,
+   "p": 11,
+   "c": 4,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "keep",
+  "diff": null,
+  "serving_g": 150,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Not in CoFID/USDA SR. OFF Arla Skyr natural 61/10/4/0.2 (4016241030603)."
+ },
+ {
+  "n": "Cottage cheese",
+  "tali": {
+   "k": 98,
+   "p": 11,
+   "c": 3.4,
+   "f": 4.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-539",
+   "name": "Cheese, cottage, plain",
+   "k": 103.0,
+   "p": 9.4,
+   "c": 3.1,
+   "f": 6.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.9,
+   "kcal_abs": -5.0,
+   "macros_out": []
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": -5,
+  "flags": [],
+  "note": "Full-fat plain. Reduced fat 12-550 = 68 (common in UK)."
+ },
+ {
+  "n": "Cheddar cheese",
+  "tali": {
+   "k": 416,
+   "p": 25,
+   "c": 0.1,
+   "f": 34
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-346",
+   "name": "Cheese, Cheddar, English",
+   "k": 416.0,
+   "p": 25.4,
+   "c": 0.1,
+   "f": 34.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Mozzarella",
+  "tali": {
+   "k": 280,
+   "p": 22,
+   "c": 2,
+   "f": 21
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-360",
+   "name": "Cheese, Mozzarella, fresh",
+   "k": 257.0,
+   "p": 18.6,
+   "c": 0.0,
+   "f": 20.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 8.9,
+   "kcal_abs": 23.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 12,
+  "flags": [],
+  "note": "Fresh mozzarella 257/18.6. Tali 280/22 is closer to low-moisture/pizza mozzarella."
+ },
+ {
+  "n": "Feta",
+  "tali": {
+   "k": 265,
+   "p": 14,
+   "c": 1.5,
+   "f": 22
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-525",
+   "name": "Cheese, Feta",
+   "k": 250.0,
+   "p": 15.6,
+   "c": 1.5,
+   "f": 20.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.0,
+   "kcal_abs": 15.0,
+   "macros_out": []
+  },
+  "serving_g": 40,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Parmesan",
+  "tali": {
+   "k": 430,
+   "p": 38,
+   "c": 0,
+   "f": 29
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-526",
+   "name": "Cheese, Parmesan, fresh",
+   "k": 415.0,
+   "p": 36.2,
+   "c": 0.9,
+   "f": 29.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 3.6,
+   "kcal_abs": 15.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Cream cheese",
+  "tali": {
+   "k": 250,
+   "p": 6,
+   "c": 4,
+   "f": 24
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-551",
+   "name": "Cheese, spreadable, full fat, soft, white",
+   "k": 252.0,
+   "p": 5.3,
+   "c": 3.0,
+   "f": 24.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.8,
+   "kcal_abs": -2.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": "Full-fat soft white spreadable cheese."
+ },
+ {
+  "n": "Soft cheese, light",
+  "tali": {
+   "k": 110,
+   "p": 9,
+   "c": 4,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-538",
+   "name": "Cheese, spreadable, medium fat, soft, white",
+   "k": 153.0,
+   "p": 9.8,
+   "c": 3.5,
+   "f": 11.2
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -28.1,
+   "kcal_abs": -43.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -13,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "CoFID 'medium fat' soft cheese 153; 'low fat' 12-541 = 99. 'Light' covers both: split or ask."
+ },
+ {
+  "n": "Brie",
+  "tali": {
+   "k": 340,
+   "p": 20,
+   "c": 0.5,
+   "f": 28
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-344",
+   "name": "Cheese, Brie, with outer rind removed",
+   "k": 343.0,
+   "p": 20.3,
+   "c": 0.0,
+   "f": 29.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.9,
+   "kcal_abs": -3.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Halloumi",
+  "tali": {
+   "k": 321,
+   "p": 22,
+   "c": 2,
+   "f": 25
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-496",
+   "name": "Cheese, Halloumi",
+   "k": 313.0,
+   "p": 23.9,
+   "c": 1.7,
+   "f": 23.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.6,
+   "kcal_abs": 8.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 5,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Babybel",
+  "tali": {
+   "k": 300,
+   "p": 23,
+   "c": 0,
+   "f": 24
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-355",
+   "name": "Cheese, Edam",
+   "k": 341.0,
+   "p": 26.7,
+   "c": 0.0,
+   "f": 26.0
+  },
+  "status": "fix",
+  "recommend": "keep-label",
+  "diff": {
+   "kcal_pct": -12.0,
+   "kcal_abs": -41.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": -8,
+  "flags": [],
+  "note": "Generic Edam proxy. Babybel label (OFF 3073781208092) 295/22/0/23 matches Tali; keep the label value."
+ },
+ {
+  "n": "Butter",
+  "tali": {
+   "k": 717,
+   "p": 0.9,
+   "c": 0.1,
+   "f": 81
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-685",
+   "name": "Butter, salted",
+   "k": 744.0,
+   "p": 0.6,
+   "c": 0.6,
+   "f": 82.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.6,
+   "kcal_abs": -27.0,
+   "macros_out": []
+  },
+  "serving_g": 10,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Margarine / spread",
+  "tali": {
+   "k": 600,
+   "p": 0.2,
+   "c": 0.7,
+   "f": 66
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-506",
+   "name": "Fat spread, reduced fat (62-75%), not polyunsaturated",
+   "k": 660.0,
+   "p": 0.3,
+   "c": 0.0,
+   "f": 73.2
+  },
+  "status": "ok",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -9.1,
+   "kcal_abs": -60.0,
+   "macros_out": []
+  },
+  "serving_g": 10,
+  "kcal_per_serving_delta": -6,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Spreads range 339 (low-fat 26-39%) to 715 (spreadable butter). A single 'margarine/spread' row hides up to 2x error: ask type."
+ },
+ {
+  "n": "Double cream",
+  "tali": {
+   "k": 450,
+   "p": 1.7,
+   "c": 2.7,
+   "f": 48
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-334",
+   "name": "Cream, fresh, double, including Jersey cream",
+   "k": 496.0,
+   "p": 1.6,
+   "c": 1.7,
+   "f": 53.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -9.3,
+   "kcal_abs": -46.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -14,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Single cream",
+  "tali": {
+   "k": 195,
+   "p": 2.6,
+   "c": 4,
+   "f": 19
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-332",
+   "name": "Cream, fresh, single",
+   "k": 193.0,
+   "p": 3.3,
+   "c": 2.2,
+   "f": 19.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.0,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Creme fraiche",
+  "tali": {
+   "k": 300,
+   "p": 2.4,
+   "c": 3,
+   "f": 30
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-335",
+   "name": "Creme fraiche, full fat",
+   "k": 378.0,
+   "p": 2.2,
+   "c": 2.4,
+   "f": 40.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -20.6,
+   "kcal_abs": -78.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -23,
+  "flags": [],
+  "note": "Full-fat 378/40 g fat; half-fat 12-336 = 162. Tali 300/30 is neither."
+ },
+ {
+  "n": "Custard",
+  "tali": {
+   "k": 100,
+   "p": 3,
+   "c": 16,
+   "f": 3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-543",
+   "name": "Custard, ready to eat, canned and tetra-pak",
+   "k": 98.0,
+   "p": 2.7,
+   "c": 16.3,
+   "f": 2.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.0,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": "Ready-to-eat."
+ },
+ {
+  "n": "Rice pudding",
+  "tali": {
+   "k": 90,
+   "p": 3.4,
+   "c": 15,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-580",
+   "name": "Pudding, rice, canned",
+   "k": 85.0,
+   "p": 3.3,
+   "c": 16.1,
+   "f": 1.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.9,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "Canned."
+ },
+ {
+  "n": "Ice cream, vanilla",
+  "tali": {
+   "k": 200,
+   "p": 3.5,
+   "c": 24,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-508",
+   "name": "Ice cream, dairy, vanilla, soft scoop",
+   "k": 169.0,
+   "p": 3.2,
+   "c": 22.0,
+   "f": 8.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 18.3,
+   "kcal_abs": 31.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 19,
+  "flags": [],
+  "note": "Dairy vanilla soft scoop 169; luxury ice creams are higher."
+ },
+ {
+  "n": "White rice, cooked",
+  "tali": {
+   "k": 130,
+   "p": 2.7,
+   "c": 28,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-862",
+   "name": "Rice, white, long grain, boiled in unsalted water",
+   "k": 131.0,
+   "p": 2.8,
+   "c": 31.1,
+   "f": 0.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.8,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Long grain, boiled. Easy-cook boiled 11-864 = 146."
+ },
+ {
+  "n": "Brown rice, cooked",
+  "tali": {
+   "k": 123,
+   "p": 2.7,
+   "c": 26,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-869",
+   "name": "Rice, brown, wholegrain, boiled in unsalted water",
+   "k": 132.0,
+   "p": 3.6,
+   "c": 29.2,
+   "f": 0.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -6.8,
+   "kcal_abs": -9.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -16,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Basmati rice, cooked",
+  "tali": {
+   "k": 120,
+   "p": 3,
+   "c": 25,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-858",
+   "name": "Rice, white, basmati, boiled in unsalted water",
+   "k": 117.0,
+   "p": 2.8,
+   "c": 26.5,
+   "f": 0.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.6,
+   "kcal_abs": 3.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 5,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Egg fried rice",
+  "tali": {
+   "k": 165,
+   "p": 4,
+   "c": 24,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-885",
+   "name": "Rice, egg fried, ready cooked, re-heated, retail, not takeaway",
+   "k": 169.0,
+   "p": 3.9,
+   "c": 28.1,
+   "f": 5.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -2.4,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -7,
+  "flags": [],
+  "note": "Retail ready-cooked. Takeaway 11-444 = 186."
+ },
+ {
+  "n": "Pilau rice",
+  "tali": {
+   "k": 180,
+   "p": 3.5,
+   "c": 30,
+   "f": 5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-968",
+   "name": "Rice, pilau, plain, homemade",
+   "k": 134.0,
+   "p": 2.5,
+   "c": 24.3,
+   "f": 3.7
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 34.3,
+   "kcal_abs": 46.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 83,
+  "flags": [],
+  "note": "CoFID homemade pilau 134/3.7 fat. Takeaway pilau not in CoFID; Tali 180 unsourced."
+ },
+ {
+  "n": "Pasta, cooked",
+  "tali": {
+   "k": 131,
+   "p": 5,
+   "c": 25,
+   "f": 1.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1129",
+   "name": "Pasta, white, dried, boiled in unsalted water",
+   "k": 169.0,
+   "p": 5.5,
+   "c": 37.2,
+   "f": 0.8
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -22.5,
+   "kcal_abs": -38.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -68,
+  "flags": [],
+  "note": "CoFID generic boiled white pasta 169 (calculated, 106% weight gain); spaghetti boiled 11-722 = 141; fusilli 11-720 = 146. Water uptake drives a 131-169 spread. Tali 131 = USDA."
+ },
+ {
+  "n": "Wholewheat pasta, cooked",
+  "tali": {
+   "k": 124,
+   "p": 5,
+   "c": 26,
+   "f": 1.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-723",
+   "name": "Pasta, wholewheat, spaghetti, dried, boiled in unsalted water",
+   "k": 134.0,
+   "p": 5.2,
+   "c": 27.5,
+   "f": 1.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -7.5,
+   "kcal_abs": -10.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -18,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Egg noodles, cooked",
+  "tali": {
+   "k": 138,
+   "p": 4.5,
+   "c": 25,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-724",
+   "name": "Noodles, egg, medium, dried, boiled in unsalted water",
+   "k": 166.0,
+   "p": 5.8,
+   "c": 35.7,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -16.9,
+   "kcal_abs": -28.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -50,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Medium egg noodles, boiled. CoFID fine 129 / thick 143 / medium 166."
+ },
+ {
+  "n": "Rice noodles, cooked",
+  "tali": {
+   "k": 110,
+   "p": 2,
+   "c": 25,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-725",
+   "name": "Noodles, rice, fine, dried, boiled in unsalted water",
+   "k": 89.0,
+   "p": 1.9,
+   "c": 21.3,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 23.6,
+   "kcal_abs": 21.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 38,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Instant noodles, dry pack (~85g)",
+  "tali": {
+   "k": 440,
+   "p": 9,
+   "c": 60,
+   "f": 17
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 171177 (SR Legacy)",
+   "name": "Soup, ramen noodle, any flavor, dry",
+   "k": 440.0,
+   "p": 10.2,
+   "c": 60.3,
+   "f": 17.6
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 85,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Ramen, dry. Name correctly says dry."
+ },
+ {
+  "n": "Gnocchi, cooked",
+  "tali": {
+   "k": 150,
+   "p": 3.5,
+   "c": 30,
+   "f": 1
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 180,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Gnocchi not in CoFID 2021 or USDA SR Legacy. Use pack label."
+ },
+ {
+  "n": "Couscous, cooked",
+  "tali": {
+   "k": 112,
+   "p": 3.8,
+   "c": 23,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-902",
+   "name": "Couscous, plain, cooked",
+   "k": 178.0,
+   "p": 7.2,
+   "c": 37.5,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -37.1,
+   "kcal_abs": -66.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": -119,
+  "flags": [],
+  "note": "CoFID cooked couscous 178 vs USDA cooked 112: the hydration ratio (1:1 to 1:1.5 water) drives a 60% spread. Better to log dry weight (CoFID raw 11-901 = 364)."
+ },
+ {
+  "n": "Quinoa, cooked",
+  "tali": {
+   "k": 120,
+   "p": 4.4,
+   "c": 21,
+   "f": 1.9
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 168917 (SR Legacy)",
+   "name": "Quinoa, cooked",
+   "k": 120.0,
+   "p": 4.4,
+   "c": 21.3,
+   "f": 1.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Not cooked in CoFID (raw 14-843 only)."
+ },
+ {
+  "n": "Bulgur wheat, cooked",
+  "tali": {
+   "k": 83,
+   "p": 3,
+   "c": 19,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170287 (SR Legacy)",
+   "name": "Bulgur, cooked",
+   "k": 83.0,
+   "p": 3.1,
+   "c": 18.6,
+   "f": 0.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Not cooked in CoFID (raw 11-904 only)."
+ },
+ {
+  "n": "Oats, dry",
+  "tali": {
+   "k": 379,
+   "p": 13,
+   "c": 67,
+   "f": 7
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-788",
+   "name": "Porridge oats, unfortified",
+   "k": 381.0,
+   "p": 10.9,
+   "c": 70.7,
+   "f": 8.1
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -0.5,
+   "kcal_abs": -2.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": "Porridge oats. Tali protein 13 (USDA) vs 10.9."
+ },
+ {
+  "n": "Porridge, made with water",
+  "tali": {
+   "k": 70,
+   "p": 2.4,
+   "c": 12,
+   "f": 1.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1107",
+   "name": "Porridge, made with water",
+   "k": 47.0,
+   "p": 1.4,
+   "c": 8.8,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 48.9,
+   "kcal_abs": 23.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 58,
+  "flags": [],
+  "note": "CoFID porridge with water 47. Tali 70 implies a thicker oat:water ratio. Better to log dry oats."
+ },
+ {
+  "n": "Porridge, made with milk",
+  "tali": {
+   "k": 110,
+   "p": 4.5,
+   "c": 15,
+   "f": 3.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-789",
+   "name": "Porridge oats, unfortified, cooked, made up with semi-skimmed milk",
+   "k": 84.0,
+   "p": 4.6,
+   "c": 12.1,
+   "f": 2.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 31.0,
+   "kcal_abs": 26.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 65,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "UK default milk is semi-skimmed (84). Whole milk 11-1108 = 112 matches Tali. Name the milk."
+ },
+ {
+  "n": "White bread (slice ~36g)",
+  "tali": {
+   "k": 265,
+   "p": 9,
+   "c": 49,
+   "f": 3.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1145",
+   "name": "Bread, white, average",
+   "k": 236.0,
+   "p": 8.7,
+   "c": 48.7,
+   "f": 2.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 12.3,
+   "kcal_abs": 29.0,
+   "macros_out": []
+  },
+  "serving_g": 36,
+  "kcal_per_serving_delta": 10,
+  "flags": [],
+  "note": "White bread average 236; sliced 11-980 = 219. Tali 265 = USDA."
+ },
+ {
+  "n": "Wholemeal bread (slice ~36g)",
+  "tali": {
+   "k": 247,
+   "p": 10,
+   "c": 41,
+   "f": 3.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-981",
+   "name": "Bread, wholemeal, average",
+   "k": 217.0,
+   "p": 9.4,
+   "c": 42.0,
+   "f": 2.5
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 13.8,
+   "kcal_abs": 30.0,
+   "macros_out": []
+  },
+  "serving_g": 36,
+  "kcal_per_serving_delta": 11,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Brown bread (slice)",
+  "tali": {
+   "k": 250,
+   "p": 9,
+   "c": 46,
+   "f": 2.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-971",
+   "name": "Bread, brown, average",
+   "k": 207.0,
+   "p": 7.9,
+   "c": 42.1,
+   "f": 2.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 20.8,
+   "kcal_abs": 43.0,
+   "macros_out": []
+  },
+  "serving_g": 36,
+  "kcal_per_serving_delta": 15,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Sourdough bread",
+  "tali": {
+   "k": 260,
+   "p": 9,
+   "c": 52,
+   "f": 1.5
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 172675 (SR Legacy)",
+   "name": "Bread, french or vienna (includes sourdough)",
+   "k": 272.0,
+   "p": 10.8,
+   "c": 51.9,
+   "f": 2.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.4,
+   "kcal_abs": -12.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -6,
+  "flags": [],
+  "note": "No CoFID sourdough; USDA French/Vienna incl. sourdough."
+ },
+ {
+  "n": "Bagel",
+  "tali": {
+   "k": 270,
+   "p": 10,
+   "c": 53,
+   "f": 1.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-970",
+   "name": "Bagels, plain",
+   "k": 273.0,
+   "p": 10.0,
+   "c": 57.8,
+   "f": 1.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.1,
+   "kcal_abs": -3.0,
+   "macros_out": []
+  },
+  "serving_g": 85,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Crumpet",
+  "tali": {
+   "k": 180,
+   "p": 5,
+   "c": 35,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-989",
+   "name": "Crumpets, toasted",
+   "k": 207.0,
+   "p": 6.9,
+   "c": 45.4,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -13.0,
+   "kcal_abs": -27.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -14,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "CoFID only has toasted crumpets (207). Default 50 g is an as-bought crumpet, but the per-100 g value should match the state logged."
+ },
+ {
+  "n": "English muffin",
+  "tali": {
+   "k": 230,
+   "p": 9,
+   "c": 44,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-541",
+   "name": "Muffins, English style, white",
+   "k": 223.0,
+   "p": 10.0,
+   "c": 44.2,
+   "f": 1.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 3.1,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 4,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pitta bread",
+  "tali": {
+   "k": 275,
+   "p": 9,
+   "c": 55,
+   "f": 1.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-974",
+   "name": "Bread, pitta, white",
+   "k": 255.0,
+   "p": 9.1,
+   "c": 55.1,
+   "f": 1.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.8,
+   "kcal_abs": 20.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 12,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Naan bread",
+  "tali": {
+   "k": 320,
+   "p": 9,
+   "c": 50,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 12.3,
+   "kcal_abs": 35.0,
+   "macros_out": []
+  },
+  "serving_g": 90,
+  "kcal_per_serving_delta": 32,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Tortilla wrap (1 ~60g)",
+  "tali": {
+   "k": 310,
+   "p": 8,
+   "c": 50,
+   "f": 8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-925",
+   "name": "Tortilla, wheat, soft",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 53.9,
+   "f": 5.7
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 8.8,
+   "kcal_abs": 25.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 15,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chapati / roti",
+  "tali": {
+   "k": 300,
+   "p": 8,
+   "c": 46,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-987",
+   "name": "Chapatis, made with fat, retail",
+   "k": 328.0,
+   "p": 8.1,
+   "c": 48.3,
+   "f": 12.8
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -8.5,
+   "kcal_abs": -28.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": -17,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "With fat 328; without fat 11-459 = 202. Bimodal; ask."
+ },
+ {
+  "n": "Baguette",
+  "tali": {
+   "k": 270,
+   "p": 9,
+   "c": 52,
+   "f": 2.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-978",
+   "name": "Bread, white, French stick",
+   "k": 263.0,
+   "p": 9.0,
+   "c": 56.1,
+   "f": 1.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.7,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 70,
+  "kcal_per_serving_delta": 5,
+  "flags": [],
+  "note": "French stick."
+ },
+ {
+  "n": "Croissant",
+  "tali": {
+   "k": 405,
+   "p": 8,
+   "c": 45,
+   "f": 21
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-988",
+   "name": "Croissants",
+   "k": 373.0,
+   "p": 8.3,
+   "c": 43.3,
+   "f": 19.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 8.6,
+   "kcal_abs": 32.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 19,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pain au chocolat",
+  "tali": {
+   "k": 430,
+   "p": 8,
+   "c": 45,
+   "f": 24
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 65,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Not in CoFID 2021 or USDA SR Legacy."
+ },
+ {
+  "n": "Cornflakes",
+  "tali": {
+   "k": 380,
+   "p": 7,
+   "c": 84,
+   "f": 0.9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-742",
+   "name": "Breakfast cereal, cornflakes, fortified",
+   "k": 376.0,
+   "p": 7.1,
+   "c": 90.9,
+   "f": 0.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.1,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Weetabix (2 ~38g)",
+  "tali": {
+   "k": 360,
+   "p": 12,
+   "c": 69,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-773",
+   "name": "Breakfast cereal, wheat biscuits, Weetabix type, fortified",
+   "k": 332.0,
+   "p": 10.5,
+   "c": 72.7,
+   "f": 1.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 8.4,
+   "kcal_abs": 28.0,
+   "macros_out": []
+  },
+  "serving_g": 38,
+  "kcal_per_serving_delta": 11,
+  "flags": [],
+  "note": "CoFID 332 is older; current label (OFF 5010029000016) 362/12/69/2 matches Tali."
+ },
+ {
+  "n": "Muesli",
+  "tali": {
+   "k": 360,
+   "p": 10,
+   "c": 66,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-780",
+   "name": "Muesli, Swiss style, unfortified",
+   "k": 366.0,
+   "p": 9.2,
+   "c": 72.6,
+   "f": 6.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.6,
+   "kcal_abs": -6.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Granola",
+  "tali": {
+   "k": 450,
+   "p": 9,
+   "c": 64,
+   "f": 17
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-939",
+   "name": "Breakfast cereal, crunchy/crispy muesli type cereal, with nuts, unfortified",
+   "k": 450.0,
+   "p": 8.4,
+   "c": 61.9,
+   "f": 20.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Crunchy muesli-type with nuts."
+ },
+ {
+  "n": "Pancakes",
+  "tali": {
+   "k": 230,
+   "p": 6,
+   "c": 28,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1143",
+   "name": "Pancakes, sweet, made with semi skimmed milk, homemade",
+   "k": 234.0,
+   "p": 6.3,
+   "c": 37.9,
+   "f": 7.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -1.7,
+   "kcal_abs": -4.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": "UK sweet pancake (semi-skimmed) 234/37.9 carbs/7.4 fat. Tali = USDA American-style recipe."
+ },
+ {
+  "n": "Waffles",
+  "tali": {
+   "k": 290,
+   "p": 7,
+   "c": 33,
+   "f": 14
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1130",
+   "name": "Waffles, homemade",
+   "k": 335.0,
+   "p": 9.0,
+   "c": 43.0,
+   "f": 15.3
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -13.4,
+   "kcal_abs": -45.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -36,
+  "flags": [],
+  "note": "Homemade. Frozen retail waffles (USDA 175038) = 285."
+ },
+ {
+  "n": "Potato, boiled",
+  "tali": {
+   "k": 87,
+   "p": 1.9,
+   "c": 20,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-490",
+   "name": "Potatoes, old, boiled in unsalted water, flesh only",
+   "k": 74.0,
+   "p": 1.8,
+   "c": 17.5,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 17.6,
+   "kcal_abs": 13.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 26,
+  "flags": [],
+  "note": "Old potatoes boiled, flesh only 74. Tali 87 = USDA."
+ },
+ {
+  "n": "Jacket potato, baked",
+  "tali": {
+   "k": 93,
+   "p": 2.5,
+   "c": 21,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-491",
+   "name": "Potatoes, old, baked, flesh and skin",
+   "k": 97.0,
+   "p": 2.5,
+   "c": 22.6,
+   "f": 0.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -4.1,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": -10,
+  "flags": [],
+  "note": "Flesh and skin."
+ },
+ {
+  "n": "Mashed potato",
+  "tali": {
+   "k": 110,
+   "p": 2,
+   "c": 16,
+   "f": 4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-553",
+   "name": "Potatoes, old, mashed with butter",
+   "k": 102.0,
+   "p": 1.9,
+   "c": 15.9,
+   "f": 3.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.8,
+   "kcal_abs": 8.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 16,
+  "flags": [],
+  "note": "Mashed with butter."
+ },
+ {
+  "n": "Roast potatoes",
+  "tali": {
+   "k": 150,
+   "p": 3,
+   "c": 24,
+   "f": 5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-599",
+   "name": "Potatoes, old, roasted in corn oil",
+   "k": 161.0,
+   "p": 2.6,
+   "c": 26.4,
+   "f": 5.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -6.8,
+   "kcal_abs": -11.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -16,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chips, oven",
+  "tali": {
+   "k": 190,
+   "p": 3,
+   "c": 30,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-487",
+   "name": "Potato chips, oven ready, no batter, baked",
+   "k": 189.0,
+   "p": 3.2,
+   "c": 35.3,
+   "f": 4.9
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 0.5,
+   "kcal_abs": 1.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Fries, fast food",
+  "tali": {
+   "k": 310,
+   "p": 3.4,
+   "c": 41,
+   "f": 15
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-486",
+   "name": "Potato chips, fine cut, from fast food outlets",
+   "k": 290.0,
+   "p": 3.5,
+   "c": 39.7,
+   "f": 14.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.9,
+   "kcal_abs": 20.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 24,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Hash brown",
+  "tali": {
+   "k": 230,
+   "p": 3,
+   "c": 26,
+   "f": 13
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170044 (SR Legacy)",
+   "name": "Potatoes, hash brown, frozen, plain, prepared, pan fried in canola oil",
+   "k": 219.0,
+   "p": 2.6,
+   "c": 28.5,
+   "f": 11.6
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.0,
+   "kcal_abs": 11.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Frozen hash brown, pan-fried. CoFID has only 'shaped potato products' (13-533, waffles/smiley faces) = 190."
+ },
+ {
+  "n": "Potato wedges",
+  "tali": {
+   "k": 170,
+   "p": 2.5,
+   "c": 27,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-483",
+   "name": "Potato wedges, retail, cooked",
+   "k": 176.0,
+   "p": 2.8,
+   "c": 30.6,
+   "f": 5.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.4,
+   "kcal_abs": -6.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -9,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Sweet potato, baked",
+  "tali": {
+   "k": 90,
+   "p": 2,
+   "c": 21,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-672",
+   "name": "Sweet potato, baked",
+   "k": 115.0,
+   "p": 1.6,
+   "c": 27.9,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -21.7,
+   "kcal_abs": -25.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": -50,
+  "flags": [],
+  "note": "CoFID baked 115 vs USDA baked 90; CoFID 2021 corrected sweet potato sugars. Real source disagreement of ~25%."
+ },
+ {
+  "n": "Broccoli",
+  "tali": {
+   "k": 34,
+   "p": 2.8,
+   "c": 7,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-502",
+   "name": "Broccoli, green, raw",
+   "k": 34.0,
+   "p": 4.3,
+   "c": 3.2,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 0,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Boiled 13-503 = 28/3.3/2.8. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Cauliflower",
+  "tali": {
+   "k": 30,
+   "p": 2,
+   "c": 5,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-512",
+   "name": "Cauliflower, raw",
+   "k": 30.0,
+   "p": 2.5,
+   "c": 4.4,
+   "f": 0.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 0,
+  "flags": [
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Boiled 13-513 = 29."
+ },
+ {
+  "n": "Carrots",
+  "tali": {
+   "k": 41,
+   "p": 0.9,
+   "c": 10,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-496",
+   "name": "Carrots, old, raw",
+   "k": 34.0,
+   "p": 0.5,
+   "c": 7.7,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 20.6,
+   "kcal_abs": 7.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Old carrots raw 34. Boiled 13-497 = 29. Name should say raw."
+ },
+ {
+  "n": "Spinach",
+  "tali": {
+   "k": 23,
+   "p": 2.9,
+   "c": 3.6,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-572",
+   "name": "Spinach, mature, raw",
+   "k": 25.0,
+   "p": 2.8,
+   "c": 1.6,
+   "f": 0.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -8.0,
+   "kcal_abs": -2.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Mature raw 25; baby raw 13-521 = 16; boiled 13-573 = 19. Cooked spinach weighs about 1/5 of raw: state matters."
+ },
+ {
+  "n": "Kale",
+  "tali": {
+   "k": 49,
+   "p": 4.3,
+   "c": 9,
+   "f": 0.9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-234",
+   "name": "Curly kale, raw",
+   "k": 33.0,
+   "p": 3.4,
+   "c": 1.4,
+   "f": 1.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 48.5,
+   "kcal_abs": 16.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 13,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Curly kale raw 33; boiled 13-649 = 26. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Cabbage",
+  "tali": {
+   "k": 25,
+   "p": 1.3,
+   "c": 6,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-582",
+   "name": "Cabbage, average, raw",
+   "k": 26.0,
+   "p": 1.8,
+   "c": 4.4,
+   "f": 0.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.8,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -1,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Boiled 13-581 = 17."
+ },
+ {
+  "n": "Green beans",
+  "tali": {
+   "k": 31,
+   "p": 1.8,
+   "c": 7,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-514",
+   "name": "Beans, green, raw",
+   "k": 24.0,
+   "p": 2.1,
+   "c": 3.1,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 29.2,
+   "kcal_abs": 7.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 6,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Boiled 13-515 = 26. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Courgette",
+  "tali": {
+   "k": 17,
+   "p": 1.2,
+   "c": 3.1,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-627",
+   "name": "Courgette, raw",
+   "k": 16.0,
+   "p": 1.3,
+   "c": 2.3,
+   "f": 0.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.2,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 1,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked)."
+ },
+ {
+  "n": "Aubergine",
+  "tali": {
+   "k": 25,
+   "p": 1,
+   "c": 6,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-161",
+   "name": "Aubergine, raw",
+   "k": 15.0,
+   "p": 0.9,
+   "c": 2.2,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 66.7,
+   "kcal_abs": 10.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 8,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Fried aubergine absorbs oil: 13-577 = 302."
+ },
+ {
+  "n": "Mushrooms",
+  "tali": {
+   "k": 22,
+   "p": 3.1,
+   "c": 3.3,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-505",
+   "name": "Mushrooms, white, raw",
+   "k": 7.0,
+   "p": 1.0,
+   "c": 0.3,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 214.3,
+   "kcal_abs": 15.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 12,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). White mushrooms raw 7 kcal (USDA 22). Fried 13-507 = 106."
+ },
+ {
+  "n": "Tomato",
+  "tali": {
+   "k": 18,
+   "p": 0.9,
+   "c": 3.9,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-517",
+   "name": "Tomatoes, standard, raw",
+   "k": 14.0,
+   "p": 0.5,
+   "c": 3.0,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 28.6,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 3,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Cherry tomatoes",
+  "tali": {
+   "k": 20,
+   "p": 0.9,
+   "c": 3.9,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-519",
+   "name": "Tomatoes, cherry, raw",
+   "k": 22.0,
+   "p": 1.1,
+   "c": 3.6,
+   "f": 0.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -9.1,
+   "kcal_abs": -2.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Tinned tomatoes",
+  "tali": {
+   "k": 20,
+   "p": 1.3,
+   "c": 3.4,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-530",
+   "name": "Tomatoes, canned, whole contents",
+   "k": 19.0,
+   "p": 1.1,
+   "c": 3.8,
+   "f": 0.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.3,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Passata",
+  "tali": {
+   "k": 35,
+   "p": 1.5,
+   "c": 6,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170460 (SR Legacy)",
+   "name": "Tomato products, canned, puree, without salt added",
+   "k": 38.0,
+   "p": 1.6,
+   "c": 9.0,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -7.9,
+   "kcal_abs": -3.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": "No CoFID passata; USDA canned tomato puree (US 'puree' = passata-like). CoFID 'tomato puree' 13-531 is the concentrate (67)."
+ },
+ {
+  "n": "Cucumber",
+  "tali": {
+   "k": 15,
+   "p": 0.7,
+   "c": 3.6,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-523",
+   "name": "Cucumber, raw, flesh and skin",
+   "k": 14.0,
+   "p": 1.0,
+   "c": 1.2,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 7.1,
+   "kcal_abs": 1.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 1,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Lettuce",
+  "tali": {
+   "k": 15,
+   "p": 1.4,
+   "c": 2.9,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-520",
+   "name": "Lettuce, average, raw",
+   "k": 11.0,
+   "p": 1.2,
+   "c": 1.4,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 36.4,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Rocket",
+  "tali": {
+   "k": 25,
+   "p": 2.6,
+   "c": 3.7,
+   "f": 0.7
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-522",
+   "name": "Rocket, raw",
+   "k": 18.0,
+   "p": 3.6,
+   "c": 0.0,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 38.9,
+   "kcal_abs": 7.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Mixed salad leaves",
+  "tali": {
+   "k": 17,
+   "p": 1.4,
+   "c": 2.9,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "15-648",
+   "name": "Salad, green",
+   "k": 13.0,
+   "p": 1.0,
+   "c": 1.6,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 30.8,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": "'Salad, green' mixed leaves."
+ },
+ {
+  "n": "Onion",
+  "tali": {
+   "k": 40,
+   "p": 1.1,
+   "c": 9,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-499",
+   "name": "Onions, raw",
+   "k": 35.0,
+   "p": 1.0,
+   "c": 8.0,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 14.3,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 3,
+  "flags": [
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Fried in butter 13-611 = 95."
+ },
+ {
+  "n": "Spring onion",
+  "tali": {
+   "k": 32,
+   "p": 1.8,
+   "c": 7,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-352",
+   "name": "Spring onions, bulbs and tops, raw",
+   "k": 23.0,
+   "p": 2.0,
+   "c": 3.0,
+   "f": 0.5
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 39.1,
+   "kcal_abs": 9.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 1,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": "Bulbs and tops."
+ },
+ {
+  "n": "Garlic",
+  "tali": {
+   "k": 149,
+   "p": 6.4,
+   "c": 33,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-244",
+   "name": "Garlic, raw",
+   "k": 98.0,
+   "p": 7.9,
+   "c": 16.3,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 52.0,
+   "kcal_abs": 51.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 5,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": "CoFID raw garlic 98 vs USDA 149. Tiny portions (5 g), so negligible impact."
+ },
+ {
+  "n": "Bell pepper",
+  "tali": {
+   "k": 31,
+   "p": 1,
+   "c": 6,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-524",
+   "name": "Pepper, capsicum, red, raw",
+   "k": 21.0,
+   "p": 0.8,
+   "c": 4.3,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 47.6,
+   "kcal_abs": 10.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 8,
+  "flags": [
+   "state-not-named"
+  ],
+  "note": "Red pepper raw; green 13-318 = 15."
+ },
+ {
+  "n": "Leek",
+  "tali": {
+   "k": 31,
+   "p": 1.5,
+   "c": 7,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-624",
+   "name": "Leeks, raw",
+   "k": 23.0,
+   "p": 1.5,
+   "c": 4.1,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 34.8,
+   "kcal_abs": 8.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 6,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked)."
+ },
+ {
+  "n": "Celery",
+  "tali": {
+   "k": 14,
+   "p": 0.7,
+   "c": 3,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-636",
+   "name": "Celery, raw",
+   "k": 9.0,
+   "p": 0.5,
+   "c": 1.4,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 55.6,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 40,
+  "kcal_per_serving_delta": 2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Asparagus",
+  "tali": {
+   "k": 20,
+   "p": 2.2,
+   "c": 3.9,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-157",
+   "name": "Asparagus, raw",
+   "k": 25.0,
+   "p": 2.9,
+   "c": 2.0,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -20.0,
+   "kcal_abs": -5.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": -4,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked)."
+ },
+ {
+  "n": "Beetroot",
+  "tali": {
+   "k": 43,
+   "p": 1.6,
+   "c": 10,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-164",
+   "name": "Beetroot, raw",
+   "k": 36.0,
+   "p": 1.7,
+   "c": 7.6,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 19.4,
+   "kcal_abs": 7.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 6,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Raw 36. UK beetroot is mostly bought cooked (13-633 = 53) or pickled (13-166 = 28). Name the state."
+ },
+ {
+  "n": "Butternut squash",
+  "tali": {
+   "k": 45,
+   "p": 1,
+   "c": 12,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-355",
+   "name": "Squash, butternut, raw",
+   "k": 36.0,
+   "p": 1.1,
+   "c": 8.3,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 25.0,
+   "kcal_abs": 9.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 11,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Baked 13-644 = 39."
+ },
+ {
+  "n": "Parsnip",
+  "tali": {
+   "k": 75,
+   "p": 1.2,
+   "c": 18,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-312",
+   "name": "Parsnip, raw",
+   "k": 64.0,
+   "p": 1.8,
+   "c": 12.5,
+   "f": 1.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 17.2,
+   "kcal_abs": 11.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 9,
+  "flags": [
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Roasted in oil 13-632 = 158."
+ },
+ {
+  "n": "Brussels sprouts",
+  "tali": {
+   "k": 43,
+   "p": 3.4,
+   "c": 9,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-177",
+   "name": "Brussels sprouts, raw",
+   "k": 42.0,
+   "p": 3.5,
+   "c": 4.1,
+   "f": 1.4
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 2.4,
+   "kcal_abs": 1.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 1,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs",
+   "state-not-named"
+  ],
+  "note": "Values match RAW produce; name should say 'raw' (item is flagged cook, so users will log it cooked). Boiled 13-630 = 32. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Sweetcorn, tinned",
+  "tali": {
+   "k": 86,
+   "p": 3,
+   "c": 19,
+   "f": 1.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-529",
+   "name": "Sweetcorn kernels, canned in water, drained",
+   "k": 78.0,
+   "p": 2.6,
+   "c": 13.9,
+   "f": 1.7
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 10.3,
+   "kcal_abs": 8.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Canned in water, drained."
+ },
+ {
+  "n": "Coleslaw",
+  "tali": {
+   "k": 150,
+   "p": 1,
+   "c": 8,
+   "f": 13
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "15-635",
+   "name": "Coleslaw, not low calorie, retail",
+   "k": 173.0,
+   "p": 0.8,
+   "c": 6.0,
+   "f": 16.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -13.3,
+   "kcal_abs": -23.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -12,
+  "flags": [],
+  "note": "Retail, standard."
+ },
+ {
+  "n": "Olives",
+  "tali": {
+   "k": 145,
+   "p": 1,
+   "c": 6,
+   "f": 15
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-340",
+   "name": "Olives, green, in brine, drained, flesh and skin",
+   "k": 103.0,
+   "p": 0.9,
+   "c": 0.0,
+   "f": 11.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 40.8,
+   "kcal_abs": 42.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 13,
+  "flags": [],
+  "note": "Green olives in brine, drained 103. Tali 145 looks like olives in oil or a US value."
+ },
+ {
+  "n": "Sundried tomatoes",
+  "tali": {
+   "k": 210,
+   "p": 5,
+   "c": 24,
+   "f": 11
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 169384 (SR Legacy)",
+   "name": "Tomatoes, sun-dried, packed in oil, drained",
+   "k": 213.0,
+   "p": 5.1,
+   "c": 23.3,
+   "f": 14.1
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -1.4,
+   "kcal_abs": -3.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": -1,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Sun-dried packed in oil, drained. Dry-packed (168567) = 258. Name should say 'in oil'."
+ },
+ {
+  "n": "Banana (1 ~118g)",
+  "tali": {
+   "k": 89,
+   "p": 1.1,
+   "c": 23,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-318",
+   "name": "Bananas, flesh only",
+   "k": 81.0,
+   "p": 1.2,
+   "c": 20.3,
+   "f": 0.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 9.9,
+   "kcal_abs": 8.0,
+   "macros_out": []
+  },
+  "serving_g": 118,
+  "kcal_per_serving_delta": 9,
+  "flags": [],
+  "note": "Flesh only. Default 118 g is the USDA medium banana; check whether that is peeled weight (it is in USDA)."
+ },
+ {
+  "n": "Apple (1 ~150g)",
+  "tali": {
+   "k": 52,
+   "p": 0.3,
+   "c": 14,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-319",
+   "name": "Apples, eating, raw, flesh and skin",
+   "k": 51.0,
+   "p": 0.6,
+   "c": 11.6,
+   "f": 0.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 2.0,
+   "kcal_abs": 1.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Orange (1 ~130g)",
+  "tali": {
+   "k": 47,
+   "p": 0.9,
+   "c": 12,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-327",
+   "name": "Oranges, flesh only",
+   "k": 36.0,
+   "p": 0.8,
+   "c": 8.2,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 30.6,
+   "kcal_abs": 11.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 130,
+  "kcal_per_serving_delta": 14,
+  "flags": [],
+  "note": "Flesh only. Default 130 g should be peeled weight."
+ },
+ {
+  "n": "Pear",
+  "tali": {
+   "k": 57,
+   "p": 0.4,
+   "c": 15,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-321",
+   "name": "Pears, raw, flesh and skin",
+   "k": 43.0,
+   "p": 0.3,
+   "c": 10.9,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 32.6,
+   "kcal_abs": 14.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 21,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Peach",
+  "tali": {
+   "k": 39,
+   "p": 0.9,
+   "c": 10,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-299",
+   "name": "Peaches, raw, flesh and skin",
+   "k": 33.0,
+   "p": 1.0,
+   "c": 7.6,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 18.2,
+   "kcal_abs": 6.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 7,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Plum",
+  "tali": {
+   "k": 46,
+   "p": 0.7,
+   "c": 11,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-372",
+   "name": "Plums, dessert, flesh and skin, raw",
+   "k": 41.0,
+   "p": 0.6,
+   "c": 9.7,
+   "f": 0.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 12.2,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Kiwi",
+  "tali": {
+   "k": 61,
+   "p": 1.1,
+   "c": 15,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-371",
+   "name": "Kiwi fruit, flesh only, raw",
+   "k": 44.0,
+   "p": 0.8,
+   "c": 8.6,
+   "f": 0.9
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 38.6,
+   "kcal_abs": 17.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 75,
+  "kcal_per_serving_delta": 13,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pineapple",
+  "tali": {
+   "k": 50,
+   "p": 0.5,
+   "c": 13,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-376",
+   "name": "Pineapple, flesh only, raw",
+   "k": 45.0,
+   "p": 0.5,
+   "c": 11.4,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 11.1,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": 5,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Mango",
+  "tali": {
+   "k": 60,
+   "p": 0.8,
+   "c": 15,
+   "f": 0.4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-378",
+   "name": "Mangoes, ripe, flesh only, raw",
+   "k": 48.0,
+   "p": 0.7,
+   "c": 10.7,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 25.0,
+   "kcal_abs": 12.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 14,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Melon",
+  "tali": {
+   "k": 34,
+   "p": 0.8,
+   "c": 8,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-354",
+   "name": "Melon, flesh only, average",
+   "k": 24.0,
+   "p": 0.5,
+   "c": 5.5,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 41.7,
+   "kcal_abs": 10.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 15,
+  "flags": [],
+  "note": "Average melon 24; cantaloupe 14-339 = 19. Tali 34 = USDA cantaloupe."
+ },
+ {
+  "n": "Watermelon",
+  "tali": {
+   "k": 30,
+   "p": 0.6,
+   "c": 8,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-296",
+   "name": "Melon, watermelon, flesh only",
+   "k": 31.0,
+   "p": 0.5,
+   "c": 7.1,
+   "f": 0.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.2,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Strawberries",
+  "tali": {
+   "k": 32,
+   "p": 0.7,
+   "c": 8,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-324",
+   "name": "Strawberries, raw",
+   "k": 30.0,
+   "p": 0.6,
+   "c": 6.1,
+   "f": 0.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.7,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 2,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Blueberries",
+  "tali": {
+   "k": 57,
+   "p": 0.7,
+   "c": 14,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-325",
+   "name": "Blueberries",
+   "k": 40.0,
+   "p": 0.9,
+   "c": 9.1,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 42.5,
+   "kcal_abs": 17.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 14,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Raspberries",
+  "tali": {
+   "k": 52,
+   "p": 1.2,
+   "c": 12,
+   "f": 0.7
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-375",
+   "name": "Raspberries, raw",
+   "k": 25.0,
+   "p": 0.8,
+   "c": 5.1,
+   "f": 0.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 108.0,
+   "kcal_abs": 27.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 22,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Mixed berries",
+  "tali": {
+   "k": 43,
+   "p": 1.1,
+   "c": 10,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 80,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "No mixed-berry row in CoFID. CoFID single berries: raspberry 25, blackberry 27, strawberry 30, blueberry 40, so Tali 43 is likely high."
+ },
+ {
+  "n": "Grapes",
+  "tali": {
+   "k": 69,
+   "p": 0.7,
+   "c": 18,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-350",
+   "name": "Grapes, average",
+   "k": 65.0,
+   "p": 0.7,
+   "c": 16.1,
+   "f": 0.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.2,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Cherries",
+  "tali": {
+   "k": 63,
+   "p": 1.1,
+   "c": 16,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-382",
+   "name": "Cherries, flesh and skin, raw",
+   "k": 63.1,
+   "p": 1.2,
+   "c": 14.6,
+   "f": 0.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.2,
+   "kcal_abs": -0.1,
+   "macros_out": []
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Flesh and skin (stones excluded)."
+ },
+ {
+  "n": "Pomegranate",
+  "tali": {
+   "k": 83,
+   "p": 1.7,
+   "c": 19,
+   "f": 1.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-226",
+   "name": "Pomegranate, flesh and pips",
+   "k": 51.0,
+   "p": 1.3,
+   "c": 11.8,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 62.7,
+   "kcal_abs": 32.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 80,
+  "kcal_per_serving_delta": 26,
+  "flags": [],
+  "note": "Flesh and pips."
+ },
+ {
+  "n": "Dates",
+  "tali": {
+   "k": 277,
+   "p": 1.8,
+   "c": 75,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-394",
+   "name": "Dates, dried, flesh and skin",
+   "k": 235.0,
+   "p": 2.4,
+   "c": 58.7,
+   "f": 0.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 17.9,
+   "kcal_abs": 42.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 10,
+  "flags": [],
+  "note": "Dried dates 235. Tali 277 = USDA Medjool. Name Medjool vs dried."
+ },
+ {
+  "n": "Raisins / sultanas",
+  "tali": {
+   "k": 299,
+   "p": 3,
+   "c": 79,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-393",
+   "name": "Raisins, dried",
+   "k": 256.0,
+   "p": 3.0,
+   "c": 62.6,
+   "f": 1.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 16.8,
+   "kcal_abs": 43.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 13,
+  "flags": [],
+  "note": "Raisins 256; sultanas 14-263 = 275. Tali 299 = USDA."
+ },
+ {
+  "n": "Dried apricots",
+  "tali": {
+   "k": 240,
+   "p": 3.4,
+   "c": 63,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-392",
+   "name": "Apricots, ready-to-eat, semi-dried",
+   "k": 161.0,
+   "p": 2.2,
+   "c": 39.4,
+   "f": 0.5
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 49.1,
+   "kcal_abs": 79.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 24,
+  "flags": [],
+  "note": "UK 'dried apricots' are mostly ready-to-eat semi-dried (161). Fully dried 14-031 = 188. Tali 240 = USDA dried."
+ },
+ {
+  "n": "Lemon",
+  "tali": {
+   "k": 29,
+   "p": 1.1,
+   "c": 9,
+   "f": 0.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-128",
+   "name": "Lemons, whole, without pips",
+   "k": 19.0,
+   "p": 1.0,
+   "c": 3.2,
+   "f": 0.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 52.6,
+   "kcal_abs": 10.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 6,
+  "flags": [
+   "energy-gap-explained-fibre-in-carbs"
+  ],
+  "note": "Whole lemon without pips. Negligible portions."
+ },
+ {
+  "n": "Grapefruit",
+  "tali": {
+   "k": 42,
+   "p": 0.8,
+   "c": 11,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-384",
+   "name": "Grapefruit, flesh only, raw",
+   "k": 34.1,
+   "p": 0.9,
+   "c": 6.9,
+   "f": 0.5
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 23.2,
+   "kcal_abs": 7.9,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": 9,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Peanut butter",
+  "tali": {
+   "k": 588,
+   "p": 25,
+   "c": 20,
+   "f": 50
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-892",
+   "name": "Peanut butter, smooth",
+   "k": 607.0,
+   "p": 22.8,
+   "c": 13.1,
+   "f": 51.8
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -3.1,
+   "kcal_abs": -19.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": -4,
+  "flags": [],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Almonds",
+  "tali": {
+   "k": 579,
+   "p": 21,
+   "c": 22,
+   "f": 50
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-896",
+   "name": "Almonds, whole kernels",
+   "k": 554.0,
+   "p": 21.2,
+   "c": 5.3,
+   "f": 49.9
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 4.5,
+   "kcal_abs": 25.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "kcal agrees. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre. Measured metabolisable energy of almonds may be below Atwater; not verified in this audit."
+ },
+ {
+  "n": "Walnuts",
+  "tali": {
+   "k": 654,
+   "p": 15,
+   "c": 14,
+   "f": 65
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-879",
+   "name": "Walnuts, kernel only",
+   "k": 688.0,
+   "p": 14.7,
+   "c": 3.3,
+   "f": 68.5
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -4.9,
+   "kcal_abs": -34.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": -8,
+  "flags": [],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Cashews",
+  "tali": {
+   "k": 553,
+   "p": 18,
+   "c": 30,
+   "f": 44
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-811",
+   "name": "Cashew nuts, kernel only, plain",
+   "k": 573.0,
+   "p": 17.7,
+   "c": 18.1,
+   "f": 48.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -3.5,
+   "kcal_abs": -20.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": -5,
+  "flags": [],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Pistachios",
+  "tali": {
+   "k": 560,
+   "p": 20,
+   "c": 28,
+   "f": 45
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-840",
+   "name": "Pistachio nuts, kernel only, roasted and salted",
+   "k": 601.0,
+   "p": 17.9,
+   "c": 8.2,
+   "f": 55.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -6.8,
+   "kcal_abs": -41.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": -10,
+  "flags": [],
+  "note": "Roasted & salted. CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Mixed nuts",
+  "tali": {
+   "k": 607,
+   "p": 20,
+   "c": 20,
+   "f": 54
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-880",
+   "name": "Nuts, mixed",
+   "k": 581.0,
+   "p": 23.8,
+   "c": 11.6,
+   "f": 49.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 4.5,
+   "kcal_abs": 26.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "CoFID carbs are available carbohydrate (excl. fibre, as monosaccharide equivalents); Tali carbs look like USDA 'by difference' which includes fibre."
+ },
+ {
+  "n": "Peanuts",
+  "tali": {
+   "k": 567,
+   "p": 26,
+   "c": 16,
+   "f": 49
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-877",
+   "name": "Peanuts, kernel only, plain, unsalted",
+   "k": 564.0,
+   "p": 25.8,
+   "c": 12.5,
+   "f": 46.0
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 0.5,
+   "kcal_abs": 3.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": "Plain unsalted."
+ },
+ {
+  "n": "Sunflower seeds",
+  "tali": {
+   "k": 584,
+   "p": 21,
+   "c": 20,
+   "f": 51
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-845",
+   "name": "Sunflower seeds",
+   "k": 576.0,
+   "p": 19.8,
+   "c": 18.6,
+   "f": 47.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.4,
+   "kcal_abs": 8.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pumpkin seeds",
+  "tali": {
+   "k": 559,
+   "p": 30,
+   "c": 11,
+   "f": 49
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-842",
+   "name": "Pumpkin seeds",
+   "k": 565.0,
+   "p": 24.4,
+   "c": 15.2,
+   "f": 45.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -1.1,
+   "kcal_abs": -6.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chia seeds",
+  "tali": {
+   "k": 486,
+   "p": 17,
+   "c": 42,
+   "f": 31
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170554 (SR Legacy)",
+   "name": "Seeds, chia seeds, dried",
+   "k": 486.0,
+   "p": 16.5,
+   "c": 42.1,
+   "f": 30.7
+  },
+  "status": "ok",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Not in CoFID. USDA carbs 42 include 34.4 g fibre; available carbs ~8 g. Showing 42 g carbs is misleading for UK users."
+ },
+ {
+  "n": "Tahini",
+  "tali": {
+   "k": 595,
+   "p": 17,
+   "c": 21,
+   "f": 54
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-847",
+   "name": "Tahini paste",
+   "k": 607.0,
+   "p": 18.5,
+   "c": 0.9,
+   "f": 58.9
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -2.0,
+   "kcal_abs": -12.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "CoFID carbs 0.9 vs Tali 21 (fibre plus a US by-difference value)."
+ },
+ {
+  "n": "Olive oil (tbsp ~14g)",
+  "tali": {
+   "k": 884,
+   "p": 0,
+   "c": 0,
+   "f": 100
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-038",
+   "name": "Oil, olive",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.7,
+   "kcal_abs": -15.0,
+   "macros_out": []
+  },
+  "serving_g": 14,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "14 g = 1 tbsp (15 ml x 0.91 g/ml). Correct."
+ },
+ {
+  "n": "Vegetable oil (tbsp ~14g)",
+  "tali": {
+   "k": 884,
+   "p": 0,
+   "c": 0,
+   "f": 100
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-686",
+   "name": "Oil, vegetable, average",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.7,
+   "kcal_abs": -15.0,
+   "macros_out": []
+  },
+  "serving_g": 14,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Coconut oil (tbsp ~14g)",
+  "tali": {
+   "k": 890,
+   "p": 0,
+   "c": 0,
+   "f": 100
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-031",
+   "name": "Oil, coconut",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.0,
+   "kcal_abs": -9.0,
+   "macros_out": []
+  },
+  "serving_g": 14,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Ketchup (tbsp ~17g)",
+  "tali": {
+   "k": 101,
+   "p": 1.2,
+   "c": 24,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-709",
+   "name": "Tomato ketchup",
+   "k": 115.0,
+   "p": 1.6,
+   "c": 28.6,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -12.2,
+   "kcal_abs": -14.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 17,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Brand-dependent (reduced-sugar ketchups are ~50% lower)."
+ },
+ {
+  "n": "Mayonnaise",
+  "tali": {
+   "k": 680,
+   "p": 1,
+   "c": 1.3,
+   "f": 75
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-654",
+   "name": "Mayonnaise, standard, retail",
+   "k": 686.0,
+   "p": 1.1,
+   "c": 2.4,
+   "f": 74.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.9,
+   "kcal_abs": -6.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Light mayonnaise",
+  "tali": {
+   "k": 290,
+   "p": 0.9,
+   "c": 9,
+   "f": 27
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-679",
+   "name": "Mayonnaise, reduced fat",
+   "k": 288.0,
+   "p": 1.0,
+   "c": 8.2,
+   "f": 28.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.7,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Brown sauce",
+  "tali": {
+   "k": 120,
+   "p": 1,
+   "c": 28,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 15,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "CoFID 2021 only has reduced salt/sugar brown sauce (17-678 = 88); no standard brown sauce row."
+ },
+ {
+  "n": "BBQ sauce",
+  "tali": {
+   "k": 170,
+   "p": 1,
+   "c": 40,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-705",
+   "name": "Barbecue sauce",
+   "k": 140.0,
+   "p": 1.0,
+   "c": 36.1,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 21.4,
+   "kcal_abs": 30.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Mustard",
+  "tali": {
+   "k": 165,
+   "p": 8,
+   "c": 15,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-364",
+   "name": "Mustard, smooth",
+   "k": 139.0,
+   "p": 7.1,
+   "c": 9.7,
+   "f": 8.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 18.7,
+   "kcal_abs": 26.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 10,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": "Smooth (English/Dijon-type) 139; wholegrain 17-365 = 140. American yellow mustard is far lower. Name the type."
+ },
+ {
+  "n": "Sweet chilli sauce",
+  "tali": {
+   "k": 230,
+   "p": 0.5,
+   "c": 56,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 20,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "CoFID 'chilli sauce' (17-719, 40 kcal) is a hot sauce, not sweet chilli. No match."
+ },
+ {
+  "n": "Soy sauce (tbsp ~16g)",
+  "tali": {
+   "k": 60,
+   "p": 8,
+   "c": 5,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-721",
+   "name": "Soy sauce, light and dark varieties",
+   "k": 79.0,
+   "p": 3.0,
+   "c": 17.9,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -24.1,
+   "kcal_abs": -19.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 16,
+  "kcal_per_serving_delta": -3,
+  "flags": [],
+  "note": "UK light+dark average (8 samples): 79/3.0/17.9. Tali 60/8/5 = USDA shoyu (53/8.1/4.9). Type-dependent."
+ },
+ {
+  "n": "Sriracha",
+  "tali": {
+   "k": 100,
+   "p": 2,
+   "c": 19,
+   "f": 1
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 171186 (SR Legacy)",
+   "name": "Sauce, hot chile, sriracha",
+   "k": 93.0,
+   "p": 1.9,
+   "c": 19.2,
+   "f": 0.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.5,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pesto",
+  "tali": {
+   "k": 450,
+   "p": 5,
+   "c": 6,
+   "f": 45
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-622",
+   "name": "Pesto, green",
+   "k": 420.0,
+   "p": 5.6,
+   "c": 3.9,
+   "f": 42.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 7.1,
+   "kcal_abs": 30.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 6,
+  "flags": [],
+  "note": "Green pesto."
+ },
+ {
+  "n": "Gravy (made)",
+  "tali": {
+   "k": 35,
+   "p": 0.8,
+   "c": 5,
+   "f": 1.3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-725",
+   "name": "Gravy instant granules, made up with water",
+   "k": 30.0,
+   "p": 0.3,
+   "c": 4.7,
+   "f": 1.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 16.7,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 70,
+  "kcal_per_serving_delta": 4,
+  "flags": [],
+  "note": "Instant granules made up."
+ },
+ {
+  "n": "Salad dressing / vinaigrette",
+  "tali": {
+   "k": 350,
+   "p": 0.5,
+   "c": 8,
+   "f": 35
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-701",
+   "name": "Dressing, French",
+   "k": 335.0,
+   "p": 0.3,
+   "c": 11.7,
+   "f": 32.2
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 4.5,
+   "kcal_abs": 15.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": "French dressing."
+ },
+ {
+  "n": "Honey (tbsp ~21g)",
+  "tali": {
+   "k": 304,
+   "p": 0.3,
+   "c": 82,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-050",
+   "name": "Honey",
+   "k": 288.0,
+   "p": 0.4,
+   "c": 76.4,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.6,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 21,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Jam",
+  "tali": {
+   "k": 260,
+   "p": 0.4,
+   "c": 64,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-073",
+   "name": "Jam, fruit with edible seeds",
+   "k": 261.0,
+   "p": 0.6,
+   "c": 69.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.4,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Marmalade",
+  "tali": {
+   "k": 260,
+   "p": 0.2,
+   "c": 65,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-078",
+   "name": "Marmalade",
+   "k": 261.0,
+   "p": 0.1,
+   "c": 69.5,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.4,
+   "kcal_abs": -1.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Nutella",
+  "tali": {
+   "k": 539,
+   "p": 6,
+   "c": 57,
+   "f": 31
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-687",
+   "name": "Chocolate nut spread",
+   "k": 549.0,
+   "p": 6.2,
+   "c": 60.5,
+   "f": 33.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.8,
+   "kcal_abs": -10.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Generic chocolate nut spread; Nutella label (OFF 8000500327388) 539/6.3/57.5/30.9 = Tali."
+ },
+ {
+  "n": "Maple syrup",
+  "tali": {
+   "k": 260,
+   "p": 0,
+   "c": 67,
+   "f": 0
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 169661 (SR Legacy)",
+   "name": "Syrups, maple",
+   "k": 260.0,
+   "p": 0.0,
+   "c": 67.0,
+   "f": 0.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Marmite",
+  "tali": {
+   "k": 250,
+   "p": 34,
+   "c": 24,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-517",
+   "name": "Yeast extract",
+   "k": 180.0,
+   "p": 40.7,
+   "c": 3.5,
+   "f": 0.4
+  },
+  "status": "fix",
+  "recommend": "keep-label",
+  "diff": {
+   "kcal_pct": 38.9,
+   "kcal_abs": 70.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 4,
+  "kcal_per_serving_delta": 3,
+  "flags": [],
+  "note": "Generic CoFID yeast extract 180/40.7/3.5 is an old analysis. Marmite label (OFF 5000184201199) 260/34/30/0.5 is close to Tali. Keep the label."
+ },
+ {
+  "n": "Sugar (tsp ~4g)",
+  "tali": {
+   "k": 387,
+   "p": 0,
+   "c": 100,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-063",
+   "name": "Sugar, white",
+   "k": 394.0,
+   "p": 0.0,
+   "c": 105.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.8,
+   "kcal_abs": -7.0,
+   "macros_out": []
+  },
+  "serving_g": 4,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "CoFID CHO 105 = sucrose as monosaccharide equivalents."
+ },
+ {
+  "n": "Pizza, cheese & tomato",
+  "tali": {
+   "k": 250,
+   "p": 11,
+   "c": 30,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-936",
+   "name": "Pizza, cheese and tomato, retail",
+   "k": 272.0,
+   "p": 12.2,
+   "c": 36.1,
+   "f": 9.8
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -8.1,
+   "kcal_abs": -22.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": -55,
+  "flags": [],
+  "note": "Retail cheese & tomato."
+ },
+ {
+  "n": "Pizza, pepperoni",
+  "tali": {
+   "k": 280,
+   "p": 12,
+   "c": 30,
+   "f": 13
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1015",
+   "name": "Pizza, meat topped, retail and takeaway",
+   "k": 255.0,
+   "p": 13.2,
+   "c": 29.1,
+   "f": 10.3
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 9.8,
+   "kcal_abs": 25.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 62,
+  "flags": [],
+  "note": "Meat-topped, retail & takeaway."
+ },
+ {
+  "n": "Lasagne (ready meal)",
+  "tali": {
+   "k": 130,
+   "p": 7,
+   "c": 12,
+   "f": 6
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-523",
+   "name": "Lasagne, retail, reheated",
+   "k": 143.0,
+   "p": 7.4,
+   "c": 15.7,
+   "f": 6.1
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -9.1,
+   "kcal_abs": -13.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 400,
+  "kcal_per_serving_delta": -52,
+  "flags": [],
+  "note": "Retail, reheated."
+ },
+ {
+  "n": "Shepherd's / cottage pie",
+  "tali": {
+   "k": 120,
+   "p": 7,
+   "c": 11,
+   "f": 5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-494",
+   "name": "Pie, Cottage/Shepherd's, reheated",
+   "k": 111.0,
+   "p": 4.5,
+   "c": 11.9,
+   "f": 5.4
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 8.1,
+   "kcal_abs": 9.0,
+   "macros_out": [
+    "p"
+   ]
+  },
+  "serving_g": 400,
+  "kcal_per_serving_delta": 36,
+  "flags": [],
+  "note": "Retail, reheated."
+ },
+ {
+  "n": "Macaroni cheese",
+  "tali": {
+   "k": 160,
+   "p": 6,
+   "c": 16,
+   "f": 8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-954",
+   "name": "Macaroni cheese, homemade",
+   "k": 183.0,
+   "p": 7.8,
+   "c": 19.8,
+   "f": 8.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -12.6,
+   "kcal_abs": -23.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 300,
+  "kcal_per_serving_delta": -69,
+  "flags": [],
+  "note": "Homemade (no retail row)."
+ },
+ {
+  "n": "Spaghetti bolognese",
+  "tali": {
+   "k": 120,
+   "p": 7,
+   "c": 13,
+   "f": 4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-524",
+   "name": "Spaghetti bolognese, retail, reheated, with spaghetti",
+   "k": 126.0,
+   "p": 6.6,
+   "c": 20.0,
+   "f": 2.8
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -4.8,
+   "kcal_abs": -6.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": -21,
+  "flags": [],
+  "note": "Retail with spaghetti."
+ },
+ {
+  "n": "Chicken tikka masala",
+  "tali": {
+   "k": 150,
+   "p": 11,
+   "c": 6,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-296",
+   "name": "Curry, chicken tikka masala, retail, reheated",
+   "k": 156.0,
+   "p": 12.4,
+   "c": 4.9,
+   "f": 9.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -3.8,
+   "kcal_abs": -6.0,
+   "macros_out": []
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": -21,
+  "flags": [],
+  "note": "Retail, reheated (sauce+chicken, no rice)."
+ },
+ {
+  "n": "Chicken korma",
+  "tali": {
+   "k": 180,
+   "p": 10,
+   "c": 8,
+   "f": 12
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-565",
+   "name": "Curry, chicken korma, homemade",
+   "k": 127.0,
+   "p": 14.6,
+   "c": 4.6,
+   "f": 5.1
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 41.7,
+   "kcal_abs": 53.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": 186,
+  "flags": [],
+  "note": "CoFID only has homemade korma (127). Takeaway/retail korma is likely richer; CoFID chicken curry takeaway average 19-322 = 145. Tali 180 unsourced."
+ },
+ {
+  "n": "Beef curry",
+  "tali": {
+   "k": 160,
+   "p": 12,
+   "c": 6,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-488",
+   "name": "Curry, beef, retail, reheated",
+   "k": 137.0,
+   "p": 13.5,
+   "c": 6.3,
+   "f": 6.6
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 16.8,
+   "kcal_abs": 23.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": 80,
+  "flags": [],
+  "note": "Retail, reheated."
+ },
+ {
+  "n": "Chicken jalfrezi",
+  "tali": {
+   "k": 120,
+   "p": 12,
+   "c": 7,
+   "f": 5
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 350,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "No jalfrezi in CoFID. CoFID chicken curry, takeaway average 19-322 = 145/11.7/2.5/9.8 for context."
+ },
+ {
+  "n": "Chow mein",
+  "tali": {
+   "k": 130,
+   "p": 6,
+   "c": 18,
+   "f": 4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-321",
+   "name": "Chow mein, chicken, takeaway",
+   "k": 147.0,
+   "p": 8.5,
+   "c": 12.7,
+   "f": 7.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -11.6,
+   "kcal_abs": -17.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": -60,
+  "flags": [],
+  "note": "Chicken chow mein, takeaway."
+ },
+ {
+  "n": "Sweet & sour chicken",
+  "tali": {
+   "k": 150,
+   "p": 7,
+   "c": 22,
+   "f": 4
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -22.7,
+   "kcal_abs": -44.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 350,
+  "kcal_per_serving_delta": -154,
+  "flags": [],
+  "note": "Takeaway (usually battered) 194/10 fat. Tali 150/4 fat understates."
+ },
+ {
+  "n": "Spring roll",
+  "tali": {
+   "k": 220,
+   "p": 5,
+   "c": 25,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-327",
+   "name": "Spring rolls, meat, takeaway",
+   "k": 242.0,
+   "p": 6.5,
+   "c": 18.2,
+   "f": 16.4
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -9.1,
+   "kcal_abs": -22.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -11,
+  "flags": [],
+  "note": "Meat spring rolls, takeaway."
+ },
+ {
+  "n": "Samosa",
+  "tali": {
+   "k": 260,
+   "p": 5,
+   "c": 28,
+   "f": 14
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "15-305",
+   "name": "Samosas, vegetable, retail",
+   "k": 217.0,
+   "p": 5.1,
+   "c": 30.0,
+   "f": 9.3
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 19.8,
+   "kcal_abs": 43.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 26,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Vegetable samosa, retail 217; meat samosa takeaway 19-326 = 272. Name the filling."
+ },
+ {
+  "n": "Onion bhaji",
+  "tali": {
+   "k": 290,
+   "p": 6,
+   "c": 30,
+   "f": 16
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "15-828",
+   "name": "Pakora/bhajia, onion, fried in vegetable oil, homemade",
+   "k": 270.0,
+   "p": 11.2,
+   "c": 24.6,
+   "f": 14.7
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 7.4,
+   "kcal_abs": 20.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": 10,
+  "flags": [],
+  "note": "Onion pakora/bhaji, homemade; retail vegetable pakora 15-653 = 238."
+ },
+ {
+  "n": "Doner kebab meat",
+  "tali": {
+   "k": 215,
+   "p": 15,
+   "c": 5,
+   "f": 15
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-539",
+   "name": "Doner kebabs, meat only",
+   "k": 377.0,
+   "p": 23.5,
+   "c": 0.0,
+   "f": 31.4
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -43.0,
+   "kcal_abs": -162.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -243,
+  "flags": [],
+  "note": "Doner meat only 377/23.5/0/31.4. Tali 215/15/5/15 is ~43% low. Doner in pitta with salad 19-526 = 248."
+ },
+ {
+  "n": "Cheeseburger, fast food",
+  "tali": {
+   "k": 250,
+   "p": 13,
+   "c": 30,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-545",
+   "name": "Burger, cheeseburger, takeaway",
+   "k": 254.0,
+   "p": 13.6,
+   "c": 28.3,
+   "f": 10.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.6,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 120,
+  "kcal_per_serving_delta": -5,
+  "flags": [],
+  "note": "Takeaway cheeseburger."
+ },
+ {
+  "n": "Chicken burger, fast food",
+  "tali": {
+   "k": 240,
+   "p": 13,
+   "c": 26,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-315",
+   "name": "Burger, chicken, takeaway",
+   "k": 235.0,
+   "p": 12.5,
+   "c": 23.4,
+   "f": 10.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.1,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "Takeaway chicken burger."
+ },
+ {
+  "n": "Hot dog (sausage + bun)",
+  "tali": {
+   "k": 250,
+   "p": 10,
+   "c": 22,
+   "f": 14
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-581",
+   "name": "Frankfurter with bun",
+   "k": 264.0,
+   "p": 10.7,
+   "c": 35.6,
+   "f": 9.8
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": -5.3,
+   "kcal_abs": -14.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 100,
+  "kcal_per_serving_delta": -14,
+  "flags": [],
+  "note": "Frankfurter with bun."
+ },
+ {
+  "n": "Meatballs (in sauce)",
+  "tali": {
+   "k": 160,
+   "p": 10,
+   "c": 8,
+   "f": 10
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-613",
+   "name": "Meatballs, pork and beef, in tomato sauce, homemade",
+   "k": 123.0,
+   "p": 10.0,
+   "c": 4.6,
+   "f": 7.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 30.1,
+   "kcal_abs": 37.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 56,
+  "flags": [],
+  "note": "Pork+beef meatballs in tomato sauce, homemade."
+ },
+ {
+  "n": "Fish & chips",
+  "tali": {
+   "k": 230,
+   "p": 9,
+   "c": 24,
+   "f": 12
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "keep",
+  "diff": null,
+  "serving_g": 300,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "No combined row. Components: cod in batter takeaway 16-368 = 240, chip-shop chips 13-485 = 214, so any mix is 214-240/100 g; Tali 230 sits in that range. Default 300 g is small for a UK chip-shop portion (not verified)."
+ },
+ {
+  "n": "Sushi, salmon set",
+  "tali": {
+   "k": 145,
+   "p": 5,
+   "c": 30,
+   "f": 1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "16-361",
+   "name": "Sushi, salmon nigiri",
+   "k": 152.0,
+   "p": 8.7,
+   "c": 25.2,
+   "f": 2.5
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -4.6,
+   "kcal_abs": -7.0,
+   "macros_out": [
+    "p",
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": -10,
+  "flags": [],
+  "note": "Salmon nigiri. A 'set' with maki differs."
+ },
+ {
+  "n": "Tomato soup",
+  "tali": {
+   "k": 55,
+   "p": 1,
+   "c": 8,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-652",
+   "name": "Soup, cream of tomato, canned",
+   "k": 51.0,
+   "p": 0.9,
+   "c": 7.8,
+   "f": 2.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.8,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 300,
+  "kcal_per_serving_delta": 12,
+  "flags": [],
+  "note": "Cream of tomato, canned. Chilled carton 17-636 = 37."
+ },
+ {
+  "n": "Chicken soup",
+  "tali": {
+   "k": 50,
+   "p": 2.5,
+   "c": 5,
+   "f": 2.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-695",
+   "name": "Soup, chicken, cream of, canned",
+   "k": 58.0,
+   "p": 1.7,
+   "c": 4.5,
+   "f": 3.8
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -13.8,
+   "kcal_abs": -8.0,
+   "macros_out": []
+  },
+  "serving_g": 300,
+  "kcal_per_serving_delta": -24,
+  "flags": [],
+  "note": "Cream of chicken, canned."
+ },
+ {
+  "n": "McDonald's Big Mac",
+  "tali": {
+   "k": 257,
+   "p": 13,
+   "c": 26,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-493",
+   "name": "Burger, Big Mac, takeaway",
+   "k": 232.0,
+   "p": 13.1,
+   "c": 20.9,
+   "f": 11.2
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 10.8,
+   "kcal_abs": 25.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 209,
+  "kcal_per_serving_delta": 52,
+  "flags": [],
+  "note": "CoFID Big Mac takeaway 232/13.1/20.9/11.2 (older sampling). Check current McDonald's UK data."
+ },
+ {
+  "n": "McDonald's McChicken Sandwich",
+  "tali": {
+   "k": 240,
+   "p": 16,
+   "c": 33,
+   "f": 7
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 167,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check McDonald's UK published data. CoFID generic chicken burger 19-315 = 235."
+ },
+ {
+  "n": "McDonald's Chicken McNuggets (6)",
+  "tali": {
+   "k": 271,
+   "p": 15,
+   "c": 17,
+   "f": 15
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 96,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check McDonald's UK data. CoFID coated chicken pieces takeaway 18-501 = 267/18.5/17.6/14.1 for context."
+ },
+ {
+  "n": "McDonald's Large Fries",
+  "tali": {
+   "k": 312,
+   "p": 5,
+   "c": 41,
+   "f": 16
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-486",
+   "name": "Potato chips, fine cut, from fast food outlets",
+   "k": 290.0,
+   "p": 3.5,
+   "c": 39.7,
+   "f": 14.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.6,
+   "kcal_abs": 22.0,
+   "macros_out": []
+  },
+  "serving_g": 154,
+  "kcal_per_serving_delta": 34,
+  "flags": [],
+  "note": "Fast-food fine-cut chips (generic)."
+ },
+ {
+  "n": "McDonald's Egg McMuffin",
+  "tali": {
+   "k": 221,
+   "p": 17,
+   "c": 28,
+   "f": 11
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 136,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Energy inconsistent: 221 kcal vs 4P+4C+9F = 279 (-26%). Check McDonald's UK data."
+ },
+ {
+  "n": "McDonald's Filet-O-Fish",
+  "tali": {
+   "k": 241,
+   "p": 15,
+   "c": 31,
+   "f": 9
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 140,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check McDonald's UK data."
+ },
+ {
+  "n": "McDonald's Cheeseburger",
+  "tali": {
+   "k": 261,
+   "p": 15,
+   "c": 32,
+   "f": 9
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-545",
+   "name": "Burger, cheeseburger, takeaway",
+   "k": 254.0,
+   "p": 13.6,
+   "c": 28.3,
+   "f": 10.4
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.8,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 115,
+  "kcal_per_serving_delta": 8,
+  "flags": [],
+  "note": "Takeaway cheeseburger (generic)."
+ },
+ {
+  "n": "Nando's Quarter Chicken (plain)",
+  "tali": {
+   "k": 148,
+   "p": 32,
+   "c": 0,
+   "f": 9
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 230,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent",
+   "bone-or-skin-basis-unclear"
+  ],
+  "note": "Energy inconsistent: 148 kcal vs 4P+9F = 209 (-41%). Check Nando's UK data; also clarify whether the weight includes bone."
+ },
+ {
+  "n": "Nando's Half Chicken (plain)",
+  "tali": {
+   "k": 148,
+   "p": 32,
+   "c": 0,
+   "f": 9
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 460,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent",
+   "bone-or-skin-basis-unclear"
+  ],
+  "note": "Same row as quarter chicken: energy inconsistent (-41%). Bone-in weight? Check Nando's UK data."
+ },
+ {
+  "n": "Nando's Peri-Peri Chips",
+  "tali": {
+   "k": 165,
+   "p": 4,
+   "c": 28,
+   "f": 10
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 200,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Energy inconsistent: 165 vs 218 (-32%). CoFID fast-food chips 13-486 = 290 for context."
+ },
+ {
+  "n": "Nando's Chicken Pitta",
+  "tali": {
+   "k": 171,
+   "p": 27,
+   "c": 27,
+   "f": 5
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 287,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Energy inconsistent: 171 vs 261 (-53%). Macros look per-serving or wrong."
+ },
+ {
+  "n": "KFC Original Recipe Chicken piece",
+  "tali": {
+   "k": 250,
+   "p": 22,
+   "c": 13,
+   "f": 16
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 152,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "bone-or-skin-basis-unclear"
+  ],
+  "note": "Check KFC UK data. CoFID coated chicken pieces takeaway 18-501 = 267. Weight with or without bone?"
+ },
+ {
+  "n": "KFC Zinger Burger",
+  "tali": {
+   "k": 227,
+   "p": 21,
+   "c": 36,
+   "f": 9
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 197,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Energy inconsistent: 227 vs 309 (-36%). Check KFC UK data."
+ },
+ {
+  "n": "KFC Fries (regular)",
+  "tali": {
+   "k": 309,
+   "p": 4,
+   "c": 37,
+   "f": 16
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "13-486",
+   "name": "Potato chips, fine cut, from fast food outlets",
+   "k": 290.0,
+   "p": 3.5,
+   "c": 39.7,
+   "f": 14.2
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 6.6,
+   "kcal_abs": 19.0,
+   "macros_out": []
+  },
+  "serving_g": 92,
+  "kcal_per_serving_delta": 17,
+  "flags": [],
+  "note": "Fast-food fine-cut chips (generic)."
+ },
+ {
+  "n": "Greggs Sausage Roll",
+  "tali": {
+   "k": 318,
+   "p": 11,
+   "c": 27,
+   "f": 19
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-468",
+   "name": "Sausage roll, flaky pastry, ready-to-eat, retail",
+   "k": 352.0,
+   "p": 8.4,
+   "c": 27.0,
+   "f": 24.1
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -9.7,
+   "kcal_abs": -34.0,
+   "macros_out": [
+    "p",
+    "f"
+   ]
+  },
+  "serving_g": 106,
+  "kcal_per_serving_delta": -36,
+  "flags": [],
+  "note": "Generic retail sausage roll; check Greggs published data."
+ },
+ {
+  "n": "Greggs Steak Bake",
+  "tali": {
+   "k": 347,
+   "p": 13,
+   "c": 30,
+   "f": 21
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 117,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check Greggs published data."
+ },
+ {
+  "n": "Greggs Cheese & Onion Bake",
+  "tali": {
+   "k": 373,
+   "p": 11,
+   "c": 33,
+   "f": 23
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 111,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check Greggs published data."
+ },
+ {
+  "n": "Greggs Yum Yum",
+  "tali": {
+   "k": 384,
+   "p": 5,
+   "c": 44,
+   "f": 22
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 81,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check Greggs published data."
+ },
+ {
+  "n": "Pot Noodle Chicken & Mushroom",
+  "tali": {
+   "k": 406,
+   "p": 9,
+   "c": 58,
+   "f": 14
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 90,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Tali values are per 100 g DRY (OFF 8714100076408 dry 430/9.8/58/17; as-prepared 141/3.2/19/5.7). Name must say 'dry' and the serving must be the whole pot, or users weighing a made-up pot (~300 g+) will overcount about 3x."
+ },
+ {
+  "n": "Pot Noodle Beef & Tomato",
+  "tali": {
+   "k": 400,
+   "p": 9,
+   "c": 57,
+   "f": 13
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 90,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "As above: per 100 g dry (OFF as-prepared 8714100076576 = 143). Name must say 'dry'."
+ },
+ {
+  "n": "Subway 6-inch Chicken Tikka",
+  "tali": {
+   "k": 160,
+   "p": 22,
+   "c": 47,
+   "f": 7
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 230,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Broken row: kcal 160/100 g but 4P+4C+9F = 339 (-112%). p/c/f look per sandwich, k per 100 g. Re-source from Subway UK."
+ },
+ {
+  "n": "Subway 6-inch Italian BMT",
+  "tali": {
+   "k": 180,
+   "p": 21,
+   "c": 46,
+   "f": 14
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 230,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Broken row: 180 vs 394 (-119%). p/c/f look per sandwich. Re-source."
+ },
+ {
+  "n": "Burger King Whopper",
+  "tali": {
+   "k": 228,
+   "p": 29,
+   "c": 51,
+   "f": 36
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "19-514",
+   "name": "Burger, Whopper, takeaway",
+   "k": 223.0,
+   "p": 10.4,
+   "c": 19.2,
+   "f": 12.1
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 2.2,
+   "kcal_abs": 5.0,
+   "macros_out": [
+    "p",
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 290,
+  "kcal_per_serving_delta": 14,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Broken row: kcal 228/100 g but p29/c51/f36 (= 644 kcal) are per-burger macros. CoFID Whopper takeaway 223/10.4/19.2/12.1. Every macro is 2-3x too high per 100 g."
+ },
+ {
+  "n": "Burger King Chicken Royale",
+  "tali": {
+   "k": 233,
+   "p": 21,
+   "c": 44,
+   "f": 20
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 210,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "energy-inconsistent"
+  ],
+  "note": "Broken row: 233 vs 440 (-89%). p/c/f look per burger. Re-source from Burger King UK."
+ },
+ {
+  "n": "Domino's Margherita slice",
+  "tali": {
+   "k": 225,
+   "p": 9,
+   "c": 31,
+   "f": 7
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 97,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check Domino's UK data. Generic CoFID retail cheese & tomato pizza 11-936 = 272."
+ },
+ {
+  "n": "Domino's Pepperoni slice",
+  "tali": {
+   "k": 265,
+   "p": 10,
+   "c": 31,
+   "f": 11
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 100,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Check Domino's UK data. CoFID meat-topped pizza 11-1015 = 255."
+ },
+ {
+  "n": "Crisps (bag ~25g)",
+  "tali": {
+   "k": 532,
+   "p": 6.6,
+   "c": 53,
+   "f": 34
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-671",
+   "name": "Potato crisps, fried in sunflower oil",
+   "k": 493.0,
+   "p": 6.2,
+   "c": 55.8,
+   "f": 28.8
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 7.9,
+   "kcal_abs": 39.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 10,
+  "flags": [],
+  "note": "Fried in sunflower oil."
+ },
+ {
+  "n": "Tortilla chips",
+  "tali": {
+   "k": 490,
+   "p": 7,
+   "c": 63,
+   "f": 23
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-644",
+   "name": "Tortilla chips fried in sunflower oil",
+   "k": 504.0,
+   "p": 7.2,
+   "c": 60.8,
+   "f": 27.4
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -2.8,
+   "kcal_abs": -14.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -4,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Pretzels",
+  "tali": {
+   "k": 380,
+   "p": 10,
+   "c": 80,
+   "f": 3
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 167555 (SR Legacy)",
+   "name": "Snacks, pretzels, hard, plain, salted",
+   "k": 384.0,
+   "p": 10.0,
+   "c": 80.4,
+   "f": 2.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.0,
+   "kcal_abs": -4.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Popcorn, plain",
+  "tali": {
+   "k": 387,
+   "p": 13,
+   "c": 78,
+   "f": 4
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 167959 (SR Legacy)",
+   "name": "Snacks, popcorn, air-popped",
+   "k": 387.0,
+   "p": 12.9,
+   "c": 77.8,
+   "f": 4.5
+  },
+  "status": "ok",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 0,
+  "flags": [
+   "state-or-type-not-named"
+  ],
+  "note": "Air-popped. UK 'plain' retail popcorn is usually oil-popped (CoFID salted retail 17-692 = 470). Name 'air-popped'. USDA carbs include 14.5 g fibre."
+ },
+ {
+  "n": "Milk chocolate (small bar ~45g)",
+  "tali": {
+   "k": 535,
+   "p": 7.6,
+   "c": 59,
+   "f": 30
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-648",
+   "name": "Chocolate, milk",
+   "k": 519.0,
+   "p": 7.3,
+   "c": 56.0,
+   "f": 31.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 3.1,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 45,
+  "kcal_per_serving_delta": 7,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Dark chocolate 70% (2 squares ~20g)",
+  "tali": {
+   "k": 598,
+   "p": 7.8,
+   "c": 46,
+   "f": 43
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170273 (SR Legacy)",
+   "name": "Chocolate, dark, 70-85% cacao solids",
+   "k": 598.0,
+   "p": 7.8,
+   "c": 45.9,
+   "f": 42.6
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "70-85% cacao. CoFID 'plain chocolate' (17-491, 510) is a lower-cocoa product."
+ },
+ {
+  "n": "Maltesers",
+  "tali": {
+   "k": 500,
+   "p": 7,
+   "c": 63,
+   "f": 24
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-651",
+   "name": "Maltesers and similar products",
+   "k": 476.0,
+   "p": 7.6,
+   "c": 63.0,
+   "f": 23.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 5.0,
+   "kcal_abs": 24.0,
+   "macros_out": []
+  },
+  "serving_g": 37,
+  "kcal_per_serving_delta": 9,
+  "flags": [],
+  "note": "OFF label 5000159546560 504/8.5/62/25."
+ },
+ {
+  "n": "Wine gums / Haribo",
+  "tali": {
+   "k": 340,
+   "p": 6.9,
+   "c": 77,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-107",
+   "name": "Fruit gums/jellies",
+   "k": 324.0,
+   "p": 6.5,
+   "c": 79.5,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 4.9,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 5,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Jaffa cake (1)",
+  "tali": {
+   "k": 370,
+   "p": 4,
+   "c": 72,
+   "f": 8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-739",
+   "name": "Jaffa cakes",
+   "k": 354.0,
+   "p": 4.4,
+   "c": 69.3,
+   "f": 8.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 4.5,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 12,
+  "kcal_per_serving_delta": 2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Digestive biscuit",
+  "tali": {
+   "k": 470,
+   "p": 6.5,
+   "c": 63,
+   "f": 21
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-799",
+   "name": "Biscuits, digestive, plain",
+   "k": 463.0,
+   "p": 6.2,
+   "c": 65.6,
+   "f": 21.3
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.5,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 15,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Chocolate digestive",
+  "tali": {
+   "k": 490,
+   "p": 6,
+   "c": 64,
+   "f": 23
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-807",
+   "name": "Biscuits, digestive, half coated in chocolate",
+   "k": 488.0,
+   "p": 6.3,
+   "c": 61.8,
+   "f": 25.7
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.4,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 17,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Hobnob",
+  "tali": {
+   "k": 470,
+   "p": 7,
+   "c": 64,
+   "f": 21
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-803",
+   "name": "Biscuits, digestive, with oats, plain",
+   "k": 480.0,
+   "p": 6.4,
+   "c": 66.4,
+   "f": 22.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -2.1,
+   "kcal_abs": -10.0,
+   "macros_out": []
+  },
+  "serving_g": 18,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": "Oat digestive proxy; Hobnobs label (OFF 5000168040004) 472/7.4/61.8/20.2 = Tali."
+ },
+ {
+  "n": "Rich tea biscuit",
+  "tali": {
+   "k": 450,
+   "p": 7,
+   "c": 75,
+   "f": 14
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-797",
+   "name": "Biscuits, semi-sweet",
+   "k": 444.0,
+   "p": 6.4,
+   "c": 75.4,
+   "f": 15.1
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.4,
+   "kcal_abs": 6.0,
+   "macros_out": []
+  },
+  "serving_g": 8,
+  "kcal_per_serving_delta": 0,
+  "flags": [],
+  "note": "Semi-sweet biscuits."
+ },
+ {
+  "n": "Shortbread",
+  "tali": {
+   "k": 520,
+   "p": 5.5,
+   "c": 60,
+   "f": 29
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-802",
+   "name": "Shortbread",
+   "k": 515.0,
+   "p": 5.3,
+   "c": 62.2,
+   "f": 29.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.0,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 20,
+  "kcal_per_serving_delta": 1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Cream cracker",
+  "tali": {
+   "k": 430,
+   "p": 9,
+   "c": 68,
+   "f": 13
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-820",
+   "name": "Cream crackers",
+   "k": 445.0,
+   "p": 8.9,
+   "c": 69.7,
+   "f": 16.4
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -3.4,
+   "kcal_abs": -15.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 16,
+  "kcal_per_serving_delta": -2,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Oatcakes",
+  "tali": {
+   "k": 430,
+   "p": 10,
+   "c": 60,
+   "f": 18
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-823",
+   "name": "Oatcakes, plain, retail",
+   "k": 453.0,
+   "p": 9.3,
+   "c": 62.8,
+   "f": 20.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -5.1,
+   "kcal_abs": -23.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": -7,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Rice cakes",
+  "tali": {
+   "k": 380,
+   "p": 8,
+   "c": 81,
+   "f": 3
+  },
+  "ref": {
+   "source": "USDA",
+   "code": "FDC 170250 (SR Legacy)",
+   "name": "Snacks, rice cakes, brown rice, plain, unsalted",
+   "k": 387.0,
+   "p": 8.2,
+   "c": 81.5,
+   "f": 2.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -1.8,
+   "kcal_abs": -7.0,
+   "macros_out": []
+  },
+  "serving_g": 10,
+  "kcal_per_serving_delta": -1,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Flapjack",
+  "tali": {
+   "k": 450,
+   "p": 5,
+   "c": 60,
+   "f": 22
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-814",
+   "name": "Flapjacks, retail",
+   "k": 434.0,
+   "p": 5.1,
+   "c": 55.7,
+   "f": 22.8
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 3.7,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": 10,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Cereal bar",
+  "tali": {
+   "k": 400,
+   "p": 6,
+   "c": 68,
+   "f": 11
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-819",
+   "name": "Cereal bars, with fruit and/or nuts, no chocolate, unfortified",
+   "k": 354.0,
+   "p": 5.6,
+   "c": 62.9,
+   "f": 10.7
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 13.0,
+   "kcal_abs": 46.0,
+   "macros_out": []
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 14,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "No chocolate 354; with chocolate 11-818 = 436. Name the type."
+ },
+ {
+  "n": "Protein bar",
+  "tali": {
+   "k": 350,
+   "p": 30,
+   "c": 35,
+   "f": 9
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "review",
+  "diff": null,
+  "serving_g": 60,
+  "kcal_per_serving_delta": null,
+  "flags": [],
+  "note": "Generic protein bar: no reference; brands range widely. Use the label."
+ },
+ {
+  "n": "Doughnut",
+  "tali": {
+   "k": 400,
+   "p": 6,
+   "c": 50,
+   "f": 20
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-850",
+   "name": "Doughnuts, ring, iced",
+   "k": 413.0,
+   "p": 5.8,
+   "c": 42.3,
+   "f": 25.7
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": -3.1,
+   "kcal_abs": -13.0,
+   "macros_out": [
+    "c",
+    "f"
+   ]
+  },
+  "serving_g": 60,
+  "kcal_per_serving_delta": -8,
+  "flags": [
+   "ambiguous-variant"
+  ],
+  "note": "Ring, iced 413; jam 11-849 = 321. Name the type."
+ },
+ {
+  "n": "Blueberry muffin",
+  "tali": {
+   "k": 380,
+   "p": 5,
+   "c": 50,
+   "f": 18
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-738",
+   "name": "Muffins, American, not chocolate, retail",
+   "k": 375.0,
+   "p": 5.0,
+   "c": 47.8,
+   "f": 19.5
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.3,
+   "kcal_abs": 5.0,
+   "macros_out": []
+  },
+  "serving_g": 70,
+  "kcal_per_serving_delta": 4,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Brownie",
+  "tali": {
+   "k": 470,
+   "p": 6,
+   "c": 55,
+   "f": 25
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1127",
+   "name": "Brownies, chocolate, homemade",
+   "k": 506.0,
+   "p": 6.2,
+   "c": 54.3,
+   "f": 30.8
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -7.1,
+   "kcal_abs": -36.0,
+   "macros_out": [
+    "f"
+   ]
+  },
+  "serving_g": 50,
+  "kcal_per_serving_delta": -18,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Cookie",
+  "tali": {
+   "k": 480,
+   "p": 5,
+   "c": 65,
+   "f": 22
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "11-815",
+   "name": "Biscuits, cookies, chocolate chip, standard",
+   "k": 471.0,
+   "p": 5.4,
+   "c": 60.0,
+   "f": 24.9
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 1.9,
+   "kcal_abs": 9.0,
+   "macros_out": []
+  },
+  "serving_g": 40,
+  "kcal_per_serving_delta": 4,
+  "flags": [],
+  "note": ""
+ },
+ {
+  "n": "Water",
+  "tali": {
+   "k": 0,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "keep",
+  "diff": null,
+  "serving_g": 250,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Zero by definition."
+ },
+ {
+  "n": "Coffee, black",
+  "tali": {
+   "k": 2,
+   "p": 0.1,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-833",
+   "name": "Coffee, infusion, average",
+   "k": 2.0,
+   "p": 0.2,
+   "c": 0.3,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 0.0,
+   "kcal_abs": 0.0,
+   "macros_out": []
+  },
+  "serving_g": 240,
+  "kcal_per_serving_delta": 0,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Latte (with milk)",
+  "tali": {
+   "k": 50,
+   "p": 3,
+   "c": 5,
+   "f": 2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-632",
+   "name": "Coffee, cappuccino, latte",
+   "k": 27.0,
+   "p": 2.0,
+   "c": 3.2,
+   "f": 0.8
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 85.2,
+   "kcal_abs": 23.0,
+   "macros_out": []
+  },
+  "serving_g": 240,
+  "kcal_per_serving_delta": 55,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "CoFID 27 kcal/100 g (9 samples 'as consumed', milk type not stated). Coffee-shop lattes vary with milk type and size; 240 ml at 50 kcal/100 ml = 120 kcal vs 65 at CoFID."
+ },
+ {
+  "n": "Cappuccino",
+  "tali": {
+   "k": 40,
+   "p": 2.5,
+   "c": 4,
+   "f": 1.8
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-632",
+   "name": "Coffee, cappuccino, latte",
+   "k": 27.0,
+   "p": 2.0,
+   "c": 3.2,
+   "f": 0.8
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 48.1,
+   "kcal_abs": 13.0,
+   "macros_out": []
+  },
+  "serving_g": 180,
+  "kcal_per_serving_delta": 23,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Same CoFID row as latte."
+ },
+ {
+  "n": "Hot chocolate (with milk)",
+  "tali": {
+   "k": 90,
+   "p": 3.5,
+   "c": 12,
+   "f": 3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-790",
+   "name": "Drinking chocolate powder, made up with semi-skimmed milk",
+   "k": 74.0,
+   "p": 3.7,
+   "c": 10.9,
+   "f": 2.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 21.6,
+   "kcal_abs": 16.0,
+   "macros_out": []
+  },
+  "serving_g": 240,
+  "kcal_per_serving_delta": 38,
+  "flags": [
+   "ml-item-cofid-per-100g",
+   "ambiguous-variant"
+  ],
+  "note": "With semi-skimmed 74; with whole milk 17-792 = 89 matches Tali. Name the milk."
+ },
+ {
+  "n": "Tea, no milk",
+  "tali": {
+   "k": 1,
+   "p": 0,
+   "c": 0.2,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-165",
+   "name": "Tea, black, infusion, average",
+   "k": 0.0,
+   "p": 0.1,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 999,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 240,
+  "kcal_per_serving_delta": 2,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Tea with milk",
+  "tali": {
+   "k": 13,
+   "p": 0.7,
+   "c": 1,
+   "f": 0.5
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-169",
+   "name": "Tea, infusion, average, with semi-skimmed milk",
+   "k": 7.0,
+   "p": 0.5,
+   "c": 0.7,
+   "f": 0.2
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 85.7,
+   "kcal_abs": 6.0,
+   "macros_out": []
+  },
+  "serving_g": 240,
+  "kcal_per_serving_delta": 14,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "With semi-skimmed milk 7/100 g. Tali 13 would imply about twice the milk."
+ },
+ {
+  "n": "Milkshake",
+  "tali": {
+   "k": 90,
+   "p": 3,
+   "c": 13,
+   "f": 3
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "12-327",
+   "name": "Milkshake, thick, takeaway",
+   "k": 88.0,
+   "p": 3.7,
+   "c": 15.3,
+   "f": 1.8
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 2.3,
+   "kcal_abs": 2.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 300,
+  "kcal_per_serving_delta": 6,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Fruit smoothie",
+  "tali": {
+   "k": 55,
+   "p": 0.8,
+   "c": 13,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-747",
+   "name": "Smoothies",
+   "k": 49.0,
+   "p": 0.5,
+   "c": 12.2,
+   "f": 0.1
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": 12.2,
+   "kcal_abs": 6.0,
+   "macros_out": []
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 15,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Orange juice",
+  "tali": {
+   "k": 45,
+   "p": 0.7,
+   "c": 10,
+   "f": 0.2
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-329",
+   "name": "Orange juice, chilled",
+   "k": 36.0,
+   "p": 0.9,
+   "c": 8.6,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 25.0,
+   "kcal_abs": 9.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 18,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Chilled OJ 36/100 g (~37 per 100 ml at density 1.04). Tali 45 = USDA."
+ },
+ {
+  "n": "Apple juice",
+  "tali": {
+   "k": 46,
+   "p": 0.1,
+   "c": 11,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-331",
+   "name": "Apple juice, clear, ambient and chilled",
+   "k": 37.0,
+   "p": 0.1,
+   "c": 9.7,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 24.3,
+   "kcal_abs": 9.0,
+   "macros_out": []
+  },
+  "serving_g": 200,
+  "kcal_per_serving_delta": 18,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Cola",
+  "tali": {
+   "k": 42,
+   "p": 0,
+   "c": 10.6,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-175",
+   "name": "Cola",
+   "k": 41.0,
+   "p": 0.0,
+   "c": 10.9,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.4,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": 3,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Diet cola",
+  "tali": {
+   "k": 0.4,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-505",
+   "name": "Cola, diet",
+   "k": 1.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -60.0,
+   "kcal_abs": -0.6,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Lemonade",
+  "tali": {
+   "k": 40,
+   "p": 0,
+   "c": 10,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-179",
+   "name": "Lemonade",
+   "k": 22.0,
+   "p": 0.0,
+   "c": 5.8,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 81.8,
+   "kcal_abs": 18.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": 59,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "CoFID lemonade 22. UK lemonades vary (many are low-sugar since the 2018 Soft Drinks Industry Levy)."
+ },
+ {
+  "n": "Energy drink",
+  "tali": {
+   "k": 45,
+   "p": 0,
+   "c": 11,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-672",
+   "name": "Energy drink, carbonated",
+   "k": 42.0,
+   "p": 0.0,
+   "c": 11.1,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.1,
+   "kcal_abs": 3.0,
+   "macros_out": []
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 8,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Sports drink",
+  "tali": {
+   "k": 24,
+   "p": 0,
+   "c": 6,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "keep",
+  "diff": null,
+  "serving_g": 500,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "No CoFID isotonic row. Lucozade Sport labels (OFF 5054267007628) 27/0/6.4/0."
+ },
+ {
+  "n": "Squash, diluted",
+  "tali": {
+   "k": 20,
+   "p": 0,
+   "c": 5,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-847",
+   "name": "Fruit juice drink/squash, diluted",
+   "k": 7.0,
+   "p": 0.0,
+   "c": 1.8,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 185.7,
+   "kcal_abs": 13.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 32,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "CoFID squash diluted 1:4 = 7; no-added-sugar 17-846 = 1. Tali 20 is too high for most UK squash."
+ },
+ {
+  "n": "Tonic water",
+  "tali": {
+   "k": 34,
+   "p": 0,
+   "c": 8.5,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-736",
+   "name": "Tonic water",
+   "k": 22.0,
+   "p": 0.0,
+   "c": 5.9,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 54.5,
+   "kcal_abs": 12.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 150,
+  "kcal_per_serving_delta": 18,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Lager",
+  "tali": {
+   "k": 43,
+   "p": 0.5,
+   "c": 3.6,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-749",
+   "name": "Lager, standard",
+   "k": 24.0,
+   "p": 0.3,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 79.2,
+   "kcal_abs": 19.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": 63,
+  "flags": [
+   "energy-gap-explained-alcohol",
+   "ml-item"
+  ],
+  "note": "CoFID standard lager (<4.5% ABV) 24 kcal (alcohol 3.2 g, carbs 'Tr'); premium 17-751 = 29. Tali 43 = USDA US beer. CoFID's trace carbs look low; ABV drives kcal. kcal gap vs macros is explained by alcohol (7 kcal/g)."
+ },
+ {
+  "n": "Red wine",
+  "tali": {
+   "k": 85,
+   "p": 0.1,
+   "c": 2.6,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-752",
+   "name": "Wine, red",
+   "k": 76.0,
+   "p": 0.1,
+   "c": 0.2,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 11.8,
+   "kcal_abs": 9.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 175,
+  "kcal_per_serving_delta": 16,
+  "flags": [
+   "energy-gap-explained-alcohol",
+   "ml-item"
+  ],
+  "note": "Per 100 ml (CoFID alcoholic drinks are per 100 ml). Alcohol explains the kcal/macro gap."
+ },
+ {
+  "n": "White wine",
+  "tali": {
+   "k": 82,
+   "p": 0.1,
+   "c": 2.6,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-755",
+   "name": "Wine, white, dry",
+   "k": 75.0,
+   "p": 0.1,
+   "c": 0.6,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 9.3,
+   "kcal_abs": 7.0,
+   "macros_out": []
+  },
+  "serving_g": 175,
+  "kcal_per_serving_delta": 12,
+  "flags": [
+   "energy-gap-explained-alcohol",
+   "ml-item"
+  ],
+  "note": "Dry white. Alcohol explains the kcal/macro gap."
+ },
+ {
+  "n": "Prosecco",
+  "tali": {
+   "k": 80,
+   "p": 0.2,
+   "c": 3,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-757",
+   "name": "Wine, white, sparkling",
+   "k": 84.0,
+   "p": 0.3,
+   "c": 5.1,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "minor",
+  "diff": {
+   "kcal_pct": -4.8,
+   "kcal_abs": -4.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 125,
+  "kcal_per_serving_delta": -5,
+  "flags": [
+   "energy-gap-explained-alcohol",
+   "ml-item"
+  ],
+  "note": "Sparkling white wine."
+ },
+ {
+  "n": "Spirits, vodka/gin",
+  "tali": {
+   "k": 220,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-247",
+   "name": "Spirits, 40% volume",
+   "k": 222.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -0.9,
+   "kcal_abs": -2.0,
+   "macros_out": []
+  },
+  "serving_g": 25,
+  "kcal_per_serving_delta": 0,
+  "flags": [
+   "energy-gap-explained-alcohol",
+   "ml-item"
+  ],
+  "note": "40% ABV spirits."
+ },
+ {
+  "n": "Coca-Cola",
+  "tali": {
+   "k": 42,
+   "p": 0,
+   "c": 10.6,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-175",
+   "name": "Cola",
+   "k": 41.0,
+   "p": 0.0,
+   "c": 10.9,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 2.4,
+   "kcal_abs": 1.0,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": 3,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "OFF UK label 54491014: 42/0/10.6/0."
+ },
+ {
+  "n": "Coca-Cola Zero Sugar",
+  "tali": {
+   "k": 0.4,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-505",
+   "name": "Cola, diet",
+   "k": 1.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -60.0,
+   "kcal_abs": -0.6,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Diet Coke",
+  "tali": {
+   "k": 0.4,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-505",
+   "name": "Cola, diet",
+   "k": 1.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -60.0,
+   "kcal_abs": -0.6,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Pepsi",
+  "tali": {
+   "k": 43,
+   "p": 0,
+   "c": 10.7,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-175",
+   "name": "Cola",
+   "k": 41.0,
+   "p": 0.0,
+   "c": 10.9,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 4.9,
+   "kcal_abs": 2.0,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": 7,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Generic cola; OFF 87170801 = 41."
+ },
+ {
+  "n": "Pepsi Max",
+  "tali": {
+   "k": 0.3,
+   "p": 0,
+   "c": 0,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-505",
+   "name": "Cola, diet",
+   "k": 1.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": -70.0,
+   "kcal_abs": -0.7,
+   "macros_out": []
+  },
+  "serving_g": 330,
+  "kcal_per_serving_delta": -2,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": ""
+ },
+ {
+  "n": "Fanta Orange",
+  "tali": {
+   "k": 44,
+   "p": 0,
+   "c": 11,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 330,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: UK Fanta Orange was reformulated. OFF 5000112552119 = 19 kcal/100 ml (4.5 g sugar). Tali 44 is the old/US formula. Verify pack."
+ },
+ {
+  "n": "Sprite",
+  "tali": {
+   "k": 40,
+   "p": 0,
+   "c": 10,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 330,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: OFF UK Sprite 5000112658149 = 14 kcal (3.3 g sugar; that listing's protein field is an obvious error). Tali 40 is the old formula. Verify pack."
+ },
+ {
+  "n": "Irn-Bru",
+  "tali": {
+   "k": 37,
+   "p": 0.1,
+   "c": 9,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 330,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: Irn-Bru reformulated. OFF 5000382023197 and 50271511 = 19-20 kcal (4.5-4.8 g sugar). Tali 37 is the old formula."
+ },
+ {
+  "n": "Lucozade Original",
+  "tali": {
+   "k": 70,
+   "p": 0,
+   "c": 17,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-761",
+   "name": "Lucozade",
+   "k": 60.0,
+   "p": 0.0,
+   "c": 16.0,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "change",
+  "diff": {
+   "kcal_pct": 16.7,
+   "kcal_abs": 10.0,
+   "macros_out": []
+  },
+  "serving_g": 500,
+  "kcal_per_serving_delta": 50,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "CoFID 'Lucozade' 60 predates reformulation; current Lucozade Energy labels (OFF 5054267009530) 35 kcal/100 ml, 8.4 g carbs. Tali 70 is 2x current."
+ },
+ {
+  "n": "Red Bull",
+  "tali": {
+   "k": 45,
+   "p": 0.6,
+   "c": 11,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-672",
+   "name": "Energy drink, carbonated",
+   "k": 42.0,
+   "p": 0.0,
+   "c": 11.1,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 7.1,
+   "kcal_abs": 3.0,
+   "macros_out": []
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 8,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "OFF 90453991 = 46."
+ },
+ {
+  "n": "Monster Energy",
+  "tali": {
+   "k": 46,
+   "p": 0,
+   "c": 11,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-672",
+   "name": "Energy drink, carbonated",
+   "k": 42.0,
+   "p": 0.0,
+   "c": 11.1,
+   "f": 0.0
+  },
+  "status": "ok",
+  "recommend": "keep",
+  "diff": {
+   "kcal_pct": 9.5,
+   "kcal_abs": 4.0,
+   "macros_out": []
+  },
+  "serving_g": 500,
+  "kcal_per_serving_delta": 20,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "OFF 5060751215660 = 47."
+ },
+ {
+  "n": "Oasis",
+  "tali": {
+   "k": 35,
+   "p": 0,
+   "c": 8.5,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 330,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: OFF Oasis Summer Fruits 5449000125002 = 17 kcal (4.1 g sugar). Tali 35 is the old formula."
+ },
+ {
+  "n": "J2O",
+  "tali": {
+   "k": 43,
+   "p": 0.1,
+   "c": 10,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 275,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: OFF J2O Apple & Raspberry 50412143 = 19-22 kcal. Tali 43 is the old formula."
+ },
+ {
+  "n": "Innocent orange juice",
+  "tali": {
+   "k": 44,
+   "p": 0.7,
+   "c": 10.5,
+   "f": 0.1
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "14-329",
+   "name": "Orange juice, chilled",
+   "k": 36.0,
+   "p": 0.9,
+   "c": 8.6,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 22.2,
+   "kcal_abs": 8.0,
+   "macros_out": []
+  },
+  "serving_g": 250,
+  "kcal_per_serving_delta": 20,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Generic chilled OJ. OFF Innocent listings are inconsistent (36 and 45)."
+ },
+ {
+  "n": "Ribena (undiluted)",
+  "tali": {
+   "k": 250,
+   "p": 0.2,
+   "c": 64,
+   "f": 0
+  },
+  "ref": {
+   "source": "CoFID",
+   "code": "17-737",
+   "name": "Blackcurrant juice drink/squash, undiluted",
+   "k": 204.0,
+   "p": 0.1,
+   "c": 54.2,
+   "f": 0.0
+  },
+  "status": "fix",
+  "recommend": "review",
+  "diff": {
+   "kcal_pct": 22.5,
+   "kcal_abs": 46.0,
+   "macros_out": [
+    "c"
+   ]
+  },
+  "serving_g": 30,
+  "kcal_per_serving_delta": 14,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Blackcurrant squash undiluted 204 per 100 g. Density matters: concentrate is ~1.1-1.3 g/ml (not verified), so the per-100 g vs per-100 ml basis differs by 10-30%. Ribena squash has also been reformulated; check pack."
+ },
+ {
+  "n": "Volvic Touch of Fruit",
+  "tali": {
+   "k": 17,
+   "p": 0,
+   "c": 4,
+   "f": 0
+  },
+  "ref": {
+   "source": "none",
+   "code": null,
+   "name": null,
+   "k": null,
+   "p": null,
+   "c": null,
+   "f": null
+  },
+  "status": "nomatch",
+  "recommend": "change",
+  "diff": null,
+  "serving_g": 500,
+  "kcal_per_serving_delta": null,
+  "flags": [
+   "ml-item-cofid-per-100g"
+  ],
+  "note": "Likely outdated: OFF Volvic Touch of Fruit (3057640578113 etc.) = 1 kcal (sugar-free). Tali 17 is the old sugared version."
+ }
+]

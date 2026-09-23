@@ -349,6 +349,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .navbtn.b { font-weight: 600; }
 .sheet-bd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 16px 24px; flex: 1; }
 .sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
+.sheet .scale button.on { background: var(--tint); }
 
 /* ===================== TRAIN ===================== */
 .ex .h { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }

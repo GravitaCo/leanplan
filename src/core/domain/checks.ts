@@ -29,29 +29,35 @@ const MAX_KCAL_100 = 900
  *  alcohol (7) and polyols (2.4) aren't in P/C/F, so a small gap is normal. */
 const TOLERANCE = 0.15
 const MIN_GAP_KCAL = 20
+const MAX_MACROS_100 = 110
+/** Below this, the macros are too small to say anything about kJ (drinks with alcohol can sit
+ *  near a 4:1 ratio by coincidence). */
+const MIN_KJ_CHECK_KCAL = 40
 
 /**
  * Checks a food's per-100 g (or ml) values. Empty result = the numbers add up.
  * `given` says which fields the user actually filled in, so an untouched field isn't
  * treated as a typed zero.
  */
-export function checkPer100(v: Per100, given: { k: boolean; macros: boolean }): Check[] {
+export function checkPer100(v: Per100, given: { k: boolean; macros: boolean }, each = false): Check[] {
   const out: Check[] = []
   const mk = macroKcal(v)
   const r = (n: number) => Math.round(n)
 
   if ([v.k, v.p, v.c, v.f].some((x) => x < 0)) return [{ level: 'warn', msg: 'Values can’t be negative.' }]
 
-  if (v.p + v.c + v.f > 100.5) {
+  // per-item values (a whole burger) can legitimately exceed these per-100 g limits. CoFID
+  // counts carbs as monosaccharide equivalents, so pure sugar reads 105 g: allow headroom.
+  if (!each && v.p + v.c + v.f > MAX_MACROS_100) {
     out.push({ level: 'warn', msg: 'That’s more than 100 g of protein, carbs and fat in 100 g. These look like per-serving numbers. Use the “per 100 g” column.' })
   }
 
-  if (given.k && v.k > MAX_KCAL_100) {
+  if (!each && given.k && v.k > MAX_KCAL_100) {
     out.push({ level: 'warn', msg: 'Nothing has more than about 900 kcal per 100 g. This may be the kJ figure.', fix: { label: `Use ${r(v.k / KJ_PER_KCAL)} kcal`, k: r(v.k / KJ_PER_KCAL) } })
     return out
   }
 
-  if (!given.macros || mk === 0) return out
+  if (!given.macros || mk < MIN_GAP_KCAL) return out
 
   if (!given.k || v.k === 0) {
     out.push({ level: 'warn', msg: `Calories are missing. From the macros it’s about ${r(mk)} kcal.`, fix: { label: `Use ${r(mk)} kcal`, k: r(mk) } })
@@ -65,7 +71,7 @@ export function checkPer100(v: Per100, given: { k: boolean; macros: boolean }): 
   // (not an absolute gap) so low-macro drinks like beer and wine, where alcohol explains the
   // difference, aren't mistaken for kJ.
   const ratio = v.k / mk
-  if (mk >= MIN_GAP_KCAL && ratio >= KJ_PER_KCAL * (1 - TOLERANCE) && ratio <= KJ_PER_KCAL * (1 + TOLERANCE)) {
+  if (mk >= MIN_KJ_CHECK_KCAL && ratio >= KJ_PER_KCAL * (1 - TOLERANCE) && ratio <= KJ_PER_KCAL * (1 + TOLERANCE)) {
     out.push({ level: 'warn', msg: 'This looks like the kJ figure. Labels show kJ first; kcal is the smaller number.', fix: { label: `Use ${r(v.k / KJ_PER_KCAL)} kcal`, k: r(v.k / KJ_PER_KCAL) } })
   } else if (gap > 0) {
     out.push({ level: 'info', msg: `Calories are higher than protein, carbs and fat explain (about ${r(mk)} kcal). Alcohol or fibre can account for this; otherwise check the packet.` })
@@ -89,7 +95,7 @@ export function checkRecipe(items: RecipeItem[]): Check[] {
   const out: Check[] = []
   const empty = items.filter((i) => !(i.grams > 0))
   if (empty.length) out.push({ level: 'warn', msg: `No amount for ${empty.map((i) => i.n).join(', ')}.` })
-  const odd = items.filter((i) => checkPer100(i, { k: true, macros: true }).some((c) => c.level === 'warn'))
+  const odd = items.filter((i) => checkPer100(i, { k: true, macros: true }, !!i.each).some((c) => c.level === 'warn'))
   if (odd.length) out.push({ level: 'warn', msg: `The values for ${odd.map((i) => i.n).join(', ')} don’t add up. Check that food.` })
   const cooked = items.filter((i) => isCookedState(i.n))
   if (cooked.length) {

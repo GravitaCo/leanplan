@@ -139,9 +139,11 @@ export function findRecipe(s: AppState, text: string): Recipe | null {
 export function recipeItemsFrom(entries: LoggedFood[]): RecipeItem[] {
   return entries.map((x) => {
     if (!x.grams) return { n: x.n, grams: 100, k: x.k, p: x.p, c: x.c, f: x.f }
-    const m = 100 / x.grams
+    const each = x.unit === 'item'
+    const m = (each ? 1 : 100) / x.grams
     const item: RecipeItem = { n: x.n, grams: x.grams, k: +(x.k * m).toFixed(1), p: +(x.p * m).toFixed(1), c: +(x.c * m).toFixed(1), f: +(x.f * m).toFixed(1) }
     if (x.unit === 'ml') item.ml = true
+    if (each) item.each = true
     return item
   })
 }
