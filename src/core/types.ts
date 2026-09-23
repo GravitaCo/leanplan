@@ -253,6 +253,14 @@ export interface Profile {
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
   plans?: IfThenPlan[]
+  /**
+   * Date (YYYY-MM-DD) from which logged workouts stop widening the food range, because the
+   * activity level already counts training (workout plan D5). Earlier days keep the old maths
+   * so history never shifts. Set once on load; absent only on data from older app versions.
+   */
+  burnSwitch?: string
+  /** the one-time note explaining the burnSwitch change has been dismissed */
+  burnNoteSeen?: boolean
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

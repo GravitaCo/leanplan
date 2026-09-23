@@ -7,10 +7,9 @@ import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
-import { workoutBurn } from '@/core/domain/workout'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
-  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, latestWeight, mealNow, plansDue, rangeFor, rangeWidth,
+  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, Tile, pressable } from '@/ui/primitives'
@@ -38,6 +37,7 @@ export function TodayScreen() {
   const toggleSupp = useStore((s) => s.toggleSupp)
   const logEntries = useStore((s) => s.logEntries)
   const runSync = useStore((s) => s.runSync)
+  const setPrefs = useStore((s) => s.setPrefs)
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [dismissedMissed, setDismissedMissed] = useState(false)
 
@@ -57,7 +57,6 @@ export function TodayScreen() {
   const sched = data.schedule[f.idx] || 'Rest'
   const logged = !!wk?.type
   const isRest = !logged && sched === 'Rest'
-  const burn = workoutBurn(wk, latestWeight(data, cur))
 
   const meal = mealNow()
   const us = isToday ? usuals(data, cur, meal) : []
@@ -105,6 +104,17 @@ export function TodayScreen() {
           <span style={{ color: 'var(--energy-ink)' }}><Icon name="leaf" /></span>
           <div><b>Welcome back.</b><br /><span className="muted">A day off logging doesn't undo anything. Pick up from here.</span></div>
           <button className="x" aria-label="Dismiss" onClick={() => setDismissedMissed(true)}><Icon name="x" size={12} stroke={3} /></button>
+        </div>
+      )}
+
+      {showBurnNote(data) && (
+        <div className="banner">
+          <span style={{ color: 'var(--energy-ink)' }}><Icon name="info" /></span>
+          <div><b>Your range has changed a little.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
+            ? 'Workouts now add a smaller estimate, counting only the energy above what you use at rest. '
+            : 'It no longer adds workout estimates, because your activity level already includes your training. '}
+            You can update your activity level in Profile. Past days are unchanged.</span></div>
+          <button className="x" aria-label="Dismiss" onClick={() => setPrefs({ burnNoteSeen: true })}><Icon name="x" size={12} stroke={3} /></button>
         </div>
       )}
 
@@ -177,7 +187,7 @@ export function TodayScreen() {
       <div className="tiles">
         <Tile color="activity" icon="dumbbell" label="Workout" onPress={() => setTab('train')}
           value={<span className="w">{logged ? wk!.type : isRest ? 'Rest' : sched}</span>}
-          sub={logged ? (burn && !gentle ? `+${fmt(burn)} kcal of room` : 'Logged') : isRest ? 'Recovery counts too' : 'Tap to start'} />
+          sub={logged ? 'Logged' : isRest ? 'Recovery counts too' : 'Tap to start'} />
         <Tile color="mind" icon="smile" label="Check-in" onPress={() => setSheet({ k: 'checkin' })}
           value={<span className="w">{day.checkin?.mood ? MOODS[day.checkin.mood - 1] : 'How are you?'}</span>}
           sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : 'Mood and hunger'} />

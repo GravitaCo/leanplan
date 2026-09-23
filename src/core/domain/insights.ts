@@ -9,7 +9,7 @@
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
-import { workoutBurn } from './workout'
+import { workoutBurn, workoutNetBurn } from './workout'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -43,9 +43,30 @@ export function latestWeight(s: AppState, d: string): number | null {
 }
 
 export interface Range { mid: number; lo: number; hi: number }
-/** The day's target (plus workout burn) ± the user's range width. */
+/**
+ * Calories a logged workout adds to the day's range. From `profile.burnSwitch` on, nothing for
+ * most people, because their activity level already counts their training (it was counted
+ * twice); sedentary users, whose level counts none, get the net burn. Days before the switch keep
+ * the old gross figure so history never moves.
+ */
+export function rangeExtra(s: AppState, d: string): number {
+  const wk = dayOf(s, d).workout
+  const kg = latestWeight(s, d)
+  const sw = s.profile.burnSwitch
+  if (!sw || d < sw) return workoutBurn(wk, kg)
+  return s.profile.activityLevel === 'sedentary' ? workoutNetBurn(wk, kg) : 0
+}
+
+/** Whether to show the one-time note about the change: only to people it affected. */
+export function showBurnNote(s: AppState): boolean {
+  const sw = s.profile.burnSwitch
+  if (!sw || s.profile.burnNoteSeen) return false
+  return Object.keys(s.days).some((d) => d < sw && !!s.days[d]?.workout)
+}
+
+/** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const mid = s.target.kcal + workoutBurn(dayOf(s, d).workout, latestWeight(s, d))
+  const mid = s.target.kcal + rangeExtra(s, d)
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }

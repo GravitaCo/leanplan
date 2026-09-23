@@ -11,6 +11,8 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEMOS } from '@/core/data/media'
 import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
+import { rangeFor, showBurnNote } from '@/core/domain/insights'
+import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { existsSync } from 'node:fs'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -171,5 +173,32 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = 'ready::2:1 lower:1:2:2 stretch:1:2:1 squeeze:2:2:3'
   const ok2 = got === want; if (!ok2) bad++
   console.log(ok2 ? 'PASS' : 'FAIL', 'tempo counter', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
+}
+// workout plan D5: logged workouts stop widening the food range from profile.burnSwitch
+// (activity level already counts training); sedentary users get net burn; history is frozen
+{
+  const lift = { type: 'Push' as const, ex: [] }
+  const day = (workout: any) => ({ foods: [], supps: {}, weight: 75, workout })
+  const st = (activityLevel: string, extra: any = {}) => ({
+    target: { kcal: 2000, p: 0, c: 0, f: 0 }, schedule: {}, customFoods: [], recipes: [],
+    profile: { activityLevel, rangeWidth: 100, burnSwitch: '2026-09-20', ...extra },
+    days: { '2026-09-10': day(lift), '2026-09-21': day(lift) },
+  }) as any
+  const got = [
+    workoutBurn(lift, 75), workoutNetBurn(lift, 75), // 3.5 × 75 × 0.75 = 197; 2.5 × 75 × 0.75 = 141
+    rangeFor(st('light'), '2026-09-10').mid, rangeFor(st('light'), '2026-09-21').mid,
+    rangeFor(st('sedentary'), '2026-09-21').mid, rangeFor(st('light', { burnSwitch: undefined }), '2026-09-21').mid,
+    showBurnNote(st('light')), showBurnNote(st('light', { burnNoteSeen: true })),
+    showBurnNote({ ...st('light'), days: { '2026-09-21': day(lift) } }),
+  ].join(' ')
+  const want = '197 141 2197 2000 2141 2197 true false false'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'range: burn switch', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  // no screen frames exercise as earning food (plan §0.8)
+  const { readFileSync, readdirSync } = require('node:fs')
+  const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e: any) => e.isDirectory() ? walk(d + '/' + e.name) : [d + '/' + e.name])
+  const hits = walk('src').filter((f) => /\.tsx?$/.test(f) && /kcal of room|more room today/.test(readFileSync(f, 'utf8')))
+  const ok2 = hits.length === 0; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'no "earn food" copy', hits.join(', '))
 }
 process.exit(bad ? 1 : 0)

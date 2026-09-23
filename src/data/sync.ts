@@ -81,7 +81,12 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   if (settings.length && !meta.settings.dirty) {
     s.target = settings[0].target
     s.schedule = settings[0].schedule
-    if (settings[0].profile) s.profile = settings[0].profile
+    if (settings[0].profile) {
+      // keep the D5 switch date if the cloud copy came from an older app version without it
+      const sw = s.profile.burnSwitch
+      s.profile = settings[0].profile
+      if (!s.profile.burnSwitch && sw) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
+    }
     meta.settings.u = settings[0].updated_at
   }
   const cf = await sbGet<any[]>('/custom_foods?user_id=eq.' + uid + '&select=*')

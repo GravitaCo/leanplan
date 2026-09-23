@@ -3,9 +3,8 @@ import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { CARDIO_MET } from '@/core/data/constants'
-import { fmt, fmtDate } from '@/core/domain/date'
-import { howToLink, workoutBurn } from '@/core/domain/workout'
-import { latestWeight } from '@/core/domain/insights'
+import { fmtDate } from '@/core/domain/date'
+import { howToLink } from '@/core/domain/workout'
 import { PageHeader, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
@@ -30,8 +29,6 @@ export function TrainScreen() {
   const logged = day.workout
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
-  const burn = workoutBurn(logged, latestWeight(data, cur))
-  const gentle = !!data.profile.gentle
 
   const initial: WorkoutType =
     (logged?.type as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
@@ -75,7 +72,7 @@ export function TrainScreen() {
   const dayName = fd.dow
   const banner = logged ? (
     <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b> logged for {dayName}.
-      {burn && !gentle ? <> That gives you about <b className="num">{fmt(burn)} kcal</b> more room today.</> : null}</>
+</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (
