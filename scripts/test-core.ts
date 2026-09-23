@@ -98,6 +98,20 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const got = String(Math.round(relog(stale, 'lunch').k))
   const ok = got === '595'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'relog refreshes a stale Whopper to 595', got)
+  // live-era entries stored the serving rounded to whole grams: 119.5 g bacon roll saved as 120 g
+  const roll = relog({ n: 'Greggs Bacon Breakfast Roll', grams: 120, k: 323, p: 19, c: 33, f: 12, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
+  const ok2 = Math.round(roll.k) === 321 && roll.grams === 119.5; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'relog of a live-era bacon roll (120 g) gives 321 kcal at 119.5 g', Math.round(roll.k), roll.grams)
+  // every chain food: a live-era serving entry (grams rounded) re-logs to the published figure
+  const off: string[] = []
+  for (const f of FOODS.filter((x) => x.ref && x.ref.g === x.g)) {
+    for (const v of [1, 2]) {
+      const e = relog({ n: f.n, grams: Math.round(f.g * v), k: 0, p: 0, c: 0, f: 0, src: 'db', how: 'serv', err: 0.2, serv: v, unit: f.each ? 'item' : f.ml ? 'ml' : undefined }, 'lunch')
+      if (Math.abs(e.k - f.ref!.k * v) >= 0.55) off.push(`${f.n} x${v}: ${Math.round(e.k)} vs ${f.ref!.k * v}`)
+    }
+  }
+  const ok3 = off.length === 0; if (!ok3) bad++
+  console.log(ok3 ? 'PASS' : 'FAIL', 'live-era serving entries re-log to the published figure (all chain foods)', off.slice(0, 5).join(', '))
 }
 // No rounding drift anywhere in the logging path, for every food: one serving, a fractional
 // amount, and an edit (x1.5) must equal the exact maths to the stored precision (0.1).

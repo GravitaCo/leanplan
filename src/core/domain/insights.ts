@@ -8,12 +8,12 @@
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
-import { dayTotals, scaleFood, unitOf, type MacroTotals } from './nutrition'
+import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
+import { workoutBurn } from './workout'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
 const d1 = (x: number) => Math.round(x * 10) / 10
-import { workoutBurn } from './workout'
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
@@ -180,8 +180,14 @@ export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
   if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
-    const s = scaleFood(food, x.grams)
-    Object.assign(out, { k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+    const unit = unitOf(food)
+    // Logged as servings: older builds stored the serving rounded to whole grams (a 119.5 g
+    // bacon roll as 120 g), so rebuild the amount from today's exact serving. The tolerance
+    // allows that rounding, and edits (which round `serv` to 0.1) fall back to the stored grams.
+    const fromServ = x.serv != null && Math.abs(x.grams - food.g * x.serv) <= 0.5 * x.serv + 1e-9
+    const amount = fromServ ? roundAmount(food.g * x.serv!, unit) : x.grams
+    const s = scaleFood(food, amount)
+    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
   }
   return out
 }

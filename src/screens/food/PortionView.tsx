@@ -62,7 +62,6 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         <div style={{ fontSize: 13, marginTop: 2 }}>
           {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
         </div>
-
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 
