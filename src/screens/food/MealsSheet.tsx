@@ -69,7 +69,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
             <div className="li" key={ii}>
               <div className="m"><div className="t">{it.n}</div>
                 <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${Math.round((it.k * it.grams) / basisOf(it))} kcal`].filter(Boolean).join(' · ')}</div></div>
-              <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
+              <input className="num" type="number" inputMode="decimal" value={Math.round(it.grams * 100) / 100} aria-label={`${it.n} amount`}
                 style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
                 onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
               <span className="muted">{it.each ? 'item' : it.ml ? 'ml' : 'g'}</span>

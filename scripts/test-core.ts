@@ -5,7 +5,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { relog } from '@/core/domain/insights'
+import { entryAmount, relog } from '@/core/domain/insights'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -110,6 +110,16 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
       if (Math.abs(e.k - f.ref!.k * v) >= 0.55) off.push(`${f.n} x${v}: ${Math.round(e.k)} vs ${f.ref!.k * v}`)
     }
   }
+  // opening the food again (search / Recent): the learned amount is today's exact serving
+  const rollFood = FOODS.find((x) => x.n === 'Greggs Bacon Breakfast Roll')!
+  const learned = entryAmount({ n: rollFood.n, grams: 120, k: 323, p: 19, c: 33, f: 12, src: 'db', how: 'serv', serv: 1 }, rollFood)
+  const viaSheet = buildEntry(rollFood, { mode: 'g', grams: learned, learned }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
+  const ok4 = learned === 119.5 && Math.round(viaSheet.k) === 321 && viaSheet.how === 'usual'; if (!ok4) bad++
+  console.log(ok4 ? 'PASS' : 'FAIL', 'portion sheet: live-era 120 g roll opens as 119.5 g = 321 kcal (usual)', learned, Math.round(viaSheet.k), viaSheet.how)
+  // an edited entry keeps its own amount (10 g serving edited x1.25 = 12.5 g, serv rounded 1.3)
+  const small = { n: 'x', k: 100, p: 0, c: 0, f: 0, g: 10 }
+  const ok5 = entryAmount({ n: 'x', grams: 12.5, k: 12.5, p: 0, c: 0, f: 0, src: 'db', serv: 1.3 }, small) === 12.5; if (!ok5) bad++
+  console.log(ok5 ? 'PASS' : 'FAIL', 'edited small serving keeps 12.5 g')
   const ok3 = off.length === 0; if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'live-era serving entries re-log to the published figure (all chain foods)', off.slice(0, 5).join(', '))
 }

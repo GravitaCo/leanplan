@@ -169,7 +169,20 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
-/** Copy of an entry for re-logging: keeps the portion, drops per-day confirmation state. */
+/**
+ * The amount an earlier entry really meant, in today's data. Logged as servings, it's today's
+ * exact serving: older builds stored servings rounded to whole grams (a 119.5 g bacon roll as
+ * 120 g), so a stored amount that equals the old rounded serving (or the exact one) is rebuilt.
+ * Anything else (weighed, hand, edited) keeps its stored amount.
+ */
+export function entryAmount(x: LoggedFood, food: Food): number {
+  if (x.serv != null) {
+    const exact = food.g * x.serv
+    if (Math.abs(x.grams - Math.round(exact)) < 1e-9 || Math.abs(x.grams - exact) < 0.0005) return roundAmount(exact, unitOf(food))
+  }
+  return x.grams
+}
+
 /**
  * Re-log an earlier entry (one-tap usuals, "same as yesterday"). A database food is re-scaled
  * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
@@ -180,12 +193,7 @@ export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
   if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
-    const unit = unitOf(food)
-    // Logged as servings: older builds stored the serving rounded to whole grams (a 119.5 g
-    // bacon roll as 120 g), so rebuild the amount from today's exact serving. The tolerance
-    // allows that rounding, and edits (which round `serv` to 0.1) fall back to the stored grams.
-    const fromServ = x.serv != null && Math.abs(x.grams - food.g * x.serv) <= 0.5 * x.serv + 1e-9
-    const amount = fromServ ? roundAmount(food.g * x.serv!, unit) : x.grams
+    const amount = entryAmount(x, food)
     const s = scaleFood(food, amount)
     Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
   }
