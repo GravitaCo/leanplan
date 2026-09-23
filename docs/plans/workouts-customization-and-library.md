@@ -1331,6 +1331,30 @@ model. It generalises to routines later without rework.
   `CARDIO_MET` key has a code and its value equals the Compendium value; `feel-better` gives
   `goalAdjustPct` 0 and a protein value that has a cited source. Bump the SW `CACHE`.
 
+### P1.5 Activity-level suggestion (nutrition; must ship before P2)
+nutrition-accuracy signed off D5 without this on condition it is the next nutrition item and ships
+before P2 (several sessions a day makes a stale level more likely). It is the only safety net for
+someone whose level understates their training (about 0.175 × BMR a day short, 250–300 kcal).
+Bands are **judgement calls** built on the level labels, not validated cut-offs.
+- **Session day:** a calendar day with at least one logged workout of 20+ min at 3.0+ MET
+  (strength counts as 45 min at 3.5). A 10-min mobility swap or a 10-min easy walk doesn't count.
+  Days, not sessions, so doubles count once.
+- **Window:** the last 28 days, including logs from before the switch; only runs once the first
+  log of any kind is 28+ days old.
+- **Bands (average session days a week):** light 1.0 to under 3.0; moderate 3.0 to under 5.5;
+  active 5.5+.
+- **Suggest only when** the computed band differs from the saved level and at least 3 of the 4
+  single weeks fall in it; at most once every 28 days ("Not now" also waits 28 days). The user
+  accepts; it never changes by itself. Accepting re-runs the Profile target suggestion, and the
+  target only changes if they accept that too.
+- **Up** only from light or moderate, never from sedentary (it also describes daily life, and
+  sedentary users already get net burn). **Down** only if at least one session was logged in the
+  window: not logging isn't evidence of not exercising.
+- **Copy** (mental-performance owns it): for example "Your logged sessions over the last 4 weeks look
+  like 'Moderately active'. Want to update it?" No kcal; hidden in gentle mode.
+- **Accuracy checks:** table tests for each band edge, the 3-of-4 rule, the 28-day cool-down, no
+  upward suggestion from sedentary, and no downward one with zero sessions.
+
 ### P2. Log any movement, several a day (schema: `day_logs.sessions`)
 `Session`, `DayLog.sessions`, `sessionsOf`/`fromLegacy`, the legacy mirror, defensive loads,
 the migration and sync mapping (§2.5, §2.8). Train becomes the Today list: built-ins work as
