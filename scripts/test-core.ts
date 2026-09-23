@@ -13,6 +13,7 @@ import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
 import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
+import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
 import { rangeFor, showBurnNote } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
@@ -247,5 +248,33 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok3 = SWAPS.mobility.ex.length === 7 && SWAPS.mobility.cardioType === 'Mobility' && CARDIO_MET[SWAPS.walk.cardioType] === 3.0
   if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'swap routines use sourced cardio keys')
+}
+// plans slide (plan §0.3, §0.4): catch-up picks at most one session, never edits the schedule,
+// ignores days before the person started, and "welcome back" is asked once per 10+ day break
+{
+  // 2026-09-21 is a Monday. Schedule: Mon Legs, Wed Push, Fri Pull, others Rest.
+  const schedule = { 0: 'Rest', 1: 'Legs', 2: 'Rest', 3: 'Push', 4: 'Rest', 5: 'Pull', 6: 'Rest' }
+  const w = (type: string) => ({ foods: [], supps: {}, weight: null, workout: { type } })
+  const e = { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null }
+  const st = (days: any, profile: any = {}) => ({ target: { kcal: 2000 }, schedule: { ...schedule }, profile, days, customFoods: [], recipes: [] }) as any
+  const s1 = st({ '2026-09-20': e })                                // started Sunday; Monday Legs not done
+  const before = JSON.stringify(s1.schedule)
+  const got = [
+    catchUp(s1, '2026-09-23'),                                       // Wed (Push): pick up Legs
+    catchUp(st({ '2026-09-20': e, '2026-09-21': w('Legs') }), '2026-09-23') ?? '-', // Legs was done
+    catchUp(st({ '2026-09-20': e, '2026-09-22': w('Legs') }), '2026-09-23') ?? '-', // done a day late: nothing to pick up
+    catchUp(st({ '2026-09-22': e }), '2026-09-23') ?? '-',           // Monday was before they started
+    catchUp(st({ '2026-09-20': e }), '2026-09-21') ?? '-',           // nothing planned in the window yet
+    catchUp(st({ '2026-09-20': e, '2026-09-23': w('Push') }), '2026-09-23') ?? '-', // today already logged
+    String(sessionsThisWeek(st({ '2026-09-21': w('Legs'), '2026-09-23': w('Push'), '2026-09-20': w('Pull') }), '2026-09-23')),
+    String(welcomeBack(st({ '2026-09-01': w('Legs') }), '2026-09-23')),
+    String(welcomeBack(st({ '2026-09-01': w('Legs') }, { welcomeAsked: '2026-09-15' }), '2026-09-23')),
+    String(welcomeBack(st({ '2026-09-18': w('Legs') }), '2026-09-23')),
+    String(welcomeBack(st({}), '2026-09-23')),
+    easyUntil('2026-09-23'),
+  ].join(' ')
+  const want = 'Legs - - - - - 2 true false false false 2026-09-29'
+  const ok = got === want && JSON.stringify(s1.schedule) === before; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans slide', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)

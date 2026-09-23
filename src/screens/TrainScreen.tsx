@@ -3,7 +3,8 @@ import { useStore } from '@/store/store'
 import type { SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
-import { fmtDate } from '@/core/domain/date'
+import { fmtDate, todayStr } from '@/core/domain/date'
+import { catchUp, easyUntil, sessionsThisWeek, welcomeBack } from '@/core/domain/training'
 import { howToLink } from '@/core/domain/workout'
 import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
 import { PageHeader, Seg } from '@/ui/primitives'
@@ -29,6 +30,7 @@ export function TrainScreen() {
   const data = useStore((s) => s.data)
   const saveWorkout = useStore((s) => s.saveWorkout)
   const saveCardio = useStore((s) => s.saveCardio)
+  const setPrefs = useStore((s) => s.setPrefs)
 
   const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
   const logged = day.workout
@@ -74,9 +76,17 @@ export function TrainScreen() {
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
   const low = lowSignals(day.checkin, recent)
   const offer = !logged && low.length >= 2
-  const [choice, setChoice] = useState<Choice>('planned')
-  const [askLighter, setAskLighter] = useState(false)
-  useEffect(() => { setChoice('planned'); setAskLighter(false) }, [cur])
+  // an accepted "easier first week" pre-selects the shorter version (still just a choice)
+  const easy = !logged && !!data.profile.easyUntil && cur <= data.profile.easyUntil
+  const [choice, setChoice] = useState<Choice>(easy ? 'shorter' : 'planned')
+  const [askLighter, setAskLighter] = useState(easy)
+  useEffect(() => { setChoice(easy ? 'shorter' : 'planned'); setAskLighter(easy) }, [cur, easy])
+
+  // plans slide: offer the planned session that didn't happen; the calendar never moves
+  const isToday = cur === todayStr()
+  const pickUp = isToday ? catchUp(data, cur) : null
+  const weekCount = sessionsThisWeek(data, cur)
+  const back = isToday && welcomeBack(data, cur)
   const shorter = choice === 'shorter'
   const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
   const [walkMins, setWalkMins] = useState('')
@@ -116,6 +126,26 @@ export function TrainScreen() {
         <span style={{ color: 'var(--activity-ink)' }}><Icon name="dumbbell" /></span>
         <div>{banner}</div>
       </div>
+      {weekCount > 0 && <div className="foot week-n">{weekCount} {weekCount === 1 ? 'session' : 'sessions'} this week</div>}
+
+      {back && (
+        <div className="card dayopt">
+          <div className="t">Welcome back. Want an easier first week?</div>
+          <div className="foot" style={{ padding: '0 0 10px' }}>A break doesn't undo anything. Shorter sessions for a week can make it easier to settle back in.</div>
+          <div className="chips">
+            <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur, easyUntil: easyUntil(cur) })}>Yes, go easier</button>
+            <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur })}>No thanks</button>
+          </div>
+        </div>
+      )}
+
+      {!logged && pickUp && pickUp !== sel && (
+        <div className="card dayopt">
+          <div className="t">Pick up with {pickUp} whenever you're ready.</div>
+          <div className="chips"><button className="chip" onClick={() => setSel(pickUp)}>Do {pickUp} today</button></div>
+        </div>
+      )}
+
       <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={setSel} /></div>
 
       {!logged && (offer || askLighter) && (

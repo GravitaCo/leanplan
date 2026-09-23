@@ -269,6 +269,10 @@ export interface Profile {
   burnSwitch?: string
   /** the one-time note explaining the burnSwitch change has been dismissed */
   burnNoteSeen?: boolean
+  /** date the "welcome back" question was last answered, so it's asked once per break */
+  welcomeAsked?: string
+  /** an accepted "easier first week" pre-selects the shorter version up to this date */
+  easyUntil?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */
