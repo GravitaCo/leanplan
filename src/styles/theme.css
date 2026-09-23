@@ -464,5 +464,5 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 /* Day-of choices on Train (plan §0.2) */
 .dayopt .t { font-size: 17px; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
 .dayopt .foot { padding: 10px 0 0; }
-.dayopt-link { display: block; margin: -6px 0 10px; }
+.dayopt-link { margin: 0 0 14px; }
 .week-n { padding: 0 4px 10px; }

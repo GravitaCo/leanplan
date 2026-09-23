@@ -8,7 +8,7 @@ import { catchUp, easyUntil, sessionsThisWeek, welcomeBack } from '@/core/domain
 import { howToLink } from '@/core/domain/workout'
 import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
 import { PageHeader, Seg } from '@/ui/primitives'
-import { Icon } from '@/ui/icons'
+import { Icon, Chevron } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
 import { DemoPlayer } from './train/DemoPlayer'
 
@@ -171,7 +171,13 @@ export function TrainScreen() {
         </div>
       )}
       {!logged && sched !== 'Rest' && !offer && !askLighter && (
-        <button className="linkbtn muted dayopt-link" onClick={() => setAskLighter(true)}>Want a lighter option?</button>
+        <div className="list dayopt-link">
+          <button className="li" onClick={() => setAskLighter(true)}>
+            <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="leaf" size={18} /></span>
+            <div className="m"><div className="t">Want a lighter option?</div><div className="s">Shorter, 10-min mobility or a walk</div></div>
+            <Chevron />
+          </button>
+        </div>
       )}
 
       {swap ? (
