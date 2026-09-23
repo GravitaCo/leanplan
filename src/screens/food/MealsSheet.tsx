@@ -6,9 +6,12 @@ import { FOODS } from '@/core/data/foods'
 import { fmt, r0 } from '@/core/domain/date'
 import { recipePerServing, recipeTotals } from '@/core/domain/nutrition'
 import { mealNow } from '@/core/domain/insights'
+import { checkRecipe, isCookedState } from '@/core/domain/checks'
+import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { RecipeLogView } from './RecipeLogView'
+import { Checks } from './common'
 
 interface Draft { id?: string; name: string; servings: string; items: RecipeItem[] }
 
@@ -62,7 +65,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
         <div className="list">
           {draft.items.length ? draft.items.map((it, ii) => (
             <div className="li" key={ii}>
-              <div className="m"><div className="t">{it.n}</div>{!gentle && <div className="s">{it.k} kcal per 100 {it.ml ? 'ml' : 'g'}</div>}</div>
+              <div className="m"><div className="t">{it.n}</div>
+                <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${it.k} kcal per 100 ${it.ml ? 'ml' : 'g'}`].filter(Boolean).join(' · ')}</div></div>
               <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
                 style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
                 onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
@@ -77,9 +81,10 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
             <>Per serving <b className="num">{r0(totals.p / s)} g protein</b></>
           ) : (
             <>Whole recipe <b className="num">{fmt(totals.k)} kcal</b> · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F<br />
-              Per serving <b className="num">{fmt(totals.k / s)} kcal</b> · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F</>
+              Per serving <b className="num">{fmt(totals.k / s)} kcal</b>{totals.k > 0 && <span className="muted num"> ± {fmt((totals.k / s) * CAPTURE_ERR.recipe)}</span>} · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F</>
           )}
         </div>
+        {draft.items.length > 0 && <Checks checks={checkRecipe(draft.items)} ok="Every ingredient has an amount and its values add up." />}
         <div className="lbl">Add ingredients</div>
         <div className="searchbar"><Icon name="search" size={17} />
           <input value={q} placeholder="Search foods" aria-label="Search ingredients" onChange={(e) => setQ(e.target.value)} /></div>
