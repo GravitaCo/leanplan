@@ -5,6 +5,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
+import { relog } from '@/core/domain/insights'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -76,6 +77,27 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     const ok = (refMismatches(f as never).length === 0) === pass; if (!ok) bad++
     console.log(ok ? 'PASS' : 'FAIL', 'guardrail:', n)
   }
+}
+// Multiples must equal the source's own figure times the multiple (Subway BMT x2 = 772, not 773)
+{
+  const off: string[] = []
+  for (const f of FOODS) {
+    const r = f.ref
+    if (!r || r.g !== f.g) continue
+    for (const v of [0.5, 2, 3]) {
+      const e = buildEntry(f, { mode: 'serv', serv: v }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
+      if (Math.abs(e.k - r.k * v) >= 0.55) off.push(`${f.n} x${v}: ${Math.round(e.k)} vs ${r.k * v}`)
+    }
+  }
+  const ok = off.length === 0; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'multiples of published servings', off.slice(0, 5).join(', '))
+}
+// Re-logging a usual uses today's corrected data, not the old snapshot (a pre-fix Whopper at 640)
+{
+  const stale = { n: 'Burger King Whopper', grams: 287, k: 640, p: 83, c: 146, f: 103, src: 'db' as const, how: 'serv' as const, err: 0.2 }
+  const got = String(Math.round(relog(stale, 'lunch').k))
+  const ok = got === '595'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'relog refreshes a stale Whopper to 595', got)
 }
 // No rounding drift anywhere in the logging path, for every food: one serving, a fractional
 // amount, and an edit (x1.5) must equal the exact maths to the stored precision (0.1).

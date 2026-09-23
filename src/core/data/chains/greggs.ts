@@ -1174,8 +1174,8 @@ export const GREGGS: Food[] = [
   },
   {
     "n": "Greggs Fairtrade Orange Juice from Concentrate 250ml",
-    "k": 45.33,
-    "p": 0.53,
+    "k": 45.0,
+    "p": 0.0,
     "c": 10.0,
     "f": 0.0,
     "g": 250.0,
@@ -1183,17 +1183,17 @@ export const GREGGS: Food[] = [
     "cat": "drinks",
     "src": "greggs-uk",
     "ref": {
-      "g": 150.0,
-      "k": 68.0,
-      "p": 0.8,
-      "c": 15.0,
+      "g": 100,
+      "k": 45.0,
+      "p": 0.0,
+      "c": 10.0,
       "f": 0.0
     }
   },
   {
     "n": "Greggs Fairtrade Orange Juice from Concentrate 500ml",
-    "k": 45.33,
-    "p": 0.53,
+    "k": 45.0,
+    "p": 0.0,
     "c": 10.0,
     "f": 0.0,
     "g": 500.0,
@@ -1201,10 +1201,10 @@ export const GREGGS: Food[] = [
     "cat": "drinks",
     "src": "greggs-uk",
     "ref": {
-      "g": 150.0,
-      "k": 68.0,
-      "p": 0.8,
-      "c": 15.0,
+      "g": 100,
+      "k": 45.0,
+      "p": 0.0,
+      "c": 10.0,
       "f": 0.0
     }
   },
@@ -1459,7 +1459,7 @@ export const GREGGS: Food[] = [
     "cat": "drinks",
     "src": "greggs-uk",
     "ref": {
-      "g": 100.0,
+      "g": 100,
       "k": 0.0,
       "p": 0.0,
       "c": 0.0,
@@ -1477,7 +1477,7 @@ export const GREGGS: Food[] = [
     "cat": "drinks",
     "src": "greggs-uk",
     "ref": {
-      "g": 100.0,
+      "g": 100,
       "k": 0.0,
       "p": 0.0,
       "c": 0.0,

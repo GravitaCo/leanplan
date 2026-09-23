@@ -161,7 +161,7 @@ export function buildEntry(
   let how: CaptureMethod
   if (portion.mode === 'serv') { grams = food.g * portion.serv; how = 'serv' }
   else if (portion.mode === 'hand') { grams = handGrams(profile, portion.type) * portion.count; how = 'hand' }
-  else { grams = portion.grams; how = portion.learned != null && Math.round(grams) === portion.learned ? 'usual' : 'g' }
+  else { grams = portion.grams; how = portion.learned != null && Math.abs(grams - portion.learned) < 0.0005 ? 'usual' : 'g' }
   const unit = unitOf(food)
   grams = roundAmount(grams, unit)
   const s = scaleFood(food, grams)

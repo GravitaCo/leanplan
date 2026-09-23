@@ -78,11 +78,17 @@ def main(path):
         # a pack size in the name ("500ml", "40g") is what one serving of it means
         size = re.search(r'(\d+)\s*(ml|g)$', n)
         g = float(size[1]) if size else P
-        f = {'n': name, 'k': per100(r['kp'], r['k100']), 'p': per100(r['pp'], r['p100']), 'c': per100(r['cp'], r['c100']),
-             'f': per100(r['fp'], r['f100']), 'g': g}
-        # keep Greggs' own per-portion line: `npm run check:foods` proves the app reproduces it
-        f['ref'] = {'g': P, 'k': r['kp'], 'p': r['pp'], 'c': r['cp'], 'f': r['fp']}
-        assert round(f['k'] * P / 100) == round(r['kp']), f'portion kcal mismatch: {n}'
+        if size and float(size[1]) != P:
+            # a bottle or bag served whole isn't Greggs' portion (e.g. 500 ml juice vs their 150 ml
+            # guide): use Greggs' own per-100 column, and check against that
+            f = {'n': name, 'k': r['k100'], 'p': r['p100'], 'c': r['c100'], 'f': r['f100'], 'g': g}
+            f['ref'] = {'g': 100, 'k': r['k100'], 'p': r['p100'], 'c': r['c100'], 'f': r['f100']}
+        else:
+            f = {'n': name, 'k': per100(r['kp'], r['k100']), 'p': per100(r['pp'], r['p100']), 'c': per100(r['cp'], r['c100']),
+                 'f': per100(r['fp'], r['f100']), 'g': g}
+            # keep Greggs' own per-portion line: `npm run check:foods` proves the app reproduces it
+            f['ref'] = {'g': P, 'k': r['kp'], 'p': r['pp'], 'c': r['cp'], 'f': r['fp']}
+            assert round(f['k'] * P / 100) == round(r['kp']), f'portion kcal mismatch: {n}'
         if drink: f['ml'] = True
         f['cat'] = 'drinks' if drink else 'fastfood'
         f['src'] = 'greggs-uk'

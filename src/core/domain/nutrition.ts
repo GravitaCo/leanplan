@@ -37,7 +37,7 @@ export function perText(f: Pick<Food, 'ml' | 'each'>): string {
 
 /** An amount in the food's unit: "150 g", "250 ml", "1 item", "½ item". */
 export function amountText(amount: number, unit: FoodUnit): string {
-  if (unit !== 'item') return `${Math.round(amount * 10) / 10} ${unit}`
+  if (unit !== 'item') return `${Math.round(amount * 100) / 100} ${unit}`
   const w = Math.floor(amount), r = amount - w
   const f = r >= 0.74 ? '¾' : r >= 0.49 ? '½' : r >= 0.24 ? '¼' : ''
   return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`
@@ -48,6 +48,19 @@ export function amountText(amount: number, unit: FoodUnit): string {
  *  g/ml only drop float noise (3 decimals); screens round for display. Items go to quarters. */
 export function roundAmount(amount: number, unit: FoodUnit): number {
   return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 1000) / 1000
+}
+
+/**
+ * What to show for a food: the source's own published line when it's per portion or per item
+ * (what users compare against, e.g. Greggs' spreadsheet), otherwise the stored per-100 values.
+ */
+export function headline(f: Food): MacroTotals & { per: string } {
+  const r = f.ref
+  if (r && r.g !== basisOf(f)) {
+    const s = scaleFood(f, r.g)
+    return { k: r.k, p: r.p ?? s.p, c: r.c ?? s.c, f: r.f ?? s.f, per: f.each ? 'per item' : `per portion (${amountText(r.g, unitOf(f))})` }
+  }
+  return { k: f.k, p: f.p, c: f.c, f: f.f, per: perText(f) }
 }
 
 /** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */

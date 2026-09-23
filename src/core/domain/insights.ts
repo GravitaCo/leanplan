@@ -8,7 +8,11 @@
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
-import { dayTotals, type MacroTotals } from './nutrition'
+import { dayTotals, scaleFood, unitOf, type MacroTotals } from './nutrition'
+import { FOODS } from '@/core/data/foods'
+
+const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
+const d1 = (x: number) => Math.round(x * 10) / 10
 import { workoutBurn } from './workout'
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -166,9 +170,20 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
 /** Copy of an entry for re-logging: keeps the portion, drops per-day confirmation state. */
+/**
+ * Re-log an earlier entry (one-tap usuals, "same as yesterday"). A database food is re-scaled
+ * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
+ * from an old snapshot. Same amount and unit; anything else keeps its logged numbers.
+ */
 export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const { ok: _ok, ...rest } = x
-  return { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
+  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
+    const s = scaleFood(food, x.grams)
+    Object.assign(out, { k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+  }
+  return out
 }
 export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[] {
   return dayOf(s, d).foods.filter((x) => x.meal === meal)

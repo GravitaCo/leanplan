@@ -2692,7 +2692,7 @@ const BASE: Food[] = [
   },
   {
     "n": "Subway 6-inch Chicken Tikka",
-    "k": 175,
+    "k": 175.13,
     "p": 14.2,
     "c": 21.8,
     "f": 3.6,
@@ -2706,7 +2706,7 @@ const BASE: Food[] = [
   },
   {
     "n": "Subway 6-inch Italian BMT",
-    "k": 278,
+    "k": 277.7,
     "p": 14.4,
     "c": 29.5,
     "f": 11.5,
@@ -3340,7 +3340,6 @@ const BASE: Food[] = [
     "ref": {
       "g": 100,
       "k": 14,
-      "p": 0,
       "c": 3.3,
       "f": 0
     }
@@ -3358,7 +3357,6 @@ const BASE: Food[] = [
     "ref": {
       "g": 100,
       "k": 20,
-      "p": 0,
       "c": 4.8,
       "f": 0
     }

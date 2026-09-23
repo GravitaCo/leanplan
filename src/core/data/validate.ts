@@ -8,8 +8,8 @@ import { checkPer100 } from '@/core/domain/checks'
 import { scaleFood } from '@/core/domain/nutrition'
 import { SOURCES } from './sources'
 
-/** Published macros are rounded to 0.1 g (small values to whole grams), so allow that much. */
-const MACRO_TOL = 0.15
+/** Published macros are given to 0.1 g, so the app may differ by no more than that. */
+const MACRO_TOL = 0.1 + 1e-9
 
 /**
  * The guardrail against "stored values right, screen wrong": when a source publishes its own
