@@ -18,10 +18,17 @@ export interface Food {
   c: number
   /** fat g per 100g/ml */
   f: number
-  /** default serving size in grams/ml */
+  /** default serving: grams/ml, or a count of items when `each` is set */
   g: number
   /** true when the food is measured in millilitres rather than grams */
   ml?: boolean
+  /** values are per one item (e.g. a chain's burger, as the chain publishes it), not per 100 */
+  each?: boolean
+  /** where the values come from: a key in `core/data/sources.ts` */
+  src?: string
+  /** the source's own published figure for an amount (a chain's per-portion or per-item line),
+   *  kept so the app can prove one serving reproduces it exactly (see validateFoods) */
+  ref?: FoodRef
   /** category — sets the default hand portion */
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
@@ -30,6 +37,11 @@ export interface Food {
   _u?: string
   _dirty?: boolean
 }
+
+export type FoodUnit = 'g' | 'ml' | 'item'
+
+/** A published figure: `k` kcal (and macros, when published) for `g` of the food's unit. */
+export interface FoodRef { g: number; k: number; p?: number; c?: number; f?: number }
 
 export type FoodCategory =
   | 'meat' | 'fish' | 'eggs' | 'dairy' | 'grains' | 'potato' | 'veg' | 'fruit'
@@ -57,7 +69,8 @@ export interface LoggedFood {
   c: number
   f: number
   meal?: MealSlot
-  unit?: 'g' | 'ml'
+  /** unit of `grams`: grams (default), millilitres, or a count of items */
+  unit?: FoodUnit
   /** capture metadata — all optional so entries logged before it existed stay valid */
   src?: EntrySource
   how?: CaptureMethod
@@ -80,8 +93,10 @@ export interface RecipeItem {
   p: number
   c: number
   f: number
+  /** amount in the item's unit: grams, ml, or a count when `each` is set */
   grams: number
   ml?: boolean
+  each?: boolean
 }
 
 export interface Recipe {

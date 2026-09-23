@@ -54,12 +54,34 @@ export function loadState(): PersistedState {
   return loadStateFrom(s)
 }
 
-export function saveState(s: PersistedState): void {
+/** Save to the device. Returns false if the browser refused (storage full or blocked), so
+ *  the caller can tell the user rather than lose their data silently. */
+export function saveState(s: PersistedState): boolean {
   try {
     localStorage.setItem(KEY, JSON.stringify(s))
+    return true
   } catch {
-    /* quota / private mode — stay in memory */
+    return false
   }
+}
+
+/** Ask the browser to keep Tali's storage rather than clear it under pressure (Safari clears
+ *  site data it thinks is unused). Harmless if unsupported or refused. */
+export async function requestPersistentStorage(): Promise<void> {
+  try {
+    if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist()
+  } catch { /* unsupported */ }
+}
+
+/** How this device last used Tali, so launch never needs the network to decide: 'guest'
+ *  (local-only) or 'account' (signed in; works offline, syncs when back online). */
+export type SessionMode = 'guest' | 'account'
+const MODE_KEY = 'tali.mode'
+export function loadMode(): SessionMode | null {
+  try { const m = localStorage.getItem(MODE_KEY); return m === 'guest' || m === 'account' ? m : null } catch { return null }
+}
+export function saveMode(m: SessionMode | null): void {
+  try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
 }
 
 /** Ensure sync metadata exists, optionally flagging all existing data dirty for first upload. */

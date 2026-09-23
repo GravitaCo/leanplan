@@ -38,6 +38,7 @@ export function ProfileScreen() {
   const email = useStore((s) => s.email)
   const authed = useStore((s) => s.authed)
   const signOut = useStore((s) => s.signOut)
+  const syncPaused = useStore((s) => s.syncPaused)
   const saveProfileMetrics = useStore((s) => s.saveProfileMetrics)
   const saveTargets = useStore((s) => s.saveTargets)
   const setPrefs = useStore((s) => s.setPrefs)
@@ -84,7 +85,7 @@ export function ProfileScreen() {
         <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 20, fontWeight: 600 }}>{pr.name || 'Add your name'}</div>
-          <div className="sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authed ? email : 'On this device only'}</div>
+          <div className="sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authed ? email : syncPaused ? 'Account · not syncing right now' : 'On this device only'}</div>
         </div>
       </div>
 
@@ -229,12 +230,12 @@ export function ProfileScreen() {
       <div className="list icons">
         <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || 'Local (no account)'}</div></div>
-            <button className="btn sm gray" onClick={signOut}>Sign out</button>
+            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || (syncPaused ? 'Your account (not syncing right now)' : 'Local (no account)')}</div></div>
+            <button className="btn sm gray" onClick={signOut}>{authed ? 'Sign out' : 'Sign in'}</button>
           </div>
         </Disclosure>
         <Disclosure icon="cloud" color="var(--mind)" label="Data & backup" open={open === 'backup'} onToggle={() => toggle('backup')}>
-          <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device{authed ? ' and synced to your private database' : ''}. Export a copy now and then.</div>
+          <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</div>
           <div className="grid2">
             <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
             <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>

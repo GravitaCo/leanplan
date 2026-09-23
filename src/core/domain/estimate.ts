@@ -14,7 +14,8 @@ import type {
   MealSlot,
   Profile,
 } from '@/core/types'
-import { scaleFood, unitOf } from './nutrition'
+import { amountText, roundAmount, scaleFood, unitOf } from './nutrition'
+import { sourceErr } from '@/core/data/sources'
 
 /** Extra relative error when the cooking-fat question is skipped: we don't add fat we
  *  weren't told about, we just say we're less sure. */
@@ -138,6 +139,10 @@ export function isCookable(f: Food, grams: number): boolean {
 }
 
 
+/** Stored values keep one decimal: finer than anything shown, and no float noise
+ *  (0.30000000000000004) bloating device storage and sync. */
+const d1 = (x: number) => Math.round(x * 10) / 10
+
 /** Portion as chosen in the add-food flow. */
 export type Portion =
   | { mode: 'serv'; serv: number }
@@ -156,13 +161,15 @@ export function buildEntry(
   let how: CaptureMethod
   if (portion.mode === 'serv') { grams = food.g * portion.serv; how = 'serv' }
   else if (portion.mode === 'hand') { grams = handGrams(profile, portion.type) * portion.count; how = 'hand' }
-  else { grams = portion.grams; how = portion.learned != null && Math.round(grams) === portion.learned ? 'usual' : 'g' }
-  grams = Math.round(grams)
+  else { grams = portion.grams; how = portion.learned != null && Math.abs(grams - portion.learned) < 0.0005 ? 'usual' : 'g' }
+  const unit = unitOf(food)
+  grams = roundAmount(grams, unit)
   const s = scaleFood(food, grams)
   // labels copied by hand are a little less certain than the curated database
-  const err = +(CAPTURE_ERR[how] + (opts.custom ? 0.03 : 0)).toFixed(2)
-  const entry: LoggedFood = { n: food.n, grams, k: s.k, p: s.p, c: s.c, f: s.f, meal, src: opts.custom ? 'custom' : 'db', how, err }
-  if (unitOf(food) === 'ml') entry.unit = 'ml'
+  // menu-label sources (restaurant chains) are wider than a weighed portion can make them
+  const err = +Math.max(CAPTURE_ERR[how] + (opts.custom ? 0.03 : 0), sourceErr(food)).toFixed(2)
+  const entry: LoggedFood = { n: food.n, grams, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f), meal, src: opts.custom ? 'custom' : 'db', how, err }
+  if (unit !== 'g') entry.unit = unit
   if (portion.mode === 'hand') entry.hand = { type: portion.type, count: portion.count }
   if (portion.mode === 'serv') entry.serv = portion.serv
 
@@ -190,7 +197,7 @@ export function combinedMargin(...xs: (LoggedFood | null)[]): number {
  */
 export function scaleEntry(x: LoggedFood, mult: number): LoggedFood {
   if (Math.abs(mult - 1) < 0.001) return x
-  const out: LoggedFood = { ...x, k: x.k * mult, p: x.p * mult, c: x.c * mult, f: x.f * mult, grams: Math.round((x.grams || 0) * mult), ok: true }
+  const out: LoggedFood = { ...x, k: d1(x.k * mult), p: d1(x.p * mult), c: d1(x.c * mult), f: d1(x.f * mult), grams: roundAmount((x.grams || 0) * mult, x.unit ?? 'g'), ok: true }
   if (x.hand) out.hand = { ...x.hand, count: Math.round(x.hand.count * mult * 10) / 10 }
   if (x.serv) out.serv = Math.round(x.serv * mult * 10) / 10
   return out
@@ -210,9 +217,9 @@ export function portionText(x: LoggedFood): string {
   if (x.how === 'quick') return 'Quick estimate'
   if (x.how === 'hand' && x.hand) {
     const h = HANDS[x.hand.type].label.toLowerCase()
-    return `${frac(x.hand.count)} ${h}${x.hand.count > 1 ? 's' : ''} · ≈ ${x.grams} ${u}`
+    return `${frac(x.hand.count)} ${h}${x.hand.count > 1 ? 's' : ''} · ≈ ${amountText(x.grams, u)}`
   }
   if (x.how === 'recipe') { const s = x.serv ?? 1; return `${frac(s)} serving${s !== 1 ? 's' : ''}` }
-  if (x.src === 'fat') return `${x.grams} ${u} · for ${x.fatFor ?? 'cooking'}`
-  return `${x.grams} ${u}${x.how === 'usual' ? ' · your usual' : ''}`
+  if (x.src === 'fat') return `${amountText(x.grams, u)} · for ${x.fatFor ?? 'cooking'}`
+  return `${amountText(x.grams, u)}${x.how === 'usual' ? ' · your usual' : ''}`
 }

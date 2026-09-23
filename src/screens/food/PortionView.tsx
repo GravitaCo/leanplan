@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
-import { unitOf } from '@/core/domain/nutrition'
+import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
+import { sourceOf } from '@/core/data/sources'
 import {
   CAPTURE_LABEL, FAT_OPTIONS, HANDS, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
 } from '@/core/domain/estimate'
-import { MEAL_LABEL, lastFatFor, lastUse } from '@/core/domain/insights'
+import { MEAL_LABEL, entryAmount, lastFatFor, lastUse } from '@/core/domain/insights'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 
 type Mode = Portion['mode']
+const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
 
 /**
  * Pick how much. Defaults to what the user had last time (learned portion), asks the
@@ -27,9 +29,16 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const u = unitOf(food)
 
   const last = lastUse(data, food.n)
-  const learned = last ? last.grams : null
-  const [mode, setMode] = useState<Mode>(last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
-  const [serv, setServ] = useState(1)
+  // what the last entry meant in today's data (a live-era 120 g roll is today's 119.5 g serving)
+  const learned = last ? entryAmount(last, food) : null
+  const each = u === 'item'
+  // per-item foods are counted, never weighed or hand-sized; a food last logged as servings
+  // opens in servings, at the same count
+  const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) && SERV_STEPS.includes(last.serv) ? last.serv : null
+  const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  const source = sourceOf(food)
+  const head = headline(food)
+  const [serv, setServ] = useState(lastServ ?? 1)
   const [grams, setGrams] = useState<number>(learned ?? food.g)
   const [hand, setHand] = useState<{ type: HandPortion; count: number }>(last?.hand ? { ...last.hand } : { type: handFor(food), count: 1 })
   // remembered per food: last time's answer for this food, never another food's
@@ -53,24 +62,27 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
-        {gentle ? `${food.p} g protein` : `${food.k} kcal · ${food.p} P · ${food.c} C · ${food.f} F`} per 100 {u}{custom ? ' · your food' : ''}
+        {gentle ? `${r1(head.p)} g protein` : `${Math.round(head.k)} kcal · ${r1(head.p)} P · ${r1(head.c)} C · ${r1(head.f)} F`} {head.per}
+        <div style={{ fontSize: 13, marginTop: 2 }}>
+          {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
+        </div>
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">How much?</div>
-      <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
-        value={mode} onChange={setMode} />
+      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
+        value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
             <div className="scale">
-              {[0.5, 1, 1.5, 2, 3].map((v) => (
+              {SERV_STEPS.map((v) => (
                 <button key={v} className={serv === v ? 'on' : ''} onClick={() => setServ(v)}>
-                  <b className="num">{frac(v)}</b>{Math.round(food.g * v)} {u}
+                  <b className="num">{frac(v)}</b>{each ? (gentle ? `${r1(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${r1(food.g * v)} ${u}`}
                 </button>
               ))}
             </div>
-            <div className="foot">One serving is {food.g} {u}.</div>
+            <div className="foot">{each ? `Values are for one item, as ${source?.text.split(',')[0] ?? 'the maker'} publishes them.` : `One serving is ${amountText(food.g, u)}.`}</div>
           </>
         )}
         {mode === 'hand' && (
@@ -96,7 +108,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         {mode === 'g' && (
           <>
             <div className="gram">
-              <input className="num" type="number" inputMode="decimal" value={grams || ''} aria-label={`Amount in ${u}`}
+              <input className="num" type="number" inputMode="decimal" value={grams ? Math.round(grams * 100) / 100 : ''} aria-label={`Amount in ${u}`}
                 onChange={(e) => setGrams(parseFloat(e.target.value) || 0)} />
               <span>{u}</span>
             </div>
@@ -104,7 +116,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
               onChange={(e) => setGrams(+e.target.value)} />
             {learned != null && (
               <div className="foot" style={{ textAlign: 'center' }}>
-                Your usual is {learned} {u}.{' '}
+                Your usual is {amountText(learned, u)}.{' '}
                 <button className="navbtn" style={{ fontSize: 13 }} onClick={() => setGrams(learned)}>Use it</button>
               </div>
             )}

@@ -1,4 +1,4 @@
-import type { DayLog, Food, Recipe, Profile, ActivityLevel, Goal, TargetRate } from '@/core/types'
+import type { DayLog, Food, FoodUnit, Recipe, Profile, ActivityLevel, Goal, TargetRate } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
 
 export interface MacroTotals {
@@ -20,26 +20,64 @@ export function dayTotals(day: DayLog | undefined): MacroTotals {
   return t
 }
 
-/** The measurement unit a food is logged in — millilitres for liquids, otherwise grams. */
-export function unitOf(f: Pick<Food, 'ml'>): 'g' | 'ml' {
-  return f.ml ? 'ml' : 'g'
+/** The unit a food is logged in: items for per-item foods, millilitres for liquids, else grams. */
+export function unitOf(f: Pick<Food, 'ml' | 'each'>): FoodUnit {
+  return f.each ? 'item' : f.ml ? 'ml' : 'g'
 }
 
-/** Scale a per-100g food to a portion in grams, producing an absolute macro entry. */
-export function scaleFood(f: Food, grams: number): MacroTotals & { g: number } {
-  const m = grams / 100
-  return { g: grams, k: f.k * m, p: f.p * m, c: f.c * m, f: f.f * m }
+/** How many units the stored values are for: 1 item, or 100 g/ml. */
+export function basisOf(f: Pick<Food, 'each'>): number {
+  return f.each ? 1 : 100
+}
+
+/** "per item", "per 100 g", "per 100 ml". */
+export function perText(f: Pick<Food, 'ml' | 'each'>): string {
+  return f.each ? 'per item' : `per 100 ${f.ml ? 'ml' : 'g'}`
+}
+
+/** An amount in the food's unit: "150 g", "250 ml", "1 item", "½ item". */
+export function amountText(amount: number, unit: FoodUnit): string {
+  if (unit !== 'item') return `${Math.round(amount * 100) / 100} ${unit}`
+  const w = Math.floor(amount), r = amount - w
+  const f = r >= 0.74 ? '¾' : r >= 0.49 ? '½' : r >= 0.24 ? '¼' : ''
+  return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`
+}
+
+/** Tidy an amount without losing real precision: chains publish portions like 206.76 g, and
+ *  rounding those (to 207 g, or even 206.8 g) shifts the calories users compare against. So
+ *  g/ml only drop float noise (3 decimals); screens round for display. Items go to quarters. */
+export function roundAmount(amount: number, unit: FoodUnit): number {
+  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 1000) / 1000
+}
+
+/**
+ * What to show for a food: the source's own published line when it's per portion or per item
+ * (what users compare against, e.g. Greggs' spreadsheet), otherwise the stored per-100 values.
+ */
+export function headline(f: Food): MacroTotals & { per: string } {
+  const r = f.ref
+  if (r && r.g !== basisOf(f)) {
+    const s = scaleFood(f, r.g)
+    return { k: r.k, p: r.p ?? s.p, c: r.c ?? s.c, f: r.f ?? s.f, per: f.each ? 'per item' : `per portion (${amountText(r.g, unitOf(f))})` }
+  }
+  return { k: f.k, p: f.p, c: f.c, f: f.f, per: perText(f) }
+}
+
+/** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */
+export function scaleFood(f: Food, amount: number): MacroTotals & { g: number } {
+  const m = amount / basisOf(f)
+  return { g: amount, k: f.k * m, p: f.p * m, c: f.c * m, f: f.f * m }
 }
 
 export function recipeTotals(r: Recipe): MacroTotals & { g: number } {
   const t = { k: 0, p: 0, c: 0, f: 0, g: 0 }
   for (const i of r.items || []) {
-    const m = (i.grams || 0) / 100
+    const m = (i.grams || 0) / basisOf(i)
     t.k += (i.k || 0) * m
     t.p += (i.p || 0) * m
     t.c += (i.c || 0) * m
     t.f += (i.f || 0) * m
-    t.g += i.grams || 0
+    if (!i.each) t.g += i.grams || 0
   }
   return t
 }

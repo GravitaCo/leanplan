@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
+import { checkPer100 } from '@/core/domain/checks'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
+import { Checks } from './common'
 
 /** Save a food from its packet label, then pick the portion. */
 export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
@@ -11,17 +13,23 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
   const showToast = useStore((s) => s.showToast)
   const [unit, setUnit] = useState<'g' | 'ml'>('g')
   const [f, setF] = useState({ n: '', g: '100', k: '', p: '', c: '', fat: '' })
+  const [warned, setWarned] = useState(false)
   const num = (v: string) => parseFloat(v) || 0
+  const vals = { k: num(f.k), p: num(f.p), c: num(f.c), f: num(f.fat) }
+  const given = { k: f.k !== '', macros: f.p !== '' || f.c !== '' || f.fat !== '' }
+  const checks = checkPer100(vals, given)
   const commit = () => {
     if (!f.n.trim()) { showToast('Give it a name'); return }
-    const food = saveCustomFood({ n: f.n.trim(), g: num(f.g) || 100, k: num(f.k), p: num(f.p), c: num(f.c), f: num(f.fat), ml: unit === 'ml' })
+    // a likely typo gets one nudge; the user has the packet, so a second Save keeps their numbers
+    if (!warned && checks.some((c) => c.level === 'warn')) { setWarned(true); showToast('Check the note below, or tap Save again to keep these numbers'); return }
+    const food = saveCustomFood({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml' })
     onSaved(food)
   }
   const row = (key: keyof typeof f, label: string, u: string, ph = '0') => (
     <div className="frow">
       <label htmlFor={'cf_' + key}>{label}</label>
       <input id={'cf_' + key} type={key === 'n' ? 'text' : 'number'} inputMode={key === 'n' ? 'text' : 'decimal'} placeholder={ph}
-        value={f[key]} onChange={(e) => setF({ ...f, [key]: e.target.value })} />
+        value={f[key]} onChange={(e) => { setF({ ...f, [key]: e.target.value }); setWarned(false) }} />
       {u && <span className="u">{u}</span>}
     </div>
   )
@@ -43,6 +51,8 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
         {row('c', 'Carbs', 'g')}
         {row('fat', 'Fat', 'g')}
       </div>
+      <Checks checks={checks} ok={given.k && given.macros ? 'Adds up: the calories match the protein, carbs and fat.' : undefined}
+        onFix={(k) => setF({ ...f, k: String(k) })} />
     </Sheet>
   )
 }

@@ -4,10 +4,11 @@
  */
 import { useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
+import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { fmt } from '@/core/domain/date'
-import { recipePerServing } from '@/core/domain/nutrition'
+import { fmt, r1 } from '@/core/domain/date'
+import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
 import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
 import { Sheet, pressable } from '@/ui/primitives'
@@ -58,7 +59,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
       <div className="m">
         <div className="t">{f.n}</div>
-        <div className="s num">{gentle ? '' : `${f.k} kcal · `}{f.p} g protein per 100 {f.ml ? 'ml' : 'g'}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
+        <div className="s num">{gentle ? '' : `${Math.round(headline(f).k)} kcal · `}{r1(headline(f).p)} g protein {headline(f).per}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
       </div>
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
@@ -125,10 +126,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const words = meaningful.length ? meaningful : [query]
     const recipes = recipesByUse(data).map((ri) => ({ r: data.recipes[ri], ri }))
       .filter((o) => words.every((w) => o.r.name.toLowerCase().includes(w)))
-    const foods = all.map((f, i) => ({ f, i }))
-      .filter((o) => words.every((w) => o.f.n.toLowerCase().includes(w)))
-      .sort((a, b) => a.f.n.toLowerCase().indexOf(words[0]) - b.f.n.toLowerCase().indexOf(words[0]))
-      .slice(0, 50)
+    const foods = rankByName(all.map((f, i) => ({ f, i })), (o) => o.f.n, words).slice(0, 50)
     body = (
       <>
         {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}

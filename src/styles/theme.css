@@ -163,6 +163,14 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
   margin-left: auto; background: var(--fill); border: 0; border-radius: 50%; width: 24px; height: 24px; flex: none;
   display: flex; align-items: center; justify-content: center; color: var(--label2);
 }
+/* accuracy checks on typed-in numbers (create food, recipe builder) */
+.note { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; font-size: 15px; line-height: 1.35; padding: 10px 14px; margin-top: 10px; border-radius: var(--radius); background: var(--card); color: var(--label); }
+.note > span { flex: 1; min-width: 60%; }
+.note svg { margin-top: 1px; color: var(--label2); }
+.note.warn svg { color: var(--tint); }
+.note.ok { background: none; padding: 8px 4px 0; color: var(--label2); font-size: 13px; }
+.note.ok svg { color: var(--energy-ink); }
+.note .btn.sm { margin-left: 27px; }
 .empty { text-align: center; color: var(--label2); font-size: 15px; padding: 22px 16px; line-height: 1.4; }
 .warn-box { background: color-mix(in srgb, var(--activity) 14%, transparent); border-radius: 10px; padding: 10px 12px; margin: 0 0 10px; }
 .prose { font-size: 15px; line-height: 1.45; }
@@ -340,7 +348,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .navbtn { background: none; border: 0; color: var(--tint); font-size: 17px; padding: 4px 0; display: inline-flex; align-items: center; }
 .navbtn.b { font-weight: 600; }
 .sheet-bd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 16px 24px; flex: 1; }
-.sheet .list, .sheet .card, .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
+.sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
+.sheet .scale button.on { background: var(--tint); }
 
 /* ===================== TRAIN ===================== */
 .ex .h { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }

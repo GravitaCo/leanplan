@@ -1,0 +1,26 @@
+name: Checks
+
+# Runs the same guardrails as the deploy on every working-branch push and pull request, so a
+# food-data or rounding error shows up red before anyone asks to merge.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run check:foods
+      - run: npm run build

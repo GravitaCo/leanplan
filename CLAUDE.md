@@ -1,9 +1,13 @@
 # Tali — project brief for Claude Code
 
 Tali is a personal **health & fitness PWA** — tracking fitness, diet/nutrition, body
-stats, workouts and supplements in one place. "Health" here means fitness + diet +
-nutrition (not medical/wellbeing). Tone: simple, approachable, gender-neutral, no
-gym-bro language.
+stats, workouts and supplements in one place. Tone: simple, approachable, gender-neutral,
+no gym-bro language.
+
+**Product frame:** good mental performance → good nutrition → good fitness. Sleep, stress,
+mood and motivation come first because they decide whether someone can eat well and train
+consistently. Tali offers **general wellness guidance, never medical advice or therapy**:
+see `docs/plans/ai-platform-plan.md` §4 and the `mental-performance` agent.
 
 - **Live:** https://app.tali.fit/ (GitHub Pages custom domain; the marketing site is Webflow
   on www.tali.fit; the repo is named `leanplan` for historical reasons; the app is **Tali**).
@@ -17,6 +21,8 @@ npm install
 npm run dev        # Vite dev server → http://localhost:5173/
 npm run build      # tsc -b && vite build → dist/
 npm run typecheck
+npm test           # core unit tests (checks, unit maths)
+npm run check:foods  # validates every built-in food; must pass before shipping food data
 ```
 
 - **Deploy = push to `main`.** A GitHub Actions workflow (`.github/workflows/deploy.yml`)
@@ -75,6 +81,20 @@ setting (`prefers-color-scheme`); there is no in-app override.
 - App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
   are generated from it.
 
+## Food data & offline (important)
+
+- **Offline-first:** Tali must open, search, log and save with no connection. Never add a
+  launch or save path that waits on the network. See `docs/plans/food-data-offline.md`.
+- Every food cites its source (`src`, keys in `src/core/data/sources.ts`); foods are per 100 g,
+  per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
+  the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.
+- Food names are stable IDs (learned usuals match by name): don't rename casually.
+- **What the user sees must equal the source.** Where a source publishes per-portion figures
+  (chains), those are the truth: keep portions exact and derive per-100 values from them. Check
+  every item through the app's logging path (one serving in the app = the published figure), not
+  just the stored per-100 values. Importers assert this; `npm test` checks chain servings.
+- **Food data changes need `nutrition-accuracy` sign-off as well as `ship-critic`** before merging.
+
 ## Backend & data (important)
 
 - Supabase. The anon key in `supabase.ts` is public by design; **RLS is locked** so every
@@ -99,3 +119,7 @@ Where a design has gaps, implement the obvious case and call out the decisions m
 
 - TypeScript strict; no unused locals. Match surrounding style.
 - Commit/push only when asked. Keep commits focused.
+- **Nothing goes live without `ship-critic` approval.** Even when Benn says "push live" or
+  "merge", run `ship-critic` on the change first and merge to `main` only on SHIP (or SHIP WITH
+  FIXES once those fixes are in and re-checked). If it hasn't approved, push to the working
+  branch and report its verdict instead. This keeps accountability for what reaches users.

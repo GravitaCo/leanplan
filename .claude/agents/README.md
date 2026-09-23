@@ -9,6 +9,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `fitness-workouts` | Workout templates, exercises, cues, programming | Safe, evidence-based, no gym-bro |
 | `security-data` | RLS, auth/OAuth, sync, Supabase schema | Skeptical, protective |
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
+| `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them
@@ -22,7 +23,9 @@ The three domain agents **build/propose but never push** — pushing is Benn's c
 (`commit/push only when asked`). Before anything goes live, run **`ship-critic`**: it
 reviews the diff against intent, verifies it runs, checks Tali's hard constraints, and
 returns **SHIP / SHIP WITH FIXES / DON'T SHIP**. Nothing merges to `main` (which
-auto-deploys to app.tali.fit) until it passes. `ship-critic` is read-only on purpose — it
+auto-deploys to app.tali.fit) until it passes — **even when Benn asks to push live or merge**
+(his standing instruction, Sept 2026): wait for the verdict, fix, re-check, then merge. **Food data changes also need
+`nutrition-accuracy` sign-off.** `ship-critic` is read-only on purpose — it
 judges, it can't quietly fix a thing to make it pass.
 
 ## Editing an agent

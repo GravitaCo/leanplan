@@ -20,13 +20,14 @@ import type {
   MacroTarget,
   Profile,
 } from '@/core/types'
-import { todayStr, shiftDay } from '@/core/domain/date'
+import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 
 enableMapSet()
@@ -43,6 +44,10 @@ interface StoreState {
   signedIn: boolean
   /** true only when a real Supabase session exists (not guest/local-only mode) */
   authed: boolean
+  /** signed-in account opened without a live session (offline): data saves locally, sync waits */
+  syncPaused: boolean
+  /** why the sign-in screen is showing, when it wasn't the user's choice */
+  authNotice: string | null
   toast: string | null
 
   // navigation
@@ -99,6 +104,8 @@ interface StoreState {
   runSync: () => Promise<void>
   scheduleSync: () => void
   signOut: () => Promise<void>
+  /** Call before a sign-in or sign-up attempt from the sign-in screen. */
+  beginSignIn: () => void
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -113,6 +120,17 @@ function meta(s: PersistedState): SyncMeta {
   return ensureMeta(s, false)
 }
 
+/** Remove Supabase's saved session (\`sb-<project>-auth-token\`) from this device. */
+function clearSavedSession() {
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token')).forEach((k) => localStorage.removeItem(k))
+  } catch { /* storage blocked */ }
+}
+
+/** Set by an explicit sign-out; cleared when the user starts signing in again. */
+let signingOut = false
+const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
+
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
@@ -120,7 +138,12 @@ let syncing = false
 export const useStore = create<StoreState>()(
   immer((set, get) => {
     // helper to persist after any mutation
-    const persist = () => saveState(get().data)
+    // Tell the user once if the device refuses to save, instead of losing data silently.
+    let storageWarned = false
+    const persist = () => {
+      if (saveState(get().data)) { storageWarned = false; return }
+      if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
+    }
 
     const markSettingsDirty = (s: PersistedState) => {
       meta(s).settings = { u: nowIso(), dirty: true }
@@ -138,6 +161,8 @@ export const useStore = create<StoreState>()(
       authReady: false,
       signedIn: false,
       authed: false,
+      syncPaused: false,
+      authNotice: null,
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),
@@ -248,7 +273,7 @@ export const useStore = create<StoreState>()(
         const per = recipePerServing(recipe)
         get().logEntries([{
           n: recipe.name, grams: Math.round(per.g * servings),
-          k: per.k * servings, p: per.p * servings, c: per.c * servings, f: per.f * servings,
+          k: r1(per.k * servings), p: r1(per.p * servings), c: r1(per.c * servings), f: r1(per.f * servings),
           meal, src: 'recipe', how: 'recipe', err: CAPTURE_ERR.recipe, serv: servings,
         }], recipe.name + ' added')
       },
@@ -422,23 +447,58 @@ export const useStore = create<StoreState>()(
       },
 
       initAuth: async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          setSession(session.access_token, session.user.id)
-          set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
+        requestPersistentStorage()
+        const mode = loadMode()
+        const live = (s: Session) => {
+          setSession(s.access_token, s.user.id)
+          saveMode('account')
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.email = s.user.email ?? null })
         }
-        set((st) => { st.authReady = true })
+        const toSignIn = (msg?: string) => {
+          setSession(null, null)
+          saveMode(null)
+          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = msg ?? null })
+        }
 
-        supabase.auth.onAuthStateChange((_event, session) => {
+        // Listen before restoring, so a sign-out the server forces during startup (password
+        // changed, "sign out everywhere", expired refresh token) is never missed.
+        let serverSignedOut = false
+        supabase.auth.onAuthStateChange((event, session) => {
+          // after a sign-out, ignore late events (e.g. a refresh that was mid-retry) until the
+          // user signs in again from the sign-in screen
+          if (signingOut) return
           if (session) {
-            setSession(session.access_token, session.user.id)
-            set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
-            get().runSync()
-          } else {
-            setSession(null, null)
-            set((st) => { st.signedIn = false; st.authed = false; st.email = null })
+            live(session)
+            if (get().authReady) get().runSync()
+          } else if (event === 'SIGNED_OUT') {
+            serverSignedOut = true
+            if (get().authReady) toSignIn(SIGNED_OUT_MSG)
           }
         })
+
+        // Launch must never depend on the network: restoring a session can stall offline while
+        // it retries a token refresh, so give it a few seconds, then open with local data.
+        // `definite` = the server answered (no session), as opposed to no connection.
+        const r = await Promise.race([
+          supabase.auth.getSession()
+            .then((x) => ({ session: x.data.session, definite: !x.error || !isAuthRetryableFetchError(x.error) }))
+            .catch(() => ({ session: null, definite: false })),
+          new Promise<{ session: null; definite: false }>((z) => setTimeout(() => z({ session: null, definite: false }), 4000)),
+        ])
+        const session = r.session
+        if (session) live(session)
+        else if (mode === 'guest') get().continueAsGuest()
+        else if (mode === 'account') {
+          if ((r.definite || serverSignedOut) && navigator.onLine) {
+            // signed out on the server: say so and ask to sign in, rather than quietly not syncing
+            toSignIn(SIGNED_OUT_MSG)
+          } else {
+            // offline or a weak signal: open the account's local data now; sync resumes when the
+            // session does. Only an explicit sign-out leads back to the sign-in screen.
+            set((st) => { st.signedIn = true; st.authed = false; st.syncPaused = true })
+          }
+        }
+        set((st) => { st.authReady = true })
 
         // Migration: flag local-only data dirty on first run so it uploads once signed in.
         set((st) => {
@@ -453,7 +513,18 @@ export const useStore = create<StoreState>()(
         saveState(get().data)
 
         if (session) get().runSync()
-        window.addEventListener('online', () => get().runSync())
+        window.addEventListener('online', async () => {
+          if (get().syncPaused) {
+            const res = await supabase.auth.getSession().catch(() => null)
+            if (res?.data.session) live(res.data.session)
+            else {
+              // only a definite answer from the server means signed out; a flaky reconnect stays paused
+              if (res && (!res.error || !isAuthRetryableFetchError(res.error))) toSignIn(SIGNED_OUT_MSG)
+              return
+            } // local data stays and uploads after sign-in
+          }
+          get().runSync()
+        })
         document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
       },
 
@@ -461,7 +532,8 @@ export const useStore = create<StoreState>()(
         // Local-only mode: no account, data stays on this device only. Cloud sync is
         // disabled (authed stays false) so we never touch the database without a real
         // authenticated session — the database is locked to auth.uid() by RLS.
-        set((st) => { st.signedIn = true; st.authed = false; st.email = null })
+        saveMode('guest')
+        set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null })
       },
 
       runSync: async () => {
@@ -495,8 +567,23 @@ export const useStore = create<StoreState>()(
         syncTimer = setTimeout(() => get().runSync(), 800)
       },
 
+      /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
+      beginSignIn: () => {
+        signingOut = false
+      },
+
       signOut: async () => {
-        await supabase.auth.signOut()
+        // Supabase keeps the saved session if its sign-out call can't reach the server
+        // (offline), which would sign the user straight back in: clear it locally as well, and
+        // ignore late session events (see onAuthStateChange). A refresh already in flight can
+        // re-save the session, so clear again once the sign-out call settles.
+        signingOut = true
+        const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
+        await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
+        clearSavedSession()
+        setSession(null, null)
+        saveMode(null)
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })
       },
     }
   }),

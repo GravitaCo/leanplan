@@ -8,8 +8,12 @@
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
-import { dayTotals, type MacroTotals } from './nutrition'
+import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
+import { FOODS } from '@/core/data/foods'
+
+const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
+const d1 = (x: number) => Math.round(x * 10) / 10
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
@@ -139,9 +143,11 @@ export function findRecipe(s: AppState, text: string): Recipe | null {
 export function recipeItemsFrom(entries: LoggedFood[]): RecipeItem[] {
   return entries.map((x) => {
     if (!x.grams) return { n: x.n, grams: 100, k: x.k, p: x.p, c: x.c, f: x.f }
-    const m = 100 / x.grams
+    const each = x.unit === 'item'
+    const m = (each ? 1 : 100) / x.grams
     const item: RecipeItem = { n: x.n, grams: x.grams, k: +(x.k * m).toFixed(1), p: +(x.p * m).toFixed(1), c: +(x.c * m).toFixed(1), f: +(x.f * m).toFixed(1) }
     if (x.unit === 'ml') item.ml = true
+    if (each) item.each = true
     return item
   })
 }
@@ -163,10 +169,40 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
-/** Copy of an entry for re-logging: keeps the portion, drops per-day confirmation state. */
+/**
+ * The amount an earlier entry really meant, in today's data. Logged as servings, it's today's
+ * exact serving: older builds stored servings rounded to whole grams (a 119.5 g bacon roll as
+ * 120 g), so a stored amount that equals the old rounded serving (or the exact one) is rebuilt.
+ * Anything else (weighed, hand, edited) keeps its stored amount.
+ */
+export function entryAmount(x: LoggedFood, food: Food): number {
+  if (x.serv != null) {
+    const s = x.serv, exact = food.g * s
+    // older builds stored the serving itself as whole grams (either way on a .5), then rounded
+    // serving × count again: 119.5 g stored as 120, so 2 rolls were saved as 240 g
+    const oldServing = [Math.floor(food.g), Math.ceil(food.g)]
+    if (Math.abs(x.grams - exact) < 0.0005 || x.grams === Math.round(exact) || oldServing.some((G) => Math.round(G * s) === x.grams)) {
+      return roundAmount(exact, unitOf(food))
+    }
+  }
+  return x.grams
+}
+
+/**
+ * Re-log an earlier entry (one-tap usuals, "same as yesterday"). A database food is re-scaled
+ * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
+ * from an old snapshot. Same amount and unit; anything else keeps its logged numbers.
+ */
 export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const { ok: _ok, ...rest } = x
-  return { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
+  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
+    const amount = entryAmount(x, food)
+    const s = scaleFood(food, amount)
+    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+  }
+  return out
 }
 export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[] {
   return dayOf(s, d).foods.filter((x) => x.meal === meal)
