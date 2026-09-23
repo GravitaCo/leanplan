@@ -62,6 +62,11 @@ reintroduced), and `src/core/` stays framework-agnostic.**
 
 ---
 
+> **Accuracy audit (nutrition-accuracy, September 2026).** The burn and energy sections were
+> checked against the code and the 2024 Compendium master list. All 21 new MET codes matched; the
+> double count was confirmed and sized; one claim was wrong (an incline code does exist) and has
+> been corrected; D5 and D11 are signed off with changes, written into §7.3.
+
 ## 0. Wellbeing first: principles and guardrails
 
 **Why this comes first.** Tali's frame is good mental performance → good nutrition → good
@@ -164,8 +169,11 @@ every phase must meet them, and ship-critic checks each phase against this list.
   Today ("+X kcal of room", `TodayScreen.tsx`) and Train ("That gives you about X kcal more room
   today", `TrainScreen.tsx`). Two accuracy problems, both checked: the `ACTIVITY` multipliers in
   `constants.ts` already count exercise days ("Lightly active (1–3 days/week)"), so logged
-  sessions are probably counted twice; and only `Walk` (3.8) and the flat strength value (3.5)
-  match a 2024 Compendium code. The other five `CARDIO_MET` values differ or have no source
+  sessions are counted twice (confirmed by nutrition-accuracy: about 135–160 kcal a day for 3 lifts
+  and 3 cardio sessions a week); and only `Walk` (3.8), `Incline treadmill` (5.0, but only the
+  "very slow" graded code) and the flat strength value (3.5) match a 2024 Compendium code. The
+  other four `CARDIO_MET` values differ or have no source, and a blank cardio type silently uses
+  4.0, which matches nothing
   (§2.9).
 - **The goal and onboarding contract types have shipped; the questionnaire has not.**
   `Profile.goal` (the four-value `Goal`), `bodyFat`, `targetRate` and `training?: TrainingPrefs`
@@ -673,7 +681,7 @@ create policy "owner_full_access" on public.training_plans
 `src/core/domain/nutrition.ts` multiplies BMR by that factor. Then `rangeFor()` in
 `src/core/domain/insights.ts` adds `workoutBurn()` (`src/core/domain/workout.ts`) on top for
 every logged session. So someone who says "moderately active" because they train 3–5 days a
-week probably gets those sessions counted twice. This is decision **D5**: the recommendation is
+week gets those sessions counted twice. This is decision **D5**: the recommendation is
 to stop adding per-session burn to the food range, and instead suggest an activity-level update
 when logged sessions show the setting is out of date (a suggestion the user accepts, in the
 style of the dynamic-adjustment loop in `personalized-nutrition-targets.md` §3). That also meets
@@ -714,7 +722,7 @@ Hot yoga (02155) and high-intensity hatha (02153, 8.0) exist but are not offered
 | `CARDIO_MET` key | Shipped value | 2024 Compendium | Status |
 |---|---|---|---|
 | Walk | 3.8 | 17190, 3.8 (2.8–3.4 mph, level, moderate) | **matches** |
-| Incline treadmill | 5.0 | no uphill treadmill code found in this pass | **unknown, unsourced** |
+| Incline treadmill | 5.0 | 17032, 5.0 (5–20% grade, very slow); 17034, 5.3 (1–5%, moderate to brisk); 17035, 7.0 (6–10%); 17036, 8.8 (11–20%, slow to moderate) | **matches the slowest code only; likely understates typical incline walking by up to ~40%. Split by grade.** |
 | Stationary bike | 5.5 | 01200, 6.8 (general); 01216, 5.0 (60 W); 01218, 5.8 (70–80 W) | **no matching code** |
 | Cross-trainer | 5.5 | 02048, 5.0 (elliptical, moderate) | **differs** |
 | Rower | 6.0 | 02071, 5.0 (< 100 W, moderate); 02070, 7.3 (general, vigorous) | **no matching code** |
@@ -722,10 +730,26 @@ Hot yoga (02155) and high-intensity hatha (02153, 8.0) exist but are not offered
 
 New keys that can be sourced now: brisk walk 17200, 4.8; jogging 12020, 7.5; running 5 mph
 12030, 8.5; running 6 mph 12050, 9.3; outdoor cycling, leisure < 10 mph 01010, 4.0; stair
-treadmill 02065, 9.3; elliptical vigorous 02049, 9.0; rowing vigorous 02070, 7.3. **Swimming,
-jump rope and intervals: unknown in this pass** (not looked up). Leave them out until they are
-sourced, following the food-data rule "never invent values". Correcting the shipped cardio
-values is decision **D11**.
+treadmill 02065, 9.3; elliptical vigorous 02049, 9.0; rowing vigorous 02070, 7.3. Swimming:
+18240, 5.8 (freestyle, slow); 18290, 8.0; 18230, 9.8. Jump rope: 15552, 8.3; 15551, 11.8.
+Intervals: 02210, 7.0 (HIIT, moderate); 02214, 11.0 (vigorous); 01305, 8.8 (cycling HIIT).
+(Codes found by nutrition-accuracy in the 2024 master list; confirm the descriptions before use.)
+
+**Other fixes the audit found:**
+- A blank cardio type falls back to **4.0** in `workout.ts`, which is neither `Other` (4.5) nor
+  sourced. Use `Other` or show no estimate.
+- The Cardio template says "Brisk walk" but defaults to `Walk` (3.8, 17190, 2.8–3.4 mph). Brisk
+  is 17200 at 4.8, a mismatch of about 26%. Name and value must agree.
+- 02050 (6.0) is "power lifting or body building, vigorous", so treat it as vigorous strength
+  with care. There is no light strength code, so "Easy" strength falls back to 3.5.
+- Stationary bike: prefer 01216 (5.0) or 01218 (5.8) as the moderate default, not 01200 (6.8).
+- **Older users:** the adult Compendium assumes 3.5 mL/kg/min at rest; its companion for adults
+  60 and over uses 2.7, so adult values read about 30% high for them. The app has no age
+  adjustment today. Open question for implementation.
+- Every burn is a group-mean estimate with large individual error (largest for resistance
+  training), so copy always says "about".
+
+Correcting the shipped cardio values is decision **D11**.
 
 **`estMins` from a routine** (all **judgement calls, unvalidated**): about 2.5 min per
 resistance set including rest, hold seconds + 20 s per hold set, about 1.5 min per
@@ -734,7 +758,11 @@ sun-salutation round, listed minutes for duration slots, the video length for gu
 **Gross vs net.** MET × kg × hours is gross: it includes the resting energy (1 MET) the TDEE
 already covers for that hour. If burn stays in the range, it should be net (MET − 1). Worked
 example, computed: 45 min moderate strength at 75 kg is 3.5 × 75 × 0.75 ≈ 197 kcal gross and
-2.5 × 75 × 0.75 ≈ 141 kcal net, about 29% less. Any change to burn needs **nutrition-accuracy**
+2.5 × 75 × 0.75 ≈ 141 kcal net, about 29% less. The saving is 1/MET, so it varies by activity
+(about 56% for mat pilates at 1.8, 26% for walking at 3.8, 13% for jogging at 7.5); never reuse
+29% as a blanket figure. Net only removes resting energy: for anyone on a light, moderate or
+active level the session is already in the multiplier, so net MET shrinks the double count but
+does not remove it. Any change to burn needs **nutrition-accuracy**
 sign-off, because it moves the food range.
 
 **Tone (§0.8).** Gentle mode hides burn. No copy presents burn as food room. Phase 1 replaces
@@ -839,7 +867,7 @@ builder (§4.3).
 
 ### 3.5 Session size by minutes
 **Driven by** `training.minutesPerSession`. The whole table is a **judgement call, unvalidated**,
-anchored to today's templates (5–6 exercises at 2–3 sets is about 13–17 sets, roughly 33–43 minutes at the 2.5-minute-a-set estimate in §2.9, before a warm-up).
+anchored to today's templates (5–6 exercises at 2–3 sets is about 13–18 sets, roughly 33–45 minutes at the 2.5-minute-a-set estimate in §2.9, before a warm-up).
 
 | Minutes | Resistance session | M or C session |
 |---|---|---|
@@ -901,7 +929,7 @@ field → recommender decision → plan.* All additions are optional fields on t
 | `lose-fat` | Reduce body fat while keeping muscle | 6–15 reps to keep muscle; volume toward the low end; cardio for fitness; never a 6-day default | **Deficit**; high protein |
 | `build-muscle` | Add muscle (headline focus) | 6–15 reps, 1–3 min rest, 2–3 RIR; full MEV → MAV volume | **Slight surplus** or maintenance |
 | `increase-strength` | Get stronger on key lifts | Main compounds 3–6 reps, 2–4 min rest; accessories 6–12 | **About maintenance** |
-| `increase-endurance` | Improve stamina and muscular endurance | Cardio-led mix; 12–20+ reps and circuits | **Maintenance** |
+| `increase-endurance` | Improve stamina and muscular endurance | Cardio-led mix; 12–20+ reps and circuits | **Maintenance or a small deficit** (`goalAdjustPct` allows −10…0%) |
 
 This coupling is wired: `suggestedTargets()` reads `profile.goal`. A possible fifth goal
 ("feel better / move more") would change this shared enum and the nutrition engine, so it is a
@@ -1153,8 +1181,9 @@ side, strap optional), `wall-calf-stretch` (per side), `knee-to-wall` (reps, per
 **Cardio (log `duration`):** `cardio-walk`, `cardio-incline-walk`, `cardio-run`,
 `cardio-cycle` (outdoor), `cardio-bike` (stationary), `cardio-row`, `cardio-swim`,
 `cardio-cross-trainer`, `cardio-stair`, `cardio-jump-rope`, `cardio-intervals`. Each maps to a
-`CARDIO_MET` key with a Compendium code (§2.9). Swimming, jump rope and intervals have no
-sourced value yet: they can be logged, but show no burn estimate until one is sourced.
+`CARDIO_MET` key with a Compendium code (§2.9). Swimming, jump rope and intervals now have
+candidate codes (§2.9); until each is confirmed and added with its code, they can be logged but show
+no burn estimate.
 
 That is roughly 120 entries, beyond the earlier 40–60+ target, spread across all six
 modalities so every filter always has a substitute.
@@ -1420,11 +1449,22 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
   meant the calendar itself should shift so the next session is always the missed one, that is the
   rotation schedule that was tried and reverted, so please confirm before anyone builds it.
 - **D5. Should logged sessions widen the food range at all?** `ACTIVITY` already counts exercise
-  days, so adding session burn on top probably double counts (§2.9). **Recommend: stop adding
-  session burn to the range**, and suggest an activity-level update when logged sessions no longer
-  match the setting. This is more accurate and never frames exercise as earning food. If burn
-  stays, use net MET (MET − 1), about 29% lower for a typical strength session. Needs
-  nutrition-accuracy sign-off either way.
+  days, so adding session burn on top double counts (§2.9; confirmed by nutrition-accuracy, about
+  135–160 kcal a day for 3 lifts and 3 cardio a week, or 36–42% of a typical lose-fat deficit).
+  **Recommend: stop adding session burn to the range**, and suggest an activity-level update when
+  logged sessions no longer match the setting. nutrition-accuracy **signs off with changes**:
+  - **Scope:** for `sedentary` users the right model is target + **net** burn. Either keep net burn
+    for sedentary only, or reword the level labels as "daily life, not counting logged training".
+    Pick one, so a sedentary person who trains isn't under-fuelled.
+  - **The suggestion is computed, not guessed:** logged minutes and MET-hours over 3–4 weeks against
+    each level's day band. The user accepts it; it never changes automatically.
+  - **History:** `rangeFor` is computed live, so past training days' ranges would drop by about
+    119–197 kcal and past "in range" counts would change. Freeze history (old maths before the
+    switch date) or accept and explain the shift.
+  - **Tell users once**, neutrally: "Your range no longer adds workout estimates, because your
+    activity level already includes training. You can update your activity level in Profile."
+    Numbers hidden in gentle mode.
+  - Stored `target.kcal` is unchanged.
 - **D6. A fifth goal, "feel better / move more".** Many people aren't after a body change. It
   touches the shared `Goal` enum, `goalAdjustPct()` (an exhaustive `switch`) and `PROTEIN_PER_KG` (a
   `Record<Goal, number>`) in `nutrition.ts`, plus `GOALS` and `GOAL_TARGET_LABEL` in
@@ -1444,11 +1484,14 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
 - **D10. Onboarding placement (carried over).** A first-run flow or a dismissible "Set up my
   training" card. **Recommend the card**: lower friction, no gated wall, and it suits skippable
   one-per-screen questions.
-- **D11. Fix the shipped `CARDIO_MET` values?** Five of six don't match a 2024 Compendium code
-  (§2.9 table). **Recommend replacing them with cited values** (for example Cross-trainer 5.0 from
-  02048, Rower 5.0 from 02071, Stationary bike split by effort from the 012xx codes), leaving
-  Incline treadmill and Other unsourced until looked up, with nutrition-accuracy sign-off. Best
-  done with D5, since both change the same numbers.
+- **D11. Fix the shipped `CARDIO_MET` values?** Four of six don't match a 2024 Compendium code,
+  and Incline treadmill matches only the slowest graded code (§2.9 table). **Recommend replacing
+  them with cited values:** Cross-trainer 5.0 (02048), Rower 5.0 (02071), Stationary bike 5.0
+  (01216) or 5.8 (01218), Incline treadmill split by grade (17034 5.3, 17035 7.0, 17036 8.8), the
+  silent 4.0 fallback replaced, and "Brisk walk" matched to its value. Record each key's code in
+  `MET_SOURCES` and add a test like `check:foods` (there are no tests on `workoutBurn`,
+  `CARDIO_MET` or `rangeFor` today). nutrition-accuracy **signs off with these changes**. Ship
+  with D5, since both change the same numbers.
 - **D12. Protein by modality.** Should a cardio-led or yoga-only plan change protein? **Recommend
   no**: `PROTEIN_PER_KG` is already set by goal, and modality adds nothing we can source. This is
   the nutrition owner's call if it's ever revisited.
