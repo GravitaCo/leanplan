@@ -20,11 +20,11 @@ import type {
   MacroTarget,
   Profile,
 } from '@/core/types'
-import { todayStr, shiftDay } from '@/core/domain/date'
+import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
 import { subscribePush, unsubscribePush } from '@/data/push'
@@ -43,6 +43,8 @@ interface StoreState {
   signedIn: boolean
   /** true only when a real Supabase session exists (not guest/local-only mode) */
   authed: boolean
+  /** signed-in account opened without a live session (offline): data saves locally, sync waits */
+  syncPaused: boolean
   toast: string | null
 
   // navigation
@@ -120,7 +122,12 @@ let syncing = false
 export const useStore = create<StoreState>()(
   immer((set, get) => {
     // helper to persist after any mutation
-    const persist = () => saveState(get().data)
+    // Tell the user once if the device refuses to save, instead of losing data silently.
+    let storageWarned = false
+    const persist = () => {
+      if (saveState(get().data)) { storageWarned = false; return }
+      if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
+    }
 
     const markSettingsDirty = (s: PersistedState) => {
       meta(s).settings = { u: nowIso(), dirty: true }
@@ -138,6 +145,7 @@ export const useStore = create<StoreState>()(
       authReady: false,
       signedIn: false,
       authed: false,
+      syncPaused: false,
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),
@@ -248,7 +256,7 @@ export const useStore = create<StoreState>()(
         const per = recipePerServing(recipe)
         get().logEntries([{
           n: recipe.name, grams: Math.round(per.g * servings),
-          k: per.k * servings, p: per.p * servings, c: per.c * servings, f: per.f * servings,
+          k: r1(per.k * servings), p: r1(per.p * servings), c: r1(per.c * servings), f: r1(per.f * servings),
           meal, src: 'recipe', how: 'recipe', err: CAPTURE_ERR.recipe, serv: servings,
         }], recipe.name + ' added')
       },
@@ -422,21 +430,35 @@ export const useStore = create<StoreState>()(
       },
 
       initAuth: async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          setSession(session.access_token, session.user.id)
-          set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
+        requestPersistentStorage()
+        // Launch must never depend on the network: restoring a session can stall offline while
+        // it retries a token refresh, so give it a few seconds, then open with local data.
+        const session = await Promise.race([
+          supabase.auth.getSession().then((r) => r.data.session).catch(() => null),
+          new Promise<null>((r) => setTimeout(() => r(null), 4000)),
+        ])
+        const mode = loadMode()
+        const live = (s: NonNullable<typeof session>) => {
+          setSession(s.access_token, s.user.id)
+          saveMode('account')
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.email = s.user.email ?? null })
+        }
+        if (session) live(session)
+        else if (mode === 'guest') get().continueAsGuest()
+        else if (mode === 'account' && !navigator.onLine) {
+          // offline: open the account's local data now; sync resumes when the session does
+          set((st) => { st.signedIn = true; st.authed = false; st.syncPaused = true })
         }
         set((st) => { st.authReady = true })
 
-        supabase.auth.onAuthStateChange((_event, session) => {
+        supabase.auth.onAuthStateChange((event, session) => {
           if (session) {
-            setSession(session.access_token, session.user.id)
-            set((st) => { st.signedIn = true; st.authed = true; st.email = session.user.email ?? null })
+            live(session)
             get().runSync()
-          } else {
+          } else if (event === 'SIGNED_OUT') {
             setSession(null, null)
-            set((st) => { st.signedIn = false; st.authed = false; st.email = null })
+            saveMode(null)
+            set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
           }
         })
 
@@ -453,7 +475,14 @@ export const useStore = create<StoreState>()(
         saveState(get().data)
 
         if (session) get().runSync()
-        window.addEventListener('online', () => get().runSync())
+        window.addEventListener('online', async () => {
+          if (get().syncPaused) {
+            const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
+            if (session) live(session)
+            else { set((st) => { st.signedIn = false; st.syncPaused = false }); return } // needs a fresh sign-in; local data stays and uploads after
+          }
+          get().runSync()
+        })
         document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
       },
 
@@ -461,6 +490,7 @@ export const useStore = create<StoreState>()(
         // Local-only mode: no account, data stays on this device only. Cloud sync is
         // disabled (authed stays false) so we never touch the database without a real
         // authenticated session — the database is locked to auth.uid() by RLS.
+        saveMode('guest')
         set((st) => { st.signedIn = true; st.authed = false; st.email = null })
       },
 
@@ -495,8 +525,12 @@ export const useStore = create<StoreState>()(
         syncTimer = setTimeout(() => get().runSync(), 800)
       },
 
+      /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
       signOut: async () => {
-        await supabase.auth.signOut()
+        if (get().authed) await supabase.auth.signOut().catch(() => {})
+        setSession(null, null)
+        saveMode(null)
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
       },
     }
   }),
