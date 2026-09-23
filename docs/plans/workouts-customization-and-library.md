@@ -1294,7 +1294,23 @@ model. It generalises to routines later without rework.
   touches the food range.
 - **Neutral copy for burn.** The Train banner becomes "**Push** logged for Wednesday." with no
   kcal sentence, and the Today workout tile's "+X kcal of room" becomes "Logged". Final wording
-  is mental-performance's call. Whether burn still widens the range quietly is D5.
+  is mental-performance's call.
+- **Stop the double count (D5, decided) and fix the cardio values (D11).** `rangeFor` stops adding
+  gross session burn. Per nutrition-accuracy's conditions: `sedentary` users keep **net** burn
+  (MET − 1) in the range, applied quietly with no "room" copy (D5a); history before the switch
+  date keeps the old maths so past days and "in range" counts don't move (D5b); a one-time
+  neutral note explains the change ("Your range no longer adds workout estimates, because your
+  activity level already includes training. You can update your activity level in Profile."),
+  with numbers hidden in gentle mode; and an activity-level suggestion computed from 3–4 weeks of
+  logged MET-hours, which the user accepts or ignores. `CARDIO_MET` moves to cited values with
+  codes in `MET_SOURCES` (§2.9, D11), the silent 4.0 fallback goes, and "Brisk walk" is matched to
+  its value. Stored `target.kcal` never changes. **Sign-off: nutrition-accuracy.**
+- **Fifth goal "Feel better and move more" (D6, decided for P1).** Adds `feel-better` to the shared
+  `Goal` enum. Energy: maintenance (`goalAdjustPct` 0). Protein: a value set and sourced by
+  nutrition-accuracy before build (not chosen here; never invented). Picked in Profile's goal
+  chips; the recommender (P6) builds an enjoyment-led balanced mix for it. TypeScript flags every
+  exhaustive `switch` and `Record<Goal, …>` that needs the new case (`nutrition.ts`,
+  `ProfileScreen.tsx`). **Sign-off: nutrition-accuracy and mental-performance.**
 - **Plans slide.** If the most recent planned session in the last 6 days wasn't logged and
   differs from today's, Train offers "Pick up with Legs whenever you're ready." Choosing it only
   changes today (the existing "it only changes today" behaviour). The calendar never moves.
@@ -1309,7 +1325,11 @@ model. It generalises to routines later without rework.
   "2–3 × 12" → 2, "2 × …" → 1); catch-up picks at most one session and never edits `schedule`;
   a source assert that no screen contains "kcal of room" or "more room today"; every
   `CARDIO_MET` key used by the swap (`Mobility` = 02101, 2.3) has a Compendium code in a new
-  `MET_SOURCES` map; old days load unchanged. Bump the SW `CACHE`.
+  `MET_SOURCES` map; old days load unchanged. Plus, for D5/D11/D6: `rangeFor` equals
+  `target.kcal` for non-sedentary users after the switch date and is unchanged before it; the
+  sedentary net-burn figure for a fixed fixture (75 kg, 45 min strength = 141 kcal); every
+  `CARDIO_MET` key has a code and its value equals the Compendium value; `feel-better` gives
+  `goalAdjustPct` 0 and a protein value that has a cited source. Bump the SW `CACHE`.
 
 ### P2. Log any movement, several a day (schema: `day_logs.sessions`)
 `Session`, `DayLog.sessions`, `sessionsOf`/`fromLegacy`, the legacy mirror, defensive loads,
@@ -1434,6 +1454,18 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
   mirrored (§2.5).
 - The links to Mind, Nutrition and Body are named against the code (§1a).
 
+### 7.3a Benn's answers (September 2026)
+- **D4:** plans slide as an offer; the calendar never moves. As recommended.
+- **D5:** stop adding workout burn to the food range. As recommended, with nutrition-accuracy's
+  conditions. Sub-choices recommended and pending Benn's confirmation: **D5a** keep net burn for
+  sedentary users only (rather than rewording the level labels, which would silently change what
+  existing users chose); **D5b** freeze history before the switch date.
+- **D6:** add the fifth goal **in Phase 1** (not P6 as recommended). Phase 1 grows accordingly.
+- **D10:** both. The tailoring questions appear during onboarding, every one skippable, and can be
+  answered later from a "Set up my training" card or from Profile. A fuller onboarding redesign
+  comes later, so P6 builds these screens to slot into it.
+- All other decisions (D1–D3, D7–D9, D11, D12) go ahead as recommended unless Benn says otherwise.
+
 ### 7.3 Decisions for Benn (with recommendations)
 - **D1. Phase order.** Tables just in time (routines in P4, plans in P5) so P1 can be
   wellbeing-led with no schema change, or all tables up front as revision 2 said? **Recommend
@@ -1481,7 +1513,7 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
   long-form footage is hard to form-check. Pose-by-pose flows give most of the value first.
 - **D9. Pilates reformer and studio kit.** **Recommend mat only** for the starter set; `reformer`
   exists in `Equipment` so it can be added later.
-- **D10. Onboarding placement (carried over).** A first-run flow or a dismissible "Set up my
+- **D10. Onboarding placement (carried over; answered in 7.3a: both, skippable).** A first-run flow or a dismissible "Set up my
   training" card. **Recommend the card**: lower friction, no gated wall, and it suits skippable
   one-per-screen questions.
 - **D11. Fix the shipped `CARDIO_MET` values?** Four of six don't match a 2024 Compendium code,
