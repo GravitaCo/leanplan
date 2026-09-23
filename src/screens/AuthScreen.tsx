@@ -175,7 +175,7 @@ export function AuthScreen() {
               </button>
             ) : (
               <span>
-                {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}
+                {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
                 <button
                   type="button"
                   className="linkbtn"

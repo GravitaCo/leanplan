@@ -404,6 +404,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .auth .list { margin-bottom: 0; }
 .auth .list input { background: none; border-radius: 0; padding: 0; height: 44px; }
 .auth .list input:focus { outline: none; }
+.auth .frow:focus-within { box-shadow: inset 3px 0 0 var(--tint); }
 .auth .frow label { min-width: 84px; }
 .auth .frow input { text-align: left; }
 .auth-err { font-size: 13px; line-height: 1.38; color: var(--red); padding: 8px 16px 0; }
