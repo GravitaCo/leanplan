@@ -169,7 +169,7 @@ export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active'
  * level of Profile (not TrainingPrefs) because both domains read it — one field, one
  * write path, so training plan and calorie direction can never silently disagree.
  */
-export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance'
+export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance' | 'feel-better'
 
 /** How fast the user wants to progress (onboarding #8). Default: 'standard'. */
 export type TargetRate = 'steady' | 'standard' | 'aggressive'

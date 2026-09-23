@@ -8,6 +8,7 @@ import { refMismatches } from '@/core/data/validate'
 import { entryAmount, relog } from '@/core/domain/insights'
 import LIVE from './fixtures-live-servings.json'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
+import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
 import { DEMOS } from '@/core/data/media'
 import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
@@ -276,5 +277,13 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = 'Legs - - - - - 2 true false false false 2026-09-29'
   const ok = got === want && JSON.stringify(s1.schedule) === before; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans slide', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+// fifth goal "feel better and move more" (plan D6): maintenance energy, sourced 1.2 g/kg protein
+{
+  const pr = { ...DEFAULT_PROFILE, sex: 'M', age: 35, height: 175, activityLevel: 'light', goal: 'feel-better', targetRate: 'aggressive' } as any
+  const t = suggestedTargets(pr, 75) as any
+  const got = [t.adjustPct, t.kcal === t.maint, t.p, PROTEIN_PER_KG['feel-better']].join(' ')
+  const ok = got === '0 true 90 1.2'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'feel-better goal', JSON.stringify(got))
 }
 process.exit(bad ? 1 : 0)

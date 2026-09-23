@@ -171,15 +171,28 @@ function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, rate: Ta
       const shift: Record<TargetRate, number> = { steady: 2, standard: 0, aggressive: -3 }
       return clamp(base + bump[activity] + shift[rate], -10, 0)
     }
+    case 'feel-better':
+      // "Feel better and move more" (workout plan D6): no body-change aim, so energy stays at
+      // maintenance whatever the pace setting.
+      return 0
   }
 }
 
-/** Protein anchor in g/kg bodyweight — highest in a deficit, to preserve lean mass. */
-const PROTEIN_PER_KG: Record<Goal, number> = {
+/**
+ * Protein anchor in g/kg bodyweight — highest in a deficit, to preserve lean mass.
+ * Sources (checked by nutrition-accuracy, September 2026): the training goals sit inside the ISSN
+ * range for exercising people, 1.4–2.0 (Jäger et al. 2017, doi:10.1186/s12970-017-0177-8), and
+ * the resistance-training meta-analysis range 1.6–2.2 (Morton et al. 2018,
+ * doi:10.1136/bjsports-2017-097608). 'feel-better' has no hypertrophy or deficit aim, so it takes
+ * the floor for active adults, 1.2 (ACSM/AND/DC 2016, Thomas et al., doi:10.1016/j.jand.2015.12.006),
+ * which also meets the 1.0–1.2 advised for older adults (PROT-AGE, Bauer et al. 2013).
+ */
+export const PROTEIN_PER_KG: Record<Goal, number> = {
   'lose-fat': 2.0,
   'build-muscle': 1.8,
   'increase-strength': 1.8,
   'increase-endurance': 1.6,
+  'feel-better': 1.2,
 }
 
 /**
