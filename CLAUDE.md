@@ -20,14 +20,14 @@ see `docs/plans/ai-platform-plan.md` §4 and the `mental-performance` agent.
 npm install
 npm run dev        # Vite dev server → http://localhost:5173/
 npm run build      # tsc -b && vite build → dist/
-npm run preview:local  # production build served on your Mac and Wi-Fi (see docs/local-preview.md)
+bash scripts/preview.sh [branch]  # switch branch, build, serve on your Mac and Wi-Fi (docs/local-preview.md)
 npm run typecheck
 npm test           # core unit tests (checks, unit maths)
 npm run check:foods  # validates every built-in food; must pass before shipping food data
 ```
 
 - **Preview before live = local** (Benn's choice for now; no staging host). Check a working
-  branch with `npm run preview:local` as described in `docs/local-preview.md`.
+  branch with `bash scripts/preview.sh <branch>` as described in `docs/local-preview.md`.
 - **Deploy = push to `main`.** A GitHub Actions workflow (`.github/workflows/deploy.yml`)
   builds and publishes to GitHub Pages. Pages source is **GitHub Actions** (build_type
   `workflow`) — do NOT switch it back to "deploy from a branch" or it serves raw source
