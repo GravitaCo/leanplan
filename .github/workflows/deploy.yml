@@ -24,6 +24,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # the legal texts must name a real controller and contact before they go live
+      - run: npm run check:legal
       - run: npm run build
       # Publish the new Tali app at the site root, with the previous LeanPlan
       # build parked at /legacy/ as a fallback during the transition.

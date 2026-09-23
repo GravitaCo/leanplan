@@ -37,6 +37,7 @@ extra.push(
   ['consent old version', String(!!currentConsent({ ...cn, v: '2000-01-01' })), 'false'],
   ['consent missing health', String(!!currentConsent({ ...cn, health: false })), 'false'],
   ['consent none', String(!!currentConsent(null)), 'false'],
+  ['consent tied to account', String(newConsent('u1').uid) + '|' + String(cn.uid), 'u1|undefined'],
 )
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
 process.exit(bad ? 1 : 0)

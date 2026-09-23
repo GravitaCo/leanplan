@@ -15,12 +15,16 @@ export interface ConsentRecord {
   health: true
   terms: true
   adult: true
+  /** the account it was given for; absent = given as a guest, for this device only */
+  uid?: string
 }
 
 const KEY = 'tali.consent'
 
-export function newConsent(): ConsentRecord {
-  return { v: CONSENT_VERSION, at: new Date().toISOString(), health: true, terms: true, adult: true }
+export function newConsent(uid?: string): ConsentRecord {
+  const r: ConsentRecord = { v: CONSENT_VERSION, at: new Date().toISOString(), health: true, terms: true, adult: true }
+  if (uid) r.uid = uid
+  return r
 }
 
 /** A record for the current version, or null (never given, or a material change since). */

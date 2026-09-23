@@ -278,6 +278,7 @@ svg.bars text.on { fill: var(--label); }
 .btn.tinted { background: color-mix(in srgb, var(--tint) 16%, transparent); color: var(--tint); }
 .btn.ghost, .btn.gray { background: var(--fill); color: var(--label); }
 .btn.danger { background: none; color: var(--red); font-weight: 400; }
+.btn.destructive { background: var(--red); color: #fff; }
 .btn.sm { height: 32px; width: auto; padding: 0 14px; font-size: 15px; border-radius: 16px; }
 .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .pill { font-size: 15px; padding: 5px 12px; border-radius: 16px; background: var(--fill); color: var(--label); border: 0; }

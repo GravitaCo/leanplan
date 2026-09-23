@@ -49,7 +49,7 @@ export function ConsentScreen() {
       </div>
 
       <button className="btn" style={{ marginTop: 16 }} disabled={!(adult && health && terms)} onClick={acceptConsent}>Continue</button>
-      <button className="btn danger" style={{ marginTop: 6 }} onClick={signOut}>{account ? 'Not now, sign out' : 'Not now'}</button>
+      <button className="btn gray" style={{ marginTop: 10 }} onClick={signOut}>{account ? 'Not now, sign out' : 'Not now'}</button>
       <div className="foot" style={{ textAlign: 'center' }}>
         If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tali to guide your eating.
       </div>

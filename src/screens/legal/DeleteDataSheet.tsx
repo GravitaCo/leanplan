@@ -20,7 +20,7 @@ export function DeleteDataSheet({ onClose }: { onClose: () => void }) {
 
   const run = async () => {
     setErr('')
-    if (!account) { deleteDeviceData(); return }
+    if (!account) { await deleteDeviceData(); return }
     setBusy(true)
     const e = await deleteAccount()
     setBusy(false)
@@ -41,9 +41,17 @@ export function DeleteDataSheet({ onClose }: { onClose: () => void }) {
       </div>
       {err && <div className="banner" role="alert">{err}</div>}
       <button className="btn gray" onClick={() => exportBackup(data)}>Export a copy first</button>
-      <button className="btn" style={{ marginTop: 10, background: 'var(--red)' }} disabled={busy} onClick={run}>
+      <button className="btn destructive" style={{ marginTop: 10 }} disabled={busy} onClick={run}>
         {busy ? 'Deleting…' : account ? 'Delete account and data' : 'Delete data on this device'}
       </button>
+      {account && (
+        <>
+          <button className="btn danger" style={{ marginTop: 6 }} disabled={busy} onClick={() => deleteDeviceData()}>
+            Only remove from this device
+          </button>
+          <div className="foot" style={{ textAlign: 'center' }}>Signs out and clears this device. Your account and its data stay, and you can sign in again.</div>
+        </>
+      )}
     </Sheet>
   )
 }

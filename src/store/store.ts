@@ -27,7 +27,7 @@ import { relog } from '@/core/domain/insights'
 import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, clearDevice, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { currentConsent, loadConsent, newConsent, saveConsent, type ConsentRecord } from '@/data/consent'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
-import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { supabase, setSession, getUid, LOCAL_USER, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 
@@ -115,7 +115,7 @@ interface StoreState {
   /** Erase the account and all its cloud data, then this device. Returns an error message, or null. */
   deleteAccount: () => Promise<string | null>
   /** Erase everything on this device and return to the sign-in screen (cloud data is untouched). */
-  deleteDeviceData: () => void
+  deleteDeviceData: () => Promise<void>
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -146,6 +146,8 @@ let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
 /** Bumped when the device is wiped, so a sync already in flight can't write the old data back. */
 let wipeGen = 0
+/** Set while an account deletion runs, so no sync can re-create rows for the deleted user. */
+let deleting = false
 
 /** Keep a server-side record of an account's consent, in the Supabase user's metadata
  *  (no schema change). Fire-and-forget: retried on the next session event if offline. */
@@ -471,12 +473,16 @@ export const useStore = create<StoreState>()(
         const live = (s: Session) => {
           setSession(s.access_token, s.user.id)
           saveMode('account')
-          // consent given on another device counts here; consent given here (as a guest, or
-          // offline) is copied to the account
+          // Consent belongs to a person, not a device. The account's own record (from any
+          // device) wins; a local record only counts if it was given for this account, so a
+          // guest's consent (worded for on-device only) or another user's never carries over.
           const remote = currentConsent(s.user.user_metadata?.tali_consent)
           const local = get().consent
-          if (!local && remote) { saveConsent(remote); set((st) => { st.consent = remote }) }
-          else if (local && !remote) recordConsentOnAccount(local)
+          const mine = local?.uid === s.user.id ? local : null
+          if (remote && remote.uid === s.user.id) {
+            if (!mine) { saveConsent(remote); set((st) => { st.consent = remote }) }
+          } else if (mine) recordConsentOnAccount(mine)
+          else if (local) { saveConsent(null); set((st) => { st.consent = null }) }
           set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.email = s.user.email ?? null })
         }
         const toSignIn = (msg?: string) => {
@@ -567,7 +573,7 @@ export const useStore = create<StoreState>()(
         if (!get().authed) return
         // nothing reaches the cloud before explicit consent to process health data
         if (!get().consent) return
-        if (syncing) return
+        if (deleting || syncing) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         syncing = true
         const gen = wipeGen
@@ -607,6 +613,9 @@ export const useStore = create<StoreState>()(
         // ignore late session events (see onAuthStateChange). A refresh already in flight can
         // re-save the session, so clear again once the sign-out call settles.
         signingOut = true
+        // consent is per person: the next person on this device is asked for their own
+        saveConsent(null)
+        set((st) => { st.consent = null })
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
         await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()
@@ -616,7 +625,9 @@ export const useStore = create<StoreState>()(
       },
 
       acceptConsent: () => {
-        const rec = newConsent()
+        // tie the record to the account when there is one (getUid is the local id for guests)
+        const uid = getUid()
+        const rec = newConsent(uid !== LOCAL_USER ? uid : undefined)
         saveConsent(rec)
         set((st) => { st.consent = rec })
         if (get().authed) recordConsentOnAccount(rec)
@@ -624,26 +635,36 @@ export const useStore = create<StoreState>()(
       },
 
       deleteAccount: async () => {
+        const offline = 'You’re offline. Connect to the internet to delete your account.'
+        if (!navigator.onLine || get().syncPaused) return offline
         if (!get().authed) return 'Sign in again to delete your account. Your data is still in it.'
-        if (!navigator.onLine) return 'You’re offline. Connect to the internet to delete your account.'
+        // stop syncing first, and let a sync already running finish, so nothing is written
+        // back for the user after the server has deleted them
+        deleting = true
+        if (syncTimer) clearTimeout(syncTimer)
+        for (let i = 0; syncing && i < 100; i++) await new Promise((r) => setTimeout(r, 100))
         // deletes every row the user owns and the auth user itself (docs/compliance/delete-account.sql)
-        const { error } = await supabase.rpc('delete_my_account')
+        const { error } = syncing ? { error: 'sync still running' } : await supabase.rpc('delete_my_account')
         if (error) {
+          deleting = false
           console.warn('delete account failed:', error)
           return 'Couldn’t delete your account, so nothing was removed. Try again, or contact us.'
         }
         // stop this browser's push subscription too; its row is already gone
         await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
-        get().deleteDeviceData()
+        await get().deleteDeviceData()
         return null
       },
 
-      deleteDeviceData: () => {
+      deleteDeviceData: async () => {
         wipeGen++
         signingOut = true
         if (syncTimer) clearTimeout(syncTimer)
-        supabase.auth.signOut({ scope: 'local' }).catch(() => {}).finally(() => { if (signingOut) clearDevice() })
+        // local-only sign-out needs no network; wait for it so it can't clear anything the
+        // next person saves on this device
+        await Promise.race([supabase.auth.signOut({ scope: 'local' }).catch(() => {}), new Promise((r) => setTimeout(r, 1500))])
         clearDevice()
+        deleting = false
         setSession(null, null)
         set((st) => {
           st.data = loadStateFrom(null)

@@ -40,7 +40,7 @@ export function privacyPolicy(): LegalDoc {
           'Account: your email address and a password (stored as a secure hash, never readable by us). If you sign in with Google, we receive your email, name and profile picture link from Google.',
           'Profile: display name, sex, age, height, weight, body fat (if you add it), activity level, goal, pace, training experience, equipment, days per week, body areas to train around and any note about them.',
           'Your log: food and drink, portions and recipes, custom foods, body weight, workouts, supplements and reminder times, mood and hunger check-ins and their notes, and your if-then plans.',
-          'Settings: calorie and macro targets, display and accuracy preferences, hand-portion sizes.',
+          'Settings: calorie and macro targets, your weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.',
           'Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send supplement reminders.',
           'Technical: like any website, the servers that deliver Tali see your IP address, browser and the time of each request.',
         ],
@@ -50,7 +50,7 @@ export function privacyPolicy(): LegalDoc {
         p: [
           'Much of what you log (weight, diet, exercise, injuries, supplements, mood) is health data, a special category of personal data. ' +
             'We only process it with your explicit consent, which we ask for before you start and record with the date. ' +
-            'You can withdraw consent at any time by deleting your account (Profile, then Privacy). Withdrawing does not affect processing before it.',
+            'Health data is what Tali runs on, so it can\'t work without this consent. You can withdraw it at any time by deleting your account (Profile, then Privacy; this needs a connection) or, without an account, by deleting your data on the device. Withdrawing does not affect processing before it.',
         ],
       },
       {

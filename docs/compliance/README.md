@@ -13,10 +13,10 @@ Last reviewed: 2026-09-23.
 |---|---|
 | Privacy policy (Art. 13) | `src/core/legal/privacy.ts`, in-app from sign-in and Profile → Privacy, public at `https://tali.fit/?doc=privacy` |
 | Terms of use | `src/core/legal/terms.ts`, same places, public at `https://tali.fit/?doc=terms` |
-| Explicit consent for health data (Art. 9(2)(a)), terms, 18+ | `src/screens/legal/ConsentScreen.tsx`: three separate unticked boxes, shown before the app opens. Recorded on the device (`tali.consent`) and in the account's Supabase user metadata (`tali_consent`, with version and time). Bumping `CONSENT_VERSION` asks everyone again. |
+| Explicit consent for health data (Art. 9(2)(a)), terms, 18+ | `src/screens/legal/ConsentScreen.tsx`: three separate unticked boxes, shown before the app opens. Recorded on the device (`tali.consent`) and in the account's Supabase user metadata (`tali_consent`, with version, time and user id). Consent is per person: it is cleared on sign-out, and a guest's consent (worded for on-device only) is asked again when they sign in. Bumping `CONSENT_VERSION` asks everyone again. |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts` returns early without a consent record |
 | Right of access and portability (Art. 15, 20) | Profile → Data & backup → Export (JSON of everything logged) |
-| Right to erasure and withdrawal of consent (Art. 17, 7(3)) | Profile → Privacy → Delete account (calls `delete_my_account()`, then wipes the device) or Delete data on this device |
+| Right to erasure and withdrawal of consent (Art. 17, 7(3)) | Profile → Privacy → Delete account (pauses sync, calls `delete_my_account()`, then wipes the device; needs a connection), Only remove from this device, or for guests Delete data on this device |
 | Rectification (Art. 16) | Every field is editable in the app |
 | Storage and PECR | Only strictly necessary local storage (log, session, mode, consent). No cookies, analytics, ads or trackers, so no cookie banner is needed |
 | Release gate | `npm run check:legal` fails while any fact in `LEGAL` is unset |
@@ -74,6 +74,9 @@ Should fix:
     would be made.
 12. A consent record is written to user metadata fire-and-forget. If an account never
     reconnects after consenting, the only record is on the device. Acceptable, but know it.
+13. Consent given while an account is open offline (no live session) isn't tied to the
+    account id, so the person is asked once more when they're back online. Harmless.
+14. The deploy workflow runs `npm run check:legal`, so main will not deploy until item 1 is done.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR
