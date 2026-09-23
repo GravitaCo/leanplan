@@ -59,7 +59,7 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
     <div ref={root} className="demo-full" role="dialog" aria-modal="true" aria-label={`Example: ${ex.n}`}>
       {failed ? (
         <div className="demo-msg">
-          {failed === 'format' ? "This example can't play on this device." : 'This example needs a connection. You can still log your sets offline.'}
+          {failed === 'format' ? "This example isn't available right now." : 'This example needs a connection. You can still log your sets offline.'}
         </div>
       ) : (
         <video

@@ -28,7 +28,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const [note, setNote] = useState(existing?.note ?? '')
   const save = () => {
     const any = mood || hunger || sleep || stress || energy || sore || note.trim()
-    setCheckin(any ? { mood, hunger, sleep, stress, energy, sore: liftDay ? sore : 0, note: note.trim(), t: nowIso() } : null)
+    setCheckin(any ? { mood, hunger, sleep, stress, energy, sore: liftDay ? sore : existing?.sore ?? 0, note: note.trim(), t: nowIso() } : null)
     onClose()
   }
   const scale = (labels: string[], value: number, set: (v: number) => void) => (

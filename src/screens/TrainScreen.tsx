@@ -78,10 +78,12 @@ export function TrainScreen() {
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
   const offer = !logged && sched !== 'Rest' && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
-  const easy = !logged && !!data.profile.easyUntil && cur <= data.profile.easyUntil
-  const [choice, setChoice] = useState<Choice>(easy ? 'shorter' : 'planned')
+  const easy = !logged && !!data.profile.easyUntil && cur >= (data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  const [walkMins, setWalkMins] = useState('')
+  const startChoice: Choice = logged?.option === 'shorter' || easy ? 'shorter' : 'planned'
+  const [choice, setChoice] = useState<Choice>(startChoice)
   const [askLighter, setAskLighter] = useState(easy)
-  useEffect(() => { setChoice(easy ? 'shorter' : 'planned'); setAskLighter(easy) }, [cur, easy])
+  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins('') }, [cur, easy, logged?.option]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // plans slide: offer the planned session that didn't happen; the calendar never moves
   const isToday = cur === todayStr()
@@ -91,7 +93,8 @@ export function TrainScreen() {
   const back = isToday && welcomeBack(data, cur)
   const shorter = choice === 'shorter'
   const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
-  const [walkMins, setWalkMins] = useState('')
+  /** choosing a tab always shows that session: it leaves a swap (the planned session stays one tap away) */
+  function pickTab(t: WorkoutType) { setSel(t); if (swap) setChoice('planned') }
 
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
@@ -141,17 +144,17 @@ export function TrainScreen() {
         </div>
       )}
 
-      {!back && !logged && pick && pickUp && pickUp !== sel && (
+      {!back && data.profile.welcomeAsked !== cur && !logged && pick && pickUp && pickUp !== sel && (
         <div className="card dayopt">
           <div className="t">Pick up with {pickUp} whenever you're ready.</div>
           <div className="chips">
-            <button className="chip" onClick={() => setSel(pickUp)}>Do {pickUp} today</button>
+            <button className="chip" onClick={() => pickTab(pickUp)}>Do {pickUp} today</button>
             <button className="chip" onClick={() => setPrefs({ pickUpDismissed: pick.d })}>Not this time</button>
           </div>
         </div>
       )}
 
-      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={setSel} /></div>
+      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={pickTab} /></div>
 
       {!logged && (offer || askLighter) && (
         <div className="card dayopt">
@@ -205,7 +208,7 @@ export function TrainScreen() {
             <div className="frow"><label htmlFor="c_min">Minutes</label>
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
           </div>
-          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, shorter ? 'shorter' : undefined)}>Save cardio</button></div>
+          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, logged?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined)}>Save cardio</button></div>
         </>
       ) : (
         <>
@@ -249,10 +252,12 @@ export function TrainScreen() {
 
       {wk && demo != null && wk.ex[demo]?.video && <DemoPlayer ex={wk.ex[demo]} onClose={closeDemo} />}
 
-      <div className="foot" style={{ padding: '12px 4px 0' }}>
-        Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little
-        weight next time. Rest about 90 seconds between sets.
-      </div>
+      {!swap && sel !== 'Cardio' && (
+        <div className="foot" style={{ padding: '12px 4px 0' }}>
+          Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little
+          weight next time. Rest about 90 seconds between sets.
+        </div>
+      )}
     </div>
   )
 }
