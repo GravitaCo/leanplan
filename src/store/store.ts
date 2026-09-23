@@ -27,6 +27,7 @@ import { relog } from '@/core/domain/insights'
 import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 
 enableMapSet()
@@ -45,6 +46,8 @@ interface StoreState {
   authed: boolean
   /** signed-in account opened without a live session (offline): data saves locally, sync waits */
   syncPaused: boolean
+  /** why the sign-in screen is showing, when it wasn't the user's choice */
+  authNotice: string | null
   toast: string | null
 
   // navigation
@@ -101,6 +104,8 @@ interface StoreState {
   runSync: () => Promise<void>
   scheduleSync: () => void
   signOut: () => Promise<void>
+  /** Call before a sign-in or sign-up attempt from the sign-in screen. */
+  beginSignIn: () => void
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -121,6 +126,10 @@ function clearSavedSession() {
     Object.keys(localStorage).filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token')).forEach((k) => localStorage.removeItem(k))
   } catch { /* storage blocked */ }
 }
+
+/** Set by an explicit sign-out; cleared when the user starts signing in again. */
+let signingOut = false
+const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
@@ -153,6 +162,7 @@ export const useStore = create<StoreState>()(
       signedIn: false,
       authed: false,
       syncPaused: false,
+      authNotice: null,
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),
@@ -438,37 +448,57 @@ export const useStore = create<StoreState>()(
 
       initAuth: async () => {
         requestPersistentStorage()
-        // Launch must never depend on the network: restoring a session can stall offline while
-        // it retries a token refresh, so give it a few seconds, then open with local data.
-        const session = await Promise.race([
-          supabase.auth.getSession().then((r) => r.data.session).catch(() => null),
-          new Promise<null>((r) => setTimeout(() => r(null), 4000)),
-        ])
         const mode = loadMode()
-        const live = (s: NonNullable<typeof session>) => {
+        const live = (s: Session) => {
           setSession(s.access_token, s.user.id)
           saveMode('account')
-          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.email = s.user.email ?? null })
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.email = s.user.email ?? null })
         }
+        const toSignIn = (msg?: string) => {
+          setSession(null, null)
+          saveMode(null)
+          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = msg ?? null })
+        }
+
+        // Listen before restoring, so a sign-out the server forces during startup (password
+        // changed, "sign out everywhere", expired refresh token) is never missed.
+        let serverSignedOut = false
+        supabase.auth.onAuthStateChange((event, session) => {
+          // after a sign-out, ignore late events (e.g. a refresh that was mid-retry) until the
+          // user signs in again from the sign-in screen
+          if (signingOut) return
+          if (session) {
+            live(session)
+            if (get().authReady) get().runSync()
+          } else if (event === 'SIGNED_OUT') {
+            serverSignedOut = true
+            if (get().authReady) toSignIn(SIGNED_OUT_MSG)
+          }
+        })
+
+        // Launch must never depend on the network: restoring a session can stall offline while
+        // it retries a token refresh, so give it a few seconds, then open with local data.
+        // `definite` = the server answered (no session), as opposed to no connection.
+        const r = await Promise.race([
+          supabase.auth.getSession()
+            .then((x) => ({ session: x.data.session, definite: !x.error || !isAuthRetryableFetchError(x.error) }))
+            .catch(() => ({ session: null, definite: false })),
+          new Promise<{ session: null; definite: false }>((z) => setTimeout(() => z({ session: null, definite: false }), 4000)),
+        ])
+        const session = r.session
         if (session) live(session)
         else if (mode === 'guest') get().continueAsGuest()
         else if (mode === 'account') {
-          // offline or a weak signal: open the account's local data now; sync resumes when the
-          // session does. Only an explicit sign-out leads back to the sign-in screen.
-          set((st) => { st.signedIn = true; st.authed = false; st.syncPaused = true })
+          if ((r.definite || serverSignedOut) && navigator.onLine) {
+            // signed out on the server: say so and ask to sign in, rather than quietly not syncing
+            toSignIn(SIGNED_OUT_MSG)
+          } else {
+            // offline or a weak signal: open the account's local data now; sync resumes when the
+            // session does. Only an explicit sign-out leads back to the sign-in screen.
+            set((st) => { st.signedIn = true; st.authed = false; st.syncPaused = true })
+          }
         }
         set((st) => { st.authReady = true })
-
-        supabase.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            live(session)
-            get().runSync()
-          } else if (event === 'SIGNED_OUT') {
-            setSession(null, null)
-            saveMode(null)
-            set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
-          }
-        })
 
         // Migration: flag local-only data dirty on first run so it uploads once signed in.
         set((st) => {
@@ -485,9 +515,13 @@ export const useStore = create<StoreState>()(
         if (session) get().runSync()
         window.addEventListener('online', async () => {
           if (get().syncPaused) {
-            const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
-            if (session) live(session)
-            else { get().showToast('Not syncing: sign in again from Profile › Account'); return } // local data stays and uploads after sign-in
+            const res = await supabase.auth.getSession().catch(() => null)
+            if (res?.data.session) live(res.data.session)
+            else {
+              // only a definite answer from the server means signed out; a flaky reconnect stays paused
+              if (res && (!res.error || !isAuthRetryableFetchError(res.error))) toSignIn(SIGNED_OUT_MSG)
+              return
+            } // local data stays and uploads after sign-in
           }
           get().runSync()
         })
@@ -534,9 +568,17 @@ export const useStore = create<StoreState>()(
       },
 
       /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
+      beginSignIn: () => {
+        signingOut = false
+        supabase.auth.startAutoRefresh().catch(() => {})
+      },
+
       signOut: async () => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
-        // (offline), which would sign the user straight back in: clear it locally as well.
+        // (offline), which would sign the user straight back in: clear it locally as well,
+        // stop background refreshes, and ignore late session events (see onAuthStateChange).
+        signingOut = true
+        supabase.auth.stopAutoRefresh().catch(() => {})
         await Promise.race([supabase.auth.signOut().catch(() => {}), new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()
         setSession(null, null)

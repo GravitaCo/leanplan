@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v10'
+const CACHE = 'tali-v11'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -31,13 +31,16 @@ async function storeShell(res) {
   for (const u of assetsOf(html)) if (!(await c.match(u))) missing.push(u)
   await c.addAll(missing)
   await c.put(SHELL, res)
+  // drop hashed assets from older builds that this shell no longer references
+  const keep = new Set(assetsOf(html))
+  for (const r of await c.keys()) if (new URL(r.url).pathname.startsWith('/assets/') && !keep.has(r.url)) await c.delete(r)
 }
 
 self.addEventListener('install', (e) => {
   // No catch: if the shell or any asset fails to download, the install fails and the
   // current, complete version keeps serving. The browser retries on a later visit.
   e.waitUntil(fetch(SHELL, { cache: 'no-cache' }).then((res) => {
-    if (!res.ok) throw new Error('shell ' + res.status)
+    if (!res.ok || !(res.headers.get('content-type') || '').includes('text/html')) throw new Error('shell ' + res.status)
     return storeShell(res)
   }).then(() => self.skipWaiting()))
 })
@@ -74,7 +77,8 @@ function put(req, res) {
 /** Network with a timeout; the cached shell if the network is slow or down. */
 function navigate(req) {
   const net = fetch(req).then((res) => {
-    if (res.ok) storeShell(res.clone()).catch(() => {}) // only if its assets cache too
+    // only a real page becomes the shell (not e.g. /sw.js opened directly), and only once its assets cache too
+    if (res.ok && (res.headers.get('content-type') || '').includes('text/html')) storeShell(res.clone()).catch(() => {})
     return res
   })
   const timeout = new Promise((resolve) => setTimeout(resolve, NAV_TIMEOUT_MS))

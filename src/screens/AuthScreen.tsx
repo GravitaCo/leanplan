@@ -14,9 +14,12 @@ export function AuthScreen() {
   const [pw2, setPw2] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const beginSignIn = useStore((st) => st.beginSignIn)
+  const notice = useStore((st) => st.authNotice)
 
   async function submit() {
     setErr('')
+    beginSignIn()
     if (mode === 'forgot') {
       if (!email) return setErr('Please enter your email.')
       setBusy(true)
@@ -47,6 +50,7 @@ export function AuthScreen() {
   }
 
   async function google() {
+    beginSignIn()
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirect() } })
   }
 
@@ -68,6 +72,8 @@ export function AuthScreen() {
           eat well · move often · feel better
         </div>
       </div>
+
+      {notice && mode !== 'check-email' && <div className="banner" role="status">{notice}</div>}
 
       {mode === 'check-email' ? (
         <div className="card" style={{ textAlign: 'center', padding: 28 }}>
