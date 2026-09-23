@@ -100,6 +100,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Exercise demo videos
 
+- Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`.
 - Clips live in `public/videos/` (vertical 540×960 H.264, no audio, `+faststart`, ~0.6 MB each)
   with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
