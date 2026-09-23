@@ -1,4 +1,5 @@
 import type { WorkoutTemplate, WorkoutType } from '@/core/types'
+import { DEMOS } from './media'
 
 /**
  * Push/Pull/Legs split. Ordered across the week as Legs → Push → Pull so back-to-back
@@ -16,7 +17,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "n": "Romanian deadlift (dumbbell or barbell)",
         "t": "3 × 10",
-        "cue": "Soft knees, push hips back, weight stays close to your legs. Feel the hamstring stretch, stand up by squeezing the glutes. Keep the back flat, never rounded."
+        "cue": "Soft knees, push hips back, weight stays close to your legs. Feel the hamstring stretch, stand up by squeezing the glutes. Keep the back flat, never rounded.",
+        "video": DEMOS.romanianDeadlift
       },
       {
         "n": "Leg extension (machine)",
@@ -89,9 +91,10 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
         "cue": "Rope at head height. Pull it towards your forehead, elbows high and wide, squeeze the rear shoulders. Light weight, slow. Great for posture."
       },
       {
-        "n": "Dumbbell biceps curl",
+        "n": "Biceps curl (barbell or dumbbell)",
         "t": "2–3 × 12",
-        "cue": "Elbows pinned to your sides, curl without swinging the body. Lower slowly. Don't let the elbows drift forward."
+        "cue": "Elbows pinned to your sides, curl without swinging the body. Lower slowly. Don't let the elbows drift forward.",
+        "video": DEMOS.barbellCurl
       },
       {
         "n": "Cable crunch (or dead bug)",

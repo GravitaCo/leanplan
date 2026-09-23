@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v19'
+const CACHE = 'tali-v20'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -94,6 +94,9 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return
   // the parked vanilla app has its own worker; never let it replace Tali's cached shell
   if (url.pathname.startsWith('/legacy/')) return
+  // demo clips stream with Range requests (Safari needs 206 responses), so leave them to the
+  // network; the app shows a "needs a connection" note when a clip can't load offline
+  if (url.pathname.startsWith('/videos/')) return
   if (req.mode === 'navigate') { e.respondWith(navigate(req)); return }
   if (url.pathname.startsWith('/assets/')) {
     // content-hashed: never changes, so the cache is always right

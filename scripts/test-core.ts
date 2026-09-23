@@ -8,6 +8,10 @@ import { refMismatches } from '@/core/data/validate'
 import { entryAmount, relog } from '@/core/domain/insights'
 import LIVE from './fixtures-live-servings.json'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
+import { DEMOS } from '@/core/data/media'
+import { WORKOUTS } from '@/core/data/workouts'
+import { tempoAt } from '@/core/domain/tempo'
+import { existsSync } from 'node:fs'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
@@ -147,5 +151,25 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   }
   const ok = drift.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', `no rounding drift in logging (${FOODS.length} foods)`, drift.slice(0, 5).join(', '))
+}
+// demo clips: every attached clip exists, its tempo is ordered and fits the clip, and the counter
+// reads the phase on screen
+{
+  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [[e.n, e.video] as const] : [])))
+  const off = clips.flatMap(([n, m]) => {
+    const why: string[] = []
+    if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
+    m.tempo.forEach((p, i) => { if (i && p.at <= m.tempo[i - 1].at) why.push('phase ' + i + ' out of order') })
+    if (m.tempo[m.tempo.length - 1].at >= m.durationSec) why.push('last phase starts after the clip ends')
+    for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
+    return why.map((w) => n + ': ' + w)
+  })
+  const ok = clips.length === 2 && off.length === 0; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
+  const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
+  const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
+  const want = 'ready::2:1 lower:1:2:2 stretch:1:2:1 squeeze:2:2:3'
+  const ok2 = got === want; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'tempo counter', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)

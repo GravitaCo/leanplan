@@ -9,6 +9,7 @@ import { latestWeight } from '@/core/domain/insights'
 import { PageHeader, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
+import { DemoSheet } from './train/DemoSheet'
 
 const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
 
@@ -65,6 +66,8 @@ export function TrainScreen() {
     setMins(cardio?.mins || '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur])
+
+  const [demo, setDemo] = useState<number | null>(null)
 
   const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
@@ -127,7 +130,9 @@ export function TrainScreen() {
               <div className="card ex" key={exi}>
                 <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
                 <div className="cue">{e.cue}</div>
-                <a className="howto" href={howToLink(e.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>
+                {e.video
+                  ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
+                  : <a className="howto" href={howToLink(e.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
                 {lastTxt && <div className="last num">{lastTxt}</div>}
                 {(sets[exi] || []).map((s, si) => (
                   <div className="setrow" key={si}>
@@ -151,6 +156,8 @@ export function TrainScreen() {
           <div className="stack"><button className="btn" onClick={commitLift}>Save {sel} session</button></div>
         </>
       )}
+
+      {wk && demo != null && wk.ex[demo]?.video && <DemoSheet ex={wk.ex[demo]} onClose={() => setDemo(null)} />}
 
       <div className="foot" style={{ padding: '12px 4px 0' }}>
         Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little

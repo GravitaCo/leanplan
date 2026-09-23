@@ -426,3 +426,21 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 .navbtn:disabled { color: var(--label3); }
+
+/* Exercise demo clip + tempo counter (screens/train/DemoSheet) */
+button.howto { background: none; border: 0; padding: 0; font: inherit; font-size: 15px; display: inline-flex; align-items: center; gap: 5px; }
+button.howto .i { fill: currentColor; }
+.demo-n { font-size: 22px; font-weight: 700; margin: 2px 0 12px; }
+.demo { position: relative; border-radius: 14px; overflow: hidden; background: #000; margin: 0 auto; aspect-ratio: 9 / 16; max-height: 62dvh; }
+.demo video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.demo-hud { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 10px 12px 12px; border-radius: 12px; color: #fff;
+  background: rgba(0, 0, 0, 0.55); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: none; }
+.demo-rep { font-size: 13px; font-weight: 600; opacity: 0.8; }
+.demo-ph { display: flex; justify-content: space-between; align-items: baseline; font-size: 22px; font-weight: 700; margin: 2px 0 8px; }
+.demo-cnt { font-size: 34px; line-height: 1; }
+.demo-bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.demo-bar i { display: block; height: 100%; background: var(--activity); transform-origin: left; }
+.demo-play, .demo-pause { position: absolute; border: 0; color: #fff; background: rgba(0, 0, 0, 0.5); border-radius: 50%; display: grid; place-items: center; }
+.demo-play { inset: 0; margin: auto; width: 64px; height: 64px; }
+.demo-play .i { fill: currentColor; margin-left: 3px; }
+.demo-pause { top: 10px; right: 10px; width: 36px; height: 36px; }

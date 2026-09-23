@@ -95,6 +95,18 @@ setting (`prefers-color-scheme`); there is no in-app override.
   just the stored per-100 values. Importers assert this; `npm test` checks chain servings.
 - **Food data changes need `nutrition-accuracy` sign-off as well as `ship-critic`** before merging.
 
+## Exercise demo videos
+
+- Clips live in `public/videos/` (vertical 540×960 H.264, no audio, `+faststart`, ~0.6 MB each)
+  with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
+  (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
+  Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
+- Each clip carries a **tempo timeline measured from the footage**; the Train screen's
+  "Watch example" sheet shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
+  changes; `npm test` checks the files exist and the timeline is ordered.
+- The service worker leaves `/videos/` to the network (Safari streams video with Range
+  requests), so clips need a connection; logging never does.
+
 ## Backend & data (important)
 
 - Supabase. The anon key in `supabase.ts` is public by design; **RLS is locked** so every

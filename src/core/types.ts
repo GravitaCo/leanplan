@@ -274,6 +274,29 @@ export interface ExerciseTemplate {
   t: string
   cue: string
   title?: string
+  /** owned demo clip; without one the card falls back to a YouTube search link */
+  video?: ExerciseMedia
+}
+
+/** What the lifter is doing during one stretch of a demo clip. */
+export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch'
+
+/** One phase of a demo clip, measured from the footage. `at` is seconds from the clip start. */
+export interface TempoPhase {
+  at: number
+  kind: TempoPhaseKind
+  /** 1-based rep number; absent for the set-up before the first rep */
+  rep?: number
+}
+
+/** Per-exercise demo media (see docs/plans/workouts-customization-and-library.md §2.1). */
+export interface ExerciseMedia {
+  /** path relative to the video base (see core/data/media.ts), or a full https URL */
+  src: string
+  poster?: string
+  durationSec: number
+  /** phases in time order; each runs until the next one starts, the last until durationSec */
+  tempo: TempoPhase[]
 }
 
 export interface WorkoutTemplate {
