@@ -111,7 +111,7 @@ export function TodayScreen() {
         <div className="banner">
           <span style={{ color: 'var(--energy-ink)' }}><Icon name="info" /></span>
           <div><b>Your range on workout days has changed.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
-            ? 'Workouts now add only the energy above what you use at rest, which is closer to what you actually use. '
+            ? 'Workouts now add only the energy above what you use at rest, so they are no longer counted twice. '
             : 'It now leaves workouts out, because your activity level already includes your training. '}
             Past days are unchanged.</span></div>
           <button className="x" aria-label="Dismiss" onClick={() => setPrefs({ burnNoteSeen: true })}><Icon name="x" size={12} stroke={3} /></button>

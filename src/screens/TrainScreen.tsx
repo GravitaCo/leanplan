@@ -190,7 +190,12 @@ export function TrainScreen() {
                 <input id="w_min" type="number" inputMode="numeric" value={walkMins} placeholder={swap.mins} onChange={(e) => setWalkMins(e.target.value)} /></div>
             </div>
           )}
-          <div className="stack"><button className="btn" onClick={() => saveCardio(swap.cardioType, choice === 'walk' ? walkMins || swap.mins : swap.mins, 'swap')}>
+          <div className="stack"><button className="btn" onClick={() => {
+            // show what was logged (the cardio tab with this type), not the planned lift
+            const m = choice === 'walk' ? walkMins || swap.mins : swap.mins
+            setSel('Cardio'); setCardioType(swap.cardioType); setMins(m)
+            saveCardio(swap.cardioType, m, 'swap')
+          }}>
             Save {choice === 'walk' ? 'walk' : 'mobility'}</button></div>
         </>
       ) : sel === 'Cardio' ? (
