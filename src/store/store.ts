@@ -533,7 +533,7 @@ export const useStore = create<StoreState>()(
         // disabled (authed stays false) so we never touch the database without a real
         // authenticated session — the database is locked to auth.uid() by RLS.
         saveMode('guest')
-        set((st) => { st.signedIn = true; st.authed = false; st.email = null })
+        set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null })
       },
 
       runSync: async () => {
@@ -570,20 +570,20 @@ export const useStore = create<StoreState>()(
       /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
       beginSignIn: () => {
         signingOut = false
-        supabase.auth.startAutoRefresh().catch(() => {})
       },
 
       signOut: async () => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
-        // (offline), which would sign the user straight back in: clear it locally as well,
-        // stop background refreshes, and ignore late session events (see onAuthStateChange).
+        // (offline), which would sign the user straight back in: clear it locally as well, and
+        // ignore late session events (see onAuthStateChange). A refresh already in flight can
+        // re-save the session, so clear again once the sign-out call settles.
         signingOut = true
-        supabase.auth.stopAutoRefresh().catch(() => {})
-        await Promise.race([supabase.auth.signOut().catch(() => {}), new Promise((r) => setTimeout(r, 3000))])
+        const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
+        await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()
         setSession(null, null)
         saveMode(null)
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })
       },
     }
   }),

@@ -85,7 +85,7 @@ export function ProfileScreen() {
         <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 20, fontWeight: 600 }}>{pr.name || 'Add your name'}</div>
-          <div className="sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authed ? email : 'On this device only'}</div>
+          <div className="sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authed ? email : syncPaused ? 'Account · not syncing right now' : 'On this device only'}</div>
         </div>
       </div>
 
@@ -230,7 +230,7 @@ export function ProfileScreen() {
       <div className="list icons">
         <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || 'Local (no account)'}</div></div>
+            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || (syncPaused ? 'Your account (not syncing right now)' : 'Local (no account)')}</div></div>
             <button className="btn sm gray" onClick={signOut}>{authed ? 'Sign out' : 'Sign in'}</button>
           </div>
         </Disclosure>
