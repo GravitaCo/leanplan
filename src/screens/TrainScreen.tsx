@@ -78,7 +78,7 @@ export function TrainScreen() {
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
   const offer = !logged && sched !== 'Rest' && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
-  const easy = !logged && !!data.profile.easyUntil && cur >= (data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
   const startChoice: Choice = logged?.option === 'shorter' || easy ? 'shorter' : 'planned'
   const [choice, setChoice] = useState<Choice>(startChoice)
