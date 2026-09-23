@@ -37,7 +37,7 @@ export function perText(f: Pick<Food, 'ml' | 'each'>): string {
 
 /** An amount in the food's unit: "150 g", "250 ml", "1 item", "½ item". */
 export function amountText(amount: number, unit: FoodUnit): string {
-  if (unit !== 'item') return `${amount} ${unit}`
+  if (unit !== 'item') return `${Math.round(amount)} ${unit}`
   const w = Math.floor(amount), r = amount - w
   const f = r >= 0.74 ? '¾' : r >= 0.49 ? '½' : r >= 0.24 ? '¼' : ''
   return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`

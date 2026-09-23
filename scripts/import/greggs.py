@@ -20,6 +20,11 @@ DRINK = re.compile(r'\b(Americano|Cappuccino|Latte|Flat White|Espresso|Mocha|Tea
 # existing Tali names are stable IDs (learned usuals match by name): keep them
 LEGACY = {'Sausage Roll(s)': 'Greggs Sausage Roll', 'Steak Bake': 'Greggs Steak Bake',
           'Cheese & Onion Bake': 'Greggs Cheese & Onion Bake', 'Yum Yum': 'Greggs Yum Yum'}
+# single items the PDF names in the plural (names are stable IDs: settle them before shipping)
+RENAME = {'Baguettes': 'Baguette', 'Stotties': 'Stottie', 'Belgian Buns': 'Belgian Bun', 'Glazed Ring Doughnuts': 'Glazed Ring Doughnut',
+          'Oval Bites': 'Oval Bite', 'Corn Topped Rolls': 'Corn Topped Roll', 'White & Wholemeal Rolls': 'White & Wholemeal Roll',
+          'Chicken Rolls': 'Chicken Roll', 'Cheese Scones': 'Cheese Scone', 'Fruit Scones': 'Fruit Scone', 'Gingerbread Men': 'Gingerbread Man',
+          'Spread': 'Spread (sandwich add-on)'}
 # not useful as separate foods: multi-item boxes, hospital-shop duplicates, drink syrups/toppings
 DROP = re.compile(r'Pizza Box \d Pack|\(HS\)|^Extra .*(Syrup|Cream|Powder)$')
 # where a pack's or decaf's single/regular version is named differently in the PDF
@@ -61,13 +66,20 @@ def main(path):
         twin = TWIN_NAMES.get(twin, twin)
         if DROP.search(n) or (twin and twin in by and same(r, by[twin])):
             dropped.append(n); continue
-        name = LEGACY.get(n) or 'Greggs ' + n.replace('(s)', '')
+        base = RENAME.get(n, n).replace('(s)', '')
+        if base.startswith('Greggs '): base = base[len('Greggs '):]
+        name = LEGACY.get(n) or 'Greggs ' + base
         drink = bool(DRINK.search(n))
-        f = {'n': name, 'k': round(r['k100']), 'p': r['p100'], 'c': r['c100'], 'f': r['f100'], 'g': r['portion']}
+        # a pack size in the name ("500ml", "40g") is what one serving of it means
+        size = re.search(r'(\d+)\s*(ml|g)$', n)
+        g = float(size[1]) if size else r['portion']
+        f = {'n': name, 'k': round(r['k100']), 'p': r['p100'], 'c': r['c100'], 'f': r['f100'], 'g': round(g)}
         if drink: f['ml'] = True
         f['cat'] = 'drinks' if drink else 'fastfood'
         f['src'] = 'greggs-uk'
         out.append(f)
+    # the long-standing favourites first: ties in search keep database order
+    out.sort(key=lambda f: 0 if f['n'] in LEGACY.values() else 1)
     body = json.dumps(out, indent=2, ensure_ascii=False)
     ts = ("import type { Food } from '@/core/types'\n\n"
           "/** Greggs UK menu, per 100 g (per 100 ml for drinks); `g` is Greggs' own portion.\n"

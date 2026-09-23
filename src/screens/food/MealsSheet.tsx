@@ -5,7 +5,8 @@ import type { MealSlot, RecipeItem } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { fmt, r0 } from '@/core/domain/date'
 import { perText, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
-import { mealNow } from '@/core/domain/insights'
+import { mealNow, queryWords } from '@/core/domain/insights'
+import { rankByName } from '@/core/domain/search'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
@@ -37,7 +38,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     const s = parseFloat(draft.servings) || 1
     const totals = recipeTotals({ id: '', name: draft.name, servings: s, items: draft.items })
     const query = q.trim().toLowerCase()
-    const matches = query ? all.filter((f) => f.n.toLowerCase().includes(query)).slice(0, 30) : []
+    const words = queryWords(query)
+    const matches = query ? rankByName(all, (f) => f.n, words.length ? words : [query]).slice(0, 30) : []
     const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
     const save = () => {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }

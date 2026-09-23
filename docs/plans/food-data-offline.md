@@ -57,7 +57,7 @@ writes a generated file in `src/core/data/chains/`. Nothing is typed by hand.
 
 ## 3. Growing past the bundle: food packs (designed, not built)
 
-The bundled database is about 32 KB for 336 foods, so a few thousand foods can still ship in the app.
+The bundled database is about 55 KB raw (~15 KB gzipped) for 547 foods, so a few thousand foods can still ship in the app.
 Beyond that (e.g. UK branded products):
 
 - **Packs:** versioned JSON files (`/packs/uk-branded.v3.json`), each with a manifest `{id, version, count, sources}`.
