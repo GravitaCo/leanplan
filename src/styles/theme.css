@@ -30,6 +30,9 @@
   --tint: #007aff;
   --red: #ff3b30;
 
+  /* brand: the Tali mark colour (Tali-App.svg). Logo only, not for UI state. */
+  --brand: #cd7fae;
+
   /* category colours: one per data type */
   --energy: #34c759;   --energy-ink: #248a3d;
   --activity: #ff9500; --activity-ink: #c93400;
@@ -385,6 +388,37 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
   font-size: 15px; font-weight: 500; opacity: 0; transition: 0.25s; pointer-events: none; max-width: 88%; text-align: center;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===================== AUTH ===================== */
+.auth {
+  min-height: 100vh; min-height: 100dvh; max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 32px) 16px calc(28px + env(safe-area-inset-bottom));
+}
+.auth-brand { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 28px; }
+.tali-icon { display: block; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.16)); }
+/* on a black page the black tile needs an edge to read as an icon */
+@media (prefers-color-scheme: dark) { .tali-icon .tile-bg { stroke: var(--fill3); stroke-width: 1; } }
+.auth-brand h1 { font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: 0.37px; margin: 16px 0 2px; }
+.auth-brand p { font-size: 15px; color: var(--label2); margin: 0; }
+.auth-t { font-size: 22px; font-weight: 700; letter-spacing: 0.35px; margin: 0 4px 10px; }
+.auth .list { margin-bottom: 0; }
+.auth .list input { background: none; border-radius: 0; padding: 0; height: 44px; }
+.auth .list input:focus { outline: none; }
+.auth .frow label { min-width: 84px; }
+.auth .frow input { text-align: left; }
+.auth-err { font-size: 13px; line-height: 1.38; color: var(--red); padding: 8px 16px 0; }
+.auth .btn { margin-top: 16px; }
+.auth .btn + .btn { margin-top: 8px; }
+.auth-or { display: flex; align-items: center; gap: 10px; margin: 18px 4px 2px; font-size: 13px; color: var(--label2); }
+.auth-or::before, .auth-or::after { content: ''; flex: 1; height: 0.5px; background: var(--sep); }
+.linkbtn { background: none; border: 0; padding: 6px 4px; font-size: 15px; color: var(--tint); }
+.linkbtn.muted { color: var(--label2); }
+.auth-links { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 18px; font-size: 15px; color: var(--label2); text-align: center; }
+.auth-check { text-align: center; padding: 28px 20px 20px; }
+.auth-check .ico { width: 56px; height: 56px; border-radius: 16px; background: var(--tint); margin: 0 auto 14px; }
+.auth-check .ico svg.i { width: 28px; height: 28px; }
+.auth-check h2 { font-size: 22px; font-weight: 700; letter-spacing: 0.35px; margin: 0 0 6px; }
+.auth-check p { font-size: 15px; color: var(--label2); margin: 0 0 18px; line-height: 1.38; }
 
 /* ===================== REDUCED MOTION ===================== */
 @media (prefers-reduced-motion: reduce) {
