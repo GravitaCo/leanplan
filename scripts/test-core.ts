@@ -6,6 +6,7 @@ import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
 import { entryAmount, relog } from '@/core/domain/insights'
+import LIVE from './fixtures-live-servings.json'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -102,12 +103,17 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const roll = relog({ n: 'Greggs Bacon Breakfast Roll', grams: 120, k: 323, p: 19, c: 33, f: 12, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
   const ok2 = Math.round(roll.k) === 321 && roll.grams === 119.5; if (!ok2) bad++
   console.log(ok2 ? 'PASS' : 'FAIL', 'relog of a live-era bacon roll (120 g) gives 321 kcal at 119.5 g', Math.round(roll.k), roll.grams)
-  // every chain food: a live-era serving entry (grams rounded) re-logs to the published figure
+  // every chain food: an entry exactly as the live build stored it (its own whole-gram serving
+  // from the shipped data, x count, rounded) re-logs AND reopens to the published figure
   const off: string[] = []
-  for (const f of FOODS.filter((x) => x.ref && x.ref.g === x.g)) {
-    for (const v of [1, 2]) {
-      const e = relog({ n: f.n, grams: Math.round(f.g * v), k: 0, p: 0, c: 0, f: 0, src: 'db', how: 'serv', err: 0.2, serv: v, unit: f.each ? 'item' : f.ml ? 'ml' : undefined }, 'lunch')
-      if (Math.abs(e.k - f.ref!.k * v) >= 0.55) off.push(`${f.n} x${v}: ${Math.round(e.k)} vs ${f.ref!.k * v}`)
+  for (const f of FOODS.filter((x) => x.ref && x.ref.g === x.g && (LIVE as Record<string, number>)[x.n] != null)) {
+    const liveG = (LIVE as Record<string, number>)[f.n]
+    for (const v of [0.5, 1, 1.5, 2, 3]) {
+      const x = { n: f.n, grams: f.each ? v : Math.round(liveG * v), k: 0, p: 0, c: 0, f: 0, src: 'db' as const, how: 'serv' as const, err: 0.2, serv: v, unit: f.each ? ('item' as const) : f.ml ? ('ml' as const) : undefined }
+      const e = relog(x, 'lunch')
+      const amt = entryAmount(x, f)
+      const sheet = buildEntry(f, { mode: 'g', grams: amt, learned: amt }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
+      if (Math.abs(e.k - f.ref!.k * v) >= 0.55 || Math.abs(sheet.k - f.ref!.k * v) >= 0.55) off.push(`${f.n} x${v}: relog ${Math.round(e.k)}, sheet ${Math.round(sheet.k)} vs ${f.ref!.k * v}`)
     }
   }
   // opening the food again (search / Recent): the learned amount is today's exact serving
@@ -121,7 +127,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok5 = entryAmount({ n: 'x', grams: 12.5, k: 12.5, p: 0, c: 0, f: 0, src: 'db', serv: 1.3 }, small) === 12.5; if (!ok5) bad++
   console.log(ok5 ? 'PASS' : 'FAIL', 'edited small serving keeps 12.5 g')
   const ok3 = off.length === 0; if (!ok3) bad++
-  console.log(ok3 ? 'PASS' : 'FAIL', 'live-era serving entries re-log to the published figure (all chain foods)', off.slice(0, 5).join(', '))
+  console.log(ok3 ? 'PASS' : 'FAIL', 'live-era entries (as actually stored) re-log and reopen to the published figure, x0.5-x3', off.slice(0, 5).join(', '))
 }
 // No rounding drift anywhere in the logging path, for every food: one serving, a fractional
 // amount, and an edit (x1.5) must equal the exact maths to the stored precision (0.1).

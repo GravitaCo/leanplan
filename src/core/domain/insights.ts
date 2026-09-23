@@ -177,8 +177,13 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
  */
 export function entryAmount(x: LoggedFood, food: Food): number {
   if (x.serv != null) {
-    const exact = food.g * x.serv
-    if (Math.abs(x.grams - Math.round(exact)) < 1e-9 || Math.abs(x.grams - exact) < 0.0005) return roundAmount(exact, unitOf(food))
+    const s = x.serv, exact = food.g * s
+    // older builds stored the serving itself as whole grams (either way on a .5), then rounded
+    // serving × count again: 119.5 g stored as 120, so 2 rolls were saved as 240 g
+    const oldServing = [Math.floor(food.g), Math.ceil(food.g)]
+    if (Math.abs(x.grams - exact) < 0.0005 || x.grams === Math.round(exact) || oldServing.some((G) => Math.round(G * s) === x.grams)) {
+      return roundAmount(exact, unitOf(food))
+    }
   }
   return x.grams
 }

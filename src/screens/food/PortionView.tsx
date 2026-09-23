@@ -12,6 +12,7 @@ import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 
 type Mode = Portion['mode']
+const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
 
 /**
  * Pick how much. Defaults to what the user had last time (learned portion), asks the
@@ -33,7 +34,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const each = u === 'item'
   // per-item foods are counted, never weighed or hand-sized; a food last logged as servings
   // opens in servings, at the same count
-  const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) ? last.serv : null
+  const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) && SERV_STEPS.includes(last.serv) ? last.serv : null
   const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
   const source = sourceOf(food)
   const head = headline(food)
@@ -75,7 +76,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         {mode === 'serv' && (
           <>
             <div className="scale">
-              {[0.5, 1, 1.5, 2, 3].map((v) => (
+              {SERV_STEPS.map((v) => (
                 <button key={v} className={serv === v ? 'on' : ''} onClick={() => setServ(v)}>
                   <b className="num">{frac(v)}</b>{each ? (gentle ? `${r1(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${r1(food.g * v)} ${u}`}
                 </button>
