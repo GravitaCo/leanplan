@@ -98,6 +98,20 @@ setting (`prefers-color-scheme`); there is no in-app override.
 - Guest mode is **local-only**: the `authed` flag gates all cloud sync, so we never hit the
   DB without a real session.
 
+## Legal & compliance (important)
+
+- Tali processes **health data** (special category, UK/EU GDPR Art. 9) on the basis of
+  **explicit consent**, collected by `screens/legal/ConsentScreen.tsx` before the app opens.
+  Nothing syncs to the cloud without it. Don't bypass or pre-tick it.
+- Legal texts live in `src/core/legal/` (facts in `LEGAL`, `privacy.ts`, `terms.ts`), public at
+  `https://tali.fit/?doc=privacy` and `?doc=terms`. The register is `docs/compliance/README.md`.
+- **Any change to what data is collected, where it goes or who processes it** (new field,
+  table, SDK, analytics, AI API, font CDN) updates the privacy policy and register in the same
+  change, and goes past the `compliance` agent. A new user-data table also joins the delete
+  list in `docs/compliance/delete-account.sql`.
+- `npm run check:legal` must pass before the legal texts go live (it fails while `LEGAL` has
+  placeholders).
+
 ## Working agreement: Figma → code
 
 The user designs in **Figma**; Claude implements. Run the **local** Figma Dev Mode MCP

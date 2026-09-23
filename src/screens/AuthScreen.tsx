@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
+import type { LegalDocId } from '@/core/legal'
+import { LegalSheet } from './legal/LegalDoc'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -16,6 +18,7 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false)
   const beginSignIn = useStore((st) => st.beginSignIn)
   const notice = useStore((st) => st.authNotice)
+  const [doc, setDoc] = useState<LegalDocId | null>(null)
 
   async function submit() {
     setErr('')
@@ -212,6 +215,13 @@ export function AuthScreen() {
           </p>
         </div>
       )}
+
+      <p style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'var(--muted)' }}>
+        <button className="pill" style={{ background: 'none', color: 'var(--muted)' }} onClick={() => setDoc('privacy')}>Privacy policy</button>
+        {' · '}
+        <button className="pill" style={{ background: 'none', color: 'var(--muted)' }} onClick={() => setDoc('terms')}>Terms of use</button>
+      </p>
+      {doc && <LegalSheet id={doc} onClose={() => setDoc(null)} />}
     </div>
   )
 }

@@ -10,6 +10,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `security-data` | RLS, auth/OAuth, sync, Supabase schema | Skeptical, protective |
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
+| `compliance` | UK/EU GDPR, health-data consent, privacy policy and terms, data rights, processors, PECR, medical-claim and consumer-law boundaries | Precise, conservative, cites the law |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them

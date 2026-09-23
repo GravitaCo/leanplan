@@ -65,6 +65,15 @@ export function saveState(s: PersistedState): boolean {
   }
 }
 
+/** Erase everything Tali keeps on this device (the user asked to delete their data). */
+export function clearDevice(): void {
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k === KEY || k.startsWith('tali.') || (k.startsWith('sb-') && k.endsWith('-auth-token')))
+      .forEach((k) => localStorage.removeItem(k))
+  } catch { /* storage blocked */ }
+}
+
 /** Ask the browser to keep Tali's storage rather than clear it under pressure (Safari clears
  *  site data it thinks is unused). Harmless if unsupported or refused. */
 export async function requestPersistentStorage(): Promise<void> {

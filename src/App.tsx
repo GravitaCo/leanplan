@@ -7,14 +7,25 @@ import { FoodScreen } from './screens/FoodScreen'
 import { TrainScreen } from './screens/TrainScreen'
 import { PlanScreen } from './screens/PlanScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
+import { ConsentScreen } from './screens/legal/ConsentScreen'
+import { LegalPage, legalDocFromUrl } from './screens/legal/LegalDoc'
+
+/** ?doc=privacy or ?doc=terms opens that document on its own, no sign-in needed. */
+const publicDoc = legalDocFromUrl()
 
 export default function App() {
+  if (publicDoc) return <LegalPage id={publicDoc} />
+  return <TaliApp />
+}
+
+function TaliApp() {
   const authReady = useStore((s) => s.authReady)
   const signedIn = useStore((s) => s.signedIn)
   const tab = useStore((s) => s.tab)
   const setTab = useStore((s) => s.setTab)
   const toast = useStore((s) => s.toast)
   const initAuth = useStore((s) => s.initAuth)
+  const consent = useStore((s) => s.consent)
 
   useEffect(() => {
     initAuth()
@@ -42,6 +53,7 @@ export default function App() {
   }
 
   if (!signedIn) return <AuthScreen />
+  if (!consent) return <ConsentScreen />
 
   return (
     <div className="app-shell">

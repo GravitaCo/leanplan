@@ -10,6 +10,9 @@ import { pushSupported } from '@/data/push'
 import { exportBackup, readBackup } from '@/data/backup'
 import { Disclosure, PageHeader, Seg, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
+import type { LegalDocId } from '@/core/legal'
+import { LegalSheet } from './legal/LegalDoc'
+import { DeleteDataSheet } from './legal/DeleteDataSheet'
 
 function latestWeight(days: Record<string, { weight: number | null }>, profileWeight?: number | null) {
   for (const d of Object.keys(days).sort().reverse()) if (days[d]?.weight) return days[d].weight
@@ -31,7 +34,7 @@ function directionLabel(pct: number): string {
   return 'at maintenance'
 }
 
-type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'notifications' | 'account' | 'backup' | 'about'
+type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'notifications' | 'account' | 'backup' | 'privacy' | 'about'
 
 export function ProfileScreen() {
   const data = useStore((s) => s.data)
@@ -49,6 +52,9 @@ export function ProfileScreen() {
   const setNotifications = useStore((s) => s.setNotifications)
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
+  const consent = useStore((s) => s.consent)
+  const [doc, setDoc] = useState<LegalDocId | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const pr = data.profile
   const weight = latestWeight(data.days, pr.weight)
@@ -246,15 +252,30 @@ export function ProfileScreen() {
             try { importBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
           }} />
         </Disclosure>
+        <Disclosure icon="shield" color="var(--tint)" label="Privacy" open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+          <div className="sub" style={{ marginBottom: 10 }}>
+            {consent && <>You agreed to Tali using your health information on {new Date(consent.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. </>}
+            No ads, analytics or tracking, and your data is never sold. To withdraw consent, delete your {authed || syncPaused ? 'account' : 'data'}.
+          </div>
+          <div className="grid2">
+            <button className="btn gray" onClick={() => setDoc('privacy')}>Privacy policy</button>
+            <button className="btn gray" onClick={() => setDoc('terms')}>Terms of use</button>
+          </div>
+          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setDeleting(true)}>
+            {authed || syncPaused ? 'Delete account' : 'Delete data on this device'}
+          </button>
+        </Disclosure>
         <Disclosure icon="info" color="var(--label2)" label="About" open={open === 'about'} onToggle={() => toggle('about')}>
           <div className="prose sub">
-            <p><b>Tali</b> is a personal health and fitness tracker. Your data is stored on this device and synced to a private database tied to your account. It's never shared or sold.</p>
+            <p><b>Tali</b> is a personal health and fitness tracker. Your data is stored on this device and, with an account, synced to a private database tied to your account. It's never sold or used for ads.</p>
             <p style={{ margin: 0 }}>General fitness information only, not medical advice. Talk to a GP before starting a new diet or exercise programme.</p>
           </div>
         </Disclosure>
       </div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
+      {doc && <LegalSheet id={doc} onClose={() => setDoc(null)} />}
+      {deleting && <DeleteDataSheet onClose={() => setDeleting(false)} />}
     </div>
   )
 }

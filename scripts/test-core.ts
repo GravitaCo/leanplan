@@ -1,6 +1,7 @@
 /** `npm test` — unit tests for the accuracy checks and unit maths (core/, no DOM). */
 import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
+import { currentConsent, newConsent } from '@/data/consent'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -29,5 +30,13 @@ const extra: [string, string, string][] = [
   ['amount text', [amountText(0.5, 'item'), amountText(2, 'item'), amountText(150, 'g')].join('|'), '½ item|2 items|150 g'],
   ['round items to ¼', String(roundAmount(1.3, 'item')), '1.25'],
 ]
+// consent: only an explicit, complete record for the current version counts
+const cn = newConsent()
+extra.push(
+  ['consent current', String(!!currentConsent(cn)), 'true'],
+  ['consent old version', String(!!currentConsent({ ...cn, v: '2000-01-01' })), 'false'],
+  ['consent missing health', String(!!currentConsent({ ...cn, health: false })), 'false'],
+  ['consent none', String(!!currentConsent(null)), 'false'],
+)
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
 process.exit(bad ? 1 : 0)
