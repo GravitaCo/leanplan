@@ -70,10 +70,19 @@ def main(path):
         if base.startswith('Greggs '): base = base[len('Greggs '):]
         name = LEGACY.get(n) or 'Greggs ' + base
         drink = bool(DRINK.search(n))
+        # Greggs' per-portion figures are what customers compare against, so they anchor the
+        # values: per 100 is derived from them (unrounded) and the portion is kept exact. A
+        # rounded portion or per-100 figure drifts by 1-2 kcal (e.g. bacon roll 323 vs 321).
+        P = r['portion']
+        per100 = lambda portion_value, fallback: round(portion_value * 100 / P, 2) if P else fallback
         # a pack size in the name ("500ml", "40g") is what one serving of it means
         size = re.search(r'(\d+)\s*(ml|g)$', n)
-        g = float(size[1]) if size else r['portion']
-        f = {'n': name, 'k': round(r['k100']), 'p': r['p100'], 'c': r['c100'], 'f': r['f100'], 'g': round(g)}
+        g = float(size[1]) if size else P
+        f = {'n': name, 'k': per100(r['kp'], r['k100']), 'p': per100(r['pp'], r['p100']), 'c': per100(r['cp'], r['c100']),
+             'f': per100(r['fp'], r['f100']), 'g': g}
+        if not size:
+            # hard gate: one serving in the app must show exactly Greggs' published per-portion kcal
+            assert round(f['k'] * g / 100) == round(r['kp']), f'serving kcal mismatch: {n}'
         if drink: f['ml'] = True
         f['cat'] = 'drinks' if drink else 'fastfood'
         f['src'] = 'greggs-uk'

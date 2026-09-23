@@ -2677,20 +2677,20 @@ const BASE: Food[] = [
   },
   {
     "n": "Burger King Whopper",
-    "k": 223,
-    "p": 10.4,
-    "c": 19.2,
-    "f": 12.1,
+    "k": 207.32,
+    "p": 10.1,
+    "c": 18.47,
+    "f": 10.45,
     "g": 287,
     "cat": "fastfood",
     "src": "bk-gb"
   },
   {
     "n": "Burger King Chicken Royale",
-    "k": 262,
+    "k": 261.75,
     "p": 10.6,
-    "c": 24,
-    "f": 13.4,
+    "c": 23.96,
+    "f": 13.36,
     "g": 217,
     "cat": "fastfood",
     "src": "bk-gb"

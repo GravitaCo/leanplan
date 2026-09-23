@@ -88,6 +88,11 @@ setting (`prefers-color-scheme`); there is no in-app override.
   per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
   the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.
 - Food names are stable IDs (learned usuals match by name): don't rename casually.
+- **What the user sees must equal the source.** Where a source publishes per-portion figures
+  (chains), those are the truth: keep portions exact and derive per-100 values from them. Check
+  every item through the app's logging path (one serving in the app = the published figure), not
+  just the stored per-100 values. Importers assert this; `npm test` checks chain servings.
+- **Food data changes need `nutrition-accuracy` sign-off as well as `ship-critic`** before merging.
 
 ## Backend & data (important)
 

@@ -1,6 +1,10 @@
 /** `npm test` — unit tests for the accuracy checks and unit maths (core/, no DOM). */
 import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
+import { FOODS } from '@/core/data/foods'
+import { SOURCES } from '@/core/data/sources'
+import { buildEntry } from '@/core/domain/estimate'
+import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
@@ -41,4 +45,20 @@ const extra: [string, string, string][] = [
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
+// Chain foods: one serving, through the app's real logging path, must show exactly the kcal the
+// data implies (the importers separately assert that equals the chain's published per-portion kcal).
+{
+  const chain = FOODS.filter((f) => f.src && SOURCES[f.src.split(':')[0]]?.err)
+  const off = chain.filter((f) => {
+    const e = buildEntry(f, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
+    return Math.round(e.k) !== Math.round((f.k * f.g) / (f.each ? 1 : 100))
+  })
+  const ok = off.length === 0; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', `chain servings match their data (${chain.length} foods)`, ok ? '' : off.map((f) => f.n).join(', '))
+  const whopper = FOODS.find((f) => f.n === 'Burger King Whopper')!, roll = FOODS.find((f) => f.n === 'Greggs Bacon Breakfast Roll')!
+  const serving = (f: typeof roll) => String(Math.round(buildEntry(f, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry.k))
+  for (const [n, got, want] of [['Greggs bacon roll = 321 (published)', serving(roll), '321'], ['Whopper = 595 (published)', serving(whopper), '595']]) {
+    const ok2 = got === want; if (!ok2) bad++; console.log(ok2 ? 'PASS' : 'FAIL', n, JSON.stringify(got))
+  }
+}
 process.exit(bad ? 1 : 0)

@@ -57,7 +57,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
-        {gentle ? `${food.p} g protein` : `${food.k} kcal · ${food.p} P · ${food.c} C · ${food.f} F`} {perText(food)}
+        {gentle ? `${r1(food.p)} g protein` : `${Math.round(food.k)} kcal · ${r1(food.p)} P · ${r1(food.c)} C · ${r1(food.f)} F`} {perText(food)}
         <div style={{ fontSize: 13, marginTop: 2 }}>
           {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
         </div>
@@ -73,7 +73,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
             <div className="scale">
               {[0.5, 1, 1.5, 2, 3].map((v) => (
                 <button key={v} className={serv === v ? 'on' : ''} onClick={() => setServ(v)}>
-                  <b className="num">{frac(v)}</b>{each ? (gentle ? `${Math.round(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${Math.round(food.g * v)} ${u}`}
+                  <b className="num">{frac(v)}</b>{each ? (gentle ? `${Math.round(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : amountText(food.g * v, u)}
                 </button>
               ))}
             </div>

@@ -37,15 +37,16 @@ export function perText(f: Pick<Food, 'ml' | 'each'>): string {
 
 /** An amount in the food's unit: "150 g", "250 ml", "1 item", "½ item". */
 export function amountText(amount: number, unit: FoodUnit): string {
-  if (unit !== 'item') return `${Math.round(amount)} ${unit}`
+  if (unit !== 'item') return `${Math.round(amount * 10) / 10} ${unit}`
   const w = Math.floor(amount), r = amount - w
   const f = r >= 0.74 ? '¾' : r >= 0.49 ? '½' : r >= 0.24 ? '¼' : ''
   return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`
 }
 
-/** Round an amount to what its unit can sensibly hold: whole g/ml, quarter items. */
+/** Round an amount to what its unit can sensibly hold: 0.1 g/ml (chains publish portions
+ *  like 119.5 g, and rounding those to whole grams shifts calories), quarter items. */
 export function roundAmount(amount: number, unit: FoodUnit): number {
-  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount)
+  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 10) / 10
 }
 
 /** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */

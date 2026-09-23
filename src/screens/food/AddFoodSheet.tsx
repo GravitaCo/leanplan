@@ -7,7 +7,7 @@ import { useStore } from '@/store/store'
 import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { fmt } from '@/core/domain/date'
+import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, perText } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
 import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
@@ -59,7 +59,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
       <div className="m">
         <div className="t">{f.n}</div>
-        <div className="s num">{gentle ? '' : `${f.k} kcal · `}{f.p} g protein {perText(f)}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
+        <div className="s num">{gentle ? '' : `${Math.round(f.k)} kcal · `}{r1(f.p)} g protein {perText(f)}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
       </div>
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
