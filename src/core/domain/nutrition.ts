@@ -43,10 +43,11 @@ export function amountText(amount: number, unit: FoodUnit): string {
   return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`
 }
 
-/** Round an amount to what its unit can sensibly hold: 0.1 g/ml (chains publish portions
- *  like 119.5 g, and rounding those to whole grams shifts calories), quarter items. */
+/** Tidy an amount without losing real precision: chains publish portions like 206.76 g, and
+ *  rounding those (to 207 g, or even 206.8 g) shifts the calories users compare against. So
+ *  g/ml only drop float noise (3 decimals); screens round for display. Items go to quarters. */
 export function roundAmount(amount: number, unit: FoodUnit): number {
-  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 10) / 10
+  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 1000) / 1000
 }
 
 /** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */

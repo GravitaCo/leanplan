@@ -61,6 +61,9 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         <div style={{ fontSize: 13, marginTop: 2 }}>
           {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
         </div>
+        {food.ref && !gentle && food.ref.g !== (u === 'item' ? 1 : 100) && (
+          <div style={{ fontSize: 13 }}>{source?.text.split(',')[0] ?? 'The source'} lists {Math.round(food.ref.k)} kcal per {amountText(food.ref.g, u)}</div>
+        )}
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 

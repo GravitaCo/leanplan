@@ -3,7 +3,8 @@ import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
 import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
-import { buildEntry } from '@/core/domain/estimate'
+import { buildEntry, scaleEntry } from '@/core/domain/estimate'
+import { refMismatches } from '@/core/data/validate'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
@@ -60,5 +61,39 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   for (const [n, got, want] of [['Greggs bacon roll = 321 (published)', serving(roll), '321'], ['Whopper = 595 (published)', serving(whopper), '595']]) {
     const ok2 = got === want; if (!ok2) bad++; console.log(ok2 ? 'PASS' : 'FAIL', n, JSON.stringify(got))
   }
+}
+// The guardrail itself: the original bacon-roll bug and its variants must be caught.
+{
+  const roll = { n: 'Test roll', k: 268.62, p: 15.9, c: 27.62, f: 10.04, g: 119.5, ref: { g: 119.5, k: 321, p: 19, c: 33, f: 12 } }
+  const cases: [string, object, boolean][] = [
+    ['exact data passes', roll, true],
+    ['portion rounded to 120 g is caught', { ...roll, g: 120 }, false],
+    ['per-100 kcal off by 1 is caught', { ...roll, k: 270.5 }, false],
+    ['macro off by 0.5 g is caught', { ...roll, p: 16.4 }, false],
+    ['pack-size serving allowed', { ...roll, n: 'Juice 500ml', g: 500 }, true],
+  ]
+  for (const [n, f, pass] of cases) {
+    const ok = (refMismatches(f as never).length === 0) === pass; if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', 'guardrail:', n)
+  }
+}
+// No rounding drift anywhere in the logging path, for every food: one serving, a fractional
+// amount, and an edit (x1.5) must equal the exact maths to the stored precision (0.1).
+{
+  const drift: string[] = []
+  const exact = (f: (typeof FOODS)[number], amt: number) => (f.k * amt) / (f.each ? 1 : 100)
+  for (const f of FOODS) {
+    const opts = { custom: false, fat: null, askFat: false }
+    const one = buildEntry(f, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE as never, opts).entry
+    if (Math.abs(one.k - exact(f, f.g)) > 0.051) drift.push(`${f.n} serving`)
+    if (!f.each) {
+      const frac = buildEntry(f, { mode: 'g', grams: 123.4, learned: null }, 'lunch', DEFAULT_PROFILE as never, opts).entry
+      if (Math.abs(frac.k - exact(f, 123.4)) > 0.051) drift.push(`${f.n} 123.4 g`)
+    }
+    const edited = scaleEntry(one, 1.5)
+    if (Math.abs(edited.k - one.k * 1.5) > 0.051) drift.push(`${f.n} edit x1.5`)
+  }
+  const ok = drift.length === 0; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', `no rounding drift in logging (${FOODS.length} foods)`, drift.slice(0, 5).join(', '))
 }
 process.exit(bad ? 1 : 0)

@@ -11,7 +11,14 @@ export const GREGGS: Food[] = [
     "f": 21.22,
     "g": 141.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 141.4,
+      "k": 436.0,
+      "p": 8.6,
+      "c": 33.0,
+      "f": 30.0
+    }
   },
   {
     "n": "Greggs Sausage Roll",
@@ -21,7 +28,14 @@ export const GREGGS: Food[] = [
     "f": 23.3,
     "g": 103.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 103.0,
+      "k": 347.0,
+      "p": 9.1,
+      "c": 24.0,
+      "f": 24.0
+    }
   },
   {
     "n": "Greggs Steak Bake",
@@ -31,7 +45,14 @@ export const GREGGS: Food[] = [
     "f": 19.06,
     "g": 136.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 136.4,
+      "k": 411.0,
+      "p": 15.0,
+      "c": 29.0,
+      "f": 26.0
+    }
   },
   {
     "n": "Greggs Yum Yum",
@@ -41,7 +62,14 @@ export const GREGGS: Food[] = [
     "f": 21.74,
     "g": 78.2,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 78.2,
+      "k": 310.0,
+      "p": 3.7,
+      "c": 34.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs 6 Mini Sausage Rolls",
@@ -51,7 +79,14 @@ export const GREGGS: Food[] = [
     "f": 19.16,
     "g": 146.1,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 146.1,
+      "k": 469.0,
+      "p": 13.0,
+      "c": 41.0,
+      "f": 28.0
+    }
   },
   {
     "n": "Greggs All Butter Croissant",
@@ -61,7 +96,14 @@ export const GREGGS: Food[] = [
     "f": 16.46,
     "g": 79.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 79.0,
+      "k": 292.0,
+      "p": 7.1,
+      "c": 35.0,
+      "f": 13.0
+    }
   },
   {
     "n": "Greggs Americano Large",
@@ -72,7 +114,14 @@ export const GREGGS: Food[] = [
     "g": 382.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 382.0,
+      "k": 15.0,
+      "p": 0.6,
+      "c": 2.3,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Americano Regular",
@@ -83,7 +132,14 @@ export const GREGGS: Food[] = [
     "g": 285.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 285.0,
+      "k": 11.0,
+      "p": 0.0,
+      "c": 1.7,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Apple & Cinnamon Flavour Porridge",
@@ -93,7 +149,14 @@ export const GREGGS: Food[] = [
     "f": 1.88,
     "g": 234.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 234.0,
+      "k": 232.0,
+      "p": 8.0,
+      "c": 37.0,
+      "f": 4.4
+    }
   },
   {
     "n": "Greggs Apple and Strawberry Fruit Pot",
@@ -103,7 +166,14 @@ export const GREGGS: Food[] = [
     "f": 0.0,
     "g": 90.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 90.0,
+      "k": 43.0,
+      "p": 0.5,
+      "c": 8.7,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Apple Danish",
@@ -113,7 +183,14 @@ export const GREGGS: Food[] = [
     "f": 7.88,
     "g": 116.7,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 116.7,
+      "k": 324.0,
+      "p": 4.7,
+      "c": 55.0,
+      "f": 9.2
+    }
   },
   {
     "n": "Greggs Bacon & Lorne Breakfast Baguette",
@@ -123,7 +200,14 @@ export const GREGGS: Food[] = [
     "f": 9.93,
     "g": 221.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 221.5,
+      "k": 607.0,
+      "p": 33.0,
+      "c": 66.0,
+      "f": 22.0
+    }
   },
   {
     "n": "Greggs Bacon & Omelette Breakfast Roll",
@@ -133,7 +217,14 @@ export const GREGGS: Food[] = [
     "f": 9.68,
     "g": 155.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 155.0,
+      "k": 363.0,
+      "p": 22.0,
+      "c": 34.0,
+      "f": 15.0
+    }
   },
   {
     "n": "Greggs Bacon & Sausage Breakfast Baguette",
@@ -143,7 +234,14 @@ export const GREGGS: Food[] = [
     "f": 9.59,
     "g": 208.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 208.5,
+      "k": 550.0,
+      "p": 29.0,
+      "c": 63.0,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Bacon and Cheese Wrap",
@@ -153,7 +251,14 @@ export const GREGGS: Food[] = [
     "f": 23.47,
     "g": 98.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 98.0,
+      "k": 358.0,
+      "p": 14.0,
+      "c": 25.0,
+      "f": 23.0
+    }
   },
   {
     "n": "Greggs Bacon and Lorne Breakfast Roll",
@@ -163,7 +268,14 @@ export const GREGGS: Food[] = [
     "f": 11.76,
     "g": 170.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 170.0,
+      "k": 461.0,
+      "p": 26.0,
+      "c": 43.0,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Bacon and Omelette Breakfast Baguette",
@@ -173,7 +285,14 @@ export const GREGGS: Food[] = [
     "f": 8.23,
     "g": 206.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 206.5,
+      "k": 504.0,
+      "p": 29.0,
+      "c": 58.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs Bacon and Sausage Breakfast Roll",
@@ -183,7 +302,14 @@ export const GREGGS: Food[] = [
     "f": 10.83,
     "g": 157.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 157.0,
+      "k": 405.0,
+      "p": 22.0,
+      "c": 39.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs Bacon Breakfast Baguette",
@@ -193,7 +319,14 @@ export const GREGGS: Food[] = [
     "f": 8.19,
     "g": 171.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 171.0,
+      "k": 462.0,
+      "p": 26.0,
+      "c": 56.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Bacon Breakfast Roll",
@@ -203,7 +336,14 @@ export const GREGGS: Food[] = [
     "f": 10.04,
     "g": 119.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 119.5,
+      "k": 321.0,
+      "p": 19.0,
+      "c": 33.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Baguette",
@@ -213,7 +353,14 @@ export const GREGGS: Food[] = [
     "f": 0.74,
     "g": 108.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 108.0,
+      "k": 275.0,
+      "p": 9.5,
+      "c": 56.0,
+      "f": 0.8
+    }
   },
   {
     "n": "Greggs Bavarian Slice",
@@ -223,7 +370,14 @@ export const GREGGS: Food[] = [
     "f": 13.39,
     "g": 127.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 127.0,
+      "k": 376.0,
+      "p": 4.3,
+      "c": 52.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs BBQ Bites Meal Box",
@@ -233,7 +387,14 @@ export const GREGGS: Food[] = [
     "f": 8.27,
     "g": 254.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 254.0,
+      "k": 526.0,
+      "p": 21.0,
+      "c": 61.0,
+      "f": 21.0
+    }
   },
   {
     "n": "Greggs BBQ Chicken & Bacon Pizza",
@@ -243,7 +404,14 @@ export const GREGGS: Food[] = [
     "f": 14.03,
     "g": 206.76,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 206.76,
+      "k": 666.0,
+      "p": 27.0,
+      "c": 72.0,
+      "f": 29.0
+    }
   },
   {
     "n": "Greggs BBQ Chicken and Bacon Melt Baguette",
@@ -253,7 +421,14 @@ export const GREGGS: Food[] = [
     "f": 5.99,
     "g": 267.3,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 267.3,
+      "k": 658.0,
+      "p": 35.0,
+      "c": 91.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs BBQ Chicken and Bacon Pasta",
@@ -263,7 +438,14 @@ export const GREGGS: Food[] = [
     "f": 6.67,
     "g": 285.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 285.0,
+      "k": 487.0,
+      "p": 26.0,
+      "c": 51.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Belgian Bun",
@@ -273,7 +455,14 @@ export const GREGGS: Food[] = [
     "f": 2.61,
     "g": 122.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 122.5,
+      "k": 371.0,
+      "p": 6.1,
+      "c": 78.0,
+      "f": 3.2
+    }
   },
   {
     "n": "Greggs BLT",
@@ -283,7 +472,14 @@ export const GREGGS: Food[] = [
     "f": 8.56,
     "g": 187.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 187.0,
+      "k": 406.0,
+      "p": 19.0,
+      "c": 45.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs Blueberry Iced Matcha Latte",
@@ -294,7 +490,14 @@ export const GREGGS: Food[] = [
     "g": 478.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 478.0,
+      "k": 134.0,
+      "p": 6.7,
+      "c": 20.0,
+      "f": 3.3
+    }
   },
   {
     "n": "Greggs Bonfire Toffee Muffin",
@@ -304,7 +507,14 @@ export const GREGGS: Food[] = [
     "f": 13.59,
     "g": 103.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 103.0,
+      "k": 363.0,
+      "p": 4.7,
+      "c": 52.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Breakfast Box",
@@ -314,7 +524,14 @@ export const GREGGS: Food[] = [
     "f": 15.27,
     "g": 131.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 131.0,
+      "k": 287.0,
+      "p": 21.0,
+      "c": 6.3,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Buffalo Chicken Pizza",
@@ -324,7 +541,14 @@ export const GREGGS: Food[] = [
     "f": 15.17,
     "g": 211.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 211.0,
+      "k": 673.0,
+      "p": 27.0,
+      "c": 68.0,
+      "f": 32.0
+    }
   },
   {
     "n": "Greggs Buffalo Sauce",
@@ -334,7 +558,14 @@ export const GREGGS: Food[] = [
     "f": 13.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 64.0,
+      "p": 0.0,
+      "c": 3.9,
+      "f": 5.2
+    }
   },
   {
     "n": "Greggs Cappuccino Large",
@@ -345,7 +576,14 @@ export const GREGGS: Food[] = [
     "g": 327.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 327.0,
+      "k": 114.0,
+      "p": 8.2,
+      "c": 13.0,
+      "f": 3.3
+    }
   },
   {
     "n": "Greggs Cappuccino Regular",
@@ -356,7 +594,14 @@ export const GREGGS: Food[] = [
     "g": 275.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 275.0,
+      "k": 94.0,
+      "p": 6.6,
+      "c": 12.0,
+      "f": 2.2
+    }
   },
   {
     "n": "Greggs Caramel Crispy",
@@ -366,7 +611,14 @@ export const GREGGS: Food[] = [
     "f": 22.0,
     "g": 50.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 50.0,
+      "k": 242.0,
+      "p": 2.2,
+      "c": 35.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Caramel Custard Doughnut",
@@ -376,7 +628,14 @@ export const GREGGS: Food[] = [
     "f": 11.34,
     "g": 97.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 97.0,
+      "k": 274.0,
+      "p": 4.1,
+      "c": 40.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Caramel Latte Large",
@@ -387,7 +646,14 @@ export const GREGGS: Food[] = [
     "g": 417.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 417.5,
+      "k": 221.0,
+      "p": 10.0,
+      "c": 27.0,
+      "f": 7.9
+    }
   },
   {
     "n": "Greggs Caramel Latte Regular",
@@ -398,7 +664,14 @@ export const GREGGS: Food[] = [
     "g": 363.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 363.5,
+      "k": 204.0,
+      "p": 8.0,
+      "c": 26.0,
+      "f": 7.3
+    }
   },
   {
     "n": "Greggs Cheese & Onion Stottie",
@@ -408,7 +681,14 @@ export const GREGGS: Food[] = [
     "f": 8.91,
     "g": 235.6,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 235.6,
+      "k": 575.0,
+      "p": 23.0,
+      "c": 71.0,
+      "f": 21.0
+    }
   },
   {
     "n": "Greggs Cheese & Pickle",
@@ -418,7 +698,14 @@ export const GREGGS: Food[] = [
     "f": 11.11,
     "g": 144.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 144.0,
+      "k": 397.0,
+      "p": 16.0,
+      "c": 46.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs Cheese & Tomato",
@@ -428,7 +715,14 @@ export const GREGGS: Food[] = [
     "f": 9.04,
     "g": 177.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 177.0,
+      "k": 384.0,
+      "p": 16.0,
+      "c": 42.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs Cheese and Caramelised Onion Toastie",
@@ -438,7 +732,14 @@ export const GREGGS: Food[] = [
     "f": 8.64,
     "g": 208.32,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 208.32,
+      "k": 548.0,
+      "p": 25.0,
+      "c": 69.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs Cheese Sandwich",
@@ -448,7 +749,14 @@ export const GREGGS: Food[] = [
     "f": 9.65,
     "g": 114.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 114.0,
+      "k": 308.0,
+      "p": 14.0,
+      "c": 36.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Cheese Scone",
@@ -458,7 +766,14 @@ export const GREGGS: Food[] = [
     "f": 19.59,
     "g": 97.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 97.0,
+      "k": 340.0,
+      "p": 13.0,
+      "c": 28.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Cherry & Mango Cooler",
@@ -469,7 +784,14 @@ export const GREGGS: Food[] = [
     "g": 420.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 420.0,
+      "k": 80.0,
+      "p": 0.0,
+      "c": 20.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Cherry Lemonade",
@@ -480,7 +802,14 @@ export const GREGGS: Food[] = [
     "g": 406.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 406.0,
+      "k": 57.0,
+      "p": 0.0,
+      "c": 15.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Chicken & Pepperoni Pizza Toastie",
@@ -490,7 +819,14 @@ export const GREGGS: Food[] = [
     "f": 11.06,
     "g": 208.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 208.0,
+      "k": 572.0,
+      "p": 27.0,
+      "c": 62.0,
+      "f": 23.0
+    }
   },
   {
     "n": "Greggs Chicken Bake",
@@ -500,7 +836,14 @@ export const GREGGS: Food[] = [
     "f": 17.95,
     "g": 150.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.4,
+      "k": 420.0,
+      "p": 13.0,
+      "c": 30.0,
+      "f": 27.0
+    }
   },
   {
     "n": "Greggs Chicken Caesar Salad with Egg",
@@ -510,7 +853,14 @@ export const GREGGS: Food[] = [
     "f": 13.19,
     "g": 235.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 235.0,
+      "k": 454.0,
+      "p": 28.0,
+      "c": 15.0,
+      "f": 31.0
+    }
   },
   {
     "n": "Greggs Chicken Roll",
@@ -520,7 +870,14 @@ export const GREGGS: Food[] = [
     "f": 19.19,
     "g": 99.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 99.0,
+      "k": 305.0,
+      "p": 8.5,
+      "c": 25.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Chocolate Brownie Bar",
@@ -530,7 +887,14 @@ export const GREGGS: Food[] = [
     "f": 22.0,
     "g": 50.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 50.0,
+      "k": 215.0,
+      "p": 2.6,
+      "c": 26.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Chocolate Cake Bar",
@@ -540,7 +904,14 @@ export const GREGGS: Food[] = [
     "f": 21.62,
     "g": 74.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 74.0,
+      "k": 298.0,
+      "p": 5.2,
+      "c": 32.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs Cloudy Lemonade",
@@ -551,7 +922,14 @@ export const GREGGS: Food[] = [
     "g": 406.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 406.0,
+      "k": 57.0,
+      "p": 0.0,
+      "c": 14.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Corn Topped Roll",
@@ -561,7 +939,14 @@ export const GREGGS: Food[] = [
     "f": 2.82,
     "g": 71.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 71.0,
+      "k": 181.0,
+      "p": 6.6,
+      "c": 33.0,
+      "f": 2.0
+    }
   },
   {
     "n": "Greggs Corned Beef Bake",
@@ -571,7 +956,14 @@ export const GREGGS: Food[] = [
     "f": 18.83,
     "g": 143.37,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 143.37,
+      "k": 417.0,
+      "p": 11.0,
+      "c": 32.0,
+      "f": 27.0
+    }
   },
   {
     "n": "Greggs Cream Éclair",
@@ -581,7 +973,14 @@ export const GREGGS: Food[] = [
     "f": 28.4,
     "g": 81.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 81.0,
+      "k": 323.0,
+      "p": 4.2,
+      "c": 25.0,
+      "f": 23.0
+    }
   },
   {
     "n": "Greggs Cream Iced Finger",
@@ -591,7 +990,14 @@ export const GREGGS: Food[] = [
     "f": 16.22,
     "g": 111.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 111.0,
+      "k": 372.0,
+      "p": 5.7,
+      "c": 47.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs Egg Mayonnaise & Tomato",
@@ -601,7 +1007,14 @@ export const GREGGS: Food[] = [
     "f": 5.94,
     "g": 185.3,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 185.3,
+      "k": 347.0,
+      "p": 14.0,
+      "c": 44.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Egg Mayonnaise Sandwich",
@@ -611,7 +1024,14 @@ export const GREGGS: Food[] = [
     "f": 6.7,
     "g": 149.3,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 149.3,
+      "k": 317.0,
+      "p": 15.0,
+      "c": 39.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Empire Biscuit",
@@ -621,7 +1041,14 @@ export const GREGGS: Food[] = [
     "f": 14.01,
     "g": 68.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 68.5,
+      "k": 284.0,
+      "p": 2.3,
+      "c": 45.0,
+      "f": 9.6
+    }
   },
   {
     "n": "Greggs Espresso Extra Shot",
@@ -632,7 +1059,14 @@ export const GREGGS: Food[] = [
     "g": 39.6,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 39.6,
+      "k": 8.0,
+      "p": 0.6,
+      "c": 1.3,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Espresso Shot",
@@ -643,7 +1077,14 @@ export const GREGGS: Food[] = [
     "g": 60.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 60.0,
+      "k": 12.0,
+      "p": 0.8,
+      "c": 1.9,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Extra Bacon",
@@ -653,7 +1094,14 @@ export const GREGGS: Food[] = [
     "f": 20.69,
     "g": 14.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 14.5,
+      "k": 45.0,
+      "p": 4.2,
+      "c": 0.0,
+      "f": 3.0
+    }
   },
   {
     "n": "Greggs Extra Breakfast Sausage",
@@ -663,7 +1111,14 @@ export const GREGGS: Food[] = [
     "f": 16.15,
     "g": 26.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 26.0,
+      "k": 62.0,
+      "p": 3.4,
+      "c": 2.6,
+      "f": 4.2
+    }
   },
   {
     "n": "Greggs Extra Lorne Sausage",
@@ -673,7 +1128,14 @@ export const GREGGS: Food[] = [
     "f": 16.92,
     "g": 65.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 65.0,
+      "k": 185.0,
+      "p": 11.0,
+      "c": 9.8,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Extra Omelette with Cheese",
@@ -683,7 +1145,14 @@ export const GREGGS: Food[] = [
     "f": 11.0,
     "g": 50.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 50.0,
+      "k": 77.0,
+      "p": 6.0,
+      "c": 0.9,
+      "f": 5.5
+    }
   },
   {
     "n": "Greggs Fairtrade Apple Juice from Concentrate",
@@ -694,7 +1163,14 @@ export const GREGGS: Food[] = [
     "g": 150.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.0,
+      "k": 69.0,
+      "p": 0.0,
+      "c": 17.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Fairtrade Orange Juice from Concentrate 250ml",
@@ -705,7 +1181,14 @@ export const GREGGS: Food[] = [
     "g": 250.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.0,
+      "k": 68.0,
+      "p": 0.8,
+      "c": 15.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Fairtrade Orange Juice from Concentrate 500ml",
@@ -716,7 +1199,14 @@ export const GREGGS: Food[] = [
     "g": 500.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.0,
+      "k": 68.0,
+      "p": 0.8,
+      "c": 15.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Fat Free Greek Style Yoghurt with Strawberry Compote",
@@ -726,7 +1216,14 @@ export const GREGGS: Food[] = [
     "f": 0.47,
     "g": 150.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.0,
+      "k": 114.0,
+      "p": 7.1,
+      "c": 20.0,
+      "f": 0.7
+    }
   },
   {
     "n": "Greggs Flat White Regular",
@@ -737,7 +1234,14 @@ export const GREGGS: Food[] = [
     "g": 222.6,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 222.6,
+      "k": 71.0,
+      "p": 5.3,
+      "c": 8.7,
+      "f": 1.8
+    }
   },
   {
     "n": "Greggs Free Range Egg Mayonnaise Baguette",
@@ -747,7 +1251,14 @@ export const GREGGS: Food[] = [
     "f": 7.88,
     "g": 241.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 241.0,
+      "k": 509.0,
+      "p": 19.0,
+      "c": 63.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Free Range Egg Mayonnaise Half Baguette",
@@ -757,7 +1268,14 @@ export const GREGGS: Food[] = [
     "f": 7.97,
     "g": 120.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 120.5,
+      "k": 254.0,
+      "p": 9.5,
+      "c": 31.0,
+      "f": 9.6
+    }
   },
   {
     "n": "Greggs Free Range Egg Mayonnaise",
@@ -767,7 +1285,14 @@ export const GREGGS: Food[] = [
     "f": 7.44,
     "g": 161.3,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 161.3,
+      "k": 358.0,
+      "p": 16.0,
+      "c": 44.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Free Range Egg Pot",
@@ -777,7 +1302,14 @@ export const GREGGS: Food[] = [
     "f": 9.11,
     "g": 90.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 90.0,
+      "k": 127.0,
+      "p": 12.0,
+      "c": 1.3,
+      "f": 8.2
+    }
   },
   {
     "n": "Greggs Fruit Scone",
@@ -787,7 +1319,14 @@ export const GREGGS: Food[] = [
     "f": 8.96,
     "g": 96.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 96.0,
+      "k": 299.0,
+      "p": 6.3,
+      "c": 48.0,
+      "f": 8.6
+    }
   },
   {
     "n": "Greggs Fruity Flapjack",
@@ -797,7 +1336,14 @@ export const GREGGS: Food[] = [
     "f": 18.33,
     "g": 60.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 60.0,
+      "k": 253.0,
+      "p": 3.9,
+      "c": 34.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Garlic & Herb Dip",
@@ -807,7 +1353,14 @@ export const GREGGS: Food[] = [
     "f": 32.5,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 128.0,
+      "p": 0.0,
+      "c": 2.9,
+      "f": 13.0
+    }
   },
   {
     "n": "Greggs Gingerbread Man",
@@ -817,7 +1370,14 @@ export const GREGGS: Food[] = [
     "f": 10.95,
     "g": 42.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 42.0,
+      "k": 176.0,
+      "p": 2.4,
+      "c": 30.0,
+      "f": 4.6
+    }
   },
   {
     "n": "Greggs Glazed Ring Doughnut",
@@ -827,7 +1387,14 @@ export const GREGGS: Food[] = [
     "f": 10.0,
     "g": 58.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 58.0,
+      "k": 201.0,
+      "p": 1.9,
+      "c": 35.0,
+      "f": 5.8
+    }
   },
   {
     "n": "Greggs Golden Syrup Flavour Porridge",
@@ -837,7 +1404,14 @@ export const GREGGS: Food[] = [
     "f": 1.81,
     "g": 237.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 237.0,
+      "k": 249.0,
+      "p": 7.6,
+      "c": 43.0,
+      "f": 4.3
+    }
   },
   {
     "n": "Greggs Green Tea Regular",
@@ -848,7 +1422,14 @@ export const GREGGS: Food[] = [
     "g": 330.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 330.0,
+      "k": 0.0,
+      "p": 0.0,
+      "c": 0.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Mature Cheddar & Onion Hand Cooked Crisps 40g",
@@ -858,7 +1439,14 @@ export const GREGGS: Food[] = [
     "f": 25.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 200.0,
+      "p": 3.0,
+      "c": 23.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Natural Mineral Water 500ml",
@@ -869,7 +1457,14 @@ export const GREGGS: Food[] = [
     "g": 500.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 100.0,
+      "k": 0.0,
+      "p": 0.0,
+      "c": 0.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Natural Mineral Water 750ml",
@@ -880,7 +1475,14 @@ export const GREGGS: Food[] = [
     "g": 750.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 100.0,
+      "k": 0.0,
+      "p": 0.0,
+      "c": 0.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Sea Salt & Cider Vinegar Hand Cooked Crisps 40g",
@@ -890,7 +1492,14 @@ export const GREGGS: Food[] = [
     "f": 25.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 200.0,
+      "p": 2.7,
+      "c": 23.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Thai Sweet Chilli Flavour Hand Cooked Crisps 40g",
@@ -900,7 +1509,14 @@ export const GREGGS: Food[] = [
     "f": 25.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 201.0,
+      "p": 2.8,
+      "c": 23.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Ham & Cheese Baguette",
@@ -910,7 +1526,14 @@ export const GREGGS: Food[] = [
     "f": 7.65,
     "g": 196.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 196.0,
+      "k": 482.0,
+      "p": 27.0,
+      "c": 57.0,
+      "f": 15.0
+    }
   },
   {
     "n": "Greggs Ham and Cheese Toastie",
@@ -920,7 +1543,14 @@ export const GREGGS: Food[] = [
     "f": 9.65,
     "g": 207.36,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 207.36,
+      "k": 543.0,
+      "p": 31.0,
+      "c": 58.0,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Ham Sandwich",
@@ -930,7 +1560,14 @@ export const GREGGS: Food[] = [
     "f": 3.89,
     "g": 126.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 126.0,
+      "k": 258.0,
+      "p": 15.0,
+      "c": 37.0,
+      "f": 4.9
+    }
   },
   {
     "n": "Greggs Hash Browns",
@@ -940,7 +1577,14 @@ export const GREGGS: Food[] = [
     "f": 8.25,
     "g": 76.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 76.4,
+      "k": 154.0,
+      "p": 1.1,
+      "c": 22.0,
+      "f": 6.3
+    }
   },
   {
     "n": "Greggs Honey Roast Ham & Egg Salad",
@@ -950,7 +1594,14 @@ export const GREGGS: Food[] = [
     "f": 4.5,
     "g": 191.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 191.0,
+      "k": 329.0,
+      "p": 17.0,
+      "c": 44.0,
+      "f": 8.6
+    }
   },
   {
     "n": "Greggs Honey Roast Ham and Egg Salad Roll",
@@ -960,7 +1611,14 @@ export const GREGGS: Food[] = [
     "f": 4.9,
     "g": 196.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 196.0,
+      "k": 333.0,
+      "p": 18.0,
+      "c": 41.0,
+      "f": 9.6
+    }
   },
   {
     "n": "Greggs Hot Buffalo Chicken Baguette",
@@ -970,7 +1628,14 @@ export const GREGGS: Food[] = [
     "f": 6.36,
     "g": 220.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 220.0,
+      "k": 506.0,
+      "p": 29.0,
+      "c": 64.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Hot Chocolate Brownies",
@@ -980,7 +1645,14 @@ export const GREGGS: Food[] = [
     "f": 23.21,
     "g": 168.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 168.0,
+      "k": 758.0,
+      "p": 11.0,
+      "c": 91.0,
+      "f": 39.0
+    }
   },
   {
     "n": "Greggs Hot Chocolate Large",
@@ -991,7 +1663,14 @@ export const GREGGS: Food[] = [
     "g": 439.1,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 439.1,
+      "k": 290.0,
+      "p": 8.8,
+      "c": 48.0,
+      "f": 6.6
+    }
   },
   {
     "n": "Greggs Hot Chocolate Regular",
@@ -1002,7 +1681,14 @@ export const GREGGS: Food[] = [
     "g": 372.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 372.0,
+      "k": 219.0,
+      "p": 6.7,
+      "c": 36.0,
+      "f": 5.2
+    }
   },
   {
     "n": "Greggs Hot Ham & Cheese Baguette",
@@ -1012,7 +1698,14 @@ export const GREGGS: Food[] = [
     "f": 7.97,
     "g": 188.16,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 188.16,
+      "k": 484.0,
+      "p": 28.0,
+      "c": 56.0,
+      "f": 15.0
+    }
   },
   {
     "n": "Greggs Hot Honey",
@@ -1022,7 +1715,14 @@ export const GREGGS: Food[] = [
     "f": 0.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 62.0,
+      "p": 0.0,
+      "c": 15.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Hot Mexican Chicken Baguette",
@@ -1032,7 +1732,14 @@ export const GREGGS: Food[] = [
     "f": 3.89,
     "g": 226.08,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 226.08,
+      "k": 495.0,
+      "p": 27.0,
+      "c": 75.0,
+      "f": 8.8
+    }
   },
   {
     "n": "Greggs Hot Milk Chocolate Cookies",
@@ -1042,7 +1749,14 @@ export const GREGGS: Food[] = [
     "f": 25.71,
     "g": 140.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 140.0,
+      "k": 686.0,
+      "p": 8.3,
+      "c": 76.0,
+      "f": 36.0
+    }
   },
   {
     "n": "Greggs Hot Yum Yums",
@@ -1052,7 +1766,14 @@ export const GREGGS: Food[] = [
     "f": 21.74,
     "g": 156.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 156.4,
+      "k": 619.0,
+      "p": 7.4,
+      "c": 69.0,
+      "f": 34.0
+    }
   },
   {
     "n": "Greggs Iced Americano",
@@ -1063,7 +1784,14 @@ export const GREGGS: Food[] = [
     "g": 440.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 440.9,
+      "k": 13.0,
+      "p": 0.8,
+      "c": 1.9,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Iced Caramel Chocolate",
@@ -1074,7 +1802,14 @@ export const GREGGS: Food[] = [
     "g": 423.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 423.0,
+      "k": 220.0,
+      "p": 4.7,
+      "c": 41.0,
+      "f": 3.8
+    }
   },
   {
     "n": "Greggs Iced Caramel Latte Regular",
@@ -1085,7 +1820,14 @@ export const GREGGS: Food[] = [
     "g": 484.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 484.9,
+      "k": 170.0,
+      "p": 8.7,
+      "c": 24.0,
+      "f": 4.4
+    }
   },
   {
     "n": "Greggs Iced Chocolate",
@@ -1096,7 +1838,14 @@ export const GREGGS: Food[] = [
     "g": 393.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 393.0,
+      "k": 161.0,
+      "p": 4.7,
+      "c": 26.0,
+      "f": 3.9
+    }
   },
   {
     "n": "Greggs Iced Latte Regular",
@@ -1107,7 +1856,14 @@ export const GREGGS: Food[] = [
     "g": 460.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 460.9,
+      "k": 124.0,
+      "p": 8.8,
+      "c": 13.0,
+      "f": 4.1
+    }
   },
   {
     "n": "Greggs Iced Matcha Latte",
@@ -1118,7 +1874,14 @@ export const GREGGS: Food[] = [
     "g": 478.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 478.0,
+      "k": 100.0,
+      "p": 7.6,
+      "c": 10.0,
+      "f": 3.3
+    }
   },
   {
     "n": "Greggs Iced Mocha",
@@ -1129,7 +1892,14 @@ export const GREGGS: Food[] = [
     "g": 436.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 436.9,
+      "k": 162.0,
+      "p": 4.8,
+      "c": 27.0,
+      "f": 3.5
+    }
   },
   {
     "n": "Greggs Iced Pumpkin Spice Latte with Salted Caramel Drizzle",
@@ -1140,7 +1910,14 @@ export const GREGGS: Food[] = [
     "g": 498.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 498.9,
+      "k": 185.0,
+      "p": 7.0,
+      "c": 31.0,
+      "f": 3.5
+    }
   },
   {
     "n": "Greggs Iced Vanilla Latte Regular",
@@ -1151,7 +1928,14 @@ export const GREGGS: Food[] = [
     "g": 484.9,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 484.9,
+      "k": 170.0,
+      "p": 8.7,
+      "c": 24.0,
+      "f": 4.4
+    }
   },
   {
     "n": "Greggs Jam Doughnut",
@@ -1161,7 +1945,14 @@ export const GREGGS: Food[] = [
     "f": 10.0,
     "g": 76.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 76.0,
+      "k": 236.0,
+      "p": 4.0,
+      "c": 37.0,
+      "f": 7.6
+    }
   },
   {
     "n": "Greggs Jammy Heart Biscuit",
@@ -1171,7 +1962,14 @@ export const GREGGS: Food[] = [
     "f": 22.03,
     "g": 59.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 59.0,
+      "k": 271.0,
+      "p": 3.1,
+      "c": 35.0,
+      "f": 13.0
+    }
   },
   {
     "n": "Greggs Latte Large",
@@ -1182,7 +1980,14 @@ export const GREGGS: Food[] = [
     "g": 380.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 380.0,
+      "k": 133.0,
+      "p": 9.9,
+      "c": 14.0,
+      "f": 3.8
+    }
   },
   {
     "n": "Greggs Latte Regular",
@@ -1193,7 +1998,14 @@ export const GREGGS: Food[] = [
     "g": 326.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 326.0,
+      "k": 114.0,
+      "p": 7.8,
+      "c": 13.0,
+      "f": 3.3
+    }
   },
   {
     "n": "Greggs Lorne & Omelette Breakfast Baguette",
@@ -1203,7 +2015,14 @@ export const GREGGS: Food[] = [
     "f": 9.21,
     "g": 260.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 260.5,
+      "k": 630.0,
+      "p": 31.0,
+      "c": 70.0,
+      "f": 24.0
+    }
   },
   {
     "n": "Greggs Lorne & Omelette Breakfast Roll",
@@ -1213,7 +2032,14 @@ export const GREGGS: Food[] = [
     "f": 9.95,
     "g": 191.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 191.0,
+      "k": 445.0,
+      "p": 23.0,
+      "c": 44.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Lorne Breakfast Baguette",
@@ -1223,7 +2049,14 @@ export const GREGGS: Food[] = [
     "f": 9.88,
     "g": 243.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 243.0,
+      "k": 651.0,
+      "p": 32.0,
+      "c": 75.0,
+      "f": 24.0
+    }
   },
   {
     "n": "Greggs Lorne Breakfast Roll",
@@ -1233,7 +2066,14 @@ export const GREGGS: Food[] = [
     "f": 9.93,
     "g": 141.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 141.0,
+      "k": 369.0,
+      "p": 17.0,
+      "c": 42.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Mac & Cheese",
@@ -1243,7 +2083,14 @@ export const GREGGS: Food[] = [
     "f": 11.1,
     "g": 324.46,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 324.46,
+      "k": 616.0,
+      "p": 27.0,
+      "c": 45.0,
+      "f": 36.0
+    }
   },
   {
     "n": "Greggs Malted Brown Loaf",
@@ -1253,7 +2100,14 @@ export const GREGGS: Food[] = [
     "f": 2.62,
     "g": 42.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 42.0,
+      "k": 111.0,
+      "p": 4.0,
+      "c": 21.0,
+      "f": 1.1
+    }
   },
   {
     "n": "Greggs Mango and Strawberry Cooler",
@@ -1264,7 +2118,14 @@ export const GREGGS: Food[] = [
     "g": 432.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 432.0,
+      "k": 104.0,
+      "p": 0.0,
+      "c": 26.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Mango Lemonade",
@@ -1275,7 +2136,14 @@ export const GREGGS: Food[] = [
     "g": 421.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 421.0,
+      "k": 76.0,
+      "p": 0.0,
+      "c": 19.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Margherita Pizza",
@@ -1285,7 +2153,14 @@ export const GREGGS: Food[] = [
     "f": 16.88,
     "g": 160.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 160.0,
+      "k": 586.0,
+      "p": 19.0,
+      "c": 64.0,
+      "f": 27.0
+    }
   },
   {
     "n": "Greggs Mature Cheddar Cheese Ploughman's Oval Bite",
@@ -1295,7 +2170,14 @@ export const GREGGS: Food[] = [
     "f": 7.49,
     "g": 227.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 227.0,
+      "k": 456.0,
+      "p": 20.0,
+      "c": 52.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs Mature Cheddar Cheese Salad Baguette",
@@ -1305,7 +2187,14 @@ export const GREGGS: Food[] = [
     "f": 6.67,
     "g": 210.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 210.0,
+      "k": 441.0,
+      "p": 18.0,
+      "c": 59.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Mexican Chicken Baguette",
@@ -1315,7 +2204,14 @@ export const GREGGS: Food[] = [
     "f": 3.69,
     "g": 235.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 235.5,
+      "k": 492.0,
+      "p": 28.0,
+      "c": 73.0,
+      "f": 8.7
+    }
   },
   {
     "n": "Greggs Mexican Chicken Flatbread",
@@ -1325,7 +2221,14 @@ export const GREGGS: Food[] = [
     "f": 4.11,
     "g": 197.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 197.0,
+      "k": 374.0,
+      "p": 24.0,
+      "c": 49.0,
+      "f": 8.1
+    }
   },
   {
     "n": "Greggs Mexican Chicken Oval Bite",
@@ -1335,7 +2238,14 @@ export const GREGGS: Food[] = [
     "f": 4.61,
     "g": 217.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 217.0,
+      "k": 462.0,
+      "p": 26.0,
+      "c": 63.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Mexican Chicken Sandwich",
@@ -1345,7 +2255,14 @@ export const GREGGS: Food[] = [
     "f": 3.41,
     "g": 176.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 176.0,
+      "k": 350.0,
+      "p": 23.0,
+      "c": 49.0,
+      "f": 6.0
+    }
   },
   {
     "n": "Greggs Milk Chocolate Caramel Shortbread Offcuts",
@@ -1355,7 +2272,14 @@ export const GREGGS: Food[] = [
     "f": 24.15,
     "g": 265.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 265.0,
+      "k": 1253.0,
+      "p": 15.0,
+      "c": 154.0,
+      "f": 64.0
+    }
   },
   {
     "n": "Greggs Milk Chocolate Caramel Shortbreads",
@@ -1365,7 +2289,14 @@ export const GREGGS: Food[] = [
     "f": 22.58,
     "g": 62.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 62.0,
+      "k": 288.0,
+      "p": 3.5,
+      "c": 36.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Milk Chocolate Cookies",
@@ -1375,7 +2306,14 @@ export const GREGGS: Food[] = [
     "f": 25.71,
     "g": 70.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 70.0,
+      "k": 343.0,
+      "p": 4.1,
+      "c": 38.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs Milk Chocolate Dipping Sauce",
@@ -1385,7 +2323,14 @@ export const GREGGS: Food[] = [
     "f": 11.0,
     "g": 60.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 60.0,
+      "k": 200.0,
+      "p": 1.1,
+      "c": 34.0,
+      "f": 6.6
+    }
   },
   {
     "n": "Greggs Mocha Large",
@@ -1396,7 +2341,14 @@ export const GREGGS: Food[] = [
     "g": 390.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 390.0,
+      "k": 304.0,
+      "p": 9.8,
+      "c": 51.0,
+      "f": 7.0
+    }
   },
   {
     "n": "Greggs Mocha Regular",
@@ -1407,7 +2359,14 @@ export const GREGGS: Food[] = [
     "g": 353.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 353.0,
+      "k": 233.0,
+      "p": 7.1,
+      "c": 39.0,
+      "f": 5.3
+    }
   },
   {
     "n": "Greggs Mozzarella & Cheddar Bites",
@@ -1417,7 +2376,14 @@ export const GREGGS: Food[] = [
     "f": 20.65,
     "g": 96.834,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 96.834,
+      "k": 322.0,
+      "p": 13.0,
+      "c": 22.0,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Novelty Bun (pink)",
@@ -1427,7 +2393,14 @@ export const GREGGS: Food[] = [
     "f": 18.02,
     "g": 49.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 49.4,
+      "k": 196.0,
+      "p": 1.6,
+      "c": 26.0,
+      "f": 8.9
+    }
   },
   {
     "n": "Greggs Novelty Bun (white)",
@@ -1437,7 +2410,14 @@ export const GREGGS: Food[] = [
     "f": 17.98,
     "g": 49.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 49.5,
+      "k": 196.0,
+      "p": 1.6,
+      "c": 26.0,
+      "f": 8.9
+    }
   },
   {
     "n": "Greggs Omelette Breakfast Baguette",
@@ -1447,7 +2427,14 @@ export const GREGGS: Food[] = [
     "f": 6.1,
     "g": 213.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 213.0,
+      "k": 441.0,
+      "p": 21.0,
+      "c": 58.0,
+      "f": 13.0
+    }
   },
   {
     "n": "Greggs Omelette Breakfast Roll",
@@ -1457,7 +2444,14 @@ export const GREGGS: Food[] = [
     "f": 7.95,
     "g": 176.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 176.0,
+      "k": 352.0,
+      "p": 19.0,
+      "c": 35.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Oval Bite",
@@ -1467,7 +2461,14 @@ export const GREGGS: Food[] = [
     "f": 3.71,
     "g": 105.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 105.0,
+      "k": 276.0,
+      "p": 12.0,
+      "c": 46.0,
+      "f": 3.9
+    }
   },
   {
     "n": "Greggs Pain au Chocolat",
@@ -1477,7 +2478,14 @@ export const GREGGS: Food[] = [
     "f": 17.72,
     "g": 79.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 79.0,
+      "k": 299.0,
+      "p": 6.6,
+      "c": 35.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Peach Melba",
@@ -1487,7 +2495,14 @@ export const GREGGS: Food[] = [
     "f": 21.21,
     "g": 99.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 99.0,
+      "k": 369.0,
+      "p": 2.6,
+      "c": 43.0,
+      "f": 21.0
+    }
   },
   {
     "n": "Greggs Peppermint Tea Regular",
@@ -1498,7 +2513,14 @@ export const GREGGS: Food[] = [
     "g": 330.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 330.0,
+      "k": 0.0,
+      "p": 0.0,
+      "c": 0.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Pepperoni Pizza",
@@ -1508,7 +2530,14 @@ export const GREGGS: Food[] = [
     "f": 19.19,
     "g": 172.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 172.0,
+      "k": 640.0,
+      "p": 21.0,
+      "c": 64.0,
+      "f": 33.0
+    }
   },
   {
     "n": "Greggs Pineapple Cake",
@@ -1518,7 +2547,14 @@ export const GREGGS: Food[] = [
     "f": 12.03,
     "g": 69.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 69.0,
+      "k": 248.0,
+      "p": 1.6,
+      "c": 41.0,
+      "f": 8.3
+    }
   },
   {
     "n": "Greggs Pineapple Fruit Pot",
@@ -1528,7 +2564,14 @@ export const GREGGS: Food[] = [
     "f": 0.0,
     "g": 110.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 110.0,
+      "k": 55.0,
+      "p": 0.6,
+      "c": 12.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Pink Jammie Doughnut",
@@ -1538,7 +2581,14 @@ export const GREGGS: Food[] = [
     "f": 13.33,
     "g": 90.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 90.0,
+      "k": 309.0,
+      "p": 4.1,
+      "c": 46.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Prawn Layered Pasta Salad",
@@ -1548,7 +2598,14 @@ export const GREGGS: Food[] = [
     "f": 4.14,
     "g": 290.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 290.0,
+      "k": 339.0,
+      "p": 12.0,
+      "c": 44.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Pumpkin Spice Doughnut",
@@ -1558,7 +2615,14 @@ export const GREGGS: Food[] = [
     "f": 13.04,
     "g": 92.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 92.0,
+      "k": 310.0,
+      "p": 4.3,
+      "c": 46.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Pumpkin Spice Iced Matcha Latte with Salted Caramel Drizzle",
@@ -1569,7 +2633,14 @@ export const GREGGS: Food[] = [
     "g": 488.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 488.0,
+      "k": 156.0,
+      "p": 6.8,
+      "c": 24.0,
+      "f": 3.4
+    }
   },
   {
     "n": "Greggs Pumpkin Spice Latte with Salted Caramel Drizzle Large",
@@ -1580,7 +2651,14 @@ export const GREGGS: Food[] = [
     "g": 422.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 422.5,
+      "k": 232.0,
+      "p": 10.0,
+      "c": 30.0,
+      "f": 8.0
+    }
   },
   {
     "n": "Greggs Pumpkin Spice Latte with Salted Caramel Drizzle Regular",
@@ -1591,7 +2669,14 @@ export const GREGGS: Food[] = [
     "g": 368.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 368.5,
+      "k": 214.0,
+      "p": 8.1,
+      "c": 29.0,
+      "f": 7.4
+    }
   },
   {
     "n": "Greggs Roast Chicken and Bacon Club Baguette",
@@ -1601,7 +2686,14 @@ export const GREGGS: Food[] = [
     "f": 5.02,
     "g": 239.1,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 239.1,
+      "k": 457.0,
+      "p": 24.0,
+      "c": 62.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Roast Chicken and Bacon Club Half Baguette",
@@ -1611,7 +2703,14 @@ export const GREGGS: Food[] = [
     "f": 4.94,
     "g": 119.55,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 119.55,
+      "k": 228.0,
+      "p": 12.0,
+      "c": 31.0,
+      "f": 5.9
+    }
   },
   {
     "n": "Greggs Roast Chicken Mayonnaise Baguette",
@@ -1621,7 +2720,14 @@ export const GREGGS: Food[] = [
     "f": 5.4,
     "g": 222.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 222.4,
+      "k": 458.0,
+      "p": 24.0,
+      "c": 62.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Roast Chicken Salad",
@@ -1631,7 +2737,14 @@ export const GREGGS: Food[] = [
     "f": 4.82,
     "g": 197.1,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 197.1,
+      "k": 349.0,
+      "p": 19.0,
+      "c": 45.0,
+      "f": 9.5
+    }
   },
   {
     "n": "Greggs Roast Chicken Salad Roll",
@@ -1641,7 +2754,14 @@ export const GREGGS: Food[] = [
     "f": 4.8,
     "g": 198.1,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 198.1,
+      "k": 357.0,
+      "p": 22.0,
+      "c": 44.0,
+      "f": 9.5
+    }
   },
   {
     "n": "Greggs Roast Chicken with Honey Mustard Mayonnaise Oval Bite",
@@ -1651,7 +2771,14 @@ export const GREGGS: Food[] = [
     "f": 4.41,
     "g": 227.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 227.0,
+      "k": 411.0,
+      "p": 27.0,
+      "c": 50.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Salted Caramel Dipping Sauce",
@@ -1661,7 +2788,14 @@ export const GREGGS: Food[] = [
     "f": 14.0,
     "g": 60.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 60.0,
+      "k": 215.0,
+      "p": 1.3,
+      "c": 34.0,
+      "f": 8.4
+    }
   },
   {
     "n": "Greggs Sausage and Omelette Breakfast Baguette",
@@ -1671,7 +2805,14 @@ export const GREGGS: Food[] = [
     "f": 8.3,
     "g": 241.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 241.0,
+      "k": 557.0,
+      "p": 27.0,
+      "c": 65.0,
+      "f": 20.0
+    }
   },
   {
     "n": "Greggs Sausage and Omelette Breakfast Roll",
@@ -1681,7 +2822,14 @@ export const GREGGS: Food[] = [
     "f": 9.55,
     "g": 178.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 178.0,
+      "k": 395.0,
+      "p": 20.0,
+      "c": 39.0,
+      "f": 17.0
+    }
   },
   {
     "n": "Greggs Sausage Breakfast Baguette",
@@ -1691,7 +2839,14 @@ export const GREGGS: Food[] = [
     "f": 8.76,
     "g": 217.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 217.0,
+      "k": 543.0,
+      "p": 24.0,
+      "c": 67.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Sausage Breakfast Roll",
@@ -1701,7 +2856,14 @@ export const GREGGS: Food[] = [
     "f": 9.74,
     "g": 154.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 154.0,
+      "k": 377.0,
+      "p": 17.0,
+      "c": 42.0,
+      "f": 15.0
+    }
   },
   {
     "n": "Greggs Sausage, Bean & Cheese Melt",
@@ -1711,7 +2873,14 @@ export const GREGGS: Food[] = [
     "f": 18.74,
     "g": 149.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 149.4,
+      "k": 456.0,
+      "p": 11.0,
+      "c": 37.0,
+      "f": 28.0
+    }
   },
   {
     "n": "Greggs Savoury Mince Pie",
@@ -1721,7 +2890,14 @@ export const GREGGS: Food[] = [
     "f": 22.13,
     "g": 253.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 253.0,
+      "k": 860.0,
+      "p": 28.0,
+      "c": 61.0,
+      "f": 56.0
+    }
   },
   {
     "n": "Greggs Scotch Pie",
@@ -1731,7 +2907,14 @@ export const GREGGS: Food[] = [
     "f": 10.07,
     "g": 139.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 139.0,
+      "k": 335.0,
+      "p": 17.0,
+      "c": 35.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Side Salad",
@@ -1741,7 +2924,14 @@ export const GREGGS: Food[] = [
     "f": 0.0,
     "g": 96.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 96.0,
+      "k": 14.0,
+      "p": 1.1,
+      "c": 1.7,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Simply Creamy Porridge",
@@ -1751,7 +2941,14 @@ export const GREGGS: Food[] = [
     "f": 1.8,
     "g": 228.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 228.0,
+      "k": 249.0,
+      "p": 7.5,
+      "c": 43.0,
+      "f": 4.1
+    }
   },
   {
     "n": "Greggs Smoky BBQ Dip",
@@ -1761,7 +2958,14 @@ export const GREGGS: Food[] = [
     "f": 0.0,
     "g": 40.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 40.0,
+      "k": 75.0,
+      "p": 0.6,
+      "c": 18.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Southern Fried Chicken Baguette",
@@ -1771,7 +2975,14 @@ export const GREGGS: Food[] = [
     "f": 5.81,
     "g": 223.68,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 223.68,
+      "k": 557.0,
+      "p": 25.0,
+      "c": 83.0,
+      "f": 13.0
+    }
   },
   {
     "n": "Greggs Southern Fried Chicken Goujons",
@@ -1781,7 +2992,14 @@ export const GREGGS: Food[] = [
     "f": 11.25,
     "g": 160.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 160.0,
+      "k": 400.0,
+      "p": 27.0,
+      "c": 32.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs Southern Fried Potato Wedges",
@@ -1791,7 +3009,14 @@ export const GREGGS: Food[] = [
     "f": 5.13,
     "g": 150.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.0,
+      "k": 240.0,
+      "p": 3.6,
+      "c": 38.0,
+      "f": 7.7
+    }
   },
   {
     "n": "Greggs Sparkling Raspberry Lemonade",
@@ -1802,7 +3027,14 @@ export const GREGGS: Food[] = [
     "g": 500.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 500.0,
+      "k": 15.0,
+      "p": 0.0,
+      "c": 0.5,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Spicy BBQ Chicken Bites",
@@ -1812,7 +3044,14 @@ export const GREGGS: Food[] = [
     "f": 13.46,
     "g": 104.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 104.0,
+      "k": 286.0,
+      "p": 19.0,
+      "c": 22.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Spicy Chicken Pizza",
@@ -1822,7 +3061,14 @@ export const GREGGS: Food[] = [
     "f": 13.85,
     "g": 195.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 195.0,
+      "k": 606.0,
+      "p": 23.0,
+      "c": 64.0,
+      "f": 27.0
+    }
   },
   {
     "n": "Greggs Spread (sandwich add-on)",
@@ -1832,7 +3078,14 @@ export const GREGGS: Food[] = [
     "f": 30.0,
     "g": 10.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 10.0,
+      "k": 27.0,
+      "p": 0.0,
+      "c": 0.0,
+      "f": 3.0
+    }
   },
   {
     "n": "Greggs Star Biscuit",
@@ -1842,7 +3095,14 @@ export const GREGGS: Food[] = [
     "f": 22.92,
     "g": 38.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 38.4,
+      "k": 185.0,
+      "p": 2.4,
+      "c": 22.0,
+      "f": 8.8
+    }
   },
   {
     "n": "Greggs Steak & Stilton® Bake",
@@ -1852,7 +3112,14 @@ export const GREGGS: Food[] = [
     "f": 19.74,
     "g": 152.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 152.0,
+      "k": 465.0,
+      "p": 17.0,
+      "c": 30.0,
+      "f": 30.0
+    }
   },
   {
     "n": "Greggs Stottie",
@@ -1862,7 +3129,14 @@ export const GREGGS: Food[] = [
     "f": 1.71,
     "g": 70.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 70.0,
+      "k": 171.0,
+      "p": 6.1,
+      "c": 33.0,
+      "f": 1.2
+    }
   },
   {
     "n": "Greggs Strawberry Iced Matcha Latte",
@@ -1873,7 +3147,14 @@ export const GREGGS: Food[] = [
     "g": 481.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 481.0,
+      "k": 149.0,
+      "p": 6.7,
+      "c": 23.0,
+      "f": 3.4
+    }
   },
   {
     "n": "Greggs Strawberry Lemonade",
@@ -1884,7 +3165,14 @@ export const GREGGS: Food[] = [
     "g": 406.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 406.0,
+      "k": 69.0,
+      "p": 0.0,
+      "c": 17.0,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs Sugar Strand Doughnut",
@@ -1894,7 +3182,14 @@ export const GREGGS: Food[] = [
     "f": 16.95,
     "g": 59.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 59.0,
+      "k": 224.0,
+      "p": 3.4,
+      "c": 30.0,
+      "f": 10.0
+    }
   },
   {
     "n": "Greggs Tandoori Chicken",
@@ -1904,7 +3199,14 @@ export const GREGGS: Food[] = [
     "f": 5.31,
     "g": 167.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 167.5,
+      "k": 350.0,
+      "p": 18.0,
+      "c": 47.0,
+      "f": 8.9
+    }
   },
   {
     "n": "Greggs Tandoori Chicken Baguette",
@@ -1914,7 +3216,14 @@ export const GREGGS: Food[] = [
     "f": 4.93,
     "g": 223.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 223.0,
+      "k": 459.0,
+      "p": 25.0,
+      "c": 65.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Tandoori Chicken Half Baguette",
@@ -1924,7 +3233,14 @@ export const GREGGS: Food[] = [
     "f": 4.84,
     "g": 111.5,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 111.5,
+      "k": 230.0,
+      "p": 12.0,
+      "c": 32.0,
+      "f": 5.4
+    }
   },
   {
     "n": "Greggs Tandoori Chicken Roll",
@@ -1934,7 +3250,14 @@ export const GREGGS: Food[] = [
     "f": 5.0,
     "g": 196.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 196.0,
+      "k": 349.0,
+      "p": 20.0,
+      "c": 43.0,
+      "f": 9.8
+    }
   },
   {
     "n": "Greggs Tomato and Mozzarella Pasta",
@@ -1944,7 +3267,14 @@ export const GREGGS: Food[] = [
     "f": 9.82,
     "g": 285.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 285.0,
+      "k": 522.0,
+      "p": 15.0,
+      "c": 51.0,
+      "f": 28.0
+    }
   },
   {
     "n": "Greggs Tomato Soup",
@@ -1954,7 +3284,14 @@ export const GREGGS: Food[] = [
     "f": 2.7,
     "g": 300.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 300.0,
+      "k": 195.0,
+      "p": 4.8,
+      "c": 25.0,
+      "f": 8.1
+    }
   },
   {
     "n": "Greggs Tottenham Cake",
@@ -1964,7 +3301,14 @@ export const GREGGS: Food[] = [
     "f": 15.91,
     "g": 88.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 88.0,
+      "k": 363.0,
+      "p": 4.1,
+      "c": 55.0,
+      "f": 14.0
+    }
   },
   {
     "n": "Greggs Triple Chocolate Cookies",
@@ -1974,7 +3318,14 @@ export const GREGGS: Food[] = [
     "f": 25.71,
     "g": 70.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 70.0,
+      "k": 333.0,
+      "p": 4.1,
+      "c": 36.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs Triple Chocolate Doughnut",
@@ -1984,7 +3335,14 @@ export const GREGGS: Food[] = [
     "f": 18.82,
     "g": 85.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 85.0,
+      "k": 325.0,
+      "p": 4.3,
+      "c": 40.0,
+      "f": 16.0
+    }
   },
   {
     "n": "Greggs Triple Chocolate Muffin",
@@ -1994,7 +3352,14 @@ export const GREGGS: Food[] = [
     "f": 16.23,
     "g": 129.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 129.4,
+      "k": 467.0,
+      "p": 7.2,
+      "c": 58.0,
+      "f": 21.0
+    }
   },
   {
     "n": "Greggs Tuna Crunch Baguette",
@@ -2004,7 +3369,14 @@ export const GREGGS: Food[] = [
     "f": 2.2,
     "g": 236.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 236.0,
+      "k": 413.0,
+      "p": 26.0,
+      "c": 64.0,
+      "f": 5.2
+    }
   },
   {
     "n": "Greggs Tuna Crunch Roll",
@@ -2014,7 +3386,14 @@ export const GREGGS: Food[] = [
     "f": 3.21,
     "g": 187.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 187.0,
+      "k": 318.0,
+      "p": 21.0,
+      "c": 43.0,
+      "f": 6.0
+    }
   },
   {
     "n": "Greggs Tuna Mayonnaise & Cucumber",
@@ -2024,7 +3403,14 @@ export const GREGGS: Food[] = [
     "f": 3.81,
     "g": 189.2,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 189.2,
+      "k": 329.0,
+      "p": 21.0,
+      "c": 44.0,
+      "f": 7.2
+    }
   },
   {
     "n": "Greggs Tuna Mayonnaise Stottie",
@@ -2034,7 +3420,14 @@ export const GREGGS: Food[] = [
     "f": 3.48,
     "g": 252.6,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 252.6,
+      "k": 482.0,
+      "p": 30.0,
+      "c": 68.0,
+      "f": 8.8
+    }
   },
   {
     "n": "Greggs Vanilla Custard Cream Doughnut",
@@ -2044,7 +3437,14 @@ export const GREGGS: Food[] = [
     "f": 15.07,
     "g": 73.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 73.0,
+      "k": 243.0,
+      "p": 3.5,
+      "c": 32.0,
+      "f": 11.0
+    }
   },
   {
     "n": "Greggs Vanilla Custard Slice",
@@ -2054,7 +3454,14 @@ export const GREGGS: Food[] = [
     "f": 9.3,
     "g": 129.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 129.0,
+      "k": 328.0,
+      "p": 4.1,
+      "c": 50.0,
+      "f": 12.0
+    }
   },
   {
     "n": "Greggs Vanilla Iced Matcha Latte",
@@ -2065,7 +3472,14 @@ export const GREGGS: Food[] = [
     "g": 482.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 482.0,
+      "k": 140.0,
+      "p": 6.7,
+      "c": 21.0,
+      "f": 3.4
+    }
   },
   {
     "n": "Greggs Vanilla Latte Large",
@@ -2076,7 +3490,14 @@ export const GREGGS: Food[] = [
     "g": 417.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 417.5,
+      "k": 225.0,
+      "p": 10.0,
+      "c": 28.0,
+      "f": 7.9
+    }
   },
   {
     "n": "Greggs Vanilla Latte Regular",
@@ -2087,7 +3508,14 @@ export const GREGGS: Food[] = [
     "g": 363.5,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 363.5,
+      "k": 204.0,
+      "p": 8.0,
+      "c": 26.0,
+      "f": 7.3
+    }
   },
   {
     "n": "Greggs Vegan Roll Pork-Free",
@@ -2097,7 +3525,14 @@ export const GREGGS: Food[] = [
     "f": 18.81,
     "g": 101.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 101.0,
+      "k": 308.0,
+      "p": 11.0,
+      "c": 21.0,
+      "f": 19.0
+    }
   },
   {
     "n": "Greggs Vegetable Bake",
@@ -2107,7 +3542,14 @@ export const GREGGS: Food[] = [
     "f": 19.28,
     "g": 150.4,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 150.4,
+      "k": 430.0,
+      "p": 8.9,
+      "c": 33.0,
+      "f": 29.0
+    }
   },
   {
     "n": "Greggs Veggie Feast Pizza",
@@ -2117,7 +3559,14 @@ export const GREGGS: Food[] = [
     "f": 12.17,
     "g": 230.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 230.0,
+      "k": 614.0,
+      "p": 20.0,
+      "c": 69.0,
+      "f": 28.0
+    }
   },
   {
     "n": "Greggs White & Wholemeal Loaf",
@@ -2127,7 +3576,14 @@ export const GREGGS: Food[] = [
     "f": 1.19,
     "g": 42.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 42.0,
+      "k": 98.0,
+      "p": 4.2,
+      "c": 18.0,
+      "f": 0.5
+    }
   },
   {
     "n": "Greggs White & Wholemeal Roll",
@@ -2137,7 +3593,14 @@ export const GREGGS: Food[] = [
     "f": 3.18,
     "g": 85.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 85.0,
+      "k": 220.0,
+      "p": 9.4,
+      "c": 37.0,
+      "f": 2.7
+    }
   },
   {
     "n": "Greggs White Bread made with Sourdough",
@@ -2147,7 +3610,14 @@ export const GREGGS: Food[] = [
     "f": 1.45,
     "g": 62.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 62.0,
+      "k": 146.0,
+      "p": 5.6,
+      "c": 28.0,
+      "f": 0.9
+    }
   },
   {
     "n": "Greggs White Chocolate Cookies",
@@ -2157,7 +3627,14 @@ export const GREGGS: Food[] = [
     "f": 25.71,
     "g": 70.0,
     "cat": "fastfood",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 70.0,
+      "k": 343.0,
+      "p": 4.2,
+      "c": 39.0,
+      "f": 18.0
+    }
   },
   {
     "n": "Greggs White Coffee Large",
@@ -2168,7 +3645,14 @@ export const GREGGS: Food[] = [
     "g": 377.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 377.0,
+      "k": 45.0,
+      "p": 3.8,
+      "c": 5.7,
+      "f": 0.8
+    }
   },
   {
     "n": "Greggs White Coffee Regular",
@@ -2179,7 +3663,14 @@ export const GREGGS: Food[] = [
     "g": 285.0,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 285.0,
+      "k": 34.0,
+      "p": 2.6,
+      "c": 5.1,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs White Tea Large",
@@ -2190,7 +3681,14 @@ export const GREGGS: Food[] = [
     "g": 404.2,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 404.2,
+      "k": 12.0,
+      "p": 0.8,
+      "c": 1.2,
+      "f": 0.0
+    }
   },
   {
     "n": "Greggs White Tea Regular",
@@ -2201,6 +3699,13 @@ export const GREGGS: Food[] = [
     "g": 316.8,
     "ml": true,
     "cat": "drinks",
-    "src": "greggs-uk"
+    "src": "greggs-uk",
+    "ref": {
+      "g": 316.8,
+      "k": 10.0,
+      "p": 0.9,
+      "c": 0.9,
+      "f": 0.0
+    }
   }
 ]

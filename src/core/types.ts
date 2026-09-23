@@ -26,6 +26,9 @@ export interface Food {
   each?: boolean
   /** where the values come from: a key in `core/data/sources.ts` */
   src?: string
+  /** the source's own published figure for an amount (a chain's per-portion or per-item line),
+   *  kept so the app can prove one serving reproduces it exactly (see validateFoods) */
+  ref?: FoodRef
   /** category — sets the default hand portion */
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
@@ -36,6 +39,9 @@ export interface Food {
 }
 
 export type FoodUnit = 'g' | 'ml' | 'item'
+
+/** A published figure: `k` kcal (and macros, when published) for `g` of the food's unit. */
+export interface FoodRef { g: number; k: number; p?: number; c?: number; f?: number }
 
 export type FoodCategory =
   | 'meat' | 'fish' | 'eggs' | 'dairy' | 'grains' | 'potato' | 'veg' | 'fruit'

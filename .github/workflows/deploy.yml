@@ -24,6 +24,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Guardrails: nothing deploys unless every food reproduces its source and the logging
+      # maths has no rounding drift (see CLAUDE.md, "Food data & offline").
+      - run: npm test
+      - run: npm run check:foods
       - run: npm run build
       # Publish the new Tali app at the site root, with the previous LeanPlan
       # build parked at /legacy/ as a fallback during the transition.

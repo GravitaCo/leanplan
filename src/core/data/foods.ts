@@ -2572,7 +2572,14 @@ const BASE: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 284,
+      "p": 40.0,
+      "c": 0.3,
+      "f": 13.6
+    }
   },
   {
     "n": "Nando's Half Chicken (plain)",
@@ -2583,7 +2590,14 @@ const BASE: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 568,
+      "p": 80.0,
+      "c": 0.5,
+      "f": 27.2
+    }
   },
   {
     "n": "Nando's Peri-Peri Chips",
@@ -2594,7 +2608,14 @@ const BASE: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 452,
+      "p": 6.4,
+      "c": 64.9,
+      "f": 19.4
+    }
   },
   {
     "n": "Nando's Chicken Pitta",
@@ -2605,7 +2626,14 @@ const BASE: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 485,
+      "p": 36.6,
+      "c": 51.3,
+      "f": 14.9
+    }
   },
   {
     "n": "KFC Original Recipe Chicken piece",
@@ -2625,7 +2653,14 @@ const BASE: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "kfc-uk"
+    "src": "kfc-uk",
+    "ref": {
+      "g": 1,
+      "k": 468,
+      "p": 23.0,
+      "c": 43.0,
+      "f": 22.0
+    }
   },
   {
     "n": "KFC Fries (regular)",
@@ -2663,7 +2698,11 @@ const BASE: Food[] = [
     "f": 3.6,
     "g": 197,
     "cat": "fastfood",
-    "src": "subway-uk"
+    "src": "subway-uk",
+    "ref": {
+      "g": 197,
+      "k": 345
+    }
   },
   {
     "n": "Subway 6-inch Italian BMT",
@@ -2673,7 +2712,11 @@ const BASE: Food[] = [
     "f": 11.5,
     "g": 139,
     "cat": "fastfood",
-    "src": "subway-uk"
+    "src": "subway-uk",
+    "ref": {
+      "g": 139,
+      "k": 386
+    }
   },
   {
     "n": "Burger King Whopper",
@@ -2683,7 +2726,14 @@ const BASE: Food[] = [
     "f": 10.45,
     "g": 287,
     "cat": "fastfood",
-    "src": "bk-gb"
+    "src": "bk-gb",
+    "ref": {
+      "g": 287,
+      "k": 595,
+      "p": 29,
+      "c": 53,
+      "f": 30
+    }
   },
   {
     "n": "Burger King Chicken Royale",
@@ -2693,7 +2743,14 @@ const BASE: Food[] = [
     "f": 13.36,
     "g": 217,
     "cat": "fastfood",
-    "src": "bk-gb"
+    "src": "bk-gb",
+    "ref": {
+      "g": 217,
+      "k": 568,
+      "p": 23,
+      "c": 52,
+      "f": 29
+    }
   },
   {
     "n": "Domino's Margherita slice",
@@ -3261,7 +3318,14 @@ const BASE: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000112552119"
+    "src": "off:5000112552119",
+    "ref": {
+      "g": 100,
+      "k": 19,
+      "p": 0,
+      "c": 4.5,
+      "f": 0
+    }
   },
   {
     "n": "Sprite",
@@ -3272,7 +3336,14 @@ const BASE: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000112658149"
+    "src": "off:5000112658149",
+    "ref": {
+      "g": 100,
+      "k": 14,
+      "p": 0,
+      "c": 3.3,
+      "f": 0
+    }
   },
   {
     "n": "Irn-Bru",
@@ -3283,7 +3354,14 @@ const BASE: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000382023197"
+    "src": "off:5000382023197",
+    "ref": {
+      "g": 100,
+      "k": 20,
+      "p": 0,
+      "c": 4.8,
+      "f": 0
+    }
   },
   {
     "n": "Lucozade Original",
@@ -3327,7 +3405,14 @@ const BASE: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5449000125002"
+    "src": "off:5449000125002",
+    "ref": {
+      "g": 100,
+      "k": 17,
+      "p": 0,
+      "c": 4.1,
+      "f": 0
+    }
   },
   {
     "n": "J2O",
@@ -3338,7 +3423,14 @@ const BASE: Food[] = [
     "g": 275,
     "ml": true,
     "cat": "drinks",
-    "src": "off:50412143"
+    "src": "off:50412143",
+    "ref": {
+      "g": 100,
+      "k": 19,
+      "p": 0,
+      "c": 4.1,
+      "f": 0
+    }
   },
   {
     "n": "Innocent orange juice",
@@ -3369,7 +3461,14 @@ const BASE: Food[] = [
     "g": 500,
     "ml": true,
     "cat": "drinks",
-    "src": "off:3057640578113"
+    "src": "off:3057640578113",
+    "ref": {
+      "g": 100,
+      "k": 0.4,
+      "p": 0,
+      "c": 0,
+      "f": 0
+    }
   }
 ]
 

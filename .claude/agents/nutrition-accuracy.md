@@ -65,6 +65,9 @@ per-100 values moved a Greggs bacon roll from its published 321 kcal to 323. For
 audit, compare **one serving as the app logs it** (`buildEntry`) with the source's own per-serving
 figure, not just the per-100 columns. Any difference, even 1 kcal, is an error: users check
 against the chain's own numbers, and a mismatch costs their trust.
+Every food with a published per-portion or per-item figure must carry it as `ref`.
+`validateFoods` enforces this (see `docs/plans/food-data-offline.md`, "Guardrails"). When you
+review new food data, check that each `ref` was copied from the source, not recalculated.
 
 ## Quality bar
 - **Cite a primary source for every factual claim or value**: UK CoFID (McCance & Widdowson),

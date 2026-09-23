@@ -80,15 +80,17 @@ def main(path):
         g = float(size[1]) if size else P
         f = {'n': name, 'k': per100(r['kp'], r['k100']), 'p': per100(r['pp'], r['p100']), 'c': per100(r['cp'], r['c100']),
              'f': per100(r['fp'], r['f100']), 'g': g}
-        if not size:
-            # hard gate: one serving in the app must show exactly Greggs' published per-portion kcal
-            assert round(f['k'] * g / 100) == round(r['kp']), f'serving kcal mismatch: {n}'
+        # keep Greggs' own per-portion line: `npm run check:foods` proves the app reproduces it
+        f['ref'] = {'g': P, 'k': r['kp'], 'p': r['pp'], 'c': r['cp'], 'f': r['fp']}
+        assert round(f['k'] * P / 100) == round(r['kp']), f'portion kcal mismatch: {n}'
         if drink: f['ml'] = True
         f['cat'] = 'drinks' if drink else 'fastfood'
         f['src'] = 'greggs-uk'
         out.append(f)
     # the long-standing favourites first: ties in search keep database order
     out.sort(key=lambda f: 0 if f['n'] in LEGACY.values() else 1)
+    for f in out:  # field order: ref last, after src
+        f['ref'] = f.pop('ref')
     body = json.dumps(out, indent=2, ensure_ascii=False)
     ts = ("import type { Food } from '@/core/types'\n\n"
           "/** Greggs UK menu, per 100 g (per 100 ml for drinks); `g` is Greggs' own portion.\n"
