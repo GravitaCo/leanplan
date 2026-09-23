@@ -87,7 +87,7 @@ every phase must meet them, and ship-critic checks each phase against this list.
 ### 0.3 No streaks, no "missed", no red
 - Progress is **sessions per week in a range** ("2 this week, your plan is 2–3").
 - Unlogged days are never labelled "missed" and never shown in red.
-- After 10 or more days away: "Welcome back. Want an easier first week?"
+- After 10 or more days away (a judgement call): "Welcome back. Want an easier first week?"
 
 ### 0.4 Plans slide, the calendar stays put
 - A missed session is not lost. Next time Train opens it is offered: "Pick up with Legs
@@ -161,7 +161,12 @@ every phase must meet them, and ship-critic checks each phase against this list.
 - **Calorie burn** (`core/domain/workout.ts > workoutBurn`): cardio uses `CARDIO_MET[type]` ×
   kg × hours (25 min when blank); any strength session is a flat 3.5 MET × 45 min. Both use
   **gross** MET. The result extends the day's calorie range (`insights.rangeFor`) and shows on
-  Today and Train.
+  Today ("+X kcal of room", `TodayScreen.tsx`) and Train ("That gives you about X kcal more room
+  today", `TrainScreen.tsx`). Two accuracy problems, both checked: the `ACTIVITY` multipliers in
+  `constants.ts` already count exercise days ("Lightly active (1–3 days/week)"), so logged
+  sessions are probably counted twice; and only `Walk` (3.8) and the flat strength value (3.5)
+  match a 2024 Compendium code. The other five `CARDIO_MET` values differ or have no source
+  (§2.9).
 - **The goal and onboarding contract types have shipped; the questionnaire has not.**
   `Profile.goal` (the four-value `Goal`), `bodyFat`, `targetRate` and `training?: TrainingPrefs`
   exist in `src/core/types.ts`. `TrainingPrefs` holds `experience`, `daysPerWeek` (2–6),
@@ -194,6 +199,33 @@ every phase must meet them, and ship-critic checks each phase against this list.
 5. Plans are a fixed four-type calendar; nothing tailors to the person.
 6. No goal, time, place, confidence or limitation inputs in use.
 7. Burn is one flat strength estimate and six cardio types.
+
+---
+
+## 1a. How training connects to the rest of Tali
+
+Everything in Tali is connected. These are the links, the exact code each one touches today
+(checked in the files named), and what this plan changes.
+
+### Mind
+| Link | Today (checked in code) | This plan |
+|---|---|---|
+| Check-in → day-of options | `CheckIn` in `src/core/types.ts` has `mood`, `hunger` (1–5), `note`, `t`. Set in `src/screens/today/CheckinSheet.tsx` through `setCheckin`; labels are `MOODS` and `HUNGER` in `src/core/domain/insights.ts`. Synced inside `day_logs.supps` under `CHECKIN_KEY = '_checkin'` (`src/data/sync.ts`). Nothing in training reads it | Optional `sleep`, `stress`, `energy`, `soreness` (§2.6), read by `dayOptions()` (§4.0.5). Same `_checkin` key, so no schema change |
+| Training → mood and sleep in the weekly review | The weekly highlight is built in `src/screens/TodayScreen.tsx` (about line 91) from `weekSummary()` in `insights.ts`: "X of Y planned sessions done". `done` only counts planned days. No mood or sleep in it | `weekSummary` gains session counts across all sessions (as a range, §0.3) and, when there's enough data, a neutral pattern line pairing sessions with the person's own mood and sleep ratings. Wording, the minimum data needed and whether to show it at all are mental-performance's call (HOOK). It describes the person's own pattern, never a claim that exercise treats anything. `profile.motivations` is shown back here |
+| Load and risk signals | none | `loadSignals()` (§3.3) feeds mental-performance's risk handling and the supportive script in `ai-platform-plan.md` §4.2 item 3 |
+
+### Nutrition
+| Link | Today (checked in code) | This plan |
+|---|---|---|
+| Goal → targets | `profile.goal` (`Goal` in `types.ts`) → `suggestedTargets(profile, weight)` in `src/core/domain/nutrition.ts`. `goalAdjustPct()` picks the band: `lose-fat` −10…−25%, `build-muscle` +5…+10%, `increase-strength` −5…+5%, `increase-endurance` −10…0% | Unchanged. The training set-up writes the same `profile.goal` (one field, one write path). Plans stamp the goal they were built for. A fifth goal would change both engines (D6) |
+| Activity → energy targets | `ACTIVITY` in `src/core/data/constants.ts` sets the TDEE multiplier (1.2 / 1.375 / 1.55 / 1.725), and its labels already count exercise days. `rangeFor()` in `insights.ts` then adds `workoutBurn()` (`src/core/domain/workout.ts`, using `CARDIO_MET` from `constants.ts`, or a flat 3.5 MET × 45 min for strength) to `target.kcal` for the day | Possible double count (§2.9). Recommended (D5): stop adding per-session burn to the range; suggest updating `activityLevel` when a few weeks of logged sessions no longer match it. Energy targets then follow real activity **without "earning food"** (§0.8) |
+| Protein per modality and goal | `PROTEIN_PER_KG` in `nutrition.ts`, by goal only: `lose-fat` 2.0, `build-muscle` 1.8, `increase-strength` 1.8, `increase-endurance` 1.6 g/kg (the nutrition plan cites a 1.6–2.2 g/kg consensus, `personalized-nutrition-targets.md` §2.5) | No change proposed. Modality doesn't change protein in Tali; goal already does. A yoga-only or cardio-led plan keeps its goal's anchor. Any change is nutrition-owned (decision D12 in §7.3) |
+
+### Body
+| Link | Today (checked in code) | This plan |
+|---|---|---|
+| Bodyweight for burn | `latestWeight()` in `insights.ts` (the latest logged weight on or before the day, else `profile.weight`); `workoutBurn` falls back to 75 kg | `sessionBurn` uses the same helper |
+| Weight trend | `weightWeekDelta()` and `weightSeries()` in `insights.ts`, shown in `TodayScreen.tsx` and `src/screens/body/WeightSheet.tsx`. Gentle mode takes weight off the Summary (copy in `ProfileScreen.tsx`) | Training never comments on weight. Progress in training is sessions a week, reps, holds and load ("last time" by exercise), not body change. The nutrition plan's dynamic-adjustment loop (`personalized-nutrition-targets.md` §3) stays the only thing that reads the weight trend |
 
 ---
 
@@ -313,7 +345,7 @@ export interface LoggedExercise {
 | yoga | `hold` (poses), `rounds` (flows) | a hold timer that fills seconds | per side |
 | pilates | `reps` or `hold` per exercise | reps or timer | per side |
 | mobility | `hold` or `reps` per exercise | timer or reps | per side |
-| any session | session level | minutes (auto from Start/Finish) | effort (Easy / Moderate / Hard / Very hard → RPE 3/5/7/9) |
+| any session | session level | minutes (auto from Start/Finish) | effort (Easy / Moderate / Hard / Very hard → RPE 2 / 3 / 5 / 7, the verbal anchors on Foster et al.'s 2001 session-RPE scale) |
 
 **Keeping it fast.**
 - Every set row pre-fills from last time (by `exId`), so a repeat session is mostly taps.
@@ -398,8 +430,6 @@ export interface TrainingPlan {
   /** completion is by sessions done, not calendar weeks (§4.1a); e.g. 18 */
   targetSessions?: number
   startedAt?: string
-  /** date until which the "easier first week" is on (§4.1b) */
-  easyUntil?: string
   completedAt?: string
   reflection?: { at: string; note?: string }
   _u?: string
@@ -518,6 +548,8 @@ export interface Profile {
   motivationNote?: string
   /** pointer to the active training_plans row; absent = no plan yet */
   activePlanId?: string
+  /** "easier first week" is on until this date (§4.1b); on Profile so it works with or without a plan */
+  easyUntil?: string
 }
 
 export interface CheckIn {       // shipped: mood, hunger, note, t. New optional signals:
@@ -565,11 +597,11 @@ snapshot titles and names so history never depends on a routine existing. Inside
 plan-body decision.
 
 ```sql
--- P1: several sessions per day. Additive, nullable; no rename. The row-level policy already
+-- P2: several sessions per day. Additive, nullable; no rename. The row-level policy already
 -- covers new columns, but this is new synced data, so it goes through security-data review.
 alter table public.day_logs add column if not exists sessions jsonb;
 
--- P3: routines (the user's own workouts).
+-- P4: routines (the user's own workouts).
 create table public.routines (
   id          uuid primary key,                 -- client-generated, mirrors recipes
   user_id     uuid not null,
@@ -589,7 +621,7 @@ create policy "owner_full_access" on public.routines
   using ((select auth.uid())::text = user_id::text)
   with check ((select auth.uid())::text = user_id::text);
 
--- P4: training plans (a weekly arrangement of routines).
+-- P5: training plans (a weekly arrangement of routines).
 create table public.training_plans (
   id               uuid primary key,
   user_id          uuid not null,
@@ -602,7 +634,6 @@ create table public.training_plans (
   week             jsonb not null,               -- PlanWeek
   target_sessions  integer,
   started_at       timestamptz,
-  easy_until       date,
   reflection       jsonb,
   completed_at     timestamptz,
   updated_at       timestamptz not null default now()
@@ -628,7 +659,7 @@ create policy "owner_full_access" on public.training_plans
 - **`activePlanId`** rides `settings.profile` (a pointer, not the body).
 - **The exercise library, built-in routines and blueprints stay app-shipped static data**: no
   table, no RLS. Owned demo videos are hosted on Bunny CDN (§5.6), not Supabase Storage.
-- **Alternative considered for P1:** carry sessions inside the `workout` JSONB under a reserved
+- **Alternative considered for P2:** carry sessions inside the `workout` JSONB under a reserved
   key, like `_checkin` in `supps`, with no DDL. Rejected as the default because an older
   install that saves a workout that day replaces the whole `workout` value and silently drops
   every session. With a separate column an old client's upsert never touches `sessions`.
@@ -636,77 +667,113 @@ create policy "owner_full_access" on public.training_plans
 
 ### 2.9 Calorie burn per session and modality
 
-`workoutBurn(workout)` becomes `sessionBurn(session, kg)`, and the day's burn is the sum over
-`sessionsOf(day)`. The legacy function stays as a wrapper over `fromLegacy` so callers move one
-at a time.
+**First, a problem in today's maths (checked in code).** `ACTIVITY` in
+`src/core/data/constants.ts` already describes exercise: "Lightly active (1–3 days/week)",
+"Moderately active (3–5 days/week)", "Very active (6–7 days/week)". `suggestedTargets()` in
+`src/core/domain/nutrition.ts` multiplies BMR by that factor. Then `rangeFor()` in
+`src/core/domain/insights.ts` adds `workoutBurn()` (`src/core/domain/workout.ts`) on top for
+every logged session. So someone who says "moderately active" because they train 3–5 days a
+week probably gets those sessions counted twice. This is decision **D5**: the recommendation is
+to stop adding per-session burn to the food range, and instead suggest an activity-level update
+when logged sessions show the setting is out of date (a suggestion the user accepts, in the
+style of the dynamic-adjustment loop in `personalized-nutrition-targets.md` §3). That also meets
+§0.8: exercise never "earns" food.
 
-**Per session:** burn = MET × kg × hours, where:
-- **MET** comes from the session's modality and effort. Cardio uses `CARDIO_MET[cardio.key]`
-  (existing keys unchanged; new keys such as Run, Cycle, Swim, Stair, Jump rope and Intervals
-  added). Other modalities use the table below. No effort given → moderate.
-- **Hours** come from `mins` if logged, else the routine's `estMins`, else a modality default
-  (strength 45, cardio 25 as today, yoga and pilates 30, mobility 10, calisthenics 30).
-- **Mixed routines** (for example a circuit plus a stretch cool-down) sum per block:
-  Σ block minutes × that block's MET. Block minutes are measured when the session was run with
-  Start/Finish, or estimated.
+**If burn is still calculated** (for the session card, or if D5 goes the other way), it works
+like this. `workoutBurn(workout)` becomes `sessionBurn(session, kg)`; the day is the sum over
+`sessionsOf(day)`. The old function stays as a wrapper so callers move one at a time.
 
-| Modality | Light (Easy, RPE ≤ 4) | Moderate (default) | Vigorous (Hard or Very hard, RPE ≥ 7) |
+- **Formula:** MET × kg × hours, as `workoutBurn` does today. `kg` comes from
+  `latestWeight()` (`insights.ts`), falling back to 75 kg as `workoutBurn` does now (the 75 kg
+  fallback is an existing unsourced default: judgement call, unvalidated).
+- **Minutes:** logged `mins`; else the routine's `estMins`; else a default. Strength 45 and
+  cardio 25 are the existing defaults in `workout.ts` (unsourced judgement calls in shipped code);
+  yoga 30, pilates 30, calisthenics 30, mobility 10 are new **judgement calls, unvalidated**.
+- **Mixed routines** sum per block: Σ block minutes × that block's MET.
+- **Effort → MET row:** Easy uses the light code, Moderate (or no answer) the moderate code, Hard
+  or Very hard the vigorous code. The mapping is a **judgement call, unvalidated**.
+
+**MET values, from the 2024 Adult Compendium of Physical Activities** (Herrmann et al., 2024),
+read from pacompendium.com in September 2026. Codes are given so every value can be checked.
+
+| Tali activity | Light | Moderate (default) | Vigorous |
 |---|---|---|---|
-| strength (sets) | 3.0 | 3.5 | 5.0 |
-| strength or calisthenics as a circuit block | 4.3 | 4.3 | 8.0 |
-| calisthenics (sets) | 2.8 | 3.8 | 8.0 |
-| yoga | 2.5 | 2.5 | 4.0 (power or vinyasa) |
-| pilates | 3.0 | 3.0 | 3.0 |
-| mobility and stretching | 2.3 | 2.3 | 2.3 |
+| Strength, sets | unknown (no light code) | 02054, 3.5 ("multiple exercises, 8–15 reps") | 02050, 6.0 (vigorous) |
+| Strength or calisthenics as a circuit | 02034, 3.5 | 02035, 5.0 | 02040, 7.5 |
+| Calisthenics, sets | 02024, 2.8 | 02022, 3.8 | 02020, 7.5 |
+| Bodyweight resistance, general | | 02056, 3.0 | 02057, 6.5 |
+| Yoga | 02175, 2.3 (general) or 02150, 2.3 (hatha) | 02185, 2.7 (vinyasa) | 02160, 4.0 (power) |
+| Sun salutations (flow) | | 02180, 3.5 | |
+| Pilates | 02103, 1.8 (traditional, mat) | 02105, 2.8 (general) | unknown |
+| Mobility and stretching | 02101, 2.3 ("stretching, mild") | 02101, 2.3 | unknown |
 
-Values are approximate from the Compendium of Physical Activities (2024 adult update,
-Herrmann et al.) and must be confirmed against its activity codes before shipping.
+Hot yoga (02155) and high-intensity hatha (02153, 8.0) exist but are not offered in Tali.
 
-**Estimating minutes (`estMins`)** from a routine: about 2.5 min per resistance set (work plus
-rest), hold seconds + 20 s per hold set, about 1.5 min per sun-salutation round, the listed
-minutes for duration slots, the video length for guided sessions.
+**Cardio (`CARDIO_MET`), shipped values checked against the same source:**
 
-**Gross vs net MET (decision D5).** Today's formula uses gross MET, which counts the resting
-energy the TDEE already includes for that hour. Net MET (MET − 1) is the accurate figure for
-extending a budget: a 45-minute moderate strength session at 75 kg is about 197 kcal gross,
-141 kcal net. Because burn widens the food range, any change to MET values or to net/gross
-needs **nutrition-accuracy** sign-off as well as ship-critic.
+| `CARDIO_MET` key | Shipped value | 2024 Compendium | Status |
+|---|---|---|---|
+| Walk | 3.8 | 17190, 3.8 (2.8–3.4 mph, level, moderate) | **matches** |
+| Incline treadmill | 5.0 | no uphill treadmill code found in this pass | **unknown, unsourced** |
+| Stationary bike | 5.5 | 01200, 6.8 (general); 01216, 5.0 (60 W); 01218, 5.8 (70–80 W) | **no matching code** |
+| Cross-trainer | 5.5 | 02048, 5.0 (elliptical, moderate) | **differs** |
+| Rower | 6.0 | 02071, 5.0 (< 100 W, moderate); 02070, 7.3 (general, vigorous) | **no matching code** |
+| Other | 4.5 | none (a catch-all) | **unsourced, judgement call** |
 
-**Tone.** Gentle mode hides burn numbers (§4.1c). The current Train banner copy that frames
-burn as "more room today" is being raised with Benn separately (§7.4); this plan does not add
-new "earn food" framing anywhere.
+New keys that can be sourced now: brisk walk 17200, 4.8; jogging 12020, 7.5; running 5 mph
+12030, 8.5; running 6 mph 12050, 9.3; outdoor cycling, leisure < 10 mph 01010, 4.0; stair
+treadmill 02065, 9.3; elliptical vigorous 02049, 9.0; rowing vigorous 02070, 7.3. **Swimming,
+jump rope and intervals: unknown in this pass** (not looked up). Leave them out until they are
+sourced, following the food-data rule "never invent values". Correcting the shipped cardio
+values is decision **D11**.
+
+**`estMins` from a routine** (all **judgement calls, unvalidated**): about 2.5 min per
+resistance set including rest, hold seconds + 20 s per hold set, about 1.5 min per
+sun-salutation round, listed minutes for duration slots, the video length for guided sessions.
+
+**Gross vs net.** MET × kg × hours is gross: it includes the resting energy (1 MET) the TDEE
+already covers for that hour. If burn stays in the range, it should be net (MET − 1). Worked
+example, computed: 45 min moderate strength at 75 kg is 3.5 × 75 × 0.75 ≈ 197 kcal gross and
+2.5 × 75 × 0.75 ≈ 141 kcal net, about 29% less. Any change to burn needs **nutrition-accuracy**
+sign-off, because it moves the food range.
+
+**Tone (§0.8).** Gentle mode hides burn. No copy presents burn as food room. Phase 1 replaces
+the two places that do today.
 
 ---
 
 ## 3. Recommendation engine (`src/core/domain/recommend.ts`, pure TS)
 
-Maps `goal` + `TrainingPrefs` → a recommended `TrainingPlan` (weekly arrangement) built from
-§2.7 blueprints and built-in routines, then tunes the mix, split, prescriptions and volume.
-Deterministic, framework-agnostic, unit-testable, and every decision traces to an answer.
+Maps what the person told us → a recommended weekly plan built from §2.7 blueprints and
+built-in routines. Deterministic, framework-agnostic and unit-testable. **Customising to the
+person comes first:** every rule below names the input that drives it and where its numbers come
+from. A number without a source is labelled **judgement call, unvalidated**. The engine never
+invents an input the questionnaire could have asked for (`onboarding-and-data-flow.md`, "onboarding
+is the driver").
 
-### 3.1 Decision logic (in order)
-1. **Weekly session count** = `sessionsPerWeek ?? daysPerWeek ?? 3`.
-2. **Mix by goal** (the table in §3.2): split the count into **R** (resistance: strength or
-   calisthenics), **C** (cardio) and **M** (yoga, pilates or mobility).
-3. **Fill each class from preferences.** R uses calisthenics when `place` has no gym (or the
-   user prefers calisthenics) and weights when it does; a mix is fine (bodyweight upper body,
-   dumbbell legs). C uses `cardioPrefs` ∩ what `place` and `equipment` allow (no pool → no
-   swimming; outdoors → walking, running, cycling). M uses yoga, then pilates, then mobility,
-   in the order the user picked them; "not sure yet" gives mobility plus one gentle yoga.
-4. **Resistance split by R count:** 1–3 → full body; 4 → upper/lower; 5–6 → PPL (Legs → Push →
-   Pull adjacency preserved). This used to key off days per week.
-5. **Prescriptions by goal** (§3.4) and **session size by minutes** (§3.5).
-6. **Volume by confidence** (sets per muscle per week, §3.4 step 3), trimmed to what the time
-   allows.
-7. **Filters:** equipment and place; "Areas to go easy on" prefers gentler same-slot
-   alternatives (§4.0.4); `difficulty` ≤ confidence (per modality via `experienceBy`).
-8. **Placement on the calendar:** spread R sessions with a day between where possible; keep
-   Legs → Push → Pull order; no hard intervals the day before legs; an M session suits the day
-   after legs or the day before a rest day; at least one full rest day (§3.3).
-9. **Guardrails** (§3.3) run last and can only make a plan lighter, never harder.
+### 3.1 Rules, their inputs and their sources
+
+| # | Rule | Driven by (field) | Source |
+|---|---|---|---|
+| 1 | Weekly session count = builder setting, else days a week, else 3 | `training.sessionsPerWeek`, `training.daysPerWeek` | 3 is mental-performance's default: judgement call |
+| 2 | Split the count into R / C / M (§3.2) | `profile.goal` + rule 1 | WHO 2020 and UK CMO 2019 for the 2-day strength floor; the rest of the table is a judgement call |
+| 3 | Fill R with weights or calisthenics | `training.place`, `training.equipment`, `training.modalities` | Kotarsky et al. 2018; Calatayud et al. 2015 (calisthenics works as resistance training) |
+| 4 | Fill C with cardio the person can do | `training.cardioPrefs`, `place`, `equipment` | none needed (a filter) |
+| 5 | Fill M with yoga, pilates or mobility, in the order picked | `training.modalities` ("not sure yet" → mobility + gentle yoga) | judgement call |
+| 6 | Resistance split: 1–3 R full body, 4 upper/lower, 5–6 PPL (Legs → Push → Pull) | the R count from rule 2 | Schoenfeld et al. 2016 (each muscle ≥ 2× a week); the cut-offs are a judgement call |
+| 7 | Session size | `training.minutesPerSession` | §3.5, judgement call |
+| 8 | Rep, rest and intensity scheme | `profile.goal` | §3.4 |
+| 9 | Weekly sets per muscle | `training.experience` (+ `experienceBy`), skewed by `goal`, plus builder `emphasis` | §3.4 |
+| 10 | Exercise choice: kit, then difficulty, then gentler alternatives | `equipment`, `experience`, `training.limitations` | §4.0.4 (preference filtering) |
+| 11 | Calendar placement: R spread out, Legs → Push → Pull order, no hard intervals before legs, M after legs or before rest | `daysPerWeek` + the plan's own sessions | charter (L → P → P); the rest is a judgement call |
+| 12 | Guardrails, last, only ever lighter (§3.3) | `goal`, `targetRate`, the nutrition deficit, logged sessions | mental-performance; thresholds are judgement calls |
+| 13 | "Why this plan" copy lists the inputs used, and the person's `motivations` | all of the above | none needed |
 
 ### 3.2 Mixed plans per goal
-Counts are weekly sessions. R = resistance, C = cardio, M = yoga, pilates or mobility.
+Counts are weekly sessions. R = resistance (weights or calisthenics), C = cardio, M = yoga,
+pilates or mobility. **Driven by** `profile.goal` × session count. **Source:** the 2-a-week
+resistance floor follows WHO 2020 (Bull et al.) and the UK CMOs (2019), "muscle strengthening on
+2 or more days". Everything else in the table is a **judgement call, unvalidated**.
 
 | Goal | 1 | 2 | 3 | 4 | 5 | 6 days available |
 |---|---|---|---|---|---|---|
@@ -715,112 +782,103 @@ Counts are weekly sessions. R = resistance, C = cardio, M = yoga, pilates or mob
 | `lose-fat` | 1R | 1R + 1C | 2R + 1C | 2R + 2C | 2R + 2C + 1M | **5 sessions** (2R + 2C + 1M) + an optional light sixth; never a 6-day default |
 | `increase-endurance` | 1C | 1R + 1C | 1R + 2C | 2R + 2C | 2R + 3C | 2R + 3C + 1M |
 
-- Benn's example "2 strength + 1 yoga + 2 cardio" is the `lose-fat` × 5 row with yoga as M.
-- **Resistance floor:** at least 2 R sessions a week whenever there are 2 or more sessions
-  (1 for endurance at 2 sessions), following the WHO and UK guidance on muscle strengthening
-  on 2+ days. Two full-body R sessions still train each muscle twice a week.
-- **Preferences never force a modality.** If someone picks only yoga and pilates with
+- Benn's example "2 strength + 1 yoga + 2 cardio" is the `lose-fat` × 5 row, with yoga as M.
+- **Preferences are never overruled** (§0.1). If someone picks only yoga and pilates with
   `build-muscle`, the plan is built from their choices and the recommender **offers** two short
-  resistance sessions with plain copy ("Yoga and pilates build strength and control. For
-  building muscle, two short resistance sessions a week make the biggest difference. Add
-  them?"). Declining is fine and never asked again that month.
-- **One session a week is a real start.** A 1-day plan is a full-body routine (or a cardio
-  session for endurance) with the copy "One session a week is a real start."
-- **Doubles** only when `doubles` is on in the builder, and only as hard + light (§3.3).
+  resistance sessions, once: "Yoga and pilates build strength and control. For building muscle,
+  two short resistance sessions a week make the biggest difference. Add them?"
+- **One session a week is a real start**: a full-body routine (a cardio session for endurance).
+- **Doubles** only when `doubles` is on in the builder, and only hard + light (§3.3).
 
-### 3.3 Load guardrails (mental-performance recommendations)
-- **At most one hard session a day.** A second session that day must be light: a walk,
-  mobility, gentle yoga or beginner pilates. `effort` is derived at save: strength,
-  calisthenics, circuits, intervals and moderate-or-harder cardio over 20 minutes are hard;
-  walking, mobility, gentle yoga and beginner pilates are light. Users can override it.
-- **Every generated plan has at least one full rest day.** Days-per-week tops out at 6.
-- **`lose-fat` never defaults to 6 days** (see §3.2).
-- **Large deficit plus high volume:** with `lose-fat` and a large deficit (`targetRate:
-  'aggressive'`, or the nutrition engine's deficit at the top of its band), recommended volume
-  sits at the low end (about MEV) and progression prompts pause ("Hold steady this week"
-  instead of "add a little weight").
-- **Soft cap note** (thresholds are **unvalidated judgement calls**, to be reviewed with data):
-  more than about 6 hard sessions in 7 days, or doubles 3 days running, shows one gentle note,
-  at most once a week: "You've been training a lot lately. How's your energy? A lighter day can
-  help."
-- **Risk patterns hook (HOOK, owned by mental-performance).** `loadSignals(state)` in core
-  returns facts only: hard sessions in the last 7 days, doubles run, a 4-week minutes trend,
-  intake trend, recent mood. Rising volume with falling intake and low mood, or notes such as
-  "burn off" or "make up for", hand over to the supportive script in `ai-platform-plan.md`
-  §4.2 (item 3). The app **never coaches toward more** in response.
-- **Gentle mode** hides volume meters and burn numbers (§4.1c).
-- These notes sit **next to the MRV meter** in the builder (§4.3): the meter warns about a
-  muscle; the guardrails talk about the week as a whole.
+### 3.3 Load guardrails (mental-performance; all thresholds are judgement calls, unvalidated)
+| Guardrail | Driven by | Status |
+|---|---|---|
+| At most one hard session a day; a second is light (walk, mobility, gentle yoga, beginner pilates) | the plan; `Routine.effort` | judgement call |
+| Every generated plan has at least one full rest day; days a week tops out at 6 | `daysPerWeek` | judgement call |
+| `lose-fat` never defaults to 6 days | `profile.goal` | judgement call |
+| Big deficit + high volume → volume at the low end, progression prompts paused ("Hold steady this week") | `profile.goal`, `profile.targetRate`, `suggestedTargets().adjustPct` | judgement call; "big deficit" = `targetRate: 'aggressive'` or `adjustPct` ≤ −20 (the band is −10…−25 in `nutrition.ts`) |
+| Soft cap: more than about 6 hard sessions in 7 days, or doubles 3 days running → one gentle note, at most once a week | logged sessions | judgement call, flagged as unvalidated by mental-performance |
+| Risk patterns → the supportive script in `ai-platform-plan.md` §4.2 item 3; never coach toward more | `loadSignals()`: hard sessions, doubles run, 4-week minutes trend, intake trend, recent mood, note text | HOOK, owned by mental-performance |
+| Gentle mode hides volume meters and burn | `profile.gentle` | §4.1c |
 
-### 3.4 Prescriptions and volume by goal (science-backed; kept from revision 2)
-1. **Rep / rest / intensity by goal:**
-   - **`build-muscle`** (headline focus): **6–15 reps**, about 1–3 min rest, 2–3 RIR.
-   - **`increase-strength`**: **3–6 reps** on the main compounds at higher relative intensity,
-     **2–4 min rest**; accessories stay in 6–12.
-   - **`lose-fat`**: keep **6–15** to *retain* muscle in a deficit (light "toning" weights
-     don't preserve muscle), volume toward the low end because recovery is harder in a
-     deficit, plus **cardio for fitness**: heart and lung fitness, stamina and how everyday
-     effort feels. Cardio is programmed for fitness, not as a way to burn off food.
-   - **`increase-endurance`**: **12–20+ reps**, circuits with short rest, plus a genuine cardio
-     emphasis with progressive duration or intervals by confidence.
-   - **Calisthenics** uses the same bands, measured in reps to within 2–3 of failure. When a
-     step passes the top of the range on every set, the card offers the next step in the chain
-     (incline push-up → push-up → decline push-up).
-   - **Yoga, pilates, mobility** use holds in slow breaths (about 20–45 s, or 5–8 breaths),
-     rounds for flows and reps for pilates exercises (about 6–10 controlled reps).
-2. **Volume by confidence** (sets per muscle per week): just starting ≈ **10**, getting
-   comfortable ≈ **12–16**, confident ≈ **16–20**, within MEV → MAV. `lose-fat` trims low;
-   `increase-endurance` spends part of the budget on cardio; builder `emphasis` adds 2–4 sets,
-   capped at MRV. A set counts **1.0 toward `primary`** and **0.5 toward each `secondary`**;
-   only resistance modalities count. Pilates shows as core work, not hypertrophy volume.
-3. **Equipment filter:** swap to the same `pattern`/`primary` with available kit (no barbell →
-   dumbbell RDL; no gym → a calisthenics step at the right difficulty).
+`effort` is derived at save (**judgement call**): strength, calisthenics, circuits, intervals and
+moderate-or-harder cardio over 20 minutes are hard; walking, mobility, gentle yoga and beginner
+pilates are light. Users can override it. These notes sit **next to the MRV meter** in the
+builder (§4.3).
+
+### 3.4 Prescriptions and volume by goal
+**Driven by** `profile.goal` (scheme) and `training.experience` (volume).
+
+| Goal | Reps | Rest | Effort | Source |
+|---|---|---|---|---|
+| `build-muscle` | 6–15 | about 1–3 min | 2–3 reps in reserve | reps: Schoenfeld et al. 2021 (hypertrophy across about 5–30 reps near failure; 6–15 chosen for time, a judgement call); rest: Schoenfeld et al. 2016 (longer rest beat 1 min); RIR: Refalo et al. 2023 |
+| `increase-strength` | 3–6 on main compounds, 6–12 accessories | 2–4 min on main lifts | heavier loads | ACSM 2009 position stand (Ratamess et al.): heavy loads (about 1–6 RM) and at least 2–3 min rest on core lifts for strength |
+| `lose-fat` | 6–15 | about 1–3 min | 2–3 RIR | same as `build-muscle`; keeping muscle in a deficit relies on resistance training plus protein (see `personalized-nutrition-targets.md` §2.5). Cardio is programmed for fitness, stamina and how everyday effort feels, **not to burn off food** (§0.8) |
+| `increase-endurance` | 12–20+, circuits | short | moderate | ACSM 2009: light to moderate loads, higher reps, short rest for local muscular endurance |
+
+- **Calisthenics** uses the same rep bands, taken to within 2–3 reps of failure. When a step
+  passes the top of its range on every set, the card offers the next step (incline push-up →
+  push-up → decline push-up). Source for counting it as resistance training: Kotarsky et al. 2018,
+  Calatayud et al. 2015. The "top of range on every set" trigger is the rule Tali already coaches
+  (`TrainScreen.tsx` footer).
+- **Stretches and mobility holds:** 10–30 s per hold, building to about 60 s per exercise in
+  total (ACSM, Garber et al. 2011). **Yoga holds in breaths** (for example 5 slow breaths) and
+  **pilates at about 6–10 controlled reps** are **judgement calls, unvalidated**.
+- **Weekly sets per muscle:** about 10 or more sets a week is a productive target (Schoenfeld,
+  Ogborn & Krieger 2017, dose–response). The split by confidence (just starting ≈ 10, getting
+  comfortable ≈ 12–16, confident ≈ 16–20) follows Israetel's MEV / MAV / MRV practitioner
+  guidance: **judgement call, unvalidated**. `lose-fat` trims to the low end; `increase-endurance`
+  spends part of the budget on cardio; builder `emphasis` adds 2–4 sets, capped at MRV
+  (**judgement call**).
+- **Counting sets:** 1.0 toward the `primary` muscle, 0.5 toward each `secondary` (**judgement
+  call**, a common practitioner convention). Only resistance modalities count. Pilates shows as
+  core work, not hypertrophy volume.
+- **Equipment swaps** keep the same `pattern` and `primary` (no barbell → dumbbell RDL).
+- **Progressive overload:** "add a little weight at the top of the range" stays, except under the
+  big-deficit guardrail (§3.3).
 
 ### 3.5 Session size by minutes
-| Minutes | Resistance session shape | M or C session |
+**Driven by** `training.minutesPerSession`. The whole table is a **judgement call, unvalidated**,
+anchored to today's templates (5–6 exercises at 2–3 sets is about 13–17 sets, roughly 33–43 minutes at the 2.5-minute-a-set estimate in §2.9, before a warm-up).
+
+| Minutes | Resistance session | M or C session |
 |---|---|---|
-| 10 | 3 exercises as a circuit, 2 rounds | a 10-minute mobility or yoga routine; a 10-minute walk |
-| 20 | 3–4 exercises × 2 sets, opposing pairs as supersets | 20-minute flow or cardio |
+| 10 | 3 exercises as a circuit, 2 rounds | 10-minute mobility or yoga; 10-minute walk |
+| 20 | 3–4 exercises × 2 sets, opposing pairs as supersets | 20 minutes |
 | 30 | 4–5 exercises × 2–3 sets | 30 minutes |
-| 45 | 5–6 exercises × 3 sets (today's templates) + optional 5-minute cool-down | 45 minutes |
-| 60+ | 6–7 exercises + warm-up and cool-down blocks | 60 minutes |
+| 45 | 5–6 exercises × 3 sets + optional 5-minute cool-down | 45 minutes |
+| 60+ | 6–7 exercises + warm-up and cool-down | 60 minutes |
 
-When the time budget can't reach the weekly volume band, the recommender keeps compounds,
-drops isolation work first, and says so plainly: "Short sessions still work. Two hard sets per
-exercise is enough to make progress."
+When time can't reach the weekly volume band, compounds stay, isolation work goes first, and the
+copy says so: "Short sessions still work. Two hard sets per exercise is enough to make progress."
+Source: low weekly volume near failure still builds strength (Androulakis-Korakakis et al. 2020).
 
-### 3.6 Evidence base (cite in code comments and the "why this plan" copy)
-- **Weekly set volume / MEV–MAV–MRV:** Schoenfeld, Ogborn & Krieger (2017) dose–response
-  meta-analysis; Israetel's volume landmarks for the bands.
-- **Frequency:** Schoenfeld, Ogborn & Krieger (2016): training a muscle ≥ 2× a week beats 1×
-  at matched volume.
-- **Proximity to failure:** training about 1–3 reps from failure drives hypertrophy without the
-  fatigue cost of failure every set (Robinson, Refalo et al. reviews).
-- **Rep range:** hypertrophy occurs across about 5–30 reps when sets go close to failure
-  (Schoenfeld et al., 2021).
-- **Strength vs hypertrophy loading:** lower reps, higher intensity and longer rest favour
-  maximal strength (Schoenfeld et al., 2017; ACSM resistance-training position stand).
-- **Muscle retention in a deficit:** resistance training plus adequate protein preserves lean
-  mass during fat loss.
-- **Calisthenics counts as resistance training:** progressive push-up training gave strength
-  and muscle-thickness gains similar to bench press (Kotarsky et al., 2018); push-ups and bench
-  press at matched muscle activation gave similar strength gains (Calatayud et al., 2015).
-- **Minimum doses work:** low weekly volume taken close to failure still builds strength,
-  especially early on (Androulakis-Korakakis et al., 2020), which is why 10- and 20-minute
-  sessions are offered rather than dismissed.
-- **Activity guidelines:** WHO 2020 guidelines (Bull et al.) and the UK Chief Medical
-  Officers' guidelines (2019): 150–300 min moderate or 75–150 min vigorous aerobic activity a
-  week, muscle strengthening on 2+ days, and any activity is better than none.
-- **Yoga and pilates:** reviews support gains in flexibility, balance, core endurance and
-  wellbeing; they do not replace progressive resistance for building muscle or cardio for
-  endurance. Specific references to be confirmed and cited at implementation. No treatment or
-  pain-relief claims are made in copy.
-- **Stretching and warm-ups:** short static stretches (under about 60 s per muscle) have a
-  trivial effect on performance (Behm et al., 2016), so a stretch cool-down is fine and a
-  dynamic warm-up is preferred before lifting.
-- **Session effort:** session RPE × minutes as a simple load measure (Foster et al., 2001).
-- **Progressive overload:** Tali already coaches "add weight at the top of the range". Keep it,
-  subject to the deficit guardrail in §3.3.
+### 3.6 References (cite in code comments and the "why this plan" copy)
+- Schoenfeld, Ogborn & Krieger (2017), J Sports Sci: weekly volume dose–response.
+- Schoenfeld, Ogborn & Krieger (2016), Sports Med: training frequency.
+- Schoenfeld et al. (2016), J Strength Cond Res: longer rest between sets.
+- Schoenfeld et al. (2021), Sports: the repetition continuum.
+- Refalo et al. (2023), Sports Med: proximity to failure and hypertrophy.
+- Ratamess et al. / ACSM (2009), Med Sci Sports Exerc: progression models in resistance training.
+- Garber et al. / ACSM (2011), Med Sci Sports Exerc: quantity and quality of exercise (includes
+  flexibility guidance).
+- Kotarsky et al. (2018), J Strength Cond Res: progressive push-up training.
+- Calatayud et al. (2015), J Strength Cond Res: push-up vs bench press.
+- Androulakis-Korakakis et al. (2020), Sports Med: minimum effective dose for strength.
+- Behm et al. (2016), Appl Physiol Nutr Metab: short static stretches have a trivial effect on
+  performance, so stretch cool-downs are fine and dynamic warm-ups are preferred before lifting.
+- Foster et al. (2001), J Strength Cond Res: session RPE.
+- Bull et al. / WHO (2020), Br J Sports Med; UK Chief Medical Officers' Physical Activity
+  Guidelines (2019): 150–300 min moderate or 75–150 min vigorous aerobic activity a week,
+  strength on 2+ days, and any activity beats none.
+- Herrmann et al. (2024), J Sport Health Sci: 2024 Adult Compendium of Physical Activities
+  (pacompendium.com), for every MET value in §2.9.
+- **Yoga and pilates:** reviews suggest gains in flexibility, balance, core endurance and
+  wellbeing. **Specific references not yet chosen: to be confirmed and cited at implementation.**
+  Until then copy makes no claims beyond "builds strength, control and flexibility", and never a
+  treatment or pain claim.
+- Author, year and journal above are from the specialist's reference list and must be checked
+  against the papers before any of them appear in user-facing copy.
 
 ---
 
@@ -927,10 +985,11 @@ export function dayOptions(planned: Routine[], today: DaySignals, recent: DaySig
   energy, and soreness on lifting days only (§2.6).
 - **Compared against the person's own recent pattern** (for example worse than their median of
   the last 14 check-ins with that signal; with under a week of history, only the scale's worst
-  value counts). **Never a composite "readiness score".** Exact thresholds belong to
-  mental-performance.
-- **When 2 or more are low, offer three equal choices:** the planned session, a **shorter
-  version** (about 60%: each exercise keeps its first sets and drops the last ones, minimum one;
+  value counts). The 14 and the one-week cut-off are **judgement calls, unvalidated**. **Never a
+  composite "readiness score".** Exact thresholds belong to mental-performance.
+- **When 2 or more are low** (mental-performance's threshold, a **judgement call**)**, offer three
+  equal choices:** the planned session, a **shorter
+  version** (about 60%, a **judgement call**: each exercise keeps its first sets and drops the last ones, minimum one;
   cardio at about 60% of the minutes at an easy pace; flows with fewer rounds; no progression
   prompts that day), or a **swap** to mobility, yoga or a walk matched to the planned day (legs
   day → hips and hamstrings).
@@ -940,6 +999,8 @@ export function dayOptions(planned: Routine[], today: DaySignals, recent: DaySig
   debt" and "you should rest".
 - Fitness owns the mechanics (what "shorter" and "swap" contain); mental-performance owns the
   triggers, copy and safety pathways.
+- **P1 runs this on today's built-in templates** (planned is `WORKOUTS[type]`); the signature
+  above takes routines from P4 onwards. Nothing about the behaviour changes.
 
 ### 4.1 Onboarding flow → first plan
 A short, skippable flow (or a "Set up my training" card on Plan / Today, see open question)
@@ -951,7 +1012,8 @@ ranges, and names what the person said would make it worth it.
 ### 4.1a Plan lifecycle UX
 - **Active plan** is what Train and Plan render from. At most one active at a time.
 - **Completion is by sessions done, not calendar weeks.** A plan carries `targetSessions` (for
-  example 18 for a 3-a-week plan). When the count of sessions done from its routines since
+  example 18 for a 3-a-week plan, six full weeks; the default block length is a **judgement
+  call, unvalidated**). When the count of sessions done from its routines since
   `startedAt` reaches it, the plan closes with a **reflection prompt** ("What felt good? What
   would you change?"), stored on the plan, then offers: **Re-use** (clone to a fresh active
   plan), **Adjust** (clone and edit), or **Dismiss** (→ archived, kept in "Past plans"). "Mark
@@ -959,16 +1021,19 @@ ranges, and names what the person said would make it worth it.
 - **Save as template** keeps any plan as a reusable blueprint; "Use template" clones it.
   Past, archived and template plans live behind a low-key "My plans" surface.
 
-### 4.1b Missed sessions, restarts and progress (mental-performance recommendations)
+### 4.1b Missed sessions: plans slide, the calendar stays (mental-performance recommendations)
 - **No "missed" labels and no red.** An unlogged planned day just looks like a day.
-- **Catch-up, not sliding.** The next time Train opens after an unlogged planned session, it
-  offers it alongside today's: "Pick up with Legs whenever you're ready." Only the most recent
-  one from the past 6 days is offered, so they never pile up. The **calendar does not move**:
-  Tuesday is still Tuesday's workout. This keeps the reverted rotation model out (decision D4).
+- **The plan slides forward as a choice.** The next time Train opens after an unlogged planned
+  session, it offers it alongside today's: "Pick up with Legs whenever you're ready." Only the
+  most recent one from the past 6 days is offered (6 is a **judgement call**), so they never pile
+  up. Choosing it changes today only. The **calendar does not move**: Tuesday is still Tuesday's
+  workout, which keeps the reverted rotation model out (§0.4, D4).
 - **Progress is sessions per week in a range, not a streak:** "2 this week, your plan is 2–3."
-  The range is the planned count minus one to the planned count. No streak counters anywhere.
-- **Welcome back.** After 10 or more days with no session: "Welcome back. Want an easier first
-  week?" Yes sets `easyUntil` 7 days out, which makes the shorter version (§4.0.5) the
+  The range is the planned count minus one to the planned count (a **judgement call**). No
+  streak counters anywhere.
+- **Welcome back.** After 10 or more days with no session (mental-performance's figure, a
+  **judgement call**): "Welcome back. Want an easier first week?" Yes sets `profile.easyUntil`
+  7 days out, which makes the shorter version (§4.0.5) the
   pre-selected choice for each planned session that week; the full session stays one tap away.
 
 ### 4.1c Gentle mode
@@ -1088,7 +1153,8 @@ side, strap optional), `wall-calf-stretch` (per side), `knee-to-wall` (reps, per
 **Cardio (log `duration`):** `cardio-walk`, `cardio-incline-walk`, `cardio-run`,
 `cardio-cycle` (outdoor), `cardio-bike` (stationary), `cardio-row`, `cardio-swim`,
 `cardio-cross-trainer`, `cardio-stair`, `cardio-jump-rope`, `cardio-intervals`. Each maps to a
-`CARDIO_MET` key (existing six unchanged; new keys need nutrition-accuracy sign-off).
+`CARDIO_MET` key with a Compendium code (§2.9). Swimming, jump rope and intervals have no
+sourced value yet: they can be logged, but show no burn estimate until one is sourced.
 
 That is roughly 120 entries, beyond the earlier 40–60+ target, spread across all six
 modalities so every filter always has a substitute.
@@ -1139,7 +1205,8 @@ export interface ExerciseMedia {
   "Breathe in" / "Breathe out", and counts rounds instead of reps.
 - **guided session** (routine-level `guide`): a long follow-along class, streamed with HLS from
   Bunny Stream. The overlay shows elapsed and total time only; finishing logs the session with
-  its minutes. At the shipped bitrate a 20-minute class would be about 35 MB, which is why these
+  its minutes. At the shipped size (about 0.6 MB for a clip of about 20 s, per CLAUDE.md) a 20-minute class
+would be roughly 36 MB (computed), which is why these
   never go in `public/videos/` and wait for the Bunny move (decision D8).
 - **`tempo.ts`:** new labels for the new kinds; a `holdAt(elapsed, targetSec)` helper beside
   `tempoAt`.
@@ -1162,53 +1229,146 @@ never waits on it.
 
 ## 6. Phased roadmap (each phase independently shippable and ship-critic-reviewable)
 
-Re-sequenced so the first phase ships visible value, and each table lands with the feature that
-first writes to it. **Schema / RLS phases need security-data review** as well as ship-critic.
+Phase 1 is **wellbeing-led and needs no database change**, so people feel the difference
+quickly. After that, each table lands with the feature that first writes to it. Phases that
+touch **Supabase schema or RLS need security-data review** as well as ship-critic. Every phase
+must also meet the §0 guardrails listed for it.
 
-| Phase | Ships | Schema / RLS | Extra reviewers |
+| Phase | What people get | Schema / RLS | Extra reviewers |
 |---|---|---|---|
-| **P1** Log any movement, as often as you like | Sessions model, several a day, quick log for all six modalities | **Yes:** `day_logs.sessions` column | security-data; nutrition-accuracy (burn) |
-| **P2** Exercise library & logging shapes | `exercises.ts`, shapes, hold timer, progressions, "last time" by exercise | No | none |
-| **P3** Build your own workout | `routines` table + builder + ad hoc start | **Yes:** new table + RLS | security-data |
-| **P4** Plans as your week | `training_plans` table + weekly calendar of routines + lifecycle | **Yes:** new table + RLS | security-data; mental-performance (adherence copy) |
-| **P5** Tailored plans | Questionnaire slice + recommender + guardrails + "Areas to go easy on" | No (settings JSON) | mental-performance; nutrition (shared goal fields) |
-| **P6** Day-of options | Check-in signals + three choices + soft cap note + risk hook | No (`_checkin` in supps) | mental-performance |
-| **P7** Volume readout & builder guardrails | MRV meter, load notes, reset to recommended | No | none |
-| **M** Media track (parallel, per clip) | Hold and flow player modes, new clips, Bunny move, guided sessions last | No | fitness form review per clip |
+| **P1** Wellbeing first | Check-in signals, day-of choices, neutral copy, plans that slide, welcome back | No | mental-performance |
+| **P2** Log any movement, several a day | Sessions model; quick log for all six modalities | **Yes:** `day_logs.sessions` column | security-data; nutrition-accuracy (burn) |
+| **P3** Exercise library & logging shapes | `exercises.ts`, shapes, hold timer, easier/harder, "last time" by exercise | No | none |
+| **P4** Build your own workout | `routines` table, builder, start any workout any day | **Yes:** new table + RLS | security-data |
+| **P5** Plans as your week | `training_plans` table, weekly calendar of workouts, lifecycle | **Yes:** new table + RLS | security-data; mental-performance |
+| **P6** Tailored plans | Questionnaire, recommender, "Areas to go easy on" | No (settings JSON) | mental-performance; nutrition (shared fields) |
+| **P7** Volume readout | Per-muscle meter with load notes, reset to recommended | No | none |
+| **M** Media track (parallel) | Hold and flow players, new clips, Bunny move, guided sessions last | No | form review per clip |
 
-- **P1 (first visible value).** Add `Session`, `DayLog.sessions`, `sessionsOf`/`fromLegacy`,
-  the legacy mirror and defensive loads; the `day_logs.sessions` migration and sync mapping.
-  Train gets the Today list: the built-in Legs/Push/Pull flows work as now but save as sessions,
-  and **"Log something else"** logs weights, calisthenics, cardio, yoga, pilates or mobility with
-  minutes and optional effort (and distance for cardio). Several sessions a day, each editable.
-  Burn sums per session using the §2.9 table (net vs gross per D5). Today's ring and
-  `insights` read `sessionsOf`. Bump the SW `CACHE`. Tests: legacy conversion, mirror, fold-in of
-  a non-mirror `workout`, malformed input.
-- **P2.** The starter library (§5.3) with ids, built-in routines resolved through it, the log
-  shapes in the session editor (reps-only with assist or band, hold timer, rounds, check), "Easier
-  / Harder" on progression chains, a read-only library browser with filters, and the clip test
-  moved to walk the library. Pure core data plus UI.
-- **P3.** `routines` table with RLS in the same migration and in `docs/security-rls.sql`; local
-  `routines` + sync loop; the workout builder (§4.3) and "Customise" on built-ins; ad hoc start on
-  any day; `canBuild()`.
-- **P4.** `training_plans` table with RLS; `trainingPlans` + sync; Plan screen edits the active
-  plan's weekday calendar with several routines per day and the hard + light rule; the legacy
-  `schedule` mirror; lifecycle with session-count completion and reflection; catch-up offer,
-  welcome back and sessions-per-week range (§4.1b).
-- **P5.** `TrainingPrefs`/`Profile` additions; the F1–F6 questionnaire (built with the onboarding
-  contract's questionnaire phase, and with `onboarding-and-data-flow.md` updated in the same
-  change); `recommend.ts` with the mix table, session sizing and guardrails; "Why this plan";
-  "Areas to go easy on" with its disclaimer on swapped exercises.
-- **P6.** Check-in signals (sleep, stress, energy, soreness on lifting days), `dayOptions`,
-  shorter and swap routines, the soft cap note and the `loadSignals` hook.
-- **P7.** Per-muscle volume meter with MEV / MAV / MRV bands and the load notes beside it,
-  minutes-a-week readout for cardio and M, reset to recommended; hidden in gentle mode.
-- **M.** Hold and flow modes in `DemoPlayer` and `tempo.ts` (ships with the first hold clip);
-  clips per modality in priority order (plank, push-up, bodyweight squat, downward dog, cat-cow,
-  half sun salutation, hundred, world's greatest stretch); the Bunny move; guided sessions last.
+### P1. Wellbeing first (no schema change)
+Works on today's built-in Legs / Push / Pull / Cardio templates, so it needs none of the new
+model. It generalises to routines later without rework.
+- **Check-in signals.** `CheckinSheet` gains optional sleep (Poor / OK / Good), stress (Low /
+  Some / High) and energy, plus soreness on lifting days. Stored in the existing `_checkin` key
+  in `day_logs.supps`.
+- **Day-of choices on today's session.** When 2 or more signals are low compared with the
+  person's own pattern (`dayOptions`, §4.0.5), Train shows three equal choices: **planned**,
+  **shorter** (about 60% of the sets: 3 → 2, 2 → 1, never below 1) or **swap** to a 10-minute
+  mobility routine or an easy walk. Two small built-in templates are added for the swap
+  ("10-minute mobility", "Easy walk"), written to the usual cue standard. A quiet "Want a lighter
+  option?" link is always there too, so nobody has to report a bad night to get one (a
+  suggestion for mental-performance to confirm).
+- **How it logs today.** Shorter saves the normal `Workout` with an extra `option: 'shorter'`
+  field. The swap saves `{ type: 'Cardio', cardioType: 'Mobility' | 'Walk', mins, option:
+  'swap' }`. Both are additive fields inside the existing JSONB, and `fromLegacy` maps them
+  cleanly in P2. A new `Mobility` `CARDIO_MET` key needs nutrition-accuracy sign-off, because it
+  touches the food range.
+- **Neutral copy for burn.** The Train banner becomes "**Push** logged for Wednesday." with no
+  kcal sentence, and the Today workout tile's "+X kcal of room" becomes "Logged". Final wording
+  is mental-performance's call. Whether burn still widens the range quietly is D5.
+- **Plans slide.** If the most recent planned session in the last 6 days wasn't logged and
+  differs from today's, Train offers "Pick up with Legs whenever you're ready." Choosing it only
+  changes today (the existing "it only changes today" behaviour). The calendar never moves.
+- **No streaks, no "missed".** Where the week's sessions show, say "2 this week, your plan is
+  2–3". Nothing labelled missed, nothing red.
+- **Welcome back.** After 10 or more days with no session: "Welcome back. Want an easier first
+  week?" Yes sets `profile.easyUntil` 7 days out, which pre-selects the shorter version.
+- **Gentle mode** already hides burn on Train and Today; keep it that way.
+- **Accuracy checks** (in `npm test`, `scripts/test-core.ts`): `dayOptions` table tests
+  (own-pattern comparison, the 2-low rule, and a type with no score field, so a score can't leak
+  into the UI); shorter-sets maths on every built-in prescription ("3 × 10–12" → 2 sets,
+  "2–3 × 12" → 2, "2 × …" → 1); catch-up picks at most one session and never edits `schedule`;
+  a source assert that no screen contains "kcal of room" or "more room today"; every
+  `CARDIO_MET` key used by the swap (`Mobility` = 02101, 2.3) has a Compendium code in a new
+  `MET_SOURCES` map; old days load unchanged. Bump the SW `CACHE`.
 
-**MVP = P1–P4** (log anything, several a day; a real library; build workouts; arrange a week).
-P5 makes it tailored; P6–P7 and the media track are additive.
+### P2. Log any movement, several a day (schema: `day_logs.sessions`)
+`Session`, `DayLog.sessions`, `sessionsOf`/`fromLegacy`, the legacy mirror, defensive loads,
+the migration and sync mapping (§2.5, §2.8). Train becomes the Today list: built-ins work as
+before but save as sessions, and **"Log something else"** logs any of the six modalities with
+minutes, optional effort and, for cardio, distance. Burn sums per session (§2.9). Today's ring and
+`insights` read `sessionsOf`. Tests: legacy conversion, the mirror, folding in a non-mirror
+`workout`, malformed input.
+- **Accuracy checks:** fixtures copied from real stored shapes (strength `{ type, ex }`, cardio
+  with string `mins`, plank seconds in `reps`) convert and mirror back losslessly; `sessionBurn`
+  of a converted legacy day equals today's `workoutBurn` to the kcal unless D5 or D11 is decided,
+  so no number changes silently; every MET used has a `MET_SOURCES` code and value that match
+  §2.9, asserted like `check:foods`; the day's burn equals the sum of its sessions.
+- **Must ship with:** the soft cap note and the `loadSignals` hook (§3.3), because this is the
+  phase that makes doubles possible; day-of choices carried onto sessions (`option`); the
+  sessions-per-week range counting sessions; no "earn food" copy on any session; gentle mode
+  hiding burn.
+
+### P3. Exercise library & logging shapes (no schema)
+The starter library (§5.3), built-ins resolved through it, the log shapes (reps-only with assist
+or band, hold timer, rounds, check), "Easier / Harder" on progression chains, a read-only library
+browser with filters, and the clip test walking the library.
+- **Must ship with:** the §5.4 exclusions; `care` tags with the "Areas to go easy on" disclaimer
+  on any swapped exercise (§4.0.4); progression prompts in words in gentle mode; the red-flag
+  copy on the hold timer and cue cards.
+- **Accuracy checks:** a `check:exercises` script modelled on `check:foods`: unique ids; a
+  committed id list so removing or renaming an id fails; every entry has a cue, a valid log
+  shape and `defaultRx` in ×/en-dash notation; progression chains have no gaps; `care` uses only
+  `BodyArea` values; nothing from the §5.4 list is present; every shipped `WORKOUTS` name maps to
+  an id (so "last time" survives the move). The clip test walks the library.
+
+### P4. Build your own workout (schema: `routines` table + RLS)
+`routines` with RLS in the same migration and in `docs/security-rls.sql`, local `routines` +
+sync, the workout builder (§4.3), "Customise" on built-ins, start any workout on any day,
+`canBuild()`.
+- **Must ship with:** `effort` (hard / light) set at save for the one-hard-a-day rule; builder
+  warnings that never block; "shorter" and "swap" working for any user-built workout.
+- **Accuracy checks:** `estMins` against hand-worked examples. Worked check: today's Push template
+  is 13–15 working sets (3 + 3 + 3 + 2–3 + 2–3), so about 33–38 min at 2.5 min a set, which is
+  shorter than the 45-minute strength default in `workout.ts`; the test pins the estimate, and the
+  gap is noted, not hidden; `effort` derivation table tests; RLS verified with the
+  queries at the end of `docs/security-rls.sql` for the new table.
+
+### P5. Plans as your week (schema: `training_plans` table + RLS)
+`training_plans` with RLS, `trainingPlans` + sync, the Plan screen editing the active plan's
+weekday calendar with several workouts a day, the legacy `schedule` mirror, and the lifecycle.
+- **Must ship with:** one hard session a day (enforced in generated plans, a gentle warning in
+  custom ones); at least one rest day; plans that slide, extended to user workouts; completion by
+  sessions done with the reflection prompt; welcome back; the sessions-per-week range.
+- **Accuracy checks:** property tests over every blueprint and every edit path: at most one hard
+  session a day in generated plans, at least one rest day, `week` keys only 0–6 and no stored
+  sequence position (the no-rotation rule as a test); the legacy `schedule` mirror matches the
+  rule in §2.4; session-count completion counts only sessions from the plan's routines.
+
+### P6. Tailored plans (no schema: settings JSON)
+`TrainingPrefs` and `Profile` additions, the F1–F6 questionnaire (built with the onboarding
+contract's questionnaire phase, with `onboarding-and-data-flow.md` updated in the same change),
+`recommend.ts` with the mix table, session sizing and guardrails, and "Why this plan".
+- **Must ship with:** enjoyment-first questions and the never-ask list (§0.1); "Areas to go easy
+  on" wording, disclaimer and red-flag copy (§4.0.4); offer, never force; no 6-day default for
+  fat loss; low volume and paused progression in a big deficit; motivations shown back in the
+  weekly review.
+- **Accuracy checks:** exhaustive tests over every combination of goal × days (1–6) × modalities
+  × place × confidence: the resistance floor, no 6-day `lose-fat` default, at least one rest day,
+  guardrails only ever lower load, and each plan's "why" lists exactly the input fields that
+  drove it (rule 13 in §3.1). A snapshot of the §3.2 table fails if the engine drifts from the
+  doc.
+
+### P7. Volume readout (no schema)
+Per-muscle MEV / MAV / MRV meter, minutes a week for cardio and M sessions, reset to
+recommended.
+- **Must ship with:** load notes beside the meter (§3.3); hidden in gentle mode; copy that never
+  pushes toward more.
+- **Accuracy checks:** volume maths on fixtures (1.0 primary, 0.5 secondary, resistance only);
+  band edges match §3.4; gentle mode renders no meter (component test or headless check).
+
+### M. Media track (parallel, per clip; no schema)
+Hold and flow modes in `DemoPlayer` and `tempo.ts` (with the first hold clip), clips in priority
+order (plank, push-up, bodyweight squat, downward dog, cat-cow, half sun salutation, hundred,
+world's greatest stretch), the Bunny move, and guided sessions last (D8).
+- **Must ship with:** a frame-by-frame form review of every clip (§5.5); hold timers that work
+  offline with no clip; no appearance-focused framing in clips or captions.
+- **Accuracy checks:** the §5.5 `npm test` additions (hold run and `loopFrom`, flow pose ids
+  exist, per-side clips have L and R), and every clip re-timed from its footage as CLAUDE.md
+  requires.
+
+**MVP = P1–P5:** wellbeing-led days, log anything several times a day, a real library, your own
+workouts, and a week you arrange. P6 makes it tailored; P7 and the media track add on.
 
 ---
 
@@ -1218,8 +1378,8 @@ P5 makes it tailored; P6–P7 and the media track are additive.
 1. **Plan storage → table-backed.** Dedicated `training_plans` table with a JSONB body and
    promoted `state`/`goal`/`source` columns, owner-RLS in the same migration, `recipes`-style
    sync; `TrainingPrefs` and `activePlanId` ride the settings JSON. *Refined:* the body is now
-   `week` (weekday → routine ids), routines get their own table, and the table lands in P4 rather
-   than P1 (see D1).
+   `week` (weekday → routine ids), routines get their own table, and the table lands in P5 rather
+   than first (see D1).
 2. **Plan lifecycle → explicit states.** `active` / `completed` / `archived` / `template`;
    dismiss or re-use after completion; re-use is always a clone. *Refined:* completion is by
    sessions done and closes with a reflection (§4.1a).
@@ -1235,54 +1395,69 @@ P5 makes it tailored; P6–P7 and the media track are additive.
    covers the workout builder and the plan builder; quick logging and several sessions a day are
    always free.
 
-### 7.2 Resolved by this revision (from Benn's brief and mental-performance's input)
+### 7.2 Resolved by this revision (from Benn's brief and direction, and mental-performance's input)
+- **Wellbeing first (§0) is binding** on every section and phase; Phase 1 is wellbeing-led.
+- Customising to the person comes first: every recommender rule names its input and source (§3.1).
+- Every number is sourced or labelled a judgement call; each phase has accuracy checks (§6).
 - Six modalities with a `modality` axis and explicit log shapes (§2.1, §2.2).
 - Routines are the reusable unit; plans arrange them by weekday (§2.3, §2.4).
-- Several sessions a day through additive `DayLog.sessions`, `workout` kept readable and
+- Several sessions a day through additive `DayLog.sessions`, with `workout` kept readable and
   mirrored (§2.5).
-- Burn is per session and per modality, summed per day (§2.9).
-- Onboarding F1–F6, "Areas to go easy on", day-of options, adherence, gentle mode and load
-  guardrails as recommended by mental-performance (§3.3, §4.0.2–§4.1c).
+- The links to Mind, Nutrition and Body are named against the code (§1a).
 
 ### 7.3 Decisions for Benn (with recommendations)
-- **D1. Phase order.** Tables just in time (routines in P3, plans in P4) so P1 ships visible value,
-  or all tables up front as revision 2 said? **Recommend just in time**: every table is reviewed
-  with its real writer, and nothing sits empty in production.
-- **D2. Where sessions sync.** A new nullable `day_logs.sessions` column, or a reserved key inside
-  the `workout` JSONB (no DDL)? **Recommend the column**: an old install saving a workout can't
-  wipe it, at the cost of one additive migration and a security-data review.
+- **D1. Phase order.** Tables just in time (routines in P4, plans in P5) so P1 can be
+  wellbeing-led with no schema change, or all tables up front as revision 2 said? **Recommend
+  just in time**: each table is reviewed with its real writer, and nothing sits empty in
+  production.
+- **D2. Where sessions sync (P2).** A new nullable `day_logs.sessions` column, or a reserved key
+  inside the `workout` JSONB (no DDL)? **Recommend the column**: an old install saving a workout
+  can't wipe it. Costs one additive migration and a security-data review.
 - **D3. Routines in their own table** rather than inside the plan's JSONB. **Recommend own
   table** (§2.8: reuse, per-record last-write-wins, ad hoc workouts, the recipes precedent).
-- **D4. Missed sessions.** A catch-up offer on a fixed calendar, or "the plan slides" to the next
-  session in sequence? **Recommend the catch-up offer.** Sliding is a rotation pointer, which was
-  tried and reverted; the offer gives the same "pick up whenever you're ready" feeling.
-- **D5. Net vs gross MET for burn.** **Recommend net (MET − 1)**, so the budget isn't widened by
-  energy the TDEE already counts (about 30% less for a typical strength session). Needs
-  nutrition-accuracy sign-off; could ship in P1 or separately.
+- **D4. What "plans slide" means.** Recommended: the missed session is carried forward as a
+  choice ("Pick up with Legs whenever you're ready") and the weekday calendar stays put. If you
+  meant the calendar itself should shift so the next session is always the missed one, that is the
+  rotation schedule that was tried and reverted, so please confirm before anyone builds it.
+- **D5. Should logged sessions widen the food range at all?** `ACTIVITY` already counts exercise
+  days, so adding session burn on top probably double counts (§2.9). **Recommend: stop adding
+  session burn to the range**, and suggest an activity-level update when logged sessions no longer
+  match the setting. This is more accurate and never frames exercise as earning food. If burn
+  stays, use net MET (MET − 1), about 29% lower for a typical strength session. Needs
+  nutrition-accuracy sign-off either way.
 - **D6. A fifth goal, "feel better / move more".** Many people aren't after a body change. It
-  touches the shared `Goal` enum and the nutrition engine (it would map to maintenance), and the
-  recommender would build a balanced mix (for 4 sessions: 2R + 1C + 1M). **Recommend adding it in
-  P5** as a coordinated cross-domain change, with `motivations` covering the "why" in the
-  meantime.
+  touches the shared `Goal` enum, `goalAdjustPct()` (an exhaustive `switch`) and `PROTEIN_PER_KG` (a
+  `Record<Goal, number>`) in `nutrition.ts`, plus `GOALS` and `GOAL_TARGET_LABEL` in
+  `ProfileScreen.tsx`; TypeScript flags each place that needs the new case. It would map to
+  maintenance, and the recommender would build a balanced mix. **Recommend adding it in P6** as a
+  coordinated change with the nutrition owner; `motivations` covers the "why" until then.
 - **D7. Onboarding changes vs the shipped contract.** Accept F1–F6 (confidence labels, 1 day a
-  week allowed, place before equipment, focus areas and cardio preferences out of onboarding)
-  and update `onboarding-and-data-flow.md` in the P5 change? Also for the nutrition side:
-  body-fat % out of onboarding and `targetRate: 'aggressive'` off the default path.
-  **Recommend yes to all**, with the nutrition items confirmed by the nutrition owner.
+  week allowed, place before equipment, focus areas and cardio preferences out of onboarding) and
+  update `onboarding-and-data-flow.md` in the P6 change? And on the nutrition side, take body-fat %
+  out of onboarding and `targetRate: 'aggressive'` off the default path? **Recommend yes**, with
+  the nutrition items confirmed by the nutrition owner.
 - **D8. Guided whole-session videos** (a 20-minute yoga or pilates class). **Recommend deferring**
-  to the end of the media track: they need Bunny Stream, cost more to produce, and generated
-  long-form footage is hard to form-check. Pose-by-pose flows deliver most of the value first.
-- **D9. Pilates reformer and studio equipment.** **Recommend mat only** for the starter set;
-  `reformer` exists in `Equipment` so it can be added later without a model change.
+  to the end of the media track: they need Bunny Stream, cost more to make, and generated
+  long-form footage is hard to form-check. Pose-by-pose flows give most of the value first.
+- **D9. Pilates reformer and studio kit.** **Recommend mat only** for the starter set; `reformer`
+  exists in `Equipment` so it can be added later.
 - **D10. Onboarding placement (carried over).** A first-run flow or a dismissible "Set up my
   training" card. **Recommend the card**: lower friction, no gated wall, and it suits skippable
   one-per-screen questions.
+- **D11. Fix the shipped `CARDIO_MET` values?** Five of six don't match a 2024 Compendium code
+  (§2.9 table). **Recommend replacing them with cited values** (for example Cross-trainer 5.0 from
+  02048, Rower 5.0 from 02071, Stationary bike split by effort from the 012xx codes), leaving
+  Incline treadmill and Other unsourced until looked up, with nutrition-accuracy sign-off. Best
+  done with D5, since both change the same numbers.
+- **D12. Protein by modality.** Should a cardio-led or yoga-only plan change protein? **Recommend
+  no**: `PROTEIN_PER_KG` is already set by goal, and modality adds nothing we can source. This is
+  the nutrition owner's call if it's ever revisited.
 
 ### 7.4 Flagged separately (not part of this plan's phases)
-- **Train banner copy.** `TrainScreen.tsx` (about line 78) says "That gives you about X kcal more
-  room today", which frames exercise as earning food. mental-performance is raising this with
-  Benn directly; this plan adds no new framing like it.
 - **`onboarding-and-data-flow.md`** still lists the revision-2 fitness questions (9–14) and
   `daysPerWeek` 2–6. It needs updating once D7 is decided.
-- **`CARDIO_MET` values** for the new cardio keys and the §2.9 table need nutrition-accuracy
-  sign-off before they affect anyone's food range.
+- **References in §3.6** come from the specialist's reference list. They must be checked against
+  the papers before any appears in user-facing copy, and the yoga and pilates references are not
+  chosen yet.
+- **The "kcal of room" copy** (Train banner and Today tile) is now in P1 at Benn's direction;
+  mental-performance still owns the final wording.
