@@ -2,6 +2,7 @@ import type { AppState } from '@/core/types'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { todayStr } from '@/core/domain/date'
+import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid } from './supabase'
 
 const KEY = 'leanplan.v1'
@@ -43,7 +44,7 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (!Array.isArray(s.recipes)) s.recipes = []
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
-  if (!s.profile.burnSwitch) s.profile.burnSwitch = todayStr()
+  ensureBurnSwitch(s.profile, todayStr())
   return s
 }
 

@@ -75,7 +75,8 @@ export function TrainScreen() {
   // always available from a quiet link; never applied automatically
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
   const low = lowSignals(day.checkin, recent)
-  const offer = !logged && low.length >= 2
+  // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
+  const offer = !logged && sched !== 'Rest' && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && !!data.profile.easyUntil && cur <= data.profile.easyUntil
   const [choice, setChoice] = useState<Choice>(easy ? 'shorter' : 'planned')
@@ -84,7 +85,8 @@ export function TrainScreen() {
 
   // plans slide: offer the planned session that didn't happen; the calendar never moves
   const isToday = cur === todayStr()
-  const pickUp = isToday ? catchUp(data, cur) : null
+  const pick = isToday ? catchUp(data, cur) : null
+  const pickUp = pick?.type
   const weekCount = sessionsThisWeek(data, cur)
   const back = isToday && welcomeBack(data, cur)
   const shorter = choice === 'shorter'
@@ -98,9 +100,9 @@ export function TrainScreen() {
 
   const dayName = fd.dow
   const banner = logged?.option === 'swap' ? (
-    <><b>{logged.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk'}</b> logged for {dayName}. Nice choice. Moving gently still counts.</>
+    <><b>{logged.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk'}</b> logged for {dayName}. Gentle movement counts too.</>
   ) : logged ? (
-    <><b>{logged.type === 'Cardio' ? 'Cardio' : WORKOUTS[logged.type].title}</b>{logged.option === 'shorter' ? ' (shorter)' : ''} logged for {dayName}.</>
+    <><b>{logged.option === 'shorter' ? 'Shorter ' : ''}{logged.type === 'Cardio' ? (logged.option === 'shorter' ? 'cardio' : 'Cardio') : WORKOUTS[logged.type].title}</b> logged for {dayName}.</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (
@@ -131,7 +133,7 @@ export function TrainScreen() {
       {back && (
         <div className="card dayopt">
           <div className="t">Welcome back. Want an easier first week?</div>
-          <div className="foot" style={{ padding: '0 0 10px' }}>A break doesn't undo anything. Shorter sessions for a week can make it easier to settle back in.</div>
+          <div className="foot" style={{ padding: '0 0 10px' }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</div>
           <div className="chips">
             <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur, easyUntil: easyUntil(cur) })}>Yes, go easier</button>
             <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur })}>No thanks</button>
@@ -139,10 +141,13 @@ export function TrainScreen() {
         </div>
       )}
 
-      {!logged && pickUp && pickUp !== sel && (
+      {!back && !logged && pick && pickUp && pickUp !== sel && (
         <div className="card dayopt">
           <div className="t">Pick up with {pickUp} whenever you're ready.</div>
-          <div className="chips"><button className="chip" onClick={() => setSel(pickUp)}>Do {pickUp} today</button></div>
+          <div className="chips">
+            <button className="chip" onClick={() => setSel(pickUp)}>Do {pickUp} today</button>
+            <button className="chip" onClick={() => setPrefs({ pickUpDismissed: pick.d })}>Not this time</button>
+          </div>
         </div>
       )}
 
@@ -152,22 +157,24 @@ export function TrainScreen() {
         <div className="card dayopt">
           <div className="t">{offer
             ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
+            : easy ? `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`
             : 'Here are a few options for today. All of them count.'}</div>
           <div className="chips" role="radiogroup" aria-label="Today's session">
             {CHOICES.map(([k, label]) => (
               <button key={k} role="radio" aria-checked={choice === k} className={'chip' + (choice === k ? ' on' : '')} onClick={() => setChoice(k)}>{label}</button>
             ))}
           </div>
-          {swap && <div className="foot">Your plan picks up where you left off.</div>}
+          {swap && <div className="foot">This counts as today's session. Your plan carries on as usual.</div>}
         </div>
       )}
-      {!logged && !offer && !askLighter && (
+      {!logged && sched !== 'Rest' && !offer && !askLighter && (
         <button className="linkbtn muted dayopt-link" onClick={() => setAskLighter(true)}>Want a lighter option?</button>
       )}
 
       {swap ? (
         <>
           <div className="grp-h">{swap.title}</div>
+          {swap.note && <div className="foot" style={{ padding: '0 4px 10px' }}>{swap.note}</div>}
           {swap.ex.map((e) => (
             <div className="card ex" key={e.n}>
               <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>

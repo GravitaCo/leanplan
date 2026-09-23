@@ -12,11 +12,12 @@ const AWAY_DAYS = 10
 const EASY_DAYS = 7
 
 /**
- * The most recent planned session in the last few days that wasn't done, if it differs from
+ * The most recent planned session in the last few days that wasn't done (and wasn't waved off
+ * with "Not this time"), if it differs from
  * today's plan and hasn't been done since. Only days after the person started logging count,
  * so a new install never offers sessions from before they joined. Never edits the schedule.
  */
-export function catchUp(s: AppState, today: string): WorkoutType | null {
+export function catchUp(s: AppState, today: string): { type: WorkoutType; d: string } | null {
   if (s.days[today]?.workout?.type) return null
   const first = Object.keys(s.days).sort()[0]
   if (!first) return null
@@ -30,7 +31,7 @@ export function catchUp(s: AppState, today: string): WorkoutType | null {
     if (planned === todays) return null
     // done on another day since then? then there's nothing to pick up
     for (let j = i - 1; j >= 1; j--) if (s.days[shiftDay(today, -j)]?.workout?.type === planned) return null
-    return planned
+    return s.profile.pickUpDismissed === d ? null : { type: planned, d }
   }
   return null
 }

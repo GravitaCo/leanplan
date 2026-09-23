@@ -17,16 +17,17 @@ const MIN_HISTORY = 7
 
 /**
  * Signals that are low today for this person. `recent` is earlier check-ins, most recent first.
- * With a week or more of answers a signal is low when today is worse than the person's median;
- * before that, only the scale's worst step counts.
+ * The scale's worst step always counts (so someone who is often stressed or sleeps badly still
+ * gets the offer); with a week or more of answers, anything worse than their median counts too.
  */
 export function lowSignals(today: CheckIn | null | undefined, recent: (CheckIn | null | undefined)[]): Signal[] {
   if (!today) return []
   return SIGNALS.filter((k) => {
     const v = today[k]
     if (!v) return false
+    if (v === WORST[k]) return true
     const past = recent.map((c) => c?.[k]).filter((x): x is number => !!x).slice(0, HISTORY)
-    if (past.length < MIN_HISTORY) return v === WORST[k]
+    if (past.length < MIN_HISTORY) return false
     const sorted = [...past].sort((a, b) => a - b)
     const n = sorted.length
     const median = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2

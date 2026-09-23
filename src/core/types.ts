@@ -273,6 +273,8 @@ export interface Profile {
   welcomeAsked?: string
   /** an accepted "easier first week" pre-selects the shorter version up to this date */
   easyUntil?: string
+  /** the planned day whose "pick up" offer was waved off with "Not this time" */
+  pickUpDismissed?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

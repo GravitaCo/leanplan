@@ -43,20 +43,20 @@ export const CARDIO_MET: Record<string, number> = {
   'Incline treadmill': 5.0,
 }
 
-/** Where each CARDIO_MET value comes from: a 2024 Compendium code, or why there is none. */
+/** Where each CARDIO_MET value comes from: "code (MET) description" from the 2024 Compendium, or why there is none. */
 export const MET_SOURCES: Record<string, string> = {
-  'Brisk walk': '17200 walking, 3.5–3.9 mph, level, brisk, firm surface, for exercise',
-  Walk: '17190 walking, 2.8–3.4 mph, level, moderate pace, firm surface',
-  'Easy walk': '17170 walking, 2.5 mph, firm, level surface',
-  'Incline walk 1–5%': '17034 climbing hills, no load, 1–5% grade, moderate to brisk (outdoor proxy for treadmill)',
-  'Incline walk 6–10%': '17035 climbing hills, no load, 6–10% grade, moderate to brisk (outdoor proxy for treadmill)',
-  'Incline walk 11–20%': '17036 climbing hills, no load, 11–20% grade, slow to moderate (outdoor proxy for treadmill)',
-  'Stationary bike': '01218 bicycling, stationary, 70–80 watts',
-  'Cross-trainer': '02048 elliptical trainer, moderate effort',
-  Rower: '02071 rowing, stationary ergometer, general, <100 watts, moderate effort',
-  Mobility: '02101 stretching, mild',
+  'Brisk walk': '17200 (4.8) walking, 3.5–3.9 mph, level, brisk, firm surface, for exercise',
+  Walk: '17190 (3.8) walking, 2.8–3.4 mph, level, moderate pace, firm surface',
+  'Easy walk': '17170 (3.0) walking, 2.5 mph, firm, level surface',
+  'Incline walk 1–5%': '17034 (5.3) climbing hills, no load, 1–5% grade, moderate to brisk (outdoor proxy for treadmill)',
+  'Incline walk 6–10%': '17035 (7.0) climbing hills, no load, 6–10% grade, moderate to brisk (outdoor proxy for treadmill)',
+  'Incline walk 11–20%': '17036 (8.8) climbing hills, no load, 11–20% grade, slow to moderate (outdoor proxy for treadmill)',
+  'Stationary bike': '01218 (5.8) bicycling, stationary, 70–80 watts',
+  'Cross-trainer': '02048 (5.0) elliptical trainer, moderate effort',
+  Rower: '02071 (5.0) rowing, stationary ergometer, general, <100 watts, moderate effort',
+  Mobility: '02101 (2.3) stretching, mild',
   Other: 'none: 3.0 MET is the lower edge of moderate intensity (2018 Physical Activity Guidelines for Americans), a stated floor',
-  'Incline treadmill': '17032 climbing hills, no load, 5–20% grade, very slow pace (legacy key)',
+  'Incline treadmill': '17032 (5.0) climbing hills, no load, 5–20% grade, very slow pace (legacy key)',
 }
 
 /** The cardio types offered in the picker, in display order. */

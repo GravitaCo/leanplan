@@ -124,11 +124,12 @@ export const LIFTS: WorkoutType[] = ["Legs","Push","Pull"]
  * only, nothing face-down, nothing from the plan's "left out on purpose" list. The mobility
  * routine is about 10 minutes including changeovers (an estimate: ~520 s of moves + ~90 s).
  */
-export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string; cardioType: string }> = {
+export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string; cardioType: string; note?: string }> = {
   "mobility": {
     "title": "10-minute mobility · hips, back and shoulders",
     "mins": "10",
     "cardioType": "Mobility",
+    "note": "Move within what feels comfortable, and skip anything that hurts.",
     "ex": [
       { "n": "March on the spot with arm swings", "t": "1 × 60 sec",
         "cue": "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast." },
@@ -152,7 +153,7 @@ export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string
     "cardioType": "Easy walk",
     "ex": [
       { "n": "Easy walk", "t": "10–20 min",
-        "cue": "Walk at a relaxed, conversational pace, one where you could chat in full sentences. Outside, indoors or on a flat treadmill all count. The most common mistake is speeding up to make it 'worth it', so keep it easy. Stop whenever you've had enough." }
+        "cue": "Walk at a relaxed, conversational pace, one where you could chat in full sentences. Outside, indoors or on a flat treadmill all count. No need to speed up to make it 'worth it'. Easy is the point. Stop whenever you've had enough." }
     ]
   }
 }

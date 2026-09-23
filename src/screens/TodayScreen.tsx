@@ -107,13 +107,13 @@ export function TodayScreen() {
         </div>
       )}
 
-      {showBurnNote(data) && (
+      {showBurnNote(data) && !gentle && (
         <div className="banner">
           <span style={{ color: 'var(--energy-ink)' }}><Icon name="info" /></span>
-          <div><b>Your range has changed a little.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
-            ? 'Workouts now add a smaller estimate, counting only the energy above what you use at rest. '
-            : 'It no longer adds workout estimates, because your activity level already includes your training. '}
-            You can update your activity level in Profile. Past days are unchanged.</span></div>
+          <div><b>Your range on workout days has changed.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
+            ? 'Workouts now add only the energy above what you use at rest, which is closer to what you actually use. '
+            : 'It now leaves workouts out, because your activity level already includes your training. '}
+            Past days are unchanged.</span></div>
           <button className="x" aria-label="Dismiss" onClick={() => setPrefs({ burnNoteSeen: true })}><Icon name="x" size={12} stroke={3} /></button>
         </div>
       )}
@@ -186,11 +186,11 @@ export function TodayScreen() {
       <div className="sec-t">Pinned</div>
       <div className="tiles">
         <Tile color="activity" icon="dumbbell" label="Workout" onPress={() => setTab('train')}
-          value={<span className="w">{logged ? wk!.type : isRest ? 'Rest' : sched}</span>}
+          value={<span className="w">{logged ? (wk!.option === 'swap' ? (wk!.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk') : wk!.type) : isRest ? 'Rest' : sched}</span>}
           sub={logged ? 'Logged' : isRest ? 'Recovery counts too' : 'Tap to start'} />
         <Tile color="mind" icon="smile" label="Check-in" onPress={() => setSheet({ k: 'checkin' })}
           value={<span className="w">{day.checkin?.mood ? MOODS[day.checkin.mood - 1] : 'How are you?'}</span>}
-          sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : 'Mood and hunger'} />
+          sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : "How you're doing"} />
         {!gentle && (
           <Tile color="body" icon="scale" label="Weight" onPress={() => setSheet({ k: 'weight' })}
             value={day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}

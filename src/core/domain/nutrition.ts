@@ -184,8 +184,9 @@ function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, rate: Ta
  * range for exercising people, 1.4–2.0 (Jäger et al. 2017, doi:10.1186/s12970-017-0177-8), and
  * the resistance-training meta-analysis range 1.6–2.2 (Morton et al. 2018,
  * doi:10.1136/bjsports-2017-097608). 'feel-better' has no hypertrophy or deficit aim, so it takes
- * the floor for active adults, 1.2 (ACSM/AND/DC 2016, Thomas et al., doi:10.1016/j.jand.2015.12.006),
- * which also meets the 1.0–1.2 advised for older adults (PROT-AGE, Bauer et al. 2013).
+ * the floor of the 1.2–2.0 range the ACSM/AND/DC 2016 position gives for athletes (Thomas et al.,
+ * doi:10.1016/j.jand.2015.12.006), which also meets the 1.0–1.2 advised for older adults (PROT-AGE,
+ * Bauer et al. 2013, doi:10.1016/j.jamda.2013.05.021).
  */
 export const PROTEIN_PER_KG: Record<Goal, number> = {
   'lose-fat': 2.0,

@@ -82,10 +82,11 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     s.target = settings[0].target
     s.schedule = settings[0].schedule
     if (settings[0].profile) {
-      // keep the D5 switch date if the cloud copy came from an older app version without it
+      // keep the earliest D5 switch date across devices (and one from an older app version's
+      // copy that lacks it), so days between two dates never flip back and forth
       const sw = s.profile.burnSwitch
       s.profile = settings[0].profile
-      if (!s.profile.burnSwitch && sw) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
+      if (sw && (!s.profile.burnSwitch || sw < s.profile.burnSwitch)) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
     }
     meta.settings.u = settings[0].updated_at
   }

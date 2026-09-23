@@ -10,7 +10,10 @@ function metHours(wk: Workout, legacy = false): { met: number; hours: number } {
   if (wk.type === 'Cardio') {
     const mins = parseFloat(wk.mins || '') || 25
     const t = wk.cardioType || ''
-    return { met: legacy ? LEGACY_CARDIO_MET[t] || 4.0 : CARDIO_MET[t] ?? CARDIO_MET.Other, hours: mins / 60 }
+    // legacy: the old table for old keys; a type added since (only possible on a past day logged
+    // after the update) takes its cited value; blank or unknown kept the old 4.0
+    const met = legacy ? LEGACY_CARDIO_MET[t] ?? (t ? CARDIO_MET[t] : undefined) ?? 4.0 : CARDIO_MET[t] ?? CARDIO_MET.Other
+    return { met, hours: mins / 60 }
   }
   // ~45 min strength session
   return { met: 3.5, hours: 0.75 }

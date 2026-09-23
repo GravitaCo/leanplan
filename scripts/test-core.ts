@@ -15,7 +15,7 @@ import { tempoAt } from '@/core/domain/tempo'
 import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
 import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
-import { rangeFor, showBurnNote } from '@/core/domain/insights'
+import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
@@ -232,11 +232,12 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     lowSignals(ci({ sleep: 1, stress: 3 }), []).join('+'),              // no history: only the worst step counts
     lowSignals(ci({ sleep: 2, stress: 2 }), []).join('+') || '-',       // middling answers aren't low without history
     lowSignals(ci({ sleep: 2, energy: 2 }), week({ sleep: 3, energy: 3 })).join('+'), // worse than their usual
-    lowSignals(ci({ sleep: 1, stress: 3 }), week({ sleep: 1, stress: 3 })).join('+') || '-', // their usual isn't flagged
+    lowSignals(ci({ sleep: 1, stress: 3 }), week({ sleep: 1, stress: 3 })).join('+') || '-', // the worst step always counts, even when usual
+    lowSignals(ci({ sleep: 2, stress: 2 }), week({ sleep: 2, stress: 2 })).join('+') || '-', // their usual middle isn't flagged
     String(offerLighter(ci({ sleep: 1 }), [])), String(offerLighter(ci({ sleep: 1, energy: 1 }), [])),
     String(offerLighter(null, [])),
   ].join(' ')
-  const want = 'sleep+stress - sleep+energy - false true false'
+  const want = 'sleep+stress - sleep+energy sleep+stress - false true false'
   const noScore = !('score' in (require('@/core/domain/dayOptions') as object))
   const ok = got === want && noScore; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'day-of signals', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
@@ -261,12 +262,13 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const s1 = st({ '2026-09-20': e })                                // started Sunday; Monday Legs not done
   const before = JSON.stringify(s1.schedule)
   const got = [
-    catchUp(s1, '2026-09-23'),                                       // Wed (Push): pick up Legs
-    catchUp(st({ '2026-09-20': e, '2026-09-21': w('Legs') }), '2026-09-23') ?? '-', // Legs was done
-    catchUp(st({ '2026-09-20': e, '2026-09-22': w('Legs') }), '2026-09-23') ?? '-', // done a day late: nothing to pick up
-    catchUp(st({ '2026-09-22': e }), '2026-09-23') ?? '-',           // Monday was before they started
-    catchUp(st({ '2026-09-20': e }), '2026-09-21') ?? '-',           // nothing planned in the window yet
-    catchUp(st({ '2026-09-20': e, '2026-09-23': w('Push') }), '2026-09-23') ?? '-', // today already logged
+    catchUp(s1, '2026-09-23')?.type,                                 // Wed (Push): pick up Legs
+    catchUp(st({ '2026-09-20': e }, { pickUpDismissed: '2026-09-21' }), '2026-09-23') ?? '-', // waved off with "Not this time"
+    catchUp(st({ '2026-09-20': e, '2026-09-21': w('Legs') }), '2026-09-23')?.type ?? '-', // Legs was done
+    catchUp(st({ '2026-09-20': e, '2026-09-22': w('Legs') }), '2026-09-23')?.type ?? '-', // done a day late: nothing to pick up
+    catchUp(st({ '2026-09-22': e }), '2026-09-23')?.type ?? '-',           // Monday was before they started
+    catchUp(st({ '2026-09-20': e }), '2026-09-21')?.type ?? '-',           // nothing planned in the window yet
+    catchUp(st({ '2026-09-20': e, '2026-09-23': w('Push') }), '2026-09-23')?.type ?? '-', // today already logged
     String(sessionsThisWeek(st({ '2026-09-21': w('Legs'), '2026-09-23': w('Push'), '2026-09-20': w('Pull') }), '2026-09-23')),
     String(welcomeBack(st({ '2026-09-01': w('Legs') }), '2026-09-23')),
     String(welcomeBack(st({ '2026-09-01': w('Legs') }, { welcomeAsked: '2026-09-15' }), '2026-09-23')),
@@ -274,7 +276,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     String(welcomeBack(st({}), '2026-09-23')),
     easyUntil('2026-09-23'),
   ].join(' ')
-  const want = 'Legs - - - - - 2 true false false false 2026-09-29'
+  const want = 'Legs - - - - - - 2 true false false false 2026-09-29'
   const ok = got === want && JSON.stringify(s1.schedule) === before; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans slide', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
@@ -285,5 +287,30 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const got = [t.adjustPct, t.kcal === t.maint, t.p, PROTEIN_PER_KG['feel-better']].join(' ')
   const ok = got === '0 true 90 1.2'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'feel-better goal', JSON.stringify(got))
+}
+// nutrition-accuracy's extra checks: switch day uses the new maths, sedentary before the switch
+// is legacy gross, legacy maths equals the shipped formula for every old key, a new type on a
+// pre-switch day uses its cited value, loadStateFrom only sets a missing switch, and each
+// source string carries the same MET as the table
+{
+  const lift = { type: 'Legs' as const, ex: [] }
+  const day = (workout: any) => ({ foods: [], supps: {}, weight: 75, workout })
+  const st = (activityLevel: string, days: any) => ({ target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [],
+    profile: { activityLevel, rangeWidth: 100, burnSwitch: '2026-09-20' }, days }) as any
+  // origin/main formula: (CARDIO_MET_old[t] || 4.0) × kg × (mins || 25)/60; strength 3.5 × kg × 0.75
+  const old = (t: string, mins: string) => Math.round((LEGACY_CARDIO_MET[t] || 4.0) * 80 * ((parseFloat(mins) || 25) / 60))
+  const legacyOk = [...Object.keys(LEGACY_CARDIO_MET), '', 'Zumba'].every((t) => workoutBurn({ type: 'Cardio', cardioType: t, mins: '' }, 80, true) === old(t, ''))
+  const got = [
+    rangeFor(st('light', { '2026-09-20': day(lift) }), '2026-09-20').mid,        // switch day itself: new maths
+    rangeFor(st('sedentary', { '2026-09-19': day(lift) }), '2026-09-19').mid,   // sedentary before the switch: gross
+    String(legacyOk),
+    workoutBurn({ type: 'Cardio', cardioType: 'Incline walk 11–20%', mins: '25' }, 75, true), // 8.8 × 75 × 25/60 = 275
+    (() => { const p = { burnSwitch: '2026-01-01' } as any; ensureBurnSwitch(p, '2026-09-23'); return p.burnSwitch })(),
+    (() => { const p = {} as any; ensureBurnSwitch(p, '2026-09-23'); return p.burnSwitch })(),
+  ].join(' ')
+  const want = '2000 2197 true 275 2026-01-01 2026-09-23'
+  const metMismatch = Object.keys(CARDIO_MET).filter((k) => { const m = MET_SOURCES[k]?.match(/^\d{5} \(([\d.]+)\)/); return m ? +m[1] !== CARDIO_MET[k] : k !== 'Other' })
+  const ok = got === want && !metMismatch.length; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'burn switch edge cases', JSON.stringify(got), metMismatch, ok ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)

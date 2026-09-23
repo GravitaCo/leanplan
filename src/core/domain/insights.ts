@@ -62,6 +62,11 @@ export function rangeExtra(s: AppState, d: string): number {
   return s.profile.activityLevel === 'sedentary' ? workoutNetBurn(wk, kg) : 0
 }
 
+/** Set the D5 switch date once (on first load of this version); an existing date is never moved. */
+export function ensureBurnSwitch(p: Profile, today: string): void {
+  if (!p.burnSwitch) p.burnSwitch = today
+}
+
 /** Whether to show the one-time note about the change: only to people it affected. */
 export function showBurnNote(s: AppState): boolean {
   const sw = s.profile.burnSwitch
