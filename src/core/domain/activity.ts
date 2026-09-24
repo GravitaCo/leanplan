@@ -14,6 +14,21 @@ const COOL_DOWN = 28
 const EXPIRE = 3
 /** after a break, no downward suggestion for this long (mental-performance) */
 const RETURN_QUIET = 14
+/** a gap this long with no session is a break (matches training.ts "welcome back") */
+const BREAK_DAYS = 10
+
+/**
+ * On a break now (10+ days since the last session), or back from one within the last 14 days,
+ * read from the log itself so it doesn't depend on answering "welcome back".
+ */
+export function onOrAfterBreak(s: AppState, today: string): boolean {
+  const ds = Object.keys(s.days).filter((d) => d < today && !!s.days[d]?.workout?.type).sort()
+  if (!ds.length) return false
+  if (ds[ds.length - 1] <= shiftDay(today, -BREAK_DAYS)) return true
+  const since = shiftDay(today, -RETURN_QUIET)
+  for (let i = 1; i < ds.length; i++) if (ds[i] > since && ds[i - 1] <= shiftDay(ds[i], -BREAK_DAYS)) return true
+  return false
+}
 const ORDER: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active']
 
 /** Band for an average number of training days a week (light 1–<3, moderate 3–<5.5, active 5.5+). */
@@ -74,6 +89,7 @@ export function activitySuggestion(s: AppState, today: string): ActivitySuggesti
     const p = s.profile
     if (p.easyUntil && today <= p.easyUntil) return null
     if (p.welcomeAsked && p.welcomeAsked > shiftDay(today, -RETURN_QUIET)) return null
+    if (onOrAfterBreak(s, today)) return null
   }
   return { level: band, up }
 }

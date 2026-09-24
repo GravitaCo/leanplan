@@ -15,7 +15,7 @@ import { tempoAt } from '@/core/domain/tempo'
 import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
 import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
-import { activitySuggestion, bandFor, trainingWeeks } from '@/core/domain/activity'
+import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -353,6 +353,20 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     [isTrainingSession({ type: 'Cardio', cardioType: 'Mobility', mins: '10' } as any), isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '20' } as any),
       isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '10' } as any), isTrainingSession(lift as any)].join(','),
   ].join(' ')
+  // mid-break and just-back cases, from the log alone (nutrition-accuracy's scratch case)
+  const at = (offs: number[], level = 'active') => {
+    const days: any = { [shiftDay(T, -40)]: { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null } }
+    offs.forEach((o) => { days[shiftDay(T, -o)] = { foods: [], supps: {}, weight: null, workout: lift } })
+    return { target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], days, profile: { activityLevel: level } } as any
+  }
+  const brk = [
+    activitySuggestion(at([28, 26, 20, 13]), T)?.level ?? '-',           // weeks [2,1,1,0], nothing for 13 days: mid-break
+    activitySuggestion(at([28, 21, 14, 3]), T)?.level ?? '-',            // back 3 days ago after an 11-day gap
+    activitySuggestion(at([27, 20, 13, 6]), T)?.level ?? '-',            // steady once a week, no break: light
+    String(onOrAfterBreak(at([28, 26, 20, 13]), T)), String(onOrAfterBreak(at([27, 20, 13, 6]), T)),
+  ].join(' ')
+  const okB = brk === '- - light true false'; if (!okB) bad++
+  console.log(okB ? 'PASS' : 'FAIL', 'activity suggestion: breaks', JSON.stringify(brk))
   const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - true/true/false - - moderate↑ moderate↑ - null false,true,false,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'activity-level suggestion', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
