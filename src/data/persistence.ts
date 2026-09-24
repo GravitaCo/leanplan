@@ -105,15 +105,31 @@ export function saveMode(m: SessionMode | null): void {
   try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
 }
 
+/** What a backup holds, for the confirm step before importing it. */
+export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number } {
+  const days = Object.keys(b.days || {}).sort()
+  return {
+    days: days.length,
+    first: days[0] ?? null,
+    last: days[days.length - 1] ?? null,
+    foods: Array.isArray(b.customFoods) ? b.customFoods.length : 0,
+    recipes: Array.isArray(b.recipes) ? b.recipes.length : 0,
+  }
+}
+
 /**
  * Turn a backup file into the state to restore. A backup is the user's intended current data,
  * so its own sync flags (exported with it, usually all clean) are discarded and every day,
  * the settings, custom foods and recipes are marked dirty with fresh stamps: the next sync
- * uploads them before it pulls, so the pull can't overwrite or drop them. Queued deletes from
- * the backup and from this device are kept, except for ids the backup restores and ids that
- * aren't UUIDs (the server rejects those, which would stall every later sync). This device
- * keeps its reminders setting (it follows its own push subscription) and the earliest D5
- * switch date either side has.
+ * uploads them before it pulls, so the pull can't overwrite or drop them.
+ *
+ * Pass this device's `current` state and whatever the backup doesn't hold stays: its days,
+ * custom foods and recipes (a food or recipe with the same id or name as one in the backup is
+ * replaced by the backup's), with their own sync flags, so unsynced edits still upload and
+ * synced ones don't upload again. Queued deletes from both are kept, except for ids that still
+ * exist after the import and ids that aren't UUIDs (the server rejects those, which would stall
+ * sync). This device keeps its reminders setting (it follows its own push subscription) and the
+ * earliest D5 switch date either side has.
  */
 export function stateFromBackup(incoming: PersistedState, current?: PersistedState): PersistedState {
   const old = incoming._meta
@@ -124,6 +140,22 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   if (current?.profile) s.profile.notificationsEnabled = !!current.profile.notificationsEnabled
   const meta = ensureMeta(s, true)
   const pending = current?._meta
+  if (current) {
+    for (const d of Object.keys(current.days || {})) {
+      if (s.days[d]) continue
+      s.days[d] = current.days[d]
+      const m = pending?.days?.[d]
+      if (m) meta.days[d] = { ...m }
+    }
+    const taken = <T,>(list: T[], id: (x: T) => string | undefined, name: (x: T) => string) => {
+      const ids = new Set(list.map(id)), names = new Set(list.map((x) => (name(x) || '').toLowerCase()))
+      return (x: T) => ids.has(id(x)) || names.has((name(x) || '').toLowerCase())
+    }
+    const foodTaken = taken(s.customFoods, (f) => f.id, (f) => f.n)
+    s.customFoods.push(...(current.customFoods || []).filter((f) => !foodTaken(f)))
+    const recipeTaken = taken(s.recipes, (r) => r.id, (r) => r.name)
+    s.recipes.push(...(current.recipes || []).filter((r) => !recipeTaken(r)))
+  }
   const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
   const keep = (lists: unknown[], live: Set<unknown>) =>
     [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && UUID_RE.test(id) && !live.has(id))

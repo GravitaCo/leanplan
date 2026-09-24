@@ -3,12 +3,13 @@ import { useStore } from '@/store/store'
 import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
 import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
-import { fmt, todayStr } from '@/core/domain/date'
+import { fmt, fmtDate, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { rangeWidth } from '@/core/domain/insights'
 import { pushSupported } from '@/data/push'
 import { exportBackup, readBackup } from '@/data/backup'
+import { backupSummary, type PersistedState } from '@/data/persistence'
 import { Disclosure, PageHeader, Seg, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 
@@ -65,6 +66,7 @@ export function ProfileScreen() {
     requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [handsOpen, setHandsOpen] = useState(false)
+  const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
   const [name, setName] = useState(pr.name || '')
@@ -260,9 +262,11 @@ export function ProfileScreen() {
             <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>
           </div>
           <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={async (e) => {
-            const file = e.target.files?.[0]
+            const input = e.target
+            const file = input.files?.[0]
+            input.value = '' // so picking the same file again still fires onChange
             if (!file) return
-            try { importBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
+            try { setPendingBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
           }} />
         </Disclosure>
         <Disclosure icon="info" color="var(--label2)" label="About" open={open === 'about'} onToggle={() => toggle('about')}>
@@ -274,11 +278,29 @@ export function ProfileScreen() {
       </div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
+      {pendingBackup && <ImportSheet backup={pendingBackup} everywhere={authed || syncPaused} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </div>
   )
 }
 
 /** Weigh one of each once; after that "a palm" is a measurement, not a guess. */
+/** Confirm step before a backup replaces data: it overwrites those days (and, signed in, the
+ *  cloud copy every device pulls), so say what's in it and what changes. */
+function ImportSheet({ backup, everywhere, onClose, onImport }: { backup: PersistedState; everywhere: boolean; onClose: () => void; onImport: () => void }) {
+  const b = backupSummary(backup)
+  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
+  const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
+  return (
+    <Sheet title="Import backup" onClose={onClose}>
+      <div className="prose sub" style={{ padding: '0 4px 12px' }}>
+        <p>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')} and {n(b.recipes, 'recipe', 'recipes')}.</p>
+        <p>Importing replaces your targets and {b.days === 1 ? 'that day' : 'those ' + b.days + ' days'} {everywhere ? 'on all your devices' : 'on this device'}. Days, foods and recipes that aren’t in the backup stay as they are.</p>
+      </div>
+      <div className="stack"><button className="btn tinted" onClick={onImport}>Import</button></div>
+    </Sheet>
+  )
+}
+
 function HandsSheet({ onClose }: { onClose: () => void }) {
   const profile = useStore((s) => s.data.profile)
   const setPrefs = useStore((s) => s.setPrefs)

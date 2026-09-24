@@ -496,7 +496,7 @@ export const useStore = create<StoreState>()(
       },
 
       importBackup: (incoming) => {
-        const fresh = stateFromBackup(structuredClone(incoming), get().data)
+        const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
         set((st) => { st.data = fresh })
         saveState(get().data)
         set((st) => { st.cur = todayStr() })

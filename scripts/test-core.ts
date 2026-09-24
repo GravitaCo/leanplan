@@ -27,7 +27,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { ensureMeta, stateFromBackup, type PersistedState } from '@/data/persistence'
+import { backupSummary, ensureMeta, stateFromBackup, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -739,4 +739,43 @@ async function syncResilience(): Promise<void> {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'sync:', n) }
 }
 
-backupRestore().then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+// Import keeps what the backup doesn't hold: this device's other days, foods and recipes, with
+// their own sync flags; the backup wins where both have the same day, id or name.
+function importCarryOver(): void {
+  const dayOf = (k: number) => ({ foods: [{ n: 'Toast', k, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null })
+  const A = uuid(), B = uuid(), C = uuid(), R = uuid(), R2 = uuid()
+  const device = stateFromBackup({ days: {} } as never)
+  device.days = { '2026-09-01': dayOf(1), '2026-09-22': dayOf(2), '2026-09-23': dayOf(3) } as never
+  const dm = device._meta!
+  dm.days = { '2026-09-01': { u: 'a', dirty: true }, '2026-09-22': { u: 'b', dirty: true }, '2026-09-23': { u: 'c', dirty: false } }
+  device.customFoods = [
+    { id: A, n: 'Only here', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+    { id: B, n: 'SYNCED HERE', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false },
+    { id: C, n: 'flapjack', k: 999, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+  ]
+  device.recipes = [{ id: R2, name: 'Soup', servings: 2, items: [], _dirty: true }]
+  dm.foodDeletes = [uuid()]
+  const backup = JSON.parse(JSON.stringify({
+    days: { '2026-09-01': dayOf(100) }, customFoods: [{ id: uuid(), n: 'Flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }],
+    recipes: [{ id: R, name: 'Chilli', servings: 4, items: [] }], target: device.target, schedule: device.schedule, profile: device.profile,
+    _meta: { settings: { u: '', dirty: false }, days: { '2026-09-01': { u: '', dirty: false } }, foodDeletes: [A], recipeDeletes: [], lastPull: null },
+  })) as PersistedState
+  const summary = JSON.stringify(backupSummary(backup))
+  const got = stateFromBackup(backup, structuredClone(device))
+  const gm = got._meta!
+  const food = (n: string) => got.customFoods.filter((f) => f.n === n)
+  const checks: [string, boolean][] = [
+    ['the backup wins on a shared day', got.days['2026-09-01'].foods[0].k === 100 && gm.days['2026-09-01'].dirty],
+    ["this device's unsynced day stays and still uploads", got.days['2026-09-22'].foods[0].k === 2 && gm.days['2026-09-22'].dirty],
+    ["this device's synced day stays and doesn't upload again", got.days['2026-09-23'].foods[0].k === 3 && gm.days['2026-09-23'].dirty === false],
+    ["this device's own foods stay with their flags", food('Only here')[0]?._dirty === true && food('SYNCED HERE')[0]?._dirty === false],
+    ['a food with the same name as the backup one: the backup wins', food('flapjack').length === 0 && food('Flapjack')[0]?.k === 400],
+    ["this device's own recipe stays", got.recipes.map((r) => r.name).sort().join() === 'Chilli,Soup'],
+    ["a queued delete of a food that stays is dropped; this device's own is kept", !gm.foodDeletes.includes(A) && gm.foodDeletes.join() === dm.foodDeletes.join()],
+    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1 })],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
+}
+
+backupRestore().then(importCarryOver).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
