@@ -18,11 +18,13 @@ const RETURN_QUIET = 14
 const BREAK_DAYS = 10
 
 /**
- * On a break now (10+ days since the last session), or back from one within the last 14 days,
- * read from the log itself so it doesn't depend on answering "welcome back".
+ * On a break now (10+ days since the last training session), or back from one within the last
+ * 14 days, read from the log itself so it doesn't depend on answering "welcome back". Gaps are
+ * measured between training sessions, so a short mobility swap in the middle of a long break
+ * doesn't hide it (mental-performance).
  */
 export function onOrAfterBreak(s: AppState, today: string): boolean {
-  const ds = Object.keys(s.days).filter((d) => d < today && !!s.days[d]?.workout?.type).sort()
+  const ds = Object.keys(s.days).filter((d) => d < today && isTrainingSession(s.days[d]?.workout)).sort()
   if (!ds.length) return false
   if (ds[ds.length - 1] <= shiftDay(today, -BREAK_DAYS)) return true
   const since = shiftDay(today, -RETURN_QUIET)

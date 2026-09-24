@@ -57,7 +57,12 @@ export function ProfileScreen() {
   const profileOpen = useStore((s) => s.profileOpen)
   const clearProfileOpen = useStore((s) => s.clearProfileOpen)
   const [open, setOpen] = useState<Section | null>(() => (profileOpen as Section | null) ?? null)
-  useEffect(() => { if (profileOpen) clearProfileOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!profileOpen) return
+    clearProfileOpen()
+    // bring the suggested targets into view: accepting them is the next step (plan P1.5)
+    requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [handsOpen, setHandsOpen] = useState(false)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
@@ -157,7 +162,7 @@ export function ProfileScreen() {
             ))}
           </div>
           {sug ? (
-            <div className="card" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
+            <div className="card" id="sug-targets" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
               {'goalNeeded' in sug ? (
                 <>Maintenance about <b className="num">{fmt(sug.maint)} kcal</b>.<br /><span className="muted">Choose your main goal to see a suggested daily target.</span></>
               ) : (

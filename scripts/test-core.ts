@@ -364,8 +364,11 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     activitySuggestion(at([28, 21, 14, 3]), T)?.level ?? '-',            // back 3 days ago after an 11-day gap
     activitySuggestion(at([27, 20, 13, 6]), T)?.level ?? '-',            // steady once a week, no break: light
     String(onOrAfterBreak(at([28, 26, 20, 13]), T)), String(onOrAfterBreak(at([27, 20, 13, 6]), T)),
+    // a 10-min mobility swap in the middle of an 18-day break doesn't hide it
+    String(onOrAfterBreak((() => { const x = at([27, 20, 2]); x.days[shiftDay(T, -11)] = { foods: [], supps: {}, weight: null, workout: { type: 'Cardio', cardioType: 'Mobility', mins: '10' } }; return x })(), T)),
+    workoutBurn({ type: 'Cardio', cardioType: 'Walk', mins: '-5' }, 75), // negative minutes clamp to 0
   ].join(' ')
-  const okB = brk === '- - light true false'; if (!okB) bad++
+  const okB = brk === '- - light true false true 0'; if (!okB) bad++
   console.log(okB ? 'PASS' : 'FAIL', 'activity suggestion: breaks', JSON.stringify(brk))
   const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - true/true/false - - moderate↑ moderate↑ - null false,true,false,true'
   const ok = got === want; if (!ok) bad++

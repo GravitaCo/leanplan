@@ -8,9 +8,10 @@ import { CARDIO_MET, LEGACY_CARDIO_MET } from '@/core/data/constants'
  */
 function metHours(wk: Workout, legacy = false): { met: number; hours: number } {
   if (wk.type === 'Cardio') {
-    // blank means the default 25; a typed 0 means 0 (legacy days keep the old "0 → 25" exactly)
+    // blank means the default 25; a typed 0 means 0 and a negative is clamped to 0 (legacy days
+    // keep the old behaviour exactly)
     const typed = parseFloat(wk.mins || '')
-    const mins = legacy ? typed || 25 : Number.isFinite(typed) ? typed : 25
+    const mins = legacy ? typed || 25 : Number.isFinite(typed) ? Math.max(0, typed) : 25
     const t = wk.cardioType || ''
     // legacy: the old table for old keys; a type added since (only possible on a past day logged
     // after the update) takes its cited value; blank or unknown kept the old 4.0

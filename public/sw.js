@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v22'
+const CACHE = 'tali-v23'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
