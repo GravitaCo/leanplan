@@ -104,6 +104,16 @@ Should fix:
 13. Consent given while an account is open offline (no live session) isn't tied to the
     account id, so the person is asked once more when they're back online. Harmless.
 14. The deploy workflow runs `npm run check:legal`, so main will not deploy until item 1 is done.
+16. The legal pages can only be published once the app on `main` has the consent screen
+    and deletion (this branch) and `delete_my_account()` is applied (checked 2026-09-24: not
+    in the database). Until then they would describe safeguards the live app doesn't have.
+17. Turnstile loads for every visitor to a page with the early-access form, not only people
+    who submit it. Moving the form to its own page (or loading Turnstile only when someone
+    starts typing) keeps it strictly necessary under PECR.
+18. Early-access invites: the site says the email is used only for the invite. Removal is by
+    email request; if an email service is used to send invites, add it as a processor first.
+19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
+    (Supabase MCP): title, supplement name, tag, icon. Keep a copy of the function in the repo.
 15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
     texts, bump `CONSENT_VERSION` so everyone consents to the new company, and tell the
     early-access list.

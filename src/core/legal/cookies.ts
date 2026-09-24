@@ -40,7 +40,7 @@ export function cookiePolicy(): LegalDoc {
         h: 'On the website',
         ul: [
           `_cfuvid: set by Cloudflare, which delivers the site, to protect it from abuse and excessive requests. It is deleted when you close your browser.`,
-          `The early access form uses Cloudflare Turnstile, a security check that tells people from bots. It runs only for that purpose.`,
+          `Pages with the early access form load Cloudflare Turnstile when they open. It checks technical signals from your browser to tell people from bots, to keep the form free of spam. It is used only for that.`,
         ],
       },
       { h: '', p: [`At the time of writing, the website sets no other cookies.`] },

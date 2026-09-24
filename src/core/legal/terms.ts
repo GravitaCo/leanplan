@@ -92,7 +92,7 @@ export function termsOfUse(): LegalDoc {
       {
         h: 'Changes to these terms',
         p: [
-          `We may update these terms, for example when the law or Tali changes. We will show the new date above and tell you in the app about important changes. ` +
+          `We may update these terms, for example when the law or Tali changes. We will show the new date above, and for important changes we will ask you to agree again in the app. ` +
             `The current version is always at ${LEGAL_URLS.terms}.`,
         ],
       },

@@ -39,7 +39,7 @@ export function privacyPolicy(): LegalDoc {
         p: [`Only what you enter, or what is needed to run your account:`],
         ul: [
           `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
-          `Profile: display name, sex, age, height, weight, body fat (if you add it), activity level, goal, pace, diet pattern (such as vegetarian or vegan), training experience, equipment, days per week, and any body areas to train around, with a note if you add one.`,
+          `Profile: display name, sex, age, height, weight, body fat (if you add it), activity level, goal, pace, diet pattern (such as vegetarian or vegan), training experience, equipment, days per week, cardio preferences, muscle groups to focus on, and any body areas to train around, with a note if you add one.`,
           `Your log: food and drink, portions, recipes and custom foods; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.`,
           `Settings: calorie and macro targets and ranges, weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.`,
           `On your device only: the list of ingredients you have at home, used for meal suggestions. It is never uploaded.`,
@@ -51,7 +51,8 @@ export function privacyPolicy(): LegalDoc {
         h: 'What we collect on the website',
         ul: [
           `Early access: if you join the list, your email address.`,
-          `Technical: like any website, the servers that deliver the site and app see your IP address, browser and the time of each request. The sign-up form uses a security check (Cloudflare Turnstile) that looks at technical signals from your browser to tell people from bots.`,
+          `Technical: like any website, the servers that deliver and run the site and app see your IP address, browser and the time of each request, and keep short-term logs for security and fault-finding.`,
+          `Bot protection: when a website page with the sign-up form opens, it loads Cloudflare Turnstile, which checks technical signals from your browser to tell people from bots, whether or not you use the form.`,
         ],
       },
       {
@@ -67,8 +68,9 @@ export function privacyPolicy(): LegalDoc {
         h: 'Why we use it, and our legal basis',
         ul: [
           `To provide the app: store and sync your log, calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.`,
-          `To invite you to early access and tell you when Tali is ready. Basis: your consent, given when you join the list. You can unsubscribe at any time.`,
+          `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.`,
           `To keep accounts, the app and the site secure and working (sign-in, stopping bots and abuse, fixing faults). Basis: our legitimate interest in running a secure service.`,
+          `To send account emails you need, such as confirming your address or resetting your password. Basis: our contract with you.`,
           `To answer your requests and meet legal duties. Basis: legal obligation.`,
         ],
       },
@@ -83,9 +85,9 @@ export function privacyPolicy(): LegalDoc {
         h: 'Who else handles your data',
         p: [`We use a small number of service providers who process data for us, on our instructions:`],
         ul: [
-          `Supabase: the app's database, sign-in and reminder service. Your account data is stored in the AWS eu-west-1 region (Ireland).`,
+          `Supabase: the app's database, sign-in, account emails and reminder service. Your account data is stored in the AWS eu-west-1 region (Ireland).`,
           `GitHub Pages: hosts the app's files and sees technical request data.`,
-          `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the sign-up security check.`,
+          `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos, and sees technical request data when you play one.`,
           `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A reminder carries only the supplement name, and it is encrypted so the push service can't read it.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
@@ -104,7 +106,7 @@ export function privacyPolicy(): LegalDoc {
         ul: [
           `App account data is kept while you have an account. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups are deleted as those backups expire on its regular cycle.`,
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tali.`,
-          `Early access emails are kept until Tali launches and we've invited you, or until you unsubscribe, whichever is sooner.`,
+          `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,
         ],
       },
@@ -130,7 +132,7 @@ export function privacyPolicy(): LegalDoc {
           `correct it (you can edit everything in the app);`,
           `have it deleted (in the app: Profile, then Privacy);`,
           `restrict or object to how we use it;`,
-          `withdraw consent at any time, including unsubscribing from early access emails.`,
+          `withdraw consent at any time, including leaving the early access list.`,
         ],
       },
       {
