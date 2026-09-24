@@ -110,13 +110,40 @@ export interface Recipe {
 
 export type WorkoutType = 'Legs' | 'Push' | 'Pull' | 'Cardio'
 
+/**
+ * How an exercise is logged (plan §2.2): kg × reps; reps only (bodyweight, optional added load,
+ * assistance or band); seconds held; minutes (optional km); a count of rounds; or done / not done.
+ */
+export type LogShape = 'weight-reps' | 'reps' | 'hold' | 'duration' | 'rounds' | 'check'
+
+export type BandLevel = 'light' | 'medium' | 'heavy' | 'extra-heavy'
+
+/** One logged set. `w`/`reps` stay strings ('' when unused); the rest is additive (plan §2.2). */
 export interface SetEntry {
+  /** kg; with `assist`, kg of assistance */
   w: string
+  /** reps; for 'rounds', the round count */
   reps: string
+  /** 'hold': seconds held */
+  sec?: string
+  /** 'duration' */
+  mins?: string
+  km?: string
+  /** `w` (or `band`) is assistance, not load */
+  assist?: boolean
+  band?: BandLevel
+  side?: 'L' | 'R'
+  /** 'check' */
+  done?: boolean
 }
 
 export interface LoggedExercise {
+  /** snapshot of the display name: history never depends on the library */
   name: string
+  /** library id, so "last time" follows the exercise across workouts */
+  exId?: string
+  /** the shape used, so history renders correctly later */
+  log?: LogShape
   sets: SetEntry[]
 }
 
@@ -209,6 +236,7 @@ export type Experience = 'beginner' | 'intermediate' | 'advanced'
 export type Equipment =
   | 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band'
   | 'cardio-machine'
+  | 'bench' | 'pull-up-bar' | 'mat' | 'yoga-props' | 'reformer'
 
 /** Cardio as a first-class category with typed sub-variations. */
 export type CardioVariation =
@@ -327,8 +355,57 @@ export interface AppState {
   recipes: Recipe[]
 }
 
+export type MovementPattern =
+  | 'horizontal-push' | 'vertical-push' | 'horizontal-pull' | 'vertical-pull'
+  | 'squat' | 'hinge' | 'lunge' | 'isolation' | 'carry' | 'core'
+
+/** What a mobility, yoga or pilates movement mostly works on (filters, swaps). */
+export type MobilityTarget =
+  | 'hips' | 'hamstrings' | 'spine' | 'shoulders' | 'chest' | 'ankles' | 'calves' | 'balance' | 'breath'
+
+/**
+ * One entry in the exercise library (`core/data/exercises.ts`, plan §2.1). `id` is a stable slug:
+ * never reused or renamed (`npm run check:exercises` guards it).
+ */
+export interface Exercise {
+  id: string
+  /** display name (en-GB) */
+  n: string
+  modality: Modality
+  /** also listed under these (cat-cow: yoga and mobility) */
+  also?: Modality[]
+  log: LogShape
+  /** prescribed per side; one logged number means "each side" */
+  perSide?: boolean
+  /** any one of these can do it; [] = nothing needed */
+  equipment: Equipment[]
+  difficulty: Experience
+  /** setup, the movement and the most common mistake */
+  cue: string
+  /** "3 × 10–12", "3 × 20–40 sec", "5 slow breaths", "20–30 min" */
+  defaultRx?: string
+  pattern?: MovementPattern
+  /** counted 1.0 toward weekly volume */
+  primary?: MuscleGroup
+  /** counted 0.5 */
+  secondary?: MuscleGroup[]
+  targets?: MobilityTarget[]
+  /** easier = step − 1, harder = step + 1 in the same chain */
+  progression?: { chain: string; step: number }
+  /** body areas this loads a lot ("Areas to go easy on") */
+  care?: BodyArea[]
+  /** a gentler library entry for the same slot */
+  gentler?: string
+  cardioVariation?: CardioVariation
+  /** CARDIO_MET key for burn */
+  cardioKey?: string
+  video?: ExerciseMedia
+}
+
 /** A definition for a built-in exercise within a workout template. */
 export interface ExerciseTemplate {
+  /** library id (`core/data/exercises.ts`) */
+  id?: string
   n: string
   /** target sets/reps, e.g. "3 × 10–12" */
   t: string

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { DayLog, SetEntry, WorkoutType } from '@/core/types'
+import type { Exercise, ExerciseTemplate, LoggedExercise, LogShape, SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
@@ -8,7 +8,7 @@ import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domai
 import { SupportSheet } from './train/SupportSheet'
 import { howToLink } from '@/core/domain/workout'
 import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
-import { PageHeader, Seg } from '@/ui/primitives'
+import { PageHeader, Seg, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
 import { DemoPlayer } from './train/DemoPlayer'
@@ -16,6 +16,11 @@ import { LogSessionSheet } from './train/LogSessionSheet'
 import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { MODALITY_LABEL } from '@/core/data/modalities'
+import { EXERCISES } from '@/core/data/exercises'
+import { exById, fmtSet, lastLogged, setHasData } from '@/core/domain/library'
+import { SwapSheet } from './train/SwapSheet'
+import { LibrarySheet } from './train/LibrarySheet'
+import { HoldTimer, RED_FLAG } from './train/HoldTimer'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 
@@ -25,14 +30,23 @@ const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pul
 type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
 const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
 
-/** The most recent other day's session from this built-in card, for "Last time". */
-function lastSessionOf(days: Record<string, DayLog>, cur: string, type: string) {
-  const ds = Object.keys(days).filter((d) => d !== cur).sort().reverse()
-  for (const d of ds) {
-    const x = sessionsOf(days[d], d).find((y) => y.routineId === 'builtin-' + type)
-    if (x) return x
-  }
-  return null
+const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
+
+/** How a slot is logged: the library entry's shape (plank before ids: a hold). */
+function shapeFor(t: ExerciseTemplate, x?: Exercise): LogShape {
+  return x?.log ?? (t.n.toLowerCase().includes('plank') ? 'hold' : 'weight-reps')
+}
+
+/** Saved sets back into the form; holds logged before shapes kept their seconds in `reps`. */
+function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
+  return sets.map((s) => (shape === 'hold' && !s.sec && s.reps ? { ...s, sec: s.reps, reps: '' } : { ...s }))
+}
+
+/** The library id a logged exercise stands for, when it isn't the workout's own (a swap). */
+function loggedSwap(t: ExerciseTemplate, L: LoggedExercise | undefined): string | undefined {
+  if (!L || L.name === t.n) return undefined
+  const id = L.exId ?? EXERCISES.find((x) => x.n === L.name)?.id
+  return id && id !== t.id ? id : undefined
 }
 
 export function TrainScreen() {
@@ -44,6 +58,7 @@ export function TrainScreen() {
   const showToast = useStore((s) => s.showToast)
   const removeSession = useStore((s) => s.removeSession)
   const [logOpen, setLogOpen] = useState(false)
+  const [libOpen, setLibOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
   // two taps to remove, so a mis-tap never deletes logged sets
   const [confirmId, setConfirmId] = useState<string | null>(null)
@@ -72,22 +87,39 @@ export function TrainScreen() {
   const wk = sel !== 'Cardio' ? WORKOUTS[sel] : null
   const loggedSets = builtin(sel)?.ex ?? null
   const [sets, setSets] = useState<Record<number, SetEntry[]>>({})
+  // per-slot swaps for today (plan P3): slot index -> library id
+  const [swaps, setSwaps] = useState<Record<number, string>>({})
+  const [swapFor, setSwapFor] = useState<number | null>(null)
+  const [timer, setTimer] = useState<{ exi: number; si: number } | null>(null)
+  /** bodyweight cards: bodyweight only, added weight or assistance (chosen before anything is typed) */
+  const [loadMode, setLoadMode] = useState<Record<number, 'none' | 'added' | 'assist'>>({})
+  const slotEx = (i: number, sw = swaps) => (wk ? exById(sw[i] ?? wk.ex[i].id) : undefined)
+  /** what a save writes: the exercise in each slot, its shape, and only the sets with something in them */
+  const buildEx = (sw = swaps, rows = sets): LoggedExercise[] => (wk ? wk.ex.map((e, i) => {
+    const x = slotEx(i, sw)
+    const shape = shapeFor(e, x)
+    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), log: shape, sets: (rows[i] || []).filter((r) => setHasData(r, shape)) }
+  }) : [])
   const setsKey = useRef('')
   useEffect(() => {
     if (!wk) return
     // our own first save echoing back (blank rows filtered out): keep the rows on screen
     const key = `${sel}|${cur}`
-    const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets.map((e) => e.sets)) ===
-      JSON.stringify(wk.ex.map((_, i) => (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '')))
+    const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets) === JSON.stringify(buildEx())
     setsKey.current = key
     if (echo) return
+    const nextSw: Record<number, string> = {}
+    wk.ex.forEach((e, i) => { const id = loggedSwap(e, loggedSets?.[i]); if (id && exById(id)) nextSw[i] = id })
     const next: Record<number, SetEntry[]> = {}
-    wk.ex.forEach((_, i) => {
-      next[i] = loggedSets?.[i]?.sets?.length
-        ? loggedSets[i].sets.map((s) => ({ ...s }))
-        : [{ w: '', reps: '' }, { w: '', reps: '' }]
+    wk.ex.forEach((e, i) => {
+      const L = loggedSets?.[i]
+      next[i] = L?.sets?.length ? toRows(L.sets, L.log ?? shapeFor(e, slotEx(i, nextSw))) : blankRows()
     })
+    setSwaps(nextSw)
     setSets(next)
+    setSwapFor(null)
+    setTimer(null)
+    setLoadMode({})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, cur, builtin(sel)?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -143,7 +175,6 @@ export function TrainScreen() {
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
 
-  const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
   const dayName = fd.dow
   const one = sessions.length === 1 ? sessions[0] : null
@@ -159,15 +190,27 @@ export function TrainScreen() {
     <><b>{dayName}: {WORKOUTS[sched]?.title || sched}.</b> Doing something else? Pick it below. It only changes today.</>
   )
 
-  function updateSet(exi: number, si: number, field: keyof SetEntry, value: string) {
-    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s, i) => (i === si ? { ...s, [field]: value } : s)) }))
+  function updateSet(exi: number, si: number, patch: Partial<SetEntry>) {
+    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s, i) => (i === si ? { ...s, ...patch } : s)) }))
   }
   function addSet(exi: number) {
     setSets((prev) => ({ ...prev, [exi]: [...prev[exi], { w: '', reps: '' }] }))
   }
+  /** bodyweight moves: none, added weight or assistance, for every set of the card */
+  function setLoad(exi: number, v: 'none' | 'added' | 'assist') {
+    setLoadMode((p) => ({ ...p, [exi]: v }))
+    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s) => (v === 'none' ? { ...s, w: '', assist: undefined } : { ...s, assist: v === 'assist' ? true : undefined })) }))
+  }
+  /** a different exercise in this slot today: its sets start fresh (weights never carry across moves) */
+  function swapSlot(exi: number, id: string) {
+    if (!wk) return
+    setSwaps((prev) => { const n = { ...prev }; if (id === wk.ex[exi].id) delete n[exi]; else n[exi] = id; return n })
+    setSets((prev) => ({ ...prev, [exi]: blankRows() }))
+    setLoadMode((p) => { const n = { ...p }; delete n[exi]; return n })
+  }
   function commitLift() {
     if (!wk) return
-    saveWorkout(sel, wk.ex.map((e, i) => ({ name: e.n, sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '') })), shorter ? 'shorter' : undefined)
+    saveWorkout(sel, buildEx(), shorter ? 'shorter' : undefined)
     setPicked(null) // used: it doesn't carry to the day's other cards
   }
 
@@ -225,8 +268,14 @@ export function TrainScreen() {
           <div className="m"><div className="t">Log something else</div><div className="s">A walk, yoga, pilates, anything</div></div>
           <Chevron />
         </button>
+        <button className="li" onClick={() => setLibOpen(true)}>
+          <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="book" size={18} /></span>
+          <div className="m"><div className="t">Exercise library</div><div className="s">How to do each move, easier and harder options</div></div>
+          <Chevron />
+        </button>
       </div>
       {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
+      {libOpen && <LibrarySheet onClose={() => setLibOpen(false)} />}
       {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
 
       {back && (
@@ -322,36 +371,85 @@ export function TrainScreen() {
       ) : (
         <>
           {wk!.ex.map((e, exi) => {
-            const isPlank = e.n.toLowerCase().includes('plank')
-            // same slot AND same exercise: a replaced move (leg press → squat) never shows the old weights
-            const lastEx = last?.ex?.[exi]?.name === e.n ? last.ex[exi] : undefined
-            const lastTxt = lastEx?.sets?.length
-              ? 'Last time: ' + lastEx.sets.map((s) => (s.w ? s.w + ' kg' : '') + (s.w && s.reps ? ' × ' : '') + (s.reps || '')).filter(Boolean).join(', ')
-              : ''
+            const x = slotEx(exi)
+            const shape = shapeFor(e, x)
+            const swapped = !!swaps[exi] && !!x
+            // a swapped slot shows the library entry; the planned one keeps the workout's own words
+            const shown: ExerciseTemplate = swapped ? { id: x!.id, n: x!.n, t: x!.defaultRx ?? e.t, cue: x!.cue, video: x!.video } : e
+            const rx = shorter ? shorterPrescription(shown.t) : shown.t
+            const lastEx = lastLogged(data.days, cur, x?.id, shown.n)
+            const lastTxt = lastEx ? lastEx.sets.map((r) => fmtSet(r, lastEx.log ?? shape)).filter(Boolean).join(', ') : ''
+            const rows = sets[exi] || []
+            const load = loadMode[exi] ?? (rows.some((r) => r.assist) ? 'assist' : rows.some((r) => r.w) ? 'added' : 'none')
+            const loadOn = load !== 'none'
             return (
               <div className="card ex" key={exi}>
-                <div className="h"><div className="n">{e.n}</div><span className="tg">{shorter ? shorterPrescription(e.t) : e.t}</span></div>
-                <div className="cue">{e.cue}</div>
-                {e.video
-                  ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
-                  : <a className="howto" href={howToLink(e.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
-                {lastTxt && <div className="last num">{lastTxt}</div>}
-                {(sets[exi] || []).map((s, si) => (
+                <div className="h"><div className="n">{shown.n}</div><span className="tg">{rx}</span></div>
+                {swapped && (
+                  <div className="swapped">In place of {e.n}, today only. <button onClick={() => swapSlot(exi, e.id!)}>Undo</button></div>
+                )}
+                <div className="cue">{shown.cue}</div>
+                <div className="acts">
+                  {shown.video
+                    ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
+                    : <a className="howto" href={howToLink(shown.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
+                  {x && <button className="howto" onClick={() => setSwapFor(exi)}>Swap</button>}
+                </div>
+                {lastTxt && <div className="last num">Last time: {lastTxt}</div>}
+                {shape === 'reps' && loadOn && (
+                  <div className="load"><Seg options={[['none', 'Bodyweight'], ['added', 'Added weight'], ['assist', 'Assisted']]} value={load} onChange={(v) => setLoad(exi, v)} /></div>
+                )}
+                {rows.map((r, si) => (
                   <div className="setrow" key={si}>
                     <span className="n">Set {si + 1}</span>
-                    {!isPlank && (
+                    {shape === 'weight-reps' && (
                       <>
-                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={s.w} aria-label={`Set ${si + 1} weight`}
-                          onChange={(ev) => updateSet(exi, si, 'w', ev.target.value)} />
+                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={r.w} aria-label={`Set ${si + 1} weight`}
+                          onChange={(ev) => updateSet(exi, si, { w: ev.target.value })} />
                         <span className="u">kg</span>
                       </>
                     )}
-                    <input className="num" type="number" inputMode="numeric" placeholder={isPlank ? 'sec' : 'reps'} value={s.reps}
-                      aria-label={`Set ${si + 1} ${isPlank ? 'seconds' : 'reps'}`} onChange={(ev) => updateSet(exi, si, 'reps', ev.target.value)} />
-                    <span className="u">{isPlank ? 'sec' : 'reps'}</span>
+                    {shape === 'reps' && loadOn && (
+                      <>
+                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={r.w} aria-label={`Set ${si + 1} ${load === 'assist' ? 'assistance' : 'added weight'}`}
+                          onChange={(ev) => updateSet(exi, si, { w: ev.target.value, ...(load === 'assist' ? { assist: true } : {}) })} />
+                        <span className="u">kg</span>
+                      </>
+                    )}
+                    {(shape === 'weight-reps' || shape === 'reps' || shape === 'rounds') && (
+                      <>
+                        <input className="num" type="number" inputMode="numeric" placeholder={shape === 'rounds' ? 'rounds' : 'reps'} value={r.reps}
+                          aria-label={`Set ${si + 1} ${shape === 'rounds' ? 'rounds' : 'reps'}`} onChange={(ev) => updateSet(exi, si, { reps: ev.target.value })} />
+                        <span className="u">{shape === 'rounds' ? 'rounds' : 'reps'}</span>
+                      </>
+                    )}
+                    {shape === 'hold' && (
+                      <>
+                        <input className="num" type="number" inputMode="numeric" placeholder="sec" value={r.sec ?? ''} aria-label={`Set ${si + 1} seconds`}
+                          onChange={(ev) => updateSet(exi, si, { sec: ev.target.value })} />
+                        <span className="u">sec</span>
+                        <button className="tm" onClick={() => setTimer({ exi, si })} aria-label={`Time set ${si + 1}`}>Timer</button>
+                      </>
+                    )}
+                    {shape === 'duration' && (
+                      <>
+                        <input className="num" type="number" inputMode="numeric" placeholder="min" value={r.mins ?? ''} aria-label={`Set ${si + 1} minutes`}
+                          onChange={(ev) => updateSet(exi, si, { mins: ev.target.value })} />
+                        <span className="u">min</span>
+                        <input className="num" type="number" inputMode="decimal" placeholder="km" value={r.km ?? ''} aria-label={`Set ${si + 1} distance`}
+                          onChange={(ev) => updateSet(exi, si, { km: ev.target.value })} />
+                        <span className="u">km</span>
+                      </>
+                    )}
+                    {shape === 'check' && (
+                      <label className="tick"><Toggle on={!!r.done} label={`Set ${si + 1} done`} onChange={() => updateSet(exi, si, { done: !r.done })} /> Done</label>
+                    )}
                   </div>
                 ))}
-                <button className="addset" onClick={() => addSet(exi)}>Add set</button>
+                <div className="acts">
+                  <button className="addset" onClick={() => addSet(exi)}>Add set</button>
+                  {shape === 'reps' && !loadOn && <button className="addset" onClick={() => setLoad(exi, 'added')}>Add weight or assistance</button>}
+                </div>
               </div>
             )
           })}
@@ -359,12 +457,23 @@ export function TrainScreen() {
         </>
       )}
 
-      {wk && demo != null && wk.ex[demo]?.video && <DemoPlayer ex={wk.ex[demo]} onClose={closeDemo} />}
+      {wk && demo != null && (() => { const x = swaps[demo] ? slotEx(demo) : undefined; const ex = x ? { n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video } : wk.ex[demo]; return ex?.video ? <DemoPlayer ex={ex} onClose={closeDemo} /> : null })()}
+      {wk && swapFor != null && slotEx(swapFor) && (
+        <SwapSheet current={slotEx(swapFor)!} planned={swaps[swapFor] ? exById(wk.ex[swapFor].id) : undefined}
+          onPick={(id) => swapSlot(swapFor, id)} onClose={() => setSwapFor(null)} />
+      )}
+      {wk && timer && (() => {
+        const x = slotEx(timer.exi)
+        const e = wk.ex[timer.exi]
+        const t = swaps[timer.exi] && x ? x.defaultRx ?? e.t : e.t
+        return <HoldTimer name={swaps[timer.exi] && x ? x.n : e.n} rx={shorter ? shorterPrescription(t) : t} perSide={x?.perSide}
+          onDone={(sec) => updateSet(timer.exi, timer.si, { sec: String(sec) })} onClose={() => setTimer(null)} />
+      })()}
 
       {!swap && sel !== 'Cardio' && (
         <div className="foot" style={{ padding: '12px 4px 0' }}>
           Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little
-          weight next time. Rest about 90 seconds between sets.
+          weight next time. Rest about 90 seconds between sets. {RED_FLAG}
         </div>
       )}
     </div>

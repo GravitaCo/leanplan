@@ -366,6 +366,18 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .setrow input { padding: 9px 10px; text-align: center; }
 .setrow .u { font-size: 13px; color: var(--label2); width: 34px; }
 .addset { background: none; border: 0; color: var(--tint); font-size: 15px; padding: 6px 0 0; }
+.ex .acts { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; }
+.ex .acts .howto { margin-bottom: 10px; }
+.ex .swapped { font-size: 13px; color: var(--label2); margin: -2px 0 10px; }
+.ex .swapped button { background: none; border: 0; padding: 0; font: inherit; color: var(--tint); }
+.setrow .tm { background: var(--fill); border: 0; border-radius: 8px; padding: 8px 10px; color: var(--tint); font-size: 15px; font-weight: 600; }
+.setrow .tick { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.ex .load { margin: 0 0 10px; }
+.hold { text-align: center; padding: 18px 0 22px; }
+.hold-k { font-size: 17px; font-weight: 600; color: var(--label2); min-height: 22px; }
+.hold-n { font-size: 72px; font-weight: 700; line-height: 1.1; margin: 6px 0; }
+.hold-n span { font-size: 22px; font-weight: 600; color: var(--label2); }
+.hold-g { font-size: 15px; color: var(--label2); }
 
 /* ===================== SETTINGS ACCORDION ===================== */
 .acc-bd { padding: 4px 16px 16px; }

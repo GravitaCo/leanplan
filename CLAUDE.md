@@ -24,6 +24,7 @@ bash scripts/preview.sh [branch]  # switch branch, build, serve on your Mac and 
 npm run typecheck
 npm test           # core unit tests (checks, unit maths)
 npm run check:foods  # validates every built-in food; must pass before shipping food data
+npm run check:exercises  # validates the exercise library; ids are never removed or renamed
 ```
 
 - **Preview before live = local** (Benn's choice for now; no staging host). Check a working
@@ -45,7 +46,9 @@ The core is deliberately **UI-framework-agnostic** so a future React Native / Ca
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
-  TDEE); `data/` (the ~336-item food DB, Push/Pull/Legs workouts, constants).
+  TDEE, `library.ts` for swaps and "last time"); `data/` (the ~336-item food DB, the exercise
+  library `exercises.ts` with its committed id list `docs/data/exercise-ids.json`,
+  Push/Pull/Legs workouts, constants).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
   migrations), `sync.ts` (offline-first, per-record dirty flags, last-write-wins),
   `push.ts` (Web Push), `backup.ts` (JSON export/import).

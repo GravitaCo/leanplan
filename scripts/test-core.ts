@@ -25,6 +25,8 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
+import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
+import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
@@ -460,5 +462,42 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '{"hard7":6,"doublesRun":0} false true {"hard7":6,"doublesRun":3} false false false,true,false,true,false'
   const ok = got === want && morning === 'true'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', morning, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+// exercise library in use (P3): hold targets and timer, set words, "last time" by id or old name,
+// swaps that keep the slot, and every demo clip reachable from the library
+{
+  const got = [
+    JSON.stringify(holdTarget('3 × 20–40 sec')), JSON.stringify(holdTarget('45 sec each side')), JSON.stringify(holdTarget('1 × 60 sec')), String(holdTarget('5 slow breaths')),
+    JSON.stringify(holdAt(12.7, { lo: 20, hi: 40 })), JSON.stringify(holdAt(47, { lo: 45, hi: 45 }, true)), JSON.stringify(holdAt(30, { lo: 45, hi: 45 }, true)).includes('"logSec":30'),
+    fmtSet({ w: '40', reps: '8' }, 'weight-reps'), fmtSet({ w: '20', reps: '6', assist: true }, 'reps'), fmtSet({ w: '10', reps: '8' }, 'reps'), fmtSet({ w: '', reps: '30' }, 'hold'), fmtSet({ w: '', reps: '', sec: '25' }, 'hold'),
+    [setHasData({ w: '', reps: '' }, 'weight-reps'), setHasData({ w: '', reps: '', sec: '20' }, 'hold'), setHasData({ w: '', reps: '', done: true }, 'check')].join(','),
+  ].join(' ')
+  const want = '{"lo":20,"hi":40} {"lo":45,"hi":45} {"lo":60,"hi":60} null {"side":1,"sec":12,"reached":false,"switchNow":false,"logSec":12} {"side":2,"sec":2,"reached":false,"switchNow":true,"logSec":2} true 40 kg × 8 6 reps (assisted 20 kg) 8 reps (+10 kg) 30 sec 25 sec false,true,true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library: holds and set words', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const S = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', routineId: 'builtin-Legs', ex }] }) as any
+  const days = {
+    '2026-09-01': S([{ name: 'Leg press', sets: [{ w: '80', reps: '10' }] }]),                                  // before ids: by name
+    '2026-09-05': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }]),
+    '2026-09-08': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [] }]),                                 // no sets: skipped
+    '2026-09-20': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '50', reps: '8' }] }]),           // on or after the day: not "last time"
+  }
+  const got = [
+    lastLogged(days, '2026-09-10', 'back-squat', 'Barbell squat')?.sets[0].w, lastLogged(days, '2026-09-10', 'leg-press', 'Leg press')?.sets[0].w,
+    String(lastLogged(days, '2026-09-03', 'back-squat', 'Barbell squat')),
+  ].join(' ')
+  const sq = EXERCISE_BY_ID['back-squat'], bench = EXERCISE_BY_ID['barbell-bench-press']
+  const altSq = alternativesFor(sq).similar.map((x) => x.id), altBench = alternativesFor(bench).similar.map((x) => x.id)
+  const push = EXERCISE_BY_ID['push-up']
+  const chainOk = stepOf(push, -1)?.id === 'incline-push-up' && stepOf(push, 1)?.id === 'decline-push-up'
+  const dd = EXERCISE_BY_ID['downward-dog']
+  const gentlerFirst = alternativesFor(dd).similar[0]?.id === dd.gentler
+  // every swap keeps the slot: same pattern and main muscle for resistance work
+  const slotOk = EXERCISES.filter((e) => e.pattern).every((e) => alternativesFor(e).similar.every((x) => x.pattern === e.pattern && x.primary === e.primary))
+  const clips = Object.values(DEMOS).every((m) => EXERCISES.some((e) => e.video === m))
+  const ok = got === '40 80 null' && altSq.includes('leg-press') && altBench.includes('chest-press') && chainOk && gentlerFirst && slotOk && clips; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library: last time, swaps, chains, clips', JSON.stringify(got), altSq.includes('leg-press'), altBench.includes('chest-press'), chainOk, gentlerFirst, slotOk, clips)
 }
 process.exit(bad ? 1 : 0)
