@@ -21,6 +21,9 @@ import { exById, fmtSet, lastLogged, setHasData } from '@/core/domain/library'
 import { CARE_DISCLAIMER, SwapSheet } from './train/SwapSheet'
 import { careList } from '@/core/data/libraryLabels'
 import { LibrarySheet } from './train/LibrarySheet'
+import { MyWorkoutsSheet } from './train/MyWorkoutsSheet'
+import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
+import { canBuild, routineTemplate } from '@/core/domain/routines'
 import { HoldTimer, RED_FLAG } from './train/HoldTimer'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -62,6 +65,9 @@ export function TrainScreen() {
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
   const removeSession = useStore((s) => s.removeSession)
+  const saveRoutineSession = useStore((s) => s.saveRoutineSession)
+  const [myOpen, setMyOpen] = useState(false)
+  const [builder, setBuilder] = useState<BuilderStart | null>(null)
   const [logOpen, setLogOpen] = useState(false)
   const [libOpen, setLibOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
@@ -80,17 +86,24 @@ export function TrainScreen() {
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
 
-  const initial: WorkoutType =
-    (firstBuiltin?.routineId?.replace('builtin-', '') as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
-  const [sel, setSel] = useState<WorkoutType>(initial)
+  // the user's own workouts (plan P4); a day's saved one reopens with it
+  const routines = data.routines || []
+  const firstOwn = sessions.find((x) => routines.some((r) => r.id === x.routineId))
+  const initial: string =
+    (firstBuiltin?.routineId?.replace('builtin-', '') as WorkoutType) || firstOwn?.routineId || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
+  /** a built-in card ('Legs', 'Push', 'Pull', 'Cardio') or the id of one of the user's workouts */
+  const [sel, setSel] = useState<string>(initial)
   useEffect(() => {
     setSel(initial)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur])
 
   // editable set state for lifts: index -> sets[]
-  const wk = sel !== 'Cardio' ? WORKOUTS[sel] : null
-  const loggedSets = builtin(sel)?.ex ?? null
+  const routine = routines.find((r) => r.id === sel)
+  const wk = routine ? routineTemplate(routine) : sel !== 'Cardio' ? WORKOUTS[sel as WorkoutType] ?? null : null
+  /** the session this card saved today, if any */
+  const cardSession = sessions.find((x) => x.routineId === (routine ? routine.id : 'builtin-' + sel))
+  const loggedSets = cardSession?.ex ?? null
   const [sets, setSets] = useState<Record<number, SetEntry[]>>({})
   // per-slot swaps for today (plan P3): slot index -> library id
   const [swaps, setSwaps] = useState<Record<number, string>>({})
@@ -129,7 +142,7 @@ export function TrainScreen() {
     setTimer(null)
     setLoadMode({})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, cur, builtin(sel)?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sel, cur, cardSession?.id, routine?._u]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // cardio state
   const cardioS = builtin('Cardio')
@@ -158,11 +171,11 @@ export function TrainScreen() {
    * - otherwise the person's pick carries across tabs until it's used to save;
    * - otherwise the day's default (shorter in an easier week or on a lighter day).
    */
-  const [picked, setPicked] = useState<{ choice: Choice; tab: WorkoutType } | null>(null)
+  const [picked, setPicked] = useState<{ choice: Choice; tab: string } | null>(null)
   const [askLighter, setAskLighter] = useState(easy)
   useEffect(() => { setPicked(null); setAskLighter(easy); setWalkMins(''); setConfirmId(null) }, [cur, easy]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setConfirmId(null) }, [sel])
-  const own = builtin(sel)
+  const own = cardSession
   const choice: Choice = own && picked?.tab !== sel
     ? own.option === 'shorter' ? 'shorter' : 'planned'
     : picked ? picked.choice : easy ? 'shorter' : 'planned'
@@ -180,6 +193,7 @@ export function TrainScreen() {
   /** choosing a tab always shows that session: it leaves a swap (the planned session stays one tap away) */
   function pickTab(t: WorkoutType) { setSel(t); if (swap) setPicked(null) }
 
+  const resistCard = !!wk?.ex.some((e) => { const m = exById(e.id)?.modality; return m === 'strength' || m === 'calisthenics' || !e.id })
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
 
@@ -218,7 +232,8 @@ export function TrainScreen() {
   }
   function commitLift() {
     if (!wk) return
-    saveWorkout(sel, buildEx(), shorter ? 'shorter' : undefined)
+    if (routine) saveRoutineSession(routine, buildEx(), shorter ? 'shorter' : undefined)
+    else saveWorkout(sel as WorkoutType, buildEx(), shorter ? 'shorter' : undefined)
     setPicked(null) // used: it doesn't carry to the day's other cards
   }
 
@@ -259,7 +274,9 @@ export function TrainScreen() {
             {sessions.map((x) => (
               <div className="li" key={x.id}>
                 <div className="m">
-                  <div className="t">{x.title}</div>
+                  {routines.some((r) => r.id === x.routineId)
+                    ? <button className="t linkbtn" style={{ padding: 0, color: 'inherit', font: 'inherit', textAlign: 'left' }} onClick={() => setSel(x.routineId!)} aria-label={`Open ${x.title}`}>{x.title}</button>
+                    : <div className="t">{x.title}</div>}
                   <div className="s">{MODALITY_LABEL[x.modality] ?? x.modality}{x.mins != null ? ` · ${x.mins} min` : ''}{x.cardio?.km ? ` · ${x.cardio.km} km` : ''}</div>
                 </div>
                 {confirmId === x.id
@@ -276,6 +293,11 @@ export function TrainScreen() {
           <div className="m"><div className="t">Log something else</div><div className="s">A walk, yoga, pilates, anything</div></div>
           <Chevron />
         </button>
+        <button className="li" onClick={() => setMyOpen(true)}>
+          <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="dumbbell" size={18} /></span>
+          <div className="m"><div className="t">My workouts</div><div className="s">{routines.some((r) => !r.archived) ? 'Open one on any day, or build another' : 'Build your own from the library'}</div></div>
+          <Chevron />
+        </button>
         <button className="li" onClick={() => setLibOpen(true)}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="book" size={18} /></span>
           <div className="m"><div className="t">Exercise library</div><div className="s">How to do each move, easier and harder options</div></div>
@@ -284,6 +306,14 @@ export function TrainScreen() {
       </div>
       {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
       {libOpen && <LibrarySheet onClose={() => setLibOpen(false)} />}
+      {myOpen && !builder && (
+        <MyWorkoutsSheet onClose={() => setMyOpen(false)} onBuild={(b) => setBuilder(b)}
+          onStart={(id) => { setSel(id); setPicked(null); setMyOpen(false); window.scrollTo(0, 0) }} />
+      )}
+      {builder && (
+        <RoutineBuilderSheet start={builder} onClose={() => setBuilder(null)}
+          onSaved={(id) => { setBuilder(null); setMyOpen(false); setSel(id); setPicked(null) }} />
+      )}
       {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
 
       {back && (
@@ -307,7 +337,17 @@ export function TrainScreen() {
         </div>
       )}
 
-      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={pickTab} /></div>
+      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={routine ? undefined : (sel as WorkoutType)} onChange={pickTab} /></div>
+      {routine && (
+        <div className="routine-hd">
+          <div>
+            <div className="t">{routine.name}</div>
+            <div className="s">Your workout{routine.estMins ? ` · about ${routine.estMins} min` : ''}. Doing it only changes {isToday ? 'today' : 'this day'}.</div>
+          </div>
+          {canBuild(data.profile) && !routine.archived && <button className="btn sm gray" onClick={() => setBuilder({ routine })}>Edit</button>}
+        </div>
+      )}
+      {routine && wk && !wk.ex.length && <div className="foot" style={{ padding: '0 4px 12px' }}>This workout has no exercises this version of Tali knows. Update the app, or edit the workout.</div>}
 
       {!logged && sched !== 'Rest' && (offer || askLighter) && (
         <div className="card dayopt">
@@ -466,7 +506,7 @@ export function TrainScreen() {
               </div>
             )
           })}
-          <div className="stack"><button className="btn" onClick={commitLift}>Save {shorter ? 'shorter ' : ''}{sel} session</button></div>
+          <div className="stack"><button className="btn" onClick={commitLift} disabled={!wk!.ex.length}>{routine ? `Save ${shorter ? 'shorter ' : ''}${routine.name}` : `Save ${shorter ? 'shorter ' : ''}${sel} session`}</button></div>
         </>
       )}
 
@@ -485,9 +525,11 @@ export function TrainScreen() {
 
       {!swap && sel !== 'Cardio' && (
         <div className="foot" style={{ padding: '12px 4px 0' }}>
+          {/* the lifting advice only where there is lifting; the red flag always */}
+          {resistCard && <>
           {/* no progression prompt on a shorter day (plan §4.0.5) */}
           Keep two or three reps in the tank each set.{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} Rest
-          about 90 seconds between sets. {RED_FLAG}
+          about 90 seconds between sets. </>}{RED_FLAG}
         </div>
       )}
     </div>

@@ -27,6 +27,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
+import { builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
@@ -594,7 +595,7 @@ async function backupRestore(): Promise<void> {
     ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
   ]
   // a stale server: different day 1, no foods or recipes; push then pull as runSync does
-  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
@@ -643,10 +644,10 @@ function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
     if (o.method === 'DELETE') {
       const id = (params.get('id') || '').replace(/^eq\./, '')
       if (!UUID_RE.test(id)) return res(400)
-      rows[t] = rows[t].filter((r) => !(r.id === id && r.user_id === uid))
+      rows[t] = (rows[t] || []).filter((r) => !(r.id === id && r.user_id === uid))
       return res(204)
     }
-    const next = [...rows[t]]
+    const next = [...(rows[t] || [])]
     for (const row of JSON.parse(String(o.body))) {
       if ('id' in row && !UUID_RE.test(row.id)) return res(400)
       const cur = next.find((r) => same(t, r, row))
@@ -798,7 +799,7 @@ function importCarryOver(): void {
     ['a food with the same name as the backup one: the backup wins', food('flapjack').length === 0 && food('Flapjack')[0]?.k === 400],
     ["this device's own recipe stays", got.recipes.map((r) => r.name).sort().join() === 'Chilli,Soup'],
     ["a queued delete of a food that stays is dropped; this device's own is kept", !gm.foodDeletes.includes(A) && gm.foodDeletes.join() === dm.foodDeletes.join()],
-    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1 })],
+    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0 })],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
 }
@@ -879,6 +880,44 @@ function legacyAndGuest(): void {
     ['a log from the retired guest mode moves into the first account', ownerCheck(stateFromBackup({ days: { '2026-09-01': day } } as never), uuid(), false) === 'claim'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/device:', n) }
+}
+
+// own workouts (P4): estimates pinned to hand-worked examples, effort, headline kind, notes, and
+// the local data handling (malformed rows dropped, ownership evidence, backup merge, unsynced count)
+{
+  const push = builtinSlots('Push'), legs = builtinSlots('Legs')
+  // Push: 3 + 3 + 3 + 2.5 + 2.5 = 14 sets × 2.5 min = 35 (plan P4: 13–15 sets, about 33–38 min)
+  // Legs: 3 + 3 + 2.5 + 3 = 11.5 sets × 2.5 = 28.75, plus plank 3 × (30 + 20) s = 2.5 → 31
+  const S = (...ids: string[]) => ids.map((exId) => ({ exId }))
+  const got = [
+    estMins(push), estMins(legs),
+    deriveEffort(push), deriveEffort(S('downward-dog', 'childs-pose')), deriveEffort(S('cardio-walk')), deriveEffort(S('cardio-intervals')), deriveEffort(S('push-up')),
+    headlineModality([...push, ...S('supine-hamstring-stretch')]), headlineModality(S('downward-dog', 'cat-cow', 'push-up')),
+    builderNotes(S('lateral-raise', 'barbell-bench-press')).length, builderNotes(S('barbell-bench-press', 'lateral-raise')).length,
+    builderNotes(S('plank', 'plank')).join('|'), builderNotes(S('downward-dog', 'back-squat')).length,
+  ].join(' ')
+  const tpl = routineTemplate({ id: 'r', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'leg-press', rx: '4 × 8' }, { exId: 'gone-from-library' }, { exId: 'plank' }] }] })
+  const tplOk = tpl.title === 'Mine' && tpl.ex.map((e) => e.id + ':' + e.t).join(',') === 'leg-press:4 × 8,plank:' + EXERCISE_BY_ID.plank.defaultRx
+  const want = '35 31 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. 1'  // by minutes: push-ups 7.5 outweigh two short poses
+  const ok = got === want && tplOk; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: estimates, effort, notes', JSON.stringify(got), tplOk, ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const R = (id: string, extra = {}) => ({ id, name: 'W ' + id, modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'plank' }] }], ...extra })
+  const a = '11111111-1111-4111-8111-111111111111', b = '22222222-2222-4222-8222-222222222222'
+  const loaded = stateFromBackup({ days: {}, routines: [R(a), null, { name: 'no blocks' }, 'x'] } as never)
+  const kept = loaded.routines.map((r) => r.id).join(',')
+  const device = stateFromBackup({ days: {}, routines: [R(b)] } as never)
+  const merged = stateFromBackup({ days: {}, routines: [R(a)] } as never, device).routines.map((r) => r.id).sort().join(',')
+  const synced = { days: {}, customFoods: [], recipes: [], routines: [{ ...R(a), _dirty: false }], _meta: { days: {}, settings: { u: '', dirty: false }, foodDeletes: [], recipeDeletes: [], lastPull: 'x' } } as never as PersistedState
+  const rows = (ids: string[]) => ({ days: [], foods: [], recipes: [], routines: ids.map((id) => ({ id })) })
+  const own = [sameAccount(synced, rows([a])), sameAccount(synced, rows([b]))].join(',')
+  const dirty = unsyncedCount({ ...synced, routines: [{ ...R(a), _dirty: true }] } as never)
+  const summary = backupSummary({ days: {}, routines: [R(a), R(b, { archived: true })] } as never).workouts
+  const got = [kept, merged, own, dirty, summary].join(' ')
+  const want = `${a} ${a},${b} true,false 1 1`
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: local data, backup, ownership', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

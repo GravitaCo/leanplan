@@ -32,6 +32,7 @@ function emptyState(): AppState {
     days: {},
     customFoods: [],
     recipes: [],
+    routines: [],
   }
 }
 
@@ -46,6 +47,8 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (s.profile.notificationsEnabled === undefined) s.profile.notificationsEnabled = false
   if (!Array.isArray(s.customFoods)) s.customFoods = []
   if (!Array.isArray(s.recipes)) s.recipes = []
+  // the user's own workouts (plan P4): anything malformed is dropped rather than breaking the screen
+  s.routines = (Array.isArray(s.routines) ? s.routines : []).filter((r) => !!r && typeof r === 'object' && typeof r.name === 'string' && Array.isArray(r.blocks))
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
@@ -111,7 +114,7 @@ export function saveMode(m: SessionMode | null): void {
 }
 
 /** What a backup holds, for the confirm step before importing it. */
-export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number } {
+export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number } {
   const days = Object.keys(b.days || {}).sort()
   return {
     days: days.length,
@@ -119,6 +122,7 @@ export function backupSummary(b: PersistedState): { days: number; first: string 
     last: days[days.length - 1] ?? null,
     foods: Array.isArray(b.customFoods) ? b.customFoods.length : 0,
     recipes: Array.isArray(b.recipes) ? b.recipes.length : 0,
+    workouts: Array.isArray(b.routines) ? b.routines.filter((r) => r && !r.archived).length : 0,
   }
 }
 
@@ -164,6 +168,9 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
     s.customFoods.push(...(current.customFoods || []).filter((f) => !foodTaken(f)))
     const recipeTaken = taken(s.recipes, (r) => r.id, (r) => r.name)
     s.recipes.push(...(current.recipes || []).filter((r) => !recipeTaken(r)))
+    // workouts match by id only: two workouts may share a name
+    const routineIds = new Set(s.routines.map((r) => r.id))
+    s.routines.push(...(current.routines || []).filter((r) => !routineIds.has(r.id)))
   }
   const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
   const keep = (lists: unknown[], live: Set<unknown>) =>
@@ -197,6 +204,7 @@ export interface AccountRows {
   days: { log_date: string; updated_at: string }[]
   foods: { id: string }[]
   recipes: { id: string }[]
+  routines: { id: string }[]
 }
 
 /**
@@ -213,8 +221,8 @@ export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
   if (!m) return false
   const at = new Map(rows.days.map((r) => [r.log_date, r.updated_at]))
   const syncedDays = Object.entries(m.days || {}).filter(([d, x]) => !x.dirty && !!x.u && !!s.days?.[d])
-  const ids = new Set([...rows.foods, ...rows.recipes].map((r) => r.id))
-  const syncedItems = [...(s.customFoods || []), ...(s.recipes || [])].filter((x) => !x._dirty && !!x.id)
+  const ids = new Set([...rows.foods, ...rows.recipes, ...(rows.routines || [])].map((r) => r.id))
+  const syncedItems = [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || [])].filter((x) => !x._dirty && !!x.id)
   const match = syncedDays.some(([d, x]) => at.get(d) === x.u) || syncedItems.some((x) => ids.has(x.id!))
   const against = syncedDays.some(([d]) => !at.has(d)) || syncedItems.some((x) => !ids.has(x.id!))
   return match && !against
@@ -226,6 +234,7 @@ export function unsyncedCount(s: PersistedState): number {
   if (!m) return 0
   return (m.settings?.dirty ? 1 : 0) + Object.values(m.days || {}).filter((x) => x.dirty).length +
     (s.customFoods || []).filter((f) => f._dirty).length + (s.recipes || []).filter((r) => r._dirty).length +
+    (s.routines || []).filter((r) => r._dirty).length +
     (m.foodDeletes || []).length + (m.recipeDeletes || []).length
 }
 
@@ -282,6 +291,13 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
     }
   })
   ;(s.recipes || []).forEach((r) => {
+    if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
+    if (migrate) {
+      r._dirty = true
+      r._u = nowIso()
+    }
+  })
+  ;(s.routines || []).forEach((r) => {
     if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
     if (migrate) {
       r._dirty = true

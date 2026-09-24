@@ -14,6 +14,9 @@ import type {
   LoggedFood,
   MealSlot,
   Recipe,
+  Routine,
+  RoutineEffort,
+  RoutineSlot,
   Workout,
   WorkoutType,
   Supplement,
@@ -23,6 +26,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { canBuild, deriveEffort, estMins, headlineModality } from '@/core/domain/routines'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -97,6 +101,10 @@ interface StoreState {
   setWeight: (kg: number) => void
   saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
+  /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
+  saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
+  archiveRoutine: (id: string) => void
+  saveRoutineSession: (routine: Routine, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
   /** add a session (any modality) to the current day, alongside any others */
   addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
   removeSession: (id: string) => void
@@ -138,7 +146,7 @@ function setSessions(day: DayLog, list: TrainingSession[]): void {
 }
 
 /**
- * Save a built-in session (Legs/Push/Pull or the Cardio card): it replaces an earlier save from
+ * Save a session from a card (a built-in or one of the user's own workouts): it replaces an earlier save from
  * the same card that day, since saving again is an edit; other sessions stay.
  */
 function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
@@ -389,6 +397,42 @@ export const useStore = create<StoreState>()(
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast(type + ' session saved')
+      },
+
+      saveRoutine: (input) => {
+        if (!canBuild(get().data.profile) || !input.slots.length) return null
+        let id: string | null = null
+        set((st) => {
+          if (!Array.isArray(st.data.routines)) st.data.routines = []
+          const name = input.name.trim() || 'My workout'
+          const body = {
+            name, modality: headlineModality(input.slots), effort: input.effort ?? deriveEffort(input.slots),
+            blocks: [{ id: 'main', kind: 'sets' as const, slots: input.slots.map((x) => ({ ...x })) }], estMins: estMins(input.slots),
+          }
+          const r = input.id ? st.data.routines.find((x) => x.id === input.id) : undefined
+          if (r) Object.assign(r, body, { archived: false, _dirty: true, _u: nowIso() })
+          else st.data.routines.push({ id: uuid(), ...body, source: 'custom', ...(input.baseId ? { baseId: input.baseId } : {}), _dirty: true, _u: nowIso() })
+          id = r?.id ?? st.data.routines[st.data.routines.length - 1].id
+        })
+        persist(); get().scheduleSync(); get().showToast('Workout saved')
+        return id
+      },
+
+      archiveRoutine: (id) => {
+        set((st) => {
+          const r = (st.data.routines || []).find((x) => x.id === id)
+          if (r) { r.archived = true; r._dirty = true; r._u = nowIso() }
+        })
+        persist(); get().scheduleSync(); get().showToast('Workout removed')
+      },
+
+      saveRoutineSession: (routine, ex, option) => {
+        set((st) => {
+          // saving the same workout again that day is an edit of that session, as for the built-ins
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: routine.modality, title: routine.name, routineId: routine.id, ex, ...(option ? { option } : {}) })
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast(routine.name + ' saved')
       },
 
       saveCardio: (cardioType, mins, option) => {

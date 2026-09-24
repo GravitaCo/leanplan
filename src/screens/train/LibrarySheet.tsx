@@ -63,7 +63,11 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
  * The exercise library, read only (plan P3): search, filter by kind and kit, and open an entry for
  * its cue, easier and harder steps and a gentler option.
  */
-export function LibrarySheet({ onClose }: { onClose: () => void }) {
+export function LibrarySheet({ onClose, onPick }: {
+  onClose: () => void
+  /** pick mode (the workout builder): tapping an exercise chooses it */
+  onPick?: (id: string) => void
+}) {
   const [q, setQ] = useState('')
   const [mod, setMod] = useState<Modality | null>(null)
   const [kit, setKit] = useState<Equipment | 'none' | null>(null)
@@ -84,7 +88,8 @@ export function LibrarySheet({ onClose }: { onClose: () => void }) {
     )
   }
   return (
-    <Sheet title="Exercise library" onClose={onClose} tall left={<button className="navbtn" onClick={onClose}>Done</button>}>
+    <Sheet title={onPick ? 'Add an exercise' : 'Exercise library'} onClose={onClose} tall animate={!onPick}
+      left={<button className="navbtn" onClick={onClose}>{onPick ? 'Cancel' : 'Done'}</button>}>
       <div className="searchbar"><Icon name="search" size={17} />
         <input value={q} placeholder="Search exercises" aria-label="Search exercises" onChange={(e) => setQ(e.target.value)} /></div>
       <div className="chips" role="radiogroup" aria-label="Kind" style={{ margin: '12px 0 8px' }}>
@@ -100,7 +105,7 @@ export function LibrarySheet({ onClose }: { onClose: () => void }) {
       {list.length ? (
         <div className="list">
           {list.map((x) => (
-            <button className="li" key={x.id} onClick={() => setOpen([x.id])}>
+            <button className="li" key={x.id} onClick={() => (onPick ? onPick(x.id) : setOpen([x.id]))}>
               <div className="m"><div className="t">{x.n}</div><div className="s">{MODALITY_LABEL[x.modality]} · {LEVEL_LABEL[x.difficulty]}</div></div>
             </button>
           ))}

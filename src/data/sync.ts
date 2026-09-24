@@ -4,7 +4,7 @@
  * merge with last-write-wins per record. Ported from the LeanPlan vanilla app and kept
  * framework-agnostic so it can back a native client later.
  */
-import type { DayLog, Food, Recipe } from '@/core/types'
+import type { DayLog, Food, Recipe, Routine } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 
@@ -45,6 +45,20 @@ function toServerRecipe(r: Recipe, uid: string) {
 }
 function fromServerRecipe(r: any): Recipe {
   return { id: r.id, name: r.name, items: r.items || [], servings: +r.servings || 1, _u: r.updated_at, _dirty: false }
+}
+/* routines: the user's own workouts (plan P4), one row each like recipes; never hard-deleted */
+function toServerRoutine(r: Routine, uid: string) {
+  return {
+    id: r.id, user_id: uid, name: r.name, modality: r.modality, effort: r.effort, source: r.source || 'custom',
+    base_id: r.baseId ?? null, blocks: Array.isArray(r.blocks) ? r.blocks : [], est_mins: r.estMins != null ? Math.round(r.estMins) : null, archived: !!r.archived,
+  }
+}
+function fromServerRoutine(r: any): Routine {
+  return {
+    id: r.id, name: r.name, modality: r.modality, effort: r.effort === 'light' ? 'light' : 'hard', source: r.source === 'recommended' ? 'recommended' : 'custom',
+    ...(r.base_id ? { baseId: r.base_id } : {}), blocks: Array.isArray(r.blocks) ? r.blocks : [], ...(r.est_mins != null ? { estMins: r.est_mins } : {}),
+    ...(r.archived ? { archived: true } : {}), _u: r.updated_at, _dirty: false,
+  }
 }
 
 type Undo = () => void
@@ -170,6 +184,9 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes, s.customFoods)))
   const dirtyRecipes = (s.recipes || []).filter((r) => r._dirty)
   await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes, s.recipes)))
+  // workouts have no name index (two may share a name), so only the 403 repair can apply
+  const dirtyRoutines = (s.routines || []).filter((r) => r._dirty)
+  await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', (r: Routine) => r.name, uid, [], s.routines)))
   return failed
 }
 
@@ -200,6 +217,12 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   ;(s.recipes || []).filter((r) => r._dirty).forEach((r) => { rById[r.id] = r })
   s.recipes = Object.values(rById)
 
+  const rt = await sbGet<any[]>('/routines?user_id=eq.' + uid + '&select=*')
+  const wById: Record<string, Routine> = {}
+  rt.map(fromServerRoutine).forEach((r) => { wById[r.id] = r })
+  ;(s.routines || []).filter((r) => r._dirty).forEach((r) => { wById[r.id] = r })
+  s.routines = Object.values(wById)
+
   const dl = await sbGet<any[]>('/day_logs?user_id=eq.' + uid + '&select=*')
   dl.forEach((row) => {
     const d = row.log_date
@@ -213,12 +236,13 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
 /** The rows sameAccount compares, read with a session that isn't applied yet. */
 export async function accountRows(uid: string, token: string): Promise<AccountRows> {
   const q = '?user_id=eq.' + uid + '&select='
-  const [days, foods, recipes] = await Promise.all([
+  const [days, foods, recipes, routines] = await Promise.all([
     sbGet<AccountRows['days']>('/day_logs' + q + 'log_date,updated_at', token),
     sbGet<AccountRows['foods']>('/custom_foods' + q + 'id', token),
     sbGet<AccountRows['recipes']>('/recipes' + q + 'id', token),
+    sbGet<AccountRows['routines']>('/routines' + q + 'id', token),
   ])
-  return { days, foods, recipes }
+  return { days, foods, recipes, routines }
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'

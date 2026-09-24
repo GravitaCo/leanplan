@@ -357,6 +357,51 @@ export interface AppState {
   days: Record<string, DayLog>
   customFoods: Food[]
   recipes: Recipe[]
+  /** the user's own workouts (plan P4); built-ins stay static core data */
+  routines: Routine[]
+}
+
+/** One exercise in a workout, with its own prescription (plan §2.3). */
+export interface RoutineSlot {
+  /** library id (`core/data/exercises.ts`) */
+  exId: string
+  /** this slot's prescription; the library's `defaultRx` when absent */
+  rx?: string
+  note?: string
+}
+
+/** sets: each exercise's sets in turn · circuit: one of each, repeated · flow: follow along in order. */
+export type BlockKind = 'sets' | 'circuit' | 'flow'
+
+export interface RoutineBlock {
+  id: string
+  label?: string
+  kind: BlockKind
+  rounds?: number
+  slots: RoutineSlot[]
+}
+
+/** For the one-hard-session-a-day guard (plan §3.3); derived at save, the user can change it. */
+export type RoutineEffort = 'light' | 'hard'
+
+/**
+ * A workout the user built (plan §2.3, P4). Stored in its own `routines` table, like recipes.
+ * Never hard-deleted: `archived` hides it, and logged sessions keep their own snapshot of names.
+ */
+export interface Routine {
+  id: string
+  name: string
+  modality: Modality
+  effort: RoutineEffort
+  blocks: RoutineBlock[]
+  /** computed at save from the prescriptions (plan §2.9), minutes */
+  estMins?: number
+  source: 'custom' | 'recommended'
+  /** the built-in it was customised from, e.g. 'builtin-Push' */
+  baseId?: string
+  archived?: boolean
+  _u?: string
+  _dirty?: boolean
 }
 
 export type MovementPattern =

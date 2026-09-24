@@ -19,7 +19,7 @@ begin
     select policyname, tablename
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions')
+      and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions','routines')
   loop
     execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
   end loop;
@@ -30,7 +30,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['settings','custom_foods','recipes','day_logs','push_subscriptions']
+  foreach t in array array['settings','custom_foods','recipes','day_logs','push_subscriptions','routines']
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format(
@@ -54,13 +54,14 @@ end $$;
 
 -- 4) Verify (optional): should list one policy per table and rls = true
 -- select tablename, rowsecurity from pg_tables where schemaname='public'
---   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions');
+--   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions','routines');
 -- select tablename, policyname, roles, cmd from pg_policies where schemaname='public'
---   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions');
+--   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions','routines');
 
 -- 5) Other constraints the sync layer relies on (read from production, 2026-09-24; not created here):
 --   custom_foods_user_name_idx  UNIQUE (user_id, lower(name))  -> 409 on a same-name insert under a new id
 --   recipes_user_name_idx       UNIQUE (user_id, lower(name))
 --   day_logs_user_id_log_date_key UNIQUE (user_id, log_date); settings_pkey (user_id)
---   custom_foods.id / recipes.id are uuid primary keys           -> 400 on a non-UUID id
+--   custom_foods.id / recipes.id / routines.id are uuid primary keys -> 400 on a non-UUID id
+--   routines has no name index (two workouts may share a name) and is never hard-deleted (archived)
 -- src/data/sync.ts (pushDirty) adopts the server id on a 409 and re-keys on a 403.

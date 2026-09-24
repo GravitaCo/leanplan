@@ -46,7 +46,7 @@ The core is deliberately **UI-framework-agnostic** so a future React Native / Ca
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
-  TDEE, `library.ts` for swaps and "last time"); `data/` (the ~336-item food DB, the exercise
+  TDEE, `library.ts` for swaps and "last time", `routines.ts` for the user's own workouts); `data/` (the ~336-item food DB, the exercise
   library `exercises.ts` with its committed id list `docs/data/exercise-ids.json`,
   Push/Pull/Legs workouts, constants).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
