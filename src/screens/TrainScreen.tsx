@@ -38,9 +38,13 @@ function shapeFor(t: ExerciseTemplate, x?: Exercise): LogShape {
   return x?.log ?? (t.n.toLowerCase().includes('plank') ? 'hold' : 'weight-reps')
 }
 
-/** Saved sets back into the form; holds logged before shapes kept their seconds in `reps`. */
+/**
+ * Saved sets back into the form. Holds edit `sec` only: older logs kept their seconds in `reps`,
+ * and new saves copy `sec` into `reps` for older installs, so the form clears `reps` (a save puts
+ * it back) and clearing the box really clears the set.
+ */
 function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
-  return sets.map((s) => (shape === 'hold' && !s.sec && s.reps ? { ...s, sec: s.reps, reps: '' } : { ...s }))
+  return sets.map((s) => (shape === 'hold' ? { ...s, sec: s.sec || s.reps, reps: '' } : { ...s }))
 }
 
 /** The library id a logged exercise stands for, when it isn't the workout's own (a swap). */
