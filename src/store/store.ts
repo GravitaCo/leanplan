@@ -259,7 +259,7 @@ export const useStore = create<StoreState>()(
 
       saveCustomFood: (def) => {
         const existing = get().data.customFoods.find((x) => x.n.toLowerCase() === def.n.toLowerCase())
-        const id = existing?.id ?? uuid('f')
+        const id = existing?.id ?? uuid()
         const food: Food = { ...def, g: Math.round(def.g), id }
         set((st) => {
           if (!Array.isArray(st.data.customFoods)) st.data.customFoods = []
@@ -289,7 +289,7 @@ export const useStore = create<StoreState>()(
             r.name = input.name; r.servings = input.servings; r.items = input.items
             r._dirty = true; r._u = nowIso()
           } else {
-            st.data.recipes.push({ id: uuid('r'), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
+            st.data.recipes.push({ id: uuid(), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
           }
         })
         persist(); get().scheduleSync(); get().showToast('Recipe saved')
@@ -327,7 +327,7 @@ export const useStore = create<StoreState>()(
           const plans = (st.data.profile.plans ??= [])
           const existing = id ? plans.find((p) => p.id === id) : undefined
           if (existing) Object.assign(existing, { when, then, cope })
-          else plans.push({ id: uuid('p'), when, then, cope, created: todayStr(), reviews: [] })
+          else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [] })
           markSettingsDirty(st.data)
         })
         persist(); get().scheduleSync(); get().showToast('Plan saved')
@@ -451,7 +451,7 @@ export const useStore = create<StoreState>()(
       addSupplement: (name, time) => {
         set((st) => {
           if (!Array.isArray(st.data.profile.supplements)) st.data.profile.supplements = []
-          st.data.profile.supplements.push({ id: uuid('s'), name, time })
+          st.data.profile.supplements.push({ id: uuid(), name, time })
           markSettingsDirty(st.data)
         })
         persist(); get().scheduleSync(); get().showToast('Saved')
@@ -609,15 +609,17 @@ export const useStore = create<StoreState>()(
           const src = get().data
           const d = structuredClone(src) as PersistedState
           const m = ensureMeta(d, false)
-          await pushDirty(d, m)
+          const failed = await pushDirty(d, m)
           await pullAll(d, m)
           // Data changed while we were on the network (an edit, a backup import): writing this
           // copy back would lose that change. Drop it; live records are still dirty, so the
           // next run pushes them again and pulls afresh.
           if (get().data !== src) { rerun = true; return }
           saveState(d)
+          // Rejected records stay dirty on the device and retry next time; the rest synced.
+          if (failed.length) console.warn('sync: some records were rejected:', failed)
           // Replace data wholesale so selectors see fresh references and re-render.
-          set((st) => { st.data = d; st.sync = 'synced' })
+          set((st) => { st.data = d; st.sync = failed.length ? 'error' : 'synced' })
         } catch (e) {
           console.warn('sync failed:', e)
           set((st) => { st.sync = 'error' })

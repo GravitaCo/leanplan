@@ -32,6 +32,13 @@ export function getUid(): string {
   return userId || LOCAL_USER
 }
 
+/** A request the server answered with an error status (as opposed to no connection). */
+export class HttpError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+  }
+}
+
 /** Thin REST wrappers around PostgREST, authorised with the current session token. */
 function sbFetch(path: string, opts: RequestInit = {}): Promise<Response> {
   opts.headers = {
@@ -44,7 +51,7 @@ function sbFetch(path: string, opts: RequestInit = {}): Promise<Response> {
 
 export async function sbGet<T = unknown>(path: string): Promise<T> {
   const r = await sbFetch(path, {})
-  if (!r.ok) throw new Error('GET ' + path + ' -> ' + r.status)
+  if (!r.ok) throw new HttpError('GET ' + path + ' -> ' + r.status, r.status)
   return r.json() as Promise<T>
 }
 
@@ -62,7 +69,7 @@ export async function sbUpsert(
     },
     body: JSON.stringify(rows),
   })
-  if (!r.ok) throw new Error('UPSERT ' + table + ' -> ' + r.status)
+  if (!r.ok) throw new HttpError('UPSERT ' + table + ' -> ' + r.status, r.status)
 }
 
 export async function sbDelete(table: string, filter: string): Promise<void> {
@@ -70,15 +77,21 @@ export async function sbDelete(table: string, filter: string): Promise<void> {
     method: 'DELETE',
     headers: { Prefer: 'return=minimal' },
   })
-  if (!r.ok && r.status !== 404) throw new Error('DELETE ' + table + ' -> ' + r.status)
+  if (!r.ok && r.status !== 404) throw new HttpError('DELETE ' + table + ' -> ' + r.status, r.status)
 }
 
 export function nowIso(): string {
   return new Date().toISOString()
 }
 
-export function uuid(prefix = ''): string {
-  return crypto.randomUUID
-    ? crypto.randomUUID()
-    : prefix + Date.now() + Math.random().toString(16).slice(2)
+/** A random v4 UUID. Built from getRandomValues, which every browser has (randomUUID is missing
+ *  on older iOS and outside secure contexts), because the server's id columns only take UUIDs. */
+export function uuid(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16))
+  b[6] = (b[6] & 0x0f) | 0x40
+  b[8] = (b[8] & 0x3f) | 0x80
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+  return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20)
 }
+
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

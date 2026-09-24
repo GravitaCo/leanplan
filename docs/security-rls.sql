@@ -57,3 +57,10 @@ end $$;
 --   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions');
 -- select tablename, policyname, roles, cmd from pg_policies where schemaname='public'
 --   and tablename in ('settings','custom_foods','recipes','day_logs','push_subscriptions');
+
+-- 5) Other constraints the sync layer relies on (read from production, 2026-09-24; not created here):
+--   custom_foods_user_name_idx  UNIQUE (user_id, lower(name))  -> 409 on a same-name insert under a new id
+--   recipes_user_name_idx       UNIQUE (user_id, lower(name))
+--   day_logs_user_id_log_date_key UNIQUE (user_id, log_date); settings_pkey (user_id)
+--   custom_foods.id / recipes.id are uuid primary keys           -> 400 on a non-UUID id
+-- src/data/sync.ts (pushDirty) adopts the server id on a 409 and re-keys on a 403.

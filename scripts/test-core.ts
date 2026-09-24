@@ -29,6 +29,7 @@ import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/co
 import { existsSync } from 'node:fs'
 import { ensureMeta, stateFromBackup, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
+import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
@@ -618,4 +619,124 @@ async function backupRestore(): Promise<void> {
   )
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'backup import:', n) }
 }
-backupRestore().then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+/** A fake PostgREST that behaves like production: RLS lets a user touch only their own rows
+ *  (403 on an upsert that would update someone else's), the (user_id, lower(name)) unique index
+ *  on custom_foods and recipes (409), uuid id columns (400) and tables whose writes can be broken. */
+function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
+  const uid = LOCAL_USER
+  const keyOf = (t: string) => (t === 'day_logs' ? ['user_id', 'log_date'] : t === 'settings' ? ['user_id'] : ['id'])
+  const same = (t: string, a: any, b: any) => keyOf(t).every((k) => a[k] === b[k])
+  const calls: string[] = []
+  const res = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status })
+  const fetchFn = (async (url: string, o: RequestInit = {}) => {
+    const [path, q = ''] = String(url).split('/rest/v1/')[1].split('?')
+    const t = path.replace(/^\//, '')
+    const params = new URLSearchParams(q)
+    calls.push((o.method || 'GET') + ' ' + t)
+    if (o.method && broken.includes(t)) return res(500)
+    const mine = (rows[t] || []).filter((r) => r.user_id === uid)
+    if (!o.method) {
+      const id = params.get('id')
+      return res(200, id ? mine.filter((r) => 'eq.' + r.id === id) : mine)
+    }
+    if (o.method === 'DELETE') {
+      const id = (params.get('id') || '').replace(/^eq\./, '')
+      if (!UUID_RE.test(id)) return res(400)
+      rows[t] = rows[t].filter((r) => !(r.id === id && r.user_id === uid))
+      return res(204)
+    }
+    const next = [...rows[t]]
+    for (const row of JSON.parse(String(o.body))) {
+      if ('id' in row && !UUID_RE.test(row.id)) return res(400)
+      const cur = next.find((r) => same(t, r, row))
+      if (cur && cur.user_id !== uid) return res(403)
+      if ((t === 'custom_foods' || t === 'recipes') && next.some((r) => r.user_id === uid && r.id !== row.id && r.name.toLowerCase() === row.name.toLowerCase())) return res(409)
+      const i = next.findIndex((r) => same(t, r, row))
+      if (i >= 0) next[i] = { ...row, updated_at: 'y' }; else next.push({ ...row, updated_at: 'y' })
+    }
+    rows[t] = next
+    return res(201)
+  }) as typeof fetch
+  return { fetchFn, calls }
+}
+
+// Sync resilience: one rejected record (name clash, someone else's id, a broken table) never
+// blocks the log, the other records or the pull.
+async function syncResilience(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const other = '99999999-9999-4999-8999-999999999999'
+  const ids = Array.from({ length: 200 }, uuid)
+  checks.push(['uuid() is always v4', ids.every((x) => UUID_RE.test(x) && x[14] === '4' && '89ab'.includes(x[19])) && new Set(ids).size === 200])
+
+  const S1 = uuid(), S2 = uuid(), THEIRS = uuid(), L1 = uuid(), L2 = uuid(), R1 = uuid()
+  const rows: Record<string, any[]> = {
+    settings: [],
+    day_logs: [],
+    custom_foods: [
+      { id: S1, user_id: LOCAL_USER, name: 'My Flapjack', kcal: 1 }, // same name, other id: 409
+      { id: S2, user_id: LOCAL_USER, name: 'Oat bar', kcal: 1 }, // deleted then re-created: 409 unless the delete goes first
+      { id: THEIRS, user_id: other, name: 'Theirs', kcal: 1 }, // another account's id: 403
+    ],
+    recipes: [],
+  }
+  const s = stateFromBackup({ days: { '2026-09-20': { foods: [{ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null } } } as never)
+  s.customFoods = [
+    { id: L1, n: 'my flapjack', k: 410, p: 5, c: 50, f: 20, g: 100, _dirty: true },
+    { id: L2, n: 'Oat bar', k: 200, p: 5, c: 30, f: 8, g: 100, _dirty: true },
+    { id: THEIRS, n: 'Borrowed soup', k: 50, p: 2, c: 6, f: 2, g: 100, _dirty: true },
+    { id: 'f1727000000abc', n: 'Old id', k: 90, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+  ]
+  s.recipes = [{ id: R1, name: 'Chilli', servings: 4, items: [], _dirty: true }]
+  const m = ensureMeta(s, false)
+  m.foodDeletes = [S2, 'f-never-uploaded']
+  const f = fakeServer(rows, ['recipes'])
+  const realFetch = globalThis.fetch
+  globalThis.fetch = f.fetchFn
+  let failed: string[] = []
+  try {
+    failed = await pushDirty(s, m)
+    await pullAll(s, m)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  const food = (n: string) => s.customFoods.find((x) => x.n === n)
+  const srv = (n: string) => rows.custom_foods.filter((x) => x.name === n)
+  checks.push(
+    ['the day reaches the server despite a broken table', rows.day_logs.length === 1 && !m.days['2026-09-20'].dirty],
+    ['settings reach the server', rows.settings.length === 1 && !m.settings.dirty],
+    ['409: adopts the server id for the same name and overwrites it', food('my flapjack')?.id === S1 && rows.custom_foods.filter((x) => x.id === S1).map((x) => x.name + x.kcal).join() === 'my flapjack410'],
+    ['a delete goes before the re-create of the same name', srv('Oat bar').length === 1 && srv('Oat bar')[0].id === L2 && m.foodDeletes.length === 0],
+    ["403: another account's id gets a new one; their row is untouched", food('Borrowed soup')?.id !== THEIRS && srv('Borrowed soup').length === 1 && rows.custom_foods.find((x) => x.id === THEIRS)?.name === 'Theirs'],
+    ['an old non-UUID id is replaced and uploads', UUID_RE.test(food('Old id')?.id || '') && srv('Old id').length === 1],
+    ['the broken table is reported and its record stays dirty', failed.length === 1 && failed[0].startsWith('recipes') && s.recipes[0]._dirty === true],
+    ['the pull still ran', m.lastPull !== null],
+  )
+
+  // a rejection the repairs can't fix leaves the record exactly as it was
+  const rows2: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [] }
+  const s2 = stateFromBackup({ days: {} } as never)
+  const KEEP = uuid()
+  s2.customFoods = [{ id: KEEP, n: 'Fine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true }]
+  const m2 = ensureMeta(s2, false)
+  const f2 = fakeServer(rows2)
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => (o.method === 'POST' && String(url).includes('custom_foods') ? new Response(null, { status: 403 }) : f2.fetchFn(url, o))) as typeof fetch
+  try {
+    failed = await pushDirty(s2, m2)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  checks.push(['an unfixable 403 keeps the id and the dirty flag', s2.customFoods[0].id === KEEP && s2.customFoods[0]._dirty === true && failed.length === 1])
+
+  // no connection: throws, nothing marked clean
+  const s3 = stateFromBackup({ days: { '2026-09-21': { foods: [], supps: {}, weight: null, workout: null } } } as never)
+  const m3 = ensureMeta(s3, false)
+  globalThis.fetch = (async () => { throw new TypeError('Failed to fetch') }) as typeof fetch
+  let threw = false
+  try { await pushDirty(s3, m3) } catch { threw = true } finally { globalThis.fetch = realFetch }
+  checks.push(['offline throws and leaves everything dirty', threw && m3.days['2026-09-21'].dirty && m3.settings.dirty])
+
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'sync:', n) }
+}
+
+backupRestore().then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

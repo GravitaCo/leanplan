@@ -5,7 +5,7 @@
  * framework-agnostic so it can back a native client later.
  */
 import type { DayLog, Food, Recipe } from '@/core/types'
-import { sbGet, sbUpsert, sbDelete, getUid, nowIso } from './supabase'
+import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 
 /* ---- client <-> server row mapping ---- */
@@ -47,35 +47,121 @@ function fromServerRecipe(r: any): Recipe {
   return { id: r.id, name: r.name, items: r.items || [], servings: +r.servings || 1, _u: r.updated_at, _dirty: false }
 }
 
-export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<void> {
+type Undo = () => void
+
+/**
+ * Upsert records in one request; if the server rejects it, retry them one by one so a single bad
+ * record can't hold up the rest. `fix` may repair a rejected record (new id) and return how to
+ * undo that if the retry still fails, so a record is only changed when the server accepts it.
+ * Throws the last rejection once the others are through; a lost connection throws at once.
+ */
+async function upsertEach<T>(
+  table: string, items: T[], row: (x: T) => object, onConflict: string, done: (x: T) => void,
+  fix?: (x: T, e: HttpError) => Promise<Undo | null>,
+): Promise<void> {
+  if (!items.length) return
+  try {
+    await sbUpsert(table, items.map(row), onConflict)
+    items.forEach(done)
+    return
+  } catch (e) {
+    if (!(e instanceof HttpError)) throw e
+  }
+  let last: HttpError | null = null
+  for (const x of items) {
+    const undos: Undo[] = []
+    for (;;) {
+      try {
+        await sbUpsert(table, [row(x)], onConflict)
+        done(x)
+        break
+      } catch (e) {
+        if (!(e instanceof HttpError)) throw e
+        const undo = undos.length < 2 && fix ? await fix(x, e) : null
+        if (undo) { undos.push(undo); continue }
+        undos.reverse().forEach((u) => u())
+        last = e
+        break
+      }
+    }
+  }
+  if (last) throw last
+}
+
+/**
+ * Repairs for a rejected custom food or recipe:
+ * - 409: the (user_id, lower(name)) unique index says this account already has that name under
+ *   another id (restored backup, re-created on another device). Adopt the server's id so this
+ *   record overwrites it: last write wins by name, as food names are stable ids here.
+ * - 403: RLS refused the id, so it belongs to another account (someone else's backup). Only
+ *   when this account can't see that id do we give the record a fresh one.
+ */
+function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => string, uid: string, deletes: string[]) {
+  let names: { id: string; name: string }[] | null = null
+  return async (x: T, e: HttpError): Promise<Undo | null> => {
+    const was = x.id
+    if (e.status === 409) {
+      names ??= await sbGet<{ id: string; name: string }[]>('/' + table + '?user_id=eq.' + uid + '&select=id,name')
+      const key = nameOf(x).toLowerCase()
+      const hit = names.find((r) => r.id !== x.id && (r.name || '').toLowerCase() === key)
+      if (!hit) return null
+      x.id = hit.id
+      const i = deletes.indexOf(hit.id)
+      if (i >= 0) deletes.splice(i, 1)
+      return () => { x.id = was; if (i >= 0) deletes.splice(i, 0, hit.id) }
+    }
+    if (e.status === 403 && x.id) {
+      const seen = await sbGet<unknown[]>('/' + table + '?id=eq.' + encodeURIComponent(x.id) + '&select=id')
+      if (seen.length) return null // ours, so the refusal is about something else
+      x.id = uuid()
+      return () => { x.id = was }
+    }
+    return null
+  }
+}
+
+/**
+ * Push every dirty record. The log (days) and settings go first, then each other table in its
+ * own step, so one rejected record can't block the rest or the pull that follows. Rejected
+ * records stay dirty and are returned as messages; a lost connection throws.
+ */
+export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<string[]> {
   const uid = getUid()
-  if (meta.settings.dirty) {
-    await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: s.profile }], 'user_id')
-    meta.settings.dirty = false
-  }
-  const dirtyFoods = (s.customFoods || []).filter((f) => f._dirty)
-  if (dirtyFoods.length) {
-    await sbUpsert('custom_foods', dirtyFoods.map((f) => toServerFood(f, uid)), 'id')
-    dirtyFoods.forEach((f) => (f._dirty = false))
-  }
-  for (const id of [...meta.foodDeletes]) {
-    await sbDelete('custom_foods', 'id=eq.' + id)
-    meta.foodDeletes = meta.foodDeletes.filter((x) => x !== id)
-  }
-  const dirtyRecipes = (s.recipes || []).filter((r) => r._dirty)
-  if (dirtyRecipes.length) {
-    await sbUpsert('recipes', dirtyRecipes.map((r) => toServerRecipe(r, uid)), 'id')
-    dirtyRecipes.forEach((r) => (r._dirty = false))
-  }
-  for (const id of [...meta.recipeDeletes]) {
-    await sbDelete('recipes', 'id=eq.' + id)
-    meta.recipeDeletes = meta.recipeDeletes.filter((x) => x !== id)
+  const failed: string[] = []
+  const step = async (what: string, fn: () => Promise<void>): Promise<boolean> => {
+    try {
+      await fn()
+      return true
+    } catch (e) {
+      if (!(e instanceof HttpError)) throw e
+      failed.push(what + ': ' + e.message)
+      return false
+    }
   }
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
-  if (dirtyDays.length) {
-    await sbUpsert('day_logs', dirtyDays.map((d) => toServerDay(s, d, uid)), 'user_id,log_date')
-    dirtyDays.forEach((d) => (meta.days[d].dirty = false))
+  await step('days', () => upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
+  if (meta.settings.dirty) {
+    await step('settings', async () => {
+      await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: s.profile }], 'user_id')
+      meta.settings.dirty = false
+    })
   }
+  // Deletes before upserts: a food deleted and re-created under the same name would otherwise
+  // hit the name index while the old row is still there.
+  const deletes = async (table: string, list: 'foodDeletes' | 'recipeDeletes') => {
+    for (const id of [...meta[list]]) {
+      // an id the server can't hold (old fallback ids) was never uploaded: nothing to delete
+      const gone = !UUID_RE.test(id) || (await step(table + ' delete', () => sbDelete(table, 'id=eq.' + encodeURIComponent(id))))
+      if (gone) meta[list] = meta[list].filter((x) => x !== id)
+    }
+  }
+  await deletes('custom_foods', 'foodDeletes')
+  await deletes('recipes', 'recipeDeletes')
+  const dirtyFoods = (s.customFoods || []).filter((f) => f._dirty)
+  await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes)))
+  const dirtyRecipes = (s.recipes || []).filter((r) => r._dirty)
+  await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes)))
+  return failed
 }
 
 export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> {

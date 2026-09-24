@@ -3,7 +3,7 @@ import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { todayStr } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
-import { nowIso, uuid } from './supabase'
+import { nowIso, uuid, UUID_RE } from './supabase'
 
 const KEY = 'leanplan.v1'
 
@@ -105,8 +105,6 @@ export function saveMode(m: SessionMode | null): void {
   try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 /**
  * Turn a backup file into the state to restore. A backup is the user's intended current data,
  * so its own sync flags (exported with it, usually all clean) are discarded and every day,
@@ -154,16 +152,17 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
   if (!s._meta.days) s._meta.days = {}
   if (!Array.isArray(s._meta.foodDeletes)) s._meta.foodDeletes = []
   if (!Array.isArray(s._meta.recipeDeletes)) s._meta.recipeDeletes = []
-  // Backfill ids on custom foods / recipes
+  // Backfill ids on custom foods / recipes; an id the server can't store (the old non-UUID
+  // fallback) was never uploaded, so it gets a real one and uploads
   ;(s.customFoods || []).forEach((f) => {
-    if (!f.id) f.id = uuid('f')
+    if (!f.id || !UUID_RE.test(f.id)) { f.id = uuid(); f._dirty = true; f._u = nowIso() }
     if (migrate) {
       f._dirty = true
       f._u = nowIso()
     }
   })
   ;(s.recipes || []).forEach((r) => {
-    if (!r.id) r.id = uuid('r')
+    if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
     if (migrate) {
       r._dirty = true
       r._u = nowIso()
