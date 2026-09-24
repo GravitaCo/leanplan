@@ -275,6 +275,8 @@ export interface Profile {
   easyUntil?: string
   /** the planned day whose "pick up" offer was waved off with "Not this time" */
   pickUpDismissed?: string
+  /** date the activity-level suggestion was last shown and answered (28-day cool-down) */
+  activityAsked?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

@@ -19,6 +19,17 @@ function metHours(wk: Workout, legacy = false): { met: number; hours: number } {
   return { met: 3.5, hours: 0.75 }
 }
 
+/**
+ * Whether a logged workout counts as a training session for the activity-level suggestion
+ * (workout plan P1.5): 20+ minutes at 3.0+ MET. Strength counts (45 min at 3.5); a 10-minute
+ * mobility swap or easy walk doesn't.
+ */
+export function isTrainingSession(wk: Workout | null | undefined): boolean {
+  if (!wk || !wk.type) return false
+  const { met, hours } = metHours(wk)
+  return met >= 3.0 && hours * 60 >= 20
+}
+
 /** Estimated gross calories burned for a logged workout (MET × kg × hours). */
 export function workoutBurn(wk: Workout | null | undefined, bodyKg: number | null, legacy = false): number {
   if (!wk || !wk.type) return 0

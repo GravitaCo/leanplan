@@ -15,6 +15,9 @@ import { tempoAt } from '@/core/domain/tempo'
 import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
 import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
+import { activitySuggestion, bandFor, trainingWeeks } from '@/core/domain/activity'
+import { isTrainingSession } from '@/core/domain/workout'
+import { shiftDay } from '@/core/domain/date'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
@@ -312,5 +315,38 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const metMismatch = Object.keys(CARDIO_MET).filter((k) => { const m = MET_SOURCES[k]?.match(/^\d{5} \(([\d.]+)\)/); return m ? +m[1] !== CARDIO_MET[k] : k !== 'Other' })
   const ok = got === want && !metMismatch.length; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'burn switch edge cases', JSON.stringify(got), metMismatch, ok ? '' : 'want ' + JSON.stringify(want))
+}
+// activity-level suggestion (plan P1.5, nutrition-accuracy's rule): band edges, 3-of-4 weeks,
+// 28 days of history, 28-day cool-down, never up from sedentary, never down with no sessions
+{
+  const T = '2026-10-20'
+  const lift = { type: 'Push', ex: [] }
+  // n training days in each of the 4 weeks before T (days 1..n of each week), plus an old entry
+  const mk = (perWeek: number[], level: string, extra: any = {}) => {
+    const days: any = { [shiftDay(T, -40)]: { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null } }
+    perWeek.forEach((n, w) => { for (let i = 0; i < n; i++) days[shiftDay(T, -(28 - w * 7) + i)] = { foods: [], supps: {}, weight: null, workout: lift } })
+    return { target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], days, profile: { activityLevel: level, ...extra } } as any
+  }
+  const sug = (perWeek: number[], level: string, extra?: any) => activitySuggestion(mk(perWeek, level, extra), T) ?? '-'
+  const got = [
+    [0.9, 1, 2.9, 3, 5.4, 5.5].map((x) => bandFor(x) ?? '-').join(','),
+    trainingWeeks(mk([1, 2, 3, 4], 'light'), T).join(','),
+    sug([4, 4, 3, 5], 'light'),                     // clearly moderate: suggest up
+    sug([4, 4, 1, 1], 'light'),                     // average 2.5 = light already
+    sug([4, 4, 2, 5], 'light'),                     // average 3.75 but only 3 of 4 weeks moderate: suggest
+    sug([4, 2, 2, 5], 'light'),                     // average 3.25 but only 2 weeks moderate: no
+    sug([4, 4, 4, 4], 'sedentary'),                 // never up from sedentary
+    sug([1, 1, 2, 1], 'active'),                    // down, with sessions: suggest light
+    sug([0, 0, 0, 0], 'active'),                    // nothing logged: no evidence, no suggestion
+    sug([6, 6, 7, 6], 'moderate'),                  // active
+    sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -10) }), // cool-down
+    sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -28) }), // cool-down over
+    String(activitySuggestion({ ...mk([4, 4, 4, 4], 'light'), days: Object.fromEntries(Object.entries(mk([4, 4, 4, 4], 'light').days).filter(([d]) => d >= shiftDay(T, -27))) }, T)), // under 28 days of logs
+    [isTrainingSession({ type: 'Cardio', cardioType: 'Mobility', mins: '10' } as any), isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '20' } as any),
+      isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '10' } as any), isTrainingSession(lift as any)].join(','),
+  ].join(' ')
+  const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate - moderate - - light - active - moderate null false,true,false,true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'activity-level suggestion', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)

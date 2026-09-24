@@ -7,6 +7,8 @@ import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
+import { activitySuggestion } from '@/core/domain/activity'
+import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
@@ -62,6 +64,8 @@ export function TodayScreen() {
   const us = isToday ? usuals(data, cur, meal) : []
   const due = isToday ? plansDue(p) : []
   const hasHistory = Object.keys(data.days).some((d) => d < cur && data.days[d].foods.length)
+  // activity-level suggestion (plan P1.5): an offer only, never applied by itself; no numbers
+  const suggestLevel = isToday && !gentle ? activitySuggestion(data, cur) : null
   const missed = isToday && !dismissedMissed && hasHistory && !dayOf(data, shiftDay(cur, -1)).foods.length && !day.foods.length
 
   const rows = weekOf(cur).map((d) => dayStat(data, d))
@@ -104,6 +108,17 @@ export function TodayScreen() {
           <span style={{ color: 'var(--energy-ink)' }}><Icon name="leaf" /></span>
           <div><b>Welcome back.</b><br /><span className="muted">A day off logging doesn't undo anything. Pick up from here.</span></div>
           <button className="x" aria-label="Dismiss" onClick={() => setDismissedMissed(true)}><Icon name="x" size={12} stroke={3} /></button>
+        </div>
+      )}
+
+      {suggestLevel && (
+        <div className="card dayopt">
+          <div className="t">Your logged sessions over the last 4 weeks look like "{ACTIVITY[suggestLevel].label.replace(/ \(.*\)$/, '')}".
+            Want to update your activity level?</div>
+          <div className="chips">
+            <button className="chip" onClick={() => { setPrefs({ activityLevel: suggestLevel, activityAsked: cur }); setTab('profile') }}>Update</button>
+            <button className="chip" onClick={() => setPrefs({ activityAsked: cur })}>Not now</button>
+          </div>
         </div>
       )}
 
