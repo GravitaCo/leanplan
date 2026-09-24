@@ -119,7 +119,7 @@ export function TrainScreen() {
     const kept = (rows[i] || []).filter((r) => setHasData(r, shape))
     // holds also keep their seconds in `reps`, which is where older installs read and filter them
     const out = shape === 'hold' ? kept.map((r) => ({ ...r, reps: r.sec || r.reps })) : kept
-    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), log: shape, sets: out }
+    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), ...(e.id ? { slot: e.id } : {}), log: shape, sets: out }
   }) : [])
   const setsKey = useRef('')
   useEffect(() => {
@@ -129,17 +129,14 @@ export function TrainScreen() {
     const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets) === JSON.stringify(buildEx())
     setsKey.current = key
     if (echo) return
-    // which logged exercise belongs to which slot: the same exercise wherever it now sits (an own
-    // workout can be reordered after it was logged), then what's left by position, which is a swap
+    // which logged exercise belongs to which slot: saves record the slot's planned exercise, so
+    // each goes back to its own slot even after an own workout is reordered; older saves (no
+    // record) match by position, as the built-in cards always have
     const logged = loggedSets ?? []
-    const byExercise = (e: ExerciseTemplate, y: LoggedExercise) => (y.exId ? y.exId === e.id : y.name === e.n)
     const taken = new Set<number>()
-    const slotLog: (LoggedExercise | undefined)[] = wk.ex.map((e, i) => {
-      const j = byExercise(e, logged[i] ?? { name: '', sets: [] }) ? i : logged.findIndex((y, k) => !taken.has(k) && byExercise(e, y))
-      if (j >= 0 && !taken.has(j)) { taken.add(j); return logged[j] }
-      return undefined
-    })
-    wk.ex.forEach((_, i) => { if (!slotLog[i] && logged[i] && !taken.has(i)) { taken.add(i); slotLog[i] = logged[i] } })
+    const slotLog: (LoggedExercise | undefined)[] = logged.some((y) => y.slot)
+      ? wk.ex.map((e) => { const j = logged.findIndex((y, k) => !taken.has(k) && !!e.id && y.slot === e.id); if (j < 0) return undefined; taken.add(j); return logged[j] })
+      : wk.ex.map((_, i) => logged[i])
     const nextSw: Record<number, string> = {}
     wk.ex.forEach((e, i) => { const id = loggedSwap(e, slotLog[i]); if (id && exById(id)) nextSw[i] = id })
     const next: Record<number, SetEntry[]> = {}
