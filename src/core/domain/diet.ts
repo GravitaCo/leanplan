@@ -104,8 +104,9 @@ const SWAPS: { when: Part; match: RegExp; to: string; diets: DietPattern[]; fact
   { when: 'dairy', match: /^milk\b/i, to: 'Soya milk', diets: ['vegan'] },
   { when: 'dairy', match: /^butter\b/i, to: 'Olive oil (tbsp ~14g)', diets: ['vegan'], factor: 0.82 },
 ]
-// processed or composite: no like-for-like swap at the same weight (egg, pastry, crumb, fat)
-const NOT_SWAPPABLE = /\b(stock|lard|dripping|suet|gelatine|anchov\w*|worcestershire|gravy|scotch egg|black pudding|chorizo|salami|pepperoni|breaded|fingers|nuggets|goujons|pâté|pate)\b/i
+// processed or composite (egg, pastry, crumb, fat), or weighed with bone (the bone would become
+// Quorn or tofu): no like-for-like swap at the same weight
+const NOT_SWAPPABLE = /\b(stock|lard|dripping|suet|gelatine|anchov\w*|worcestershire|gravy|scotch egg|black pudding|chorizo|salami|pepperoni|breaded|fingers|nuggets|goujons|pâté|pate|rolls?|pies?|pasty|pasties|bakes?|weighed with bone|on the bone|bone-in)\b/i
 const SWAP_CATS = new Set(['meat', 'fish', 'dairy', 'fats'])
 
 export interface Swap {
