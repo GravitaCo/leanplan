@@ -33,14 +33,17 @@ export interface Suggestion {
  */
 export function suggestRecipes(recipes: Recipe[], order: number[], have: string[], diet: DietPattern | undefined, foods: Food[]): Suggestion[] {
   const got = new Set(have)
+  const byName = new Map(foods.map((f) => [f.n, f]))
   const cat = new Map(foods.map((f) => [f.n, f.cat]))
   const rank = new Map(order.map((ri, i) => [ri, i]))
   return recipes
     .map((recipe, recipeIndex) => {
       // with a diet swap, the swapped-in food is what they need (a vegetarian needs Quorn, not beef)
-      const swaps = swapsFor(recipe.items, diet, foods)
+      const swaps = swapsFor(recipe.items, diet, byName)
       const use = new Map(swaps.filter((w) => w.to).map((w) => [w.from, w.to!.n]))
-      const missing = recipe.items.map((it) => use.get(it.n) ?? it.n).filter((n) => !got.has(n) && !isStaple(n, cat.get(n)))
+      // a conflicting ingredient with no swap is "leave it out", so it isn't missing
+      const leaveOut = new Set(swaps.filter((w) => !w.to).map((w) => w.from))
+      const missing = [...new Set(recipe.items.filter((it) => !leaveOut.has(it.n)).map((it) => use.get(it.n) ?? it.n))].filter((n) => !got.has(n) && !isStaple(n, cat.get(n)))
       const per = recipePerServing(recipe)
       return {
         recipeIndex, recipe, missing,

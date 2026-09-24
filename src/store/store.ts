@@ -27,7 +27,7 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
@@ -53,6 +53,9 @@ interface StoreState {
   syncPaused: boolean
   /** why the sign-in screen is showing, when it wasn't the user's choice */
   authNotice: string | null
+  /** "I have…" snapshot for meal suggestions (device-only) */
+  kitchen: string[]
+  setKitchen: (have: string[]) => void
   toast: string | null
 
   // navigation
@@ -192,6 +195,8 @@ export const useStore = create<StoreState>()(
       authed: false,
       syncPaused: false,
       authNotice: null,
+      kitchen: loadKitchen(),
+      setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),

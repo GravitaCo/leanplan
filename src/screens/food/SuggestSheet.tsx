@@ -6,28 +6,30 @@ import { r0 } from '@/core/domain/date'
 import { recipesByUse, recentFoods, queryWords } from '@/core/domain/insights'
 import { rankByName } from '@/core/domain/search'
 import { kitchenCandidates, suggestRecipes } from '@/core/domain/suggest'
-import { DIETS } from '@/core/domain/diet'
+import { DIETS, dietFit, type Swap } from '@/core/domain/diet'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
 export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => void; onLog: (recipeIndex: number) => void; onRecipes: () => void }) {
   const data = useStore((s) => s.data)
-  const setPrefs = useStore((s) => s.setPrefs)
+  const have = useStore((s) => s.kitchen)
+  const setKitchen = useStore((s) => s.setKitchen)
   const [q, setQ] = useState('')
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
-  const have = data.profile.kitchen?.have ?? []
   const diet = data.profile.diet
+  const gentle = !!data.profile.gentle
   const dietLabel = DIETS.find(([d]) => d === diet)?.[1]
 
   const candidates = useMemo(
     () => kitchenCandidates(data.recipes, recentFoods(data, all, 20).map((f) => f.n), all),
     [data, all],
   )
-  const chips = [...new Set([...have, ...candidates])].slice(0, 30)
-  const toggle = (n: string) => {
-    const next = have.includes(n) ? have.filter((x) => x !== n) : [...have, n]
-    setPrefs({ kitchen: { have: next, updated: new Date().toISOString() } })
-  }
+  // stable order: candidates as found, then anything added by search; nothing that conflicts
+  // with the diet (a vegetarian isn't offered beef mince)
+  const byName = useMemo(() => new Map(all.map((f) => [f.n, f])), [all])
+  const fitsDiet = (n: string) => dietFit(byName.get(n) ?? { n }, diet) !== 'conflict'
+  const chips = [...new Set([...candidates.filter(fitsDiet), ...have])].slice(0, 36)
+  const toggle = (n: string) => setKitchen(have.includes(n) ? have.filter((x) => x !== n) : [...have, n])
   const words = queryWords(q.trim().toLowerCase())
   const adds = q.trim() ? rankByName(all, (f) => f.n, words.length ? words : [q.trim().toLowerCase()]).filter((f) => !chips.includes(f.n)).slice(0, 6) : []
   const results = suggestRecipes(data.recipes, recipesByUse(data), have, diet, all)
@@ -68,7 +70,7 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
                   </div>
                   {s.swaps.length > 0 && (
                     <div className="s">
-                      {s.swaps.map((w) => (w.to ? `Swap ${w.from} → ${w.to.n}` : `Contains ${w.reason}: ${w.from}`)).join(' · ')}
+                      {s.swaps.map((w) => swapText(w, gentle)).join(' · ')}
                     </div>
                   )}
                 </div>
@@ -76,9 +78,17 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
               </button>
             ))}
           </div>
-          <div className="foot">Ranked by what you have. Swaps keep the same weight; edit the recipe to use one.</div>
+          <div className="foot">Ranked by what you have. Swaps use the same weight (oil for butter a little less). Edit the recipe to use one.</div>
         </>
       )}
     </Sheet>
   )
+}
+
+/** "Swap Beef mince → Quorn pieces (−600 kcal, −35 g protein)", or "Contains meat: Beef stock". */
+function swapText(w: Swap, gentle: boolean): string {
+  if (!w.to) return `Contains ${w.reason}: ${w.from} (leave out or use a plant version)`
+  const sign = (x: number) => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x))
+  const d = w.delta ? ` (${gentle ? '' : `${sign(w.delta.k)} kcal, `}${sign(w.delta.p)} g protein)` : ''
+  return `Swap ${w.from} → ${w.to.n}${d}`
 }

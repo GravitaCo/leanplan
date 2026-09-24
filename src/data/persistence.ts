@@ -84,6 +84,16 @@ export async function requestPersistentStorage(): Promise<void> {
   } catch { /* unsupported */ }
 }
 
+/** "I have…" kitchen snapshot: device-only on purpose (short-lived; syncing it would push the
+ *  whole settings row on every tap and could overwrite newer targets from another device). */
+const KITCHEN_KEY = 'tali.kitchen'
+export function loadKitchen(): string[] {
+  try { const v = JSON.parse(localStorage.getItem(KITCHEN_KEY) || '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [] } catch { return [] }
+}
+export function saveKitchen(have: string[]): void {
+  try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(have)) } catch { /* blocked */ }
+}
+
 /** How this device last used Tali, so launch never needs the network to decide: 'guest'
  *  (local-only) or 'account' (signed in; works offline, syncs when back online). */
 export type SessionMode = 'guest' | 'account'

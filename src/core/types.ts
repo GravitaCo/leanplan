@@ -298,8 +298,6 @@ export interface Profile {
   plans?: IfThenPlan[]
   /** diet pattern for suggestions: meals are never hidden, conflicting ingredients get swaps */
   diet?: DietPattern
-  /** what's in the kitchen right now, for "What can I make?" */
-  kitchen?: Kitchen
   /**
    * Date (YYYY-MM-DD) from which logged workouts stop widening the food range, because the
    * activity level already counts training (workout plan D5). Earlier days keep the old maths
