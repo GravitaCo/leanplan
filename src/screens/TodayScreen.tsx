@@ -3,11 +3,11 @@
  * checks on the estimates that move the total; one-tap usuals; pinned tiles; supplements;
  * and the week against the target range.
  */
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
-import { activitySuggestion } from '@/core/domain/activity'
+import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
 import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
@@ -40,6 +40,7 @@ export function TodayScreen() {
   const logEntries = useStore((s) => s.logEntries)
   const runSync = useStore((s) => s.runSync)
   const setPrefs = useStore((s) => s.setPrefs)
+  const showToast = useStore((s) => s.showToast)
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [dismissedMissed, setDismissedMissed] = useState(false)
 
@@ -64,9 +65,15 @@ export function TodayScreen() {
   const us = isToday ? usuals(data, cur, meal) : []
   const due = isToday ? plansDue(p) : []
   const hasHistory = Object.keys(data.days).some((d) => d < cur && data.days[d].foods.length)
-  // activity-level suggestion (plan P1.5): an offer only, never applied by itself; no numbers
-  const suggestLevel = isToday && !gentle ? activitySuggestion(data, cur) : null
   const missed = isToday && !dismissedMissed && hasHistory && !dayOf(data, shiftDay(cur, -1)).foods.length && !day.foods.length
+  // activity-level suggestion (plan P1.5): an offer only, never applied by itself; no numbers;
+  // hidden in gentle mode; the range-change note wins on the same day; no downward nudge on a
+  // "welcome back" day
+  const sugRaw = isToday && !gentle && !showBurnNote(data) ? activitySuggestion(data, cur) : null
+  const suggest = sugRaw && !(missed && !sugRaw.up) ? sugRaw : null
+  useEffect(() => {
+    if (suggest && markActivityShown(data, cur)) setPrefs({ activityShown: cur })
+  }, [suggest?.level, cur]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = weekOf(cur).map((d) => dayStat(data, d))
   const past = rows.filter((x) => !x.future)
@@ -111,13 +118,18 @@ export function TodayScreen() {
         </div>
       )}
 
-      {suggestLevel && (
+      {suggest && (
         <div className="card dayopt">
-          <div className="t">Your logged sessions over the last 4 weeks look like "{ACTIVITY[suggestLevel].label.replace(/ \(.*\)$/, '')}".
-            Want to update your activity level?</div>
+          <div className="t">{suggest.up ? '' : 'Weeks vary. '}Your logged sessions over the last 4 weeks
+            fit <b>{ACTIVITY[suggest.level].label.replace(/ \(.*\)$/, '')}</b> best.
+            {suggest.up ? ' Want to update your activity level to match?' : ' If you do more than you log, your current setting may still be right. Want to update it?'}</div>
           <div className="chips">
-            <button className="chip" onClick={() => { setPrefs({ activityLevel: suggestLevel, activityAsked: cur }); setTab('profile') }}>Update</button>
-            <button className="chip" onClick={() => setPrefs({ activityAsked: cur })}>Not now</button>
+            <button className="chip" onClick={() => {
+              setPrefs({ activityLevel: suggest.level, activityAsked: cur })
+              showToast('Activity level updated. Your targets only change if you choose to.')
+              setTab('profile')
+            }}>Update</button>
+            <button className="chip" onClick={() => setPrefs({ activityAsked: cur })}>Keep as is</button>
           </div>
         </div>
       )}

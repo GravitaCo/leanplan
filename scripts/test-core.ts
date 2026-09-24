@@ -327,7 +327,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     perWeek.forEach((n, w) => { for (let i = 0; i < n; i++) days[shiftDay(T, -(28 - w * 7) + i)] = { foods: [], supps: {}, weight: null, workout: lift } })
     return { target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], days, profile: { activityLevel: level, ...extra } } as any
   }
-  const sug = (perWeek: number[], level: string, extra?: any) => activitySuggestion(mk(perWeek, level, extra), T) ?? '-'
+  const sug = (perWeek: number[], level: string, extra?: any) => { const r = activitySuggestion(mk(perWeek, level, extra), T); return r ? r.level + (r.up ? '↑' : '↓') : '-' }
   const got = [
     [0.9, 1, 2.9, 3, 5.4, 5.5].map((x) => bandFor(x) ?? '-').join(','),
     trainingWeeks(mk([1, 2, 3, 4], 'light'), T).join(','),
@@ -341,11 +341,16 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     sug([6, 6, 7, 6], 'moderate'),                  // active
     sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -10) }), // cool-down
     sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -28) }), // cool-down over
+    sug([1, 1, 2, 1], 'active', { easyUntil: shiftDay(T, 2) }),            // easier week: no downward nudge
+    sug([1, 1, 2, 1], 'active', { welcomeAsked: shiftDay(T, -5) }),        // just back from a break: no downward nudge
+    sug([4, 4, 4, 4], 'light', { easyUntil: shiftDay(T, 2) }),             // upward is fine then
+    sug([4, 4, 4, 4], 'light', { activityShown: shiftDay(T, -1) }),        // shown yesterday, unanswered: still showing
+    sug([4, 4, 4, 4], 'light', { activityShown: shiftDay(T, -3) }),        // unanswered 3 days: counts as "Keep as is"
     String(activitySuggestion({ ...mk([4, 4, 4, 4], 'light'), days: Object.fromEntries(Object.entries(mk([4, 4, 4, 4], 'light').days).filter(([d]) => d >= shiftDay(T, -27))) }, T)), // under 28 days of logs
     [isTrainingSession({ type: 'Cardio', cardioType: 'Mobility', mins: '10' } as any), isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '20' } as any),
       isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '10' } as any), isTrainingSession(lift as any)].join(','),
   ].join(' ')
-  const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate - moderate - - light - active - moderate null false,true,false,true'
+  const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - moderate↑ moderate↑ - null false,true,false,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'activity-level suggestion', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
