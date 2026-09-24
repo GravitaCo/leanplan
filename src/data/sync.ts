@@ -159,7 +159,8 @@ export function mergeAfterSync(base: PersistedState, live: PersistedState, synce
  *  records removed during the sync left out. */
 function mergeList<T extends { id?: string }>(base: T[] = [], live: T[] = [], synced: T[] = [], deletes: string[]): T[] {
   const baseRefs = new Set(base)
-  const edited = new Map(live.filter((x) => !baseRefs.has(x)).map((x) => [x.id, x]))
+  const changed = live.filter((x) => !baseRefs.has(x))
+  const edited = new Map(changed.filter((x) => x.id).map((x) => [x.id, x]))
   const liveIds = new Set(live.map((x) => x.id))
   const baseIds = new Set(base.map((x) => x.id))
   const out: T[] = []
@@ -169,7 +170,7 @@ function mergeList<T extends { id?: string }>(base: T[] = [], live: T[] = [], sy
     const e = edited.get(x.id)
     if (e) { out.push(e); edited.delete(x.id) } else out.push(x)
   }
-  return out.concat([...edited.values()])
+  return out.concat([...edited.values()], changed.filter((x) => !x.id)) // id-less: kept as they are
 }
 
 /** True when anything still waits to upload. */

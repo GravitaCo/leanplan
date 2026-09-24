@@ -29,7 +29,7 @@ import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
 import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, mergeAfterSync, hasDirty, type SyncStatus } from '@/data/sync'
-import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { supabase, setSession, getUid, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 
@@ -606,11 +606,15 @@ export const useStore = create<StoreState>()(
         try {
           // Work on a plain mutable clone — the store's live data is frozen by Immer,
           // and the sync engine mutates records in place.
+          const uid = getUid()
           const base = get().data
           const d = structuredClone(base) as PersistedState
           const m = ensureMeta(d, false)
           await pushDirty(d, m)
           await pullAll(d, m)
+          // Signed out (or into another account) mid-sync: the pull no longer reflects this
+          // user's rows, so drop it rather than clearing their saved foods from the device.
+          if (!get().authed || getUid() !== uid) { set((st) => { st.sync = 'idle' }); return }
           // Edits made while the network calls were in flight keep their live version and
           // dirty flag rather than being overwritten by the clone.
           const merged = mergeAfterSync(base, get().data, d)
