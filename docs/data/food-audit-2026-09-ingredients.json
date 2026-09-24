@@ -3470,5 +3470,355 @@
   },
   "status": "new",
   "serving_g": 50
+ },
+ {
+  "n": "Cumin, ground or seeds",
+  "ref": {
+   "source": "USDA",
+   "code": "170923",
+   "name": "Spices, cumin seed",
+   "k": 375.0,
+   "p": 17.81,
+   "c": 44.24,
+   "f": 22.27
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Paprika",
+  "ref": {
+   "source": "USDA",
+   "code": "171329",
+   "name": "Spices, paprika",
+   "k": 282.0,
+   "p": 14.14,
+   "c": 53.99,
+   "f": 12.89
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Turmeric, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "172231",
+   "name": "Spices, turmeric, ground",
+   "k": 312.0,
+   "p": 9.68,
+   "c": 67.14,
+   "f": 3.25
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Chilli powder",
+  "ref": {
+   "source": "USDA",
+   "code": "171319",
+   "name": "Spices, chili powder",
+   "k": 282.0,
+   "p": 13.46,
+   "c": 49.7,
+   "f": 14.28
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Cinnamon, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171320",
+   "name": "Spices, cinnamon, ground",
+   "k": 247.0,
+   "p": 3.99,
+   "c": 80.59,
+   "f": 1.24
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Black pepper, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170931",
+   "name": "Spices, pepper, black",
+   "k": 251.0,
+   "p": 10.39,
+   "c": 63.95,
+   "f": 3.26
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "White pepper, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170933",
+   "name": "Spices, pepper, white",
+   "k": 296.0,
+   "p": 10.4,
+   "c": 68.61,
+   "f": 2.12
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Oregano, dried",
+  "ref": {
+   "source": "USDA",
+   "code": "171328",
+   "name": "Spices, oregano, dried",
+   "k": 265.0,
+   "p": 9.0,
+   "c": 68.92,
+   "f": 4.28
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Coriander, ground (seeds)",
+  "ref": {
+   "source": "USDA",
+   "code": "170922",
+   "name": "Spices, coriander seed",
+   "k": 298.0,
+   "p": 12.37,
+   "c": 54.99,
+   "f": 17.77
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Nutmeg, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171326",
+   "name": "Spices, nutmeg, ground",
+   "k": 525.0,
+   "p": 5.84,
+   "c": 49.29,
+   "f": 36.31
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Allspice, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171315",
+   "name": "Spices, allspice, ground",
+   "k": 263.0,
+   "p": 6.09,
+   "c": 72.12,
+   "f": 8.69
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Cardamom, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170919",
+   "name": "Spices, cardamom",
+   "k": 311.0,
+   "p": 10.76,
+   "c": 68.47,
+   "f": 6.7
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Cloves, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171321",
+   "name": "Spices, cloves, ground",
+   "k": 274.0,
+   "p": 5.97,
+   "c": 65.53,
+   "f": 13.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Fennel seeds",
+  "ref": {
+   "source": "USDA",
+   "code": "171323",
+   "name": "Spices, fennel seed",
+   "k": 345.0,
+   "p": 15.8,
+   "c": 52.29,
+   "f": 14.87
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Mustard seeds, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170929",
+   "name": "Spices, mustard seed, ground",
+   "k": 508.0,
+   "p": 26.08,
+   "c": 28.09,
+   "f": 36.24
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Chicken stock cube, dry (1 cube ~10g)",
+  "ref": {
+   "source": "USDA",
+   "code": "171563",
+   "name": "Soup, chicken broth cubes, dry",
+   "k": 198.0,
+   "p": 14.6,
+   "c": 23.5,
+   "f": 4.7
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Chicken stock, made with a cube",
+  "ref": {
+   "source": "USDA",
+   "code": "174566",
+   "name": "Soup, chicken broth cubes, dry, prepared with water",
+   "k": 5.0,
+   "p": 0.39,
+   "c": 0.62,
+   "f": 0.12
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Beef stock cube, dry (1 cube ~6g)",
+  "ref": {
+   "source": "USDA",
+   "code": "171561",
+   "name": "Soup, beef broth, cubed, dry",
+   "k": 170.0,
+   "p": 17.3,
+   "c": 16.1,
+   "f": 4.0
+  },
+  "status": "new",
+  "serving_g": 6
+ },
+ {
+  "n": "Beef stock, made with a cube",
+  "ref": {
+   "source": "USDA",
+   "code": "172923",
+   "name": "Soup, beef broth, cubed, prepared with water",
+   "k": 3.0,
+   "p": 0.21,
+   "c": 0.25,
+   "f": 0.08
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Black beans, dried, uncooked",
+  "ref": {
+   "source": "USDA",
+   "code": "173734",
+   "name": "Beans, black, mature seeds, raw",
+   "k": 341.0,
+   "p": 21.6,
+   "c": 62.36,
+   "f": 1.42
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Black beans, canned, with liquid",
+  "ref": {
+   "source": "USDA",
+   "code": "175188",
+   "name": "Beans, black turtle, mature seeds, canned",
+   "k": 91.0,
+   "p": 6.03,
+   "c": 16.55,
+   "f": 0.29
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Sea bass fillet, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "175142",
+   "name": "Fish, sea bass, mixed species, raw",
+   "k": 97.0,
+   "p": 18.43,
+   "c": 0.0,
+   "f": 2.0
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Rice noodles, dried, uncooked",
+  "ref": {
+   "source": "USDA",
+   "code": "169742",
+   "name": "Rice noodles, dry",
+   "k": 364.0,
+   "p": 5.95,
+   "c": 80.18,
+   "f": 0.56
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Beef mince, 10% fat, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "174030",
+   "name": "Beef, ground, 90% lean meat / 10% fat, raw",
+   "k": 176.0,
+   "p": 20.0,
+   "c": 0.0,
+   "f": 10.0
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Beef mince, 20% fat, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "174036",
+   "name": "Beef, ground, 80% lean meat / 20% fat, raw",
+   "k": 254.0,
+   "p": 17.17,
+   "c": 0.0,
+   "f": 20.0
+  },
+  "status": "new",
+  "serving_g": 125
  }
 ]
