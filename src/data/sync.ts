@@ -115,4 +115,70 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   meta.lastPull = nowIso()
 }
 
+/**
+ * Fold a finished sync back into state that may have changed while it was in flight.
+ * `base` is the state the sync cloned, `live` the state now, `synced` the clone that
+ * pushDirty/pullAll worked on. A record the user touched meanwhile is a new object in `live`
+ * (callers update state immutably, as the Immer store does), so it keeps its live version
+ * and dirty flag and uploads on the next sync; everything else comes from `synced`. Fields
+ * sync doesn't handle come from `live`. Neither `base` nor `live` is mutated.
+ */
+export function mergeAfterSync(base: PersistedState, live: PersistedState, synced: PersistedState): PersistedState {
+  const bm = base._meta, lm = live._meta
+  const sm = synced._meta!
+  const meta: SyncMeta = { ...sm, days: { ...sm.days } }
+  const out: PersistedState = { ...live, days: { ...synced.days }, _meta: meta }
+
+  // settings travel as one row: target, schedule and profile together
+  if (live.target === base.target && live.schedule === base.schedule && live.profile === base.profile) {
+    out.target = synced.target; out.schedule = synced.schedule; out.profile = synced.profile
+  }
+  if (lm && lm.settings !== bm?.settings) meta.settings = lm.settings
+
+  const dayKeys = new Set([...Object.keys(base.days || {}), ...Object.keys(live.days || {}), ...Object.keys(lm?.days || {})])
+  for (const d of dayKeys) {
+    if (live.days?.[d] !== base.days?.[d]) {
+      if (live.days?.[d]) out.days[d] = live.days[d]
+      else delete out.days[d]
+    }
+    if (lm && lm.days?.[d] !== bm?.days?.[d]) {
+      if (lm.days?.[d]) meta.days[d] = lm.days[d]
+      else delete meta.days[d]
+    }
+  }
+
+  const added = (now: string[] = [], then: string[] = []) => now.filter((id) => !then.includes(id))
+  meta.foodDeletes = [...new Set([...sm.foodDeletes, ...added(lm?.foodDeletes, bm?.foodDeletes)])]
+  meta.recipeDeletes = [...new Set([...sm.recipeDeletes, ...added(lm?.recipeDeletes, bm?.recipeDeletes)])]
+  out.customFoods = mergeList(base.customFoods, live.customFoods, synced.customFoods, meta.foodDeletes)
+  out.recipes = mergeList(base.recipes, live.recipes, synced.recipes, meta.recipeDeletes)
+  return out
+}
+
+/** Synced list order, with records edited during the sync swapped in (new ones last) and
+ *  records removed during the sync left out. */
+function mergeList<T extends { id?: string }>(base: T[] = [], live: T[] = [], synced: T[] = [], deletes: string[]): T[] {
+  const baseRefs = new Set(base)
+  const edited = new Map(live.filter((x) => !baseRefs.has(x)).map((x) => [x.id, x]))
+  const liveIds = new Set(live.map((x) => x.id))
+  const baseIds = new Set(base.map((x) => x.id))
+  const out: T[] = []
+  for (const x of synced) {
+    if (x.id && deletes.includes(x.id)) continue
+    if (baseIds.has(x.id) && !liveIds.has(x.id)) continue // removed while syncing
+    const e = edited.get(x.id)
+    if (e) { out.push(e); edited.delete(x.id) } else out.push(x)
+  }
+  return out.concat([...edited.values()])
+}
+
+/** True when anything still waits to upload. */
+export function hasDirty(s: PersistedState): boolean {
+  const m = s._meta
+  if (!m) return false
+  return m.settings.dirty || m.foodDeletes.length > 0 || m.recipeDeletes.length > 0
+    || Object.values(m.days).some((x) => x.dirty)
+    || (s.customFoods || []).some((f) => f._dirty) || (s.recipes || []).some((r) => r._dirty)
+}
+
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'

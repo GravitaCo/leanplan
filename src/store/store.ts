@@ -28,7 +28,7 @@ import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
 import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
-import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
+import { pushDirty, pullAll, mergeAfterSync, hasDirty, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
@@ -606,13 +606,17 @@ export const useStore = create<StoreState>()(
         try {
           // Work on a plain mutable clone — the store's live data is frozen by Immer,
           // and the sync engine mutates records in place.
-          const d = structuredClone(get().data) as PersistedState
+          const base = get().data
+          const d = structuredClone(base) as PersistedState
           const m = ensureMeta(d, false)
           await pushDirty(d, m)
           await pullAll(d, m)
-          saveState(d)
-          // Replace data wholesale so selectors see fresh references and re-render.
-          set((st) => { st.data = d; st.sync = 'synced' })
+          // Edits made while the network calls were in flight keep their live version and
+          // dirty flag rather than being overwritten by the clone.
+          const merged = mergeAfterSync(base, get().data, d)
+          saveState(merged)
+          set((st) => { st.data = merged; st.sync = 'synced' })
+          if (hasDirty(merged)) get().scheduleSync()
         } catch (e) {
           console.warn('sync failed:', e)
           set((st) => { st.sync = 'error' })

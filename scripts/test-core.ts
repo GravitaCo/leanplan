@@ -30,6 +30,10 @@ import { existsSync } from 'node:fs'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
+import { produce } from 'immer'
+import { pushDirty, pullAll, mergeAfterSync, hasDirty } from '@/data/sync'
+import { setSession } from '@/data/supabase'
+import type { PersistedState } from '@/data/persistence'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -552,4 +556,82 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const staples = [['Salt', 'sauces'], ['Olive oil (tbsp ~14g)', 'fats'], ['Cumin, ground', 'sauces'], ['Pasta, dried, uncooked', 'grains'], ['Sugar snap peas', 'veg'], ['Dried apricots', 'fruit']].map(([n, c]) => isStaple(n, c as never) ? 'y' : 'n').join('')
   const ok = staples === 'yyynnn'; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'staples assumed only for basics', staples)
 }
-process.exit(bad ? 1 : 0)
+
+// sync: an edit that lands while a sync is in flight (between push and pull) survives and uploads next time
+void (async () => {
+  const U = '00000000-0000-0000-0000-00000000000a'
+  setSession('token', U)
+  const food = (n: string) => ({ n, k: 100, p: 1, c: 1, f: 1, g: 100 })
+  const day = (n: string) => ({ foods: [food(n) as never], supps: {}, weight: null, workout: null })
+  const T0 = '2026-09-24T08:00:00.000Z'
+  let live: PersistedState = produce({
+    target: {} as never, schedule: {} as never, profile: { ...DEFAULT_PROFILE },
+    days: { '2026-09-23': day('Pushed toast'), '2026-09-24': day('Porridge') },
+    customFoods: [{ id: 'f-keep', ...food('Keep'), _dirty: false }, { id: 'f-gone', ...food('Gone'), _dirty: false }],
+    recipes: [],
+    _meta: { settings: { u: T0, dirty: false }, days: { '2026-09-23': { u: T0, dirty: true }, '2026-09-24': { u: T0, dirty: false } }, foodDeletes: [], recipeDeletes: [], lastPull: null },
+  } as PersistedState, () => {})
+  const calls: string[] = []
+  let edited = false
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (url: string, opts: any) => {
+    const path = String(url).split('/rest/v1')[1]
+    calls.push((opts.method || 'GET') + ' ' + path + (opts.body ? ' ' + opts.body : ''))
+    if (!opts.method && !edited) {
+      // the push has finished and the pull is starting: the user logs a food, saves a custom food
+      // and removes another, as the store would (Immer, new objects for what changed)
+      edited = true
+      live = produce(live, (st) => {
+        st.days['2026-09-24'].foods.push(food('Banana') as never)
+        st._meta!.days['2026-09-24'] = { u: '2026-09-24T08:00:01.000Z', dirty: true }
+        st.customFoods.push({ id: 'f-new', ...food('New'), _dirty: true })
+        st.customFoods = st.customFoods.filter((f) => f.id !== 'f-gone')
+        st._meta!.foodDeletes.push('f-gone')
+      })
+    }
+    const rows = path.startsWith('/day_logs') ? [
+      { log_date: '2026-09-24', foods: [food('Porridge')], supps: {}, weight: null, workout: null, updated_at: T0 },
+      { log_date: '2026-09-22', foods: [food('Other phone')], supps: {}, weight: null, workout: null, updated_at: T0 },
+    ] : path.startsWith('/custom_foods') ? [
+      { id: 'f-keep', name: 'Keep', kcal: 100, protein: 1, carbs: 1, fat: 1, grams: 100, ml: false, updated_at: T0 },
+      { id: 'f-gone', name: 'Gone', kcal: 100, protein: 1, carbs: 1, fat: 1, grams: 100, ml: false, updated_at: T0 },
+    ] : []
+    return { ok: true, status: 200, json: async () => rows } as Response
+  }) as typeof fetch
+  const run = async () => {
+    const base = live
+    const d = structuredClone(base) as PersistedState
+    await pushDirty(d, d._meta!)
+    await pullAll(d, d._meta!)
+    return { stale: d, merged: mergeAfterSync(base, live, d) }
+  }
+  const { stale, merged } = await run()
+  const names = (s: PersistedState, d: string) => (s.days[d]?.foods || []).map((x) => x.n).join('+')
+  const foods = (s: PersistedState) => s.customFoods.map((f) => f.id + (f._dirty ? '*' : '')).join(',')
+  const checks: [string, string, string][] = [
+    ['edit landed between push and pull', String(edited), 'true'],
+    ['old behaviour (the clone) loses the edit', names(stale, '2026-09-24'), 'Porridge'],
+    ['live edit kept', names(merged, '2026-09-24'), 'Porridge+Banana'],
+    ['live edit still dirty', String(merged._meta!.days['2026-09-24'].dirty), 'true'],
+    ['pushed day clean', names(merged, '2026-09-23') + ' ' + merged._meta!.days['2026-09-23'].dirty, 'Pushed toast false'],
+    ['pulled day from another device', names(merged, '2026-09-22') + ' ' + merged._meta!.days['2026-09-22'].dirty, 'Other phone false'],
+    ['custom foods: new kept dirty, removed stays removed', foods(merged), 'f-keep,f-new*'],
+    ['delete queued', merged._meta!.foodDeletes.join(), 'f-gone'],
+    ['something left to upload', String(hasDirty(merged)), 'true'],
+    ['live state not mutated', names(live, '2026-09-24') + ' ' + Object.isFrozen(live.days), 'Porridge+Banana true'],
+  ]
+  // the follow-up sync uploads the edit and the delete, then nothing is left
+  live = merged
+  calls.length = 0
+  const second = await run()
+  const pushed = calls.filter((c) => !c.startsWith('GET'))
+  checks.push(
+    ['next sync uploads the day', String(pushed.some((c) => c.includes('day_logs') && c.includes('Banana'))), 'true'],
+    ['next sync uploads the custom food', String(pushed.some((c) => c.startsWith('POST /custom_foods') && c.includes('f-new'))), 'true'],
+    ['next sync deletes the removed food', String(pushed.some((c) => c === 'DELETE /custom_foods?id=eq.f-gone')), 'true'],
+    ['then nothing dirty', String(hasDirty(second.merged)), 'false'],
+  )
+  globalThis.fetch = realFetch
+  setSession(null, null)
+  for (const [n, got, want] of checks) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'sync:', n, ok ? '' : `${got} vs ${want}`) }
+})().then(() => process.exit(bad ? 1 : 0), (e) => { console.log('FAIL sync:', e); process.exit(1) })
