@@ -614,7 +614,7 @@ export const useStore = create<StoreState>()(
           // Data changed while we were on the network (an edit, a backup import): writing this
           // copy back would lose that change. Drop it; live records are still dirty, so the
           // next run pushes them again and pulls afresh.
-          if (get().data !== src) { rerun = true; set((st) => { st.sync = 'idle' }); return }
+          if (get().data !== src) { rerun = true; return }
           saveState(d)
           // Replace data wholesale so selectors see fresh references and re-render.
           set((st) => { st.data = d; st.sync = 'synced' })
