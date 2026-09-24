@@ -27,7 +27,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { backupSummary, ensureMeta, freshForAccount, keepForAccount, ownerCheck, stateFromBackup, type PersistedState } from '@/data/persistence'
+import { backupSummary, belongsToAccount, ensureMeta, freshForAccount, freshForGuest, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -833,14 +833,43 @@ function accountOwner(): void {
     ['another account: ask', ownerCheck(synced, B, false) === 'ask' && ownerCheck(synced, B, true) === 'ask'],
     ['guest data never synced: moves into the first account', ownerCheck(withData(null), B, false) === 'claim'],
     ['synced by an older version, still signed in: claim', ownerCheck(withData('x'), B, true) === 'claim'],
-    ['synced by an older version, after a sign-out: ask', ownerCheck(withData('x'), B, false) === 'ask'],
+    ['synced by an older version, after a sign-out: verify against the account first', ownerCheck(withData('x'), B, false) === 'verify'],
     ['keep: owner is the new account and everything uploads', km.owner === B && km.settings.dirty && km.days['2026-09-20'].dirty && kept.customFoods.every((f) => f._dirty) && km.lastPull === null],
     ["keep: the other account's queued deletes are dropped", km.foodDeletes.length === 0],
     ['fresh: nothing from the device is left', fresh._meta!.owner === B && Object.keys(fresh.days).length === 0 && fresh.customFoods.length === 0 && fresh.recipes.length === 0 && !fresh._meta!.settings.dirty],
     ["a backup never changes whose device it is", restored._meta!.owner === A],
-    ['an import keeps lastPull, so synced data still asks after a sign-out', ownerCheck(afterImport, B, false) === 'ask'],
+    ['an import keeps lastPull, so synced data still asks after a sign-out', ownerCheck(afterImport, B, false) === 'verify'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'owner:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+// Older installs (no owner recorded) and guest mode on shared devices.
+function legacyAndGuest(): void {
+  const day = { foods: [], supps: {}, weight: null, workout: null }
+  const F = uuid(), R = uuid()
+  const legacy = stateFromBackup({ days: { '2026-09-01': day, '2026-09-02': day } } as never)
+  const m = legacy._meta!
+  m.lastPull = '2026-09-10T00:00:00Z'
+  m.days['2026-09-01'] = { u: '2026-09-01T08:00:00.123456+00:00', dirty: false }
+  m.days['2026-09-02'] = { u: 'local', dirty: true }
+  m.settings.dirty = false
+  legacy.customFoods = [{ id: F, n: 'Mine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false }]
+  legacy.recipes = [{ id: R, name: 'Chilli', servings: 1, items: [], _dirty: true }]
+  const none = { days: [], foods: [], recipes: [] }
+  const checks: [string, boolean][] = [
+    ['same account: a synced day with the same server timestamp', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }] })],
+    ['same account: a synced custom food id it holds', sameAccount(legacy, { ...none, foods: [{ id: F }] })],
+    ['not proof: a day edited since (other timestamp)', !sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-05T00:00:00+00:00' }] })],
+    ["not proof: an unsynced local record's id or date", !sameAccount(legacy, { days: [{ log_date: '2026-09-02', updated_at: 'local' }], foods: [], recipes: [{ id: R }] })],
+    ['not proof: an account with nothing', !sameAccount(legacy, none)],
+    ["guest mode asks when the log is an account's (owner)", belongsToAccount({ ...legacy, _meta: { ...m, lastPull: null, owner: uuid() } })],
+    ['guest mode asks when an older version synced it', belongsToAccount(legacy)],
+    ['guest data that never synced opens as before', !belongsToAccount(stateFromBackup({ days: { '2026-09-01': day } } as never))],
+    ['counts unsynced changes', unsyncedCount(legacy) === 2],
+    ['fresh guest state: empty and no one\'s', (() => { const g = freshForGuest(); return !belongsToAccount(g) && Object.keys(g.days).length === 0 && unsyncedCount(g) === 0 })()],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/guest:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

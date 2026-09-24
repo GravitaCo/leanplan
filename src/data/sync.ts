@@ -6,7 +6,7 @@
  */
 import type { DayLog, Food, Recipe } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
-import type { PersistedState, SyncMeta } from './persistence'
+import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 
 /* ---- client <-> server row mapping ---- */
 function toServerFood(f: Food, uid: string) {
@@ -208,6 +208,17 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     meta.days[d] = { u: row.updated_at, dirty: false }
   })
   meta.lastPull = nowIso()
+}
+
+/** The rows sameAccount compares, read with a session that isn't applied yet. */
+export async function accountRows(uid: string, token: string): Promise<AccountRows> {
+  const q = '?user_id=eq.' + uid + '&select='
+  const [days, foods, recipes] = await Promise.all([
+    sbGet<AccountRows['days']>('/day_logs' + q + 'log_date,updated_at', token),
+    sbGet<AccountRows['foods']>('/custom_foods' + q + 'id', token),
+    sbGet<AccountRows['recipes']>('/recipes' + q + 'id', token),
+  ])
+  return { days, foods, recipes }
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'

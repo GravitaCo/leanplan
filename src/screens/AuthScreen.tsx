@@ -3,7 +3,6 @@ import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { TaliIcon } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
-import { exportBackup } from '@/data/backup'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -200,11 +199,11 @@ export function AuthScreen() {
 
 /**
  * Shown after signing in when this device holds data that may belong to another account (a
- * shared phone). Nothing from that data shows or syncs until the user picks one.
+ * shared phone). Nothing from that data shows, syncs or exports until the user picks one; if it
+ * is theirs from another account, they sign in to that one to get it.
  */
 export function OwnerChoiceScreen() {
   const ask = useStore((st) => st.ownerAsk)
-  const data = useStore((st) => st.data)
   const resolveOwner = useStore((st) => st.resolveOwner)
   const [busy, setBusy] = useState(false)
   const who = ask?.email || 'this account'
@@ -220,18 +219,47 @@ export function OwnerChoiceScreen() {
         <h1>Tali</h1>
         <p>Signed in as {who}</p>
       </div>
-      <h2 className="auth-t">This device has another log</h2>
-      <div className="card prose">
-        <p>The log on this device was made in a different account, or before it was linked to {who}.</p>
-        <p>Starting fresh removes it from this device and loads {who}’s own data. Anything that hadn’t synced yet is lost, so export a copy first if you need it.</p>
-        <p style={{ margin: 0 }}>Keeping it adds it to {who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.</p>
-      </div>
-      <button className="btn" disabled={busy} onClick={() => pick('fresh')}>Start fresh with {who}</button>
-      <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>
+      {ask?.checking ? (
+        <div className="card prose" role="status">Checking the log on this device…</div>
+      ) : (
+        <>
+          <h2 className="auth-t">This device has another log</h2>
+          <div className="card prose">
+            <p>The log on this device was made in a different account, or before it was linked to {who}.</p>
+            <p>Starting fresh removes it from this device and loads {who}’s own data. If the log is yours from another account, cancel and sign in to that one instead: anything that hadn’t synced yet is still there.</p>
+            <p style={{ margin: 0 }}>Keeping it adds it to {who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.</p>
+          </div>
+          <button className="btn" disabled={busy} onClick={() => pick('fresh')}>Start fresh with {who}</button>
+          <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>
+        </>
+      )}
       <div className="auth-links">
-        <button type="button" className="linkbtn" onClick={() => exportBackup(data)}>Export this device’s log first</button>
         <button type="button" className="linkbtn muted" disabled={busy} onClick={() => pick('cancel')}>Cancel and sign out</button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * "Continue without an account" when this device holds an account's log (someone signed out on
+ * a shared phone): the log never opens without that account.
+ */
+export function GuestChoiceScreen() {
+  const resolveGuest = useStore((st) => st.resolveGuest)
+  return (
+    <div className="auth auth-owner">
+      <div className="auth-brand">
+        <TaliIcon size={88} />
+        <h1>Tali</h1>
+        <p>Without an account</p>
+      </div>
+      <h2 className="auth-t">This device has an account’s log</h2>
+      <div className="card prose">
+        <p>The log on this device belongs to an account, so it only opens when you sign in to that account.</p>
+        <p style={{ margin: 0 }}>Starting fresh removes it from this device and opens Tali empty, without an account. Anything that account hadn’t synced yet is lost.</p>
+      </div>
+      <button className="btn" onClick={() => resolveGuest('signin')}>Sign in</button>
+      <button className="btn gray" onClick={() => resolveGuest('fresh')}>Start fresh without an account</button>
     </div>
   )
 }

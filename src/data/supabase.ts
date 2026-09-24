@@ -40,17 +40,18 @@ export class HttpError extends Error {
 }
 
 /** Thin REST wrappers around PostgREST, authorised with the current session token. */
-function sbFetch(path: string, opts: RequestInit = {}): Promise<Response> {
+function sbFetch(path: string, opts: RequestInit = {}, token?: string): Promise<Response> {
   opts.headers = {
     apikey: SB_KEY,
-    Authorization: 'Bearer ' + getToken(),
+    Authorization: 'Bearer ' + (token || getToken()),
     ...(opts.headers || {}),
   }
   return fetch(SB_REST + path, opts)
 }
 
-export async function sbGet<T = unknown>(path: string): Promise<T> {
-  const r = await sbFetch(path, {})
+/** `token`: read as a session that isn't applied yet (the owner check before sign-in completes). */
+export async function sbGet<T = unknown>(path: string, token?: string): Promise<T> {
+  const r = await sbFetch(path, {}, token)
   if (!r.ok) throw new HttpError('GET ' + path + ' -> ' + r.status, r.status)
   return r.json() as Promise<T>
 }

@@ -178,14 +178,61 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
  * phone would show one person's log to the next and upload it into their account.
  * `stayedSignedIn`: this device was still signed in to an account (not a fresh sign-in).
  */
-export function ownerCheck(s: PersistedState, uid: string, stayedSignedIn: boolean): 'same' | 'claim' | 'ask' {
+export function ownerCheck(s: PersistedState, uid: string, stayedSignedIn: boolean): 'same' | 'claim' | 'ask' | 'verify' {
   const owner = s._meta?.owner
   if (owner) return owner === uid ? 'same' : 'ask'
   // Never synced (guest data, a first sign-in): it moves into the account, as it always has.
   if (!s._meta?.lastPull) return 'claim'
   // Synced by an older version that didn't record the owner: still the signed-in account's if
-  // the device never signed out; after a sign-out we can't tell whose it is.
-  return stayedSignedIn ? 'claim' : 'ask'
+  // the device never signed out. After a sign-out, 'verify': compare it with this account's
+  // rows (sameAccount) before asking.
+  return stayedSignedIn ? 'claim' : 'verify'
+}
+
+/** This account's rows, as much as sameAccount needs (ids and server timestamps only). */
+export interface AccountRows {
+  days: { log_date: string; updated_at: string }[]
+  foods: { id: string }[]
+  recipes: { id: string }[]
+}
+
+/**
+ * Whether data an older version synced (no owner recorded) came from this account. Evidence
+ * the server alone could have given this device: a synced day whose stored server timestamp
+ * matches this account's row for that date, or a synced custom food or recipe whose id (a random
+ * UUID) this account holds. RLS only returns the signed-in account's rows, so a match can't come
+ * from anyone else. No match (including an edit made elsewhere since) means ask.
+ */
+export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
+  const m = s._meta
+  if (!m) return false
+  const at = new Map(rows.days.map((r) => [r.log_date, r.updated_at]))
+  const dayMatch = Object.entries(m.days || {}).some(([d, x]) => !x.dirty && !!x.u && at.get(d) === x.u)
+  const ids = new Set([...rows.foods, ...rows.recipes].map((r) => r.id))
+  const idMatch = [...(s.customFoods || []), ...(s.recipes || [])].some((x) => !x._dirty && !!x.id && ids.has(x.id))
+  return dayMatch || idMatch
+}
+
+/** Whether continuing without an account would show an account's data: it has an owner, or an
+ *  older version synced it. Guest data that never synced has neither. */
+export function belongsToAccount(s: PersistedState): boolean {
+  return !!(s._meta?.owner || s._meta?.lastPull)
+}
+
+/** Changes on this device that haven't reached the server, for the sign-out choice. */
+export function unsyncedCount(s: PersistedState): number {
+  const m = s._meta
+  if (!m) return 0
+  return (m.settings?.dirty ? 1 : 0) + Object.values(m.days || {}).filter((x) => x.dirty).length +
+    (s.customFoods || []).filter((f) => f._dirty).length + (s.recipes || []).filter((r) => r._dirty).length +
+    (m.foodDeletes || []).length + (m.recipeDeletes || []).length
+}
+
+/** An empty device state for a guest: no owner, nothing synced. */
+export function freshForGuest(): PersistedState {
+  const s = loadStateFrom(null)
+  ensureMeta(s, false)
+  return s
 }
 
 /** "Keep this device's data in this account": everything on the device uploads to `uid`. The

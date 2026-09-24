@@ -9,7 +9,7 @@ import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { rangeWidth } from '@/core/domain/insights'
 import { pushSupported } from '@/data/push'
 import { exportBackup, readBackup } from '@/data/backup'
-import { backupSummary, type PersistedState } from '@/data/persistence'
+import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { Disclosure, PageHeader, Seg, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 
@@ -67,7 +67,7 @@ export function ProfileScreen() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [handsOpen, setHandsOpen] = useState(false)
   const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
-  const [signingOut, setSigningOut] = useState(false)
+  const [signOutOpen, setSignOutOpen] = useState(false)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
   const [name, setName] = useState(pr.name || '')
@@ -253,7 +253,7 @@ export function ProfileScreen() {
         <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || (syncPaused ? 'Your account (not syncing right now)' : 'Local (no account)')}</div></div>
-            <button className="btn sm gray" disabled={signingOut} onClick={async () => { setSigningOut(true); try { await signOut() } finally { setSigningOut(false) } }}>{authed ? (signingOut ? 'Signing out…' : 'Sign out') : 'Sign in'}</button>
+            <button className="btn sm gray" onClick={() => (authed ? setSignOutOpen(true) : signOut())}>{authed ? 'Sign out' : 'Sign in'}</button>
           </div>
         </Disclosure>
         <Disclosure icon="cloud" color="var(--mind)" label="Data & backup" open={open === 'backup'} onToggle={() => toggle('backup')}>
@@ -279,6 +279,7 @@ export function ProfileScreen() {
       </div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
+      {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} everywhere={authed || syncPaused} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </div>
   )
@@ -297,6 +298,31 @@ function ImportSheet({ backup, everywhere, onClose, onImport }: { backup: Persis
         <p>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''} {everywhere ? 'on all your devices' : 'on this device'}. Anything else here stays as it is.</p>
       </div>
       <div className="stack"><button className="btn tinted" onClick={onImport}>Import</button></div>
+    </Sheet>
+  )
+}
+
+/** Sign out, optionally removing this device's log (shared phones). It stays in the account. */
+function SignOutSheet({ onClose }: { onClose: () => void }) {
+  const signOut = useStore((s) => s.signOut)
+  const data = useStore((s) => s.data)
+  const [busy, setBusy] = useState<'keep' | 'remove' | null>(null)
+  const unsynced = unsyncedCount(data)
+  const go = async (remove: boolean) => {
+    if (busy) return
+    setBusy(remove ? 'remove' : 'keep')
+    try { await signOut({ remove }) } finally { setBusy(null) }
+  }
+  return (
+    <Sheet title="Sign out" onClose={onClose}>
+      <div className="prose sub" style={{ padding: '0 4px 12px' }}>
+        <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>
+        {unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Data & backup.</p>}
+      </div>
+      <div className="stack">
+        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : 'Sign out and remove this device’s log'}</button>
+      </div>
     </Sheet>
   )
 }

@@ -27,8 +27,8 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
-import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
+import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForGuest, belongsToAccount, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
@@ -55,7 +55,9 @@ interface StoreState {
   authNotice: string | null
   /** signed in, but this device's data may belong to another account: nothing shows or syncs
    *  until the user picks keep or start fresh (see ownerCheck) */
-  ownerAsk: { uid: string; email: string | null } | null
+  ownerAsk: { uid: string; email: string | null; checking?: boolean } | null
+  /** "Continue without an account" on data that belongs to an account: ask before showing it */
+  guestAsk: boolean
   /** "I have…" snapshot for meal suggestions (device-only) */
   kitchen: string[]
   setKitchen: (have: string[]) => void
@@ -117,9 +119,12 @@ interface StoreState {
   // sync / auth
   initAuth: () => Promise<void>
   continueAsGuest: () => void
+  /** Answer guestAsk: start fresh as a guest (this device's log is removed) or go back to sign in. */
+  resolveGuest: (choice: 'fresh' | 'signin') => void
   runSync: () => Promise<void>
   scheduleSync: () => void
-  signOut: () => Promise<void>
+  /** `remove`: also remove this device's log (shared phones), leaving an empty guest state. */
+  signOut: (opts?: { remove?: boolean }) => Promise<void>
   /** Call before a sign-in or sign-up attempt from the sign-in screen. */
   beginSignIn: () => void
   /** Answer ownerAsk: keep this device's data in the account, start fresh, or sign out. */
@@ -170,6 +175,8 @@ const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is s
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
+/** Set by the store: local-only mode. */
+let enterGuest: () => void = () => {}
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
@@ -190,6 +197,14 @@ export const useStore = create<StoreState>()(
       meta(s).days[d] = { u: nowIso(), dirty: true }
     }
 
+    enterGuest = () => {
+      // Local-only mode: no account, data stays on this device only. Cloud sync is
+      // disabled (authed stays false) so we never touch the database without a real
+      // authenticated session — the database is locked to auth.uid() by RLS.
+      saveMode('guest')
+      set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null; st.guestAsk = false })
+    }
+
     return {
       data: loadState(),
       cur: todayStr(),
@@ -203,6 +218,7 @@ export const useStore = create<StoreState>()(
       syncPaused: false,
       authNotice: null,
       ownerAsk: null,
+      guestAsk: false,
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
@@ -536,12 +552,29 @@ export const useStore = create<StoreState>()(
           // A different account's data must not show or sync until the user chooses. Until then
           // the session isn't applied and the mode isn't saved, so a reload asks again.
           const check = ownerCheck(get().data, uid, loadMode() === 'account')
-          if (check === 'ask') {
+          if (check === 'ask' || check === 'verify') {
             setSession(null, null)
             // not 'account' until the user chooses, so an offline reload can't open this data
             // as a signed-in account
             saveMode(null)
-            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
+            const checking = check === 'verify'
+            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.guestAsk = false })
+            if (checking) {
+              // Data an older version synced without recording whose it was: if it matches this
+              // account's rows it's theirs, so carry on without a question (and without marking
+              // it all to upload over newer server data). Any doubt, including no connection: ask.
+              Promise.race([accountRows(uid, s.access_token), new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), 6000))])
+                .then((rows) => sameAccount(get().data, rows))
+                .catch(() => false)
+                .then((same) => {
+                  if (get().ownerAsk?.uid !== uid || !get().ownerAsk?.checking) return // answered or signed out meanwhile
+                  if (!same) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
+                  set((st) => { ensureMeta(st.data, false).owner = uid; st.ownerAsk = null })
+                  saveState(get().data)
+                  live(s)
+                  get().runSync()
+                })
+            }
             return
           }
           if (check === 'claim') {
@@ -586,7 +619,7 @@ export const useStore = create<StoreState>()(
         ])
         const session = r.session
         if (session) live(session)
-        else if (mode === 'guest') get().continueAsGuest()
+        else if (mode === 'guest') enterGuest() // already chose guest on this device: no question
         else if (mode === 'account') {
           if ((r.definite || serverSignedOut) && navigator.onLine) {
             // signed out on the server: say so and ask to sign in, rather than quietly not syncing
@@ -616,11 +649,20 @@ export const useStore = create<StoreState>()(
       },
 
       continueAsGuest: () => {
-        // Local-only mode: no account, data stays on this device only. Cloud sync is
-        // disabled (authed stays false) so we never touch the database without a real
-        // authenticated session — the database is locked to auth.uid() by RLS.
-        saveMode('guest')
-        set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null })
+        // an account's log (someone signed out on a shared phone) never opens as a guest
+        // without asking; guest data that never synced opens as before
+        if (belongsToAccount(get().data)) { set((st) => { st.guestAsk = true }); return }
+        enterGuest()
+      },
+
+      resolveGuest: (choice) => {
+        if (choice === 'signin') { set((st) => { st.guestAsk = false }); return }
+        const next = freshForGuest()
+        saveState(next)
+        get().setKitchen([])
+        set((st) => { st.data = next; st.cur = todayStr(); st.guestAsk = false })
+        unsubscribePush() // no session: this only ends the browser's subscription, which stops the reminders
+        enterGuest()
       },
 
       runSync: async () => {
@@ -694,7 +736,7 @@ export const useStore = create<StoreState>()(
         }
       },
 
-      signOut: async () => {
+      signOut: async (opts) => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
         // (offline), which would sign the user straight back in: clear it locally as well, and
         // ignore late session events (see onAuthStateChange). A refresh already in flight can
@@ -709,7 +751,13 @@ export const useStore = create<StoreState>()(
         get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)
         saveMode(null)
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
+        if (opts?.remove) {
+          // shared phones: the next person finds an empty device, not this log
+          const next = freshForGuest()
+          saveState(next)
+          set((st) => { st.data = next; st.cur = todayStr() })
+        }
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null; st.guestAsk = false })
       },
     }
   }),
