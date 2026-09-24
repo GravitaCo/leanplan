@@ -104,11 +104,23 @@ export function TrainScreen() {
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
-  // per card: a shorter Push doesn't make that day's Legs or cardio shorter
-  const startChoice: Choice = builtin(sel)?.option === 'shorter' || easy ? 'shorter' : 'planned'
-  const [choice, setChoice] = useState<Choice>(startChoice)
+  /*
+   * The day-of choice is worked out, not stored, so it's right on the first frame:
+   * - a card with its own saved session shows that version (a shorter Push stays shorter),
+   *   unless the person picks something else on that card;
+   * - otherwise the person's pick carries across tabs until it's used to save;
+   * - otherwise the day's default (shorter in an easier week or on a lighter day).
+   */
+  const [picked, setPicked] = useState<{ choice: Choice; tab: WorkoutType } | null>(null)
   const [askLighter, setAskLighter] = useState(easy)
-  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins(''); setConfirmId(null) }, [cur, easy, sel, builtin(sel)?.option]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPicked(null); setAskLighter(easy); setWalkMins(''); setConfirmId(null) }, [cur, easy]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setConfirmId(null) }, [sel])
+  const own = builtin(sel)
+  const choice: Choice = own && picked?.tab !== sel
+    ? own.option === 'shorter' ? 'shorter' : 'planned'
+    : picked ? picked.choice : easy ? 'shorter' : 'planned'
+  /** a choice the person makes themselves */
+  const pickChoice = (c: Choice) => setPicked({ choice: c, tab: sel })
 
   // plans slide: offer the planned session that didn't happen; the calendar never moves
   const isToday = cur === todayStr()
@@ -119,7 +131,7 @@ export function TrainScreen() {
   const shorter = choice === 'shorter'
   const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
   /** choosing a tab always shows that session: it leaves a swap (the planned session stays one tap away) */
-  function pickTab(t: WorkoutType) { setSel(t); if (swap) setChoice('planned') }
+  function pickTab(t: WorkoutType) { setSel(t); if (swap) setPicked(null) }
 
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
@@ -149,6 +161,7 @@ export function TrainScreen() {
   function commitLift() {
     if (!wk) return
     saveWorkout(sel, wk.ex.map((e, i) => ({ name: e.n, sets: (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '') })), shorter ? 'shorter' : undefined)
+    setPicked(null) // used: it doesn't carry to the day's other cards
   }
 
   return (
@@ -235,7 +248,7 @@ export function TrainScreen() {
             : 'Here are a few options for today. All of them count.'}</div>
           <div className="chips" role="radiogroup" aria-label="Today's session">
             {CHOICES.map(([k, label]) => (
-              <button key={k} role="radio" aria-checked={choice === k} className={'chip' + (choice === k ? ' on' : '')} onClick={() => setChoice(k)}>{label}</button>
+              <button key={k} role="radio" aria-checked={choice === k} className={'chip' + (choice === k ? ' on' : '')} onClick={() => pickChoice(k)}>{label}</button>
             ))}
           </div>
           {swap && <div className="foot">This counts as today's session. Your plan carries on as usual.</div>}
@@ -271,7 +284,7 @@ export function TrainScreen() {
             // show what was logged (the cardio tab with this type), not the planned lift
             const m = choice === 'walk' ? walkMins || swap.mins : swap.mins
             setSel('Cardio'); setCardioType(swap.cardioType); setMins(m)
-            saveCardio(swap.cardioType, m, 'swap')
+            saveCardio(swap.cardioType, m, 'swap'); setPicked(null)
           }}>
             Save {choice === 'walk' ? 'walk' : 'mobility'}</button></div>
         </>
@@ -290,7 +303,7 @@ export function TrainScreen() {
             <div className="frow"><label htmlFor="c_min">Minutes</label>
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
           </div>
-          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined)}>Save cardio</button></div>
+          <div className="stack"><button className="btn" onClick={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); setPicked(null) }}>Save cardio</button></div>
         </>
       ) : (
         <>
