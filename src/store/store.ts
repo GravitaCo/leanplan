@@ -496,7 +496,7 @@ export const useStore = create<StoreState>()(
       },
 
       importBackup: (incoming) => {
-        const fresh = stateFromBackup(structuredClone(incoming), get().data._meta)
+        const fresh = stateFromBackup(structuredClone(incoming), get().data)
         set((st) => { st.data = fresh })
         saveState(get().data)
         set((st) => { st.cur = todayStr() })
@@ -601,14 +601,20 @@ export const useStore = create<StoreState>()(
         if (syncing) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         syncing = true
+        let rerun = false
         set((st) => { st.sync = 'syncing' })
         try {
           // Work on a plain mutable clone — the store's live data is frozen by Immer,
           // and the sync engine mutates records in place.
-          const d = structuredClone(get().data) as PersistedState
+          const src = get().data
+          const d = structuredClone(src) as PersistedState
           const m = ensureMeta(d, false)
           await pushDirty(d, m)
           await pullAll(d, m)
+          // Data changed while we were on the network (an edit, a backup import): writing this
+          // copy back would lose that change. Drop it; live records are still dirty, so the
+          // next run pushes them again and pulls afresh.
+          if (get().data !== src) { rerun = true; set((st) => { st.sync = 'idle' }); return }
           saveState(d)
           // Replace data wholesale so selectors see fresh references and re-render.
           set((st) => { st.data = d; st.sync = 'synced' })
@@ -617,6 +623,7 @@ export const useStore = create<StoreState>()(
           set((st) => { st.sync = 'error' })
         } finally {
           syncing = false
+          if (rerun) get().scheduleSync()
         }
       },
 

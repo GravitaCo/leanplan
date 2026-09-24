@@ -559,27 +559,38 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
 // before pulling, and a stale server can't overwrite or drop what was restored.
 async function backupRestore(): Promise<void> {
   const day = (kcal: number) => ({ foods: [{ n: 'Toast', k: kcal, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: 70, workout: null })
+  const F1 = '11111111-1111-4111-8111-111111111111', R1 = '22222222-2222-4222-8222-222222222222'
+  const GONE = '33333333-3333-4333-8333-333333333333', RGONE = '44444444-4444-4444-8444-444444444444', HERE = '55555555-5555-4555-8555-555555555555'
   const live = stateFromBackup({ days: {} } as never)
+  live.profile.burnSwitch = '2026-09-10'
+  live.profile.notificationsEnabled = true
   live.days = { '2026-09-01': day(100), '2026-09-02': day(120) } as never
-  live.customFoods = [{ id: 'f1', n: 'My flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }]
-  live.recipes = [{ id: 'r1', name: 'Chilli', servings: 4, items: [] }]
+  live.customFoods = [{ id: F1, n: 'My flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }]
+  live.recipes = [{ id: R1, name: 'Chilli', servings: 4, items: [] }]
   const m = ensureMeta(live, true)
-  m.foodDeletes = ['f1', 'f-gone']
-  m.recipeDeletes = ['r-gone']
+  m.foodDeletes = [F1, GONE, 'f1727000000abc']
+  m.recipeDeletes = [RGONE]
   // after a sync everything is clean; that is what exportBackup writes out
   m.settings.dirty = false
   Object.values(m.days).forEach((x) => (x.dirty = false))
   live.customFoods.forEach((f) => (f._dirty = false))
   live.recipes.forEach((r) => (r._dirty = false))
   const file = JSON.parse(JSON.stringify(live)) as PersistedState
-  const got = stateFromBackup(file, { settings: { u: '', dirty: false }, days: {}, foodDeletes: ['f-here', 'f1'], recipeDeletes: ['r1'], lastPull: null })
+  const device = stateFromBackup({ days: {} } as never)
+  device.profile.burnSwitch = '2026-09-05'
+  device.profile.notificationsEnabled = false
+  device._meta!.foodDeletes = [HERE, F1]
+  device._meta!.recipeDeletes = [R1]
+  const got = stateFromBackup(file, device)
   const gm = got._meta!
   const checks: [string, boolean][] = [
     ['settings dirty', gm.settings.dirty],
     ['every day dirty', Object.keys(got.days).length === 2 && Object.keys(got.days).every((d) => gm.days[d]?.dirty)],
     ['custom foods dirty', got.customFoods.every((f) => f._dirty && !!f._u)],
     ['recipes dirty', got.recipes.every((r) => r._dirty && !!r._u)],
-    ['queued deletes kept except restored ids', gm.foodDeletes.join('|') === 'f-gone|f-here' && gm.recipeDeletes.join('|') === 'r-gone'],
+    ['earliest D5 switch date kept', got.profile.burnSwitch === '2026-09-05'],
+    ["this device's reminders setting kept", got.profile.notificationsEnabled === false],
+    ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
   ]
   // a stale server: different day 1, no foods or recipes; push then pull as runSync does
   const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
@@ -602,7 +613,7 @@ async function backupRestore(): Promise<void> {
   }
   checks.push(
     ['restored day survives the pull', got.days['2026-09-01'].foods[0].k === 100],
-    ['restored food and recipe survive the pull', got.customFoods.some((f) => f.id === 'f1') && got.recipes.some((r) => r.id === 'r1')],
+    ['restored food and recipe survive the pull', got.customFoods.some((f) => f.id === F1) && got.recipes.some((r) => r.id === R1)],
     ['restored data reached the server', server.custom_foods.length === 1 && server.recipes.length === 1 && server.day_logs.length === 2 && server.settings.length === 1],
   )
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'backup import:', n) }

@@ -105,21 +105,30 @@ export function saveMode(m: SessionMode | null): void {
   try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
  * Turn a backup file into the state to restore. A backup is the user's intended current data,
  * so its own sync flags (exported with it, usually all clean) are discarded and every day,
  * the settings, custom foods and recipes are marked dirty with fresh stamps: the next sync
  * uploads them before it pulls, so the pull can't overwrite or drop them. Queued deletes from
- * the backup and from this device are kept, except for ids the backup restores.
+ * the backup and from this device are kept, except for ids the backup restores and ids that
+ * aren't UUIDs (the server rejects those, which would stall every later sync). This device
+ * keeps its reminders setting (it follows its own push subscription) and the earliest D5
+ * switch date either side has.
  */
-export function stateFromBackup(incoming: PersistedState, pending?: SyncMeta): PersistedState {
+export function stateFromBackup(incoming: PersistedState, current?: PersistedState): PersistedState {
   const old = incoming._meta
   delete incoming._meta
+  const switches = [incoming.profile?.burnSwitch, current?.profile?.burnSwitch].filter((x): x is string => !!x)
   const s = loadStateFrom(incoming)
+  if (switches.length) s.profile.burnSwitch = switches.sort()[0]
+  if (current?.profile) s.profile.notificationsEnabled = !!current.profile.notificationsEnabled
   const meta = ensureMeta(s, true)
+  const pending = current?._meta
   const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
   const keep = (lists: unknown[], live: Set<unknown>) =>
-    [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && !live.has(id))
+    [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && UUID_RE.test(id) && !live.has(id))
   meta.foodDeletes = keep([old?.foodDeletes, pending?.foodDeletes], new Set(s.customFoods.map((f) => f.id)))
   meta.recipeDeletes = keep([old?.recipeDeletes, pending?.recipeDeletes], new Set(s.recipes.map((r) => r.id)))
   return s
