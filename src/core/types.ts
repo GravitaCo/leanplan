@@ -42,9 +42,6 @@ export type FoodUnit = 'g' | 'ml' | 'item'
 
 export type DietPattern = 'none' | 'pescatarian' | 'vegetarian' | 'vegan'
 
-/** "I have…" snapshot for meal suggestions: food names, no quantities (never a chore). */
-export interface Kitchen { have: string[]; updated: string }
-
 /** A published figure: `k` kcal (and macros, when published) for `g` of the food's unit. */
 export interface FoodRef { g: number; k: number; p?: number; c?: number; f?: number }
 

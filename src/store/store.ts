@@ -640,6 +640,7 @@ export const useStore = create<StoreState>()(
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
         await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()
+        get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)
         saveMode(null)
         set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })

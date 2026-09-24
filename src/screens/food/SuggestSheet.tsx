@@ -70,7 +70,7 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
                   </div>
                   {s.swaps.length > 0 && (
                     <div className="s">
-                      {s.swaps.map((w) => swapText(w, gentle)).join(' · ')}
+                      {s.swaps.map((w) => swapText(w, gentle, +s.recipe.servings || 1)).join(' · ')}
                     </div>
                   )}
                 </div>
@@ -85,10 +85,11 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   )
 }
 
-/** "Swap Beef mince → Quorn pieces (−600 kcal, −35 g protein)", or "Contains meat: Beef stock". */
-function swapText(w: Swap, gentle: boolean): string {
+/** "Swap Beef mince → Quorn pieces (−64 kcal, −9 g protein per serving)", or "Contains meat: …". */
+function swapText(w: Swap, gentle: boolean, servings: number): string {
   if (!w.to) return `Contains ${w.reason}: ${w.from} (leave out or use a plant version)`
-  const sign = (x: number) => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x))
-  const d = w.delta ? ` (${gentle ? '' : `${sign(w.delta.k)} kcal, `}${sign(w.delta.p)} g protein)` : ''
+  const sign = (x: number) => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x / servings))
+  // per serving, like the protein figure beside it
+  const d = w.delta ? ` (${gentle ? '' : `${sign(w.delta.k)} kcal, `}${sign(w.delta.p)} g protein per serving)` : ''
   return `Swap ${w.from} → ${w.to.n}${d}`
 }
