@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from './store/store'
 import { BottomNav } from './ui/BottomNav'
-import { AuthScreen, GuestChoiceScreen, OwnerChoiceScreen } from './screens/AuthScreen'
+import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FoodScreen } from './screens/FoodScreen'
 import { TrainScreen } from './screens/TrainScreen'
@@ -16,7 +16,6 @@ export default function App() {
   const toast = useStore((s) => s.toast)
   const initAuth = useStore((s) => s.initAuth)
   const ownerAsk = useStore((s) => s.ownerAsk)
-  const guestAsk = useStore((s) => s.guestAsk)
 
   useEffect(() => {
     initAuth()
@@ -44,7 +43,6 @@ export default function App() {
   }
 
   if (ownerAsk) return <OwnerChoiceScreen />
-  if (guestAsk) return <GuestChoiceScreen />
   if (!signedIn) return <AuthScreen />
 
   return (

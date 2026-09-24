@@ -14,7 +14,8 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
-  /** Supabase user id this device's data belongs to; unset for guest data never synced (and
+  /** Supabase user id this device's data belongs to; unset for data never synced (from the
+   *  retired guest mode, or before a first sign-in) and
    *  for data synced by a version before this was recorded). */
   owner?: string
 }
@@ -97,8 +98,9 @@ export function saveKitchen(have: string[]): void {
   try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(have)) } catch { /* blocked */ }
 }
 
-/** How this device last used Tali, so launch never needs the network to decide: 'guest'
- *  (local-only) or 'account' (signed in; works offline, syncs when back online). */
+/** How this device last used Tali, so launch never needs the network to decide: 'account'
+ *  (signed in; works offline, syncs when back online). 'guest' is only read, from devices that
+ *  used the retired guest mode; launch sends them to the sign-in screen. */
 export type SessionMode = 'guest' | 'account'
 const MODE_KEY = 'tali.mode'
 export function loadMode(): SessionMode | null {
@@ -181,7 +183,8 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
 export function ownerCheck(s: PersistedState, uid: string, stayedSignedIn: boolean): 'same' | 'claim' | 'ask' | 'verify' {
   const owner = s._meta?.owner
   if (owner) return owner === uid ? 'same' : 'ask'
-  // Never synced (guest data, a first sign-in): it moves into the account, as it always has.
+  // Never synced (the retired guest mode, a first sign-in): it moves into the account, as it
+  // always has.
   if (!s._meta?.lastPull) return 'claim'
   // Synced by an older version that didn't record the owner: still the signed-in account's if
   // the device never signed out. After a sign-out, 'verify': compare it with this account's
@@ -217,12 +220,6 @@ export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
   return match && !against
 }
 
-/** Whether continuing without an account would show an account's data: it has an owner, or an
- *  older version synced it. Guest data that never synced has neither. */
-export function belongsToAccount(s: PersistedState): boolean {
-  return !!(s._meta?.owner || s._meta?.lastPull)
-}
-
 /** Changes on this device that haven't reached the server, for the sign-out choice. */
 export function unsyncedCount(s: PersistedState): number {
   const m = s._meta
@@ -232,8 +229,8 @@ export function unsyncedCount(s: PersistedState): number {
     (m.foodDeletes || []).length + (m.recipeDeletes || []).length
 }
 
-/** An empty device state for a guest: no owner, nothing synced. */
-export function freshForGuest(): PersistedState {
+/** An empty device state: no owner, nothing synced (sign out and remove). */
+export function freshForDevice(): PersistedState {
   const s = loadStateFrom(null)
   ensureMeta(s, false)
   return s

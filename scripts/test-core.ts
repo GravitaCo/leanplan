@@ -27,7 +27,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { backupSummary, belongsToAccount, ensureMeta, freshForAccount, freshForGuest, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
+import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -844,7 +844,7 @@ function accountOwner(): void {
 }
 
 
-// Older installs (no owner recorded) and guest mode on shared devices.
+// Older installs (no owner recorded), removing the log at sign-out, and the retired guest mode.
 function legacyAndGuest(): void {
   const day = { foods: [], supps: {}, weight: null, workout: null }
   const F = uuid(), R = uuid()
@@ -874,13 +874,11 @@ function legacyAndGuest(): void {
       return !sameAccount(mixed, forB) && !sameAccount(mixed, forA)
     })()],
     ['not proof: a synced food this account does not hold', !sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }] })],
-    ["guest mode asks when the log is an account's (owner)", belongsToAccount({ ...legacy, _meta: { ...m, lastPull: null, owner: uuid() } })],
-    ['guest mode asks when an older version synced it', belongsToAccount(legacy)],
-    ['guest data that never synced opens as before', !belongsToAccount(stateFromBackup({ days: { '2026-09-01': day } } as never))],
     ['counts unsynced changes', unsyncedCount(legacy) === 2],
-    ['fresh guest state: empty and no one\'s', (() => { const g = freshForGuest(); return !belongsToAccount(g) && Object.keys(g.days).length === 0 && unsyncedCount(g) === 0 })()],
+    ['removed at sign-out: empty, no one\'s, and moves into whoever signs in next', (() => { const g = freshForDevice(); return !g._meta!.owner && !g._meta!.lastPull && ownerCheck(g, uuid(), false) === 'claim' && Object.keys(g.days).length === 0 && unsyncedCount(g) === 0 })()],
+    ['a log from the retired guest mode moves into the first account', ownerCheck(stateFromBackup({ days: { '2026-09-01': day } } as never), uuid(), false) === 'claim'],
   ]
-  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/guest:', n) }
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/device:', n) }
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

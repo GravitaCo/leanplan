@@ -27,7 +27,7 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForGuest, belongsToAccount, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
@@ -47,7 +47,7 @@ interface StoreState {
   email: string | null
   authReady: boolean
   signedIn: boolean
-  /** true only when a real Supabase session exists (not guest/local-only mode) */
+  /** true only when a real Supabase session exists (not offline-paused or while asking whose data) */
   authed: boolean
   /** signed-in account opened without a live session (offline): data saves locally, sync waits */
   syncPaused: boolean
@@ -56,8 +56,6 @@ interface StoreState {
   /** signed in, but this device's data may belong to another account: nothing shows or syncs
    *  until the user picks keep or start fresh (see ownerCheck) */
   ownerAsk: { uid: string; email: string | null; checking?: boolean } | null
-  /** "Continue without an account" on data that belongs to an account: ask before showing it */
-  guestAsk: boolean
   /** "I have…" snapshot for meal suggestions (device-only) */
   kitchen: string[]
   setKitchen: (have: string[]) => void
@@ -118,12 +116,9 @@ interface StoreState {
 
   // sync / auth
   initAuth: () => Promise<void>
-  continueAsGuest: () => void
-  /** Answer guestAsk: start fresh as a guest (this device's log is removed) or go back to sign in. */
-  resolveGuest: (choice: 'fresh' | 'signin') => void
   runSync: () => Promise<void>
   scheduleSync: () => void
-  /** `remove`: also remove this device's log (shared phones), leaving an empty guest state. */
+  /** `remove`: also remove this device's log (shared phones), leaving an empty state. */
   signOut: (opts?: { remove?: boolean }) => Promise<void>
   /** Call before a sign-in or sign-up attempt from the sign-in screen. */
   beginSignIn: () => void
@@ -170,13 +165,12 @@ function clearSavedSession() {
 
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
+const GUEST_GONE_MSG = 'Tali now needs an account. Sign in or create one: the log on this phone moves into it.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
-/** Set by the store: local-only mode. */
-let enterGuest: () => void = () => {}
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
@@ -197,14 +191,6 @@ export const useStore = create<StoreState>()(
       meta(s).days[d] = { u: nowIso(), dirty: true }
     }
 
-    enterGuest = () => {
-      // Local-only mode: no account, data stays on this device only. Cloud sync is
-      // disabled (authed stays false) so we never touch the database without a real
-      // authenticated session — the database is locked to auth.uid() by RLS.
-      saveMode('guest')
-      set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null; st.guestAsk = false })
-    }
-
     return {
       data: loadState(),
       cur: todayStr(),
@@ -218,7 +204,6 @@ export const useStore = create<StoreState>()(
       syncPaused: false,
       authNotice: null,
       ownerAsk: null,
-      guestAsk: false,
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
@@ -558,7 +543,7 @@ export const useStore = create<StoreState>()(
             // as a signed-in account
             saveMode(null)
             const checking = check === 'verify'
-            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.guestAsk = false })
+            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
             if (checking) {
               // Data an older version synced without recording whose it was: if it matches this
               // account's rows it's theirs, so carry on without a question (and without marking
@@ -625,7 +610,9 @@ export const useStore = create<StoreState>()(
         ])
         const session = r.session
         if (session) live(session)
-        else if (mode === 'guest') enterGuest() // already chose guest on this device: no question
+        // mode 'guest' (the old "continue without an account"): there is no guest mode any more, so
+        // it opens the sign-in screen; the log stays and moves into the account on first sign-in
+        else if (mode === 'guest') { saveMode(null); set((st) => { st.authNotice = GUEST_GONE_MSG }) }
         else if (mode === 'account') {
           if ((r.definite || serverSignedOut) && navigator.onLine) {
             // signed out on the server: say so and ask to sign in, rather than quietly not syncing
@@ -654,26 +641,9 @@ export const useStore = create<StoreState>()(
         document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
       },
 
-      continueAsGuest: () => {
-        // an account's log (someone signed out on a shared phone) never opens as a guest
-        // without asking; guest data that never synced opens as before
-        if (belongsToAccount(get().data)) { set((st) => { st.guestAsk = true }); return }
-        enterGuest()
-      },
-
-      resolveGuest: (choice) => {
-        if (choice === 'signin') { set((st) => { st.guestAsk = false }); return }
-        const next = freshForGuest()
-        saveState(next)
-        get().setKitchen([])
-        set((st) => { st.data = next; st.cur = todayStr(); st.guestAsk = false })
-        unsubscribePush() // no session: this only ends the browser's subscription, which stops the reminders
-        enterGuest()
-      },
-
       runSync: async () => {
-        // Only sync with a real authenticated session. Guests are local-only; the
-        // database rejects anything without a JWT matching the row's user_id.
+        // Only sync with a real authenticated session (none while offline or while asking whose
+        // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
         if (syncing) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
@@ -715,7 +685,7 @@ export const useStore = create<StoreState>()(
         syncTimer = setTimeout(() => get().runSync(), 800)
       },
 
-      /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
+      /** Call before a sign-in attempt: ends the post-sign-out wait for late session events. */
       beginSignIn: () => {
         signingOut = false
       },
@@ -759,11 +729,11 @@ export const useStore = create<StoreState>()(
         saveMode(null)
         if (opts?.remove) {
           // shared phones: the next person finds an empty device, not this log
-          const next = freshForGuest()
+          const next = freshForDevice()
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr() })
         }
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null; st.guestAsk = false })
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
       },
     }
   }),

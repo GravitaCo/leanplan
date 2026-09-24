@@ -3,14 +3,12 @@ import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { TaliIcon } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
-import { unsyncedCount } from '@/data/persistence'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
 const redirect = () => window.location.origin + window.location.pathname
 
 export function AuthScreen() {
-  const continueAsGuest = useStore((s) => s.continueAsGuest)
   const [mode, setModeRaw] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
@@ -186,11 +184,6 @@ export function AuthScreen() {
                 </button>
               </span>
             )}
-            {mode !== 'forgot' && (
-              <button type="button" className="linkbtn muted" onClick={continueAsGuest}>
-                Continue without an account
-              </button>
-            )}
           </div>
         </form>
       )}
@@ -237,34 +230,6 @@ export function OwnerChoiceScreen() {
       <div className="auth-links">
         <button type="button" className="linkbtn muted" disabled={busy} onClick={() => pick('cancel')}>Cancel and sign out</button>
       </div>
-    </div>
-  )
-}
-
-/**
- * "Continue without an account" when this device holds an account's log (someone signed out on
- * a shared phone): the log never opens without that account.
- */
-export function GuestChoiceScreen() {
-  const resolveGuest = useStore((st) => st.resolveGuest)
-  const unsynced = useStore((st) => unsyncedCount(st.data))
-  const [sure, setSure] = useState(false)
-  // losing changes that never reached the account takes a second tap, as at sign-out
-  const fresh = () => (unsynced > 0 && !sure ? setSure(true) : resolveGuest('fresh'))
-  return (
-    <div className="auth auth-owner">
-      <div className="auth-brand">
-        <TaliIcon size={88} />
-        <h1>Tali</h1>
-        <p>Without an account</p>
-      </div>
-      <h2 className="auth-t">This device has an account’s log</h2>
-      <div className="card prose">
-        <p>The log on this device belongs to an account, so it only opens when you sign in to that account.</p>
-        <p style={{ margin: 0 }}>Starting fresh removes it from this device and opens Tali empty, without an account.{unsynced > 0 ? ' ' + (unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t') + ' reached that account yet and would be lost: signing in to it first keeps ' + (unsynced === 1 ? 'it.' : 'them.') : ''}</p>
-      </div>
-      <button className="btn" onClick={() => resolveGuest('signin')}>Sign in</button>
-      <button className="btn gray" onClick={fresh}>{sure && unsynced > 0 ? 'Start fresh anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Start fresh without an account'}</button>
     </div>
   )
 }

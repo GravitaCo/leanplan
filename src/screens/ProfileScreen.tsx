@@ -252,7 +252,7 @@ export function ProfileScreen() {
       <div className="list icons">
         <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || (syncPaused ? 'Your account (not syncing right now)' : 'Local (no account)')}</div></div>
+            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || 'Your account (not syncing right now)'}</div></div>
             <button className="btn sm gray" onClick={() => (authed || syncPaused ? setSignOutOpen(true) : signOut())}>{authed || syncPaused ? 'Sign out' : 'Sign in'}</button>
           </div>
         </Disclosure>

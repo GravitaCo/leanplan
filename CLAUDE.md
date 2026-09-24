@@ -120,8 +120,12 @@ setting (`prefers-color-scheme`); there is no in-app override.
   row is private to `auth.uid()` (see `docs/security-rls.sql`). Don't loosen it.
 - **Never rename the localStorage key `leanplan.v1`** or the Supabase table/column names —
   doing so orphans existing user data.
-- Guest mode is **local-only**: the `authed` flag gates all cloud sync, so we never hit the
-  DB without a real session.
+- **No guest mode** (retired Sept 2026, Benn's call): everyone signs up. The `authed` flag
+  gates all cloud sync, so we never hit the DB without a real session (it stays false offline
+  and while the app asks whose data is on the device). A device from the old guest mode opens
+  the sign-in screen, and its log moves into the account on first sign-in.
+- The device's data records its owner (`_meta.owner`); signing in as a different account asks
+  before showing or syncing it (`ownerCheck` in `src/data/persistence.ts`).
 
 ## Working agreement: Figma → code
 
