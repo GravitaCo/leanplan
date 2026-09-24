@@ -41,6 +41,7 @@ export function TrainScreen() {
   const saveWorkout = useStore((s) => s.saveWorkout)
   const saveCardio = useStore((s) => s.saveCardio)
   const setPrefs = useStore((s) => s.setPrefs)
+  const showToast = useStore((s) => s.showToast)
   const removeSession = useStore((s) => s.removeSession)
   const [logOpen, setLogOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
@@ -53,7 +54,9 @@ export function TrainScreen() {
   const sessions = sessionsOf(day, cur)
   const logged = sessions.length > 0
   const builtin = (t: string) => sessions.find((x) => x.routineId === 'builtin-' + t)
-  const firstBuiltin = sessions.find((x) => (x.routineId || '').startsWith('builtin-'))
+  // open on the day's lift if there is one (as the mirror does), else the first built-in card
+  const firstBuiltin = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
+    ?? sessions.find((x) => (x.routineId || '').startsWith('builtin-'))
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
 
@@ -79,7 +82,7 @@ export function TrainScreen() {
     })
     setSets(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, cur])
+  }, [sel, cur, builtin(sel)?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // cardio state
   const cardioS = builtin('Cardio')
@@ -101,10 +104,11 @@ export function TrainScreen() {
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
-  const startChoice: Choice = firstBuiltin?.option === 'shorter' || easy ? 'shorter' : 'planned'
+  // per card: a shorter Push doesn't make that day's Legs or cardio shorter
+  const startChoice: Choice = builtin(sel)?.option === 'shorter' || easy ? 'shorter' : 'planned'
   const [choice, setChoice] = useState<Choice>(startChoice)
   const [askLighter, setAskLighter] = useState(easy)
-  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins('') }, [cur, easy, firstBuiltin?.option]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins(''); setConfirmId(null) }, [cur, easy, sel, builtin(sel)?.option]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // plans slide: offer the planned session that didn't happen; the calendar never moves
   const isToday = cur === todayStr()
@@ -162,7 +166,9 @@ export function TrainScreen() {
           <div className="t">You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</div>
           <div className="chips">
             <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button>
-            <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur, easyFrom: shiftDay(cur, 1), easyUntil: shiftDay(cur, 1) })}>Make tomorrow lighter</button>
+            {(data.schedule[fmtDate(shiftDay(cur, 1)).idx] || 'Rest') !== 'Rest' && (
+              <button className="chip" onClick={() => { setPrefs({ loadNoteSeen: cur, easyFrom: shiftDay(cur, 1), easyUntil: shiftDay(cur, 1) }); showToast('Tomorrow will start with the shorter version selected.') }}>Make tomorrow lighter</button>
+            )}
           </div>
           <button className="linkbtn muted" style={{ paddingLeft: 0, marginTop: 6 }} onClick={() => setSupportOpen(true)}>Finding it hard to ease off?</button>
         </div>
@@ -179,7 +185,7 @@ export function TrainScreen() {
                   <div className="s">{MODALITY_LABEL[x.modality] ?? x.modality}{x.mins != null ? ` · ${x.mins} min` : ''}{x.cardio?.km ? ` · ${x.cardio.km} km` : ''}</div>
                 </div>
                 {confirmId === x.id
-                  ? <button className="linkbtn" style={{ color: 'var(--red)' }} onClick={() => { removeSession(x.id); setConfirmId(null) }}>Remove</button>
+                  ? <button className="linkbtn" style={{ color: 'var(--red)' }} aria-label={`Remove ${x.title}`} onClick={() => { removeSession(x.id); setConfirmId(null) }}>Remove</button>
                   : <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => setConfirmId(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>}
               </div>
             ))}
@@ -223,7 +229,9 @@ export function TrainScreen() {
         <div className="card dayopt">
           <div className="t">{offer
             ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
-            : easy ? `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`
+            : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
+              ? 'Lighter day: the shorter version is selected for today. Change it any time.'
+              : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`)
             : 'Here are a few options for today. All of them count.'}</div>
           <div className="chips" role="radiogroup" aria-label="Today's session">
             {CHOICES.map(([k, label]) => (

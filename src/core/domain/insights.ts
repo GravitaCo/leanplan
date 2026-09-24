@@ -65,8 +65,10 @@ export function rangeExtra(s: AppState, d: string): number {
     const old = workoutBurn(day.workout, kg, true)
     if (!Array.isArray(day.sessions)) return old
     const list = sessionsOf(day, d)
+    // the old maths only stands in for a built-in card session; anything new counts at its own value
     const mirrored = mirroredIndex(list)
-    return old + list.reduce((a, x, i) => (i === mirrored ? a : a + sessionBurn(x, kg)), 0)
+    const keepOld = mirrored >= 0 && (list[mirrored].routineId || '').startsWith('builtin-')
+    return (keepOld ? old : 0) + list.reduce((a, x, i) => (keepOld && i === mirrored ? a : a + sessionBurn(x, kg)), 0)
   }
   if (s.profile.activityLevel !== 'sedentary') return 0
   return sessionsOf(day, d).reduce((a, x) => a + sessionNetBurn(x, kg), 0)

@@ -417,8 +417,10 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const pre = { target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], profile: { activityLevel: 'light', rangeWidth: 100, burnSwitch: '2026-12-01' },
     days: { [D]: day({ weight: 70, workout: { ...lift, _mirror: true }, sessions: [fromLegacy(lift, D), yoga] }) } } as any
   const preMid = rangeFor(pre, D).mid  // old lift 3.5 × 70 × 0.75 = 184 + yoga gross 95
-  const ok3 = fold === 'p1:1,y1:- builtin-Push,builtin-Legs' && preMid === 2000 + 184 + 95; if (!ok3) bad++
-  console.log(ok3 ? 'PASS' : 'FAIL', 'sessions: older-install fold-in and pre-switch extras', JSON.stringify(fold), preMid)
+  // a lone new session on a pre-switch day counts at its own value, not through the old mirror maths
+  const lone = rangeFor({ ...pre, days: { [D]: day({ weight: 70, workout: mirrorOf([yoga]), sessions: [yoga] }) } }, D).mid
+  const ok3 = fold === 'p1:1,y1:- builtin-Push,builtin-Legs' && preMid === 2000 + 184 + 95 && lone === 2000 + 95; if (!ok3) bad++
+  console.log(ok3 ? 'PASS' : 'FAIL', 'sessions: older-install fold-in and pre-switch extras', JSON.stringify(fold), preMid, lone)
   // sedentary net burn after the switch sums every session; other levels add nothing
   const st = (level: string) => ({ target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [],
     profile: { activityLevel: level, rangeWidth: 100, burnSwitch: '2026-09-01' },
