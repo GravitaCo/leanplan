@@ -10,7 +10,7 @@ import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlo
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
-import { mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { fromLegacy, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -66,7 +66,11 @@ export function rangeExtra(s: AppState, d: string): number {
     if (!Array.isArray(day.sessions)) return old
     const list = sessionsOf(day, d)
     // the old maths only stands in for a built-in card session; anything new counts at its own value
-    const mirrored = mirroredIndex(list)
+    // when an older install wrote the workout, the old maths belongs to the session made from it
+    const wk = day.workout
+    const mirrored = wk?.type && !wk._mirror
+      ? list.findIndex((x) => x.routineId === fromLegacy(wk, d).routineId)
+      : mirroredIndex(list)
     const keepOld = mirrored >= 0 && (list[mirrored].routineId || '').startsWith('builtin-')
     return (keepOld ? old : 0) + list.reduce((a, x, i) => (keepOld && i === mirrored ? a : a + sessionBurn(x, kg)), 0)
   }

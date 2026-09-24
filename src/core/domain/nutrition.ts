@@ -241,8 +241,9 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
   // Step 5 — macros, protein first (the evidence-based lever, anchored to bodyweight),
   // fat as an essential/hormonal floor, carbs fill the remainder to fuel training.
   // Feel-better has no training target to fuel and lower protein, so a 25% fat share would leave
-  // carbs above the 45–60% guideline; it takes the UK Reference Intake share instead (70 g fat per
-  // 2000 kcal, 31.5%; Regulation (EU) 1169/2011 Annex XIII as retained in UK law).
+  // carbs above the 45–60% range (EFSA 2010); it takes the UK Reference Intake share instead (70 g
+  // fat per 2000 kcal, 31.5%; Regulation (EU) 1169/2011 Annex XIII, assimilated law in GB). Where
+  // the 0.8 g/kg floor binds (heavier, shorter people), fat is higher and carbs can fall below 45%.
   const fatShare = profile.goal === 'feel-better' ? (70 * 9) / 2000 : 0.25
   const f = Math.round(Math.max(0.8 * weight, (kcal * fatShare) / 9))
   let p = Math.round(weight * PROTEIN_PER_KG[profile.goal])
