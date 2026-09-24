@@ -241,7 +241,7 @@ export function ProfileScreen() {
             <div><div>Supplement reminders</div><div className="sub" style={{ fontSize: 13 }}>{notifStatus}</div></div>
             <Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
               const ok = await setNotifications(!pr.notificationsEnabled)
-              showToast(ok ? (pr.notificationsEnabled ? 'Reminders off' : 'Reminders on') : 'Permission denied')
+              showToast(ok ? (pr.notificationsEnabled ? 'Reminders off' : 'Reminders on') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
             }} />
           </div>
           <div className="foot" style={{ padding: '10px 0 0' }}>iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>

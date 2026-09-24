@@ -728,6 +728,18 @@ async function syncResilience(): Promise<void> {
   }
   checks.push(['an unfixable 403 keeps the id and the dirty flag', s2.customFoods[0].id === KEEP && s2.customFoods[0]._dirty === true && failed.length === 1])
 
+  // a 409 never adopts an id another local record holds: renaming R1 onto R2's name must not
+  // overwrite R2 (the pull would keep only one of the two)
+  const RA = uuid(), RB = uuid()
+  const rows4: Record<string, any[]> = { settings: [], day_logs: [], custom_foods: [], recipes: [{ id: RB, user_id: LOCAL_USER, name: 'Curry', items: [], servings: 2 }] }
+  const s4 = stateFromBackup({ days: {} } as never)
+  s4.recipes = [{ id: RA, name: 'curry', servings: 4, items: [], _dirty: true }, { id: RB, name: 'Curry', servings: 2, items: [], _dirty: false }]
+  const m4 = ensureMeta(s4, false)
+  m4.settings.dirty = false
+  globalThis.fetch = fakeServer(rows4).fetchFn
+  try { failed = await pushDirty(s4, m4) } finally { globalThis.fetch = realFetch }
+  checks.push(["a 409 never takes another local record's id", s4.recipes[0].id === RA && s4.recipes[0]._dirty === true && rows4.recipes.length === 1 && rows4.recipes[0].servings === 2 && failed.length === 1])
+
   // no connection: throws, nothing marked clean
   const s3 = stateFromBackup({ days: { '2026-09-21': { foods: [], supps: {}, weight: null, workout: null } } } as never)
   const m3 = ensureMeta(s3, false)
@@ -800,6 +812,8 @@ function accountOwner(): void {
   const km = kept._meta!
   const fresh = freshForAccount(B)
   const dev = withData('x', A)
+  const legacy = withData('2026-09-01T00:00:00Z')
+  const afterImport = stateFromBackup(JSON.parse(JSON.stringify(withData(null))), legacy)
   const restored = stateFromBackup(JSON.parse(JSON.stringify({ ...withData('x', B), days: {} })), dev)
   const checks: [string, boolean][] = [
     ['same account: carry on', ownerCheck(synced, A, false) === 'same'],
@@ -811,6 +825,7 @@ function accountOwner(): void {
     ["keep: the other account's queued deletes are dropped", km.foodDeletes.length === 0],
     ['fresh: nothing from the device is left', fresh._meta!.owner === B && Object.keys(fresh.days).length === 0 && fresh.customFoods.length === 0 && fresh.recipes.length === 0 && !fresh._meta!.settings.dirty],
     ["a backup never changes whose device it is", restored._meta!.owner === A],
+    ['an import keeps lastPull, so synced data still asks after a sign-out', ownerCheck(afterImport, B, false) === 'ask'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'owner:', n) }
 }

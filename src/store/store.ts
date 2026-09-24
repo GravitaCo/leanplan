@@ -29,7 +29,7 @@ import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
-import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 
@@ -292,6 +292,8 @@ export const useStore = create<StoreState>()(
           if (!Array.isArray(st.data.recipes)) st.data.recipes = []
           let r: Recipe | undefined
           if (input.id) r = st.data.recipes.find((x) => x.id === input.id)
+          // renaming onto another recipe's name would leave two with one name (the server allows one)
+          if (r && st.data.recipes.some((x) => x !== r && x.name.toLowerCase() === input.name.toLowerCase())) return
           if (!r) r = st.data.recipes.find((x) => x.name.toLowerCase() === input.name.toLowerCase())
           if (r) {
             r.name = input.name; r.servings = input.servings; r.items = input.items
@@ -536,6 +538,9 @@ export const useStore = create<StoreState>()(
           const check = ownerCheck(get().data, uid, loadMode() === 'account')
           if (check === 'ask') {
             setSession(null, null)
+            // not 'account' until the user chooses, so an offline reload can't open this data
+            // as a signed-in account
+            saveMode(null)
             set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
             return
           }
@@ -631,6 +636,7 @@ export const useStore = create<StoreState>()(
           // Work on a plain mutable clone — the store's live data is frozen by Immer,
           // and the sync engine mutates records in place.
           const src = get().data
+          const uid0 = getUid()
           const d = structuredClone(src) as PersistedState
           const m = ensureMeta(d, false)
           const failed = await pushDirty(d, m)
@@ -639,6 +645,9 @@ export const useStore = create<StoreState>()(
           // copy back would lose that change. Drop it; live records are still dirty, so the
           // next run pushes them again and pulls afresh.
           if (get().data !== src) { rerun = true; return }
+          // signed out, or another account's session held back, while this ran: its requests may
+          // have gone out without this account's token (an anon read returns no rows), so drop it
+          if (!get().authed || getUid() !== uid0) return
           saveState(d)
           // Rejected records stay dirty on the device and retry next time; the rest synced.
           if (failed.length) console.warn('sync: some records were rejected:', failed)
@@ -669,6 +678,8 @@ export const useStore = create<StoreState>()(
         if (choice === 'cancel') { await get().signOut(); return }
         const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
         if (choice === 'fresh') get().setKitchen([])
+        // the browser's push subscription still belongs to the previous account: end it
+        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
         saveState(next)
         set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
         // the session was held back while asking; it comes from local storage, so this works offline
@@ -688,6 +699,9 @@ export const useStore = create<StoreState>()(
         // ignore late session events (see onAuthStateChange). A refresh already in flight can
         // re-save the session, so clear again once the sign-out call settles.
         signingOut = true
+        // Stop this device's reminders for this account while its token can still delete the row;
+        // otherwise they keep arriving for the next person on a shared phone. Never waits long.
+        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
         await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()

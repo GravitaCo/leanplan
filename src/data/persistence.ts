@@ -145,6 +145,8 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   const pending = current?._meta
   // a backup never changes whose device this is (its own _meta was discarded above)
   if (pending?.owner) meta.owner = pending.owner
+  // and never makes data this device synced look never-synced (ownerCheck reads lastPull)
+  meta.lastPull = pending?.lastPull ?? null
   if (current) {
     for (const d of Object.keys(current.days || {})) {
       if (s.days[d]) continue

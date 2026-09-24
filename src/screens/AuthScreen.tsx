@@ -223,7 +223,8 @@ export function OwnerChoiceScreen() {
       <h2 className="auth-t">This device has another log</h2>
       <div className="card prose">
         <p>The log on this device was made in a different account, or before it was linked to {who}.</p>
-        <p style={{ margin: 0 }}>Starting fresh removes it from this device and loads {who}’s own data. Anything that hadn’t synced yet is lost, so export a copy first if you need it.</p>
+        <p>Starting fresh removes it from this device and loads {who}’s own data. Anything that hadn’t synced yet is lost, so export a copy first if you need it.</p>
+        <p style={{ margin: 0 }}>Keeping it adds it to {who}, replacing that account’s targets and any days that are in both.</p>
       </div>
       <button className="btn" disabled={busy} onClick={() => pick('fresh')}>Start fresh with {who}</button>
       <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>

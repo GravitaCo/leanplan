@@ -96,7 +96,7 @@ async function upsertEach<T>(
  * - 403: RLS refused the id, so it belongs to another account (someone else's backup). Only
  *   when this account can't see that id do we give the record a fresh one.
  */
-function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => string, uid: string, deletes: string[]) {
+function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => string, uid: string, deletes: string[], local: T[]) {
   let names: { id: string; name: string }[] | null = null
   return async (x: T, e: HttpError): Promise<Undo | null> => {
     const was = x.id
@@ -104,7 +104,9 @@ function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => str
       names ??= await sbGet<{ id: string; name: string }[]>('/' + table + '?user_id=eq.' + uid + '&select=id,name')
       const key = nameOf(x).toLowerCase()
       const hit = names.find((r) => r.id !== x.id && (r.name || '').toLowerCase() === key)
-      if (!hit) return null
+      // another local record already holds that id: adopting it would make one overwrite the
+      // other (and the pull keep only one), so leave this one dirty and report it instead
+      if (!hit || local.some((o) => o !== x && o.id === hit.id)) return null
       x.id = hit.id
       const i = deletes.indexOf(hit.id)
       if (i >= 0) deletes.splice(i, 1)
@@ -158,9 +160,9 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   await deletes('custom_foods', 'foodDeletes')
   await deletes('recipes', 'recipeDeletes')
   const dirtyFoods = (s.customFoods || []).filter((f) => f._dirty)
-  await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes)))
+  await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes, s.customFoods)))
   const dirtyRecipes = (s.recipes || []).filter((r) => r._dirty)
-  await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes)))
+  await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes, s.recipes)))
   return failed
 }
 

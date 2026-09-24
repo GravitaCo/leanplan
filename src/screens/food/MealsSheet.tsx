@@ -44,6 +44,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     const save = () => {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
       if (!draft.items.length) { showToast('Add at least one ingredient'); return }
+      if (draft.id && recipes.some((r) => r.id !== draft.id && r.name.toLowerCase() === draft.name.trim().toLowerCase())) { showToast('You already have a recipe with that name'); return }
       saveRecipe({ id: draft.id, name: draft.name.trim(), servings: s, items: draft.items })
       if (initialDraft) onClose()
       else setDraft(null)

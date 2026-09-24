@@ -28,7 +28,7 @@ export async function subscribePush(): Promise<boolean> {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     })
     const j = sub.toJSON()
-    await fetch(SB_REST + '/push_subscriptions', {
+    const r = await fetch(SB_REST + '/push_subscriptions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,6 +43,7 @@ export async function subscribePush(): Promise<boolean> {
         auth_key: j.keys?.auth,
       }),
     })
+    if (!r.ok) throw new Error('push_subscriptions -> ' + r.status)
     return true
   } catch (e) {
     console.error('Push subscribe failed:', e)
@@ -50,9 +51,14 @@ export async function subscribePush(): Promise<boolean> {
   }
 }
 
+/** End this browser's push subscription and delete its row (the row only goes while a session
+ *  is still set; without one, ending the subscription still stops the reminders arriving). */
 export async function unsubscribePush(): Promise<void> {
+  if (!pushSupported()) return
   try {
-    const reg = await navigator.serviceWorker.ready
+    // getRegistration, not ready: ready never settles when no worker is registered
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (!reg) return
     const sub = await reg.pushManager.getSubscription()
     if (sub) {
       const endpoint = sub.endpoint
