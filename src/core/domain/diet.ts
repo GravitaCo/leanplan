@@ -40,8 +40,8 @@ const RULES: [Part, RegExp][] = [
 /** Made with animal rennet by definition (protected recipes): not vegetarian. */
 const RENNET = /\b(parmesan|parmigiano|grana padano|pecorino|gorgonzola)\b/i
 /** Varies by brand or recipe: we can't vouch either way from the name. */
-const CHECK_VEGETARIAN = /\b(cheese|cheddar|brie|feta|mozzarella|halloumi|camembert|stilton|pesto|wine|prosecco|champagne|lager|beer|ale|cider|stout|fruit yogh?urt|jelly|marshmallows?)\b/i
-const CHECK_VEGAN = /\b(naan|granola|refried|pilau|gnocchi|instant noodles|muffins?|margarine|spread|wine|prosecco|champagne|lager|beer|ale|cider|stout|biscuits?|cakes?)\b/i
+const CHECK_VEGETARIAN = /\b(cheese|cheddar|brie|feta|mozzarella|halloumi|camembert|stilton|babybel|refried|pesto|wine|prosecco|champagne|lager|beer|ale|cider|stout|fruit yogh?urt|jelly|marshmallows?)\b/i
+const CHECK_VEGAN = /\b(naan|granola|muesli|refried|pilau|gnocchi|instant noodles|muffins?|margarine|spread|wine|prosecco|champagne|lager|beer|ale|cider|stout|biscuits?|cakes?)\b/i
 const PLAIN_SAUCE = /\b(soy sauce|ketchup|sriracha|mustard|vinegar|mint sauce|chilli sauce|sweet chilli)\b/i
 // dishes whose full ingredients we can't know from the name (chains, ready meals, snacks)
 const COMPOSITE = new Set(['ready', 'fastfood', 'snacks'])
@@ -104,7 +104,8 @@ const SWAPS: { when: Part; match: RegExp; to: string; diets: DietPattern[]; fact
   { when: 'dairy', match: /^milk\b/i, to: 'Soya milk', diets: ['vegan'] },
   { when: 'dairy', match: /^butter\b/i, to: 'Olive oil (tbsp ~14g)', diets: ['vegan'], factor: 0.82 },
 ]
-const NOT_SWAPPABLE = /\b(stock|lard|dripping|suet|gelatine|anchov\w*|worcestershire|gravy)\b/i
+// processed or composite: no like-for-like swap at the same weight (egg, pastry, crumb, fat)
+const NOT_SWAPPABLE = /\b(stock|lard|dripping|suet|gelatine|anchov\w*|worcestershire|gravy|scotch egg|black pudding|chorizo|salami|pepperoni|breaded|fingers|nuggets|goujons|pâté|pate)\b/i
 const SWAP_CATS = new Set(['meat', 'fish', 'dairy', 'fats'])
 
 export interface Swap {

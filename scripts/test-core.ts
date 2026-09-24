@@ -497,6 +497,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     ['parmesan not vegetarian', dietFit({ n: 'Parmesan', cat: 'dairy' }, 'vegetarian'), 'conflict'],
     ['mashed potato not vegan', dietFit({ n: 'Mashed potato', cat: 'potato' }, 'vegan'), 'conflict'],
     ['wine is check', dietFit({ n: 'Red wine', cat: 'drinks' }, 'vegetarian'), 'check'],
+    ['scotch egg / fish fingers never swap whole', sw('vegetarian', [{ n: 'Scotch egg', k: 1, p: 1, c: 1, f: 1, grams: 120 }, { n: 'Fish fingers, cooked (3)', k: 1, p: 1, c: 1, f: 1, grams: 90 }] as never), 'Scotch egg>-|Fish fingers>-'],
+    ['babybel is check for vegetarians', dietFit({ n: 'Babybel', cat: 'dairy' }, 'vegetarian'), 'check'],
+    ['muesli is check for vegans', dietFit({ n: 'Muesli', cat: 'grains' }, 'vegan'), 'check'],
     ['cream crackers not dairy', dietFit({ n: 'Cream cracker', cat: 'snacks' }, 'vegan'), 'check'],
   ] as const) {
     const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'diet:', n, ok ? '' : got)
