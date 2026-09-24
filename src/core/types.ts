@@ -180,6 +180,8 @@ export interface Session {
   at?: string
   /** minutes; when absent the modality's default is used for estimates */
   mins?: number
+  /** a time estimate (an own workout's, plan §2.9), used when `mins` wasn't logged; never shown as logged */
+  estMins?: number
   effort?: Effort
   ex?: LoggedExercise[]
   /** cardio: a CARDIO_MET key, and optional distance */

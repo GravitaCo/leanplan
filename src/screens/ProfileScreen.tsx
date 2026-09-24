@@ -293,8 +293,8 @@ function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; on
   return (
     <Sheet title="Import backup" onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
-        <p>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')} and {n(b.recipes, 'recipe', 'recipes')}.</p>
-        <p>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''} on all your devices. Anything else here stays as it is.</p>
+        <p>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')}, {n(b.recipes, 'recipe', 'recipes')} and {n(b.workouts, 'workout', 'workouts')}.</p>
+        <p>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''}{b.workouts ? ', and adds its workouts' : ''} on all your devices. Anything else here stays as it is.</p>
       </div>
       <div className="stack"><button className="btn tinted" onClick={onImport}>Import</button></div>
     </Sheet>

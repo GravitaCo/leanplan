@@ -129,11 +129,22 @@ export function TrainScreen() {
     const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets) === JSON.stringify(buildEx())
     setsKey.current = key
     if (echo) return
+    // which logged exercise belongs to which slot: the same exercise wherever it now sits (an own
+    // workout can be reordered after it was logged), then what's left by position, which is a swap
+    const logged = loggedSets ?? []
+    const byExercise = (e: ExerciseTemplate, y: LoggedExercise) => (y.exId ? y.exId === e.id : y.name === e.n)
+    const taken = new Set<number>()
+    const slotLog: (LoggedExercise | undefined)[] = wk.ex.map((e, i) => {
+      const j = byExercise(e, logged[i] ?? { name: '', sets: [] }) ? i : logged.findIndex((y, k) => !taken.has(k) && byExercise(e, y))
+      if (j >= 0 && !taken.has(j)) { taken.add(j); return logged[j] }
+      return undefined
+    })
+    wk.ex.forEach((_, i) => { if (!slotLog[i] && logged[i] && !taken.has(i)) { taken.add(i); slotLog[i] = logged[i] } })
     const nextSw: Record<number, string> = {}
-    wk.ex.forEach((e, i) => { const id = loggedSwap(e, loggedSets?.[i]); if (id && exById(id)) nextSw[i] = id })
+    wk.ex.forEach((e, i) => { const id = loggedSwap(e, slotLog[i]); if (id && exById(id)) nextSw[i] = id })
     const next: Record<number, SetEntry[]> = {}
     wk.ex.forEach((e, i) => {
-      const L = loggedSets?.[i]
+      const L = slotLog[i]
       next[i] = L?.sets?.length ? toRows(L.sets, L.log ?? shapeFor(e, slotEx(i, nextSw))) : blankRows()
     })
     setSwaps(nextSw)
@@ -208,7 +219,7 @@ export function TrainScreen() {
   ) : one?.option === 'swap' ? (
     <><b>{one.title}</b> logged for {dayName}. Gentle movement counts too.</>
   ) : one ? (
-    <><b>{one.option === 'shorter' ? 'Shorter ' + (one.modality === 'strength' ? one.title : one.title.toLowerCase()) : one.title}</b> logged for {dayName}.</>
+    <><b>{one.option === 'shorter' ? 'Shorter ' + (one.modality === 'strength' || !(one.routineId || '').startsWith('builtin-') ? one.title : one.title.toLowerCase()) : one.title}</b> logged for {dayName}.</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (

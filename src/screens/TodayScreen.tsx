@@ -88,8 +88,10 @@ export function TodayScreen() {
 
   const activity = logged
     ? sess.length > 1 ? <span className="w">{sess.length} sessions</span>
-      : sess[0].modality === 'strength' ? <span className="w">{(sess[0].routineId || '').replace('builtin-', '') || sess[0].title} done</span>
-      : <>{sess[0].mins ?? '?'}<small> min</small></>
+      : sess[0].modality === 'strength' ? <span className="w">{(sess[0].routineId || '').startsWith('builtin-') ? sess[0].routineId!.replace('builtin-', '') : sess[0].title} done</span>
+      // an own workout logged without minutes shows its name, not a guessed number
+      : sess[0].mins != null ? <>{sess[0].mins}<small> min</small></>
+      : <span className="w">{sess[0].title} done</span>
     : <span className="w">{isRest ? 'Rest day' : sched + ' planned'}</span>
 
   const highlights: ReactNode[] = []

@@ -20,7 +20,7 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession } from '@/core/domain/sessions'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, sessionMetMins } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -932,8 +932,10 @@ function legacyAndGuest(): void {
   const S = (n: number) => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, modality: 'pilates', title: 'Mat mix', routineId: pilatesId }))
   const st = (effort: string) => ({ profile: {}, routines: [{ id: pilatesId, name: 'Mat mix', modality: 'pilates', effort, source: 'custom', blocks: [] }],
     days: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [shiftDay(T, -i), { foods: [], supps: {}, weight: null, workout: null, sessions: S(1) }])) }) as any
-  const got = [typed, est, short, rounded, headlineModality(mixed), deriveEffort(mixed), loadSignals(st('hard'), T).hard7, loadSignals(st('light'), T).hard7].join(' ')
-  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 8 2 × 10 7,35,35 pilates hard 7 0'
+  // an own workout's estimate stands in for unlogged minutes (plan §2.9); logged minutes win
+  const mm = [sessionMetMins({ modality: 'yoga', estMins: 15 } as any).mins, sessionMetMins({ modality: 'yoga', estMins: 15, mins: 40 } as any).mins, sessionMetMins({ modality: 'yoga' } as any).mins].join(',')
+  const got = [typed, est, short, rounded, headlineModality(mixed), deriveEffort(mixed), loadSignals(st('hard'), T).hard7, loadSignals(st('light'), T).hard7, mm].join(' ')
+  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 8 2 × 10 7,35,35 pilates hard 7 0 15,40,30'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: typed sets and reps, rounding, hard ones count for the load note', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

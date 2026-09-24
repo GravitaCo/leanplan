@@ -26,7 +26,9 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx } from '@/core/domain/routines'
+import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
+import { shorterPrescription } from '@/core/domain/dayOptions'
+import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -431,7 +433,9 @@ export const useStore = create<StoreState>()(
       saveRoutineSession: (routine, ex, option) => {
         set((st) => {
           // saving the same workout again that day is an edit of that session, as for the built-ins
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: routine.modality, title: routine.name, routineId: routine.id, ex, ...(option ? { option } : {}) })
+          // its own time estimate stands in for minutes (a shorter day's from the shorter prescriptions)
+          const slots = slotsOf(routine).map((x) => (option === 'shorter' ? { ...x, rx: shorterPrescription(x.rx || EXERCISE_BY_ID[x.exId]?.defaultRx || '') } : x))
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: routine.modality, title: routine.name, routineId: routine.id, ex, estMins: estMins(slots), ...(option ? { option } : {}) })
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast(routine.name + ' saved')

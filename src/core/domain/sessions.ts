@@ -72,7 +72,9 @@ const level = (e?: Effort) => (e === 'easy' ? 'light' : e === 'hard' || e === 'v
 /** MET and minutes for a session (Compendium values; see modalities.ts and constants.ts). */
 export function sessionMetMins(x: Session): { met: number; mins: number } {
   // capped at 4 hours so a typo ("300" for 30) can't add a day's worth (a judgement call)
-  const mins = x.mins != null && Number.isFinite(x.mins) ? Math.min(240, Math.max(0, x.mins)) : DEFAULT_MINS[x.modality] ?? 30
+  // logged minutes, else a workout's own estimate (plan §2.9), else the modality default
+  const given = x.mins != null && Number.isFinite(x.mins) ? x.mins : x.estMins != null && Number.isFinite(x.estMins) ? x.estMins : null
+  const mins = given != null ? Math.min(240, Math.max(0, given)) : DEFAULT_MINS[x.modality] ?? 30
   if (x.modality === 'cardio') return { met: CARDIO_MET[x.cardio?.key || ''] ?? CARDIO_MET.Other, mins }
   const m = MODALITY_MET[x.modality]
   return { met: m ? m[level(x.effort)] : CARDIO_MET.Other, mins }
