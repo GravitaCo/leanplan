@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { DayLog, SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
@@ -72,8 +72,15 @@ export function TrainScreen() {
   const wk = sel !== 'Cardio' ? WORKOUTS[sel] : null
   const loggedSets = builtin(sel)?.ex ?? null
   const [sets, setSets] = useState<Record<number, SetEntry[]>>({})
+  const setsKey = useRef('')
   useEffect(() => {
     if (!wk) return
+    // our own first save echoing back (blank rows filtered out): keep the rows on screen
+    const key = `${sel}|${cur}`
+    const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets.map((e) => e.sets)) ===
+      JSON.stringify(wk.ex.map((_, i) => (sets[i] || []).filter((s) => s.w !== '' || s.reps !== '')))
+    setsKey.current = key
+    if (echo) return
     const next: Record<number, SetEntry[]> = {}
     wk.ex.forEach((_, i) => {
       next[i] = loggedSets?.[i]?.sets?.length
@@ -180,7 +187,14 @@ export function TrainScreen() {
           <div className="chips">
             <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button>
             {(data.schedule[fmtDate(shiftDay(cur, 1)).idx] || 'Rest') !== 'Rest' && (
-              <button className="chip" onClick={() => { setPrefs({ loadNoteSeen: cur, easyFrom: shiftDay(cur, 1), easyUntil: shiftDay(cur, 1) }); showToast('Tomorrow will start with the shorter version selected.') }}>Make tomorrow lighter</button>
+              <button className="chip" onClick={() => {
+                const tmr = shiftDay(cur, 1)
+                const p = data.profile
+                // an easier week already covering tomorrow stays as it is, not cut to one day
+                if (p.easyUntil && p.easyUntil >= tmr && (p.easyFrom || p.welcomeAsked || '') <= tmr) setPrefs({ loadNoteSeen: cur })
+                else setPrefs({ loadNoteSeen: cur, easyFrom: tmr, easyUntil: tmr })
+                showToast('Tomorrow will start with the shorter version selected.')
+              }}>Make tomorrow lighter</button>
             )}
           </div>
           <button className="linkbtn muted" style={{ paddingLeft: 0, marginTop: 6 }} onClick={() => setSupportOpen(true)}>Finding it hard to ease off?</button>

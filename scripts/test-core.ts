@@ -294,6 +294,15 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok = got === '0 true 90 1.2'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'feel-better goal', JSON.stringify(got))
 }
+// feel-better fat at the UK RI share (31.5%) keeps carbs within the 45–60% guideline across sizes
+{
+  const rows = [[60, 'F', 160, 'sedentary'], [75, 'M', 175, 'light'], [95, 'M', 185, 'active'], [55, 'F', 155, 'moderate']].map(([kg, sex, height, act]) => {
+    const t = suggestedTargets({ ...DEFAULT_PROFILE, sex, age: 40, height, activityLevel: act, goal: 'feel-better' } as any, kg as number) as any
+    return { cPct: (t.c * 4) / t.kcal, fPct: (t.f * 9) / t.kcal, sum: Math.abs(t.p * 4 + t.c * 4 + t.f * 9 - t.kcal) }
+  })
+  const ok = rows.every((r) => r.cPct <= 0.6 && r.cPct >= 0.45 && r.fPct >= 0.3 && r.fPct <= 0.35 && r.sum <= 8); if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'feel-better split', JSON.stringify(rows.map((r) => [r.cPct.toFixed(3), r.fPct.toFixed(3)])))
+}
 // nutrition-accuracy's extra checks: switch day uses the new maths, sedentary before the switch
 // is legacy gross, legacy maths equals the shipped formula for every old key, a new type on a
 // pre-switch day uses its cited value, loadStateFrom only sets a missing switch, and each
