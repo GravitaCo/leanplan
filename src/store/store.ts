@@ -566,12 +566,18 @@ export const useStore = create<StoreState>()(
               Promise.race([accountRows(uid, s.access_token), new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), 6000))])
                 .then((rows) => sameAccount(get().data, rows))
                 .catch(() => false)
-                .then((same) => {
-                  if (get().ownerAsk?.uid !== uid || !get().ownerAsk?.checking) return // answered or signed out meanwhile
+                .then(async (same) => {
+                  const still = () => !signingOut && get().ownerAsk?.uid === uid && !!get().ownerAsk?.checking
+                  if (!still()) return // answered, cancelled or signed out meanwhile
                   if (!same) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
+                  // the token may have been refreshed while this ran: apply the current session
+                  const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
+                  const now = r?.data.session
+                  if (!still()) return
+                  if (!now || now.user.id !== uid) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
                   set((st) => { ensureMeta(st.data, false).owner = uid; st.ownerAsk = null })
                   saveState(get().data)
-                  live(s)
+                  live(now)
                   get().runSync()
                 })
             }

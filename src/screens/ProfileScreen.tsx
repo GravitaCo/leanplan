@@ -307,9 +307,11 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
   const signOut = useStore((s) => s.signOut)
   const data = useStore((s) => s.data)
   const [busy, setBusy] = useState<'keep' | 'remove' | null>(null)
+  const [sure, setSure] = useState(false)
   const unsynced = unsyncedCount(data)
   const go = async (remove: boolean) => {
     if (busy) return
+    if (remove && unsynced > 0 && !sure) { setSure(true); return } // losing changes takes a second tap
     setBusy(remove ? 'remove' : 'keep')
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
@@ -321,7 +323,7 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
       </div>
       <div className="stack">
         <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : 'Sign out and remove this device’s log'}</button>
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
       </div>
     </Sheet>
   )

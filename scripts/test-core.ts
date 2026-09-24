@@ -858,11 +858,22 @@ function legacyAndGuest(): void {
   legacy.recipes = [{ id: R, name: 'Chilli', servings: 1, items: [], _dirty: true }]
   const none = { days: [], foods: [], recipes: [] }
   const checks: [string, boolean][] = [
-    ['same account: a synced day with the same server timestamp', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }] })],
-    ['same account: a synced custom food id it holds', sameAccount(legacy, { ...none, foods: [{ id: F }] })],
-    ['not proof: a day edited since (other timestamp)', !sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-05T00:00:00+00:00' }] })],
+    ['same account: synced day timestamps and food ids all this account\'s', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }], foods: [{ id: F }] })],
+    ['same account: a day edited elsewhere since still counts if a food id matches', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: 'later' }], foods: [{ id: F }] })],
+    ['not proof: a day edited since and no id match', !sameAccount({ ...legacy, customFoods: [] }, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-05T00:00:00+00:00' }] })],
     ["not proof: an unsynced local record's id or date", !sameAccount(legacy, { days: [{ log_date: '2026-09-02', updated_at: 'local' }], foods: [], recipes: [{ id: R }] })],
     ['not proof: an account with nothing', !sameAccount(legacy, none)],
+    // an older version left B's days plus A's leftover days (dates B has no row for): neither
+    // account passes, so both are asked
+    ['not proof: a leftover synced day this account has no row for', (() => {
+      const mixed = structuredClone(legacy)
+      mixed.days['2026-08-15'] = structuredClone(day)
+      mixed._meta!.days['2026-08-15'] = { u: '2026-08-15T09:00:00+00:00', dirty: false }
+      const forB = { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }], foods: [{ id: F }] }
+      const forA = { ...none, days: [{ log_date: '2026-08-15', updated_at: '2026-08-15T09:00:00+00:00' }], foods: [{ id: F }] }
+      return !sameAccount(mixed, forB) && !sameAccount(mixed, forA)
+    })()],
+    ['not proof: a synced food this account does not hold', !sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }] })],
     ["guest mode asks when the log is an account's (owner)", belongsToAccount({ ...legacy, _meta: { ...m, lastPull: null, owner: uuid() } })],
     ['guest mode asks when an older version synced it', belongsToAccount(legacy)],
     ['guest data that never synced opens as before', !belongsToAccount(stateFromBackup({ days: { '2026-09-01': day } } as never))],

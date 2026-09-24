@@ -197,20 +197,24 @@ export interface AccountRows {
 }
 
 /**
- * Whether data an older version synced (no owner recorded) came from this account. Evidence
- * the server alone could have given this device: a synced day whose stored server timestamp
- * matches this account's row for that date, or a synced custom food or recipe whose id (a random
- * UUID) this account holds. RLS only returns the signed-in account's rows, so a match can't come
- * from anyone else. No match (including an edit made elsewhere since) means ask.
+ * Whether data an older version synced (no owner recorded) came from this account. Needs
+ * evidence the server alone could have given this device (a synced day whose stored server
+ * timestamp matches this account's row for that date, or a synced custom food or recipe whose id,
+ * a random UUID, this account holds; RLS only returns the signed-in account's rows) and nothing
+ * against it: every synced day must be a date this account has (the app never deletes day rows)
+ * and every synced food and recipe must be one it holds. A shared phone that older versions left
+ * holding two accounts' days fails that, and asks. So does any doubt.
  */
 export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
   const m = s._meta
   if (!m) return false
   const at = new Map(rows.days.map((r) => [r.log_date, r.updated_at]))
-  const dayMatch = Object.entries(m.days || {}).some(([d, x]) => !x.dirty && !!x.u && at.get(d) === x.u)
+  const syncedDays = Object.entries(m.days || {}).filter(([d, x]) => !x.dirty && !!x.u && !!s.days?.[d])
   const ids = new Set([...rows.foods, ...rows.recipes].map((r) => r.id))
-  const idMatch = [...(s.customFoods || []), ...(s.recipes || [])].some((x) => !x._dirty && !!x.id && ids.has(x.id))
-  return dayMatch || idMatch
+  const syncedItems = [...(s.customFoods || []), ...(s.recipes || [])].filter((x) => !x._dirty && !!x.id)
+  const match = syncedDays.some(([d, x]) => at.get(d) === x.u) || syncedItems.some((x) => ids.has(x.id!))
+  const against = syncedDays.some(([d]) => !at.has(d)) || syncedItems.some((x) => !ids.has(x.id!))
+  return match && !against
 }
 
 /** Whether continuing without an account would show an account's data: it has an owner, or an
