@@ -5,14 +5,16 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-09-23.
+Last reviewed: 2026-09-24. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
 | Requirement | Where |
 |---|---|
-| Privacy policy (Art. 13) | `src/core/legal/privacy.ts`, in-app from sign-in and Profile → Privacy, public at `https://tali.fit/?doc=privacy` |
-| Terms of use | `src/core/legal/terms.ts`, same places, public at `https://tali.fit/?doc=terms` |
+| Privacy policy (Art. 13), app and website | `src/core/legal/privacy.ts` → https://www.tali.fit/legals/privacy |
+| Terms and conditions | `src/core/legal/terms.ts` → https://www.tali.fit/legals/terms |
+| Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tali.fit/legals/cookie-policy |
+| Links from the app | Sign-in footer, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
 | Explicit consent for health data (Art. 9(2)(a)), terms, 18+ | `src/screens/legal/ConsentScreen.tsx`: three separate unticked boxes, shown before the app opens. Recorded on the device (`tali.consent`) and in the account's Supabase user metadata (`tali_consent`, with version, time and user id). Consent is per person: it is cleared on sign-out, and a guest's consent (worded for on-device only) is asked again when they sign in. Bumping `CONSENT_VERSION` asks everyone again. |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts` returns early without a consent record |
 | Right of access and portability (Art. 15, 20) | Profile → Data & backup → Export (JSON of everything logged) |
@@ -31,6 +33,8 @@ Last reviewed: 2026-09-23.
 | Custom foods, recipes | Run the service | 6(1)(b) | `custom_foods`, `recipes` | Until account deletion |
 | Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off or account deletion; dead endpoints (404/410) are removed by the function |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
+| Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
+| Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
 | Guest mode data | Run the app locally | Not processed by us: never leaves the device | Browser local storage | Until the user deletes it |
 
 ## Processors and transfers
@@ -39,8 +43,20 @@ Last reviewed: 2026-09-23.
 |---|---|---|---|
 | Supabase Inc. | Processor: database, auth, edge functions | Project `exvblofwiwbvycomxvmj`, region eu-west-1 (Ireland) | Accept Supabase's DPA (dashboard or supabase.com/legal/dpa); note Supabase is US-based, so check its transfer terms and record them |
 | GitHub Inc. (Pages) | Processor for hosting and request logs | US | Confirm GitHub's DPA covers Pages for your account type; record the transfer mechanism |
+| Webflow Inc. | Processor: website hosting, form submissions | US | Accept Webflow's DPA; record transfer mechanism |
+| Cloudflare Inc. | Processor: delivers the website (as Webflow's CDN), Turnstile | US / global | Covered through Webflow for delivery; Turnstile has its own terms: confirm and record |
+| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN, sees IP addresses | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name) |
+
+## Publishing the legal pages
+
+The text is written in `src/core/legal/` and rendered with `npm run legal:html`
+(output `node_modules/.cache/legal-html.json`), then written to the Webflow site "Tali",
+collection "Legals" (`content` rich text, `last-updated` date), as drafts via the Webflow MCP.
+Publishing is a separate, explicit step. Don't edit the pages in Webflow: the next push from
+the repo would overwrite the edit. Webflow item ids: privacy `6ab56fd7d03958d70ceaf976`,
+terms `6ab56fd7d03958d70ceaf978`, cookie-policy `6ab56fd7d03958d70ceaf97a`.
 
 ## DPIA
 
@@ -50,11 +66,10 @@ above feeds it, but the DPIA itself has not been written. **Open.**
 
 ## Status
 
-Build and test phase (decided 2026-09-24). A new company will be formed to run Tali
-before public launch; until then the controller in `LEGAL` stays unset on purpose. Forming
-it before launch avoids moving users' consent from one controller to another later. This
-branch's legal work stays off `main` until the company exists, because `check:legal` (run
-by the deploy workflow) fails without it.
+Build and test phase. Gravita Creative Ltd is the controller for now (decided 2026-09-24);
+a separate company will be formed before public launch (see item 15). This branch stays off
+`main` until the ICO fee is paid, because `check:legal` (run by the deploy workflow) fails
+without the number.
 
 While testing: anyone other than Benn using Tali with real data is still covered by GDPR.
 Keep testers few, tell them it's a test build, and delete their data when testing ends.
@@ -63,15 +78,16 @@ Keep testers few, tell them it's a test build, and delete their data when testin
 
 Blocking before the legal texts can go live:
 
-1. Fill `LEGAL` in `src/core/legal/index.ts`: controller legal name, address, privacy
-   contact email, ICO registration number, governing law, Supabase backup retention (check
-   the project's plan: backup window and point-in-time recovery setting).
-2. Pay the ICO data protection fee and register (ico.org.uk/fee). Processing health data
-   as a business almost always requires it.
+1. Pay the ICO data protection fee for Gravita Creative Ltd and add the number to `LEGAL`
+   (the only fact still missing; the new company will need its own later).
+2. Early access: every invite email needs a working unsubscribe, and the list must be deleted
+   once people are invited (the privacy policy promises both). Webflow forms have no
+   unsubscribe of their own.
 3. Apply `docs/compliance/delete-account.sql` in the Supabase SQL editor. Until then,
    Delete account shows an error and deletes nothing.
-4. Accept the Supabase DPA and confirm GitHub's terms, and record both here.
-5. Add `https://tali.fit/?doc=privacy` and `?doc=terms` to the Google OAuth consent screen.
+4. Accept the Supabase, Webflow and Bunny.net DPAs, confirm GitHub's and Cloudflare Turnstile's
+   terms, and record them here.
+5. Add https://www.tali.fit/legals/privacy and /legals/terms to the Google OAuth consent screen.
 6. Have a solicitor review the privacy policy, terms and this register.
 
 Should fix:
@@ -88,6 +104,9 @@ Should fix:
 13. Consent given while an account is open offline (no live session) isn't tied to the
     account id, so the person is asked once more when they're back online. Harmless.
 14. The deploy workflow runs `npm run check:legal`, so main will not deploy until item 1 is done.
+15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
+    texts, bump `CONSENT_VERSION` so everyone consents to the new company, and tell the
+    early-access list.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

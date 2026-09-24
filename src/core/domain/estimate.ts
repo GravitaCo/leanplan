@@ -131,6 +131,13 @@ export function biggestMarginSource(foods: LoggedFood[]): CaptureMethod | null {
 export function handGrams(p: Profile, type: HandPortion): number {
   return p.hands?.[type] || HANDS[type].g
 }
+/** Hand portions describe food as eaten. Dry or uncooked staples (rice, pasta, dried pulses,
+ *  flour) are weighed instead: a cupped hand of dry rice would log ~3x a cooked portion. Dried
+ *  herbs and spices (tiny amounts) are exempt. */
+export function handsAllowed(f: Food): boolean {
+  if (f.each || f.ml || f.cat === 'drinks') return false
+  return !(/\b(uncooked|dried|dry)\b/i.test(f.n) && f.cat !== 'sauces')
+}
 export function handFor(f: Food): HandPortion {
   return (f.cat && HAND_FOR_CAT[f.cat]) || 'cupped'
 }
@@ -161,7 +168,7 @@ export function buildEntry(
   let how: CaptureMethod
   if (portion.mode === 'serv') { grams = food.g * portion.serv; how = 'serv' }
   else if (portion.mode === 'hand') { grams = handGrams(profile, portion.type) * portion.count; how = 'hand' }
-  else { grams = portion.grams; how = portion.learned != null && Math.round(grams) === portion.learned ? 'usual' : 'g' }
+  else { grams = portion.grams; how = portion.learned != null && Math.abs(grams - portion.learned) < 0.0005 ? 'usual' : 'g' }
   const unit = unitOf(food)
   grams = roundAmount(grams, unit)
   const s = scaleFood(food, grams)

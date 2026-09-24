@@ -37,15 +37,30 @@ export function perText(f: Pick<Food, 'ml' | 'each'>): string {
 
 /** An amount in the food's unit: "150 g", "250 ml", "1 item", "½ item". */
 export function amountText(amount: number, unit: FoodUnit): string {
-  if (unit !== 'item') return `${amount} ${unit}`
+  if (unit !== 'item') return `${Math.round(amount * 100) / 100} ${unit}`
   const w = Math.floor(amount), r = amount - w
   const f = r >= 0.74 ? '¾' : r >= 0.49 ? '½' : r >= 0.24 ? '¼' : ''
   return `${(w || !f ? String(w) : '') + f} item${amount > 1 ? 's' : ''}`
 }
 
-/** Round an amount to what its unit can sensibly hold: whole g/ml, quarter items. */
+/** Tidy an amount without losing real precision: chains publish portions like 206.76 g, and
+ *  rounding those (to 207 g, or even 206.8 g) shifts the calories users compare against. So
+ *  g/ml only drop float noise (3 decimals); screens round for display. Items go to quarters. */
 export function roundAmount(amount: number, unit: FoodUnit): number {
-  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount)
+  return unit === 'item' ? Math.round(amount * 4) / 4 : Math.round(amount * 1000) / 1000
+}
+
+/**
+ * What to show for a food: the source's own published line when it's per portion or per item
+ * (what users compare against, e.g. Greggs' spreadsheet), otherwise the stored per-100 values.
+ */
+export function headline(f: Food): MacroTotals & { per: string } {
+  const r = f.ref
+  if (r && r.g !== basisOf(f)) {
+    const s = scaleFood(f, r.g)
+    return { k: r.k, p: r.p ?? s.p, c: r.c ?? s.c, f: r.f ?? s.f, per: f.each ? 'per item' : `per portion (${amountText(r.g, unitOf(f))})` }
+  }
+  return { k: f.k, p: f.p, c: f.c, f: f.f, per: perText(f) }
 }
 
 /** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */
@@ -156,15 +171,29 @@ function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, rate: Ta
       const shift: Record<TargetRate, number> = { steady: 2, standard: 0, aggressive: -3 }
       return clamp(base + bump[activity] + shift[rate], -10, 0)
     }
+    case 'feel-better':
+      // "Feel better and move more" (workout plan D6): no body-change aim, so energy stays at
+      // maintenance whatever the pace setting.
+      return 0
   }
 }
 
-/** Protein anchor in g/kg bodyweight — highest in a deficit, to preserve lean mass. */
-const PROTEIN_PER_KG: Record<Goal, number> = {
+/**
+ * Protein anchor in g/kg bodyweight — highest in a deficit, to preserve lean mass.
+ * Sources (checked by nutrition-accuracy, September 2026): the training goals sit inside the ISSN
+ * range for exercising people, 1.4–2.0 (Jäger et al. 2017, doi:10.1186/s12970-017-0177-8), and
+ * the resistance-training meta-analysis range 1.6–2.2 (Morton et al. 2018,
+ * doi:10.1136/bjsports-2017-097608). 'feel-better' has no hypertrophy or deficit aim, so it takes
+ * the floor of the 1.2–2.0 range the ACSM/AND/DC 2016 position gives for athletes (Thomas et al.,
+ * doi:10.1016/j.jand.2015.12.006), which also meets the 1.0–1.2 advised for older adults (PROT-AGE,
+ * Bauer et al. 2013, doi:10.1016/j.jamda.2013.05.021).
+ */
+export const PROTEIN_PER_KG: Record<Goal, number> = {
   'lose-fat': 2.0,
   'build-muscle': 1.8,
   'increase-strength': 1.8,
   'increase-endurance': 1.6,
+  'feel-better': 1.2,
 }
 
 /**
@@ -211,7 +240,12 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
 
   // Step 5 — macros, protein first (the evidence-based lever, anchored to bodyweight),
   // fat as an essential/hormonal floor, carbs fill the remainder to fuel training.
-  const f = Math.round(Math.max(0.8 * weight, (kcal * 0.25) / 9))
+  // Feel-better has no training target to fuel and lower protein, so a 25% fat share would leave
+  // carbs above the 45–60% range (EFSA 2010); it takes the UK Reference Intake share instead (70 g
+  // fat per 2000 kcal, 31.5%; Regulation (EU) 1169/2011 Annex XIII, assimilated law in GB). Where
+  // the 0.8 g/kg floor binds (heavier, shorter people), fat is higher and carbs can fall below 45%.
+  const fatShare = profile.goal === 'feel-better' ? (70 * 9) / 2000 : 0.25
+  const f = Math.round(Math.max(0.8 * weight, (kcal * fatShare) / 9))
   let p = Math.round(weight * PROTEIN_PER_KG[profile.goal])
   // Reconciliation: for very heavy users on a low calorie target, bodyweight-anchored
   // protein plus the fat floor can exceed the whole budget on their own — an impossible

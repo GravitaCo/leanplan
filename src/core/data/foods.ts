@@ -1,10 +1,12 @@
 import type { Food } from '@/core/types'
+import { GREGGS } from './chains/greggs'
+import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
  *  `each` is set). `src` cites where the values come from (see `sources.ts`); every change
  *  must pass `npm run check:foods`. `cat` sets the default hand portion; `cook` marks plain
  *  foods usually cooked in fat, which get the one cooking-fat question. */
-export const FOODS: Food[] = [
+const BASE: Food[] = [
   {
     "n": "Chicken breast, cooked",
     "k": 148,
@@ -2571,7 +2573,14 @@ export const FOODS: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 284,
+      "p": 40.0,
+      "c": 0.3,
+      "f": 13.6
+    }
   },
   {
     "n": "Nando's Half Chicken (plain)",
@@ -2582,7 +2591,14 @@ export const FOODS: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 568,
+      "p": 80.0,
+      "c": 0.5,
+      "f": 27.2
+    }
   },
   {
     "n": "Nando's Peri-Peri Chips",
@@ -2593,7 +2609,14 @@ export const FOODS: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 452,
+      "p": 6.4,
+      "c": 64.9,
+      "f": 19.4
+    }
   },
   {
     "n": "Nando's Chicken Pitta",
@@ -2604,7 +2627,14 @@ export const FOODS: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "nandos-uk"
+    "src": "nandos-uk",
+    "ref": {
+      "g": 1,
+      "k": 485,
+      "p": 36.6,
+      "c": 51.3,
+      "f": 14.9
+    }
   },
   {
     "n": "KFC Original Recipe Chicken piece",
@@ -2624,7 +2654,14 @@ export const FOODS: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "kfc-uk"
+    "src": "kfc-uk",
+    "ref": {
+      "g": 1,
+      "k": 468,
+      "p": 23.0,
+      "c": 43.0,
+      "f": 22.0
+    }
   },
   {
     "n": "KFC Fries (regular)",
@@ -2635,42 +2672,6 @@ export const FOODS: Food[] = [
     "g": 92,
     "cat": "fastfood",
     "src": "cofid:13-486"
-  },
-  {
-    "n": "Greggs Sausage Roll",
-    "k": 318,
-    "p": 11,
-    "c": 27,
-    "f": 19,
-    "g": 106,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Steak Bake",
-    "k": 347,
-    "p": 13,
-    "c": 30,
-    "f": 21,
-    "g": 117,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Cheese & Onion Bake",
-    "k": 373,
-    "p": 11,
-    "c": 33,
-    "f": 23,
-    "g": 111,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Greggs Yum Yum",
-    "k": 384,
-    "p": 5,
-    "c": 44,
-    "f": 22,
-    "g": 81,
-    "cat": "fastfood"
   },
   {
     "n": "Pot Noodle Chicken & Mushroom",
@@ -2692,43 +2693,65 @@ export const FOODS: Food[] = [
   },
   {
     "n": "Subway 6-inch Chicken Tikka",
-    "k": 175,
+    "k": 175.13,
     "p": 14.2,
     "c": 21.8,
     "f": 3.6,
     "g": 197,
     "cat": "fastfood",
-    "src": "subway-uk"
+    "src": "subway-uk",
+    "ref": {
+      "g": 197,
+      "k": 345
+    }
   },
   {
     "n": "Subway 6-inch Italian BMT",
-    "k": 278,
+    "k": 277.7,
     "p": 14.4,
     "c": 29.5,
     "f": 11.5,
     "g": 139,
     "cat": "fastfood",
-    "src": "subway-uk"
+    "src": "subway-uk",
+    "ref": {
+      "g": 139,
+      "k": 386
+    }
   },
   {
     "n": "Burger King Whopper",
-    "k": 223,
-    "p": 10.4,
-    "c": 19.2,
-    "f": 12.1,
+    "k": 207.32,
+    "p": 10.1,
+    "c": 18.47,
+    "f": 10.45,
     "g": 287,
     "cat": "fastfood",
-    "src": "bk-gb"
+    "src": "bk-gb",
+    "ref": {
+      "g": 287,
+      "k": 595,
+      "p": 29,
+      "c": 53,
+      "f": 30
+    }
   },
   {
     "n": "Burger King Chicken Royale",
-    "k": 262,
+    "k": 261.75,
     "p": 10.6,
-    "c": 24,
-    "f": 13.4,
+    "c": 23.96,
+    "f": 13.36,
     "g": 217,
     "cat": "fastfood",
-    "src": "bk-gb"
+    "src": "bk-gb",
+    "ref": {
+      "g": 217,
+      "k": 568,
+      "p": 23,
+      "c": 52,
+      "f": 29
+    }
   },
   {
     "n": "Domino's Margherita slice",
@@ -3296,7 +3319,14 @@ export const FOODS: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000112552119"
+    "src": "off:5000112552119",
+    "ref": {
+      "g": 100,
+      "k": 19,
+      "p": 0,
+      "c": 4.5,
+      "f": 0
+    }
   },
   {
     "n": "Sprite",
@@ -3307,7 +3337,13 @@ export const FOODS: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000112658149"
+    "src": "off:5000112658149",
+    "ref": {
+      "g": 100,
+      "k": 14,
+      "c": 3.3,
+      "f": 0
+    }
   },
   {
     "n": "Irn-Bru",
@@ -3318,7 +3354,13 @@ export const FOODS: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5000382023197"
+    "src": "off:5000382023197",
+    "ref": {
+      "g": 100,
+      "k": 20,
+      "c": 4.8,
+      "f": 0
+    }
   },
   {
     "n": "Lucozade Original",
@@ -3362,7 +3404,14 @@ export const FOODS: Food[] = [
     "g": 330,
     "ml": true,
     "cat": "drinks",
-    "src": "off:5449000125002"
+    "src": "off:5449000125002",
+    "ref": {
+      "g": 100,
+      "k": 17,
+      "p": 0,
+      "c": 4.1,
+      "f": 0
+    }
   },
   {
     "n": "J2O",
@@ -3373,7 +3422,14 @@ export const FOODS: Food[] = [
     "g": 275,
     "ml": true,
     "cat": "drinks",
-    "src": "off:50412143"
+    "src": "off:50412143",
+    "ref": {
+      "g": 100,
+      "k": 19,
+      "p": 0,
+      "c": 4.1,
+      "f": 0
+    }
   },
   {
     "n": "Innocent orange juice",
@@ -3404,6 +3460,16 @@ export const FOODS: Food[] = [
     "g": 500,
     "ml": true,
     "cat": "drinks",
-    "src": "off:3057640578113"
+    "src": "off:3057640578113",
+    "ref": {
+      "g": 100,
+      "k": 0.4,
+      "p": 0,
+      "c": 0,
+      "f": 0
+    }
   }
 ]
+
+/** Chain menus are generated files in `chains/` (see scripts/import/). */
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS)

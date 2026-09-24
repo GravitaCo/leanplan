@@ -9,8 +9,9 @@ mood and motivation come first because they decide whether someone can eat well 
 consistently. Tali offers **general wellness guidance, never medical advice or therapy**:
 see `docs/plans/ai-platform-plan.md` §4 and the `mental-performance` agent.
 
-- **Live:** https://tali.fit/ (GitHub Pages custom domain; the repo is named `leanplan` for
-  historical reasons; the app is **Tali**). Previous vanilla app is parked at `/legacy/`.
+- **Live:** https://app.tali.fit/ (GitHub Pages custom domain; the marketing site is Webflow
+  on www.tali.fit; the repo is named `leanplan` for historical reasons; the app is **Tali**).
+  Previous vanilla app is parked at `/legacy/`.
 - **Repo:** GravitaCo/leanplan, default branch `main`.
 
 ## Run / build / deploy
@@ -19,17 +20,21 @@ see `docs/plans/ai-platform-plan.md` §4 and the `mental-performance` agent.
 npm install
 npm run dev        # Vite dev server → http://localhost:5173/
 npm run build      # tsc -b && vite build → dist/
+bash scripts/preview.sh [branch]  # switch branch, build, serve on your Mac and Wi-Fi (docs/local-preview.md)
 npm run typecheck
 npm test           # core unit tests (checks, unit maths)
 npm run check:foods  # validates every built-in food; must pass before shipping food data
+npm run check:exercises  # validates the exercise library; ids are never removed or renamed
 ```
 
+- **Preview before live = local** (Benn's choice for now; no staging host). Check a working
+  branch with `bash scripts/preview.sh <branch>` as described in `docs/local-preview.md`.
 - **Deploy = push to `main`.** A GitHub Actions workflow (`.github/workflows/deploy.yml`)
   builds and publishes to GitHub Pages. Pages source is **GitHub Actions** (build_type
   `workflow`) — do NOT switch it back to "deploy from a branch" or it serves raw source
   and the page goes blank.
-- Vite `base` is `/` (see `vite.config.ts`) since the app serves from the `tali.fit` root.
-  Reference public assets with **relative** paths. `public/CNAME` (`tali.fit`) is copied
+- Vite `base` is `/` (see `vite.config.ts`) since the app serves from the `app.tali.fit` root.
+  Reference public assets with **relative** paths. `public/CNAME` (`app.tali.fit`) is copied
   into `dist/` on every build so the custom domain survives each Pages deploy — don't
   remove it. Don't commit `dist/`.
 - Bump the service-worker `CACHE` name in `public/sw.js` whenever you change shipped
@@ -41,7 +46,9 @@ The core is deliberately **UI-framework-agnostic** so a future React Native / Ca
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
-  TDEE); `data/` (the ~336-item food DB, Push/Pull/Legs workouts, constants).
+  TDEE, `library.ts` for swaps and "last time"); `data/` (the ~336-item food DB, the exercise
+  library `exercises.ts` with its committed id list `docs/data/exercise-ids.json`,
+  Push/Pull/Legs workouts, constants).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
   migrations), `sync.ts` (offline-first, per-record dirty flags, last-write-wins),
   `push.ts` (Web Push), `backup.ts` (JSON export/import).
@@ -88,6 +95,24 @@ setting (`prefers-color-scheme`); there is no in-app override.
   per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
   the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.
 - Food names are stable IDs (learned usuals match by name): don't rename casually.
+- **What the user sees must equal the source.** Where a source publishes per-portion figures
+  (chains), those are the truth: keep portions exact and derive per-100 values from them. Check
+  every item through the app's logging path (one serving in the app = the published figure), not
+  just the stored per-100 values. Importers assert this; `npm test` checks chain servings.
+- **Food data changes need `nutrition-accuracy` sign-off as well as `ship-critic`** before merging.
+
+## Exercise demo videos
+
+- Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`.
+- Clips live in `public/videos/` (vertical 540×960 H.264, no audio, `+faststart`, ~0.6 MB each)
+  with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
+  (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
+  Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
+- Each clip carries a **tempo timeline measured from the footage**; the Train screen's
+  "Watch example" full-screen player shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
+  changes; `npm test` checks the files exist and the timeline is ordered.
+- The service worker leaves `/videos/` to the network (Safari streams video with Range
+  requests), so clips need a connection; logging never does.
 
 ## Backend & data (important)
 
@@ -103,8 +128,13 @@ setting (`prefers-color-scheme`); there is no in-app override.
 - Tali processes **health data** (special category, UK/EU GDPR Art. 9) on the basis of
   **explicit consent**, collected by `screens/legal/ConsentScreen.tsx` before the app opens.
   Nothing syncs to the cloud without it. Don't bypass or pre-tick it.
-- Legal texts live in `src/core/legal/` (facts in `LEGAL`, `privacy.ts`, `terms.ts`), public at
-  `https://tali.fit/?doc=privacy` and `?doc=terms`. The register is `docs/compliance/README.md`.
+- Legal texts are written in `src/core/legal/` (facts in `LEGAL`, `privacy.ts`, `terms.ts`,
+  `cookies.ts`) and published to the Webflow website's "Legals" collection at
+  `https://www.tali.fit/legals/{privacy,terms,cookie-policy}`; the app links out to those pages.
+  `npm run legal:html` renders them for Webflow. Edit here, never only in Webflow. The controller
+  is Gravita Creative Ltd for now. The register is `docs/compliance/README.md`.
+- The policies cover the website (www.tali.fit, Webflow: early-access form, Cloudflare) as well
+  as the app (app.tali.fit). A new site script, form, embed or cookie is a policy change too.
 - **Any change to what data is collected, where it goes or who processes it** (new field,
   table, SDK, analytics, AI API, font CDN) updates the privacy policy and register in the same
   change, and goes past the `compliance` agent. A new user-data table also joins the delete

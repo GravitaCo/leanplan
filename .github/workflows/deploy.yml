@@ -24,6 +24,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Guardrails: nothing deploys unless every food reproduces its source and the logging
+      # maths has no rounding drift (see CLAUDE.md, "Food data & offline").
+      - run: npm test
+      - run: npm run check:foods
       # the legal texts must name a real controller and contact before they go live
       - run: npm run check:legal
       - run: npm run build

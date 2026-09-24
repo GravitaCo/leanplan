@@ -3,9 +3,10 @@ import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { MealSlot, RecipeItem } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { fmt, r0 } from '@/core/domain/date'
-import { perText, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
-import { mealNow } from '@/core/domain/insights'
+import { fmt, r0, r1 } from '@/core/domain/date'
+import { basisOf, headline, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
+import { mealNow, queryWords } from '@/core/domain/insights'
+import { rankByName } from '@/core/domain/search'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
@@ -37,7 +38,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     const s = parseFloat(draft.servings) || 1
     const totals = recipeTotals({ id: '', name: draft.name, servings: s, items: draft.items })
     const query = q.trim().toLowerCase()
-    const matches = query ? all.filter((f) => f.n.toLowerCase().includes(query)).slice(0, 30) : []
+    const words = queryWords(query)
+    const matches = query ? rankByName(all, (f) => f.n, words.length ? words : [query]).slice(0, 30) : []
     const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
     const save = () => {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
@@ -66,8 +68,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
           {draft.items.length ? draft.items.map((it, ii) => (
             <div className="li" key={ii}>
               <div className="m"><div className="t">{it.n}</div>
-                <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${it.k} kcal ${perText(it)}`].filter(Boolean).join(' · ')}</div></div>
-              <input className="num" type="number" inputMode="decimal" value={it.grams} aria-label={`${it.n} amount`}
+                <div className="s">{[isCookedState(it.n) && 'Cooked weight', !gentle && `${Math.round((it.k * it.grams) / basisOf(it))} kcal`].filter(Boolean).join(' · ')}</div></div>
+              <input className="num" type="number" inputMode="decimal" value={Math.round(it.grams * 100) / 100} aria-label={`${it.n} amount`}
                 style={{ width: 72, textAlign: 'right', padding: '7px 8px' }}
                 onChange={(e) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(e.target.value) || 0 } : x)) })} />
               <span className="muted">{it.each ? 'item' : it.ml ? 'ml' : 'g'}</span>
@@ -92,7 +94,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
           <div className="list" style={{ marginTop: 8 }}>
             {matches.map((f, i) => (
               <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml, each: f.each }] })}>
-                <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${f.p} g protein` : `${f.k} kcal`} {perText(f)}</div></div>
+                <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${r1(headline(f).p)} g protein` : `${Math.round(headline(f).k)} kcal`} {headline(f).per}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
               </button>
             ))}

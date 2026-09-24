@@ -26,6 +26,9 @@ export interface Food {
   each?: boolean
   /** where the values come from: a key in `core/data/sources.ts` */
   src?: string
+  /** the source's own published figure for an amount (a chain's per-portion or per-item line),
+   *  kept so the app can prove one serving reproduces it exactly (see validateFoods) */
+  ref?: FoodRef
   /** category — sets the default hand portion */
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
@@ -36,6 +39,11 @@ export interface Food {
 }
 
 export type FoodUnit = 'g' | 'ml' | 'item'
+
+export type DietPattern = 'none' | 'pescatarian' | 'vegetarian' | 'vegan'
+
+/** A published figure: `k` kcal (and macros, when published) for `g` of the food's unit. */
+export interface FoodRef { g: number; k: number; p?: number; c?: number; f?: number }
 
 export type FoodCategory =
   | 'meat' | 'fish' | 'eggs' | 'dairy' | 'grains' | 'potato' | 'veg' | 'fruit'
@@ -104,13 +112,40 @@ export interface Recipe {
 
 export type WorkoutType = 'Legs' | 'Push' | 'Pull' | 'Cardio'
 
+/**
+ * How an exercise is logged (plan §2.2): kg × reps; reps only (bodyweight, optional added load,
+ * assistance or band); seconds held; minutes (optional km); a count of rounds; or done / not done.
+ */
+export type LogShape = 'weight-reps' | 'reps' | 'hold' | 'duration' | 'rounds' | 'check'
+
+export type BandLevel = 'light' | 'medium' | 'heavy' | 'extra-heavy'
+
+/** One logged set. `w`/`reps` stay strings ('' when unused); the rest is additive (plan §2.2). */
 export interface SetEntry {
+  /** kg; with `assist`, kg of assistance */
   w: string
+  /** reps; for 'rounds', the round count */
   reps: string
+  /** 'hold': seconds held */
+  sec?: string
+  /** 'duration' */
+  mins?: string
+  km?: string
+  /** `w` (or `band`) is assistance, not load */
+  assist?: boolean
+  band?: BandLevel
+  side?: 'L' | 'R'
+  /** 'check' */
+  done?: boolean
 }
 
 export interface LoggedExercise {
+  /** snapshot of the display name: history never depends on the library */
   name: string
+  /** library id, so "last time" follows the exercise across workouts */
+  exId?: string
+  /** the shape used, so history renders correctly later */
+  log?: LogShape
   sets: SetEntry[]
 }
 
@@ -121,12 +156,47 @@ export interface Workout {
   /** cardio sessions */
   cardioType?: string
   mins?: string
+  /** the day-of choice taken instead of the plan as written (plan §0.2); absent = as planned */
+  option?: 'shorter' | 'swap'
+  /** written by this version as a copy of the day's first session, for older installs */
+  _mirror?: boolean
+}
+
+/** The discipline a session belongs to (workout plan §2.1). */
+export type Modality = 'strength' | 'calisthenics' | 'cardio' | 'yoga' | 'pilates' | 'mobility'
+
+/** Optional session effort (Foster et al. 2001 session-RPE verbal anchors). */
+export type Effort = 'easy' | 'moderate' | 'hard' | 'very-hard'
+
+/** One session on a day; a day can hold several (workout plan §2.5). */
+export interface Session {
+  id: string
+  modality: Modality
+  /** snapshot shown in history: "Push · chest / shoulders / triceps", "Evening yoga", "Brisk walk" */
+  title: string
+  /** the routine it came from: 'builtin-Legs', 'builtin-Cardio', … ; absent for a quick log */
+  routineId?: string
+  /** ISO time it was saved; orders sessions within the day */
+  at?: string
+  /** minutes; when absent the modality's default is used for estimates */
+  mins?: number
+  effort?: Effort
+  ex?: LoggedExercise[]
+  /** cardio: a CARDIO_MET key, and optional distance */
+  cardio?: { key: string; km?: number }
+  option?: 'shorter' | 'swap'
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
 export interface CheckIn {
   mood: number
   hunger: number
+  /** optional day-of signals (1–3; 0 or absent = not answered); see insights SLEEP/STRESS/… */
+  sleep?: number
+  stress?: number
+  energy?: number
+  /** only asked on lifting days */
+  sore?: number
   note?: string
   t?: string
 }
@@ -135,7 +205,10 @@ export interface DayLog {
   foods: LoggedFood[]
   supps: Record<string, boolean>
   weight: number | null
+  /** legacy single session: read through sessionsOf(); still written as a mirror for older installs */
   workout: Workout | null
+  /** every session this day, in order; absent on days logged before sessions existed */
+  sessions?: Session[]
   checkin?: CheckIn | null
 }
 
@@ -155,7 +228,7 @@ export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active'
  * level of Profile (not TrainingPrefs) because both domains read it — one field, one
  * write path, so training plan and calorie direction can never silently disagree.
  */
-export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance'
+export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance' | 'feel-better'
 
 /** How fast the user wants to progress (onboarding #8). Default: 'standard'. */
 export type TargetRate = 'steady' | 'standard' | 'aggressive'
@@ -165,6 +238,7 @@ export type Experience = 'beginner' | 'intermediate' | 'advanced'
 export type Equipment =
   | 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band'
   | 'cardio-machine'
+  | 'bench' | 'pull-up-bar' | 'mat' | 'yoga-props' | 'reformer'
 
 /** Cardio as a first-class category with typed sub-variations. */
 export type CardioVariation =
@@ -247,6 +321,30 @@ export interface Profile {
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
   plans?: IfThenPlan[]
+  /** diet pattern for suggestions: meals are never hidden, conflicting ingredients get swaps */
+  diet?: DietPattern
+  /**
+   * Date (YYYY-MM-DD) from which logged workouts stop widening the food range, because the
+   * activity level already counts training (workout plan D5). Earlier days keep the old maths
+   * so history never shifts. Set once on load; absent only on data from older app versions.
+   */
+  burnSwitch?: string
+  /** the one-time note explaining the burnSwitch change has been dismissed */
+  burnNoteSeen?: boolean
+  /** date the "welcome back" question was last answered, so it's asked once per break */
+  welcomeAsked?: string
+  /** an accepted "easier first week" pre-selects the shorter version up to this date */
+  easyUntil?: string
+  /** and from this date (absent = from when "welcome back" was answered) */
+  easyFrom?: string
+  /** the planned day whose "pick up" offer was waved off with "Not this time" */
+  pickUpDismissed?: string
+  /** date the activity-level suggestion was last answered (28-day cool-down) */
+  activityAsked?: string
+  /** date it was first shown; left unanswered for 3 days it counts as "Keep as is" */
+  activityShown?: string
+  /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
+  loadNoteSeen?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */
@@ -261,13 +359,85 @@ export interface AppState {
   recipes: Recipe[]
 }
 
+export type MovementPattern =
+  | 'horizontal-push' | 'vertical-push' | 'horizontal-pull' | 'vertical-pull'
+  | 'squat' | 'hinge' | 'lunge' | 'isolation' | 'carry' | 'core'
+
+/** What a mobility, yoga or pilates movement mostly works on (filters, swaps). */
+export type MobilityTarget =
+  | 'hips' | 'hamstrings' | 'spine' | 'shoulders' | 'chest' | 'ankles' | 'calves' | 'balance' | 'breath'
+
+/**
+ * One entry in the exercise library (`core/data/exercises.ts`, plan §2.1). `id` is a stable slug:
+ * never reused or renamed (`npm run check:exercises` guards it).
+ */
+export interface Exercise {
+  id: string
+  /** display name (en-GB) */
+  n: string
+  modality: Modality
+  /** also listed under these (cat-cow: yoga and mobility) */
+  also?: Modality[]
+  log: LogShape
+  /** prescribed per side; one logged number means "each side" */
+  perSide?: boolean
+  /** any one of these can do it; [] = nothing needed */
+  equipment: Equipment[]
+  difficulty: Experience
+  /** setup, the movement and the most common mistake */
+  cue: string
+  /** "3 × 10–12", "3 × 20–40 sec", "5 slow breaths", "20–30 min" */
+  defaultRx?: string
+  pattern?: MovementPattern
+  /** counted 1.0 toward weekly volume */
+  primary?: MuscleGroup
+  /** counted 0.5 */
+  secondary?: MuscleGroup[]
+  targets?: MobilityTarget[]
+  /** easier = step − 1, harder = step + 1 in the same chain */
+  progression?: { chain: string; step: number }
+  /** body areas this loads a lot ("Areas to go easy on") */
+  care?: BodyArea[]
+  /** a gentler library entry for the same slot */
+  gentler?: string
+  cardioVariation?: CardioVariation
+  /** CARDIO_MET key for burn */
+  cardioKey?: string
+  video?: ExerciseMedia
+}
+
 /** A definition for a built-in exercise within a workout template. */
 export interface ExerciseTemplate {
+  /** library id (`core/data/exercises.ts`) */
+  id?: string
   n: string
   /** target sets/reps, e.g. "3 × 10–12" */
   t: string
   cue: string
   title?: string
+  /** owned demo clip; without one the card falls back to a YouTube search link */
+  video?: ExerciseMedia
+}
+
+/** What the lifter is doing during one stretch of a demo clip. */
+export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch'
+
+/** One phase of a demo clip, measured from the footage. `at` is seconds from the clip start. */
+export interface TempoPhase {
+  at: number
+  kind: TempoPhaseKind
+  /** 1-based rep number; absent for the set-up before the first rep */
+  rep?: number
+}
+
+/** Per-exercise demo media (see docs/plans/workouts-customization-and-library.md §2.1). */
+export interface ExerciseMedia {
+  /** path relative to the video base (see core/data/media.ts), or a full https URL */
+  src: string
+  poster?: string
+  durationSec: number
+  /** phases in time order; each runs until the next one starts, the last until durationSec */
+  tempo: TempoPhase[]
 }
 
 export interface WorkoutTemplate {

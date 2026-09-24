@@ -1,8 +1,9 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, ActivityLevel, Goal, HandPortion, Sex } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
+import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
-import { fmt } from '@/core/domain/date'
+import { fmt, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { rangeWidth } from '@/core/domain/insights'
@@ -11,7 +12,7 @@ import { exportBackup, readBackup } from '@/data/backup'
 import { Disclosure, PageHeader, Seg, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import type { LegalDocId } from '@/core/legal'
-import { LegalSheet } from './legal/LegalDoc'
+import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { DeleteDataSheet } from './legal/DeleteDataSheet'
 
 function latestWeight(days: Record<string, { weight: number | null }>, profileWeight?: number | null) {
@@ -24,9 +25,10 @@ const GOALS: { value: Goal; label: string }[] = [
   { value: 'build-muscle', label: 'Build muscle' },
   { value: 'increase-strength', label: 'Increase strength' },
   { value: 'increase-endurance', label: 'Improve endurance' },
+  { value: 'feel-better', label: 'Feel better and move more' },
 ]
 const GOAL_TARGET_LABEL: Record<Goal, string> = {
-  'lose-fat': 'Fat loss', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance',
+  'lose-fat': 'Fat loss', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
 }
 function directionLabel(pct: number): string {
   if (pct < 0) return `${-pct}% below maintenance`
@@ -53,12 +55,20 @@ export function ProfileScreen() {
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
   const consent = useStore((s) => s.consent)
-  const [doc, setDoc] = useState<LegalDocId | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const pr = data.profile
   const weight = latestWeight(data.days, pr.weight)
-  const [open, setOpen] = useState<Section | null>(null)
+  // a card elsewhere can ask for a section to be open on arrival (e.g. after an activity update)
+  const profileOpen = useStore((s) => s.profileOpen)
+  const clearProfileOpen = useStore((s) => s.clearProfileOpen)
+  const [open, setOpen] = useState<Section | null>(() => (profileOpen as Section | null) ?? null)
+  useEffect(() => {
+    if (!profileOpen) return
+    clearProfileOpen()
+    // bring the suggested targets into view: accepting them is the next step (plan P1.5)
+    requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [handsOpen, setHandsOpen] = useState(false)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
@@ -101,6 +111,11 @@ export function ProfileScreen() {
         <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k) => [k, ACCURACY[k].label])}
           value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
         <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{accuracyOf(pr).desc}</div>
+      </div></div>
+      <div className="list"><div style={{ padding: '12px 16px' }}>
+        <div style={{ marginBottom: 8 }}>Diet</div>
+        <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? 'None' : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
+        <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>Meal suggestions offer swaps for ingredients that don't fit. Nothing is hidden.</div>
       </div></div>
       <div className="list"><div style={{ padding: '12px 16px' }}>
         <div style={{ marginBottom: 8 }}>Display</div>
@@ -146,6 +161,9 @@ export function ProfileScreen() {
           <button className="btn gray" onClick={() => saveProfileMetrics({
             sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
             weight: parseFloat(metrics.weight) || null, activityLevel: metrics.activityLevel,
+            // choosing a level yourself starts the suggestion's cool-down, so the app never
+            // offers a different level based on logs from before the decision
+            ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr() } : {}),
           })}>Save metrics</button>
 
           <div className="lbl" style={{ paddingLeft: 0 }}>Main goal</div>
@@ -155,7 +173,7 @@ export function ProfileScreen() {
             ))}
           </div>
           {sug ? (
-            <div className="card" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
+            <div className="card" id="sug-targets" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
               {'goalNeeded' in sug ? (
                 <>Maintenance about <b className="num">{fmt(sug.maint)} kcal</b>.<br /><span className="muted">Choose your main goal to see a suggested daily target.</span></>
               ) : (
@@ -257,9 +275,10 @@ export function ProfileScreen() {
             {consent && <>You agreed to Tali using your health information on {new Date(consent.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. </>}
             No ads, analytics or tracking, and your data is never sold. To withdraw consent, delete your {authed || syncPaused ? 'account' : 'data'}.
           </div>
-          <div className="grid2">
-            <button className="btn gray" onClick={() => setDoc('privacy')}>Privacy policy</button>
-            <button className="btn gray" onClick={() => setDoc('terms')}>Terms of use</button>
+          <div className="list" style={{ margin: '0 0 6px' }}>
+            {(['privacy', 'terms', 'cookies'] as LegalDocId[]).map((id) => (
+              <LegalLink key={id} id={id} className="li act"><div className="m"><div className="t">{LEGAL_LABEL[id]}</div></div><Chevron /></LegalLink>
+            ))}
           </div>
           <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setDeleting(true)}>
             {authed || syncPaused ? 'Delete account' : 'Delete data on this device'}
@@ -274,7 +293,6 @@ export function ProfileScreen() {
       </div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
-      {doc && <LegalSheet id={doc} onClose={() => setDoc(null)} />}
       {deleting && <DeleteDataSheet onClose={() => setDeleting(false)} />}
     </div>
   )

@@ -169,7 +169,7 @@ Flag for a later phase, not now.
 Two distinct features, both camera-based, both PWA-constrained.
 
 ### Shared PWA constraints
-- Camera needs **HTTPS** (we have it: tali.fit) + a user-gesture `getUserMedia` permission prompt.
+- Camera needs **HTTPS** (we have it: app.tali.fit) + a user-gesture `getUserMedia` permission prompt.
 - iOS Safari/standalone PWA: camera in `getUserMedia` works in recent iOS; test on installed PWA.
 - Prefer **on-device** processing for privacy + offline + £0 marginal cost; cloud only as fallback.
 - New screen/sheet `food/ScanSheet.tsx` (UI layer); keep parsing/lookup logic in

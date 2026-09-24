@@ -18,6 +18,7 @@ const PATHS = {
   chevL: <path d="M15 5l-7 7 7 7" />,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></>,
   x: <path d="M6 6l12 12M18 6L6 18" />,
+  play: <path d="M8 5.5v13l10.5-6.5z" />,
   target: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r=".8" /></>,
   bolt: <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />,
   book: <><path d="M5 5.5a2 2 0 0 1 2-2h11.5v14H7a2 2 0 0 0-2 2z" /><path d="M5 19.5a2 2 0 0 0 2 2h11.5v-4" /></>,
@@ -29,6 +30,7 @@ const PATHS = {
   cloud: <path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.8 3.8 0 0 1-.3 7.4z" />,
   info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>,
   shield: <path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.9-7 9-4-1.1-7-4.7-7-9V6.3z" />,
+  mail: <><rect x="3.5" y="5.5" width="17" height="13" rx="3" /><path d="M4.5 7.5l7.5 5.5 7.5-5.5" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

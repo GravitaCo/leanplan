@@ -3,16 +3,18 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
 const who = () => fact('controller', 'legal name')
 
 /**
- * Terms of use. Written for a free service to consumers. A paid tier needs a legal
+ * Terms and conditions. Written for a free service to consumers. A paid tier needs a legal
  * review first (cancellation rights, subscription rules, app store terms).
  */
 export function termsOfUse(): LegalDoc {
   return {
-    title: 'Terms of use',
-    updated: '2026-09-23',
+    title: 'Terms and conditions',
+    updated: '2026-09-24',
     intro:
-      `These terms are the agreement between you and ${who()} ("we") for using Tali. ` +
-      'By using Tali you accept them. Please read the health section in particular.',
+      `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
+      `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
+      `registered office ${fact('address', 'address')}. ` +
+      'By using Tali you accept these terms. Please read the health section in particular.',
     sections: [
       {
         h: 'Who can use Tali',
@@ -84,6 +86,7 @@ export function termsOfUse(): LegalDoc {
             'Your legal rights as a consumer are not affected.',
           'Otherwise, because Tali is a free wellness tool, we are not responsible for loss that was not foreseeable, for loss caused by you not following the health guidance above, ' +
             'or for business losses. We are not responsible for losing data stored only on your device.',
+          'Early access is a test version. Features may change, break or be removed, and we may reset or end early access, telling you first where we can.',
         ],
       },
       {

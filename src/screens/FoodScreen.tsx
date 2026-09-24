@@ -14,10 +14,12 @@ import { AddFoodSheet } from './food/AddFoodSheet'
 import { MealsSheet } from './food/MealsSheet'
 import { EditEntrySheet } from './food/EditEntrySheet'
 import { MarginSheet } from './food/MarginSheet'
+import { SuggestSheet } from './food/SuggestSheet'
+import { RecipeLogView } from './food/RecipeLogView'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
-  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | null
+  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | { k: 'suggest' } | { k: 'logRecipe'; ri: number } | null
 
 export function FoodScreen() {
   const data = useStore((s) => s.data)
@@ -25,6 +27,7 @@ export function FoodScreen() {
   const repeatYesterday = useStore((s) => s.repeatYesterday)
   const logRecipe = useStore((s) => s.logRecipe)
   const [sheet, setSheet] = useState<SheetKind>(null)
+  const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
   const gentle = !!data.profile.gentle
   const day = dayOf(data, cur)
@@ -129,6 +132,10 @@ export function FoodScreen() {
           <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="book" size={18} /></span>
           <div className="m"><div className="t">Recipes</div></div><span className="tr num">{data.recipes.length || ''}</span><Chevron />
         </button>
+        <button className="li" onClick={() => setSheet({ k: 'suggest' })}>
+          <span className="ico" style={{ background: 'var(--energy)' }}><Icon name="bulb" size={18} /></span>
+          <div className="m"><div className="t">What can I make?</div></div><Chevron />
+        </button>
         <button className="li" onClick={() => setSheet({ k: 'add', view: 'quick' })}>
           <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="bolt" size={18} /></span>
           <div className="m"><div className="t">Quick estimate</div></div><Chevron />
@@ -140,6 +147,8 @@ export function FoodScreen() {
       </div>
       <div className="foot">Numbers marked ≈ are estimates. Your day total shows a ± margin so it stays honest about what it knows.</div>
 
+      {sheet?.k === 'suggest' && <SuggestSheet onClose={() => setSheet(null)} onLog={(ri) => { setLogMeal(mealNow()); setSheet({ k: 'logRecipe', ri }) }} onRecipes={() => setSheet({ k: 'recipes' })} />}
+      {sheet?.k === 'logRecipe' && <RecipeLogView index={sheet.ri} meal={logMeal} setMeal={setLogMeal} onBack={() => setSheet({ k: 'suggest' })} onClose={() => setSheet(null)} animate={false} />}
       {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
       {sheet?.k === 'recipes' && <MealsSheet initialDraft={sheet.draft} onClose={() => setSheet(null)} />}
       {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}

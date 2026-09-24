@@ -1,61 +1,27 @@
-import type { LegalDoc, LegalDocId } from '@/core/legal'
-import { privacyPolicy } from '@/core/legal/privacy'
-import { termsOfUse } from '@/core/legal/terms'
-import { Sheet } from '@/ui/primitives'
+import type { ReactNode } from 'react'
+import { LEGAL_URLS, type LegalDocId } from '@/core/legal'
 
-export function legalDoc(id: LegalDocId): LegalDoc {
-  return id === 'privacy' ? privacyPolicy() : termsOfUse()
+export const LEGAL_LABEL: Record<LegalDocId, string> = {
+  privacy: 'Privacy policy',
+  terms: 'Terms and conditions',
+  cookies: 'Cookie policy',
 }
 
-const updatedText = (iso: string) =>
-  'Last updated ' + new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-
-/** The body of a privacy policy or terms document. */
-export function LegalBody({ doc }: { doc: LegalDoc }) {
+/**
+ * Link to a legal document on the website (www.tali.fit/legals/…). Opens outside the app,
+ * so reading it never loses the screen the person is on. The text is written in
+ * src/core/legal and published to Webflow (docs/compliance/README.md, "Publishing").
+ */
+export function LegalLink({ id, className, children }: { id: LegalDocId; className?: string; children?: ReactNode }) {
   return (
-    <div className="prose">
-      <p className="sub" style={{ fontSize: 13 }}>{updatedText(doc.updated)}</p>
-      <p>{doc.intro}</p>
-      {doc.sections.map((s, i) => (
-        <section key={i}>
-          {s.h && <h3>{s.h}</h3>}
-          {s.p?.map((t, j) => <p key={j}>{t}</p>)}
-          {s.ul && <ul>{s.ul.map((t, j) => <li key={j}>{t}</li>)}</ul>}
-        </section>
-      ))}
-    </div>
+    <a href={LEGAL_URLS[id]} target="_blank" rel="noopener" className={className}>
+      {children ?? LEGAL_LABEL[id]}
+    </a>
   )
 }
 
-/** A legal document over the current screen. */
-export function LegalSheet({ id, onClose }: { id: LegalDocId; onClose: () => void }) {
-  const doc = legalDoc(id)
-  return (
-    <Sheet title={doc.title} tall onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
-      <div className="card"><LegalBody doc={doc} /></div>
-    </Sheet>
-  )
-}
-
-/** Public page at /?doc=privacy or /?doc=terms: readable without signing in (app stores
- *  and Google sign-in need a public link). */
-export function LegalPage({ id }: { id: LegalDocId }) {
-  const doc = legalDoc(id)
-  return (
-    <div className="screen" style={{ maxWidth: 680, margin: '0 auto', paddingTop: 'max(24px, env(safe-area-inset-top))', paddingBottom: 40 }}>
-      <a href="./" className="navbtn" style={{ textDecoration: 'none' }}>Open Tali</a>
-      <h1 style={{ fontSize: 34, fontWeight: 700, margin: '12px 0 12px' }}>{doc.title}</h1>
-      <div className="card"><LegalBody doc={doc} /></div>
-      <div className="foot" style={{ textAlign: 'center' }}>
-        <a href={id === 'privacy' ? '?doc=terms' : '?doc=privacy'} style={{ color: 'var(--tint)' }}>
-          {id === 'privacy' ? 'Terms of use' : 'Privacy policy'}
-        </a>
-      </div>
-    </div>
-  )
-}
-
-export function legalDocFromUrl(): LegalDocId | null {
+/** Old in-app links (/?doc=privacy, /?doc=terms) now live on the website. */
+export function legalRedirect(): string | null {
   const d = new URLSearchParams(window.location.search).get('doc')
-  return d === 'privacy' || d === 'terms' ? d : null
+  return d === 'privacy' || d === 'terms' || d === 'cookies' ? LEGAL_URLS[d] : null
 }

@@ -44,9 +44,39 @@ Values are per 100 g, per 100 ml when `ml` is set, or **per item** when `each` i
 4. Have `nutrition-accuracy` review anything over ~20 rows; record audits in `docs/data/`.
 5. Bump the SW `CACHE` in `public/sw.js` so installed apps pick up the new bundle.
 
+### Chain menus (e.g. Greggs)
+Each chain's own published nutrition file is imported by a script in `scripts/import/` that
+writes a generated file in `src/core/data/chains/`. Nothing is typed by hand.
+- **Greggs:** `python3 scripts/import/greggs.py <nutrition PDF>`. It parses deterministically,
+  with no AI, and cross-checks every row (per-portion kcal = per-100 g × portion). It drops
+  multi-item boxes, drinks' syrup and cream add-ons, decaf duplicates and hospital-shop items.
+  It keeps existing Tali names so learned usuals still match.
+- **Every refresh:** re-run when the chain publishes a new file, review the diff, then run
+  `npm run check:foods`. Chains whose files are scanned images need an AI reading step instead
+  (not built yet).
+
+### Guardrails: what the user sees must equal the source
+These were added after a Greggs bacon roll showed 323 kcal against Greggs' published 321, because
+its portion had been rounded. Each one fails the build, so the deploy stops.
+1. **Published figure kept with the food (`ref`):** chain and pack-label foods carry the source's own
+   per-portion or per-item line. `validateFoods` requires one serving to reproduce it: kcal to the
+   unit, macros to 0.1 g, and the default serving equal to the published amount. Foods from a
+   menu-label source can't ship without `ref`.
+2. **Sourced values locked to their audit:** CoFID and USDA foods must equal the values recorded in
+   `docs/data/food-audit-*.json`. Changing one means re-auditing it, not editing the number.
+3. **No rounding drift:** `npm test` puts every food through the real logging code (one serving,
+   123.4 g, an edit ×1.5) and allows no drift beyond the stored 0.1 precision. Logged amounts keep
+   their real precision; only screens round.
+4. **Importers assert it too:** `scripts/import/*` fail on any row whose portion kcal doesn't match.
+5. **CI:** `.github/workflows/checks.yml` runs typecheck, tests, check:foods and build on every
+   branch push. The deploy workflow runs the tests and food checks before building.
+6. **People:** food data changes need `nutrition-accuracy` sign-off as well as `ship-critic`.
+7. **Shown to users:** the portion sheet prints the source's own figure, e.g. "Greggs UK lists
+   321 kcal per 119.5 g", so anyone can check it.
+
 ## 3. Growing past the bundle: food packs (designed, not built)
 
-The bundled database is about 32 KB for 336 foods, so a few thousand foods can still ship in the app.
+The bundled database is about 55 KB raw (~15 KB gzipped) for 547 foods, so a few thousand foods can still ship in the app.
 Beyond that (e.g. UK branded products):
 
 - **Packs:** versioned JSON files (`/packs/uk-branded.v3.json`), each with a manifest `{id, version, count, sources}`.

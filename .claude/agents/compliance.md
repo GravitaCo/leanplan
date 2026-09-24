@@ -28,8 +28,14 @@ Supabase plan's backup window), say "I don't know" and list it as an open item. 
 invent** a company name, address, registration number, regulator position or case.
 
 ## Tali's regulatory picture (verify against the code, it drifts)
-- **Controller:** set in `src/core/legal/index.ts` (`LEGAL`). Placeholders there are
-  blockers for going live; `npm run check:legal` fails until they're filled.
+- **Controller:** Gravita Creative Ltd (08348225) for now, set in `src/core/legal/index.ts`
+  (`LEGAL`); a separate company is planned before public launch, which means a new controller,
+  new texts and re-consent. `npm run check:legal` fails until every fact (incl. the ICO fee
+  registration number) is filled.
+- **Two surfaces:** the app (app.tali.fit, GitHub Pages) and the website (www.tali.fit,
+  Webflow, delivered through Cloudflare, with an early-access email form using Cloudflare
+  Turnstile). Check the live site (`curl -D-`, page scripts) as well as the code: its cookies
+  and scripts must match `cookies.ts`.
 - **Law:** UK GDPR + DPA 2018 (UK users), EU GDPR (EU users; consider an Art. 27 EU
   representative if EU users are targeted), PECR (UK) / ePrivacy (EU).
 - **Special-category data (Art. 9):** weight, body fat, food and diet logs, workouts,
@@ -41,12 +47,14 @@ invent** a company name, address, registration number, regulator position or cas
   marketing, and as easy to withdraw as to give** (withdrawal = Profile → Privacy →
   Delete account).
 - **Processors / recipients:** Supabase (database, auth, edge function; project region
-  eu-west-1, Ireland), GitHub Pages (hosting, sees IP/request data), Google (only if the
-  user picks Google sign-in; independent controller for that), browser push services
-  (Apple, Google, Mozilla) for reminders. **Adding any new processor, SDK, font CDN,
+  eu-west-1, Ireland), GitHub Pages (app hosting), Webflow + Cloudflare (website, early-access
+  sign-ups, Turnstile), Bunny.net (exercise demo videos, `src/core/data/media.ts`), Google
+  (only if the user picks Google sign-in; independent controller for that), browser push
+  services (Apple, Google, Mozilla) for reminders. **Adding any new processor, SDK, font CDN,
   analytics, error tracker or AI API is a privacy-policy change** and may need a DPA,
   a transfer mechanism (IDTA/UK Addendum/SCCs/DPF) and a TIA.
-- **No analytics, ads, tracking or cookies.** Local storage is strictly necessary for the
+- **No analytics, ads or tracking.** The app sets no cookies; the website sets only Cloudflare's
+  `_cfuvid` security cookie. The app's local storage (listed in `cookies.ts`) is strictly necessary for the
   service, so PECR consent is not needed for it. Adding any non-essential storage or
   tracking needs prior opt-in consent, and the policy must change first.
 - **Age:** 18+ (diet and weight features; avoids the ICO Children's Code). Keep the gate.
@@ -77,8 +85,11 @@ invent** a company name, address, registration number, regulator position or cas
    and bump `CONSENT_VERSION` in `index.ts` **only for material changes** to what is
    consented to (it re-prompts every user). Keep the plain, gender-neutral Tali voice;
    short sentences; no em dashes.
-3. **Before release:** run `npm run check:legal` and confirm the in-app texts, the public
-   URLs (`https://tali.fit/?doc=privacy`, `?doc=terms`) and the register agree.
+3. **Before release:** run `npm run check:legal`, then `npm run legal:html` and push the
+   result to the Webflow site "Tali" (collection "Legals", slugs `privacy`, `terms`,
+   `cookie-policy`, fields `content` + `last-updated`) as drafts via the Webflow MCP. Never
+   publish them without Benn's go-ahead and a `ship-critic` pass. Confirm the repo text, the
+   Webflow items and the register agree.
 
 ## How you work
 - Inspect the code first (`src/data/`, `src/store/store.ts`, `src/core/types.ts`, the

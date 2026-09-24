@@ -8,13 +8,14 @@ import { TrainScreen } from './screens/TrainScreen'
 import { PlanScreen } from './screens/PlanScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { ConsentScreen } from './screens/legal/ConsentScreen'
-import { LegalPage, legalDocFromUrl } from './screens/legal/LegalDoc'
+import { legalRedirect } from './screens/legal/LegalDoc'
 
-/** ?doc=privacy or ?doc=terms opens that document on its own, no sign-in needed. */
-const publicDoc = legalDocFromUrl()
+/** Old /?doc=… links go to the document on the website. */
+const moved = legalRedirect()
+if (moved) window.location.replace(moved)
 
 export default function App() {
-  if (publicDoc) return <LegalPage id={publicDoc} />
+  if (moved) return null
   return <TaliApp />
 }
 

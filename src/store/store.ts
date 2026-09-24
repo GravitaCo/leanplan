@@ -19,12 +19,15 @@ import type {
   Supplement,
   MacroTarget,
   Profile,
+  Session as TrainingSession,
 } from '@/core/types'
+import { WORKOUTS } from '@/core/data/workouts'
+import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, clearDevice, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, clearDevice, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { currentConsent, loadConsent, newConsent, saveConsent, type ConsentRecord } from '@/data/consent'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, getUid, LOCAL_USER, uuid, nowIso } from '@/data/supabase'
@@ -39,6 +42,8 @@ interface StoreState {
   data: PersistedState
   cur: string
   tab: Tab
+  /** one-shot: the Profile section to open on arrival (UI only, never persisted) */
+  profileOpen: string | null
   sync: SyncStatus
   email: string | null
   authReady: boolean
@@ -49,12 +54,17 @@ interface StoreState {
   syncPaused: boolean
   /** why the sign-in screen is showing, when it wasn't the user's choice */
   authNotice: string | null
+  /** "I have…" snapshot for meal suggestions (device-only) */
+  kitchen: string[]
+  setKitchen: (have: string[]) => void
   toast: string | null
   /** explicit consent to process health data + terms + age, for the current version */
   consent: ConsentRecord | null
 
   // navigation
   setTab: (t: Tab) => void
+  openProfile: (section: string) => void
+  clearProfileOpen: () => void
   setDate: (d: string) => void
   shiftDate: (n: number) => void
   showToast: (msg: string) => void
@@ -85,8 +95,11 @@ interface StoreState {
   // supplements / weight / workout
   toggleSupp: (id: string) => void
   setWeight: (kg: number) => void
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>) => void
-  saveCardio: (cardioType: string, mins: string) => void
+  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
+  saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
+  /** add a session (any modality) to the current day, alongside any others */
+  addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
+  removeSession: (id: string) => void
 
   // plan / settings
   setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
@@ -121,6 +134,24 @@ interface StoreState {
 function ensureDay(s: PersistedState, d: string): DayLog {
   if (!s.days[d]) s.days[d] = { foods: [], supps: {}, weight: null, workout: null }
   return s.days[d]
+}
+
+/** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
+function setSessions(day: DayLog, list: TrainingSession[]): void {
+  day.sessions = list
+  day.workout = mirrorOf(list)
+}
+
+/**
+ * Save a built-in session (Legs/Push/Pull or the Cardio card): it replaces an earlier save from
+ * the same card that day, since saving again is an edit; other sessions stay.
+ */
+function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
+  const list = sessionsOf(day, date)
+  const i = list.findIndex((y) => y.routineId === x.routineId)
+  const prev = i >= 0 ? list[i] : null
+  const next: TrainingSession = { ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
+  setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
 
 /** Lowest calorie target the app will set without medical support. */
@@ -176,6 +207,7 @@ export const useStore = create<StoreState>()(
       data: loadState(),
       cur: todayStr(),
       tab: 'today',
+      profileOpen: null,
       sync: 'idle',
       email: null,
       authReady: false,
@@ -183,10 +215,14 @@ export const useStore = create<StoreState>()(
       authed: false,
       syncPaused: false,
       authNotice: null,
+      kitchen: loadKitchen(),
+      setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
       consent: loadConsent(),
 
       setTab: (t) => set((st) => { st.tab = t }),
+      openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
+      clearProfileOpen: () => set((st) => { st.profileOpen = null }),
       setDate: (d) => set((st) => { st.cur = d }),
       shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
@@ -357,20 +393,43 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
 
-      saveWorkout: (type, ex) => {
+      saveWorkout: (type, ex, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = { type, ex }
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}) })
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast(type + ' session saved')
       },
 
-      saveCardio: (cardioType, mins) => {
+      saveCardio: (cardioType, mins, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = { type: 'Cardio', cardioType, mins }
+          const typed = parseFloat(mins)
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, {
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
+            ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
+          })
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Cardio saved')
+      },
+
+      addSession: (x) => {
+        set((st) => {
+          const day = ensureDay(st.data, st.cur)
+          setSessions(day, [...sessionsOf(day, st.cur), { ...x, id: uuid(), at: nowIso() }])
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
+      },
+
+      removeSession: (id) => {
+        set((st) => {
+          const day = ensureDay(st.data, st.cur)
+          setSessions(day, sessionsOf(day, st.cur).filter((y) => y.id !== id))
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast('Session removed')
       },
 
       setScheduleDay: (idx, value) => {
@@ -619,6 +678,7 @@ export const useStore = create<StoreState>()(
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
         await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
         clearSavedSession()
+        get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)
         saveMode(null)
         set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })
@@ -669,6 +729,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           st.data = loadStateFrom(null)
           st.consent = null
+          st.kitchen = []
           st.tab = 'today'
           st.cur = todayStr()
           st.sync = 'idle'

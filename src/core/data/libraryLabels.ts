@@ -1,0 +1,61 @@
+import type { BodyArea, Equipment, Experience, LogShape, MobilityTarget } from '@/core/types'
+
+/** Words for the exercise library's tags (en-GB, plain). */
+export const EQUIPMENT_LABEL: Record<Equipment, string> = {
+  barbell: 'Barbell',
+  dumbbell: 'Dumbbells',
+  machine: 'Machine',
+  cable: 'Cable',
+  bodyweight: 'Bodyweight',
+  kettlebell: 'Kettlebell',
+  band: 'Band',
+  'cardio-machine': 'Cardio machine',
+  bench: 'Bench',
+  'pull-up-bar': 'Pull-up bar',
+  mat: 'Mat',
+  'yoga-props': 'Yoga props',
+  reformer: 'Reformer',
+}
+
+/** What a move asks of you (not who you are: the questionnaire keeps its own words, plan §4.0.2). */
+export const LEVEL_LABEL: Record<Experience, string> = {
+  beginner: 'Good place to start',
+  intermediate: 'Builds on the basics',
+  advanced: 'More demanding',
+}
+
+export const CARE_LABEL: Record<BodyArea, string> = {
+  'lower-back': 'the lower back',
+  knees: 'the knees',
+  shoulders: 'the shoulders',
+  elbows: 'the elbows',
+  wrists: 'the wrists',
+  neck: 'the neck',
+}
+
+export const TARGET_LABEL: Record<MobilityTarget, string> = {
+  hips: 'Hips',
+  hamstrings: 'Hamstrings',
+  spine: 'Spine',
+  shoulders: 'Shoulders',
+  chest: 'Chest',
+  ankles: 'Ankles',
+  calves: 'Calves',
+  balance: 'Balance',
+  breath: 'Breath',
+}
+
+export const SHAPE_LABEL: Record<LogShape, string> = {
+  'weight-reps': 'Weight and reps',
+  reps: 'Reps',
+  hold: 'Timed hold',
+  duration: 'Minutes',
+  rounds: 'Rounds',
+  check: 'Done',
+}
+
+/** "the knees", "the wrists and the shoulders", "the neck, the knees and the wrists" */
+export function careList(areas: BodyArea[]): string {
+  const w = areas.map((a) => CARE_LABEL[a])
+  return w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : w.join('')
+}

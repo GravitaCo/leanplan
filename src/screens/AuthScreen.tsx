@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
-import type { LegalDocId } from '@/core/legal'
-import { LegalSheet } from './legal/LegalDoc'
+import { LegalLink } from './legal/LegalDoc'
+import { TaliIcon } from '@/ui/brand'
+import { Icon } from '@/ui/icons'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -10,7 +11,7 @@ const redirect = () => window.location.origin + window.location.pathname
 
 export function AuthScreen() {
   const continueAsGuest = useStore((s) => s.continueAsGuest)
-  const [mode, setMode] = useState<Mode>('signin')
+  const [mode, setModeRaw] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [pw2, setPw2] = useState('')
@@ -18,7 +19,10 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false)
   const beginSignIn = useStore((st) => st.beginSignIn)
   const notice = useStore((st) => st.authNotice)
-  const [doc, setDoc] = useState<LegalDocId | null>(null)
+  const setMode = (m: Mode) => {
+    setErr('')
+    setModeRaw(m)
+  }
 
   async function submit() {
     setErr('')
@@ -29,7 +33,8 @@ export function AuthScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect() })
       setBusy(false)
       if (error) return setErr(error.message)
-      return setMode('check-email')
+      setModeRaw('check-email')
+      return
     }
     if (!email || !pw) return setErr('Please fill in all fields.')
     if (mode === 'signup') {
@@ -43,7 +48,8 @@ export function AuthScreen() {
       })
       setBusy(false)
       if (error) return setErr(error.message)
-      return setMode('check-email')
+      setModeRaw('check-email')
+      return
     }
     // signin
     setBusy(true)
@@ -57,98 +63,88 @@ export function AuthScreen() {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirect() } })
   }
 
+  const title = mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Reset password' : 'Welcome back'
+
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '24px 22px calc(28px + env(safe-area-inset-bottom))',
-        maxWidth: 460,
-        margin: '0 auto',
-      }}
-    >
-      <div style={{ textAlign: 'center', marginBottom: 34 }}>
-        <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px' }}>Tali</div>
-        <div className="mono" style={{ marginTop: 6 }}>
-          eat well · move often · feel better
-        </div>
+    <div className="auth">
+      <div className="auth-brand">
+        <TaliIcon size={88} />
+        <h1>Tali</h1>
+        <p>Eat well, move often, feel better.</p>
       </div>
 
       {notice && mode !== 'check-email' && <div className="banner" role="status">{notice}</div>}
 
       {mode === 'check-email' ? (
-        <div className="card" style={{ textAlign: 'center', padding: 28 }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>✉️</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>Check your email</h2>
-          <p style={{ color: 'var(--muted)', fontSize: 14, margin: '0 0 20px' }}>
-            We sent a link to your inbox. Click it to continue.
-          </p>
-          <button className="btn ghost" onClick={() => setMode('signin')}>
+        <div className="card auth-check">
+          <div className="ico">
+            <Icon name="mail" />
+          </div>
+          <h2>Check your email</h2>
+          <p>We sent a link to your inbox. Open it to continue.</p>
+          <button className="btn gray" onClick={() => setMode('signin')}>
             Back to sign in
           </button>
         </div>
       ) : (
-        <div className="card" style={{ padding: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 18px', letterSpacing: '-0.4px' }}>
-            {mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Reset password' : 'Welcome back'}
-          </h2>
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!busy) submit()
+          }}
+        >
+          <h2 className="auth-t">{title}</h2>
+
+          <div className="list">
+            <div className="frow">
+              <label htmlFor="auth-email">Email</label>
+              <input
+                id="auth-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                placeholder="you@example.com"
+              />
+            </div>
+            {mode !== 'forgot' && (
+              <div className="frow">
+                <label htmlFor="auth-pw">Password</label>
+                <input
+                  id="auth-pw"
+                  type="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder={mode === 'signup' ? 'At least 8 characters' : 'Required'}
+                />
+              </div>
+            )}
+            {mode === 'signup' && (
+              <div className="frow">
+                <label htmlFor="auth-pw2">Confirm</label>
+                <input
+                  id="auth-pw2"
+                  type="password"
+                  autoComplete="new-password"
+                  value={pw2}
+                  onChange={(e) => setPw2(e.target.value)}
+                  placeholder="Repeat password"
+                />
+              </div>
+            )}
+          </div>
 
           {err && (
-            <div
-              style={{
-                background: 'rgba(224,101,77,.12)',
-                border: '1px solid var(--over)',
-                color: 'var(--over)',
-                fontSize: 13,
-                padding: '10px 12px',
-                borderRadius: 10,
-                marginBottom: 12,
-              }}
-            >
+            <div className="auth-err" role="alert">
               {err}
             </div>
           )}
 
-          <div className="field">
-            <label>Email</label>
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value.trim())}
-              placeholder="you@example.com"
-            />
-          </div>
-
-          {mode !== 'forgot' && (
-            <div className="field">
-              <label>Password</label>
-              <input
-                type="password"
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
-                placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
-              />
-            </div>
-          )}
-
-          {mode === 'signup' && (
-            <div className="field">
-              <label>Confirm password</label>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={pw2}
-                onChange={(e) => setPw2(e.target.value)}
-                placeholder="Repeat password"
-              />
-            </div>
-          )}
-
-          <button className="btn" disabled={busy} onClick={submit}>
+          <button type="submit" className="btn" disabled={busy}>
             {busy
               ? 'Please wait…'
               : mode === 'signup'
@@ -158,70 +154,62 @@ export function AuthScreen() {
                   : 'Sign in'}
           </button>
 
-          {mode === 'signin' && (
-            <div style={{ textAlign: 'right', marginTop: 8 }}>
-              <button className="pill" style={{ background: 'none', color: 'var(--accent)' }} onClick={() => setMode('forgot')}>
-                Forgot password?
-              </button>
-            </div>
-          )}
-
           {mode !== 'forgot' && (
             <>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  margin: '16px 0',
-                  color: 'var(--muted)',
-                  fontSize: 12,
-                }}
-              >
-                <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-                or
-                <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-              </div>
-              <button className="btn ghost" onClick={google}>
+              <div className="auth-or">or</div>
+              <button type="button" className="btn gray" onClick={google}>
+                <GoogleG />
                 Continue with Google
-              </button>
-              <button
-                className="pill"
-                style={{ display: 'block', margin: '16px auto 0', background: 'none', color: 'var(--muted)' }}
-                onClick={continueAsGuest}
-              >
-                Continue without an account
               </button>
             </>
           )}
 
-          <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--muted)' }}>
+          <div className="auth-links">
+            {mode === 'signin' && (
+              <button type="button" className="linkbtn" onClick={() => setMode('forgot')}>
+                Forgot password?
+              </button>
+            )}
             {mode === 'forgot' ? (
-              <button className="pill" style={{ background: 'none', color: 'var(--accent)' }} onClick={() => setMode('signin')}>
+              <button type="button" className="linkbtn" onClick={() => setMode('signin')}>
                 Back to sign in
               </button>
             ) : (
-              <>
-                {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
+              <span>
+                {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
                 <button
-                  className="pill"
-                  style={{ background: 'none', color: 'var(--accent)' }}
+                  type="button"
+                  className="linkbtn"
                   onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
                 >
                   {mode === 'signup' ? 'Sign in' : 'Sign up'}
                 </button>
-              </>
+              </span>
             )}
-          </p>
-        </div>
+            {mode !== 'forgot' && (
+              <button type="button" className="linkbtn muted" onClick={continueAsGuest}>
+                Continue without an account
+              </button>
+            )}
+          </div>
+        </form>
       )}
 
-      <p style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'var(--muted)' }}>
-        <button className="pill" style={{ background: 'none', color: 'var(--muted)' }} onClick={() => setDoc('privacy')}>Privacy policy</button>
-        {' · '}
-        <button className="pill" style={{ background: 'none', color: 'var(--muted)' }} onClick={() => setDoc('terms')}>Terms of use</button>
+      <p className="legal-links">
+        <LegalLink id="privacy" />{' · '}<LegalLink id="terms">Terms</LegalLink>{' · '}<LegalLink id="cookies">Cookies</LegalLink>
       </p>
-      {doc && <LegalSheet id={doc} onClose={() => setDoc(null)} />}
     </div>
+  )
+}
+
+/** Google's multicolour "G", as its sign-in branding guidelines ask for on this button. */
+function GoogleG() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+    </svg>
   )
 }

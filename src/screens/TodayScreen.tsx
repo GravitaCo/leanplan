@@ -3,14 +3,16 @@
  * checks on the estimates that move the total; one-tap usuals; pinned tiles; supplements;
  * and the week against the target range.
  */
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
-import { workoutBurn } from '@/core/domain/workout'
+import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
+import { sessionsOf } from '@/core/domain/sessions'
+import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
-  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, latestWeight, mealNow, plansDue, rangeFor, rangeWidth,
+  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, Tile, pressable } from '@/ui/primitives'
@@ -38,6 +40,9 @@ export function TodayScreen() {
   const toggleSupp = useStore((s) => s.toggleSupp)
   const logEntries = useStore((s) => s.logEntries)
   const runSync = useStore((s) => s.runSync)
+  const setPrefs = useStore((s) => s.setPrefs)
+  const showToast = useStore((s) => s.showToast)
+  const openProfile = useStore((s) => s.openProfile)
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [dismissedMissed, setDismissedMissed] = useState(false)
 
@@ -53,17 +58,24 @@ export function TodayScreen() {
   const isToday = cur === todayStr()
   const f = fmtDate(cur)
 
-  const wk = day.workout
+  const sess = sessionsOf(day, cur)
   const sched = data.schedule[f.idx] || 'Rest'
-  const logged = !!wk?.type
+  const logged = sess.length > 0
   const isRest = !logged && sched === 'Rest'
-  const burn = workoutBurn(wk, latestWeight(data, cur))
 
   const meal = mealNow()
   const us = isToday ? usuals(data, cur, meal) : []
   const due = isToday ? plansDue(p) : []
   const hasHistory = Object.keys(data.days).some((d) => d < cur && data.days[d].foods.length)
   const missed = isToday && !dismissedMissed && hasHistory && !dayOf(data, shiftDay(cur, -1)).foods.length && !day.foods.length
+  // activity-level suggestion (plan P1.5): an offer only, never applied by itself; no numbers;
+  // hidden in gentle mode; the range-change note wins on the same day; no downward nudge on a
+  // "welcome back" day
+  const sugRaw = isToday && !gentle && !showBurnNote(data) ? activitySuggestion(data, cur) : null
+  const suggest = sugRaw && !(missed && !sugRaw.up) ? sugRaw : null
+  useEffect(() => {
+    if (suggest && markActivityShown(data, cur)) setPrefs({ activityShown: cur })
+  }, [suggest?.level, cur]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = weekOf(cur).map((d) => dayStat(data, d))
   const past = rows.filter((x) => !x.future)
@@ -75,7 +87,9 @@ export function TodayScreen() {
   const syncLabel = !authed ? 'on this device' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
 
   const activity = logged
-    ? wk!.type === 'Cardio' ? <>{wk!.mins || '?'}<small> min</small></> : <span className="w">{wk!.type} done</span>
+    ? sess.length > 1 ? <span className="w">{sess.length} sessions</span>
+      : sess[0].modality === 'strength' ? <span className="w">{(sess[0].routineId || '').replace('builtin-', '') || sess[0].title} done</span>
+      : <>{sess[0].mins ?? '?'}<small> min</small></>
     : <span className="w">{isRest ? 'Rest day' : sched + ' planned'}</span>
 
   const highlights: ReactNode[] = []
@@ -105,6 +119,33 @@ export function TodayScreen() {
           <span style={{ color: 'var(--energy-ink)' }}><Icon name="leaf" /></span>
           <div><b>Welcome back.</b><br /><span className="muted">A day off logging doesn't undo anything. Pick up from here.</span></div>
           <button className="x" aria-label="Dismiss" onClick={() => setDismissedMissed(true)}><Icon name="x" size={12} stroke={3} /></button>
+        </div>
+      )}
+
+      {suggest && (
+        <div className="card dayopt">
+          <div className="t">{suggest.up ? '' : 'Weeks vary. '}Your logged sessions over the last 4 weeks
+            fit <b>{ACTIVITY[suggest.level].label.replace(/ \(.*\)$/, '')}</b> best.
+            {suggest.up ? ' Want to update your activity level to match?' : ' If you do more than you log, your current setting may still be right. Want to update it?'}</div>
+          <div className="chips">
+            <button className="chip" onClick={() => {
+              setPrefs({ activityLevel: suggest.level, activityAsked: cur })
+              showToast('Activity level updated. Your targets only change if you choose to.')
+              openProfile('metrics')
+            }}>Update</button>
+            <button className="chip" onClick={() => setPrefs({ activityAsked: cur })}>Keep as is</button>
+          </div>
+        </div>
+      )}
+
+      {showBurnNote(data) && !gentle && (
+        <div className="banner">
+          <span style={{ color: 'var(--energy-ink)' }}><Icon name="info" /></span>
+          <div><b>Your range on workout days has changed.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
+            ? 'Workouts now add only the energy above what you use at rest, so they are no longer counted twice. '
+            : 'It now leaves workouts out, because your activity level already includes your training. '}
+            Past days are unchanged.</span></div>
+          <button className="x" aria-label="Dismiss" onClick={() => setPrefs({ burnNoteSeen: true })}><Icon name="x" size={12} stroke={3} /></button>
         </div>
       )}
 
@@ -176,11 +217,11 @@ export function TodayScreen() {
       <div className="sec-t">Pinned</div>
       <div className="tiles">
         <Tile color="activity" icon="dumbbell" label="Workout" onPress={() => setTab('train')}
-          value={<span className="w">{logged ? wk!.type : isRest ? 'Rest' : sched}</span>}
-          sub={logged ? (burn && !gentle ? `+${fmt(burn)} kcal of room` : 'Logged') : isRest ? 'Recovery counts too' : 'Tap to start'} />
+          value={<span className="w">{logged ? (sess.length > 1 ? `${sess.length} sessions` : sess[0].modality === 'strength' ? ((sess[0].routineId || '').replace('builtin-', '') || sess[0].title) : sess[0].title) : isRest ? 'Rest' : sched}</span>}
+          sub={logged ? 'Logged' : isRest ? 'Recovery counts too' : 'Tap to start'} />
         <Tile color="mind" icon="smile" label="Check-in" onPress={() => setSheet({ k: 'checkin' })}
           value={<span className="w">{day.checkin?.mood ? MOODS[day.checkin.mood - 1] : 'How are you?'}</span>}
-          sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : 'Mood and hunger'} />
+          sub={day.checkin?.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]}` : "How you're doing"} />
         {!gentle && (
           <Tile color="body" icon="scale" label="Weight" onPress={() => setSheet({ k: 'weight' })}
             value={day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}

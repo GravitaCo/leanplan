@@ -31,11 +31,14 @@ const CHECKIN_KEY = '_checkin'
 function toServerDay(s: PersistedState, d: string, uid: string) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }
   const supps = x.checkin ? { ...(x.supps || {}), [CHECKIN_KEY]: x.checkin } : x.supps || {}
-  return { user_id: uid, log_date: d, foods: x.foods || [], supps, weight: x.weight ?? null, workout: x.workout ?? null }
+  // sessions: an additive day_logs column (workout plan P2); workout stays as the legacy mirror
+  return { user_id: uid, log_date: d, foods: x.foods || [], supps, weight: x.weight ?? null, workout: x.workout ?? null, sessions: Array.isArray(x.sessions) ? x.sessions : null }
 }
 function fromServerDay(row: any): DayLog {
   const { [CHECKIN_KEY]: checkin, ...supps } = row.supps || {}
-  return { foods: row.foods || [], supps, weight: row.weight ?? null, workout: row.workout || null, checkin: checkin || null }
+  const day: DayLog = { foods: row.foods || [], supps, weight: row.weight ?? null, workout: row.workout || null, checkin: checkin || null }
+  if (Array.isArray(row.sessions)) day.sessions = row.sessions
+  return day
 }
 function toServerRecipe(r: Recipe, uid: string) {
   return { id: r.id, user_id: uid, name: r.name, items: r.items || [], servings: +r.servings || 1 }
@@ -81,7 +84,13 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   if (settings.length && !meta.settings.dirty) {
     s.target = settings[0].target
     s.schedule = settings[0].schedule
-    if (settings[0].profile) s.profile = settings[0].profile
+    if (settings[0].profile) {
+      // keep the earliest D5 switch date across devices (and one from an older app version's
+      // copy that lacks it), so days between two dates never flip back and forth
+      const sw = s.profile.burnSwitch
+      s.profile = settings[0].profile
+      if (sw && (!s.profile.burnSwitch || sw < s.profile.burnSwitch)) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
+    }
     meta.settings.u = settings[0].updated_at
   }
   const cf = await sbGet<any[]>('/custom_foods?user_id=eq.' + uid + '&select=*')

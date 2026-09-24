@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "preview:local": "npm run build && vite preview --host",
     "typecheck": "tsc -b --noEmit",
     "check:foods": "esbuild scripts/check-foods.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-foods.cjs && node node_modules/.cache/check-foods.cjs",
     "check:legal": "esbuild scripts/check-legal.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-legal.cjs && node node_modules/.cache/check-legal.cjs",
+    "legal:html": "esbuild scripts/legal-html.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/legal-html.cjs && node node_modules/.cache/legal-html.cjs",
+    "check:exercises": "esbuild scripts/check-exercises.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-exercises.cjs && node node_modules/.cache/check-exercises.cjs",
     "test": "esbuild scripts/test-core.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/test-core.cjs && node node_modules/.cache/test-core.cjs"
   },
   "dependencies": {

@@ -8,14 +8,24 @@
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
-import { dayTotals, type MacroTotals } from './nutrition'
+import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
+import { fromLegacy, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { FOODS } from '@/core/data/foods'
+
+const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
+const d1 = (x: number) => Math.round(x * 10) / 10
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
 
 export const MOODS = ['Rough', 'Low', 'Okay', 'Good', 'Great']
 export const HUNGER = ['Starving', 'Hungry', 'Satisfied', 'Full', 'Stuffed']
+/** Day-of check-in signals (plan §0.2): three steps each, all optional. */
+export const SLEEP = ['Poor', 'OK', 'Good']
+export const STRESS = ['Low', 'Some', 'High']
+export const ENERGY = ['Low', 'OK', 'Good']
+export const SORE = ['Not sore', 'A bit', 'Very sore']
 
 const DEFAULT_RANGE = 100
 const EMPTY_DAY: DayLog = { foods: [], supps: {}, weight: null, workout: null, checkin: null }
@@ -39,9 +49,50 @@ export function latestWeight(s: AppState, d: string): number | null {
 }
 
 export interface Range { mid: number; lo: number; hi: number }
-/** The day's target (plus workout burn) ± the user's range width. */
+/**
+ * Calories a logged workout adds to the day's range. From `profile.burnSwitch` on, nothing for
+ * most people, because their activity level already counts their training (it was counted
+ * twice); sedentary users, whose level counts none, get the net burn. Days before the switch keep
+ * the old gross figure so history never moves.
+ */
+export function rangeExtra(s: AppState, d: string): number {
+  const day = dayOf(s, d)
+  const kg = latestWeight(s, d)
+  const sw = s.profile.burnSwitch
+  if (!sw || d < sw) {
+    // before the switch: exactly the old single-workout maths; any extra sessions added to such a
+    // day later count at their own gross value
+    const old = workoutBurn(day.workout, kg, true)
+    if (!Array.isArray(day.sessions)) return old
+    const list = sessionsOf(day, d)
+    // the old maths only stands in for a built-in card session; anything new counts at its own value
+    // when an older install wrote the workout, the old maths belongs to the session made from it
+    const wk = day.workout
+    const mirrored = wk?.type && !wk._mirror
+      ? list.findIndex((x) => x.routineId === fromLegacy(wk, d).routineId)
+      : mirroredIndex(list)
+    const keepOld = mirrored >= 0 && (list[mirrored].routineId || '').startsWith('builtin-')
+    return (keepOld ? old : 0) + list.reduce((a, x, i) => (keepOld && i === mirrored ? a : a + sessionBurn(x, kg)), 0)
+  }
+  if (s.profile.activityLevel !== 'sedentary') return 0
+  return sessionsOf(day, d).reduce((a, x) => a + sessionNetBurn(x, kg), 0)
+}
+
+/** Set the D5 switch date once (on first load of this version); an existing date is never moved. */
+export function ensureBurnSwitch(p: Profile, today: string): void {
+  if (!p.burnSwitch) p.burnSwitch = today
+}
+
+/** Whether to show the one-time note about the change: only to people it affected. */
+export function showBurnNote(s: AppState): boolean {
+  const sw = s.profile.burnSwitch
+  if (!sw || s.profile.burnNoteSeen) return false
+  return Object.keys(s.days).some((d) => d < sw && sessionsOf(s.days[d], d).length > 0)
+}
+
+/** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const mid = s.target.kcal + workoutBurn(dayOf(s, d).workout, latestWeight(s, d))
+  const mid = s.target.kcal + rangeExtra(s, d)
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }
@@ -165,10 +216,40 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
-/** Copy of an entry for re-logging: keeps the portion, drops per-day confirmation state. */
+/**
+ * The amount an earlier entry really meant, in today's data. Logged as servings, it's today's
+ * exact serving: older builds stored servings rounded to whole grams (a 119.5 g bacon roll as
+ * 120 g), so a stored amount that equals the old rounded serving (or the exact one) is rebuilt.
+ * Anything else (weighed, hand, edited) keeps its stored amount.
+ */
+export function entryAmount(x: LoggedFood, food: Food): number {
+  if (x.serv != null) {
+    const s = x.serv, exact = food.g * s
+    // older builds stored the serving itself as whole grams (either way on a .5), then rounded
+    // serving × count again: 119.5 g stored as 120, so 2 rolls were saved as 240 g
+    const oldServing = [Math.floor(food.g), Math.ceil(food.g)]
+    if (Math.abs(x.grams - exact) < 0.0005 || x.grams === Math.round(exact) || oldServing.some((G) => Math.round(G * s) === x.grams)) {
+      return roundAmount(exact, unitOf(food))
+    }
+  }
+  return x.grams
+}
+
+/**
+ * Re-log an earlier entry (one-tap usuals, "same as yesterday"). A database food is re-scaled
+ * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
+ * from an old snapshot. Same amount and unit; anything else keeps its logged numbers.
+ */
 export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const { ok: _ok, ...rest } = x
-  return { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
+  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
+    const amount = entryAmount(x, food)
+    const s = scaleFood(food, amount)
+    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+  }
+  return out
 }
 export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[] {
   return dayOf(s, d).foods.filter((x) => x.meal === meal)
@@ -204,7 +285,7 @@ export function dayStat(s: AppState, d: string): DayStat {
     d, t, r,
     logged: x.foods.length > 0,
     future: d > todayStr(),
-    done: !!x.workout?.type,
+    done: sessionsOf(x, d).length > 0,
     planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
     inRange: t.k >= r.lo && t.k <= r.hi,
   }

@@ -6,12 +6,13 @@
 import { LEGAL, placeholdersIn } from '@/core/legal'
 import { privacyPolicy } from '@/core/legal/privacy'
 import { termsOfUse } from '@/core/legal/terms'
+import { cookiePolicy } from '@/core/legal/cookies'
 
 let bad = 0
 const fail = (m: string) => { bad++; console.log('FAIL', m) }
 
 for (const [k, v] of Object.entries(LEGAL)) if (!v) fail(`LEGAL.${k} is not set`)
-for (const doc of [privacyPolicy(), termsOfUse()]) {
+for (const doc of [privacyPolicy(), termsOfUse(), cookiePolicy()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)
   if (!doc.sections.length) fail(`${doc.title}: no sections`)

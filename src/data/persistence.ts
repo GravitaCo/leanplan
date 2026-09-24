@@ -1,6 +1,8 @@
 import type { AppState } from '@/core/types'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
+import { todayStr } from '@/core/domain/date'
+import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid } from './supabase'
 
 const KEY = 'leanplan.v1'
@@ -40,6 +42,15 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (s.profile.notificationsEnabled === undefined) s.profile.notificationsEnabled = false
   if (!Array.isArray(s.customFoods)) s.customFoods = []
   if (!Array.isArray(s.recipes)) s.recipes = []
+  // workout plan D5: logged workouts stop widening the food range from today; earlier days
+  // keep the old maths (see insights.rangeExtra)
+  ensureBurnSwitch(s.profile, todayStr())
+  // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
+  // read through sessionsOf without being rewritten
+  for (const d of Object.keys(s.days)) {
+    const day = s.days[d]
+    if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
+  }
   return s
 }
 
@@ -69,7 +80,7 @@ export function saveState(s: PersistedState): boolean {
 export function clearDevice(): void {
   try {
     Object.keys(localStorage)
-      .filter((k) => k === KEY || k.startsWith('tali.') || (k.startsWith('sb-') && k.endsWith('-auth-token')))
+      .filter((k) => k === KEY || k.startsWith('tali.') || k.startsWith('sb-'))
       .forEach((k) => localStorage.removeItem(k))
   } catch { /* storage blocked */ }
 }
@@ -80,6 +91,16 @@ export async function requestPersistentStorage(): Promise<void> {
   try {
     if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist()
   } catch { /* unsupported */ }
+}
+
+/** "I have…" kitchen snapshot: device-only on purpose (short-lived; syncing it would push the
+ *  whole settings row on every tap and could overwrite newer targets from another device). */
+const KITCHEN_KEY = 'tali.kitchen'
+export function loadKitchen(): string[] {
+  try { const v = JSON.parse(localStorage.getItem(KITCHEN_KEY) || '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [] } catch { return [] }
+}
+export function saveKitchen(have: string[]): void {
+  try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(have)) } catch { /* blocked */ }
 }
 
 /** How this device last used Tali, so launch never needs the network to decide: 'guest'

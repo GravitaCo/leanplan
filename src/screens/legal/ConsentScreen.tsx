@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { MIN_AGE, type LegalDocId } from '@/core/legal'
+import { MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
-import { LegalSheet } from './LegalDoc'
+import { LegalLink } from './LegalDoc'
 
 /**
  * Explicit consent before Tali processes anyone's health data (UK/EU GDPR Art. 9(2)(a)).
@@ -16,13 +16,8 @@ export function ConsentScreen() {
   const [adult, setAdult] = useState(false)
   const [health, setHealth] = useState(false)
   const [terms, setTerms] = useState(false)
-  const [doc, setDoc] = useState<LegalDocId | null>(null)
   const account = authed || syncPaused
 
-  const link = (id: LegalDocId, label: string) => (
-    <button type="button" className="navbtn" style={{ fontSize: 'inherit', padding: 0, display: 'inline' }}
-      onClick={(e) => { e.preventDefault(); setDoc(id) }}>{label}</button>
-  )
   const box = (on: boolean, set: (v: boolean) => void, id: string, children: ReactNode) => (
     <div className="li" style={{ alignItems: 'flex-start', gap: 12, padding: '12px 16px' }}>
       <input id={id} type="checkbox" checked={on} onChange={(e) => set(e.target.checked)}
@@ -43,8 +38,8 @@ export function ConsentScreen() {
       </p>
 
       <div className="list">
-        {box(health, setHealth, 'c_health', <>I agree to Tali storing and using my health information to run the app for me, as the {link('privacy', 'privacy policy')} explains. I can withdraw this at any time by deleting my data in Profile.</>)}
-        {box(terms, setTerms, 'c_terms', <>I accept the {link('terms', 'terms of use')}, and understand Tali gives general wellness information, not medical advice.</>)}
+        {box(health, setHealth, 'c_health', <>I agree to Tali storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time by deleting my data in Profile.</>)}
+        {box(terms, setTerms, 'c_terms', <>I accept the <LegalLink id="terms">terms and conditions</LegalLink>, and understand Tali gives general wellness information, not medical advice.</>)}
         {box(adult, setAdult, 'c_age', <>I’m {MIN_AGE} or over.</>)}
       </div>
 
@@ -54,7 +49,6 @@ export function ConsentScreen() {
         If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tali to guide your eating.
       </div>
 
-      {doc && <LegalSheet id={doc} onClose={() => setDoc(null)} />}
     </div>
   )
 }
