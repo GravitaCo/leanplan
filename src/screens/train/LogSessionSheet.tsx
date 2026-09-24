@@ -4,6 +4,7 @@ import type { Effort, Modality } from '@/core/types'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { DEFAULT_MINS, EFFORTS, MODALITIES, MODALITY_LABEL } from '@/core/data/modalities'
 import { Sheet } from '@/ui/primitives'
+import { RED_FLAG } from './HoldTimer'
 
 /**
  * Quick log of any movement (workout plan P2, §2.2): the kind, minutes and, optionally, a name,
@@ -63,7 +64,7 @@ export function LogSessionSheet({ onClose }: { onClose: () => void }) {
           <button key={k} role="radio" aria-checked={effort === k} className={'chip' + (effort === k ? ' on' : '')} onClick={() => setEffort(effort === k ? null : k)}>{label}</button>
         ))}
       </div>
-      <div className="foot" style={{ padding: '12px 4px 0' }}>This sits alongside anything else you've logged today. Every kind of movement counts.</div>
+      <div className="foot" style={{ padding: '12px 4px 0' }}>This sits alongside anything else you've logged today. Every kind of movement counts. {RED_FLAG}</div>
     </Sheet>
   )
 }

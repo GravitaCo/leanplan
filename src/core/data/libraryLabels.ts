@@ -17,11 +17,11 @@ export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   reformer: 'Reformer',
 }
 
-/** Difficulty in the questionnaire's own words (plan §4.0.2). */
+/** What a move asks of you (not who you are: the questionnaire keeps its own words, plan §4.0.2). */
 export const LEVEL_LABEL: Record<Experience, string> = {
-  beginner: 'Just starting',
-  intermediate: 'Getting comfortable',
-  advanced: 'Confident',
+  beginner: 'Good place to start',
+  intermediate: 'Builds on the basics',
+  advanced: 'More demanding',
 }
 
 export const CARE_LABEL: Record<BodyArea, string> = {

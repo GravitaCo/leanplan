@@ -3,9 +3,9 @@ import { alternativesFor } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { Sheet } from '@/ui/primitives'
 
-/** Shown with every swap (plan §4.0.4, wording from mental-performance). */
+/** The shared part of the §4.0.4 disclaimer; each place adds its own first sentence (mental-performance). */
 export const CARE_DISCLAIMER =
-  'Tali will suggest gentler alternatives for these areas. This is general fitness guidance, not medical advice. If you have pain, an injury or a health condition, check with your GP or a physiotherapist before starting or changing exercise. Stop any movement that causes pain.'
+  'This is general fitness guidance, not medical advice. If you have pain, an injury or a health condition, check with your GP or a physiotherapist before starting or changing exercise. Stop any movement that causes pain.'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
@@ -13,8 +13,8 @@ function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void
     <button className="li" onClick={onPick}>
       <div className="m">
         <div className="t">{x.n}</div>
-        <div className="s">{[tag, LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}</div>
-        {x.care?.length ? <div className="s">Works {careList(x.care)} quite a lot</div> : null}
+        <div className="s">{[tag, tag === 'Easier' || tag === 'Harder' ? '' : LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}</div>
+        {x.care?.length ? <div className="s">Asks quite a lot of {careList(x.care)}</div> : null}
       </div>
     </button>
   )
@@ -25,14 +25,17 @@ function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void
  * harder on its progression, or a similar move. It changes today only; the planned exercise is
  * one tap away.
  */
-export function SwapSheet({ current, planned, onPick, onClose }: {
+export function SwapSheet({ current, planned, shorter, onPick, onClose }: {
   current: Exercise
+  /** a shorter day: no "Harder" step (no progression prompts that day, plan §4.0.5) */
+  shorter?: boolean
   /** the workout's own exercise for this slot, when something else is in it now */
   planned?: Exercise
   onPick: (id: string) => void
   onClose: () => void
 }) {
-  const alt = alternativesFor(planned ?? current)
+  const all = alternativesFor(planned ?? current)
+  const alt = shorter ? { ...all, harder: undefined } : all
   const pick = (id: string) => { onPick(id); onClose() }
   const shown = (x?: Exercise) => x && x.id !== current.id
   return (
@@ -64,7 +67,7 @@ export function SwapSheet({ current, planned, onPick, onClose }: {
       ) : (
         !planned && !alt.easier && !alt.harder && <div className="foot" style={{ padding: '0 4px' }}>There's nothing similar in the library yet.</div>
       )}
-      <div className="foot" style={{ padding: '12px 4px 0' }}>{CARE_DISCLAIMER}</div>
+      <div className="foot" style={{ padding: '12px 4px 0' }}>Easier and gentler options are here for any day, for any reason. {CARE_DISCLAIMER}</div>
     </Sheet>
   )
 }

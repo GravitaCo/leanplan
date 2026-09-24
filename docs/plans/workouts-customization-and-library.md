@@ -989,8 +989,12 @@ any of them falls back to a sensible default, never a blocker.
   gentler alternatives for these areas. This is general fitness guidance, not medical advice. If
   you have pain, an injury or a health condition, check with your GP or a physiotherapist before
   starting or changing exercise. Stop any movement that causes pain."
-- **Red flags** (chest pain, dizziness or faintness, sudden severe pain during exercise): "Please
-  stop and get checked. Call NHS 111, or 999 in an emergency."
+- **Red flags** (chest pain, dizziness or faintness, sudden severe pain during exercise): "Stop if
+  you get chest pain, feel dizzy or faint, or have sudden severe pain. Call 999 for chest pain that
+  doesn't go away, or NHS 111 if you're not sure." (Revised in P3 after mental-performance checked
+  the NHS chest-pain page: 999 first for chest pain.) Outside the P6 question, the disclaimer's
+  first sentence fits its place (Swap sheet: "Easier and gentler options are here for any day, for
+  any reason."; library entry: "This move asks quite a lot of {areas}.").
 - **Pregnancy and postnatal:** no special programme; copy says "check with your midwife or GP".
 - **Never:** diagnose, offer rehab programmes, claim a movement is safe for a condition, or parse
   `limitationsNote` into a prescription (it is shown back to the user only).

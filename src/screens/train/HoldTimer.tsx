@@ -3,7 +3,7 @@ import { holdAt, holdTarget } from '@/core/domain/library'
 import { Sheet } from '@/ui/primitives'
 
 /** Red flags (plan §4.0.4): on the hold timer and the exercise cards. */
-export const RED_FLAG = 'Chest pain, dizziness or faintness, or sudden severe pain: please stop and get checked. Call NHS 111, or 999 in an emergency.'
+export const RED_FLAG = "Stop if you get chest pain, feel dizzy or faint, or have sudden severe pain. Call 999 for chest pain that doesn't go away, or NHS 111 if you're not sure."
 
 /**
  * A timer for a hold (plank, a yoga pose, a stretch). It runs on the device clock, so it works
@@ -35,9 +35,9 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
   return (
     <Sheet title={name} onClose={onClose}>
       <div className="hold" aria-live="polite">
-        <div className="hold-k">{start == null ? 'Ready when you are' : h.switchNow ? 'Switch sides' : perSide && target ? (h.side === 1 ? 'First side' : 'Second side') : h.reached ? 'Target reached' : 'Holding'}</div>
+        <div className="hold-k">{start == null ? 'Ready when you are' : h.switchNow ? 'Switch sides' : perSide && target ? (h.side === 1 ? 'First side' : 'Second side') : target && h.sec >= target.hi ? 'Good place to stop' : h.reached ? 'In your range' : 'Holding'}</div>
         <div className="hold-n num" aria-label={`${h.sec} seconds`}>{h.sec}<span> sec</span></div>
-        {goal && <div className="hold-g">Aim for {goal}{perSide ? ' each side' : ''}. Stop sooner if your form slips.</div>}
+        {goal && <div className="hold-g">Aim for {goal}{perSide ? ' each side' : ''}. Stop sooner if your form slips or anything hurts.</div>}
       </div>
       <div className="stack">
         {start == null

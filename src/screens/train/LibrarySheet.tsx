@@ -51,7 +51,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         </div>
       )}
       {x.care?.length ? (
-        <div className="foot" style={{ padding: '12px 4px 0' }}>This works {careList(x.care)} quite a lot. {CARE_DISCLAIMER}</div>
+        <div className="foot" style={{ padding: '12px 4px 0' }}>This move asks quite a lot of {careList(x.care)}.{gentler ? " If you'd like to go easier on them, the gentler option above works the same area." : ''} {CARE_DISCLAIMER}</div>
       ) : null}
       <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
       {demo && x.video && <DemoPlayer ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(false)} />}

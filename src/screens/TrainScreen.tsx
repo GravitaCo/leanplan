@@ -367,6 +367,7 @@ export function TrainScreen() {
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
           </div>
           <div className="stack"><button className="btn" onClick={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); setPicked(null) }}>Save cardio</button></div>
+          <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
         </>
       ) : (
         <>
@@ -460,7 +461,7 @@ export function TrainScreen() {
       {wk && demo != null && (() => { const x = swaps[demo] ? slotEx(demo) : undefined; const ex = x ? { n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video } : wk.ex[demo]; return ex?.video ? <DemoPlayer ex={ex} onClose={closeDemo} /> : null })()}
       {wk && swapFor != null && slotEx(swapFor) && (
         <SwapSheet current={slotEx(swapFor)!} planned={swaps[swapFor] ? exById(wk.ex[swapFor].id) : undefined}
-          onPick={(id) => swapSlot(swapFor, id)} onClose={() => setSwapFor(null)} />
+          shorter={shorter} onPick={(id) => swapSlot(swapFor, id)} onClose={() => setSwapFor(null)} />
       )}
       {wk && timer && (() => {
         const x = slotEx(timer.exi)
@@ -472,8 +473,9 @@ export function TrainScreen() {
 
       {!swap && sel !== 'Cardio' && (
         <div className="foot" style={{ padding: '12px 4px 0' }}>
-          Keep two or three reps in the tank each set. When every set hits the top of the range with good form, add a little
-          weight next time. Rest about 90 seconds between sets. {RED_FLAG}
+          {/* no progression prompt on a shorter day (plan §4.0.5) */}
+          Keep two or three reps in the tank each set.{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} Rest
+          about 90 seconds between sets. {RED_FLAG}
         </div>
       )}
     </div>
