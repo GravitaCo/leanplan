@@ -34,9 +34,9 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
 
   return (
     <Sheet title={name} onClose={onClose}>
-      <div className="hold" aria-live="polite">
-        <div className="hold-k">{start == null ? 'Ready when you are' : h.switchNow ? 'Switch sides' : perSide && target ? (h.side === 1 ? 'First side' : 'Second side') : target && h.sec >= target.hi ? 'Good place to stop' : h.reached ? 'In your range' : 'Holding'}</div>
-        <div className="hold-n num" aria-label={`${h.sec} seconds`}>{h.sec}<span> sec</span></div>
+      <div className="hold">
+        <div className="hold-k" aria-live="polite">{start == null ? 'Ready when you are' : h.switchNow ? 'Switch sides' : perSide && target ? (h.side === 1 ? 'First side' : 'Second side') : target && h.sec >= target.hi ? 'Good place to stop' : h.reached ? 'In your range' : 'Holding'}</div>
+        <div className="hold-n num" role="timer" aria-label={`${h.sec} seconds`}>{h.sec}<span> sec</span></div>
         {goal && <div className="hold-g">Aim for {goal}{perSide ? ' each side' : ''}. Stop sooner if your form slips or anything hurts.</div>}
       </div>
       <div className="stack">

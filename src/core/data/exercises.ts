@@ -23,10 +23,10 @@ export const EXERCISES: Exercise[] = [
   // ─── Strength: the built-ins ────────────────────────────────────────────────────────────────
   {
     id: 'back-squat', n: 'Barbell squat', modality: 'strength', log: 'weight-reps',
-    equipment: ['barbell'], difficulty: 'advanced', defaultRx: '3 × 10–12',
+    equipment: ['barbell'], difficulty: 'intermediate', defaultRx: '3 × 10–12',
     pattern: 'squat', primary: 'quads', secondary: ['glutes', 'core'],
     care: ['knees', 'lower-back'], gentler: 'goblet-squat', video: DEMOS.barbellSquat,
-    cue: "Bar across your upper back, feet shoulder-width, toes slightly out. Sit down slowly between your heels with your chest up and knees tracking over your toes, as low as you can keep a flat back and heels down. Pause, then push through mid-foot to stand. Don't lock the knees hard at the top.",
+    cue: "Set the bar in a rack at about chest height, with the safety arms just below your lowest squat. Rest the bar on the muscles of your upper back, not your neck, feet shoulder-width and toes slightly out. Sit down slowly between your heels with your chest up and knees tracking over your toes, as low as you can keep a flat back and heels down. Pause, then push through mid-foot to stand. Don't lock the knees hard at the top.",
   },
   {
     id: 'leg-press', n: 'Leg press', modality: 'strength', log: 'weight-reps',
@@ -39,7 +39,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'barbell'], difficulty: 'intermediate', defaultRx: '3 × 10',
     pattern: 'hinge', primary: 'hamstrings', secondary: ['glutes', 'back'],
     care: ['lower-back'], gentler: 'hip-thrust', video: DEMOS.romanianDeadlift,
-    cue: "Soft knees, push hips back, weight stays close to your legs. Feel the hamstring stretch, stand up by squeezing the glutes. Keep the back flat, never rounded.",
+    cue: "Soft knees, push hips back, weight stays close to your legs. Lower only as far as your back stays long and flat, usually to just below the knees or mid-shin. Feel the hamstring stretch, then stand up by squeezing the glutes.",
   },
   {
     id: 'leg-extension', n: 'Leg extension (machine)', modality: 'strength', log: 'weight-reps',
@@ -63,7 +63,9 @@ export const EXERCISES: Exercise[] = [
     id: 'barbell-bench-press', n: 'Barbell bench press', modality: 'strength', log: 'weight-reps',
     equipment: ['barbell'], difficulty: 'intermediate', defaultRx: '3 × 10–12',
     pattern: 'horizontal-push', primary: 'chest', secondary: ['triceps', 'shoulders'], video: DEMOS.barbellBench,
-    cue: "Shoulder blades back and down, feet flat, grip a little wider than your shoulders. Lower the bar under control to your lower chest, pause lightly without bouncing, then press up to straight arms over your shoulders.",
+    care: ['shoulders'],
+    gentler: 'chest-press',
+    cue: "Set the rack's safety arms just below your chest, or have someone spot you. Shoulder blades back and down, feet flat, grip a little wider than your shoulders. Lower the bar under control to your lower chest, pause lightly without bouncing, then press up to straight arms over your shoulders. If a rep stalls, lower the bar onto the safety arms.",
   },
   {
     id: 'chest-press', n: 'Chest press (machine or dumbbell)', modality: 'strength', log: 'weight-reps',
@@ -82,7 +84,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10–12',
     pattern: 'vertical-push', primary: 'shoulders', secondary: ['triceps'],
     care: ['shoulders'], gentler: 'landmine-press',
-    cue: "Start at ear height. Press up without arching the lower back, keep ribs down. Stop short of failure.",
+    cue: "Start at ear height. Press up without arching the lower back, keep ribs down. Stop a couple of reps before you couldn't do another.",
   },
   {
     id: 'lateral-raise', n: 'Lateral raise', modality: 'strength', log: 'weight-reps',
@@ -169,7 +171,7 @@ export const EXERCISES: Exercise[] = [
     id: 'step-up', n: 'Step-up', modality: 'strength', log: 'weight-reps', perSide: true,
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
-    cue: "Use a sturdy step or bench no higher than your knee, with your whole foot on it. Push through the front heel to stand up tall, then step down slowly with the same leg. Don't push off the back foot to do the work.",
+    cue: "Use a sturdy step or bench no higher than your knee, with your whole foot on it. Push through the front heel to stand up tall, then lower the other foot back to the floor slowly, keeping the working foot on the step. Don't push off the back foot to do the work.",
   },
   {
     id: 'db-bench-press', n: 'Dumbbell bench press', modality: 'strength', log: 'weight-reps',
@@ -218,7 +220,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['kettlebell'], difficulty: 'intermediate', defaultRx: '3 × 10–15',
     pattern: 'hinge', primary: 'glutes', secondary: ['hamstrings', 'core'],
     care: ['lower-back'], gentler: 'hip-thrust',
-    cue: "Feet a little wider than hips, kettlebell a step in front. Hinge at your hips with a flat back, hike it back between your legs, then stand up quickly by squeezing your glutes so it floats to chest height. It's a hip hinge, not a squat or an arm lift; don't lean back at the top.",
+    cue: "Clear space around you. Stand with feet a little wider than hips, kettlebell a step in front. Hinge at your hips with a flat back and hike it back between your thighs, keeping it above knee height. Stand up quickly by squeezing your glutes so it floats to chest height; your arms just hold on, they don't lift. Let it fall back into the next hinge rather than squatting to meet it, and don't lean back at the top. To finish, let it swing back once more and set it down in front of you with a flat back.",
   },
   {
     id: 'landmine-press', n: 'Landmine press', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -277,13 +279,14 @@ export const EXERCISES: Exercise[] = [
     equipment: ['pull-up-bar'], difficulty: 'intermediate', defaultRx: '3 × 5–8',
     pattern: 'vertical-pull', primary: 'back', secondary: ['biceps'],
     progression: { chain: 'pull-up', step: 3 },
-    cue: "Loop a resistance band over the bar and put a knee or foot in it, hands a little wider than your shoulders. Pull your chest towards the bar, leading with the elbows, then lower all the way to straight arms. Don't let the band bounce you out of the bottom.",
+    cue: "Loop a resistance band over the bar and put a knee or foot in it, hands a little wider than your shoulders. Pull your chest towards the bar, leading with the elbows, then lower all the way to straight arms. Don't let the band bounce you out of the bottom. Step out of the band carefully at the end so it can't snap back, and replace a band that's nicked or worn.",
   },
   {
     id: 'negative-pull-up', n: 'Negative pull-up', modality: 'calisthenics', log: 'reps',
     equipment: ['pull-up-bar'], difficulty: 'intermediate', defaultRx: '3 × 3–5',
     pattern: 'vertical-pull', primary: 'back', secondary: ['biceps'],
     progression: { chain: 'pull-up', step: 3 },
+    care: ['shoulders', 'elbows'],
     cue: "Step up on a sturdy box so your chin is over the bar, hands a little wider than your shoulders. Lift your feet and lower yourself slowly, taking 3 to 5 seconds, until your arms are straight. Step back up for the next rep instead of jumping, and don't just drop.",
   },
   {
@@ -291,6 +294,8 @@ export const EXERCISES: Exercise[] = [
     equipment: ['pull-up-bar'], difficulty: 'advanced', defaultRx: '3 × 3–8',
     pattern: 'vertical-pull', primary: 'back', secondary: ['biceps'],
     progression: { chain: 'pull-up', step: 4 },
+    care: ['shoulders', 'elbows'],
+    gentler: 'lat-pulldown',
     cue: "Hang from the bar with palms facing you, hands shoulder-width, shoulders gently pulled down. Pull until your chin passes the bar, then lower all the way to straight arms. Keep your legs still; no swinging or kicking to get up.",
   },
   {
@@ -298,6 +303,8 @@ export const EXERCISES: Exercise[] = [
     equipment: ['pull-up-bar'], difficulty: 'advanced', defaultRx: '3 × 3–8',
     pattern: 'vertical-pull', primary: 'back', secondary: ['biceps'],
     progression: { chain: 'pull-up', step: 5 },
+    care: ['shoulders', 'elbows'],
+    gentler: 'lat-pulldown',
     cue: "Hang from the bar with palms facing away, hands a little wider than your shoulders, shoulders gently pulled down. Pull your chest towards the bar, leading with the elbows, then lower all the way with control. No swinging or kicking; if the last reps need it, the set is done.",
   },
 
@@ -328,7 +335,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['bench'], difficulty: 'intermediate', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'],
     progression: { chain: 'squat', step: 4 }, care: ['knees'], gentler: 'split-squat',
-    cue: "Rest the top of your back foot on a bench and hop the front foot far enough forward that you can lower without the heel lifting. Sink straight down, then push up through the front foot. Don't bounce at the bottom or let the front knee drift inwards.",
+    cue: "Rest the top of your back foot on a bench, holding a wall or support if you like, and step the front foot far enough forward that you can lower without the heel lifting. Sink straight down, then push up through the front foot. Don't bounce at the bottom or let the front knee drift inwards.",
   },
   {
     id: 'reverse-lunge', n: 'Reverse lunge', modality: 'calisthenics', log: 'reps', perSide: true,
@@ -403,12 +410,13 @@ export const EXERCISES: Exercise[] = [
     id: 'hollow-hold', n: 'Hollow hold', modality: 'calisthenics', log: 'hold',
     equipment: [], difficulty: 'intermediate', defaultRx: '3 × 15–30 sec',
     pattern: 'core', primary: 'core',
-    cue: "Lie on your back, press your lower back gently into the floor, and lift your head, shoulders and legs a little, arms reaching forward. Hold while breathing steadily. If your lower back lifts off the floor, bend your knees or raise your legs higher.",
+    cue: "Lie on your back, press your lower back gently into the floor, and lift your head, shoulders and legs a little, arms reaching forward, chin slightly tucked and eyes on your knees. Hold while breathing steadily. If your lower back lifts off the floor, bend your knees or raise your legs higher.",
   },
   {
     id: 'hanging-knee-raise', n: 'Hanging knee raise', modality: 'calisthenics', log: 'reps',
     equipment: ['pull-up-bar'], difficulty: 'intermediate', defaultRx: '3 × 8–12',
     pattern: 'core', primary: 'core', secondary: ['forearms'],
+    care: ['shoulders'],
     cue: "Hang from a bar with straight arms and shoulders gently pulled down. Lift your knees towards your chest, curling your hips up slightly, then lower slowly. Don't swing or use momentum; pause at the bottom to settle between reps.",
   },
 
@@ -422,6 +430,7 @@ export const EXERCISES: Exercise[] = [
     id: 'mountain-climber', n: 'Mountain climber', modality: 'cardio', also: ['calisthenics'], log: 'reps',
     equipment: [], difficulty: 'intermediate', defaultRx: '3 × 10–20 each side', cardioVariation: 'hiit',
     care: ['wrists'], gentler: 'step-jacks',
+    perSide: true,
     cue: "Start in a high plank, hands under your shoulders; hands on a bench makes it easier. Bring one knee towards your chest, then switch legs, stepping or running at a pace you can control. Keep your hips level with your shoulders rather than piking up or sagging.",
   },
   {
@@ -446,6 +455,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'dolphin', n: 'Dolphin pose', modality: 'yoga', log: 'hold',
     equipment: ['mat'], difficulty: 'beginner', defaultRx: '3–5 slow breaths', targets: ['shoulders', 'hamstrings'],
+    care: ['shoulders'],
     cue: "From hands and knees, lower onto your forearms with elbows under your shoulders. Tuck your toes and lift your hips up and back, knees bent as much as you like. Press gently through your forearms so your head doesn't sink between your shoulders.",
   },
   {
@@ -472,7 +482,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'triangle', n: 'Triangle pose', modality: 'yoga', log: 'hold', perSide: true,
-    equipment: ['yoga-props'], difficulty: 'beginner', defaultRx: '5 slow breaths each side', targets: ['hamstrings', 'hips'],
+    equipment: [], difficulty: 'beginner', defaultRx: '5 slow breaths each side', targets: ['hamstrings', 'hips'],
     cue: "Stand with feet wide, front toes forward, both legs straight but not locked. Reach forward over the front leg, then tip down to rest your hand on your shin or a block, other arm reaching up. Rest on the shin or a block, never pressing on the knee, and don't collapse your chest towards the floor.",
   },
   {
@@ -516,13 +526,13 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'reclined-figure-four', n: 'Reclined figure four', modality: 'yoga', also: ['mobility'], log: 'hold', perSide: true,
     equipment: ['mat'], difficulty: 'beginner', defaultRx: '30–60 sec each side', targets: ['hips'],
-    cue: "Lie on your back with knees bent. Cross one ankle over the other knee, flex that foot, then hold behind the lower thigh and draw it gently towards you. Keep your head and shoulders relaxed on the mat, and don't press on the crossed knee.",
+    cue: "Lie on your back with knees bent. Cross one ankle over the other knee, flex that foot, then hold behind the thigh of the uncrossed leg and draw it gently towards you. Keep your head and shoulders relaxed on the mat, and don't press on the crossed knee.",
   },
   {
     id: 'pigeon', n: 'Pigeon pose', modality: 'yoga', log: 'hold', perSide: true,
     equipment: ['mat', 'yoga-props'], difficulty: 'intermediate', defaultRx: '30–60 sec each side', targets: ['hips'],
     care: ['knees'], gentler: 'reclined-figure-four',
-    cue: "From hands and knees, bring one knee forward behind the same wrist, shin angled across the mat, and slide the other leg back. Put a cushion or block under the front hip so your hips stay level, and stay upright or fold forward. Any feeling in the front knee means back off; the reclined figure four works the same area.",
+    cue: "From hands and knees, bring one knee forward towards the same wrist and let that foot rest near the opposite hip, so the shin sits at a gentle angle rather than straight across the mat. Flex the front foot, slide the other leg straight back, and put a cushion or block under the front hip so your hips stay level. Stay upright on your hands, or fold forward only as far as is easy. Any feeling in the front knee means come out; the reclined figure four works the same area.",
   },
   {
     id: 'legs-up-the-wall', n: 'Legs up the wall', modality: 'yoga', log: 'hold',
@@ -613,6 +623,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'swimming', n: 'Swimming (lying face down)', modality: 'pilates', log: 'reps',
     equipment: ['mat'], difficulty: 'intermediate', defaultRx: '2 × 10–20 kicks', targets: ['spine'],
+    care: ['lower-back'],
     cue: "Lie on your front with arms reaching past your head and legs long. Lift your arms and legs just off the mat and flutter them in small, opposite beats. Keep your neck long and your gaze down; don't crank your head or lower back up to lift higher.",
   },
   {
@@ -656,6 +667,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'worlds-greatest-stretch', n: "World's greatest stretch", modality: 'mobility', log: 'reps', perSide: true,
     equipment: [], difficulty: 'beginner', defaultRx: '1 × 4–5 each side', targets: ['hips', 'spine', 'hamstrings'],
+    care: ['knees'],
     cue: "Step into a long lunge with the back knee down on a mat or lifted, and place both hands inside the front foot. Reach the inside arm up to the ceiling, turning your chest, then bring it back down. Move slowly and turn from your upper back rather than twisting the lower back.",
   },
   {
@@ -672,6 +684,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'half-kneeling-hip-flexor', n: 'Half-kneeling hip flexor stretch', modality: 'mobility', log: 'hold', perSide: true,
     equipment: [], difficulty: 'beginner', defaultRx: '45 sec each side', targets: ['hips'],
+    care: ['knees'],
     cue: "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride.",
   },
   {
@@ -692,6 +705,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'doorway-chest-stretch', n: 'Doorway chest stretch', modality: 'mobility', log: 'hold',
     equipment: [], difficulty: 'beginner', defaultRx: '30–45 sec', targets: ['chest', 'shoulders'],
+    care: ['shoulders'],
     cue: "Stand in a doorway with forearms on the frame, elbows at or just below shoulder height. Step one foot through gently until you feel a stretch across your chest. Keep it mild and your shoulders down; don't lean so far that the front of the shoulder aches.",
   },
   {

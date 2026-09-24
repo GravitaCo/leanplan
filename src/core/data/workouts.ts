@@ -12,13 +12,13 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "back-squat", "n": "Barbell squat",
         "t": "3 × 10–12",
-        "cue": "Bar across your upper back, feet shoulder-width, toes slightly out. Sit down slowly between your heels with your chest up and knees tracking over your toes, as low as you can keep a flat back and heels down. Pause, then push through mid-foot to stand. Don't lock the knees hard at the top.",
+        "cue": "Set the bar in a rack at about chest height, with the safety arms just below your lowest squat. Rest the bar on the muscles of your upper back, not your neck, feet shoulder-width and toes slightly out. Sit down slowly between your heels with your chest up and knees tracking over your toes, as low as you can keep a flat back and heels down. Pause, then push through mid-foot to stand. Don't lock the knees hard at the top.",
         "video": DEMOS.barbellSquat
       },
       {
         "id": "romanian-deadlift", "n": "Romanian deadlift (dumbbell or barbell)",
         "t": "3 × 10",
-        "cue": "Soft knees, push hips back, weight stays close to your legs. Feel the hamstring stretch, stand up by squeezing the glutes. Keep the back flat, never rounded.",
+        "cue": "Soft knees, push hips back, weight stays close to your legs. Lower only as far as your back stays long and flat, usually to just below the knees or mid-shin. Feel the hamstring stretch, then stand up by squeezing the glutes.",
         "video": DEMOS.romanianDeadlift
       },
       {
@@ -44,7 +44,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "barbell-bench-press", "n": "Barbell bench press",
         "t": "3 × 10–12",
-        "cue": "Shoulder blades back and down, feet flat, grip a little wider than your shoulders. Lower the bar under control to your lower chest, pause lightly without bouncing, then press up to straight arms over your shoulders.",
+        "cue": "Set the rack's safety arms just below your chest, or have someone spot you. Shoulder blades back and down, feet flat, grip a little wider than your shoulders. Lower the bar under control to your lower chest, pause lightly without bouncing, then press up to straight arms over your shoulders. If a rep stalls, lower the bar onto the safety arms.",
         "video": DEMOS.barbellBench
       },
       {
@@ -55,7 +55,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "db-shoulder-press", "n": "Dumbbell shoulder press (seated)",
         "t": "3 × 10–12",
-        "cue": "Start at ear height. Press up without arching the lower back, keep ribs down. Stop short of failure."
+        "cue": "Start at ear height. Press up without arching the lower back, keep ribs down. Stop a couple of reps before you couldn't do another."
       },
       {
         "id": "lateral-raise", "n": "Lateral raise",

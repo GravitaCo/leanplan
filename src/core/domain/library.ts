@@ -39,6 +39,8 @@ export function alternativesFor(e: Exercise): Alternatives {
   const resist = RESIST.includes(e.modality)
   const similar = EXERCISES.filter((x) => {
     if (skip.has(x.id)) return false
+    // the named gentler option always shows, even when it works a neighbouring muscle (RDL → hip thrust)
+    if (x.id === e.gentler) return true
     if (resist) return RESIST.includes(x.modality) && x.pattern === e.pattern && x.primary === e.primary
     if (RESIST.includes(x.modality) || x.modality === 'cardio' || e.modality === 'cardio') return e.modality === 'cardio' && x.modality === 'cardio'
     return !!x.targets?.some((t) => e.targets?.includes(t))

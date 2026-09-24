@@ -18,7 +18,8 @@ import { showLoadNote } from '@/core/domain/load'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { EXERCISES } from '@/core/data/exercises'
 import { exById, fmtSet, lastLogged, setHasData } from '@/core/domain/library'
-import { SwapSheet } from './train/SwapSheet'
+import { CARE_DISCLAIMER, SwapSheet } from './train/SwapSheet'
+import { careList } from '@/core/data/libraryLabels'
 import { LibrarySheet } from './train/LibrarySheet'
 import { HoldTimer, RED_FLAG } from './train/HoldTimer'
 
@@ -98,7 +99,10 @@ export function TrainScreen() {
   const buildEx = (sw = swaps, rows = sets): LoggedExercise[] => (wk ? wk.ex.map((e, i) => {
     const x = slotEx(i, sw)
     const shape = shapeFor(e, x)
-    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), log: shape, sets: (rows[i] || []).filter((r) => setHasData(r, shape)) }
+    const kept = (rows[i] || []).filter((r) => setHasData(r, shape))
+    // holds also keep their seconds in `reps`, which is where older installs read and filter them
+    const out = shape === 'hold' ? kept.map((r) => ({ ...r, reps: r.sec || r.reps })) : kept
+    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), log: shape, sets: out }
   }) : [])
   const setsKey = useRef('')
   useEffect(() => {
@@ -387,14 +391,18 @@ export function TrainScreen() {
               <div className="card ex" key={exi}>
                 <div className="h"><div className="n">{shown.n}</div><span className="tg">{rx}</span></div>
                 {swapped && (
-                  <div className="swapped">In place of {e.n}, today only. <button onClick={() => swapSlot(exi, e.id!)}>Undo</button></div>
+                  <div className="swapped">In place of {e.n}, {isToday ? 'today' : 'this day'} only. <button onClick={() => swapSlot(exi, e.id!)} aria-label={`Undo, back to ${e.n}`}>Undo</button>
+                    {x!.care?.length ? <> Asks quite a lot of {careList(x!.care)}. {CARE_DISCLAIMER}</> : null}</div>
                 )}
                 <div className="cue">{shown.cue}</div>
+                {!swapped && x?.gentler && x.equipment[0] === 'barbell' && x.difficulty !== 'beginner' && exById(x.gentler) && (
+                  <div className="swapped">New to this? The {exById(x.gentler)!.n.toLowerCase()} is a good place to start. Tap Swap.</div>
+                )}
                 <div className="acts">
                   {shown.video
                     ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
                     : <a className="howto" href={howToLink(shown.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
-                  {x && <button className="howto" onClick={() => setSwapFor(exi)}>Swap</button>}
+                  {x && <button className="howto" onClick={() => setSwapFor(exi)} aria-label={`Swap ${shown.n}`}>Swap</button>}
                 </div>
                 {lastTxt && <div className="last num">Last time: {lastTxt}</div>}
                 {shape === 'reps' && loadOn && (

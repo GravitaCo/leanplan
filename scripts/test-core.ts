@@ -495,9 +495,11 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const dd = EXERCISE_BY_ID['downward-dog']
   const gentlerFirst = alternativesFor(dd).similar[0]?.id === dd.gentler
   // every swap keeps the slot: same pattern and main muscle for resistance work
-  const slotOk = EXERCISES.filter((e) => e.pattern).every((e) => alternativesFor(e).similar.every((x) => x.pattern === e.pattern && x.primary === e.primary))
+  const slotOk = EXERCISES.filter((e) => e.pattern).every((e) => alternativesFor(e).similar.every((x) => x.id === e.gentler || (x.pattern === e.pattern && x.primary === e.primary)))
+  // every named gentler option is reachable from the Swap sheet
+  const gentlerOk = EXERCISES.filter((e) => e.gentler).every((e) => { const a = alternativesFor(e); return a.similar.some((x) => x.id === e.gentler) || a.easier?.id === e.gentler })
   const clips = Object.values(DEMOS).every((m) => EXERCISES.some((e) => e.video === m))
-  const ok = got === '40 80 null' && altSq.includes('leg-press') && altBench.includes('chest-press') && chainOk && gentlerFirst && slotOk && clips; if (!ok) bad++
-  console.log(ok ? 'PASS' : 'FAIL', 'library: last time, swaps, chains, clips', JSON.stringify(got), altSq.includes('leg-press'), altBench.includes('chest-press'), chainOk, gentlerFirst, slotOk, clips)
+  const ok = got === '40 80 null' && altSq.includes('leg-press') && altBench.includes('chest-press') && chainOk && gentlerFirst && slotOk && gentlerOk && clips; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library: last time, swaps, chains, clips', JSON.stringify(got), altSq.includes('leg-press'), altBench.includes('chest-press'), chainOk, gentlerFirst, slotOk, gentlerOk, clips)
 }
 process.exit(bad ? 1 : 0)
