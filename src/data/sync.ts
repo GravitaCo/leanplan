@@ -49,6 +49,11 @@ function fromServerRecipe(r: any): Recipe {
 
 type Undo = () => void
 
+/** A refusal of the whole request (signed-out token, rate limit, server trouble), as opposed to
+ *  one record the server won't take: retrying record by record would only repeat it N times, so
+ *  the table's step fails once and its records wait for the next sync. */
+const wholeRequest = (e: HttpError) => e.status === 401 || e.status === 429 || e.status >= 500
+
 /**
  * Upsert records in one request; if the server rejects it, retry them one by one so a single bad
  * record can't hold up the rest. `fix` may repair a rejected record (new id) and return how to
@@ -65,7 +70,7 @@ async function upsertEach<T>(
     items.forEach(done)
     return
   } catch (e) {
-    if (!(e instanceof HttpError)) throw e
+    if (!(e instanceof HttpError) || wholeRequest(e)) throw e
   }
   let last: HttpError | null = null
   for (const x of items) {
@@ -77,6 +82,7 @@ async function upsertEach<T>(
         break
       } catch (e) {
         if (!(e instanceof HttpError)) throw e
+        if (wholeRequest(e)) { undos.reverse().forEach((u) => u()); throw e }
         const undo = undos.length < 2 && fix ? await fix(x, e) : null
         if (undo) { undos.push(undo); continue }
         undos.reverse().forEach((u) => u())
@@ -154,7 +160,8 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
     for (const id of [...meta[list]]) {
       // an id the server can't hold (old fallback ids) was never uploaded: nothing to delete
       const gone = !UUID_RE.test(id) || (await step(table + ' delete', () => sbDelete(table, 'id=eq.' + encodeURIComponent(id))))
-      if (gone) meta[list] = meta[list].filter((x) => x !== id)
+      if (!gone) break // the rest wait for the next sync rather than failing one by one
+      meta[list] = meta[list].filter((x) => x !== id)
     }
   }
   await deletes('custom_foods', 'foodDeletes')

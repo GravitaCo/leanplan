@@ -683,7 +683,8 @@ export const useStore = create<StoreState>()(
         saveState(next)
         set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
         // the session was held back while asking; it comes from local storage, so this works offline
-        const r = await supabase.auth.getSession().catch(() => null)
+        // raced like at launch: getSession can stall offline while it retries a token refresh
+        const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
         const session = r?.data.session
         if (session && session.user.id === ask.uid && applySession) {
           applySession(session)

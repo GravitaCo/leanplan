@@ -740,6 +740,19 @@ async function syncResilience(): Promise<void> {
   try { failed = await pushDirty(s4, m4) } finally { globalThis.fetch = realFetch }
   checks.push(["a 409 never takes another local record's id", s4.recipes[0].id === RA && s4.recipes[0]._dirty === true && rows4.recipes.length === 1 && rows4.recipes[0].servings === 2 && failed.length === 1])
 
+  // a refused request (503, 401) is not retried per record: one request per table, all still dirty
+  for (const status of [503, 401]) {
+    const s5 = stateFromBackup({ days: Object.fromEntries(Array.from({ length: 50 }, (_, i) => ['2026-08-' + String(i % 28 + 1).padStart(2, '0') + (i >= 28 ? 'x' : ''), { foods: [], supps: {}, weight: null, workout: null }])) } as never)
+    s5.customFoods = [{ id: uuid(), n: 'A', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true }]
+    const m5 = ensureMeta(s5, true)
+    let n = 0
+    globalThis.fetch = (async () => { n++; return new Response(null, { status }) }) as typeof fetch
+    let f5: string[] = []
+    try { f5 = await pushDirty(s5, m5) } finally { globalThis.fetch = realFetch }
+    // days, settings, custom foods: 3 requests, not 50 + 1 + 1
+    checks.push([`a ${status} makes one request per table and leaves everything dirty`, f5.length === 3 && n === 3 && Object.values(m5.days).every((x) => x.dirty) && m5.settings.dirty && s5.customFoods[0]._dirty === true])
+  }
+
   // no connection: throws, nothing marked clean
   const s3 = stateFromBackup({ days: { '2026-09-21': { foods: [], supps: {}, weight: null, workout: null } } } as never)
   const m3 = ensureMeta(s3, false)
