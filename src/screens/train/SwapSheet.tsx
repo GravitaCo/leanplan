@@ -1,6 +1,6 @@
 import type { Exercise } from '@/core/types'
 import { alternativesFor } from '@/core/domain/library'
-import { EQUIPMENT_LABEL, CARE_LABEL, LEVEL_LABEL } from '@/core/data/libraryLabels'
+import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { Sheet } from '@/ui/primitives'
 
 /** Shown with every swap (plan §4.0.4, wording from mental-performance). */
@@ -14,7 +14,7 @@ function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void
       <div className="m">
         <div className="t">{x.n}</div>
         <div className="s">{[tag, LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}</div>
-        {x.care?.length ? <div className="s">Works {x.care.map((a) => CARE_LABEL[a]).join(', ')} quite a lot</div> : null}
+        {x.care?.length ? <div className="s">Works {careList(x.care)} quite a lot</div> : null}
       </div>
     </button>
   )

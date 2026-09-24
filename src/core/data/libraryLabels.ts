@@ -53,3 +53,9 @@ export const SHAPE_LABEL: Record<LogShape, string> = {
   rounds: 'Rounds',
   check: 'Done',
 }
+
+/** "the knees", "the wrists and the shoulders", "the neck, the knees and the wrists" */
+export function careList(areas: BodyArea[]): string {
+  const w = areas.map((a) => CARE_LABEL[a])
+  return w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : w.join('')
+}

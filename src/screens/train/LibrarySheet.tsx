@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Equipment, Exercise, Modality } from '@/core/types'
 import { EXERCISES } from '@/core/data/exercises'
 import { MODALITIES, MODALITY_LABEL } from '@/core/data/modalities'
-import { CARE_LABEL, EQUIPMENT_LABEL, LEVEL_LABEL, TARGET_LABEL } from '@/core/data/libraryLabels'
+import { careList, EQUIPMENT_LABEL, LEVEL_LABEL, TARGET_LABEL } from '@/core/data/libraryLabels'
 import { exById, stepOf } from '@/core/domain/library'
 import { rankByName } from '@/core/domain/search'
 import { howToLink } from '@/core/domain/workout'
@@ -51,7 +51,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         </div>
       )}
       {x.care?.length ? (
-        <div className="foot" style={{ padding: '12px 4px 0' }}>This works {x.care.map((a) => CARE_LABEL[a]).join(', ')} quite a lot. {CARE_DISCLAIMER}</div>
+        <div className="foot" style={{ padding: '12px 4px 0' }}>This works {careList(x.care)} quite a lot. {CARE_DISCLAIMER}</div>
       ) : null}
       <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
       {demo && x.video && <DemoPlayer ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(false)} />}
