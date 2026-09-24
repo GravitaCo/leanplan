@@ -6,6 +6,8 @@ import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
 import { entryAmount, relog } from '@/core/domain/insights'
+import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
+import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
@@ -460,5 +462,37 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '{"hard7":6,"doublesRun":0} false true {"hard7":6,"doublesRun":3} false false false,true,false,true,false'
   const ok = got === want && morning === 'true'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', morning, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+// Diet rules: conservative tags, swaps from the database, meals never hidden
+{
+  const P = (n: string, c?: string) => partsOf(n, c as never).sort().join('+')
+  const cases: [string, string, string][] = [
+    ['raw chicken is meat', P('Chicken breast, raw, skinless', 'meat'), 'meat'],
+    ['oat milk is not dairy', P('Oat milk', 'drinks'), ''],
+    ['peanut butter is plant', P('Peanut butter', 'fats'), ''],
+    ['butter beans are plant', P('Butter beans, canned, drained', 'eggs'), ''],
+    ['kidney beans are not kidney', P('Kidney beans, cooked', 'eggs'), ''],
+    ['Quorn contains egg', P('Quorn mince', 'meat'), 'egg'],
+    ['vegan-labelled has no animal parts', P('Greggs Vegan Roll Pork-Free', 'fastfood'), ''],
+    ['Worcestershire contains fish', P('Worcestershire sauce', 'sauces'), 'fish'],
+    ['Greggs is not egg', P('Greggs Baguette', 'fastfood'), ''],
+    ['Quorn: vegetarian fits, vegan conflicts', dietFit({ n: 'Quorn mince', cat: 'meat' as never }, 'vegetarian') + '/' + dietFit({ n: 'Quorn mince', cat: 'meat' as never }, 'vegan'), 'fits/conflict'],
+    ['unknown ready meal is check', dietFit({ n: 'Lasagne', cat: 'ready' }, 'vegetarian'), 'check'],
+    ['veggie pizza: vegetarian fits, vegan never fits', dietFit({ n: 'Greggs Veggie Feast Pizza', cat: 'fastfood' }, 'vegetarian') + '/' + dietFit({ n: 'Greggs Veggie Feast Pizza', cat: 'fastfood' }, 'vegan'), 'fits/check'],
+    ['pesto not vegan', dietFit({ n: 'Pesto', cat: 'sauces' }, 'vegan'), 'conflict'],
+    ['gravy is check', dietFit({ n: 'Gravy (made)', cat: 'sauces' }, 'vegetarian'), 'check'],
+    ['soy sauce fits vegan', dietFit({ n: 'Soy sauce (tbsp ~16g)', cat: 'sauces' }, 'vegan'), 'fits'],
+  ]
+  for (const [n, got, want] of cases) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'diet:', n, ok ? '' : `${got} vs ${want}`) }
+  const items = [{ n: 'Beef mince, extra lean (about 5% fat), raw', k: 1, p: 1, c: 1, f: 1, grams: 500 }, { n: 'Onion', k: 1, p: 1, c: 1, f: 1, grams: 100 }, { n: 'Milk, semi-skimmed', k: 1, p: 1, c: 1, f: 1, grams: 100 }]
+  const sw = (d: 'vegetarian' | 'vegan') => swapsFor(items as never, d, FOODS).map((w) => `${w.from.split(',')[0]}>${w.to?.n ?? '-'}`).join('|')
+  for (const [n, got, want] of [['vegetarian swaps', sw('vegetarian'), 'Beef mince>Quorn mince'], ['vegan swaps (no Quorn: egg)', sw('vegan'), 'Beef mince>Tofu, firm|Milk>Oat milk']] as const) {
+    const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'diet:', n, ok ? '' : got)
+  }
+  const sug = suggestRecipes([{ id: 'r', name: 'Chilli', servings: 4, items: items as never }], [0], ['Onion', 'Quorn mince'], 'vegetarian', FOODS)[0]
+  const okS = sug.missing.join('|') === 'Milk, semi-skimmed'; if (!okS) bad++
+  console.log(okS ? 'PASS' : 'FAIL', 'suggest: a vegetarian with Quorn is only missing the milk', sug.missing.join('|'))
+  const staples = [['Salt', 'sauces'], ['Olive oil (tbsp ~14g)', 'fats'], ['Cumin, ground', 'sauces'], ['Pasta, dried, uncooked', 'grains'], ['Sugar snap peas', 'veg'], ['Dried apricots', 'fruit']].map(([n, c]) => isStaple(n, c as never) ? 'y' : 'n').join('')
+  const ok = staples === 'yyynnn'; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'staples assumed only for basics', staples)
 }
 process.exit(bad ? 1 : 0)

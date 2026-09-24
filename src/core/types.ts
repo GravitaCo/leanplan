@@ -40,6 +40,11 @@ export interface Food {
 
 export type FoodUnit = 'g' | 'ml' | 'item'
 
+export type DietPattern = 'none' | 'pescatarian' | 'vegetarian' | 'vegan'
+
+/** "I have…" snapshot for meal suggestions: food names, no quantities (never a chore). */
+export interface Kitchen { have: string[]; updated: string }
+
 /** A published figure: `k` kcal (and macros, when published) for `g` of the food's unit. */
 export interface FoodRef { g: number; k: number; p?: number; c?: number; f?: number }
 
@@ -291,6 +296,10 @@ export interface Profile {
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
   plans?: IfThenPlan[]
+  /** diet pattern for suggestions: meals are never hidden, conflicting ingredients get swaps */
+  diet?: DietPattern
+  /** what's in the kitchen right now, for "What can I make?" */
+  kitchen?: Kitchen
   /**
    * Date (YYYY-MM-DD) from which logged workouts stop widening the food range, because the
    * activity level already counts training (workout plan D5). Earlier days keep the old maths
