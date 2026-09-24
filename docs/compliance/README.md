@@ -46,6 +46,8 @@ Last reviewed: 2026-09-24. Controller: Gravita Creative Ltd (company 08348225), 
 | Webflow Inc. | Processor: website hosting, form submissions | US | Accept Webflow's DPA; record transfer mechanism |
 | Cloudflare Inc. | Processor: delivers the website (as Webflow's CDN), Turnstile | US / global | Covered through Webflow for delivery; Turnstile has its own terms: confirm and record |
 | Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN, sees IP addresses | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
+| Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
+| Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name) |
 
@@ -104,7 +106,10 @@ Should fix:
 13. Consent given while an account is open offline (no live session) isn't tied to the
     account id, so the person is asked once more when they're back online. Harmless.
 14. The deploy workflow runs `npm run check:legal`, so main will not deploy until item 1 is done.
-16. The legal pages can only be published once the app on `main` has the consent screen
+16. Exception, 2026-09-24: interim website-only texts (`src/core/legal/website.ts`,
+    `npm run legal:html -- --site`) are published at the same URLs, since they describe only
+    the website and the early-access form. The full texts replace them at go-live.
+    Also: the full pages can only be published once the app on `main` has the consent screen
     and deletion (this branch) and `delete_my_account()` is applied (checked 2026-09-24: not
     in the database). Until then they would describe safeguards the live app doesn't have.
 17. Turnstile loads for every visitor to a page with the early-access form, not only people

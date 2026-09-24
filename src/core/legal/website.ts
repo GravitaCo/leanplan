@@ -29,7 +29,7 @@ export function sitePrivacy(): LegalDoc {
         h: 'What we collect',
         ul: [
           `Early access: your email address, if you join the list.`,
-          `Technical: like any website, the servers that deliver this site see your IP address, browser and the time of each request, and keep short-term logs for security.`,
+          `Technical: like any website, the servers that deliver this site see your IP address, browser and the time of each request, which our providers keep for a short time under their own retention periods, for security.`,
           `Bot protection: pages with the sign-up form load Cloudflare Turnstile when they open. It checks technical signals from your browser to tell people from bots, whether or not you use the form.`,
         ],
       },
@@ -42,12 +42,15 @@ export function sitePrivacy(): LegalDoc {
         ],
       },
       {
+        h: '',
+        p: [`You don't have to give us your email. Without it, we can't invite you to early access.`],
+      },
+      {
         h: 'Who else handles it',
-        p: [`Service providers who process data for us, on our instructions:`],
+        p: [`Service providers who handle data for us:`],
         ul: [
-          `Webflow: hosts this website and stores early access sign-ups.`,
-          `Cloudflare: delivers the site and runs the bot check.`,
-          `Amazon CloudFront: delivers some of the site's page code for Webflow.`,
+          `Webflow: hosts this website and stores early access sign-ups. It uses Cloudflare to deliver the site and run the bot check, and Amazon CloudFront for some of the site's page code.`,
+          `Google Workspace: our email, used to send invitations and to receive your messages.`,
         ],
       },
       {
@@ -71,7 +74,8 @@ export function sitePrivacy(): LegalDoc {
       {
         h: 'Your rights',
         p: [
-          `You can ask for a copy of your data, to correct or delete it, to restrict or object to how we use it, and you can withdraw consent at any time. ` +
+          `You can ask for a copy of your data (including in a portable format), to correct or delete it, and to restrict or object to how we use it. ` +
+            `You can withdraw consent at any time; this doesn't affect anything we did before you withdrew it. ` +
             `To leave the early access list or use any of these rights, email ${email()}. We reply within one month, and it's free.`,
           `If you're unhappy with how we handle your data, please tell us first so we can put it right. You can also complain to the Information Commissioner's Office (ico.org.uk, 0303 123 1113) or, in the EU, to your local data protection authority.`,
         ],
@@ -104,7 +108,7 @@ export function siteCookies(): LegalDoc {
         h: 'What the site uses',
         ul: [
           `_cfuvid: a cookie set by Cloudflare, which delivers the site, to protect it from abuse and excessive requests. It is deleted when you close your browser.`,
-          `Cloudflare Turnstile: pages with the early access form load this bot check when they open. It checks technical signals from your browser to tell people from bots and keep the form free of spam. It is used only for that.`,
+          `Cloudflare Turnstile: pages with the early access form load this bot check when they open. It checks technical signals from your browser to tell people from bots and keep the form free of spam. We use it only for that.`,
         ],
       },
       {
