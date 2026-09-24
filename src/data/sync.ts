@@ -102,6 +102,9 @@ export function tsMicros(ts: unknown): number {
   const ms = Date.parse(m ? ts.replace(m[0], '') : ts)
   return ms * 1000 + (m ? parseInt((m[1] + '000000').slice(0, 6), 10) : 0)
 }
+/** Lower edge of the overlap window, in whole ms: the query and the exclusion list both use it,
+ *  so no row can fall inside the query yet outside the list. */
+const windowFloorMs = (markMicros: number) => Math.floor(markMicros / 1000) - OVERLAP_MS
 const quote = (v: string) => '"' + v.replace(/["\\]/g, '\\$&') + '"'
 
 /** The GET path for one table: everything on first sync, otherwise only rows past the mark. */
@@ -110,7 +113,7 @@ export function sinceQuery(table: string, key: string, uid: string, m: PullMark 
   const mu = m ? tsMicros(m.mark) : NaN
   if (!m || !Number.isFinite(mu)) return q
   if (!m.edge) return q + '&updated_at=gt.' + encodeURIComponent(m.mark)
-  const lo = new Date(Math.floor(mu / 1000) - OVERLAP_MS).toISOString()
+  const lo = new Date(windowFloorMs(mu)).toISOString()
   const parts = ['updated_at.gt.' + quote(lo)].concat(
     m.edge.map(([k, t]) => 'not.and(' + key + '.eq.' + quote(k) + ',updated_at.eq.' + quote(t) + ')'),
   )
@@ -133,14 +136,15 @@ export function advance(prev: PullMark | undefined, rows: any[], key: string): P
   }
   if (!best || !Number.isFinite(bestU)) return prev
   const edge: [string, string][] = []
-  for (const [k, [t, u]] of seen) if (u > bestU - OVERLAP_MS * 1000) edge.push([k, t])
+  for (const [k, [t, u]] of seen) if (u > windowFloorMs(bestU) * 1000) edge.push([k, t])
   return { mark: best, edge: edge.length > EDGE_MAX ? null : edge }
 }
 
 /** Keys the server still has for a table, but only if its row count says something changed
  *  that the mark can't show (a delete, or a row we somehow missed). */
 async function serverKeysIfChanged(table: string, key: string, uid: string, localCount: number, onlyIfMore = false): Promise<string[] | null> {
-  const n = await sbCount('/' + table + '?user_id=eq.' + uid + '&select=' + key)
+  // the count is only a safety net: if it fails, skip it rather than fail the whole sync
+  const n = await sbCount('/' + table + '?user_id=eq.' + uid + '&select=' + key).catch(() => null)
   if (n === null || n === localCount || (onlyIfMore && n < localCount)) return null
   const rows = await sbGet<any[]>('/' + table + '?user_id=eq.' + uid + '&select=' + key)
   return rows.map((r) => String(r[key]))

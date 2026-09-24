@@ -24,6 +24,7 @@ function put(table: string, row: Row, at = now()) {
 }
 
 /* the fake PostgREST */
+let failHead = false
 let bodyRows = 0 // full rows sent back by GET select=*
 let keyRows = 0 // key-only rows (select=<key>)
 const unq = (v: string) => (v.startsWith('"') ? v.slice(1, -1).replace(/\\(.)/g, '$1') : v)
@@ -65,6 +66,7 @@ function query(url: string): { table: string; rows: Row[]; select: string } {
 ;(globalThis as any).fetch = async (url: string, opts: RequestInit = {}) => {
   const method = opts.method || 'GET'
   const { table, rows, select } = query(url)
+  if (method === 'HEAD' && failHead) return new Response(null, { status: 500 })
   if (method === 'HEAD') return new Response(null, { status: 200, headers: { 'Content-Range': '*/' + rows.length } })
   if (method === 'GET') {
     const out = select === '*' ? rows.map((r) => ({ ...r })) : rows.map((r) => ({ [select]: r[select] }))
@@ -140,6 +142,13 @@ const check = (name: string, got: unknown, want: unknown) => {
   check('late commit applied', a.days['2026-09-03'].weight, 75)
   check('quiet after late commit', await sync(a), { rows: 0, keys: 0 })
 
+  // a row right at the bottom of the window (sub-ms below mark - 5 s) is not re-sent forever
+  await sync(a)
+  const m2 = a._meta!.pull!.tables.day_logs!.mark
+  put('day_logs', day('2026-09-02', 81), fmt(Math.floor(tsMicros(m2) / 1000) * 1000 - 5_000_000 + 1))
+  check('row at the window floor pulled once', await sync(a), { rows: 1, keys: 0 })
+  check('then quiet', await sync(a), { rows: 0, keys: 0 })
+
   // hard delete on another device: count differs, keys fetched, food dropped, no full rows
   db.custom_foods = db.custom_foods.filter((r) => r.id !== id(2))
   check('delete found by count', await sync(a), { rows: 0, keys: 2 })
@@ -152,12 +161,19 @@ const check = (name: string, got: unknown, want: unknown) => {
   await sync(a)
   check('local delete sticks', [a.customFoods.map((f) => f.n), db.custom_foods.length], [['Oat bar'], 1])
 
+  // a failing count request (HEAD) doesn't break sync
+  failHead = true
+  put('recipes', { id: id(3), user_id: UID, name: 'Chilli', items: [], servings: 6 })
+  const r = await sync(a).then((x) => x, () => 'threw')
+  failHead = false
+  check('failed count is skipped', [r, a.recipes[0].servings], [{ rows: 1, keys: 0 }, 6])
+
   // a row the mark missed (e.g. a bug, or restored state) is healed by the count
   const b = device()
   await sync(b)
   delete b.days['2026-09-02']; delete b._meta!.days['2026-09-02']
   check('missing day healed by count', await sync(b), { rows: 1, keys: 4 })
-  check('healed day present', b.days['2026-09-02']?.weight, 80)
+  check('healed day present', b.days['2026-09-02']?.weight, 81)
 
   // a big upload in one transaction (many rows share a timestamp): strict gt, still quiet after
   const big = Array.from({ length: 60 }, (_, i) => day('2025-01-' + String(i + 1).padStart(2, '0'), 70))
