@@ -48,6 +48,15 @@ export async function sbGet<T = unknown>(path: string): Promise<T> {
   return r.json() as Promise<T>
 }
 
+/** Row count for a query without downloading rows (HEAD + `count=exact`); null if the server
+ *  didn't say, so callers can skip whatever the count was for. */
+export async function sbCount(path: string): Promise<number | null> {
+  const r = await sbFetch(path, { method: 'HEAD', headers: { Prefer: 'count=exact' } })
+  if (!r.ok) throw new Error('HEAD ' + path + ' -> ' + r.status)
+  const n = Number((r.headers.get('content-range') || '').split('/')[1])
+  return Number.isInteger(n) ? n : null
+}
+
 export async function sbUpsert(
   table: string,
   rows: unknown[],

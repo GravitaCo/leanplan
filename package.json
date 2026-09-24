@@ -10,7 +10,7 @@
     "preview:local": "npm run build && vite preview --host",
     "typecheck": "tsc -b --noEmit",
     "check:foods": "esbuild scripts/check-foods.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-foods.cjs && node node_modules/.cache/check-foods.cjs",
-    "test": "esbuild scripts/test-core.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/test-core.cjs && node node_modules/.cache/test-core.cjs"
+    "test": "esbuild scripts/test-core.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/test-core.cjs && node node_modules/.cache/test-core.cjs && esbuild scripts/test-sync.ts --bundle --platform=node --alias:@=./src --define:import.meta.env={} --log-level=error --outfile=node_modules/.cache/test-sync.cjs && node node_modules/.cache/test-sync.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

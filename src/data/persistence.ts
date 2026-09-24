@@ -14,6 +14,27 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
+  /** Incremental-pull high-water marks for the account they were taken from (see sync.pullAll).
+   *  Absent = full pull next time. */
+  pull?: { uid: string; tables: Record<string, PullMark | undefined> }
+}
+
+/** Newest server `updated_at` pulled for a table, plus the (key, updated_at) pairs already held
+ *  inside the overlap window below it; `edge: null` = too many to list, use a strict `gt`. */
+export interface PullMark {
+  mark: string
+  edge: [string, string][] | null
+}
+
+const isPair = (x: unknown) => Array.isArray(x) && x.length === 2 && typeof x[0] === 'string' && typeof x[1] === 'string'
+/** Keep only well-formed marks; anything else is dropped, which just means one full pull. */
+function cleanPull(p: SyncMeta['pull']): SyncMeta['pull'] {
+  if (!p || typeof p !== 'object' || typeof p.uid !== 'string' || !p.tables || typeof p.tables !== 'object') return undefined
+  const tables: Record<string, PullMark> = {}
+  for (const [t, m] of Object.entries(p.tables)) {
+    if (m && typeof m.mark === 'string' && (m.edge === null || (Array.isArray(m.edge) && m.edge.every(isPair)))) tables[t] = m
+  }
+  return { uid: p.uid, tables }
 }
 
 export interface PersistedState extends AppState {
@@ -125,6 +146,8 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
   if (!s._meta.days) s._meta.days = {}
   if (!Array.isArray(s._meta.foodDeletes)) s._meta.foodDeletes = []
   if (!Array.isArray(s._meta.recipeDeletes)) s._meta.recipeDeletes = []
+  s._meta.pull = cleanPull(s._meta.pull)
+  if (!s._meta.pull) delete s._meta.pull
   // Backfill ids on custom foods / recipes
   ;(s.customFoods || []).forEach((f) => {
     if (!f.id) f.id = uuid('f')

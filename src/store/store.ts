@@ -498,6 +498,7 @@ export const useStore = create<StoreState>()(
       importBackup: (incoming) => {
         const fresh = loadStateFrom(incoming)
         ensureMeta(fresh, true)
+        delete fresh._meta!.pull // the backup's marks don't describe this device: pull everything once
         set((st) => { st.data = fresh })
         saveState(get().data)
         set((st) => { st.cur = todayStr() })
