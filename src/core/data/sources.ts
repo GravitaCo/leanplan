@@ -22,7 +22,7 @@ const MENU_ERR = 0.2
 
 export const SOURCES: Record<string, Source> = {
   cofid: { label: 'UK CoFID 2021', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid' },
-  usda: { label: 'USDA FoodData Central', url: 'https://fdc.nal.usda.gov/' },
+  usda: { label: 'USDA FoodData Central (US data; carbs include fibre)', url: 'https://fdc.nal.usda.gov/' },
   label: { label: 'Pack label', url: '' },
   off: { label: 'Pack label via Open Food Facts', url: 'https://world.openfoodfacts.org/' },
   'subway-uk': { label: 'Subway UK, Sep 2026', url: 'https://www.subway.com/en-GB/MenuNutrition/Nutrition', err: MENU_ERR },

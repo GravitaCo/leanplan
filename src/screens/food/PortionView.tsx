@@ -5,7 +5,7 @@ import { fmt, r1 } from '@/core/domain/date'
 import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
 import { sourceOf } from '@/core/data/sources'
 import {
-  CAPTURE_LABEL, FAT_OPTIONS, HANDS, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
+  CAPTURE_LABEL, FAT_OPTIONS, HANDS, handsAllowed, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
 } from '@/core/domain/estimate'
 import { MEAL_LABEL, entryAmount, lastFatFor, lastUse } from '@/core/domain/insights'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
@@ -35,7 +35,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   // per-item foods are counted, never weighed or hand-sized; a food last logged as servings
   // opens in servings, at the same count
   const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) && SERV_STEPS.includes(last.serv) ? last.serv : null
-  const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' && handsAllowed(food) ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
   const source = sourceOf(food)
   const head = headline(food)
   const [serv, setServ] = useState(lastServ ?? 1)
@@ -70,7 +70,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">How much?</div>
-      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']]}
+      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : handsAllowed(food) ? [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']] : [['serv', 'Servings'], ['g', 'Grams']]}
         value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
@@ -82,6 +82,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
                 </button>
               ))}
             </div>
+            {/, raw\b/i.test(food.n) && <div className="foot">Weigh it before cooking: raw weight, not cooked.</div>}
             <div className="foot">{each ? `Values are for one item, as ${source?.text.split(',')[0] ?? 'the maker'} publishes them.` : `One serving is ${amountText(food.g, u)}.`}</div>
           </>
         )}

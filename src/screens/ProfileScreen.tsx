@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, ActivityLevel, Goal, HandPortion, Sex } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
+import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
@@ -105,6 +106,11 @@ export function ProfileScreen() {
         <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k) => [k, ACCURACY[k].label])}
           value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
         <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{accuracyOf(pr).desc}</div>
+      </div></div>
+      <div className="list"><div style={{ padding: '12px 16px' }}>
+        <div style={{ marginBottom: 8 }}>Diet</div>
+        <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? 'None' : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
+        <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>Meal suggestions offer swaps for ingredients that don't fit. Nothing is hidden.</div>
       </div></div>
       <div className="list"><div style={{ padding: '12px 16px' }}>
         <div style={{ marginBottom: 8 }}>Display</div>

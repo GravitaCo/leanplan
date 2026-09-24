@@ -1,7 +1,8 @@
 /** `npm run check:foods` — validates the built-in food database. Fails on errors. */
 import { FOODS } from '@/core/data/foods'
 import { validateFoods } from '@/core/data/validate'
-import audit from '../docs/data/food-audit-2026-09.json'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const r = validateFoods(FOODS)
 
@@ -9,7 +10,15 @@ const r = validateFoods(FOODS)
 // still hold exactly the reference values recorded in docs/data (kcal whole, macros to 0.1 g).
 // Changing one means re-auditing it, not editing the number.
 type Row = { n: string; ref: { source: string; code: string | null; k: number | null; p: number | null; c: number | null; f: number | null } }
-const byName = new Map((audit as Row[]).map((a) => [a.n, a]))
+// every docs/data/food-audit*.json (run from the repo root, as npm does)
+const dir = 'docs/data'
+const audit: Row[] = readdirSync(dir).filter((f) => /^food-audit.*\.json$/.test(f)).sort()
+  .flatMap((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')) as Row[])
+const byName = new Map<string, Row>()
+for (const a of audit) {
+  if (byName.has(a.n)) r.errors.push(`${a.n}: audited more than once in docs/data`)
+  byName.set(a.n, a)
+}
 const r1 = (x: number | null) => Math.round((x ?? 0) * 10) / 10
 for (const f of FOODS) {
   const key = f.src?.split(':')[0]
