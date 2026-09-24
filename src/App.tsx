@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from './store/store'
 import { BottomNav } from './ui/BottomNav'
-import { AuthScreen } from './screens/AuthScreen'
+import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FoodScreen } from './screens/FoodScreen'
 import { TrainScreen } from './screens/TrainScreen'
@@ -15,6 +15,7 @@ export default function App() {
   const setTab = useStore((s) => s.setTab)
   const toast = useStore((s) => s.toast)
   const initAuth = useStore((s) => s.initAuth)
+  const ownerAsk = useStore((s) => s.ownerAsk)
 
   useEffect(() => {
     initAuth()
@@ -41,6 +42,7 @@ export default function App() {
     )
   }
 
+  if (ownerAsk) return <OwnerChoiceScreen />
   if (!signedIn) return <AuthScreen />
 
   return (

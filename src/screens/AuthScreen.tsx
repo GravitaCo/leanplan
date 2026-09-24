@@ -3,6 +3,7 @@ import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { TaliIcon } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
+import { exportBackup } from '@/data/backup'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -193,6 +194,43 @@ export function AuthScreen() {
           </div>
         </form>
       )}
+    </div>
+  )
+}
+
+/**
+ * Shown after signing in when this device holds data that may belong to another account (a
+ * shared phone). Nothing from that data shows or syncs until the user picks one.
+ */
+export function OwnerChoiceScreen() {
+  const ask = useStore((st) => st.ownerAsk)
+  const data = useStore((st) => st.data)
+  const resolveOwner = useStore((st) => st.resolveOwner)
+  const [busy, setBusy] = useState(false)
+  const who = ask?.email || 'this account'
+  const pick = async (c: 'keep' | 'fresh' | 'cancel') => {
+    if (busy) return
+    setBusy(true)
+    try { await resolveOwner(c) } finally { setBusy(false) }
+  }
+  return (
+    <div className="auth auth-owner">
+      <div className="auth-brand">
+        <TaliIcon size={88} />
+        <h1>Tali</h1>
+        <p>Signed in as {who}</p>
+      </div>
+      <h2 className="auth-t">This device has another log</h2>
+      <div className="card prose">
+        <p>The log on this device was made in a different account, or before it was linked to {who}.</p>
+        <p style={{ margin: 0 }}>Starting fresh removes it from this device and loads {who}’s own data. Anything that hadn’t synced yet is lost, so export a copy first if you need it.</p>
+      </div>
+      <button className="btn" disabled={busy} onClick={() => pick('fresh')}>Start fresh with {who}</button>
+      <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>
+      <div className="auth-links">
+        <button type="button" className="linkbtn" onClick={() => exportBackup(data)}>Export this device’s log first</button>
+        <button type="button" className="linkbtn muted" disabled={busy} onClick={() => pick('cancel')}>Cancel and sign out</button>
+      </div>
     </div>
   )
 }

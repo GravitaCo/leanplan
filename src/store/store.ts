@@ -27,7 +27,7 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, stateFromBackup, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
@@ -53,6 +53,9 @@ interface StoreState {
   syncPaused: boolean
   /** why the sign-in screen is showing, when it wasn't the user's choice */
   authNotice: string | null
+  /** signed in, but this device's data may belong to another account: nothing shows or syncs
+   *  until the user picks keep or start fresh (see ownerCheck) */
+  ownerAsk: { uid: string; email: string | null } | null
   /** "I have…" snapshot for meal suggestions (device-only) */
   kitchen: string[]
   setKitchen: (have: string[]) => void
@@ -119,6 +122,8 @@ interface StoreState {
   signOut: () => Promise<void>
   /** Call before a sign-in or sign-up attempt from the sign-in screen. */
   beginSignIn: () => void
+  /** Answer ownerAsk: keep this device's data in the account, start fresh, or sign out. */
+  resolveOwner: (choice: 'keep' | 'fresh' | 'cancel') => Promise<void>
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -165,6 +170,8 @@ const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is s
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
+/** Set by initAuth: make a Supabase session this device's live session. */
+let applySession: ((s: Session) => void) | null = null
 
 export const useStore = create<StoreState>()(
   immer((set, get) => {
@@ -195,6 +202,7 @@ export const useStore = create<StoreState>()(
       authed: false,
       syncPaused: false,
       authNotice: null,
+      ownerAsk: null,
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
@@ -507,15 +515,43 @@ export const useStore = create<StoreState>()(
       initAuth: async () => {
         requestPersistentStorage()
         const mode = loadMode()
+        // Migration: flag local-only data dirty on first run so it uploads once signed in. Runs
+        // first, before any session is applied (which records the owner and so creates _meta).
+        set((st) => {
+          const d = st.data
+          const migrate =
+            !d._meta &&
+            (Object.keys(d.days || {}).length > 0 ||
+              (d.customFoods || []).length > 0 ||
+              (d.recipes || []).length > 0)
+          ensureMeta(d, migrate)
+        })
+        saveState(get().data)
+
         const live = (s: Session) => {
-          setSession(s.access_token, s.user.id)
+          const uid = s.user.id
+          if (get().ownerAsk?.uid === uid) return // still waiting on the user's choice (a token refresh)
+          // A different account's data must not show or sync until the user chooses. Until then
+          // the session isn't applied and the mode isn't saved, so a reload asks again.
+          const check = ownerCheck(get().data, uid, loadMode() === 'account')
+          if (check === 'ask') {
+            setSession(null, null)
+            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
+            return
+          }
+          if (check === 'claim') {
+            set((st) => { ensureMeta(st.data, false).owner = uid })
+            saveState(get().data)
+          }
+          setSession(s.access_token, uid)
           saveMode('account')
-          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.email = s.user.email ?? null })
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null })
         }
+        applySession = live
         const toSignIn = (msg?: string) => {
           setSession(null, null)
           saveMode(null)
-          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = msg ?? null })
+          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = msg ?? null })
         }
 
         // Listen before restoring, so a sign-out the server forces during startup (password
@@ -557,18 +593,6 @@ export const useStore = create<StoreState>()(
           }
         }
         set((st) => { st.authReady = true })
-
-        // Migration: flag local-only data dirty on first run so it uploads once signed in.
-        set((st) => {
-          const d = st.data
-          const migrate =
-            !d._meta &&
-            (Object.keys(d.days || {}).length > 0 ||
-              (d.customFoods || []).length > 0 ||
-              (d.recipes || []).length > 0)
-          ensureMeta(d, migrate)
-        })
-        saveState(get().data)
 
         if (session) get().runSync()
         window.addEventListener('online', async () => {
@@ -639,6 +663,25 @@ export const useStore = create<StoreState>()(
         signingOut = false
       },
 
+      resolveOwner: async (choice) => {
+        const ask = get().ownerAsk
+        if (!ask) return
+        if (choice === 'cancel') { await get().signOut(); return }
+        const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
+        if (choice === 'fresh') get().setKitchen([])
+        saveState(next)
+        set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
+        // the session was held back while asking; it comes from local storage, so this works offline
+        const r = await supabase.auth.getSession().catch(() => null)
+        const session = r?.data.session
+        if (session && session.user.id === ask.uid && applySession) {
+          applySession(session)
+          get().runSync()
+        } else {
+          set((st) => { st.signedIn = false; st.authNotice = SIGNED_OUT_MSG })
+        }
+      },
+
       signOut: async () => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
         // (offline), which would sign the user straight back in: clear it locally as well, and
@@ -651,7 +694,7 @@ export const useStore = create<StoreState>()(
         get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)
         saveMode(null)
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
       },
     }
   }),

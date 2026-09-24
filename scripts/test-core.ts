@@ -27,7 +27,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { backupSummary, ensureMeta, stateFromBackup, type PersistedState } from '@/data/persistence'
+import { backupSummary, ensureMeta, freshForAccount, keepForAccount, ownerCheck, stateFromBackup, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -778,4 +778,41 @@ function importCarryOver(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
 }
 
-backupRestore().then(importCarryOver).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+// Shared devices: data recorded as another account's is never merged silently on sign-in;
+// guest data still moves into the first account.
+function accountOwner(): void {
+  const A = uuid(), B = uuid()
+  const day = { foods: [{ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null }
+  const withData = (lastPull: string | null, owner?: string) => {
+    const s = stateFromBackup({ days: { '2026-09-20': structuredClone(day) } } as never)
+    s.customFoods = [{ id: uuid(), n: 'Mine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false }]
+    const m = s._meta!
+    m.lastPull = lastPull
+    m.days['2026-09-20'].dirty = false
+    m.settings.dirty = false
+    m.foodDeletes = [uuid()]
+    if (owner) m.owner = owner
+    return s
+  }
+  const synced = withData('2026-09-23T10:00:00Z', A)
+  const kept = keepForAccount(structuredClone(synced), B)
+  const km = kept._meta!
+  const fresh = freshForAccount(B)
+  const dev = withData('x', A)
+  const restored = stateFromBackup(JSON.parse(JSON.stringify({ ...withData('x', B), days: {} })), dev)
+  const checks: [string, boolean][] = [
+    ['same account: carry on', ownerCheck(synced, A, false) === 'same'],
+    ['another account: ask', ownerCheck(synced, B, false) === 'ask' && ownerCheck(synced, B, true) === 'ask'],
+    ['guest data never synced: moves into the first account', ownerCheck(withData(null), B, false) === 'claim'],
+    ['synced by an older version, still signed in: claim', ownerCheck(withData('x'), B, true) === 'claim'],
+    ['synced by an older version, after a sign-out: ask', ownerCheck(withData('x'), B, false) === 'ask'],
+    ['keep: owner is the new account and everything uploads', km.owner === B && km.settings.dirty && km.days['2026-09-20'].dirty && kept.customFoods.every((f) => f._dirty) && km.lastPull === null],
+    ["keep: the other account's queued deletes are dropped", km.foodDeletes.length === 0],
+    ['fresh: nothing from the device is left', fresh._meta!.owner === B && Object.keys(fresh.days).length === 0 && fresh.customFoods.length === 0 && fresh.recipes.length === 0 && !fresh._meta!.settings.dirty],
+    ["a backup never changes whose device it is", restored._meta!.owner === A],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'owner:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

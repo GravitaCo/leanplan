@@ -14,6 +14,9 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
+  /** Supabase user id this device's data belongs to; unset for guest data never synced (and
+   *  for data synced by a version before this was recorded). */
+  owner?: string
 }
 
 export interface PersistedState extends AppState {
@@ -140,6 +143,8 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   if (current?.profile) s.profile.notificationsEnabled = !!current.profile.notificationsEnabled
   const meta = ensureMeta(s, true)
   const pending = current?._meta
+  // a backup never changes whose device this is (its own _meta was discarded above)
+  if (pending?.owner) meta.owner = pending.owner
   if (current) {
     for (const d of Object.keys(current.days || {})) {
       if (s.days[d]) continue
@@ -161,6 +166,39 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
     [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && UUID_RE.test(id) && !live.has(id))
   meta.foodDeletes = keep([old?.foodDeletes, pending?.foodDeletes], new Set(s.customFoods.map((f) => f.id)))
   meta.recipeDeletes = keep([old?.recipeDeletes, pending?.recipeDeletes], new Set(s.recipes.map((r) => r.id)))
+  return s
+}
+
+/**
+ * What a sign-in as `uid` means for the data on this device. 'same' or 'claim' (record `uid` as
+ * the owner) carry on as before; 'ask' means the data may be someone else's, so the user chooses
+ * between keeping it in this account and starting fresh. Never merge that silently: a shared
+ * phone would show one person's log to the next and upload it into their account.
+ * `stayedSignedIn`: this device was still signed in to an account (not a fresh sign-in).
+ */
+export function ownerCheck(s: PersistedState, uid: string, stayedSignedIn: boolean): 'same' | 'claim' | 'ask' {
+  const owner = s._meta?.owner
+  if (owner) return owner === uid ? 'same' : 'ask'
+  // Never synced (guest data, a first sign-in): it moves into the account, as it always has.
+  if (!s._meta?.lastPull) return 'claim'
+  // Synced by an older version that didn't record the owner: still the signed-in account's if
+  // the device never signed out; after a sign-out we can't tell whose it is.
+  return stayedSignedIn ? 'claim' : 'ask'
+}
+
+/** "Keep this device's data in this account": everything on the device uploads to `uid`. The
+ *  queued deletes named the other account's rows, so they go. */
+export function keepForAccount(s: PersistedState, uid: string): PersistedState {
+  delete s._meta
+  ensureMeta(s, true).owner = uid
+  return s
+}
+
+/** "Start fresh with this account": an empty device state that the next sync fills from `uid`'s
+ *  cloud data. */
+export function freshForAccount(uid: string): PersistedState {
+  const s = loadStateFrom(null)
+  ensureMeta(s, false).owner = uid
   return s
 }
 

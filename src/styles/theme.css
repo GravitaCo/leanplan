@@ -413,6 +413,10 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .auth-brand h1 { font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: 0.37px; margin: 16px 0 2px; }
 .auth-brand p { font-size: 15px; color: var(--label2); margin: 0; }
 .auth-t { font-size: 22px; font-weight: 700; letter-spacing: 0.35px; margin: 0 4px 10px; }
+/* "This device has another log" choice: centred, and the explanation in the same secondary
+   style as the line under the logo (.card would otherwise make it left-aligned, full-colour) */
+.auth-owner .auth-t { text-align: center; }
+.auth-owner .card { text-align: center; color: var(--label2); font-size: 15px; line-height: 1.45; }
 .auth .list { margin-bottom: 0; }
 .auth .list input { background: none; border-radius: 0; padding: 0; height: 44px; }
 .auth .list input:focus { outline: none; }
