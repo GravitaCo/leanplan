@@ -83,16 +83,19 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<void
    on insert and by the set_updated_at trigger on update, so device clocks never matter). A pull
    asks only for rows newer than that. `now()` is the transaction start, so a write that commits
    just after our read can carry a timestamp a moment older than rows we already hold; to catch
-   it we re-ask for a small window below the mark and exclude, by (key, updated_at), the rows in
-   that window we already have. A quiet second sync therefore returns no rows at all.
+   it we re-ask for a window below the mark and exclude the timestamps in that window we already
+   hold. Every row one transaction writes shares its `now()`, and our read saw that transaction's
+   rows all or not at all, so a held timestamp means those rows are held (a big upload costs one
+   entry). A quiet second sync therefore returns no rows at all. The window covers the longest a
+   request's transaction can stay open (statement_timeout for `authenticated` is 8 s).
    Deletes are hard deletes (no tombstones), so custom foods and recipes also compare a row count
    (HEAD, no body): only when it differs do we fetch keys and drop what the server no longer has.
    A missing mark (first sync, older app version, another account, a restored backup) means a
    full pull, exactly as before. */
-const OVERLAP_MS = 5000
-/** Above this many rows inside the window (a big first upload shares one timestamp), fall back
- *  to a strict `gt.mark` rather than build a long URL. */
-const EDGE_MAX = 40
+const OVERLAP_MS = 15000
+/** Most held timestamps to list (one per transaction inside the window). Past this the oldest are
+ *  left off: their rows are fetched again, which costs a little and never loses anything. */
+const EDGE_MAX = 60
 
 /** Server timestamp to microseconds since the epoch; NaN if unreadable. Parsed by hand because
  *  Postgres gives 6 fractional digits, which Date.parse drops (and older Safari rejects). */
@@ -108,36 +111,31 @@ const windowFloorMs = (markMicros: number) => Math.floor(markMicros / 1000) - OV
 const quote = (v: string) => '"' + v.replace(/["\\]/g, '\\$&') + '"'
 
 /** The GET path for one table: everything on first sync, otherwise only rows past the mark. */
-export function sinceQuery(table: string, key: string, uid: string, m: PullMark | undefined): string {
+export function sinceQuery(table: string, uid: string, m: PullMark | undefined): string {
   const q = '/' + table + '?user_id=eq.' + uid + '&select=*'
   const mu = m ? tsMicros(m.mark) : NaN
   if (!m || !Number.isFinite(mu)) return q
-  if (!m.edge) return q + '&updated_at=gt.' + encodeURIComponent(m.mark)
-  const lo = new Date(windowFloorMs(mu)).toISOString()
-  const parts = ['updated_at.gt.' + quote(lo)].concat(
-    m.edge.map(([k, t]) => 'not.and(' + key + '.eq.' + quote(k) + ',updated_at.eq.' + quote(t) + ')'),
-  )
+  const parts = ['updated_at.gt.' + quote(new Date(windowFloorMs(mu)).toISOString())]
+  if (m.edge.length) parts.push('updated_at.not.in.(' + m.edge.map(quote).join(',') + ')')
   return q + '&and=' + encodeURIComponent('(' + parts.join(',') + ')')
 }
 
-/** Move the mark past the rows just received and keep the ones inside the overlap window. */
-export function advance(prev: PullMark | undefined, rows: any[], key: string): PullMark | undefined {
+/** Move the mark past the rows just received and keep the timestamps held inside the window. */
+export function advance(prev: PullMark | undefined, rows: any[]): PullMark | undefined {
   let best = prev ? prev.mark : ''
   let bestU = tsMicros(best)
-  const seen = new Map<string, [string, number]>()
-  for (const [k, t] of prev?.edge || []) seen.set(k, [t, tsMicros(t)])
+  const seen = new Map<number, string>()
+  for (const t of prev?.edge || []) seen.set(tsMicros(t), t)
   for (const r of rows) {
     const u = tsMicros(r.updated_at)
     if (!Number.isFinite(u)) continue
     if (!(u <= bestU)) { best = r.updated_at; bestU = u }
-    // the row as just received is the server's current version, even if a late commit gave it
-    // an older timestamp than the one we held
-    seen.set(String(r[key]), [r.updated_at, u])
+    seen.set(u, r.updated_at)
   }
   if (!best || !Number.isFinite(bestU)) return prev
-  const edge: [string, string][] = []
-  for (const [k, [t, u]] of seen) if (u > windowFloorMs(bestU) * 1000) edge.push([k, t])
-  return { mark: best, edge: edge.length > EDGE_MAX ? null : edge }
+  const floor = windowFloorMs(bestU) * 1000
+  const edge = [...seen].filter(([u]) => Number.isFinite(u) && u > floor).sort((a, b) => b[0] - a[0])
+  return { mark: best, edge: edge.slice(0, EDGE_MAX).map(([, t]) => t) }
 }
 
 /** Keys the server still has for a table, but only if its row count says something changed
@@ -162,13 +160,13 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   const uid = getUid()
   if (!meta.pull || meta.pull.uid !== uid) meta.pull = { uid, tables: {} }
   const marks = meta.pull.tables
-  const pull = async (table: string, key: string) => {
+  const pull = async (table: string) => {
     const full = !marks[table]
-    const rows = await sbGet<any[]>(sinceQuery(table, key, uid, marks[table]))
+    const rows = await sbGet<any[]>(sinceQuery(table, uid, marks[table]))
     return { rows, full }
   }
 
-  const st = await pull('settings', 'user_id')
+  const st = await pull('settings')
   const settings = st.rows
   if (settings.length && !meta.settings.dirty) {
     s.target = settings[0].target
@@ -182,7 +180,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     }
     meta.settings.u = settings[0].updated_at
   }
-  marks.settings = advance(marks.settings, settings, 'user_id')
+  marks.settings = advance(marks.settings, settings)
 
   // custom foods and recipes: a full pull replaces the list (server + unpushed local), an
   // incremental one merges changed rows in; local dirty records always win (last write wins)
@@ -193,9 +191,9 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     if (replace) (s.customFoods || []).filter((f) => f._dirty).forEach((f) => { if (f.id) byId[f.id] = f })
     s.customFoods = Object.values(byId)
   }
-  const cf = await pull('custom_foods', 'id')
+  const cf = await pull('custom_foods')
   mergeFoods(cf.rows, cf.full)
-  marks.custom_foods = advance(marks.custom_foods, cf.rows, 'id')
+  marks.custom_foods = advance(marks.custom_foods, cf.rows)
   if (!cf.full) {
     const keys = await serverKeysIfChanged('custom_foods', 'id', uid, s.customFoods.length)
     if (keys) {
@@ -204,7 +202,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
       const local = new Set(s.customFoods.map((f) => f.id))
       const rows = await fetchByKeys('custom_foods', 'id', uid, keys.filter((k) => !local.has(k)))
       mergeFoods(rows, false)
-      marks.custom_foods = advance(marks.custom_foods, rows, 'id')
+      marks.custom_foods = advance(marks.custom_foods, rows)
     }
   }
 
@@ -215,9 +213,9 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     if (replace) (s.recipes || []).filter((r) => r._dirty).forEach((r) => { rById[r.id] = r })
     s.recipes = Object.values(rById)
   }
-  const rc = await pull('recipes', 'id')
+  const rc = await pull('recipes')
   mergeRecipes(rc.rows, rc.full)
-  marks.recipes = advance(marks.recipes, rc.rows, 'id')
+  marks.recipes = advance(marks.recipes, rc.rows)
   if (!rc.full) {
     const keys = await serverKeysIfChanged('recipes', 'id', uid, s.recipes.length)
     if (keys) {
@@ -226,7 +224,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
       const local = new Set(s.recipes.map((r) => r.id))
       const rows = await fetchByKeys('recipes', 'id', uid, keys.filter((k) => !local.has(k)))
       mergeRecipes(rows, false)
-      marks.recipes = advance(marks.recipes, rows, 'id')
+      marks.recipes = advance(marks.recipes, rows)
     }
   }
 
@@ -236,9 +234,9 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     s.days[d] = fromServerDay(row)
     meta.days[d] = { u: row.updated_at, dirty: false }
   })
-  const dl = await pull('day_logs', 'log_date')
+  const dl = await pull('day_logs')
   mergeDays(dl.rows)
-  marks.day_logs = advance(marks.day_logs, dl.rows, 'log_date')
+  marks.day_logs = advance(marks.day_logs, dl.rows)
   if (!dl.full) {
     // days are never deleted, so only a server count above ours (a missed row) needs a look
     const known = Object.keys(meta.days).filter((d) => !meta.days[d].dirty)
@@ -246,9 +244,12 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     if (keys) {
       const rows = await fetchByKeys('day_logs', 'log_date', uid, keys.filter((k) => !meta.days[k]))
       mergeDays(rows)
-      marks.day_logs = advance(marks.day_logs, rows, 'log_date')
+      marks.day_logs = advance(marks.day_logs, rows)
     }
   }
+  // signed out (or into another account) while this ran: later requests went out under a
+  // different token and saw none of these rows, so the caller must not save this result
+  if (getUid() !== uid) throw new Error('session changed during sync')
   meta.lastPull = nowIso()
 }
 

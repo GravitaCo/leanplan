@@ -19,20 +19,19 @@ export interface SyncMeta {
   pull?: { uid: string; tables: Record<string, PullMark | undefined> }
 }
 
-/** Newest server `updated_at` pulled for a table, plus the (key, updated_at) pairs already held
- *  inside the overlap window below it; `edge: null` = too many to list, use a strict `gt`. */
+/** Newest server `updated_at` pulled for a table, plus the `updated_at` values already held
+ *  inside the overlap window below it (see sync.pullAll). */
 export interface PullMark {
   mark: string
-  edge: [string, string][] | null
+  edge: string[]
 }
 
-const isPair = (x: unknown) => Array.isArray(x) && x.length === 2 && typeof x[0] === 'string' && typeof x[1] === 'string'
 /** Keep only well-formed marks; anything else is dropped, which just means one full pull. */
 function cleanPull(p: SyncMeta['pull']): SyncMeta['pull'] {
   if (!p || typeof p !== 'object' || typeof p.uid !== 'string' || !p.tables || typeof p.tables !== 'object') return undefined
   const tables: Record<string, PullMark> = {}
   for (const [t, m] of Object.entries(p.tables)) {
-    if (m && typeof m.mark === 'string' && (m.edge === null || (Array.isArray(m.edge) && m.edge.every(isPair)))) tables[t] = m
+    if (m && typeof m.mark === 'string' && Array.isArray(m.edge) && m.edge.every((t) => typeof t === 'string')) tables[t] = m
   }
   return { uid: p.uid, tables }
 }

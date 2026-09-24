@@ -44,10 +44,15 @@ function cond(expr: string): (r: Row) => boolean {
     return (r) => !parts.every((p) => p(r))
   }
   const [col, op, ...rest] = expr.split('.')
+  if (op === 'not') { const inner = cond(col + '.' + rest.join('.')); return (r) => !inner(r) }
   const v = unq(rest.join('.'))
   if (op === 'eq') return (r) => (col === 'updated_at' ? tsMicros(r[col]) === tsMicros(v) : String(r[col]) === v)
   if (op === 'gt') return (r) => tsMicros(r[col]) > tsMicros(v)
-  if (op === 'in') { const set = new Set(splitTop(v.slice(1, -1)).map(unq)); return (r) => set.has(String(r[col])) }
+  if (op === 'in') {
+    const list = splitTop(v.slice(1, -1)).map(unq)
+    if (col === 'updated_at') { const set = new Set(list.map(tsMicros)); return (r) => set.has(tsMicros(r[col])) }
+    const set = new Set(list); return (r) => set.has(String(r[col]))
+  }
   throw new Error('unsupported filter ' + expr)
 }
 function query(url: string): { table: string; rows: Row[]; select: string } {
@@ -145,7 +150,7 @@ const check = (name: string, got: unknown, want: unknown) => {
   // a row right at the bottom of the window (sub-ms below mark - 5 s) is not re-sent forever
   await sync(a)
   const m2 = a._meta!.pull!.tables.day_logs!.mark
-  put('day_logs', day('2026-09-02', 81), fmt(Math.floor(tsMicros(m2) / 1000) * 1000 - 5_000_000 + 1))
+  put('day_logs', day('2026-09-02', 81), fmt(Math.floor(tsMicros(m2) / 1000) * 1000 - 15_000_000 + 1))
   check('row at the window floor pulled once', await sync(a), { rows: 1, keys: 0 })
   check('then quiet', await sync(a), { rows: 0, keys: 0 })
 
@@ -179,8 +184,25 @@ const check = (name: string, got: unknown, want: unknown) => {
   const big = Array.from({ length: 60 }, (_, i) => day('2025-01-' + String(i + 1).padStart(2, '0'), 70))
   const at = now(); big.forEach((r) => put('day_logs', r, at))
   check('big batch pulled', (await sync(b)).rows, 60)
-  check('big batch falls back to strict gt', b._meta!.pull!.tables.day_logs!.edge, null)
+  check('big batch is one held timestamp', b._meta!.pull!.tables.day_logs!.edge.filter((t) => t === at).length, 1)
   check('quiet after big batch', await sync(b), { rows: 0, keys: 0 })
+  check('still quiet after big batch', await sync(b), { rows: 0, keys: 0 })
+  // a late write just after a big batch is still caught (no strict-gt fallback)
+  put('day_logs', day('2026-09-01', 42), fmt(tsMicros(b._meta!.pull!.tables.day_logs!.mark) - 1000))
+  check('late write after big batch caught', [await sync(b), b.days['2026-09-01'].weight], [{ rows: 1, keys: 0 }, 42])
+  check('quiet after that', await sync(b), { rows: 0, keys: 0 })
+  // a slow transaction up to the full window below the mark (8 s statement_timeout + margin)
+  put('day_logs', day('2026-09-03', 43), fmt(tsMicros(b._meta!.pull!.tables.day_logs!.mark) - 12_000_000))
+  check('12 s late commit caught', [await sync(b), b.days['2026-09-03'].weight], [{ rows: 1, keys: 0 }, 43])
+
+  // signing out mid-pull: the result must not be saved (store.runSync saves only on success)
+  put('custom_foods', food(id(9), 'Crumpet'))
+  const realFetch = (globalThis as any).fetch
+  ;(globalThis as any).fetch = async (url: string, opts?: RequestInit) => { if (url.includes('/recipes')) setSession(null, null); return realFetch(url, opts) }
+  const aborted = await sync(b).then(() => 'saved', (e) => String(e.message))
+  ;(globalThis as any).fetch = realFetch
+  setSession('token', UID)
+  check('sign-out mid-sync aborts the pull', aborted, 'session changed during sync')
 
   // another account on this device: marks don't carry over
   const other = '22222222-2222-2222-2222-222222222222'
@@ -194,7 +216,7 @@ const check = (name: string, got: unknown, want: unknown) => {
   const old = loadStateFrom({ ...loadStateFrom(null), _meta: { settings: { u: '', dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null } } as PersistedState)
   check('meta without marks migrates', 'pull' in ensureMeta(old, false), false)
   const broken = loadStateFrom(null)
-  broken._meta = { settings: { u: '', dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, pull: { uid: UID, tables: { day_logs: { mark: 5, edge: 'x' } as any, recipes: { mark: '2026-01-01T00:00:00+00:00', edge: [] } } } }
+  broken._meta = { settings: { u: '', dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, pull: { uid: UID, tables: { day_logs: { mark: 5, edge: 'x' } as any, custom_foods: { mark: 'x', edge: [['a', 'b']] } as any, recipes: { mark: '2026-01-01T00:00:00+00:00', edge: [] } } } }
   check('malformed marks dropped, good ones kept', Object.keys(ensureMeta(broken, false).pull!.tables), ['recipes'])
   const c = device()
   c._meta!.pull = { uid: UID, tables: {} }
