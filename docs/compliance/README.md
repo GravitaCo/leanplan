@@ -48,6 +48,17 @@ A DPIA is very likely required (UK GDPR Art. 35; ICO lists large-scale special-c
 data and health apps among the triggers). The consent, minimisation, RLS and deletion work
 above feeds it, but the DPIA itself has not been written. **Open.**
 
+## Status
+
+Build and test phase (decided 2026-09-24). A new company will be formed to run Tali
+before public launch; until then the controller in `LEGAL` stays unset on purpose. Forming
+it before launch avoids moving users' consent from one controller to another later. This
+branch's legal work stays off `main` until the company exists, because `check:legal` (run
+by the deploy workflow) fails without it.
+
+While testing: anyone other than Benn using Tali with real data is still covered by GDPR.
+Keep testers few, tell them it's a test build, and delete their data when testing ends.
+
 ## Open items (Benn)
 
 Blocking before the legal texts can go live:
