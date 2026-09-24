@@ -19,7 +19,10 @@ import type {
   Supplement,
   MacroTarget,
   Profile,
+  Session as TrainingSession,
 } from '@/core/types'
+import { WORKOUTS } from '@/core/data/workouts'
+import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -88,6 +91,9 @@ interface StoreState {
   setWeight: (kg: number) => void
   saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
+  /** add a session (any modality) to the current day, alongside any others */
+  addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
+  removeSession: (id: string) => void
 
   // plan / settings
   setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
@@ -115,6 +121,24 @@ interface StoreState {
 function ensureDay(s: PersistedState, d: string): DayLog {
   if (!s.days[d]) s.days[d] = { foods: [], supps: {}, weight: null, workout: null }
   return s.days[d]
+}
+
+/** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
+function setSessions(day: DayLog, list: TrainingSession[]): void {
+  day.sessions = list
+  day.workout = mirrorOf(list)
+}
+
+/**
+ * Save a built-in session (Legs/Push/Pull or the Cardio card): it replaces an earlier save from
+ * the same card that day, since saving again is an edit; other sessions stay.
+ */
+function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
+  const list = sessionsOf(day, date)
+  const i = list.findIndex((y) => y.routineId === x.routineId)
+  const prev = i >= 0 ? list[i] : null
+  const next: TrainingSession = { ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
+  setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
 
 /** Lowest calorie target the app will set without medical support. */
@@ -345,7 +369,7 @@ export const useStore = create<StoreState>()(
 
       saveWorkout: (type, ex, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = option ? { type, ex, option } : { type, ex }
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}) })
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast(type + ' session saved')
@@ -353,10 +377,32 @@ export const useStore = create<StoreState>()(
 
       saveCardio: (cardioType, mins, option) => {
         set((st) => {
-          ensureDay(st.data, st.cur).workout = option ? { type: 'Cardio', cardioType, mins, option } : { type: 'Cardio', cardioType, mins }
+          const typed = parseFloat(mins)
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, {
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            ...(Number.isFinite(typed) ? { mins: typed } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
+          })
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Cardio saved')
+      },
+
+      addSession: (x) => {
+        set((st) => {
+          const day = ensureDay(st.data, st.cur)
+          setSessions(day, [...sessionsOf(day, st.cur), { ...x, id: uuid(), at: nowIso() }])
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
+      },
+
+      removeSession: (id) => {
+        set((st) => {
+          const day = ensureDay(st.data, st.cur)
+          setSessions(day, sessionsOf(day, st.cur).filter((y) => y.id !== id))
+          markDayDirty(st.data, st.cur)
+        })
+        persist(); get().scheduleSync(); get().showToast('Session removed')
       },
 
       setScheduleDay: (idx, value) => {

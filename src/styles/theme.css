@@ -466,3 +466,4 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .dayopt .foot { padding: 10px 0 0; }
 .dayopt-link { margin: 0 0 14px; }
 .week-n { padding: 0 4px 10px; }
+.x-btn { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--fill); color: var(--label2); display: grid; place-items: center; }

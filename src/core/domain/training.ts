@@ -1,6 +1,10 @@
 import type { AppState, WorkoutType } from '@/core/types'
 import { fmtDate, shiftDay } from './date'
 import { weekOf } from './insights'
+import { sessionsOf } from './sessions'
+
+const did = (s: AppState, d: string) => sessionsOf(s.days[d], d).length > 0
+const didRoutine = (s: AppState, d: string, type: string) => sessionsOf(s.days[d], d).some((x) => x.routineId === 'builtin-' + type)
 
 /**
  * Plans that slide (workout plan §0.3, §0.4, §4.1b). Nothing is ever "missed" and the calendar
@@ -18,7 +22,7 @@ const EASY_DAYS = 7
  * so a new install never offers sessions from before they joined. Never edits the schedule.
  */
 export function catchUp(s: AppState, today: string): { type: WorkoutType; d: string } | null {
-  if (s.days[today]?.workout?.type) return null
+  if (did(s, today)) return null
   const first = Object.keys(s.days).sort()[0]
   if (!first) return null
   const todays = s.schedule[fmtDate(today).idx]
@@ -27,10 +31,10 @@ export function catchUp(s: AppState, today: string): { type: WorkoutType; d: str
     if (d < first) return null
     const planned = s.schedule[fmtDate(d).idx]
     if (!planned || planned === 'Rest') continue
-    if (s.days[d]?.workout?.type) return null // the most recent planned day was done
+    if (did(s, d)) return null // the most recent planned day was done
     if (planned === todays) return null
     // done on another day since then? then there's nothing to pick up
-    for (let j = i - 1; j >= 1; j--) if (s.days[shiftDay(today, -j)]?.workout?.type === planned) return null
+    for (let j = i - 1; j >= 1; j--) if (didRoutine(s, shiftDay(today, -j), planned)) return null
     return s.profile.pickUpDismissed === d ? null : { type: planned, d }
   }
   return null
@@ -38,12 +42,12 @@ export function catchUp(s: AppState, today: string): { type: WorkoutType; d: str
 
 /** Sessions logged this week (Monday to Sunday), counted up, never a streak. */
 export function sessionsThisWeek(s: AppState, d: string): number {
-  return weekOf(d).filter((x) => !!s.days[x]?.workout?.type).length
+  return weekOf(d).reduce((n, x) => n + sessionsOf(s.days[x], x).length, 0)
 }
 
 /** The last day with a logged session before `d`, if any. */
 export function lastSessionBefore(s: AppState, d: string): string | null {
-  const ds = Object.keys(s.days).filter((x) => x < d && !!s.days[x]?.workout?.type).sort()
+  const ds = Object.keys(s.days).filter((x) => x < d && did(s, x)).sort()
   return ds.length ? ds[ds.length - 1] : null
 }
 
@@ -52,7 +56,7 @@ export function lastSessionBefore(s: AppState, d: string): string | null {
  * people who have trained before, and never on the day they're already back.
  */
 export function welcomeBack(s: AppState, today: string): boolean {
-  if (s.days[today]?.workout?.type) return false
+  if (did(s, today)) return false
   const last = lastSessionBefore(s, today)
   if (!last || last > shiftDay(today, -AWAY_DAYS)) return false
   return (s.profile.welcomeAsked || '') < last

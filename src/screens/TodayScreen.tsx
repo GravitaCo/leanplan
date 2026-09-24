@@ -8,6 +8,7 @@ import { useStore } from '@/store/store'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
+import { sessionsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
@@ -57,9 +58,9 @@ export function TodayScreen() {
   const isToday = cur === todayStr()
   const f = fmtDate(cur)
 
-  const wk = day.workout
+  const sess = sessionsOf(day, cur)
   const sched = data.schedule[f.idx] || 'Rest'
-  const logged = !!wk?.type
+  const logged = sess.length > 0
   const isRest = !logged && sched === 'Rest'
 
   const meal = mealNow()
@@ -86,7 +87,9 @@ export function TodayScreen() {
   const syncLabel = !authed ? 'on this device' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
 
   const activity = logged
-    ? wk!.type === 'Cardio' ? <>{wk!.mins || '?'}<small> min</small></> : <span className="w">{wk!.type} done</span>
+    ? sess.length > 1 ? <span className="w">{sess.length} sessions</span>
+      : sess[0].modality === 'strength' ? <span className="w">{(sess[0].routineId || '').replace('builtin-', '') || sess[0].title} done</span>
+      : <>{sess[0].mins ?? '?'}<small> min</small></>
     : <span className="w">{isRest ? 'Rest day' : sched + ' planned'}</span>
 
   const highlights: ReactNode[] = []
@@ -214,7 +217,7 @@ export function TodayScreen() {
       <div className="sec-t">Pinned</div>
       <div className="tiles">
         <Tile color="activity" icon="dumbbell" label="Workout" onPress={() => setTab('train')}
-          value={<span className="w">{logged ? (wk!.option === 'swap' ? (wk!.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk') : wk!.type) : isRest ? 'Rest' : sched}</span>}
+          value={<span className="w">{logged ? (sess.length > 1 ? `${sess.length} sessions` : sess[0].modality === 'strength' ? ((sess[0].routineId || '').replace('builtin-', '') || sess[0].title) : sess[0].title) : isRest ? 'Rest' : sched}</span>}
           sub={logged ? 'Logged' : isRest ? 'Recovery counts too' : 'Tap to start'} />
         <Tile color="mind" icon="smile" label="Check-in" onPress={() => setSheet({ k: 'checkin' })}
           value={<span className="w">{day.checkin?.mood ? MOODS[day.checkin.mood - 1] : 'How are you?'}</span>}

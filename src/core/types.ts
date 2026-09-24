@@ -129,6 +129,33 @@ export interface Workout {
   mins?: string
   /** the day-of choice taken instead of the plan as written (plan §0.2); absent = as planned */
   option?: 'shorter' | 'swap'
+  /** written by this version as a copy of the day's first session, for older installs */
+  _mirror?: boolean
+}
+
+/** The discipline a session belongs to (workout plan §2.1). */
+export type Modality = 'strength' | 'calisthenics' | 'cardio' | 'yoga' | 'pilates' | 'mobility'
+
+/** Optional session effort (Foster et al. 2001 session-RPE verbal anchors). */
+export type Effort = 'easy' | 'moderate' | 'hard' | 'very-hard'
+
+/** One session on a day; a day can hold several (workout plan §2.5). */
+export interface Session {
+  id: string
+  modality: Modality
+  /** snapshot shown in history: "Push · chest / shoulders / triceps", "Evening yoga", "Brisk walk" */
+  title: string
+  /** the routine it came from: 'builtin-Legs', 'builtin-Cardio', … ; absent for a quick log */
+  routineId?: string
+  /** ISO time it was saved; orders sessions within the day */
+  at?: string
+  /** minutes; when absent the modality's default is used for estimates */
+  mins?: number
+  effort?: Effort
+  ex?: LoggedExercise[]
+  /** cardio: a CARDIO_MET key, and optional distance */
+  cardio?: { key: string; km?: number }
+  option?: 'shorter' | 'swap'
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
@@ -149,7 +176,10 @@ export interface DayLog {
   foods: LoggedFood[]
   supps: Record<string, boolean>
   weight: number | null
+  /** legacy single session: read through sessionsOf(); still written as a mirror for older installs */
   workout: Workout | null
+  /** every session this day, in order; absent on days logged before sessions existed */
+  sessions?: Session[]
   checkin?: CheckIn | null
 }
 
@@ -279,6 +309,8 @@ export interface Profile {
   activityAsked?: string
   /** date it was first shown; left unanswered for 3 days it counts as "Keep as is" */
   activityShown?: string
+  /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
+  loadNoteSeen?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

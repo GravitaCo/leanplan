@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { SetEntry, WorkoutType } from '@/core/types'
+import type { DayLog, SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { fmtDate, todayStr } from '@/core/domain/date'
@@ -11,6 +11,10 @@ import { PageHeader, Seg } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { DayNav } from '@/ui/WeekStrip'
 import { DemoPlayer } from './train/DemoPlayer'
+import { LogSessionSheet } from './train/LogSessionSheet'
+import { sessionsOf } from '@/core/domain/sessions'
+import { showLoadNote } from '@/core/domain/load'
+import { MODALITY_LABEL } from '@/core/data/modalities'
 
 const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
 
@@ -18,11 +22,14 @@ const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pul
 type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
 const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
 
-function lastSessionOf(days: Record<string, { workout: { type: string; ex?: { name: string; sets: SetEntry[] }[] } | null }>, cur: string, type: string) {
-  const ds = Object.keys(days)
-    .filter((d) => d !== cur && days[d].workout && days[d].workout!.type === type)
-    .sort()
-  return ds.length ? days[ds[ds.length - 1]].workout : null
+/** The most recent other day's session from this built-in card, for "Last time". */
+function lastSessionOf(days: Record<string, DayLog>, cur: string, type: string) {
+  const ds = Object.keys(days).filter((d) => d !== cur).sort().reverse()
+  for (const d of ds) {
+    const x = sessionsOf(days[d], d).find((y) => y.routineId === 'builtin-' + type)
+    if (x) return x
+  }
+  return null
 }
 
 export function TrainScreen() {
@@ -31,14 +38,20 @@ export function TrainScreen() {
   const saveWorkout = useStore((s) => s.saveWorkout)
   const saveCardio = useStore((s) => s.saveCardio)
   const setPrefs = useStore((s) => s.setPrefs)
+  const removeSession = useStore((s) => s.removeSession)
+  const [logOpen, setLogOpen] = useState(false)
 
   const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
-  const logged = day.workout
+  // a day can hold several sessions (plan P2); each built-in card reads its own saved session
+  const sessions = sessionsOf(day, cur)
+  const logged = sessions.length > 0
+  const builtin = (t: string) => sessions.find((x) => x.routineId === 'builtin-' + t)
+  const firstBuiltin = sessions.find((x) => (x.routineId || '').startsWith('builtin-'))
   const fd = fmtDate(cur)
   const sched = data.schedule[fd.idx] || 'Rest'
 
   const initial: WorkoutType =
-    (logged?.type as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
+    (firstBuiltin?.routineId?.replace('builtin-', '') as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
   const [sel, setSel] = useState<WorkoutType>(initial)
   useEffect(() => {
     setSel(initial)
@@ -47,7 +60,7 @@ export function TrainScreen() {
 
   // editable set state for lifts: index -> sets[]
   const wk = sel !== 'Cardio' ? WORKOUTS[sel] : null
-  const loggedSets = logged?.type === sel ? logged.ex : null
+  const loggedSets = builtin(sel)?.ex ?? null
   const [sets, setSets] = useState<Record<number, SetEntry[]>>({})
   useEffect(() => {
     if (!wk) return
@@ -62,7 +75,8 @@ export function TrainScreen() {
   }, [sel, cur])
 
   // cardio state
-  const cardio = logged?.type === 'Cardio' ? logged : null
+  const cardioS = builtin('Cardio')
+  const cardio = cardioS ? { cardioType: cardioS.cardio?.key, mins: cardioS.mins != null ? String(cardioS.mins) : '' } : null
   const [cardioType, setCardioType] = useState(cardio?.cardioType || 'Brisk walk')
   const [mins, setMins] = useState(cardio?.mins || '')
   useEffect(() => {
@@ -80,10 +94,10 @@ export function TrainScreen() {
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
-  const startChoice: Choice = logged?.option === 'shorter' || easy ? 'shorter' : 'planned'
+  const startChoice: Choice = firstBuiltin?.option === 'shorter' || easy ? 'shorter' : 'planned'
   const [choice, setChoice] = useState<Choice>(startChoice)
   const [askLighter, setAskLighter] = useState(easy)
-  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins('') }, [cur, easy, logged?.option]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setChoice(startChoice); setAskLighter(easy); setWalkMins('') }, [cur, easy, firstBuiltin?.option]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // plans slide: offer the planned session that didn't happen; the calendar never moves
   const isToday = cur === todayStr()
@@ -102,10 +116,13 @@ export function TrainScreen() {
   const last = useMemo(() => (sel !== 'Cardio' ? lastSessionOf(data.days, cur, sel) : null), [data.days, cur, sel])
 
   const dayName = fd.dow
-  const banner = logged?.option === 'swap' ? (
-    <><b>{logged.cardioType === 'Mobility' ? 'Mobility' : 'Easy walk'}</b> logged for {dayName}. Gentle movement counts too.</>
-  ) : logged ? (
-    <><b>{logged.option === 'shorter' ? 'Shorter ' : ''}{logged.type === 'Cardio' ? (logged.option === 'shorter' ? 'cardio' : 'Cardio') : WORKOUTS[logged.type].title}</b> logged for {dayName}.</>
+  const one = sessions.length === 1 ? sessions[0] : null
+  const banner = sessions.length > 1 ? (
+    <><b>{sessions.length} sessions</b> logged for {dayName}.</>
+  ) : one?.option === 'swap' ? (
+    <><b>{one.title}</b> logged for {dayName}. Gentle movement counts too.</>
+  ) : one ? (
+    <><b>{one.option === 'shorter' ? 'Shorter ' + (one.modality === 'strength' ? one.title : one.title.toLowerCase()) : one.title}</b> logged for {dayName}.</>
   ) : sched === 'Rest' ? (
     <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
   ) : (
@@ -132,6 +149,38 @@ export function TrainScreen() {
         <div>{banner}</div>
       </div>
       {weekCount > 0 && <div className="foot week-n">{weekCount} {weekCount === 1 ? 'session' : 'sessions'} this week</div>}
+
+      {isToday && showLoadNote(data, cur) && (
+        <div className="card dayopt">
+          <div className="t">You've been training a lot lately. How's your energy? A lighter day can help.</div>
+          <div className="chips"><button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button></div>
+        </div>
+      )}
+
+      {sessions.length > 0 && (
+        <>
+          <div className="grp-h">Logged today</div>
+          <div className="list">
+            {sessions.map((x) => (
+              <div className="li" key={x.id}>
+                <div className="m">
+                  <div className="t">{x.title}</div>
+                  <div className="s">{MODALITY_LABEL[x.modality] ?? x.modality}{x.mins != null ? ` · ${x.mins} min` : ''}{x.cardio?.km ? ` · ${x.cardio.km} km` : ''}</div>
+                </div>
+                <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => removeSession(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="list">
+        <button className="li" onClick={() => setLogOpen(true)}>
+          <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="plus" size={18} /></span>
+          <div className="m"><div className="t">Log something else</div><div className="s">Yoga, pilates, a run, anything</div></div>
+          <Chevron />
+        </button>
+      </div>
+      {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
 
       {back && (
         <div className="card dayopt">
@@ -219,7 +268,7 @@ export function TrainScreen() {
             <div className="frow"><label htmlFor="c_min">Minutes</label>
               <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
           </div>
-          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, logged?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined)}>Save cardio</button></div>
+          <div className="stack"><button className="btn" onClick={() => saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined)}>Save cardio</button></div>
         </>
       ) : (
         <>

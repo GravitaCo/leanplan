@@ -4,6 +4,7 @@ import { nowIso } from '@/data/supabase'
 import { ENERGY, HUNGER, MOODS, SLEEP, SORE, STRESS } from '@/core/domain/insights'
 import { fmtDate } from '@/core/domain/date'
 import { LIFTS } from '@/core/data/workouts'
+import { sessionsOf } from '@/core/domain/sessions'
 import type { WorkoutType } from '@/core/types'
 import { Sheet } from '@/ui/primitives'
 
@@ -15,8 +16,9 @@ import { Sheet } from '@/ui/primitives'
 export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const existing = useStore((s) => s.data.days[s.cur]?.checkin)
   const liftDay = useStore((s) => {
-    const w = s.data.days[s.cur]?.workout?.type || s.data.schedule[fmtDate(s.cur).idx]
-    return LIFTS.includes(w as WorkoutType)
+    // a lift logged today (any session) or planned today
+    const logged = sessionsOf(s.data.days[s.cur], s.cur).some((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
+    return logged || LIFTS.includes(s.data.schedule[fmtDate(s.cur).idx] as WorkoutType)
   })
   const setCheckin = useStore((s) => s.setCheckin)
   const [mood, setMood] = useState(existing?.mood ?? 0)

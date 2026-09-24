@@ -1,6 +1,9 @@
 import type { ActivityLevel, AppState } from '@/core/types'
 import { shiftDay } from './date'
-import { isTrainingSession } from './workout'
+import { isTrainingSess, sessionsOf } from './sessions'
+
+/** A day counts once however many sessions it has. */
+const trainingDay = (s: AppState, d: string) => sessionsOf(s.days[d], d).some(isTrainingSess)
 
 /**
  * Activity-level suggestion (workout plan P1.5, rule from nutrition-accuracy). Since logged
@@ -14,7 +17,7 @@ const COOL_DOWN = 28
 const EXPIRE = 3
 /** after a break, no downward suggestion for this long (mental-performance) */
 const RETURN_QUIET = 14
-/** a gap this long with no session is a break (matches training.ts "welcome back") */
+/** a gap this long with no training session is a break (same 10-day length as "welcome back"; stricter definition of a session) */
 const BREAK_DAYS = 10
 
 /**
@@ -24,7 +27,7 @@ const BREAK_DAYS = 10
  * doesn't hide it (mental-performance).
  */
 export function onOrAfterBreak(s: AppState, today: string): boolean {
-  const ds = Object.keys(s.days).filter((d) => d < today && isTrainingSession(s.days[d]?.workout)).sort()
+  const ds = Object.keys(s.days).filter((d) => d < today && trainingDay(s, d)).sort()
   if (!ds.length) return false
   if (ds[ds.length - 1] <= shiftDay(today, -BREAK_DAYS)) return true
   const since = shiftDay(today, -RETURN_QUIET)
@@ -46,7 +49,7 @@ export function trainingWeeks(s: AppState, today: string): number[] {
   const weeks = [0, 0, 0, 0]
   for (let i = 1; i <= WINDOW; i++) {
     // a day counts once however many sessions it has
-    if (isTrainingSession(s.days[shiftDay(today, -i)]?.workout)) weeks[3 - Math.floor((i - 1) / 7)]++
+    if (trainingDay(s, shiftDay(today, -i))) weeks[3 - Math.floor((i - 1) / 7)]++
   }
   return weeks
 }

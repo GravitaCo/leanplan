@@ -45,6 +45,12 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
+  // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
+  // read through sessionsOf without being rewritten
+  for (const d of Object.keys(s.days)) {
+    const day = s.days[d]
+    if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
+  }
   return s
 }
 

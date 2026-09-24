@@ -9,7 +9,8 @@
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
-import { workoutBurn, workoutNetBurn } from './workout'
+import { workoutBurn } from './workout'
+import { sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -55,11 +56,13 @@ export interface Range { mid: number; lo: number; hi: number }
  * the old gross figure so history never moves.
  */
 export function rangeExtra(s: AppState, d: string): number {
-  const wk = dayOf(s, d).workout
+  const day = dayOf(s, d)
   const kg = latestWeight(s, d)
   const sw = s.profile.burnSwitch
-  if (!sw || d < sw) return workoutBurn(wk, kg, true)
-  return s.profile.activityLevel === 'sedentary' ? workoutNetBurn(wk, kg) : 0
+  // before the switch: exactly the old single-workout maths (days then held one session)
+  if (!sw || d < sw) return workoutBurn(day.workout, kg, true)
+  if (s.profile.activityLevel !== 'sedentary') return 0
+  return sessionsOf(day, d).reduce((a, x) => a + sessionNetBurn(x, kg), 0)
 }
 
 /** Set the D5 switch date once (on first load of this version); an existing date is never moved. */
@@ -71,7 +74,7 @@ export function ensureBurnSwitch(p: Profile, today: string): void {
 export function showBurnNote(s: AppState): boolean {
   const sw = s.profile.burnSwitch
   if (!sw || s.profile.burnNoteSeen) return false
-  return Object.keys(s.days).some((d) => d < sw && !!s.days[d]?.workout)
+  return Object.keys(s.days).some((d) => d < sw && sessionsOf(s.days[d], d).length > 0)
 }
 
 /** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
@@ -269,7 +272,7 @@ export function dayStat(s: AppState, d: string): DayStat {
     d, t, r,
     logged: x.foods.length > 0,
     future: d > todayStr(),
-    done: !!x.workout?.type,
+    done: sessionsOf(x, d).length > 0,
     planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
     inRange: t.k >= r.lo && t.k <= r.hi,
   }

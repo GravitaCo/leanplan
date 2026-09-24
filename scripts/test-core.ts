@@ -18,6 +18,9 @@ import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession } from '@/core/domain/sessions'
+import { loadSignals, showLoadNote } from '@/core/domain/load'
+import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
@@ -373,5 +376,61 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - true/true/false - - moderate↑ moderate↑ - null false,true,false,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'activity-level suggestion', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+// Phase 2 sessions (plan §2.5, P2 accuracy checks): real stored shapes convert and mirror back
+// losslessly, a converted legacy day's burn equals the old workoutBurn to the kcal, a non-mirror
+// workout from an older install is folded in, malformed input never throws, the day's burn is the
+// sum of its sessions, and every modality MET matches its cited source
+{
+  const D = '2026-09-10'
+  const lift = { type: 'Push', ex: [{ name: 'Barbell bench press', sets: [{ w: '40', reps: '10' }] }, { name: 'Plank', sets: [{ w: '', reps: '30' }] }] } as any
+  const walk = { type: 'Cardio', cardioType: 'Brisk walk', mins: '30' } as any
+  const blank = { type: 'Cardio', cardioType: '', mins: '' } as any
+  const round = (wk: any) => { const m = mirrorOf([fromLegacy(wk, D)]); delete (m as any)._mirror; return JSON.stringify(m) === JSON.stringify(wk) }
+  const same = (wk: any) => sessionNetBurn(fromLegacy(wk, D), 70) === workoutNetBurn(wk, 70) && sessionBurn(fromLegacy(wk, D), 70) === workoutBurn(wk, 70)
+  const day = (x: any) => ({ foods: [], supps: {}, weight: null, workout: null, ...x })
+  const yoga = { id: 'y1', modality: 'yoga', title: 'Evening yoga', mins: 30 } as any
+  const got = [
+    [lift, walk].map(round).join(','),
+    [lift, walk, blank, { type: 'Cardio', cardioType: 'Rower', mins: '0' }].map(same).join(','),
+    sessionsOf(day({ workout: lift }), D).map((x) => x.id + ':' + x.routineId).join(','),
+    sessionsOf(day({ workout: { ...lift, _mirror: true }, sessions: [yoga] }), D).length,           // mirror: not folded in
+    sessionsOf(day({ workout: walk, sessions: [yoga] }), D).map((x) => x.title).join('+'),          // older install wrote after us
+    sessionsOf(day({ sessions: 'bad' }), D).length, sessionsOf(day({ sessions: [null, {}, yoga] }), D).length, sessionsOf(undefined, D).length,
+    JSON.stringify(mirrorOf([yoga])), String(mirrorOf([]) === null),
+    JSON.stringify(mirrorOf([yoga, fromLegacy(lift, D)])?.type),                                   // a lift wins the mirror
+    sessionBurn(yoga, 70),                                                                          // 2.7 × 70 × 0.5 = 94.5
+    sessionBurn({ ...yoga, effort: 'easy' }, 70), sessionBurn({ ...yoga, effort: 'hard' }, 70),     // 2.3 → 81; 4.0 → 140
+    sessionBurn({ id: 'm', modality: 'mobility', title: 'M' } as any, 70),                          // 10 min default: 2.3 × 70 / 6 = 27
+  ].join(' ')
+  const want = 'true,true true,true,true,true legacy-2026-09-10:builtin-Push 1 Evening yoga+Brisk walk 0 1 0 {"type":"Cardio","cardioType":"Other","mins":"30","_mirror":true} true "Push" 95 81 140 27'
+  const metOk = Object.values(MODALITY_MET).every((m) => ['light', 'moderate', 'vigorous'].every((k) => m.src.includes('(' + (m as any)[k].toFixed(1) + ')')))
+  const ok = got === want && metOk; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'sessions: legacy, mirror, burn', JSON.stringify(got), metOk, ok ? '' : 'want ' + JSON.stringify(want))
+  // sedentary net burn after the switch sums every session; other levels add nothing
+  const st = (level: string) => ({ target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [],
+    profile: { activityLevel: level, rangeWidth: 100, burnSwitch: '2026-09-01' },
+    days: { [D]: day({ weight: 70, workout: { ...walk, _mirror: true }, sessions: [fromLegacy(walk, D), yoga] }) } }) as any
+  const sum = sessionNetBurn(fromLegacy(walk, D), 70) + sessionNetBurn(yoga, 70)
+  const ok2 = rangeFor(st('sedentary'), D).mid === 2000 + sum && rangeFor(st('light'), D).mid === 2000; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'sessions: day burn is the sum', rangeFor(st('sedentary'), D).mid, 2000 + sum)
+}
+// load guardrail (plan §3.3): hard sessions, doubles, once-a-week note
+{
+  const T = '2026-09-30'
+  const hard = (n: number) => Array.from({ length: n }, (_, i) => ({ id: 'h' + i, modality: 'strength', title: 'Lift' }))
+  const mk = (perDay: Record<number, number>, extra: any = {}) => ({ target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], profile: { activityLevel: 'light', ...extra },
+    days: Object.fromEntries(Object.entries(perDay).map(([o, n]) => [shiftDay(T, -+o), { foods: [], supps: {}, weight: null, workout: null, sessions: hard(n) }])) }) as any
+  const got = [
+    JSON.stringify(loadSignals(mk({ 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }), T)), String(showLoadNote(mk({ 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }), T)),  // 6: not more than 6
+    String(showLoadNote(mk({ 0: 2, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }), T)),                               // 7 hard in a week
+    JSON.stringify(loadSignals(mk({ 0: 2, 1: 2, 2: 2 }), T)), String(showLoadNote(mk({ 0: 2, 1: 2 }), T)), // doubles 3 running; 2 isn't
+    String(showLoadNote(mk({ 0: 2, 1: 2, 2: 2 }, { loadNoteSeen: shiftDay(T, -3) }), T)),              // seen this week
+    [isHardSession({ modality: 'yoga' } as any), isHardSession({ modality: 'yoga', effort: 'hard' } as any), isHardSession({ modality: 'cardio', cardio: { key: 'Brisk walk' }, mins: 40 } as any),
+      isHardSession({ modality: 'cardio', cardio: { key: 'Incline walk 6–10%' }, mins: 30 } as any), isHardSession({ modality: 'strength', effort: 'easy' } as any)].join(','),
+  ].join(' ')
+  const want = '{"hard7":6,"doublesRun":0} false true {"hard7":6,"doublesRun":3} false false false,true,false,true,false'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)
