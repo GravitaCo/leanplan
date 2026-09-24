@@ -10,6 +10,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `security-data` | RLS, auth/OAuth, sync, Supabase schema | Skeptical, protective |
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
+| `cfo` | Monetisation, pricing, costs, unit economics, revenue and go-to-market spend; owns `docs/plans/monetisation-plan.md` | Numbers-first, no invented figures, fair-pricing rules |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them
