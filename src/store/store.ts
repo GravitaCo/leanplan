@@ -380,7 +380,8 @@ export const useStore = create<StoreState>()(
           const typed = parseFloat(mins)
           putBuiltin(ensureDay(st.data, st.cur), st.cur, {
             modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
-            ...(Number.isFinite(typed) ? { mins: typed } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
+            // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
+            ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
           })
           markDayDirty(st.data, st.cur)
         })

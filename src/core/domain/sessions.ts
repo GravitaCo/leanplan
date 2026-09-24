@@ -14,10 +14,12 @@ import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 export function fromLegacy(wk: Workout, date: string): Session {
   if (wk.type === 'Cardio') {
     const typed = parseFloat(wk.mins || '')
+    const mobility = wk.cardioType === 'Mobility'
     return {
-      id: 'legacy-' + date, modality: wk.cardioType === 'Mobility' ? 'mobility' : 'cardio',
+      id: 'legacy-' + date, modality: mobility ? 'mobility' : 'cardio',
       title: wk.cardioType || 'Cardio', routineId: 'builtin-Cardio',
-      mins: Number.isFinite(typed) ? typed : undefined,
+      // blank minutes on the Cardio card always meant 25; keep that for Mobility too
+      mins: Number.isFinite(typed) ? typed : mobility ? 25 : undefined,
       cardio: { key: wk.cardioType || '' }, option: wk.option,
     }
   }
@@ -37,14 +39,25 @@ export function sessionsOf(day: DayLog | undefined, date: string): Session[] {
   const wk = day.workout
   if (!Array.isArray(day.sessions)) return wk?.type ? [fromLegacy(wk, date)] : []
   const list = day.sessions.filter((x) => x && typeof x.id === 'string' && typeof x.modality === 'string')
-  if (wk?.type && !wk._mirror) return [...list, { ...fromLegacy(wk, date), id: 'legacy-extra-' + date }]
-  return list
+  if (!wk?.type || wk._mirror) return list
+  // an older install wrote this after us: it's the newer edit of the same card, so it replaces
+  // that card's session (keeping its id); a different card is added, never counted twice
+  const incoming = fromLegacy(wk, date)
+  const i = list.findIndex((x) => x.routineId === incoming.routineId)
+  if (i >= 0) return list.map((x, j) => (j === i ? { ...incoming, id: x.id, at: x.at } : x))
+  return [...list, { ...incoming, id: 'legacy-extra-' + date }]
 }
 
 /**
  * The single-workout copy older installs read: the first built-in lift as `{ type, ex }`,
  * otherwise the first session as cardio (older installs only know the four types), or null.
  */
+/** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
+export function mirroredIndex(sessions: Session[]): number {
+  const i = sessions.findIndex((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
+  return i >= 0 ? i : sessions.length ? 0 : -1
+}
+
 export function mirrorOf(sessions: Session[]): Workout | null {
   const lift = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
   if (lift) return { type: lift.routineId!.replace('builtin-', '') as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }
@@ -58,7 +71,8 @@ const level = (e?: Effort) => (e === 'easy' ? 'light' : e === 'hard' || e === 'v
 
 /** MET and minutes for a session (Compendium values; see modalities.ts and constants.ts). */
 export function sessionMetMins(x: Session): { met: number; mins: number } {
-  const mins = x.mins != null && Number.isFinite(x.mins) ? Math.max(0, x.mins) : DEFAULT_MINS[x.modality] ?? 30
+  // capped at 4 hours so a typo ("300" for 30) can't add a day's worth (a judgement call)
+  const mins = x.mins != null && Number.isFinite(x.mins) ? Math.min(240, Math.max(0, x.mins)) : DEFAULT_MINS[x.modality] ?? 30
   if (x.modality === 'cardio') return { met: CARDIO_MET[x.cardio?.key || ''] ?? CARDIO_MET.Other, mins }
   const m = MODALITY_MET[x.modality]
   return { met: m ? m[level(x.effort)] : CARDIO_MET.Other, mins }
@@ -86,7 +100,8 @@ export function isTrainingSess(x: Session): boolean {
  * A hard session for the load guardrails (plan §3.3, a judgement call): weights and bodyweight
  * work, anything logged as Hard or Very hard, and cardio at vigorous intensity (6+ MET, the 2018
  * Physical Activity Guidelines for Americans threshold) for over 20 minutes. Walks, mobility,
- * yoga and pilates are light unless logged as hard.
+ * yoga and pilates are light unless logged as hard. Only the 6.0 MET threshold is sourced;
+ * "over 20 minutes" is a judgement call.
  */
 export function isHardSession(x: Session): boolean {
   if (x.effort === 'hard' || x.effort === 'very-hard') return true

@@ -14,7 +14,7 @@ import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
 import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
-import { catchUp, sessionsThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
+import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
@@ -275,7 +275,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     catchUp(st({ '2026-09-22': e }), '2026-09-23')?.type ?? '-',           // Monday was before they started
     catchUp(st({ '2026-09-20': e }), '2026-09-21')?.type ?? '-',           // nothing planned in the window yet
     catchUp(st({ '2026-09-20': e, '2026-09-23': w('Push') }), '2026-09-23')?.type ?? '-', // today already logged
-    String(sessionsThisWeek(st({ '2026-09-21': w('Legs'), '2026-09-23': w('Push'), '2026-09-20': w('Pull') }), '2026-09-23')),
+    String(daysMovedThisWeek(st({ '2026-09-21': w('Legs'), '2026-09-23': w('Push'), '2026-09-20': w('Pull') }), '2026-09-23')),
     String(welcomeBack(st({ '2026-09-01': w('Legs') }), '2026-09-23')),
     String(welcomeBack(st({ '2026-09-01': w('Legs') }, { welcomeAsked: '2026-09-15' }), '2026-09-23')),
     String(welcomeBack(st({ '2026-09-18': w('Legs') }), '2026-09-23')),
@@ -392,7 +392,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const yoga = { id: 'y1', modality: 'yoga', title: 'Evening yoga', mins: 30 } as any
   const got = [
     [lift, walk].map(round).join(','),
-    [lift, walk, blank, { type: 'Cardio', cardioType: 'Rower', mins: '0' }].map(same).join(','),
+    [lift, walk, blank, { type: 'Cardio', cardioType: 'Rower', mins: '0' }, { type: 'Cardio', cardioType: 'Mobility', mins: '' }].map(same).join(','),
     sessionsOf(day({ workout: lift }), D).map((x) => x.id + ':' + x.routineId).join(','),
     sessionsOf(day({ workout: { ...lift, _mirror: true }, sessions: [yoga] }), D).length,           // mirror: not folded in
     sessionsOf(day({ workout: walk, sessions: [yoga] }), D).map((x) => x.title).join('+'),          // older install wrote after us
@@ -403,16 +403,29 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     sessionBurn({ ...yoga, effort: 'easy' }, 70), sessionBurn({ ...yoga, effort: 'hard' }, 70),     // 2.3 → 81; 4.0 → 140
     sessionBurn({ id: 'm', modality: 'mobility', title: 'M' } as any, 70),                          // 10 min default: 2.3 × 70 / 6 = 27
   ].join(' ')
-  const want = 'true,true true,true,true,true legacy-2026-09-10:builtin-Push 1 Evening yoga+Brisk walk 0 1 0 {"type":"Cardio","cardioType":"Other","mins":"30","_mirror":true} true "Push" 95 81 140 27'
+  const want = 'true,true true,true,true,true,true legacy-2026-09-10:builtin-Push 1 Evening yoga+Brisk walk 0 1 0 {"type":"Cardio","cardioType":"Other","mins":"30","_mirror":true} true "Push" 95 81 140 27'
   const metOk = Object.values(MODALITY_MET).every((m) => ['light', 'moderate', 'vigorous'].every((k) => m.src.includes('(' + (m as any)[k].toFixed(1) + ')')))
   const ok = got === want && metOk; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'sessions: legacy, mirror, burn', JSON.stringify(got), metOk, ok ? '' : 'want ' + JSON.stringify(want))
+  // an older install re-saving the same card replaces that session (no double count); a different
+  // card is added; a pre-switch day keeps the old maths and adds only its extra sessions
+  const push = { id: 'p1', modality: 'strength', title: 'Push', routineId: 'builtin-Push', ex: [] } as any
+  const fold = [
+    sessionsOf(day({ workout: { type: 'Push', ex: [{ name: 'x', sets: [] }] }, sessions: [push, yoga] }), D).map((x) => x.id + ':' + (x.ex?.length ?? '-')).join(','),
+    sessionsOf(day({ workout: { type: 'Legs', ex: [] }, sessions: [push] }), D).map((x) => x.routineId).join(','),
+  ].join(' ')
+  const pre = { target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [], profile: { activityLevel: 'light', rangeWidth: 100, burnSwitch: '2026-12-01' },
+    days: { [D]: day({ weight: 70, workout: { ...lift, _mirror: true }, sessions: [fromLegacy(lift, D), yoga] }) } } as any
+  const preMid = rangeFor(pre, D).mid  // old lift 3.5 × 70 × 0.75 = 184 + yoga gross 95
+  const ok3 = fold === 'p1:1,y1:- builtin-Push,builtin-Legs' && preMid === 2000 + 184 + 95; if (!ok3) bad++
+  console.log(ok3 ? 'PASS' : 'FAIL', 'sessions: older-install fold-in and pre-switch extras', JSON.stringify(fold), preMid)
   // sedentary net burn after the switch sums every session; other levels add nothing
   const st = (level: string) => ({ target: { kcal: 2000 }, schedule: {}, customFoods: [], recipes: [],
     profile: { activityLevel: level, rangeWidth: 100, burnSwitch: '2026-09-01' },
     days: { [D]: day({ weight: 70, workout: { ...walk, _mirror: true }, sessions: [fromLegacy(walk, D), yoga] }) } }) as any
   const sum = sessionNetBurn(fromLegacy(walk, D), 70) + sessionNetBurn(yoga, 70)
-  const ok2 = rangeFor(st('sedentary'), D).mid === 2000 + sum && rangeFor(st('light'), D).mid === 2000; if (!ok2) bad++
+  // hard-coded: brisk walk net 3.8 × 70 × 0.5 = 133, yoga net 1.7 × 70 × 0.5 = 59.5 → 60
+  const ok2 = sum === 193 && rangeFor(st('sedentary'), D).mid === 2193 && rangeFor(st('light'), D).mid === 2000; if (!ok2) bad++
   console.log(ok2 ? 'PASS' : 'FAIL', 'sessions: day burn is the sum', rangeFor(st('sedentary'), D).mid, 2000 + sum)
 }
 // load guardrail (plan §3.3): hard sessions, doubles, once-a-week note
@@ -429,8 +442,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     [isHardSession({ modality: 'yoga' } as any), isHardSession({ modality: 'yoga', effort: 'hard' } as any), isHardSession({ modality: 'cardio', cardio: { key: 'Brisk walk' }, mins: 40 } as any),
       isHardSession({ modality: 'cardio', cardio: { key: 'Incline walk 6–10%' }, mins: 30 } as any), isHardSession({ modality: 'strength', effort: 'easy' } as any)].join(','),
   ].join(' ')
+  const morning = String(showLoadNote(mk({ 1: 2, 2: 2, 3: 2 }), T))  // three days of doubles, nothing yet today
   const want = '{"hard7":6,"doublesRun":0} false true {"hard7":6,"doublesRun":3} false false false,true,false,true,false'
-  const ok = got === want; if (!ok) bad++
-  console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  const ok = got === want && morning === 'true'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', morning, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 process.exit(bad ? 1 : 0)

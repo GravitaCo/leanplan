@@ -3,8 +3,9 @@ import { useStore } from '@/store/store'
 import type { DayLog, SetEntry, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
-import { fmtDate, todayStr } from '@/core/domain/date'
-import { catchUp, easyUntil, sessionsThisWeek, welcomeBack } from '@/core/domain/training'
+import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
+import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
+import { SupportSheet } from './train/SupportSheet'
 import { howToLink } from '@/core/domain/workout'
 import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
 import { PageHeader, Seg } from '@/ui/primitives'
@@ -15,6 +16,8 @@ import { LogSessionSheet } from './train/LogSessionSheet'
 import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { MODALITY_LABEL } from '@/core/data/modalities'
+
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 
 const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
 
@@ -40,6 +43,10 @@ export function TrainScreen() {
   const setPrefs = useStore((s) => s.setPrefs)
   const removeSession = useStore((s) => s.removeSession)
   const [logOpen, setLogOpen] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
+  // two taps to remove, so a mis-tap never deletes logged sets
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const gentle = !!data.profile.gentle
 
   const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
   // a day can hold several sessions (plan P2); each built-in card reads its own saved session
@@ -92,7 +99,7 @@ export function TrainScreen() {
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
   const offer = !logged && sched !== 'Rest' && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
-  const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
   const startChoice: Choice = firstBuiltin?.option === 'shorter' || easy ? 'shorter' : 'planned'
   const [choice, setChoice] = useState<Choice>(startChoice)
@@ -103,7 +110,7 @@ export function TrainScreen() {
   const isToday = cur === todayStr()
   const pick = isToday ? catchUp(data, cur) : null
   const pickUp = pick?.type
-  const weekCount = sessionsThisWeek(data, cur)
+  const weekCount = daysMovedThisWeek(data, cur)
   const back = isToday && welcomeBack(data, cur)
   const shorter = choice === 'shorter'
   const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
@@ -148,18 +155,22 @@ export function TrainScreen() {
         <span style={{ color: 'var(--activity-ink)' }}><Icon name="dumbbell" /></span>
         <div>{banner}</div>
       </div>
-      {weekCount > 0 && <div className="foot week-n">{weekCount} {weekCount === 1 ? 'session' : 'sessions'} this week</div>}
+      {weekCount > 0 && <div className="foot week-n">You moved on {gentle ? WORDS[weekCount] : weekCount} {weekCount === 1 ? 'day' : 'days'} this week</div>}
 
       {isToday && showLoadNote(data, cur) && (
         <div className="card dayopt">
-          <div className="t">You've been training a lot lately. How's your energy? A lighter day can help.</div>
-          <div className="chips"><button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button></div>
+          <div className="t">You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</div>
+          <div className="chips">
+            <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button>
+            <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur, easyFrom: shiftDay(cur, 1), easyUntil: shiftDay(cur, 1) })}>Make tomorrow lighter</button>
+          </div>
+          <button className="linkbtn muted" style={{ paddingLeft: 0, marginTop: 6 }} onClick={() => setSupportOpen(true)}>Finding it hard to ease off?</button>
         </div>
       )}
 
       {sessions.length > 0 && (
         <>
-          <div className="grp-h">Logged today</div>
+          <div className="grp-h">{isToday ? 'Logged today' : `Logged on ${dayName}`}</div>
           <div className="list">
             {sessions.map((x) => (
               <div className="li" key={x.id}>
@@ -167,7 +178,9 @@ export function TrainScreen() {
                   <div className="t">{x.title}</div>
                   <div className="s">{MODALITY_LABEL[x.modality] ?? x.modality}{x.mins != null ? ` · ${x.mins} min` : ''}{x.cardio?.km ? ` · ${x.cardio.km} km` : ''}</div>
                 </div>
-                <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => removeSession(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>
+                {confirmId === x.id
+                  ? <button className="linkbtn" style={{ color: 'var(--red)' }} onClick={() => { removeSession(x.id); setConfirmId(null) }}>Remove</button>
+                  : <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => setConfirmId(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>}
               </div>
             ))}
           </div>
@@ -176,18 +189,19 @@ export function TrainScreen() {
       <div className="list">
         <button className="li" onClick={() => setLogOpen(true)}>
           <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="plus" size={18} /></span>
-          <div className="m"><div className="t">Log something else</div><div className="s">Yoga, pilates, a run, anything</div></div>
+          <div className="m"><div className="t">Log something else</div><div className="s">A walk, yoga, pilates, anything</div></div>
           <Chevron />
         </button>
       </div>
       {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
+      {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
 
       {back && (
         <div className="card dayopt">
           <div className="t">Welcome back. Want an easier first week?</div>
           <div className="foot" style={{ padding: '0 0 10px' }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</div>
           <div className="chips">
-            <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur, easyUntil: easyUntil(cur) })}>Yes, go easier</button>
+            <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })}>Yes, go easier</button>
             <button className="chip" onClick={() => setPrefs({ welcomeAsked: cur })}>No thanks</button>
           </div>
         </div>

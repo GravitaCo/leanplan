@@ -40,9 +40,12 @@ export function catchUp(s: AppState, today: string): { type: WorkoutType; d: str
   return null
 }
 
-/** Sessions logged this week (Monday to Sunday), counted up, never a streak. */
-export function sessionsThisWeek(s: AppState, d: string): number {
-  return weekOf(d).reduce((n, x) => n + sessionsOf(s.days[x], x).length, 0)
+/**
+ * Days this week (Monday to Sunday) with any logged movement, counted up, never a streak. Days,
+ * not sessions, so stacking sessions never raises the number (mental-performance).
+ */
+export function daysMovedThisWeek(s: AppState, d: string): number {
+  return weekOf(d).filter((x) => did(s, x)).length
 }
 
 /** The last day with a logged session before `d`, if any. */

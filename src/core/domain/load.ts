@@ -14,7 +14,7 @@ const NOTE_EVERY = 7
 export interface LoadSignals {
   /** hard sessions in the 7 days to `today` */
   hard7: number
-  /** consecutive days, ending today, with two or more hard sessions */
+  /** consecutive days with two or more hard sessions, ending today or yesterday (so the morning after counts) */
   doublesRun: number
 }
 
@@ -26,9 +26,8 @@ export function loadSignals(s: AppState, today: string): LoadSignals {
   const hardOn = (d: string) => sessionsOf(s.days[d], d).filter(isHardSession).length
   let hard7 = 0
   for (let i = 0; i < 7; i++) hard7 += hardOn(shiftDay(today, -i))
-  let doublesRun = 0
-  while (doublesRun < 30 && hardOn(shiftDay(today, -doublesRun)) >= 2) doublesRun++
-  return { hard7, doublesRun }
+  const run = (from: string) => { let n = 0; while (n < 30 && hardOn(shiftDay(from, -n)) >= 2) n++; return n }
+  return { hard7, doublesRun: Math.max(run(today), run(shiftDay(today, -1))) }
 }
 
 /** Show the "you've been training a lot" note: very heavy load, and not shown in the last week. */

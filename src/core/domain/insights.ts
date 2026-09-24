@@ -10,7 +10,7 @@ import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlo
 import { parseYmd, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
-import { sessionNetBurn, sessionsOf } from './sessions'
+import { mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -59,8 +59,15 @@ export function rangeExtra(s: AppState, d: string): number {
   const day = dayOf(s, d)
   const kg = latestWeight(s, d)
   const sw = s.profile.burnSwitch
-  // before the switch: exactly the old single-workout maths (days then held one session)
-  if (!sw || d < sw) return workoutBurn(day.workout, kg, true)
+  if (!sw || d < sw) {
+    // before the switch: exactly the old single-workout maths; any extra sessions added to such a
+    // day later count at their own gross value
+    const old = workoutBurn(day.workout, kg, true)
+    if (!Array.isArray(day.sessions)) return old
+    const list = sessionsOf(day, d)
+    const mirrored = mirroredIndex(list)
+    return old + list.reduce((a, x, i) => (i === mirrored ? a : a + sessionBurn(x, kg)), 0)
+  }
   if (s.profile.activityLevel !== 'sedentary') return 0
   return sessionsOf(day, d).reduce((a, x) => a + sessionNetBurn(x, kg), 0)
 }

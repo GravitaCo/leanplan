@@ -303,6 +303,8 @@ export interface Profile {
   welcomeAsked?: string
   /** an accepted "easier first week" pre-selects the shorter version up to this date */
   easyUntil?: string
+  /** and from this date (absent = from when "welcome back" was answered) */
+  easyFrom?: string
   /** the planned day whose "pick up" offer was waved off with "Not this time" */
   pickUpDismissed?: string
   /** date the activity-level suggestion was last answered (28-day cool-down) */
