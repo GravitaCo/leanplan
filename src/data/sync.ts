@@ -49,8 +49,8 @@ function fromServerRecipe(r: any): Recipe {
 /* routines: the user's own workouts (plan P4), one row each like recipes; never hard-deleted */
 function toServerRoutine(r: Routine, uid: string) {
   return {
-    id: r.id, user_id: uid, name: r.name, modality: r.modality, effort: r.effort, source: r.source || 'custom',
-    base_id: r.baseId ?? null, blocks: Array.isArray(r.blocks) ? r.blocks : [], est_mins: r.estMins != null ? Math.round(r.estMins) : null, archived: !!r.archived,
+    id: r.id, user_id: uid, name: r.name, modality: r.modality, effort: r.effort === 'light' ? 'light' : 'hard', source: r.source === 'recommended' ? 'recommended' : 'custom',
+    base_id: r.baseId ?? null, blocks: Array.isArray(r.blocks) ? r.blocks : [], est_mins: r.estMins != null ? Math.min(1440, Math.max(0, Math.round(r.estMins))) : null, archived: !!r.archived,
   }
 }
 function fromServerRoutine(r: any): Routine {
@@ -60,6 +60,11 @@ function fromServerRoutine(r: any): Routine {
     ...(r.archived ? { archived: true } : {}), _u: r.updated_at, _dirty: false,
   }
 }
+
+/** A table this version knows but the server doesn't have yet (a migration still to apply): treated
+ *  as empty, so it can't stop the rest of the sync. */
+const missing = <T,>(p: Promise<T[]>): Promise<T[] | null> =>
+  p.catch((e) => { if (e instanceof HttpError && e.status === 404) return null; throw e })
 
 type Undo = () => void
 
@@ -217,12 +222,6 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   ;(s.recipes || []).filter((r) => r._dirty).forEach((r) => { rById[r.id] = r })
   s.recipes = Object.values(rById)
 
-  const rt = await sbGet<any[]>('/routines?user_id=eq.' + uid + '&select=*')
-  const wById: Record<string, Routine> = {}
-  rt.map(fromServerRoutine).forEach((r) => { wById[r.id] = r })
-  ;(s.routines || []).filter((r) => r._dirty).forEach((r) => { wById[r.id] = r })
-  s.routines = Object.values(wById)
-
   const dl = await sbGet<any[]>('/day_logs?user_id=eq.' + uid + '&select=*')
   dl.forEach((row) => {
     const d = row.log_date
@@ -230,6 +229,15 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     s.days[d] = fromServerDay(row)
     meta.days[d] = { u: row.updated_at, dirty: false }
   })
+
+  // after the log, so trouble with workouts can never hold up the days; no table yet = keep local
+  const rt = await missing(sbGet<any[]>('/routines?user_id=eq.' + uid + '&select=*'))
+  if (rt) {
+    const wById: Record<string, Routine> = {}
+    rt.map(fromServerRoutine).forEach((r) => { wById[r.id] = r })
+    ;(s.routines || []).filter((r) => r._dirty).forEach((r) => { wById[r.id] = r })
+    s.routines = Object.values(wById)
+  }
   meta.lastPull = nowIso()
 }
 
@@ -240,7 +248,8 @@ export async function accountRows(uid: string, token: string): Promise<AccountRo
     sbGet<AccountRows['days']>('/day_logs' + q + 'log_date,updated_at', token),
     sbGet<AccountRows['foods']>('/custom_foods' + q + 'id', token),
     sbGet<AccountRows['recipes']>('/recipes' + q + 'id', token),
-    sbGet<AccountRows['routines']>('/routines' + q + 'id', token),
+    // before the table exists no workout can have synced, so none counts either way
+    missing(sbGet<AccountRows['routines']>('/routines' + q + 'id', token)).then((x) => x ?? []),
   ])
   return { days, foods, recipes, routines }
 }

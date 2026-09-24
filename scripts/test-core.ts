@@ -27,9 +27,9 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, routineTemplate } from '@/core/domain/routines'
+import { aboutMins, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
-import { pushDirty, pullAll } from '@/data/sync'
+import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
@@ -898,7 +898,7 @@ function legacyAndGuest(): void {
   ].join(' ')
   const tpl = routineTemplate({ id: 'r', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'leg-press', rx: '4 × 8' }, { exId: 'gone-from-library' }, { exId: 'plank' }] }] })
   const tplOk = tpl.title === 'Mine' && tpl.ex.map((e) => e.id + ':' + e.t).join(',') === 'leg-press:4 × 8,plank:' + EXERCISE_BY_ID.plank.defaultRx
-  const want = '35 31 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. 1'  // by minutes: push-ups 7.5 outweigh two short poses
+  const want = '35 31 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
   const ok = got === want && tplOk; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: estimates, effort, notes', JSON.stringify(got), tplOk, ok ? '' : 'want ' + JSON.stringify(want))
 }
@@ -920,4 +920,46 @@ function legacyAndGuest(): void {
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: local data, backup, ownership', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+// own workouts, typed prescriptions and the load note (mental-performance must-fixes)
+{
+  const typed = ['3x10', '3 X 10', '3*10', '3-4 × 8', '20-40 sec', ' 3 ×10 ', '', 'max effort'].map((x) => String(normaliseRx(x))).join('|')
+  const est = estMins([{ exId: 'back-squat', rx: normaliseRx('3x10') }])
+  const short = shorterPrescription(normaliseRx('3x10')!)
+  const rounded = [aboutMins(7.4), aboutMins(37), aboutMins(33)].join(',')
+  const T = '2026-09-24'
+  const pilatesId = '33333333-3333-4333-8333-333333333333'
+  const mixed = [{ exId: 'hundred' }, { exId: 'roll-up' }, { exId: 'swimming' }, { exId: 'side-lying-leg-series' }, { exId: 'goblet-squat', rx: '1 × 8' }]
+  const S = (n: number) => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, modality: 'pilates', title: 'Mat mix', routineId: pilatesId }))
+  const st = (effort: string) => ({ profile: {}, routines: [{ id: pilatesId, name: 'Mat mix', modality: 'pilates', effort, source: 'custom', blocks: [] }],
+    days: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [shiftDay(T, -i), { foods: [], supps: {}, weight: null, workout: null, sessions: S(1) }])) }) as any
+  const got = [typed, est, short, rounded, headlineModality(mixed), deriveEffort(mixed), loadSignals(st('hard'), T).hard7, loadSignals(st('light'), T).hard7].join(' ')
+  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 8 2 × 10 7,35,35 pilates hard 7 0'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: typed sets and reps, rounding, hard ones count for the load note', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+// P4 deploy order (security-data): before the routines table exists, sync still pulls the log and
+// keeps local workouts; the ownership check reads no workouts
+async function routinesMissing(): Promise<void> {
+  const W = '44444444-4444-4444-8444-444444444444'
+  const s = { target: {}, schedule: {}, profile: {}, days: {}, customFoods: [], recipes: [], routines: [{ id: W, name: 'Mine', modality: 'yoga', effort: 'light', source: 'custom', blocks: [], _dirty: true }] } as never as PersistedState
+  const m = ensureMeta(s, false)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
+    const t = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
+    if (t === 'routines') return new Response('{"message":"relation does not exist"}', { status: 404 })
+    if (o.method) return new Response(null, { status: 204 })
+    return new Response(JSON.stringify(t === 'day_logs' ? [{ log_date: '2026-09-20', foods: [], supps: {}, weight: 70, workout: null, updated_at: 'z' }] : []), { status: 200 })
+  }) as typeof fetch
+  let failed: string[] = [], pulled = false, rows: any = null
+  try {
+    failed = await pushDirty(s, m)
+    await pullAll(s, m); pulled = true
+    rows = await accountRows(LOCAL_USER, 't')
+  } catch (e) { console.error(e) } finally { globalThis.fetch = realFetch }
+  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0
+  if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: a missing routines table never stops the log syncing', pulled, JSON.stringify(failed), s.routines.length)
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

@@ -26,7 +26,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { canBuild, deriveEffort, estMins, headlineModality } from '@/core/domain/routines'
+import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx } from '@/core/domain/routines'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -404,10 +404,12 @@ export const useStore = create<StoreState>()(
         let id: string | null = null
         set((st) => {
           if (!Array.isArray(st.data.routines)) st.data.routines = []
-          const name = input.name.trim() || 'My workout'
+          const name = input.name.trim().slice(0, 120) || 'My workout'
+          // sets and reps in the app's notation, so estimates and "Shorter" read them
+          const slots = input.slots.map((x) => { const rx = normaliseRx(x.rx); return { exId: x.exId, ...(rx ? { rx } : {}), ...(x.note ? { note: x.note } : {}) } })
           const body = {
-            name, modality: headlineModality(input.slots), effort: input.effort ?? deriveEffort(input.slots),
-            blocks: [{ id: 'main', kind: 'sets' as const, slots: input.slots.map((x) => ({ ...x })) }], estMins: estMins(input.slots),
+            name, modality: headlineModality(slots), effort: input.effort ?? deriveEffort(slots),
+            blocks: [{ id: 'main', kind: 'sets' as const, slots }], estMins: estMins(slots),
           }
           const r = input.id ? st.data.routines.find((x) => x.id === input.id) : undefined
           if (r) Object.assign(r, body, { archived: false, _dirty: true, _u: nowIso() })

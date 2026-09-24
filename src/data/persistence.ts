@@ -1,4 +1,4 @@
-import type { AppState } from '@/core/types'
+import type { AppState, Modality } from '@/core/types'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { todayStr } from '@/core/domain/date'
@@ -6,6 +6,7 @@ import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid, UUID_RE } from './supabase'
 
 const KEY = 'leanplan.v1'
+const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
 
 /** Per-record sync bookkeeping, persisted alongside the app state. */
 export interface SyncMeta {
@@ -49,6 +50,16 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (!Array.isArray(s.recipes)) s.recipes = []
   // the user's own workouts (plan P4): anything malformed is dropped rather than breaking the screen
   s.routines = (Array.isArray(s.routines) ? s.routines : []).filter((r) => !!r && typeof r === 'object' && typeof r.name === 'string' && Array.isArray(r.blocks))
+  // and every field the server checks is made valid, so an odd one (a hand-edited backup) can't
+  // fail every sync
+  for (const r of s.routines) {
+    r.name = r.name.trim().slice(0, 120) || 'My workout'
+    if (!ROUTINE_KINDS.includes(r.modality)) r.modality = 'strength'
+    r.effort = r.effort === 'light' ? 'light' : 'hard'
+    r.source = r.source === 'recommended' ? 'recommended' : 'custom'
+    if (r.baseId != null && (typeof r.baseId !== 'string' || r.baseId.length > 64)) delete r.baseId
+    if (r.estMins != null) r.estMins = Math.min(1440, Math.max(0, Math.round(+r.estMins || 0)))
+  }
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())

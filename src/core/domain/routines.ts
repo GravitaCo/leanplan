@@ -37,6 +37,23 @@ export function routineTemplate(r: Routine): WorkoutTemplate {
   return { title: r.name, ex }
 }
 
+/**
+ * Sets and reps as typed ("3x10", "3 X 10", "3*10", "3-4 × 8") in the app's own notation
+ * ("3 × 10", "3–4 × 8"), so the time estimate and "Shorter" read it the same way as the built-ins.
+ */
+export function normaliseRx(rx: string | undefined): string | undefined {
+  const t = (rx || '').trim().replace(/\s+/g, ' ')
+  if (!t) return undefined
+  return t
+    .replace(/(\d)\s*[xX*×]\s*(?=\d)/g, '$1 × ')
+    .replace(/(\d)\s*[-–—]\s*(?=\d)/g, '$1–')
+}
+
+/** A time estimate for display: whole minutes up to 10, then to the nearest 5 (never shown as exact). */
+export function aboutMins(n: number): number {
+  return n <= 10 ? Math.max(1, Math.round(n)) : Math.round(n / 5) * 5
+}
+
 const avg = (a: string, b?: string) => (b ? (parseInt(a) + parseInt(b)) / 2 : parseInt(a))
 
 /** Sets in a prescription: "3 × 10–12" → 3, "2–3 × 12" → 2.5; anything else is one. */
@@ -123,18 +140,22 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
   const resist = (x?: Exercise) => !!x && (x.modality === 'strength' || x.modality === 'calisthenics')
   const firstBig = xs.findIndex((x) => resist(x) && x!.pattern !== 'isolation' && x!.pattern !== 'core')
   if (xs.some((x, i) => resist(x) && x!.pattern === 'isolation' && firstBig > i)) {
-    out.push('Bigger lifts usually go first, while you are fresh.')
+    out.push("Bigger lifts usually go first, while you're fresh.")
   }
   const lastResist = xs.map(resist).lastIndexOf(true)
   if (xs.some((x, i) => i < lastResist && !!x && (x.modality === 'yoga' || x.modality === 'pilates') && x.log === 'hold')) {
-    out.push('Longer stretches and holds usually go at the end. A few moving warm-up exercises suit the start.')
+    out.push('Long stretches and holds usually suit the end, and a few moving warm-ups suit the start.')
   }
   const seen = new Set<string>()
   for (const s of slots) {
-    if (seen.has(s.exId)) { out.push(`${exOf(s)?.n ?? 'An exercise'} is in here twice.`); break }
+    if (seen.has(s.exId)) { out.push(`${exOf(s)?.n ?? 'An exercise'} is in here twice. Keep it if you meant to.`); break }
     seen.add(s.exId)
   }
+  // a hard session estimated at 75+ minutes has no warm-up in the estimate and runs longer in
+  // practice; a 90-minute yoga class is ordinary (both judgement calls, unvalidated)
   const m = estMins(slots)
-  if (slots.length && m > 90) out.push(`This one is long, about ${m} minutes. That is fine if it suits you; splitting it across two days is another option.`)
+  if (slots.length && m > (deriveEffort(slots) === 'hard' ? 75 : 90)) {
+    out.push(`This one runs about ${aboutMins(m)} minutes. That's fine if it suits you, or you could split it into two shorter workouts.`)
+  }
   return out
 }

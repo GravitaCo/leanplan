@@ -2,7 +2,7 @@ import { useStore } from '@/store/store'
 import type { WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { MODALITY_LABEL } from '@/core/data/modalities'
-import { builtinSlots, canBuild, slotsOf } from '@/core/domain/routines'
+import { aboutMins, builtinSlots, canBuild, slotsOf } from '@/core/domain/routines'
 import { Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import type { BuilderStart } from './RoutineBuilderSheet'
@@ -28,7 +28,7 @@ export function MyWorkoutsSheet({ onStart, onBuild, onClose }: {
             <div className="li" key={r.id}>
               <button className="m linkrow" onClick={() => onStart(r.id)} aria-label={`Open ${r.name}`}>
                 <div className="t">{r.name}</div>
-                <div className="s">{[MODALITY_LABEL[r.modality], `${slotsOf(r).length} ${slotsOf(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${r.estMins} min` : ''].filter(Boolean).join(' · ')}</div>
+                <div className="s">{[MODALITY_LABEL[r.modality], `${slotsOf(r).length} ${slotsOf(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')}</div>
               </button>
               {build && <button className="linkbtn" onClick={() => onBuild({ routine: r })} aria-label={`Edit ${r.name}`}>Edit</button>}
             </div>

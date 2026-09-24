@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Routine, RoutineSlot } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { builderNotes, estMins, slotsOf } from '@/core/domain/routines'
+import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LibrarySheet } from './LibrarySheet'
@@ -33,7 +33,9 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
   const [confirmRemove, setConfirmRemove] = useState(false)
 
   const move = (i: number, d: -1 | 1) => setSlots((p) => { const n = [...p]; const j = i + d; if (j < 0 || j >= n.length) return p; [n[i], n[j]] = [n[j], n[i]]; return n })
-  const notes = builderNotes(slots)
+  // read what's typed the way a save will store it ("3x10" is 3 × 10)
+  const normalised = slots.map((s) => ({ ...s, rx: normaliseRx(s.rx) }))
+  const notes = builderNotes(normalised)
 
   const save = () => {
     const id = saveRoutine({ id: r?.id, name, slots, ...(start.baseId ? { baseId: start.baseId } : {}) })
@@ -51,7 +53,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
           <input id="rb_name" value={name} placeholder="My workout" maxLength={120} onChange={(e) => setName(e.target.value)} /></div>
       </div>
 
-      <div className="grp-h">Exercises{slots.length ? ` · about ${estMins(slots)} min` : ''}</div>
+      <div className="grp-h">Exercises{slots.length ? ` · about ${aboutMins(estMins(normalised))} min` : ''}</div>
       {slots.length > 0 && (
         <div className="list">
           {slots.map((s, i) => {
@@ -80,6 +82,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
         </button>
       </div>
       {notes.map((n) => <div className="foot" key={n} style={{ padding: '8px 4px 0' }}>{n}</div>)}
+      {notes.length > 0 && <div className="foot" style={{ padding: '8px 4px 0' }}>These are suggestions. Save whenever you're happy with it.</div>}
 
       {r && (
         <div className="stack" style={{ marginTop: 18 }}>

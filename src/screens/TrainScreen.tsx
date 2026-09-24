@@ -23,7 +23,7 @@ import { careList } from '@/core/data/libraryLabels'
 import { LibrarySheet } from './train/LibrarySheet'
 import { MyWorkoutsSheet } from './train/MyWorkoutsSheet'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
-import { canBuild, routineTemplate } from '@/core/domain/routines'
+import { aboutMins, canBuild, routineTemplate } from '@/core/domain/routines'
 import { HoldTimer, RED_FLAG } from './train/HoldTimer'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -160,9 +160,12 @@ export function TrainScreen() {
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
   const low = lowSignals(day.checkin, recent)
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
-  const offer = !logged && sched !== 'Rest' && low.length >= 2
+  // a day with training in it: the schedule says so, or the person opened one of their own workouts
+  // (P4: start any workout any day, with the same lighter options)
+  const trainingDay = sched !== 'Rest' || !!routine
+  const offer = !logged && trainingDay && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
-  const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  const easy = !logged && trainingDay && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [walkMins, setWalkMins] = useState('')
   /*
    * The day-of choice is worked out, not stored, so it's right on the first frame:
@@ -342,14 +345,14 @@ export function TrainScreen() {
         <div className="routine-hd">
           <div>
             <div className="t">{routine.name}</div>
-            <div className="s">Your workout{routine.estMins ? ` · about ${routine.estMins} min` : ''}. Doing it only changes {isToday ? 'today' : 'this day'}.</div>
+            <div className="s">Your workout{routine.estMins ? ` · about ${aboutMins(routine.estMins)} min` : ''}. Your weekly schedule stays as it is.</div>
           </div>
           {canBuild(data.profile) && !routine.archived && <button className="btn sm gray" onClick={() => setBuilder({ routine })}>Edit</button>}
         </div>
       )}
       {routine && wk && !wk.ex.length && <div className="foot" style={{ padding: '0 4px 12px' }}>This workout has no exercises this version of Tali knows. Update the app, or edit the workout.</div>}
 
-      {!logged && sched !== 'Rest' && (offer || askLighter) && (
+      {!logged && trainingDay && (offer || askLighter) && (
         <div className="card dayopt">
           <div className="t">{offer
             ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
@@ -365,7 +368,7 @@ export function TrainScreen() {
           {swap && <div className="foot">This counts as today's session. Your plan carries on as usual.</div>}
         </div>
       )}
-      {!logged && sched !== 'Rest' && !offer && !askLighter && (
+      {!logged && trainingDay && !offer && !askLighter && (
         <div className="list dayopt-link">
           <button className="li" onClick={() => setAskLighter(true)}>
             <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="leaf" size={18} /></span>
