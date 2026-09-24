@@ -440,6 +440,465 @@ review the design). Guests stay uncounted beyond an anonymous install count.
 
 ---
 
+## 11. Additional revenue ideas (24 September 2026)
+
+Written in answer to Benn's request for more ways to stay profitable without hurting the
+experience or users' goals, including his own idea: "don't pay if you succeed in your goals".
+Every idea is judged against the unit economics above and the fairness rules in the CFO brief.
+Nothing here is built; nothing here changes §2 unless Benn approves it.
+
+### 11.1 Reference numbers used throughout
+
+All inputs come from §1.3, §5.1 and §6 unless marked **ASSUMPTION**.
+
+| Input | Value | Where from |
+|---|---|---|
+| Net receipts, monthly plan (web, Stripe, VAT-registered) | £3.85 a month | §1.3 |
+| Net receipts, annual plan | £32.245 a year (£2.69 a month) | §1.3 |
+| AI + payer infrastructure + free-user carry | £0.75 + £0.02 + £0.12 = £0.89 a month | §6 base |
+| Contribution, blended payer | £2.26 a month | §6 base |
+| Contribution, monthly-plan payer | £3.85 − £0.89 = £2.96 a month | derived |
+| Contribution, annual-plan payer | £32.245 − 12 × £0.89 = £21.57 a year (£1.80 a month) | derived |
+| LTV, blended | about £31 | §5.1 |
+| CAC cap per paying user | £10 | §5.2 |
+| Reference scale | 10k MAU, 4% paying = 400 payers (240 annual, 160 monthly at 60% annual) | §1.4 |
+| Reference contribution | 400 × £2.26 = **£904 a month** | derived |
+
+"Revenue impact" below means the change in monthly contribution at the 10k MAU reference, so
+every idea can be compared with that £904. Stripe keeps its fees when we refund a payment
+[S50], which matters for any refund-based model.
+
+### 11.2 Benn's idea: "don't pay if you succeed", and its variants
+
+**What it is.** A Plus subscriber who reaches their goal in the period gets their money back.
+The intent is good: it signals confidence, and it frames Tali as on the user's side. The
+question is whether it survives the economics, verification, behaviour and law.
+
+**Economics (full refund, annual plan).** A successful payer is refunded £39.99. The VAT portion
+comes back to us through a credit note, so we give up the £33.325 net, but Stripe keeps its
+£1.08 of fees [S50], and the AI and infrastructure have already been spent. **ASSUMPTION:**
+checking each claim takes 3 to 5 minutes of staff time at about £15 an hour, so about £1 a claim
+(HealthyWage uses staff-reviewed video weigh-ins [S42]). A successful payer therefore costs
+£1.08 + £9.00 AI + £0.24 infrastructure + £1.44 free-user carry + £1.00 checking = **−£12.76 a
+year**, against **+£21.57** for a payer who does not claim. With a success rate *s*:
+
+contribution per annual payer = (1 − *s*) × £21.57 − *s* × £12.76
+
+| Success rate *s* | Contribution per annual payer | Change |
+|---|---|---|
+| 20% | 0.8 × 21.57 − 0.2 × 12.76 = £14.70 | −32% |
+| 40% | 0.6 × 21.57 − 0.4 × 12.76 = £7.84 | −64% |
+| 47% (the share hitting target in the Volpp deposit-contract arm [S44]) | 0.53 × 21.57 − 0.47 × 12.76 = £5.44 | −75% |
+| 63% | about £0 | break-even point: 21.57 ÷ (21.57 + 12.76) |
+
+The rate would drift upwards over time, because the offer attracts people who are confident
+they will succeed and rewards choosing easy goals. The business then earns most from the users
+it fails, which is the opposite of what Benn wants: the better Tali works, the less it earns.
+
+**Verification and gaming.** Weight is typed into `WeightSheet` by the user, the data is
+offline-first and editable, and history syncs last-write-wins (`src/data/sync.ts`). Nothing in
+Tali can prove a weight, and two of the five goals in `src/core/types.ts` ("feel-better",
+"build-muscle") have no measurable end point at all. Making it verifiable means
+HealthyWage-style filmed weigh-ins [S42]: videos of bodies are sensitive health data that we
+would then have to store and review, which cuts across rule 6. Pact, an app that paid people for
+meeting exercise goals and charged them for missing, settled with the US FTC for $1.5 million
+after users who met their goals were charged anyway and its verification failed to recognise
+their workouts [S43]. Verification is where these models break.
+
+**Does it reward the wrong behaviour?** Yes, when the outcome is weight. Paying on the number
+on a given day rewards short-term cutting around the deadline rather than habits. The research
+is consistent: financial incentives moved weight in the short run (deposit-contract arm lost
+14.0 lb against 3.9 lb for controls over 16 weeks), but participants rapidly regained weight
+once the incentives stopped [S44][S44b]. A meta-analysis of 128 experiments found that expected,
+tangible, performance-contingent rewards reduce intrinsic motivation (d = −0.28) [S47], and
+intrinsic motivation is what keeps someone logging after the reward ends. Worst of all, under
+rule 4: a user who gains weight or has a bad month pays full price while their successful peers
+pay nothing. That is charging someone more because of a weight gain. **Fairness: fail.**
+
+**Law.** The DMCC subscription regime [S28][S30] does not forbid refunds, so the model is not
+unlawful in itself. The risks sit elsewhere. A headline like "free if you succeed" with
+conditions behind it is exposed under the DMCC Act unfair commercial practices rules as a
+misleading action or omission, now enforced directly by the CMA with fines of up to 10% of
+global turnover [S49]; the conditions would have to be objective, shown up front and not at our
+discretion. If the user puts money at stake that we keep on failure, it starts to look like
+"betting" on "the likelihood of anything occurring or not occurring" under the Gambling Act 2005
+s9(1) [S48], which needs a Gambling Commission licence. DietBet argues its games are skill
+contests and not gambling [S41], but that is a US position. **A solicitor must look at any
+money-at-stake design before it is built.**
+
+**Revenue predictability.** Revenue from each payer cannot be treated as earned until their goal
+window closes, cash may have to be returned up to 12 months after it was taken, and *s* is
+unknown until the first cohort finishes. That is a year-long blind spot in the P&L at exactly
+the stage we need our own numbers (§7).
+
+**The variants.**
+
+| Variant | Mechanics | Economics (arithmetic) | Fairness | Verdict |
+|---|---|---|---|---|
+| Goal-based partial refund | 25% of the annual price back, as a credit on renewal, if the goal is met | Cost per success 0.25 × £33.325 = £8.33; at *s* = 30%, £2.50 a payer a year, contribution £21.57 → £19.07 (−12%) | Fail when the goal is weight (same rule 4 problem, smaller); same verification gap | **Reject** in outcome form |
+| Consistency rebate | Log or check in on 20 of 30 days, next month half price (monthly plan) | A half-price month gives up about £2.02 net (£2.495 ÷ 1.2, less the smaller Stripe percentage). **ASSUMPTION:** 40% of monthly payers qualify (range 25 to 60%): £0.81 a month, contribution £2.96 → £2.15 (−27%). LTV holds only if monthly churn falls from 10% to 10% × 2.15 ÷ 2.96 = 7.3% | Concern, close to fail: a quick tap counts as a log, so it pays for taps; it rewards compulsive logging (an eating-disorder risk); missing days costs money, which is monetising a missed streak (rule 4). Engagement-contingent rewards also lowered self-reported interest (d = −0.15) [S47] | **Reject in cash form**; non-cash recognition only, via `mental-performance` |
+| Commitment deposit, Tali keeps the forfeit (Beeminder model) | User pledges money and loses it on a missed goal | Beeminder keeps derailment pledges and says collecting them is its business model; pledges step $5, $10, $30, $90, $270 and up; premium plans $8, $16 and $81 a month [S36][S37][S38]. Illustration: **ASSUMPTION** 3% of 10k MAU opt in, 30% of their months fail, £10 average forfeit: 300 × 0.3 × £10 = £900 a month, about the whole Plus contribution | Fail by construction: we earn precisely when the user struggles (rule 4); betting risk (s9) | **Reject** |
+| Commitment deposit, forfeit to charity (stickK model) | Stake goes to a chosen charity, "anti-charity" or friend; optional human referee | stickK is free to users, minimum stake $5 per reporting period [S39][S40]; Tali earns nothing directly. Refunding a £20 deposit on success loses £0.50 of Stripe fees [S50] | Concern: still money tied to outcomes; charity fundraising rules may apply (not researched) | **Not now.** Evidence is real but narrow: 11% of smokers offered a deposit contract took it, and it raised quit rates by 3 points, lasting to 12 months [S45]; commitment contracts after a gym incentive produced long-run change [S46]; stickK's 78% vs 35% success is self-selected, not causal [S40] |
+| Donate to charity on success | Tali gives, for example, £2 per user who reaches a milestone | 400 payers × 30% × £2 = £240 a year, £20 a month (2% of £904). Charity Miles shows the sponsor-funded version (brands pay per mile) [S70], which brings advertisers in | Concern: tied to weight it gamifies body outcomes | **Reject in outcome form.** A flat pledge (a fixed share of revenue) is fine if Benn wants it; it is values, not revenue |
+
+**What I would do instead with Benn's instinct.** The fair core of "don't pay if you succeed" is
+"don't pay for what you didn't get". Two versions keep that spirit without tying money to the
+body:
+
+1. **Idle-month credit.** On the monthly plan, a month in which the subscriber made no Plus
+   requests is credited against the next bill automatically. Idle months cost us almost nothing
+   in AI, so this is rule 2 applied to billing, and it is the opposite of the forgotten
+   subscription that the DMCC regime targets. Cost: **ASSUMPTION** 15% of monthly payer-months
+   are idle (range 10 to 25%): 160 × 0.15 × £3.85 = **£92 a month** (10% of £904). Per monthly
+   payer that is £0.58, so contribution £2.96 → £2.38, and it pays for itself if monthly churn
+   falls from 10% to about 8.0%. Unknown until tested; **test on one cohort**, do not launch
+   blind. Build: M (usage counter in the AI proxy, Stripe customer-balance credit).
+2. **Share the win.** When a user reaches a milestone they chose themselves (for example "trained
+   12 times this month", never a weight), offer them a free Plus month to give to a friend. It
+   costs about £0.77 if the friend uses it, charges nobody more for failing, and works as a
+   referral (idea 8). Needs `mental-performance` to confirm milestones cannot become pressure.
+
+### 11.3 The candidate list
+
+Each entry gives: what it is; who pays; revenue impact at the 10k MAU reference; build effort
+(S = days, M = one to three weeks, L = more than a month or needs sales and legal work); fit
+with the fairness rules; risks.
+
+**1. Pay-what-you-can with a free hardship option.** Plus at three visible prices, £2.99, £4.99
+or £7.99 a month (annual £24.99, £39.99, £59.99), plus "free for six months, no questions,
+renewable once". Who pays: users, at a level they choose. Impact: contribution at £2.99 =
+£2.99 ÷ 1.2 − (1.5% × 2.99 + 20p + 0.7% × 2.99) − £0.89 = **£1.34**; at £7.99 = £6.66 − £0.38 −
+£0.89 = **£5.39**. **ASSUMPTION** mix 25% low, 65% standard, 10% high: 0.25 × 1.34 + 0.65 × 2.96
++ 0.10 × 5.39 = £2.80, about 5% below £2.96, so it breaks even if it lifts conversion by about
+6%. Hardship places, capped at 5% of payers: 20 × £0.77 = £15 a month. Net impact: with no
+conversion lift, £904 × 0.945 − £15 − £904 = about −£65 a month; break-even needs about an 8%
+lift in paying users; a 12% lift gives £854 × 1.12 − £15 − £904 = about +£37. Roughly neutral.
+Comparables: Beeminder gives students, jobseekers,
+seniors and non-OECD users a buy-one-get-one discount [S37]; Headspace gave unemployed Americans a
+free year in 2020 [S52]; Ethical Consumer runs a pay-it-forward subscription fund [S53]. No
+mainstream fitness app found running a visible sliding scale (searched 24 September 2026), so
+the mix is unknown. Build: S. Fairness: **pass**. Risks: the price anchors downwards; honour
+system can be abused (the cap bounds it).
+
+**2. Supporter tier, nothing locked.** A one-off "support Tali" payment (£10, £25 or £50) or £20
+a year, with cosmetic thanks only: an alternative app icon, name in the credits, access to beta
+builds. Comparable: Obsidian's Catalyst licence, a one-off $25, $50 or $100+ that unlocks no
+features [S51]. Who pays: fans. Impact: £20 a year nets £20 ÷ 1.2 − (£0.30 + £0.20 + £0.14) =
+£16.03, about £1.34 a month with no AI cost; a one-off £25 nets £20.83 − £0.58 = £20.26.
+**ASSUMPTION** 0.2 to 1% of MAU: at 0.5%, 50 supporters × £1.34 = **£67 a month** (range £27 to
+£134). Small, but it can go live **before any AI exists**, proves the payments stack, and one-off
+payments are not subscription contracts under the DMCC definition [S72]; a recurring supporter
+plan would be. Build: S. Fairness: **pass**. Risks: small numbers; mild overlap with Plus
+(include the supporter perks in Plus).
+
+**3. AI usage credits (pay as you go).** Packs such as £2.99 for 150 AI actions, alongside Plus,
+never expiring. Who pays: light users and people whose trial ended. Impact: net per pack £2.49 −
+(£0.045 + £0.20) = £2.25; 150 meal parses cost about $0.90 (£0.68) on Sonnet 5 or $2.25 (£1.69)
+on Opus 5 (`ai-platform-plan.md` §3.2), so contribution **£1.57** (Sonnet) or **£0.56** (Opus) a
+pack. **ASSUMPTION** 2% of the 9,600 free users buy one pack a quarter: 192 × £1.57 ÷ 3 = £100 a
+month; **ASSUMPTION** 10% of the 400 payers downgrade to one pack a quarter: 40 × (£2.26 − £0.52)
+= −£70. Net about **+£30 a month**, and could be negative. Its real value is as a fair-use top-up
+for heavy Plus users (the §3.1 safeguard) and a fair option for light users. The 20p Stripe fee
+makes packs below about £2.99 poor value to us. Credits are becoming common for metered AI
+features [S73]. Build: M (ledger, proxy checks). Fairness: **pass** if prices are shown per
+action and credits never expire. Risks: a visible meter can make people ration a feature that
+would help them; unused credits are a liability on the books.
+
+**4. One-off programme purchases, owned forever.** Extra programmes (for example an eight-week
+couch-to-5k with guided video) sold once and kept, never replacing the free plans (§2.2). Who
+pays: users. Impact: £7.99 nets £6.66 − (£0.12 + £0.20) = £6.34 before any creator share.
+Production is fixed: **ASSUMPTION** 20 generated minutes at $7 to $24 a minute (£105 to £360,
+`ai-platform-plan.md` §3.4) plus £200 to £500 of expert review, so 48 to 136 sales to break
+even. **ASSUMPTION** 1% of 10k MAU buy one a year: 100 × £6.34 ÷ 12 = **£53 a month** gross,
+before production. Build: M. Fairness: **concern**: must stay optional extras, reviewed by
+`fitness-workouts` / `nutrition-accuracy`, general wellness only (rule 5). Risks: content cost
+before demand is proven; "owned forever" commits us to hosting.
+
+**5. Non-AI lifetime deal.** Under §2.1 everything without AI is already free, so a non-AI
+lifetime deal has nothing to sell unless we lock something that is free today, which breaks
+rule 2. Who pays: nobody, as designed. Impact: £0. The honest version is idea 2 (a one-off
+supporter payment). Build: n/a. Fairness: **fail** if it means paywalling, **pass** as supporter.
+Risks: pressure later to invent paid non-AI features to give the deal meaning.
+
+**6. Household or family plan.** Family Plus at £59.99 a year for up to four separate, private
+accounts, with fair use per member. Comparable: Strava Family at £99 a year for up to four
+against £54.99 for one [S55]. Who pays: one household member. Impact: net £49.99 − (£0.90 +
+£0.20 + £0.42) = £48.47; **ASSUMPTION** 2.5 active members × (£9.00 AI + £0.24) = £23.10, so
+about **£25 a year per family**, against £23 for one annual individual (§5.1) but £46 for two.
+It adds money only where it converts households that would not otherwise pay; otherwise it
+cannibalises. Net impact: unknown, probably small either way. Build: M (invites, shared
+entitlement). Fairness: **pass** only if no member can see another's data (weight monitoring
+within couples or of teenagers is a real harm); needs `security-data` and `mental-performance`.
+Risks: cannibalisation; AI cost scales with members.
+
+**7. Gifting and "sponsor a membership".** A prepaid 12 months of Plus with no auto-renew (so the
+gift itself is not a subscription contract [S72]), plus a "sponsor a year for someone who cannot
+afford it" option that funds the hardship places in idea 1. Comparable: Headspace sells 3, 6 and
+12-month gifts [S56]; Ethical Consumer's pay-it-forward fund [S53]. Who pays: givers. Impact: a
+redeemed gift contributes about £23 (annual net less AI and infrastructure). **ASSUMPTION** gifts
+equal 5 to 15% of annual payers a year: 12 to 36 × £23 = £276 to £828 a year, **£23 to £69 a
+month**, concentrated in December and January. Build: S to M (codes, redemption, email).
+Fairness: **concern**: giving someone a diet and fitness app can say "you should change your
+body", so gift copy must be neutral, never mention weight, and the recipient can decline or pass
+it on (`mental-performance`). Risks: seasonal; unredeemed gifts.
+
+**8. Earned free months via referrals.** Give a month, get a month: the referrer gets a free
+month when the friend's first payment clears; the friend gets a 30-day trial instead of 14.
+Free months are the most common reward in fitness referral programmes [S71]. Who pays: us, in
+foregone revenue. Impact as CAC per paying user: the referrer's free month gives up £3.85
+(monthly) or £2.69 (annual), about £3.15 blended; the friend's 16 extra trial days cost about
+£0.40 of AI, and at **ASSUMPTION** 15 to 40% trial-to-paid that is £1.00 to £2.67 per payer.
+**CAC about £4 to £6.50, well inside the £10 cap.** A free user who refers gets a Plus month
+instead, costing about £0.77. Every 10 referred payers a month add about 10 × £31 = £310 of LTV
+each month. Build: S to M (codes, attribution, reward ledger). Fairness: **pass** with a share
+link only (no contact-book upload), a cap of 12 reward months a year, and no nagging. Risks:
+self-referral with second accounts (reward only on a real card payment).
+
+**9. Founding-member price lock.** £29.99 a year for as long as the subscription continues, for
+the first 500 subscribers or first 90 days (already allowed in §2.3). Who pays: early users.
+Impact: net £24.99 − (£0.45 + £0.20 + £0.21) = £24.13 a year, £2.01 a month; contribution
+£2.01 − £0.89 = £1.12 against £1.80, so **−£0.68 a month per founder** against a full-price
+counterfactual; 500 founders = −£340 a month, but most founders would not otherwise have paid
+that early. On pessimistic AI (£2.00) a founder loses £0.13 a month, so the same fair-use limit
+applies. It must be a flat price, not an introductory price that steps up, or DMCC trial and
+reduced-price rules apply [S72]. Build: S. Fairness: **pass** if the renewal price is stated
+plainly. Risks: a long tail of low-margin subscribers if AI costs rise.
+
+**10. Pause instead of cancel.** Pause the monthly plan for one to three months, offered on the
+same screen as a one-tap Cancel, never in front of it. Google Play offers pauses of up to three
+months and not for annual plans [S54]. Who pays: nobody during the pause. Impact: 160 monthly
+payers × 10% churn = 16 cancellations a month; **ASSUMPTION** 20% choose pause (range 10 to 30%)
+and half of those resume: 1.6 payers kept a month × £31 = **about £50 of LTV added each month**
+(range £25 to £75). Build: S. Fairness: **pass** only if cancel stays equally prominent; a pause
+offer that slows cancellation is exactly what the DMCC "as easy as sign-up" rule forbids
+[S28][S30]. Risks: few.
+
+**11. Workplace / employer wellness (B2B).** Employers pay per eligible employee; employees get
+Plus. Comparables: Headspace for Work at about $12 to $36 per employee a year (a third-party
+procurement estimate) [S57]; Wellhub pays app partners per validated use under contract [S58].
+Impact: **ASSUMPTION** £1 per employee a month (about £12 a year, the low end of Headspace),
+500 employees, 20% activate (range 10 to 30%): £500 − 100 × £0.77 = **about £420 a month per
+client**, the same as about 186 consumer payers (£420 ÷ £2.26). One client roughly adds half the
+reference contribution. Build: L (admin, invoicing, DPIA, security questionnaires, sales time).
+Fairness: **concern**: employers must only ever see aggregates with a minimum group size, never
+individuals, and no weight-loss challenges (rules 4 and 6, `security-data`). Risks: long sales
+cycles; employer pressure on employees. Keep §4's "not before 10k MAU", with one small friendly
+pilot allowed earlier as a learning deal.
+
+**12. Gyms or PT studios, white-label.** A gym-branded copy of Tali. Comparable: Virtuagym
+bundles white-label apps into $59 to $489 a month packages (third-party figure) [S59]. Who pays:
+gyms. Impact: unknown; pricing would need interviews. Build: L (per-client branding, store
+accounts, support). Fairness: **concern**: the gym becomes a controller of members' health data
+(rule 6). Risks: it turns Tali into an agency. The Coach plan (§3.2) with multi-coach seats
+serves studios without forking the product.
+
+**13. Creator marketplace.** Open marketplace where any creator sells programmes. Comparable:
+Playbook creators keep 80% of revenue from audiences they bring [S60]; §5.4 assumes 50%. Impact:
+at 50%, £3.17 to us per £7.99 sale; the same demand as idea 4, shared. Build: L. Fairness:
+**concern to fail** at open scale: every item needs expert review for rule 5 and body-image
+marketing, and that cost grows with the number of creators. Risks: quality, claims, moderation.
+A curated pilot (§4 rank 3) captures most of the value.
+
+**14. Ethical affiliates.** A "send this week's meal plan to my grocery basket" button with an
+affiliate tag, or labelled links to kitchen scales. Who pays: retailers. Impact: Ocado pays at
+least 3% on first-time shoppers [S61]; Amazon UK kitchen items pay about 3 to 4% (third-party
+summaries of the schedule) [S62]. **ASSUMPTION** 1% of 10k MAU are new Ocado customers with a
+£60 first basket: 100 × £1.80 = £180 a year; 1% buy a £20 scale at 3.5%: 100 × £0.70 = £70 a
+year. Total **about £20 a month**. It can be done without sharing identifiable data: the list is
+built on the device and handed over through a deep link carrying product IDs only (the pattern
+Samsung Food / Whisk uses with grocers [S63]); the affiliate network sees a click, not a user.
+The retailer does see the basket, as it would if the user shopped anyway. Build: M (product
+matching is the hard part). Fairness: **concern**: scales promote weighing food, which is
+unhelpful for some users; placement must never be triggered by user data. Risks: trust cost is
+far larger than £20 a month. Build the basket hand-off one day as a free feature, untagged.
+
+**15. Printed or exported annual report.** The digital "year in Tali" summary is the user's own
+data and stays free (rule 1); a printed book is an optional extra. Comparable: Day One books from
+$19.99 for 50 pages plus $0.10 a page [S64]. Impact: **ASSUMPTION** £19.99 price, £8 to £12
+print-on-demand and postage (not quoted): £16.66 − £10 − £0.50 fees = about £6 a book; 0.75% of
+10k MAU = 75 books = £450 a year, **about £38 a month**. Build: M (layout, print-vendor
+integration). Fairness: **concern**: health data goes to a print vendor (processor agreement,
+`security-data`), and weight should be off by default. Risks: low volume, fulfilment support.
+
+**16. Non-dilutive funding.** Innovate UK Smart grants have been paused since January 2025 [S65].
+Their replacement for new applicants, Growth Catalyst Early Stage: New Innovators (£25k to £50k,
+limited to five "critical technologies"), closed on 6 August 2025 [S65]. Knowledge Transfer
+Partnerships (a subsidised graduate placement with a university) and Innovation Loans run on
+rolling deadlines, and Frontier AI competitions are scheduled from October 2026 (third-party
+pipeline summary) [S66]. A consumer wellness app is a weak fit for most themed calls; check the
+Innovation Funding Service monthly. The surer money is R&D tax relief: the merged scheme gives
+a 20% above-the-line credit (about 16.2p per £1 after tax), and loss-making SMEs spending at
+least 30% on R&D can claim up to 26.97p per £1 under ERIS [S67]. **ASSUMPTION** £20k to £40k a
+year of qualifying staff and contractor cost (offline sync, the estimate model, AI evaluation):
+£3.2k to £6.5k a year under the merged scheme, £5.4k to £10.8k under ERIS, that is **about £270
+to £900 a month**. If no one draws a salary, qualifying cost is close to nil. Build: S (a claim
+through an adviser) to M (a grant bid). Fairness: **pass**. Risks: HMRC's R&D definition is
+strict; adviser fees; grant writing time with low odds.
+
+**17. Anonymised research data.** Selling or licensing aggregated user data to researchers or
+companies. Impact: unknown, and small at our scale because buyers want large samples. Build: M
+to L. Fairness: **fail**. The ICO's 2025 guidance judges anonymisation by whether a "motivated
+intruder" could re-identify people, and for health data it treats capable intruders as likely
+[S68]. Strava's heatmap was "aggregated and anonymised" and still exposed military bases and
+patrol routes [S69]. A small user base makes re-identification easier, not harder. Rule 6 allows
+aggregated, opt-in use cleared by `security-data`; that fits an unpaid, ethics-approved academic
+study, not a revenue line.
+
+**Ideas added from research.**
+
+**18. Idle-month credit** (see §11.2): **test on one cohort**, M, pass.
+
+**19. Non-renewing annual pass.** Twelve months of Plus at £39.99 that simply ends, with an email
+before it does. A contract that does not auto-renew falls outside the DMCC subscription
+definition [S72] and suits people who distrust subscriptions. Impact: **ASSUMPTION** renewal
+drops from the 28% industry figure (§5.1) to 20% for pass buyers: expected paid years 1 ÷ (1 −
+0.2) = 1.25 against 1.39, so LTV on that segment falls 10%; if 30% of annual buyers choose it,
+blended LTV falls 3%, recovered if it lifts annual conversion by 3% or more. Build: S. Fairness:
+**pass**. Risks: slightly lower LTV.
+
+**20. Share the win** (see §11.2): a user-chosen, non-weight milestone unlocks a free month to
+give away. S, pending `mental-performance`.
+
+### 11.4 Summary table
+
+| # | Idea | Who pays | Impact at 10k MAU (contribution a month) | Build | Fairness |
+|---|---|---|---|---|---|
+| B | Full refund on success | us | −32% to −75% of Plus contribution at *s* = 20 to 47% | M | Fail |
+| B | Partial refund on goal | us | −12% at *s* = 30% | M | Fail (weight) |
+| B | Consistency rebate (cash) | us | −27% unless churn falls to 7.3% | M | Concern, near fail |
+| B | Deposit kept by Tali | users who fail | about +£900, extracted from struggling users | M | Fail |
+| B | Deposit to charity | users who fail (to charity) | £0 direct | M | Concern |
+| B | Charity on success | us | −£20 | S | Concern (outcome form) |
+| 1 | Pay-what-you-can + hardship | users | about neutral (−£65 to +£37) | S | Pass |
+| 2 | Supporter, one-off | fans | +£27 to +£134 | S | Pass |
+| 3 | AI credits | light users | about +£30, could be negative | M | Pass |
+| 4 | One-off programmes | users | +£53 gross before production | M | Concern |
+| 5 | Non-AI lifetime | nobody | £0 | n/a | Fail / fold into 2 |
+| 6 | Family plan | households | unknown, small | M | Pass with conditions |
+| 7 | Gifts + sponsor | givers | +£23 to +£69 | S to M | Concern (copy) |
+| 8 | Referral month | us | CAC £4 to £6.50; +£31 LTV per referred payer | S to M | Pass |
+| 9 | Founding price lock | early users | −£0.68 per founder vs full price | S | Pass |
+| 10 | Pause | nobody | +£25 to +£75 of LTV a month | S | Pass |
+| 11 | Workplace | employers | +£420 per 500-employee client | L | Concern |
+| 12 | White-label | gyms | unknown | L | Concern |
+| 13 | Creator marketplace | users | shares idea 4 | L | Concern to fail |
+| 14 | Affiliates | retailers | about +£20 | M | Concern |
+| 15 | Printed report | users | about +£38 | M | Concern |
+| 16 | R&D relief, grants | government | about +£270 to +£900 if eligible | S to M | Pass |
+| 17 | Research data sale | buyers | unknown, small | M to L | Fail |
+| 18 | Idle-month credit | us | −£92 unless churn falls to 8.0% | M | Pass |
+| 19 | Non-renewing annual pass | users | −3% blended LTV, offset by conversion | S | Pass |
+| 20 | Share the win | us | about £0.77 per gift used | S | Pending review |
+
+(B = variants of Benn's idea in §11.2.)
+
+### 11.5 Ranked shortlist: what I would do, in order
+
+1. **One-off supporter payment (idea 2), now.** The only line that can earn before AI ships. It
+   builds and tests Stripe checkout, receipts and VAT handling without subscription obligations.
+   Small money (£27 to £134 a month at 10k MAU), high learning.
+2. **R&D tax relief claim and a monthly grant check (idea 16), now.** No product work; up to
+   £270 to £900 a month equivalent if the spend qualifies. Needs an adviser and a view on
+   founder salary.
+3. **Founding-member price lock (idea 9), at Plus launch.** Early cash and loyalty at a known,
+   bounded cost (−£0.68 a month per founder), with the fair-use limit.
+4. **Give a month, get a month referrals (idea 8), with Plus launch.** The cheapest acquisition
+   channel modelled anywhere in this plan (£4 to £6.50 per paying user against a £10 cap).
+   "Share the win" (idea 20) can reuse the same mechanism once `mental-performance` agrees.
+5. **Fair-billing bundle (ideas 10 and 19), before the DMCC regime starts in January 2027.**
+   Pause shown beside a one-tap cancel, plus a non-renewing annual pass. Both are S effort and
+   make "no dark patterns" visible.
+6. **Pay-what-you-can floor, hardship places, gifts and sponsorship (ideas 1 and 7), after three
+   months of sales data.** Roughly revenue-neutral; they widen access and turn goodwill into
+   paid sponsorships. Needs data to set the floor price.
+7. **AI credit top-ups (idea 3), once fair-use data exists.** Primarily a safety valve for
+   heavy users above the Plus limit, and a fair option for light users.
+
+To **test, not launch**: the idle-month credit (idea 18), on one cohort. **Later, on
+conditions:** family plan (after Plus conversion is known), a single workplace pilot (idea 11),
+curated programmes (idea 4, as in §4), printed report (idea 15).
+
+### 11.6 Rejected, with reasons
+
+- **Full refund on success:** loses 32 to 75% of Plus contribution at plausible success rates,
+  cannot be verified without filming users' bodies, rewards short-term weight cutting, charges
+  people more after a weight gain (rule 4), and hides a year of revenue.
+- **Goal-based partial refund:** the same rule 4 problem at a smaller price.
+- **Cash consistency rebate:** pays for taps, rewards compulsive logging and fines missed days.
+- **Commitment deposits kept by Tali (Beeminder model):** earns exactly when users struggle;
+  possible unlicensed betting under s9 of the Gambling Act 2005.
+- **Charity donation tied to outcomes:** gamifies body outcomes; a flat revenue pledge is the
+  acceptable form.
+- **Non-AI lifetime deal:** nothing to sell without paywalling something free (rule 2).
+- **White-label for gyms:** turns Tali into an agency and moves health data to third-party
+  controllers; the Coach plan does the job.
+- **Open creator marketplace:** review cost scales with creators and rule 5 risk scales with it;
+  keep a curated pilot.
+- **Affiliates as revenue:** about £20 a month at 10k MAU for a real trust cost.
+- **Anonymised research data for money:** fails rule 6; re-identification risk is high for
+  health data and higher for a small user base.
+
+### 11.7 Psychological safety review
+
+Reviewed by the `mental-performance` agent on 24 September 2026. Findings are summarised from the
+papers cited (P1 to P16 below); confirm effect sizes before quoting any of them publicly.
+
+**Verdicts.** The two agents agree: nothing that ties money to an outcome or to failure.
+
+| Idea | Verdict | Why, and the guardrails |
+|---|---|---|
+| Free if you hit your goal (outcome, e.g. weight) | **Avoid** | Expected, contingent rewards undermine intrinsic motivation [P1]; weight incentives worked for 16 weeks and weight was then regained [P2]; workplace weight incentives had high dropout [P3]; dieting predicts later binge eating and disordered eating [P4]. It invites rapid loss, gaming the weigh-in and restriction, charges people at the moment of relapse, and means Tali earns more when users fail. Never make the outcome weight |
+| Consistency rebate for behaviours | Safe with guardrails | Behaviour incentives raise activity modestly while they run [P5]. Count weekly reviews or check-ins only, never workout volume or calorie logging (compulsion risk [P6][P7]); a generous threshold (any 8 of 12 weeks) that a miss never resets; gain framing only; gentle mode qualifies |
+| Commitment deposits | **Avoid** | Loss framing works for the few who opt in [P8][P9], but take-up is low (about 14% in [P9]), losing money after a bad week is punishment, and it suits compulsive and restrictive users most |
+| Charity donation on a goal | Safe with guardrails | Prosocial incentives can sustain effort [P10]. Behaviours only, never weight; Tali pays, not the user |
+| Pay what you can, free hardship option | Safe | Pairing price with a social cause raised both uptake and revenue [P11]. No means-testing, no questions |
+| Supporter tier, nothing locked | Safe | Supports autonomy, adds no pressure |
+| AI credits | Safe with guardrails | Metering creates a "taxi meter" feeling and people overpay for flat rates to avoid it [P12]; users would ration the weekly review, the feature that helps most. Flat Plus stays the default; credits only as a small add-on; no countdown mid-conversation; crisis responses never draw on credits |
+| Referral months | Safe with guardrails | No leaderboards, no "invite 3 or lose access", and friends see no stats about the person who referred them |
+| Pause instead of cancel | Safe | Fits habit research (a lapse does not break a habit). Cancel stays one tap, as the DMCC Act 2024 subscription rules require [P13] |
+| Employer wellness | Safe with guardrails, lowest priority | Large trials found no health effect [P14][P15]. The employer sees only groups of 50 or more, never individuals; participation is voluntary with no payment tied to it; no team leaderboards; the DPIA treats this as special category health data |
+| Gifting or sponsoring | Safe with guardrails | An unsolicited weight-loss app can read as a comment on someone's body. Frame it as general wellbeing, never "for someone who needs to lose weight"; the giver sees nothing; the recipient sets their own goals |
+| Creator programmes | **Avoid** body-focused creators; others safe with guardrails | Fitspiration imagery worsens mood and body image [P16]. No before-and-after photos, physique marketing or weight claims; content reviewed for disordered-eating safety; plans stay free |
+| Trial and renewal reminders, upsell timing | Safe with guardrails | Remind 3 to 7 days before any charge. Never upsell during a crisis script, in gentle mode, after a bad check-in or mid-log. Offer upgrades after a moment of competence (a completed weekly review). No fake countdowns |
+
+**Across everything:** users must be 18 or over, and anyone the screener routes to gentle mode is
+excluded from any contingent mechanic.
+
+**The safe version of Benn's idea: the "On your side" promise.**
+
+1. **Money back if Tali isn't helping.** Within 60 days, tell us it isn't working and get a refund,
+   no proof needed. It keeps "we win when you win" without judging anyone's results.
+2. **Show-up thank-you.** Complete any 8 weekly reviews in your first 12 weeks and get a free month,
+   or give it to a charity. It is presented as a surprise thank-you, not a target, because
+   unexpected rewards do not crowd out motivation [P1].
+
+Pilot it on one cohort and measure weekly review completion, retention at weeks 13 and 26, refund
+take-up and gentle-mode escalations; the guardrail metric is no rise in risk-language flags. Cost
+this against §11.2 before launch: a refund keeps Stripe's fee and the AI already used, so the CFO
+figures there apply to the refund rate. Most incentive trials run 3 to 6 months and none tested
+app pricing directly, so this is evidence-informed, not proven.
+
+**Sources for this subsection**
+
+- [P1] Deci, Koestner and Ryan 1999: https://doi.org/10.1037/0033-2909.125.6.627
+- [P2] Volpp et al. 2008, JAMA: https://doi.org/10.1001/jama.2008.804
+- [P3] Cawley and Price 2013: https://doi.org/10.1016/j.jhealeco.2013.04.005
+- [P4] Neumark-Sztainer et al. 2006: https://doi.org/10.1016/j.jada.2006.01.003
+- [P5] Mitchell et al. 2020, BJSM: https://doi.org/10.1136/bjsports-2019-100633
+- [P6] Simpson and Mazzeo 2017: https://doi.org/10.1016/j.eatbeh.2017.02.002
+- [P7] Levinson et al. 2017: https://doi.org/10.1016/j.eatbeh.2017.08.003
+- [P8] Royer, Stehr and Sydnor 2015: https://doi.org/10.1257/app.20130327
+- [P9] Halpern et al. 2015, NEJM: https://doi.org/10.1056/NEJMoa1414293
+- [P10] Imas 2014: https://doi.org/10.2139/ssrn.2343445
+- [P11] Gneezy et al. 2010, Science: https://doi.org/10.1126/science.1186744
+- [P12] Lambrecht and Skiera 2006: https://doi.org/10.1509/jmkr.43.2.212
+- [P13] DMCC Act 2024: https://www.legislation.gov.uk/ukpga/2024/13
+- [P14] Song and Baicker 2019, JAMA: https://doi.org/10.1001/jama.2019.3307
+- [P15] Jones, Molitor and Reif 2019: https://doi.org/10.1093/qje/qjz023
+- [P16] Tiggemann and Zaccardo 2015: https://doi.org/10.1016/j.bodyim.2015.06.003
+
+---
+
 ## 9. Sources (all checked 24 September 2026)
 
 - [S1] Supabase pricing: https://supabase.com/pricing
@@ -480,6 +939,45 @@ review the design). Guests stay uncounted beyond an anonymous install count.
 - [S33] CMA consultation on Apple and Google steering: https://www.gov.uk/government/news/cma-consults-on-new-requirements-for-apple-and-googles-mobile-platforms
 - [S34] CMA decision still pending, mid-September 2026: https://www.macobserver.com/news/apple-uk-steering-conduct-requirement-cma-no-decision/
 - [S35] Apple EU fees from 1 October 2026, US link-out status (FunnelFox, 25 August 2026): https://blog.funnelfox.com/apple-app-store-fees-2026-eu-dma/
+- [S36] Beeminder pricing and premium plans: https://www.beeminder.com/money and https://www.beeminder.com/premium
+- [S37] Beeminder pledge schedule and discounts: https://help.beeminder.com/article/20-how-much-do-i-pledge-on-my-goals and https://help.beeminder.com/article/19-how-much-does-beeminder-cost
+- [S38] Beeminder keeps derailment pledges as its business model: https://help.beeminder.com/article/114-can-i-specify-a-beneficiary-for-my-derailments and https://blog.beeminder.com/derail/ (via search summaries)
+- [S39] stickK stakes, recipients and referees: https://www.stickk.com/faq/stakes/Commitment+Contracts and https://www.stickk.com/faq/referees/Commitment+Contracts (vendor pages blocked automated fetch; figures from search summaries)
+- [S40] stickK overview, free for individuals, 78% vs 35% success figure: https://en.wikipedia.org/wiki/StickK
+- [S41] DietBet fees (10 to 25% of pot) and its "not gambling" position: https://support.waybetter.com/hc/en-us/articles/360011677974-DietBet-Fees and https://www.dietbet.com/dietbet-not-gambling
+- [S42] HealthyWage video weigh-in verification: https://www.healthywage.com/healthywager/rules/ and https://www.healthywage.com/healthywager/faq/
+- [S43] FTC settlement with Pact, Inc. (September 2017): https://www.ftc.gov/news-events/news/press-releases/2017/09/mobile-app-settles-ftc-allegations-it-failed-deliver-promised-cash-rewards-meeting-exercise-diet
+- [S44] Volpp et al., financial incentive-based approaches for weight loss, JAMA 2008: https://pubmed.ncbi.nlm.nih.gov/19066383/
+- [S44b] Follow-up trial noting rapid regain once incentives were removed: https://pmc.ncbi.nlm.nih.gov/articles/PMC3583583/
+- [S45] Giné, Karlan and Zinman, commitment contract for smoking cessation, AEJ Applied 2010: https://www.aeaweb.org/articles?id=10.1257%2Fapp.2.4.213
+- [S46] Royer, Stehr and Sydnor, incentives, commitments and habit formation in exercise, AEJ Applied 2015: https://www.aeaweb.org/articles?id=10.1257%2Fapp.20130327
+- [S47] Deci, Koestner and Ryan, meta-analysis of extrinsic rewards and intrinsic motivation, Psychological Bulletin 1999: https://home.ubalt.edu/tmitch/642/articles%20syllabus/Deci%20Koestner%20Ryan%20meta%20IM%20psy%20bull%2099.pdf
+- [S48] Gambling Act 2005, section 9 (meaning of betting): https://www.legislation.gov.uk/ukpga/2005/19/section/9
+- [S49] CMA unfair commercial practices guidance under the DMCC Act: https://connect.cma.gov.uk/unfair-commercial-practices-guidance and penalties summary https://www.womblebonddickinson.com/uk/insights/articles-and-briefings/digital-markets-competition-and-consumers-act-2024-explained-cmas
+- [S50] Stripe keeps processing fees on refunded payments: https://support.stripe.com/questions/understanding-fees-for-refunded-payments
+- [S51] Obsidian Catalyst licence: https://help.obsidian.md/catalyst
+- [S52] Headspace free year for unemployed Americans (May 2020): https://www.businesswire.com/news/home/20200514005286/en/Headspace-Announces-Free-One-Year-Subscriptions-for-All-Unemployed-Americans
+- [S53] Ethical Consumer pay-it-forward subscriptions: https://www.ethicalconsumer.org/about-us/pay-it-forward
+- [S54] Google Play subscription pause: https://developer.android.com/google/play/billing/lifecycle/subscriptions and https://android-developers.googleblog.com/2020/06/new-features-to-acquire-and-retain-subscribers.html
+- [S55] Strava Family plan: https://support.strava.com/hc/en-us/articles/26013043116173-Strava-s-Family-Plan (UK £99 price from search summaries; verify)
+- [S56] Headspace gift subscriptions: https://www.headspace.com/buy/gift and https://help.headspace.com/hc/en-us/articles/215057718-How-can-I-gift-a-Headspace-subscription
+- [S57] Headspace for Work pricing estimate (third-party procurement data): https://www.vendr.com/marketplace/headspace
+- [S58] Wellhub partner payments: https://support.gympass.com/hc/en-us/articles/17135742388755-How-does-payment-for-partners-work
+- [S59] Virtuagym white-label pricing (third-party): https://www.fitbudd.com/post/white-label-fitness-apps and vendor page https://business.virtuagym.com/custom-mobile-app/
+- [S60] Playbook creator payments: https://playbookapp.io/handbook/how-payments-work
+- [S61] Ocado affiliate programme: https://www.ocado.com/content/ocado-affiliate-programme-39129 and Awin advertiser fees https://www.awin.com/gb/pricing/advertisers
+- [S62] Amazon UK Associates rates (third-party summaries; official schedule at https://affiliate-program.amazon.co.uk/help/operating/schedule not fetched): https://azonpress.com/amazon-affiliate-commission-rates/
+- [S63] Samsung Food / Whisk grocer basket integration: https://support.samsungfood.com/hc/en-us/articles/360042276852-Grocer-Integration-Overview
+- [S64] Day One book printing: https://dayoneapp.com/book-printing/ (price from search summaries; verify)
+- [S65] Innovate UK Smart grants paused and Growth Catalyst Early Stage closed: https://www.ukri.org/opportunity/growth-catalyst-early-stage-new-innovators/ and https://casrai.org/guides/innovate-uk-smart-grants
+- [S66] Innovate UK Q3/Q4 2026 pipeline (third-party): https://venturenomix.com/innovate-uk-grants-q3-q4-2026/ and live list https://apply-for-innovation-funding.service.gov.uk/competition/search
+- [S67] R&D merged scheme and ERIS rates (adviser summary): https://forrestbrown.co.uk/knowledge-bank/merged-r-and-d-scheme/
+- [S68] ICO anonymisation guidance: https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/data-sharing/anonymisation/about-this-guidance/
+- [S69] Strava heatmap exposed military bases (January 2018): https://www.nbcnews.com/tech/security/strava-fitness-tracking-map-reveals-military-bases-movements-war-zones-n841871
+- [S70] Charity Miles sponsor model: https://charitymiles.org/how-it-works/
+- [S71] Fitness referral programme examples (aggregator): https://growsurf.com/examples/fitness-app-referral-programs/
+- [S72] DMCC Act definition of a subscription contract (auto-renewal or trial/reduced-price period): https://brodies.com/insights/technology/the-dmcc-act-changes-to-rules-surrounding-subscription-contracts/
+- [S73] Credits for metered AI features in consumer apps (trend piece): https://aichatcompanions.com/blog/ai-companion-pricing-shift-credits-2026/
 - Repo: `src/data/sync.ts`, `src/store/store.ts`, `src/data/supabase.ts`, `src/data/push.ts`, `src/core/data/media.ts`, `public/sw.js`, `.github/workflows/deploy.yml`, `docs/security-rls.sql`, `docs/plans/ai-platform-plan.md` §3, `docs/plans/nutrition-data-and-sourcing.md`, `docs/plans/workouts-customization-and-library.md` §5.6.
 
 ---
@@ -491,3 +989,10 @@ review the design). Guests stay uncounted beyond an anonymous install count.
   commencement (January 2027) and subscription benchmarks; proposed the free/paid line, Tali Plus
   at £4.99 / £39.99, a Coach plan, the CAC spend rule and break-even scenarios (base 89 payers
   before salaries, about 1,860 to pay one person).
+- **2026-09-24 (later):** Added §11, additional revenue ideas (CFO). Evaluated Benn's "don't pay if
+  you succeed" idea and four variants (rejected in outcome form: −32% to −75% of Plus
+  contribution at 20 to 47% success, unverifiable, fails rule 4), 17 candidate ideas and three
+  found in research; ranked a shortlist of seven (supporter payment, R&D relief, founding price,
+  referrals, pause plus non-renewing pass, pay-what-you-can with hardship and gifts, AI
+  top-ups). Added sources S36 to S73. §11.7 then awaited `mental-performance`.
+- **24 September 2026 (later):** filled §11.7 with the `mental-performance` review: verdicts per idea, cross-cutting guardrails and the "On your side" promise as the safe version of Benn's idea.
