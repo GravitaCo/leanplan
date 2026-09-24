@@ -27,6 +27,8 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
+import { ensureMeta, stateFromBackup, type PersistedState } from '@/data/persistence'
+import { pushDirty, pullAll } from '@/data/sync'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
@@ -552,4 +554,57 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const staples = [['Salt', 'sauces'], ['Olive oil (tbsp ~14g)', 'fats'], ['Cumin, ground', 'sauces'], ['Pasta, dried, uncooked', 'grains'], ['Sugar snap peas', 'veg'], ['Dried apricots', 'fruit']].map(([n, c]) => isStaple(n, c as never) ? 'y' : 'n').join('')
   const ok = staples === 'yyynnn'; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'staples assumed only for basics', staples)
 }
-process.exit(bad ? 1 : 0)
+
+// Backup restore: an exported-then-imported state is fully dirty, so the next sync uploads it
+// before pulling, and a stale server can't overwrite or drop what was restored.
+async function backupRestore(): Promise<void> {
+  const day = (kcal: number) => ({ foods: [{ n: 'Toast', k: kcal, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: 70, workout: null })
+  const live = stateFromBackup({ days: {} } as never)
+  live.days = { '2026-09-01': day(100), '2026-09-02': day(120) } as never
+  live.customFoods = [{ id: 'f1', n: 'My flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }]
+  live.recipes = [{ id: 'r1', name: 'Chilli', servings: 4, items: [] }]
+  const m = ensureMeta(live, true)
+  m.foodDeletes = ['f1', 'f-gone']
+  m.recipeDeletes = ['r-gone']
+  // after a sync everything is clean; that is what exportBackup writes out
+  m.settings.dirty = false
+  Object.values(m.days).forEach((x) => (x.dirty = false))
+  live.customFoods.forEach((f) => (f._dirty = false))
+  live.recipes.forEach((r) => (r._dirty = false))
+  const file = JSON.parse(JSON.stringify(live)) as PersistedState
+  const got = stateFromBackup(file, { settings: { u: '', dirty: false }, days: {}, foodDeletes: ['f-here', 'f1'], recipeDeletes: ['r1'], lastPull: null })
+  const gm = got._meta!
+  const checks: [string, boolean][] = [
+    ['settings dirty', gm.settings.dirty],
+    ['every day dirty', Object.keys(got.days).length === 2 && Object.keys(got.days).every((d) => gm.days[d]?.dirty)],
+    ['custom foods dirty', got.customFoods.every((f) => f._dirty && !!f._u)],
+    ['recipes dirty', got.recipes.every((r) => r._dirty && !!r._u)],
+    ['queued deletes kept except restored ids', gm.foodDeletes.join('|') === 'f-gone|f-here' && gm.recipeDeletes.join('|') === 'r-gone'],
+  ]
+  // a stale server: different day 1, no foods or recipes; push then pull as runSync does
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
+    const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
+    if (o.method === 'POST') {
+      for (const row of JSON.parse(String(o.body))) {
+        const k = table === 'day_logs' ? 'log_date' : table === 'settings' ? 'user_id' : 'id'
+        server[table] = [...server[table].filter((x) => x[k] !== row[k]), { ...row, updated_at: 'y' }]
+      }
+    }
+    return new Response(o.method ? null : JSON.stringify(server[table]), { status: o.method ? 204 : 200 })
+  }) as typeof fetch
+  try {
+    await pushDirty(got, gm)
+    await pullAll(got, gm)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  checks.push(
+    ['restored day survives the pull', got.days['2026-09-01'].foods[0].k === 100],
+    ['restored food and recipe survive the pull', got.customFoods.some((f) => f.id === 'f1') && got.recipes.some((r) => r.id === 'r1')],
+    ['restored data reached the server', server.custom_foods.length === 1 && server.recipes.length === 1 && server.day_logs.length === 2 && server.settings.length === 1],
+  )
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'backup import:', n) }
+}
+backupRestore().then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

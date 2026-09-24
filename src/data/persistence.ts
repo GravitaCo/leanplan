@@ -105,6 +105,26 @@ export function saveMode(m: SessionMode | null): void {
   try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
 }
 
+/**
+ * Turn a backup file into the state to restore. A backup is the user's intended current data,
+ * so its own sync flags (exported with it, usually all clean) are discarded and every day,
+ * the settings, custom foods and recipes are marked dirty with fresh stamps: the next sync
+ * uploads them before it pulls, so the pull can't overwrite or drop them. Queued deletes from
+ * the backup and from this device are kept, except for ids the backup restores.
+ */
+export function stateFromBackup(incoming: PersistedState, pending?: SyncMeta): PersistedState {
+  const old = incoming._meta
+  delete incoming._meta
+  const s = loadStateFrom(incoming)
+  const meta = ensureMeta(s, true)
+  const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
+  const keep = (lists: unknown[], live: Set<unknown>) =>
+    [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && !live.has(id))
+  meta.foodDeletes = keep([old?.foodDeletes, pending?.foodDeletes], new Set(s.customFoods.map((f) => f.id)))
+  meta.recipeDeletes = keep([old?.recipeDeletes, pending?.recipeDeletes], new Set(s.recipes.map((r) => r.id)))
+  return s
+}
+
 /** Ensure sync metadata exists, optionally flagging all existing data dirty for first upload. */
 export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
   if (!s._meta) {

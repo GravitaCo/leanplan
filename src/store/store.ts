@@ -27,7 +27,7 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, stateFromBackup, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
@@ -496,8 +496,7 @@ export const useStore = create<StoreState>()(
       },
 
       importBackup: (incoming) => {
-        const fresh = loadStateFrom(incoming)
-        ensureMeta(fresh, true)
+        const fresh = stateFromBackup(structuredClone(incoming), get().data._meta)
         set((st) => { st.data = fresh })
         saveState(get().data)
         set((st) => { st.cur = todayStr() })
