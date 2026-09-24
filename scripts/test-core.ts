@@ -302,7 +302,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     profile: { activityLevel, rangeWidth: 100, burnSwitch: '2026-09-20' }, days }) as any
   // origin/main formula: (CARDIO_MET_old[t] || 4.0) × kg × (mins || 25)/60; strength 3.5 × kg × 0.75
   const old = (t: string, mins: string) => Math.round((LEGACY_CARDIO_MET[t] || 4.0) * 80 * ((parseFloat(mins) || 25) / 60))
-  const legacyOk = [...Object.keys(LEGACY_CARDIO_MET), '', 'Zumba'].every((t) => workoutBurn({ type: 'Cardio', cardioType: t, mins: '' }, 80, true) === old(t, ''))
+  const legacyOk = [...Object.keys(LEGACY_CARDIO_MET), '', 'Zumba'].every((t) => ['', '0', '30'].every((m) => workoutBurn({ type: 'Cardio', cardioType: t, mins: m }, 80, true) === old(t, m)))
   const got = [
     rangeFor(st('light', { '2026-09-20': day(lift) }), '2026-09-20').mid,        // switch day itself: new maths
     rangeFor(st('sedentary', { '2026-09-19': day(lift) }), '2026-09-19').mid,   // sedentary before the switch: gross
@@ -341,6 +341,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     sug([6, 6, 7, 6], 'moderate'),                  // active
     sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -10) }), // cool-down
     sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -28) }), // cool-down over
+    sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -5) }),        // chose a level themselves 5 days ago
+    sug([4, 4, 4, 4], 'light', { activityAsked: shiftDay(T, -27) }),       // cool-down at 27 days
+    String(isTrainingSession({ type: 'Cardio', cardioType: '', mins: '' } as any)) + '/' + String(isTrainingSession({ type: 'Cardio', cardioType: 'Incline treadmill', mins: '20' } as any)) + '/' + String(isTrainingSession({ type: 'Cardio', cardioType: 'Rower', mins: '0' } as any)),
     sug([1, 1, 2, 1], 'active', { easyUntil: shiftDay(T, 2) }),            // easier week: no downward nudge
     sug([1, 1, 2, 1], 'active', { welcomeAsked: shiftDay(T, -5) }),        // just back from a break: no downward nudge
     sug([4, 4, 4, 4], 'light', { easyUntil: shiftDay(T, 2) }),             // upward is fine then
@@ -350,7 +353,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     [isTrainingSession({ type: 'Cardio', cardioType: 'Mobility', mins: '10' } as any), isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '20' } as any),
       isTrainingSession({ type: 'Cardio', cardioType: 'Easy walk', mins: '10' } as any), isTrainingSession(lift as any)].join(','),
   ].join(' ')
-  const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - moderate↑ moderate↑ - null false,true,false,true'
+  const want = '-,light,light,moderate,moderate,active 1,2,3,4 moderate↑ - moderate↑ - - light↓ - active↑ - moderate↑ - - true/true/false - - moderate↑ moderate↑ - null false,true,false,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'activity-level suggestion', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

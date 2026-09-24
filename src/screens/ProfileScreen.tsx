@@ -1,8 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import type { AccuracyMode, ActivityLevel, Goal, HandPortion, Sex } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
-import { fmt } from '@/core/domain/date'
+import { fmt, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { rangeWidth } from '@/core/domain/insights'
@@ -53,7 +53,11 @@ export function ProfileScreen() {
 
   const pr = data.profile
   const weight = latestWeight(data.days, pr.weight)
-  const [open, setOpen] = useState<Section | null>(null)
+  // a card elsewhere can ask for a section to be open on arrival (e.g. after an activity update)
+  const profileOpen = useStore((s) => s.profileOpen)
+  const clearProfileOpen = useStore((s) => s.clearProfileOpen)
+  const [open, setOpen] = useState<Section | null>(() => (profileOpen as Section | null) ?? null)
+  useEffect(() => { if (profileOpen) clearProfileOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [handsOpen, setHandsOpen] = useState(false)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
@@ -141,6 +145,9 @@ export function ProfileScreen() {
           <button className="btn gray" onClick={() => saveProfileMetrics({
             sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
             weight: parseFloat(metrics.weight) || null, activityLevel: metrics.activityLevel,
+            // choosing a level yourself starts the suggestion's cool-down, so the app never
+            // offers a different level based on logs from before the decision
+            ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr() } : {}),
           })}>Save metrics</button>
 
           <div className="lbl" style={{ paddingLeft: 0 }}>Main goal</div>

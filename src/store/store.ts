@@ -38,6 +38,8 @@ interface StoreState {
   data: PersistedState
   cur: string
   tab: Tab
+  /** one-shot: the Profile section to open on arrival (UI only, never persisted) */
+  profileOpen: string | null
   sync: SyncStatus
   email: string | null
   authReady: boolean
@@ -52,6 +54,8 @@ interface StoreState {
 
   // navigation
   setTab: (t: Tab) => void
+  openProfile: (section: string) => void
+  clearProfileOpen: () => void
   setDate: (d: string) => void
   shiftDate: (n: number) => void
   showToast: (msg: string) => void
@@ -156,6 +160,7 @@ export const useStore = create<StoreState>()(
       data: loadState(),
       cur: todayStr(),
       tab: 'today',
+      profileOpen: null,
       sync: 'idle',
       email: null,
       authReady: false,
@@ -166,6 +171,8 @@ export const useStore = create<StoreState>()(
       toast: null,
 
       setTab: (t) => set((st) => { st.tab = t }),
+      openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
+      clearProfileOpen: () => set((st) => { st.profileOpen = null }),
       setDate: (d) => set((st) => { st.cur = d }),
       shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 

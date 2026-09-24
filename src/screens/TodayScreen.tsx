@@ -41,6 +41,7 @@ export function TodayScreen() {
   const runSync = useStore((s) => s.runSync)
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
+  const openProfile = useStore((s) => s.openProfile)
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [dismissedMissed, setDismissedMissed] = useState(false)
 
@@ -127,7 +128,7 @@ export function TodayScreen() {
             <button className="chip" onClick={() => {
               setPrefs({ activityLevel: suggest.level, activityAsked: cur })
               showToast('Activity level updated. Your targets only change if you choose to.')
-              setTab('profile')
+              openProfile('metrics')
             }}>Update</button>
             <button className="chip" onClick={() => setPrefs({ activityAsked: cur })}>Keep as is</button>
           </div>

@@ -64,7 +64,7 @@ export function activitySuggestion(s: AppState, today: string): ActivitySuggesti
   const weeks = trainingWeeks(s, today)
   const total = weeks.reduce((a, b) => a + b, 0)
   const band = bandFor(total / 4)
-  const cur = s.profile.activityLevel
+  const cur = ORDER.includes(s.profile.activityLevel) ? s.profile.activityLevel : 'light' // as nutrition.ts does
   if (!band || band === cur) return null
   if (weeks.filter((w) => bandFor(w) === band).length < 3) return null
   const up = ORDER.indexOf(band) > ORDER.indexOf(cur)
