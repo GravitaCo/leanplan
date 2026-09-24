@@ -253,7 +253,7 @@ export function ProfileScreen() {
         <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{email || (syncPaused ? 'Your account (not syncing right now)' : 'Local (no account)')}</div></div>
-            <button className="btn sm gray" onClick={() => (authed ? setSignOutOpen(true) : signOut())}>{authed ? 'Sign out' : 'Sign in'}</button>
+            <button className="btn sm gray" onClick={() => (authed || syncPaused ? setSignOutOpen(true) : signOut())}>{authed || syncPaused ? 'Sign out' : 'Sign in'}</button>
           </div>
         </Disclosure>
         <Disclosure icon="cloud" color="var(--mind)" label="Data & backup" open={open === 'backup'} onToggle={() => toggle('backup')}>
@@ -323,7 +323,7 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
       </div>
       <div className="stack">
         <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
       </div>
     </Sheet>
   )

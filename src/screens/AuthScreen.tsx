@@ -3,6 +3,7 @@ import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { TaliIcon } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
+import { unsyncedCount } from '@/data/persistence'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -246,6 +247,10 @@ export function OwnerChoiceScreen() {
  */
 export function GuestChoiceScreen() {
   const resolveGuest = useStore((st) => st.resolveGuest)
+  const unsynced = useStore((st) => unsyncedCount(st.data))
+  const [sure, setSure] = useState(false)
+  // losing changes that never reached the account takes a second tap, as at sign-out
+  const fresh = () => (unsynced > 0 && !sure ? setSure(true) : resolveGuest('fresh'))
   return (
     <div className="auth auth-owner">
       <div className="auth-brand">
@@ -256,10 +261,10 @@ export function GuestChoiceScreen() {
       <h2 className="auth-t">This device has an account’s log</h2>
       <div className="card prose">
         <p>The log on this device belongs to an account, so it only opens when you sign in to that account.</p>
-        <p style={{ margin: 0 }}>Starting fresh removes it from this device and opens Tali empty, without an account. Anything that account hadn’t synced yet is lost.</p>
+        <p style={{ margin: 0 }}>Starting fresh removes it from this device and opens Tali empty, without an account.{unsynced > 0 ? ' ' + (unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t') + ' reached that account yet and would be lost: signing in to it first keeps ' + (unsynced === 1 ? 'it.' : 'them.') : ''}</p>
       </div>
       <button className="btn" onClick={() => resolveGuest('signin')}>Sign in</button>
-      <button className="btn gray" onClick={() => resolveGuest('fresh')}>Start fresh without an account</button>
+      <button className="btn gray" onClick={fresh}>{sure && unsynced > 0 ? 'Start fresh anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Start fresh without an account'}</button>
     </div>
   )
 }
