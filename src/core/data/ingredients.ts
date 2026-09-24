@@ -384,7 +384,7 @@ export const INGREDIENTS: Food[] = [
     "p": 16.5,
     "c": 0.0,
     "f": 16.5,
-    "g": 50,
+    "g": 25,
     "cat": "meat",
     "src": "cofid:19-497"
   },
@@ -394,7 +394,7 @@ export const INGREDIENTS: Food[] = [
     "p": 18.8,
     "c": 0.0,
     "f": 6.7,
-    "g": 50,
+    "g": 25,
     "cat": "meat",
     "src": "cofid:19-646"
   },
@@ -670,7 +670,7 @@ export const INGREDIENTS: Food[] = [
     "src": "cofid:16-399"
   },
   {
-    "n": "King prawns, raw",
+    "n": "King prawns, raw, peeled",
     "k": 77,
     "p": 17.6,
     "c": 0.0,
@@ -702,7 +702,7 @@ export const INGREDIENTS: Food[] = [
     "src": "cofid:16-263"
   },
   {
-    "n": "Mussels, raw",
+    "n": "Mussels, raw, flesh only (weigh without shells)",
     "k": 74,
     "p": 12.1,
     "c": 2.5,
@@ -2396,7 +2396,7 @@ export const INGREDIENTS: Food[] = [
     "c": 0.6,
     "f": 82.2,
     "g": 10,
-    "cat": "dairy",
+    "cat": "fats",
     "src": "cofid:17-661"
   },
   {
@@ -2406,7 +2406,7 @@ export const INGREDIENTS: Food[] = [
     "c": 0.5,
     "f": 79.1,
     "g": 10,
-    "cat": "dairy",
+    "cat": "fats",
     "src": "cofid:17-655"
   },
   {
@@ -2738,16 +2738,6 @@ export const INGREDIENTS: Food[] = [
     "g": 60,
     "cat": "eggs",
     "src": "usda:173734"
-  },
-  {
-    "n": "Black beans, canned, with liquid",
-    "k": 91,
-    "p": 6.0,
-    "c": 16.6,
-    "f": 0.3,
-    "g": 120,
-    "cat": "eggs",
-    "src": "usda:175188"
   },
   {
     "n": "Sea bass fillet, raw",

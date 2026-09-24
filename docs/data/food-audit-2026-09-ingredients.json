@@ -501,7 +501,7 @@
    "f": 16.5
   },
   "status": "new",
-  "serving_g": 50
+  "serving_g": 25
  },
  {
   "n": "Bacon, back rashers, fat trimmed, raw",
@@ -515,7 +515,7 @@
    "f": 6.7
   },
   "status": "new",
-  "serving_g": 50
+  "serving_g": 25
  },
  {
   "n": "Bacon, streaky rashers, raw",
@@ -868,7 +868,7 @@
   "serving_g": 140
  },
  {
-  "n": "King prawns, raw",
+  "n": "King prawns, raw, peeled",
   "ref": {
    "source": "CoFID",
    "code": "16-387",
@@ -910,7 +910,7 @@
   "serving_g": 100
  },
  {
-  "n": "Mussels, raw",
+  "n": "Mussels, raw, flesh only (weigh without shells)",
   "ref": {
    "source": "CoFID",
    "code": "16-497",
@@ -3750,20 +3750,6 @@
   },
   "status": "new",
   "serving_g": 60
- },
- {
-  "n": "Black beans, canned, with liquid",
-  "ref": {
-   "source": "USDA",
-   "code": "175188",
-   "name": "Beans, black turtle, mature seeds, canned",
-   "k": 91.0,
-   "p": 6.03,
-   "c": 16.55,
-   "f": 0.29
-  },
-  "status": "new",
-  "serving_g": 120
  },
  {
   "n": "Sea bass fillet, raw",
