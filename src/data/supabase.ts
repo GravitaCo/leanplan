@@ -11,7 +11,7 @@ export const SB_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_l-XOQOrSJ6sRGEwaRR8rrg_pXukGtET'
 export const SB_REST = SB_URL + '/rest/v1'
 
-/** Fallback user id used for local-only mode before the first sign-in. */
+/** Fallback user id when no session is set (requests with it match no rows under RLS). */
 export const LOCAL_USER = '00000000-0000-0000-0000-000000000001'
 
 export const supabase: SupabaseClient = createClient(SB_URL, SB_KEY)

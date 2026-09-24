@@ -84,7 +84,7 @@ export function TodayScreen() {
   const wDelta = weightWeekDelta(data, cur)
   const supps = p.supplements || []
   const baseLo = tg.kcal - rangeWidth(p), baseHi = tg.kcal + rangeWidth(p)
-  const syncLabel = !authed ? 'on this device' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
+  const syncLabel = !authed ? 'not syncing' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
 
   const activity = logged
     ? sess.length > 1 ? <span className="w">{sess.length} sessions</span>

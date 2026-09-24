@@ -89,8 +89,8 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Food data & offline (important)
 
-- **Offline-first:** Tali must open, search, log and save with no connection. Never add a
-  launch or save path that waits on the network. See `docs/plans/food-data-offline.md`.
+- **Offline-first:** once signed in, Tali must open, search, log and save with no connection.
+  Never add a launch or save path that waits on the network. (The first sign-in needs one.) See `docs/plans/food-data-offline.md`.
 - Every food cites its source (`src`, keys in `src/core/data/sources.ts`); foods are per 100 g,
   per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
   the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.

@@ -165,7 +165,7 @@ function clearSavedSession() {
 
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
-const GUEST_GONE_MSG = 'Tali now needs an account. Sign in or create one: the log on this phone moves into it.'
+const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
