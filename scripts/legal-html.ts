@@ -1,7 +1,7 @@
 /**
  * `npm run legal:html` — renders the legal documents in src/core/legal as HTML for the
  * Webflow "Legals" collection (rich-text `content` + `last-updated`), one entry per slug.
- * Writes node_modules/.cache/legal-html.json and prints a summary. The repo text is the
+ * Pass `-- --site` for the interim website-only versions. Writes node_modules/.cache/legal-html.json and prints a summary. The repo text is the
  * source of truth: publish from here, don't edit the pages in Webflow.
  */
 import { writeFileSync } from 'node:fs'
@@ -9,6 +9,7 @@ import { LEGAL_URLS, type LegalDoc, type LegalDocId } from '@/core/legal'
 import { privacyPolicy } from '@/core/legal/privacy'
 import { termsOfUse } from '@/core/legal/terms'
 import { cookiePolicy } from '@/core/legal/cookies'
+import { sitePrivacy, siteTerms, siteCookies } from '@/core/legal/website'
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 /** escape, then turn URLs, emails and bare domains we name into links */
@@ -28,7 +29,12 @@ export function toHtml(doc: LegalDoc): string {
   return out.join('\n')
 }
 
-const docs: Record<LegalDocId, LegalDoc> = { privacy: privacyPolicy(), terms: termsOfUse(), cookies: cookiePolicy() }
+// --site: the interim website-only versions (src/core/legal/website.ts), used until go-live
+const site = process.argv.includes('--site')
+const docs: Record<LegalDocId, LegalDoc> = site
+  ? { privacy: sitePrivacy(), terms: siteTerms(), cookies: siteCookies() }
+  : { privacy: privacyPolicy(), terms: termsOfUse(), cookies: cookiePolicy() }
+console.log(site ? 'Interim website-only versions' : 'Full app + website versions')
 const items = (Object.keys(docs) as LegalDocId[]).map((id) => ({
   id,
   name: docs[id].title,
