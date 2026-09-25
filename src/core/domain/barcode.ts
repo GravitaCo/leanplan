@@ -131,7 +131,8 @@ export interface ScanDraft {
   serving: Record<FoodKind, number | undefined>
   /** the whole pack, in g or ml, when OFF knows it */
   pack?: number
-  /** OFF lists the whole pack as one serving (a 150 g bag of crisps): don't trust it */
+  /** OFF lists the whole pack as one serving, and the pack is bigger than one (a 150 g bag of
+   *  crisps, a 2 L bottle): don't trust it */
   wholePack: boolean
   /** a liquid, so per 100 ml is offered up front */
   liquid: boolean
@@ -189,7 +190,7 @@ export function isPer100ml(p: Pick<OffProduct, 'nutrition_data_per' | 'quantity'
   if (unit === 'ml') return true
   if (unit === 'g') return false
   if (/100\s*ml/i.test(p.nutrition_data_per || '')) return true
-  return /\d\s*(ml|cl|dl|l|litres?|liters?)\b/i.test(p.quantity || '')
+  return /\d\s*(ml|cl|dl|l|litres?|liters?|pints?)\b/i.test(p.quantity || '')
 }
 
 /** "4 x 250g" / "250 g x 4": a multipack. The weight of one unit (g or ml), when it says. */
@@ -306,18 +307,26 @@ export function isVagueName(p: Pick<OffProduct, 'product_name' | 'brands'>): boo
   return (p.brands || '').split(',').map((b) => b.trim().toLowerCase()).some((b) => b && b === name)
 }
 
-/** A single pack size from the quantity text ("150", "150 g", "1.5 kg", "33cl"); not multipacks. */
+/** A single pack size from the quantity text ("150", "150 g", "1.5 kg", "33cl", "2 pints"); not multipacks. */
 export function packFromQuantity(q: string | undefined): number | undefined {
-  const m = (q || '').trim().match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|cl|l)?$/i)
+  const m = (q || '').trim().match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|cl|l|pints?)?$/i)
   if (!m) return undefined
-  const x = parseFloat(m[1].replace(',', '.')) * (/^(kg|l)$/i.test(m[2] || '') ? 1000 : /^cl$/i.test(m[2] || '') ? 10 : 1)
+  const u = (m[2] || '').toLowerCase()
+  const x = parseFloat(m[1].replace(',', '.')) * (u === 'kg' || u === 'l' ? 1000 : u === 'cl' ? 10 : u.startsWith('pint') ? 568 : 1)
   return x > 0 && x <= 5000 ? Math.round(x) : undefined
 }
 
-/** OFF's serving is the whole pack (within 2%), for a pack of 100 g or more that isn't a meal or a
- *  drink: a sharing bag of crisps, where the pack's own serving is smaller. */
-export function servingIsWholePack(serving: number | undefined, pack: number | undefined, mealOrDrink: boolean): boolean {
-  return !mealOrDrink && !!serving && !!pack && pack >= 100 && Math.abs(serving - pack) <= 0.02 * pack
+export type PackKind = 'meal' | 'drink' | 'other'
+
+/** The biggest pack that's still one serving: a 500 ml bottle, a 600 g ready meal, a 100 g bar.
+ *  Anything bigger (a 2 L bottle, a family lasagne, a sharing bag) is never a default serving. */
+export const SINGLE_SERVE_MAX: Record<PackKind, number> = { drink: 500, meal: 600, other: 100 }
+
+export const singleServe = (pack: number, kind: PackKind) => pack <= SINGLE_SERVE_MAX[kind]
+
+/** OFF's serving is the whole pack (within 2%) and the pack is bigger than one serving. */
+export function servingIsWholePack(serving: number | undefined, pack: number | undefined, kind: PackKind): boolean {
+  return !!serving && !!pack && !singleServe(pack, kind) && Math.abs(serving - pack) <= 0.02 * pack
 }
 
 /** A best-guess ingredient category from OFF categories, or undefined. */
@@ -333,7 +342,9 @@ export function productName(p: Pick<OffProduct, 'product_name' | 'brands'>): str
   const name = tidy(p.product_name || '')
   const brand = tidy((p.brands || '').split(',')[0] || '')
   if (!name) return brand
-  if (!brand || name.toLowerCase().startsWith(brand.toLowerCase())) return name
+  // "Coca-Cola" + "Coca Cola Zero": the brand is already in the name, ignoring case and punctuation
+  const bare = (x: string) => ` ${x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()} `
+  if (!brand || bare(name).includes(bare(brand))) return name
   return `${brand} ${name}`
 }
 
@@ -377,12 +388,17 @@ export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<stri
   const ml = isPer100ml(p)
   const meal = isMealProduct(p.categories_tags)
   const cat = guessCategory(p.categories_tags)
-  const liquid = ml || cat === 'drinks'
+  const liquid = ml || cat === 'drinks' || slugs(p.categories_tags).has('milks')
+  const packKind: PackKind = meal ? 'meal' : liquid ? 'drink' : 'other'
   const pack = serving(p.product_quantity) ?? packFromQuantity(p.quantity)
-  const wholePack = servingIsWholePack(serving(p.serving_quantity), pack, meal || liquid)
-  const serv = wholePack ? undefined : serving(p.serving_quantity)
+  const given = serving(p.serving_quantity)
+  const wholePack = servingIsWholePack(given, pack, packKind)
+  const serv = wholePack ? undefined : given
+  // no serving from OFF and a pack bigger than one serving: the pack isn't a default either
+  const bigPack = !given && !multi.multi && pack !== undefined && !singleServe(pack, packKind)
   const notes = servingNotes(p, ml)
   if (wholePack) notes.push({ field: 'serving', kind: 'odd', msg: 'Open Food Facts lists the whole pack as one serving. Check the serving size on the pack.' })
+  else if (bigPack && classifyProduct(p.categories_tags) === 'eat') notes.push({ field: 'serving', kind: 'odd', msg: 'This pack is more than one serving. Check the serving size on the pack.' })
   return {
     barcode,
     name: baseName ? uniqueName(baseName, taken) : '',
@@ -396,7 +412,7 @@ export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<stri
     // eaten as is: the pack's serving; else one unit of a multipack; else a small pack whole (or a
     // meal's pack). A sharing bag with no believable serving is left for the user to type.
     serving: {
-      eat: serv ?? (multi.multi ? serving(multi.unit) ?? (meal ? 100 : undefined) : wholePack ? undefined : pack !== undefined && (meal || liquid || pack < 100) ? pack : meal ? 100 : undefined),
+      eat: serv ?? (multi.multi ? serving(multi.unit) ?? (meal ? 100 : undefined) : wholePack ? undefined : pack !== undefined ? (singleServe(pack, packKind) ? pack : undefined) : meal ? 100 : undefined),
       cook: serv ?? (wholePack ? undefined : 100),
     },
     pack,
