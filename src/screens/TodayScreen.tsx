@@ -6,6 +6,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import type { WorkoutType } from '@/core/types'
+import { plannedOn } from '@/core/domain/week'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
@@ -62,7 +63,8 @@ export function TodayScreen() {
   const f = fmtDate(cur)
 
   const sess = sessionsOf(day, cur)
-  const sched = data.schedule[f.idx] || 'Rest'
+  // anything unknown in the schedule reads as Rest (see plannedOn)
+  const sched = plannedOn(data.schedule, f.idx)
   const openTrain = useStore((s) => s.openTrain)
   const logged = sess.length > 0
   const isRest = !logged && sched === 'Rest'

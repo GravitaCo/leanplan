@@ -116,6 +116,7 @@ export function TrainScreen() {
     setSwapsBy((p) => ({ ...p, [t]: n }))
   }
   function openWorkout(t: WorkoutType, c?: Choice) {
+    if (!WORKOUTS[t]) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
     if (c) setPicked(c)
     setMode('preview'); setOpen(t); window.scrollTo(0, 0)
   }

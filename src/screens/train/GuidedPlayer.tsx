@@ -4,7 +4,7 @@ import type { Effort, ExerciseMedia, LoggedExercise, SetEntry, Workout, WorkoutT
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
-import { buildLogged, fmtClock, fmtTarget, lastTime, later, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { buildLogged, fmtClock, fmtTarget, lastTime, later, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { sessionsOf } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
@@ -218,14 +218,15 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
 
   /** a swap keeps what was logged for the move swapped out (as an extra), and the new move starts fresh */
   function swapTo(id: string) {
-    let ex = extras
-    if (sets.length) {
-      ex = [...extras, { name: slot.swapped && slot.x ? slot.x.n : slot.planned.n, ...(slot.x ? { exId: slot.x.id } : {}), log: slot.shape, rx: slot.fullRx, sets }]
-      setExtras(ex)
-    }
-    const next = { ...logged, [slot.i]: [] }
+    // the move going out keeps its sets (as an extra); the move coming in takes back its own
+    const r = swapInto(slot, id, sets, extras, shorter, exById)
+    const next = { ...logged, [slot.i]: r.sets }
+    setExtras(r.extras)
     setLogged(next)
-    if (sets.length) save(next, ex)
+    if (sets.length || r.sets.length) {
+      // saved with the slot as it now is (the parent's slots update on the next render)
+      saveWorkout(type, buildLogged(slots.map((s) => (s.i === slot.i ? r.slot : s)), next, r.extras), option, { quiet: true, open: true })
+    }
     onSwap(slot.i, id)
   }
 

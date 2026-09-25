@@ -20,7 +20,7 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, sessionMetMins } from '@/core/domain/sessions'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -33,7 +33,7 @@ import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
-import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, targetFor, warmupSlot } from '@/core/domain/guided'
+import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
 const G = { k: true, macros: true }
@@ -1001,6 +1001,31 @@ function legacyAndGuest(): void {
     })()],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'review:', n) }
+}
+
+
+// ---------- swap X → Y → X keeps X's sets in the slot, once ----------
+{
+  const byId = (id: string | undefined) => EXERCISE_BY_ID[id ?? '']
+  const [x0] = slotsOf(WORKOUTS.Legs.ex.slice(0, 1), {}, false, byId)
+  const xSets: any[] = [{ w: '40', reps: '10' }, { w: '40', reps: '9' }]
+  const toY = swapInto(x0, 'goblet-squat', xSets, [], false, byId)
+  const ySets: any[] = [{ w: '16', reps: '12' }]
+  const toX = swapInto(toY.slot, 'back-squat', ySets, toY.extras, false, byId)
+  const saved = buildLogged([toX.slot], { [x0.i]: toX.sets }, toX.extras)
+  const reload = splitLogged(saved, [toX.slot])
+  const xs = saved.filter((e) => e.exId === 'back-squat')
+  const noSets = swapInto(x0, 'goblet-squat', [], [], false, byId)
+  const checks: [string, boolean][] = [
+    ['swap out: X kept as an extra, Y starts fresh', toY.slot.x?.id === 'goblet-squat' && toY.sets.length === 0 && toY.extras.length === 1 && toY.extras[0].exId === 'back-squat'],
+    ['swap back: X takes its sets back, Y kept as an extra', toX.slot.x?.id === 'back-squat' && !toX.slot.swapped && toX.sets.length === 2 && toX.sets[1].reps === '9' && toX.extras.length === 1 && toX.extras[0].exId === 'goblet-squat'],
+    ['saved: exactly one X entry, with its sets, in the slot', xs.length === 1 && saved[0].exId === 'back-squat' && saved[0].sets.length === 2],
+    ['reloaded: X sets in the slot, Y still kept', reload.bySlot[x0.i].length === 2 && reload.extras.length === 1 && reload.extras[0].exId === 'goblet-squat'],
+    ['swap with nothing logged adds no extra', noSets.extras.length === 0 && noSets.sets.length === 0],
+    ['saving with an empty note clears it; no note given keeps it', keptOnSave({ note: '' }).join() === 'effort,mins' && keptOnSave({ effort: null, note: '' }).join() === 'mins' && keptOnSave({ note: 'x' }).join() === 'effort,note,mins' && keptOnSave(undefined).join() === 'effort,note,mins'],
+    ['splitLogged reports the matched entry\'s own log shape', splitLogged([{ name: 'Barbell squat', exId: 'back-squat', log: 'reps', sets: [{ w: '', reps: '10' }] }] as any, [x0]).logs[x0.i] === 'reps'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'swap:', n) }
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

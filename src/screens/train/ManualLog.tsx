@@ -6,7 +6,7 @@ import { sessionsOf } from '@/core/domain/sessions'
 import { howToLink } from '@/core/domain/workout'
 import { shortTitle } from '@/core/domain/week'
 import { todayStr } from '@/core/domain/date'
-import { buildLogged, lastTime, splitLogged, working, type Slot } from '@/core/domain/guided'
+import { buildLogged, lastTime, splitLogged, swapInto, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
 import { BackButton, Seg, Toggle } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
@@ -52,7 +52,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
     const out: Record<number, SetEntry[]> = {}
     slots.forEach((s) => {
       const L = init.bySlot[s.i]
-      out[s.i] = L.length ? toRows(L, session?.ex?.[s.i]?.log ?? s.shape) : blankRows()
+      out[s.i] = L.length ? toRows(L, init.logs[s.i] ?? s.shape) : blankRows()
     })
     return out
   })
@@ -72,12 +72,15 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
   }
   /** a different exercise in this slot today: its sets start fresh (weights never carry across moves) */
   function swapSlot(exi: number, id: string) {
-    // the sets already typed for the move swapped out stay in the log, as their own entry
+    // the sets typed for the move going out stay in the log as their own entry; the move coming
+    // in takes back its own sets if it was here earlier today (swap X → Y → X keeps X's, once)
     const sl = slots.find((s) => s.i === exi)
-    const had = sl ? (sets[exi] || []).filter((r) => setHasData(r, sl.shape)) : []
-    if (sl && had.length) setExtras((e) => [...e, { name: sl.swapped && sl.x ? sl.x.n : sl.planned.n, ...(sl.x ? { exId: sl.x.id } : {}), log: sl.shape, rx: sl.fullRx, sets: sl.shape === 'hold' ? had.map((r) => ({ ...r, reps: r.sec || r.reps })) : had }])
+    if (!sl) return
+    const had = (sets[exi] || []).filter((r) => setHasData(r, sl.shape))
+    const r = swapInto(sl, id, had, extras, shorter, exById)
+    setExtras(r.extras)
     onSwap(exi, id)
-    setSets((prev) => ({ ...prev, [exi]: blankRows() }))
+    setSets((prev) => ({ ...prev, [exi]: r.sets.length ? toRows(r.sets, r.log ?? r.slot.shape) : blankRows() }))
     setLoadMode((p) => { const n = { ...p }; delete n[exi]; return n })
   }
   function commit() {

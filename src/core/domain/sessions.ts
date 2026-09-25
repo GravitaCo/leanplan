@@ -109,3 +109,12 @@ export function isHardSession(x: Session): boolean {
   if (x.modality === 'cardio') { const { met, mins } = sessionMetMins(x); return met >= 6 && mins > 20 }
   return false
 }
+
+/**
+ * Fields a re-save of a built-in session carries over from the earlier save when the caller
+ * doesn't set them. An explicit null effort or an explicitly empty note clears that field
+ * (the finish sheet), so a note can be removed.
+ */
+export function keptOnSave(extra?: { effort?: Effort | null; note?: string }): ('effort' | 'note' | 'mins')[] {
+  return (['effort', 'note', 'mins'] as const).filter((k) => !(k === 'effort' && extra?.effort === null) && !(k === 'note' && extra?.note === ''))
+}

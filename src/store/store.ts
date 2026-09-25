@@ -24,7 +24,7 @@ import type {
   Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
-import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -418,8 +418,8 @@ export const useStore = create<StoreState>()(
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
           putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}), ...more },
-            // the finish sheet clears effort / note it was given as empty; other saves keep them
-            extra?.effort === null ? ['mins'] : ['effort', 'note', 'mins'])
+            // what the caller didn't set carries over; an explicit null effort or empty note clears it
+            keptOnSave(extra))
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync()

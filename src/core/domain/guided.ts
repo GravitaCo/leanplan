@@ -261,21 +261,45 @@ export function matchLogged(L: LoggedExercise | undefined, s: Slot, byPosition =
  * ever dropped: an entry that doesn't belong to the slot at its position (a move swapped out
  * after sets were logged) is kept as an extra, and goes back into a slot that matches it.
  */
-export function splitLogged(ex: LoggedExercise[] | undefined, slots: Slot[]): { bySlot: Record<number, SetEntry[]>; extras: LoggedExercise[] } {
+export function splitLogged(ex: LoggedExercise[] | undefined, slots: Slot[]): { bySlot: Record<number, SetEntry[]>; extras: LoggedExercise[]; logs: Record<number, LogShape | undefined> } {
   const list = ex || []
   const bySlot: Record<number, SetEntry[]> = {}
+  /** the shape each matched entry was logged with (older logs render in their own layout) */
+  const logs: Record<number, LogShape | undefined> = {}
   const used = new Set<number>()
   for (const s of slots) {
-    if (matchLogged(list[s.i], s)) { bySlot[s.i] = list[s.i].sets.map((y) => ({ ...y })); used.add(s.i) }
+    if (matchLogged(list[s.i], s)) { bySlot[s.i] = list[s.i].sets.map((y) => ({ ...y })); logs[s.i] = list[s.i].log; used.add(s.i) }
   }
   for (const s of slots) {
     if (bySlot[s.i]) continue
     const j = list.findIndex((L, k) => !used.has(k) && L.sets?.length && matchLogged(L, s, false))
-    if (j >= 0) { bySlot[s.i] = list[j].sets.map((y) => ({ ...y })); used.add(j) }
+    if (j >= 0) { bySlot[s.i] = list[j].sets.map((y) => ({ ...y })); logs[s.i] = list[j].log; used.add(j) }
     else bySlot[s.i] = []
   }
   const extras = list.filter((L, k) => !used.has(k) && L && L.sets?.length)
-  return { bySlot, extras }
+  return { bySlot, extras, logs }
+}
+
+/** The slot as it will be with library entry `id` in it (the planned id puts the planned move back). */
+export function reslot(slot: Slot, id: string, shorter: boolean, byId: (id: string | undefined) => Exercise | undefined): Slot {
+  const [s] = slotsOf([slot.planned], id === slot.planned.id ? {} : { 0: id }, shorter, byId)
+  return { ...s, i: slot.i }
+}
+
+/**
+ * A swap in one slot: what was logged for the move going out is kept as an extra, and the move
+ * coming in takes back anything already logged for it today (swap X → Y → X keeps X's sets in
+ * the slot, once). Returns the slot as it now is, its sets, and the extras.
+ */
+export function swapInto(slot: Slot, id: string, sets: SetEntry[], extras: LoggedExercise[], shorter: boolean, byId: (id: string | undefined) => Exercise | undefined): { slot: Slot; sets: SetEntry[]; extras: LoggedExercise[]; log?: LogShape } {
+  const out = sets.length
+    ? [...extras, { name: slotName(slot), ...(slot.x ? { exId: slot.x.id } : {}), log: slot.shape, rx: slot.fullRx, sets: sets.map((y) => (slot.shape === 'hold' ? { ...y, reps: y.sec || y.reps } : y)) }]
+    : [...extras]
+  const next = reslot(slot, id, shorter, byId)
+  const j = out.findIndex((e) => e.sets?.length && matchLogged(e, next, false))
+  if (j < 0) return { slot: next, sets: [], extras: out }
+  const back = out[j]
+  return { slot: next, sets: back.sets.map((y) => ({ ...y })), extras: out.filter((_, k) => k !== j), log: back.log }
 }
 
 /** What a save writes: every slot in the workout's order, then the extras, untouched. */
