@@ -89,7 +89,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       },
       {
         "id": "face-pull", "n": "Face pull (cable)",
-        "t": "2–3 × 15",
+        "t": "2–3 × 15", "restSec": 60,
         "cue": "Rope at head height. Pull it towards your forehead, elbows high and wide, squeeze the rear shoulders. Light weight, slow."
       },
       {

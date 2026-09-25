@@ -5,6 +5,7 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
+import type { WorkoutType } from '@/core/types'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
@@ -62,6 +63,7 @@ export function TodayScreen() {
 
   const sess = sessionsOf(day, cur)
   const sched = data.schedule[f.idx] || 'Rest'
+  const openTrain = useStore((s) => s.openTrain)
   const logged = sess.length > 0
   const isRest = !logged && sched === 'Rest'
 
@@ -249,7 +251,7 @@ export function TodayScreen() {
               <span className="ps">{moveSub}</span>
             </span>
             {!logged && !isRest
-              ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); setTab('train') }}>Start</button>
+              ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(sched as WorkoutType) }}>Start</button>
               : <Chevron />}
           </div>
         </section>

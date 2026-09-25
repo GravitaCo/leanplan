@@ -54,8 +54,36 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   for (const d of Object.keys(s.days)) {
     const day = s.days[d]
     if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
+    if (day && Array.isArray(day.sessions)) cleanGuided(day.sessions)
   }
   return s
+}
+
+const FEELS = ['spare', 'right', 'struggle', 'stopped']
+
+/**
+ * Guided-session fields (Train redesign, stage 4) are all optional and additive: `note` and the
+ * set flags `warmup` / `feel`, and `rx` on a logged exercise. Old logs have none of them and
+ * render as before. Anything malformed (from a hand-edited backup, say) is dropped, never
+ * guessed, so it can't skew targets or "last time".
+ */
+function cleanGuided(list: unknown[]): void {
+  for (const x of list as Record<string, unknown>[]) {
+    if (!x || typeof x !== 'object') continue
+    if (x.note !== undefined && typeof x.note !== 'string') delete x.note
+    if (x.open !== undefined && x.open !== true) delete x.open
+    if (!Array.isArray(x.ex)) continue
+    for (const e of x.ex as Record<string, unknown>[]) {
+      if (!e || typeof e !== 'object') continue
+      if (e.rx !== undefined && typeof e.rx !== 'string') delete e.rx
+      if (!Array.isArray(e.sets)) continue
+      for (const st of e.sets as Record<string, unknown>[]) {
+        if (!st || typeof st !== 'object') continue
+        if (st.feel !== undefined && !FEELS.includes(st.feel as string)) delete st.feel
+        if (st.warmup !== undefined && st.warmup !== true) delete st.warmup
+      }
+    }
+  }
 }
 
 /** Load persisted state from localStorage. */

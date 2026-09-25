@@ -137,7 +137,14 @@ export interface SetEntry {
   side?: 'L' | 'R'
   /** 'check' */
   done?: boolean
+  /** a warm-up set: shown, but never counted towards targets or "last time" */
+  warmup?: boolean
+  /** optional "How was that set?" answer (guided player) */
+  feel?: SetFeel
 }
+
+/** "How was that set?": had lots to spare, about right (two or three left), a real struggle, stopped early. */
+export type SetFeel = 'spare' | 'right' | 'struggle' | 'stopped'
 
 export interface LoggedExercise {
   /** snapshot of the display name: history never depends on the library */
@@ -146,6 +153,8 @@ export interface LoggedExercise {
   exId?: string
   /** the shape used, so history renders correctly later */
   log?: LogShape
+  /** the prescription it was logged against ("3 × 10–12"); "last time" only counts the same rep range */
+  rx?: string
   sets: SetEntry[]
 }
 
@@ -185,6 +194,10 @@ export interface Session {
   /** cardio: a CARDIO_MET key, and optional distance */
   cardio?: { key: string; km?: number }
   option?: 'shorter' | 'swap'
+  /** optional note from the finish sheet */
+  note?: string
+  /** a guided session left part-way ("Leave for now"): Train offers Resume; cleared by Finish or any other save */
+  open?: boolean
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
@@ -417,6 +430,8 @@ export interface ExerciseTemplate {
   title?: string
   /** owned demo clip; without one the card falls back to a YouTube search link */
   video?: ExerciseMedia
+  /** rest between sets in seconds; overrides the default for the movement pattern */
+  restSec?: number
 }
 
 /** What the lifter is doing during one stretch of a demo clip. */

@@ -3,7 +3,10 @@ import { holdAt, holdTarget } from '@/core/domain/library'
 import { Sheet } from '@/ui/primitives'
 
 /** Red flags (plan §4.0.4): on the hold timer and the exercise cards. */
-export const RED_FLAG = "Stop if you get chest pain, feel dizzy or faint, or have sudden severe pain. Call 999 for chest pain that doesn't go away, or NHS 111 if you're not sure."
+export const RED_FLAG = "Stop if you get chest pain, feel dizzy or faint, or have sudden severe pain. Call 999 for chest pain that feels tight or heavy, spreads to your arm, jaw or back, or doesn't ease with rest. Call NHS 111 if you're not sure."
+
+/** After "Stopped early" (fitness-workouts): when pain needs a professional's look before trying the move again. */
+export const PAIN_HELP = "If pain is sharp, in a joint, or still there after a few days, speak to a GP or physiotherapist before doing this move again."
 
 /**
  * A timer for a hold (plank, a yoga pose, a stretch). It runs on the device clock, so it works

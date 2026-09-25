@@ -20,7 +20,7 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession } from '@/core/domain/sessions'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, sessionMetMins } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -33,6 +33,9 @@ import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
+import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, targetFor, warmupSlot } from '@/core/domain/guided'
+import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
+import { loadStateFrom } from '@/data/persistence'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -879,6 +882,125 @@ function legacyAndGuest(): void {
     ['a log from the retired guest mode moves into the first account', ownerCheck(stateFromBackup({ days: { '2026-09-01': day } } as never), uuid(), false) === 'claim'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/device:', n) }
+}
+
+
+// ---------- guided session (Train redesign, stage 4): targets, last time, rest, week ----------
+{
+  const EX = (id: string) => EXERCISE_BY_ID[id]
+  const day = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 's-' + Math.random(), modality: 'strength', title: 'Legs & Core', routineId: 'builtin-Legs', ex }] }) as any
+  const sq = (sets: any[], rx?: string) => ({ name: 'Barbell squat', exId: 'back-squat', log: 'weight-reps', ...(rx ? { rx } : {}), sets })
+  const days: any = {
+    '2026-09-10': day([sq([{ w: '35', reps: '12' }, { w: '35', reps: '12' }], '3 × 10–12')]),
+    '2026-09-14': day([sq([{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '10' }, { w: '40', reps: '10', feel: 'struggle' }, { w: '40', reps: '9' }], '3 × 10–12')]),
+    '2026-09-16': day([sq([{ w: '60', reps: '5' }], '5 × 5')]),
+  }
+  const last = lastTime(days, '2026-09-18', 'back-squat', 'Barbell squat', '3 × 10–12')
+  const t0 = targetFor('weight-reps', '3 × 10–12', last, 0)
+  const t1 = targetFor('weight-reps', '3 × 10–12', last, 1)
+  const t2 = targetFor('weight-reps', '3 × 10–12', last, 2)
+  const top = targetFor('weight-reps', '3 × 10–12', { name: 'x', sets: [{ w: '40', reps: '12' }] }, 0)
+  const first = targetFor('weight-reps', '3 × 10–12', null, 0)
+  const firstNext = targetFor('weight-reps', '3 × 10–12', null, 1, [{ w: '30', reps: '12' }])
+  const changed = targetFor('weight-reps', '3 × 10–12', last, 1, [{ w: '42.5', reps: '10' }])
+  const checks: [string, boolean][] = [
+    ['parseRx: sets and rep range', JSON.stringify(parseRx('2–3 × 12')) === JSON.stringify({ sets: { lo: 2, hi: 3 }, reps: { lo: 12, hi: 12 }, unit: 'reps' })],
+    ['parseRx: timed holds', parseRx('3 × 20–40 sec').unit === 'sec' && parseRx('3 × 20–40 sec').reps!.hi === 40],
+    ['parseRx: minutes with no sets', parseRx('20–30 min').sets === null && parseRx('20–30 min').unit === 'min'],
+    ['sameRange ignores set count (shorter day)', sameRange('2 × 10–12', '3 × 10–12') && !sameRange('5 × 5', '3 × 10–12')],
+    ['plannedSets: top of the range, shorter ~60%', plannedSets('2–3 × 12') === 3 && plannedSets('3 × 10–12', true) === 2],
+    ['setCount: Legs & Core is 14–15 sets', setCount(WORKOUTS.Legs.ex) === '14–15 sets'],
+    ['last time: skips a different rep range (5 × 5) and drops warm-ups', !!last && last.sets.length === 3 && last.sets[0].w === '40'],
+    ['last time: nothing in range → null', lastTime(days, '2026-09-12', 'back-squat', 'Barbell squat', '5 × 5') === null],
+    ['last time: logs from before rx count as the same range', !!lastTime({ '2026-09-01': day([sq([{ w: '30', reps: '10' }])]) }, '2026-09-18', 'back-squat', 'Barbell squat', '3 × 10–12')],
+    ['target: last reps + 1 at last weight', t0?.w === '40' && t0?.reps === '11'],
+    ['target: no +1 after "a real struggle"', t1?.reps === '10'],
+    ['target: 9 last time → 10', t2?.reps === '10'],
+    ['target: capped at the top of the range', top?.reps === '12'],
+    ['target: nothing logged before → null (opens Adjust)', first === null],
+    ['target: first session, set 2 repeats set 1', firstNext?.w === '30' && firstNext?.reps === '12'],
+    ['target: a weight changed mid-session carries on, reps stay on target', changed?.w === '42.5' && changed?.reps === '10'],
+    ['target: never raises the weight by itself', [t0, t1, t2, top].every((t) => t?.w === '40')],
+    ['target: holds aim for the bottom of the range with nothing logged', targetFor('hold', '3 × 20–40 sec', null, 0)?.sec === '20'],
+    ['rest: compound 2 min, isolation 90 s, core and holds 60 s', restFor(EX('back-squat')) === 120 && restFor(EX('romanian-deadlift')) === 120 && restFor(EX('leg-extension')) === 90 && restFor(EX('plank')) === 60 && restFor(EX('cable-crunch')) === 60],
+    ['rest: a routine restSec overrides the default', restFor(EX('back-squat'), { restSec: 75 }) === 75],
+    ['rest: unknown exercise 90 s', restFor(undefined) === 90],
+    ['fmtClock', fmtClock(72) === '1:12' && fmtClock(-3) === '0:00' && fmtClock(120) === '2:00'],
+    ['setsLine: same weight compressed, warm-ups left out', setsLine([{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '11' }, { w: '40', reps: '9' }], 'weight-reps') === '40 kg · 11, 9'],
+    ['setsLine: nothing → Not today', setsLine([], 'weight-reps') === 'Not today'],
+    ['later: moves one to the end, today only', JSON.stringify(later([0, 1, 2, 3], 1)) === '[0,2,3,1]' && JSON.stringify(later([0, 1], 1)) === '[0,1]'],
+    ['warm-up slot: the first kg × reps exercise', warmupSlot(['hold', 'weight-reps', 'weight-reps']) === 1],
+    ['lastLogged ignores warm-up only entries', lastLogged({ '2026-09-01': day([sq([{ w: '20', reps: '5', warmup: true }])]) }, '2026-09-18', 'back-squat', 'Barbell squat') === null],
+    ['week: the default split never warns', weekWarnings({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).length === 0],
+    ['week: Push then Pull (shared rear delts only) does not warn', weekWarnings({ 0: 'Rest', 1: 'Push', 2: 'Pull', 3: 'Legs', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).length === 0],
+    ['week: the same workout back to back warns', weekWarnings({ 0: 'Rest', 1: 'Push', 2: 'Push', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).some((w) => w.kind === 'back-to-back' && w.days.join() === '1,2')],
+    ['week: Sunday wraps to Monday', weekWarnings({ 0: 'Legs', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).some((w) => w.days.join() === '0,1')],
+    ['week: no rest day warns', weekWarnings({ 0: 'Cardio', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).some((w) => w.kind === 'no-rest')],
+    ['week: swapDays', JSON.stringify(swapDays({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any, 1, 3)[1]) === '"Push"'],
+    ['tempo: countOf is the phase count', (() => { const s = tempoAt(DEMOS.barbellSquat, 5); return s.kind === 'lower' && s.countOf === 8 && s.count === 3 })()],
+    ['persistence: guided fields kept, malformed ones dropped', (() => {
+      const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', note: 5, ex: [{ name: 'x', rx: 3, sets: [{ w: '1', reps: '2', feel: 'meh', warmup: 'yes' }, { w: '1', reps: '2', feel: 'struggle', warmup: true }] }] }] } } } as any)
+      const x: any = st.days['2026-09-20'].sessions![0]
+      return x.note === undefined && x.ex[0].rx === undefined && x.ex[0].sets[0].feel === undefined && x.ex[0].sets[0].warmup === undefined && x.ex[0].sets[1].feel === 'struggle' && x.ex[0].sets[1].warmup === true
+    })()],
+    ['persistence: old logs without the new fields load unchanged', (() => {
+      const old = { foods: [], supps: {}, weight: null, workout: { type: 'Legs', ex: [{ name: 'Barbell squat', sets: [{ w: '40', reps: '10' }] }] } }
+      const st = loadStateFrom({ days: { '2026-09-01': structuredClone(old) } } as any)
+      return JSON.stringify(st.days['2026-09-01']) === JSON.stringify(old) && sessionsOf(st.days['2026-09-01'], '2026-09-01')[0].ex![0].sets.length === 1
+    })()],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'guided:', n) }
+}
+
+
+// ---------- review fixes (ship-critic, fitness-workouts) ----------
+{
+  const L3: any = { name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }, { w: '40', reps: '10' }, { w: '40', reps: '10' }] }
+  const raised = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '45', reps: '9' }, { w: '45', reps: '8' }])
+  const raisedEarly = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '45', reps: '9' }, { w: '40', reps: '11' }])
+  const lowered = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '35', reps: '11' }, { w: '35', reps: '11' }])
+  const same = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '40', reps: '11' }, { w: '40', reps: '11' }])
+  const stopped = targetFor('weight-reps', '3 × 10–12', { name: 'x', sets: [{ w: '40', reps: '7', feel: 'stopped' }] } as any, 0)
+  const legs = slotsOf(WORKOUTS.Legs.ex, {}, false, (id) => EXERCISE_BY_ID[id ?? ''])
+  const legsShort = slotsOf(WORKOUTS.Legs.ex, {}, true, (id) => EXERCISE_BY_ID[id ?? ''])
+  const pull = slotsOf(WORKOUTS.Pull.ex, {}, false, (id) => EXERCISE_BY_ID[id ?? ''])
+  const facePull = pull.find((x) => x.planned.id === 'face-pull')!
+  const curlSlot = pull.find((x) => x.planned.id === 'biceps-curl')!
+  // an old log: the curl saved under a name the workout no longer uses, and no ids
+  const oldPull: any[] = WORKOUTS.Pull.ex.map((e) => ({ name: e.n, sets: [{ w: '10', reps: '10' }] }))
+  oldPull[curlSlot.i] = { name: 'Dumbbell biceps curl', sets: [{ w: '8', reps: '12' }] }
+  const split = splitLogged(oldPull, pull)
+  // a move swapped out after sets were logged: kept as an extra, and found again when swapped back
+  const built = buildLogged(legs, { 0: [{ w: '', reps: '30', sec: '30' }] }, [{ name: 'Old move', sets: [{ w: '5', reps: '5' }] }] as any)
+  const checks: [string, boolean][] = [
+    ['after a raise, later sets keep the new weight and aim for what was just managed', raised?.w === '45' && raised?.reps === '8'],
+    ['a weight change carries past one set (raised on set 1, back on set 2 still counts)', raisedEarly?.w === '40' && raisedEarly?.reps === '11'],
+    ['after lowering, keep the target reps at the lower weight', lowered?.w === '35' && lowered?.reps === '11'],
+    ['no change from last time: the usual target', same?.w === '40' && same?.reps === '11'],
+    ['no +1 after "stopped early"', stopped?.reps === '7'],
+    ['readyToStepUp: every set at the top', readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '12' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: not with a set below the top', !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '11' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: not after a real struggle or stopping early', !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12', feel: 'struggle' }] } as any, '3 × 10–12') && !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12', feel: 'stopped' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: warm-ups ignored, nothing logged is false', readyToStepUp({ name: 'x', sets: [{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '12' }] } as any, '3 × 10–12') && !readyToStepUp(null, '3 × 10–12')],
+    ['setsLo: "2–3 × 12" plans 2 with a third optional', legs.find((x) => x.planned.id === 'leg-extension')!.setsLo === 2 && legs.find((x) => x.planned.id === 'leg-extension')!.sets === 3],
+    ['setsLo equals sets on a shorter day', legsShort.every((x) => x.setsLo === x.sets)],
+    ['restHint wording', restHint(120) === 'Rest about 2 minutes' && restHint(150) === 'Rest about 2:30' && restHint(60) === 'About a minute is plenty here' && restHint(90) === 'Rest about 90 seconds' && restHint(45) === 'Rest about 45 seconds'],
+    ['face pull rests 60 s (routine restSec)', restFor(facePull.x, facePull.shown) === 60],
+    ['old logs load by position when names changed ("Dumbbell biceps curl")', split.bySlot[curlSlot.i]?.[0]?.w === '8' && split.extras.length === 0],
+    ['a swapped-out move is kept as an extra, never dropped', (() => { const sw = slotsOf(WORKOUTS.Legs.ex.slice(0, 1), { 0: 'goblet-squat' }, false, (id) => EXERCISE_BY_ID[id ?? '']); const r = splitLogged([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }] as any, sw); return r.bySlot[0].length === 0 && r.extras.length === 1 && buildLogged(sw, r.bySlot, r.extras).some((e) => e.exId === 'back-squat' && e.sets.length === 1) })()],
+    ['swapped back to the planned move: its sets come back from the extras', (() => { const r = splitLogged([{ name: 'Goblet squat', exId: 'goblet-squat', sets: [{ w: '16', reps: '10' }] }, { name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }] as any, legs.slice(0, 1)); return r.bySlot[0][0].w === '40' && r.extras.length === 1 && r.extras[0].exId === 'goblet-squat' })()],
+    ['buildLogged keeps extras after the slots, and hold seconds in reps', built.length === legs.length + 1 && built[built.length - 1].name === 'Old move' && built[0].rx === '3 × 10–12'],
+    ['stintMins: today adds the stint to the earlier minutes', stintMins(20, 15 * 60000, true) === 35 && stintMins(undefined, 30 * 60000, true) === 30],
+    ['stintMins: never from a stint on another day', stintMins(undefined, 30 * 60000, false) === undefined && stintMins(42, 5 * 60000, false) === 42],
+    ['strength with no minutes still uses the default for estimates', sessionMetMins({ id: 'a', modality: 'strength', title: 'x' } as any).mins === 45],
+    ['plannedOn: unknown schedule values read as Rest', plannedOn({ 0: 'Yoga' as any, 1: 'Legs' } as any, 0) === 'Rest' && plannedOn({ 1: 'Legs' } as any, 1) === 'Legs' && plannedOn({} as any, 3) === 'Rest'],
+    ['persistence: open kept only when true', (() => {
+      const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'x', open: 'yes' }, { id: 'b', modality: 'strength', title: 'y', open: true }] } } } as any)
+      const l: any[] = st.days['2026-09-20'].sessions!
+      return l[0].open === undefined && l[1].open === true
+    })()],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'review:', n) }
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

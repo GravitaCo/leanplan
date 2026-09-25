@@ -14,6 +14,7 @@ export default function App() {
   const tab = useStore((s) => s.tab)
   const setTab = useStore((s) => s.setTab)
   const toast = useStore((s) => s.toast)
+  const toastAction = useStore((s) => s.toastAction)
   const initAuth = useStore((s) => s.initAuth)
   const ownerAsk = useStore((s) => s.ownerAsk)
 
@@ -54,7 +55,12 @@ export default function App() {
       {tab === 'plan' && <PlanScreen />}
       {tab === 'profile' && <ProfileScreen />}
 
-      <div className={'toast' + (toast ? ' show' : '')}>{toast}</div>
+      <div className={'toast' + (toast ? ' show' : '') + (toastAction ? ' act' : '')} role="status" aria-live="polite">
+        <span>{toast}</span>
+        {toast && toastAction && (
+          <button onClick={() => { toastAction.run(); useStore.setState({ toast: null, toastAction: null }) }}>{toastAction.label}</button>
+        )}
+      </div>
       <BottomNav active={tab} onChange={setTab} />
     </div>
   )

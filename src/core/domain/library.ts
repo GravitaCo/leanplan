@@ -64,8 +64,9 @@ export function lastLogged(days: Record<string, DayLog>, before: string, exId: s
   const ds = Object.keys(days).filter((d) => d < before).sort().reverse()
   for (const d of ds) {
     for (const s of sessionsOf(days[d], d)) {
-      const hit = s.ex?.find((x) => x.sets?.length && ((exId && x.exId === exId) || (!x.exId && x.name === name)))
-      if (hit) return hit
+      // warm-up sets never count as "last time"
+      const hit = s.ex?.find((x) => x.sets?.some((y) => !y.warmup) && ((exId && x.exId === exId) || (!x.exId && x.name === name)))
+      if (hit) return { ...hit, sets: hit.sets.filter((y) => !y.warmup) }
     }
   }
   return null

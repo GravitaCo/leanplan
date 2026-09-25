@@ -1,51 +1,30 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { Exercise, ExerciseTemplate, LoggedExercise, LogShape, SetEntry, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS, SWAPS } from '@/core/data/workouts'
-import { CARDIO_OPTIONS } from '@/core/data/constants'
+import type { ExerciseTemplate, LoggedExercise, Session, WorkoutType } from '@/core/types'
+import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
-import { SupportSheet } from './train/SupportSheet'
-import { howToLink } from '@/core/domain/workout'
-import { lowSignals, shorterPrescription } from '@/core/domain/dayOptions'
-import { PageHeader, Seg, Toggle } from '@/ui/primitives'
-import { Icon, Chevron } from '@/ui/icons'
-import { DayNav } from '@/ui/WeekStrip'
-import { DemoPlayer } from './train/DemoPlayer'
-import { LogSessionSheet } from './train/LogSessionSheet'
+import { lowSignals } from '@/core/domain/dayOptions'
 import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
+import { exById } from '@/core/domain/library'
+import { setCount, slotsOf, working } from '@/core/domain/guided'
+import { plannedOn, shortTitle } from '@/core/domain/week'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { EXERCISES } from '@/core/data/exercises'
-import { exById, fmtSet, lastLogged, setHasData } from '@/core/domain/library'
-import { CARE_DISCLAIMER, SwapSheet } from './train/SwapSheet'
-import { careList } from '@/core/data/libraryLabels'
+import { PageHeader } from '@/ui/primitives'
+import { Icon, Chevron } from '@/ui/icons'
+import { DayNav, MoveStrip } from '@/ui/WeekStrip'
+import { SupportSheet } from './train/SupportSheet'
+import { LogSessionSheet } from './train/LogSessionSheet'
 import { LibrarySheet } from './train/LibrarySheet'
-import { HoldTimer, RED_FLAG } from './train/HoldTimer'
+import { AddSomethingSheet } from './train/AddSomethingSheet'
+import { Preview, CHOICES, type Choice } from './train/Preview'
+import { GuidedPlayer } from './train/GuidedPlayer'
+import { ManualLog } from './train/ManualLog'
+import { Thumb } from './train/Thumb'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
-
-const TABS: [WorkoutType, string][] = [['Legs', 'Legs'], ['Push', 'Push'], ['Pull', 'Pull'], ['Cardio', 'Cardio']]
-
-/** Day-of choices (plan §0.2): equal options, the planned session always one tap away. */
-type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
-const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
-
-const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
-
-/** How a slot is logged: the library entry's shape (plank before ids: a hold). */
-function shapeFor(t: ExerciseTemplate, x?: Exercise): LogShape {
-  return x?.log ?? (t.n.toLowerCase().includes('plank') ? 'hold' : 'weight-reps')
-}
-
-/**
- * Saved sets back into the form. Holds edit `sec` only: older logs kept their seconds in `reps`,
- * and new saves copy `sec` into `reps` for older installs, so the form clears `reps` (a save puts
- * it back) and clearing the box really clears the set.
- */
-function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
-  return sets.map((s) => (shape === 'hold' ? { ...s, sec: s.sec || s.reps, reps: '' } : { ...s }))
-}
 
 /** The library id a logged exercise stands for, when it isn't the workout's own (a swap). */
 function loggedSwap(t: ExerciseTemplate, L: LoggedExercise | undefined): string | undefined {
@@ -54,190 +33,179 @@ function loggedSwap(t: ExerciseTemplate, L: LoggedExercise | undefined): string 
   return id && id !== t.id ? id : undefined
 }
 
+/**
+ * Train: what I'm doing today (stage 4 redesign). The day's planned workout with Start, a
+ * catch-up offer, "Add something", the lighter options and what's done. Planning (the week, the
+ * workouts) lives in Plan; one-off changes for today happen here.
+ */
 export function TrainScreen() {
   const cur = useStore((s) => s.cur)
   const data = useStore((s) => s.data)
-  const saveWorkout = useStore((s) => s.saveWorkout)
-  const saveCardio = useStore((s) => s.saveCardio)
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
   const removeSession = useStore((s) => s.removeSession)
+  const trainOpen = useStore((s) => s.trainOpen)
+  const openPlan = useStore((s) => s.openPlan)
+  const clearOpen = useStore((s) => s.clearOpen)
+
+  const [addOpen, setAddOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
   const [libOpen, setLibOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
   // two taps to remove, so a mis-tap never deletes logged sets
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [open, setOpen] = useState<WorkoutType | null>(null)
+  const [mode, setMode] = useState<'preview' | 'manual'>('preview')
+  const [playing, setPlaying] = useState(false)
+  const [swapsBy, setSwapsBy] = useState<Record<string, Record<number, string>>>({})
+  const [picked, setPicked] = useState<Choice | null>(null)
   const gentle = !!data.profile.gentle
 
-  const day = data.days[cur] || { foods: [], supps: {}, weight: null, workout: null }
-  // a day can hold several sessions (plan P2); each built-in card reads its own saved session
+  const day = data.days[cur]
   const sessions = sessionsOf(day, cur)
   const logged = sessions.length > 0
   const builtin = (t: string) => sessions.find((x) => x.routineId === 'builtin-' + t)
-  // open on the day's lift if there is one (as the mirror does), else the first built-in card
-  const firstBuiltin = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
-    ?? sessions.find((x) => (x.routineId || '').startsWith('builtin-'))
   const fd = fmtDate(cur)
-  const sched = data.schedule[fd.idx] || 'Rest'
-
-  const initial: WorkoutType =
-    (firstBuiltin?.routineId?.replace('builtin-', '') as WorkoutType) || (LIFTS.includes(sched as WorkoutType) ? (sched as WorkoutType) : 'Cardio')
-  const [sel, setSel] = useState<WorkoutType>(initial)
-  useEffect(() => {
-    setSel(initial)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cur])
-
-  // editable set state for lifts: index -> sets[]
-  const wk = sel !== 'Cardio' ? WORKOUTS[sel] : null
-  const loggedSets = builtin(sel)?.ex ?? null
-  const [sets, setSets] = useState<Record<number, SetEntry[]>>({})
-  // per-slot swaps for today (plan P3): slot index -> library id
-  const [swaps, setSwaps] = useState<Record<number, string>>({})
-  const [swapFor, setSwapFor] = useState<number | null>(null)
-  const [timer, setTimer] = useState<{ exi: number; si: number } | null>(null)
-  /** bodyweight cards: bodyweight only, added weight or assistance (chosen before anything is typed) */
-  const [loadMode, setLoadMode] = useState<Record<number, 'none' | 'added' | 'assist'>>({})
-  const slotEx = (i: number, sw = swaps) => (wk ? exById(sw[i] ?? wk.ex[i].id) : undefined)
-  /** what a save writes: the exercise in each slot, its shape, and only the sets with something in them */
-  const buildEx = (sw = swaps, rows = sets): LoggedExercise[] => (wk ? wk.ex.map((e, i) => {
-    const x = slotEx(i, sw)
-    const shape = shapeFor(e, x)
-    const kept = (rows[i] || []).filter((r) => setHasData(r, shape))
-    // holds also keep their seconds in `reps`, which is where older installs read and filter them
-    const out = shape === 'hold' ? kept.map((r) => ({ ...r, reps: r.sec || r.reps })) : kept
-    return { name: sw[i] && x ? x.n : e.n, ...(x ? { exId: x.id } : {}), log: shape, sets: out }
-  }) : [])
-  const setsKey = useRef('')
-  useEffect(() => {
-    if (!wk) return
-    // our own first save echoing back (blank rows filtered out): keep the rows on screen
-    const key = `${sel}|${cur}`
-    const echo = key === setsKey.current && !!loggedSets && JSON.stringify(loggedSets) === JSON.stringify(buildEx())
-    setsKey.current = key
-    if (echo) return
-    const nextSw: Record<number, string> = {}
-    wk.ex.forEach((e, i) => { const id = loggedSwap(e, loggedSets?.[i]); if (id && exById(id)) nextSw[i] = id })
-    const next: Record<number, SetEntry[]> = {}
-    wk.ex.forEach((e, i) => {
-      const L = loggedSets?.[i]
-      next[i] = L?.sets?.length ? toRows(L.sets, L.log ?? shapeFor(e, slotEx(i, nextSw))) : blankRows()
-    })
-    setSwaps(nextSw)
-    setSets(next)
-    setSwapFor(null)
-    setTimer(null)
-    setLoadMode({})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, cur, builtin(sel)?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // cardio state
-  const cardioS = builtin('Cardio')
-  const cardio = cardioS ? { cardioType: cardioS.cardio?.key, mins: cardioS.mins != null ? String(cardioS.mins) : '' } : null
-  const [cardioType, setCardioType] = useState(cardio?.cardioType || 'Brisk walk')
-  const [mins, setMins] = useState(cardio?.mins || '')
-  useEffect(() => {
-    setCardioType(cardio?.cardioType || 'Brisk walk')
-    setMins(cardio?.mins || '')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cur])
+  // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
+  const sched = plannedOn(data.schedule, fd.idx)
+  const isToday = cur === todayStr()
+  const dayName = fd.dow
 
   // day-of choices: offered when two or more check-in signals are low for this person, and
-  // always available from a quiet link; never applied automatically
+  // always available from a quiet row; never applied automatically
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
-  const low = lowSignals(day.checkin, recent)
+  const low = lowSignals(day?.checkin, recent)
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
   const offer = !logged && sched !== 'Rest' && low.length >= 2
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
-  const [walkMins, setWalkMins] = useState('')
-  /*
-   * The day-of choice is worked out, not stored, so it's right on the first frame:
-   * - a card with its own saved session shows that version (a shorter Push stays shorter),
-   *   unless the person picks something else on that card;
-   * - otherwise the person's pick carries across tabs until it's used to save;
-   * - otherwise the day's default (shorter in an easier week or on a lighter day).
-   */
-  const [picked, setPicked] = useState<{ choice: Choice; tab: WorkoutType } | null>(null)
-  const [askLighter, setAskLighter] = useState(easy)
-  useEffect(() => { setPicked(null); setAskLighter(easy); setWalkMins(''); setConfirmId(null) }, [cur, easy]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setConfirmId(null) }, [sel])
-  const own = builtin(sel)
-  const choice: Choice = own && picked?.tab !== sel
-    ? own.option === 'shorter' ? 'shorter' : 'planned'
-    : picked ? picked.choice : easy ? 'shorter' : 'planned'
-  /** a choice the person makes themselves */
-  const pickChoice = (c: Choice) => setPicked({ choice: c, tab: sel })
+  const [lighterOpen, setLighterOpen] = useState(false)
 
-  // plans slide: offer the planned session that didn't happen; the calendar never moves
-  const isToday = cur === todayStr()
+  useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
+  // Plan's "Do this today" hands a workout over
+  useEffect(() => {
+    if (!trainOpen) return
+    openWorkout(trainOpen)
+    clearOpen()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainOpen])
+
   const pick = isToday ? catchUp(data, cur) : null
   const pickUp = pick?.type
   const weekCount = daysMovedThisWeek(data, cur)
   const back = isToday && welcomeBack(data, cur)
-  const shorter = choice === 'shorter'
-  const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
-  /** choosing a tab always shows that session: it leaves a swap (the planned session stays one tap away) */
-  function pickTab(t: WorkoutType) { setSel(t); if (swap) setPicked(null) }
 
-  const [demo, setDemo] = useState<number | null>(null)
-  const closeDemo = useCallback(() => setDemo(null), [])
+  /** today's version of a workout: its own saved session wins, then the person's pick, then the day's default */
+  const choiceFor = (t: WorkoutType): Choice => {
+    if (picked) return picked
+    const own = builtin(t)
+    if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
+    return easy ? 'shorter' : 'planned'
+  }
+  const swapsFor = (t: WorkoutType): Record<number, string> => {
+    if (swapsBy[t]) return swapsBy[t]
+    const out: Record<number, string> = {}
+    const L = builtin(t)?.ex
+    WORKOUTS[t].ex.forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id)) out[i] = id })
+    return out
+  }
+  function setSwap(t: WorkoutType, i: number, id: string) {
+    const cur0 = swapsFor(t)
+    const n = { ...cur0 }
+    if (id === WORKOUTS[t].ex[i].id) delete n[i]; else n[i] = id
+    setSwapsBy((p) => ({ ...p, [t]: n }))
+  }
+  function openWorkout(t: WorkoutType, c?: Choice) {
+    if (c) setPicked(c)
+    setMode('preview'); setOpen(t); window.scrollTo(0, 0)
+  }
+  const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
 
+  const easyNote = easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
+    ? 'Lighter day: the shorter version is selected for today. Change it any time.'
+    : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`) : null
 
-  const dayName = fd.dow
-  const one = sessions.length === 1 ? sessions[0] : null
-  const banner = sessions.length > 1 ? (
-    <><b>{sessions.length} sessions</b> logged for {dayName}.</>
-  ) : one?.option === 'swap' ? (
-    <><b>{one.title}</b> logged for {dayName}. Gentle movement counts too.</>
-  ) : one ? (
-    <><b>{one.option === 'shorter' ? 'Shorter ' + (one.modality === 'strength' ? one.title : one.title.toLowerCase()) : one.title}</b> logged for {dayName}.</>
-  ) : sched === 'Rest' ? (
-    <><b>{dayName} is a rest day.</b> Recovery is when you adapt. A gentle walk is fine, and you can still log a session below.</>
-  ) : (
-    <><b>{dayName}: {WORKOUTS[sched]?.title || sched}.</b> Doing something else? Pick it below. It only changes today.</>
+  // ---------- a workout is open: preview, the manual form, or the player ----------
+  if (open) {
+    const choice = choiceFor(open)
+    const shorter = choice === 'shorter'
+    const swaps = swapsFor(open)
+    const slots = slotsOf(WORKOUTS[open].ex, swaps, shorter, exById)
+    const option = shorter ? 'shorter' as const : undefined
+    if (mode === 'manual') {
+      return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} />
+    }
+    return (
+      <>
+        <Preview type={open} choice={choice} onChoice={setPicked} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
+          session={builtin(open)} note={choice === 'shorter' ? easyNote : null} dayName={dayName} isToday={isToday}
+          onStart={() => setPlaying(true)} onManual={() => { setMode('manual'); window.scrollTo(0, 0) }} onBack={closeWorkout}
+          onEditPlan={() => openPlan(open)} />
+        {playing && <GuidedPlayer type={open} slots={slots} option={option} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
+      </>
+    )
+  }
+
+  // ---------- the today list ----------
+  const plannedType = sched !== 'Rest' ? (sched as WorkoutType) : null
+  const own = plannedType ? builtin(plannedType) : undefined
+  const plannedShorter = plannedType ? choiceFor(plannedType) === 'shorter' : false
+  const plannedSets = plannedType && LIFTS.includes(plannedType)
+    ? slotsOf(WORKOUTS[plannedType].ex, swapsFor(plannedType), plannedShorter, exById).reduce((a, s) => a + s.sets, 0) : 0
+  const ownDone = own?.ex ? own.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
+  // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
+  const inProgress = !!own && plannedType !== 'Cardio' && own.open === true
+  const showPlanned = !!plannedType && (!own || inProgress)
+  const plannedSub = plannedType === 'Cardio' ? WORKOUTS.Cardio.ex[0].t
+    : plannedType ? `${WORKOUTS[plannedType].ex.length} exercises · ${setCount(WORKOUTS[plannedType].ex, plannedShorter)}${plannedShorter ? ' · shorter' : ''}` : ''
+  const firstVideo = plannedType ? WORKOUTS[plannedType].ex.find((e) => e.video)?.video : undefined
+  const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && pickUp !== sched
+  const lighterShown = !logged && sched !== 'Rest'
+  const lighterUp = lighterShown && (offer || easy)
+
+  const lighter = (
+    <div className={'card lighter' + (lighterUp || lighterOpen ? ' open' : '')}>
+      {lighterUp ? (
+        <div className="t">{offer
+          ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
+          : easyNote}</div>
+      ) : (
+        <button className="lh" aria-expanded={lighterOpen} onClick={() => setLighterOpen(!lighterOpen)}>
+          <span className="t">Lighter options</span>
+          <span className="s">Shorter, mobility, walk <Chevron rotate={lighterOpen ? 270 : 90} /></span>
+        </button>
+      )}
+      {(lighterUp || lighterOpen) && (
+        <div className="chips" role="group" aria-label="Today's session" style={{ marginTop: 10 }}>
+          {CHOICES.map(([k, label]) => (
+            <button key={k} className={'chip' + (plannedType && choiceFor(plannedType) === k ? ' on' : '')} onClick={() => plannedType && openWorkout(plannedType, k)}>{label}</button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 
-  function updateSet(exi: number, si: number, patch: Partial<SetEntry>) {
-    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s, i) => (i === si ? { ...s, ...patch } : s)) }))
+  const sessSub = (x: Session) => {
+    const n = x.ex ? x.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
+    return [MODALITY_LABEL[x.modality] ?? x.modality, x.ex ? `${n} ${n === 1 ? 'set' : 'sets'}` : '', x.mins != null && !x.ex ? `${x.mins} min` : '', x.cardio?.km ? `${x.cardio.km} km` : '', x.option === 'shorter' ? 'shorter' : '']
+      .filter(Boolean).join(' · ')
   }
-  function addSet(exi: number) {
-    setSets((prev) => ({ ...prev, [exi]: [...prev[exi], { w: '', reps: '' }] }))
-  }
-  /** bodyweight moves: none, added weight or assistance, for every set of the card */
-  function setLoad(exi: number, v: 'none' | 'added' | 'assist') {
-    setLoadMode((p) => ({ ...p, [exi]: v }))
-    setSets((prev) => ({ ...prev, [exi]: prev[exi].map((s) => (v === 'none' ? { ...s, w: '', assist: undefined } : { ...s, assist: v === 'assist' ? true : undefined })) }))
-  }
-  /** a different exercise in this slot today: its sets start fresh (weights never carry across moves) */
-  function swapSlot(exi: number, id: string) {
-    if (!wk) return
-    setSwaps((prev) => { const n = { ...prev }; if (id === wk.ex[exi].id) delete n[exi]; else n[exi] = id; return n })
-    setSets((prev) => ({ ...prev, [exi]: blankRows() }))
-    setLoadMode((p) => { const n = { ...p }; delete n[exi]; return n })
-  }
-  function commitLift() {
-    if (!wk) return
-    saveWorkout(sel, buildEx(), shorter ? 'shorter' : undefined)
-    setPicked(null) // used: it doesn't carry to the day's other cards
+  const routineOf = (x: Session): WorkoutType | null => {
+    const t = (x.routineId || '').replace('builtin-', '') as WorkoutType
+    return x.routineId?.startsWith('builtin-') && WORKOUTS[t] && x.option !== 'swap' ? t : null
   }
 
   return (
     <div className="screen">
       <PageHeader eyebrow={<DayNav />} title="Train" />
-
-      <div className="banner">
-        <span style={{ color: 'var(--activity-ink)' }}><Icon name="dumbbell" /></span>
-        <div>{banner}</div>
-      </div>
-      {weekCount > 0 && <div className="foot week-n">You moved on {gentle ? WORDS[weekCount] : weekCount} {weekCount === 1 ? 'day' : 'days'} this week</div>}
+      <MoveStrip />
 
       {isToday && showLoadNote(data, cur) && (
         <div className="card dayopt">
           <div className="t">You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</div>
           <div className="chips">
             <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button>
-            {(data.schedule[fmtDate(shiftDay(cur, 1)).idx] || 'Rest') !== 'Rest' && (
+            {plannedOn(data.schedule, fmtDate(shiftDay(cur, 1)).idx) !== 'Rest' && (
               <button className="chip" onClick={() => {
                 const tmr = shiftDay(cur, 1)
                 const p = data.profile
@@ -252,40 +220,6 @@ export function TrainScreen() {
         </div>
       )}
 
-      {sessions.length > 0 && (
-        <>
-          <div className="grp-h">{isToday ? 'Logged today' : `Logged on ${dayName}`}</div>
-          <div className="list">
-            {sessions.map((x) => (
-              <div className="li" key={x.id}>
-                <div className="m">
-                  <div className="t">{x.title}</div>
-                  <div className="s">{MODALITY_LABEL[x.modality] ?? x.modality}{x.mins != null ? ` · ${x.mins} min` : ''}{x.cardio?.km ? ` · ${x.cardio.km} km` : ''}</div>
-                </div>
-                {confirmId === x.id
-                  ? <button className="linkbtn" style={{ color: 'var(--red)' }} aria-label={`Remove ${x.title}`} onClick={() => { removeSession(x.id); setConfirmId(null) }}>Remove</button>
-                  : <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => setConfirmId(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      <div className="list">
-        <button className="li" onClick={() => setLogOpen(true)}>
-          <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="plus" size={18} /></span>
-          <div className="m"><div className="t">Log something else</div><div className="s">A walk, yoga, pilates, anything</div></div>
-          <Chevron />
-        </button>
-        <button className="li" onClick={() => setLibOpen(true)}>
-          <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="book" size={18} /></span>
-          <div className="m"><div className="t">Exercise library</div><div className="s">How to do each move, easier and harder options</div></div>
-          <Chevron />
-        </button>
-      </div>
-      {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
-      {libOpen && <LibrarySheet onClose={() => setLibOpen(false)} />}
-      {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
-
       {back && (
         <div className="card dayopt">
           <div className="t">Welcome back. Want an easier first week?</div>
@@ -297,199 +231,84 @@ export function TrainScreen() {
         </div>
       )}
 
-      {!back && data.profile.welcomeAsked !== cur && !logged && pick && pickUp && pickUp !== sel && (
-        <div className="card dayopt">
-          <div className="t">Pick up with {pickUp} whenever you're ready.</div>
-          <div className="chips">
-            <button className="chip" onClick={() => pickTab(pickUp)}>Do {pickUp} today</button>
-            <button className="chip" onClick={() => setPrefs({ pickUpDismissed: pick.d })}>Not this time</button>
-          </div>
-        </div>
-      )}
+      {lighterUp && lighter}
 
-      <div style={{ margin: '4px 0 14px' }}><Seg options={TABS} value={sel} onChange={pickTab} /></div>
-
-      {!logged && sched !== 'Rest' && (offer || askLighter) && (
-        <div className="card dayopt">
-          <div className="t">{offer
-            ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
-            : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
-              ? 'Lighter day: the shorter version is selected for today. Change it any time.'
-              : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`)
-            : 'Here are a few options for today. All of them count.'}</div>
-          <div className="chips" role="radiogroup" aria-label="Today's session">
-            {CHOICES.map(([k, label]) => (
-              <button key={k} role="radio" aria-checked={choice === k} className={'chip' + (choice === k ? ' on' : '')} onClick={() => pickChoice(k)}>{label}</button>
-            ))}
-          </div>
-          {swap && <div className="foot">This counts as today's session. Your plan carries on as usual.</div>}
-        </div>
-      )}
-      {!logged && sched !== 'Rest' && !offer && !askLighter && (
-        <div className="list dayopt-link">
-          <button className="li" onClick={() => setAskLighter(true)}>
-            <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="leaf" size={18} /></span>
-            <div className="m"><div className="t">Want a lighter option?</div><div className="s">Shorter, 10-min mobility or a walk</div></div>
-            <Chevron />
-          </button>
-        </div>
-      )}
-
-      {swap ? (
-        <>
-          <div className="grp-h">{swap.title}</div>
-          {swap.note && <div className="foot" style={{ padding: '0 4px 10px' }}>{swap.note}</div>}
-          {swap.ex.map((e) => (
-            <div className="card ex" key={e.n}>
-              <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
-              <div className="cue">{e.cue}</div>
-            </div>
-          ))}
-          {choice === 'walk' && (
-            <div className="list">
-              <div className="frow"><label htmlFor="w_min">Minutes</label>
-                <input id="w_min" type="number" inputMode="numeric" value={walkMins} placeholder={swap.mins} onChange={(e) => setWalkMins(e.target.value)} /></div>
+      <section className="tsec" aria-labelledby="today-h">
+        <h2 id="today-h" className="tsec-h">{isToday ? 'Today' : dayName}</h2>
+        <div className="list tlist">
+          {showPlanned && plannedType && (
+            <div className="li trow" role="button" tabIndex={0} onClick={() => openWorkout(plannedType)}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openWorkout(plannedType) } }}>
+              <Thumb video={firstVideo} big />
+              <div className="m">
+                <div className="t b">{shortTitle(plannedType)}</div>
+                <div className="s num">{inProgress ? `In progress · ${ownDone} of ${plannedSets} sets` : plannedSub}</div>
+              </div>
+              <button className="btn sm startb" onClick={(e) => { e.stopPropagation(); openWorkout(plannedType) }}>{inProgress ? 'Resume' : 'Start'}</button>
             </div>
           )}
-          <div className="stack"><button className="btn" onClick={() => {
-            // show what was logged (the cardio tab with this type), not the planned lift
-            const m = choice === 'walk' ? walkMins || swap.mins : swap.mins
-            setSel('Cardio'); setCardioType(swap.cardioType); setMins(m)
-            saveCardio(swap.cardioType, m, 'swap'); setPicked(null)
-          }}>
-            Save {choice === 'walk' ? 'walk' : 'mobility'}</button></div>
-        </>
-      ) : sel === 'Cardio' ? (
-        <>
-          <div className="card ex">
-            <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}</span></div>
-            <div className="cue">{WORKOUTS.Cardio.ex[0].cue}</div>
-          </div>
-          <div className="list">
-            <div className="frow"><label htmlFor="c_type">Type</label>
-              <select id="c_type" value={cardioType} onChange={(e) => setCardioType(e.target.value)}>
-                {/* a retired type from an older log still shows as saved */}
-                {(CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]).map((o) => <option key={o}>{o}</option>)}
-              </select></div>
-            <div className="frow"><label htmlFor="c_min">Minutes</label>
-              <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
-          </div>
-          <div className="stack"><button className="btn" onClick={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); setPicked(null) }}>Save cardio</button></div>
-          <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
-        </>
-      ) : (
-        <>
-          {wk!.ex.map((e, exi) => {
-            const x = slotEx(exi)
-            const shape = shapeFor(e, x)
-            const swapped = !!swaps[exi] && !!x
-            // a swapped slot shows the library entry; the planned one keeps the workout's own words
-            const shown: ExerciseTemplate = swapped ? { id: x!.id, n: x!.n, t: x!.defaultRx ?? e.t, cue: x!.cue, video: x!.video } : e
-            const rx = shorter ? shorterPrescription(shown.t) : shown.t
-            const lastEx = lastLogged(data.days, cur, x?.id, shown.n)
-            const lastTxt = lastEx ? lastEx.sets.map((r) => fmtSet(r, lastEx.log ?? shape)).filter(Boolean).join(', ') : ''
-            const rows = sets[exi] || []
-            const load = loadMode[exi] ?? (rows.some((r) => r.assist) ? 'assist' : rows.some((r) => r.w) ? 'added' : 'none')
-            const loadOn = load !== 'none'
-            return (
-              <div className="card ex" key={exi}>
-                <div className="h"><div className="n">{shown.n}</div><span className="tg">{rx}</span></div>
-                {swapped && (
-                  <div className="swapped">In place of {e.n}, {isToday ? 'today' : 'this day'} only. <button onClick={() => swapSlot(exi, e.id!)} aria-label={`Undo, back to ${e.n}`}>Undo</button>
-                    {x!.care?.length ? <> Asks quite a lot of {careList(x!.care)}. {CARE_DISCLAIMER}</> : null}</div>
-                )}
-                <div className="cue">{shown.cue}</div>
-                {!swapped && x?.gentler && x.equipment[0] === 'barbell' && x.difficulty !== 'beginner' && exById(x.gentler) && (
-                  <div className="swapped">New to this? The {exById(x.gentler)!.n.toLowerCase()} is a good place to start. Tap Swap.</div>
-                )}
-                <div className="acts">
-                  {shown.video
-                    ? <button className="howto" onClick={() => setDemo(exi)}><Icon name="play" size={15} /> Watch example</button>
-                    : <a className="howto" href={howToLink(shown.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
-                  {x && <button className="howto" onClick={() => setSwapFor(exi)} aria-label={`Swap ${shown.n}`}>Swap</button>}
-                </div>
-                {lastTxt && <div className="last num">Last time: {lastTxt}</div>}
-                {shape === 'reps' && loadOn && (
-                  <div className="load"><Seg options={[['none', 'Bodyweight'], ['added', 'Added weight'], ['assist', 'Assisted']]} value={load} onChange={(v) => setLoad(exi, v)} /></div>
-                )}
-                {rows.map((r, si) => (
-                  <div className="setrow" key={si}>
-                    <span className="n">Set {si + 1}</span>
-                    {shape === 'weight-reps' && (
-                      <>
-                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={r.w} aria-label={`Set ${si + 1} weight`}
-                          onChange={(ev) => updateSet(exi, si, { w: ev.target.value })} />
-                        <span className="u">kg</span>
-                      </>
-                    )}
-                    {shape === 'reps' && loadOn && (
-                      <>
-                        <input className="num" type="number" inputMode="decimal" placeholder="kg" value={r.w} aria-label={`Set ${si + 1} ${load === 'assist' ? 'assistance' : 'added weight'}`}
-                          onChange={(ev) => updateSet(exi, si, { w: ev.target.value, ...(load === 'assist' ? { assist: true } : {}) })} />
-                        <span className="u">kg</span>
-                      </>
-                    )}
-                    {(shape === 'weight-reps' || shape === 'reps' || shape === 'rounds') && (
-                      <>
-                        <input className="num" type="number" inputMode="numeric" placeholder={shape === 'rounds' ? 'rounds' : 'reps'} value={r.reps}
-                          aria-label={`Set ${si + 1} ${shape === 'rounds' ? 'rounds' : 'reps'}`} onChange={(ev) => updateSet(exi, si, { reps: ev.target.value })} />
-                        <span className="u">{shape === 'rounds' ? 'rounds' : 'reps'}</span>
-                      </>
-                    )}
-                    {shape === 'hold' && (
-                      <>
-                        <input className="num" type="number" inputMode="numeric" placeholder="sec" value={r.sec ?? ''} aria-label={`Set ${si + 1} seconds`}
-                          onChange={(ev) => updateSet(exi, si, { sec: ev.target.value })} />
-                        <span className="u">sec</span>
-                        <button className="tm" onClick={() => setTimer({ exi, si })} aria-label={`Time set ${si + 1}`}>Timer</button>
-                      </>
-                    )}
-                    {shape === 'duration' && (
-                      <>
-                        <input className="num" type="number" inputMode="numeric" placeholder="min" value={r.mins ?? ''} aria-label={`Set ${si + 1} minutes`}
-                          onChange={(ev) => updateSet(exi, si, { mins: ev.target.value })} />
-                        <span className="u">min</span>
-                        <input className="num" type="number" inputMode="decimal" placeholder="km" value={r.km ?? ''} aria-label={`Set ${si + 1} distance`}
-                          onChange={(ev) => updateSet(exi, si, { km: ev.target.value })} />
-                        <span className="u">km</span>
-                      </>
-                    )}
-                    {shape === 'check' && (
-                      <label className="tick"><Toggle on={!!r.done} label={`Set ${si + 1} done`} onChange={() => updateSet(exi, si, { done: !r.done })} /> Done</label>
-                    )}
-                  </div>
-                ))}
-                <div className="acts">
-                  <button className="addset" onClick={() => addSet(exi)}>Add set</button>
-                  {shape === 'reps' && !loadOn && <button className="addset" onClick={() => setLoad(exi, 'added')}>Add weight or assistance</button>}
-                </div>
-              </div>
-            )
-          })}
-          <div className="stack"><button className="btn" onClick={commitLift}>Save {shorter ? 'shorter ' : ''}{sel} session</button></div>
-        </>
-      )}
-
-      {wk && demo != null && (() => { const x = swaps[demo] ? slotEx(demo) : undefined; const ex = x ? { n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video } : wk.ex[demo]; return ex?.video ? <DemoPlayer ex={ex} onClose={closeDemo} /> : null })()}
-      {wk && swapFor != null && slotEx(swapFor) && (
-        <SwapSheet current={slotEx(swapFor)!} planned={swaps[swapFor] ? exById(wk.ex[swapFor].id) : undefined}
-          shorter={shorter} onPick={(id) => swapSlot(swapFor, id)} onClose={() => setSwapFor(null)} />
-      )}
-      {wk && timer && (() => {
-        const x = slotEx(timer.exi)
-        const e = wk.ex[timer.exi]
-        const t = swaps[timer.exi] && x ? x.defaultRx ?? e.t : e.t
-        return <HoldTimer name={swaps[timer.exi] && x ? x.n : e.n} rx={shorter ? shorterPrescription(t) : t} perSide={x?.perSide}
-          onDone={(sec) => updateSet(timer.exi, timer.si, { sec: String(sec) })} onClose={() => setTimer(null)} />
-      })()}
-
-      {!swap && sel !== 'Cardio' && (
-        <div className="foot" style={{ padding: '12px 4px 0' }}>
-          {/* no progression prompt on a shorter day (plan §4.0.5) */}
-          Keep two or three reps in the tank each set.{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} Rest
-          about 90 seconds between sets. {RED_FLAG}
+          {sched === 'Rest' && (
+            <div className="li trow">
+              <span className="thumb big ph" aria-hidden="true"><Icon name="leaf" size={22} /></span>
+              <div className="m"><div className="t b">Rest day</div><div className="s">Recovery counts too. A gentle walk is fine.</div></div>
+            </div>
+          )}
+          {plannedType && own && !inProgress && !showPick && (
+            <div className="li trow">
+              <span className="done-chk" aria-hidden="true"><Icon name="check" size={16} stroke={2.6} /></span>
+              <div className="m"><div className="t b">All done for today</div><div className="s">{shortTitle(plannedType)} is in Done today</div></div>
+            </div>
+          )}
+          {showPick && pickUp && (
+            <div className="li trow">
+              <span className="thumb big ph" aria-hidden="true"><Icon name="dumbbell" size={22} /></span>
+              <div className="m"><div className="t muted">{shortTitle(pickUp)}, from {fmtDate(pick!.d).dow}</div><div className="s">If you'd like to pick it up</div></div>
+              <button className="linkbtn" onClick={() => openWorkout(pickUp)}>Add</button>
+              <button className="x-btn" aria-label="Not this time" onClick={() => setPrefs({ pickUpDismissed: pick!.d })}><Icon name="x" size={14} stroke={2.6} /></button>
+            </div>
+          )}
+          <button className="li act addrow" onClick={() => setAddOpen(true)}><Icon name="plus" size={20} /><span>Add something</span></button>
         </div>
-      )}
+      </section>
+
+      {lighterShown && !lighterUp && lighter}
+
+      {weekCount > 0 && <div className="foot week-n">You moved on {gentle ? WORDS[weekCount] : weekCount} {weekCount === 1 ? 'day' : 'days'} this week</div>}
+
+      <section className="tsec" aria-labelledby="done-h">
+        <h2 id="done-h" className="tsec-s">{isToday ? 'Done today' : `Done on ${dayName}`}</h2>
+        {sessions.length ? (
+          <div className="list">
+            {sessions.map((x) => {
+              const r = routineOf(x)
+              const body = (
+                <>
+                  <span className="done-chk" aria-hidden="true"><Icon name="check" size={16} stroke={2.6} /></span>
+                  <div className="m"><div className="t">{x.title.split(' · ')[0]}</div><div className="s">{sessSub(x)}</div></div>
+                </>
+              )
+              return (
+                <div className="li" key={x.id}>
+                  {r ? <button className="li-in" onClick={() => openWorkout(r)} aria-label={`Open ${x.title}`}>{body}</button> : <div className="li-in">{body}</div>}
+                  {confirmId === x.id
+                    ? <button className="linkbtn" style={{ color: 'var(--red)' }} aria-label={`Remove ${x.title}`} onClick={() => { removeSession(x.id); setConfirmId(null) }}>Remove</button>
+                    : <button className="x-btn" aria-label={`Remove ${x.title}`} onClick={() => setConfirmId(x.id)}><Icon name="x" size={14} stroke={2.6} /></button>}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="dash-empty">{isToday ? 'Nothing yet. Anything you do today shows here.' : `Nothing logged on ${dayName}.`}</div>
+        )}
+      </section>
+
+      {addOpen && <AddSomethingSheet planned={sched} onClose={() => setAddOpen(false)}
+        onLog={() => { setAddOpen(false); setLogOpen(true) }}
+        onWorkout={(w) => { setAddOpen(false); openWorkout(w) }}
+        onLibrary={() => { setAddOpen(false); setLibOpen(true) }} />}
+      {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
+      {libOpen && <LibrarySheet onClose={() => setLibOpen(false)} />}
+      {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
     </div>
   )
 }

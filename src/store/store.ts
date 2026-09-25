@@ -20,6 +20,8 @@ import type {
   MacroTarget,
   Profile,
   Session as TrainingSession,
+  Effort,
+  Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
@@ -60,6 +62,15 @@ interface StoreState {
   kitchen: string[]
   setKitchen: (have: string[]) => void
   toast: string | null
+  /** an action on the current toast ("Undo"); cleared with the toast */
+  toastAction: { label: string; run: () => void } | null
+  /** one-shot hand-offs between tabs (UI only, never persisted): Plan's "Do this today" opens
+   *  Train's preview for a workout; Train's "Edit in Plan" opens Plan's workout view */
+  trainOpen: WorkoutType | null
+  planOpen: WorkoutType | null
+  openTrain: (w: WorkoutType) => void
+  openPlan: (w: WorkoutType) => void
+  clearOpen: () => void
 
   // navigation
   setTab: (t: Tab) => void
@@ -67,7 +78,7 @@ interface StoreState {
   clearProfileOpen: () => void
   setDate: (d: string) => void
   shiftDate: (n: number) => void
-  showToast: (msg: string) => void
+  showToast: (msg: string, action?: { label: string; run: () => void }) => void
 
   // food
   /** log one or more entries on the current day (e.g. a food plus its cooking fat) */
@@ -95,14 +106,20 @@ interface StoreState {
   // supplements / weight / workout
   toggleSupp: (id: string) => void
   setWeight: (kg: number) => void
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
+  /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
+   *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
+  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
   /** add a session (any modality) to the current day, alongside any others */
   addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
   removeSession: (id: string) => void
+  /** put back a session removed a moment ago (Undo), on the day it came from */
+  restoreSession: (date: string, x: TrainingSession) => void
 
   // plan / settings
-  setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
+  setScheduleDay: (idx: number, value: WorkoutType | 'Rest', quiet?: boolean) => void
+  /** replace the whole weekly schedule (swap two days, undo) */
+  setSchedule: (s: Schedule, quiet?: boolean) => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
   /** quiet profile update for preferences (accuracy, display, hands…) */
@@ -141,11 +158,14 @@ function setSessions(day: DayLog, list: TrainingSession[]): void {
  * Save a built-in session (Legs/Push/Pull or the Cardio card): it replaces an earlier save from
  * the same card that day, since saving again is an edit; other sessions stay.
  */
-function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
+function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>, keep: ('effort' | 'note' | 'mins')[] = []): void {
   const list = sessionsOf(day, date)
   const i = list.findIndex((y) => y.routineId === x.routineId)
   const prev = i >= 0 ? list[i] : null
-  const next: TrainingSession = { ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
+  // fields the caller didn't set carry over from the earlier save (a later edit keeps the effort)
+  const kept: Partial<TrainingSession> = {}
+  for (const k of keep) if (prev?.[k] !== undefined && (x as Partial<TrainingSession>)[k] === undefined) (kept as Record<string, unknown>)[k] = prev[k]
+  const next: TrainingSession = { ...kept, ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
 
@@ -207,6 +227,12 @@ export const useStore = create<StoreState>()(
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
+      toastAction: null,
+      trainOpen: null,
+      planOpen: null,
+      openTrain: (w) => set((st) => { st.tab = 'train'; st.trainOpen = w }),
+      openPlan: (w) => set((st) => { st.tab = 'plan'; st.planOpen = w }),
+      clearOpen: () => set((st) => { st.trainOpen = null; st.planOpen = null }),
 
       setTab: (t) => set((st) => { st.tab = t }),
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
@@ -214,10 +240,11 @@ export const useStore = create<StoreState>()(
       setDate: (d) => set((st) => { st.cur = d }),
       shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
-      showToast: (msg) => {
-        set((st) => { st.toast = msg })
+      showToast: (msg, action) => {
+        set((st) => { st.toast = msg; st.toastAction = action ?? null })
         if (toastTimer) clearTimeout(toastTimer)
-        toastTimer = setTimeout(() => set((st) => { st.toast = null }), 1600)
+        // an Undo needs time to be read and reached
+        toastTimer = setTimeout(() => set((st) => { st.toast = null; st.toastAction = null }), action ? 5000 : 1600)
       },
 
       logEntries: (entries, toast) => {
@@ -383,12 +410,20 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
 
-      saveWorkout: (type, ex, option) => {
+      saveWorkout: (type, ex, option, extra) => {
         set((st) => {
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}) })
+          const more: Partial<TrainingSession> = {}
+          if (extra?.effort) more.effort = extra.effort
+          if (extra?.note) more.note = extra.note
+          if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
+          if (extra?.open) more.open = true
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}), ...more },
+            // the finish sheet clears effort / note it was given as empty; other saves keep them
+            extra?.effort === null ? ['mins'] : ['effort', 'note', 'mins'])
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(type + ' session saved')
+        persist(); get().scheduleSync()
+        if (!extra?.quiet) get().showToast(extra?.toast ?? type + ' session saved')
       },
 
       saveCardio: (cardioType, mins, option) => {
@@ -413,6 +448,16 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
       },
 
+      restoreSession: (date, x) => {
+        set((st) => {
+          const day = ensureDay(st.data, date)
+          const list = sessionsOf(day, date).filter((y) => y.id !== x.id)
+          setSessions(day, [...list, x].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
+          markDayDirty(st.data, date)
+        })
+        persist(); get().scheduleSync()
+      },
+
       removeSession: (id) => {
         set((st) => {
           const day = ensureDay(st.data, st.cur)
@@ -422,12 +467,20 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Session removed')
       },
 
-      setScheduleDay: (idx, value) => {
+      setScheduleDay: (idx, value, quiet) => {
         set((st) => {
           st.data.schedule[idx] = value
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Schedule updated')
+        persist(); get().scheduleSync(); if (!quiet) get().showToast('Schedule updated')
+      },
+
+      setSchedule: (sch, quiet) => {
+        set((st) => {
+          for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
+          markSettingsDirty(st.data)
+        })
+        persist(); get().scheduleSync(); if (!quiet) get().showToast('Schedule updated')
       },
 
       saveTargets: (t, rangeWidth) => {

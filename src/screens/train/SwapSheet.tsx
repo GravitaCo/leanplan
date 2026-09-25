@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { Exercise } from '@/core/types'
+import { exById } from '@/core/domain/library'
 import { alternativesFor } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { Sheet } from '@/ui/primitives'
@@ -25,18 +27,35 @@ function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void
  * harder on its progression, or a similar move. It changes today only; the planned exercise is
  * one tap away.
  */
-export function SwapSheet({ current, planned, shorter, onPick, onClose }: {
+export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, onClose }: {
   current: Exercise
   /** a shorter day: no "Harder" step (no progression prompts that day, plan §4.0.5) */
   shorter?: boolean
   /** the workout's own exercise for this slot, when something else is in it now */
   planned?: Exercise
+  /** working sets already logged today for this slot: the swap asks first (they are kept, not wiped) */
+  loggedSets?: number
   onPick: (id: string) => void
   onClose: () => void
 }) {
+  const [confirm, setConfirm] = useState<string | null>(null)
   const all = alternativesFor(planned ?? current)
   const alt = shorter ? { ...all, harder: undefined } : all
-  const pick = (id: string) => { onPick(id); onClose() }
+  const pick = (id: string) => { if (loggedSets > 0 && !confirm) { setConfirm(id); return } onPick(id); onClose() }
+  const to = exById(confirm ?? undefined)
+  if (confirm && to) {
+    return (
+      <Sheet title="Swap exercise" onClose={onClose} animate={false}>
+        <div className="sub" style={{ padding: '0 4px 14px' }}>
+          You've logged {loggedSets} {loggedSets === 1 ? 'set' : 'sets'} of {current.n} today. {loggedSets === 1 ? 'It stays' : 'They stay'} in today's log, and {to.n} starts fresh.
+        </div>
+        <div className="stack" style={{ marginTop: 0 }}>
+          <button className="btn" onClick={() => { onPick(confirm); onClose() }}>Swap to {to.n}</button>
+          <button className="btn gray" onClick={() => setConfirm(null)}>Keep {current.n}</button>
+        </div>
+      </Sheet>
+    )
+  }
   const shown = (x?: Exercise) => x && x.id !== current.id
   return (
     <Sheet title="Swap exercise" onClose={onClose} tall>

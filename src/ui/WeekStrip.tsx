@@ -3,6 +3,7 @@ import { fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Rings } from './charts'
 import { Icon } from './icons'
+import { sessionsOf } from '@/core/domain/sessions'
 
 const DOW = 'MTWTFSS'
 
@@ -46,5 +47,32 @@ export function DayNav() {
       <span>{cur === todayStr() ? 'Today' : f.dow} · {short}</span>
       <button onClick={() => setDate(shiftDay(cur, 1))} aria-label="Next day"><Icon name="chevR" size={16} stroke={2.6} /></button>
     </span>
+  )
+}
+
+/**
+ * Train's week (Monday–Sunday): the chosen day filled, today's letter in the tint, and a dot on
+ * each day with any logged movement. Dots only: no connecting line and no "days in a row".
+ */
+export function MoveStrip() {
+  const cur = useStore((s) => s.cur)
+  const days = useStore((s) => s.data.days)
+  const setDate = useStore((s) => s.setDate)
+  const today = todayStr()
+  return (
+    <div className="mstrip" role="list" aria-label="This week">
+      {weekOf(cur).map((d, i) => {
+        const f = fmtDate(d)
+        const moved = sessionsOf(days[d], d).length > 0
+        return (
+          <button key={d} role="listitem" className={'md' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '')}
+            onClick={() => setDate(d)} aria-label={`${f.dow} ${f.full}${moved ? ', moved' : ''}`} aria-current={d === today ? 'date' : undefined} aria-pressed={d === cur}>
+            <span className="l">{DOW[i]}</span>
+            <span className="c num">{parseYmd(d).getDate()}</span>
+            <span className={'dot' + (moved ? ' on' : '')} />
+          </button>
+        )
+      })}
+    </div>
   )
 }

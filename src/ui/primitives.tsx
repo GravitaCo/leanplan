@@ -119,11 +119,11 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
   animate?: boolean
   children: ReactNode
 }) {
+  useScrollLock()
   useEffect(() => {
-    document.body.classList.add('noscroll')
     const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.classList.remove('noscroll'); window.removeEventListener('keydown', onKey) }
+    return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   return (
     <div className="sheet-root">
@@ -148,4 +148,40 @@ export function BackButton({ onClick, label = 'Back' }: { onClick: () => void; l
       {label}
     </button>
   )
+}
+
+/**
+ * A bottom sheet without the navigation header, for sheets whose first line is their own large
+ * title (the player's Adjust and Finish sheets). Escape and the backdrop close it.
+ */
+export function BareSheet({ label, onClose, className, children }: { label: string; onClose: () => void; className?: string; children: ReactNode }) {
+  useScrollLock()
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <div className="sheet-root">
+      <div className="sheet-bg" onClick={onClose} />
+      <div className={'sheet bare' + (className ? ' ' + className : '')} role="dialog" aria-modal="true" aria-label={label}>
+        <div className="grabber" />
+        <div className="sheet-bd">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Lock page scroll while an overlay is open. Counted, so closing a sheet over the player (or a
+ * sheet over a sheet) doesn't unlock the page while something else is still open.
+ */
+let locks = 0
+export function useScrollLock(on = true) {
+  useEffect(() => {
+    if (!on) return
+    locks++
+    document.body.classList.add('noscroll')
+    return () => { locks = Math.max(0, locks - 1); if (!locks) document.body.classList.remove('noscroll') }
+  }, [on])
 }

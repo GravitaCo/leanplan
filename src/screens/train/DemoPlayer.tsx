@@ -3,6 +3,7 @@ import type { ExerciseTemplate } from '@/core/types'
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
 import { Icon } from '@/ui/icons'
+import { useScrollLock } from '@/ui/primitives'
 
 /**
  * Full-screen demo clip with the tempo counter laid over it (phase, rep and a 1-2-3 count), so
@@ -14,6 +15,7 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
   const vid = useRef<HTMLVideoElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)
+  useScrollLock()
   const [t, setT] = useState(0)
   const [playing, setPlaying] = useState(false)
   // offline vs a device that can't decode the clip: the copy differs
@@ -28,7 +30,6 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
-    document.body.classList.add('noscroll')
     closeBtn.current?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -40,7 +41,7 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
       btns[(i + (e.shiftKey ? btns.length - 1 : 1)) % btns.length]?.focus()
     }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.classList.remove('noscroll'); window.removeEventListener('keydown', onKey); opener?.focus() }
+    return () => { window.removeEventListener('keydown', onKey); opener?.focus() }
   }, [onClose])
 
   function toggle() {
