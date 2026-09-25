@@ -180,17 +180,27 @@ export function BareSheet({ label, onClose, className, children }: { label: stri
  * keyboard, it covers the bottom and pans the view, so a bottom sheet would sit behind the keyboard
  * with its top (the search bar) panned out of sight. `--vv-top` / `--vv-h` let `.sheet-root` follow
  * the visible area instead, and `kb` on <html> marks the keyboard as open. Once the sheet has
- * shrunk to fit, the focused field is scrolled back into view inside it (clear of a sticky CTA).
+ * shrunk to fit, the focused field is scrolled back into view inside it (clear of a sticky CTA),
+ * only when it shrinks, so scrolling a list with the keyboard up doesn't jump back to the field.
+ * Pinch-zoom also shrinks the visual viewport; while zoomed the sheet is left at full size.
  */
 let locks = 0
+let lastH = 0
+function clearViewport() {
+  const r = document.documentElement
+  r.style.removeProperty('--vv-top'); r.style.removeProperty('--vv-h'); r.classList.remove('kb')
+  lastH = 0
+}
 function fitViewport() {
   const vv = window.visualViewport
   if (!vv) return
+  if (vv.scale > 1.01) return clearViewport()
   const s = document.documentElement.style
   s.setProperty('--vv-top', vv.offsetTop + 'px')
   s.setProperty('--vv-h', vv.height + 'px')
   document.documentElement.classList.toggle('kb', window.innerHeight - vv.height > 120)
-  requestAnimationFrame(revealFocused)
+  if (lastH && vv.height < lastH - 1) requestAnimationFrame(revealFocused)
+  lastH = vv.height
 }
 function revealFocused() {
   const el = document.activeElement
@@ -220,8 +230,7 @@ export function useScrollLock(on = true) {
       window.visualViewport?.removeEventListener('resize', fitViewport)
       window.visualViewport?.removeEventListener('scroll', fitViewport)
       document.removeEventListener('focusin', onFocusIn)
-      const r = document.documentElement
-      r.style.removeProperty('--vv-top'); r.style.removeProperty('--vv-h'); r.classList.remove('kb')
+      clearViewport()
     }
   }, [on])
 }
