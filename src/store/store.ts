@@ -28,7 +28,7 @@ import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { latestWeight, relog } from '@/core/domain/insights'
+import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
@@ -92,6 +92,8 @@ interface StoreState {
   /** save (or update by name) a custom food definition; returns the saved food */
   saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
+  /** give a saved food a barcode (a scan matched it by name); returns the updated food */
+  linkBarcode: (id: string, barcode: string) => Food | null
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -285,9 +287,14 @@ export const useStore = create<StoreState>()(
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!prev.length) return
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+        const all = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
+        if (!all.length) return
+        // foods no longer in Tali (removed as unverified) aren't copied, nor their cooking fat
+        const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+        const prev = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+        const note = gone.size ? ` · ${gone.size} food${gone.size > 1 ? 's' : ''} no longer in Tali, not copied` : ''
+        if (!prev.length) { get().showToast(`Not copied: ${gone.size > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {
@@ -301,6 +308,18 @@ export const useStore = create<StoreState>()(
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
         persist(); get().scheduleSync(); get().showToast('Food saved')
+        return food
+      },
+
+      linkBarcode: (id, barcode) => {
+        if (!get().data.customFoods.some((x) => x.id === id)) return null
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
+        })
+        persist(); get().scheduleSync()
+        const food = get().data.customFoods.find((x) => x.id === id)!
+        get().showToast(`Barcode linked to your “${food.n}”`)
         return food
       },
 

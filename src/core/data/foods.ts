@@ -1,5 +1,11 @@
 import type { Food } from '@/core/types'
 import { GREGGS } from './chains/greggs'
+import { KFC } from './chains/kfc'
+import { POPEYES } from './chains/popeyes'
+import { PIZZAHUT } from './chains/pizzahut'
+import { BURGERKING } from './chains/burgerking'
+import { NANDOS } from './chains/nandos'
+import { PIZZAEXPRESS } from './chains/pizzaexpress'
 import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
@@ -71,26 +77,6 @@ const BASE: Food[] = [
     "cat": "meat",
     "cook": true,
     "src": "cofid:18-507"
-  },
-  {
-    "n": "Beef mince 20% fat, cooked",
-    "k": 250,
-    "p": 24,
-    "c": 0,
-    "f": 17,
-    "g": 150,
-    "cat": "meat",
-    "cook": true
-  },
-  {
-    "n": "Beef steak (sirloin), cooked",
-    "k": 210,
-    "p": 29,
-    "c": 0,
-    "f": 10,
-    "g": 150,
-    "cat": "meat",
-    "cook": true
   },
   {
     "n": "Beef, roast",
@@ -169,16 +155,6 @@ const BASE: Food[] = [
     "src": "cofid:18-159"
   },
   {
-    "n": "Duck breast, cooked",
-    "k": 200,
-    "p": 27,
-    "c": 0,
-    "f": 10,
-    "g": 150,
-    "cat": "meat",
-    "cook": true
-  },
-  {
     "n": "Pork sausage, cooked (1 ~50g)",
     "k": 294,
     "p": 14.5,
@@ -188,16 +164,6 @@ const BASE: Food[] = [
     "cat": "meat",
     "cook": true,
     "src": "cofid:19-509"
-  },
-  {
-    "n": "Chicken sausage, cooked (1 ~50g)",
-    "k": 175,
-    "p": 16,
-    "c": 5,
-    "f": 10,
-    "g": 50,
-    "cat": "meat",
-    "cook": true
   },
   {
     "n": "Bacon, grilled",
@@ -500,16 +466,6 @@ const BASE: Food[] = [
     "src": "label"
   },
   {
-    "n": "Quorn mince",
-    "k": 105,
-    "p": 15,
-    "c": 4,
-    "f": 2,
-    "g": 100,
-    "cat": "eggs",
-    "cook": true
-  },
-  {
     "n": "Quorn pieces",
     "k": 73,
     "p": 14.0,
@@ -662,15 +618,6 @@ const BASE: Food[] = [
     "src": "usda:174832"
   },
   {
-    "n": "Oat milk",
-    "k": 45,
-    "p": 1,
-    "c": 6.6,
-    "f": 1.5,
-    "g": 200,
-    "cat": "dairy"
-  },
-  {
     "n": "Soya milk",
     "k": 26,
     "p": 2.4,
@@ -719,15 +666,6 @@ const BASE: Food[] = [
     "g": 125,
     "cat": "dairy",
     "src": "cofid:12-380"
-  },
-  {
-    "n": "Skyr",
-    "k": 63,
-    "p": 11,
-    "c": 4,
-    "f": 0.2,
-    "g": 150,
-    "cat": "dairy"
   },
   {
     "n": "Cottage cheese",
@@ -790,15 +728,6 @@ const BASE: Food[] = [
     "src": "cofid:12-551"
   },
   {
-    "n": "Soft cheese, light",
-    "k": 110,
-    "p": 9,
-    "c": 4,
-    "f": 6,
-    "g": 30,
-    "cat": "dairy"
-  },
-  {
     "n": "Brie",
     "k": 343,
     "p": 20.3,
@@ -837,15 +766,6 @@ const BASE: Food[] = [
     "g": 10,
     "cat": "dairy",
     "src": "cofid:17-685"
-  },
-  {
-    "n": "Margarine / spread",
-    "k": 600,
-    "p": 0.2,
-    "c": 0.7,
-    "f": 66,
-    "g": 10,
-    "cat": "dairy"
   },
   {
     "n": "Double cream",
@@ -948,15 +868,6 @@ const BASE: Food[] = [
     "src": "cofid:11-885"
   },
   {
-    "n": "Pilau rice",
-    "k": 180,
-    "p": 3.5,
-    "c": 30,
-    "f": 5,
-    "g": 180,
-    "cat": "grains"
-  },
-  {
     "n": "Pasta, cooked",
     "k": 169,
     "p": 5.5,
@@ -977,15 +888,6 @@ const BASE: Food[] = [
     "src": "cofid:11-723"
   },
   {
-    "n": "Egg noodles, cooked",
-    "k": 138,
-    "p": 4.5,
-    "c": 25,
-    "f": 2,
-    "g": 180,
-    "cat": "grains"
-  },
-  {
     "n": "Rice noodles, cooked",
     "k": 89,
     "p": 1.9,
@@ -1004,15 +906,6 @@ const BASE: Food[] = [
     "g": 85,
     "cat": "grains",
     "src": "usda:171177"
-  },
-  {
-    "n": "Gnocchi, cooked",
-    "k": 150,
-    "p": 3.5,
-    "c": 30,
-    "f": 1,
-    "g": 180,
-    "cat": "grains"
   },
   {
     "n": "Couscous, cooked",
@@ -1125,15 +1018,6 @@ const BASE: Food[] = [
     "src": "cofid:11-970"
   },
   {
-    "n": "Crumpet",
-    "k": 180,
-    "p": 5,
-    "c": 35,
-    "f": 1,
-    "g": 50,
-    "cat": "grains"
-  },
-  {
     "n": "English muffin",
     "k": 223,
     "p": 10.0,
@@ -1174,15 +1058,6 @@ const BASE: Food[] = [
     "src": "cofid:11-925"
   },
   {
-    "n": "Chapati / roti",
-    "k": 300,
-    "p": 8,
-    "c": 46,
-    "f": 9,
-    "g": 60,
-    "cat": "grains"
-  },
-  {
     "n": "Baguette",
     "k": 263,
     "p": 9.0,
@@ -1201,15 +1076,6 @@ const BASE: Food[] = [
     "g": 60,
     "cat": "grains",
     "src": "cofid:11-988"
-  },
-  {
-    "n": "Pain au chocolat",
-    "k": 430,
-    "p": 8,
-    "c": 45,
-    "f": 24,
-    "g": 65,
-    "cat": "grains"
   },
   {
     "n": "Cornflakes",
@@ -1260,15 +1126,6 @@ const BASE: Food[] = [
     "g": 80,
     "cat": "grains",
     "src": "cofid:11-1143"
-  },
-  {
-    "n": "Waffles",
-    "k": 290,
-    "p": 7,
-    "c": 33,
-    "f": 14,
-    "g": 80,
-    "cat": "grains"
   },
   {
     "n": "Potato, boiled",
@@ -1624,15 +1481,6 @@ const BASE: Food[] = [
     "src": "cofid:13-157"
   },
   {
-    "n": "Beetroot",
-    "k": 43,
-    "p": 1.6,
-    "c": 10,
-    "f": 0.2,
-    "g": 80,
-    "cat": "veg"
-  },
-  {
     "n": "Butternut squash",
     "k": 36,
     "p": 1.1,
@@ -1844,15 +1692,6 @@ const BASE: Food[] = [
     "g": 80,
     "cat": "fruit",
     "src": "cofid:14-375"
-  },
-  {
-    "n": "Mixed berries",
-    "k": 43,
-    "p": 1.1,
-    "c": 10,
-    "f": 0.5,
-    "g": 80,
-    "cat": "fruit"
   },
   {
     "n": "Grapes",
@@ -2105,15 +1944,6 @@ const BASE: Food[] = [
     "src": "cofid:17-679"
   },
   {
-    "n": "Brown sauce",
-    "k": 120,
-    "p": 1,
-    "c": 28,
-    "f": 0.1,
-    "g": 15,
-    "cat": "sauces"
-  },
-  {
     "n": "BBQ sauce",
     "k": 140,
     "p": 1.0,
@@ -2132,15 +1962,6 @@ const BASE: Food[] = [
     "g": 10,
     "cat": "sauces",
     "src": "cofid:17-364"
-  },
-  {
-    "n": "Sweet chilli sauce",
-    "k": 230,
-    "p": 0.5,
-    "c": 56,
-    "f": 0.1,
-    "g": 20,
-    "cat": "sauces"
   },
   {
     "n": "Soy sauce (tbsp ~16g)",
@@ -2333,15 +2154,6 @@ const BASE: Food[] = [
     "src": "cofid:19-296"
   },
   {
-    "n": "Chicken korma",
-    "k": 180,
-    "p": 10,
-    "c": 8,
-    "f": 12,
-    "g": 350,
-    "cat": "ready"
-  },
-  {
     "n": "Beef curry",
     "k": 137,
     "p": 13.5,
@@ -2350,15 +2162,6 @@ const BASE: Food[] = [
     "g": 350,
     "cat": "ready",
     "src": "cofid:19-488"
-  },
-  {
-    "n": "Chicken jalfrezi",
-    "k": 120,
-    "p": 12,
-    "c": 7,
-    "f": 5,
-    "g": 350,
-    "cat": "ready"
   },
   {
     "n": "Chow mein",
@@ -2461,15 +2264,6 @@ const BASE: Food[] = [
     "src": "cofid:19-613"
   },
   {
-    "n": "Fish & chips",
-    "k": 230,
-    "p": 9,
-    "c": 24,
-    "f": 12,
-    "g": 300,
-    "cat": "ready"
-  },
-  {
     "n": "Sushi, salmon set",
     "k": 152,
     "p": 8.7,
@@ -2500,33 +2294,6 @@ const BASE: Food[] = [
     "src": "cofid:17-695"
   },
   {
-    "n": "McDonald's Big Mac",
-    "k": 257,
-    "p": 13,
-    "c": 26,
-    "f": 11,
-    "g": 209,
-    "cat": "fastfood"
-  },
-  {
-    "n": "McDonald's McChicken Sandwich",
-    "k": 240,
-    "p": 16,
-    "c": 33,
-    "f": 7,
-    "g": 167,
-    "cat": "fastfood"
-  },
-  {
-    "n": "McDonald's Chicken McNuggets (6)",
-    "k": 271,
-    "p": 15,
-    "c": 17,
-    "f": 15,
-    "g": 96,
-    "cat": "fastfood"
-  },
-  {
     "n": "McDonald's Large Fries",
     "k": 290,
     "p": 3.5,
@@ -2537,24 +2304,6 @@ const BASE: Food[] = [
     "src": "cofid:13-486"
   },
   {
-    "n": "McDonald's Egg McMuffin",
-    "k": 221,
-    "p": 17,
-    "c": 28,
-    "f": 11,
-    "g": 136,
-    "cat": "fastfood"
-  },
-  {
-    "n": "McDonald's Filet-O-Fish",
-    "k": 241,
-    "p": 15,
-    "c": 31,
-    "f": 9,
-    "g": 140,
-    "cat": "fastfood"
-  },
-  {
     "n": "McDonald's Cheeseburger",
     "k": 254,
     "p": 13.6,
@@ -2563,133 +2312,6 @@ const BASE: Food[] = [
     "g": 115,
     "cat": "fastfood",
     "src": "cofid:19-545"
-  },
-  {
-    "n": "Nando's Quarter Chicken (plain)",
-    "k": 284,
-    "p": 40.0,
-    "c": 0.3,
-    "f": 13.6,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 284,
-      "p": 40.0,
-      "c": 0.3,
-      "f": 13.6
-    }
-  },
-  {
-    "n": "Nando's Half Chicken (plain)",
-    "k": 568,
-    "p": 80.0,
-    "c": 0.5,
-    "f": 27.2,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 568,
-      "p": 80.0,
-      "c": 0.5,
-      "f": 27.2
-    }
-  },
-  {
-    "n": "Nando's Peri-Peri Chips",
-    "k": 452,
-    "p": 6.4,
-    "c": 64.9,
-    "f": 19.4,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 452,
-      "p": 6.4,
-      "c": 64.9,
-      "f": 19.4
-    }
-  },
-  {
-    "n": "Nando's Chicken Pitta",
-    "k": 485,
-    "p": 36.6,
-    "c": 51.3,
-    "f": 14.9,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 485,
-      "p": 36.6,
-      "c": 51.3,
-      "f": 14.9
-    }
-  },
-  {
-    "n": "KFC Original Recipe Chicken piece",
-    "k": 250,
-    "p": 22,
-    "c": 13,
-    "f": 16,
-    "g": 152,
-    "cat": "fastfood"
-  },
-  {
-    "n": "KFC Zinger Burger",
-    "k": 468,
-    "p": 23.0,
-    "c": 43.0,
-    "f": 22.0,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "kfc-uk",
-    "ref": {
-      "g": 1,
-      "k": 468,
-      "p": 23.0,
-      "c": 43.0,
-      "f": 22.0
-    }
-  },
-  {
-    "n": "KFC Fries (regular)",
-    "k": 290,
-    "p": 3.5,
-    "c": 39.7,
-    "f": 14.2,
-    "g": 92,
-    "cat": "fastfood",
-    "src": "cofid:13-486"
-  },
-  {
-    "n": "Pot Noodle Chicken & Mushroom",
-    "k": 406,
-    "p": 9,
-    "c": 58,
-    "f": 14,
-    "g": 90,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Pot Noodle Beef & Tomato",
-    "k": 400,
-    "p": 9,
-    "c": 57,
-    "f": 13,
-    "g": 90,
-    "cat": "fastfood"
   },
   {
     "n": "Subway 6-inch Chicken Tikka",
@@ -2720,58 +2342,6 @@ const BASE: Food[] = [
     }
   },
   {
-    "n": "Burger King Whopper",
-    "k": 207.32,
-    "p": 10.1,
-    "c": 18.47,
-    "f": 10.45,
-    "g": 287,
-    "cat": "fastfood",
-    "src": "bk-gb",
-    "ref": {
-      "g": 287,
-      "k": 595,
-      "p": 29,
-      "c": 53,
-      "f": 30
-    }
-  },
-  {
-    "n": "Burger King Chicken Royale",
-    "k": 261.75,
-    "p": 10.6,
-    "c": 23.96,
-    "f": 13.36,
-    "g": 217,
-    "cat": "fastfood",
-    "src": "bk-gb",
-    "ref": {
-      "g": 217,
-      "k": 568,
-      "p": 23,
-      "c": 52,
-      "f": 29
-    }
-  },
-  {
-    "n": "Domino's Margherita slice",
-    "k": 225,
-    "p": 9,
-    "c": 31,
-    "f": 7,
-    "g": 97,
-    "cat": "fastfood"
-  },
-  {
-    "n": "Domino's Pepperoni slice",
-    "k": 265,
-    "p": 10,
-    "c": 31,
-    "f": 11,
-    "g": 100,
-    "cat": "fastfood"
-  },
-  {
     "n": "Crisps (bag ~25g)",
     "k": 493,
     "p": 6.2,
@@ -2800,15 +2370,6 @@ const BASE: Food[] = [
     "g": 30,
     "cat": "snacks",
     "src": "usda:167555"
-  },
-  {
-    "n": "Popcorn, plain",
-    "k": 387,
-    "p": 13,
-    "c": 78,
-    "f": 4,
-    "g": 20,
-    "cat": "snacks"
   },
   {
     "n": "Milk chocolate (small bar ~45g)",
@@ -2951,33 +2512,6 @@ const BASE: Food[] = [
     "src": "cofid:11-814"
   },
   {
-    "n": "Cereal bar",
-    "k": 400,
-    "p": 6,
-    "c": 68,
-    "f": 11,
-    "g": 30,
-    "cat": "snacks"
-  },
-  {
-    "n": "Protein bar",
-    "k": 350,
-    "p": 30,
-    "c": 35,
-    "f": 9,
-    "g": 60,
-    "cat": "snacks"
-  },
-  {
-    "n": "Doughnut",
-    "k": 400,
-    "p": 6,
-    "c": 50,
-    "f": 20,
-    "g": 60,
-    "cat": "snacks"
-  },
-  {
     "n": "Blueberry muffin",
     "k": 375,
     "p": 5.0,
@@ -3015,7 +2549,8 @@ const BASE: Food[] = [
     "f": 0,
     "g": 250,
     "ml": true,
-    "cat": "drinks"
+    "cat": "drinks",
+    "src": "cofid:17-377"
   },
   {
     "n": "Coffee, black",
@@ -3027,26 +2562,6 @@ const BASE: Food[] = [
     "ml": true,
     "cat": "drinks",
     "src": "cofid:17-833"
-  },
-  {
-    "n": "Latte (with milk)",
-    "k": 50,
-    "p": 3,
-    "c": 5,
-    "f": 2,
-    "g": 240,
-    "ml": true,
-    "cat": "drinks"
-  },
-  {
-    "n": "Cappuccino",
-    "k": 40,
-    "p": 2.5,
-    "c": 4,
-    "f": 1.8,
-    "g": 180,
-    "ml": true,
-    "cat": "drinks"
   },
   {
     "n": "Hot chocolate (with milk)",
@@ -3170,16 +2685,6 @@ const BASE: Food[] = [
     "src": "cofid:17-672"
   },
   {
-    "n": "Sports drink",
-    "k": 24,
-    "p": 0,
-    "c": 6,
-    "f": 0,
-    "g": 500,
-    "ml": true,
-    "cat": "drinks"
-  },
-  {
     "n": "Squash, diluted",
     "k": 7,
     "p": 0.0,
@@ -3200,16 +2705,6 @@ const BASE: Food[] = [
     "ml": true,
     "cat": "drinks",
     "src": "cofid:17-736"
-  },
-  {
-    "n": "Lager",
-    "k": 43,
-    "p": 0.5,
-    "c": 3.6,
-    "f": 0,
-    "g": 330,
-    "ml": true,
-    "cat": "drinks"
   },
   {
     "n": "Red wine",
@@ -3432,26 +2927,6 @@ const BASE: Food[] = [
     }
   },
   {
-    "n": "Innocent orange juice",
-    "k": 44,
-    "p": 0.7,
-    "c": 10.5,
-    "f": 0.1,
-    "g": 250,
-    "ml": true,
-    "cat": "drinks"
-  },
-  {
-    "n": "Ribena (undiluted)",
-    "k": 250,
-    "p": 0.2,
-    "c": 64,
-    "f": 0,
-    "g": 30,
-    "ml": true,
-    "cat": "drinks"
-  },
-  {
     "n": "Volvic Touch of Fruit",
     "k": 0.4,
     "p": 0,
@@ -3472,4 +2947,4 @@ const BASE: Food[] = [
 ]
 
 /** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT, BURGERKING, NANDOS, PIZZAEXPRESS)

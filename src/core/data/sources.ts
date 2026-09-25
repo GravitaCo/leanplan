@@ -19,6 +19,10 @@ export interface Source {
 /** UK menu calorie labels: 21% mean absolute error per item (bomb calorimetry of 295 items,
  *  Br J Nutr 2025, PMC12722009). See docs/plans/nutrition-accuracy-research.md §1.1. */
 const MENU_ERR = 0.2
+/** A pack label read from Open Food Facts by the user's own scan: crowdsourced and unchecked by
+ *  us, and labels are legally within about ±20% for most macros (nutrition-accuracy-research §1.4).
+ *  Applies to scanned custom foods only; built-in foods cited to OFF were checked when added. */
+export const SCANNED_LABEL_ERR = 0.2
 
 export const SOURCES: Record<string, Source> = {
   cofid: { label: 'UK CoFID 2021', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid' },
@@ -27,19 +31,32 @@ export const SOURCES: Record<string, Source> = {
   off: { label: 'Pack label via Open Food Facts', url: 'https://world.openfoodfacts.org/' },
   'subway-uk': { label: 'Subway UK, Sep 2026', url: 'https://www.subway.com/en-GB/MenuNutrition/Nutrition', err: MENU_ERR },
   'bk-gb': { label: 'Burger King UK, Sep 2026', url: 'https://www.burgerking.co.uk/', err: MENU_ERR },
-  'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/', err: MENU_ERR },
+  'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/food/menu', err: MENU_ERR },
   'greggs-uk': { label: 'Greggs UK, Sep 2026', url: 'https://www.greggs.com/nutrition', err: MENU_ERR },
+  'popeyes-uk': { label: 'Popeyes UK, Sep 2026', url: 'https://popeyesuk.com/nutrition', err: MENU_ERR },
+  'pizzahut-uk': { label: 'Pizza Hut Restaurants UK (dine-in), Jul 2026', url: '', err: MENU_ERR },
+  'pizzaexpress-uk': { label: 'PizzaExpress UK (England, Wales & Scotland), Sep 2026', url: 'https://www.pizzaexpress.com/allergens-and-nutritionals', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
 }
 
+/** Chain menus: sources whose values are a restaurant's published per-item figures. */
+export function isMenuSource(src: string | undefined): boolean {
+  return !!src && SOURCES[src.split(':')[0]]?.err === MENU_ERR
+}
+
+/** A custom food saved from a barcode scan (values read from Open Food Facts, then confirmed). */
+const isScanned = (f: Pick<Food, 'src' | 'id'>) => !!f.id && !!f.src && f.src.split(':')[0] === 'off'
+
 /** The source's minimum error for a food, or 0. */
 export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
+  if (isScanned(f)) return SCANNED_LABEL_ERR
   return (!f.id && f.src && SOURCES[f.src.split(':')[0]]?.err) || 0
 }
 
-/** Human line for a food's source: "UK CoFID 2021 · 19-539", "Your label", or null if unchecked. */
+/** Human line for a food's source: "UK CoFID 2021 · 19-539", "Your label", or null if unchecked.
+ *  A scanned food keeps its Open Food Facts line (with the barcode), like built-in OFF foods. */
 export function sourceOf(f: Pick<Food, 'src' | 'id'>): { text: string; url: string } | null {
-  if (f.id) return { text: 'Your label', url: '' }
+  if (f.id && !isScanned(f)) return { text: 'Your label', url: '' }
   if (!f.src) return null
   const [key, code] = f.src.split(':')
   const s = SOURCES[key]

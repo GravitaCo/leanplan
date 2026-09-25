@@ -5,7 +5,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { entryAmount, relog } from '@/core/domain/insights'
+import { entryAmount, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
@@ -36,6 +36,12 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
+import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { lookupProduct } from '@/data/products'
+import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
+import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
+import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
+import type { Food } from '@/core/types'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -72,6 +78,8 @@ const extra: [string, string, string][] = [
   ['search: berries keeps Strawberries', rankByName(['Mixed berries', 'Strawberries'], (x) => x, ['berries']).join('|'), 'Mixed berries|Strawberries'],
   ['search: peas keeps Chickpeas (no pea->pear)', rankByName(['Pear', 'Peach', 'Chickpeas, cooked'], (x) => x, ['peas']).join('|'), 'Chickpeas, cooked'],
   ['search: eggs -> egg, not Greggs', rankByName(['Greggs BLT', 'Egg, whole', 'Greggs Free Range Egg Pot'], (x) => x, ['eggs']).join('|'), 'Egg, whole|Greggs Free Range Egg Pot'],
+  ['search: brand name isn\'t the dish', rankByName(['Pizza Hut Fries', 'Pizza, cheese & tomato'], (x) => x, ['pizza'])[0], 'Pizza, cheese & tomato'],
+  ['search: eggs finds eggs when a dish says Eggs', rankByName(['Greggs BLT', 'PizzaExpress Eggs Benedict', 'Egg, whole'], (x) => x, ['eggs'])[0], 'Egg, whole'],
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
@@ -153,6 +161,18 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const small = { n: 'x', k: 100, p: 0, c: 0, f: 0, g: 10 }
   const ok5 = entryAmount({ n: 'x', grams: 12.5, k: 12.5, p: 0, c: 0, f: 0, src: 'db', serv: 1.3 }, small) === 12.5; if (!ok5) bad++
   console.log(ok5 ? 'PASS' : 'FAIL', 'edited small serving keeps 12.5 g')
+  // a food that became per item re-logs as items at the chain's figure (KFC Original: 380 -> 241)
+  const orig = relog({ n: 'KFC Original Recipe Chicken piece', grams: 152, k: 380, p: 30, c: 12, f: 23, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
+  const okO = orig.unit === 'item' && orig.grams === 1 && Math.round(orig.k) === Math.round(FOODS.find((f) => f.n === 'KFC Original Recipe Chicken piece')!.k); if (!okO) bad++
+  console.log(okO ? 'PASS' : 'FAIL', 'relog: per-100 g KFC Original becomes 1 item at KFC\'s figure', orig.unit, orig.grams, Math.round(orig.k))
+  // removed (unverified) foods are never re-offered as usuals
+  {
+    const day = (d: string) => ({ [d]: { foods: [{ n: 'Oat milk', grams: 200, k: 90, p: 2, c: 13, f: 3, meal: 'breakfast', src: 'db' }, { n: 'Onion', grams: 50, k: 18, p: 0.6, c: 4, f: 0.1, meal: 'breakfast', src: 'db' }], supps: {}, weight: null, workout: null } })
+    const st = { days: { ...day('2026-09-20'), ...day('2026-09-21'), ...day('2026-09-22') } } as never
+    const u = usuals(st, '2026-09-23', 'breakfast').map((x) => x.n).join('|')
+    const okU = u === 'Onion'; if (!okU) bad++
+    console.log(okU ? 'PASS' : 'FAIL', 'usuals skip removed foods', u)
+  }
   const ok3 = off.length === 0; if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'live-era entries (as actually stored) re-log and reopen to the published figure, x0.5-x3', off.slice(0, 5).join(', '))
 }
@@ -540,6 +560,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     ['vegetarian swaps (sourced Quorn pieces)', sw('vegetarian'), 'Beef mince>Quorn pieces'],
     ['vegan swaps (no Quorn: egg; soya milk)', sw('vegan'), 'Beef mince>Tofu, firm|Milk>Soya milk'],
     ['stock, lard, sauces and dishes never swap to a whole protein', sw('vegetarian', stocky as never), 'Chicken stock>-|Lard>-|Worcestershire sauce>-|Greggs Sausage Roll>-'],
+    ['vegan cheese swap on a ham pizza still conflicts', dietFit({ n: 'PizzaExpress Piccolo Ham & Mushrooms Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan') + '/' + dietFit({ n: 'PizzaExpress Piccolo Pollo Vegan Mozz Alternative', cat: 'fastfood' }, 'vegetarian'), 'conflict/conflict'],
+    ['vegan cheese swap alone is check, not dairy', dietFit({ n: 'PizzaExpress Piccolo Margherita Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan'), 'check'],
+    ['oat drink is plant, macchiato is milk', dietFit({ n: 'Latte (oat drink)', cat: 'drinks' }, 'vegan') + '/' + dietFit({ n: 'Macchiato', cat: 'drinks' }, 'vegan'), 'fits/conflict'],
     ['tea with no milk is vegan', dietFit({ n: 'Tea, no milk', cat: 'drinks' }, 'vegan'), 'fits'],
     ['tuna steak fits pescatarian', dietFit({ n: 'Tuna steak, raw', cat: 'fish' }, 'pescatarian'), 'fits'],
     ['parmesan not vegetarian', dietFit({ n: 'Parmesan', cat: 'dairy' }, 'vegetarian'), 'conflict'],
@@ -1029,4 +1052,201 @@ function legacyAndGuest(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'swap:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+// ---------- barcode scanning: check digits, OFF mapping, label checks, ingredient vs meal ----------
+async function barcodeScan(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const probs = (v: LabelValues, ml = false) => checkLabel(v, { ml }).map((p) => p.kind + ':' + p.field).join(',')
+  const good: LabelValues = { k: 165, kj: 690, p: 31, c: 0, f: 3.6, sat: 1, sugars: 0, salt: 0.2 }
+  checks.push(
+    ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
+    ['check digit: one digit off fails', !checkDigitOk('4006381333932') && !checkDigitOk('96385075') && !checkDigitOk('123')],
+    ['UPC-E expands to its UPC-A', expandUpcE('04252614') === '042100005264'],
+    ['normalize: UPC-A gets the leading 0, keeps the 12-digit spelling as alt', JSON.stringify(normalizeBarcode('036000291452', 'upc_a')) === JSON.stringify({ code: '0036000291452', alt: '036000291452' })],
+    ['normalize: EAN-13 with spaces', normalizeBarcode('4006 3813 3393 1')?.code === '4006381333931'],
+    ['normalize: typed EAN-8 stays 8 digits', normalizeBarcode('96385074')?.code === '96385074'],
+    ['normalize: scanned UPC-E becomes EAN-13', normalizeBarcode('04252614', 'upc_e')?.code === '0042100005264'],
+    ['normalize: a bad check digit is refused', normalizeBarcode('4006381333932') === null && normalizeBarcode('12345') === null && normalizeBarcode('abc') === null],
+  )
+
+  // OFF mapping
+  const beans: OffProduct = {
+    product_name: 'Baked Beanz 415g', brands: 'Heinz, Kraft Heinz', quantity: '415 g', product_quantity: 415, serving_quantity: '207.5',
+    nutriments: { 'energy-kcal_100g': 78, 'energy-kj_100g': 330, proteins_100g: 4.7, carbohydrates_100g: 12.5, fat_100g: 0.2, sugars_100g: 4.7, 'saturated-fat_100g': 0, fiber_100g: 3.8, salt_100g: 0.6 },
+    categories_tags: ['en:plant-based-foods-and-beverages', 'en:legumes', 'en:beans', 'en:baked-beans'],
+  }
+  const d = draftFromOff('5000157024671', beans, ['Heinz Baked Beanz'])
+  checks.push(
+    ['OFF: name is Brand + product, size removed, deduped against existing names', d.name === 'Heinz Baked Beanz (2)'],
+    ['OFF: per-100 g values mapped', d.values.k === 78 && d.values.p === 4.7 && d.values.c === 12.5 && d.values.f === 0.2 && d.values.fibre === 3.8 && d.values.salt === 0.6 && !d.kcalFromKj],
+    ['OFF: beans are an ingredient (veg), grams, serving from serving_quantity', d.kind === 'cook' && d.cat === 'veg' && !d.ml && d.serving.cook === 208 && d.serving.eat === 208],
+    ['OFF: brand already in the name is not repeated', productName({ product_name: 'Heinz Tomato Ketchup', brands: 'Heinz' }) === 'Heinz Tomato Ketchup'],
+    ['OFF: multipack size removed', productName({ product_name: 'Crisps 6 x 25g', brands: 'Walkers' }) === 'Walkers Crisps'],
+  )
+  const kjOnly = draftFromOff('4006381333931', { product_name: 'Oat drink', quantity: '1 l', nutriments: { 'energy-kj_100g': 197, proteins_100g: 1, carbohydrates_100g: 6.6, fat_100g: 1.5 } }, [])
+  checks.push(
+    ['OFF: kJ only → kcal = kJ / 4.184', kjOnly.values.k === 47.1 && kjOnly.kcalFromKj && kjOnly.values.kj === 197],
+    ['OFF: missing fields stay missing, not zero', !('sugars' in kjOnly.values) && !('salt' in kjOnly.values)],
+    ['ml: quantity in litres / cl / ml, or nutrition_data_per 100ml', kjOnly.ml && isPer100ml({ quantity: '33cl' }) && isPer100ml({ quantity: '500 ml' }) && isPer100ml({ nutrition_data_per: '100ml' }) && !isPer100ml({ quantity: '400 g' }) && !isPer100ml({ quantity: '1 kg' })],
+  )
+
+  // ready meal vs ingredient
+  const lasagne = draftFromOff('4006381333931', {
+    product_name: 'Beef Lasagne', brands: 'Tesco', product_quantity: '400',
+    nutriments: { 'energy-kcal_100g': 150, proteins_100g: 8, carbohydrates_100g: 14, fat_100g: 6.5 },
+    categories_tags: ['en:meals', 'en:pasta-dishes', 'en:lasagnas'],
+  }, [])
+  checks.push(
+    ['classify: ready meals, sandwiches, pizzas, soups, meal kits, prepared salads are eat-as-is meals', ['en:meals', 'en:sandwiches', 'en:pizzas', 'en:soups', 'en:meal-kits', 'en:prepared-salads'].map((t) => classifyProduct([t]) === 'eat' && isMealProduct([t])).every(Boolean)],
+    ['classify: pasta, milk, sauces, soup mixes, pizza sauce are for cooking', [['en:pastas'], ['en:milks'], ['en:sauces', 'en:pizza-sauces'], ['en:soup-mixes'], []].map((t) => classifyProduct(t)).every((k) => k === 'cook')],
+    ['classify: lasagne is a meal, default serving = the pack (400 g), 100 g as an ingredient', lasagne.kind === 'eat' && lasagne.meal && lasagne.serving.eat === 400 && lasagne.serving.cook === 100],
+    ['category guess: milk dairy, oil fats, salmon fish, crisps snacks, cola drinks, unknown none', [['en:dairies', 'en:milks'], ['en:vegetable-oils'], ['en:fishes'], ['en:crisps'], ['en:beverages', 'en:sodas'], ['en:something']].map((t) => guessCategory(t) ?? '-').join() === 'dairy,fats,fish,snacks,drinks,-'],
+  )
+  const asMeal = foodFromConfirmed({ barcode: '4006381333931', name: 'Tesco Beef Lasagne', values: lasagne.values, ml: false, kind: 'eat', meal: true, cat: 'grains', g: 400 })
+  const asIngr = foodFromConfirmed({ barcode: '5000157024671', name: ' Heinz Baked Beanz ', values: d.values, ml: false, kind: 'cook', cat: d.cat, g: 208 })
+  checks.push(
+    ['saved ready meal: cat ready, no cook flag, pack serving, off: source and barcode', asMeal.cat === 'ready' && !asMeal.cook && asMeal.g === 400 && asMeal.src === 'off:4006381333931' && asMeal.barcode === '4006381333931'],
+    ['saved ingredient: guessed cat, per-100 values exactly as confirmed, name trimmed', asIngr.cat === 'veg' && asIngr.k === 78 && asIngr.p === 4.7 && asIngr.c === 12.5 && asIngr.f === 0.2 && asIngr.n === 'Heinz Baked Beanz'],
+  )
+
+  // accuracy checks, each naming its field
+  checks.push(
+    ['checks: a consistent label has no problems', probs(good) === ''],
+    ['checks: kJ typed as kcal flags kcal and kJ', probs({ ...good, k: 690 }).includes('odd:k') && probs({ ...good, k: 690 }).includes('odd:kj')],
+    ['checks: kJ vs kcal within 5 kcal / 5% is fine', probs({ ...good, k: 168 }) === ''],
+    ['checks: misread kJ digits flag both', probs({ ...good, kj: 960 }) === 'odd:k,odd:kj'],
+    ['checks: energy the macros can’t explain flags kcal (no kJ given)', probs({ k: 400, p: 31, c: 0, f: 3.6 }) === 'odd:k'],
+    ['checks: fibre (2 kcal/g) counts towards energy', probs({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }) === '' && probs({ k: 150, p: 3, c: 20, f: 2 }) === 'odd:k'],
+    ['checks: alcohol is % vol: a 40% spirit at 222 kcal/100 ml is fine (40 × 0.789 g × 7)', probs({ k: 222, p: 0, c: 0, f: 0, alcohol: 40 }, true) === ''],
+    ['checks: energy well above what 40% alcohol explains is still flagged; a 20% liqueur adds up', probs({ k: 280 + 60, p: 0, c: 15, f: 0, alcohol: 40 }, true) === 'odd:k' && probs({ k: 210, p: 0, c: 25, f: 0, alcohol: 20 }, true) === ''],
+    ['checks: a US label counts fibre inside carbs, so no fibre allowance', checkLabel({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }, { usLabel: true }).some((p) => p.field === 'k')],
+    ['checks: sugars more than carbs flags sugars; within 0.2 g is fine', probs({ k: 40, p: 0, c: 10, f: 0, sugars: 12 }) === 'odd:sugars' && probs({ k: 40, p: 0, c: 10, f: 0, sugars: 10.2 }) === ''],
+    ['checks: saturates more than fat flags saturates', probs({ k: 45, p: 0, c: 0, f: 5, sat: 6 }) === 'odd:sat'],
+    ['checks: more than 100 g in 100 g flags the biggest part', checkLabel({ k: 380, p: 10, c: 60, f: 4, fibre: 30, salt: 1 }).some((p) => p.field === 'c' && /add up to 105 g/.test(p.msg))],
+    ['checks: per 100 ml allows denser liquids (syrup)', probs({ k: 350, p: 0, c: 88, f: 0 }, true) === '' && probs({ k: 560, p: 0, c: 140.5, f: 0 }, true).includes('odd:c')],
+    ['checks: negatives flagged per field', probs({ k: 50, p: -1, c: 12, f: 0.5 }).startsWith('odd:p')],
+    ['checks: missing required fields named, name too', checkLabel({ k: 50, c: 12 }, { name: ' ' }).map((p) => p.kind + ':' + p.field).join() === 'missing:name,missing:p,missing:f'],
+  )
+
+  // local first; source and margin of a saved scan
+  const saved: Food = { ...asIngr, id: uuid() }
+  const entry = buildEntry(saved, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  const builtinOff = FOODS.find((f) => f.src?.startsWith('off:'))!
+  checks.push(
+    ['local: a saved scan is found by its barcode; built-in OFF foods by their src', findByBarcode([saved], '5000157024671') === saved && findByBarcode(FOODS, builtinOff.src!.slice(4)) === builtinOff],
+    ['source: a saved scan keeps the Open Food Facts line and a ±20% label margin', sourceOf(saved)?.text === 'Pack label via Open Food Facts · 5000157024671' && sourceErr(saved) === 0.2 && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
+    ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === 0.2],
+  )
+
+  // ingredient-only: "What can I make?" chips and the recipe builder
+  const menuItem = FOODS.find((f) => isMenuSource(f.src))!
+  const foods: Food[] = [...FOODS, { ...asMeal, id: uuid() }]
+  const cand = kitchenCandidates([{ id: 'r', name: 'R', servings: 1, items: [{ n: 'Tesco Beef Lasagne', k: 1, p: 1, c: 1, f: 1, grams: 1 }, { n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, grams: 1 }] }], [menuItem.n, 'Tesco Beef Lasagne', 'Heinz Baked Beanz'], foods)
+  const ranked = ingredientsFirst([{ n: 'A', cat: 'ready' }, { n: 'B', cat: 'grains' }, { n: 'C', src: menuItem.src }, { n: 'D' }] as Food[], (f) => f)
+  checks.push(
+    ['kitchen chips: no ready meals or chain menu items', cand.join() === 'Heinz Baked Beanz'],
+    ['made food: cat ready/fastfood or a menu source', isMadeFood({ cat: 'ready' }) && isMadeFood({ cat: 'fastfood' }) && isMadeFood({ src: menuItem.src }) && !isMadeFood({ cat: 'grains', src: 'cofid:1' }) && !isMadeFood(undefined)],
+    ['recipe search: ingredients first, made foods after, order kept', ranked.map((f) => f.n).join('') === 'BDAC'],
+  )
+
+  // sync: meta held back until the migration; a pull keeps this device's extra fields
+  const rowOff = toServerFood(saved, LOCAL_USER) as Record<string, unknown>
+  const rowOn = toServerFood(saved, LOCAL_USER, true) as Record<string, any>
+  const back = fromServerFood({ ...rowOn, updated_at: 'z' })
+  checks.push(
+    ['sync: CUSTOM_FOOD_META is off, so no meta column is sent', CUSTOM_FOOD_META === false && !('meta' in rowOff)],
+    ['sync: with the flag on, meta carries src, cat, barcode', rowOn.meta?.src === 'off:5000157024671' && rowOn.meta?.cat === 'veg' && rowOn.meta?.barcode === '5000157024671' && !('ml' in rowOn.meta)],
+    ['sync: meta read back from the server', back.barcode === '5000157024671' && back.src === 'off:5000157024671' && back.cat === 'veg'],
+  )
+  const rows: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [] }
+  const s = stateFromBackup({ days: {} } as never)
+  s.customFoods = [{ ...saved, _dirty: true }]
+  const m = ensureMeta(s, false)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = fakeServer(rows).fetchFn
+  try { await pushDirty(s, m); await pullAll(s, m) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: after push + pull (no meta on the server) the scan keeps barcode, src and cat', rows.custom_foods.length === 1 && !('meta' in rows.custom_foods[0]) && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
+  const back2 = stateFromBackup(JSON.parse(JSON.stringify(s)))
+  checks.push(['persistence and backup JSON: barcode survives a round trip', back2.customFoods[0].barcode === '5000157024671'])
+
+  // review fixes: per-serving values, multipacks, units, US labels, stale data, bad data, links
+  const perServ = draftFromOff('4006381333931', { product_name: 'Granola', serving_quantity: 45, nutrition_data_per: 'serving', nutriments: { 'energy-kcal_100g': 450, proteins_100g: 10, carbohydrates_100g: 60, fat_100g: 18 } }, [])
+  const sameLines = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150, proteins_100g: 2, proteins_serving: 2, carbohydrates_100g: 18, carbohydrates_serving: 18, fat_100g: 8, fat_serving: 8 } })
+  const fine = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 500, 'energy-kcal_serving': 150 } })
+  const about100 = servingNotes({ serving_quantity: 100, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150 } })
+  checks.push(
+    ['per-serving: OFF derived per-100 from a per-serving label → note on kcal', perServ.notes.length === 1 && perServ.notes[0].field === 'k' && /per-serving label/.test(perServ.notes[0].msg)],
+    ['per-serving: per-100 lines equal the per-serving ones for a 30 g serving → note', sameLines.length === 1 && /30 g serving/.test(sameLines[0].msg)],
+    ['per-serving: different lines, or a ~100 g serving, → no note', fine.length === 0 && about100.length === 0],
+    ['OFF_FIELDS asks for nutriments, last_modified_t and the quantity unit', ['nutriments', 'last_modified_t', 'product_quantity_unit'].every((f) => OFF_FIELDS.split(',').includes(f))],
+    // naming a nutrient as a field empties nutriments in the live API (checked Sept 2026)
+    ['OFF_FIELDS names no nutrient (top-level fields only)', OFF_FIELDS.split(',').every((f) => !/_(100g|serving)$|^energy/.test(f))],
+    ['multipack: "4 x 250g" → one unit is 250 g; "250 g x 4" too; "6 x" without a weight → none', multipackUnit('4 x 250g').unit === 250 && multipackUnit('250 g x 4').unit === 250 && multipackUnit('6 x pots').multi && multipackUnit('6 x pots').unit === undefined && !multipackUnit('400 g').multi],
+    ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.eat === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.eat === 100],
+    ['ml: product_quantity_unit wins over the quantity text', isPer100ml({ product_quantity_unit: 'g', quantity: '500 ml' }) === false && isPer100ml({ product_quantity_unit: 'ml', quantity: '500 g' }) === true],
+    ['ml: ice cream sold in ml stays per 100 g', isPer100ml({ quantity: '500 ml', product_quantity_unit: 'ml', categories_tags: ['en:frozen-desserts', 'en:ice-creams'] }) === false],
+    ['US-only label detected; a UK one or one sold in both is not', isUsLabel(['en:united-states']) && !isUsLabel(['en:united-kingdom', 'en:united-states']) && !isUsLabel(['en:united-kingdom']) && !isUsLabel(undefined)],
+    ['stale: last edit over 3 years ago gives the year; recent none', staleYear(Date.UTC(2021, 5, 1) / 1000, Date.UTC(2026, 8, 25)) === 2021 && staleYear(Date.UTC(2025, 0, 1) / 1000, Date.UTC(2026, 8, 25)) === undefined && staleYear('x') === undefined],
+    ['bad OFF data: wrong types dropped, no throw', (() => { const x = draftFromOff('4006381333931', { product_name: 42, brands: ['x'], categories_tags: 'en:meals', countries_tags: [1, 'en:united-states'], nutriments: { 'energy-kcal_100g': { a: 1 }, proteins_100g: '5' } }, []); return x.name === '' && x.kind === 'cook' && x.values.k === undefined && x.values.p === 5 && x.usLabel })()],
+    ['bad OFF data: not an object at all', draftFromOff('4006381333931', null, []).name === '' && draftFromOff('4006381333931', 'junk', []).notes.length === 0],
+    ['name capped at 120 characters', draftFromOff('4006381333931', { product_name: 'x'.repeat(500) }, []).name.length === MAX_NAME],
+    ['link: a saved food of the same name without a barcode is reused; one with a barcode or a built-in is not', linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], ' heinz baked beanz')?.id === 'a' && !linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100, barcode: '1' }], 'Heinz Baked Beanz') && !linkableFood([{ n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], 'Heinz Baked Beanz') && d.baseName === 'Heinz Baked Beanz'],
+  )
+
+  // Benn's case: Walkers Sensations, 5000328028873. OFF: whole 150 g bag as one serving, name "sensations"
+  const walkers = draftFromOff('5000328028873', {
+    product_name: 'sensations', brands: 'Walkers', serving_size: '1 pack (150 g)', serving_quantity: 150, quantity: '150',
+    categories_tags: ['en:snacks', 'en:salty-snacks', 'en:appetizers', 'en:crisps', 'en:potato-crisps'],
+    nutriments: { 'energy-kcal_100g': 490, proteins_100g: 6.6, carbohydrates_100g: 54, fat_100g: 26 },
+  }, [])
+  const crisps = foodFromConfirmed({ barcode: walkers.barcode, name: 'Walkers Sensations Thai Sweet Chilli', values: { k: 497, p: 6.3, c: 55, f: 27 }, ml: false, kind: walkers.kind, meal: walkers.meal, cat: walkers.cat, g: 30 })
+  const eatEntry = buildEntry({ ...crisps, id: uuid() }, { mode: 'serv', serv: 1 }, 'snack', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  checks.push(
+    ['crisps: eat as it is, cat snacks, not a meal, not a liquid', walkers.kind === 'eat' && walkers.cat === 'snacks' && !walkers.meal && !walkers.liquid && !walkers.ml],
+    ['crisps: whole pack as one serving is flagged and not used as the default', walkers.wholePack && walkers.pack === 150 && walkers.serving.eat === undefined && walkers.serving.cook === undefined && walkers.notes.some((n) => n.field === 'serving' && /whole pack as one serving/.test(n.msg))],
+    ['crisps: "sensations" is a vague name (ask for the flavour)', walkers.vague && walkers.name === 'Walkers sensations'],
+    ['crisps: saved with eat, cat snacks (not ready); one 30 g serving = 149 kcal', crisps.eat === true && crisps.cat === 'snacks' && crisps.g === 30 && eatEntry.k === 149.1],
+    ['serving is required: empty flagged, typed fine', checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 0 }).some((p) => p.field === 'serving' && p.kind === 'missing') && !checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 30 }).some((p) => p.field === 'serving')],
+    ['whole pack: fine for single-serve sizes (400 g meal, 500 ml bottle, 25 g bag), or a real smaller serving', !servingIsWholePack(400, 400, 'meal') && !servingIsWholePack(500, 500, 'drink') && !servingIsWholePack(25, 25, 'other') && !servingIsWholePack(30, 150, 'other') && servingIsWholePack(148, 150, 'other')],
+    ['eat as is: crisps, chocolate, biscuits, bars, sodas, juice, desserts, ice cream', [['en:crisps'], ['en:chocolates'], ['en:biscuits'], ['en:cereal-bars'], ['en:sodas'], ['en:fruit-juices'], ['en:desserts'], ['en:ice-creams']].every((t) => classifyProduct(t) === 'eat' && !isMealProduct(t))],
+    ['for cooking wins: milk and plant milk filed as beverages, plain nuts filed as snacks', classifyProduct(['en:beverages', 'en:plant-based-milks']) === 'cook' && classifyProduct(['en:dairies', 'en:milks', 'en:beverages']) === 'cook' && classifyProduct(['en:snacks', 'en:nuts']) === 'cook'],
+    ['saved: a meal eaten as is → ready + eat; for cooking → no eat flag', asMeal.cat === 'ready' && asMeal.eat === true && asIngr.eat === undefined && foodFromConfirmed({ barcode: '1', name: 'X', values: lasagne.values, ml: false, kind: 'cook', meal: true, cat: 'grains', g: 100 }).cat === 'grains'],
+    ['vague names: one word or just the brand; a real name is not', isVagueName({ product_name: 'sensations', brands: 'Walkers' }) && isVagueName({ product_name: 'Walkers', brands: 'Walkers' }) && isVagueName({ product_name: 'Sensations 150g' }) && !isVagueName({ product_name: 'Baked Beanz', brands: 'Heinz' }) && !isVagueName({})],
+    ['2 L cola, no serving: no default serving (not 2000 ml), flagged', (() => { const x = draftFromOff('1', { product_name: 'Coca-Cola Original Taste', brands: 'Coca-Cola', quantity: '2 l', product_quantity: 2000, product_quantity_unit: 'ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: { 'energy-kcal_100g': 42 } }, []); return x.kind === 'eat' && x.ml && x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving') })()],
+    ['2 L cola, serving given as 2000: whole pack flagged, not used', (() => { const x = draftFromOff('1', { quantity: '2 l', product_quantity: 2000, serving_quantity: 2000, categories_tags: ['en:sodas'], nutriments: {} }, []); return x.wholePack && x.serving.eat === undefined && x.serving.cook === undefined })()],
+    ['1.2 kg family lasagne: no 1200 g default, flagged; a 400 g one still defaults to the pack', (() => { const x = draftFromOff('1', { product_quantity: 1200, categories_tags: ['en:meals', 'en:lasagnas'], nutriments: {} }, []); return x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving') && lasagne.serving.eat === 400 })()],
+    ['a 330 ml can defaults to the can', draftFromOff('1', { quantity: '330 ml', product_quantity: 330, categories_tags: ['en:sodas'], nutriments: {} }, []).serving.eat === 330],
+    ['pints are ml; milk counts as liquid', isPer100ml({ quantity: '4 pints' }) && packFromQuantity('2 pints') === 1136 && draftFromOff('1', { quantity: '1 kg', product_quantity_unit: 'g', categories_tags: ['en:dairies', 'en:milks'], nutriments: {} }, []).liquid],
+    ['brand not repeated when the name has it with other punctuation', productName({ product_name: 'Coca Cola Zero', brands: 'Coca-Cola' }) === 'Coca Cola Zero' && productName({ product_name: 'Original Taste', brands: 'Coca-Cola' }) === 'Coca-Cola Original Taste' && productName({ product_name: 'Diet coke', brands: 'Coca-Cola' }) === 'Coca-Cola Diet coke'],
+    ['pack size from a plain quantity; not from a multipack', packFromQuantity('150') === 150 && packFromQuantity('150 g') === 150 && packFromQuantity('1.5 kg') === 1500 && packFromQuantity('33cl') === 330 && packFromQuantity('4 x 250g') === undefined],
+    ['a drink counts as liquid (per 100 ml offered up front)', draftFromOff('1', { quantity: '500 ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: {} }, []).liquid],
+    ['made food keys off the saved eat flag, whatever the category', isMadeFood({ eat: true, cat: 'grains' }) && kitchenCandidates([], ['Granola bar'], [{ id: 'g', n: 'Granola bar', k: 1, p: 1, c: 1, f: 1, g: 40, cat: 'grains', eat: true }]).length === 0],
+    ['sync (flag on): meta carries eat', (toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true) as any).meta.eat === true && fromServerFood({ ...toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true), updated_at: 'z' }).eat === true],
+  )
+
+  // sync with the flag on: meta is always an object, so a cleared field clears on pull
+  const plain: Food = { id: uuid(), n: 'Plain', k: 1, p: 1, c: 1, f: 1, g: 100 }
+  checks.push(['sync (flag on): a food with no extra fields sends meta {}', JSON.stringify((toServerFood(plain, LOCAL_USER, true) as any).meta) === '{}'])
+  const s3 = stateFromBackup({ days: {} } as never)
+  s3.customFoods = [{ ...saved, _dirty: false }]
+  const m3 = ensureMeta(s3, false)
+  m3.settings.dirty = false
+  const cleared = { ...toServerFood({ ...saved, barcode: undefined, src: undefined, cat: undefined }, LOCAL_USER, true), updated_at: 'y' }
+  globalThis.fetch = fakeServer({ settings: [], day_logs: [], recipes: [], custom_foods: [cleared] }).fetchFn
+  try { await pullAll(s3, m3) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: a server meta of {} clears the device’s barcode, src and cat on pull', s3.customFoods.length === 1 && s3.customFoods[0].barcode === undefined && s3.customFoods[0].src === undefined && s3.customFoods[0].cat === undefined])
+
+  // lookup: offline vs a server error vs not found
+  const look = async (f: typeof fetch) => { globalThis.fetch = f; try { return (await lookupProduct({ code: '4006381333931' }, { timeoutMs: 200 })).status } finally { globalThis.fetch = realFetch } }
+  const st500 = await look((async () => new Response('oops', { status: 503 })) as typeof fetch)
+  const stNet = await look((async () => { throw new TypeError('Failed to fetch') }) as typeof fetch)
+  const st404 = await look((async () => new Response(JSON.stringify({ status: 0 }), { status: 404 })) as typeof fetch)
+  const stBad = await look((async () => new Response('<html>', { status: 200 })) as typeof fetch)
+  const stSlow = await look(((_u: string, o: RequestInit) => new Promise((_, no) => o.signal!.addEventListener('abort', () => no(new DOMException('aborted', 'AbortError'))))) as typeof fetch)
+  const stOk = await look((async () => new Response(JSON.stringify({ status: 1, product: { nutriments: { 'energy-kcal_100g': 1 } } }), { status: 200 })) as typeof fetch)
+  checks.push(['lookup: 5xx and unreadable replies are errors; no connection and timeouts are offline; 404 is not found', [st500, stBad, stNet, stSlow, st404, stOk].join() === 'error,error,offline,offline,not-found,found'])
+
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

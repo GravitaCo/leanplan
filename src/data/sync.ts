@@ -9,8 +9,28 @@ import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } f
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 
 /* ---- client <-> server row mapping ---- */
-function toServerFood(f: Food, uid: string) {
-  return {
+
+/**
+ * Send custom foods' extra fields (per-item, source, category, barcode …) in the additive
+ * `custom_foods.meta` jsonb column (docs/migrations/2026-09-custom-foods-meta.sql). Off until that
+ * migration is applied: PostgREST rejects an upsert naming a column that doesn't exist, so turning
+ * this on early would stop every custom food syncing. The fields persist on the device either way,
+ * and a pull never drops them (see pullAll).
+ */
+export const CUSTOM_FOOD_META = false
+
+/** The Food fields that travel in `meta` (everything the named columns don't hold). */
+const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode', 'eat'] as const
+type FoodMeta = Partial<Pick<Food, (typeof FOOD_META_KEYS)[number]>>
+
+function foodMeta(f: Food): FoodMeta | null {
+  const m: Record<string, unknown> = {}
+  for (const k of FOOD_META_KEYS) if (f[k] !== undefined && f[k] !== false) m[k] = f[k]
+  return Object.keys(m).length ? (m as FoodMeta) : null
+}
+
+export function toServerFood(f: Food, uid: string, withMeta = CUSTOM_FOOD_META) {
+  const row = {
     id: f.id,
     user_id: uid,
     name: f.n,
@@ -21,10 +41,16 @@ function toServerFood(f: Food, uid: string) {
     grams: +f.g || 100,
     ml: !!f.ml,
   }
+  // always an object, so clearing a field (e.g. a barcode) clears it on the server too
+  return withMeta ? { ...row, meta: foodMeta(f) ?? {} } : row
 }
-function fromServerFood(r: any): Food {
-  return { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
+export function fromServerFood(r: any): Food {
+  const f: Food = { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
+  const m = hasMeta(r) ? r.meta : null
+  if (m) for (const k of FOOD_META_KEYS) if (m[k] !== undefined && m[k] !== null) (f as any)[k] = m[k]
+  return f
 }
+const hasMeta = (r: any) => !!r.meta && typeof r.meta === 'object' && !Array.isArray(r.meta)
 /* day_logs has no check-in column, so the check-in travels inside the supps jsonb under a
    reserved key and is unpacked on pull. Additive: no table or column changes. */
 const CHECKIN_KEY = '_checkin'
@@ -190,7 +216,16 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   }
   const cf = await sbGet<any[]>('/custom_foods?user_id=eq.' + uid + '&select=*')
   const byId: Record<string, Food> = {}
-  cf.map(fromServerFood).forEach((f) => { if (f.id) byId[f.id] = f })
+  const local = new Map((s.customFoods || []).map((f) => [f.id, f]))
+  cf.forEach((row) => {
+    const f = fromServerFood(row)
+    if (!f.id) return
+    // a row without `meta` (the column isn't there yet, or an older version wrote it) keeps this
+    // device's extra fields for the same food, so a pull never strips a scan's barcode or source
+    const mine = local.get(f.id)
+    if (mine && !hasMeta(row)) for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
+    byId[f.id] = f
+  })
   ;(s.customFoods || []).filter((f) => f._dirty).forEach((f) => { if (f.id) byId[f.id] = f })
   s.customFoods = Object.values(byId)
 
