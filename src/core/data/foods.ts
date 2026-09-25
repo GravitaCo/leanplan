@@ -1,6 +1,7 @@
 import type { Food } from '@/core/types'
 import { GREGGS } from './chains/greggs'
 import { KFC } from './chains/kfc'
+import { POPEYES } from './chains/popeyes'
 import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
@@ -3446,4 +3447,4 @@ const BASE: Food[] = [
 ]
 
 /** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES)
