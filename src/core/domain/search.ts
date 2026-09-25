@@ -18,8 +18,12 @@ function isWordChar(ch: string | undefined): boolean {
   return !!ch && /[a-z0-9]/.test(ch)
 }
 
+/** Chain names that contain food words: matches inside them count less than the dish itself. */
+const BRAND = /^(pizza hut|pizzaexpress|burger king|greggs|kfc|popeyes|nando's|subway|mcdonald's|domino's)\b/i
+
 function hit(name: string, words: string[]): Hit | null {
   const n = name.toLowerCase()
+  const brandEnd = n.match(BRAND)?.[0].length ?? 0
   let tier = 0, score = 0, whole = true
   for (const w of words) {
     let best: { t: number; s: number; whole: boolean } | null = null
@@ -27,7 +31,8 @@ function hit(name: string, words: string[]): Hit | null {
       const atStart = !isWordChar(n[i - 1])
       const atEnd = !isWordChar(n[i + w.length])
       const t = atStart ? 0 : atEnd ? 1 : 2
-      const sc = i - (atStart && atEnd ? 20 : 0)
+      // a word found only inside the brand ("pizza" in "Pizza Hut Fries") ranks after real matches
+      const sc = i - (atStart && atEnd ? 20 : 0) + (i < brandEnd ? 60 : 0)
       if (!best || t < best.t || (t === best.t && sc < best.s)) best = { t, s: sc, whole: atStart && atEnd }
     }
     if (!best) return null

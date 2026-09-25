@@ -1,3 +1,5 @@
+# NOT SHIPPED: "ZA" is PizzaExpress South Africa (Jan 2020), not UK data. Kept for reference only;
+# its output is not in FOODS. See ship-critic review, Sep 2026.
 """Import PizzaExpress "ZA" nutrition (slices, wraps, 14" pizzas) into src/core/data/chains/pizzaexpress_za.ts.
 
 Usage:  python3 scripts/import/pizzaexpress_za.py "path/to/ZA 2 Nutritional Info Website V1 PE.pdf"
