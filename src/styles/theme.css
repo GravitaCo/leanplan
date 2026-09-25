@@ -304,6 +304,17 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .searchbar { display: flex; align-items: center; gap: 6px; background: var(--fill); border-radius: 10px; padding: 0 8px; height: 38px; color: var(--label2); }
 .searchbar input { background: none; padding: 0; height: 38px; border-radius: 0; }
 .searchbar input:focus { outline: none; }
+.searchbar .scanbtn { flex: none; padding: 4px 2px; }
+/* barcode scanner: camera view with a target frame */
+.scanbox { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden; background: var(--fill2); }
+.scanbox video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanframe { position: absolute; inset: 28% 9%; border: 2px solid var(--tint); border-radius: 12px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.28); pointer-events: none; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
+/* a form value worth checking against the pack: neutral tint marker, never an alarm colour */
+.frow.flag { flex-wrap: wrap; row-gap: 0; box-shadow: inset 3px 0 0 var(--tint); }
+.frow.flag > input { flex: 1 1 0; width: 0; min-width: 0; }
+.frow .flagnote { order: 9; flex-basis: 100%; font-size: 13px; color: var(--tint); margin: -6px 0 9px; }
+.frow.need input::placeholder { color: var(--tint); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .toggle { position: relative; width: 51px; height: 31px; border-radius: 31px; background: var(--fill2); flex: none; border: 0; padding: 0; transition: background 0.2s; }
 .toggle::before { content: ''; position: absolute; width: 27px; height: 27px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); }
