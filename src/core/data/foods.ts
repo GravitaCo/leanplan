@@ -1,5 +1,6 @@
 import type { Food } from '@/core/types'
 import { GREGGS } from './chains/greggs'
+import { KFC } from './chains/kfc'
 import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
@@ -2637,33 +2638,6 @@ const BASE: Food[] = [
     }
   },
   {
-    "n": "KFC Original Recipe Chicken piece",
-    "k": 250,
-    "p": 22,
-    "c": 13,
-    "f": 16,
-    "g": 152,
-    "cat": "fastfood"
-  },
-  {
-    "n": "KFC Zinger Burger",
-    "k": 468,
-    "p": 23.0,
-    "c": 43.0,
-    "f": 22.0,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "kfc-uk",
-    "ref": {
-      "g": 1,
-      "k": 468,
-      "p": 23.0,
-      "c": 43.0,
-      "f": 22.0
-    }
-  },
-  {
     "n": "KFC Fries (regular)",
     "k": 290,
     "p": 3.5,
@@ -3472,4 +3446,4 @@ const BASE: Food[] = [
 ]
 
 /** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC)
