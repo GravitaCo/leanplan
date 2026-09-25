@@ -4,6 +4,7 @@ import { KFC } from './chains/kfc'
 import { POPEYES } from './chains/popeyes'
 import { PIZZAHUT } from './chains/pizzahut'
 import { BURGERKING } from './chains/burgerking'
+import { NANDOS } from './chains/nandos'
 import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
@@ -2312,76 +2313,6 @@ const BASE: Food[] = [
     "src": "cofid:19-545"
   },
   {
-    "n": "Nando's Quarter Chicken (plain)",
-    "k": 284,
-    "p": 40.0,
-    "c": 0.3,
-    "f": 13.6,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 284,
-      "p": 40.0,
-      "c": 0.3,
-      "f": 13.6
-    }
-  },
-  {
-    "n": "Nando's Half Chicken (plain)",
-    "k": 568,
-    "p": 80.0,
-    "c": 0.5,
-    "f": 27.2,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 568,
-      "p": 80.0,
-      "c": 0.5,
-      "f": 27.2
-    }
-  },
-  {
-    "n": "Nando's Peri-Peri Chips",
-    "k": 452,
-    "p": 6.4,
-    "c": 64.9,
-    "f": 19.4,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 452,
-      "p": 6.4,
-      "c": 64.9,
-      "f": 19.4
-    }
-  },
-  {
-    "n": "Nando's Chicken Pitta",
-    "k": 485,
-    "p": 36.6,
-    "c": 51.3,
-    "f": 14.9,
-    "g": 1,
-    "each": true,
-    "cat": "fastfood",
-    "src": "nandos-uk",
-    "ref": {
-      "g": 1,
-      "k": 485,
-      "p": 36.6,
-      "c": 51.3,
-      "f": 14.9
-    }
   },
   {
     "n": "Subway 6-inch Chicken Tikka",
@@ -3019,4 +2950,4 @@ const BASE: Food[] = [
 ]
 
 /** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT, BURGERKING)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT, BURGERKING, NANDOS)
