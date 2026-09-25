@@ -146,10 +146,6 @@ export function isCookable(f: Food, grams: number): boolean {
   return !!f.cook && grams >= MIN_COOK_GRAMS
 }
 
-
-/** Stored values keep one decimal: finer than anything shown, and no float noise
- *  (0.30000000000000004) bloating device storage and sync. */
-
 /** Portion as chosen in the add-food flow. */
 export type Portion =
   | { mode: 'serv'; serv: number }

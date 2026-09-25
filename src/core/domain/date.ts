@@ -43,6 +43,7 @@ export function r0(x: number): number {
   return Math.round(x)
 }
 
+/** One decimal: what stored food values keep (finer than anything shown, no float noise in storage and sync). */
 export function r1(x: number): number {
   return Math.round(x * 10) / 10
 }
