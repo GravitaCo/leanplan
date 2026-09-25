@@ -142,6 +142,8 @@ def tidy(name, section):
     if n != 'Oat Drink': n = re.sub(r'\s*[-–]?\s*Oat Drink$', ' (oat drink)', n)
     if section == 'Dips':
         n = ' '.join(w if w in SMALL or not w[:1].islower() else w[:1].upper() + w[1:] for w in n.split())
+    # PizzaExpress's "Dine Out" is its delivery menu (different recipes and portions)
+    n = n.replace('(Dine Out)', '(delivery)').replace(', Dine Out)', ', delivery)').replace(' (Dine In)', '')
     return n[:1].upper() + n[1:]
 
 

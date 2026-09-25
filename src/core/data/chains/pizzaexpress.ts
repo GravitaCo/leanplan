@@ -60,7 +60,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Loaded Pesto Dough Balls (Dine Out)",
+    "n": "PizzaExpress Loaded Pesto Dough Balls (delivery)",
     "k": 440.0,
     "p": 12.6,
     "c": 55.7,
@@ -96,7 +96,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Loaded Pesto Dough Balls GF (Dine Out)",
+    "n": "PizzaExpress Loaded Pesto Dough Balls GF (delivery)",
     "k": 495.0,
     "p": 5.3,
     "c": 58.9,
@@ -132,7 +132,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dough Balls with Garlic Butter (Dine Out)",
+    "n": "PizzaExpress Dough Balls with Garlic Butter (delivery)",
     "k": 483.0,
     "p": 9.7,
     "c": 50.0,
@@ -168,7 +168,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress GF Dough Balls with Garlic Butter (Dine Out)",
+    "n": "PizzaExpress GF Dough Balls with Garlic Butter (delivery)",
     "k": 537.0,
     "p": 2.3,
     "c": 53.2,
@@ -240,7 +240,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dough Balls Sharer (Dine Out)",
+    "n": "PizzaExpress Dough Balls Sharer (delivery)",
     "k": 961.0,
     "p": 20.1,
     "c": 106.4,
@@ -276,7 +276,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress GF Dough Balls Sharer (Dine Out)",
+    "n": "PizzaExpress GF Dough Balls Sharer (delivery)",
     "k": 1069.0,
     "p": 5.5,
     "c": 112.8,
@@ -312,7 +312,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dough Balls Sharer Vegan (Dine Out)",
+    "n": "PizzaExpress Dough Balls Sharer Vegan (delivery)",
     "k": 985.0,
     "p": 19.6,
     "c": 104.4,
@@ -348,7 +348,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dough Balls Sharer Vegan GF (Dine Out)",
+    "n": "PizzaExpress Dough Balls Sharer Vegan GF (delivery)",
     "k": 1093.0,
     "p": 4.9,
     "c": 110.8,
@@ -402,7 +402,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dynamite Dough Balls (Dine Out)",
+    "n": "PizzaExpress Dynamite Dough Balls (delivery)",
     "k": 549.0,
     "p": 10.2,
     "c": 56.6,
@@ -420,7 +420,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Dynamite Dough Balls GF (Dine Out)",
+    "n": "PizzaExpress Dynamite Dough Balls GF (delivery)",
     "k": 603.0,
     "p": 2.8,
     "c": 59.8,
@@ -582,7 +582,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Calamari (Dine Out)",
+    "n": "PizzaExpress Calamari (delivery)",
     "k": 678.0,
     "p": 14.9,
     "c": 27.0,
@@ -618,7 +618,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Lemon & Herbs Chicken Wings (Dine Out)",
+    "n": "PizzaExpress Lemon & Herbs Chicken Wings (delivery)",
     "k": 584.0,
     "p": 46.0,
     "c": 4.1,
@@ -654,7 +654,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Mozzarella Sticks (Dine Out)",
+    "n": "PizzaExpress Mozzarella Sticks (delivery)",
     "k": 552.0,
     "p": 28.1,
     "c": 46.6,
@@ -690,7 +690,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Sharing Trio (Dine Out)",
+    "n": "PizzaExpress Sharing Trio (delivery)",
     "k": 1320.0,
     "p": 49.6,
     "c": 102.9,
@@ -798,7 +798,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Truffle Cacio e Pepe Bites (Dine Out)",
+    "n": "PizzaExpress Truffle Cacio e Pepe Bites (delivery)",
     "k": 481.0,
     "p": 13.0,
     "c": 35.9,
@@ -852,7 +852,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Firecracker Chicken Wings (Dine Out)",
+    "n": "PizzaExpress Firecracker Chicken Wings (delivery)",
     "k": 631.0,
     "p": 47.3,
     "c": 22.5,
@@ -906,7 +906,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Polenta Chips (Dine Out)",
+    "n": "PizzaExpress Polenta Chips (delivery)",
     "k": 615.0,
     "p": 7.9,
     "c": 59.8,
@@ -1014,7 +1014,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Halloumi Bites (Dine Out)",
+    "n": "PizzaExpress Halloumi Bites (delivery)",
     "k": 1303.0,
     "p": 44.9,
     "c": 167.0,
@@ -1410,7 +1410,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Classic Double American Cheese (Dine Out)",
+    "n": "PizzaExpress Classic Double American Cheese (delivery)",
     "k": 997.0,
     "p": 53.4,
     "c": 92.8,
@@ -1428,7 +1428,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Classic Double American Cheese GF (Dine Out)",
+    "n": "PizzaExpress Classic Double American Cheese GF (delivery)",
     "k": 971.0,
     "p": 41.1,
     "c": 95.6,
@@ -2238,7 +2238,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Romana Double American Cheese (Dine Out)",
+    "n": "PizzaExpress Romana Double American Cheese (delivery)",
     "k": 1197.0,
     "p": 68.3,
     "c": 93.0,
@@ -2256,7 +2256,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Romana Double American Cheese GF (Dine Out)",
+    "n": "PizzaExpress Romana Double American Cheese GF (delivery)",
     "k": 1461.0,
     "p": 59.5,
     "c": 157.8,
@@ -2886,7 +2886,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Large Classic Double American Cheese (Dine Out)",
+    "n": "PizzaExpress Large Classic Double American Cheese (delivery)",
     "k": 1631.0,
     "p": 85.5,
     "c": 177.4,
@@ -3678,7 +3678,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Sweet & Smoky BBQ Dip (Dine In)",
+    "n": "PizzaExpress Sweet & Smoky BBQ Dip",
     "k": 44.0,
     "p": 0.3,
     "c": 10.1,
@@ -3768,7 +3768,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Garlic Butter Dip Pot (Dine Out)",
+    "n": "PizzaExpress Garlic Butter Dip Pot (delivery)",
     "k": 238.0,
     "p": 0.2,
     "c": 0.3,
@@ -3786,7 +3786,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Vegan Garlic & Parsley Spread (Dine Out)",
+    "n": "PizzaExpress Vegan Garlic & Parsley Spread (delivery)",
     "k": 229.0,
     "p": 0.1,
     "c": 0.3,
@@ -3840,7 +3840,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Pizzanaise (Dine Out)",
+    "n": "PizzaExpress Pizzanaise (delivery)",
     "k": 183.0,
     "p": 0.6,
     "c": 2.7,
@@ -3858,7 +3858,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Sweet & Smoky BBQ Dip Pot (Dine Out)",
+    "n": "PizzaExpress Sweet & Smoky BBQ Dip Pot (delivery)",
     "k": 57.0,
     "p": 0.4,
     "c": 13.2,
@@ -3876,7 +3876,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Garlic & Herb Dip (Dine Out)",
+    "n": "PizzaExpress Garlic & Herb Dip (delivery)",
     "k": 197.0,
     "p": 0.4,
     "c": 2.2,
@@ -4002,7 +4002,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Stem Ginger Cake (Dine Out)",
+    "n": "PizzaExpress Stem Ginger Cake (delivery)",
     "k": 509.0,
     "p": 1.7,
     "c": 78.5,
@@ -4164,7 +4164,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Chocolate Fudge Cake (Dine Out)",
+    "n": "PizzaExpress Chocolate Fudge Cake (delivery)",
     "k": 528.0,
     "p": 9.9,
     "c": 86.5,
@@ -4200,7 +4200,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Lemon & Raspberry Cheesecake (Dine Out)",
+    "n": "PizzaExpress Lemon & Raspberry Cheesecake (delivery)",
     "k": 330.0,
     "p": 3.2,
     "c": 31.5,
@@ -4236,7 +4236,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Honeycomb & Caramel Cream Slice (Dine Out)",
+    "n": "PizzaExpress Honeycomb & Caramel Cream Slice (delivery)",
     "k": 479.0,
     "p": 5.9,
     "c": 52.6,
@@ -4272,7 +4272,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Baked Vanilla Cheesecake (Dine Out)",
+    "n": "PizzaExpress Baked Vanilla Cheesecake (delivery)",
     "k": 466.0,
     "p": 5.3,
     "c": 39.1,
@@ -4290,7 +4290,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Biscoff Cheesecake (Dine Out)",
+    "n": "PizzaExpress Biscoff Cheesecake (delivery)",
     "k": 913.0,
     "p": 9.4,
     "c": 89.8,
@@ -4308,7 +4308,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Double Chocolate Brownie Bites (Dine Out)",
+    "n": "PizzaExpress Double Chocolate Brownie Bites (delivery)",
     "k": 988.0,
     "p": 11.4,
     "c": 103.0,
@@ -5460,7 +5460,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Piccolo Dough Balls with houmous (no salad, Dine Out)",
+    "n": "PizzaExpress Piccolo Dough Balls with houmous (no salad, delivery)",
     "k": 183.0,
     "p": 6.0,
     "c": 24.3,
@@ -5496,7 +5496,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Piccolo Dough Balls GF with houmous (no salad, Dine Out)",
+    "n": "PizzaExpress Piccolo Dough Balls GF with houmous (no salad, delivery)",
     "k": 237.0,
     "p": 2.8,
     "c": 33.7,
@@ -5532,7 +5532,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Piccolo Dough Balls with garlic butter (no salad, Dine Out)",
+    "n": "PizzaExpress Piccolo Dough Balls with garlic butter (no salad, delivery)",
     "k": 180.0,
     "p": 4.5,
     "c": 23.1,
@@ -5568,7 +5568,7 @@ export const PIZZAEXPRESS: Food[] = [
     }
   },
   {
-    "n": "PizzaExpress Piccolo Dough Balls GF with garlic butter (no salad, Dine Out)",
+    "n": "PizzaExpress Piccolo Dough Balls GF with garlic butter (no salad, delivery)",
     "k": 404.0,
     "p": 1.5,
     "c": 32.6,
