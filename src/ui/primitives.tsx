@@ -175,13 +175,61 @@ export function BareSheet({ label, onClose, className, children }: { label: stri
 /**
  * Lock page scroll while an overlay is open. Counted, so closing a sheet over the player (or a
  * sheet over a sheet) doesn't unlock the page while something else is still open.
+ *
+ * While locked it also tracks the visual viewport. iOS doesn't resize the page for the on-screen
+ * keyboard, it covers the bottom and pans the view, so a bottom sheet would sit behind the keyboard
+ * with its top (the search bar) panned out of sight. `--vv-top` / `--vv-h` let `.sheet-root` follow
+ * the visible area instead, and `kb` on <html> marks the keyboard as open. Once the sheet has
+ * shrunk to fit, the focused field is scrolled back into view inside it (clear of a sticky CTA).
  */
 let locks = 0
+function fitViewport() {
+  const vv = window.visualViewport
+  if (!vv) return
+  const s = document.documentElement.style
+  s.setProperty('--vv-top', vv.offsetTop + 'px')
+  s.setProperty('--vv-h', vv.height + 'px')
+  document.documentElement.classList.toggle('kb', window.innerHeight - vv.height > 120)
+  requestAnimationFrame(revealFocused)
+}
+function revealFocused() {
+  const el = document.activeElement
+  if (!(el instanceof HTMLElement) || !el.matches('input, textarea, select')) return
+  const bd = el.closest('.sheet-bd')
+  if (!bd) return
+  const f = el.getBoundingClientRect(), b = bd.getBoundingClientRect()
+  const bottom = b.bottom - (bd.querySelector('.sheet-cta')?.getBoundingClientRect().height ?? 0) - 12
+  if (f.bottom > bottom) bd.scrollTop += f.bottom - bottom
+  else if (f.top < b.top + 12) bd.scrollTop -= b.top + 12 - f.top
+}
+const onFocusIn = () => requestAnimationFrame(revealFocused)
 export function useScrollLock(on = true) {
   useEffect(() => {
     if (!on) return
-    locks++
-    document.body.classList.add('noscroll')
-    return () => { locks = Math.max(0, locks - 1); if (!locks) document.body.classList.remove('noscroll') }
+    if (!locks++) {
+      document.body.classList.add('noscroll')
+      fitViewport()
+      window.visualViewport?.addEventListener('resize', fitViewport)
+      window.visualViewport?.addEventListener('scroll', fitViewport)
+      document.addEventListener('focusin', onFocusIn)
+    }
+    return () => {
+      locks = Math.max(0, locks - 1)
+      if (locks) return
+      document.body.classList.remove('noscroll')
+      window.visualViewport?.removeEventListener('resize', fitViewport)
+      window.visualViewport?.removeEventListener('scroll', fitViewport)
+      document.removeEventListener('focusin', onFocusIn)
+      const r = document.documentElement
+      r.style.removeProperty('--vv-top'); r.style.removeProperty('--vv-h'); r.classList.remove('kb')
+    }
   }, [on])
 }
+
+/**
+ * Ref for a field that should take focus when its sheet opens. Use instead of `autoFocus`:
+ * `preventScroll` stops iOS scrolling the page to where the field sits mid slide-up animation
+ * (below the screen), which left the sheet's top out of view once the keyboard was up.
+ * Stable identity, so React calls it once on mount.
+ */
+export const focusOnMount = (el: HTMLInputElement | null) => { el?.focus({ preventScroll: true }) }

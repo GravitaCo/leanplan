@@ -11,7 +11,7 @@ import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
 import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
-import { Sheet, pressable } from '@/ui/primitives'
+import { Sheet, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
 import { PortionView } from './PortionView'
@@ -142,7 +142,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     <Sheet title="Add food" tall onClose={onClose} animate={animate}>
       <div className="searchbar">
         <Icon name="search" size={17} />
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
+        <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
           autoComplete="off" enterKeyHint="search" aria-label="Search foods" />
       </div>
       <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>

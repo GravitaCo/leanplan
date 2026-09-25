@@ -360,14 +360,16 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .toggle:disabled { opacity: 0.4; }
 
 /* ===================== SHEETS ===================== */
-.sheet-root { position: fixed; inset: 0; z-index: 60; }
+.sheet-root { position: fixed; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100%); z-index: 60; }
 .sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); animation: sheet-fade 0.25s ease; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto; background: var(--sheet);
-  border-radius: 14px 14px 0 0; max-height: calc(100dvh - env(safe-area-inset-top) - 12px); display: flex; flex-direction: column;
+  border-radius: 14px 14px 0 0; max-height: calc(100% - env(safe-area-inset-top) - 12px); display: flex; flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom); animation: sheet-up 0.34s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
-.sheet.tall { height: calc(100dvh - env(safe-area-inset-top) - 12px); }
+.sheet.tall { height: calc(100% - env(safe-area-inset-top) - 12px); }
+/* keyboard up: the sheet sits on the keyboard, so no home-indicator gap */
+.kb .sheet { padding-bottom: 0; }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
 .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--fill3); margin: 6px auto 0; flex: none; }
