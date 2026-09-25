@@ -48,16 +48,16 @@ export function sessionsOf(day: DayLog | undefined, date: string): Session[] {
   return [...list, { ...incoming, id: 'legacy-extra-' + date }]
 }
 
-/**
- * The single-workout copy older installs read: the first built-in lift as `{ type, ex }`,
- * otherwise the first session as cardio (older installs only know the four types), or null.
- */
 /** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
 export function mirroredIndex(sessions: Session[]): number {
   const i = sessions.findIndex((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
   return i >= 0 ? i : sessions.length ? 0 : -1
 }
 
+/**
+ * The single-workout copy older installs read: the first built-in lift as `{ type, ex }`,
+ * otherwise the first session as cardio (older installs only know the four types), or null.
+ */
 export function mirrorOf(sessions: Session[]): Workout | null {
   const lift = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
   if (lift) return { type: lift.routineId!.replace('builtin-', '') as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }

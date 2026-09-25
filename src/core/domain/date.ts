@@ -25,13 +25,15 @@ export function shiftDay(d: string, n: number): string {
   return ymd(t)
 }
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+export const DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+/** Monday-first initials for week strips and bars. */
+export const DOW = 'MTWTFSS'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function fmtDate(d: string): { dow: string; full: string; idx: number } {
   const t = parseYmd(d)
   return {
-    dow: DAYS[t.getDay()],
+    dow: DAY_NAME[t.getDay()],
     full: t.getDate() + ' ' + MONTHS[t.getMonth()] + ' ' + t.getFullYear(),
     idx: t.getDay(),
   }

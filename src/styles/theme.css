@@ -73,19 +73,6 @@
 
   --radius: 22px;
   --radius-sm: 18px;
-
-  /* legacy aliases, kept so older screens (Auth) keep rendering */
-  --ink: var(--label);
-  --muted: var(--label2);
-  --faint: var(--label3);
-  --line: var(--sep);
-  --line-strong: var(--fill3);
-  --card-2: var(--fill);
-  --accent: var(--tint);
-  --accent-d: var(--tint);
-  --good: var(--energy);
-  --warn: var(--activity);
-  --over: var(--activity);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -149,8 +136,7 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 }
 .hdr { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: calc(env(safe-area-inset-top) + 18px) 0 12px; }
 .eyebrow { font-size: 13px; font-weight: 500; color: var(--label2); letter-spacing: 0; display: flex; align-items: center; gap: 6px; min-height: 20px; }
-.ltitle, .page-title { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 2px 0 0; }
-.page-hdr { padding: calc(env(safe-area-inset-top) + 18px) 0 12px; }
+.ltitle { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 2px 0 0; }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; border: 0; flex: none; margin-bottom: 0;
   background: var(--tint-soft); color: var(--tint); font-size: 16px; font-weight: 600;
@@ -163,18 +149,12 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 }
 .daynav { display: inline-flex; align-items: center; gap: 2px; }
 .daynav button { background: none; border: 0; color: var(--tint); padding: 0 4px; display: flex; }
-.back { background: none; border: 0; color: var(--tint); font-size: 17px; display: flex; align-items: center; gap: 2px; padding: 0; margin-left: -6px; }
 
 /* ===================== SECTIONS & CARDS ===================== */
-.sec-t, .section-label {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 26px 4px 10px; color: var(--label);
-}
 .card {
   background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
   box-shadow: var(--shadow); display: block; width: 100%; text-align: left; border: 0; color: var(--label);
 }
-.card.tight { padding: 12px 14px; }
 .hk-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .hk-c { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
 .hk-m { display: flex; align-items: center; gap: 4px; font-size: 15px; color: var(--label2); }
@@ -199,7 +179,6 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .note.ok svg { color: var(--energy-ink); }
 .note .btn.sm { margin-left: 27px; }
 .empty { text-align: center; color: var(--label2); font-size: 15px; padding: 22px 16px; line-height: 1.4; }
-.warn-box { background: color-mix(in srgb, var(--activity) 14%, transparent); border-radius: 10px; padding: 10px 12px; margin: 0 0 10px; }
 .prose { font-size: 15px; line-height: 1.45; }
 .prose p { margin: 0 0 10px; }
 .prose ul { margin: 0 0 10px; padding-left: 18px; }
@@ -218,15 +197,11 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .wd .t { font-size: 10px; font-weight: 600; color: var(--label3); text-transform: uppercase; letter-spacing: 0.2px; white-space: nowrap; }
 .wd .t.done { color: var(--activity-ink); }
 
-/* ===================== RINGS HERO ===================== */
-.hero { display: flex; gap: 18px; align-items: center; }
-.legend { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+/* ===================== RINGS LEGEND ===================== */
 .lg .k { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
 .lg .v { font-size: 22px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lg .v small { font-size: 15px; font-weight: 600; color: var(--label2); }
 .w { font-family: var(--font-sans); font-size: 17px; font-weight: 600; }
-.hero-f { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--sep); font-size: 15px; color: var(--label2); }
-.hero-f .grow { flex: 1; }
 
 /* ===================== TILES ===================== */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
@@ -272,30 +247,14 @@ button.li:active, .li[role='button']:active { background: var(--fill); }
 .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--label2); background: var(--fill); border-radius: 5px; padding: 1px 5px; margin-left: 6px; vertical-align: 1px; }
 
 /* legacy row (Auth) */
-.row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--sep); }
-.row:last-child { border-bottom: 0; }
-.row .grow { flex: 1; min-width: 0; }
-.row .name { font-size: 17px; }
-.row .meta { font-size: 13px; color: var(--label2); margin-top: 2px; }
 .x-btn { background: none; border: 0; color: var(--label3); font-size: 20px; line-height: 1; padding: 4px 6px; }
 
 /* ===================== MACROS & RANGE BAR ===================== */
-.rbar { position: relative; height: 10px; border-radius: 5px; background: var(--fill); margin: 14px 0 16px; }
-.rbar .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--energy); transition: width 0.3s; }
-.rbar .tk { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--label2); }
-.macro3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.mc .k { font-size: 13px; font-weight: 600; }
-.mc .v { font-size: 17px; font-weight: 600; margin-top: 1px; }
-.mc .v small { font-size: 13px; font-weight: 600; color: var(--label2); }
-.mc .b { height: 4px; border-radius: 2px; background: var(--fill); margin-top: 6px; overflow: hidden; }
-.mc .b i { display: block; height: 100%; border-radius: 2px; }
 
 /* ===================== CHARTS ===================== */
 svg.bars { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
 svg.bars text { font-size: 11px; fill: var(--label2); font-weight: 600; }
 svg.bars text.on { fill: var(--label); }
-.hl { font-size: 15px; line-height: 1.38; padding: 10px 0 0; border-top: 1px solid var(--sep); margin-top: 10px; }
-.hl + .hl { margin-top: 0; }
 
 /* ===================== CONTROLS ===================== */
 .btn {
@@ -305,13 +264,10 @@ svg.bars text.on { fill: var(--label); }
 .btn:active { opacity: 0.7; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn.tinted { background: var(--tint-soft); color: var(--tint); }
-.btn.ghost, .btn.gray { background: var(--fill); color: var(--label); }
+.btn.gray { background: var(--fill); color: var(--label); }
 .btn.danger { background: none; color: var(--red); font-weight: 400; }
 .btn.sm { height: 36px; width: auto; padding: 0 16px; font-size: 15px; border-radius: 18px; }
 .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-.pill { font-size: 15px; padding: 5px 12px; border-radius: 16px; background: var(--fill); color: var(--label); border: 0; }
-.pill.accent { background: var(--tint-soft); color: var(--tint); }
-.pill.solid { background: var(--tint); color: var(--on-tint); }
 .seg { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; }
 .seg button { flex: 1; border: 0; background: none; border-radius: 7px; padding: 6px 4px; font-size: 13px; font-weight: 600; color: var(--label); white-space: nowrap; }
 .seg button.on { background: var(--segon); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04); }
@@ -352,7 +308,6 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .searchbar input { background: none; padding: 0; height: 38px; border-radius: 0; }
 .searchbar input:focus { outline: none; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .toggle { position: relative; width: 51px; height: 31px; border-radius: 31px; background: var(--fill2); flex: none; border: 0; padding: 0; transition: background 0.2s; }
 .toggle::before { content: ''; position: absolute; width: 27px; height: 27px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); }
 .toggle.on { background: var(--tint); }
@@ -586,7 +541,6 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 /* Day-of choices on Train (plan §0.2) */
 .dayopt .t { font-size: 17px; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
 .dayopt .foot { padding: 10px 0 0; }
-.dayopt-link { margin: 0 0 14px; }
 .week-n { padding: 0 4px 10px; }
 .x-btn { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--fill); color: var(--label2); display: grid; place-items: center; }
 /* settings rows: the label keeps its width, a long value gives way */

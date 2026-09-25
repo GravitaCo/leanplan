@@ -55,8 +55,8 @@ build can reuse it. Keep React/DOM out of `core/` and `data/`.
 - `src/store/store.ts` — Zustand + Immer store; wires core/data to React; owns the
   debounced sync loop.
 - `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `Seg`, `Toggle`,
-  `Disclosure`, `Tile`, `CatHead`, `PageHeader`, `pressable`), `charts.tsx` (`Rings`,
-  `RangeBar`, `MacroCol`, `Sparkline`, `WeekBars`), `WeekStrip` + `DayNav`, `BottomNav`, `icons`.
+  `Disclosure`, `CatHead`, `PageHeader`, `pressable`), `charts.tsx` (`Rings`,
+  `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`, `WeekBars`), `WeekStrip` + `DayNav`, `BottomNav`, `icons`.
 - `src/screens/` — Today (Summary), Food (+ `food/AddFoodSheet` → Portion / RecipeLog /
   QuickEstimate / CreateFood views, `food/EditEntrySheet`, `food/MealsSheet`, `food/MarginSheet`),
   Train, Plan (+ `plan/PlanSheets`), Profile, AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
@@ -79,11 +79,9 @@ setting (`prefers-color-scheme`); there is no in-app override.
   No status red/amber for eating — targets are ranges and copy stays neutral.
 - Type: system font (`--font-sans`, SF Pro on iOS); numbers use `.num` (SF Pro Rounded,
   tabular). iOS scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
-- Shared classes: `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.sec-t`, `.lbl`,
+- Shared classes: `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.lbl`,
   `.foot`, `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`,
   `.frow` (form rows), `.tile`, `.banner`, `.toast`.
-- Legacy token names (`--accent`, `--muted`, `--line`, `--card-2`, …) remain as aliases
-  so older markup (AuthScreen) keeps rendering; prefer the new names in new code.
 - App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
   are generated from it.
 

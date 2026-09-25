@@ -77,7 +77,6 @@ interface StoreState {
   openProfile: (section: string) => void
   clearProfileOpen: () => void
   setDate: (d: string) => void
-  shiftDate: (n: number) => void
   showToast: (msg: string, action?: { label: string; run: () => void }) => void
 
   // food
@@ -117,7 +116,6 @@ interface StoreState {
   restoreSession: (date: string, x: TrainingSession) => void
 
   // plan / settings
-  setScheduleDay: (idx: number, value: WorkoutType | 'Rest', quiet?: boolean) => void
   /** replace the whole weekly schedule (swap two days, undo) */
   setSchedule: (s: Schedule, quiet?: boolean) => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
@@ -238,7 +236,6 @@ export const useStore = create<StoreState>()(
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
       clearProfileOpen: () => set((st) => { st.profileOpen = null }),
       setDate: (d) => set((st) => { st.cur = d }),
-      shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
       showToast: (msg, action) => {
         set((st) => { st.toast = msg; st.toastAction = action ?? null })
@@ -465,14 +462,6 @@ export const useStore = create<StoreState>()(
           markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Session removed')
-      },
-
-      setScheduleDay: (idx, value, quiet) => {
-        set((st) => {
-          st.data.schedule[idx] = value
-          markSettingsDirty(st.data)
-        })
-        persist(); get().scheduleSync(); if (!quiet) get().showToast('Schedule updated')
       },
 
       setSchedule: (sch, quiet) => {

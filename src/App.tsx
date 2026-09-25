@@ -35,7 +35,7 @@ export default function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--muted)',
+          color: 'var(--label2)',
         }}
       >
         <span className="mono">Loading…</span>

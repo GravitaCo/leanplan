@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { ExerciseTemplate, LoggedExercise, Session, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS } from '@/core/data/workouts'
+import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
 import { lowSignals } from '@/core/domain/dayOptions'
@@ -159,7 +159,7 @@ export function TrainScreen() {
   const showPlanned = !!plannedType && (!own || inProgress)
   const plannedSub = plannedType === 'Cardio' ? WORKOUTS.Cardio.ex[0].t
     : plannedType ? `${WORKOUTS[plannedType].ex.length} exercises · ${setCount(WORKOUTS[plannedType].ex, plannedShorter)}${plannedShorter ? ' · shorter' : ''}` : ''
-  const firstVideo = plannedType ? WORKOUTS[plannedType].ex.find((e) => e.video)?.video : undefined
+  const plannedVideo = plannedType ? firstVideo(plannedType) : undefined
   const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && pickUp !== sched
   const lighterShown = !logged && sched !== 'Rest'
   const lighterUp = lighterShown && (offer || easy)
@@ -240,7 +240,7 @@ export function TrainScreen() {
           {showPlanned && plannedType && (
             <div className="li trow" role="button" tabIndex={0} onClick={() => openWorkout(plannedType)}
               onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openWorkout(plannedType) } }}>
-              <Thumb video={firstVideo} big />
+              <Thumb video={plannedVideo} big />
               <div className="m">
                 <div className="t b">{shortTitle(plannedType)}</div>
                 <div className="s num">{inProgress ? `In progress · ${ownDone} of ${plannedSets} sets` : plannedSub}</div>

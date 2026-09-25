@@ -7,14 +7,13 @@
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
-import { parseYmd, shiftDay, todayStr, ymd } from './date'
+import { parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
 import { fromLegacy, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
-const d1 = (x: number) => Math.round(x * 10) / 10
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
@@ -247,7 +246,7 @@ export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
     const amount = entryAmount(x, food)
     const s = scaleFood(food, amount)
-    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+    Object.assign(out, { grams: amount, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f) })
   }
   return out
 }

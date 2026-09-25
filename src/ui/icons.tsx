@@ -12,7 +12,6 @@ const PATHS = {
   smile: <><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14c.9 1.3 2.1 2 3.5 2s2.6-.7 3.5-2M9 9.5h.01M15 9.5h.01" /></>,
   check: <path d="M5 12.5l4.2 4.2L19 7" />,
   checkc: <><circle cx="12" cy="12" r="8.5" /><path d="M8 12.3l2.7 2.7L16 9.6" /></>,
-  chart: <path d="M5 20V11M10 20V5M15 20v-7M20 20v-4" />,
   plus: <path d="M12 5v14M5 12h14" />,
   chevR: <path d="M9 5l7 7-7 7" />,
   chevL: <path d="M15 5l-7 7 7 7" />,
@@ -35,10 +34,10 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS
 
-export function Icon({ name, size = 20, stroke = 2, className }: { name: IconName; size?: number; stroke?: number; className?: string }) {
+export function Icon({ name, size = 20, stroke = 2 }: { name: IconName; size?: number; stroke?: number }) {
   return (
     <svg
-      className={'i' + (className ? ' ' + className : '')}
+      className="i"
       width={size}
       height={size}
       viewBox="0 0 24 24"

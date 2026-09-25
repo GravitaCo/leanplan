@@ -258,6 +258,3 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
   return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: Math.round(adjustPct), floored, bodyFatAssumed }
 }
 
-export function macroPct(value: number, goal: number): number {
-  return Math.min(100, goal ? (value / goal) * 100 : 0)
-}

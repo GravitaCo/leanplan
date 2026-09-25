@@ -18,14 +18,13 @@ export function PageHeader({ eyebrow, title, right }: { eyebrow?: ReactNode; tit
 }
 
 /** Health-style card heading: category icon + label in the category colour. */
-export function CatHead({ color, icon, label, meta }: { color: Category; icon: IconName; label: string; meta?: ReactNode }) {
+export function CatHead({ color, icon, label }: { color: Category; icon: IconName; label: string }) {
   return (
     <div className="hk-h">
       <div className="hk-c" style={{ color: `var(--${color}-ink)` }}>
         <Icon name={icon} size={17} />
         {label}
       </div>
-      {meta != null && <div className="hk-m">{meta}</div>}
     </div>
   )
 }
@@ -41,19 +40,6 @@ export function pressable(onPress: () => void) {
       if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onPress() }
     },
   }
-}
-
-export function Tile({ color, icon, label, value, sub, extra, onPress }: {
-  color: Category; icon: IconName; label: string; value: ReactNode; sub?: ReactNode; extra?: ReactNode; onPress: () => void
-}) {
-  return (
-    <div className="tile" {...pressable(onPress)}>
-      <CatHead color={color} icon={icon} label={label} meta={<Chevron />} />
-      <div className="v num">{value}</div>
-      {extra}
-      {sub && <div className="s">{sub}</div>}
-    </div>
-  )
 }
 
 export function Seg<T extends string>({ options, value, onChange }: { options: [T, string][]; value: T | undefined; onChange: (v: T) => void }) {
@@ -120,11 +106,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
   children: ReactNode
 }) {
   useScrollLock()
-  useEffect(() => {
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useEscape(onClose)
   return (
     <div className="sheet-root">
       <div className="sheet-bg" onClick={onClose} style={animate ? undefined : { animation: 'none' }} />
@@ -156,11 +138,7 @@ export function BackButton({ onClick, label = 'Back' }: { onClick: () => void; l
  */
 export function BareSheet({ label, onClose, className, children }: { label: string; onClose: () => void; className?: string; children: ReactNode }) {
   useScrollLock()
-  useEffect(() => {
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useEscape(onClose)
   return (
     <div className="sheet-root">
       <div className="sheet-bg" onClick={onClose} />
@@ -213,9 +191,8 @@ function revealFocused() {
   else if (f.top < b.top + 12) bd.scrollTop -= b.top + 12 - f.top
 }
 const onFocusIn = () => requestAnimationFrame(revealFocused)
-export function useScrollLock(on = true) {
+export function useScrollLock() {
   useEffect(() => {
-    if (!on) return
     if (!locks++) {
       document.body.classList.add('noscroll')
       fitViewport()
@@ -232,7 +209,15 @@ export function useScrollLock(on = true) {
       document.removeEventListener('focusin', onFocusIn)
       clearViewport()
     }
-  }, [on])
+  }, [])
+}
+
+function useEscape(onClose: () => void) {
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
 }
 
 /**
