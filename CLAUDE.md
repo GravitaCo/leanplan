@@ -75,7 +75,8 @@ setting (`prefers-color-scheme`); there is no in-app override.
 - Surfaces & labels follow iOS system colours: `--bg`, `--card`, `--elev`, `--sheet`,
   `--fill`/`--fill2`/`--fill3`, `--label`/`--label2`/`--label3`, `--sep`. Interactive: `--tint`.
 - One category colour per data type, each with a contrast-safe `-ink` text variant:
-  `--energy`, `--activity`, `--protein`, `--carbs`, `--fat`, `--body`, `--supps`, `--mind`.
+  `--energy`, `--activity`, `--body`, `--mind` (mapped onto the `--food` / `--move` / `--mind`
+  pillars). Protein, carbs, fat and supplements have no colour of their own (removed Sept 2026).
   No status red/amber for eating — targets are ranges and copy stays neutral.
 - Type: system font (`--font-sans`, SF Pro on iOS); numbers use `.num` (SF Pro Rounded,
   tabular). iOS scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.

@@ -56,14 +56,10 @@
   --food: #5b6e2f;  --food-ink: #5b6e2f;  --food-fill: #c3cd9c;  --food-track: #e4e8d2;
   --move: #a8502b;  --move-ink: #a8502b;  --move-fill: #e6ad8f;
 
-  /* per-data-type names, mapped onto the pillars (older code and charts use these) */
+  /* per-data-type names, mapped onto the pillars */
   --energy: var(--food);   --energy-ink: var(--food-ink);
-  --protein: var(--food);  --protein-ink: var(--food-ink);
-  --carbs: var(--food);    --carbs-ink: var(--food-ink);
-  --fat: var(--food);      --fat-ink: var(--food-ink);
   --activity: var(--move); --activity-ink: var(--move-ink);
   --body: var(--food);     --body-ink: var(--food-ink);   /* weight: an outcome of eating */
-  --supps: var(--mind);    --supps-ink: var(--mind-ink);  /* grouped with mind, as in the design */
   /* text/icon colour on a solid category or tint square */
   --on-cat: #ffffff;
 

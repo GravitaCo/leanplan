@@ -3,7 +3,7 @@ import { useEffect, type ReactNode, type KeyboardEvent } from 'react'
 import { Icon, Chevron, type IconName } from './icons'
 
 /** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
-export type Category = 'energy' | 'activity' | 'protein' | 'carbs' | 'fat' | 'body' | 'supps' | 'mind'
+export type Category = 'energy' | 'activity' | 'body' | 'mind'
 
 export function PageHeader({ eyebrow, title, right }: { eyebrow?: ReactNode; title: string; right?: ReactNode }) {
   return (
