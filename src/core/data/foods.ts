@@ -2313,8 +2313,6 @@ const BASE: Food[] = [
     "src": "cofid:19-545"
   },
   {
-  },
-  {
     "n": "Subway 6-inch Chicken Tikka",
     "k": 175.13,
     "p": 14.2,
@@ -2341,8 +2339,6 @@ const BASE: Food[] = [
       "g": 139,
       "k": 386
     }
-  },
-  {
   },
   {
     "n": "Crisps (bag ~25g)",
