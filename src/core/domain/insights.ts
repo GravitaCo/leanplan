@@ -130,6 +130,8 @@ export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedF
     const fs = s.days[d].foods || []
     for (let i = fs.length - 1; i >= 0; i--) {
       if (fs[i].n !== name || fs[i].src === 'fat') continue
+      // a database food that's since been removed (unverified or outdated) isn't re-offered
+      if (fs[i].src === 'db' && !FOOD_BY_NAME.has(name)) return []
       // a cooking-fat entry is logged straight after its food
       const next = fs[i + 1]
       const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
@@ -243,10 +245,16 @@ export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const { ok: _ok, ...rest } = x
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
-  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
-    const amount = entryAmount(x, food)
+  const unit = food ? unitOf(food) : undefined
+  // same unit: rescale the same amount. A food now sold per item (KFC Original Recipe, once per
+  // 100 g) re-logs as the same number of servings as items, at the chain's own figure.
+  const sameUnit = !!food && unit === (x.unit ?? 'g')
+  const nowPerItem = !!food && unit === 'item' && x.serv != null
+  if (food && x.grams && (sameUnit || nowPerItem)) {
+    const amount = sameUnit ? entryAmount(x, food) : roundAmount(x.serv!, 'item')
     const s = scaleFood(food, amount)
     Object.assign(out, { grams: amount, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f) })
+    if (!sameUnit) out.unit = 'item'
   }
   return out
 }

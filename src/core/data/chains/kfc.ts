@@ -472,7 +472,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC Signature Fries (regular)",
+    "n": "KFC Fries (regular)",
     "k": 261.0,
     "p": 3.1,
     "c": 38.0,
@@ -1876,7 +1876,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC Pepsi Max Bottle",
+    "n": "KFC Pepsi Max Bottle (per 250ml)",
     "k": 0.8,
     "p": 0.0,
     "c": 0.0,
@@ -1894,7 +1894,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC Diet Pepsi Bottle",
+    "n": "KFC Diet Pepsi Bottle (per 250ml)",
     "k": 0.8,
     "p": 0.0,
     "c": 0.0,
@@ -1912,7 +1912,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC Tango Bottle",
+    "n": "KFC Tango Bottle (per 250ml)",
     "k": 19.6,
     "p": 0.0,
     "c": 4.4,
@@ -1930,7 +1930,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC 7up Free Bottle",
+    "n": "KFC 7up Free Bottle (per 250ml)",
     "k": 2.0,
     "p": 0.0,
     "c": 0.0,
@@ -1966,7 +1966,7 @@ export const KFC: Food[] = [
     }
   },
   {
-    "n": "KFC Pepsi Bottle",
+    "n": "KFC Pepsi Bottle (per 250ml)",
     "k": 19.2,
     "p": 0.0,
     "c": 4.8,

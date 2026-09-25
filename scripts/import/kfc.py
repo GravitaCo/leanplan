@@ -18,6 +18,8 @@ NUMW = re.compile(r'^<?\d+(?:\.\d+)?$')
 COLS = ['kj', 'k', 'f', 'sat', 'c', 'su', 'p', 'salt']
 # existing Tali names are stable IDs (learned usuals match by name): keep them
 LEGACY = {'Zinger Burger': 'KFC Zinger Burger', 'Original Recipe Chicken (per piece, average)': 'KFC Original Recipe Chicken piece'}
+# output names that must keep an existing Tali name (the old generic row is replaced by KFC's own figures)
+LEGACY_OUT = {'KFC Signature Fries (regular)': 'KFC Fries (regular)'}
 # the PDF's own wording, tidied into a singular item name (names are stable IDs: settle them before shipping)
 RENAME = {
     'Original Recipe Chicken Fillet Roll': 'Original Recipe Fillet Roll',
@@ -89,7 +91,8 @@ SIZE = re.compile(r'^(Small|Regular|Large) (.+)$|^(.+?)\s*-?\s+(Regular|Large)$'
 
 def tidy(n):
     """'Regular Coleslaw' / 'Pepsi Max - Large' -> 'Coleslaw (regular)' / 'Pepsi Max (large)'; '... Bottle per 250ml' -> '... Bottle'."""
-    n = re.sub(r' per 250ml$', '', n)
+    # keep the published basis in the name: a bottle's size isn't given, and "1 serving" is 250 ml
+    n = re.sub(r' per 250ml$', ' (per 250ml)', n)
     m = SIZE.match(n)
     if m: n = f'{m[2]} ({m[1].lower()})' if m[1] else f'{m[3]} ({m[4].lower()})'
     return n
@@ -114,6 +117,7 @@ def main(path):
         if n in DROP or r['ireland']:
             dropped.append(f"{n} ({DROP.get(n, 'Republic of Ireland only')})"); continue
         name = LEGACY.get(n) or 'KFC ' + tidy(RENAME.get(n, n))
+        name = LEGACY_OUT.get(name, name)
         assert name not in seen, f'duplicate name: {name}'
         seen.add(name)
         cat = 'drinks' if DRINK.search(n) else 'sauces' if SAUCE.search(n) else 'fastfood'

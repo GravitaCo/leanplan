@@ -154,6 +154,10 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const small = { n: 'x', k: 100, p: 0, c: 0, f: 0, g: 10 }
   const ok5 = entryAmount({ n: 'x', grams: 12.5, k: 12.5, p: 0, c: 0, f: 0, src: 'db', serv: 1.3 }, small) === 12.5; if (!ok5) bad++
   console.log(ok5 ? 'PASS' : 'FAIL', 'edited small serving keeps 12.5 g')
+  // a food that became per item re-logs as items at the chain's figure (KFC Original: 380 -> 241)
+  const orig = relog({ n: 'KFC Original Recipe Chicken piece', grams: 152, k: 380, p: 30, c: 12, f: 23, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
+  const okO = orig.unit === 'item' && orig.grams === 1 && Math.round(orig.k) === Math.round(FOODS.find((f) => f.n === 'KFC Original Recipe Chicken piece')!.k); if (!okO) bad++
+  console.log(okO ? 'PASS' : 'FAIL', 'relog: per-100 g KFC Original becomes 1 item at KFC\'s figure', orig.unit, orig.grams, Math.round(orig.k))
   const ok3 = off.length === 0; if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'live-era entries (as actually stored) re-log and reopen to the published figure, x0.5-x3', off.slice(0, 5).join(', '))
 }
