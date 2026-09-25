@@ -36,6 +36,11 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
+import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
+import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
+import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
+import type { Food } from '@/core/types'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -1045,4 +1050,121 @@ function legacyAndGuest(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'swap:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+
+// ---------- barcode scanning: check digits, OFF mapping, label checks, ingredient vs meal ----------
+async function barcodeScan(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const probs = (v: LabelValues, ml = false) => checkLabel(v, ml).map((p) => p.kind + ':' + p.field).join(',')
+  const good: LabelValues = { k: 165, kj: 690, p: 31, c: 0, f: 3.6, sat: 1, sugars: 0, salt: 0.2 }
+  checks.push(
+    ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
+    ['check digit: one digit off fails', !checkDigitOk('4006381333932') && !checkDigitOk('96385075') && !checkDigitOk('123')],
+    ['UPC-E expands to its UPC-A', expandUpcE('04252614') === '042100005264'],
+    ['normalize: UPC-A gets the leading 0, keeps the 12-digit spelling as alt', JSON.stringify(normalizeBarcode('036000291452', 'upc_a')) === JSON.stringify({ code: '0036000291452', alt: '036000291452' })],
+    ['normalize: EAN-13 with spaces', normalizeBarcode('4006 3813 3393 1')?.code === '4006381333931'],
+    ['normalize: typed EAN-8 stays 8 digits', normalizeBarcode('96385074')?.code === '96385074'],
+    ['normalize: scanned UPC-E becomes EAN-13', normalizeBarcode('04252614', 'upc_e')?.code === '0042100005264'],
+    ['normalize: a bad check digit is refused', normalizeBarcode('4006381333932') === null && normalizeBarcode('12345') === null && normalizeBarcode('abc') === null],
+  )
+
+  // OFF mapping
+  const beans: OffProduct = {
+    product_name: 'Baked Beanz 415g', brands: 'Heinz, Kraft Heinz', quantity: '415 g', product_quantity: 415, serving_quantity: '207.5',
+    nutriments: { 'energy-kcal_100g': 78, 'energy-kj_100g': 330, proteins_100g: 4.7, carbohydrates_100g: 12.5, fat_100g: 0.2, sugars_100g: 4.7, 'saturated-fat_100g': 0, fiber_100g: 3.8, salt_100g: 0.6 },
+    categories_tags: ['en:plant-based-foods-and-beverages', 'en:legumes', 'en:beans', 'en:baked-beans'],
+  }
+  const d = draftFromOff('5000157024671', beans, ['Heinz Baked Beanz'])
+  checks.push(
+    ['OFF: name is Brand + product, size removed, deduped against existing names', d.name === 'Heinz Baked Beanz (2)'],
+    ['OFF: per-100 g values mapped', d.values.k === 78 && d.values.p === 4.7 && d.values.c === 12.5 && d.values.f === 0.2 && d.values.fibre === 3.8 && d.values.salt === 0.6 && !d.kcalFromKj],
+    ['OFF: beans are an ingredient (veg), grams, serving from serving_quantity', d.kind === 'ingredient' && d.cat === 'veg' && !d.ml && d.serving.ingredient === 208 && d.serving.meal === 208],
+    ['OFF: brand already in the name is not repeated', productName({ product_name: 'Heinz Tomato Ketchup', brands: 'Heinz' }) === 'Heinz Tomato Ketchup'],
+    ['OFF: multipack size removed', productName({ product_name: 'Crisps 6 x 25g', brands: 'Walkers' }) === 'Walkers Crisps'],
+  )
+  const kjOnly = draftFromOff('4006381333931', { product_name: 'Oat drink', quantity: '1 l', nutriments: { 'energy-kj_100g': 197, proteins_100g: 1, carbohydrates_100g: 6.6, fat_100g: 1.5 } }, [])
+  checks.push(
+    ['OFF: kJ only → kcal = kJ / 4.184', kjOnly.values.k === 47.1 && kjOnly.kcalFromKj && kjOnly.values.kj === 197],
+    ['OFF: missing fields stay missing, not zero', !('sugars' in kjOnly.values) && !('salt' in kjOnly.values)],
+    ['ml: quantity in litres / cl / ml, or nutrition_data_per 100ml', kjOnly.ml && isPer100ml({ quantity: '33cl' }) && isPer100ml({ quantity: '500 ml' }) && isPer100ml({ nutrition_data_per: '100ml' }) && !isPer100ml({ quantity: '400 g' }) && !isPer100ml({ quantity: '1 kg' })],
+  )
+
+  // ready meal vs ingredient
+  const lasagne = draftFromOff('4006381333931', {
+    product_name: 'Beef Lasagne', brands: 'Tesco', product_quantity: '400',
+    nutriments: { 'energy-kcal_100g': 150, proteins_100g: 8, carbohydrates_100g: 14, fat_100g: 6.5 },
+    categories_tags: ['en:meals', 'en:pasta-dishes', 'en:lasagnas'],
+  }, [])
+  checks.push(
+    ['classify: ready meals, sandwiches, pizzas, soups, meal kits, prepared salads are meals', ['en:meals', 'en:sandwiches', 'en:pizzas', 'en:soups', 'en:meal-kits', 'en:prepared-salads'].map((t) => classifyProduct([t])).every((k) => k === 'meal')],
+    ['classify: pasta, milk, sauces, soup mixes, pizza sauce, snack bars are ingredients', [['en:pastas'], ['en:milks'], ['en:sauces', 'en:pizza-sauces'], ['en:soup-mixes'], ['en:cereal-bars'], []].map((t) => classifyProduct(t)).every((k) => k === 'ingredient')],
+    ['classify: lasagne is a meal, default serving = the pack (400 g), 100 g as an ingredient', lasagne.kind === 'meal' && lasagne.serving.meal === 400 && lasagne.serving.ingredient === 100],
+    ['category guess: milk dairy, oil fats, salmon fish, crisps snacks, cola drinks, unknown none', [['en:dairies', 'en:milks'], ['en:vegetable-oils'], ['en:fishes'], ['en:crisps'], ['en:beverages', 'en:sodas'], ['en:something']].map((t) => guessCategory(t) ?? '-').join() === 'dairy,fats,fish,snacks,drinks,-'],
+  )
+  const asMeal = foodFromConfirmed({ barcode: '4006381333931', name: 'Tesco Beef Lasagne', values: lasagne.values, ml: false, kind: 'meal', cat: 'grains', g: 400 })
+  const asIngr = foodFromConfirmed({ barcode: '5000157024671', name: ' Heinz Baked Beanz ', values: d.values, ml: false, kind: 'ingredient', cat: d.cat, g: 208 })
+  checks.push(
+    ['saved ready meal: cat ready, no cook flag, pack serving, off: source and barcode', asMeal.cat === 'ready' && !asMeal.cook && asMeal.g === 400 && asMeal.src === 'off:4006381333931' && asMeal.barcode === '4006381333931'],
+    ['saved ingredient: guessed cat, per-100 values exactly as confirmed, name trimmed', asIngr.cat === 'veg' && asIngr.k === 78 && asIngr.p === 4.7 && asIngr.c === 12.5 && asIngr.f === 0.2 && asIngr.n === 'Heinz Baked Beanz'],
+  )
+
+  // accuracy checks, each naming its field
+  checks.push(
+    ['checks: a consistent label has no problems', probs(good) === ''],
+    ['checks: kJ typed as kcal flags kcal and kJ', probs({ ...good, k: 690 }).includes('odd:k') && probs({ ...good, k: 690 }).includes('odd:kj')],
+    ['checks: kJ vs kcal within 5 kcal / 5% is fine', probs({ ...good, k: 168 }) === ''],
+    ['checks: misread kJ digits flag both', probs({ ...good, kj: 960 }) === 'odd:k,odd:kj'],
+    ['checks: energy the macros can’t explain flags kcal (no kJ given)', probs({ k: 400, p: 31, c: 0, f: 3.6 }) === 'odd:k'],
+    ['checks: fibre (2) and alcohol (7) count towards energy', probs({ k: 250, p: 0, c: 25, f: 0, alcohol: 20 }) === '' && probs({ k: 250, p: 0, c: 25, f: 0 }) === 'odd:k' && probs({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }) === ''],
+    ['checks: sugars more than carbs flags sugars; within 0.2 g is fine', probs({ k: 40, p: 0, c: 10, f: 0, sugars: 12 }) === 'odd:sugars' && probs({ k: 40, p: 0, c: 10, f: 0, sugars: 10.2 }) === ''],
+    ['checks: saturates more than fat flags saturates', probs({ k: 45, p: 0, c: 0, f: 5, sat: 6 }) === 'odd:sat'],
+    ['checks: more than 100 g in 100 g flags the biggest part', checkLabel({ k: 380, p: 10, c: 60, f: 4, fibre: 30, salt: 1 }).some((p) => p.field === 'c' && /add up to 105 g/.test(p.msg))],
+    ['checks: per 100 ml allows denser liquids (syrup)', probs({ k: 350, p: 0, c: 88, f: 0 }, true) === '' && probs({ k: 560, p: 0, c: 140.5, f: 0 }, true).includes('odd:c')],
+    ['checks: negatives flagged per field', probs({ k: 50, p: -1, c: 12, f: 0.5 }).startsWith('odd:p')],
+    ['checks: missing required fields named, name too', checkLabel({ k: 50, c: 12 }, false, ' ').map((p) => p.kind + ':' + p.field).join() === 'missing:name,missing:p,missing:f'],
+  )
+
+  // local first; source and margin of a saved scan
+  const saved: Food = { ...asIngr, id: uuid() }
+  const entry = buildEntry(saved, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  const builtinOff = FOODS.find((f) => f.src?.startsWith('off:'))!
+  checks.push(
+    ['local: a saved scan is found by its barcode; built-in OFF foods by their src', findByBarcode([saved], '5000157024671') === saved && findByBarcode(FOODS, builtinOff.src!.slice(4)) === builtinOff],
+    ['source: a saved scan keeps the Open Food Facts line and a ±20% label margin', sourceOf(saved)?.text === 'Pack label via Open Food Facts · 5000157024671' && sourceErr(saved) === 0.2 && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
+    ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === 0.2],
+  )
+
+  // ingredient-only: "What can I make?" chips and the recipe builder
+  const menuItem = FOODS.find((f) => isMenuSource(f.src))!
+  const foods: Food[] = [...FOODS, { ...asMeal, id: uuid() }]
+  const cand = kitchenCandidates([{ id: 'r', name: 'R', servings: 1, items: [{ n: 'Tesco Beef Lasagne', k: 1, p: 1, c: 1, f: 1, grams: 1 }, { n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, grams: 1 }] }], [menuItem.n, 'Tesco Beef Lasagne', 'Heinz Baked Beanz'], foods)
+  const ranked = ingredientsFirst([{ n: 'A', cat: 'ready' }, { n: 'B', cat: 'grains' }, { n: 'C', src: menuItem.src }, { n: 'D' }] as Food[], (f) => f)
+  checks.push(
+    ['kitchen chips: no ready meals or chain menu items', cand.join() === 'Heinz Baked Beanz'],
+    ['made food: cat ready/fastfood or a menu source', isMadeFood({ cat: 'ready' }) && isMadeFood({ cat: 'fastfood' }) && isMadeFood({ src: menuItem.src }) && !isMadeFood({ cat: 'grains', src: 'cofid:1' }) && !isMadeFood(undefined)],
+    ['recipe search: ingredients first, made foods after, order kept', ranked.map((f) => f.n).join('') === 'BDAC'],
+  )
+
+  // sync: meta held back until the migration; a pull keeps this device's extra fields
+  const rowOff = toServerFood(saved, LOCAL_USER) as Record<string, unknown>
+  const rowOn = toServerFood(saved, LOCAL_USER, true) as Record<string, any>
+  const back = fromServerFood({ ...rowOn, updated_at: 'z' })
+  checks.push(
+    ['sync: CUSTOM_FOOD_META is off, so no meta column is sent', CUSTOM_FOOD_META === false && !('meta' in rowOff)],
+    ['sync: with the flag on, meta carries src, cat, barcode', rowOn.meta?.src === 'off:5000157024671' && rowOn.meta?.cat === 'veg' && rowOn.meta?.barcode === '5000157024671' && !('ml' in rowOn.meta)],
+    ['sync: meta read back from the server', back.barcode === '5000157024671' && back.src === 'off:5000157024671' && back.cat === 'veg'],
+  )
+  const rows: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [] }
+  const s = stateFromBackup({ days: {} } as never)
+  s.customFoods = [{ ...saved, _dirty: true }]
+  const m = ensureMeta(s, false)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = fakeServer(rows).fetchFn
+  try { await pushDirty(s, m); await pullAll(s, m) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: after push + pull (no meta on the server) the scan keeps barcode, src and cat', rows.custom_foods.length === 1 && !('meta' in rows.custom_foods[0]) && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
+  const back2 = stateFromBackup(JSON.parse(JSON.stringify(s)))
+  checks.push(['persistence and backup JSON: barcode survives a round trip', back2.customFoods[0].barcode === '5000157024671'])
+
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

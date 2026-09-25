@@ -7,6 +7,18 @@
 import type { DietPattern, Food, Recipe } from '@/core/types'
 import { recipePerServing } from './nutrition'
 import { swapsFor, type Swap } from './diet'
+import { isMenuSource } from '@/core/data/sources'
+
+/** Made foods, eaten as they come: ready meals, fast food and chain menu items. They're never
+ *  offered as "I have…" ingredients, and rank after ingredients when building a recipe. */
+export function isMadeFood(f: Pick<Food, 'cat' | 'src'> | undefined): boolean {
+  return !!f && (f.cat === 'ready' || f.cat === 'fastfood' || isMenuSource(f.src))
+}
+
+/** Ingredients first, made foods after, each group keeping its order (e.g. search rank). */
+export function ingredientsFirst<T>(items: T[], foodOf: (x: T) => Pick<Food, 'cat' | 'src'> | undefined): T[] {
+  return [...items.filter((x) => !isMadeFood(foodOf(x))), ...items.filter((x) => isMadeFood(foodOf(x)))]
+}
 
 /** Cupboard basics most kitchens have: assumed present unless the user says otherwise.
  *  Named basics, plus dried or ground herbs and spices (not "Pasta, dried" or dried fruit). */
@@ -56,12 +68,16 @@ export function suggestRecipes(recipes: Recipe[], order: number[], have: string[
     .sort((a, b) => a.missing.length - b.missing.length || b.perServing.p - a.perServing.p || (rank.get(a.recipeIndex) ?? 0) - (rank.get(b.recipeIndex) ?? 0))
 }
 
-/** Ingredient names worth offering as "I have…" chips: from the user's recipes and recent logs. */
+/** Ingredient names worth offering as "I have…" chips: from the user's recipes and recent logs.
+ *  Never ready meals or chain menu items: those aren't something you cook with. */
 export function kitchenCandidates(recipes: Recipe[], recentNames: string[], foods: Food[]): string[] {
-  const cat = new Map(foods.map((f) => [f.n, f.cat]))
+  const byName = new Map(foods.map((f) => [f.n, f]))
   const out: string[] = []
   const seen = new Set<string>()
-  const add = (n: string) => { if (!seen.has(n) && !isStaple(n, cat.get(n))) { seen.add(n); out.push(n) } }
+  const add = (n: string) => {
+    const f = byName.get(n)
+    if (!seen.has(n) && !isStaple(n, f?.cat) && !isMadeFood(f)) { seen.add(n); out.push(n) }
+  }
   recipes.forEach((r) => r.items.forEach((it) => add(it.n)))
   recentNames.forEach(add)
   return out

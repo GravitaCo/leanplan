@@ -39,9 +39,10 @@ const MIN_KJ_CHECK_KCAL = 40
  * `given` says which fields the user actually filled in, so an untouched field isn't
  * treated as a typed zero.
  */
-export function checkPer100(v: Per100, given: { k: boolean; macros: boolean }, each = false): Check[] {
+export function checkPer100(v: Per100, given: { k: boolean; macros: boolean }, each = false, extraKcal = 0): Check[] {
   const out: Check[] = []
-  const mk = macroKcal(v)
+  // `extraKcal`: energy a label lists outside P/C/F (fibre at 2 kcal/g, alcohol at 7), when known
+  const mk = macroKcal(v) + extraKcal
   const r = (n: number) => Math.round(n)
 
   if ([v.k, v.p, v.c, v.f].some((x) => x < 0)) return [{ level: 'warn', msg: 'Values can’t be negative.' }]

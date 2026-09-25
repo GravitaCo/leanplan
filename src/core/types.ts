@@ -33,6 +33,8 @@ export interface Food {
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
   cook?: boolean
+  /** the pack's barcode (EAN-13 / EAN-8 digits), on foods saved from a scan or a label with one */
+  barcode?: string
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
