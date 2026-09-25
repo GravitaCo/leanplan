@@ -313,6 +313,7 @@ export interface Profile {
   sex: Sex
   age: number | null
   height: number | null
+  /** The weight last set on Profile, a fallback only: the current weight is `latestWeight` (day logs first). */
   weight?: number | null
   activityLevel: ActivityLevel
   supplements: Supplement[]
