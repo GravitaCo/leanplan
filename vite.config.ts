@@ -29,6 +29,9 @@ function lazyAssetList(): Plugin {
 export default defineConfig({
   base: '/',
   plugins: [react(), lazyAssetList()],
+  // local preview only: lets a phone reach it through an https tunnel (camera needs https);
+  // see docs/local-preview.md. Doesn't affect the built site.
+  preview: { allowedHosts: ['.trycloudflare.com'] },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
