@@ -28,7 +28,7 @@ import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { relog } from '@/core/domain/insights'
+import { latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
@@ -403,6 +403,9 @@ export const useStore = create<StoreState>()(
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
+          // one weight: the profile follows the latest entry up to today
+          const now = latestWeight(st.data, todayStr())
+          if (now !== st.data.profile.weight) { st.data.profile.weight = now; markSettingsDirty(st.data) }
         })
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
@@ -488,10 +491,14 @@ export const useStore = create<StoreState>()(
 
       saveProfileMetrics: (patch) => {
         set((st) => {
+          // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
+          const today = todayStr()
+          if (patch.weight && patch.weight !== latestWeight(st.data, today)) {
+            ensureDay(st.data, today).weight = patch.weight
+            markDayDirty(st.data, today)
+          }
           Object.assign(st.data.profile, patch)
-          if (patch.weight) ensureDay(st.data, st.cur).weight = patch.weight
           markSettingsDirty(st.data)
-          if (patch.weight) markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Saved')
       },

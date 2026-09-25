@@ -6,17 +6,12 @@ import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
-import { rangeWidth } from '@/core/domain/insights'
+import { latestWeight, rangeWidth } from '@/core/domain/insights'
 import { pushSupported } from '@/data/push'
 import { exportBackup, readBackup } from '@/data/backup'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
-
-function latestWeight(days: Record<string, { weight: number | null }>, profileWeight?: number | null) {
-  for (const d of Object.keys(days).sort().reverse()) if (days[d]?.weight) return days[d].weight
-  return profileWeight ?? null
-}
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -54,7 +49,7 @@ export function ProfileScreen() {
   const showToast = useStore((s) => s.showToast)
 
   const pr = data.profile
-  const weight = latestWeight(data.days, pr.weight)
+  const weight = latestWeight(data, todayStr())
   // a card elsewhere can ask for a section to be open on arrival (e.g. after an activity update)
   const profileOpen = useStore((s) => s.profileOpen)
   const clearProfileOpen = useStore((s) => s.clearProfileOpen)
