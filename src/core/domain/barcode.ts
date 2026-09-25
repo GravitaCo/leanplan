@@ -71,9 +71,9 @@ export function findByBarcode(foods: Food[], code: string): Food | undefined {
 /** The fields we ask Open Food Facts for (keep in step with data/products.ts). */
 export const OFF_FIELDS = [
   'product_name', 'brands', 'quantity', 'product_quantity', 'product_quantity_unit', 'serving_size', 'serving_quantity',
+  // top-level fields only: naming a nutrient here (e.g. energy-kcal_serving) makes the API
+  // return an empty nutriments. nutriments already carries the _100g and _serving lines.
   'nutriments', 'categories_tags', 'countries_tags', 'nutrition_data_per', 'last_modified_t',
-  // per-serving lines (inside nutriments), to spot per-serving values typed into the per-100 fields
-  'energy-kcal_serving', 'proteins_serving', 'carbohydrates_serving', 'fat_serving',
 ].join(',')
 
 /** The subset of an OFF v2 product we read. Everything is optional: products are crowdsourced. */

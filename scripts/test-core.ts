@@ -1177,7 +1177,9 @@ async function barcodeScan(): Promise<void> {
     ['per-serving: OFF derived per-100 from a per-serving label → note on kcal', perServ.notes.length === 1 && perServ.notes[0].field === 'k' && /per-serving label/.test(perServ.notes[0].msg)],
     ['per-serving: per-100 lines equal the per-serving ones for a 30 g serving → note', sameLines.length === 1 && /30 g serving/.test(sameLines[0].msg)],
     ['per-serving: different lines, or a ~100 g serving, → no note', fine.length === 0 && about100.length === 0],
-    ['OFF_FIELDS asks for the per-serving lines and last_modified_t', ['energy-kcal_serving', 'proteins_serving', 'carbohydrates_serving', 'fat_serving', 'last_modified_t', 'product_quantity_unit'].every((f) => OFF_FIELDS.split(',').includes(f))],
+    ['OFF_FIELDS asks for nutriments, last_modified_t and the quantity unit', ['nutriments', 'last_modified_t', 'product_quantity_unit'].every((f) => OFF_FIELDS.split(',').includes(f))],
+    // naming a nutrient as a field empties nutriments in the live API (checked Sept 2026)
+    ['OFF_FIELDS names no nutrient (top-level fields only)', OFF_FIELDS.split(',').every((f) => !/_(100g|serving)$|^energy/.test(f))],
     ['multipack: "4 x 250g" → one unit is 250 g; "250 g x 4" too; "6 x" without a weight → none', multipackUnit('4 x 250g').unit === 250 && multipackUnit('250 g x 4').unit === 250 && multipackUnit('6 x pots').multi && multipackUnit('6 x pots').unit === undefined && !multipackUnit('400 g').multi],
     ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.meal === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.meal === 100],
     ['ml: product_quantity_unit wins over the quantity text', isPer100ml({ product_quantity_unit: 'g', quantity: '500 ml' }) === false && isPer100ml({ product_quantity_unit: 'ml', quantity: '500 g' }) === true],
