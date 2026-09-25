@@ -10,7 +10,7 @@ import { rangeWidth } from '@/core/domain/insights'
 import { pushSupported } from '@/data/push'
 import { exportBackup, readBackup } from '@/data/backup'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
-import { Disclosure, PageHeader, Seg, Sheet, Toggle } from '@/ui/primitives'
+import { Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 
 function latestWeight(days: Record<string, { weight: number | null }>, profileWeight?: number | null) {
@@ -34,7 +34,7 @@ function directionLabel(pct: number): string {
   return 'at maintenance'
 }
 
-type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'notifications' | 'account' | 'backup' | 'about'
+type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
 
 export function ProfileScreen() {
   const data = useStore((s) => s.data)
@@ -43,6 +43,7 @@ export function ProfileScreen() {
   const syncPaused = useStore((s) => s.syncPaused)
   const saveProfileMetrics = useStore((s) => s.saveProfileMetrics)
   const saveTargets = useStore((s) => s.saveTargets)
+  const setTab = useStore((s) => s.setTab)
   const setPrefs = useStore((s) => s.setPrefs)
   const addSupplement = useStore((s) => s.addSupplement)
   const updateSupplement = useStore((s) => s.updateSupplement)
@@ -91,49 +92,29 @@ export function ProfileScreen() {
 
   const field = (label: string, input: ReactNode) => <div className="field"><label>{label}</label>{input}</div>
 
+  // the everyday range (workout days can add to it; Summary and Food show the day's own)
+  const range = { lo: data.target.kcal - rangeWidth(pr), hi: data.target.kcal + rangeWidth(pr) }
+  const goalLabel = GOALS.find((g) => g.value === pr.goal)?.label
+  const trainDays = Object.values(data.schedule).filter((x) => x && x !== 'Rest').length
+  const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
+  const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
+
   return (
     <div className="screen">
       <PageHeader title="Profile" />
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 20, fontWeight: 600 }}>{pr.name || 'Add your name'}</div>
-          <div className="sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{syncPaused ? 'Account · not syncing right now' : email}</div>
-        </div>
-      </div>
 
-      <div className="lbl">Tracking</div>
-      <div className="list"><div style={{ padding: '12px 16px' }}>
-        <div style={{ marginBottom: 8 }}>Accuracy</div>
-        <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k) => [k, ACCURACY[k].label])}
-          value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
-        <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{accuracyOf(pr).desc}</div>
-      </div></div>
-      <div className="list"><div style={{ padding: '12px 16px' }}>
-        <div style={{ marginBottom: 8 }}>Diet</div>
-        <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? 'None' : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
-        <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>Meal suggestions offer swaps for ingredients that don't fit. Nothing is hidden.</div>
-      </div></div>
-      <div className="list"><div style={{ padding: '12px 16px' }}>
-        <div style={{ marginBottom: 8 }}>Display</div>
-        <Seg<'std' | 'gentle'> options={[['std', 'Standard'], ['gentle', 'Gentle']]} value={pr.gentle ? 'gentle' : 'std'}
-          onChange={(v) => setPrefs({ gentle: v === 'gentle' })} />
-        <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>
-          {pr.gentle ? 'Calorie numbers are hidden while you log and review your day, and body weight is off your Summary. You see how the day is going in words, and protein stays visible. Targets stay editable here.'
-            : 'Full numbers, with a ± margin on anything estimated.'}
-        </div>
-      </div></div>
-      <div className="list icons">
-        <button className="li" onClick={() => setHandsOpen(true)}>
-          <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="hand" size={18} /></span>
-          <div className="m"><div className="t">Hand portions</div></div>
-          <span className="tr num">palm {handGrams(pr, 'palm')} g</span><Chevron />
+      {/* identity: tap to edit your name and email */}
+      <div className="list idcard">
+        <button className="li" onClick={() => toggle('profile')} aria-expanded={open === 'profile'}>
+          <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
+          <div className="m">
+            <div className="idn">{pr.name || 'Add your name'}</div>
+            <div className="s num">{goalLabel ? goalLabel + ' · ' : ''}{fmt(range.lo)}–{fmt(range.hi)} kcal a day</div>
+            <div className="s">{syncPaused ? 'Account · not syncing right now' : email}</div>
+          </div>
+          <Chevron rotate={open === 'profile' ? 90 : 0} />
         </button>
-      </div>
-
-      <div className="lbl">Settings</div>
-      <div className="list icons">
-        <Disclosure icon="person" color="var(--tint)" label="Profile" open={open === 'profile'} onToggle={() => toggle('profile')}>
+        {open === 'profile' && <div className="acc-bd">
           {field('Display name', <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" />)}
           {authed && field('Email', <input type="email" value={emailField} onChange={(e) => setEmailField(e.target.value.trim())} autoComplete="email" />)}
           <button className="btn" onClick={async () => {
@@ -143,9 +124,13 @@ export function ProfileScreen() {
               showToast(err ? 'Email error: ' + err : 'Check your email to confirm')
             }
           }}>Save profile</button>
-        </Disclosure>
+        </div>}
+      </div>
 
-        <Disclosure icon="scale" color="var(--body)" label="Body metrics & goal" open={open === 'metrics'} onToggle={() => toggle('metrics')}>
+      <div className="lbl">You and your goal</div>
+      <div className="list icons">
+        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
+          open={open === 'metrics'} onToggle={() => toggle('metrics')}>
           <div className="grid2">
             {field('Sex', <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
               <option value="M">Male</option><option value="F">Female</option></select>)}
@@ -188,8 +173,8 @@ export function ProfileScreen() {
             </div>
           ) : <div className="foot" style={{ padding: '10px 0 0' }}>Add age, height and weight to see suggested targets.</div>}
         </Disclosure>
-
-        <Disclosure icon="target" color="var(--energy)" label="Targets" open={open === 'targets'} onToggle={() => toggle('targets')}>
+        <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={`${fmt(range.lo)}–${fmt(range.hi)} kcal`}
+          open={open === 'targets'} onToggle={() => toggle('targets')}>
           <div className="grid2">
             {field('Calories', <input type="number" value={targets.kcal} onChange={(e) => setTargets({ ...targets, kcal: e.target.value })} />)}
             {field('Range ±', <input type="number" value={targets.range} onChange={(e) => setTargets({ ...targets, range: e.target.value })} />)}
@@ -210,8 +195,13 @@ export function ProfileScreen() {
             Your day is judged against a range (up to ± 400), not a single number. Calories won't go below 1,200 here. Going lower is something to do with medical support.
           </div>
         </Disclosure>
+        <SettingRow icon="dumbbell" color={MOVEF} soft label="Training" value={trainDays === 1 ? '1 day a week' : `${trainDays} days a week`} onPress={() => setTab('plan')} />
+      </div>
+      <div className="foot">Your weekly training schedule lives on Plan.</div>
 
-        <Disclosure icon="pill" color="var(--supps)" label="Supplements" open={open === 'supplements'} onToggle={() => toggle('supplements')}>
+      <div className="lbl">Tracking</div>
+      <div className="list icons">
+        <Disclosure icon="pill" color={MINDF} soft label="Supplements" value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
           {(pr.supplements || []).map((s) => (
             <div className="li" key={s.id} style={{ padding: '8px 0' }}>
               <div className="m"><div className="t">{s.name}</div><div className="s num">{s.time}</div></div>
@@ -235,27 +225,44 @@ export function ProfileScreen() {
             </div>
           ) : <button className="btn tinted" style={{ marginTop: 8 }} onClick={() => setSuppForm({ id: null, name: '', time: '08:00' })}>Add supplement</button>}
         </Disclosure>
-
-        <Disclosure icon="bell" color="var(--red)" label="Notifications" open={open === 'notifications'} onToggle={() => toggle('notifications')}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div><div>Supplement reminders</div><div className="sub" style={{ fontSize: 13 }}>{notifStatus}</div></div>
-            <Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
-              const ok = await setNotifications(!pr.notificationsEnabled)
-              showToast(ok ? (pr.notificationsEnabled ? 'Reminders off' : 'Reminders on') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
-            }} />
+        <Disclosure icon="leaf" color={FOODF} soft label="Diet" value={dietLabel} open={open === 'diet'} onToggle={() => toggle('diet')}>
+          <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? 'None' : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
+          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>Meal suggestions offer swaps for ingredients that don't fit. Nothing is hidden.</div>
+        </Disclosure>
+        <SettingRow icon="hand" color={FOODF} soft label="Hand portions" value={`palm ${handGrams(pr, 'palm')} g`} onPress={() => setHandsOpen(true)} />
+        <Disclosure icon="target" color={FOODF} soft label="Accuracy" value={accuracyOf(pr).label} open={open === 'accuracy'} onToggle={() => toggle('accuracy')}>
+          <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k) => [k, ACCURACY[k].label])}
+            value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
+          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{accuracyOf(pr).desc}</div>
+        </Disclosure>
+        <Disclosure icon="smile" color={MINDF} soft label="Display" value={pr.gentle ? 'Gentle' : 'Standard'} open={open === 'display'} onToggle={() => toggle('display')}>
+          <Seg<'std' | 'gentle'> options={[['std', 'Standard'], ['gentle', 'Gentle']]} value={pr.gentle ? 'gentle' : 'std'}
+            onChange={(v) => setPrefs({ gentle: v === 'gentle' })} />
+          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>
+            {pr.gentle ? 'Calorie numbers are hidden while you log and review your day, and body weight is off your Summary. You see how the day is going in words, and protein stays visible. Targets stay editable here.'
+              : 'Full numbers, with a ± margin on anything estimated.'}
           </div>
-          <div className="foot" style={{ padding: '10px 0 0' }}>iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
         </Disclosure>
       </div>
 
+      <div className="lbl">Notifications</div>
       <div className="list icons">
-        <Disclosure icon="key" color="var(--label2)" label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div><div className="sub" style={{ fontSize: 13 }}>Signed in as</div><div>{syncPaused ? 'Your account (not syncing right now)' : email}</div></div>
-            <button className="btn sm gray" onClick={() => setSignOutOpen(true)}>Sign out</button>
-          </div>
+        <SettingRow icon="bell" color={MINDF} soft label="Supplement reminders" sub={notifStatus}
+          right={<Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
+              const ok = await setNotifications(!pr.notificationsEnabled)
+              showToast(ok ? (pr.notificationsEnabled ? 'Reminders off' : 'Reminders on') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
+            }} />} />
+      </div>
+      <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
+
+      <div className="lbl">Account and data</div>
+      <div className="list icons">
+        <Disclosure icon="person" color={GRAY} soft label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
+          <div className="sub" style={{ fontSize: 13 }}>Signed in as</div>
+          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? 'Your account (not syncing right now)' : email}</div>
+          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>Change your name or email from the card at the top.</div>}
         </Disclosure>
-        <Disclosure icon="cloud" color="var(--mind)" label="Data & backup" open={open === 'backup'} onToggle={() => toggle('backup')}>
+        <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</div>
           <div className="grid2">
             <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
@@ -269,13 +276,24 @@ export function ProfileScreen() {
             try { setPendingBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
           }} />
         </Disclosure>
-        <Disclosure icon="info" color="var(--label2)" label="About" open={open === 'about'} onToggle={() => toggle('about')}>
+      </div>
+
+      <div className="list icons" style={{ marginTop: 24 }}>
+        <Disclosure icon="info" color={GRAY} soft label="About Tali" open={open === 'about'} onToggle={() => toggle('about')}>
           <div className="prose sub">
-            <p><b>Tali</b> is a personal health and fitness tracker. Your data is stored on this device and synced to a private database tied to your account. It's never shared or sold.</p>
+            <p><b>Tali</b> is a personal health and fitness tracker.</p>
             <p style={{ margin: 0 }}>General fitness information only, not medical advice. Talk to a GP before starting a new diet or exercise programme.</p>
           </div>
         </Disclosure>
+        <Disclosure icon="key" color={GRAY} soft label="Privacy" open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+          <div className="prose sub">
+            <p style={{ margin: 0 }}>Your data is stored on this device and synced to a private database tied to your account. It's never shared or sold.</p>
+          </div>
+        </Disclosure>
       </div>
+
+      <button className="btn signout" onClick={() => setSignOutOpen(true)}>Sign out</button>
+      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>Tali offers general wellness guidance, not medical advice.</div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
@@ -318,7 +336,7 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Sign out" onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>
-        {unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Data & backup.</p>}
+        {unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
       </div>
       <div className="stack">
         <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>

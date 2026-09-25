@@ -72,15 +72,36 @@ export function Toggle({ on, onChange, disabled, label }: { on: boolean; onChang
   return <button className={'toggle' + (on ? ' on' : '')} role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={onChange} />
 }
 
+/** Settings-row icon: a soft pillar square (Profile) or a solid category square. */
+function RowIcon({ icon, color, soft }: { icon: IconName; color: string; soft?: boolean }) {
+  return <span className={'ico' + (soft ? ' soft' : '')} style={{ background: color }}><Icon name={icon} size={18} /></span>
+}
+
+/** Grouped-list row that navigates or opens something (icon · label · value · chevron). */
+export function SettingRow({ icon, color, soft, label, sub, value, onPress, right }: {
+  icon: IconName; color: string; soft?: boolean; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode
+}) {
+  const body = (
+    <>
+      <RowIcon icon={icon} color={color} soft={soft} />
+      <div className="m"><div className="t">{label}</div>{sub != null && <div className="s">{sub}</div>}</div>
+      {value != null && <span className="tr num">{value}</span>}
+      {right ?? (onPress && <Chevron />)}
+    </>
+  )
+  return onPress ? <button className="li" onClick={onPress}>{body}</button> : <div className="li">{body}</div>
+}
+
 /** Grouped-list row that expands in place (settings sections). */
-export function Disclosure({ icon, color, label, open, onToggle, children }: {
-  icon: IconName; color: string; label: string; open: boolean; onToggle: () => void; children: ReactNode
+export function Disclosure({ icon, color, soft, label, value, open, onToggle, children }: {
+  icon: IconName; color: string; soft?: boolean; label: string; value?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode
 }) {
   return (
     <>
       <button className="li" onClick={onToggle} aria-expanded={open}>
-        <span className="ico" style={{ background: color }}><Icon name={icon} size={18} /></span>
+        <RowIcon icon={icon} color={color} soft={soft} />
         <div className="m"><div className="t">{label}</div></div>
+        {value != null && !open && <span className="tr num">{value}</span>}
         <Chevron rotate={open ? 90 : 0} />
       </button>
       {open && <div className="acc-bd">{children}</div>}
