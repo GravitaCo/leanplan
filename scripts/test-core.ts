@@ -5,7 +5,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { entryAmount, relog } from '@/core/domain/insights'
+import { entryAmount, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
@@ -158,6 +158,14 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const orig = relog({ n: 'KFC Original Recipe Chicken piece', grams: 152, k: 380, p: 30, c: 12, f: 23, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
   const okO = orig.unit === 'item' && orig.grams === 1 && Math.round(orig.k) === Math.round(FOODS.find((f) => f.n === 'KFC Original Recipe Chicken piece')!.k); if (!okO) bad++
   console.log(okO ? 'PASS' : 'FAIL', 'relog: per-100 g KFC Original becomes 1 item at KFC\'s figure', orig.unit, orig.grams, Math.round(orig.k))
+  // removed (unverified) foods are never re-offered as usuals
+  {
+    const day = (d: string) => ({ [d]: { foods: [{ n: 'Oat milk', grams: 200, k: 90, p: 2, c: 13, f: 3, meal: 'breakfast', src: 'db' }, { n: 'Onion', grams: 50, k: 18, p: 0.6, c: 4, f: 0.1, meal: 'breakfast', src: 'db' }], supps: {}, weight: null, workout: null } })
+    const st = { days: { ...day('2026-09-20'), ...day('2026-09-21'), ...day('2026-09-22') } } as never
+    const u = usuals(st, '2026-09-23', 'breakfast').map((x) => x.n).join('|')
+    const okU = u === 'Onion'; if (!okU) bad++
+    console.log(okU ? 'PASS' : 'FAIL', 'usuals skip removed foods', u)
+  }
   const ok3 = off.length === 0; if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'live-era entries (as actually stored) re-log and reopen to the published figure, x0.5-x3', off.slice(0, 5).join(', '))
 }

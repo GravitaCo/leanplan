@@ -28,7 +28,7 @@ import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { relog } from '@/core/domain/insights'
+import { isRemovedFood, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
@@ -285,9 +285,14 @@ export const useStore = create<StoreState>()(
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!prev.length) return
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+        const all = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
+        if (!all.length) return
+        // foods no longer in Tali (removed as unverified) aren't copied, nor their cooking fat
+        const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+        const prev = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+        const note = gone.size ? ` · ${gone.size} food${gone.size > 1 ? 's' : ''} no longer in Tali, not copied` : ''
+        if (!prev.length) { get().showToast(`Not copied: ${gone.size > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {

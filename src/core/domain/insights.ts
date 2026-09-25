@@ -125,13 +125,18 @@ export function lastFatFor(s: AppState, name: string): FatChoice | null {
   return lastUse(s, name)?.fatChoice ?? null
 }
 /** A usual food plus the cooking fat it was logged with, ready to re-log. */
+/** A database food that's since been removed (unverified or outdated): its stored numbers are
+ *  never re-served (usuals, same as yesterday). Diary history keeps what was logged. */
+export function isRemovedFood(x: LoggedFood): boolean {
+  return x.src === 'db' && !FOOD_BY_NAME.has(x.n)
+}
+
 export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedFood[] {
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
     for (let i = fs.length - 1; i >= 0; i--) {
       if (fs[i].n !== name || fs[i].src === 'fat') continue
-      // a database food that's since been removed (unverified or outdated) isn't re-offered
-      if (fs[i].src === 'db' && !FOOD_BY_NAME.has(name)) return []
+      if (isRemovedFood(fs[i])) return []
       // a cooking-fat entry is logged straight after its food
       const next = fs[i + 1]
       const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
@@ -208,7 +213,7 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   for (const d of days) {
     const seen = new Set<string>()
     for (const x of s.days[d].foods || []) {
-      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n)) continue
+      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n) || isRemovedFood(x)) continue
       seen.add(x.n)
       if (!counts[x.n]) counts[x.n] = { n: x.n, count: 0, last: x }
       counts[x.n].count++
