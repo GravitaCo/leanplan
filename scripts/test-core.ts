@@ -73,6 +73,7 @@ const extra: [string, string, string][] = [
   ['search: peas keeps Chickpeas (no pea->pear)', rankByName(['Pear', 'Peach', 'Chickpeas, cooked'], (x) => x, ['peas']).join('|'), 'Chickpeas, cooked'],
   ['search: eggs -> egg, not Greggs', rankByName(['Greggs BLT', 'Egg, whole', 'Greggs Free Range Egg Pot'], (x) => x, ['eggs']).join('|'), 'Egg, whole|Greggs Free Range Egg Pot'],
   ['search: brand name isn\'t the dish', rankByName(['Pizza Hut Fries', 'Pizza, cheese & tomato'], (x) => x, ['pizza'])[0], 'Pizza, cheese & tomato'],
+  ['search: eggs finds eggs when a dish says Eggs', rankByName(['Greggs BLT', 'PizzaExpress Eggs Benedict', 'Egg, whole'], (x) => x, ['eggs'])[0], 'Egg, whole'],
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
@@ -552,6 +553,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     ['vegetarian swaps (sourced Quorn pieces)', sw('vegetarian'), 'Beef mince>Quorn pieces'],
     ['vegan swaps (no Quorn: egg; soya milk)', sw('vegan'), 'Beef mince>Tofu, firm|Milk>Soya milk'],
     ['stock, lard, sauces and dishes never swap to a whole protein', sw('vegetarian', stocky as never), 'Chicken stock>-|Lard>-|Worcestershire sauce>-|Greggs Sausage Roll>-'],
+    ['vegan cheese swap on a ham pizza still conflicts', dietFit({ n: 'PizzaExpress Piccolo Ham & Mushrooms Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan') + '/' + dietFit({ n: 'PizzaExpress Piccolo Pollo Vegan Mozz Alternative', cat: 'fastfood' }, 'vegetarian'), 'conflict/conflict'],
+    ['vegan cheese swap alone is check, not dairy', dietFit({ n: 'PizzaExpress Piccolo Margherita Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan'), 'check'],
+    ['oat drink is plant, macchiato is milk', dietFit({ n: 'Latte (oat drink)', cat: 'drinks' }, 'vegan') + '/' + dietFit({ n: 'Macchiato', cat: 'drinks' }, 'vegan'), 'fits/conflict'],
     ['tea with no milk is vegan', dietFit({ n: 'Tea, no milk', cat: 'drinks' }, 'vegan'), 'fits'],
     ['tuna steak fits pescatarian', dietFit({ n: 'Tuna steak, raw', cat: 'fish' }, 'pescatarian'), 'fits'],
     ['parmesan not vegetarian', dietFit({ n: 'Parmesan', cat: 'dairy' }, 'vegetarian'), 'conflict'],

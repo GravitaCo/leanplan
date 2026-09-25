@@ -5,7 +5,7 @@
  *   "burger"); matches inside a word ("egg" in "Greggs") only when nothing better exists.
  * - Each word scores its best occurrence: a whole-word match beats a prefix ("milk" →
  *   "Milk, whole" before "Milkshake"), and earlier in the name beats later.
- * - A plural with no word-start match is retried as the singular ("eggs" → "egg").
+ * - A plural also matches as its singular when that is a whole word ("eggs" → "Egg, whole").
  * - Ties keep database order, which is curated (common foods first), instead of
  *   favouring short names.
  */
@@ -45,17 +45,16 @@ function hit(name: string, words: string[]): Hit | null {
 
 /** Items whose `name` matches every word, best first. */
 export function rankByName<T>(items: T[], name: (x: T) => string, words: string[]): T[] {
-  const hits = items.map((x, i) => ({ x, i, h: hit(name(x), words) })).filter((o) => o.h !== null) as { x: T; i: number; h: Hit }[]
-  // A plural with no word-start match ("eggs", where only "Greggs" contains it) retries as the
-  // singular, but only if the singular matches a whole word ("egg" yes; "pea" in "pear" no,
-  // so "peas" keeps "Chickpeas").
-  if (!hits.some((o) => o.h.tier === 0)) {
-    const singular = words.map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w))
-    if (singular.some((w, i) => w !== words[i])) {
-      const alt = items.map((x) => hit(name(x), singular))
-      if (alt.some((h) => h?.tier === 0 && h.whole)) return rankByName(items, name, singular)
-    }
-  }
+  // A plural also searches as its singular when the singular is a whole word somewhere
+  // ("eggs" finds "Egg, whole" even though "Eggs Benedict" matches too), but not when it
+  // isn't ("pea" only inside "pear": "peas" keeps "Chickpeas"). Each item keeps its better match.
+  const singular = words.map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w))
+  const alt = singular.some((w, i) => w !== words[i]) ? items.map((x) => hit(name(x), singular)) : null
+  const useAlt = !!alt && alt.some((h) => h?.tier === 0 && h.whole)
+  const better = (a: Hit | null, b: Hit | null) => (!a ? b : !b ? a : b.tier < a.tier || (b.tier === a.tier && b.score < a.score) ? b : a)
+  const hits = items
+    .map((x, i) => ({ x, i, h: useAlt ? better(hit(name(x), words), alt![i]) : hit(name(x), words) }))
+    .filter((o) => o.h !== null) as { x: T; i: number; h: Hit }[]
   const useMid = !hits.some((o) => o.h.tier < 2)
   return hits
     .filter((o) => useMid || o.h.tier < 2)
