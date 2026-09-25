@@ -20,7 +20,7 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -407,6 +407,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const blank = { type: 'Cardio', cardioType: '', mins: '' } as any
   const round = (wk: any) => { const m = mirrorOf([fromLegacy(wk, D)]); delete (m as any)._mirror; return JSON.stringify(m) === JSON.stringify(wk) }
   const same = (wk: any) => sessionNetBurn(fromLegacy(wk, D), 70) === workoutNetBurn(wk, 70) && sessionBurn(fromLegacy(wk, D), 70) === workoutBurn(wk, 70)
+    && isTrainingSess(fromLegacy(wk, D)) === isTrainingSession(wk)
   const day = (x: any) => ({ foods: [], supps: {}, weight: null, workout: null, ...x })
   const yoga = { id: 'y1', modality: 'yoga', title: 'Evening yoga', mins: 30 } as any
   const got = [

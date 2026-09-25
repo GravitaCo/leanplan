@@ -4,7 +4,7 @@ import type { ExerciseTemplate, LoggedExercise, Session, WorkoutType } from '@/c
 import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
-import { lowSignals } from '@/core/domain/dayOptions'
+import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
 import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
@@ -76,7 +76,7 @@ export function TrainScreen() {
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
   const low = lowSignals(day?.checkin, recent)
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
-  const offer = !logged && sched !== 'Rest' && low.length >= 2
+  const offer = !logged && sched !== 'Rest' && offerLighter(day?.checkin, recent)
   // an accepted "easier first week" pre-selects the shorter version (still just a choice)
   const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
   const [lighterOpen, setLighterOpen] = useState(false)
