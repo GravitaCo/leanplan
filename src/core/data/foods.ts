@@ -3,6 +3,7 @@ import { GREGGS } from './chains/greggs'
 import { KFC } from './chains/kfc'
 import { POPEYES } from './chains/popeyes'
 import { PIZZAHUT } from './chains/pizzahut'
+import { BURGERKING } from './chains/burgerking'
 import { INGREDIENTS } from './ingredients'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
@@ -2411,38 +2412,6 @@ const BASE: Food[] = [
     }
   },
   {
-    "n": "Burger King Whopper",
-    "k": 207.32,
-    "p": 10.1,
-    "c": 18.47,
-    "f": 10.45,
-    "g": 287,
-    "cat": "fastfood",
-    "src": "bk-gb",
-    "ref": {
-      "g": 287,
-      "k": 595,
-      "p": 29,
-      "c": 53,
-      "f": 30
-    }
-  },
-  {
-    "n": "Burger King Chicken Royale",
-    "k": 261.75,
-    "p": 10.6,
-    "c": 23.96,
-    "f": 13.36,
-    "g": 217,
-    "cat": "fastfood",
-    "src": "bk-gb",
-    "ref": {
-      "g": 217,
-      "k": 568,
-      "p": 23,
-      "c": 52,
-      "f": 29
-    }
   },
   {
     "n": "Crisps (bag ~25g)",
@@ -3050,4 +3019,4 @@ const BASE: Food[] = [
 ]
 
 /** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT, BURGERKING)
