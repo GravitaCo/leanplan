@@ -36,7 +36,7 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
-import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
@@ -1078,7 +1078,7 @@ async function barcodeScan(): Promise<void> {
   checks.push(
     ['OFF: name is Brand + product, size removed, deduped against existing names', d.name === 'Heinz Baked Beanz (2)'],
     ['OFF: per-100 g values mapped', d.values.k === 78 && d.values.p === 4.7 && d.values.c === 12.5 && d.values.f === 0.2 && d.values.fibre === 3.8 && d.values.salt === 0.6 && !d.kcalFromKj],
-    ['OFF: beans are an ingredient (veg), grams, serving from serving_quantity', d.kind === 'ingredient' && d.cat === 'veg' && !d.ml && d.serving.ingredient === 208 && d.serving.meal === 208],
+    ['OFF: beans are an ingredient (veg), grams, serving from serving_quantity', d.kind === 'cook' && d.cat === 'veg' && !d.ml && d.serving.cook === 208 && d.serving.eat === 208],
     ['OFF: brand already in the name is not repeated', productName({ product_name: 'Heinz Tomato Ketchup', brands: 'Heinz' }) === 'Heinz Tomato Ketchup'],
     ['OFF: multipack size removed', productName({ product_name: 'Crisps 6 x 25g', brands: 'Walkers' }) === 'Walkers Crisps'],
   )
@@ -1096,13 +1096,13 @@ async function barcodeScan(): Promise<void> {
     categories_tags: ['en:meals', 'en:pasta-dishes', 'en:lasagnas'],
   }, [])
   checks.push(
-    ['classify: ready meals, sandwiches, pizzas, soups, meal kits, prepared salads are meals', ['en:meals', 'en:sandwiches', 'en:pizzas', 'en:soups', 'en:meal-kits', 'en:prepared-salads'].map((t) => classifyProduct([t])).every((k) => k === 'meal')],
-    ['classify: pasta, milk, sauces, soup mixes, pizza sauce, snack bars are ingredients', [['en:pastas'], ['en:milks'], ['en:sauces', 'en:pizza-sauces'], ['en:soup-mixes'], ['en:cereal-bars'], []].map((t) => classifyProduct(t)).every((k) => k === 'ingredient')],
-    ['classify: lasagne is a meal, default serving = the pack (400 g), 100 g as an ingredient', lasagne.kind === 'meal' && lasagne.serving.meal === 400 && lasagne.serving.ingredient === 100],
+    ['classify: ready meals, sandwiches, pizzas, soups, meal kits, prepared salads are eat-as-is meals', ['en:meals', 'en:sandwiches', 'en:pizzas', 'en:soups', 'en:meal-kits', 'en:prepared-salads'].map((t) => classifyProduct([t]) === 'eat' && isMealProduct([t])).every(Boolean)],
+    ['classify: pasta, milk, sauces, soup mixes, pizza sauce are for cooking', [['en:pastas'], ['en:milks'], ['en:sauces', 'en:pizza-sauces'], ['en:soup-mixes'], []].map((t) => classifyProduct(t)).every((k) => k === 'cook')],
+    ['classify: lasagne is a meal, default serving = the pack (400 g), 100 g as an ingredient', lasagne.kind === 'eat' && lasagne.meal && lasagne.serving.eat === 400 && lasagne.serving.cook === 100],
     ['category guess: milk dairy, oil fats, salmon fish, crisps snacks, cola drinks, unknown none', [['en:dairies', 'en:milks'], ['en:vegetable-oils'], ['en:fishes'], ['en:crisps'], ['en:beverages', 'en:sodas'], ['en:something']].map((t) => guessCategory(t) ?? '-').join() === 'dairy,fats,fish,snacks,drinks,-'],
   )
-  const asMeal = foodFromConfirmed({ barcode: '4006381333931', name: 'Tesco Beef Lasagne', values: lasagne.values, ml: false, kind: 'meal', cat: 'grains', g: 400 })
-  const asIngr = foodFromConfirmed({ barcode: '5000157024671', name: ' Heinz Baked Beanz ', values: d.values, ml: false, kind: 'ingredient', cat: d.cat, g: 208 })
+  const asMeal = foodFromConfirmed({ barcode: '4006381333931', name: 'Tesco Beef Lasagne', values: lasagne.values, ml: false, kind: 'eat', meal: true, cat: 'grains', g: 400 })
+  const asIngr = foodFromConfirmed({ barcode: '5000157024671', name: ' Heinz Baked Beanz ', values: d.values, ml: false, kind: 'cook', cat: d.cat, g: 208 })
   checks.push(
     ['saved ready meal: cat ready, no cook flag, pack serving, off: source and barcode', asMeal.cat === 'ready' && !asMeal.cook && asMeal.g === 400 && asMeal.src === 'off:4006381333931' && asMeal.barcode === '4006381333931'],
     ['saved ingredient: guessed cat, per-100 values exactly as confirmed, name trimmed', asIngr.cat === 'veg' && asIngr.k === 78 && asIngr.p === 4.7 && asIngr.c === 12.5 && asIngr.f === 0.2 && asIngr.n === 'Heinz Baked Beanz'],
@@ -1181,15 +1181,40 @@ async function barcodeScan(): Promise<void> {
     // naming a nutrient as a field empties nutriments in the live API (checked Sept 2026)
     ['OFF_FIELDS names no nutrient (top-level fields only)', OFF_FIELDS.split(',').every((f) => !/_(100g|serving)$|^energy/.test(f))],
     ['multipack: "4 x 250g" → one unit is 250 g; "250 g x 4" too; "6 x" without a weight → none', multipackUnit('4 x 250g').unit === 250 && multipackUnit('250 g x 4').unit === 250 && multipackUnit('6 x pots').multi && multipackUnit('6 x pots').unit === undefined && !multipackUnit('400 g').multi],
-    ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.meal === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.meal === 100],
+    ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.eat === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.eat === 100],
     ['ml: product_quantity_unit wins over the quantity text', isPer100ml({ product_quantity_unit: 'g', quantity: '500 ml' }) === false && isPer100ml({ product_quantity_unit: 'ml', quantity: '500 g' }) === true],
     ['ml: ice cream sold in ml stays per 100 g', isPer100ml({ quantity: '500 ml', product_quantity_unit: 'ml', categories_tags: ['en:frozen-desserts', 'en:ice-creams'] }) === false],
     ['US-only label detected; a UK one or one sold in both is not', isUsLabel(['en:united-states']) && !isUsLabel(['en:united-kingdom', 'en:united-states']) && !isUsLabel(['en:united-kingdom']) && !isUsLabel(undefined)],
     ['stale: last edit over 3 years ago gives the year; recent none', staleYear(Date.UTC(2021, 5, 1) / 1000, Date.UTC(2026, 8, 25)) === 2021 && staleYear(Date.UTC(2025, 0, 1) / 1000, Date.UTC(2026, 8, 25)) === undefined && staleYear('x') === undefined],
-    ['bad OFF data: wrong types dropped, no throw', (() => { const x = draftFromOff('4006381333931', { product_name: 42, brands: ['x'], categories_tags: 'en:meals', countries_tags: [1, 'en:united-states'], nutriments: { 'energy-kcal_100g': { a: 1 }, proteins_100g: '5' } }, []); return x.name === '' && x.kind === 'ingredient' && x.values.k === undefined && x.values.p === 5 && x.usLabel })()],
+    ['bad OFF data: wrong types dropped, no throw', (() => { const x = draftFromOff('4006381333931', { product_name: 42, brands: ['x'], categories_tags: 'en:meals', countries_tags: [1, 'en:united-states'], nutriments: { 'energy-kcal_100g': { a: 1 }, proteins_100g: '5' } }, []); return x.name === '' && x.kind === 'cook' && x.values.k === undefined && x.values.p === 5 && x.usLabel })()],
     ['bad OFF data: not an object at all', draftFromOff('4006381333931', null, []).name === '' && draftFromOff('4006381333931', 'junk', []).notes.length === 0],
     ['name capped at 120 characters', draftFromOff('4006381333931', { product_name: 'x'.repeat(500) }, []).name.length === MAX_NAME],
     ['link: a saved food of the same name without a barcode is reused; one with a barcode or a built-in is not', linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], ' heinz baked beanz')?.id === 'a' && !linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100, barcode: '1' }], 'Heinz Baked Beanz') && !linkableFood([{ n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], 'Heinz Baked Beanz') && d.baseName === 'Heinz Baked Beanz'],
+  )
+
+  // Benn's case: Walkers Sensations, 5000328028873. OFF: whole 150 g bag as one serving, name "sensations"
+  const walkers = draftFromOff('5000328028873', {
+    product_name: 'sensations', brands: 'Walkers', serving_size: '1 pack (150 g)', serving_quantity: 150, quantity: '150',
+    categories_tags: ['en:snacks', 'en:salty-snacks', 'en:appetizers', 'en:crisps', 'en:potato-crisps'],
+    nutriments: { 'energy-kcal_100g': 490, proteins_100g: 6.6, carbohydrates_100g: 54, fat_100g: 26 },
+  }, [])
+  const crisps = foodFromConfirmed({ barcode: walkers.barcode, name: 'Walkers Sensations Thai Sweet Chilli', values: { k: 497, p: 6.3, c: 55, f: 27 }, ml: false, kind: walkers.kind, meal: walkers.meal, cat: walkers.cat, g: 30 })
+  const eatEntry = buildEntry({ ...crisps, id: uuid() }, { mode: 'serv', serv: 1 }, 'snack', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  checks.push(
+    ['crisps: eat as it is, cat snacks, not a meal, not a liquid', walkers.kind === 'eat' && walkers.cat === 'snacks' && !walkers.meal && !walkers.liquid && !walkers.ml],
+    ['crisps: whole pack as one serving is flagged and not used as the default', walkers.wholePack && walkers.pack === 150 && walkers.serving.eat === undefined && walkers.serving.cook === undefined && walkers.notes.some((n) => n.field === 'serving' && /whole pack as one serving/.test(n.msg))],
+    ['crisps: "sensations" is a vague name (ask for the flavour)', walkers.vague && walkers.name === 'Walkers sensations'],
+    ['crisps: saved with eat, cat snacks (not ready); one 30 g serving = 149 kcal', crisps.eat === true && crisps.cat === 'snacks' && crisps.g === 30 && eatEntry.k === 149.1],
+    ['serving is required: empty flagged, typed fine', checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 0 }).some((p) => p.field === 'serving' && p.kind === 'missing') && !checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 30 }).some((p) => p.field === 'serving')],
+    ['whole pack: not for meals or drinks, packs under 100 g, or a real smaller serving', !servingIsWholePack(400, 400, true) && !servingIsWholePack(25, 25, false) && !servingIsWholePack(30, 150, false) && servingIsWholePack(148, 150, false)],
+    ['eat as is: crisps, chocolate, biscuits, bars, sodas, juice, desserts, ice cream', [['en:crisps'], ['en:chocolates'], ['en:biscuits'], ['en:cereal-bars'], ['en:sodas'], ['en:fruit-juices'], ['en:desserts'], ['en:ice-creams']].every((t) => classifyProduct(t) === 'eat' && !isMealProduct(t))],
+    ['for cooking wins: milk and plant milk filed as beverages, plain nuts filed as snacks', classifyProduct(['en:beverages', 'en:plant-based-milks']) === 'cook' && classifyProduct(['en:dairies', 'en:milks', 'en:beverages']) === 'cook' && classifyProduct(['en:snacks', 'en:nuts']) === 'cook'],
+    ['saved: a meal eaten as is → ready + eat; for cooking → no eat flag', asMeal.cat === 'ready' && asMeal.eat === true && asIngr.eat === undefined && foodFromConfirmed({ barcode: '1', name: 'X', values: lasagne.values, ml: false, kind: 'cook', meal: true, cat: 'grains', g: 100 }).cat === 'grains'],
+    ['vague names: one word or just the brand; a real name is not', isVagueName({ product_name: 'sensations', brands: 'Walkers' }) && isVagueName({ product_name: 'Walkers', brands: 'Walkers' }) && isVagueName({ product_name: 'Sensations 150g' }) && !isVagueName({ product_name: 'Baked Beanz', brands: 'Heinz' }) && !isVagueName({})],
+    ['pack size from a plain quantity; not from a multipack', packFromQuantity('150') === 150 && packFromQuantity('150 g') === 150 && packFromQuantity('1.5 kg') === 1500 && packFromQuantity('33cl') === 330 && packFromQuantity('4 x 250g') === undefined],
+    ['a drink counts as liquid (per 100 ml offered up front)', draftFromOff('1', { quantity: '500 ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: {} }, []).liquid],
+    ['made food keys off the saved eat flag, whatever the category', isMadeFood({ eat: true, cat: 'grains' }) && kitchenCandidates([], ['Granola bar'], [{ id: 'g', n: 'Granola bar', k: 1, p: 1, c: 1, f: 1, g: 40, cat: 'grains', eat: true }]).length === 0],
+    ['sync (flag on): meta carries eat', (toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true) as any).meta.eat === true && fromServerFood({ ...toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true), updated_at: 'z' }).eat === true],
   )
 
   // sync with the flag on: meta is always an object, so a cleared field clears on pull

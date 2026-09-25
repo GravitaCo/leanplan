@@ -9,14 +9,15 @@ import { recipePerServing } from './nutrition'
 import { swapsFor, type Swap } from './diet'
 import { isMenuSource } from '@/core/data/sources'
 
-/** Made foods, eaten as they come: ready meals, fast food and chain menu items. They're never
+/** Made foods, eaten as they come: anything saved as "Eat as it is" (`eat`), ready meals, fast
+ *  food and chain menu items. They're never
  *  offered as "I have…" ingredients, and rank after ingredients when building a recipe. */
-export function isMadeFood(f: Pick<Food, 'cat' | 'src'> | undefined): boolean {
-  return !!f && (f.cat === 'ready' || f.cat === 'fastfood' || isMenuSource(f.src))
+export function isMadeFood(f: Pick<Food, 'cat' | 'src' | 'eat'> | undefined): boolean {
+  return !!f && (!!f.eat || f.cat === 'ready' || f.cat === 'fastfood' || isMenuSource(f.src))
 }
 
 /** Ingredients first, made foods after, each group keeping its order (e.g. search rank). */
-export function ingredientsFirst<T>(items: T[], foodOf: (x: T) => Pick<Food, 'cat' | 'src'> | undefined): T[] {
+export function ingredientsFirst<T>(items: T[], foodOf: (x: T) => Pick<Food, 'cat' | 'src' | 'eat'> | undefined): T[] {
   return [...items.filter((x) => !isMadeFood(foodOf(x))), ...items.filter((x) => isMadeFood(foodOf(x)))]
 }
 

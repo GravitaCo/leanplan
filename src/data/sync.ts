@@ -20,7 +20,7 @@ import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 export const CUSTOM_FOOD_META = false
 
 /** The Food fields that travel in `meta` (everything the named columns don't hold). */
-const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode'] as const
+const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode', 'eat'] as const
 type FoodMeta = Partial<Pick<Food, (typeof FOOD_META_KEYS)[number]>>
 
 function foodMeta(f: Food): FoodMeta | null {

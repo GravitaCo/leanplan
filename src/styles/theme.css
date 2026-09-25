@@ -315,6 +315,20 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .frow.flag > input { flex: 1 1 0; width: 0; min-width: 0; }
 .frow .flagnote { order: 9; flex-basis: 100%; font-size: 13px; color: var(--tint); margin: -6px 0 9px; }
 .frow.need input::placeholder { color: var(--tint); }
+/* scanned label: per 100 (editable) and per serving (live) side by side, in UK label order */
+.ntab .nrow { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; align-items: center; column-gap: 10px; min-height: 44px; padding: 0 16px; position: relative; }
+.ntab .nrow + .nrow::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--sep); }
+.ntab .nrow label { font-size: 17px; min-width: 0; }
+.ntab .nrow label.sub { font-size: 15px; padding-left: 12px; color: var(--label2); }
+.ntab .nrow label small { font-size: 13px; color: var(--label2); margin-left: 4px; }
+.ntab .nrow input { width: 100%; min-width: 0; background: none; padding: 11px 0; text-align: right; border-radius: 0; font-size: 17px; }
+.ntab .nrow input:focus { outline: none; }
+.ntab .nrow .nserv { text-align: right; font-size: 17px; color: var(--label2); }
+.ntab .nhead { min-height: 34px; font-size: 13px; color: var(--label2); line-height: 1.2; padding-top: 6px; padding-bottom: 6px; }
+.ntab .nhead span { text-align: right; }
+.ntab .nrow.flag { box-shadow: inset 3px 0 0 var(--tint); }
+.ntab .nrow .flagnote { grid-column: 1 / -1; font-size: 13px; color: var(--tint); margin: -6px 0 9px; }
+.ntab .nrow.need input::placeholder { color: var(--tint); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .toggle { position: relative; width: 51px; height: 31px; border-radius: 31px; background: var(--fill2); flex: none; border: 0; padding: 0; transition: background 0.2s; }
 .toggle::before { content: ''; position: absolute; width: 27px; height: 27px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); }

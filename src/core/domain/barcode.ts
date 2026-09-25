@@ -111,7 +111,8 @@ export interface LabelValues {
 export type LabelField = keyof LabelValues
 export const REQUIRED_FIELDS: LabelField[] = ['k', 'p', 'c', 'f']
 
-export type FoodKind = 'ingredient' | 'meal'
+/** "For cooking" (an ingredient) or "Eat as it is" (ready meals, snacks, drinks, desserts). */
+export type FoodKind = 'cook' | 'eat'
 
 /** What the confirm view starts from. */
 export interface ScanDraft {
@@ -122,10 +123,20 @@ export interface ScanDraft {
   kcalFromKj: boolean
   ml: boolean
   kind: FoodKind
-  /** best-guess category for the ingredient reading; a ready meal is always 'ready' */
+  /** OFF files it as a meal (ready meal, sandwich, soup …): saved with cat 'ready' when eaten as is */
+  meal: boolean
+  /** best-guess category otherwise */
   cat?: FoodCategory
-  /** default serving for each reading, in g or ml */
-  serving: Record<FoodKind, number>
+  /** default serving for each reading, in g or ml; undefined = the user has to type it */
+  serving: Record<FoodKind, number | undefined>
+  /** the whole pack, in g or ml, when OFF knows it */
+  pack?: number
+  /** OFF lists the whole pack as one serving (a 150 g bag of crisps): don't trust it */
+  wholePack: boolean
+  /** a liquid, so per 100 ml is offered up front */
+  liquid: boolean
+  /** product name too vague to tell varieties apart ("Sensations"): ask for the flavour */
+  vague: boolean
   /** the name before de-duplication, to link an existing food of the same name */
   baseName: string
   /** problems with the product as OFF holds it (per-serving values in the per-100 fields) */
@@ -227,9 +238,8 @@ export function servingNotes(p: Pick<OffProduct, 'nutrition_data_per' | 'serving
 }
 
 /**
- * Made foods, eaten as they come: not ingredients you cook with. OFF category slugs (language
- * prefix dropped), matched exactly so "pizza-sauces" or "soup-mixes" don't count. Snack bars stay
- * ingredients-side (cat 'snacks'): they're not meals, and a bar's serving is its own weight anyway.
+ * Meals, eaten as they come (saved with cat 'ready'). OFF category slugs (language prefix
+ * dropped), matched exactly so "pizza-sauces" or "soup-mixes" don't count.
  */
 export const MEAL_CATEGORIES: ReadonlySet<string> = new Set([
   'meals', 'prepared-meals', 'ready-meals', 'microwave-meals', 'frozen-ready-meals', 'frozen-meals', 'refrigerated-meals',
@@ -237,6 +247,21 @@ export const MEAL_CATEGORIES: ReadonlySet<string> = new Set([
   'prepared-salads', 'mixed-salads', 'pasta-salads', 'soups', 'fresh-soups', 'canned-soups',
   'pasta-dishes', 'rice-dishes', 'noodle-dishes', 'lasagnas', 'curries', 'sushi', 'meat-pies',
 ])
+
+/** Also eaten as they come, but not meals: snacks, sweets, drinks and desserts (they keep their
+ *  own category, e.g. 'snacks'). */
+export const EAT_AS_IS_CATEGORIES: ReadonlySet<string> = new Set([
+  'snacks', 'sweet-snacks', 'salty-snacks', 'appetizers', 'crisps', 'potato-crisps', 'chips', 'popcorn', 'pretzels',
+  'biscuits', 'biscuits-and-cakes', 'cakes', 'chocolates', 'chocolate-bars', 'confectioneries', 'candies', 'sweets',
+  'cereal-bars', 'bars', 'protein-bars', 'energy-bars',
+  'beverages', 'drinks', 'sodas', 'carbonated-drinks', 'soft-drinks', 'energy-drinks', 'fruit-juices', 'juices', 'smoothies',
+  'waters', 'alcoholic-beverages', 'beers', 'wines', 'spirits',
+  'desserts', 'dairy-desserts', 'frozen-desserts', 'ice-creams', 'puddings', 'sorbets',
+])
+
+/** Bought to cook or mix with even when OFF also files them as drinks or snacks (milk, cream,
+ *  baking chocolate, nuts): these win over the eat-as-is list. */
+const FOR_COOKING_CATEGORIES = ['milks', 'plant-based-milks', 'dairy-substitutes', 'creams', 'cooking-chocolates', 'baking-chocolate', 'nuts', 'plain-nuts', 'flours', 'sauces', 'cooking-helpers']
 
 /** Ingredient categories, most specific first; the first that matches wins. */
 const CATEGORY_TAGS: [FoodCategory, string[]][] = [
@@ -256,11 +281,43 @@ const CATEGORY_TAGS: [FoodCategory, string[]][] = [
 
 const slugs = (tags: string[] | undefined) => new Set((tags || []).map((t) => t.replace(/^[a-z]{2,3}:/, '').toLowerCase()))
 
-/** 'meal' for ready meals and other made foods, else 'ingredient'. */
-export function classifyProduct(tags: string[] | undefined): FoodKind {
+/** OFF files it as a meal (ready meal, sandwich, pizza, soup …). */
+export function isMealProduct(tags: string[] | undefined): boolean {
   const s = slugs(tags)
-  for (const t of s) if (MEAL_CATEGORIES.has(t)) return 'meal'
-  return 'ingredient'
+  for (const t of s) if (MEAL_CATEGORIES.has(t)) return true
+  return false
+}
+
+/** 'eat' for meals, snacks, sweets, drinks and desserts; 'cook' for everything else. */
+export function classifyProduct(tags: string[] | undefined): FoodKind {
+  if (isMealProduct(tags)) return 'eat'
+  const s = slugs(tags)
+  if (FOR_COOKING_CATEGORIES.some((t) => s.has(t))) return 'cook'
+  for (const t of s) if (EAT_AS_IS_CATEGORIES.has(t)) return 'eat'
+  return 'cook'
+}
+
+/** A name that can't tell one variety from another: one word, or just a brand or range name
+ *  ("Sensations", "Walkers"). */
+export function isVagueName(p: Pick<OffProduct, 'product_name' | 'brands'>): boolean {
+  const name = (p.product_name || '').replace(/\b\d+(?:[.,]\d+)?\s*(?:g|kg|ml|cl|l)\b/gi, ' ').trim().toLowerCase()
+  if (!name) return false
+  if (name.split(/\s+/).length <= 1) return true
+  return (p.brands || '').split(',').map((b) => b.trim().toLowerCase()).some((b) => b && b === name)
+}
+
+/** A single pack size from the quantity text ("150", "150 g", "1.5 kg", "33cl"); not multipacks. */
+export function packFromQuantity(q: string | undefined): number | undefined {
+  const m = (q || '').trim().match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|cl|l)?$/i)
+  if (!m) return undefined
+  const x = parseFloat(m[1].replace(',', '.')) * (/^(kg|l)$/i.test(m[2] || '') ? 1000 : /^cl$/i.test(m[2] || '') ? 10 : 1)
+  return x > 0 && x <= 5000 ? Math.round(x) : undefined
+}
+
+/** OFF's serving is the whole pack (within 2%), for a pack of 100 g or more that isn't a meal or a
+ *  drink: a sharing bag of crisps, where the pack's own serving is smaller. */
+export function servingIsWholePack(serving: number | undefined, pack: number | undefined, mealOrDrink: boolean): boolean {
+  return !mealOrDrink && !!serving && !!pack && pack >= 100 && Math.abs(serving - pack) <= 0.02 * pack
 }
 
 /** A best-guess ingredient category from OFF categories, or undefined. */
@@ -316,9 +373,16 @@ export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<stri
   const p = sanitizeOff(raw)
   const { values, kcalFromKj } = offValues(p.nutriments)
   const baseName = productName(p).slice(0, MAX_NAME).trim()
-  const serv = serving(p.serving_quantity)
-  const pack = multipackUnit(p.quantity)
+  const multi = multipackUnit(p.quantity)
   const ml = isPer100ml(p)
+  const meal = isMealProduct(p.categories_tags)
+  const cat = guessCategory(p.categories_tags)
+  const liquid = ml || cat === 'drinks'
+  const pack = serving(p.product_quantity) ?? packFromQuantity(p.quantity)
+  const wholePack = servingIsWholePack(serving(p.serving_quantity), pack, meal || liquid)
+  const serv = wholePack ? undefined : serving(p.serving_quantity)
+  const notes = servingNotes(p, ml)
+  if (wholePack) notes.push({ field: 'serving', kind: 'odd', msg: 'Open Food Facts lists the whole pack as one serving. Check the serving size on the pack.' })
   return {
     barcode,
     name: baseName ? uniqueName(baseName, taken) : '',
@@ -327,10 +391,19 @@ export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<stri
     kcalFromKj,
     ml,
     kind: classifyProduct(p.categories_tags),
-    cat: guessCategory(p.categories_tags),
-    // a ready meal's serving is the pack; in a multipack, one unit of it
-    serving: { meal: serv ?? (pack.multi ? serving(pack.unit) ?? 100 : serving(p.product_quantity) ?? 100), ingredient: serv ?? 100 },
-    notes: servingNotes(p, ml),
+    meal,
+    cat,
+    // eaten as is: the pack's serving; else one unit of a multipack; else a small pack whole (or a
+    // meal's pack). A sharing bag with no believable serving is left for the user to type.
+    serving: {
+      eat: serv ?? (multi.multi ? serving(multi.unit) ?? (meal ? 100 : undefined) : wholePack ? undefined : pack !== undefined && (meal || liquid || pack < 100) ? pack : meal ? 100 : undefined),
+      cook: serv ?? (wholePack ? undefined : 100),
+    },
+    pack,
+    wholePack,
+    liquid,
+    vague: isVagueName(p),
+    notes,
     usLabel: isUsLabel(p.countries_tags),
     staleYear: staleYear(p.last_modified_t, now),
   }
@@ -344,13 +417,15 @@ export function linkableFood(foods: Food[], name: string): Food | undefined {
 }
 
 /** The food to save once the user has confirmed the values (per-100 values kept exactly). */
-export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; cat?: FoodCategory; g: number }): Omit<Food, 'id'> {
+export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; meal?: boolean; cat?: FoodCategory; g: number }): Omit<Food, 'id'> {
   const v = d.values
   const food: Omit<Food, 'id'> = {
     n: d.name.trim(), k: v.k ?? 0, p: v.p ?? 0, c: v.c ?? 0, f: v.f ?? 0,
     g: d.g > 0 ? d.g : 100, ml: d.ml, src: 'off:' + d.barcode, barcode: d.barcode,
   }
-  const cat = d.kind === 'meal' ? 'ready' : d.cat
+  if (d.kind === 'eat') food.eat = true
+  // only a true meal eaten as is becomes 'ready'; crisps stay 'snacks', a drink 'drinks'
+  const cat = d.kind === 'eat' && d.meal ? 'ready' : d.cat
   if (cat) food.cat = cat
   return food
 }
@@ -358,7 +433,7 @@ export function foodFromConfirmed(d: { barcode: string; name: string; values: La
 /* ---------------- accuracy checks ---------------- */
 
 export interface LabelProblem {
-  field: LabelField | 'name'
+  field: LabelField | 'name' | 'serving'
   /** 'missing' blocks Save (required field empty); 'odd' is a nudge to check the pack */
   kind: 'missing' | 'odd'
   msg: string
@@ -375,11 +450,12 @@ const ALCOHOL_G_PER_ABV = 0.789
  * Problems with a set of per-100 label values, each naming the field to look at. Empty = the
  * numbers hang together. Never blocks except for missing required fields.
  */
-export function checkLabel(v: LabelValues, opts: { ml?: boolean; name?: string; usLabel?: boolean } = {}): LabelProblem[] {
+export function checkLabel(v: LabelValues, opts: { ml?: boolean; name?: string; usLabel?: boolean; serving?: number } = {}): LabelProblem[] {
   const { ml = false, name, usLabel = false } = opts
   const out: LabelProblem[] = []
   const has = (x: number | undefined): x is number => x !== undefined && Number.isFinite(x)
   if (name !== undefined && !name.trim()) out.push({ field: 'name', kind: 'missing', msg: 'Give it a name.' })
+  if ('serving' in opts && !(opts.serving! > 0)) out.push({ field: 'serving', kind: 'missing', msg: 'Add the serving size from the pack.' })
   const labels: Record<LabelField, string> = { k: 'Calories', p: 'Protein', c: 'Carbs', f: 'Fat', kj: 'Energy (kJ)', sugars: 'Sugars', sat: 'Saturates', fibre: 'Fibre', alcohol: 'Alcohol (% vol)', salt: 'Salt' }
   for (const f of REQUIRED_FIELDS) if (!has(v[f])) out.push({ field: f, kind: 'missing', msg: `${labels[f]} is missing. Copy it from the pack.` })
   for (const f of Object.keys(labels) as LabelField[]) if (has(v[f]) && v[f]! < 0) out.push({ field: f, kind: 'odd', msg: `${labels[f]} can’t be negative.` })

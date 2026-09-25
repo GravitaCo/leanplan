@@ -35,6 +35,9 @@ export interface Food {
   cook?: boolean
   /** the pack's barcode (EAN-13 / EAN-8 digits), on foods saved from a scan or a label with one */
   barcode?: string
+  /** eaten as it comes (a ready meal, crisps, a drink): logged by the serving, never offered as a
+   *  "What can I make?" ingredient and ranked after ingredients in the recipe builder */
+  eat?: true
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean

@@ -1,6 +1,6 @@
 -- Barcode scanning: custom foods carry fields the named columns don't hold (per-item `each`,
 -- source `src` such as 'off:<barcode>', published `ref`, category `cat`, `cook`, `barcode`).
--- They travel in ONE additive, nullable jsonb column: { each, src, ref, cat, cook, barcode }.
+-- They travel in ONE additive, nullable jsonb column: { each, src, ref, cat, cook, barcode, eat }.
 -- No table or column is renamed; existing rows keep meta = null and read as before.
 -- RLS is table-level (owner_full_access on custom_foods, see docs/security-rls.sql) and there are
 -- no column grants, so the new column is covered with no policy change.
