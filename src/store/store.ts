@@ -403,9 +403,8 @@ export const useStore = create<StoreState>()(
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
-          // one weight: the profile follows the latest entry up to today
-          const now = latestWeight(st.data, todayStr())
-          if (now !== st.data.profile.weight) { st.data.profile.weight = now; markSettingsDirty(st.data) }
+          // Profile shows latestWeight, so this is its weight too; profile.weight isn't rewritten,
+          // which would upload the whole settings record on every weigh-in
         })
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
