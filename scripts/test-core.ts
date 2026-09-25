@@ -36,7 +36,8 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
-import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { lookupProduct } from '@/data/products'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
@@ -1054,7 +1055,7 @@ function legacyAndGuest(): void {
 // ---------- barcode scanning: check digits, OFF mapping, label checks, ingredient vs meal ----------
 async function barcodeScan(): Promise<void> {
   const checks: [string, boolean][] = []
-  const probs = (v: LabelValues, ml = false) => checkLabel(v, ml).map((p) => p.kind + ':' + p.field).join(',')
+  const probs = (v: LabelValues, ml = false) => checkLabel(v, { ml }).map((p) => p.kind + ':' + p.field).join(',')
   const good: LabelValues = { k: 165, kj: 690, p: 31, c: 0, f: 3.6, sat: 1, sugars: 0, salt: 0.2 }
   checks.push(
     ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
@@ -1114,13 +1115,16 @@ async function barcodeScan(): Promise<void> {
     ['checks: kJ vs kcal within 5 kcal / 5% is fine', probs({ ...good, k: 168 }) === ''],
     ['checks: misread kJ digits flag both', probs({ ...good, kj: 960 }) === 'odd:k,odd:kj'],
     ['checks: energy the macros can’t explain flags kcal (no kJ given)', probs({ k: 400, p: 31, c: 0, f: 3.6 }) === 'odd:k'],
-    ['checks: fibre (2) and alcohol (7) count towards energy', probs({ k: 250, p: 0, c: 25, f: 0, alcohol: 20 }) === '' && probs({ k: 250, p: 0, c: 25, f: 0 }) === 'odd:k' && probs({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }) === ''],
+    ['checks: fibre (2 kcal/g) counts towards energy', probs({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }) === '' && probs({ k: 150, p: 3, c: 20, f: 2 }) === 'odd:k'],
+    ['checks: alcohol is % vol: a 40% spirit at 222 kcal/100 ml is fine (40 × 0.789 g × 7)', probs({ k: 222, p: 0, c: 0, f: 0, alcohol: 40 }, true) === ''],
+    ['checks: energy well above what 40% alcohol explains is still flagged; a 20% liqueur adds up', probs({ k: 280 + 60, p: 0, c: 15, f: 0, alcohol: 40 }, true) === 'odd:k' && probs({ k: 210, p: 0, c: 25, f: 0, alcohol: 20 }, true) === ''],
+    ['checks: a US label counts fibre inside carbs, so no fibre allowance', checkLabel({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }, { usLabel: true }).some((p) => p.field === 'k')],
     ['checks: sugars more than carbs flags sugars; within 0.2 g is fine', probs({ k: 40, p: 0, c: 10, f: 0, sugars: 12 }) === 'odd:sugars' && probs({ k: 40, p: 0, c: 10, f: 0, sugars: 10.2 }) === ''],
     ['checks: saturates more than fat flags saturates', probs({ k: 45, p: 0, c: 0, f: 5, sat: 6 }) === 'odd:sat'],
     ['checks: more than 100 g in 100 g flags the biggest part', checkLabel({ k: 380, p: 10, c: 60, f: 4, fibre: 30, salt: 1 }).some((p) => p.field === 'c' && /add up to 105 g/.test(p.msg))],
     ['checks: per 100 ml allows denser liquids (syrup)', probs({ k: 350, p: 0, c: 88, f: 0 }, true) === '' && probs({ k: 560, p: 0, c: 140.5, f: 0 }, true).includes('odd:c')],
     ['checks: negatives flagged per field', probs({ k: 50, p: -1, c: 12, f: 0.5 }).startsWith('odd:p')],
-    ['checks: missing required fields named, name too', checkLabel({ k: 50, c: 12 }, false, ' ').map((p) => p.kind + ':' + p.field).join() === 'missing:name,missing:p,missing:f'],
+    ['checks: missing required fields named, name too', checkLabel({ k: 50, c: 12 }, { name: ' ' }).map((p) => p.kind + ':' + p.field).join() === 'missing:name,missing:p,missing:f'],
   )
 
   // local first; source and margin of a saved scan
@@ -1163,6 +1167,50 @@ async function barcodeScan(): Promise<void> {
   checks.push(['sync: after push + pull (no meta on the server) the scan keeps barcode, src and cat', rows.custom_foods.length === 1 && !('meta' in rows.custom_foods[0]) && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
   const back2 = stateFromBackup(JSON.parse(JSON.stringify(s)))
   checks.push(['persistence and backup JSON: barcode survives a round trip', back2.customFoods[0].barcode === '5000157024671'])
+
+  // review fixes: per-serving values, multipacks, units, US labels, stale data, bad data, links
+  const perServ = draftFromOff('4006381333931', { product_name: 'Granola', serving_quantity: 45, nutrition_data_per: 'serving', nutriments: { 'energy-kcal_100g': 450, proteins_100g: 10, carbohydrates_100g: 60, fat_100g: 18 } }, [])
+  const sameLines = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150, proteins_100g: 2, proteins_serving: 2, carbohydrates_100g: 18, carbohydrates_serving: 18, fat_100g: 8, fat_serving: 8 } })
+  const fine = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 500, 'energy-kcal_serving': 150 } })
+  const about100 = servingNotes({ serving_quantity: 100, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150 } })
+  checks.push(
+    ['per-serving: OFF derived per-100 from a per-serving label → note on kcal', perServ.notes.length === 1 && perServ.notes[0].field === 'k' && /per-serving label/.test(perServ.notes[0].msg)],
+    ['per-serving: per-100 lines equal the per-serving ones for a 30 g serving → note', sameLines.length === 1 && /30 g serving/.test(sameLines[0].msg)],
+    ['per-serving: different lines, or a ~100 g serving, → no note', fine.length === 0 && about100.length === 0],
+    ['OFF_FIELDS asks for the per-serving lines and last_modified_t', ['energy-kcal_serving', 'proteins_serving', 'carbohydrates_serving', 'fat_serving', 'last_modified_t', 'product_quantity_unit'].every((f) => OFF_FIELDS.split(',').includes(f))],
+    ['multipack: "4 x 250g" → one unit is 250 g; "250 g x 4" too; "6 x" without a weight → none', multipackUnit('4 x 250g').unit === 250 && multipackUnit('250 g x 4').unit === 250 && multipackUnit('6 x pots').multi && multipackUnit('6 x pots').unit === undefined && !multipackUnit('400 g').multi],
+    ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.meal === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.meal === 100],
+    ['ml: product_quantity_unit wins over the quantity text', isPer100ml({ product_quantity_unit: 'g', quantity: '500 ml' }) === false && isPer100ml({ product_quantity_unit: 'ml', quantity: '500 g' }) === true],
+    ['ml: ice cream sold in ml stays per 100 g', isPer100ml({ quantity: '500 ml', product_quantity_unit: 'ml', categories_tags: ['en:frozen-desserts', 'en:ice-creams'] }) === false],
+    ['US-only label detected; a UK one or one sold in both is not', isUsLabel(['en:united-states']) && !isUsLabel(['en:united-kingdom', 'en:united-states']) && !isUsLabel(['en:united-kingdom']) && !isUsLabel(undefined)],
+    ['stale: last edit over 3 years ago gives the year; recent none', staleYear(Date.UTC(2021, 5, 1) / 1000, Date.UTC(2026, 8, 25)) === 2021 && staleYear(Date.UTC(2025, 0, 1) / 1000, Date.UTC(2026, 8, 25)) === undefined && staleYear('x') === undefined],
+    ['bad OFF data: wrong types dropped, no throw', (() => { const x = draftFromOff('4006381333931', { product_name: 42, brands: ['x'], categories_tags: 'en:meals', countries_tags: [1, 'en:united-states'], nutriments: { 'energy-kcal_100g': { a: 1 }, proteins_100g: '5' } }, []); return x.name === '' && x.kind === 'ingredient' && x.values.k === undefined && x.values.p === 5 && x.usLabel })()],
+    ['bad OFF data: not an object at all', draftFromOff('4006381333931', null, []).name === '' && draftFromOff('4006381333931', 'junk', []).notes.length === 0],
+    ['name capped at 120 characters', draftFromOff('4006381333931', { product_name: 'x'.repeat(500) }, []).name.length === MAX_NAME],
+    ['link: a saved food of the same name without a barcode is reused; one with a barcode or a built-in is not', linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], ' heinz baked beanz')?.id === 'a' && !linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100, barcode: '1' }], 'Heinz Baked Beanz') && !linkableFood([{ n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], 'Heinz Baked Beanz') && d.baseName === 'Heinz Baked Beanz'],
+  )
+
+  // sync with the flag on: meta is always an object, so a cleared field clears on pull
+  const plain: Food = { id: uuid(), n: 'Plain', k: 1, p: 1, c: 1, f: 1, g: 100 }
+  checks.push(['sync (flag on): a food with no extra fields sends meta {}', JSON.stringify((toServerFood(plain, LOCAL_USER, true) as any).meta) === '{}'])
+  const s3 = stateFromBackup({ days: {} } as never)
+  s3.customFoods = [{ ...saved, _dirty: false }]
+  const m3 = ensureMeta(s3, false)
+  m3.settings.dirty = false
+  const cleared = { ...toServerFood({ ...saved, barcode: undefined, src: undefined, cat: undefined }, LOCAL_USER, true), updated_at: 'y' }
+  globalThis.fetch = fakeServer({ settings: [], day_logs: [], recipes: [], custom_foods: [cleared] }).fetchFn
+  try { await pullAll(s3, m3) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: a server meta of {} clears the device’s barcode, src and cat on pull', s3.customFoods.length === 1 && s3.customFoods[0].barcode === undefined && s3.customFoods[0].src === undefined && s3.customFoods[0].cat === undefined])
+
+  // lookup: offline vs a server error vs not found
+  const look = async (f: typeof fetch) => { globalThis.fetch = f; try { return (await lookupProduct({ code: '4006381333931' }, { timeoutMs: 200 })).status } finally { globalThis.fetch = realFetch } }
+  const st500 = await look((async () => new Response('oops', { status: 503 })) as typeof fetch)
+  const stNet = await look((async () => { throw new TypeError('Failed to fetch') }) as typeof fetch)
+  const st404 = await look((async () => new Response(JSON.stringify({ status: 0 }), { status: 404 })) as typeof fetch)
+  const stBad = await look((async () => new Response('<html>', { status: 200 })) as typeof fetch)
+  const stSlow = await look(((_u: string, o: RequestInit) => new Promise((_, no) => o.signal!.addEventListener('abort', () => no(new DOMException('aborted', 'AbortError'))))) as typeof fetch)
+  const stOk = await look((async () => new Response(JSON.stringify({ status: 1, product: { nutriments: { 'energy-kcal_100g': 1 } } }), { status: 200 })) as typeof fetch)
+  checks.push(['lookup: 5xx and unreadable replies are errors; no connection and timeouts are offline; 404 is not found', [st500, stBad, stNet, stSlow, st404, stOk].join() === 'error,error,offline,offline,not-found,found'])
 
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
 }

@@ -22,6 +22,12 @@ import { ScanView } from './ScanView'
 import { ScanConfirmView } from './ScanConfirmView'
 import type { ScanDraft } from '@/core/domain/barcode'
 
+const MISSING_NOTE = {
+  'not-found': 'Not found. Enter it from the label: per 100 g column.',
+  offline: 'Couldn’t look it up without a connection. Enter it from the label: per 100 g column.',
+  error: 'Couldn’t look it up right now. Enter it from the label: per 100 g column.',
+} as const
+
 type View =
   | { kind: 'search' }
   | { kind: 'portion'; food: Food; custom: boolean }
@@ -49,7 +55,7 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
     return <ScanView {...common} onResult={(r) => {
       if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
       else if (r.kind === 'found') go({ kind: 'confirm', draft: r.draft })
-      else go({ kind: 'create', barcode: r.barcode, note: r.offline ? 'Couldn’t look it up without a connection. Enter it from the label: per 100 g column.' : 'Not found. Enter it from the label: per 100 g column.' })
+      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why] })
     }} />
   }
   return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />

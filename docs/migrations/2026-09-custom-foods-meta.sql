@@ -17,5 +17,10 @@ begin
     alter table public.custom_foods add constraint custom_foods_meta_is_object
       check (meta is null or jsonb_typeof(meta) = 'object');
   end if;
+  -- a few short fields; the cap stops anyone using the column as free storage
+  if not exists (select 1 from pg_constraint where conname = 'custom_foods_meta_size' and conrelid = 'public.custom_foods'::regclass) then
+    alter table public.custom_foods add constraint custom_foods_meta_size
+      check (meta is null or pg_column_size(meta) <= 2048);
+  end if;
 end $$;
 notify pgrst, 'reload schema';

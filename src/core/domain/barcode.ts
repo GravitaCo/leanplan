@@ -69,7 +69,12 @@ export function findByBarcode(foods: Food[], code: string): Food | undefined {
 /* ---------------- Open Food Facts → draft ---------------- */
 
 /** The fields we ask Open Food Facts for (keep in step with data/products.ts). */
-export const OFF_FIELDS = 'product_name,brands,quantity,product_quantity,serving_size,serving_quantity,nutriments,categories_tags,countries_tags,nutrition_data_per'
+export const OFF_FIELDS = [
+  'product_name', 'brands', 'quantity', 'product_quantity', 'product_quantity_unit', 'serving_size', 'serving_quantity',
+  'nutriments', 'categories_tags', 'countries_tags', 'nutrition_data_per', 'last_modified_t',
+  // per-serving lines (inside nutriments), to spot per-serving values typed into the per-100 fields
+  'energy-kcal_serving', 'proteins_serving', 'carbohydrates_serving', 'fat_serving',
+].join(',')
 
 /** The subset of an OFF v2 product we read. Everything is optional: products are crowdsourced. */
 export interface OffProduct {
@@ -77,12 +82,16 @@ export interface OffProduct {
   brands?: string
   quantity?: string
   product_quantity?: number | string
+  /** 'g' or 'ml': the unit of product_quantity */
+  product_quantity_unit?: string
   serving_size?: string
   serving_quantity?: number | string
   nutriments?: Record<string, number | string | undefined>
   categories_tags?: string[]
   countries_tags?: string[]
   nutrition_data_per?: string
+  /** unix seconds */
+  last_modified_t?: number
 }
 
 /** Per-100 label values. Undefined = not on the label (or not in OFF), which is not zero. */
@@ -95,6 +104,7 @@ export interface LabelValues {
   sugars?: number
   sat?: number
   fibre?: number
+  /** alcohol as OFF stores it: % vol (ABV), not grams */
   alcohol?: number
   salt?: number
 }
@@ -116,6 +126,14 @@ export interface ScanDraft {
   cat?: FoodCategory
   /** default serving for each reading, in g or ml */
   serving: Record<FoodKind, number>
+  /** the name before de-duplication, to link an existing food of the same name */
+  baseName: string
+  /** problems with the product as OFF holds it (per-serving values in the per-100 fields) */
+  notes: LabelProblem[]
+  /** a US label: carbs include fibre, so fibre isn't counted on top */
+  usLabel: boolean
+  /** the year OFF last saw an edit, when that's more than three years ago */
+  staleYear?: number
 }
 
 const KJ_PER_KCAL = 4.184
@@ -148,10 +166,64 @@ export function offValues(n: OffProduct['nutriments']): { values: LabelValues; k
   return { values: v, kcalFromKj }
 }
 
-/** Liquids are labelled per 100 ml: OFF says so, or the pack size is in ml, cl or litres. */
-export function isPer100ml(p: Pick<OffProduct, 'nutrition_data_per' | 'quantity'>): boolean {
+/** Ice cream is sold by volume but labelled per 100 g. */
+const FROZEN_DESSERTS = ['ice-creams', 'ice-cream-tubs', 'ice-cream-bars', 'ice-creams-and-sorbets', 'sorbets', 'frozen-desserts']
+
+/** Liquids are labelled per 100 ml: OFF's pack unit says ml, or (without one) OFF says per 100 ml,
+ *  or the pack size is in ml, cl or litres. Never ice cream and other frozen desserts. */
+export function isPer100ml(p: Pick<OffProduct, 'nutrition_data_per' | 'quantity' | 'product_quantity_unit' | 'categories_tags'>): boolean {
+  const s = slugs(p.categories_tags)
+  if (FROZEN_DESSERTS.some((t) => s.has(t))) return false
+  const unit = (p.product_quantity_unit || '').trim().toLowerCase()
+  if (unit === 'ml') return true
+  if (unit === 'g') return false
   if (/100\s*ml/i.test(p.nutrition_data_per || '')) return true
   return /\d\s*(ml|cl|dl|l|litres?|liters?)\b/i.test(p.quantity || '')
+}
+
+/** "4 x 250g" / "250 g x 4": a multipack. The weight of one unit (g or ml), when it says. */
+export function multipackUnit(quantity: string | undefined): { multi: boolean; unit?: number } {
+  const q = quantity || ''
+  const toBase = (n: string, u: string) => { const x = parseFloat(n.replace(',', '.')); const m = /^k|^l/i.test(u) ? 1000 : /^cl/i.test(u) ? 10 : 1; return Math.round(x * m) }
+  const a = q.match(/\b\d+\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|ml|cl|l)\b/i)
+  if (a) return { multi: true, unit: toBase(a[1], a[2]) }
+  const b = q.match(/\b(\d+(?:[.,]\d+)?)\s*(kg|g|ml|cl|l)\s*[x×]\s*\d+\b/i)
+  if (b) return { multi: true, unit: toBase(b[1], b[2]) }
+  return { multi: /\b\d+\s*[x×](?=\s|\d)/i.test(q) }
+}
+
+/** Sold only in the US (not the UK): US labels count fibre inside carbs. */
+export function isUsLabel(countries: string[] | undefined): boolean {
+  const s = slugs(countries)
+  return s.has('united-states') && !s.has('united-kingdom')
+}
+
+/** The year OFF last saw an edit, when it's more than three years ago (recipes change). */
+export function staleYear(lastModified: unknown, now = Date.now()): number | undefined {
+  if (typeof lastModified !== 'number' || !Number.isFinite(lastModified) || lastModified <= 0) return undefined
+  const ms = lastModified * 1000
+  return now - ms > 3 * 365.25 * 86400e3 ? new Date(ms).getUTCFullYear() : undefined
+}
+
+/**
+ * Signs OFF's per-100 values are really per serving: OFF says it worked them out from a
+ * per-serving label, or the per-100 and per-serving lines are the same for a serving that isn't
+ * about 100 g.
+ */
+export function servingNotes(p: Pick<OffProduct, 'nutrition_data_per' | 'serving_quantity' | 'nutriments'>, ml = false): LabelProblem[] {
+  const u = ml ? 'ml' : 'g'
+  if ((p.nutrition_data_per || '').trim().toLowerCase() === 'serving') {
+    return [{ field: 'k', kind: 'odd', msg: `Open Food Facts worked these per 100 ${u} numbers out from a per-serving label. Check them against the per 100 ${u} column on your pack.` }]
+  }
+  const sq = num(p.serving_quantity)
+  const n = p.nutriments || {}
+  const per100 = num(n['energy-kcal_100g']), perServ = num(n['energy-kcal_serving'])
+  if (sq === undefined || (sq >= 90 && sq <= 110) || per100 === undefined || perServ === undefined || per100 <= 0) return []
+  const same = (a: number | undefined, b: number | undefined) => a === undefined || b === undefined || Math.abs(a - b) <= Math.max(0.5, 0.02 * Math.max(a, b))
+  if (same(per100, perServ) && (['proteins', 'carbohydrates', 'fat'] as const).every((k) => same(num(n[k + '_100g']), num(n[k + '_serving'])))) {
+    return [{ field: 'k', kind: 'odd', msg: `The per 100 ${u} numbers match the per-serving ones (a ${Math.round(sq)} ${u} serving), so they may be per serving. Check the per 100 ${u} column on your pack.` }]
+  }
+  return []
 }
 
 /**
@@ -218,21 +290,57 @@ export function uniqueName(name: string, taken: Iterable<string>): string {
 /** A sensible default serving in g or ml: 0 < x ≤ 5 kg, else undefined. */
 const serving = (v: unknown) => { const n = num(v); return n && n > 0 && n <= 5000 ? Math.round(n) : undefined }
 
+export const MAX_NAME = 120
+
+/** An OFF product with every field we read type-checked: anything of the wrong type is dropped. */
+export function sanitizeOff(raw: unknown): OffProduct {
+  const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const str = (v: unknown) => (typeof v === 'string' ? v : undefined)
+  const numOrStr = (v: unknown) => (typeof v === 'number' || typeof v === 'string' ? v : undefined)
+  const tags = (v: unknown) => (Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string') : undefined)
+  const n = p.nutriments && typeof p.nutriments === 'object' && !Array.isArray(p.nutriments) ? (p.nutriments as Record<string, unknown>) : {}
+  const nutriments: Record<string, number | string> = {}
+  for (const [k, v] of Object.entries(n)) if (typeof v === 'number' || typeof v === 'string') nutriments[k] = v
+  return {
+    product_name: str(p.product_name), brands: str(p.brands), quantity: str(p.quantity),
+    product_quantity: numOrStr(p.product_quantity), product_quantity_unit: str(p.product_quantity_unit),
+    serving_size: str(p.serving_size), serving_quantity: numOrStr(p.serving_quantity),
+    nutriments, categories_tags: tags(p.categories_tags), countries_tags: tags(p.countries_tags),
+    nutrition_data_per: str(p.nutrition_data_per),
+    last_modified_t: typeof p.last_modified_t === 'number' ? p.last_modified_t : undefined,
+  }
+}
+
 /** The confirm view's starting point for an OFF product. `taken` = every food name the user can see. */
-export function draftFromOff(barcode: string, p: OffProduct, taken: Iterable<string>): ScanDraft {
+export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<string>, now = Date.now()): ScanDraft {
+  const p = sanitizeOff(raw)
   const { values, kcalFromKj } = offValues(p.nutriments)
-  const name = productName(p)
+  const baseName = productName(p).slice(0, MAX_NAME).trim()
   const serv = serving(p.serving_quantity)
+  const pack = multipackUnit(p.quantity)
+  const ml = isPer100ml(p)
   return {
     barcode,
-    name: name ? uniqueName(name, taken) : '',
+    name: baseName ? uniqueName(baseName, taken) : '',
+    baseName,
     values,
     kcalFromKj,
-    ml: isPer100ml(p),
+    ml,
     kind: classifyProduct(p.categories_tags),
     cat: guessCategory(p.categories_tags),
-    serving: { meal: serv ?? serving(p.product_quantity) ?? 100, ingredient: serv ?? 100 },
+    // a ready meal's serving is the pack; in a multipack, one unit of it
+    serving: { meal: serv ?? (pack.multi ? serving(pack.unit) ?? 100 : serving(p.product_quantity) ?? 100), ingredient: serv ?? 100 },
+    notes: servingNotes(p, ml),
+    usLabel: isUsLabel(p.countries_tags),
+    staleYear: staleYear(p.last_modified_t, now),
   }
+}
+
+/** A saved food of the user's with exactly this name and no barcode yet: link the scan to it
+ *  instead of saving a "(2)" copy. */
+export function linkableFood(foods: Food[], name: string): Food | undefined {
+  const key = name.trim().toLowerCase()
+  return key ? foods.find((f) => !!f.id && !f.barcode && f.n.trim().toLowerCase() === key) : undefined
 }
 
 /** The food to save once the user has confirmed the values (per-100 values kept exactly). */
@@ -260,16 +368,19 @@ export interface LabelProblem {
 const SLACK = 0.2
 /** More than this in 100 ml is denser than any common liquid (honey and syrups are ~1.4 g/ml). */
 const MAX_G_PER_100ML = 140
+/** g of alcohol per 100 ml at 1% vol (ethanol density 0.789 g/ml). */
+const ALCOHOL_G_PER_ABV = 0.789
 
 /**
  * Problems with a set of per-100 label values, each naming the field to look at. Empty = the
  * numbers hang together. Never blocks except for missing required fields.
  */
-export function checkLabel(v: LabelValues, ml = false, name?: string): LabelProblem[] {
+export function checkLabel(v: LabelValues, opts: { ml?: boolean; name?: string; usLabel?: boolean } = {}): LabelProblem[] {
+  const { ml = false, name, usLabel = false } = opts
   const out: LabelProblem[] = []
   const has = (x: number | undefined): x is number => x !== undefined && Number.isFinite(x)
   if (name !== undefined && !name.trim()) out.push({ field: 'name', kind: 'missing', msg: 'Give it a name.' })
-  const labels: Record<LabelField, string> = { k: 'Calories', p: 'Protein', c: 'Carbs', f: 'Fat', kj: 'Energy (kJ)', sugars: 'Sugars', sat: 'Saturates', fibre: 'Fibre', alcohol: 'Alcohol', salt: 'Salt' }
+  const labels: Record<LabelField, string> = { k: 'Calories', p: 'Protein', c: 'Carbs', f: 'Fat', kj: 'Energy (kJ)', sugars: 'Sugars', sat: 'Saturates', fibre: 'Fibre', alcohol: 'Alcohol (% vol)', salt: 'Salt' }
   for (const f of REQUIRED_FIELDS) if (!has(v[f])) out.push({ field: f, kind: 'missing', msg: `${labels[f]} is missing. Copy it from the pack.` })
   for (const f of Object.keys(labels) as LabelField[]) if (has(v[f]) && v[f]! < 0) out.push({ field: f, kind: 'odd', msg: `${labels[f]} can’t be negative.` })
 
@@ -282,9 +393,10 @@ export function checkLabel(v: LabelValues, ml = false, name?: string): LabelProb
     }
   }
 
-  // energy vs macros: 4P + 4C + 9F, plus fibre (2) and alcohol (7) when the label lists them
+  // energy vs macros: 4P + 4C + 9F, plus fibre (2 kcal/g; a US label already counts it in carbs)
+  // and alcohol (7 kcal/g, from % vol) when the label lists them
   if (REQUIRED_FIELDS.every((f) => has(v[f]))) {
-    const extra = 2 * (v.fibre ?? 0) + 7 * (v.alcohol ?? 0)
+    const extra = (usLabel ? 0 : 2 * Math.max(0, v.fibre ?? 0)) + 7 * ALCOHOL_G_PER_ABV * Math.max(0, v.alcohol ?? 0)
     const macros = { k: v.k!, p: v.p!, c: v.c!, f: v.f! }
     for (const c of checkPer100(macros, { k: true, macros: true }, false, extra)) {
       // the per-serving (>110 g) check is covered by the sum check below, negatives above

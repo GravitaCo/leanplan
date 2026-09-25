@@ -11,7 +11,7 @@ import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
 const MAIN: [LabelField, string, string][] = [['k', 'Calories', 'kcal'], ['p', 'Protein', 'g'], ['c', 'Carbs', 'g'], ['f', 'Fat', 'g']]
-const EXTRA: [LabelField, string, string][] = [['kj', 'Energy', 'kJ'], ['sugars', 'of which sugars', 'g'], ['sat', 'of which saturates', 'g'], ['fibre', 'Fibre', 'g'], ['salt', 'Salt', 'g'], ['alcohol', 'Alcohol', 'g']]
+const EXTRA: [LabelField, string, string][] = [['kj', 'Energy', 'kJ'], ['sugars', 'of which sugars', 'g'], ['sat', 'of which saturates', 'g'], ['fibre', 'Fibre', 'g'], ['salt', 'Salt', 'g'], ['alcohol', 'Alcohol', '% vol']]
 
 const toText = (v: number | undefined) => (v === undefined ? '' : String(Math.round(v * 100) / 100))
 
@@ -37,11 +37,14 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved }: {
     const n = parseFloat(text[f].replace(',', '.'))
     if (text[f].trim() !== '' && Number.isFinite(n)) values[f] = n
   }
-  const problems = checkLabel(values, ml, name)
+  const unit = ml ? 'ml' : 'g'
+  const g = parseFloat(serving) || 0
+  // product-level notes (per-serving values in the per-100 fields) mark calories until they're edited
+  const kUnchanged = values.k === draft.values.k
+  const problems = [...checkLabel(values, { ml, name, usLabel: draft.usLabel }), ...(kUnchanged ? draft.notes : [])]
   const missing = problems.some((p) => p.kind === 'missing')
   const odd = new Set(problems.filter((p) => p.kind === 'odd').map((p) => p.field))
   const notes = [...new Set(problems.filter((p) => p.kind === 'odd').map((p) => p.msg))]
-  const unit = ml ? 'ml' : 'g'
 
   const pickKind = (k: FoodKind) => {
     setKind(k)
@@ -90,10 +93,19 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved }: {
           <span className="u">{unit}</span>
         </div>
       </div>
+      {g > 0 && values.k !== undefined && (
+        <div className="foot num">One serving ({Math.round(g * 10) / 10} {unit}) = {Math.round((values.k * g) / 100)} kcal. Compare with the pack’s per-serving column.</div>
+      )}
       <div style={{ marginTop: 12 }}>
         <Seg<'g' | 'ml'> options={[['g', 'Per 100 g'], ['ml', 'Per 100 ml']]} value={unit} onChange={(u) => setMl(u === 'ml')} />
       </div>
 
+      {(draft.usLabel || draft.staleYear) && (
+        <div className="foot">
+          {draft.usLabel && 'US label: carbs include fibre. '}
+          {draft.staleYear && `Last updated ${draft.staleYear}. Recipes change: check against your pack.`}
+        </div>
+      )}
       <div className="lbl">Per 100 {unit}</div>
       <div className="list">{MAIN.map(row)}</div>
       <div className="lbl">Also on the label</div>

@@ -41,7 +41,8 @@ export function toServerFood(f: Food, uid: string, withMeta = CUSTOM_FOOD_META) 
     grams: +f.g || 100,
     ml: !!f.ml,
   }
-  return withMeta ? { ...row, meta: foodMeta(f) } : row
+  // always an object, so clearing a field (e.g. a barcode) clears it on the server too
+  return withMeta ? { ...row, meta: foodMeta(f) ?? {} } : row
 }
 export function fromServerFood(r: any): Food {
   const f: Food = { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }

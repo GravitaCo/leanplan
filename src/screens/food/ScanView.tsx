@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { draftFromOff, findByBarcode, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
+import { draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
@@ -17,7 +17,7 @@ import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecode
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }
   | { kind: 'found'; draft: ScanDraft }
-  | { kind: 'missing'; barcode: string; offline: boolean }
+  | { kind: 'missing'; barcode: string; why: 'not-found' | 'offline' | 'error' }
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
 
@@ -34,6 +34,7 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
   onResult: (r: ScanOutcome) => void
 }) {
   const customFoods = useStore((s) => s.data.customFoods)
+  const linkBarcode = useStore((s) => s.linkBarcode)
   const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -65,8 +66,19 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     lookupRef.current = ctl
     const res = await lookupProduct(norm, { signal: ctl.signal })
     if (!aliveRef.current) return
-    if (res.status === 'found') onResult({ kind: 'found', draft: draftFromOff(res.code, res.product, all.map((f) => f.n)) })
-    else onResult({ kind: 'missing', barcode: norm.code, offline: res.status === 'offline' })
+    if (res.status !== 'found') { onResult({ kind: 'missing', barcode: norm.code, why: res.status }); return }
+    let draft: ScanDraft
+    try {
+      draft = draftFromOff(res.code, res.product, all.map((f) => f.n))
+    } catch {
+      onResult({ kind: 'missing', barcode: norm.code, why: 'error' }); return
+    }
+    // the user already saved this product by hand under the same name: link the barcode to it
+    // (their own label values stay) rather than saving a "(2)" copy
+    const mine = linkableFood(customFoods || [], draft.baseName)
+    const linked = mine?.id ? linkBarcode(mine.id, res.code) : null
+    if (linked) onResult({ kind: 'local', food: linked, custom: true })
+    else onResult({ kind: 'found', draft })
   }
   const firstValid = (hits: Hit[]) => hits.find((h) => normalizeBarcode(h.raw, h.format))
 
@@ -118,7 +130,6 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       lookupRef.current?.abort()
       stopCamera()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onPhoto = async (file: File | undefined) => {
@@ -165,8 +176,8 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       <div className="list icons" style={{ marginTop: 14 }}>
         <label className="li" style={{ cursor: 'pointer' }}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-          <div className="m"><div className="t">{busy === 'photo' ? 'Reading the photo…' : 'Take a photo'}</div><div className="s">Of the barcode, close up</div></div>
-          <input type="file" accept="image/*" capture="environment" className="vh" aria-label="Take a photo of the barcode"
+          <div className="m"><div className="t">{busy === 'photo' ? 'Reading the photo…' : 'Take a photo'}</div><div className="s">Of the barcode, close up, or pick one from your photos</div></div>
+          <input type="file" accept="image/*" className="vh" aria-label="Take a photo of the barcode"
             onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = '' }} />
         </label>
       </div>

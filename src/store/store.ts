@@ -92,6 +92,8 @@ interface StoreState {
   /** save (or update by name) a custom food definition; returns the saved food */
   saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
+  /** give a saved food a barcode (a scan matched it by name); returns the updated food */
+  linkBarcode: (id: string, barcode: string) => Food | null
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -306,6 +308,18 @@ export const useStore = create<StoreState>()(
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
         persist(); get().scheduleSync(); get().showToast('Food saved')
+        return food
+      },
+
+      linkBarcode: (id, barcode) => {
+        if (!get().data.customFoods.some((x) => x.id === id)) return null
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
+        })
+        persist(); get().scheduleSync()
+        const food = get().data.customFoods.find((x) => x.id === id)!
+        get().showToast(`Barcode linked to your “${food.n}”`)
         return food
       },
 
