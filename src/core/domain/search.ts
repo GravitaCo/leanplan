@@ -30,7 +30,8 @@ function hit(name: string, words: string[]): Hit | null {
     for (let i = n.indexOf(w); i >= 0; i = n.indexOf(w, i + 1)) {
       const atStart = !isWordChar(n[i - 1])
       const atEnd = !isWordChar(n[i + w.length])
-      const t = atStart ? 0 : atEnd ? 1 : 2
+      // ending a word inside the brand ("Gr|eggs|") is no better than mid-word
+      const t = atStart ? 0 : atEnd && i >= brandEnd ? 1 : 2
       // a word found only inside the brand ("pizza" in "Pizza Hut Fries") ranks after real matches
       const sc = i - (atStart && atEnd ? 20 : 0) + (i < brandEnd ? 60 : 0)
       if (!best || t < best.t || (t === best.t && sc < best.s)) best = { t, s: sc, whole: atStart && atEnd }
