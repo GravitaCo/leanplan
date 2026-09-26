@@ -5,7 +5,7 @@ import { FOODS } from '@/core/data/foods'
 import { r0 } from '@/core/domain/date'
 import { recipesByUse, recentFoods, queryWords } from '@/core/domain/insights'
 import { rankByName } from '@/core/domain/search'
-import { kitchenCandidates, suggestRecipes } from '@/core/domain/suggest'
+import { isMadeFood, kitchenCandidates, suggestRecipes } from '@/core/domain/suggest'
 import { DIETS, dietFit, type Swap } from '@/core/domain/diet'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
@@ -31,7 +31,7 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   const chips = [...new Set([...candidates.filter(fitsDiet), ...have])].slice(0, 36)
   const toggle = (n: string) => setKitchen(have.includes(n) ? have.filter((x) => x !== n) : [...have, n])
   const words = queryWords(q.trim().toLowerCase())
-  const adds = q.trim() ? rankByName(all, (f) => f.n, words.length ? words : [q.trim().toLowerCase()]).filter((f) => !chips.includes(f.n)).slice(0, 6) : []
+  const adds = q.trim() ? rankByName(all, (f) => f.n, words.length ? words : [q.trim().toLowerCase()]).filter((f) => !chips.includes(f.n) && !isMadeFood(f)).slice(0, 6) : []
   const results = suggestRecipes(data.recipes, recipesByUse(data), have, diet, all)
 
   return (

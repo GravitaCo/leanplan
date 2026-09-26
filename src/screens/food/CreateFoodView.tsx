@@ -6,8 +6,12 @@ import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { Checks } from './common'
 
 /** Save a food from its packet label, then pick the portion. */
-export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
+export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note }: {
   meal: MealSlot; setMeal: (m: MealSlot) => void; onBack?: () => void; onClose: () => void; animate: boolean; onSaved: (f: Food) => void
+  /** from a scan that found nothing: saved with the food, so the next scan opens it */
+  barcode?: string
+  /** why we're here instead of the scan result */
+  note?: string
 }) {
   const saveCustomFood = useStore((s) => s.saveCustomFood)
   const showToast = useStore((s) => s.showToast)
@@ -22,7 +26,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
     if (!f.n.trim()) { showToast('Give it a name'); return }
     // a likely typo gets one nudge; the user has the packet, so a second Save keeps their numbers
     if (!warned && checks.some((c) => c.level === 'warn')) { setWarned(true); showToast('Check the note below, or tap Save again to keep these numbers'); return }
-    const food = saveCustomFood({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml' })
+    const food = saveCustomFood({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml', ...(barcode ? { barcode } : {}) })
     onSaved(food)
   }
   const row = (key: keyof typeof f, label: string, u: string, ph = '0') => (
@@ -36,8 +40,9 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved }: {
   return (
     <Sheet title="Create a food" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit}>Save</button>}>
+      {note && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><span>{note}{barcode && <span className="num muted"> Barcode {barcode}.</span>}</span></div>}
       <div className="sub" style={{ padding: '0 4px 12px' }}>
-        Copy the “per 100 {unit}” column from the packet. Saved foods appear in search from now on.
+        Copy the “per 100 {unit}” column from the packet. Saved foods appear in search from now on{barcode ? ', and open when you scan this barcode' : ''}.
       </div>
       <Seg<'g' | 'ml'> options={[['g', 'Grams'], ['ml', 'Millilitres']]} value={unit} onChange={setUnit} />
       <div className="list" style={{ marginTop: 12 }}>

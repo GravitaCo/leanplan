@@ -28,11 +28,11 @@ const EXCLUDES: Record<DietPattern, Part[]> = {
 }
 
 // plant versions named like animal foods: never tagged as the animal food
-const PLANT = /\b(quorn|vegan|vegetarian|veggie|plant|soya|soy|tofu|tempeh|seitan|oat milk|almond|coconut|peanut butter|butter beans?|cocoa butter)\b/i
+const PLANT = /\b(quorn|vegan|vegetarian|veggie|plant|soya|soy|tofu|tempeh|seitan|oat (milk|drink)|almond|coconut|peanut butter|butter beans?|cocoa butter)\b/i
 const RULES: [Part, RegExp][] = [
-  ['meat', /\b(chicken|beef|pork|lamb|mutton|turkey|duck|goose|venison|veal|bacon|ham|gammon|sausages?|chorizo|salami|pepperoni|prosciutto|pancetta|mince|steak|burger|meatballs?|kebab|doner|liver|kidney(?! beans?)|black pudding|lard|suet|dripping|gelatine|corned beef|pâté|pate|lorne|hot dog|nuggets?|goujons?|mcnuggets)\b/i],
+  ['meat', /\b(chicken|beef|pork|lamb|mutton|turkey|duck|goose|venison|veal|bacon|ham|gammon|pollo|sausages?|chorizo|salami|pepperoni|prosciutto|pancetta|mince|steak|burger|meatballs?|kebab|doner|liver|kidney(?! beans?)|black pudding|lard|suet|dripping|gelatine|corned beef|pâté|pate|lorne|hot dog|nuggets?|goujons?|mcnuggets)\b/i],
   ['fish', /\b(fish|salmon|tuna|cod|haddock|mackerel|sardines?|anchov\w*|prawns?|shrimp|mussels?|squid|crab|lobster|scallops?|sea bass|trout|plaice|pollock|kipper|seafood|sushi|worcestershire)\b/i],
-  ['dairy', /\b(milk|cheese|cheddar|mozzarella|parmesan|feta|halloumi|paneer|butter|ghee|cream(?! crackers?)|yogh?urt|skyr|kefir|whey|crème|custard|latte|cappuccino|flat white|mocha|milkshake|ice cream|béchamel|rice pudding|pesto|nutella|pizza|horseradish sauce|mash(ed)?|pancakes?|croissants?|pain au chocolat|waffles?|coleslaw|white (coffee|tea)|hot chocolate|iced (caramel )?chocolate)\b/i],
+  ['dairy', /\b(milk|cheese|cheddar|mozzarella|parmesan|feta|halloumi|paneer|butter|ghee|cream(?! crackers?)|yogh?urt|skyr|kefir|whey|crème|custard|latte|cappuccino|macchiato|bambinoccino|babyccino|flat white|mocha|milkshake|ice cream|béchamel|rice pudding|pesto|nutella|pizza|horseradish sauce|mash(ed)?|pancakes?|croissants?|pain au chocolat|waffles?|coleslaw|white (coffee|tea)|hot chocolate|iced (caramel )?chocolate)\b/i],
   ['egg', /\b(eggs?|omelette|mayonnaise|mayo|quiche|meringue|frittata|quorn|coleslaw|pancakes?|waffles?)\b/i],
   ['honey', /\b(honey)\b/i],
 ]
@@ -53,14 +53,24 @@ function clean(name: string): string {
   return name.replace(/\b(no|without)\s+[a-z]+/gi, ' ')
 }
 
+/** A vegan swap for one ingredient ("Ham & Mushrooms Vegan Mozz Alternative"): the cheese is
+ *  plant-based, the rest of the dish isn't vouched for. */
+const VEGAN_SWAP = /\bvegan\s+(mozz\w*|mozzarella|cheese|mayo\w*|cream)(\s+alternative)?\b/gi
+function unswapped(name: string): string {
+  return clean(name).replace(VEGAN_SWAP, ' ')
+}
+
 /** What animal parts a food's name says it contains. */
 export function partsOf(rawName: string, cat?: Food['cat']): Part[] {
-  const name = clean(rawName)
+  const swapped = new RegExp(VEGAN_SWAP.source, 'i').test(rawName)
+  const name = unswapped(rawName)
   if (/\bvegan\b/i.test(name)) return []
   const out = new Set<Part>()
   const plant = PLANT.test(name)
   for (const [part, re] of RULES) {
     if (!re.test(name)) continue
+    // with a vegan cheese swap, "pizza" or "cheese" no longer means dairy
+    if (swapped && part === 'dairy') continue
     // "Oat milk", "Peanut butter", "Quorn mince": the plant word wins for that part
     if (plant && (part === 'dairy' || part === 'meat')) continue
     out.add(part)
@@ -77,7 +87,7 @@ export function partsOf(rawName: string, cat?: Food['cat']): Part[] {
 
 export function dietFit(food: Pick<Food, 'n' | 'cat'>, diet: DietPattern | undefined): DietFit {
   if (!diet || diet === 'none') return 'fits'
-  const name = clean(food.n)
+  const name = unswapped(food.n)
   const parts = partsOf(food.n, food.cat)
   if (parts.some((p) => EXCLUDES[diet].includes(p))) return 'conflict'
   if (diet !== 'pescatarian' && RENNET.test(name)) return 'conflict'

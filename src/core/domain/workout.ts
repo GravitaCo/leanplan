@@ -26,6 +26,8 @@ function metHours(wk: Workout, legacy = false): { met: number; hours: number } {
  * Whether a logged workout counts as a training session for the activity-level suggestion
  * (workout plan P1.5): 20+ minutes at 3.0+ MET. Strength counts (45 min at 3.5); a 10-minute
  * mobility swap or easy walk doesn't.
+ * Single-workout (legacy) form: the app uses `isTrainingSess` in sessions.ts; this stays as the
+ * reference the tests check it against.
  */
 export function isTrainingSession(wk: Workout | null | undefined): boolean {
   if (!wk || !wk.type) return false
@@ -43,6 +45,8 @@ export function workoutBurn(wk: Workout | null | undefined, bodyKg: number | nul
 /**
  * Net calories: the gross burn minus the resting energy (1 MET) that maintenance already covers
  * for that time. Only used for sedentary users, whose activity level counts no training.
+ * Single-workout (legacy) form: the app uses `sessionNetBurn`; this stays as the reference the
+ * tests check it against.
  */
 export function workoutNetBurn(wk: Workout | null | undefined, bodyKg: number | null): number {
   if (!wk || !wk.type) return 0

@@ -33,6 +33,11 @@ export interface Food {
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
   cook?: boolean
+  /** the pack's barcode (EAN-13 / EAN-8 digits), on foods saved from a scan or a label with one */
+  barcode?: string
+  /** eaten as it comes (a ready meal, crisps, a drink): logged by the serving, never offered as a
+   *  "What can I make?" ingredient and ranked after ingredients in the recipe builder */
+  eat?: true
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
@@ -137,7 +142,14 @@ export interface SetEntry {
   side?: 'L' | 'R'
   /** 'check' */
   done?: boolean
+  /** a warm-up set: shown, but never counted towards targets or "last time" */
+  warmup?: boolean
+  /** optional "How was that set?" answer (guided player) */
+  feel?: SetFeel
 }
+
+/** "How was that set?": had lots to spare, about right (two or three left), a real struggle, stopped early. */
+export type SetFeel = 'spare' | 'right' | 'struggle' | 'stopped'
 
 export interface LoggedExercise {
   /** snapshot of the display name: history never depends on the library */
@@ -149,6 +161,8 @@ export interface LoggedExercise {
   /** library id of the workout's planned exercise for this slot (differs from `exId` after a swap),
    *  so a reopened card puts each logged exercise back in its own slot even after a reorder */
   slot?: string
+  /** the prescription it was logged against ("3 × 10–12"); "last time" only counts the same rep range */
+  rx?: string
   sets: SetEntry[]
 }
 
@@ -190,6 +204,10 @@ export interface Session {
   /** cardio: a CARDIO_MET key, and optional distance */
   cardio?: { key: string; km?: number }
   option?: 'shorter' | 'swap'
+  /** optional note from the finish sheet */
+  note?: string
+  /** a guided session left part-way ("Leave for now"): Train offers Resume; cleared by Finish or any other save */
+  open?: boolean
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
@@ -305,6 +323,7 @@ export interface Profile {
   sex: Sex
   age: number | null
   height: number | null
+  /** The weight last set on Profile, a fallback only: the current weight is `latestWeight` (day logs first). */
   weight?: number | null
   activityLevel: ActivityLevel
   supplements: Supplement[]
@@ -467,6 +486,8 @@ export interface ExerciseTemplate {
   title?: string
   /** owned demo clip; without one the card falls back to a YouTube search link */
   video?: ExerciseMedia
+  /** rest between sets in seconds; overrides the default for the movement pattern */
+  restSec?: number
 }
 
 /** What the lifter is doing during one stretch of a demo clip. */

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
-import { TaliIcon } from '@/ui/brand'
+import { TaliMark } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
@@ -66,7 +66,7 @@ export function AuthScreen() {
   return (
     <div className="auth">
       <div className="auth-brand">
-        <TaliIcon size={88} />
+        <TaliMark width={112} />
         <h1>Tali</h1>
         <p>Eat well, move often, feel better.</p>
       </div>
@@ -209,7 +209,7 @@ export function OwnerChoiceScreen() {
   return (
     <div className="auth auth-owner">
       <div className="auth-brand">
-        <TaliIcon size={88} />
+        <TaliMark width={112} />
         <h1>Tali</h1>
         <p>Signed in as {who}</p>
       </div>

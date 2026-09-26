@@ -23,18 +23,21 @@ import type {
   MacroTarget,
   Profile,
   Session as TrainingSession,
+  Effort,
+  Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
-import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { relog } from '@/core/domain/insights'
+import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
+import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
@@ -66,14 +69,22 @@ interface StoreState {
   kitchen: string[]
   setKitchen: (have: string[]) => void
   toast: string | null
+  /** an action on the current toast ("Undo"); cleared with the toast */
+  toastAction: { label: string; run: () => void } | null
+  /** one-shot hand-offs between tabs (UI only, never persisted): Plan's "Do this today" opens
+   *  Train's preview for a workout; Train's "Edit in Plan" opens Plan's workout view */
+  trainOpen: WorkoutType | null
+  planOpen: WorkoutType | null
+  openTrain: (w: WorkoutType) => void
+  openPlan: (w: WorkoutType) => void
+  clearOpen: () => void
 
   // navigation
   setTab: (t: Tab) => void
   openProfile: (section: string) => void
   clearProfileOpen: () => void
   setDate: (d: string) => void
-  shiftDate: (n: number) => void
-  showToast: (msg: string) => void
+  showToast: (msg: string, action?: { label: string; run: () => void }) => void
 
   // food
   /** log one or more entries on the current day (e.g. a food plus its cooking fat) */
@@ -88,6 +99,8 @@ interface StoreState {
   /** save (or update by name) a custom food definition; returns the saved food */
   saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
+  /** give a saved food a barcode (a scan matched it by name); returns the updated food */
+  linkBarcode: (id: string, barcode: string) => Food | null
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -101,7 +114,9 @@ interface StoreState {
   // supplements / weight / workout
   toggleSupp: (id: string) => void
   setWeight: (kg: number) => void
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
+  /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
+   *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
+  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
   /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
   saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
@@ -110,9 +125,12 @@ interface StoreState {
   /** add a session (any modality) to the current day, alongside any others */
   addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
   removeSession: (id: string) => void
+  /** put back a session removed a moment ago (Undo), on the day it came from */
+  restoreSession: (date: string, x: TrainingSession) => void
 
   // plan / settings
-  setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
+  /** replace the whole weekly schedule (swap two days, undo) */
+  setSchedule: (s: Schedule, quiet?: boolean) => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
   /** quiet profile update for preferences (accuracy, display, hands…) */
@@ -121,7 +139,8 @@ interface StoreState {
   updateSupplement: (id: string, name: string, time: string) => void
   removeSupplement: (id: string) => void
   updateEmail: (email: string) => Promise<string | null>
-  setNotifications: (enabled: boolean) => Promise<boolean>
+  /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
+  setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
   importBackup: (state: PersistedState) => void
 
   // sync / auth
@@ -151,11 +170,14 @@ function setSessions(day: DayLog, list: TrainingSession[]): void {
  * Save a session from a card (a built-in or one of the user's own workouts): it replaces an earlier save from
  * the same card that day, since saving again is an edit; other sessions stay.
  */
-function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
+function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>, keep: ('effort' | 'note' | 'mins')[] = []): void {
   const list = sessionsOf(day, date)
   const i = list.findIndex((y) => y.routineId === x.routineId)
   const prev = i >= 0 ? list[i] : null
-  const next: TrainingSession = { ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
+  // fields the caller didn't set carry over from the earlier save (a later edit keeps the effort)
+  const kept: Partial<TrainingSession> = {}
+  for (const k of keep) if (prev?.[k] !== undefined && (x as Partial<TrainingSession>)[k] === undefined) (kept as Record<string, unknown>)[k] = prev[k]
+  const next: TrainingSession = { ...kept, ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
 
@@ -189,9 +211,17 @@ export const useStore = create<StoreState>()(
     // helper to persist after any mutation
     // Tell the user once if the device refuses to save, instead of losing data silently.
     let storageWarned = false
-    const persist = () => {
-      if (saveState(get().data)) { storageWarned = false; return }
+    /** Save on this device; false (and a one-off warning) when storage is full. */
+    const persist = (): boolean => {
+      if (saveState(get().data)) { storageWarned = false; return true }
       if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
+      return false
+    }
+
+    /** After a change: save it on this device, queue the sync, then confirm it (when there's a message). */
+    const saved = (toast?: string) => {
+      persist(); get().scheduleSync()
+      if (toast !== undefined) get().showToast(toast)
     }
 
     const markSettingsDirty = (s: PersistedState) => {
@@ -217,17 +247,23 @@ export const useStore = create<StoreState>()(
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
+      toastAction: null,
+      trainOpen: null,
+      planOpen: null,
+      openTrain: (w) => set((st) => { st.tab = 'train'; st.trainOpen = w }),
+      openPlan: (w) => set((st) => { st.tab = 'plan'; st.planOpen = w }),
+      clearOpen: () => set((st) => { st.trainOpen = null; st.planOpen = null }),
 
       setTab: (t) => set((st) => { st.tab = t }),
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
       clearProfileOpen: () => set((st) => { st.profileOpen = null }),
       setDate: (d) => set((st) => { st.cur = d }),
-      shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
-      showToast: (msg) => {
-        set((st) => { st.toast = msg })
+      showToast: (msg, action) => {
+        set((st) => { st.toast = msg; st.toastAction = action ?? null })
         if (toastTimer) clearTimeout(toastTimer)
-        toastTimer = setTimeout(() => set((st) => { st.toast = null }), 1600)
+        // an Undo needs time to be read and reached
+        toastTimer = setTimeout(() => set((st) => { st.toast = null; st.toastAction = null }), action ? 5000 : 1600)
       },
 
       logEntries: (entries, toast) => {
@@ -236,7 +272,7 @@ export const useStore = create<StoreState>()(
           ensureDay(st.data, st.cur).foods.push(...entries)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(toast ?? entries[0].n + ' added')
+        saved(toast ?? entries[0].n + ' added')
       },
 
       updateEntry: (index, mult, meal) => {
@@ -247,7 +283,7 @@ export const useStore = create<StoreState>()(
           d.foods[index] = { ...scaleEntry(x, mult), meal: meal ?? x.meal }
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       confirmEntry: (index) => {
@@ -257,7 +293,7 @@ export const useStore = create<StoreState>()(
           x.ok = true
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks, noted')
+        saved('Thanks, noted')
       },
 
       removeFood: (index) => {
@@ -266,14 +302,19 @@ export const useStore = create<StoreState>()(
           d.foods.splice(index, 1)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!prev.length) return
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+        const all = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
+        if (!all.length) return
+        // foods no longer in Tali (removed as unverified) aren't copied, nor their cooking fat
+        const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+        const prev = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+        const note = gone.size ? ` · ${gone.size} food${gone.size > 1 ? 's' : ''} no longer in Tali, not copied` : ''
+        if (!prev.length) { get().showToast(`Not copied: ${gone.size > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {
@@ -286,7 +327,19 @@ export const useStore = create<StoreState>()(
           if (cur) Object.assign(cur, food, { _dirty: true, _u: nowIso() })
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
-        persist(); get().scheduleSync(); get().showToast('Food saved')
+        saved('Food saved')
+        return food
+      },
+
+      linkBarcode: (id, barcode) => {
+        if (!get().data.customFoods.some((x) => x.id === id)) return null
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
+        })
+        saved()
+        const food = get().data.customFoods.find((x) => x.id === id)!
+        get().showToast(`Barcode linked to your “${food.n}”`)
         return food
       },
 
@@ -295,7 +348,7 @@ export const useStore = create<StoreState>()(
           const gone = st.data.customFoods.splice(index, 1)[0]
           if (gone?.id) meta(st.data).foodDeletes.push(gone.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Removed from saved')
+        saved('Removed from saved')
       },
 
       saveRecipe: (input) => {
@@ -313,7 +366,7 @@ export const useStore = create<StoreState>()(
             st.data.recipes.push({ id: uuid(), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
           }
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe saved')
+        saved('Recipe saved')
       },
 
       deleteRecipe: (index) => {
@@ -323,7 +376,7 @@ export const useStore = create<StoreState>()(
           st.data.recipes.splice(index, 1)
           if (r.id) meta(st.data).recipeDeletes.push(r.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe deleted')
+        saved('Recipe deleted')
       },
 
       logRecipe: (recipe, servings, meal) => {
@@ -340,7 +393,7 @@ export const useStore = create<StoreState>()(
           ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Check-in saved')
+        saved('Check-in saved')
       },
 
       savePlan: ({ id, when, then, cope }) => {
@@ -351,7 +404,7 @@ export const useStore = create<StoreState>()(
           else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [] })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Plan saved')
+        saved('Plan saved')
       },
 
       deletePlan: (id) => {
@@ -359,7 +412,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.plans = (st.data.profile.plans ?? []).filter((p) => p.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       reviewPlans: (outcomes) => {
@@ -373,7 +426,7 @@ export const useStore = create<StoreState>()(
           }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks for checking in')
+        saved('Thanks for checking in')
       },
 
       toggleSupp: (id) => {
@@ -382,23 +435,33 @@ export const useStore = create<StoreState>()(
           d.supps[id] = !d.supps[id]
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       setWeight: (kg) => {
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
+          // Profile shows latestWeight, so this is its weight too; profile.weight isn't rewritten,
+          // which would upload the whole settings record on every weigh-in
         })
-        persist(); get().scheduleSync(); get().showToast('Weight saved')
+        saved('Weight saved')
       },
 
-      saveWorkout: (type, ex, option) => {
+      saveWorkout: (type, ex, option, extra) => {
         set((st) => {
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}) })
+          const more: Partial<TrainingSession> = {}
+          if (extra?.effort) more.effort = extra.effort
+          if (extra?.note) more.note = extra.note
+          if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
+          if (extra?.open) more.open = true
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: builtinId(type), ex, ...(option ? { option } : {}), ...more },
+            // what the caller didn't set carries over; an explicit null effort or empty note clears it
+            keptOnSave(extra))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(type + ' session saved')
+        saved()
+        if (!extra?.quiet) get().showToast(extra?.toast ?? type + ' session saved')
       },
 
       saveRoutine: (input) => {
@@ -445,13 +508,13 @@ export const useStore = create<StoreState>()(
         set((st) => {
           const typed = parseFloat(mins)
           putBuiltin(ensureDay(st.data, st.cur), st.cur, {
-            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: builtinId('Cardio'),
             // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
             ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
           })
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Cardio saved')
+        saved('Cardio saved')
       },
 
       addSession: (x) => {
@@ -460,7 +523,17 @@ export const useStore = create<StoreState>()(
           setSessions(day, [...sessionsOf(day, st.cur), { ...x, id: uuid(), at: nowIso() }])
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
+        saved(x.title + ' saved')
+      },
+
+      restoreSession: (date, x) => {
+        set((st) => {
+          const day = ensureDay(st.data, date)
+          const list = sessionsOf(day, date).filter((y) => y.id !== x.id)
+          setSessions(day, [...list, x].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
+          markDayDirty(st.data, date)
+        })
+        saved()
       },
 
       removeSession: (id) => {
@@ -469,15 +542,15 @@ export const useStore = create<StoreState>()(
           setSessions(day, sessionsOf(day, st.cur).filter((y) => y.id !== id))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Session removed')
+        saved('Session removed')
       },
 
-      setScheduleDay: (idx, value) => {
+      setSchedule: (sch, quiet) => {
         set((st) => {
-          st.data.schedule[idx] = value
+          for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Schedule updated')
+        saved(quiet ? undefined : 'Schedule updated')
       },
 
       saveTargets: (t, rangeWidth) => {
@@ -490,23 +563,27 @@ export const useStore = create<StoreState>()(
           if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
         get().showToast(floored ? `Kept at 1,200 kcal${c !== t.c ? ', with carbs raised to match' : ''}. Going lower needs medical support.` : 'Targets saved')
       },
 
       saveProfileMetrics: (patch) => {
         set((st) => {
+          // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
+          const today = todayStr()
+          if (patch.weight && patch.weight !== latestWeight(st.data, today)) {
+            ensureDay(st.data, today).weight = patch.weight
+            markDayDirty(st.data, today)
+          }
           Object.assign(st.data.profile, patch)
-          if (patch.weight) ensureDay(st.data, st.cur).weight = patch.weight
           markSettingsDirty(st.data)
-          if (patch.weight) markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       setPrefs: (patch) => {
         set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       addSupplement: (name, time) => {
@@ -515,7 +592,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.supplements.push({ id: uuid(), name, time })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       updateSupplement: (id, name, time) => {
@@ -524,7 +601,7 @@ export const useStore = create<StoreState>()(
           if (s) { s.name = name; s.time = time }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       removeSupplement: (id) => {
@@ -532,7 +609,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.supplements = (st.data.profile.supplements || []).filter((x: Supplement) => x.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       updateEmail: async (email) => {
@@ -549,19 +626,20 @@ export const useStore = create<StoreState>()(
         }
         set((st) => {
           st.data.profile.notificationsEnabled = enabled
-          meta(st.data).settings = { u: nowIso(), dirty: true }
+          markSettingsDirty(st.data)
         })
-        saveState(get().data)
+        const stored = persist()
         get().scheduleSync()
-        return true
+        return stored || 'unsaved'
       },
 
       importBackup: (incoming) => {
         const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
         set((st) => { st.data = fresh })
-        saveState(get().data)
+        const stored = persist()
         set((st) => { st.cur = todayStr() })
-        get().showToast('Backup loaded')
+        // one message at a time: say here if the device couldn't keep it (it still syncs)
+        get().showToast(stored ? 'Backup loaded' : 'Backup loaded, but this device couldn’t save it. Storage may be full.')
         get().scheduleSync()
       },
 
@@ -598,15 +676,14 @@ export const useStore = create<StoreState>()(
               // Data an older version synced without recording whose it was: if it matches this
               // account's rows it's theirs, so carry on without a question (and without marking
               // it all to upload over newer server data). Any doubt, including no connection: ask.
-              Promise.race([accountRows(uid, s.access_token), new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), 6000))])
-                .then((rows) => sameAccount(get().data, rows))
+              withTimeout(accountRows(uid, s.access_token).then((rows) => sameAccount(get().data, rows)), 6000, false)
                 .catch(() => false)
                 .then(async (same) => {
                   const still = () => !signingOut && get().ownerAsk?.uid === uid && !!get().ownerAsk?.checking
                   if (!still()) return // answered, cancelled or signed out meanwhile
                   if (!same) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
                   // the token may have been refreshed while this ran: apply the current session
-                  const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
+                  const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
                   const now = r?.data.session
                   if (!still()) return
                   if (!now || now.user.id !== uid) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
@@ -652,12 +729,11 @@ export const useStore = create<StoreState>()(
         // Launch must never depend on the network: restoring a session can stall offline while
         // it retries a token refresh, so give it a few seconds, then open with local data.
         // `definite` = the server answered (no session), as opposed to no connection.
-        const r = await Promise.race([
+        const r = await withTimeout(
           supabase.auth.getSession()
             .then((x) => ({ session: x.data.session, definite: !x.error || !isAuthRetryableFetchError(x.error) }))
             .catch(() => ({ session: null, definite: false })),
-          new Promise<{ session: null; definite: false }>((z) => setTimeout(() => z({ session: null, definite: false }), 4000)),
-        ])
+          4000, { session: null, definite: false })
         const session = r.session
         if (session) live(session)
         // mode 'guest' (the old "continue without an account"): there is no guest mode any more, so
@@ -747,12 +823,12 @@ export const useStore = create<StoreState>()(
         const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
         if (choice === 'fresh') get().setKitchen([])
         // the browser's push subscription still belongs to the previous account: end it
-        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
+        await withTimeout(unsubscribePush(), 2000, undefined)
         saveState(next)
         set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
         // the session was held back while asking; it comes from local storage, so this works offline
         // raced like at launch: getSession can stall offline while it retries a token refresh
-        const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
+        const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
         const session = r?.data.session
         if (session && session.user.id === ask.uid && applySession) {
           applySession(session)
@@ -770,9 +846,9 @@ export const useStore = create<StoreState>()(
         signingOut = true
         // Stop this device's reminders for this account while its token can still delete the row;
         // otherwise they keep arriving for the next person on a shared phone. Never waits long.
-        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
+        await withTimeout(unsubscribePush(), 2000, undefined)
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
-        await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
+        await withTimeout(out, 3000, undefined)
         clearSavedSession()
         get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)

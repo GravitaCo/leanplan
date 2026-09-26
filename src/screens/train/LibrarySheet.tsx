@@ -63,15 +63,17 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
  * The exercise library, read only (plan P3): search, filter by kind and kit, and open an entry for
  * its cue, easier and harder steps and a gentler option.
  */
-export function LibrarySheet({ onClose, onPick }: {
+export function LibrarySheet({ onClose, initial, onPick }: {
   onClose: () => void
+  /** open straight at this entry */
+  initial?: string
   /** pick mode (the workout builder): tapping an exercise chooses it */
   onPick?: (id: string) => void
 }) {
   const [q, setQ] = useState('')
   const [mod, setMod] = useState<Modality | null>(null)
   const [kit, setKit] = useState<Equipment | 'none' | null>(null)
-  const [open, setOpen] = useState<string[]>([])
+  const [open, setOpen] = useState<string[]>(initial ? [initial] : [])
   const cur = exById(open[open.length - 1])
 
   const list = useMemo(() => {

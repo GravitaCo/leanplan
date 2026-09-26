@@ -1,0 +1,5578 @@
+{
+ "source": "Nando's UK menu (page data loaded by nandos.co.uk/food/menu)",
+ "url": "https://www.nandos.co.uk/food/menu/page-data/index/page-data.json",
+ "fetched": "2026-09-25",
+ "sections": [
+  {
+   "id": "section:starters",
+   "displayName": "Starters",
+   "items": [
+    {
+     "id": "take-your-pick:starters",
+     "displayName": "Dare to share",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "With Three Starters"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "halloumi-sticks-dip:starters",
+     "displayName": "Halloumi Sticks & Dip",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 452,
+        "energyKj": 1881,
+        "fatMg": 32000,
+        "fibreMg": 200,
+        "proteinMg": 27100,
+        "saltMg": 2300,
+        "saturatesMg": 16600,
+        "sugarsMg": 12700,
+        "totalCarbsMg": 14800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "halloumi-sticks-dip:starters",
+     "displayName": "Halloumi Sticks & Dip",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 452,
+        "energyKj": 1881,
+        "fatMg": 32000,
+        "fibreMg": 200,
+        "proteinMg": 27100,
+        "saltMg": 2300,
+        "saturatesMg": 16600,
+        "sugarsMg": 12700,
+        "totalCarbsMg": 14800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "houmous-with-pe-ri-pe-ri-drizzle:starters",
+     "displayName": "Houmous with PERi-PERi Drizzle",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 815,
+        "energyKj": 3426,
+        "fatMg": 32600,
+        "fibreMg": 5000,
+        "proteinMg": 25000,
+        "saltMg": 2900,
+        "saturatesMg": 4500,
+        "sugarsMg": 5400,
+        "totalCarbsMg": 103800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sweet-potato-wedges-with-garlic-pe-rinaise:starters",
+     "displayName": "Sweet Potato Wedges with Garlic PERinaise",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 440,
+        "energyKj": 1833,
+        "fatMg": 24100,
+        "fibreMg": 7100,
+        "proteinMg": 8100,
+        "saltMg": 1600,
+        "saturatesMg": 10200,
+        "sugarsMg": 28300,
+        "totalCarbsMg": 51000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spicy-mixed-olives:starters",
+     "displayName": "Spicy Mixed Olives",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 138,
+        "energyKj": 564,
+        "fatMg": 13500,
+        "fibreMg": 3900,
+        "proteinMg": 1200,
+        "saltMg": 4600,
+        "saturatesMg": 1400,
+        "sugarsMg": 0,
+        "totalCarbsMg": 4700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pe-ri-pe-ri-nuts:starters",
+     "displayName": "PERi-PERi Nuts",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 793,
+        "energyKj": 3278,
+        "fatMg": 67400,
+        "fibreMg": 9000,
+        "proteinMg": 27300,
+        "saltMg": 1200,
+        "saturatesMg": 8800,
+        "sugarsMg": 5900,
+        "totalCarbsMg": 14800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "halloumi-and-dip:starters",
+     "displayName": "Halloumi & Dip",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 519,
+        "energyKj": 2160,
+        "fatMg": 38200,
+        "fibreMg": 200,
+        "proteinMg": 28900,
+        "saltMg": 2800,
+        "saturatesMg": 20800,
+        "sugarsMg": 13200,
+        "totalCarbsMg": 15300
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:pe-ri-pe-ri-chicken",
+   "displayName": "PERi-PERi Chicken",
+   "items": [
+    {
+     "id": "chicken-butterfly:pe-ri-pe-ri-chicken",
+     "displayName": "Chicken Butterfly",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 332,
+        "energyKj": 1394,
+        "fatMg": 10100,
+        "fibreMg": 1500,
+        "proteinMg": 59400,
+        "saltMg": 1300,
+        "saturatesMg": 2300,
+        "sugarsMg": 200,
+        "totalCarbsMg": 200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "4-boneless-chicken-thighs:pe-ri-pe-ri-chicken",
+     "displayName": "4 Boneless Chicken Thighs",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 578,
+        "energyKj": 2320,
+        "fatMg": 30400,
+        "fibreMg": 1200,
+        "proteinMg": 70100,
+        "saltMg": 1700,
+        "saturatesMg": 7800,
+        "sugarsMg": 200,
+        "totalCarbsMg": 200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "1-2-chicken:pe-ri-pe-ri-chicken",
+     "displayName": "1/2 Chicken",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 568,
+        "energyKj": 2378,
+        "fatMg": 27200,
+        "fibreMg": 1000,
+        "proteinMg": 80000,
+        "saltMg": 1700,
+        "saturatesMg": 7600,
+        "sugarsMg": 300,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "1-4-chicken:pe-ri-pe-ri-chicken",
+     "displayName": "1/4 Chicken",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 284,
+        "energyKj": 1189,
+        "fatMg": 13600,
+        "fibreMg": 500,
+        "proteinMg": 40000,
+        "saltMg": 800,
+        "saturatesMg": 3800,
+        "sugarsMg": 100,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": [
+       "This information is based on an average between a chicken leg and a chicken breast"
+      ]
+     }
+    },
+    {
+     "id": "whole-chicken:pe-ri-pe-ri-chicken",
+     "displayName": "Whole Chicken",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1136,
+        "energyKj": 4757,
+        "fatMg": 54400,
+        "fibreMg": 1900,
+        "proteinMg": 160100,
+        "saltMg": 3400,
+        "saturatesMg": 15200,
+        "sugarsMg": 600,
+        "totalCarbsMg": 1000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "3-chicken-wings:pe-ri-pe-ri-chicken",
+     "displayName": "3 Chicken Wings",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 236,
+        "energyKj": 987,
+        "fatMg": 11800,
+        "fibreMg": 700,
+        "proteinMg": 31900,
+        "saltMg": 1300,
+        "saturatesMg": 2800,
+        "sugarsMg": 100,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "5-chicken-wings:pe-ri-pe-ri-chicken",
+     "displayName": "5 Chicken Wings",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 393,
+        "energyKj": 1645,
+        "fatMg": 19700,
+        "fibreMg": 1200,
+        "proteinMg": 53200,
+        "saltMg": 2200,
+        "saturatesMg": 4700,
+        "sugarsMg": 200,
+        "totalCarbsMg": 400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "10-chicken-wings:pe-ri-pe-ri-chicken",
+     "displayName": "10 Chicken Wings",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 786,
+        "energyKj": 3290,
+        "fatMg": 39400,
+        "fibreMg": 2500,
+        "proteinMg": 106400,
+        "saltMg": 4400,
+        "saturatesMg": 9400,
+        "sugarsMg": 400,
+        "totalCarbsMg": 900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "15-chicken-wings:pe-ri-pe-ri-chicken",
+     "displayName": "15 Chicken Wings",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1179,
+        "energyKj": 4935,
+        "fatMg": 59100,
+        "fibreMg": 3700,
+        "proteinMg": 159600,
+        "saltMg": 6700,
+        "saturatesMg": 14100,
+        "sugarsMg": 500,
+        "totalCarbsMg": 1300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "10-wing-roulette:pe-ri-pe-ri-chicken",
+     "displayName": "10 Wing Roulette",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "1-4-chicken-breast:pe-ri-pe-ri-chicken",
+     "displayName": "1/4 Chicken Breast",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 323,
+        "energyKj": 1353,
+        "fatMg": 12800,
+        "fibreMg": 1000,
+        "proteinMg": 51500,
+        "saltMg": 900,
+        "saturatesMg": 3600,
+        "sugarsMg": 200,
+        "totalCarbsMg": 200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "1-4-chicken-leg:pe-ri-pe-ri-chicken",
+     "displayName": "1/4 Chicken Leg",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 245,
+        "energyKj": 1026,
+        "fatMg": 14400,
+        "fibreMg": 0,
+        "proteinMg": 28500,
+        "saltMg": 700,
+        "saturatesMg": 4100,
+        "sugarsMg": 100,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chicken-livers-portuguese-roll:pe-ri-pe-ri-chicken",
+     "displayName": "Chicken Livers & Portuguese Roll",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:burgers-pittas-wraps",
+   "displayName": "Burgers, Pittas, Wraps",
+   "items": [
+    {
+     "id": "fino-pitta:burgers-pittas-wraps",
+     "displayName": "Fino Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 763,
+        "energyKj": 3151,
+        "fatMg": 32400,
+        "fibreMg": 3700,
+        "proteinMg": 54900,
+        "saltMg": 3100,
+        "saturatesMg": 12700,
+        "sugarsMg": 16200,
+        "totalCarbsMg": 58100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "butterfly-burger:burgers-pittas-wraps",
+     "displayName": "Butterfly Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 632,
+        "energyKj": 2664,
+        "fatMg": 16400,
+        "fibreMg": 4200,
+        "proteinMg": 66600,
+        "saltMg": 2800,
+        "saturatesMg": 4000,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 53000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sunset-burger:burgers-pittas-wraps",
+     "displayName": "Sunset Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 619,
+        "energyKj": 2541,
+        "fatMg": 27700,
+        "fibreMg": 3300,
+        "proteinMg": 46100,
+        "saltMg": 2200,
+        "saturatesMg": 9400,
+        "sugarsMg": 9600,
+        "totalCarbsMg": 42100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "grilled-chicken-wrap:burgers-pittas-wraps",
+     "displayName": "Grilled Chicken Wrap",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 537,
+        "energyKj": 2259,
+        "fatMg": 14800,
+        "fibreMg": 3600,
+        "proteinMg": 37300,
+        "saltMg": 2200,
+        "saturatesMg": 2800,
+        "sugarsMg": 19000,
+        "totalCarbsMg": 61500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "double-chicken-wrap:burgers-pittas-wraps",
+     "displayName": "Double Chicken Wrap",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 674,
+        "energyKj": 2840,
+        "fatMg": 17300,
+        "fibreMg": 4000,
+        "proteinMg": 65900,
+        "saltMg": 3000,
+        "saturatesMg": 3400,
+        "sugarsMg": 19100,
+        "totalCarbsMg": 61600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "fino-pitta:burgers-pittas-wraps",
+     "displayName": "Fino Pitta (Boneless Chicken Thighs)",
+     "subsection": "",
+     "restaurantGroup": "Chicken Thigh fino Pitta trial",
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 763,
+        "energyKj": 3151,
+        "fatMg": 32400,
+        "fibreMg": 3700,
+        "proteinMg": 54900,
+        "saltMg": 3100,
+        "saturatesMg": 12700,
+        "sugarsMg": 16200,
+        "totalCarbsMg": 58100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "grilled-chicken-burger:burgers-pittas-wraps",
+     "displayName": "Grilled Chicken Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 438,
+        "energyKj": 1852,
+        "fatMg": 8900,
+        "fibreMg": 3100,
+        "proteinMg": 35800,
+        "saltMg": 2200,
+        "saturatesMg": 2200,
+        "sugarsMg": 4600,
+        "totalCarbsMg": 52900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "double-chicken-burger:burgers-pittas-wraps",
+     "displayName": "Double Chicken Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 576,
+        "energyKj": 2433,
+        "fatMg": 11500,
+        "fibreMg": 3600,
+        "proteinMg": 64400,
+        "saltMg": 2900,
+        "saturatesMg": 2700,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 53000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "grilled-chicken-pitta:burgers-pittas-wraps",
+     "displayName": "Grilled Chicken Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 485,
+        "energyKj": 2040,
+        "fatMg": 14900,
+        "fibreMg": 4100,
+        "proteinMg": 36600,
+        "saltMg": 1700,
+        "saturatesMg": 3100,
+        "sugarsMg": 7000,
+        "totalCarbsMg": 51300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "double-chicken-pitta:burgers-pittas-wraps",
+     "displayName": "Double Chicken Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 623,
+        "energyKj": 2621,
+        "fatMg": 17400,
+        "fibreMg": 4600,
+        "proteinMg": 65200,
+        "saltMg": 2500,
+        "saturatesMg": 3600,
+        "sugarsMg": 7100,
+        "totalCarbsMg": 51400
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:salads",
+   "displayName": "Salads",
+   "items": [
+    {
+     "id": "rainbow-bowl:salads",
+     "displayName": "Rainbow Bowl",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "With Chicken Breast",
+      "With Chicken Thighs",
+      "With PERi-Plant",
+      "With Beanie Patty"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 528,
+        "energyKj": 2207,
+        "fatMg": 28500,
+        "fibreMg": 12300,
+        "proteinMg": 16200,
+        "saltMg": 1900,
+        "saturatesMg": 3100,
+        "sugarsMg": 13500,
+        "totalCarbsMg": 49800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "rainbow-bowl:salads",
+     "displayName": "Rainbow Bowl (Northern Ireland Only)",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own",
+      "With Chicken Breast",
+      "With Chicken Thighs",
+      "With PERi-Plant",
+      "With Beanie Patty"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 528,
+        "energyKj": 2207,
+        "fatMg": 28500,
+        "fibreMg": 12300,
+        "proteinMg": 16200,
+        "saltMg": 1900,
+        "saturatesMg": 3100,
+        "sugarsMg": 13500,
+        "totalCarbsMg": 49800
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:sharing-platters",
+   "displayName": "Sharing Platters",
+   "items": [
+    {
+     "id": "full-platter:sharing-platters",
+     "displayName": "Full Platter",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "+2 large or 4 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1136,
+        "energyKj": 4757,
+        "fatMg": 54400,
+        "fibreMg": 1900,
+        "proteinMg": 160100,
+        "saltMg": 3400,
+        "saturatesMg": 15200,
+        "sugarsMg": 600,
+        "totalCarbsMg": 1000
+       }
+      ],
+      "messages": [
+       "This information is specific to a Whole Chicken with a Plain...ish baste. Please check sides, extras and customisations separately."
+      ]
+     }
+    },
+    {
+     "id": "boneless-platter:sharing-platters",
+     "displayName": "Boneless Platter",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "+2 large or 4 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 910,
+        "energyKj": 3714,
+        "fatMg": 40500,
+        "fibreMg": 2700,
+        "proteinMg": 129500,
+        "saltMg": 3100,
+        "saturatesMg": 10200,
+        "sugarsMg": 400,
+        "totalCarbsMg": 400
+       }
+      ],
+      "messages": [
+       "This information is specific to a Chicken Butterfly and 4 Boneless Chicken Thighs with a Plain...ish baste. Please check sides, extras and customisations separately."
+      ]
+     }
+    },
+    {
+     "id": "family-platter:sharing-platters",
+     "displayName": "Family Platter",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "+5 large sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2272,
+        "energyKj": 9514,
+        "fatMg": 109000,
+        "fibreMg": 4000,
+        "proteinMg": 320000,
+        "saltMg": 7000,
+        "saturatesMg": 30000,
+        "sugarsMg": 1000,
+        "totalCarbsMg": 2000
+       }
+      ],
+      "messages": [
+       "This information is specific to 2 Whole Chickens with a Plain...ish baste. Please check sides, extras and customisations separately."
+      ]
+     }
+    },
+    {
+     "id": "wing-platter:sharing-platters",
+     "displayName": "Wing Platter",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "+2 large or 4 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 786,
+        "energyKj": 3290,
+        "fatMg": 39400,
+        "fibreMg": 2500,
+        "proteinMg": 106400,
+        "saltMg": 4400,
+        "saturatesMg": 9400,
+        "sugarsMg": 400,
+        "totalCarbsMg": 900
+       }
+      ],
+      "messages": [
+       "This information is specific to 10 Chicken Wings with a Plain...ish baste. Please check sides, extras and customisations separately."
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:veggie",
+   "displayName": "Veggie",
+   "items": [
+    {
+     "id": "portobello-mushroom-halloumi-pitta:veggie",
+     "displayName": "Portobello Mushroom & Halloumi Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "chickpea-burger:veggie",
+     "displayName": "Spiced Chickpea Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 534,
+        "energyKj": 2237,
+        "fatMg": 19900,
+        "fibreMg": 11300,
+        "proteinMg": 15600,
+        "saltMg": 1800,
+        "saturatesMg": 2700,
+        "sugarsMg": 19400,
+        "totalCarbsMg": 75800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "the-great-imitator-wrap:veggie",
+     "displayName": "The Great Imitator Wrap",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 560,
+        "energyKj": 2347,
+        "fatMg": 22700,
+        "fibreMg": 4900,
+        "proteinMg": 24700,
+        "saltMg": 2600,
+        "saturatesMg": 2600,
+        "sugarsMg": 14500,
+        "totalCarbsMg": 63800
+       }
+      ],
+      "messages": [
+       "This is a plant-based recipe however the wrap and baste contains shellac."
+      ]
+     }
+    },
+    {
+     "id": "the-great-imitator-burger:veggie",
+     "displayName": "The Great Imitator Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 502,
+        "energyKj": 2111,
+        "fatMg": 17800,
+        "fibreMg": 4700,
+        "proteinMg": 23700,
+        "saltMg": 2300,
+        "saturatesMg": 2400,
+        "sugarsMg": 5700,
+        "totalCarbsMg": 61900
+       }
+      ],
+      "messages": [
+       "This is a plant-based recipe however the baste contains shellac."
+      ]
+     }
+    },
+    {
+     "id": "the-great-imitator-pitta:veggie",
+     "displayName": "The Great Imitator Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 585,
+        "energyKj": 2448,
+        "fatMg": 25200,
+        "fibreMg": 6100,
+        "proteinMg": 28300,
+        "saltMg": 2000,
+        "saturatesMg": 3300,
+        "sugarsMg": 8400,
+        "totalCarbsMg": 62300
+       }
+      ],
+      "messages": [
+       "This is a plant-based recipe however the baste contains shellac."
+      ]
+     }
+    },
+    {
+     "id": "beanie-wrap:veggie",
+     "displayName": "Beanie Wrap",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 660,
+        "energyKj": 2769,
+        "fatMg": 24900,
+        "fibreMg": 11000,
+        "proteinMg": 22000,
+        "saltMg": 3000,
+        "saturatesMg": 5900,
+        "sugarsMg": 20100,
+        "totalCarbsMg": 81000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "beanie-burger:veggie",
+     "displayName": "Beanie Burger",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 562,
+        "energyKj": 2362,
+        "fatMg": 19000,
+        "fibreMg": 10600,
+        "proteinMg": 20500,
+        "saltMg": 2900,
+        "saturatesMg": 5200,
+        "sugarsMg": 5700,
+        "totalCarbsMg": 72400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "beanie-pitta:veggie",
+     "displayName": "Beanie Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own",
+      "+1 regular side",
+      "+2 regular sides"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 609,
+        "energyKj": 2550,
+        "fatMg": 25000,
+        "fibreMg": 11600,
+        "proteinMg": 21400,
+        "saltMg": 2500,
+        "saturatesMg": 6100,
+        "sugarsMg": 8100,
+        "totalCarbsMg": 70700
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:nandinos-kids",
+   "displayName": "Nandinos (Kids)",
+   "items": [
+    {
+     "id": "chicken-burger:nandinos-kids",
+     "displayName": "Chicken Burger",
+     "subsection": "Mains",
+     "restaurantGroup": null,
+     "priceList": [
+      "Nandinos Meal"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 288,
+        "energyKj": 1215,
+        "fatMg": 7100,
+        "fibreMg": 2000,
+        "proteinMg": 32800,
+        "saltMg": 1300,
+        "saturatesMg": 3000,
+        "sugarsMg": 4300,
+        "totalCarbsMg": 23300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chicken-breast-fillet:nandinos-kids",
+     "displayName": "Chicken Breast Fillet",
+     "subsection": "Mains",
+     "restaurantGroup": null,
+     "priceList": [
+      "Nandinos Meal"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 138,
+        "energyKj": 581,
+        "fatMg": 2600,
+        "fibreMg": 500,
+        "proteinMg": 28600,
+        "saltMg": 700,
+        "saturatesMg": 600,
+        "sugarsMg": 100,
+        "totalCarbsMg": 100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "3-chicken-wings:nandinos-kids",
+     "displayName": "3 Chicken Wings",
+     "subsection": "Mains",
+     "restaurantGroup": null,
+     "priceList": [
+      "Nandinos Meal"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 236,
+        "energyKj": 987,
+        "fatMg": 11800,
+        "fibreMg": 700,
+        "proteinMg": 31900,
+        "saltMg": 1300,
+        "saturatesMg": 2800,
+        "sugarsMg": 100,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "beanie-burger:nandinos-kids",
+     "displayName": "Beanie Burger",
+     "subsection": "Mains",
+     "restaurantGroup": null,
+     "priceList": [
+      "Nandinos Meal"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 432,
+        "energyKj": 1809,
+        "fatMg": 19300,
+        "fibreMg": 9500,
+        "proteinMg": 18000,
+        "saltMg": 2100,
+        "saturatesMg": 6600,
+        "sugarsMg": 5600,
+        "totalCarbsMg": 43200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "beanie-patty:nandinos-kids",
+     "displayName": "Beanie Patty",
+     "subsection": "Mains",
+     "restaurantGroup": null,
+     "priceList": [
+      "Nandinos Meal"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 216,
+        "energyKj": 906,
+        "fatMg": 7700,
+        "fibreMg": 7900,
+        "proteinMg": 13300,
+        "saltMg": 1500,
+        "saturatesMg": 3200,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 19600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spiced-grains-butternut-squash:nandinos-kids",
+     "displayName": "Spiced Grains & Butternut Squash",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 95,
+        "energyKj": 396,
+        "fatMg": 3900,
+        "fibreMg": 3600,
+        "proteinMg": 3000,
+        "saltMg": 200,
+        "saturatesMg": 300,
+        "sugarsMg": 1800,
+        "totalCarbsMg": 10100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spicy-rice:nandinos-kids",
+     "displayName": "Spicy Rice",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 246,
+        "energyKj": 1034,
+        "fatMg": 6000,
+        "fibreMg": 3900,
+        "proteinMg": 3800,
+        "saltMg": 1700,
+        "saturatesMg": 500,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 42200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "corn-on-the-cob:nandinos-kids",
+     "displayName": "Corn on the Cob",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 72,
+        "energyKj": 304,
+        "fatMg": 1400,
+        "fibreMg": 2300,
+        "proteinMg": 2900,
+        "saltMg": 0,
+        "saturatesMg": 300,
+        "sugarsMg": 6300,
+        "totalCarbsMg": 11000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chips:nandinos-kids",
+     "displayName": "Chips",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 225,
+        "energyKj": 942,
+        "fatMg": 9700,
+        "fibreMg": 2300,
+        "proteinMg": 3200,
+        "saltMg": 300,
+        "saturatesMg": 900,
+        "sugarsMg": 400,
+        "totalCarbsMg": 32300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "long-stem-broccoli:nandinos-kids",
+     "displayName": "Long Stem Broccoli",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 16,
+        "energyKj": 68,
+        "fatMg": 800,
+        "fibreMg": 1100,
+        "proteinMg": 1100,
+        "saltMg": 300,
+        "saturatesMg": 0,
+        "sugarsMg": 100,
+        "totalCarbsMg": 1800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "little-tomatoes:nandinos-kids",
+     "displayName": "Little Tomatoes",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 13,
+        "energyKj": 56,
+        "fatMg": 300,
+        "fibreMg": 800,
+        "proteinMg": 700,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 2200,
+        "totalCarbsMg": 2200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "garlic-bread:nandinos-kids",
+     "displayName": "Garlic Bread",
+     "subsection": "Dino Sides",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 219,
+        "energyKj": 913,
+        "fatMg": 13600,
+        "fibreMg": 1100,
+        "proteinMg": 4000,
+        "saltMg": 500,
+        "saturatesMg": 5300,
+        "sugarsMg": 1500,
+        "totalCarbsMg": 20400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chilly-billy-lolly:nandinos-kids",
+     "displayName": "Chilly Billy Lolly",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 30,
+        "energyKj": 127,
+        "fatMg": 100,
+        "fibreMg": 300,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 7600,
+        "totalCarbsMg": 7600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "vanilla-frozen-yogurt:nandinos-kids",
+     "displayName": "Bottomless Vanilla Frozen Yoghurt",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 88,
+        "energyKj": 376,
+        "fatMg": 100,
+        "fibreMg": 100,
+        "proteinMg": 3200,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 19000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "strawberry-frozen-yoghurt:nandinos-kids",
+     "displayName": "Bottomless Strawberry Frozen Yoghurt",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 86,
+        "energyKj": 367,
+        "fatMg": 100,
+        "fibreMg": 200,
+        "proteinMg": 3100,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 18000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chocolate-frozen-yoghurt:nandinos-kids",
+     "displayName": "Bottomless Chocolate Frozen Yoghurt",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 96,
+        "energyKj": 407,
+        "fatMg": 300,
+        "fibreMg": 800,
+        "proteinMg": 4000,
+        "saltMg": 200,
+        "saturatesMg": 200,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 19000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "mango-frozen-yoghurt:nandinos-kids",
+     "displayName": "Bottomless Mango Frozen Yoghurt",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 87,
+        "energyKj": 371,
+        "fatMg": 100,
+        "fibreMg": 200,
+        "proteinMg": 3100,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 18000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "scoop-of-vanilla-gelado:nandinos-kids",
+     "displayName": "Scoop of Vanilla Gelado",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 153,
+        "energyKj": 644,
+        "fatMg": 8700,
+        "fibreMg": 100,
+        "proteinMg": 2300,
+        "saltMg": 200,
+        "saturatesMg": 6700,
+        "sugarsMg": 15400,
+        "totalCarbsMg": 16800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "kid-s-cawston-press-apple-pear:nandinos-kids",
+     "displayName": "Kid's Cawston Press Apple & Pear",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 54,
+        "energyKj": 234,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 12800,
+        "totalCarbsMg": 12800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "kid-s-cawston-press-summer-berry:nandinos-kids",
+     "displayName": "Kid's Cawston Press Summer Berry",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 50,
+        "energyKj": 214,
+        "fatMg": 200,
+        "fibreMg": 0,
+        "proteinMg": 600,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 11000,
+        "totalCarbsMg": 11600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottle-green-apple-cordial:nandinos-kids",
+     "displayName": "Bottle Green Apple Cordial",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 25,
+        "energyKj": 108,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 6300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottle-green-strawberry-cordial:nandinos-kids",
+     "displayName": "Bottle Green Strawberry Cordial",
+     "subsection": "Dessert OR Drink",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 25,
+        "energyKj": 108,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 6300
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:sides",
+   "displayName": "Sides",
+   "items": [
+    {
+     "id": "pe-ri-salted-chips:sides",
+     "displayName": "PERi-Salted Chips",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 452,
+        "energyKj": 1891,
+        "fatMg": 19400,
+        "fibreMg": 4700,
+        "proteinMg": 6400,
+        "saltMg": 1200,
+        "saturatesMg": 1700,
+        "sugarsMg": 900,
+        "totalCarbsMg": 64900
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1128,
+        "energyKj": 4724,
+        "fatMg": 48600,
+        "fibreMg": 11600,
+        "proteinMg": 15900,
+        "saltMg": 2600,
+        "saturatesMg": 4300,
+        "sugarsMg": 2300,
+        "totalCarbsMg": 162100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "garlic-bread:sides",
+     "displayName": "Garlic Bread",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 362,
+        "energyKj": 1518,
+        "fatMg": 15500,
+        "fibreMg": 2100,
+        "proteinMg": 6900,
+        "saltMg": 1300,
+        "saturatesMg": 4800,
+        "sugarsMg": 400,
+        "totalCarbsMg": 47900
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 723,
+        "energyKj": 3036,
+        "fatMg": 30900,
+        "fibreMg": 4300,
+        "proteinMg": 13800,
+        "saltMg": 2500,
+        "saturatesMg": 9500,
+        "sugarsMg": 800,
+        "totalCarbsMg": 95900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chips:sides",
+     "displayName": "Chips",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 450,
+        "energyKj": 1884,
+        "fatMg": 19400,
+        "fibreMg": 4600,
+        "proteinMg": 6300,
+        "saltMg": 600,
+        "saturatesMg": 1700,
+        "sugarsMg": 800,
+        "totalCarbsMg": 64600
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1125,
+        "energyKj": 4710,
+        "fatMg": 48500,
+        "fibreMg": 11500,
+        "proteinMg": 15800,
+        "saltMg": 1600,
+        "saturatesMg": 4300,
+        "sugarsMg": 2000,
+        "totalCarbsMg": 161500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spicy-rice:sides",
+     "displayName": "Spicy Rice",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 246,
+        "energyKj": 1034,
+        "fatMg": 6000,
+        "fibreMg": 3900,
+        "proteinMg": 3800,
+        "saltMg": 1700,
+        "saturatesMg": 500,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 42200
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 492,
+        "energyKj": 2067,
+        "fatMg": 12000,
+        "fibreMg": 7800,
+        "proteinMg": 7500,
+        "saltMg": 3300,
+        "saturatesMg": 900,
+        "sugarsMg": 2400,
+        "totalCarbsMg": 84300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "corn-on-the-cob:sides",
+     "displayName": "Corn on the Cob",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 144,
+        "energyKj": 608,
+        "fatMg": 2700,
+        "fibreMg": 4600,
+        "proteinMg": 5700,
+        "saltMg": 0,
+        "saturatesMg": 500,
+        "sugarsMg": 12500,
+        "totalCarbsMg": 22000
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 288,
+        "energyKj": 1216,
+        "fatMg": 5400,
+        "fibreMg": 9200,
+        "proteinMg": 11400,
+        "saltMg": 100,
+        "saturatesMg": 1000,
+        "sugarsMg": 25000,
+        "totalCarbsMg": 44000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "rainbow-slaw:sides",
+     "displayName": "Rainbow Slaw",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 99,
+        "energyKj": 411,
+        "fatMg": 5800,
+        "fibreMg": 2400,
+        "proteinMg": 1900,
+        "saltMg": 200,
+        "saturatesMg": 700,
+        "sugarsMg": 5300,
+        "totalCarbsMg": 11300
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 177,
+        "energyKj": 735,
+        "fatMg": 10000,
+        "fibreMg": 4400,
+        "proteinMg": 2900,
+        "saltMg": 400,
+        "saturatesMg": 1100,
+        "sugarsMg": 10500,
+        "totalCarbsMg": 21700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spiced-grains-butternut-squash:sides",
+     "displayName": "Spiced Grains & Butternut Squash",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 232,
+        "energyKj": 972,
+        "fatMg": 11400,
+        "fibreMg": 7200,
+        "proteinMg": 8400,
+        "saltMg": 800,
+        "saturatesMg": 3000,
+        "sugarsMg": 3600,
+        "totalCarbsMg": 20500
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 421,
+        "energyKj": 1764,
+        "fatMg": 19200,
+        "fibreMg": 14400,
+        "proteinMg": 14500,
+        "saltMg": 1200,
+        "saturatesMg": 3500,
+        "sugarsMg": 7100,
+        "totalCarbsMg": 40700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "creamy-mash:sides",
+     "displayName": "Creamy Mash",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 276,
+        "energyKj": 1154,
+        "fatMg": 15200,
+        "fibreMg": 2200,
+        "proteinMg": 3200,
+        "saltMg": 1200,
+        "saturatesMg": 9600,
+        "sugarsMg": 1800,
+        "totalCarbsMg": 32800
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 552,
+        "energyKj": 2308,
+        "fatMg": 30400,
+        "fibreMg": 4400,
+        "proteinMg": 6400,
+        "saltMg": 2400,
+        "saturatesMg": 19200,
+        "sugarsMg": 3600,
+        "totalCarbsMg": 65600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coleslaw:sides",
+     "displayName": "Coleslaw",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 263,
+        "energyKj": 1088,
+        "fatMg": 23700,
+        "fibreMg": 800,
+        "proteinMg": 1300,
+        "saltMg": 500,
+        "saturatesMg": 1700,
+        "sugarsMg": 7500,
+        "totalCarbsMg": 11400
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 526,
+        "energyKj": 2177,
+        "fatMg": 47400,
+        "fibreMg": 1500,
+        "proteinMg": 2700,
+        "saltMg": 1000,
+        "saturatesMg": 3300,
+        "sugarsMg": 15000,
+        "totalCarbsMg": 22900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coleslaw:sides",
+     "displayName": "Coleslaw",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 240,
+        "energyKj": 1005,
+        "fatMg": 18200,
+        "fibreMg": 2300,
+        "proteinMg": 1500,
+        "saltMg": 800,
+        "saturatesMg": 1400,
+        "sugarsMg": 10600,
+        "totalCarbsMg": 11600
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 480,
+        "energyKj": 2009,
+        "fatMg": 36500,
+        "fibreMg": 4600,
+        "proteinMg": 3000,
+        "saltMg": 1500,
+        "saturatesMg": 2700,
+        "sugarsMg": 21300,
+        "totalCarbsMg": 23100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "macho-peas:sides",
+     "displayName": "Macho Peas",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 141,
+        "energyKj": 589,
+        "fatMg": 6400,
+        "fibreMg": 8500,
+        "proteinMg": 7700,
+        "saltMg": 400,
+        "saturatesMg": 1800,
+        "sugarsMg": 800,
+        "totalCarbsMg": 17500
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 283,
+        "energyKj": 1179,
+        "fatMg": 12900,
+        "fibreMg": 17100,
+        "proteinMg": 15400,
+        "saltMg": 700,
+        "saturatesMg": 3600,
+        "sugarsMg": 1700,
+        "totalCarbsMg": 35000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "long-stem-broccoli:sides",
+     "displayName": "Long Stem Broccoli",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 32,
+        "energyKj": 135,
+        "fatMg": 1500,
+        "fibreMg": 2200,
+        "proteinMg": 2100,
+        "saltMg": 600,
+        "saturatesMg": 100,
+        "sugarsMg": 300,
+        "totalCarbsMg": 3700
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 65,
+        "energyKj": 270,
+        "fatMg": 3100,
+        "fibreMg": 4400,
+        "proteinMg": 4300,
+        "saltMg": 1200,
+        "saturatesMg": 200,
+        "sugarsMg": 500,
+        "totalCarbsMg": 7300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "mixed-leaf-salad:sides",
+     "displayName": "Mixed Leaf Salad",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "Regular",
+      "Large"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 13,
+        "energyKj": 56,
+        "fatMg": 200,
+        "fibreMg": 1000,
+        "proteinMg": 900,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 1600
+       },
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 27,
+        "energyKj": 111,
+        "fatMg": 400,
+        "fibreMg": 2100,
+        "proteinMg": 1800,
+        "saltMg": 100,
+        "saturatesMg": 100,
+        "sugarsMg": 2400,
+        "totalCarbsMg": 3200
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:extras",
+   "displayName": "Extras",
+   "items": [
+    {
+     "id": "peri-peri-chicken-gravy:extras",
+     "displayName": "PERi-PERi Chicken Gravy",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 54,
+        "energyKj": 225,
+        "fatMg": 2400,
+        "fibreMg": 600,
+        "proteinMg": 3200,
+        "saltMg": 1200,
+        "saturatesMg": 500,
+        "sugarsMg": 1000,
+        "totalCarbsMg": 4500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "grilled-halloumi-cheese:extras",
+     "displayName": "Grilled Halloumi Cheese",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 177,
+        "energyKj": 734,
+        "fatMg": 13800,
+        "fibreMg": 0,
+        "proteinMg": 11900,
+        "saltMg": 1100,
+        "saturatesMg": 8500,
+        "sugarsMg": 1300,
+        "totalCarbsMg": 1300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "per-plant-strips-extra:extras",
+     "displayName": "PERi-Plant Strips",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 202,
+        "energyKj": 841,
+        "fatMg": 11500,
+        "fibreMg": 2000,
+        "proteinMg": 16500,
+        "saltMg": 800,
+        "saturatesMg": 800,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 9100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chicken-breast-extra:extras",
+     "displayName": "Grilled Chicken Breast",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 138,
+        "energyKj": 581,
+        "fatMg": 2600,
+        "fibreMg": 500,
+        "proteinMg": 28600,
+        "saltMg": 700,
+        "saturatesMg": 600,
+        "sugarsMg": 100,
+        "totalCarbsMg": 100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "beanie-patty-extra:extras",
+     "displayName": "Beanie Patty",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 261,
+        "energyKj": 1091,
+        "fatMg": 12700,
+        "fibreMg": 7900,
+        "proteinMg": 13300,
+        "saltMg": 1500,
+        "saturatesMg": 3600,
+        "sugarsMg": 1200,
+        "totalCarbsMg": 19600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "2-chicken-thighs-extra:extras",
+     "displayName": "2 Boneless Chicken Thighs",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 289,
+        "energyKj": 1160,
+        "fatMg": 15200,
+        "fibreMg": 600,
+        "proteinMg": 35000,
+        "saltMg": 900,
+        "saturatesMg": 3900,
+        "sugarsMg": 100,
+        "totalCarbsMg": 100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pe-rinaise:extras",
+     "displayName": "PERinaise",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 159,
+        "energyKj": 656,
+        "fatMg": 14300,
+        "fibreMg": 100,
+        "proteinMg": 300,
+        "saltMg": 1300,
+        "saturatesMg": 1100,
+        "sugarsMg": 5100,
+        "totalCarbsMg": 7000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "garlic-pe-rinaise:extras",
+     "displayName": "Garlic PERinaise",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 176,
+        "energyKj": 726,
+        "fatMg": 15800,
+        "fibreMg": 300,
+        "proteinMg": 4200,
+        "saltMg": 1100,
+        "saturatesMg": 9100,
+        "sugarsMg": 4100,
+        "totalCarbsMg": 4400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chilli-jam:extras",
+     "displayName": "Chilli Jam",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 164,
+        "energyKj": 695,
+        "fatMg": 100,
+        "fibreMg": 800,
+        "proteinMg": 500,
+        "saltMg": 500,
+        "saturatesMg": 100,
+        "sugarsMg": 33600,
+        "totalCarbsMg": 40700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pe-ri-bbq:extras",
+     "displayName": "PERi-BBQ",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 61,
+        "energyKj": 255,
+        "fatMg": 1400,
+        "fibreMg": 800,
+        "proteinMg": 600,
+        "saltMg": 500,
+        "saturatesMg": 300,
+        "sugarsMg": 11100,
+        "totalCarbsMg": 11900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "mayonnaise:extras",
+     "displayName": "Mayonnaise",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 73,
+        "energyKj": 303,
+        "fatMg": 6000,
+        "fibreMg": 100,
+        "proteinMg": 200,
+        "saltMg": 600,
+        "saturatesMg": 500,
+        "sugarsMg": 3000,
+        "totalCarbsMg": 4500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pe-rinaise-mild:extras",
+     "displayName": "PERinaise Mild",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 46,
+        "energyKj": 192,
+        "fatMg": 4200,
+        "fibreMg": 100,
+        "proteinMg": 0,
+        "saltMg": 400,
+        "saturatesMg": 300,
+        "sugarsMg": 1500,
+        "totalCarbsMg": 2000
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "medium-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Medium PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 9,
+        "energyKj": 37,
+        "fatMg": 700,
+        "fibreMg": 700,
+        "proteinMg": 100,
+        "saltMg": 1200,
+        "saturatesMg": 100,
+        "sugarsMg": 200,
+        "totalCarbsMg": 200
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "garlic-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Garlic PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 10,
+        "energyKj": 41,
+        "fatMg": 600,
+        "fibreMg": 300,
+        "proteinMg": 200,
+        "saltMg": 1000,
+        "saturatesMg": 100,
+        "sugarsMg": 800,
+        "totalCarbsMg": 800
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "lemon-herb-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Lemon & Herb PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 8,
+        "energyKj": 35,
+        "fatMg": 700,
+        "fibreMg": 400,
+        "proteinMg": 100,
+        "saltMg": 500,
+        "saturatesMg": 100,
+        "sugarsMg": 200,
+        "totalCarbsMg": 200
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "hot-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Hot PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 9,
+        "energyKj": 36,
+        "fatMg": 600,
+        "fibreMg": 500,
+        "proteinMg": 200,
+        "saltMg": 1200,
+        "saturatesMg": 100,
+        "sugarsMg": 400,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "vusa-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Vusa PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 35,
+        "energyKj": 145,
+        "fatMg": 3100,
+        "fibreMg": 900,
+        "proteinMg": 400,
+        "saltMg": 500,
+        "saturatesMg": 300,
+        "sugarsMg": 300,
+        "totalCarbsMg": 1000
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "extra-hot-pe-ri-pe-ri-sauce:extras",
+     "displayName": "Extra Hot PERi-PERi Sauce",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 9,
+        "energyKj": 36,
+        "fatMg": 200,
+        "fibreMg": 700,
+        "proteinMg": 300,
+        "saltMg": 900,
+        "saturatesMg": 0,
+        "sugarsMg": 900,
+        "totalCarbsMg": 1100
+       }
+      ],
+      "messages": [
+       "This information is based on per serving."
+      ]
+     }
+    },
+    {
+     "id": "pe-ri-salt:extras",
+     "displayName": "PERi-PERi Salt",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "pe-ri-pe-ri-drizzle:extras",
+     "displayName": "PERi-PERi Drizzle",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 97,
+        "energyKj": 399,
+        "fatMg": 10300,
+        "fibreMg": 300,
+        "proteinMg": 300,
+        "saltMg": 800,
+        "saturatesMg": 1500,
+        "sugarsMg": 300,
+        "totalCarbsMg": 900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cheddar-cheese:extras",
+     "displayName": "Cheddar Cheese",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 78,
+        "energyKj": 326,
+        "fatMg": 6400,
+        "fibreMg": 0,
+        "proteinMg": 5200,
+        "saltMg": 400,
+        "saturatesMg": 4000,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pineapple:extras",
+     "displayName": "Grilled Pineapple",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 37,
+        "energyKj": 159,
+        "fatMg": 0,
+        "fibreMg": 500,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 7400,
+        "totalCarbsMg": 8900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "portuguese-roll:extras",
+     "displayName": "Portuguese Roll",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 275,
+        "energyKj": 1162,
+        "fatMg": 6300,
+        "fibreMg": 2000,
+        "proteinMg": 6700,
+        "saltMg": 1200,
+        "saturatesMg": 3600,
+        "sugarsMg": 400,
+        "totalCarbsMg": 47100
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "lemon-herb-wrap:extras",
+     "displayName": "Tortilla Wrap",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 247,
+        "energyKj": 1040,
+        "fatMg": 4800,
+        "fibreMg": 2200,
+        "proteinMg": 7400,
+        "saltMg": 1000,
+        "saturatesMg": 1400,
+        "sugarsMg": 4000,
+        "totalCarbsMg": 42400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "toasted-pitta-bread-with-butter:extras",
+     "displayName": "Toasted Pitta",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 246,
+        "energyKj": 1039,
+        "fatMg": 5600,
+        "fibreMg": 1900,
+        "proteinMg": 7100,
+        "saltMg": 700,
+        "saturatesMg": 3400,
+        "sugarsMg": 1900,
+        "totalCarbsMg": 40800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "portobello-mushroom:extras",
+     "displayName": "Portobello Mushroom",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "houmous:extras",
+     "displayName": "Houmous",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 202,
+        "energyKj": 842,
+        "fatMg": 13400,
+        "fibreMg": 600,
+        "proteinMg": 6700,
+        "saltMg": 600,
+        "saturatesMg": 1800,
+        "sugarsMg": 800,
+        "totalCarbsMg": 13600
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:desserts",
+   "displayName": "Desserts",
+   "items": [
+    {
+     "id": "choc-a-lot-cake:desserts",
+     "displayName": "Choc-A-Lot Cake",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 582,
+        "energyKj": 2428,
+        "fatMg": 31700,
+        "fibreMg": 3300,
+        "proteinMg": 8100,
+        "saltMg": 1300,
+        "saturatesMg": 14700,
+        "sugarsMg": 42800,
+        "totalCarbsMg": 67400
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "gooey-caramel-cheesecake:desserts",
+     "displayName": "Gooey Caramel Cheesecake",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 415,
+        "energyKj": 1729,
+        "fatMg": 25300,
+        "fibreMg": 600,
+        "proteinMg": 7800,
+        "saltMg": 500,
+        "saturatesMg": 16500,
+        "sugarsMg": 25100,
+        "totalCarbsMg": 38900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "salted-caramel-brownie:desserts",
+     "displayName": "Salted Caramel Brownie",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 389,
+        "energyKj": 1623,
+        "fatMg": 21700,
+        "fibreMg": 2100,
+        "proteinMg": 4200,
+        "saltMg": 400,
+        "saturatesMg": 14900,
+        "sugarsMg": 29000,
+        "totalCarbsMg": 42900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "naughty-nata:desserts",
+     "displayName": "Naughty Nata",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 169,
+        "energyKj": 707,
+        "fatMg": 7200,
+        "fibreMg": 1100,
+        "proteinMg": 2800,
+        "saltMg": 200,
+        "saturatesMg": 3700,
+        "sugarsMg": 13200,
+        "totalCarbsMg": 22600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "vanilla-gelado:desserts",
+     "displayName": "Vanilla Gelado",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 161,
+        "energyKj": 674,
+        "fatMg": 8300,
+        "fibreMg": 200,
+        "proteinMg": 2500,
+        "saltMg": 200,
+        "saturatesMg": 6200,
+        "sugarsMg": 17300,
+        "totalCarbsMg": 19500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "vanilla-gelado:desserts",
+     "displayName": "Vanilla Gelado",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 161,
+        "energyKj": 674,
+        "fatMg": 8300,
+        "fibreMg": 200,
+        "proteinMg": 2500,
+        "saltMg": 200,
+        "saturatesMg": 6200,
+        "sugarsMg": 17300,
+        "totalCarbsMg": 19500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "mango-gelado:desserts",
+     "displayName": "Mango Gelado",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 99,
+        "energyKj": 416,
+        "fatMg": 400,
+        "fibreMg": 1700,
+        "proteinMg": 400,
+        "saltMg": 200,
+        "saturatesMg": 100,
+        "sugarsMg": 20300,
+        "totalCarbsMg": 24000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chocolate-gelado:desserts",
+     "displayName": "Chocolate Gelado",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 145,
+        "energyKj": 608,
+        "fatMg": 7500,
+        "fibreMg": 2600,
+        "proteinMg": 1600,
+        "saltMg": 100,
+        "saturatesMg": 5600,
+        "sugarsMg": 17300,
+        "totalCarbsMg": 18000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coconut-gelado:desserts",
+     "displayName": "Coconut Gelado",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 157,
+        "energyKj": 660,
+        "fatMg": 7500,
+        "fibreMg": 1000,
+        "proteinMg": 2000,
+        "saltMg": 100,
+        "saturatesMg": 7000,
+        "sugarsMg": 19500,
+        "totalCarbsMg": 20300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coconut-gelado:desserts",
+     "displayName": "Coconut Gelado",
+     "subsection": "",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 157,
+        "energyKj": 660,
+        "fatMg": 7500,
+        "fibreMg": 1000,
+        "proteinMg": 2000,
+        "saltMg": 100,
+        "saturatesMg": 7000,
+        "sugarsMg": 19500,
+        "totalCarbsMg": 20300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "vanilla-frozen-yogurt:desserts",
+     "displayName": "Bottomless Vanilla Frozen Yoghurt",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 88,
+        "energyKj": 376,
+        "fatMg": 100,
+        "fibreMg": 100,
+        "proteinMg": 3200,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 19000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "strawberry-frozen-yoghurt:desserts",
+     "displayName": "Bottomless Strawberry Frozen Yoghurt",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 86,
+        "energyKj": 367,
+        "fatMg": 100,
+        "fibreMg": 200,
+        "proteinMg": 3100,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 18000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chocolate-frozen-yoghurt:desserts",
+     "displayName": "Bottomless Chocolate Frozen Yoghurt",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 96,
+        "energyKj": 407,
+        "fatMg": 300,
+        "fibreMg": 800,
+        "proteinMg": 4000,
+        "saltMg": 200,
+        "saturatesMg": 200,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 19000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "mango-frozen-yoghurt:desserts",
+     "displayName": "Bottomless Mango Frozen Yoghurt",
+     "subsection": "",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 87,
+        "energyKj": 371,
+        "fatMg": 100,
+        "fibreMg": 200,
+        "proteinMg": 3100,
+        "saltMg": 0,
+        "saturatesMg": 100,
+        "sugarsMg": 16000,
+        "totalCarbsMg": 18000
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  },
+  {
+   "id": "section:drinks",
+   "displayName": "Drinks",
+   "items": [
+    {
+     "id": "irn-bru:drinks",
+     "displayName": "Irn Bru",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Scotland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 138,
+        "energyKj": 588,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 34000,
+        "totalCarbsMg": 34000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-coca-cola:drinks",
+     "displayName": "Bottomless Coca-Cola",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 126,
+        "energyKj": 540,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 31800,
+        "totalCarbsMg": 31800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-coca-cola:drinks",
+     "displayName": "Bottomless Coca-Cola",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "can of coke trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 126,
+        "energyKj": 540,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 31800,
+        "totalCarbsMg": 31800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-coke-zero:drinks",
+     "displayName": "Bottomless Coke Zero",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 4,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-diet-coke:drinks",
+     "displayName": "Bottomless Diet Coke",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1,
+        "energyKj": 4,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-fanta:drinks",
+     "displayName": "Bottomless Fanta",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 57,
+        "energyKj": 240,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 13500,
+        "totalCarbsMg": 13500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-dr-pepper-zero:drinks",
+     "displayName": "Bottomless Dr Pepper Zero",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "can of coke trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-oasis:drinks",
+     "displayName": "Bottomless Oasis Summer Fruits",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "can of coke trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-sprite-zero:drinks",
+     "displayName": "Bottomless Sprite Zero",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 3,
+        "energyKj": 15,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coca-cola:drinks",
+     "displayName": "Coca-Cola",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 139,
+        "energyKj": 594,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 35000,
+        "totalCarbsMg": 35000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coca-cola:drinks",
+     "displayName": "Coca-Cola",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "can of coke trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 139,
+        "energyKj": 594,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 35000,
+        "totalCarbsMg": 35000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "coke-zero:drinks",
+     "displayName": "Coke Zero",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1,
+        "energyKj": 5,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "diet-coke:drinks",
+     "displayName": "Diet Coke",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 1,
+        "energyKj": 5,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "fanta:drinks",
+     "displayName": "Fanta",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 63,
+        "energyKj": 264,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 14900,
+        "totalCarbsMg": 14900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sprite-zero:drinks",
+     "displayName": "Sprite Zero",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 3,
+        "energyKj": 17,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "still-water:drinks",
+     "displayName": "Still Water",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sparkling-water:drinks",
+     "displayName": "Sparkling Water",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottle-green-apple-cordial:drinks",
+     "displayName": "Bottle Green Apple Cordial",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 25,
+        "energyKj": 108,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 6300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottle-green-strawberry-cordial:drinks",
+     "displayName": "Bottle Green Strawberry Cordial",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 25,
+        "energyKj": 108,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 4700,
+        "totalCarbsMg": 6300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-peach-rubro:drinks",
+     "displayName": "Bottomless Peach RUBRO",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Rubro trial (glass)",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 57,
+        "energyKj": 249,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 14700,
+        "totalCarbsMg": 14700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "rubro-new-countertop-bottomless:drinks",
+     "displayName": "RUBRO Peach Iced Tea",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Rubro trial (new dispenser)",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 57,
+        "energyKj": 249,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 14700,
+        "totalCarbsMg": 14700
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "rubro-peach:drinks",
+     "displayName": "RUBRO Peach",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "rubro-berry:drinks",
+     "displayName": "RUBRO Berry",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "rubro-lemon:drinks",
+     "displayName": "RUBRO Lemon",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "karma-drinks-gingerella:drinks",
+     "displayName": "Karma Drinks Gingerella",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 105,
+        "energyKj": 441,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 900,
+        "saturatesMg": 0,
+        "sugarsMg": 23700,
+        "totalCarbsMg": 24000
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "nix-and-kix-cucumber-mint:drinks",
+     "displayName": "NIX and KIX Cucumber Mint",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 59,
+        "energyKj": 248,
+        "fatMg": 1700,
+        "fibreMg": 0,
+        "proteinMg": 1700,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 12900,
+        "totalCarbsMg": 13200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "real-kombucha-royal-flush:drinks",
+     "displayName": "REAL Kombucha Royal Flush",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 44,
+        "energyKj": 184,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 8300,
+        "totalCarbsMg": 8300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-pepsi-max:drinks",
+     "displayName": "Bottomless Pepsi Max",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 6,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-tango-orange:drinks",
+     "displayName": "Bottomless Tango Orange",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 3,
+        "energyKj": 15,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-pepsi-max-cherry:drinks",
+     "displayName": "Bottomless Pepsi Max Cherry",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 6,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-7-up-free:drinks",
+     "displayName": "Bottomless 7UP Free",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 6,
+        "energyKj": 24,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-diet-pepsi:drinks",
+     "displayName": "Bottomless Diet Pepsi",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 9,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "bottomless-7-up-free-lime-and-mint:drinks",
+     "displayName": "Bottomless 7UP Free Lime & Mint",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 5,
+        "energyKj": 23,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pepsi:drinks",
+     "displayName": "Pepsi Blue can (sugar levy applied)",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 145,
+        "energyKj": 620,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 36300,
+        "totalCarbsMg": 36300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "diet-pepsi:drinks",
+     "displayName": "Diet Pepsi can",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 10,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "pepsi-max:drinks",
+     "displayName": "Pepsi Max can",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 2,
+        "energyKj": 7,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "tango-orange:drinks",
+     "displayName": "Tango Orange can",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 63,
+        "energyKj": 261,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 14200,
+        "totalCarbsMg": 14200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "7-up-free:drinks",
+     "displayName": "7UP Free can",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": "Pepsi trial",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 7,
+        "energyKj": 26,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "tap-water:drinks",
+     "displayName": "Glass of Water",
+     "subsection": "Soft Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "big-drop-brewing-co-pale-ale:drinks",
+     "displayName": "Big Drop Brewing Co. Pale Ale",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 0.5,
+        "energyKcal": 63,
+        "energyKj": 261,
+        "fatMg": 700,
+        "fibreMg": 0,
+        "proteinMg": 1000,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 5000,
+        "totalCarbsMg": 11900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sagres:drinks",
+     "displayName": "Sagres",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 5,
+        "energyKcal": 129,
+        "energyKj": 541,
+        "fatMg": 300,
+        "fibreMg": 1000,
+        "proteinMg": 700,
+        "saltMg": 0,
+        "saturatesMg": 300,
+        "sugarsMg": 700,
+        "totalCarbsMg": 10200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sagres:drinks",
+     "displayName": "Sagres",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 5,
+        "energyKcal": 129,
+        "energyKj": 541,
+        "fatMg": 300,
+        "fibreMg": 1000,
+        "proteinMg": 700,
+        "saltMg": 0,
+        "saturatesMg": 300,
+        "sugarsMg": 700,
+        "totalCarbsMg": 10200
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sxollie-cider:drinks",
+     "displayName": "Sxollie",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4.5,
+        "energyKcal": 289,
+        "energyKj": 1214,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 22000,
+        "totalCarbsMg": 30300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sxollie-cider:drinks",
+     "displayName": "Sxollie",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4.5,
+        "energyKcal": 289,
+        "energyKj": 1214,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 22000,
+        "totalCarbsMg": 30300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "sxollie-cider:drinks",
+     "displayName": "Sxollie",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4.5,
+        "energyKcal": 289,
+        "energyKj": 1214,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 22000,
+        "totalCarbsMg": 30300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "freedom-pils:drinks",
+     "displayName": "Freedom Pils",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4.4,
+        "energyKcal": 119,
+        "energyKj": 495,
+        "fatMg": 300,
+        "fibreMg": 1700,
+        "proteinMg": 1300,
+        "saltMg": 0,
+        "saturatesMg": 300,
+        "sugarsMg": 300,
+        "totalCarbsMg": 8600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "freedom-pils:drinks",
+     "displayName": "Freedom Pils",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4.4,
+        "energyKcal": 119,
+        "energyKj": 495,
+        "fatMg": 300,
+        "fibreMg": 1700,
+        "proteinMg": 1300,
+        "saltMg": 0,
+        "saturatesMg": 300,
+        "sugarsMg": 300,
+        "totalCarbsMg": 8600
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "five-points-xpa:drinks",
+     "displayName": "Five Points XPA",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4,
+        "energyKcal": 56,
+        "energyKj": 231,
+        "fatMg": 300,
+        "fibreMg": 300,
+        "proteinMg": 1000,
+        "saltMg": 200,
+        "saturatesMg": 300,
+        "sugarsMg": 300,
+        "totalCarbsMg": 11900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "five-points-xpa:drinks",
+     "displayName": "Five Points XPA",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 4,
+        "energyKcal": 56,
+        "energyKj": 231,
+        "fatMg": 300,
+        "fibreMg": 300,
+        "proteinMg": 1000,
+        "saltMg": 200,
+        "saturatesMg": 300,
+        "sugarsMg": 300,
+        "totalCarbsMg": 11900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "black-s-kinsale-pale-ale:drinks",
+     "displayName": "Black’s Kinsale Pale Ale",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 112,
+        "energyKj": 479,
+        "fatMg": 300,
+        "fibreMg": 0,
+        "proteinMg": 1000,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 1700,
+        "totalCarbsMg": 11900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "tempted-medium-dry-cider:drinks",
+     "displayName": "Tempted Medium Dry Cider",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": "Northern Ireland",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 155,
+        "energyKj": 650,
+        "fatMg": 500,
+        "fibreMg": 0,
+        "proteinMg": 500,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 800,
+        "totalCarbsMg": 800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "draught-beer:drinks",
+     "displayName": "Draught Beer",
+     "subsection": "Beer & Cider",
+     "restaurantGroup": null,
+     "priceList": [],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-sauvignon-blanc:drinks",
+     "displayName": "Spier Sauvignon Blanc (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13,
+        "energyKcal": 195,
+        "energyKj": 815,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 800,
+        "totalCarbsMg": 800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-sauvignon-blanc:drinks",
+     "displayName": "Spier Sauvignon Blanc (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13,
+        "energyKcal": 195,
+        "energyKj": 815,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 800,
+        "totalCarbsMg": 800
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-chardonnay:drinks",
+     "displayName": "Spier Chardonnay (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 585,
+        "energyKj": 2445,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 98,
+        "energyKj": 408,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 300
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 137,
+        "energyKj": 571,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 400
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 195,
+        "energyKj": 815,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-chardonnay:drinks",
+     "displayName": "Spier Chardonnay (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 585,
+        "energyKj": 2445,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 98,
+        "energyKj": 408,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 300
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 137,
+        "energyKj": 571,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 400
+       },
+       {
+        "alcoholByVolumePercent": 13.64,
+        "energyKcal": 195,
+        "energyKj": 815,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "creative-block-2:drinks",
+     "displayName": "Creative Block 2 (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.42,
+        "energyKcal": 585,
+        "energyKj": 2438,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "creative-block-2:drinks",
+     "displayName": "Creative Block 2 (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.42,
+        "energyKcal": 585,
+        "energyKj": 2438,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-merlot:drinks",
+     "displayName": "Spier Merlot (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.9,
+        "energyKcal": 205,
+        "energyKj": 854,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 900,
+        "totalCarbsMg": 900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-merlot:drinks",
+     "displayName": "Spier Merlot (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.9,
+        "energyKcal": 205,
+        "energyKj": 854,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 900,
+        "totalCarbsMg": 900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-cabernet-sauvignon:drinks",
+     "displayName": "Spier Cabernet Sauvignon (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 600,
+        "energyKj": 2513,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2000,
+        "totalCarbsMg": 2000
+       },
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 200,
+        "energyKj": 838,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 700,
+        "totalCarbsMg": 700
+       },
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 100,
+        "energyKj": 419,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 300,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-cabernet-sauvignon:drinks",
+     "displayName": "Spier Cabernet Sauvignon (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 600,
+        "energyKj": 2513,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2000,
+        "totalCarbsMg": 2000
+       },
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 200,
+        "energyKj": 838,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 700,
+        "totalCarbsMg": 700
+       },
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 100,
+        "energyKj": 419,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 300,
+        "totalCarbsMg": 300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "creative-block-5:drinks",
+     "displayName": "Creative Block 5 (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 638,
+        "energyKj": 2670,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "creative-block-5:drinks",
+     "displayName": "Creative Block 5 (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.52,
+        "energyKcal": 638,
+        "energyKj": 2670,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 1500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-rose:drinks",
+     "displayName": "Spier Rose (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.15,
+        "energyKcal": 188,
+        "energyKj": 785,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "spier-rose:drinks",
+     "displayName": "Spier Rose (South Africa)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 13.15,
+        "energyKcal": 188,
+        "energyKj": 785,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cara-viva-medium-dry-portugal:drinks",
+     "displayName": "Cara Viva Medium Dry (Portugal)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 525,
+        "energyKj": 2210,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 800,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 11200,
+        "totalCarbsMg": 11200
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 175,
+        "energyKj": 737,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 300,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 3700,
+        "totalCarbsMg": 3700
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 123,
+        "energyKj": 516,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2600,
+        "totalCarbsMg": 2600
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 88,
+        "energyKj": 368,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 100,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 1900,
+        "totalCarbsMg": 1900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cara-viva-medium-dry-portugal:drinks",
+     "displayName": "Cara Viva Medium Dry (Portugal)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 525,
+        "energyKj": 2210,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 800,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 11200,
+        "totalCarbsMg": 11200
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 175,
+        "energyKj": 737,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 300,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 3700,
+        "totalCarbsMg": 3700
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 123,
+        "energyKj": 516,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2600,
+        "totalCarbsMg": 2600
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 88,
+        "energyKj": 368,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 100,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 1900,
+        "totalCarbsMg": 1900
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cara-viva-summer-fruit-portugal:drinks",
+     "displayName": "Cara Viva Summer Fruit (Portugal)",
+     "subsection": "Wine",
+     "restaurantGroup": null,
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 540,
+        "energyKj": 2273,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 800,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 15000,
+        "totalCarbsMg": 15000
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 180,
+        "energyKj": 758,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 300,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 5000,
+        "totalCarbsMg": 5000
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 126,
+        "energyKj": 530,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 200,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 3500,
+        "totalCarbsMg": 3500
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 90,
+        "energyKj": 379,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 100,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2500,
+        "totalCarbsMg": 2500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cara-viva-summer-fruit-portugal:drinks",
+     "displayName": "Cara Viva Summer Fruit (Portugal)",
+     "subsection": "Wine",
+     "restaurantGroup": "Alcohol for delivery and collection",
+     "priceList": [
+      "125ml",
+      "175ml",
+      "250ml",
+      "Bottle"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 540,
+        "energyKj": 2273,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 800,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 15000,
+        "totalCarbsMg": 15000
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 180,
+        "energyKj": 758,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 300,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 5000,
+        "totalCarbsMg": 5000
+       },
+       {
+        "alcoholByVolumePercent": 11.5,
+        "energyKcal": 90,
+        "energyKj": 379,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 100,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 2500,
+        "totalCarbsMg": 2500
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "cappuccino:drinks",
+     "displayName": "Cappuccino",
+     "subsection": "Coffee",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "gal-ão:drinks",
+     "displayName": "Galão",
+     "subsection": "Coffee",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "espresso:drinks",
+     "displayName": "Espresso",
+     "subsection": "Coffee",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "espresso-espresso:drinks",
+     "displayName": "Espresso Espresso",
+     "subsection": "Coffee",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "americano:drinks",
+     "displayName": "Americano",
+     "subsection": "Coffee",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "hot-chocolate:drinks",
+     "displayName": "Hot Chocolate",
+     "subsection": "Hot Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [],
+      "messages": []
+     }
+    },
+    {
+     "id": "organic-everyday-tea:drinks",
+     "displayName": "Organic Everyday Tea",
+     "subsection": "Hot Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 23,
+        "energyKj": 95,
+        "fatMg": 800,
+        "fibreMg": 0,
+        "proteinMg": 1700,
+        "saltMg": 100,
+        "saturatesMg": 500,
+        "sugarsMg": 2300,
+        "totalCarbsMg": 2300
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "chamomile-citrus-tea-infusion:drinks",
+     "displayName": "Chamomile & Citrus Tea Infusion",
+     "subsection": "Hot Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "organic-mint-tea-infusion:drinks",
+     "displayName": "Organic Mint Tea Infusion",
+     "subsection": "Hot Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    },
+    {
+     "id": "african-nectar-rooibos-tea-infusion:drinks",
+     "displayName": "African Nectar Rooibos Tea Infusion",
+     "subsection": "Hot Drinks",
+     "restaurantGroup": null,
+     "priceList": [
+      "On its own"
+     ],
+     "nutritionalInfo": {
+      "factsForPortionSizes": [
+       {
+        "alcoholByVolumePercent": null,
+        "energyKcal": 0,
+        "energyKj": 0,
+        "fatMg": 0,
+        "fibreMg": 0,
+        "proteinMg": 0,
+        "saltMg": 0,
+        "saturatesMg": 0,
+        "sugarsMg": 0,
+        "totalCarbsMg": 0
+       }
+      ],
+      "messages": []
+     }
+    }
+   ]
+  }
+ ]
+}
