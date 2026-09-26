@@ -364,6 +364,11 @@ export interface Profile {
   activityShown?: string
   /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
   loadNoteSeen?: string
+  /**
+   * Who the user wants to see in exercise demos. A display choice about the video, not about the
+   * user; absent = follow `sex` (read through demoPrefOf).
+   */
+  demos?: DemoKind
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */
@@ -422,7 +427,7 @@ export interface Exercise {
   cardioVariation?: CardioVariation
   /** CARDIO_MET key for burn */
   cardioKey?: string
-  video?: ExerciseMedia
+  video?: ExerciseDemo
 }
 
 /** A definition for a built-in exercise within a workout template. */
@@ -434,8 +439,8 @@ export interface ExerciseTemplate {
   t: string
   cue: string
   title?: string
-  /** owned demo clip; without one the card falls back to a YouTube search link */
-  video?: ExerciseMedia
+  /** owned demo clips; without one the card falls back to a YouTube search link */
+  video?: ExerciseDemo
   /** rest between sets in seconds; overrides the default for the movement pattern */
   restSec?: number
 }
@@ -460,6 +465,16 @@ export interface ExerciseMedia {
   /** phases in time order; each runs until the next one starts, the last until durationSec */
   tempo: TempoPhase[]
 }
+
+/** Who demonstrates in a clip: the two formats demos are made in. */
+export type DemoKind = 'f' | 'm'
+
+/**
+ * An exercise's demo clips, one per demonstrator. Each clip carries its own tempo, measured from
+ * its own footage. Read through `pickDemo` (core/domain/demo.ts), which falls back to whichever
+ * clip exists.
+ */
+export type ExerciseDemo = Partial<Record<DemoKind, ExerciseMedia>>
 
 export interface WorkoutTemplate {
   title: string

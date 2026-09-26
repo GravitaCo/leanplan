@@ -329,23 +329,32 @@ Health or Google Health Connect cycle data; that waits for a native build.
    - rate-loop guard for period weeks.
 6. **Optional sync** (the `cycle_days` table), then life-stage modes.
 
-## 9. Decisions for Benn
+## 9. Decisions
 
-1. **Name.** "Flow" has real conflicts:
-   - an App Store app is literally called "Flow: Period & Cycle Tracker";
-   - "Flow – Depression treatment" is a mental-health app;
-   - Flo Health holds FLO trademarks for menstrual-tracking software, and "Flow" sounds the same.
+### Made (26 Sept 2026)
 
-   The name also centres on bleeding, which leaves out people on contraception or in perimenopause,
-   and it clashes with "flow state". Options: keep "Flow" as an in-app label after a trademark
-   search, or use "Cycle" (lowest risk), "Rhythm" or "Tides".
-2. **Demo default.** Match the calorie sex field when it's set, or ask once ("Who would you like
-   to see in exercise demos?"). The reviews split. Security prefers not tying it to sex.
-3. **Gender identity.** Collect it (optional, handled as sensitive data), or rely on the relabelled
+- **Name: not "Flow".** The feature needs a name that feels considerate to the people using it.
+  Benn is happy with "Cycle" or "Rhythm". Recommendation: **"Cycle"** (in copy, "Your cycle").
+  It is plain, descriptive and doesn't centre bleeding, so it still fits people on contraception
+  or in perimenopause. "Rhythm" is warmer, but "the rhythm method" is a well-known name for
+  calendar-based contraception, and Tali has to stay clearly away from contraception and
+  fertility claims (§7). Wherever this doc says "Flow", read the chosen name.
+- **Demo videos: the user chooses.** Built on this branch as "Exercise demos: Woman / Man" in
+  Profile, stored as `profile.demos`. Until the user chooses, it follows the energy-formula `sex`
+  field. All current clips show a woman, so choosing "Man" plays the woman's clip and says the
+  man's versions are on the way. Each new clip is added under its demonstrator key in `DEMOS`,
+  with its own measured tempo.
+- **Demand signal:** two women asked for the cycle feature. That's worth following up, but two
+  requests are a small sample. A short survey or interviews with more users before the build
+  would test how much they want it and what they'd want it to do.
+
+### Still open
+
+1. **Gender identity.** Collect it (optional, handled as sensitive data), or rely on the relabelled
    energy formula plus the demo choice and collect nothing. Sexual orientation is recommended out
    either way.
-4. **Sync.** Is device-only acceptable for Flow v1, knowing a lost phone loses the log unless it
+2. **Sync.** Is device-only acceptable for Flow v1, knowing a lost phone loses the log unless it
    was exported?
-5. **Scope.** UK only at first, or US too? US launch raises the privacy bar (encryption, state-law
+3. **Scope.** UK only at first, or US too? US launch raises the privacy bar (encryption, state-law
    policies).
-6. **Clinician review** of the red-flag thresholds and copy before launch.
+4. **Clinician review** of the red-flag thresholds and copy before launch.

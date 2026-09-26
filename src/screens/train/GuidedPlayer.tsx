@@ -15,6 +15,7 @@ import { AdjustSheet } from './AdjustSheet'
 import { FinishSheet } from './FinishSheet'
 import { HoldTimer } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
+import { useDemo } from './useDemo'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -131,7 +132,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
   const target = complete ? null : targetFor(slot.shape, slot.rx, last, setNo, done)
   const isLastSlot = pos >= order.length - 1
   const name = bareName(slot.shown.n)
-  const video = slot.shown.video
+  const video = useDemo(slot.shown.video)
 
   // one clock for the elapsed time and the rest countdown (device clock: works offline)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [])

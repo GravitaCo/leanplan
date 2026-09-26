@@ -4,6 +4,7 @@ import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
 import { Icon } from '@/ui/icons'
 import { useScrollLock } from '@/ui/primitives'
+import { useDemo } from './useDemo'
 
 /**
  * Full-screen demo clip with the tempo counter laid over it (phase, rep and a 1-2-3 count), so
@@ -11,7 +12,7 @@ import { useScrollLock } from '@/ui/primitives'
  * when the clip is paused, buffers or loops.
  */
 export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () => void }) {
-  const m = ex.video!
+  const m = useDemo(ex.video)!
   const vid = useRef<HTMLVideoElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const closeBtn = useRef<HTMLButtonElement>(null)

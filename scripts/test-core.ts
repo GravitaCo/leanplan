@@ -43,6 +43,7 @@ import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/s
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
 import type { Food } from '@/core/types'
+import { anyDemoWith, demoClips, demoPrefOf, pickDemo } from '@/core/domain/demo'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -199,7 +200,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
 // demo clips: every attached clip exists, its tempo is ordered and fits the clip, and the counter
 // reads the phase on screen
 {
-  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [[e.n, e.video] as const] : [])))
+  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => demoClips(e.video).map((m) => [e.n, m] as const)))
   const off = clips.flatMap(([n, m]) => {
     const why: string[] = []
     if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
@@ -210,11 +211,20 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   })
   const ok = clips.length === 4 && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
-  const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
+  const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift.f, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
   const want = 'ready::2:1 lower:1:2:2 stretch:1:2:1 squeeze:2:2:3'
   const ok2 = got === want; if (!ok2) bad++
   console.log(ok2 ? 'PASS' : 'FAIL', 'tempo counter', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
+  // demonstrator choice: the chosen clip, else the other one; the choice follows sex until set
+  const f = DEMOS.barbellCurl.f, m = { ...f, src: 'x.m.mp4' }
+  const ok3 = pickDemo({ f, m }, 'm') === m && pickDemo({ f, m }, 'f') === f && pickDemo({ f }, 'm') === f
+    && pickDemo({ m }, 'f') === m && pickDemo(undefined, 'f') === undefined && pickDemo({}, 'f') === undefined
+    && demoPrefOf({ sex: 'F' }) === 'f' && demoPrefOf({ sex: 'M' }) === 'm' && demoPrefOf({ sex: 'F', demos: 'm' }) === 'm'
+    && demoPrefOf({ sex: 'M', demos: 'f' }) === 'f'
+    && anyDemoWith(Object.values(DEMOS), 'f') && !anyDemoWith(Object.values(DEMOS), 'm')
+  if (!ok3) bad++
+  console.log(ok3 ? 'PASS' : 'FAIL', 'demo choice: pickDemo falls back, demoPrefOf follows sex until set')
 }
 // workout plan D5: logged workouts stop widening the food range from profile.burnSwitch
 // (activity level already counts training); sedentary users get net burn; history is frozen
@@ -964,7 +974,7 @@ function legacyAndGuest(): void {
     ['week: Sunday wraps to Monday', weekWarnings({ 0: 'Legs', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).some((w) => w.days.join() === '0,1')],
     ['week: no rest day warns', weekWarnings({ 0: 'Cardio', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).some((w) => w.kind === 'no-rest')],
     ['week: swapDays', JSON.stringify(swapDays({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any, 1, 3)[1]) === '"Push"'],
-    ['tempo: countOf is the phase count', (() => { const s = tempoAt(DEMOS.barbellSquat, 5); return s.kind === 'lower' && s.countOf === 8 && s.count === 3 })()],
+    ['tempo: countOf is the phase count', (() => { const s = tempoAt(DEMOS.barbellSquat.f, 5); return s.kind === 'lower' && s.countOf === 8 && s.count === 3 })()],
     ['persistence: guided fields kept, malformed ones dropped', (() => {
       const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', note: 5, ex: [{ name: 'x', rx: 3, sets: [{ w: '1', reps: '2', feel: 'meh', warmup: 'yes' }, { w: '1', reps: '2', feel: 'struggle', warmup: true }] }] }] } } } as any)
       const x: any = st.days['2026-09-20'].sessions![0]

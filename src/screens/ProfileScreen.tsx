@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, DemoKind, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
 import { DIETS } from '@/core/domain/diet'
+import { anyDemoWith, demoPrefOf } from '@/core/domain/demo'
+import { EXERCISES } from '@/core/data/exercises'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
 import { suggestedTargets } from '@/core/domain/nutrition'
@@ -29,7 +31,9 @@ function directionLabel(pct: number): string {
   return 'at maintenance'
 }
 
-type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
+const DEMO_LABEL: Record<DemoKind, string> = { f: 'Woman', m: 'Man' }
+
+type Section = 'profile' | 'metrics' | 'targets' | 'demos' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
 
 export function ProfileScreen() {
   const data = useStore((s) => s.data)
@@ -92,6 +96,7 @@ export function ProfileScreen() {
   const goalLabel = GOALS.find((g) => g.value === pr.goal)?.label
   const trainDays = Object.values(data.schedule).filter((x) => x && x !== 'Rest').length
   const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
+  const demoPref = demoPrefOf(pr)
   const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
 
   return (
@@ -191,6 +196,14 @@ export function ProfileScreen() {
           </div>
         </Disclosure>
         <SettingRow icon="dumbbell" color={MOVEF} soft label="Training" value={trainDays === 1 ? '1 day a week' : `${trainDays} days a week`} onPress={() => setTab('plan')} />
+        <Disclosure icon="play" color={MOVEF} soft label="Exercise demos" value={DEMO_LABEL[demoPref]} open={open === 'demos'} onToggle={() => toggle('demos')}>
+          <Seg<DemoKind> options={[['f', DEMO_LABEL.f], ['m', DEMO_LABEL.m]]} value={demoPref} onChange={(v) => setPrefs({ demos: v })} />
+          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>
+            {anyDemoWith(EXERCISES.map((e) => e.video), demoPref)
+              ? 'Who you see demonstrating each exercise. Where a demo only has one version so far, that one plays.'
+              : `Demos with a ${DEMO_LABEL[demoPref].toLowerCase()} are on the way. Until then you'll see the ${DEMO_LABEL[demoPref === 'f' ? 'm' : 'f'].toLowerCase()}'s version.`}
+          </div>
+        </Disclosure>
       </div>
       <div className="foot">Your weekly training schedule lives on Plan.</div>
 

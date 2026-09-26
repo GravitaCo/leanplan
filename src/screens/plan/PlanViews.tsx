@@ -14,6 +14,7 @@ import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
+import { useDemo } from '../train/useDemo'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -206,7 +207,7 @@ export function WorkoutView({ type, onBack }: { type: WorkoutType; onBack: () =>
   const schedule = useStore((s) => s.data.schedule)
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
-  const v = firstVideo(type)
+  const v = useDemo(firstVideo(type))
   const [failed, setFailed] = useState(false)
   const on = WEEK_ORDER.filter((d) => schedule[d] === type).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'

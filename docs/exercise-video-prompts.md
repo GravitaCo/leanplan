@@ -67,11 +67,26 @@ no counter; they are there to show posture and set-up.
 
 ## Character and scene block (use in every prompt)
 
+Every exercise is made in two versions, one with each demonstrator, and users choose which they
+see (Profile › Exercise demos). Keep the scene, camera and wording identical between the two and
+change only the demonstrator line, so both clips are framed and timed the same way.
+
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
-> Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal leggings,
-> sage-green sports bra, open cropped tank, flat training shoes. Calm, focused expression.
+> [DEMONSTRATOR] Calm, focused expression.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
 > colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
+
+**Demonstrator lines:**
+
+- **Woman (`f`):** Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal
+  leggings, sage-green sports bra, open cropped tank, flat training shoes.
+- **Man (`m`):** Man in his 30s, medium natural build, realistic skin, short hair, charcoal
+  training shorts, fitted sage-green T-shirt, flat training shoes.
+
+Use one fixed reference still per demonstrator if the model takes one, so they look the same in
+every clip. Name files `name.mp4` for the existing woman clips and `name.m.mp4` for the man's,
+with matching posters, and add each clip under its key (`f` or `m`) in `DEMOS` in
+`core/data/media.ts` with **its own measured tempo**: never copy timings from the other version.
 
 **For machine and cable exercises, add:**
 
@@ -82,6 +97,8 @@ no counter; they are there to show posture and set-up.
 
 > Two slow, controlled repetitions, perfect form, no bouncing or swinging. She starts and ends
 > in the same position.
+
+For the man's version, write "He" for "She" here and in the exercise prompt.
 
 Then add the exercise's **timing text**. All rep timings use the same hypertrophy tempo: a slow
 lowering of about 3 seconds, a short pause in the stretch, a smooth lift of about 1.5 seconds
