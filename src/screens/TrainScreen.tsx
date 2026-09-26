@@ -11,7 +11,7 @@ import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
 import { plannedOn, shortTitle } from '@/core/domain/week'
 import { MODALITY_LABEL } from '@/core/data/modalities'
-import { keyOfSession, keyRoutineId, templateFor, type WorkoutKey } from '@/core/domain/routines'
+import { isBuiltinKey, keyOfSession, keyRoutineId, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { EXERCISES } from '@/core/data/exercises'
 import { PageHeader } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
@@ -112,7 +112,12 @@ export function TrainScreen() {
     if (swapsBy[t]) return swapsBy[t]
     const out: Record<number, string> = {}
     const L = builtin(t)?.ex
-    ;(templateFor(t, routines)?.ex ?? []).forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id)) out[i] = id })
+    const ex = templateFor(t, routines)?.ex ?? []
+    // an own workout can be reordered after it was logged: an entry that is one of its own planned
+    // exercises has only moved, so it isn't read as a swap (the sets follow it; see splitLogged)
+    const own = !isBuiltinKey(t)
+    const planned = new Set(ex.map((e) => e.id))
+    ex.forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id) && !(own && planned.has(id))) out[i] = id })
     return out
   }
   function setSwap(t: WorkoutKey, i: number, id: string) {
