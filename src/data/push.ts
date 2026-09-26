@@ -1,5 +1,5 @@
 /** Web Push subscription handling for supplement reminders (ported from LeanPlan). */
-import { SB_REST, SB_KEY, getToken, getUid } from './supabase'
+import { sbFetch, getUid } from './supabase'
 
 const VAPID_PUBLIC_KEY =
   'BOvtsDXhc-q8UtjBcaCY7iydSF_-xKRHoIR8YsOqdGXvYl4HUMlaeWsCsNf5ZTNMAh-9wQwEfmu4Kgcg6_WnGlU'
@@ -28,14 +28,9 @@ export async function subscribePush(): Promise<boolean> {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     })
     const j = sub.toJSON()
-    const r = await fetch(SB_REST + '/push_subscriptions', {
+    const r = await sbFetch('/push_subscriptions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + getToken(),
-        apikey: SB_KEY,
-        Prefer: 'resolution=merge-duplicates',
-      },
+      headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
       body: JSON.stringify({
         user_id: getUid(),
         endpoint: j.endpoint,
@@ -63,14 +58,8 @@ export async function unsubscribePush(): Promise<void> {
     if (sub) {
       const endpoint = sub.endpoint
       await sub.unsubscribe()
-      await fetch(
-        SB_REST +
-          '/push_subscriptions?endpoint=eq.' +
-          encodeURIComponent(endpoint) +
-          '&user_id=eq.' +
-          getUid(),
-        { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken(), apikey: SB_KEY } },
-      )
+      // a failed delete is ignored: the subscription is already ended, so reminders stop anyway
+      await sbFetch('/push_subscriptions?endpoint=eq.' + encodeURIComponent(endpoint) + '&user_id=eq.' + getUid(), { method: 'DELETE' })
     }
   } catch (e) {
     console.error('Push unsubscribe failed:', e)

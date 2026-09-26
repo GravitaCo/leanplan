@@ -97,7 +97,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   `.tile`, `.banner`, `.toast`.
 - **Logo:** the Tali mark (plum #3A2734). `Tali-App.svg` is the app icon: plum frame, white mark;
   `public/favicon.svg` switches to a mauve #CD7FAE frame in light system mode. The PWA PNGs in
-  `public/` are generated from it. In the app, `TaliMark` draws the mark in `--mark` (plum on light,
+  `public/` are generated from `Tali-App.svg`. In the app, `TaliMark` draws the mark in `--mark` (plum on light,
   white on dark).
 
 ## Food data & offline (important)
@@ -121,10 +121,11 @@ setting (`prefers-color-scheme`); there is no in-app override.
   with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
   Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
-- Each clip carries a **tempo timeline measured from the footage**. The guided player and the
-  library's demo player show the phase and a 1-2-3 count from it. They never claim to count the
-  user's reps. Re-time it whenever a clip changes; `npm test` checks the files exist and the
-  timeline is ordered.
+- Each clip carries a **tempo timeline measured from the footage**. The guided player
+  (`train/GuidedPlayer.tsx`) shows the phase and a 1-2-3 count from it. The demo player
+  (`train/DemoPlayer.tsx`, opened from the library, the session preview and "Log sets by hand")
+  also shows the clip's own rep ("Rep 2 of 3") and a pace row. Neither counts the user's reps.
+  Re-time it whenever a clip changes; `npm test` checks the files exist and the timeline is ordered.
 - The service worker leaves `/videos/` to the network (Safari streams video with Range
   requests), so clips need a connection; logging never does.
 
@@ -141,9 +142,12 @@ setting (`prefers-color-scheme`); there is no in-app override.
 - The device's data records its owner (`_meta.owner`); signing in as a different account asks
   before showing or syncing it (`ownerCheck` in `src/data/persistence.ts`).
 
-## Working agreement: Figma → code
+## Working agreement: design → code
 
-The user designs in **Figma**; Claude implements. Run the **local** Figma Dev Mode MCP
+Benn is the creative director; Claude implements. Designs come from **Figma** or from the
+claude.ai **Design canvas** (Claude drafts boards there for Benn to review and approve).
+Either way, nothing is built until Benn has approved the design. For Figma, run the **local**
+Figma Dev Mode MCP
 (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`) — it's only
 reachable from a Claude Code running on the user's machine, not from a cloud session.
 

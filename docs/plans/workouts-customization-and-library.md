@@ -157,9 +157,9 @@ every phase must meet them, and ship-critic checks each phase against this list.
   through `ExerciseTemplate.video` from `DEMOS` in `src/core/data/media.ts`. The shipped
   `ExerciseMedia` is `{ src, poster?, durationSec, tempo: TempoPhase[] }`, where each phase is
   `{ at, kind: 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch', rep? }` measured from the
-  footage at 8 fps. The guided session (`train/GuidedPlayer.tsx`) and the library's demo player
-  (`train/DemoPlayer.tsx`) read the video clock and overlay the phase and a 1-2-3 count
-  (`core/domain/tempo.ts`); they never claim to count the user's reps. Exercises without a clip fall back to a YouTube search (`howToLink`).
+  footage at 8 fps. The guided session (`train/GuidedPlayer.tsx`) reads the video clock and overlays
+  the phase and a 1-2-3 count (`core/domain/tempo.ts`). The demo player (`train/DemoPlayer.tsx`)
+  also shows the clip's own rep and a pace row. Neither counts the user's reps. Exercises without a clip fall back to a YouTube search (`howToLink`).
   `VIDEO_BASE` is the one switch for moving clips to Bunny CDN. The service worker leaves
   `/videos/` to the network. `npm test` checks every clip file exists and the timeline is
   ordered. Clips are generated from the Seedance prompts in `docs/exercise-video-prompts.md`.
@@ -662,7 +662,7 @@ create policy "owner_full_access" on public.training_plans
   dirty for first upload exactly as it does recipes.
 - **`sync.ts`.** `to/fromServerRoutine` and `to/fromServerPlan` mappers plus dirty loops
   mirroring recipes; `toServerDay` adds `sessions: x.sessions ?? null` and `fromServerDay`
-  reads `row.sessions`. All behind `authed`, so guests stay local-only. Local dirty records win
+  reads `row.sessions`. All behind `authed`, so nothing reaches the server without a signed-in session. Local dirty records win
   on pull, as today.
 - **`activePlanId`** rides `settings.profile` (a pointer, not the body).
 - **The exercise library, built-in routines and blueprints stay app-shipped static data**: no

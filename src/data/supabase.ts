@@ -40,7 +40,7 @@ export class HttpError extends Error {
 }
 
 /** Thin REST wrappers around PostgREST, authorised with the current session token. */
-function sbFetch(path: string, opts: RequestInit = {}, token?: string): Promise<Response> {
+export function sbFetch(path: string, opts: RequestInit = {}, token?: string): Promise<Response> {
   opts.headers = {
     apikey: SB_KEY,
     Authorization: 'Bearer ' + (token || getToken()),
