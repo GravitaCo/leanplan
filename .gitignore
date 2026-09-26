@@ -11,3 +11,5 @@ __pycache__/
 .claude/settings.local.json
 .claude/worktrees/
 dist-e2e
+.env
+.env.*
