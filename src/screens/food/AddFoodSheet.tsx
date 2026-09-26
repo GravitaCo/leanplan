@@ -177,7 +177,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
           <div className="m"><div className="t">Scan barcode</div><div className="s">Packaged food, from the pack</div></div><Chevron />
         </button>
         <button className="li" onClick={() => go({ kind: 'create' })}>
-          <span className="ico" style={{ background: 'var(--energy)' }}><Icon name="plus" size={18} /></span>
+          <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>
           <div className="m"><div className="t">Create a food</div><div className="s">From the label on the packet</div></div><Chevron />
         </button>
       </div>

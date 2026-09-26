@@ -4,7 +4,7 @@ import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
 import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
-import { buildEntry, scaleEntry } from '@/core/domain/estimate'
+import { buildEntry, scaleEntry, CAPTURE_ERR } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
 import { entryAmount, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
@@ -1137,8 +1137,8 @@ async function barcodeScan(): Promise<void> {
   const builtinOff = FOODS.find((f) => f.src?.startsWith('off:'))!
   checks.push(
     ['local: a saved scan is found by its barcode; built-in OFF foods by their src', findByBarcode([saved], '5000157024671') === saved && findByBarcode(FOODS, builtinOff.src!.slice(4)) === builtinOff],
-    ['source: a saved scan keeps the Open Food Facts line and a ±20% label margin', sourceOf(saved)?.text === 'Pack label via Open Food Facts · 5000157024671' && sourceErr(saved) === 0.2 && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
-    ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === 0.2],
+    ['source: a saved scan keeps the Open Food Facts line and the same margin as a typed label', sourceOf(saved)?.text === 'Your pack label (found via Open Food Facts) · 5000157024671' && sourceErr(saved) === sourceErr({ id: 'x', src: 'label' }) && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
+    ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === +(CAPTURE_ERR.serv + 0.03).toFixed(2)],
   )
 
   // ingredient-only: "What can I make?" chips and the recipe builder
@@ -1153,11 +1153,24 @@ async function barcodeScan(): Promise<void> {
   )
 
   // sync: meta held back until the migration; a pull keeps this device's extra fields
-  const rowOff = toServerFood(saved, LOCAL_USER) as Record<string, unknown>
+  const rowOff = toServerFood(saved, LOCAL_USER, false) as Record<string, unknown>
+  {
+    // a stale device copy with a barcode meets a newer server row without meta: after one sync
+    // the server has its newer name and values plus the barcode
+    const srv: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [{ ...toServerFood({ ...saved, n: 'Renamed elsewhere', k: 99 }, LOCAL_USER, false), updated_at: 'z' }] }
+    const q = stateFromBackup({ days: {} } as never)
+    q.customFoods = [{ ...saved, _dirty: false }]
+    const qm = ensureMeta(q, false)
+    const rf = globalThis.fetch
+    globalThis.fetch = fakeServer(srv).fetchFn
+    try { await pushDirty(q, qm); await pullAll(q, qm); await pushDirty(q, qm); await pullAll(q, qm) } finally { globalThis.fetch = rf }
+    const row = srv.custom_foods[0]
+    checks.push(['sync: pre-meta rows get this device\'s barcode without losing the newer server edit', srv.custom_foods.length === 1 && row.name === 'Renamed elsewhere' && row.kcal === 99 && row.meta?.barcode === '5000157024671' && !q.customFoods[0]._dirty])
+  }
   const rowOn = toServerFood(saved, LOCAL_USER, true) as Record<string, any>
   const back = fromServerFood({ ...rowOn, updated_at: 'z' })
   checks.push(
-    ['sync: CUSTOM_FOOD_META is off, so no meta column is sent', CUSTOM_FOOD_META === false && !('meta' in rowOff)],
+    ['sync: CUSTOM_FOOD_META is on (migration applied), and off still sends no meta', CUSTOM_FOOD_META === true && !('meta' in rowOff)],
     ['sync: with the flag on, meta carries src, cat, barcode', rowOn.meta?.src === 'off:5000157024671' && rowOn.meta?.cat === 'veg' && rowOn.meta?.barcode === '5000157024671' && !('ml' in rowOn.meta)],
     ['sync: meta read back from the server', back.barcode === '5000157024671' && back.src === 'off:5000157024671' && back.cat === 'veg'],
   )
@@ -1168,7 +1181,7 @@ async function barcodeScan(): Promise<void> {
   const realFetch = globalThis.fetch
   globalThis.fetch = fakeServer(rows).fetchFn
   try { await pushDirty(s, m); await pullAll(s, m) } finally { globalThis.fetch = realFetch }
-  checks.push(['sync: after push + pull (no meta on the server) the scan keeps barcode, src and cat', rows.custom_foods.length === 1 && !('meta' in rows.custom_foods[0]) && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
+  checks.push(['sync: after push + pull the scan keeps barcode, src and cat (meta on the server)', rows.custom_foods.length === 1 && rows.custom_foods[0].meta?.barcode === '5000157024671' && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
   const back2 = stateFromBackup(JSON.parse(JSON.stringify(s)))
   checks.push(['persistence and backup JSON: barcode survives a round trip', back2.customFoods[0].barcode === '5000157024671'])
 

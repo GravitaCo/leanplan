@@ -61,8 +61,8 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
               </linearGradient>
             </defs>
             <path d={area} fill="url(#wfill)" />
-            <path d={line} fill="none" stroke="var(--body)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--body)" />}
+            <path d={line} fill="none" stroke="var(--body-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--body-ink)" />}
           </svg>
         </div>
       )}

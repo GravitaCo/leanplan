@@ -265,7 +265,7 @@ export function TodayScreen() {
               <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
                 <span className="tk">Weight</span>
                 <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
-                {weights.length > 1 && <div style={{ marginTop: 6 }}><Sparkline values={weights} w={120} h={26} color="var(--body)" /></div>}
+                {weights.length > 1 && <div style={{ marginTop: 6 }}><Sparkline values={weights} w={120} h={26} color="var(--body-ink)" /></div>}
                 <span className="s">{wDelta == null ? (day.weight ? 'Today' : 'Weekly trend appears here') : `${wDelta > 0 ? '+' : wDelta < 0 ? '−' : ''}${Math.abs(wDelta)} kg vs last week`}</span>
               </div>
             )}

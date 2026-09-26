@@ -92,7 +92,7 @@ export function WeekBars({ rows, lo, hi, cur }: { rows: DayStat[]; lo: number; h
         return (
           <g key={x.d}>
             {x.logged ? (
-              <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill="var(--energy)" fillOpacity={x.d === cur ? 1 : 0.6} />
+              <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={x.d === cur ? 'var(--energy-ink)' : 'var(--energy)'} />
             ) : !x.future ? (
               <rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill="var(--fill3)" />
             ) : null}

@@ -12,12 +12,12 @@ import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 
 /**
  * Send custom foods' extra fields (per-item, source, category, barcode …) in the additive
- * `custom_foods.meta` jsonb column (docs/migrations/2026-09-custom-foods-meta.sql). Off until that
- * migration is applied: PostgREST rejects an upsert naming a column that doesn't exist, so turning
- * this on early would stop every custom food syncing. The fields persist on the device either way,
- * and a pull never drops them (see pullAll).
+ * `custom_foods.meta` jsonb column (docs/migrations/2026-09-custom-foods-meta.sql, applied
+ * 26 Sept 2026). Once any build with this on has shipped, never drop the column: installed apps
+ * still running it would 400 on every custom-food upsert. To roll back, turn this off and deploy
+ * first. A pull never drops a device's fields when a row has no meta (see fromServerFood).
  */
-export const CUSTOM_FOOD_META = false
+export const CUSTOM_FOOD_META = true
 
 /** The Food fields that travel in `meta` (everything the named columns don't hold). */
 const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode', 'eat'] as const
@@ -223,7 +223,12 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     // a row without `meta` (the column isn't there yet, or an older version wrote it) keeps this
     // device's extra fields for the same food, so a pull never strips a scan's barcode or source
     const mine = local.get(f.id)
-    if (mine && !hasMeta(row)) for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
+    if (mine && !hasMeta(row)) {
+      for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
+      // the server's row predates meta (or came from an older build): upload this device's extra
+      // fields on the next push, on top of the server's newest name and values
+      if (CUSTOM_FOOD_META && FOOD_META_KEYS.some((k) => mine[k] !== undefined)) f._dirty = true
+    }
     byId[f.id] = f
   })
   ;(s.customFoods || []).filter((f) => f._dirty).forEach((f) => { if (f.id) byId[f.id] = f })

@@ -53,7 +53,8 @@
 
   /* three pillars: base (bars, rings, dots), -ink (text), -fill (soft chips, quiet bars) */
   --mind: #2e7479;  --mind-ink: #2e7479;  --mind-fill: #9cc9c9;
-  --food: #5b6e2f;  --food-ink: #5b6e2f;  --food-fill: #c3cd9c;  --food-track: #e4e8d2;
+  --food: #87cf59;  --food-ink: #437722;  --food-fill: #c9eca0;  --food-track: #e2f4d7;
+  --on-food: #1d1d1f;  /* icons on a solid food square: the green is too light for white */
   --move: #a8502b;  --move-ink: #a8502b;  --move-fill: #e6ad8f;
 
   /* per-data-type names, mapped onto the pillars */
@@ -83,7 +84,8 @@
     --red: #ff8a80;
     --mark: #ffffff;
     --mind: #7fc0c2;  --mind-ink: #7fc0c2;  --mind-fill: #2f5557;
-    --food: #b6c47f;  --food-ink: #b6c47f;  --food-fill: #5d6a37;  --food-track: #2f3420;
+    --food: #9fec85;  --food-ink: #9fec85;  --food-fill: #344c24;  --food-track: #2a3e1e;
+    --on-food: #000000;
     --move: #e39a76;  --move-ink: #e39a76;  --move-fill: #6e3b25;
     --on-cat: #000000;
   }
