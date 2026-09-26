@@ -169,11 +169,30 @@ Each phase goes through the usual reviews before merging:
 - `mental-performance` for the capture and suggested-fix copy;
 - `ship-critic`.
 
-## Decisions for Benn
+## Decisions (Benn, 26 Sept 2026)
 
-1. **AI label reading on the web:** included for everyone, or premium? It costs about 1–2p a scan.
-2. **Sharing scanned products:** on by default with a Settings toggle, or opt-in? Either way only
-   product facts are shared, never who ate what.
-3. **Verification threshold:** 2 independent users, or 3?
-4. **Seed the shared list** from barcodes our users have already confirmed (only with their
-   consent from 2), or start empty?
+1. **Label reading is free for everyone for now.** With few users we absorb the cost. Set a
+   monthly spend limit on the API account.
+2. **Scanned products are added to the shared list automatically,** with no duplicates.
+3. **Two independent users verify a product.**
+4. **Seed from barcodes already confirmed,** with each user's consent.
+
+### Names and duplicates
+
+- **The barcode is the product's identity.** Names never decide what is a duplicate.
+  - Both flows start with, or ask for, the barcode.
+  - A label photo taken after a barcode scan attaches to that barcode.
+  - One barcode means one product (with versions for recipe changes).
+- **The name of a new product:**
+  1. Open Food Facts' name, if it has one.
+  2. Otherwise the same `ai-read-label` call can read an optional **photo of the front of the
+     pack** (brand, product, flavour, size).
+  3. Otherwise the user types it, with a hint: "Brand, product and flavour, e.g. Walkers Sensations
+     Roasted Chicken & Thyme".
+- **Later scanners see the existing name.** They can suggest a better one. Names are compared
+  after normalising (case, punctuation, "&"/"and", word order, sizes removed). The name most
+  confirmers keep wins, and the first stays until another has more votes. A user's own saved copy
+  can always carry their own name locally.
+- **A label photo with no barcode** (loose or relabelled items) saves privately only. It isn't
+  added to the shared list, because there's nothing reliable to match it on. The app suggests:
+  "Scan the barcode too so it's there for everyone next time".
