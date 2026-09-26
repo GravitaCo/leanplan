@@ -53,7 +53,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
           </div>
         </>
       )}
-      <div className="foot" style={{ padding: '0 4px 12px' }}>This only changes today. To change your week, or build your own workouts, use Plan.</div>
+      <div className="foot" style={{ padding: '0 4px 12px' }}>This only changes today. To change your week or build your own workouts, go to Plan.</div>
       <div className="list icons">
         <button className="li" onClick={onLibrary}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="book" size={18} /></span>

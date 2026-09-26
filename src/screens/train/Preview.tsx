@@ -78,7 +78,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const sub = swap
     ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`
     : type === 'Cardio' ? `${dayName} · ${shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}`
-    : `${dayName} · ${slots.length} exercises · ${setCount(slots.map((s) => s.shown), shorter)}`
+    : `${dayName} · ${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
 
   return (
     <div className="screen pv">

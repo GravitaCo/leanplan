@@ -60,7 +60,9 @@ export function TrainScreen() {
   const [mode, setMode] = useState<'preview' | 'manual'>('preview')
   const [playing, setPlaying] = useState(false)
   const [swapsBy, setSwapsBy] = useState<Record<string, Record<number, string>>>({})
-  const [picked, setPicked] = useState<Choice | null>(null)
+  // the person's pick for today, for the workout it was made on (it never carries into another)
+  const [pick0, setPick0] = useState<{ c: Choice; k: WorkoutKey } | null>(null)
+  const setPicked = (c: Choice | null, k: WorkoutKey | null = open) => setPick0(c && k ? { c, k } : null)
   const gentle = !!data.profile.gentle
 
   const day = data.days[cur]
@@ -101,7 +103,7 @@ export function TrainScreen() {
 
   /** today's version of a workout: its own saved session wins, then the person's pick, then the day's default */
   const choiceFor = (t: WorkoutKey): Choice => {
-    if (picked) return picked
+    if (pick0 && pick0.k === t) return pick0.c
     const own = builtin(t)
     if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
     return easy ? 'shorter' : 'planned'
@@ -121,7 +123,7 @@ export function TrainScreen() {
   }
   function openWorkout(t: WorkoutKey, c?: Choice) {
     if (!templateFor(t, routines)) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
-    if (c) setPicked(c)
+    if (c) setPicked(c, t)
     setMode('preview'); setOpen(t); window.scrollTo(0, 0)
   }
   const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
@@ -142,7 +144,7 @@ export function TrainScreen() {
     }
     return (
       <>
-        <Preview type={open} choice={choice} onChoice={setPicked} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
+        <Preview type={open} choice={choice} onChoice={(c) => setPicked(c, open)} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
           session={builtin(open)} note={choice === 'shorter' ? easyNote : null} dayName={dayName} isToday={isToday}
           onStart={() => setPlaying(true)} onManual={() => { setMode('manual'); window.scrollTo(0, 0) }} onBack={closeWorkout}
           onEditPlan={() => openPlan(open)} />

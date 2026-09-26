@@ -238,7 +238,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
       <div className="screen" style={{ paddingTop: 16 }}>
         <ExerciseList type={type} />
         {own ? (
-          <div className="foot" style={{ padding: '4px 4px 0' }}>Open it on any day with Do this today, or from Add something in Train. Putting your own workouts into your week comes with weekly plans.</div>
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Do it today with Do this today, or on any day from Add something in Train. Adding your own workouts to your week is coming in a later update.</div>
         ) : (
           <div className="foot" style={{ padding: '4px 4px 0' }}>Ready-made workouts stay as they are.{onCopy ? ' Make your own copy to change the exercises.' : ''} To change a move for one day, use Swap in Train.</div>
         )}

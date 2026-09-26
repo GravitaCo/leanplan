@@ -191,7 +191,7 @@ export function PlanScreen() {
               <button className="li act" onClick={() => setBuilder({})}><Icon name="plus" size={17} /><span>Build a workout</span></button>
             )}
           </div>
-          <div className="foot" style={{ padding: '4px 4px 0' }}>Build your own from the library, or open a ready-made one and make your own copy.</div>
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Build your own from the library, or copy a ready-made one and change it.</div>
         </Sheet>
       )}
     </div>
