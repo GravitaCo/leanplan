@@ -163,6 +163,20 @@ The confirm view says where the figures came from:
 2. **Shared product list:** tables, RPC, lookup order, labels in the confirm view, audits.
 3. **Native:** on-device reading, free and offline.
 
+### Phase 1 as built (branch `claude/label-scan`, not deployed)
+
+- Code: `supabase/functions/ai-read-label/` (Edge Function), `supabase/functions/_shared/label-read.ts`
+  (schema + validator, shared with the app), `src/core/domain/label.ts` (parsing, checks, the
+  one-fix search, draft), `src/core/domain/labelQuality.ts`, `src/data/labelReader.ts`,
+  `src/screens/food/LabelCaptureView.tsx` (lazy-loaded), `ScanConfirmView.tsx` (label mode).
+- Cap: `docs/migrations/2026-09-ai-usage.sql` (30 reads per user per UTC day, counts only).
+- Not in phase 1: the photo crop beside each field (the reader returns no positions yet).
+- To deploy, in order: review (`security-data`, `nutrition-accuracy`, `mental-performance`,
+  `ship-critic`); run the migration in the SQL editor; `supabase secrets set ANTHROPIC_API_KEY=…`
+  (optional `LABEL_MODEL`, `LABEL_EFFORT`); `supabase functions deploy ai-read-label`; set a monthly
+  spend limit on the Anthropic account; then merge.
+- E2E: `scripts/e2e-label-scan.cjs` (fake camera, mocked function; never calls the API).
+
 Each phase goes through the usual reviews before merging:
 - `nutrition-accuracy` for the checks and thresholds;
 - `security-data` for the Edge Function, tables, RLS and RPC;

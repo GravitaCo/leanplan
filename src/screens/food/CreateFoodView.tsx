@@ -3,15 +3,18 @@ import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
+import { Icon } from '@/ui/icons'
 import { Checks } from './common'
 
 /** Save a food from its packet label, then pick the portion. */
-export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note }: {
+export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note, onLabelPhoto }: {
   meal: MealSlot; setMeal: (m: MealSlot) => void; onBack?: () => void; onClose: () => void; animate: boolean; onSaved: (f: Food) => void
   /** from a scan that found nothing: saved with the food, so the next scan opens it */
   barcode?: string
   /** why we're here instead of the scan result */
   note?: string
+  /** "Photo of the label": read the numbers from a photo instead of typing them */
+  onLabelPhoto?: () => void
 }) {
   const saveCustomFood = useStore((s) => s.saveCustomFood)
   const showToast = useStore((s) => s.showToast)
@@ -41,6 +44,11 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
     <Sheet title="Create a food" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit}>Save</button>}>
       {note && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><span>{note}{barcode && <span className="num muted"> Barcode {barcode}.</span>}</span></div>}
+      {onLabelPhoto && (
+        <div className="stack" style={{ marginTop: 0, marginBottom: 12 }}>
+          <button className="btn gray" onClick={onLabelPhoto}><Icon name="camera" size={17} /> Photo of the label</button>
+        </div>
+      )}
       <div className="sub" style={{ padding: '0 4px 12px' }}>
         Copy the “per 100 {unit}” column from the packet. Saved foods appear in search from now on{barcode ? ', and open when you scan this barcode' : ''}.
       </div>

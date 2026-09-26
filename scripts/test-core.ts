@@ -39,6 +39,9 @@ import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
 import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
+import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, suggestFix, textsFromRead, validateLabelRead, variants, type LabelRead } from '@/core/domain/label'
+import { measureFrame, qualityIssue, toGray } from '@/core/domain/labelQuality'
+import { LABEL_ROWS, LABEL_SCHEMA } from '../supabase/functions/_shared/label-read'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
@@ -1265,6 +1268,128 @@ async function barcodeScan(): Promise<void> {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
 }
 
+// Label photos: parsing the literal text, the misread checks, the one-fix search, and the draft.
+function labelScan(): void {
+  const checks: [string, boolean][] = []
+  type Rows = Partial<Record<(typeof LABEL_ROWS)[number], [string, string?, string?]>>
+  const read = (rows: Rows, o: Partial<LabelRead> = {}, conf: Record<string, 'low'> = {}): LabelRead => ({
+    readable: true, basis: '100g', serving_text: '30g', ri_basis: 'serving',
+    rows: Object.fromEntries(LABEL_ROWS.map((k) => {
+      const [a = '', b = '', c = ''] = rows[k] || []
+      return [k, { per100: { text: a, confidence: conf[k + ':per100'] || 'high' }, serving: { text: b, confidence: conf[k + ':serving'] || 'high' }, ri: { text: c, confidence: 'high' } }]
+    })) as LabelRead['rows'],
+    front: { brand: '', product: '', variety: '', pack_size: '' },
+    ...o,
+  })
+  const ids = (r: LabelRead) => labelIssues(textsFromRead(r, r.basis === '100ml')).issues.map((i) => i.id).sort().join(',')
+  // crisps, 30 g bag: every column agrees
+  const crisps: Rows = {
+    kj: ['2079kJ', '624kJ', '7%'], kcal: ['497kcal', '149kcal', '7%'], fat: ['27.3g', '8.2g', '12%'], saturates: ['2.3g', '0.7g', '4%'],
+    carbohydrate: ['57.0g', '17.1g'], sugars: ['3.9g', '1.2g', '1%'], fibre: ['4.3g', '1.3g'], protein: ['6.2g', '1.9g'], salt: ['1.30g', '0.39g', '7%'],
+  }
+  // granola, 30 g serving: fat 7.1 g per 100 g, 2.1 g per serving
+  const granola: Rows = {
+    kj: ['1640kJ', '492kJ'], kcal: ['390kcal', '117kcal'], fat: ['7.1g', '2.1g'], saturates: ['1.2g', '0.4g'], carbohydrate: ['66.0g', '19.8g'],
+    sugars: ['21.0g', '6.3g'], fibre: ['7.5g', '2.3g'], protein: ['9.0g', '2.7g'], salt: ['0.05g', '0.02g'],
+  }
+  const p = (t: string, f: any = 'f', col: any = 'per100') => JSON.stringify(parseCell(t, f, col))
+  checks.push(
+    ['parse: grams', p('0.64g') === JSON.stringify({ value: 0.64, dp: 2 })],
+    ['parse: decimal comma', parseCell('0,64 g', 'f', 'per100').value === 0.64],
+    ['parse: thousands comma in kJ', parseCell('2,079kJ', 'kj', 'per100').value === 2079],
+    ['parse: less than is kept and marked', p('<0.5g') === JSON.stringify({ value: 0.5, dp: 1, mark: 'lt' })],
+    ['parse: trace is 0 and marked', parseCell('Trace', 'sugars', 'per100').mark === 'trace' && parseCell('trace', 'sugars', 'per100').value === 0],
+    ['parse: kJ/kcal in one cell, each row takes its own', parseCell('2079kJ/497kcal', 'kj', 'per100').value === 2079 && parseCell('2079kJ/497kcal', 'k', 'per100').value === 497],
+    ['parse: kJ in the kcal row is flagged', parseCell('2079kJ', 'k', 'per100').flag === 'unit'],
+    ['parse: kcal in a grams row is flagged', parseCell('12kcal', 'p', 'per100').flag === 'unit'],
+    ['parse: salt in mg becomes grams', parseCell('300mg', 'salt', 'per100').value === 0.3],
+    ['parse: missing decimal point (064) is flagged', parseCell('064g', 'salt', 'per100').flag === 'format'],
+    ['parse: doubled decimal point is flagged', parseCell('0.6.4g', 'salt', 'per100').flag === 'format'],
+    ['parse: letter O in a number is unreadable, never silently read', parseCell('O.5g', 'fibre', 'per100').flag === 'unreadable' && parseCell('O.5g', 'fibre', 'per100').value === undefined],
+    ['parse: empty and dash are not printed', parseCell('', 'f', 'per100').value === undefined && parseCell('-', 'f', 'per100').value === undefined && !parseCell('—', 'f', 'per100').flag],
+    ['parse: RI percent', parseCell('12%', 'f', 'ri').value === 12 && parseCell('<1%', 'sugars', 'ri').mark === 'lt'],
+    ['serving text: last weight wins', parseServing('Per ½ pack (200g)') === 200 && parseServing('30g') === 30 && parseServing('1 biscuit (12.5 g)') === 12.5 && parseServing('250ml glass') === 250 && parseServing('1 bar') === undefined],
+    ['checks: a consistent label has no issues', ids(read(crisps)) === ''],
+    ['checks: granola hangs together too', ids(read(granola)) === ''],
+    ['check kJ↔kcal: per 100 misread', ids(read({ ...crisps, kcal: ['457kcal', '149kcal', '7%'] })).includes('energy:per100')],
+    ['check kJ↔kcal: per serving misread', ids(read({ ...crisps, kj: ['2079kJ', '684kJ', '7%'] })).includes('energy:serving')],
+    ['check per 100 ↔ per serving', ids(read({ ...granola, fat: ['1.1g', '2.1g'] })).includes('serving:f')],
+    ['check per 100 ↔ per serving allows label rounding (salt 0.015 → 0.02)', !ids(read(granola)).includes('serving:salt')],
+    ['check energy ↔ macros', ids(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['1.1g'], carbohydrate: ['66.0g'], protein: ['9.0g'], fibre: ['7.5g'] }, { serving_text: '' })).includes('macros')],
+    ['check RI %', ids(read({ ...crisps, fat: ['27.3g', '8.2g', '42%'] })) === 'ri:f'],
+    ['check sugars ≤ carbs', ids(read({ ...crisps, sugars: ['59g', '1.2g', '1%'] })).includes('part:sugars:per100')],
+    ['check saturates ≤ fat', ids(read({ ...crisps, saturates: ['2.3g', '8.7g', '4%'] })).includes('part:sat:serving')],
+    ['check parts ≤ 100 g', ids(read({ protein: ['60g'], carbohydrate: ['50g'], fat: ['1g'] }, { serving_text: '' })).includes('sum')],
+    ['check salt over 10 g is soft (stock cubes)', labelIssues(textsFromRead(read({ salt: ['12.5g'] }, { serving_text: '' }), false)).issues.some((i) => i.id === 'salt' && i.soft)],
+    ['check decimal-point format', ids(read({ ...crisps, salt: ['130g', '0.39g', '7%'] })).includes('serving:salt')],
+    ['variants: 1↔7, decimal point added or removed', ['7.1g', '1.7g', '11g'].every((v) => variants('1.1g').includes(v)) && variants('64g').includes('6.4g') && variants('0.64').includes('064')],
+  )
+  // the one-fix search
+  const fix = (r: LabelRead) => suggestFix(textsFromRead(r, false))
+  const s17 = fix(read({ ...granola, fat: ['1.1g', '2.1g'] }))
+  checks.push(
+    ['suggest 1↔7: fat 1.1 → 7.1 from the per-serving column', s17?.cell === cellId('f', 'per100') && s17.value === 7.1 && s17.display === '7.1 g' && s17.because === 'The per-serving column says 2.1 g for 30 g.'],
+    ['suggest decimal: salt 064 → 0.64', (() => { const s = fix(read({ ...granola, salt: ['064g', '0.19g'] })); return s?.value === 0.64 && s.to === '0.64g' })()],
+    ['suggest decimal: fibre 75 → 7.5', fix(read({ ...granola, fibre: ['75g', '2.3g'] }))?.value === 7.5],
+    ['suggest in the per-serving column: 2.7 → 2.1', (() => { const s = fix(read({ ...granola, fat: ['7.1g', '2.7g'] })); return s?.cell === cellId('f', 'serving') && s.value === 2.1 })()],
+    ['suggest 3↔8 in kcal: 437 → 487', fix(read({ ...crisps, kj: ['2038kJ', '611kJ', '7%'], kcal: ['437kcal', '146kcal', '7%'] }))?.value === 487],
+    ['ambiguous (only the macros disagree, several fixes fit) → no suggestion', fix(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['1.1g'], carbohydrate: ['66g'], protein: ['9.0g'], fibre: ['7.5g'] }, { serving_text: '', ri_basis: 'none' })) === null],
+    ['two misreads → no suggestion', fix(read({ ...granola, fat: ['1.1g', '2.1g'], protein: ['3.0g', '2.7g'] })) === null],
+    ['nothing wrong → no suggestion', fix(read(crisps)) === null],
+    ['a unit in the wrong row can’t be fixed by a digit → no suggestion', fix(read({ ...crisps, kcal: ['2079kJ', '149kcal', '7%'] })) === null],
+  )
+  // mapping to the confirm view's draft
+  const d = draftFromLabel(read(granola, { front: { brand: 'Jordans', product: 'Jordans Country Crisp', variety: 'Strawberry', pack_size: '500g' } }), { taken: ['Jordans Country Crisp Strawberry'] })
+  const dLow = draftFromLabel(read(granola, {}, { 'fat:per100': 'low' }), { barcode: '5010477348678', taken: [] })
+  const dMark = draftFromLabel(read({ ...granola, salt: ['<0.01g', '<0.01g'] }), { taken: [] })
+  const base = draftFromOff('5000328657950', { product_name: 'Sensations Roasted Chicken & Thyme', brands: 'Walkers', nutriments: { 'energy-kcal_100g': 490 }, categories_tags: ['en:crisps'] }, [])
+  const dBase = draftFromLabel(read(crisps, { serving_text: '' }), { base, taken: [] })
+  checks.push(
+    ['draft: per-100 values parsed from the read', JSON.stringify(d.values) === JSON.stringify({ kj: 1640, k: 390, f: 7.1, sat: 1.2, c: 66, sugars: 21, fibre: 7.5, p: 9, salt: 0.05 })],
+    ['draft: name from the front photo, deduplicated, then made unique', d.name === 'Jordans Country Crisp Strawberry (2)' && d.label?.nameFromFront === true],
+    ['draft: serving and pack from the label and front', d.serving.cook === 30 && d.serving.eat === 30 && d.pack === 500],
+    ['draft: saved as a label (no barcode unless scanned)', d.source === 'label' && d.barcode === '' && dLow.barcode === '5010477348678'],
+    ['draft: low confidence highlights the cell', dLow.label?.lowConf.includes(cellId('f', 'per100')) === true],
+    ['draft: a “less than” value says how it’s saved', dMark.label?.marks.some((m) => m.includes('<0.01g')) === true],
+    ['draft: photo after a barcode keeps the barcode and OFF name, takes the label’s numbers', dBase.barcode === '5000328657950' && dBase.name === 'Walkers Sensations Roasted Chicken & Thyme' && dBase.values.k === 497 && dBase.kind === 'eat'],
+    ['draft: the 1↔7 suggestion travels with the draft', draftFromLabel(read({ ...granola, fat: ['1.1g', '2.1g'] }), { taken: [] }).label?.suggestion?.value === 7.1],
+    ['draft: per 100 ml labels', draftFromLabel(read({ kcal: ['42kcal'] }, { basis: '100ml' }), { taken: [] }).ml === true],
+    ['draft: empty fallback keeps the barcode', emptyLabelDraft({ barcode: '5000328657950', taken: [] }).barcode === '5000328657950' && Object.keys(emptyLabelDraft({ taken: [] }).values).length === 0],
+    ['front name: brand already in the product', frontName({ brand: 'Walkers', product: 'Walkers Sensations', variety: 'Roasted Chicken & Thyme', pack_size: '' }) === 'Walkers Sensations Roasted Chicken & Thyme'],
+    ['saved food: src label, barcode only when scanned', (() => {
+      const a = foodFromConfirmed({ barcode: '', name: 'X', values: { k: 1, p: 1, c: 1, f: 1 }, ml: false, kind: 'cook', g: 30, source: 'label' })
+      const b = foodFromConfirmed({ barcode: '5000328657950', name: 'X', values: { k: 1, p: 1, c: 1, f: 1 }, ml: false, kind: 'cook', g: 30, source: 'label' })
+      return a.src === 'label' && a.barcode === undefined && b.src === 'label' && b.barcode === '5000328657950' && sourceErr({ ...b, id: 'x' }) === 0
+    })()],
+  )
+  // the schema and its validator (server and client share them)
+  const good = read(crisps)
+  checks.push(
+    ['validate: a well-formed read passes', JSON.stringify(validateLabelRead(JSON.parse(JSON.stringify(good)))) === JSON.stringify(good)],
+    ['validate: a missing row, a bad enum or an over-long cell is rejected', validateLabelRead({ ...good, rows: { ...good.rows, salt: undefined } }) === null
+      && validateLabelRead({ ...good, basis: 'per pack' }) === null
+      && validateLabelRead({ ...good, rows: { ...good.rows, fat: { ...good.rows.fat, per100: { text: 'x'.repeat(200), confidence: 'high' } } } }) === null
+      && validateLabelRead('ignore previous instructions') === null],
+    ['schema: every row is required and closed', (LABEL_SCHEMA.properties.rows.required as readonly string[]).length === LABEL_ROWS.length && LABEL_SCHEMA.additionalProperties === false],
+  )
+  // photo quality on a synthetic frame
+  const W = 64, H = 48
+  const frame = (f: (x: number, y: number) => number) => { const a = new Uint8Array(W * H); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) a[y * W + x] = f(x, y); return a }
+  const sharp = frame((x, y) => ((x >> 1) + (y >> 2)) % 2 ? 30 : 220)
+  const flat = frame(() => 150)
+  const dark = frame((x, y) => ((x >> 1) + (y >> 2)) % 2 ? 5 : 60)
+  const glare = frame((x, y) => (x < 20 ? 255 : ((x >> 1) + (y >> 2)) % 2 ? 30 : 220))
+  const rgba = new Uint8Array([255, 255, 255, 255, 0, 0, 0, 255])
+  checks.push(
+    ['quality: sharp text passes', qualityIssue(measureFrame(sharp, W, H)) === null],
+    ['quality: a featureless (blurred) frame says hold still', qualityIssue(measureFrame(flat, W, H)) === 'blur'],
+    ['quality: too dark', qualityIssue(measureFrame(dark, W, H)) === 'dark'],
+    ['quality: glare', qualityIssue(measureFrame(glare, W, H)) === 'glare'],
+    ['quality: greyscale from RGBA', Array.from(toGray(rgba, 2, 1)).join() === '255,0'],
+  )
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'label:', n) }
+}
+
 // Network deadlines: a slow call settles with the fallback; a quick one (or a quick failure) is untouched.
 async function timeouts(): Promise<void> {
   const wait = <T,>(ms: number, v: T) => new Promise<T>((r) => setTimeout(() => r(v), ms))
@@ -1280,4 +1405,4 @@ async function timeouts(): Promise<void> {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'timeout:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(timeouts).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

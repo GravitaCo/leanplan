@@ -1,0 +1,7 @@
+# Supabase CLI settings for Tali's Edge Functions (the database is managed in the dashboard; see
+# docs/security-rls.sql and docs/migrations/). Only the settings that differ from the defaults.
+project_id = "exvblofwiwbvycomxvmj"
+
+[functions.ai-read-label]
+# signed-in users only: the gateway rejects a request without a valid user JWT
+verify_jwt = true

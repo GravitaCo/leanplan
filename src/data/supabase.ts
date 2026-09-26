@@ -28,6 +28,11 @@ export function getToken(): string {
   return accessToken || SB_KEY
 }
 
+/** A signed-in session is applied (the app is authed), so a server call can run as the user. */
+export function hasSession(): boolean {
+  return !!accessToken
+}
+
 export function getUid(): string {
   return userId || LOCAL_USER
 }

@@ -2,7 +2,7 @@
  * The add-food flow in one sheet: search → portion, plus quick estimate, create-a-food and
  * recipe logging. Views swap inside the open sheet without replaying the slide-up.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
@@ -11,7 +11,7 @@ import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
 import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
-import { Sheet, focusOnMount, pressable } from '@/ui/primitives'
+import { Sheet, BackButton, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
 import { PortionView } from './PortionView'
@@ -21,6 +21,22 @@ import { CreateFoodView } from './CreateFoodView'
 import { ScanView } from './ScanView'
 import { ScanConfirmView } from './ScanConfirmView'
 import type { ScanDraft } from '@/core/domain/barcode'
+import { emptyLabelDraft } from '@/core/domain/label'
+
+type LabelProps = { onBack?: () => void; onClose: () => void; animate: boolean; barcode?: string; base?: ScanDraft; onDone: (d: ScanDraft, notice?: string) => void }
+
+/** Shown if the label camera's code can't load (offline before it was ever opened). */
+function LabelOffline({ onBack, onClose, animate, barcode, base, onDone }: LabelProps) {
+  return (
+    <Sheet title="Scan the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+      <div className="note" role="status"><Icon name="info" size={17} /><span>Label photos need a connection the first time they open.</span></div>
+      <div className="stack"><button className="btn tinted" onClick={() => onDone(base ?? emptyLabelDraft({ barcode, taken: [] }))}>Type it in instead</button></div>
+    </Sheet>
+  )
+}
+
+// the capture view (camera, quality checks) loads only when opened, like the barcode decoder
+const LabelCaptureView = lazy(() => import('./LabelCaptureView').catch(() => ({ default: LabelOffline })))
 
 const MISSING_NOTE = {
   'not-found': 'Not found. Enter it from the label: per 100 g column.',
@@ -35,7 +51,9 @@ type View =
   | { kind: 'quick' }
   | { kind: 'create'; barcode?: string; note?: string }
   | { kind: 'scan' }
-  | { kind: 'confirm'; draft: ScanDraft }
+  | { kind: 'confirm'; draft: ScanDraft; notice?: string; back?: View; id?: number }
+  /** a photo of the label: after a barcode scan it keeps the barcode (and OFF's name) */
+  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View }
 
 export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
@@ -49,8 +67,26 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
   if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
-  if (view.kind === 'create') return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
-  if (view.kind === 'confirm') return <ScanConfirmView {...common} onBack={() => go({ kind: 'scan' })} draft={view.draft} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  if (view.kind === 'create') {
+    return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })}
+      onLabelPhoto={view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view }) : undefined} />
+  }
+  if (view.kind === 'label') {
+    const toConfirm = (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft, notice, back: view.back, id: Date.now() })
+    const lp: LabelProps = { onBack: () => go(view.back), onClose, animate: !moved, barcode: view.barcode, base: view.base, onDone: toConfirm }
+    return (
+      <Suspense fallback={<Sheet title="Scan the label" onClose={onClose} animate={!moved}><div className="empty" role="status">Opening the camera…</div></Sheet>}>
+        <LabelCaptureView {...lp} />
+      </Suspense>
+    )
+  }
+  if (view.kind === 'confirm') {
+    const d = view.draft
+    // OFF's figures, or a label that couldn't be read: offer reading the user's own pack
+    const photo = d.source !== 'label' || view.notice ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view }) : undefined
+    return <ScanConfirmView key={view.id ?? 0} {...common} onBack={() => go(view.back ?? { kind: 'scan' })} draft={d} notice={view.notice} onLabelPhoto={photo}
+      onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  }
   if (view.kind === 'scan') {
     return <ScanView {...common} onResult={(r) => {
       if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
@@ -175,6 +211,10 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         <button className="li" onClick={() => go({ kind: 'scan' })}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
           <div className="m"><div className="t">Scan barcode</div><div className="s">Packaged food, from the pack</div></div><Chevron />
+        </button>
+        <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
+          <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
+          <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
         </button>
         <button className="li" onClick={() => go({ kind: 'create' })}>
           <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>
