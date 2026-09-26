@@ -205,6 +205,12 @@ export const useStore = create<StoreState>()(
       if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
     }
 
+    /** After a change: save it on this device, queue the sync, then confirm it (when there's a message). */
+    const saved = (toast?: string) => {
+      persist(); get().scheduleSync()
+      if (toast !== undefined) get().showToast(toast)
+    }
+
     const markSettingsDirty = (s: PersistedState) => {
       meta(s).settings = { u: nowIso(), dirty: true }
     }
@@ -253,7 +259,7 @@ export const useStore = create<StoreState>()(
           ensureDay(st.data, st.cur).foods.push(...entries)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(toast ?? entries[0].n + ' added')
+        saved(toast ?? entries[0].n + ' added')
       },
 
       updateEntry: (index, mult, meal) => {
@@ -264,7 +270,7 @@ export const useStore = create<StoreState>()(
           d.foods[index] = { ...scaleEntry(x, mult), meal: meal ?? x.meal }
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       confirmEntry: (index) => {
@@ -274,7 +280,7 @@ export const useStore = create<StoreState>()(
           x.ok = true
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks, noted')
+        saved('Thanks, noted')
       },
 
       removeFood: (index) => {
@@ -283,7 +289,7 @@ export const useStore = create<StoreState>()(
           d.foods.splice(index, 1)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       repeatYesterday: (meal) => {
@@ -308,7 +314,7 @@ export const useStore = create<StoreState>()(
           if (cur) Object.assign(cur, food, { _dirty: true, _u: nowIso() })
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
-        persist(); get().scheduleSync(); get().showToast('Food saved')
+        saved('Food saved')
         return food
       },
 
@@ -318,7 +324,7 @@ export const useStore = create<StoreState>()(
           const cur = st.data.customFoods.find((x) => x.id === id)
           if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
         })
-        persist(); get().scheduleSync()
+        saved()
         const food = get().data.customFoods.find((x) => x.id === id)!
         get().showToast(`Barcode linked to your “${food.n}”`)
         return food
@@ -329,7 +335,7 @@ export const useStore = create<StoreState>()(
           const gone = st.data.customFoods.splice(index, 1)[0]
           if (gone?.id) meta(st.data).foodDeletes.push(gone.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Removed from saved')
+        saved('Removed from saved')
       },
 
       saveRecipe: (input) => {
@@ -347,7 +353,7 @@ export const useStore = create<StoreState>()(
             st.data.recipes.push({ id: uuid(), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
           }
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe saved')
+        saved('Recipe saved')
       },
 
       deleteRecipe: (index) => {
@@ -357,7 +363,7 @@ export const useStore = create<StoreState>()(
           st.data.recipes.splice(index, 1)
           if (r.id) meta(st.data).recipeDeletes.push(r.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe deleted')
+        saved('Recipe deleted')
       },
 
       logRecipe: (recipe, servings, meal) => {
@@ -374,7 +380,7 @@ export const useStore = create<StoreState>()(
           ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Check-in saved')
+        saved('Check-in saved')
       },
 
       savePlan: ({ id, when, then, cope }) => {
@@ -385,7 +391,7 @@ export const useStore = create<StoreState>()(
           else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [] })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Plan saved')
+        saved('Plan saved')
       },
 
       deletePlan: (id) => {
@@ -393,7 +399,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.plans = (st.data.profile.plans ?? []).filter((p) => p.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       reviewPlans: (outcomes) => {
@@ -407,7 +413,7 @@ export const useStore = create<StoreState>()(
           }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks for checking in')
+        saved('Thanks for checking in')
       },
 
       toggleSupp: (id) => {
@@ -416,7 +422,7 @@ export const useStore = create<StoreState>()(
           d.supps[id] = !d.supps[id]
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       setWeight: (kg) => {
@@ -426,7 +432,7 @@ export const useStore = create<StoreState>()(
           // Profile shows latestWeight, so this is its weight too; profile.weight isn't rewritten,
           // which would upload the whole settings record on every weigh-in
         })
-        persist(); get().scheduleSync(); get().showToast('Weight saved')
+        saved('Weight saved')
       },
 
       saveWorkout: (type, ex, option, extra) => {
@@ -441,7 +447,7 @@ export const useStore = create<StoreState>()(
             keptOnSave(extra))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
         if (!extra?.quiet) get().showToast(extra?.toast ?? type + ' session saved')
       },
 
@@ -455,7 +461,7 @@ export const useStore = create<StoreState>()(
           })
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Cardio saved')
+        saved('Cardio saved')
       },
 
       addSession: (x) => {
@@ -464,7 +470,7 @@ export const useStore = create<StoreState>()(
           setSessions(day, [...sessionsOf(day, st.cur), { ...x, id: uuid(), at: nowIso() }])
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
+        saved(x.title + ' saved')
       },
 
       restoreSession: (date, x) => {
@@ -474,7 +480,7 @@ export const useStore = create<StoreState>()(
           setSessions(day, [...list, x].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
           markDayDirty(st.data, date)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       removeSession: (id) => {
@@ -483,7 +489,7 @@ export const useStore = create<StoreState>()(
           setSessions(day, sessionsOf(day, st.cur).filter((y) => y.id !== id))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Session removed')
+        saved('Session removed')
       },
 
       setSchedule: (sch, quiet) => {
@@ -491,7 +497,7 @@ export const useStore = create<StoreState>()(
           for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); if (!quiet) get().showToast('Schedule updated')
+        saved(quiet ? undefined : 'Schedule updated')
       },
 
       saveTargets: (t, rangeWidth) => {
@@ -504,7 +510,7 @@ export const useStore = create<StoreState>()(
           if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
         get().showToast(floored ? `Kept at 1,200 kcal${c !== t.c ? ', with carbs raised to match' : ''}. Going lower needs medical support.` : 'Targets saved')
       },
 
@@ -519,12 +525,12 @@ export const useStore = create<StoreState>()(
           Object.assign(st.data.profile, patch)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       setPrefs: (patch) => {
         set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       addSupplement: (name, time) => {
@@ -533,7 +539,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.supplements.push({ id: uuid(), name, time })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       updateSupplement: (id, name, time) => {
@@ -542,7 +548,7 @@ export const useStore = create<StoreState>()(
           if (s) { s.name = name; s.time = time }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       removeSupplement: (id) => {
@@ -550,7 +556,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.supplements = (st.data.profile.supplements || []).filter((x: Supplement) => x.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       updateEmail: async (email) => {
