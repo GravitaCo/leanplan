@@ -14,8 +14,6 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
-  /** Custom foods saved before `custom_foods.meta` synced have been queued to upload it once. */
-  metaQueued?: boolean
   /** Supabase user id this device's data belongs to; unset for data never synced (from the
    *  retired guest mode, or before a first sign-in) and
    *  for data synced by a version before this was recorded). */
@@ -311,13 +309,6 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
       f._u = nowIso()
     }
   })
-  // foods scanned while meta didn't sync (barcode, source, category): upload those fields once
-  if (!s._meta.metaQueued) {
-    ;(s.customFoods || []).forEach((f) => {
-      if (f.barcode || f.src || f.cat || f.eat || f.each || f.cook || f.ref) f._dirty = true
-    })
-    s._meta.metaQueued = true
-  }
   ;(s.recipes || []).forEach((r) => {
     if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
     if (migrate) {

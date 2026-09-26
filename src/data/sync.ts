@@ -223,7 +223,12 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     // a row without `meta` (the column isn't there yet, or an older version wrote it) keeps this
     // device's extra fields for the same food, so a pull never strips a scan's barcode or source
     const mine = local.get(f.id)
-    if (mine && !hasMeta(row)) for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
+    if (mine && !hasMeta(row)) {
+      for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
+      // the server's row predates meta (or came from an older build): upload this device's extra
+      // fields on the next push, on top of the server's newest name and values
+      if (CUSTOM_FOOD_META && FOOD_META_KEYS.some((k) => mine[k] !== undefined)) f._dirty = true
+    }
     byId[f.id] = f
   })
   ;(s.customFoods || []).filter((f) => f._dirty).forEach((f) => { if (f.id) byId[f.id] = f })

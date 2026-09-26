@@ -1136,7 +1136,7 @@ async function barcodeScan(): Promise<void> {
   const builtinOff = FOODS.find((f) => f.src?.startsWith('off:'))!
   checks.push(
     ['local: a saved scan is found by its barcode; built-in OFF foods by their src', findByBarcode([saved], '5000157024671') === saved && findByBarcode(FOODS, builtinOff.src!.slice(4)) === builtinOff],
-    ['source: a saved scan keeps the Open Food Facts line and the same margin as a typed label', sourceOf(saved)?.text === 'Pack label via Open Food Facts · 5000157024671' && sourceErr(saved) === sourceErr({ id: 'x', src: 'label' }) && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
+    ['source: a saved scan keeps the Open Food Facts line and the same margin as a typed label', sourceOf(saved)?.text === 'Your pack label (found via Open Food Facts) · 5000157024671' && sourceErr(saved) === sourceErr({ id: 'x', src: 'label' }) && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
     ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === +(CAPTURE_ERR.serv + 0.03).toFixed(2)],
   )
 
@@ -1154,12 +1154,17 @@ async function barcodeScan(): Promise<void> {
   // sync: meta held back until the migration; a pull keeps this device's extra fields
   const rowOff = toServerFood(saved, LOCAL_USER, false) as Record<string, unknown>
   {
-    // foods scanned before meta synced upload their fields once; plain ones aren't touched
-    const q = { days: {}, customFoods: [{ ...saved, _dirty: false }, { id: uuid(), n: 'Plain', k: 1, p: 0, c: 0, f: 0, g: 100, _dirty: false }], recipes: [] } as unknown as PersistedState
-    ensureMeta(q, false)
-    const first = q.customFoods.map((f) => !!f._dirty).join('/')
-    q.customFoods.forEach((f) => (f._dirty = false)); ensureMeta(q, false)
-    checks.push(['sync: scanned foods queue their meta upload once', first === 'true/false' && q.customFoods.every((f) => !f._dirty)])
+    // a stale device copy with a barcode meets a newer server row without meta: after one sync
+    // the server has its newer name and values plus the barcode
+    const srv: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [{ ...toServerFood({ ...saved, n: 'Renamed elsewhere', k: 99 }, LOCAL_USER, false), updated_at: 'z' }] }
+    const q = stateFromBackup({ days: {} } as never)
+    q.customFoods = [{ ...saved, _dirty: false }]
+    const qm = ensureMeta(q, false)
+    const rf = globalThis.fetch
+    globalThis.fetch = fakeServer(srv).fetchFn
+    try { await pushDirty(q, qm); await pullAll(q, qm); await pushDirty(q, qm); await pullAll(q, qm) } finally { globalThis.fetch = rf }
+    const row = srv.custom_foods[0]
+    checks.push(['sync: pre-meta rows get this device\'s barcode without losing the newer server edit', srv.custom_foods.length === 1 && row.name === 'Renamed elsewhere' && row.kcal === 99 && row.meta?.barcode === '5000157024671' && !q.customFoods[0]._dirty])
   }
   const rowOn = toServerFood(saved, LOCAL_USER, true) as Record<string, any>
   const back = fromServerFood({ ...rowOn, updated_at: 'z' })

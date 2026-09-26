@@ -55,6 +55,8 @@ export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
  *  A scanned food keeps its Open Food Facts line (with the barcode), like built-in OFF foods. */
 export function sourceOf(f: Pick<Food, 'src' | 'id'>): { text: string; url: string } | null {
   if (f.id && !isScanned(f)) return { text: 'Your label', url: '' }
+  // checked line by line against the user's own pack: credit that, not the crowdsourced record
+  if (isScanned(f)) return { text: `Your pack label (found via Open Food Facts) · ${f.src!.split(':')[1] ?? ''}`.replace(/ · $/, ''), url: SOURCES.off.url }
   if (!f.src) return null
   const [key, code] = f.src.split(':')
   const s = SOURCES[key]
