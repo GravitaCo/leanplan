@@ -1,7 +1,10 @@
+import { useStore } from '@/store/store'
 import type { WorkoutType } from '@/core/types'
 import { SESSIONS, WORKOUTS } from '@/core/data/workouts'
 import { setCount } from '@/core/domain/guided'
 import { shortTitle } from '@/core/domain/week'
+import { aboutMins, slotsOf as routineSlots } from '@/core/domain/routines'
+import { MODALITY_LABEL } from '@/core/data/modalities'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
@@ -12,11 +15,14 @@ import { Icon } from '@/ui/icons'
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
   planned?: WorkoutType | 'Rest'
   onLog: () => void
-  onWorkout: (w: WorkoutType) => void
+  /** a built-in's type or the id of one of the user's own workouts */
+  onWorkout: (w: string) => void
   onLibrary: () => void
   onClose: () => void
 }) {
   const others = SESSIONS.filter((s): s is WorkoutType => s !== 'Rest' && s !== planned)
+  const all = useStore((s) => s.data.routines)
+  const mine = (all || []).filter((r) => !r.archived)
   return (
     <Sheet title="Add something" onClose={onClose}>
       <div className="list icons">
@@ -34,7 +40,20 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
           </button>
         ))}
       </div>
-      <div className="foot" style={{ padding: '0 4px 12px' }}>This only changes today. To change your week, use Plan.</div>
+      {mine.length > 0 && (
+        <>
+          <div className="lbl">Your workouts</div>
+          <div className="list">
+            {mine.map((r) => (
+              <button className="li" key={r.id} onClick={() => onWorkout(r.id)}>
+                <div className="m"><div className="t">{r.name}</div>
+                  <div className="s">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')}</div></div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="foot" style={{ padding: '0 4px 12px' }}>This only changes today. To change your week, or build your own workouts, use Plan.</div>
       <div className="list icons">
         <button className="li" onClick={onLibrary}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="book" size={18} /></span>

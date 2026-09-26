@@ -1,6 +1,8 @@
 import type { Exercise, ExerciseTemplate, Modality, Profile, Routine, RoutineEffort, RoutineSlot, WorkoutTemplate, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { WORKOUTS } from '@/core/data/workouts'
+import { builtinId, isBuiltin } from './sessions'
+import { shortTitle } from './week'
 import { CARDIO_MET } from '@/core/data/constants'
 import { holdTarget } from './library'
 
@@ -158,4 +160,44 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
     out.push(`This one runs about ${aboutMins(m)} minutes. That's fine if it suits you, or you could split it into two shorter workouts.`)
   }
   return out
+}
+
+/**
+ * A workout wherever the app opens one (Train, Plan): a built-in's type ('Legs', 'Push', 'Pull',
+ * 'Cardio') or the id of one of the user's own workouts.
+ */
+export type WorkoutKey = string
+
+export const isBuiltinKey = (key: WorkoutKey): boolean => !!WORKOUTS[key]
+
+/** The user's own workout a key names (archived ones too, so a logged day still opens). */
+export function routineFor(key: WorkoutKey, routines: Routine[] | undefined): Routine | undefined {
+  return isBuiltinKey(key) ? undefined : (routines || []).find((r) => r.id === key)
+}
+
+/** The cards for a key; null when it names nothing this device knows. */
+export function templateFor(key: WorkoutKey, routines: Routine[] | undefined): WorkoutTemplate | null {
+  if (isBuiltinKey(key)) return WORKOUTS[key]
+  const r = routineFor(key, routines)
+  return r ? routineTemplate(r) : null
+}
+
+/** The `routineId` its sessions carry. */
+export const keyRoutineId = (key: WorkoutKey): string => (isBuiltinKey(key) ? builtinId(key) : key)
+
+/** Its short name: "Push", or the name the person gave it. */
+export function keyTitle(key: WorkoutKey, routines: Routine[] | undefined): string {
+  return isBuiltinKey(key) ? shortTitle(key) : routineFor(key, routines)?.name ?? 'Workout'
+}
+
+/** The workout a logged session came from, when this device still has it (a swap is not one). */
+export function keyOfSession(x: { routineId?: string; option?: string }, routines: Routine[] | undefined): WorkoutKey | null {
+  if (x.option === 'swap' || !x.routineId) return null
+  if (isBuiltin(x)) { const t = x.routineId.replace(builtinId(''), ''); return isBuiltinKey(t) ? t : null }
+  return routineFor(x.routineId, routines) ? x.routineId : null
+}
+
+/** The first demo clip in a workout, for its thumbnail. */
+export function keyVideo(key: WorkoutKey, routines: Routine[] | undefined) {
+  return templateFor(key, routines)?.ex.find((e) => e.video)?.video
 }

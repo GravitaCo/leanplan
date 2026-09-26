@@ -5,12 +5,13 @@ import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
 import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
-import { builtinId, builtinType, isBuiltin, sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
 import { plannedOn, shortTitle } from '@/core/domain/week'
 import { MODALITY_LABEL } from '@/core/data/modalities'
+import { keyOfSession, keyRoutineId, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { EXERCISES } from '@/core/data/exercises'
 import { PageHeader } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
@@ -54,7 +55,8 @@ export function TrainScreen() {
   const [supportOpen, setSupportOpen] = useState(false)
   // two taps to remove, so a mis-tap never deletes logged sets
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [open, setOpen] = useState<WorkoutType | null>(null)
+  // a built-in's type or the id of one of the user's own workouts (plan P4)
+  const [open, setOpen] = useState<WorkoutKey | null>(null)
   const [mode, setMode] = useState<'preview' | 'manual'>('preview')
   const [playing, setPlaying] = useState(false)
   const [swapsBy, setSwapsBy] = useState<Record<string, Record<number, string>>>({})
@@ -64,7 +66,9 @@ export function TrainScreen() {
   const day = data.days[cur]
   const sessions = sessionsOf(day, cur)
   const logged = sessions.length > 0
-  const builtin = (t: string) => sessions.find((x) => x.routineId === builtinId(t))
+  const routines = data.routines
+  /** the session a workout saved on this day, if any */
+  const builtin = (t: WorkoutKey) => sessions.find((x) => x.routineId === keyRoutineId(t))
   const fd = fmtDate(cur)
   // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
   const sched = plannedOn(data.schedule, fd.idx)
@@ -96,27 +100,27 @@ export function TrainScreen() {
   const back = isToday && welcomeBack(data, cur)
 
   /** today's version of a workout: its own saved session wins, then the person's pick, then the day's default */
-  const choiceFor = (t: WorkoutType): Choice => {
+  const choiceFor = (t: WorkoutKey): Choice => {
     if (picked) return picked
     const own = builtin(t)
     if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
     return easy ? 'shorter' : 'planned'
   }
-  const swapsFor = (t: WorkoutType): Record<number, string> => {
+  const swapsFor = (t: WorkoutKey): Record<number, string> => {
     if (swapsBy[t]) return swapsBy[t]
     const out: Record<number, string> = {}
     const L = builtin(t)?.ex
-    WORKOUTS[t].ex.forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id)) out[i] = id })
+    ;(templateFor(t, routines)?.ex ?? []).forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id)) out[i] = id })
     return out
   }
-  function setSwap(t: WorkoutType, i: number, id: string) {
+  function setSwap(t: WorkoutKey, i: number, id: string) {
     const cur0 = swapsFor(t)
     const n = { ...cur0 }
-    if (id === WORKOUTS[t].ex[i].id) delete n[i]; else n[i] = id
+    if (id === templateFor(t, routines)?.ex[i]?.id) delete n[i]; else n[i] = id
     setSwapsBy((p) => ({ ...p, [t]: n }))
   }
-  function openWorkout(t: WorkoutType, c?: Choice) {
-    if (!WORKOUTS[t]) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
+  function openWorkout(t: WorkoutKey, c?: Choice) {
+    if (!templateFor(t, routines)) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
     if (c) setPicked(c)
     setMode('preview'); setOpen(t); window.scrollTo(0, 0)
   }
@@ -131,7 +135,7 @@ export function TrainScreen() {
     const choice = choiceFor(open)
     const shorter = choice === 'shorter'
     const swaps = swapsFor(open)
-    const slots = slotsOf(WORKOUTS[open].ex, swaps, shorter, exById)
+    const slots = slotsOf(templateFor(open, routines)?.ex ?? [], swaps, shorter, exById)
     const option = shorter ? 'shorter' as const : undefined
     if (mode === 'manual') {
       return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} />
@@ -191,10 +195,7 @@ export function TrainScreen() {
     return [MODALITY_LABEL[x.modality] ?? x.modality, x.ex ? `${n} ${n === 1 ? 'set' : 'sets'}` : '', x.mins != null && !x.ex ? `${x.mins} min` : '', x.cardio?.km ? `${x.cardio.km} km` : '', x.option === 'shorter' ? 'shorter' : '']
       .filter(Boolean).join(' · ')
   }
-  const routineOf = (x: Session): WorkoutType | null => {
-    const t = builtinType(x) as WorkoutType
-    return isBuiltin(x) && WORKOUTS[t] && x.option !== 'swap' ? t : null
-  }
+  const routineOf = (x: Session): WorkoutKey | null => keyOfSession(x, routines)
 
   return (
     <div className="screen">

@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { Session, WorkoutType } from '@/core/types'
+import { keyTitle, type WorkoutKey } from '@/core/domain/routines'
+import type { Session } from '@/core/types'
 import { WORKOUTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { exById, fmtSet } from '@/core/domain/library'
 import { fmtTarget, lastTime, readyToStepUp, setCount, setsLine, splitLogged, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
-import { shortTitle } from '@/core/domain/week'
 import { careList } from '@/core/data/libraryLabels'
 import { BackButton } from '@/ui/primitives'
 import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
@@ -24,7 +24,8 @@ export const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter
  * for, swaps for today only, then Start. Cardio days and the gentle swaps save from here.
  */
 export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan }: {
-  type: WorkoutType
+  /** a built-in's type or the id of one of the user's own workouts */
+  type: WorkoutKey
   choice: Choice
   onChoice: (c: Choice) => void
   slots: Slot[]
@@ -40,6 +41,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   onBack: () => void
   onEditPlan: () => void
 }) {
+  const routines = useStore((s) => s.data.routines)
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
   const saveCardio = useStore((s) => s.saveCardio)
@@ -48,7 +50,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const closeDemo = useCallback(() => setDemo(null), [])
   const shorter = choice === 'shorter'
   const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
-  const title = swap ? swap.title.split(' · ')[0] : shortTitle(type)
+  const title = swap ? swap.title.split(' · ')[0] : keyTitle(type, routines)
   const logged = session?.ex?.some((e) => working(e.sets).length > 0)
   const wSlot = warmupSlot(slots.map((s) => s.shape))
 
@@ -163,7 +165,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           <div className="stack pv-cta">
             <button className="btn" onClick={onStart}>{logged ? 'Continue' : 'Start'}</button>
             <button className="linkbtn" onClick={onManual}>{logged ? 'Edit sets by hand' : 'Log sets by hand'}</button>
-            <button className="linkbtn" onClick={onEditPlan}>Edit {shortTitle(type)} in Plan</button>
+            <button className="linkbtn" onClick={onEditPlan}>Edit {keyTitle(type, routines)} in Plan</button>
           </div>
         </>
       )}

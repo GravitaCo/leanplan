@@ -12,6 +12,9 @@ import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
+import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
+import { aboutMins, builtinSlots, canBuild, isBuiltinKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
+import { MODALITY_LABEL } from '@/core/data/modalities'
 
 type Guide = 'split' | 'basics'
 const GUIDES: { id: Guide; title: string; icon: IconName; color: string }[] = [
@@ -27,7 +30,13 @@ export function PlanScreen() {
   const [editing, setEditing] = useState<{ id?: string } | null>(null)
   const [guide, setGuide] = useState<Guide | null>(null)
   const [dayIdx, setDayIdx] = useState<number | null>(null)
-  const [workout, setWorkout] = useState<WorkoutType | null>(null)
+  // a built-in's type or the id of one of the user's own workouts (plan P4)
+  const [workout, setWorkout] = useState<WorkoutKey | null>(null)
+  const [builder, setBuilder] = useState<BuilderStart | null>(null)
+  const routines = useStore((s) => s.data.routines)
+  const profile = useStore((s) => s.data.profile)
+  const mine = (routines || []).filter((r) => !r.archived)
+  const build = canBuild(profile)
   const [sheet, setSheet] = useState<null | 'workouts' | 'library'>(null)
   const todayIdx = new Date().getDay()
 
@@ -37,8 +46,25 @@ export function PlanScreen() {
     setWorkout(planOpen); setDayIdx(null); clearOpen()
   }, [planOpen, clearOpen])
   useEffect(() => { window.scrollTo(0, 0) }, [dayIdx, workout])
+  // one of the user's own workouts removed (archived) while open: back to the plan
+  const gone = !!workout && !isBuiltinKey(workout) && !mine.some((r) => r.id === workout)
+  useEffect(() => { if (gone && !builder) setWorkout(null) }, [gone, builder])
 
-  if (workout) return <WorkoutView type={workout} onBack={() => setWorkout(null)} />
+  const builderSheet = builder && (
+    <RoutineBuilderSheet start={builder} onClose={() => setBuilder(null)} onSaved={(id) => { setBuilder(null); setSheet(null); setWorkout(id) }} />
+  )
+  if (workout && !gone) {
+    const own = routineFor(workout, routines)
+    return (
+      <>
+        <WorkoutView type={workout} onBack={() => setWorkout(null)}
+          onEdit={own && build ? () => setBuilder({ routine: own }) : undefined}
+          onCopy={!own && build && LIFTS.includes(workout as WorkoutType)
+            ? () => setBuilder({ name: 'My ' + shortTitle(workout), slots: builtinSlots(workout as WorkoutType), baseId: 'builtin-' + workout }) : undefined} />
+        {builderSheet}
+      </>
+    )
+  }
   if (dayIdx != null) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
 
   const vals = WEEK_ORDER.map((d) => plannedOn(schedule, d))
@@ -93,7 +119,7 @@ export function PlanScreen() {
 
       <div className="tiles plantiles">
         <button className="tile st" onClick={() => setSheet('workouts')}>
-          <span className="v num">{SESSIONS.length - 1}</span><span className="tt">Workouts</span>
+          <span className="v num">{SESSIONS.length - 1 + mine.length}</span><span className="tt">Workouts</span>
         </button>
         <button className="tile st" onClick={() => setSheet('library')}>
           <span className="v num">{EXERCISES.length}</span><span className="tt">Exercise library</span>
@@ -138,6 +164,7 @@ export function PlanScreen() {
         </Sheet>
       )}
       {sheet === 'library' && <LibrarySheet onClose={() => setSheet(null)} />}
+      {builderSheet}
       {sheet === 'workouts' && (
         <Sheet title="Workouts" onClose={() => setSheet(null)} left={null} right={<button className="navbtn b" onClick={() => setSheet(null)}>Done</button>}>
           <div className="lbl" style={{ paddingTop: 0 }}>Ready-made</div>
@@ -150,7 +177,21 @@ export function PlanScreen() {
               </button>
             ))}
           </div>
-          <div className="foot" style={{ padding: '4px 4px 0' }}>Making your own workouts is coming later.</div>
+          <div className="lbl">Yours</div>
+          <div className="list">
+            {mine.map((r) => (
+              <button className="li pv-row" key={r.id} onClick={() => { setSheet(null); setWorkout(r.id) }}>
+                <Thumb video={keyVideo(r.id, routines)} shape={r.modality === 'cardio' ? 'duration' : 'weight-reps'} />
+                <div className="m"><div className="t">{r.name}</div>
+                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')}</div></div>
+                <Chevron />
+              </button>
+            ))}
+            {build && (
+              <button className="li act" onClick={() => setBuilder({})}><Icon name="plus" size={17} /><span>Build a workout</span></button>
+            )}
+          </div>
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Build your own from the library, or open a ready-made one and make your own copy.</div>
         </Sheet>
       )}
     </div>

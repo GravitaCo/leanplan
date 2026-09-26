@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useStore } from '@/store/store'
-import type { Effort, ExerciseMedia, LoggedExercise, SetEntry, Workout, WorkoutType } from '@/core/types'
+import { keyRoutineId, keyTitle, type WorkoutKey } from '@/core/domain/routines'
+import type { Effort, ExerciseMedia, LoggedExercise, SetEntry, Workout } from '@/core/types'
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, fmtClock, fmtTarget, lastTime, later, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
-import { builtinId, sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
-import { shortTitle } from '@/core/domain/week'
 import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { AdjustSheet } from './AdjustSheet'
@@ -83,7 +83,8 @@ type SheetKind = null | 'adjust' | 'warmup' | 'menu' | 'leave' | 'finish' | 'hol
  * back to its poster or the cue.
  */
 export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished }: {
-  type: WorkoutType
+  /** a built-in's type or the id of one of the user's own workouts */
+  type: WorkoutKey
   slots: Slot[]
   option?: Workout['option']
   onSwap: (i: number, id: string) => void
@@ -98,8 +99,9 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
   const removeSession = useStore((s) => s.removeSession)
   const restoreSession = useStore((s) => s.restoreSession)
   const showToast = useStore((s) => s.showToast)
-  const title = shortTitle(type)
-  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === builtinId(type))
+  const routines = useStore((s) => s.data.routines)
+  const title = keyTitle(type, routines)
+  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === keyRoutineId(type))
   const isToday = cur === todayStr()
   const shorter = option === 'shorter'
   useScrollLock()

@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { LoggedExercise, LogShape, SetEntry, Workout, WorkoutType } from '@/core/types'
+import { keyRoutineId, keyTitle, type WorkoutKey } from '@/core/domain/routines'
+import type { LoggedExercise, LogShape, SetEntry, Workout } from '@/core/types'
 import { exById, fmtSet, setHasData } from '@/core/domain/library'
-import { builtinId, sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf } from '@/core/domain/sessions'
 import { howToLink } from '@/core/domain/workout'
-import { shortTitle } from '@/core/domain/week'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, lastTime, splitLogged, swapInto, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
@@ -31,7 +31,8 @@ function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
  * earlier Train card form, unchanged in what it saves.
  */
 export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
-  type: WorkoutType
+  /** a built-in's type or the id of one of the user's own workouts */
+  type: WorkoutKey
   slots: Slot[]
   option?: Workout['option']
   swaps: Record<number, string>
@@ -42,7 +43,9 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
   const days = useStore((s) => s.data.days)
   const saveWorkout = useStore((s) => s.saveWorkout)
   const isToday = cur === todayStr()
-  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === builtinId(type))
+  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === keyRoutineId(type))
+  const routines = useStore((s) => s.data.routines)
+  const title = keyTitle(type, routines)
   const shorter = option === 'shorter'
 
   // matched by id or name, then by position for older logs; anything else is kept, never dropped
@@ -87,13 +90,13 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
     const kept: Record<number, SetEntry[]> = {}
     slots.forEach((s) => { kept[s.i] = (sets[s.i] || []).filter((r) => setHasData(r, s.shape)) })
     const ex = buildLogged(slots, kept, extras)
-    saveWorkout(type, ex, option, { toast: `${shortTitle(type)} saved` })
+    saveWorkout(type, ex, option, { toast: `${title} saved` })
     onBack()
   }
 
   return (
     <div className="screen">
-      <div className="pv-back"><BackButton label={shortTitle(type)} onClick={onBack} /></div>
+      <div className="pv-back"><BackButton label={title} onClick={onBack} /></div>
       <h1 className="ltitle">Log sets by hand</h1>
       <div className="sub" style={{ margin: '2px 0 16px' }}>Type in what you did. Blank sets aren't saved.</div>
       {slots.map((sl) => {
@@ -176,7 +179,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
           </div>
         )
       })}
-      <div className="stack"><button className="btn" onClick={commit}>Save {shorter ? 'shorter ' : ''}{shortTitle(type)}</button></div>
+      <div className="stack"><button className="btn" onClick={commit}>Save {shorter ? 'shorter ' : ''}{title}</button></div>
       <div className="foot" style={{ padding: '12px 4px 0' }}>
         {/* no progression prompt on a shorter day (plan §4.0.5) */}
         Stop each set with two or three reps to spare.{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} {RED_FLAG}

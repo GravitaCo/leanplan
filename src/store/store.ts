@@ -14,11 +14,9 @@ import type {
   LoggedFood,
   MealSlot,
   Recipe,
-  Routine,
   RoutineEffort,
   RoutineSlot,
   Workout,
-  WorkoutType,
   Supplement,
   MacroTarget,
   Profile,
@@ -73,10 +71,11 @@ interface StoreState {
   toastAction: { label: string; run: () => void } | null
   /** one-shot hand-offs between tabs (UI only, never persisted): Plan's "Do this today" opens
    *  Train's preview for a workout; Train's "Edit in Plan" opens Plan's workout view */
-  trainOpen: WorkoutType | null
-  planOpen: WorkoutType | null
-  openTrain: (w: WorkoutType) => void
-  openPlan: (w: WorkoutType) => void
+  /** a workout to open: a built-in's type or the id of one of the user's own (WorkoutKey) */
+  trainOpen: string | null
+  planOpen: string | null
+  openTrain: (w: string) => void
+  openPlan: (w: string) => void
   clearOpen: () => void
 
   // navigation
@@ -116,12 +115,12 @@ interface StoreState {
   setWeight: (kg: number) => void
   /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
    *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
+  /** save a workout's session for the day: a built-in lift or one of the user's own (by id) */
+  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
   /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
   saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
   archiveRoutine: (id: string) => void
-  saveRoutineSession: (routine: Routine, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
   /** add a session (any modality) to the current day, alongside any others */
   addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
   removeSession: (id: string) => void
@@ -455,13 +454,22 @@ export const useStore = create<StoreState>()(
           if (extra?.note) more.note = extra.note
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: builtinId(type), ex, ...(option ? { option } : {}), ...more },
+          // one of the user's own workouts: its kind and name, and its time estimate standing in for
+          // minutes that weren't logged (plan §2.9; a shorter day's from the shorter prescriptions)
+          const own = WORKOUTS[type] ? undefined : (st.data.routines || []).find((r) => r.id === type)
+          if (!WORKOUTS[type] && !own) return
+          const base = own
+            ? { modality: own.modality, title: own.name, routineId: own.id,
+                estMins: estMins(slotsOf(own).map((x) => (option === 'shorter' ? { ...x, rx: shorterPrescription(x.rx || EXERCISE_BY_ID[x.exId]?.defaultRx || '') } : x))) }
+            : { modality: 'strength' as const, title: WORKOUTS[type].title, routineId: builtinId(type) }
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { ...base, ex, ...(option ? { option } : {}), ...more },
             // what the caller didn't set carries over; an explicit null effort or empty note clears it
             keptOnSave(extra))
           markDayDirty(st.data, st.cur)
         })
         saved()
-        if (!extra?.quiet) get().showToast(extra?.toast ?? type + ' session saved')
+        const ownName = WORKOUTS[type] ? null : (get().data.routines || []).find((r) => r.id === type)?.name
+        if (!extra?.quiet) get().showToast(extra?.toast ?? (ownName ? ownName + ' saved' : type + ' session saved'))
       },
 
       saveRoutine: (input) => {
@@ -491,17 +499,6 @@ export const useStore = create<StoreState>()(
           if (r) { r.archived = true; r._dirty = true; r._u = nowIso() }
         })
         persist(); get().scheduleSync(); get().showToast('Workout removed')
-      },
-
-      saveRoutineSession: (routine, ex, option) => {
-        set((st) => {
-          // saving the same workout again that day is an edit of that session, as for the built-ins
-          // its own time estimate stands in for minutes (a shorter day's from the shorter prescriptions)
-          const slots = slotsOf(routine).map((x) => (option === 'shorter' ? { ...x, rx: shorterPrescription(x.rx || EXERCISE_BY_ID[x.exId]?.defaultRx || '') } : x))
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: routine.modality, title: routine.name, routineId: routine.id, ex, estMins: estMins(slots), ...(option ? { option } : {}) })
-          markDayDirty(st.data, st.cur)
-        })
-        persist(); get().scheduleSync(); get().showToast(routine.name + ' saved')
       },
 
       saveCardio: (cardioType, mins, option) => {

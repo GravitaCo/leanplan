@@ -158,9 +158,6 @@ export interface LoggedExercise {
   exId?: string
   /** the shape used, so history renders correctly later */
   log?: LogShape
-  /** library id of the workout's planned exercise for this slot (differs from `exId` after a swap),
-   *  so a reopened card puts each logged exercise back in its own slot even after a reorder */
-  slot?: string
   /** the prescription it was logged against ("3 × 10–12"); "last time" only counts the same rep range */
   rx?: string
   sets: SetEntry[]

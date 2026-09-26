@@ -7,6 +7,7 @@ import { todayStr } from '@/core/domain/date'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
+import { aboutMins, keyTitle, keyVideo, routineFor, slotsOf as routineSlots, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -175,12 +176,13 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
 }
 
 /** A workout's exercises, read only; each opens its library entry. */
-function ExerciseList({ type }: { type: WorkoutType }) {
+function ExerciseList({ type }: { type: WorkoutKey }) {
   const [lib, setLib] = useState<string | null>(null)
+  const routines = useStore((s) => s.data.routines)
   return (
     <>
       <div className="list">
-        {WORKOUTS[type].ex.map((e, i) => {
+        {(templateFor(type, routines)?.ex ?? []).map((e, i) => {
           const x = exById(e.id)
           const body = (
             <>
@@ -199,32 +201,51 @@ function ExerciseList({ type }: { type: WorkoutType }) {
 
 /**
  * A workout (Plan, p1-workout): its exercises and where it sits in the week. Ready-made workouts
- * are read only for now (there are no custom routines in the data model yet); a move can be
- * swapped for one day in Train. "Do this today" hands over to Train, which owns Start.
+ * stay as they are; "Make your own copy" starts one of the user's own from it (plan P4), which can
+ * then be edited. "Do this today" hands over to Train, which owns Start.
  */
-export function WorkoutView({ type, onBack }: { type: WorkoutType; onBack: () => void }) {
+export function WorkoutView({ type, onBack, onCopy, onEdit }: {
+  /** a built-in's type or the id of one of the user's own workouts */
+  type: WorkoutKey
+  onBack: () => void
+  /** a ready-made workout: make an editable copy */
+  onCopy?: () => void
+  /** one of the user's own: edit it */
+  onEdit?: () => void
+}) {
   const schedule = useStore((s) => s.data.schedule)
+  const routines = useStore((s) => s.data.routines)
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
-  const v = firstVideo(type)
+  const own = routineFor(type, routines)
+  const v = keyVideo(type, routines)
   const [failed, setFailed] = useState(false)
   const on = WEEK_ORDER.filter((d) => schedule[d] === type).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
+  const sub = own
+    ? [`${routineSlots(own).length} ${routineSlots(own).length === 1 ? 'exercise' : 'exercises'}`, own.estMins ? `about ${aboutMins(own.estMins)} min` : ''].filter(Boolean).join(' · ')
+    : workoutSub(type as WorkoutType)
   return (
     <div className="wv">
       <div className={'wv-hero' + (v?.poster && !failed ? '' : ' plain')}>
         {v?.poster && !failed && <img src={mediaUrl(v.poster)} alt="" onError={() => setFailed(true)} />}
         <button className="wv-back" aria-label="Back" onClick={onBack}><Icon name="chevL" size={18} stroke={2.6} /></button>
         <div className="wv-t">
-          <h1>{shortTitle(type)}</h1>
-          <div className="s num">{when} · {workoutSub(type)}</div>
+          <h1>{keyTitle(type, routines)}</h1>
+          <div className="s num">{own ? `Your workout · ${sub}` : `${when} · ${sub}`}</div>
         </div>
       </div>
       <div className="screen" style={{ paddingTop: 16 }}>
         <ExerciseList type={type} />
-        <div className="foot" style={{ padding: '4px 4px 0' }}>Ready-made workouts can't be edited yet. To change a move for one day, use Swap in Train.</div>
+        {own ? (
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Open it on any day with Do this today, or from Add something in Train. Putting your own workouts into your week comes with weekly plans.</div>
+        ) : (
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Ready-made workouts stay as they are.{onCopy ? ' Make your own copy to change the exercises.' : ''} To change a move for one day, use Swap in Train.</div>
+        )}
         <div className="stack">
           <button className="btn gray" onClick={() => { setDate(todayStr()); openTrain(type) }}>Do this today</button>
+          {own && onEdit && <button className="btn gray" onClick={onEdit}>Edit workout</button>}
+          {!own && onCopy && <button className="btn gray" onClick={onCopy}>Make your own copy</button>}
         </div>
       </div>
     </div>
