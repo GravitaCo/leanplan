@@ -144,12 +144,11 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Working agreement: design → code
 
-Benn is the creative director; Claude implements. Designs come from **Figma** or from the
-claude.ai **Design canvas** (Claude drafts boards there for Benn to review and approve).
-Either way, nothing is built until Benn has approved the design. For Figma, run the **local**
-Figma Dev Mode MCP
-(`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`) — it's only
-reachable from a Claude Code running on the user's machine, not from a cloud session.
+Benn is the creative director and approves designs; Claude implements, and code goes through
+review (`ship-critic`, see Conventions). Designs come from **Figma** or from the claude.ai
+**Design canvas**, where Claude drafts boards for Benn to review. For Figma, run the **local**
+Figma Dev Mode MCP (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`);
+it's only reachable from a Claude Code running on the user's machine, not from a cloud session.
 
 Per screen/flow: read the frame → reconcile its styles against the tokens above (flag, don't
 silently diverge) → build with existing primitives (extract a new shared component when a
