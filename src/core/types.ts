@@ -33,6 +33,11 @@ export interface Food {
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
   cook?: boolean
+  /** the pack's barcode (EAN-13 / EAN-8 digits), on foods saved from a scan or a label with one */
+  barcode?: string
+  /** eaten as it comes (a ready meal, crisps, a drink): logged by the serving, never offered as a
+   *  "What can I make?" ingredient and ranked after ingredients in the recipe builder */
+  eat?: true
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
@@ -313,6 +318,7 @@ export interface Profile {
   sex: Sex
   age: number | null
   height: number | null
+  /** The weight last set on Profile, a fallback only: the current weight is `latestWeight` (day logs first). */
   weight?: number | null
   activityLevel: ActivityLevel
   supplements: Supplement[]

@@ -11,22 +11,33 @@ import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
 import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
-import { Sheet, pressable } from '@/ui/primitives'
+import { Sheet, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
 import { PortionView } from './PortionView'
 import { RecipeLogView } from './RecipeLogView'
 import { QuickEstimateView } from './QuickEstimateView'
 import { CreateFoodView } from './CreateFoodView'
+import { ScanView } from './ScanView'
+import { ScanConfirmView } from './ScanConfirmView'
+import type { ScanDraft } from '@/core/domain/barcode'
+
+const MISSING_NOTE = {
+  'not-found': 'Not found. Enter it from the label: per 100 g column.',
+  offline: 'Couldn’t look it up without a connection. Enter it from the label: per 100 g column.',
+  error: 'Couldn’t look it up right now. Enter it from the label: per 100 g column.',
+} as const
 
 type View =
   | { kind: 'search' }
   | { kind: 'portion'; food: Food; custom: boolean }
   | { kind: 'recipe'; index: number }
   | { kind: 'quick' }
-  | { kind: 'create' }
+  | { kind: 'create'; barcode?: string; note?: string }
+  | { kind: 'scan' }
+  | { kind: 'confirm'; draft: ScanDraft }
 
-export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create'; onClose: () => void }) {
+export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
   const [view, setView] = useState<View>(initialView ? { kind: initialView } : { kind: 'search' })
   const [q, setQ] = useState('')
@@ -38,7 +49,15 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
   if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
-  if (view.kind === 'create') return <CreateFoodView {...common} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  if (view.kind === 'create') return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  if (view.kind === 'confirm') return <ScanConfirmView {...common} onBack={() => go({ kind: 'scan' })} draft={view.draft} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+  if (view.kind === 'scan') {
+    return <ScanView {...common} onResult={(r) => {
+      if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
+      else if (r.kind === 'found') go({ kind: 'confirm', draft: r.draft })
+      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why] })
+    }} />
+  }
   return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />
 }
 
@@ -142,8 +161,9 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     <Sheet title="Add food" tall onClose={onClose} animate={animate}>
       <div className="searchbar">
         <Icon name="search" size={17} />
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
+        <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
           autoComplete="off" enterKeyHint="search" aria-label="Search foods" />
+        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label="Scan barcode"><Icon name="barcode" size={20} /></button>
       </div>
       <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>
       {body}
@@ -151,6 +171,10 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         <button className="li" onClick={() => go({ kind: 'quick' })}>
           <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="bolt" size={18} /></span>
           <div className="m"><div className="t">Quick estimate</div><div className="s">Restaurant or unknown food</div></div><Chevron />
+        </button>
+        <button className="li" onClick={() => go({ kind: 'scan' })}>
+          <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
+          <div className="m"><div className="t">Scan barcode</div><div className="s">Packaged food, from the pack</div></div><Chevron />
         </button>
         <button className="li" onClick={() => go({ kind: 'create' })}>
           <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>

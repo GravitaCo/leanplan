@@ -1,7 +1,7 @@
 import type { DayLog, Exercise, ExerciseTemplate, LoggedExercise, LogShape, SetEntry } from '@/core/types'
 import { sessionsOf } from './sessions'
 import { shorterPrescription, shorterSets } from './dayOptions'
-import { fmtSet } from './library'
+import { fmtSet, sameExercise } from './library'
 
 /**
  * The guided session (Train redesign, stage 4): prescriptions, rest defaults, "last time" and
@@ -101,7 +101,7 @@ export function lastTime(days: Record<string, DayLog>, before: string, exId: str
   for (const d of ds) {
     for (const s of [...sessionsOf(days[d], d)].reverse()) {
       for (const x of s.ex || []) {
-        if (!((exId && x.exId === exId) || (!x.exId && x.name === name))) continue
+        if (!sameExercise(x, exId, name)) continue
         const sets = working(x.sets)
         if (!sets.length) continue
         if (x.rx && !sameRange(x.rx, rx)) continue

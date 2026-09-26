@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Schedule, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS } from '@/core/data/workouts'
+import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { exById } from '@/core/domain/library'
 import { todayStr } from '@/core/domain/date'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
-import { DAY_NAME, WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
+import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
+import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
@@ -22,7 +23,6 @@ const CATEGORIES: { id: 'weights' | 'cardio'; label: string; items: WorkoutType[
   { id: 'cardio', label: MODALITY_LABEL.cardio, items: ['Cardio'], color: 'var(--mind-fill)' },
 ]
 
-export const firstVideo = (t: WorkoutType) => WORKOUTS[t].ex.find((e) => e.video)?.video
 export const workoutSub = (t: WorkoutType) => (t === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[t].ex.length} exercises · ${setCount(WORKOUTS[t].ex)}`)
 const kindOf = (t: WorkoutType) => (t === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength)
 

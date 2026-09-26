@@ -7,14 +7,13 @@
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
-import { parseYmd, shiftDay, todayStr, ymd } from './date'
+import { parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
-import { fromLegacy, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
-const d1 = (x: number) => Math.round(x * 10) / 10
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
@@ -71,7 +70,7 @@ export function rangeExtra(s: AppState, d: string): number {
     const mirrored = wk?.type && !wk._mirror
       ? list.findIndex((x) => x.routineId === fromLegacy(wk, d).routineId)
       : mirroredIndex(list)
-    const keepOld = mirrored >= 0 && (list[mirrored].routineId || '').startsWith('builtin-')
+    const keepOld = mirrored >= 0 && isBuiltin(list[mirrored])
     return (keepOld ? old : 0) + list.reduce((a, x, i) => (keepOld && i === mirrored ? a : a + sessionBurn(x, kg)), 0)
   }
   if (s.profile.activityLevel !== 'sedentary') return 0
@@ -126,11 +125,18 @@ export function lastFatFor(s: AppState, name: string): FatChoice | null {
   return lastUse(s, name)?.fatChoice ?? null
 }
 /** A usual food plus the cooking fat it was logged with, ready to re-log. */
+/** A database food that's since been removed (unverified or outdated): its stored numbers are
+ *  never re-served (usuals, same as yesterday). Diary history keeps what was logged. */
+export function isRemovedFood(x: LoggedFood): boolean {
+  return x.src === 'db' && !FOOD_BY_NAME.has(x.n)
+}
+
 export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedFood[] {
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
     for (let i = fs.length - 1; i >= 0; i--) {
       if (fs[i].n !== name || fs[i].src === 'fat') continue
+      if (isRemovedFood(fs[i])) return []
       // a cooking-fat entry is logged straight after its food
       const next = fs[i + 1]
       const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
@@ -207,7 +213,7 @@ export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   for (const d of days) {
     const seen = new Set<string>()
     for (const x of s.days[d].foods || []) {
-      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n)) continue
+      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n) || isRemovedFood(x)) continue
       seen.add(x.n)
       if (!counts[x.n]) counts[x.n] = { n: x.n, count: 0, last: x }
       counts[x.n].count++
@@ -244,10 +250,16 @@ export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
   const { ok: _ok, ...rest } = x
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
-  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
-    const amount = entryAmount(x, food)
+  const unit = food ? unitOf(food) : undefined
+  // same unit: rescale the same amount. A food now sold per item (KFC Original Recipe, once per
+  // 100 g) re-logs as the same number of servings as items, at the chain's own figure.
+  const sameUnit = !!food && unit === (x.unit ?? 'g')
+  const nowPerItem = !!food && unit === 'item' && x.serv != null
+  if (food && x.grams && (sameUnit || nowPerItem)) {
+    const amount = sameUnit ? entryAmount(x, food) : roundAmount(x.serv!, 'item')
     const s = scaleFood(food, amount)
-    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+    Object.assign(out, { grams: amount, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f) })
+    if (!sameUnit) out.unit = 'item'
   }
   return out
 }

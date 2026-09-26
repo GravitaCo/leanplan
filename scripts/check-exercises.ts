@@ -2,17 +2,20 @@
 import { EXERCISES } from '@/core/data/exercises'
 import { WORKOUTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_MET } from '@/core/data/constants'
+import { MODALITIES } from '@/core/data/modalities'
+import { CARE_LABEL, EQUIPMENT_LABEL, LEVEL_LABEL, SHAPE_LABEL, TARGET_LABEL } from '@/core/data/libraryLabels'
 import committed from '../docs/data/exercise-ids.json'
 
 const errors: string[] = []
-const MODALITY = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
-const SHAPES = ['weight-reps', 'reps', 'hold', 'duration', 'rounds', 'check']
-const EQUIP = ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'kettlebell', 'band', 'cardio-machine', 'bench', 'pull-up-bar', 'mat', 'yoga-props', 'reformer']
-const AREAS = ['lower-back', 'knees', 'shoulders', 'elbows', 'wrists', 'neck']
-const LEVELS = ['beginner', 'intermediate', 'advanced']
+// the allowed values come from the exhaustive label maps, so a new union member can't be missed here
+const MODALITY: string[] = MODALITIES
+const SHAPES = Object.keys(SHAPE_LABEL)
+const EQUIP = Object.keys(EQUIPMENT_LABEL)
+const AREAS = Object.keys(CARE_LABEL)
+const LEVELS = Object.keys(LEVEL_LABEL)
 const PATTERNS = ['horizontal-push', 'vertical-push', 'horizontal-pull', 'vertical-pull', 'squat', 'hinge', 'lunge', 'isolation', 'carry', 'core']
 const MUSCLES = ['chest', 'back', 'quads', 'hamstrings', 'glutes', 'shoulders', 'biceps', 'triceps', 'calves', 'core', 'forearms']
-const TARGETS = ['hips', 'hamstrings', 'spine', 'shoulders', 'chest', 'ankles', 'calves', 'balance', 'breath']
+const TARGETS = Object.keys(TARGET_LABEL)
 // §5.4: left out on purpose (safety over novelty)
 const EXCLUDED = /kipping|bench dip|headstand|shoulder stand|plough|plow|lotus|wheel pose|rollover|jackknife|neck pull|weighted sit|russian twist|behind[- ]the[- ]neck|box jump|depth jump|pistol/i
 // cardio pieces logged without a burn estimate until nutrition-accuracy confirms a code (§2.9)

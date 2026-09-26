@@ -163,3 +163,6 @@ export const SESSIONS = ["Legs","Push","Pull","Cardio","Rest"] as const
 
 /** Default recurring weekly schedule, keyed by weekday (0 = Sun … 6 = Sat). */
 export const DEFAULT_SCHEDULE: Record<number, WorkoutType | 'Rest'> = {"0":"Rest","1":"Legs","2":"Cardio","3":"Push","4":"Cardio","5":"Pull","6":"Cardio"}
+
+/** The first demo clip in a workout, for its thumbnail. */
+export const firstVideo = (t: WorkoutType) => WORKOUTS[t].ex.find((e) => e.video)?.video

@@ -27,19 +27,36 @@ export const SOURCES: Record<string, Source> = {
   off: { label: 'Pack label via Open Food Facts', url: 'https://world.openfoodfacts.org/' },
   'subway-uk': { label: 'Subway UK, Sep 2026', url: 'https://www.subway.com/en-GB/MenuNutrition/Nutrition', err: MENU_ERR },
   'bk-gb': { label: 'Burger King UK, Sep 2026', url: 'https://www.burgerking.co.uk/', err: MENU_ERR },
-  'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/', err: MENU_ERR },
+  'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/food/menu', err: MENU_ERR },
   'greggs-uk': { label: 'Greggs UK, Sep 2026', url: 'https://www.greggs.com/nutrition', err: MENU_ERR },
+  'popeyes-uk': { label: 'Popeyes UK, Sep 2026', url: 'https://popeyesuk.com/nutrition', err: MENU_ERR },
+  'pizzahut-uk': { label: 'Pizza Hut Restaurants UK (dine-in), Jul 2026', url: '', err: MENU_ERR },
+  'pizzaexpress-uk': { label: 'PizzaExpress UK (England, Wales & Scotland), Sep 2026', url: 'https://www.pizzaexpress.com/allergens-and-nutritionals', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
 }
 
-/** The source's minimum error for a food, or 0. */
+/** Chain menus: sources whose values are a restaurant's published per-item figures. */
+export function isMenuSource(src: string | undefined): boolean {
+  return !!src && SOURCES[src.split(':')[0]]?.err === MENU_ERR
+}
+
+/** A custom food saved from a barcode scan (values read from Open Food Facts, then confirmed). */
+const isScanned = (f: Pick<Food, 'src' | 'id'>) => !!f.id && !!f.src && f.src.split(':')[0] === 'off'
+
+/** The source's minimum error for a food, or 0. A scanned food is the user's own pack, checked
+ *  line by line before saving, so it gets the same margin as a label typed in (Benn, Sept 2026:
+ *  the pack is the most accurate information we have). */
 export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
+  if (isScanned(f)) return 0
   return (!f.id && f.src && SOURCES[f.src.split(':')[0]]?.err) || 0
 }
 
-/** Human line for a food's source: "UK CoFID 2021 · 19-539", "Your label", or null if unchecked. */
+/** Human line for a food's source: "UK CoFID 2021 · 19-539", "Your label", or null if unchecked.
+ *  A scanned food keeps its Open Food Facts line (with the barcode), like built-in OFF foods. */
 export function sourceOf(f: Pick<Food, 'src' | 'id'>): { text: string; url: string } | null {
-  if (f.id) return { text: 'Your label', url: '' }
+  if (f.id && !isScanned(f)) return { text: 'Your label', url: '' }
+  // checked line by line against the user's own pack: credit that, not the crowdsourced record
+  if (isScanned(f)) return { text: `Your pack label (found via Open Food Facts) · ${f.src!.split(':')[1] ?? ''}`.replace(/ · $/, ''), url: SOURCES.off.url }
   if (!f.src) return null
   const [key, code] = f.src.split(':')
   const s = SOURCES[key]

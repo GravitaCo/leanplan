@@ -24,11 +24,11 @@ import type {
   Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
-import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { relog } from '@/core/domain/insights'
+import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
@@ -77,7 +77,6 @@ interface StoreState {
   openProfile: (section: string) => void
   clearProfileOpen: () => void
   setDate: (d: string) => void
-  shiftDate: (n: number) => void
   showToast: (msg: string, action?: { label: string; run: () => void }) => void
 
   // food
@@ -93,6 +92,8 @@ interface StoreState {
   /** save (or update by name) a custom food definition; returns the saved food */
   saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
+  /** give a saved food a barcode (a scan matched it by name); returns the updated food */
+  linkBarcode: (id: string, barcode: string) => Food | null
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -117,7 +118,6 @@ interface StoreState {
   restoreSession: (date: string, x: TrainingSession) => void
 
   // plan / settings
-  setScheduleDay: (idx: number, value: WorkoutType | 'Rest', quiet?: boolean) => void
   /** replace the whole weekly schedule (swap two days, undo) */
   setSchedule: (s: Schedule, quiet?: boolean) => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
@@ -238,7 +238,6 @@ export const useStore = create<StoreState>()(
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
       clearProfileOpen: () => set((st) => { st.profileOpen = null }),
       setDate: (d) => set((st) => { st.cur = d }),
-      shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
       showToast: (msg, action) => {
         set((st) => { st.toast = msg; st.toastAction = action ?? null })
@@ -288,9 +287,14 @@ export const useStore = create<StoreState>()(
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!prev.length) return
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+        const all = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
+        if (!all.length) return
+        // foods no longer in Tali (removed as unverified) aren't copied, nor their cooking fat
+        const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+        const prev = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+        const note = gone.size ? ` · ${gone.size} food${gone.size > 1 ? 's' : ''} no longer in Tali, not copied` : ''
+        if (!prev.length) { get().showToast(`Not copied: ${gone.size > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {
@@ -304,6 +308,18 @@ export const useStore = create<StoreState>()(
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
         persist(); get().scheduleSync(); get().showToast('Food saved')
+        return food
+      },
+
+      linkBarcode: (id, barcode) => {
+        if (!get().data.customFoods.some((x) => x.id === id)) return null
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
+        })
+        persist(); get().scheduleSync()
+        const food = get().data.customFoods.find((x) => x.id === id)!
+        get().showToast(`Barcode linked to your “${food.n}”`)
         return food
       },
 
@@ -406,6 +422,8 @@ export const useStore = create<StoreState>()(
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
+          // Profile shows latestWeight, so this is its weight too; profile.weight isn't rewritten,
+          // which would upload the whole settings record on every weigh-in
         })
         persist(); get().scheduleSync(); get().showToast('Weight saved')
       },
@@ -417,7 +435,7 @@ export const useStore = create<StoreState>()(
           if (extra?.note) more.note = extra.note
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}), ...more },
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: builtinId(type), ex, ...(option ? { option } : {}), ...more },
             // what the caller didn't set carries over; an explicit null effort or empty note clears it
             keptOnSave(extra))
           markDayDirty(st.data, st.cur)
@@ -430,7 +448,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           const typed = parseFloat(mins)
           putBuiltin(ensureDay(st.data, st.cur), st.cur, {
-            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: builtinId('Cardio'),
             // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
             ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
           })
@@ -467,14 +485,6 @@ export const useStore = create<StoreState>()(
         persist(); get().scheduleSync(); get().showToast('Session removed')
       },
 
-      setScheduleDay: (idx, value, quiet) => {
-        set((st) => {
-          st.data.schedule[idx] = value
-          markSettingsDirty(st.data)
-        })
-        persist(); get().scheduleSync(); if (!quiet) get().showToast('Schedule updated')
-      },
-
       setSchedule: (sch, quiet) => {
         set((st) => {
           for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
@@ -499,10 +509,14 @@ export const useStore = create<StoreState>()(
 
       saveProfileMetrics: (patch) => {
         set((st) => {
+          // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
+          const today = todayStr()
+          if (patch.weight && patch.weight !== latestWeight(st.data, today)) {
+            ensureDay(st.data, today).weight = patch.weight
+            markDayDirty(st.data, today)
+          }
           Object.assign(st.data.profile, patch)
-          if (patch.weight) ensureDay(st.data, st.cur).weight = patch.weight
           markSettingsDirty(st.data)
-          if (patch.weight) markDayDirty(st.data, st.cur)
         })
         persist(); get().scheduleSync(); get().showToast('Saved')
       },

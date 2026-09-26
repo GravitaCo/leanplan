@@ -1,6 +1,7 @@
 import type { MuscleGroup, Schedule, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
+import { DAY_NAME } from './date'
 
 /**
  * The weekly plan (Plan tab, stage 4). The schedule stays one workout per weekday
@@ -8,7 +9,6 @@ import { EXERCISE_BY_ID } from '@/core/data/exercises'
  */
 
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
-export const DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 /** Main muscles a workout trains: the primary muscle of each move, core left out (it recovers fast). */
 export function mainMuscles(type: WorkoutType | 'Rest' | undefined): Set<MuscleGroup> {
@@ -36,7 +36,7 @@ export function weekWarnings(s: Schedule): WeekWarning[] {
     if (!x || !y || x === 'Rest' || y === 'Rest' || !LIFTS.includes(x) || !LIFTS.includes(y)) continue
     const shared = [...mainMuscles(x)].filter((m) => mainMuscles(y).has(m))
     if (x === y || shared.length >= 2) {
-      const name = x === y ? WORKOUTS[x].title.split(' · ')[0] : 'Two workouts for the same muscles'
+      const name = x === y ? shortTitle(x) : 'Two workouts for the same muscles'
       out.push({
         kind: 'back-to-back', days: [a, b],
         text: `${name} ${x === y ? 'is' : 'are'} on back-to-back days (${DAY_NAME[a]} and ${DAY_NAME[b]}). Legs, then Push, then Pull gives each area time to recover.`,

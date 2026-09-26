@@ -1,11 +1,10 @@
 import { useStore } from '@/store/store'
-import { fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
+import { DOW, fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Rings } from './charts'
 import { Icon } from './icons'
 import { sessionsOf } from '@/core/domain/sessions'
 
-const DOW = 'MTWTFSS'
 
 /** Monday–Sunday strip: each day shows a mini energy ring and its planned session. */
 export function WeekStrip() {

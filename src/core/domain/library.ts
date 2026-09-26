@@ -56,16 +56,20 @@ export function setHasData(s: SetEntry, shape: LogShape): boolean {
   return s.w !== '' || s.reps !== ''
 }
 
+/** The same exercise in a log: by library id, or by name for logs from before ids existed. */
+export const sameExercise = (x: LoggedExercise, exId: string | undefined, name: string): boolean =>
+  (!!exId && x.exId === exId) || (!x.exId && x.name === name)
+
 /**
- * The most recent earlier day this exercise was logged with sets, from any workout: by library id,
- * or by name for logs from before ids existed.
+ * The most recent earlier day this exercise was logged with sets, from any workout. Like Train's
+ * `lastTime` (guided.ts) but across any rep range; not used by a screen yet.
  */
 export function lastLogged(days: Record<string, DayLog>, before: string, exId: string | undefined, name: string): LoggedExercise | null {
   const ds = Object.keys(days).filter((d) => d < before).sort().reverse()
   for (const d of ds) {
     for (const s of sessionsOf(days[d], d)) {
       // warm-up sets never count as "last time"
-      const hit = s.ex?.find((x) => x.sets?.some((y) => !y.warmup) && ((exId && x.exId === exId) || (!x.exId && x.name === name)))
+      const hit = s.ex?.find((x) => x.sets?.some((y) => !y.warmup) && sameExercise(x, exId, name))
       if (hit) return { ...hit, sets: hit.sets.filter((y) => !y.warmup) }
     }
   }

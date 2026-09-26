@@ -1,8 +1,7 @@
-/** Small SVG data displays: activity-style rings, range bar, macro columns, sparkline, week bars. */
+/** Small SVG data displays: activity-style rings, meters, sparkline, week bars. */
 import type { DayStat } from '@/core/domain/insights'
-import type { Category } from './primitives'
 
-const DOW = 'MTWTFSS'
+import { DOW } from '@/core/domain/date'
 
 /** Concentric rings, outermost first. Progress caps at a full ring — never an "over" state. */
 export function Rings({ items, size, stroke }: { items: { pct: number; color: string }[]; size: number; stroke?: number }) {
@@ -33,24 +32,11 @@ export function Rings({ items, size, stroke }: { items: { pct: number; color: st
   )
 }
 
-/** Horizontal bar with tick marks at the edges of the target range. */
-export function RangeBar({ k, lo, hi }: { k: number; lo: number; hi: number }) {
-  const max = hi * 1.25
-  const P = (v: number) => Math.max(0, Math.min(100, (v / max) * 100))
-  return (
-    <div className="rbar" aria-hidden="true">
-      <div className="f" style={{ width: P(k) + '%' }} />
-      <div className="tk" style={{ left: P(lo) + '%' }} />
-      <div className="tk" style={{ left: P(hi) + '%' }} />
-    </div>
-  )
-}
-
 /** Thin progress bar (0–1), capped at full: never an "over" state. */
-export function Meter({ pct, color = 'var(--food)', h = 4 }: { pct: number; color?: string; h?: number }) {
+export function Meter({ pct }: { pct: number }) {
   return (
-    <span className="meter" style={{ height: h, borderRadius: h / 2 }} aria-hidden="true">
-      <i style={{ width: Math.max(0, Math.min(100, (pct || 0) * 100)) + '%', background: color, borderRadius: h / 2 }} />
+    <span className="meter" style={{ height: 4, borderRadius: 2 }} aria-hidden="true">
+      <i style={{ width: Math.max(0, Math.min(100, (pct || 0) * 100)) + '%', background: 'var(--food)', borderRadius: 2 }} />
     </span>
   )
 }
@@ -78,16 +64,6 @@ export function MacroTrio({ p, c, f, tp, tc, tf }: { p: number; c: number; f: nu
     </div>
   )
   return <div className="mtrio">{col('Protein', p, tp)}{col('Carbs', c, tc)}{col('Fat', f, tf)}</div>
-}
-
-export function MacroCol({ label, value, goal, color }: { label: string; value: number; goal: number; color: Category }) {
-  return (
-    <div className="mc">
-      <div className="k" style={{ color: `var(--${color}-ink)` }}>{label}</div>
-      <div className="v num">{Math.round(value)}<small> / {goal} g</small></div>
-      <div className="b"><i style={{ width: Math.min(100, goal ? (value / goal) * 100 : 0) + '%', background: `var(--${color})` }} /></div>
-    </div>
-  )
 }
 
 export function Sparkline({ values, w, h, color }: { values: number[]; w: number; h: number; color: string }) {

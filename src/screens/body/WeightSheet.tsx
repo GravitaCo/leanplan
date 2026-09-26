@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
 import { weightWeekDelta } from '@/core/domain/insights'
-import { Sheet } from '@/ui/primitives'
+import { Sheet, focusOnMount } from '@/ui/primitives'
 
 interface Point { d: string; w: number }
 
@@ -39,7 +39,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Body weight" tall onClose={onClose} right={<button className="navbtn b" onClick={save}>Save</button>}>
       <div className="card">
         <div className="gram">
-          <input autoFocus className="num" type="number" inputMode="decimal" step="0.1" placeholder="0.0" value={bw}
+          <input ref={focusOnMount} className="num" type="number" inputMode="decimal" step="0.1" placeholder="0.0" value={bw}
             aria-label={`Weight for ${fmtDate(cur).dow} in kg`} onChange={(e) => setBw(e.target.value)} />
           <span>kg</span>
         </div>

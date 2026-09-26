@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v34'
+const CACHE = 'tali-v50'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -17,6 +17,13 @@ function assetsOf(html) {
     if (u.origin === self.location.origin && u.pathname !== '/') urls.add(u.href)
   }
   return [...urls]
+}
+
+/** Lazily loaded assets of the same build (the barcode decoder and its .wasm), listed by the
+ *  build in <meta name="tali-lazy">. Not precached; kept once fetched so they work offline. */
+function lazyOf(html) {
+  const m = html.match(/<meta name="tali-lazy" content="([^"]*)"/)
+  return m ? m[1].split(/\s+/).filter(Boolean).map((p) => new URL(p, self.location.href).href) : []
 }
 
 /**
@@ -32,7 +39,7 @@ async function storeShell(res) {
   await c.addAll(missing)
   await c.put(SHELL, res)
   // drop hashed assets from older builds that this shell no longer references
-  const keep = new Set(assetsOf(html))
+  const keep = new Set([...assetsOf(html), ...lazyOf(html)])
   for (const r of await c.keys()) if (new URL(r.url).pathname.startsWith('/assets/') && !keep.has(r.url)) await c.delete(r)
 }
 

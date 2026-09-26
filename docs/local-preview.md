@@ -28,6 +28,18 @@ To try it on your phone, open the **Network** address the script prints (for exa
 
 For live-reloading while editing code, `npm run dev` serves http://localhost:5173/ instead.
 
+## Testing the camera (barcode scanning) on a phone
+
+iPhone Safari only allows the camera on https, so the Wi-Fi address above can't scan. Use a free
+Cloudflare quick tunnel instead: install it once with `brew install cloudflared`, start the
+preview as above, then in a second Terminal window run
+
+```
+cloudflared tunnel --url http://localhost:4173
+```
+
+and open the `https://….trycloudflare.com` address it prints on the phone. `Ctrl+C` stops it.
+
 ## Things to know
 
 - **Testing needs an account, and it's the live database.** There is no guest mode, and there
