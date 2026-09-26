@@ -245,7 +245,9 @@ export function ProfileScreen() {
         <SettingRow icon="bell" color={MINDF} soft label="Supplement reminders" sub={notifStatus}
           right={<Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
               const ok = await setNotifications(!pr.notificationsEnabled)
-              showToast(ok ? (pr.notificationsEnabled ? 'Reminders off' : 'Reminders on') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
+              const done = pr.notificationsEnabled ? 'Reminders off' : 'Reminders on'
+              showToast(ok === 'unsaved' ? done + ', but this device couldn’t save the setting. Storage may be full.'
+                : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
             }} />} />
       </div>
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
