@@ -13,7 +13,11 @@
 --   auth.uid() atomically (a single upsert guarded by the limit) and returns how many are left,
 --   or -1 when today's cap is reached. The limit lives here, not in the caller, so calling the
 --   function directly can only use up the caller's own allowance.
--- - The Edge Function calls it with the user's own JWT (no service role on AI paths).
+-- - A global cap per task and day (500 label reads across all users) bounds total spend. It's a
+--   read-then-write, so concurrent calls can overshoot it by a few; that's accepted (spend is
+--   also capped on the Anthropic account). The per-user cap is exact (a guarded upsert).
+-- - The Edge Function calls it with the user's own JWT (no service role on AI paths). With the
+--   gateway's verify_jwt off, this call is the gate: no valid session, no model call.
 -- ============================================================================
 
 create table if not exists public.ai_usage (
@@ -23,6 +27,9 @@ create table if not exists public.ai_usage (
   count integer not null default 0 check (count >= 0),
   primary key (user_id, task, day)
 );
+
+-- the global cap sums one task's day
+create index if not exists ai_usage_task_day on public.ai_usage (task, day);
 
 alter table public.ai_usage enable row level security;
 
@@ -43,6 +50,8 @@ as $$
 declare
   uid uuid := auth.uid();
   cap integer;
+  global_cap integer;
+  today date := (now() at time zone 'utc')::date;
   n integer;
 begin
   if uid is null then
@@ -50,12 +59,18 @@ begin
   end if;
   -- one cap per task; unknown tasks are refused
   cap := case p_task when 'read-label' then 30 else null end;
+  global_cap := case p_task when 'read-label' then 500 else null end;
   if cap is null then
     raise exception 'unknown task' using errcode = '22023';
   end if;
 
+  -- everyone's reads today (a small overshoot under concurrency is fine; see above)
+  if (select coalesce(sum(a.count), 0) from public.ai_usage a where a.task = p_task and a.day = today) >= global_cap then
+    return -1;
+  end if;
+
   insert into public.ai_usage as u (user_id, task, day, count)
-  values (uid, p_task, (now() at time zone 'utc')::date, 1)
+  values (uid, p_task, today, 1)
   on conflict (user_id, task, day)
     do update set count = u.count + 1
     where u.count < cap

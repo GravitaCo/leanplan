@@ -39,7 +39,9 @@ import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
 import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
-import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, suggestFix, textsFromRead, validateLabelRead, variants, type LabelRead } from '@/core/domain/label'
+import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, servingRef, suggestFix, textsFromRead, validateLabelRead, variants, SERVING_NEEDED, type LabelRead } from '@/core/domain/label'
+import { scaleFood as scaleFoodRef } from '@/core/domain/nutrition'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { measureFrame, qualityIssue, toGray } from '@/core/domain/labelQuality'
 import { LABEL_ROWS, LABEL_SCHEMA } from '../supabase/functions/_shared/label-read'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
@@ -1297,7 +1299,8 @@ function labelScan(): void {
     ['parse: grams', p('0.64g') === JSON.stringify({ value: 0.64, dp: 2 })],
     ['parse: decimal comma', parseCell('0,64 g', 'f', 'per100').value === 0.64],
     ['parse: thousands comma in kJ', parseCell('2,079kJ', 'kj', 'per100').value === 2079],
-    ['parse: less than is kept and marked', p('<0.5g') === JSON.stringify({ value: 0.5, dp: 1, mark: 'lt' })],
+    ['parse: less than is stored at the midpoint, marked, bound kept', p('<0.5g') === JSON.stringify({ value: 0.25, dp: 2, mark: 'lt', raw: 0.5 })],
+    ['parse: <0.1 g → 0.05, salt <0.0125 g → 0.00625', parseCell('<0.1g', 'sugars', 'per100').value === 0.05 && parseCell('<0.0125g', 'salt', 'per100').value === 0.00625],
     ['parse: trace is 0 and marked', parseCell('Trace', 'sugars', 'per100').mark === 'trace' && parseCell('trace', 'sugars', 'per100').value === 0],
     ['parse: kJ/kcal in one cell, each row takes its own', parseCell('2079kJ/497kcal', 'kj', 'per100').value === 2079 && parseCell('2079kJ/497kcal', 'k', 'per100').value === 497],
     ['parse: kJ in the kcal row is flagged', parseCell('2079kJ', 'k', 'per100').flag === 'unit'],
@@ -1308,10 +1311,16 @@ function labelScan(): void {
     ['parse: letter O in a number is unreadable, never silently read', parseCell('O.5g', 'fibre', 'per100').flag === 'unreadable' && parseCell('O.5g', 'fibre', 'per100').value === undefined],
     ['parse: empty and dash are not printed', parseCell('', 'f', 'per100').value === undefined && parseCell('-', 'f', 'per100').value === undefined && !parseCell('—', 'f', 'per100').flag],
     ['parse: RI percent', parseCell('12%', 'f', 'ri').value === 12 && parseCell('<1%', 'sugars', 'ri').mark === 'lt'],
-    ['serving text: last weight wins', parseServing('Per ½ pack (200g)') === 200 && parseServing('30g') === 30 && parseServing('1 biscuit (12.5 g)') === 12.5 && parseServing('250ml glass') === 250 && parseServing('1 bar') === undefined],
+    ['serving text: brackets win, else the first quantity', parseServing('Per ½ pack (200g)') === 200 && parseServing('30g') === 30 && parseServing('1 biscuit (12.5 g)') === 12.5 && parseServing('250ml glass') === 250 && parseServing('1 bar') === undefined],
+    ['serving text: ignores what comes after “with”', parseServing('30g with 125ml semi-skimmed milk') === 30],
+    ['serving text: ignores what comes after “serves”', parseServing('Per 250ml glass (serves 4 from 1L)') === 250 && parseServing('100g (makes 2 x 250g)') === 100],
     ['checks: a consistent label has no issues', ids(read(crisps)) === ''],
     ['checks: granola hangs together too', ids(read(granola)) === ''],
     ['check kJ↔kcal: per 100 misread', ids(read({ ...crisps, kcal: ['457kcal', '149kcal', '7%'] })).includes('energy:per100')],
+    ['check kJ↔kcal: 2.5% tolerance (2079 kJ = 497 kcal; 486 passes, 484 doesn’t)', !ids(read({ kj: ['2079kJ'], kcal: ['486kcal'] }, { serving_text: '' })).includes('energy') && ids(read({ kj: ['2079kJ'], kcal: ['484kcal'] }, { serving_text: '' })).includes('energy:per100')],
+    ['check energy ↔ macros still runs with “<0.5g” (at its midpoint)', ids(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['<0.5g'], carbohydrate: ['66g'], protein: ['9.0g'] }, { serving_text: '' })).includes('macros')
+      && !ids(read({ kj: ['1580kJ'], kcal: ['378kcal'], fat: ['<0.5g'], carbohydrate: ['85g'], protein: ['8.5g'] }, { serving_text: '' })).includes('macros')],
+    ['check with no serving size: the energy ratio checks every row', ids(read({ ...granola, fat: ['7.1g', '2.7g'] }, { serving_text: '1 bowl' })) === 'serving:f' && ids(read(granola, { serving_text: '' })) === ''],
     ['check kJ↔kcal: per serving misread', ids(read({ ...crisps, kj: ['2079kJ', '684kJ', '7%'] })).includes('energy:serving')],
     ['check per 100 ↔ per serving', ids(read({ ...granola, fat: ['1.1g', '2.1g'] })).includes('serving:f')],
     ['check per 100 ↔ per serving allows label rounding (salt 0.015 → 0.02)', !ids(read(granola)).includes('serving:salt')],
@@ -1328,7 +1337,8 @@ function labelScan(): void {
   const fix = (r: LabelRead) => suggestFix(textsFromRead(r, false))
   const s17 = fix(read({ ...granola, fat: ['1.1g', '2.1g'] }))
   checks.push(
-    ['suggest 1↔7: fat 1.1 → 7.1 from the per-serving column', s17?.cell === cellId('f', 'per100') && s17.value === 7.1 && s17.display === '7.1 g' && s17.because === 'The per-serving column says 2.1 g for 30 g.'],
+    ['suggest 1↔7: fat 1.1 → 7.1 from the per-serving column', s17?.cell === cellId('f', 'per100') && s17.value === 7.1 && s17.display === '7.1 g' && s17.because === 'The per-serving column says 2.1 g for 30 g, which is about 7 g per 100 g.'],
+    ['suggest with no serving size, from the energy ratio: 2.7 → 2.1', (() => { const s = fix(read({ ...granola, fat: ['7.1g', '2.7g'] }, { serving_text: '' })); return s?.cell === cellId('f', 'serving') && s.value === 2.1 })()],
     ['suggest decimal: salt 064 → 0.64', (() => { const s = fix(read({ ...granola, salt: ['064g', '0.19g'] })); return s?.value === 0.64 && s.to === '0.64g' })()],
     ['suggest decimal: fibre 75 → 7.5', fix(read({ ...granola, fibre: ['75g', '2.3g'] }))?.value === 7.5],
     ['suggest in the per-serving column: 2.7 → 2.1', (() => { const s = fix(read({ ...granola, fat: ['7.1g', '2.7g'] })); return s?.cell === cellId('f', 'serving') && s.value === 2.1 })()],
@@ -1354,6 +1364,8 @@ function labelScan(): void {
     ['draft: photo after a barcode keeps the barcode and OFF name, takes the label’s numbers', dBase.barcode === '5000328657950' && dBase.name === 'Walkers Sensations Roasted Chicken & Thyme' && dBase.values.k === 497 && dBase.kind === 'eat'],
     ['draft: the 1↔7 suggestion travels with the draft', draftFromLabel(read({ ...granola, fat: ['1.1g', '2.1g'] }), { taken: [] }).label?.suggestion?.value === 7.1],
     ['draft: per 100 ml labels', draftFromLabel(read({ kcal: ['42kcal'] }, { basis: '100ml' }), { taken: [] }).ml === true],
+    ['draft: per-serving column but no readable serving → serving required', (() => { const x = draftFromLabel(read(granola, { serving_text: '1 bowl' }), { taken: [] }); return x.serving.cook === undefined && x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving' && n.msg === SERVING_NEEDED) })()],
+    ['draft: “<0.5g” note says it’s halfway', dMark.label?.marks.some((m) => m.includes('halfway')) === true],
     ['draft: empty fallback keeps the barcode', emptyLabelDraft({ barcode: '5000328657950', taken: [] }).barcode === '5000328657950' && Object.keys(emptyLabelDraft({ taken: [] }).values).length === 0],
     ['front name: brand already in the product', frontName({ brand: 'Walkers', product: 'Walkers Sensations', variety: 'Roasted Chicken & Thyme', pack_size: '' }) === 'Walkers Sensations Roasted Chicken & Thyme'],
     ['saved food: src label, barcode only when scanned', (() => {
@@ -1361,6 +1373,21 @@ function labelScan(): void {
       const b = foodFromConfirmed({ barcode: '5000328657950', name: 'X', values: { k: 1, p: 1, c: 1, f: 1 }, ml: false, kind: 'cook', g: 30, source: 'label' })
       return a.src === 'label' && a.barcode === undefined && b.src === 'label' && b.barcode === '5000328657950' && sourceErr({ ...b, id: 'x' }) === 0
     })()],
+  )
+  // the pack's per-serving line is saved as ref, and one serving logs exactly it
+  const bar: Rows = { kcal: ['452kcal', '204kcal'], fat: ['21.0g', '9.5g'], carbohydrate: ['58.0g', '26.1g'], protein: ['6.0g', '2.7g'] }
+  const barCheck = labelIssues(textsFromRead(read(bar, { serving_text: '45g' }), false))
+  const ref = servingRef(barCheck, 45, 45)
+  const barFood = { id: 'b', ...foodFromConfirmed({ barcode: '', name: 'Bar', values: { k: 452, p: 6, c: 58, f: 21 }, ml: false, kind: 'eat', g: 45, source: 'label', ref }) } as Food
+  const logged = buildEntry(barFood, { mode: 'serv', serv: 1 } as any, 'snack', DEFAULT_PROFILE as any, { custom: true, fat: null, askFat: false }).entry
+  const two = buildEntry(barFood, { mode: 'serv', serv: 2 } as any, 'snack', DEFAULT_PROFILE as any, { custom: true, fat: null, askFat: false }).entry
+  checks.push(
+    ['ref: the per-serving line is kept when it agrees and the serving is the printed one', JSON.stringify(ref) === JSON.stringify({ g: 45, k: 204, p: 2.7, c: 26.1, f: 9.5 }) && JSON.stringify(barFood.ref) === JSON.stringify(ref)],
+    ['ref: per-100 452 kcal, 45 g serving printed 204 kcal → one serving logs 204', logged.k === 204 && logged.f === 9.5 && Math.round(scaleFoodRef(barFood, 45).k) === 204],
+    ['ref: other amounts scale the per-100 values (2 servings = 406.8)', two.k === 406.8],
+    ['ref: not kept when the saved serving differs or the columns disagree', servingRef(barCheck, 45, 50) === undefined
+      && servingRef(labelIssues(textsFromRead(read({ ...bar, fat: ['21.0g', '3.5g'] }, { serving_text: '45g' }), false)), 45, 45) === undefined],
+    ['flag: label scanning is off until the function is deployed', LABEL_SCAN_ENABLED === false],
   )
   // the schema and its validator (server and client share them)
   const good = read(crisps)

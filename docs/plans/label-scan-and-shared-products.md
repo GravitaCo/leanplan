@@ -169,12 +169,20 @@ The confirm view says where the figures came from:
   (schema + validator, shared with the app), `src/core/domain/label.ts` (parsing, checks, the
   one-fix search, draft), `src/core/domain/labelQuality.ts`, `src/data/labelReader.ts`,
   `src/screens/food/LabelCaptureView.tsx` (lazy-loaded), `ScanConfirmView.tsx` (label mode).
-- Cap: `docs/migrations/2026-09-ai-usage.sql` (30 reads per user per UTC day, counts only).
+- Cap: `docs/migrations/2026-09-ai-usage.sql` (30 reads per user and 500 in total per UTC day,
+  counts only; the total can overshoot by a few under concurrency).
+- Off by default: `LABEL_SCAN_ENABLED` in `src/data/labelReader.ts` hides every entry point until
+  the function is deployed and smoke-tested (a `VITE_LABEL_SCAN=1` build turns it on locally).
+- The gateway's `verify_jwt` is off; the function rejects a missing or malformed token (401), and
+  the `ai_usage_take` RPC, called with the user's JWT before any model call, is the gate.
+- A confirmed label whose per-serving column agrees is saved with the pack's per-serving line as
+  `ref`, so one serving logs exactly what the pack prints (`scaleFood`).
 - Not in phase 1: the photo crop beside each field (the reader returns no positions yet).
-- To deploy, in order: review (`security-data`, `nutrition-accuracy`, `mental-performance`,
-  `ship-critic`); run the migration in the SQL editor; `supabase secrets set ANTHROPIC_API_KEY=…`
-  (optional `LABEL_MODEL`, `LABEL_EFFORT`); `supabase functions deploy ai-read-label`; set a monthly
-  spend limit on the Anthropic account; then merge.
+- To deploy, in order: reviews; run the migration in the SQL editor; `supabase secrets set
+  ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-sonnet-5, and `LABEL_EFFORT`), plus
+  `SUPABASE_PUBLISHABLE_KEY=sb_publishable_…` if the platform doesn't provide `SUPABASE_ANON_KEY`;
+  `supabase functions deploy ai-read-label` (config.toml sets verify_jwt = false); set a monthly
+  spend limit on the Anthropic account; smoke-test; then flip `LABEL_SCAN_ENABLED` and merge.
 - E2E: `scripts/e2e-label-scan.cjs` (fake camera, mocked function; never calls the API).
 
 Each phase goes through the usual reviews before merging:

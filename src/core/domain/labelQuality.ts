@@ -57,8 +57,8 @@ export type QualityIssue = 'dark' | 'glare' | 'blur'
 
 /** Neutral, specific prompts: what to change, never what went wrong. */
 export const QUALITY_PROMPT: Record<QualityIssue, string> = {
-  dark: 'Too dark. Try near a window or under a light.',
-  glare: 'Glare on the table. Tilt the pack a little.',
+  dark: 'A bit dark. Try near a window or under a light.',
+  glare: 'Glare on the label. Tilt the pack a little.',
   blur: 'Hold still, or move back a little so it can focus.',
 }
 

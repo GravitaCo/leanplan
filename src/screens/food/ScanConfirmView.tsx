@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { checkLabel, foodFromConfirmed, type FoodKind, type LabelField, type LabelValues, type ScanDraft } from '@/core/domain/barcode'
-import { cellId, labelIssues, parseCell, type LabelIssue, type LabelTexts } from '@/core/domain/label'
+import { cellId, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
 import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
@@ -127,7 +127,11 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
   }
   const save = () => {
     if (missing) return
-    const food = saveCustomFood(foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source }))
+    // the pack's per-serving line, when it agrees and the saved serving is the printed one (a
+    // whole number, since saved servings are whole grams)
+    const printed = info ? parseServing(info.texts.servingText) : undefined
+    const ref = live && Number.isInteger(g) ? servingRef(live, printed, g) : undefined
+    const food = saveCustomFood(foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source, ref }))
     onSaved(food)
   }
   const accept = () => {
@@ -169,7 +173,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
         </div>
         <div className={'frow' + (g > 0 ? '' : ' need') + (odd.has('serving') ? ' flag' : '')}>
           <label htmlFor="sc_g">Serving on the pack</label>
-          {odd.has('serving') && <span className="flagnote">Check the serving size on the pack</span>}
+          {odd.has('serving') && <span className="flagnote">{productNotes.some((n) => n.msg === SERVING_NEEDED) ? 'Needed: the serving the per-serving column is for' : 'Check the serving size on the pack'}</span>}
           <input id="sc_g" type="number" inputMode="decimal" placeholder="e.g. 30" value={serving}
             aria-invalid={g > 0 ? undefined : true} onChange={(e) => { setServing(e.target.value); setServingTouched(true) }} />
           <span className="u">{unit}</span>
@@ -207,7 +211,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           // a label photo shows the label's own per-serving figure; otherwise it's worked out
           const read = info ? parseCell(servText[f], f, 'serving') : undefined
           const per = read?.value !== undefined
-            ? (read.mark === 'lt' ? '<' : '') + round(read.value, Math.max(read.dp, 0))
+            ? (read.mark === 'lt' ? '<' + round(read.raw!, Math.max(read.dp - 1, 0)) : round(read.value, Math.max(read.dp, 0)))
             : f === 'alcohol' ? (v !== undefined ? round(v, 1) : '—') : v !== undefined && g > 0 ? round((v * g) / 100, dp) : '—'
           const s = suggFor(f)
           const own = (rowIssues.get(f) || []).find(oneRow)
@@ -225,7 +229,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
               ) : own ? (
                 <span className="flagnote">{own.msg}</span>
               ) : odd.has(f) ? (
-                <span className="flagnote">{lowConf.has(f) && !rowIssues.has(f) ? 'Hard to read in the photo. Check against your pack' : 'Looks off. Check against your pack'}</span>
+                <span className="flagnote">{lowConf.has(f) && !rowIssues.has(f) ? 'Hard to read in the photo. Check against your pack.' : 'Worth a second look. Compare with your pack.'}</span>
               ) : null}
             </div>
           )
@@ -239,7 +243,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           {notes.map((m) => <div key={m} className="note"><Icon name="info" size={17} /><span>{m}</span></div>)}
         </div>
       )}
-      {allGood && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers hang together. Still worth a glance at the pack.</span></div>}
+      {allGood && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers are consistent with each other.</span></div>}
       <div className="stack">
         <button className="btn" onClick={save} disabled={missing}>{missing ? 'Fill in the marked fields' : 'Save food'}</button>
       </div>

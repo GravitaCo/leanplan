@@ -63,10 +63,22 @@ export function headline(f: Food): MacroTotals & { per: string } {
   return { k: f.k, p: f.p, c: f.c, f: f.f, per: perText(f) }
 }
 
-/** Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry. */
-export function scaleFood(f: Food, amount: number): MacroTotals & { g: number } {
+/** The stored per-100 (or per-item) values scaled to an amount, ignoring any published figure. */
+export function scaleStored(f: Food, amount: number): MacroTotals & { g: number } {
   const m = amount / basisOf(f)
   return { g: amount, k: f.k * m, p: f.p * m, c: f.c * m, f: f.f * m }
+}
+
+/**
+ * Scale a food to an amount in its unit (grams, ml or items), producing an absolute macro entry.
+ * Exactly the published amount (`ref`: a chain's portion, a pack's per-serving line) gives the
+ * published figures themselves, so one serving shows what the source prints.
+ */
+export function scaleFood(f: Food, amount: number): MacroTotals & { g: number } {
+  const s = scaleStored(f, amount)
+  const r = f.ref
+  if (!r || r.g === basisOf(f) || Math.abs(amount - r.g) > 0.0005) return s
+  return { g: amount, k: r.k, p: r.p ?? s.p, c: r.c ?? s.c, f: r.f ?? s.f }
 }
 
 export function recipeTotals(r: Recipe): MacroTotals & { g: number } {

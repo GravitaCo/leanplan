@@ -50,8 +50,10 @@ export interface Parsed {
   value?: number
   /** decimal places as printed, for the rounding a label allows */
   dp: number
-  /** "<0.5g" (less than) or "trace": a real value we can't check exactly */
+  /** "<0.5g" (less than) or "trace": a real value we can't check exactly. A "less than" value
+   *  is stored at the midpoint (<0.5 g → 0.25 g); `raw` keeps the printed bound. */
   mark?: 'lt' | 'trace'
+  raw?: number
   /** a problem with the text itself */
   flag?: 'unit' | 'format' | 'unreadable'
 }
@@ -119,13 +121,22 @@ export function parseCell(raw: string | undefined, f: LabelField, col: Col): Par
   let value = n.v, dp = n.dp
   // salt as 300mg: saved in grams
   if (col !== 'ri' && tok.unit === 'mg' && f !== 'alcohol') { value = value / 1000; dp += 3 }
-  return { value, dp, ...(tok.lt ? { mark: 'lt' as const } : {}), ...((n.flag ?? flag) ? { flag: n.flag ?? flag } : {}) }
+  const lt = tok.lt ? { mark: 'lt' as const, raw: value } : {}
+  // "<0.5g": halfway between 0 and the bound (nutrition-accuracy, Sept 2026)
+  if (tok.lt) { value = value / 2; dp += 1 }
+  return { value, dp, ...lt, ...((n.flag ?? flag) ? { flag: n.flag ?? flag } : {}) }
 }
 
-/** The serving the per-serving column is for, in g or ml: the last "200g" / "250 ml" in the text. */
+const QTY = /(\d+(?:[.,]\d+)?)\s*(g|ml|kg|l)\b/
+/**
+ * The serving the per-serving column is for, in g or ml. A quantity in brackets wins ("Per ½ pack
+ * (200g)" → 200), else the first one ("250ml glass" → 250). Anything after "with", "serves" or
+ * "makes" is about something else ("30g with 125ml milk" → 30).
+ */
 export function parseServing(text: string | undefined): number | undefined {
-  const all = [...(text || '').toLowerCase().matchAll(/(\d+(?:[.,]\d+)?)\s*(g|ml|kg|l)\b/g)]
-  const m = all[all.length - 1]
+  const t = (text || '').toLowerCase().split(/\b(?:with|serves|makes)\b/)[0]
+  const bracket = [...t.matchAll(/\(([^)]*)\)/g)].map((b) => b[1].match(QTY)).find(Boolean)
+  const m = bracket ?? t.match(QTY)
   if (!m) return undefined
   const x = parseFloat(m[1].replace(',', '.')) * (m[2] === 'kg' || m[2] === 'l' ? 1000 : 1)
   return x > 0 && x <= 5000 ? x : undefined
@@ -142,11 +153,13 @@ export interface LabelIssue {
   /** worth a look, but not a contradiction (salt over 10 g, a hard-to-read cell) */
   soft?: boolean
   kind: 'format' | 'energy' | 'serving' | 'ri' | 'part' | 'sum' | 'macros' | 'salt'
+  /** more cells the suggested-fix search should try (the energy row a serving ratio came from) */
+  also?: CellId[]
 }
 
 const KJ_PER_KCAL = 4.184
-/** kJ ↔ kcal must agree this closely (plan §1.3.1), plus 1 kcal for rounding. */
-const KJ_TOL = 0.02
+/** kJ ↔ kcal must agree this closely (plan §1.3.1, widened to 2.5% by nutrition-accuracy), plus 1 kcal for rounding. */
+const KJ_TOL = 0.025
 /** UK reference intakes (Regulation (EU) 1169/2011 Annex XIII, retained in UK law). */
 export const RI: Partial<Record<LabelField, number>> = { kj: 8400, k: 2000, f: 70, sat: 20, c: 260, sugars: 90, p: 50, salt: 6 }
 const MAX_G_PER_100ML = 140
@@ -166,6 +179,8 @@ export interface LabelCheckResult {
   serving: LabelValues
   /** the serving the checks used, g or ml */
   g?: number
+  /** with no serving size, the one the energy row implies (per-serving kcal ÷ per-100 kcal × 100) */
+  impliedG?: number
 }
 
 /** Every relationship the panel states twice, checked (plan §1.3). Empty issues = it hangs together. */
@@ -191,7 +206,10 @@ export function labelIssues(t: LabelTexts): LabelCheckResult {
     }
   }
   const exact = (f: LabelField, col: Col) => { const p = parsed[cellId(f, col)]; return p.value !== undefined && !p.mark && p.flag !== 'unreadable' ? p : undefined }
+  /** a value we can use in a sum: exact, or a "less than" at its midpoint, or trace */
+  const usable = (f: LabelField, col: Col) => { const p = parsed[cellId(f, col)]; return p.value !== undefined && p.flag !== 'unreadable' ? p : undefined }
   const g = t.servingG && t.servingG > 0 ? t.servingG : parseServing(t.servingText)
+  let impliedG: number | undefined
 
   // 1. kJ ↔ kcal, in both columns
   for (const col of ['per100', 'serving'] as const) {
@@ -215,6 +233,27 @@ export function labelIssues(t: LabelTexts): LabelCheckResult {
       if (Math.abs(b.value! - expected) > tol) {
         issues.push({ id: `serving:${f}`, cells: [cellId(f, 'per100'), cellId(f, 'serving')], kind: 'serving',
           msg: `${LABELS[f]}: ${show(a.value!, f, 'per100', a.dp)} per 100 ${u} would be about ${show(expected, f, 'serving', Math.max(b.dp, 1))} for ${fmt(g, 1)} ${u}, but the per-serving column reads ${show(b.value!, f, 'serving', b.dp)}.` })
+      }
+    }
+  } else {
+    // no serving size: the energy row gives the ratio between the columns, and every other row
+    // must agree with it (so one misread row still stands out)
+    const ka = exact('k', 'per100'), kb = exact('k', 'serving')
+    if (ka && kb && ka.value! > 0 && kb.value! > 0) {
+      const r = kb.value! / ka.value!
+      impliedG = r * 100
+      // the ratio is only as exact as the two rounded kcal figures
+      const rErr = 0.5 * 10 ** -kb.dp / kb.value! + 0.5 * 10 ** -ka.dp / ka.value!
+      for (const f of fields) {
+        if (f === 'alcohol' || f === 'k') continue
+        const a = exact(f, 'per100'), b = exact(f, 'serving')
+        if (!a || !b) continue
+        const expected = a.value! * r
+        const tol = 0.5 * 10 ** -b.dp + 0.5 * 10 ** -a.dp * r + (0.02 + rErr) * expected + 1e-9
+        if (Math.abs(b.value! - expected) > tol) {
+          issues.push({ id: `serving:${f}`, cells: [cellId(f, 'per100'), cellId(f, 'serving')], also: [cellId('k', 'per100'), cellId('k', 'serving')], kind: 'serving',
+            msg: `${LABELS[f]}: the energy figures put the serving at about ${fmt(impliedG, 0)} ${u}, which would be about ${show(expected, f, 'serving', Math.max(b.dp, 1))}, but the per-serving column reads ${show(b.value!, f, 'serving', b.dp)}.` })
+        }
       }
     }
   }
@@ -253,10 +292,11 @@ export function labelIssues(t: LabelTexts): LabelCheckResult {
   }
 
   // 5. energy ↔ macros (the same check typed labels get), per 100
+  // ("<0.5g" counts at its midpoint here, so the check still runs)
   const kcalCells = (['k', 'p', 'c', 'f'] as LabelField[]).map((f) => cellId(f, 'per100'))
-  if ((['k', 'p', 'c', 'f'] as LabelField[]).every((f) => exact(f, 'per100'))) {
+  if (exact('k', 'per100') && (['p', 'c', 'f'] as LabelField[]).every((f) => usable(f, 'per100'))) {
     const vals: LabelValues = { k: per100.k, p: per100.p, c: per100.c, f: per100.f }
-    for (const f of ['fibre', 'alcohol'] as LabelField[]) if (exact(f, 'per100')) vals[f] = per100[f]
+    for (const f of ['fibre', 'alcohol'] as LabelField[]) if (usable(f, 'per100')) vals[f] = per100[f]
     for (const pr of checkLabel(vals, { ml: t.ml })) {
       // kJ, parts and sums are checked above, with the label's own tighter rules
       if (pr.kind !== 'odd' || pr.field !== 'k' || /kJ|add up|negative/.test(pr.msg)) continue
@@ -271,7 +311,7 @@ export function labelIssues(t: LabelTexts): LabelCheckResult {
     issues.push({ id: 'salt', cells: [cellId('salt', 'per100')], kind: 'salt', soft: true,
       msg: `Salt reads ${show(salt.value!, 'salt', 'per100', salt.dp)} per 100 ${u}. That’s usual only for seasonings and stock: check against the pack.` })
   }
-  return { issues, parsed, per100, serving, g }
+  return { issues, parsed, per100, serving, g, impliedG }
 }
 
 /* ---------------- the suggested fix ---------------- */
@@ -325,10 +365,13 @@ function because(issue: LabelIssue, cell: CellId, t: LabelTexts, r: LabelCheckRe
   const [of, oc] = other ? splitCell(other) : [f, col]
   const ov = o?.value !== undefined ? show(o.value, of, oc, o.dp) : ''
   switch (issue.kind) {
-    case 'serving':
+    case 'serving': {
+      const sg = r.g ?? r.impliedG!
+      const about = r.g ? '' : 'about '
       return col === 'per100'
-        ? `The per-serving column says ${ov} for ${fmt(r.g!, 1)} ${u}.`
-        : `The per 100 ${u} column says ${ov}, which is about ${show((o!.value! * r.g!) / 100, f, 'serving')} for ${fmt(r.g!, 1)} ${u}.`
+        ? `The per-serving column says ${ov} for ${about}${fmt(sg, r.g ? 1 : 0)} ${u}, which is about ${show((o!.value! * 100) / sg, f, 'per100')} per 100 ${u}.`
+        : `The per 100 ${u} column says ${ov}, which is about ${show((o!.value! * sg) / 100, f, 'serving')} for ${about}${fmt(sg, r.g ? 1 : 0)} ${u}.`
+    }
     case 'energy':
       return f === 'k' ? `The label says ${ov}, which is about ${Math.round(o!.value! / KJ_PER_KCAL)} kcal.` : `The label says ${ov}, which is about ${Math.round(o!.value! * KJ_PER_KCAL)} kJ.`
     case 'ri':
@@ -356,7 +399,7 @@ export function suggestFix(t: LabelTexts, lowConf: CellId[] = []): Suggestion | 
   const failing = base.issues.filter((i) => !i.soft)
   if (!failing.length) return null
   const softIds = new Set(base.issues.filter((i) => i.soft).map((i) => i.id))
-  const cells = [...new Set([...failing.flatMap((i) => i.cells), ...lowConf])]
+  const cells = [...new Set([...failing.flatMap((i) => [...i.cells, ...(i.also || [])]), ...lowConf])]
   const found = new Map<string, Suggestion>()
   for (const cell of cells) {
     const text = getText(t, cell)
@@ -434,7 +477,7 @@ export function draftFromLabel(read: LabelRead, opts: { barcode?: string; base?:
     const p = parsed[cellId(f, 'per100')]
     // a flagged unit or format keeps its number (highlighted); unreadable stays empty
     if (p.value !== undefined && p.flag !== 'unreadable') values[f] = p.value
-    if (p.mark) marks.push(`${LABELS[f]} reads “${texts.per100[f]}”: saved as ${show(p.value!, f, 'per100', p.dp)}.`)
+    if (p.mark) marks.push(`${LABELS[f]} reads “${texts.per100[f]}”: saved as ${show(p.value!, f, 'per100', p.dp)}${p.mark === 'lt' ? ', halfway' : ''}.`)
   }
   const lowConf: CellId[] = []
   for (const row of LABEL_ROWS) {
@@ -442,6 +485,9 @@ export function draftFromLabel(read: LabelRead, opts: { barcode?: string; base?:
     for (const col of ['per100', 'serving', 'ri'] as Col[]) if (r[col].text && r[col].confidence === 'low') lowConf.push(cellId(f, col))
   }
   const g = parseServing(read.serving_text)
+  // a per-serving column with no readable serving size: the size must be typed (a default of
+  // 100 g would pair the column with the wrong amount)
+  const servingNeeded = g === undefined && LABEL_ROWS.some((row) => !!read.rows[row].serving.text)
   const fromFront = frontName(read.front)
   const baseName = fromFront || base?.baseName || ''
   const kind: FoodKind = base?.kind ?? 'cook'
@@ -456,16 +502,34 @@ export function draftFromLabel(read: LabelRead, opts: { barcode?: string; base?:
     kind,
     meal: base?.meal ?? false,
     cat: base?.cat,
-    serving: { eat: serv ?? base?.serving.eat, cook: serv ?? base?.serving.cook ?? 100 },
+    serving: servingNeeded ? { eat: undefined, cook: undefined } : { eat: serv ?? base?.serving.eat, cook: serv ?? base?.serving.cook ?? 100 },
     pack: packFromQuantity(read.front.pack_size) ?? base?.pack,
     wholePack: false,
     liquid: ml || !!base?.liquid,
     vague: false,
-    notes: [],
+    notes: servingNeeded ? [{ field: 'serving', kind: 'odd', msg: SERVING_NEEDED }] : [],
     usLabel: false,
     source: 'label',
     label: { texts, suggestion: suggestFix(texts, lowConf), lowConf, marks, nameFromFront: !!fromFront },
   }
+}
+
+export const SERVING_NEEDED = 'The label has a per-serving column, but its serving size couldn’t be read. Add it from the pack.'
+
+/**
+ * The pack's own per-serving figures, to save with the food as its `ref` so one serving logs
+ * exactly what the pack prints (nutrition.ts scaleFood). Only when the per-serving column agrees
+ * with the per-100 column and the saved serving is the printed one.
+ */
+export function servingRef(r: LabelCheckResult, printedG: number | undefined, savedG: number): { g: number; k: number; p?: number; c?: number; f?: number } | undefined {
+  if (!printedG || Math.abs(savedG - printedG) > 0.0005) return undefined
+  if (r.issues.some((i) => !i.soft && (i.kind === 'serving' || i.kind === 'energy' || i.kind === 'format'))) return undefined
+  const cell = (f: LabelField) => { const p = r.parsed[cellId(f, 'serving')]; return p && p.value !== undefined && !p.mark && !p.flag ? p.value : undefined }
+  const k = cell('k')
+  if (k === undefined) return undefined
+  const ref: { g: number; k: number; p?: number; c?: number; f?: number } = { g: printedG, k }
+  for (const f of ['p', 'c', 'f'] as const) { const v = cell(f); if (v !== undefined) ref[f] = v }
+  return ref
 }
 
 /** An empty label draft, for typing it in when the photo couldn't be read. */

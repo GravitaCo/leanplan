@@ -25,6 +25,7 @@ const FRONT_EDGE = 1024
 const MAX_BYTES = 1_500_000
 const CHECK_EVERY_MS = 350
 
+export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic’s AI service to read the numbers, under their data policy. You can check the numbers before anything is saved.'
 export const GUIDANCE = 'Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.'
 
 type Shot = { blob: Blob; url: string; issue: QualityIssue | null }
@@ -32,9 +33,10 @@ type Step = 'consent' | 'panel' | 'front' | 'review' | 'reading'
 
 const FAIL_NOTE: Record<Exclude<LabelReadResult['status'], 'ok'>, string> = {
   offline: 'Couldn’t read the photo without a connection, or it took too long.',
-  'no-session': 'Reading a photo needs you signed in and online.',
-  limit: 'That’s today’s photo reads used.',
-  unreadable: 'The photo couldn’t be read.',
+  unavailable: 'Photo reading isn’t available right now.',
+  'no-session': 'Sign in again to read photos.',
+  limit: 'You’ve used today’s photo reads. They reset tomorrow.',
+  unreadable: 'The photo couldn’t be read. A flatter, brighter shot often helps.',
   error: 'Couldn’t read the photo right now.',
 }
 
@@ -179,7 +181,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     }
     const then = base
       ? ' The Open Food Facts figures are below: check them against your pack.'
-      : ' Type the numbers from the pack below.'
+      : res.status === 'unavailable' ? ' Type it in instead.' : ' Type the numbers from the pack below.'
     typeInstead(FAIL_NOTE[res.status] + then)
   }
 
@@ -191,8 +193,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       <Sheet title={title} onClose={onClose} animate={animate} left={left}>
         <div className="card" style={{ padding: 16 }}>
           <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}>Before your first photo</div>
-          <div className="sub">Your photo is read once to fill in the numbers, then deleted. It’s sent to our server and an AI service (Anthropic) to read it.</div>
-          <div className="foot" style={{ padding: '10px 0 0' }}>You check every number before anything is saved. Nothing else about you is sent.</div>
+          <div className="sub">{CONSENT}</div>
+          <div className="foot" style={{ padding: '10px 0 0' }}>Nothing else about you is sent.</div>
         </div>
         <div className="stack">
           <button className="btn tinted" onClick={() => { setLabelConsent(true); setStep('panel') }}>OK, take a photo</button>
@@ -205,7 +207,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   if (step === 'reading') {
     return (
       <Sheet title={title} onClose={onClose} animate={animate} left={left}>
-        <div className="empty" role="status">Reading the label…<br />You’ll check every number before saving.</div>
+        <div className="empty" role="status">Reading the label…</div>
       </Sheet>
     )
   }
@@ -235,7 +237,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
         <div className="stack">
           <button className="btn tinted" onClick={() => void read()}>Read the label</button>
         </div>
-        <div className="foot">Your photo is read once, then deleted. You’ll check every number before saving.</div>
+        <div className="foot">Your photo is read once, then Tali doesn’t keep it.</div>
       </Sheet>
     )
   }

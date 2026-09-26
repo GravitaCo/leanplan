@@ -1,8 +1,9 @@
 /**
  * ai-read-label: transcribe a UK nutrition panel from a photo (plan: docs/plans/label-scan-and-shared-products.md §1.2).
  *
- * - Signed-in users only: the gateway verifies the JWT (verify_jwt, supabase/config.toml), and the
- *   daily-cap RPC runs as the caller, so an invalid or missing session never reaches the model.
+ * - Signed-in users only. verify_jwt is off (supabase/config.toml): this function rejects a missing
+ *   or malformed Authorization with 401, and the daily-cap RPC runs as the caller before any model
+ *   call, so only a valid signed-in session (auth.uid() set) reaches the model.
  * - Input: { panel: base64 JPEG, front?: base64 JPEG }, each at most ~1.5 MB (the app downscales).
  * - The model only transcribes: literal cell text plus a confidence, in a strict JSON schema. The
  *   app parses and checks the numbers (src/core/domain/label.ts). Nothing here computes a value.
@@ -11,7 +12,9 @@
  * - Nothing about the photo or its values is logged or stored: counts, sizes and timings only.
  *
  * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-sonnet-5: transcription needs accurate vision, not deep reasoning; about a third of Opus 5's cost. Set claude-opus-5 if real labels read worse),
- * LABEL_EFFORT (default low). SUPABASE_URL and SUPABASE_ANON_KEY are provided by the platform.
+ * LABEL_EFFORT (default low). SUPABASE_URL is provided by the platform. The RPC's apikey is
+ * SUPABASE_ANON_KEY when the platform provides it, else set SUPABASE_PUBLISHABLE_KEY (the
+ * project's sb_publishable_… key) as a secret.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0'
 import { LABEL_SCHEMA, validateLabelRead } from '../_shared/label-read.ts'
@@ -24,8 +27,10 @@ const EFFORT: Effort = envEffort && EFFORT_LEVELS.includes(envEffort) ? envEffor
 
 /** ~1.5 MB of JPEG, as base64 (4 chars per 3 bytes). */
 const MAX_IMAGE_B64 = 2_100_000
-/** Both images plus JSON punctuation. */
+/** Both images plus JSON punctuation, in bytes. */
 const MAX_BODY = 2 * MAX_IMAGE_B64 + 1_000
+/** Output cap: the JSON is ~1.5k tokens; the rest is room for brief adaptive thinking. */
+const MAX_TOKENS = 3000
 /** The app gives up at 20 s: answer (or fail) before then. */
 const MODEL_TIMEOUT_MS = 17_000
 
@@ -38,6 +43,25 @@ const ORIGINS = [
 ]
 
 type ErrorCode = 'bad_request' | 'forbidden' | 'too_large' | 'unauthorized' | 'limit' | 'unreadable' | 'refused' | 'busy' | 'upstream' | 'config'
+
+/** The body as text, or null once it passes `max` bytes (stops reading there). */
+async function readLimited(req: Request, max: number): Promise<string | null> {
+  if (!req.body) return ''
+  const reader = req.body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > max) { await reader.cancel().catch(() => {}); return null }
+    chunks.push(value)
+  }
+  const all = new Uint8Array(size)
+  let at = 0
+  for (const c of chunks) { all.set(c, at); at += c.byteLength }
+  return new TextDecoder().decode(all)
+}
 
 const SYSTEM = `You transcribe UK food nutrition labels from photos. You are a careful copy typist, not a nutritionist.
 
@@ -81,7 +105,7 @@ const jpeg = (x: unknown): x is string => typeof x === 'string' && x.length <= M
 
 /** Takes one of today's scans for the caller, as the caller (RLS and auth.uid() apply). */
 async function takeScan(auth: string): Promise<'ok' | 'limit' | 'unauthorized' | 'config'> {
-  const url = Deno.env.get('SUPABASE_URL'), anon = Deno.env.get('SUPABASE_ANON_KEY')
+  const url = Deno.env.get('SUPABASE_URL'), anon = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
   if (!url || !anon) return 'config'
   let res: Response
   try {
@@ -111,16 +135,18 @@ Deno.serve(async (req) => {
   if (origin && !cors) return fail('forbidden')
   if (req.method !== 'POST') return fail('bad_request')
 
+  // a session token is a JWT (three base64url parts); anything else is refused here, with CORS
+  // headers so the app can say "sign in again" rather than "offline"
+  const auth = req.headers.get('Authorization') || ''
+  if (!/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(auth)) return fail('unauthorized')
   const key = Deno.env.get('ANTHROPIC_API_KEY')
   if (!key) return fail('config')
-  const auth = req.headers.get('Authorization') || ''
-  if (!/^Bearer [A-Za-z0-9._-]+$/.test(auth)) return fail('unauthorized')
   if (Number(req.headers.get('Content-Length') || 0) > MAX_BODY) return fail('too_large')
 
   let body: { panel?: unknown; front?: unknown }
   try {
-    const raw = await req.text()
-    if (raw.length > MAX_BODY) return fail('too_large')
+    const raw = await readLimited(req, MAX_BODY)
+    if (raw === null) return fail('too_large')
     body = JSON.parse(raw)
   } catch {
     return fail('bad_request')
@@ -156,7 +182,7 @@ Deno.serve(async (req) => {
   try {
     msg = await client.beta.messages.create({
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: MAX_TOKENS,
       system: SYSTEM,
       messages: [{ role: 'user', content }],
       output_config: haiku ? { format: { type: 'json_schema', schema: LABEL_SCHEMA } } : { format: { type: 'json_schema', schema: LABEL_SCHEMA }, effort: EFFORT },

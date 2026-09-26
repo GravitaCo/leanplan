@@ -1,8 +1,12 @@
 /**
  * Headless end-to-end check of label photo scanning (phase 1), in Chromium with a fake camera.
  *
- *   npm run build && npx vite preview --port 4173 &
- *   NODE_PATH=$(npm root -g) node scripts/e2e-label-scan.cjs
+ * Label scanning is behind LABEL_SCAN_ENABLED (off), so test a build with it turned on, and
+ * (optionally) check the normal build hides it:
+ *
+ *   VITE_LABEL_SCAN=1 npx vite build --outDir dist-e2e && npx vite preview --outDir dist-e2e --port 4173 &
+ *   npm run build && npx vite preview --port 4174 &
+ *   E2E_URL_OFF=http://localhost:4174/ NODE_PATH=$(npm root -g) node scripts/e2e-label-scan.cjs
  *
  * Needs Playwright (global install is fine; browsers in PLAYWRIGHT_BROWSERS_PATH, e.g.
  * /opt/pw-browsers). Every Supabase request is intercepted: the session is a fake one, and the
@@ -10,7 +14,8 @@
  *
  * Scenarios: capture from a fake camera frame of a nutrition table → a good read → confirm;
  * a 1/7 misread → the suggestion is accepted; a function error → typing fallback; offline →
- * typing fallback.
+ * typing fallback; the function missing (a 404 preflight) → "isn't available", typing fallback;
+ * with the flag off, no entry point shows.
  */
 const { chromium } = require('playwright')
 const fs = require('node:fs')
@@ -82,7 +87,7 @@ function fakeJwt(uid) {
   return `${b({ alg: 'HS256', typ: 'JWT' })}.${b({ sub: uid, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 86400 })}.sig`
 }
 
-async function scenario(browser, name, fn) {
+async function scenario(browser, name, fn, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ['camera'] })
   const uid = '11111111-2222-4333-8444-555555555555'
   const user = { id: uid, aud: 'authenticated', role: 'authenticated', email: 'e2e@example.com', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
@@ -93,9 +98,15 @@ async function scenario(browser, name, fn) {
   }, [JSON.stringify(session)])
   const calls = { fn: 0, bodies: [] }
   let reply = { status: 200, body: { ok: true, read: readOf(GRANOLA) } }
+  let missing = false
   await ctx.route(/supabase\.co\//, async (route) => {
     const url = route.request().url()
     if (url.includes('/functions/v1/ai-read-label')) {
+      // an undeployed function: Supabase answers the preflight 404 with no CORS headers
+      // (Playwright answers CORS preflights itself when routing, so the failed preflight a
+      // browser sees is played as a network failure; the 404 is what the gateway sends)
+      if (missing === 'preflight') return route.abort('failed')
+      if (missing) return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ code: 'NOT_FOUND', message: 'Requested function was not found' }) })
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } })
       calls.fn++
       const body = JSON.parse(route.request().postData() || '{}')
@@ -112,9 +123,10 @@ async function scenario(browser, name, fn) {
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   const set = (r) => { reply = r }
+  const setMissing = (how = '404') => { missing = how }
   try {
-    await page.goto(BASE)
-    await fn({ page, ctx, calls, set })
+    await page.goto(opts.url || BASE)
+    await fn({ page, ctx, calls, set, setMissing })
     if (errors.length) throw new Error('page errors: ' + errors.join(' | '))
     console.log('PASS', name)
     return true
@@ -132,7 +144,7 @@ async function captureLabel(page, { consent = true } = {}) {
   await page.getByRole('button', { name: 'Add food' }).first().click()
   await page.getByRole('button', { name: /Scan the label/ }).click()
   if (consent) {
-    await page.getByText('Your photo is read once to fill in the numbers, then deleted. It’s sent to our server and an AI service (Anthropic) to read it.').waitFor()
+    await page.getByText('Tali doesn’t keep your photo. It’s sent to Anthropic’s AI service to read the numbers, under their data policy. You can check the numbers before anything is saved.').waitFor()
     await page.getByRole('button', { name: 'OK, take a photo' }).click()
   }
   await page.getByText('Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.').waitFor()
@@ -176,7 +188,7 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     expect((await page.locator('#sc_g').inputValue()) === '30', 'serving from the label')
     expect((await page.locator('.nserv[data-f="f"]').textContent()) === '2.1', 'per-serving from the label’s own column')
     expect((await page.locator('.nserv[data-f="f"]').getAttribute('data-read')) === 'true', 'per-serving marked as read')
-    await page.getByText('These numbers hang together.').waitFor()
+    await page.getByText('These numbers are consistent with each other.').waitFor()
     await shot(page, 'confirm')
     await page.getByRole('button', { name: 'Save food' }).click()
     // saved: the portion view opens for the new food
@@ -194,11 +206,11 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     await note.scrollIntoViewIfNeeded()
     await shot(page, 'suggestion')
     const txt = (await note.textContent()) || ''
-    expect(txt.includes('Did you mean 7.1 g?') && txt.includes('The per-serving column says 2.1 g for 30 g.'), 'suggestion copy: ' + txt)
+    expect(txt.includes('Did you mean 7.1 g?') && txt.includes('The per-serving column says 2.1 g for 30 g, which is about 7 g per 100 g.'), 'suggestion copy: ' + txt)
     await page.getByRole('button', { name: 'Use 7.1 g' }).click()
     expect((await page.locator('#sc_f').inputValue()) === '7.1', 'fat set to 7.1')
     expect((await page.locator('[data-suggest]').count()) === 0, 'suggestion gone')
-    await page.getByText('These numbers hang together.').waitFor()
+    await page.getByText('These numbers are consistent with each other.').waitFor()
   }))
 
   results.push(await scenario(browser, 'function error → typing fallback', async ({ page, set, calls }) => {
@@ -226,6 +238,40 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     expect((await page.locator('#sc_k').inputValue()) === '', 'empty fields')
     await ctx.setOffline(false)
   }))
+
+  results.push(await scenario(browser, 'function missing (gateway 404) → unavailable, typing fallback', async ({ page, setMissing, calls }) => {
+    setMissing()
+    await captureLabel(page)
+    await page.getByRole('button', { name: 'Read the label' }).click()
+    await page.getByText('Photo reading isn’t available right now. Type it in instead.').waitFor()
+    expect(calls.fn === 0, 'the POST never ran')
+    expect((await page.locator('#sc_k').inputValue()) === '', 'empty fields to type into')
+  }))
+
+  results.push(await scenario(browser, 'function missing (failed CORS preflight, online) → unavailable', async ({ page, setMissing }) => {
+    setMissing('preflight')
+    await captureLabel(page)
+    await page.getByRole('button', { name: 'Read the label' }).click()
+    await page.getByText('Photo reading isn’t available right now. Type it in instead.').waitFor()
+  }))
+
+  results.push(await scenario(browser, 'saved food keeps the pack’s per-serving line', async ({ page }) => {
+    await captureLabel(page)
+    await page.getByRole('button', { name: 'Read the label' }).click()
+    await page.getByRole('button', { name: 'Save food' }).click()
+    await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).customFoods.find((f) => f.n === 'Tali Test Crunchy Granola Honey'))
+    expect(saved.ref && saved.ref.g === 30 && saved.ref.k === 117 && saved.ref.f === 2.1, 'ref saved: ' + JSON.stringify(saved.ref))
+  }))
+
+  if (process.env.E2E_URL_OFF) {
+    results.push(await scenario(browser, 'flag off: no label entry points', async ({ page }) => {
+      await page.getByRole('button', { name: 'Add food' }).first().click()
+      await page.getByRole('button', { name: /Create a food/ }).waitFor()
+      expect((await page.getByRole('button', { name: /Scan the label/ }).count()) === 0, 'Scan the label hidden')
+      expect((await page.getByText('Photo of the label').count()) === 0, 'Photo of the label hidden')
+    }, { url: process.env.E2E_URL_OFF }))
+  }
 
   results.push(await scenario(browser, 'consent is remembered on the device', async ({ page }) => {
     await captureLabel(page)

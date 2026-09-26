@@ -22,6 +22,7 @@ import { ScanView } from './ScanView'
 import { ScanConfirmView } from './ScanConfirmView'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { emptyLabelDraft } from '@/core/domain/label'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 
 type LabelProps = { onBack?: () => void; onClose: () => void; animate: boolean; barcode?: string; base?: ScanDraft; onDone: (d: ScanDraft, notice?: string) => void }
 
@@ -69,7 +70,7 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
   if (view.kind === 'create') {
     return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })}
-      onLabelPhoto={view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view }) : undefined} />
+      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view }) : undefined} />
   }
   if (view.kind === 'label') {
     const toConfirm = (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft, notice, back: view.back, id: Date.now() })
@@ -83,7 +84,7 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'confirm') {
     const d = view.draft
     // OFF's figures, or a label that couldn't be read: offer reading the user's own pack
-    const photo = d.source !== 'label' || view.notice ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view }) : undefined
+    const photo = LABEL_SCAN_ENABLED && (d.source !== 'label' || view.notice) ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view }) : undefined
     return <ScanConfirmView key={view.id ?? 0} {...common} onBack={() => go(view.back ?? { kind: 'scan' })} draft={d} notice={view.notice} onLabelPhoto={photo}
       onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
   }
@@ -212,10 +213,12 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
           <div className="m"><div className="t">Scan barcode</div><div className="s">Packaged food, from the pack</div></div><Chevron />
         </button>
-        <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
-          <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-          <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
-        </button>
+        {LABEL_SCAN_ENABLED && (
+          <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
+            <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
+            <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
+          </button>
+        )}
         <button className="li" onClick={() => go({ kind: 'create' })}>
           <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>
           <div className="m"><div className="t">Create a food</div><div className="s">From the label on the packet</div></div><Chevron />
