@@ -10,13 +10,13 @@
  *   typed error, never raw model text.
  * - Nothing about the photo or its values is logged or stored: counts, sizes and timings only.
  *
- * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-opus-5),
+ * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-sonnet-5: transcription needs accurate vision, not deep reasoning; about a third of Opus 5's cost. Set claude-opus-5 if real labels read worse),
  * LABEL_EFFORT (default low). SUPABASE_URL and SUPABASE_ANON_KEY are provided by the platform.
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0'
 import { LABEL_SCHEMA, validateLabelRead } from '../_shared/label-read.ts'
 
-const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-opus-5'
+const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-sonnet-5'
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
 type Effort = (typeof EFFORT_LEVELS)[number]
 const envEffort = Deno.env.get('LABEL_EFFORT') as Effort | undefined
