@@ -49,8 +49,8 @@ Two concrete problems:
 
 ### How sync works today
 - Offline-first (`src/data/sync.ts`): localStorage (`leanplan.v1`) is the working store; dirty
-  records upsert to Supabase; pull merges last-write-wins per record. Guest mode is local-only
-  (the `authed` flag gates all cloud calls).
+  records upsert to Supabase; pull merges last-write-wins per record. There is no guest mode
+  (retired Sept 2026); the `authed` flag gates all cloud calls.
 - Tables: `settings`, `custom_foods`, `recipes`, `day_logs`, `push_subscriptions`. RLS locks
   every row to `auth.uid()` (`docs/security-rls.sql`). The built-in `FOODS` array is **shipped in
   the bundle**, not in the DB.

@@ -46,45 +46,59 @@ The core is deliberately **UI-framework-agnostic** so a future React Native / Ca
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
-  TDEE, `library.ts` for swaps and "last time"); `data/` (the ~336-item food DB, the exercise
-  library `exercises.ts` with its committed id list `docs/data/exercise-ids.json`,
-  Push/Pull/Legs workouts, constants).
+  TDEE, `library.ts` for swaps and "last time", `guided.ts` for guided-session targets, rest
+  and "last time" by rep range, `week.ts` for week warnings); `data/` (the food DB with its
+  chain menus, the exercise library `exercises.ts` with its committed id list
+  `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, demo media, constants).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
   migrations), `sync.ts` (offline-first, per-record dirty flags, last-write-wins),
   `push.ts` (Web Push), `backup.ts` (JSON export/import).
 - `src/store/store.ts` — Zustand + Immer store; wires core/data to React; owns the
   debounced sync loop.
-- `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `Seg`, `Toggle`,
-  `Disclosure`, `CatHead`, `PageHeader`, `pressable`), `charts.tsx` (`Rings`,
-  `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`, `WeekBars`), `WeekStrip` + `DayNav`, `BottomNav`, `icons`.
+- `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `BareSheet`, `Seg`,
+  `Toggle`, `Disclosure`, `SettingRow`, `CatHead`, `PageHeader`, `BackButton`, `pressable`,
+  `useScrollLock`), `charts.tsx` (`Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`,
+  `WeekBars`), `WeekStrip` + `DayNav` + `MoveStrip`, `BottomNav`, `brand.tsx` (`TaliMark`), `icons`.
 - `src/screens/` — Today (Summary), Food (+ `food/AddFoodSheet` → Portion / RecipeLog /
-  QuickEstimate / CreateFood views, `food/EditEntrySheet`, `food/MealsSheet`, `food/MarginSheet`),
-  Train, Plan (+ `plan/PlanSheets`), Profile, AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
+  QuickEstimate / CreateFood / Scan views, `food/EditEntrySheet`, `food/MealsSheet`,
+  `food/MarginSheet`), Train (today only: `train/Preview` → `train/GuidedPlayer` with
+  `AdjustSheet`, `FinishSheet`, `ManualLog`, `AddSomethingSheet`), Plan (the week: `plan/PlanViews`
+  for day, category and workout, `plan/PlanSheets` for if-then plans), Profile (grouped settings),
+  AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
 - Logging model: `core/domain/estimate.ts` gives every entry a capture method + typical
   error (days show a ± margin; the cooking-fat question only for foods flagged `cook`);
   `core/domain/insights.ts` holds ranges, neutral status copy, usuals and weekly trends.
 
 ## Design system
 
-Tokens live in `src/styles/theme.css` (`:root` CSS variables). Use these, don't hardcode:
-
-Apple Health / Fitbit-inspired (replaced the earlier dark coral / Hanken Grotesk look in
-Sept 2026, at Benn's request). Light or dark always follows the device's appearance
+"Studio" (Sept 2026, at Benn's request; replaced the Apple Health look). Designs are reviewed on
+the claude.ai Design canvas before they're built. Tokens live in `src/styles/theme.css` (`:root`
+CSS variables): use them, don't hardcode. Light or dark always follows the device's appearance
 setting (`prefers-color-scheme`); there is no in-app override.
 
-- Surfaces & labels follow iOS system colours: `--bg`, `--card`, `--elev`, `--sheet`,
-  `--fill`/`--fill2`/`--fill3`, `--label`/`--label2`/`--label3`, `--sep`. Interactive: `--tint`.
-- One category colour per data type, each with a contrast-safe `-ink` text variant:
-  `--energy`, `--activity`, `--body`, `--mind` (mapped onto the `--food` / `--move` / `--mind`
-  pillars). Protein, carbs, fat and supplements have no colour of their own (removed Sept 2026).
-  No status red/amber for eating — targets are ranges and copy stays neutral.
-- Type: system font (`--font-sans`, SF Pro on iOS); numbers use `.num` (SF Pro Rounded,
-  tabular). iOS scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
-- Shared classes: `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.lbl`,
-  `.foot`, `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`,
-  `.frow` (form rows), `.tile`, `.banner`, `.toast`.
-- App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
-  are generated from it.
+- **Surfaces:** light is warm stone `--bg` #F4F2EF with paper `--card` #FFFFFF; dark is neutral
+  iOS black and graphite (`--bg` #000, `--card` #1C1C1E, `--elev` #2C2C2E), never warm or brown.
+  Labels `--label`/`--label2`/`--label3`, separators `--sep`, fills `--fill`/`--fill2`/`--fill3`.
+- **One accent:** Tali mauve `--tint` (#9A4A7A light, #CD7FAE dark) with `--tint-soft` for
+  selected rows. Primary buttons are ink pills (`--btn`/`--btn-ink`): black in light, white in dark.
+- **Three pillars** (mind, food, move), each with a base (bars, rings, dots), an `-ink` for text
+  (4.5:1 on `--card` and `--bg`) and a `-fill`. Food is #87CF59 with ink #437722 in light, #9FEC85 in
+  dark; use `--on-food` for icons on a solid food square. Data-type names map onto them:
+  `--energy` and `--body` → food, `--activity` → move, `--mind`. Protein, carbs, fat and
+  supplements share the food colour and are told apart by their labels.
+- **Target ranges** use the neutral grey `--band`, never a pillar colour. No status red/amber for
+  eating: targets are ranges and copy stays neutral.
+- **Type:** Geist (variable, bundled in `public/fonts/` under the OFL, preloaded so it works
+  offline). Numbers use `.num` (tabular). Scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
+- **Video screens** (guided player, rest) look the same in both modes: footage full-bleed, never
+  blurred, only a light shade top and bottom, white controls.
+- **Shared classes:** `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.lbl`, `.foot`,
+  `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`, `.frow` (form rows),
+  `.tile`, `.banner`, `.toast`.
+- **Logo:** the Tali mark (plum #3A2734). `Tali-App.svg` is the app icon: plum frame, white mark;
+  `public/favicon.svg` switches to a mauve #CD7FAE frame in light system mode. The PWA PNGs in
+  `public/` are generated from it. In the app, `TaliMark` draws the mark in `--mark` (plum on light,
+  white on dark).
 
 ## Food data & offline (important)
 
@@ -107,9 +121,10 @@ setting (`prefers-color-scheme`); there is no in-app override.
   with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
   Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
-- Each clip carries a **tempo timeline measured from the footage**; the Train screen's
-  "Watch example" full-screen player shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
-  changes; `npm test` checks the files exist and the timeline is ordered.
+- Each clip carries a **tempo timeline measured from the footage**. The guided player and the
+  library's demo player show the phase and a 1-2-3 count from it. They never claim to count the
+  user's reps. Re-time it whenever a clip changes; `npm test` checks the files exist and the
+  timeline is ordered.
 - The service worker leaves `/videos/` to the network (Safari streams video with Range
   requests), so clips need a connection; logging never does.
 
@@ -134,7 +149,8 @@ reachable from a Claude Code running on the user's machine, not from a cloud ses
 
 Per screen/flow: read the frame → reconcile its styles against the tokens above (flag, don't
 silently diverge) → build with existing primitives (extract a new shared component when a
-pattern repeats) → wire to the store → verify in a headless browser → push to deploy.
+pattern repeats) → wire to the store → verify in a headless browser → push to the working
+branch → `ship-critic` → merge to `main` (see Conventions).
 Where a design has gaps, implement the obvious case and call out the decisions made.
 
 ## Conventions

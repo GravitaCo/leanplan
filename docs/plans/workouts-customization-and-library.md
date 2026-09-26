@@ -157,9 +157,9 @@ every phase must meet them, and ship-critic checks each phase against this list.
   through `ExerciseTemplate.video` from `DEMOS` in `src/core/data/media.ts`. The shipped
   `ExerciseMedia` is `{ src, poster?, durationSec, tempo: TempoPhase[] }`, where each phase is
   `{ at, kind: 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch', rep? }` measured from the
-  footage at 8 fps. "Watch example" opens `train/DemoPlayer.tsx`: a full-screen player that
-  reads the video clock and overlays phase, rep and a 1-2-3 count (`core/domain/tempo.ts`),
-  plus a pace row. Exercises without a clip fall back to a YouTube search (`howToLink`).
+  footage at 8 fps. The guided session (`train/GuidedPlayer.tsx`) and the library's demo player
+  (`train/DemoPlayer.tsx`) read the video clock and overlay the phase and a 1-2-3 count
+  (`core/domain/tempo.ts`); they never claim to count the user's reps. Exercises without a clip fall back to a YouTube search (`howToLink`).
   `VIDEO_BASE` is the one switch for moving clips to Bunny CDN. The service worker leaves
   `/videos/` to the network. `npm test` checks every clip file exists and the timeline is
   ordered. Clips are generated from the Seedance prompts in `docs/exercise-video-prompts.md`.
@@ -194,8 +194,8 @@ every phase must meet them, and ship-critic checks each phase against this list.
 - Supabase tables: `settings` (one row per user: JSON `target`, `schedule`, `profile`),
   `custom_foods`, `recipes`, `day_logs` (`foods`, `supps`, `weight`, `workout` JSONB),
   `push_subscriptions`. Sync is offline-first with per-record dirty flags and last-write-wins
-  (`sync.ts`). RLS locks every row to `auth.uid()` (`docs/security-rls.sql`). Guest mode is
-  local-only (`authed = false`). **Never rename existing tables or columns.**
+  (`sync.ts`). RLS locks every row to `auth.uid()` (`docs/security-rls.sql`). There is no guest
+  mode (retired Sept 2026); `authed` gates every cloud call. **Never rename existing tables or columns.**
 - `recipes` is the proven pattern for a reusable user-authored unit: its own table, a JSON
   body column, client-generated ids, `_u`/`_dirty`, a delete queue in `SyncMeta`.
 

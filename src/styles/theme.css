@@ -53,7 +53,8 @@
 
   /* three pillars: base (bars, rings, dots), -ink (text), -fill (soft chips, quiet bars) */
   --mind: #2e7479;  --mind-ink: #2e7479;  --mind-fill: #9cc9c9;
-  --food: #87cf59;  --food-ink: #437722;  --food-fill: #c9eca0;  --food-track: #e2f4d7;
+  --food: #87cf59;  --food-ink: #437722;  --food-fill: #c9eca0;
+  --band: #c7c7cc;     /* target-range band on bars and charts: neutral grey, never a pillar colour */
   --on-food: #1d1d1f;  /* icons on a solid food square: the green is too light for white */
   --move: #a8502b;  --move-ink: #a8502b;  --move-fill: #e6ad8f;
 
@@ -84,7 +85,8 @@
     --red: #ff8a80;
     --mark: #ffffff;
     --mind: #7fc0c2;  --mind-ink: #7fc0c2;  --mind-fill: #2f5557;
-    --food: #9fec85;  --food-ink: #9fec85;  --food-fill: #344c24;  --food-track: #2a3e1e;
+    --food: #9fec85;  --food-ink: #9fec85;  --food-fill: #344c24;
+    --band: #48484a;
     --on-food: #000000;
     --move: #e39a76;  --move-ink: #e39a76;  --move-fill: #6e3b25;
     --on-cat: #000000;
@@ -462,7 +464,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .kbig.w { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
 .kbar { position: relative; height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; margin-top: 14px; }
 .pcard > .kbar { margin-top: 0; }
-.kbar .band { position: absolute; top: 0; bottom: 0; background: var(--food-track); }
+.kbar .band { position: absolute; top: 0; bottom: 0; background: var(--band); }
 .kbar .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--food); transition: width 0.3s; }
 .pline { font-size: 13px; color: var(--label2); line-height: 1.4; }
 .pline.split { display: flex; justify-content: space-between; gap: 12px; }
@@ -563,8 +565,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .dayopt .foot { padding: 10px 0 0; }
 .week-n { padding: 0 4px 10px; }
 .x-btn { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--fill); color: var(--label2); display: grid; place-items: center; }
-/* settings rows: the label keeps its width, a long value gives way */
-/* label keeps its width; a value takes the rest (truncating) and pushes the chevron to the edge */
+/* settings rows: the label keeps its width; a value takes the rest (truncating) and pushes the chevron to the edge */
 .list.icons .li .m { flex: 0 0 auto; max-width: 72%; }
 .list.icons .li .tr { flex: 1 1 0; min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 /* rows with no value: the label fills the row */

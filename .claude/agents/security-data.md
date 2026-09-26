@@ -19,7 +19,7 @@ You are the **security & data-integrity specialist** for Tali, a personal health
 ## What must stay true (the security model)
 - **RLS is locked down**: every policy is `auth.uid() = user_id`, so every row is private to its owner. **Never loosen this.** Any migration that adds a table must add matching owner-scoped RLS in the same change.
 - The **anon/publishable key in `supabase.ts` is public by design** — that's expected, not a leak. The real protection is RLS. Don't treat the anon key as a secret, and don't ever commit a service-role/secret key.
-- **Guest mode is local-only**: the `authed` flag gates all cloud sync, so the app must never hit the DB without a real session. Verify this holds for any new sync path.
+- **No guest mode** (retired Sept 2026): the `authed` flag gates all cloud sync, so the app must never hit the DB without a real session (it stays false offline and while the app asks whose data is on the device). Verify this holds for any new sync path.
 - Sync is **offline-first, per-record dirty flags, last-write-wins, debounced**. Preserve those semantics; watch for races and data loss.
 - OAuth `redirectTo` is **dynamic** (`window.location.origin`); the production redirect/Site URL live in the Supabase dashboard allow-list, not the code. Don't hardcode environment URLs.
 

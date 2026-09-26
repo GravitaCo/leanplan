@@ -85,7 +85,7 @@ export function WeekBars({ rows, lo, hi, cur }: { rows: DayStat[]; lo: number; h
   const step = W / 7
   return (
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Energy this week against your range">
-      <rect x={0} y={y(hi)} width={W} height={y(lo) - y(hi)} rx={5} fill="var(--food-track)" />
+      <rect x={0} y={y(hi)} width={W} height={y(lo) - y(hi)} rx={5} fill="var(--band)" />
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)
