@@ -129,7 +129,8 @@ interface StoreState {
   updateSupplement: (id: string, name: string, time: string) => void
   removeSupplement: (id: string) => void
   updateEmail: (email: string) => Promise<string | null>
-  setNotifications: (enabled: boolean) => Promise<boolean>
+  /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
+  setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
   importBackup: (state: PersistedState) => void
 
   // sync / auth
@@ -200,9 +201,11 @@ export const useStore = create<StoreState>()(
     // helper to persist after any mutation
     // Tell the user once if the device refuses to save, instead of losing data silently.
     let storageWarned = false
-    const persist = () => {
-      if (saveState(get().data)) { storageWarned = false; return }
+    /** Save on this device; false (and a one-off warning) when storage is full. */
+    const persist = (): boolean => {
+      if (saveState(get().data)) { storageWarned = false; return true }
       if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
+      return false
     }
 
     /** After a change: save it on this device, queue the sync, then confirm it (when there's a message). */
@@ -573,19 +576,20 @@ export const useStore = create<StoreState>()(
         }
         set((st) => {
           st.data.profile.notificationsEnabled = enabled
-          meta(st.data).settings = { u: nowIso(), dirty: true }
+          markSettingsDirty(st.data)
         })
-        saveState(get().data)
+        const stored = persist()
         get().scheduleSync()
-        return true
+        return stored || 'unsaved'
       },
 
       importBackup: (incoming) => {
         const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
         set((st) => { st.data = fresh })
-        saveState(get().data)
+        const stored = persist()
         set((st) => { st.cur = todayStr() })
-        get().showToast('Backup loaded')
+        // one message at a time: say here if the device couldn't keep it (it still syncs)
+        get().showToast(stored ? 'Backup loaded' : 'Backup loaded, but this device couldn’t save it. Storage may be full.')
         get().scheduleSync()
       },
 
