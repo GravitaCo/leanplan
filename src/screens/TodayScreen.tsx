@@ -10,7 +10,7 @@ import { plannedOn } from '@/core/domain/week'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
-import { sessionsOf } from '@/core/domain/sessions'
+import { builtinType, sessionsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
 import { WORKOUTS } from '@/core/data/workouts'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
@@ -96,7 +96,7 @@ export function TodayScreen() {
   // Move card: what today holds (a logged session wins over the plan)
   const plan = WORKOUTS[sched]
   const moveTitle = logged
-    ? sess.length > 1 ? `${sess.length} sessions` : sess[0].title || ((sess[0].routineId || '').replace('builtin-', ''))
+    ? sess.length > 1 ? `${sess.length} sessions` : sess[0].title || builtinType(sess[0])
     : isRest ? 'Rest day' : plan?.title || sched
   const moveSub = logged
     ? sess.length > 1 ? 'Logged today' : sess[0].modality === 'strength' ? 'Logged' : `Logged${sess[0].mins ? ` · ${sess[0].mins} min` : ''}`

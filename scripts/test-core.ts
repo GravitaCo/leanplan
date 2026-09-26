@@ -20,7 +20,7 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
+import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
 import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
@@ -954,6 +954,8 @@ function legacyAndGuest(): void {
     ['setsLine: nothing → Not today', setsLine([], 'weight-reps') === 'Not today'],
     ['later: moves one to the end, today only', JSON.stringify(later([0, 1, 2, 3], 1)) === '[0,2,3,1]' && JSON.stringify(later([0, 1], 1)) === '[0,1]'],
     ['warm-up slot: the first kg × reps exercise', warmupSlot(['hold', 'weight-reps', 'weight-reps']) === 1],
+    ['builtin ids: stored string unchanged, type read back', builtinId('Legs') === 'builtin-Legs' && builtinType({ routineId: 'builtin-Cardio' }) === 'Cardio' && builtinType({}) === ''],
+    ['builtin ids: lift vs cardio vs custom', isBuiltinLift({ routineId: 'builtin-Push' }) && !isBuiltinLift({ routineId: 'builtin-Cardio' }) && !isBuiltin({ routineId: 'r-123' }) && isBuiltin({ routineId: 'builtin-Cardio' })],
     ['lastLogged ignores warm-up only entries', lastLogged({ '2026-09-01': day([sq([{ w: '20', reps: '5', warmup: true }])]) }, '2026-09-18', 'back-squat', 'Barbell squat') === null],
     ['week: the default split never warns', weekWarnings({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).length === 0],
     ['week: Push then Pull (shared rear delts only) does not warn', weekWarnings({ 0: 'Rest', 1: 'Push', 2: 'Pull', 3: 'Legs', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).length === 0],

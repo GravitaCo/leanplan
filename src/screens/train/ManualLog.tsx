@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { LoggedExercise, LogShape, SetEntry, Workout, WorkoutType } from '@/core/types'
 import { exById, fmtSet, setHasData } from '@/core/domain/library'
-import { sessionsOf } from '@/core/domain/sessions'
+import { builtinId, sessionsOf } from '@/core/domain/sessions'
 import { howToLink } from '@/core/domain/workout'
 import { shortTitle } from '@/core/domain/week'
 import { todayStr } from '@/core/domain/date'
@@ -42,7 +42,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
   const days = useStore((s) => s.data.days)
   const saveWorkout = useStore((s) => s.saveWorkout)
   const isToday = cur === todayStr()
-  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === 'builtin-' + type)
+  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === builtinId(type))
   const shorter = option === 'shorter'
 
   // matched by id or name, then by position for older logs; anything else is kept, never dropped

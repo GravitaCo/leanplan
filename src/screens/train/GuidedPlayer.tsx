@@ -5,7 +5,7 @@ import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, fmtClock, fmtTarget, lastTime, later, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
-import { sessionsOf } from '@/core/domain/sessions'
+import { builtinId, sessionsOf } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
 import { shortTitle } from '@/core/domain/week'
@@ -99,7 +99,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
   const restoreSession = useStore((s) => s.restoreSession)
   const showToast = useStore((s) => s.showToast)
   const title = shortTitle(type)
-  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === 'builtin-' + type)
+  const session = sessionsOf(days[cur], cur).find((x) => x.routineId === builtinId(type))
   const isToday = cur === todayStr()
   const shorter = option === 'shorter'
   useScrollLock()

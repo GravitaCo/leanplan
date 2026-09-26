@@ -24,7 +24,7 @@ import type {
   Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
-import { keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
@@ -435,7 +435,7 @@ export const useStore = create<StoreState>()(
           if (extra?.note) more.note = extra.note
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}), ...more },
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: builtinId(type), ex, ...(option ? { option } : {}), ...more },
             // what the caller didn't set carries over; an explicit null effort or empty note clears it
             keptOnSave(extra))
           markDayDirty(st.data, st.cur)
@@ -448,7 +448,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           const typed = parseFloat(mins)
           putBuiltin(ensureDay(st.data, st.cur), st.cur, {
-            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: builtinId('Cardio'),
             // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
             ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
           })

@@ -5,7 +5,7 @@ import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
 import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
-import { sessionsOf } from '@/core/domain/sessions'
+import { builtinId, builtinType, isBuiltin, sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
@@ -64,7 +64,7 @@ export function TrainScreen() {
   const day = data.days[cur]
   const sessions = sessionsOf(day, cur)
   const logged = sessions.length > 0
-  const builtin = (t: string) => sessions.find((x) => x.routineId === 'builtin-' + t)
+  const builtin = (t: string) => sessions.find((x) => x.routineId === builtinId(t))
   const fd = fmtDate(cur)
   // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
   const sched = plannedOn(data.schedule, fd.idx)
@@ -192,8 +192,8 @@ export function TrainScreen() {
       .filter(Boolean).join(' · ')
   }
   const routineOf = (x: Session): WorkoutType | null => {
-    const t = (x.routineId || '').replace('builtin-', '') as WorkoutType
-    return x.routineId?.startsWith('builtin-') && WORKOUTS[t] && x.option !== 'swap' ? t : null
+    const t = builtinType(x) as WorkoutType
+    return isBuiltin(x) && WORKOUTS[t] && x.option !== 'swap' ? t : null
   }
 
   return (

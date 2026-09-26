@@ -4,6 +4,18 @@ import { DEFAULT_MINS, MODALITY_MET } from '@/core/data/modalities'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 
 /**
+ * Built-in routines are stored as `routineId: 'builtin-' + type` ('builtin-Legs', 'builtin-Cardio').
+ * The stored string never changes (synced data depends on it); these are the one place that reads
+ * or writes it.
+ */
+const BUILTIN = 'builtin-'
+export const builtinId = (type: string): string => BUILTIN + type
+/** The built-in type a session came from ('Legs', 'Cardio'…), or its routineId unchanged if not built-in. */
+export const builtinType = (x: Pick<Session, 'routineId'>): string => (x.routineId || '').replace(BUILTIN, '')
+export const isBuiltin = (x: Pick<Session, 'routineId'>): boolean => (x.routineId || '').startsWith(BUILTIN)
+export const isBuiltinLift = (x: Pick<Session, 'routineId'>): boolean => LIFTS.includes(builtinType(x) as WorkoutType)
+
+/**
  * Sessions: a day can hold several (workout plan §2.5). Days logged before this change only
  * have the single `workout`; they are read through `fromLegacy` without being rewritten, so no
  * old day changes or re-uploads on update. Every save also writes a legacy mirror into
@@ -17,7 +29,7 @@ export function fromLegacy(wk: Workout, date: string): Session {
     const mobility = wk.cardioType === 'Mobility'
     return {
       id: 'legacy-' + date, modality: mobility ? 'mobility' : 'cardio',
-      title: wk.cardioType || 'Cardio', routineId: 'builtin-Cardio',
+      title: wk.cardioType || 'Cardio', routineId: builtinId('Cardio'),
       // blank minutes on the Cardio card always meant 25; keep that for Mobility too
       mins: Number.isFinite(typed) ? typed : mobility ? 25 : undefined,
       cardio: { key: wk.cardioType || '' }, option: wk.option,
@@ -25,7 +37,7 @@ export function fromLegacy(wk: Workout, date: string): Session {
   }
   return {
     id: 'legacy-' + date, modality: 'strength', title: WORKOUTS[wk.type]?.title || wk.type,
-    routineId: 'builtin-' + wk.type, ex: wk.ex, option: wk.option,
+    routineId: builtinId(wk.type), ex: wk.ex, option: wk.option,
   }
 }
 
@@ -50,7 +62,7 @@ export function sessionsOf(day: DayLog | undefined, date: string): Session[] {
 
 /** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
 export function mirroredIndex(sessions: Session[]): number {
-  const i = sessions.findIndex((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
+  const i = sessions.findIndex(isBuiltinLift)
   return i >= 0 ? i : sessions.length ? 0 : -1
 }
 
@@ -59,8 +71,8 @@ export function mirroredIndex(sessions: Session[]): number {
  * otherwise the first session as cardio (older installs only know the four types), or null.
  */
 export function mirrorOf(sessions: Session[]): Workout | null {
-  const lift = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
-  if (lift) return { type: lift.routineId!.replace('builtin-', '') as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }
+  const lift = sessions.find(isBuiltinLift)
+  if (lift) return { type: builtinType(lift) as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }
   const first = sessions[0]
   if (!first) return null
   const key = first.cardio?.key && CARDIO_MET[first.cardio.key] != null ? first.cardio.key : first.modality === 'mobility' ? 'Mobility' : 'Other'

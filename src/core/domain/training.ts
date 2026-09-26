@@ -1,10 +1,10 @@
 import type { AppState, WorkoutType } from '@/core/types'
 import { fmtDate, shiftDay } from './date'
 import { weekOf } from './insights'
-import { sessionsOf } from './sessions'
+import { builtinId, sessionsOf } from './sessions'
 
 const did = (s: AppState, d: string) => sessionsOf(s.days[d], d).length > 0
-const didRoutine = (s: AppState, d: string, type: string) => sessionsOf(s.days[d], d).some((x) => x.routineId === 'builtin-' + type)
+const didRoutine = (s: AppState, d: string, type: string) => sessionsOf(s.days[d], d).some((x) => x.routineId === builtinId(type))
 
 /**
  * Plans that slide (workout plan §0.3, §0.4, §4.1b). Nothing is ever "missed" and the calendar
