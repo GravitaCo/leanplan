@@ -19,10 +19,6 @@ export interface Source {
 /** UK menu calorie labels: 21% mean absolute error per item (bomb calorimetry of 295 items,
  *  Br J Nutr 2025, PMC12722009). See docs/plans/nutrition-accuracy-research.md §1.1. */
 const MENU_ERR = 0.2
-/** A pack label read from Open Food Facts by the user's own scan: crowdsourced and unchecked by
- *  us, and labels are legally within about ±20% for most macros (nutrition-accuracy-research §1.4).
- *  Applies to scanned custom foods only; built-in foods cited to OFF were checked when added. */
-export const SCANNED_LABEL_ERR = 0.2
 
 export const SOURCES: Record<string, Source> = {
   cofid: { label: 'UK CoFID 2021', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid' },
@@ -47,9 +43,11 @@ export function isMenuSource(src: string | undefined): boolean {
 /** A custom food saved from a barcode scan (values read from Open Food Facts, then confirmed). */
 const isScanned = (f: Pick<Food, 'src' | 'id'>) => !!f.id && !!f.src && f.src.split(':')[0] === 'off'
 
-/** The source's minimum error for a food, or 0. */
+/** The source's minimum error for a food, or 0. A scanned food is the user's own pack, checked
+ *  line by line before saving, so it gets the same margin as a label typed in (Benn, Sept 2026:
+ *  the pack is the most accurate information we have). */
 export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
-  if (isScanned(f)) return SCANNED_LABEL_ERR
+  if (isScanned(f)) return 0
   return (!f.id && f.src && SOURCES[f.src.split(':')[0]]?.err) || 0
 }
 
