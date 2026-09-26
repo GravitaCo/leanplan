@@ -31,6 +31,7 @@ import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
+import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
@@ -615,15 +616,14 @@ export const useStore = create<StoreState>()(
               // Data an older version synced without recording whose it was: if it matches this
               // account's rows it's theirs, so carry on without a question (and without marking
               // it all to upload over newer server data). Any doubt, including no connection: ask.
-              Promise.race([accountRows(uid, s.access_token), new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), 6000))])
-                .then((rows) => sameAccount(get().data, rows))
+              withTimeout(accountRows(uid, s.access_token).then((rows) => sameAccount(get().data, rows)), 6000, false)
                 .catch(() => false)
                 .then(async (same) => {
                   const still = () => !signingOut && get().ownerAsk?.uid === uid && !!get().ownerAsk?.checking
                   if (!still()) return // answered, cancelled or signed out meanwhile
                   if (!same) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
                   // the token may have been refreshed while this ran: apply the current session
-                  const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
+                  const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
                   const now = r?.data.session
                   if (!still()) return
                   if (!now || now.user.id !== uid) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
@@ -669,12 +669,11 @@ export const useStore = create<StoreState>()(
         // Launch must never depend on the network: restoring a session can stall offline while
         // it retries a token refresh, so give it a few seconds, then open with local data.
         // `definite` = the server answered (no session), as opposed to no connection.
-        const r = await Promise.race([
+        const r = await withTimeout(
           supabase.auth.getSession()
             .then((x) => ({ session: x.data.session, definite: !x.error || !isAuthRetryableFetchError(x.error) }))
             .catch(() => ({ session: null, definite: false })),
-          new Promise<{ session: null; definite: false }>((z) => setTimeout(() => z({ session: null, definite: false }), 4000)),
-        ])
+          4000, { session: null, definite: false })
         const session = r.session
         if (session) live(session)
         // mode 'guest' (the old "continue without an account"): there is no guest mode any more, so
@@ -764,12 +763,12 @@ export const useStore = create<StoreState>()(
         const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
         if (choice === 'fresh') get().setKitchen([])
         // the browser's push subscription still belongs to the previous account: end it
-        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
+        await withTimeout(unsubscribePush(), 2000, undefined)
         saveState(next)
         set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
         // the session was held back while asking; it comes from local storage, so this works offline
         // raced like at launch: getSession can stall offline while it retries a token refresh
-        const r = await Promise.race([supabase.auth.getSession().catch(() => null), new Promise<null>((z) => setTimeout(() => z(null), 4000))])
+        const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
         const session = r?.data.session
         if (session && session.user.id === ask.uid && applySession) {
           applySession(session)
@@ -787,9 +786,9 @@ export const useStore = create<StoreState>()(
         signingOut = true
         // Stop this device's reminders for this account while its token can still delete the row;
         // otherwise they keep arriving for the next person on a shared phone. Never waits long.
-        await Promise.race([unsubscribePush(), new Promise((r) => setTimeout(r, 2000))])
+        await withTimeout(unsubscribePush(), 2000, undefined)
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
-        await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
+        await withTimeout(out, 3000, undefined)
         clearSavedSession()
         get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)

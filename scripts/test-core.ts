@@ -1,4 +1,5 @@
 /** `npm test` — unit tests for the accuracy checks and unit maths (core/, no DOM). */
+import { withTimeout } from '@/data/timeout'
 import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
 import { FOODS } from '@/core/data/foods'
@@ -1251,4 +1252,19 @@ async function barcodeScan(): Promise<void> {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+// Network deadlines: a slow call settles with the fallback; a quick one (or a quick failure) is untouched.
+async function timeouts(): Promise<void> {
+  const wait = <T,>(ms: number, v: T) => new Promise<T>((r) => setTimeout(() => r(v), ms))
+  const quick = await withTimeout(wait(5, 'reply'), 200, 'fallback')
+  const slow = await withTimeout(wait(300, 'reply'), 20, 'fallback')
+  let failed = ''
+  try { await withTimeout(Promise.reject(new Error('down')), 200, 'fallback') } catch (e) { failed = (e as Error).message }
+  const checks: [string, boolean][] = [
+    ['a reply before the deadline wins', quick === 'reply'],
+    ['past the deadline, the fallback', slow === 'fallback'],
+    ['a failure before the deadline still fails', failed === 'down'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'timeout:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(timeouts).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
