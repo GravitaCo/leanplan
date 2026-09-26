@@ -10,7 +10,7 @@ import { WORKOUTS, LIFTS } from '@/core/data/workouts'
  */
 const BUILTIN = 'builtin-'
 export const builtinId = (type: string): string => BUILTIN + type
-/** The built-in type a session came from ('Legs', 'Cardio'…), or its routineId unchanged if not built-in. */
+/** The built-in type a session came from ('Legs', 'Cardio'…): its routineId with the 'builtin-' tag removed. */
 export const builtinType = (x: Pick<Session, 'routineId'>): string => (x.routineId || '').replace(BUILTIN, '')
 export const isBuiltin = (x: Pick<Session, 'routineId'>): boolean => (x.routineId || '').startsWith(BUILTIN)
 export const isBuiltinLift = (x: Pick<Session, 'routineId'>): boolean => LIFTS.includes(builtinType(x) as WorkoutType)
