@@ -63,8 +63,9 @@ const COMPOUND = new Set(['squat', 'hinge', 'lunge', 'horizontal-push', 'vertica
 
 /**
  * Rest after a set, in seconds: a routine's own restSec wins; otherwise by the library pattern.
- * Big compound lifts 2 min, isolation 90 s, core and holds 60 s. Mobility, yoga and pilates moves
- * (no pattern) 60 s; anything unknown 90 s, the shipped "about 90 seconds".
+ * Big compound lifts 2 min, isolation 90 s, core and holds 60 s. Mobility, yoga, pilates and cardio
+ * moves (pattern mobility, cardio or core; check:exercises keeps them off the others) 60 s; anything
+ * unknown 90 s, the shipped "about 90 seconds".
  */
 export function restFor(x: Exercise | undefined, tpl?: Pick<ExerciseTemplate, 'restSec'>): number {
   if (tpl?.restSec != null && tpl.restSec >= 0) return tpl.restSec

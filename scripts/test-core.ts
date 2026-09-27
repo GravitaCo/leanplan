@@ -35,6 +35,7 @@ import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
+import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
@@ -532,12 +533,25 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const dd = EXERCISE_BY_ID['downward-dog']
   const gentlerFirst = alternativesFor(dd).similar[0]?.id === dd.gentler
   // every swap keeps the slot: same pattern and main muscle for resistance work
-  const slotOk = EXERCISES.filter((e) => e.pattern).every((e) => alternativesFor(e).similar.every((x) => x.id === e.gentler || (x.pattern === e.pattern && x.primary === e.primary)))
+  const slotOk = EXERCISES.filter((e) => e.modality === 'strength' || e.modality === 'calisthenics').every((e) => alternativesFor(e).similar.every((x) => x.id === e.gentler || (x.pattern === e.pattern && x.primary === e.primary)))
   // every named gentler option is reachable from the Swap sheet
   const gentlerOk = EXERCISES.filter((e) => e.gentler).every((e) => { const a = alternativesFor(e); return a.similar.some((x) => x.id === e.gentler) || a.easier?.id === e.gentler })
   const clips = Object.values(DEMOS).every((m) => EXERCISES.some((e) => e.video === m))
   const ok = got === '40 80 null' && altSq.includes('leg-press') && altBench.includes('chest-press') && chainOk && gentlerFirst && slotOk && gentlerOk && clips; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'library: last time, swaps, chains, clips', JSON.stringify(got), altSq.includes('leg-press'), altBench.includes('chest-press'), chainOk, gentlerFirst, slotOk, gentlerOk, clips)
+}
+// engine library attributes (training engine §4.2): kit profiles, household props, the coverage gate
+{
+  const X = EXERCISE_BY_ID
+  const kitOk = usableWith(X['bulgarian-split-squat'], 'none') && !usableWith(X['back-squat'], 'dumbbells') && usableWith(X['goblet-squat'], 'dumbbells')
+    && usableWith(X['face-pull'], 'bands') && !usableWith(X['face-pull'], 'none') && usableWith(X['back-squat'], 'gym') && !usableWith(X['pull-up'], 'none')
+  const cells = coverage(EXERCISES)
+  const gate = coverageGate(EXERCISES)
+  const shapeOk = cells.length === 8 * 4 * 3 && gate.ok === (gate.gaps.length === 0) && gate.gaps.every((c) => c.ids.length < 2)
+  // mobility and cardio buckets never carry a primary muscle, so they never count as volume
+  const noVolume = EXERCISES.filter((e) => e.pattern === 'mobility' || e.pattern === 'cardio').every((e) => !e.primary)
+  const ok = kitOk && shapeOk && noVolume; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library coverage: kit profiles, props, gate shape, no volume from stretches', kitOk, shapeOk, noVolume)
 }
 // Diet rules: conservative tags, swaps from the database, meals never hidden
 {

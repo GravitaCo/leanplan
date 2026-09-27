@@ -482,9 +482,49 @@ export interface Routine {
   _dirty?: boolean
 }
 
+/**
+ * Movement pattern. The resistance patterns follow the NSCA / ExRx-style split into push and pull
+ * (horizontal and vertical), squat (knee-dominant, both feet), lunge (knee-dominant, split stance),
+ * hinge (hip-dominant), carry, core and single-joint isolation. `mobility` (stretches, yoga poses
+ * and flows, pilates spine and hip work) and `cardio` are engine buckets for everything else: they
+ * never count toward weekly muscle volume, so those entries carry `targets`, not `primary`.
+ */
 export type MovementPattern =
   | 'horizontal-push' | 'vertical-push' | 'horizontal-pull' | 'vertical-pull'
   | 'squat' | 'hinge' | 'lunge' | 'isolation' | 'carry' | 'core'
+  | 'mobility' | 'cardio'
+
+/**
+ * Time one exercise takes, before rest (personalised-training-engine.md §3.3 step 2). `setupSec` is
+ * paid once per exercise (loading a bar ~120 s, a machine or cable ~45 s, dumbbells ~30 s, getting
+ * down to the floor ~15 s); `setSec` is one working set, both sides for `perSide` entries, at a
+ * controlled ~3 s a rep (about 2 s down, 1 s up) plus ~5 s to get set, a hold's mid-range time, or
+ * ~6 s a slow breath. For `duration` entries one "set" is one minute (60), so the prescribed minutes
+ * are the cost. Rest is added by the engine from the goal. Judgement calls, unvalidated.
+ */
+export interface TimeCost { setupSec: number; setSec: number }
+
+/**
+ * The smallest next step the kit allows (engine §3.5 A, double progression per ACSM 2009: add reps
+ * inside the range, then load). The engine takes the step that matches the kit in use.
+ * - `plate-2.5`: barbell or landmine, +2.5 kg total (1.25 kg a side)
+ * - `next-weight`: the next dumbbell or kettlebell up
+ * - `next-stack`: the next pin on a machine or cable stack
+ * - `next-band`: the next band (or, for assisted moves, a lighter one)
+ * - `chain`: the next step on its `ladders` once the top of the range is reached
+ * - `reps` / `time`: no load to add; more reps, seconds or minutes inside the range
+ */
+export type LoadStep = 'plate-2.5' | 'next-weight' | 'next-stack' | 'next-band' | 'chain' | 'reps' | 'time'
+
+/**
+ * Household things that stand in for kit (a chair or sofa for a bench, a step, a wall, a door
+ * frame). Kept apart from `Equipment` on purpose: `Equipment` drives the library's kit filter and
+ * labels, so these never change what the library shows.
+ */
+export type HouseholdProp = 'chair' | 'sofa' | 'step' | 'wall' | 'doorway'
+
+/** Where the body is for most of the set (floor transitions matter in short sessions and from 55). */
+export type BodyPosition = 'standing' | 'seated' | 'bench' | 'floor' | 'hanging' | 'water'
 
 /** What a mobility, yoga or pilates movement mostly works on (filters, swaps). */
 export type MobilityTarget =
@@ -527,6 +567,35 @@ export interface Exercise {
   /** CARDIO_MET key for burn */
   cardioKey?: string
   video?: ExerciseMedia
+
+  // ─── Engine attributes (personalised-training-engine.md §4.2). Data only: nothing on screen
+  // reads them yet. `npm run check:exercises` requires them on every entry.
+  /** setup once, then per working set, before rest */
+  timeCost?: TimeCost
+  /** technical demand, separate from `difficulty` (how hard it is): 1 simple, 2 some coordination
+   *  or balance, 3 a lift worth coaching (barbell squat, swing, dip) */
+  skill?: 1 | 2 | 3
+  /** jumping, running or landing: `high` is filtered out with a readiness "yes", knees flagged or
+   *  from 55 unless chosen; `low` is stepping or marching */
+  impact?: 'none' | 'low' | 'high'
+  position?: BodyPosition
+  /** one side at a time (the other side rests or balances) */
+  unilateral?: boolean
+  /** how much it tires the whole body, not just the working muscle */
+  systemicCost?: 'low' | 'medium' | 'high'
+  /** fine indoors in a small space without disturbing anyone, given the kit it lists */
+  homeFriendly?: boolean
+  /** household props that do the job of the listed kit (a sofa for the bench) */
+  props?: HouseholdProp[]
+  /** the next steps the kit allows; see LoadStep */
+  increment?: LoadStep[]
+  /**
+   * The engine's progression ladders: one exercise can sit on several (split squat is on the
+   * no-kit squat and lunge ladders). Steps run easier (1) to harder, with no gaps; two entries may
+   * share a step. `progression` above stays the swap sheet's chain, so these change nothing on
+   * screen.
+   */
+  ladders?: { chain: string; step: number }[]
 }
 
 /** A definition for a built-in exercise within a workout template. */
