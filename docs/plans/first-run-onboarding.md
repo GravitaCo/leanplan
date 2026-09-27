@@ -310,13 +310,19 @@ if they tap it. Nothing is regenerated for them automatically.
 - Test (phase 3): two devices answer different fields offline, both sync, and every answer
   survives; `onboardedAt` on one device suppresses the wizard on the other.
 
-## 13. Pending Benn
+## 13. Decisions on the last open points (Benn, 27 Sept 2026)
 
-These are open and stay marked pending until Benn answers.
-1. **Age:** required, or skippable (with the §2.1 safe-side routing)?
-2. **Existing users** who never onboarded: the §12 recommended default?
-3. **1-day week:** allow it, or hold to WHO's 2+ strength days?
-4. **Under-16 stop and 16–17 rules:** who owns the legal check?
-5. **Wellbeing question:** who does the clinical review, and what does "wider launch" mean?
-6. **Pregnancy flag:** how often is it re-asked?
-7. **16–17 no-AI:** enforced by self-declared age only. Is that acceptable?
+1. **Age is required.** It's asked first: "Why we ask: it keeps your plan safe and sets energy
+   needs." Everything else stays skippable.
+2. **Existing users** get a one-time consent prompt for the health data already held. Their
+   current week stays, and a "Build my plan" card offers the new Q&A (§12).
+3. **1-day week is allowed** as one full-body session, with the note: "One day is a great start.
+   Two gets you the full benefit when you're ready." It never pushes.
+4. **Legal and clinical sign-off: invited beta first.** Onboarding goes to a small invited group
+   before a UK lawyer (age rules, GDPR, DPIA, privacy notice) and a clinician (the wellbeing
+   question and routing) are brought in. That happens once the app works, because it costs money.
+   "Wider launch" means opening beyond the invited beta, and it needs both sign-offs.
+5. **Pregnancy flag:** re-asked gently every 12 weeks, and the user can clear it any time in
+   Profile. (Default, not yet confirmed by Benn.)
+6. **16–17 no-AI rule:** enforced from self-declared age during the beta. This is flagged for the
+   legal review. (Default.)
