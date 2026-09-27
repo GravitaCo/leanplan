@@ -56,6 +56,22 @@ export interface ConsentLog {
   healthPause?: HealthPause
   /** after a yes: what was held back, with the server's values when it was held, still to upload */
   healthResume?: HealthHeld
+  /** health consent withdrawn: the account's copy of the log is still to be deleted (ISO time asked) */
+  cloudClear?: string
+  /** the account's copy of the log was deleted after a withdrawal (ISO time): a later yes re-uploads it */
+  cloudCleared?: string
+  /** after a yes that ends a pause or a withdrawal: rows the server changed since this time are
+   *  another device's newer edits and win; this device's versions go to `resumeCopy` */
+  resumeFrom?: string
+  /** this device's versions of days and settings replaced by newer ones from another device when
+   *  sync resumed, kept for the person to download (Profile, Back up and restore) */
+  resumeCopy?: ResumeCopy
+}
+
+export interface ResumeCopy {
+  at: string
+  days?: Record<string, DayLog>
+  settings?: { target: unknown; schedule: unknown; profile: unknown }
 }
 
 /** The server's health values for a day, as they were when this device first held it back. */
@@ -111,8 +127,14 @@ export function cleanConsents(x: unknown): ConsentLog {
     ...(typeof log.healthCleared === 'string' ? { healthCleared: log.healthCleared } : {}),
     ...(pause ? { healthPause: pause } : {}),
     ...(resume.days || resume.profile ? { healthResume: resume } : {}),
+    ...(isTime(log.cloudClear) ? { cloudClear: log.cloudClear } : {}),
+    ...(isTime(log.cloudCleared) ? { cloudCleared: log.cloudCleared } : {}),
+    ...(isTime(log.resumeFrom) ? { resumeFrom: log.resumeFrom } : {}),
+    ...(log.resumeCopy && typeof log.resumeCopy === 'object' && isTime(log.resumeCopy.at) ? { resumeCopy: log.resumeCopy } : {}),
   }
 }
+
+const isTime = (x: unknown): x is string => typeof x === 'string' && !isNaN(Date.parse(x))
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 function cleanHeld(x: unknown): HealthHeld {
@@ -200,7 +222,10 @@ export function quietNumbers(s: PersistedState): boolean {
  * pushDirty also waits for the latest health record to reach the server.
  */
 export function consentLetsSync(s: PersistedState): boolean {
-  return healthConsentAnswered(s)
+  // a yes at the current version. A "Not now" or a withdrawal keeps the whole log on this device:
+  // food and workout logs are treated as health data too (docs/compliance/README.md)
+  const r = latestConsent(s, 'health')
+  return !!r && r.granted && r.version === CONSENT_VERSIONS.health
 }
 
 /** Record a grant or withdrawal on the device. Returns the new record (dirty until synced). */
@@ -312,11 +337,33 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
     clearHealthData(s, meta)
     const log = consentLog(s)
     log.healthCleared = rec.id
-    // the clear uploads everywhere, so nothing is held back any more
+    // nothing is held back any more: the whole log is now this device's only
     delete log.healthPause
     delete log.healthResume
+    delete log.resumeFrom
+    // the account's copy of the log is deleted by the next sync (withdrawal: nothing syncs after)
+    log.cloudClear = rec.at
   }
   return rec
+}
+
+/**
+ * A yes after a pause or a withdrawal: this device's log uploads again. After a cloud clear
+ * everything is marked to upload (the server has none of it); otherwise only what's dirty goes,
+ * and rows another device changed since the pause or withdrawal are left to win (resumeFrom).
+ */
+export function resumeAfterYes(s: PersistedState, meta: SyncMeta): void {
+  const log = consentLog(s)
+  const since = log.healthPause?.at ?? log.cloudCleared ?? log.cloudClear
+  if (log.cloudClear) delete log.cloudClear // not carried out yet: the account still has the log
+  if (log.cloudCleared) {
+    const u = nowIso()
+    for (const d of Object.keys(s.days || {})) meta.days[d] = { u, dirty: true }
+    meta.settings = { u, dirty: true }
+    for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string }[]) { x._dirty = true; x._u = u }
+    delete log.cloudCleared
+  }
+  if (since) log.resumeFrom = since
 }
 
 /**
@@ -324,6 +371,7 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
  * upload (the days and settings pushed without their health fields while paused).
  */
 export function grantHealth(s: PersistedState, meta: SyncMeta): ConsentRecord {
+  resumeAfterYes(s, meta)
   const rec = recordConsent(s, 'health', true)
   resumeHealthSync(s, meta)
   return rec

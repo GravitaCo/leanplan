@@ -259,6 +259,11 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
     if (!failed.length) failed.push('consents: health consent not uploaded yet')
     return failed
   }
+  // a yes after a pause or a withdrawal: another device's newer rows win, this device's versions are kept
+  if (s.consents?.resumeFrom) {
+    const ok = await step('resume', () => settleResume(s, meta, uid))
+    if (!ok) return failed // don't upload over rows that couldn't be checked; retried next run
+  }
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   // health sync paused ("Not now", consent.ts): health fields stay on this device, and what the
   // server already has for them is sent back unchanged
@@ -343,6 +348,59 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   await step('plans', () => upsertEach('training_plans', dirtyPlans, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', () => '', uid, [], s.trainingPlans)))
   await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', () => '', uid, [], s.routines)))
   return failed
+}
+
+/** Tables holding a person's log in their account (not their consent records). */
+const LOG_TABLES = ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'push_subscriptions', 'ai_usage', 'settings']
+
+/**
+ * After a health withdrawal: delete the account's copy of the log, so it lives only on the
+ * person's devices (food and workouts are treated as health data). Consent records stay: they
+ * show the withdrawal. Idempotent; a table that isn't there (404) counts as cleared.
+ */
+export async function clearCloudLog(s: PersistedState): Promise<void> {
+  const log = s.consents
+  if (!log?.cloudClear) return
+  const uid = getUid()
+  for (const t of LOG_TABLES) await sbDelete(t, 'user_id=eq.' + uid)
+  log.cloudCleared = log.cloudClear
+  delete log.cloudClear
+}
+
+/**
+ * Sync resumes after a pause or a withdrawal: a dirty day or settings row that the server changed
+ * since then was edited on another device, so the server's wins; this device's version is kept in
+ * `resumeCopy` for the person to download. Everything else uploads as usual.
+ */
+async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Promise<void> {
+  const log = s.consents!
+  const since = Date.parse(log.resumeFrom!)
+  const copy = { at: log.resumeCopy?.at ?? nowIso(), ...(log.resumeCopy || {}) }
+  let kept = false
+  const dirty = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
+  if (dirty.length) {
+    const rows = await sbGet<any[]>('/day_logs?user_id=eq.' + uid + '&log_date=in.(' + dirty.join(',') + ')&select=*')
+    for (const r of rows) {
+      const d = r.log_date
+      if (!dirty.includes(d) || !(Date.parse(r.updated_at) > since)) continue
+      if (s.days[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
+      s.days[d] = fromServerDay(r)
+      meta.days[d] = { u: r.updated_at, dirty: false }
+    }
+  }
+  if (meta.settings.dirty) {
+    const st = await sbGet<any[]>('/settings?user_id=eq.' + uid + '&select=*')
+    if (st[0] && Date.parse(st[0].updated_at) > since) {
+      copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }
+      kept = true
+      s.target = st[0].target
+      s.schedule = st[0].schedule
+      if (st[0].profile) s.profile = st[0].profile
+      meta.settings = { u: st[0].updated_at, dirty: false }
+    }
+  }
+  if (kept) log.resumeCopy = copy
+  delete log.resumeFrom
 }
 
 export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> {

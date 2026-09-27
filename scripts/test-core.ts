@@ -694,6 +694,12 @@ function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
       return res(200, id ? mine.filter((r) => 'eq.' + r.id === id) : mine)
     }
     if (o.method === 'DELETE') {
+      // a whole account's rows of one table (the cloud clear after a health withdrawal)
+      if (params.get('user_id') && !params.get('id')) {
+        if (params.get('user_id') !== 'eq.' + uid) return res(403)
+        rows[t] = (rows[t] || []).filter((r) => r.user_id !== uid)
+        return res(204)
+      }
       const id = (params.get('id') || '').replace(/^eq\./, '')
       if (!UUID_RE.test(id)) return res(400)
       rows[t] = (rows[t] || []).filter((r) => !(r.id === id && r.user_id === uid))

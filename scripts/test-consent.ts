@@ -1,13 +1,13 @@
 /* Consent, account deletion and the connection indicator (onboarding plan §7, §8). Run from
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
-import { liveConsentDue, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
+import { liveConsentDue, resumeAfterYes, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
   consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
-import { pushDirty, pullAll } from '@/data/sync'
+import { pushDirty, pullAll, clearCloudLog } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
@@ -520,8 +520,50 @@ async function gateAndPause(): Promise<void> {
   report('consent gate and pause', checks)
 }
 
+/** A withdrawal keeps the whole log on the phone and deletes the account's copy; a yes brings it back. */
+async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
+  const checks: [string, boolean][] = []
+  const s = stateFromBackup({ days: { '2026-09-03': day(72) } } as never)
+  const m = ensureMeta(s, false)
+  recordConsent(s, 'health', true)
+  checks.push(['a yes lets the log sync', consentLetsSync(s)])
+  withdraw(s, m, 'health')
+  checks.push(['after a withdrawal nothing of the log syncs', !consentLetsSync(s) && healthConsentAnswered(s)])
+  checks.push(['the account\'s copy is queued for deletion', !!s.consents?.cloudClear])
+  const rows = { ...emptyRows(), day_logs: [{ user_id: LOCAL_USER, log_date: '2026-09-03', foods: [], supps: {}, weight: 72 }], settings: [{ user_id: LOCAL_USER, profile: {} }], custom_foods: [{ id: uuid(), user_id: LOCAL_USER, name: 'x' }], consents: [{ id: uuid(), user_id: LOCAL_USER }] }
+  await withFetch(fakeServer(rows).fetchFn, () => clearCloudLog(s))
+  checks.push(['cloud clear deletes the log tables, keeps the consent records', rows.day_logs.length === 0 && rows.settings.length === 0 && rows.custom_foods.length === 0 && rows.consents.length === 1 && !!s.consents?.cloudCleared && !s.consents?.cloudClear])
+  checks.push(['the phone keeps its food log', (s.days['2026-09-03']?.foods || []).length === 1])
+  // yes again: everything is marked to upload (the server has none of it)
+  const m2 = ensureMeta(s, false)
+  m2.days['2026-09-03'] = { u: 'x', dirty: false }
+  resumeAfterYes(s, m2)
+  recordConsent(s, 'health', true)
+  checks.push(['a yes after a cloud clear re-uploads the whole log', m2.days['2026-09-03'].dirty === true && m2.settings.dirty === true && !s.consents?.cloudCleared && consentLetsSync(s)])
+
+  // resume after a pause: a day another device changed since wins, this phone's version is kept
+  const p = stateFromBackup({ days: { '2026-09-04': day(null), '2026-09-05': day(null) } } as never)
+  const pm = ensureMeta(p, true)
+  const pausedAt = new Date(Date.now() - 7 * 86400_000).toISOString()
+  pauseHealthSync(p, pausedAt)
+  resumeAfterYes(p, pm)
+  recordConsent(p, 'health', true)
+  const newer = new Date(Date.now() - 86400_000).toISOString(), older = new Date(Date.now() - 30 * 86400_000).toISOString()
+  const prow = { ...emptyRows(), day_logs: [
+    { user_id: LOCAL_USER, log_date: '2026-09-04', foods: [{ n: 'Apple', k: 50, p: 0, c: 12, f: 0, grams: 100 }], supps: {}, weight: null, workout: null, updated_at: newer },
+    { user_id: LOCAL_USER, log_date: '2026-09-05', foods: [], supps: {}, weight: null, workout: null, updated_at: older },
+  ] }
+  await withFetch(fakeServer(prow).fetchFn, () => pushDirty(p, pm))
+  const d4 = prow.day_logs.find((r) => r.log_date === '2026-09-04'), d5 = prow.day_logs.find((r) => r.log_date === '2026-09-05')
+  checks.push(['a day changed on another device during the pause keeps that device\'s version', d4?.foods?.[0]?.n === 'Apple' && p.days['2026-09-04'].foods[0].n === 'Apple'])
+  checks.push(['this phone\'s version of it is kept to download', p.consents?.resumeCopy?.days?.['2026-09-04']?.foods?.[0]?.n === 'Toast'])
+  checks.push(['a day nobody else changed uploads from this phone', d5?.foods?.[0]?.n === 'Toast' && !p.consents?.resumeFrom])
+  report('withdrawal and resume', checks)
+}
+
 export async function consentSuite(fakeServer: FakeServer): Promise<number> {
   bad = 0
+  await withdrawnLocalOnly(fakeServer)
   gate()
   await consentFirst(fakeServer)
   await consent(fakeServer)

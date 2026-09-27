@@ -38,12 +38,12 @@ import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
-import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
+import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, latestConsent, consentLog, resumeAfterYes, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -1010,9 +1010,10 @@ export const useStore = create<StoreState>()(
         if (!get().authed) return
         if (syncing || deleting) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
-        // Nothing reaches the cloud until the person has answered the health consent screen
-        // (UK GDPR Art. 9(2)(a)). Until then, only read their consent records, so an answer given
-        // on another device counts here (and the screen goes away) without asking twice.
+        // Nothing of the log reaches the cloud without a yes to health data (UK GDPR Art. 9(2)(a)):
+        // not before an answer, not during a "Not now", not after a withdrawal. Until then only the
+        // consent records sync (an answer given on another device counts here), and after a
+        // withdrawal the account's copy of the log is deleted.
         if (!consentLetsSync(get().data)) {
           syncing = true
           // data changed while the pull ran (e.g. Continue was tapped): run again afterwards, since
@@ -1022,15 +1023,26 @@ export const useStore = create<StoreState>()(
             const src = get().data
             const uid0 = getUid()
             const d = structuredClone(src) as PersistedState
+            await pushConsents(d)
             await pullConsents(d)
+            // still withdrawn after the latest records (another device may have said yes since):
+            // delete the account's copy of the log, once the withdrawal itself is on the server
+            const latest = latestConsent(d, 'health')
+            const m = ensureMeta(d, false)
+            if (latest && !latest.granted && !latest._dirty) {
+              const log = consentLog(d)
+              // a withdrawal made on another device: this device's log becomes its only copy too
+              if (applyHealthWithdrawal(d, m) && !log.cloudCleared) log.cloudClear ??= latest.at
+              await clearCloudLog(d)
+            }
             if (get().data !== src) { again = true; return }
-            if (!get().authed || getUid() !== uid0 || !consentLetsSync(d)) return
-            // a withdrawal that came in isn't applied here: the log on this copy hasn't been pulled,
-            // and clearing it would upload stale days over newer ones. The full run next applies it
-            // after pullAll (healthCleared isn't set for it yet).
+            if (!get().authed || getUid() !== uid0) return
+            // a yes that came in from another device ends this device's pause or withdrawal
+            const log = consentLog(d)
+            if (consentLetsSync(d) && (log.healthPause || log.cloudClear || log.cloudCleared)) resumeAfterYes(d, m)
             saveState(d)
             set((st) => { st.data = d })
-            again = true
+            again = consentLetsSync(d)
           } catch (e) {
             console.warn('consent check failed:', e)
           } finally {
