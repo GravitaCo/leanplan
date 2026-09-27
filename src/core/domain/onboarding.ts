@@ -77,6 +77,20 @@ export const ADULT_AGE = 18
 /** the pregnancy question is re-asked this often (§13.5, confirmed in §14) */
 export const PREGNANCY_REASK_DAYS = 12 * 7
 
+/** The wellbeing screen's four options (board ob1-6-wellbeing). */
+export type WellbeingAnswer = 'yes' | 'sometimes' | 'no' | 'rather-not-say'
+
+/**
+ * The only thing stored from the wellbeing screen. No → 'clear' (normal targets); Yes or
+ * Sometimes → 'flagged'; "Rather not say" → 'undisclosed'; skipped → absent. Undisclosed and
+ * skipped take the §2.1 safe side: maintenance pre-selected (the goal's deficit offered, one tap
+ * to choose), gentle mode offered, not on, and weight still shown.
+ */
+export function wellbeingOutcome(a: WellbeingAnswer | undefined): OnboardingOutcomes['wellbeing'] {
+  if (!a) return undefined
+  return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : 'flagged'
+}
+
 /** The medical-conditions question is only asked when the goal means eating less (§3). */
 export const asksMedical = (goal: Goal | undefined): boolean => goal === 'lose-fat'
 

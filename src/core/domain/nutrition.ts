@@ -111,7 +111,7 @@ export interface SuggestedTargets {
   goal: Goal
   /** signed % applied to maintenance: negative = deficit, positive = surplus, 0 = maintenance */
   adjustPct: number
-  /** true when the safe-minimum floor (max of BMR and 1200 kcal) capped the target */
+  /** true when the safe-minimum floor (max of BMR, 1,500 men / 1,200 women and unspecified, 800) capped the target */
   floored: boolean
   /** true when body-fat % was absent and the 15% fallback was assumed */
   bodyFatAssumed: boolean
@@ -137,6 +137,15 @@ export const MIFFLIN_SEX_HALF_GAP = (MIFFLIN_SEX_CONSTANT.male - MIFFLIN_SEX_CON
 /** Resting energy (kcal/day), Mifflin–St Jeor: 10·kg + 6.25·cm − 5·age + sex constant. */
 export function mifflinBmr(kg: number, cm: number, age: number, sex: SexAnswer): number {
   return 10 * kg + 6.25 * cm - 5 * age + MIFFLIN_SEX_CONSTANT[sex]
+}
+
+/** §9 floors (first-run-onboarding): 1,500 men, 1,200 women and "Prefer not to say" */
+export const SEX_FLOOR: Record<SexAnswer, number> = { male: 1500, female: 1200, unspecified: 1200 }
+export const ABSOLUTE_FLOOR = 800
+
+/** The lowest target Tali suggests: max(BMR, the sex floor), never below 800. Shared by both engines. */
+export function calorieFloor(bmr: number, sex: SexAnswer): number {
+  return Math.max(ABSOLUTE_FLOOR, bmr, SEX_FLOOR[sex])
 }
 
 /** Interpolate x from [x0,x1] onto [y0,y1], clamped to the segment ends. */
@@ -252,8 +261,9 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
   let kcal = Math.round(maint * (1 + adjustPct / 100))
 
   // Step 4 — safety floors: never below resting metabolic rate (a target under BMR is
-  // unsafe and unsustainable), with a hard 1200 kcal backstop for very small users.
-  const floor = Math.round(Math.max(bmr, 1200))
+  // unsafe and unsustainable), nor the sex floor (1,500 men, 1,200 women and unspecified), nor
+  // 800. The same rule as startingTargets, so Profile and the onboarding summary agree.
+  const floor = Math.ceil(calorieFloor(bmr, sexOf(profile)))
   const floored = kcal < floor
   if (floored) {
     kcal = floor

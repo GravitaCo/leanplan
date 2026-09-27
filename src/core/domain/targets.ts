@@ -1,6 +1,7 @@
-import type { ActivityLevel, DailyMovement, Goal, JobType, Profile, StepsBand, SexAnswer } from '@/core/types'
+import type { ActivityLevel, DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
-import { MIFFLIN_SEX_HALF_GAP, goalAdjustPct, mifflinBmr } from './nutrition'
+import { MIFFLIN_SEX_HALF_GAP, calorieFloor, goalAdjustPct, mifflinBmr, ABSOLUTE_FLOOR } from './nutrition'
+export { ABSOLUTE_FLOOR, SEX_FLOOR } from './nutrition'
 import { sexOf, type DefaultField, type HiddenReason, type SafetyRouting } from './onboarding'
 
 /**
@@ -80,9 +81,6 @@ export function activityLevelFor(mult: number): ActivityLevel {
 
 /** ±15%: Mifflin is within ±10% for about 70–80% of adults and the multiplier adds the rest (§5). */
 export const RANGE_MARGIN = 0.15
-/** §9 floors: 1,500 men, 1,200 women and "Prefer not to say" */
-export const SEX_FLOOR: Record<SexAnswer, number> = { male: 1500, female: 1200, unspecified: 1200 }
-export const ABSOLUTE_FLOOR = 800
 /** weight loss at most 1% of body weight a week (§5) */
 export const MAX_LOSS_PCT_PER_WEEK = 1
 /** the usual ~7,700 kcal per kg of body weight lost (≈3,500 kcal/lb); an upper-bound rule of thumb */
@@ -199,10 +197,10 @@ export function startingTargets(
   const maxDeficit = (kg * (MAX_LOSS_PCT_PER_WEEK / 100) * KCAL_PER_KG_LOST) / 7
   const capped = maint - kcal > maxDeficit
   if (capped) { kcal = maint - maxDeficit; floorsApplied.push('weekly-loss-cap') }
-  const floor = Math.max(ABSOLUTE_FLOOR, bmr, SEX_FLOOR[sex])
+  const floor = calorieFloor(bmr, sex)
   if (kcal < floor) {
     kcal = floor
-    floorsApplied.push(floor === ABSOLUTE_FLOOR ? 'absolute' : floor === bmr ? 'bmr' : 'sex-minimum')
+    floorsApplied.push(floor === bmr ? 'bmr' : floor === ABSOLUTE_FLOOR ? 'absolute' : 'sex-minimum')
   }
   // round, but never let rounding cross a floor or the weekly cap
   let shown = r50(kcal)

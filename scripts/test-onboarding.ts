@@ -4,9 +4,9 @@
 import type { OnboardingOutcomes, Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, urgentAdviceFor } from '@/core/data/signposts'
-import { asksMedical, legacySex, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
+import { asksMedical, legacySex, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
-import { PROTEIN_PER_KG, suggestedTargets } from '@/core/domain/nutrition'
+import { PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
 let bad = 0
@@ -96,6 +96,10 @@ function routing(): void {
     ['readiness skipped beside a louder row: not quiet', (() => { const x = r({ outcomes: { ...CLEAR, readiness: undefined, wellbeing: 'flagged' } }); return !x.quietSignpost && !x.signpost.includes('gp') })()],
     ['sleep/stress skipped: treated as poor (near maintenance, gentler)', (() => { const x = r({ outcomes: { ...CLEAR, baseline: undefined } }); return x.nearMaintenance && x.gentlerStart && x.defaults.includes('baseline') })()],
     ['wellbeing skipped: maintenance pre-selected, gentle offered, not on', (() => { const x = r({ outcomes: { ...CLEAR, wellbeing: undefined } }); return x.startAtMaintenance && x.offerGentle && !x.gentle && x.defaults.includes('wellbeing') })()],
+    ['wellbeing board options: No → clear, Yes/Sometimes → flagged, Rather not say → undisclosed, skipped → absent',
+      wellbeingOutcome('no') === 'clear' && wellbeingOutcome('yes') === 'flagged' && wellbeingOutcome('sometimes') === 'flagged' && wellbeingOutcome('rather-not-say') === 'undisclosed' && wellbeingOutcome(undefined) === undefined],
+    ['wellbeing No: normal targets, nothing routed', (() => { const x = r({ outcomes: { ...CLEAR, wellbeing: wellbeingOutcome('no') } }); return !x.noDeficit && !x.startAtMaintenance && !x.offerGentle && !x.gentle && !x.hideWeight && !x.signpost.length })()],
+    ['wellbeing Rather not say and skipped: weight shown, deficit offered not pre-selected', [wellbeingOutcome('rather-not-say'), undefined].every((w) => { const x = r({ outcomes: { ...CLEAR, wellbeing: w } }); return !x.hideWeight && !x.noDeficit && x.startAtMaintenance && !x.hideCalories })],
     ['everything skipped never blocks', (() => { const x = r({ outcomes: {} }); return !x.stop && !x.hideCalories })()],
   ])
 }
@@ -209,7 +213,23 @@ function targets(): void {
   // suggestedTargets keeps working; "Prefer not to say" lands between the two
   const s = (sexAnswer?: 'unspecified') => suggestedTargets({ ...DEFAULT_PROFILE, sex: 'M', sexAnswer, age: 40, height: 175, activityLevel: 'light', goal: 'feel-better' }, 75) as { maint: number }
   const sF = suggestedTargets({ ...DEFAULT_PROFILE, sex: 'F', age: 40, height: 175, activityLevel: 'light', goal: 'feel-better' }, 75) as { maint: number }
+  // Profile's suggestedTargets uses the same floors, so it never disagrees with the summary
+  const st = (sex: 'M' | 'F', sexAnswer: 'male' | 'female' | 'unspecified', x: Partial<Profile>, kg: number) =>
+    suggestedTargets({ ...DEFAULT_PROFILE, sex, sexAnswer, activityLevel: 'sedentary', goal: 'lose-fat', targetRate: 'aggressive', ...x }, kg) as { kcal: number; floored: boolean }
+  const tiny = { age: 60, height: 160, bodyFat: 35 }
+  let agree = true
+  for (const [sex, sexAnswer] of [['M', 'male'], ['F', 'female'], ['F', 'unspecified']] as const) for (const age of [18, 40, 70]) for (const height of [150, 170, 190]) for (const kg of [50, 70, 100, 140]) {
+    const t = st(sex, sexAnswer, { age, height, bodyFat: 40 }, kg)
+    const floor = Math.ceil(calorieFloor(mifflinBmr(kg, height, age, sexAnswer), sexAnswer))
+    if (t.kcal < floor || (t.floored && t.kcal !== floor)) agree = false
+    const s2 = targetsFor(adult({ sex, sexAnswer, age, height, weight: kg, bodyFat: 40, targetRate: 'aggressive', movement: undefined }), null)
+    if (s2.kcal !== null && s2.floorsApplied.some((f) => f !== 'weekly-loss-cap') && s2.kcal !== Math.ceil(floor / 50) * 50) agree = false
+  }
   report('suggestedTargets', [
+    ['floor: men 1,500 on Profile too', st('M', 'male', tiny, 60).kcal === 1500 && st('M', 'male', tiny, 60).floored],
+    ['floor: women and unspecified 1,200 on Profile too', st('F', 'female', tiny, 60).kcal === 1200 && st('F', 'unspecified', { ...tiny, age: 70 }, 60).kcal === 1200 && st('F', 'unspecified', tiny, 60).kcal === 1222],
+    ['floor: BMR above the sex floor holds', st('F', 'female', { age: 25, height: 180, bodyFat: 40 }, 120).kcal === 2039],
+    ['Profile and summary floors agree across a sweep', agree],
     ['M / F unchanged, unspecified at the midpoint', s().maint === Math.round((750 + 1093.75 - 200 + 5) * 1.375) && s('unspecified').maint < s().maint && s('unspecified').maint > sF.maint],
   ])
 }
