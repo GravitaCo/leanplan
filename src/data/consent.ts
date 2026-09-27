@@ -54,25 +54,36 @@ export interface ConsentLog {
   healthCleared?: string
   /** an existing user said "Not now" to the one-time health consent sheet (plan §14): device only */
   healthPause?: HealthPause
+  /** after a yes: what was held back, with the server's values when it was held, still to upload */
+  healthResume?: HealthHeld
+}
+
+/** The server's health values for a day, as they were when this device first held it back. */
+export interface DaySnap { weight: number | null; checkin: unknown }
+/** The server's profile health fields (weight, body fat, limitations), likewise. */
+export type ProfileSnap = { weight?: unknown; bodyFat?: unknown; limitations?: unknown; limitationsNote?: unknown }
+
+export interface HealthHeld {
+  /** days uploaded without their health fields: date → the server's values at the time */
+  days?: Record<string, DaySnap>
+  /** settings uploaded without their health fields: the server's values at the time */
+  profile?: ProfileSnap
 }
 
 /**
- * "Not now" from someone who already had health data in Tali before consent was asked (plan §14,
- * PENDING security-data review). Their health data stays on this phone and its upload is paused:
- * while paused, a sync sends day logs without `weight` (the server keeps what it has) and with the
- * server's own check-in in `supps._checkin`, and settings with the server's own health fields in
- * `profile`, so nothing health-related leaves the device and nothing already on the server is
- * lost. What was held back is remembered (`heldDays`, `heldSettings`) and uploads when they agree.
+ * "Not now" from someone who already had health data in Tali before consent was asked (plan §14;
+ * security-data review SAFE WITH FIXES, applied). New health data stays on this phone and its
+ * upload is paused: a sync sends day logs without `weight` (the server keeps what it has) and with
+ * the server's own check-in in `supps._checkin`, and settings with the server's own health fields
+ * in `profile`. What was held back is remembered with the server's values at the time; on a yes
+ * each held value uploads only if the server still has those values, otherwise the server's
+ * (newer, from another device) wins and this device takes it.
  */
-export interface HealthPause {
+export interface HealthPause extends HealthHeld {
   /** when they said "Not now" the first time */
   at: string
   /** the one re-ask, 2 weeks later, has been answered */
   reasked?: boolean
-  /** days uploaded while paused: their weight and check-in on this device are newer than the server's */
-  heldDays?: string[]
-  /** settings uploaded while paused: the profile's health fields here are newer than the server's */
-  heldSettings?: boolean
 }
 
 /** The one re-ask after "Not now" comes this long after it (plan §14: 2 weeks). */
@@ -94,20 +105,33 @@ export function cleanConsents(x: unknown): ConsentLog {
     (CONSENT_TYPES as readonly string[]).includes(r.type) && typeof r.version === 'string' && VERSION_RE.test(r.version) &&
     typeof r.granted === 'boolean' && typeof r.at === 'string' && !isNaN(Date.parse(r.at)))
   const pause = cleanPause(log.healthPause)
+  const resume = cleanHeld(log.healthResume)
   return {
     records: records.map((r) => ({ id: r.id, type: r.type, version: r.version, granted: r.granted, at: r.at, ...(r._dirty ? { _dirty: true } : {}) })),
     ...(typeof log.healthCleared === 'string' ? { healthCleared: log.healthCleared } : {}),
     ...(pause ? { healthPause: pause } : {}),
+    ...(resume.days || resume.profile ? { healthResume: resume } : {}),
   }
 }
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
+function cleanHeld(x: unknown): HealthHeld {
+  const h = x && typeof x === 'object' ? (x as HealthHeld) : {}
+  const days: Record<string, DaySnap> = {}
+  if (h.days && typeof h.days === 'object') {
+    for (const [d, v] of Object.entries(h.days)) {
+      if (!DAY_RE.test(d) || !v || typeof v !== 'object') continue
+      days[d] = { weight: typeof v.weight === 'number' ? v.weight : null, checkin: v.checkin ?? null }
+    }
+  }
+  const profile = h.profile && typeof h.profile === 'object' ? { ...h.profile } : undefined
+  return { ...(Object.keys(days).length ? { days } : {}), ...(profile ? { profile } : {}) }
+}
 function cleanPause(x: unknown): HealthPause | null {
   if (!x || typeof x !== 'object') return null
   const p = x as Partial<HealthPause>
   if (typeof p.at !== 'string' || isNaN(Date.parse(p.at))) return null
-  const days = Array.isArray(p.heldDays) ? [...new Set(p.heldDays.filter((d): d is string => typeof d === 'string' && DAY_RE.test(d)))] : []
-  return { at: p.at, ...(p.reasked === true ? { reasked: true } : {}), ...(days.length ? { heldDays: days } : {}), ...(p.heldSettings === true ? { heldSettings: true } : {}) }
+  return { at: p.at, ...(p.reasked === true ? { reasked: true } : {}), ...cleanHeld(p) }
 }
 
 /** The latest record of a type (latest `at` wins; ties go to the later one in the list). */
@@ -289,6 +313,7 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
     log.healthCleared = rec.id
     // the clear uploads everywhere, so nothing is held back any more
     delete log.healthPause
+    delete log.healthResume
   }
   return rec
 }
@@ -343,10 +368,27 @@ export function resumeHealthSync(s: PersistedState, meta: SyncMeta): boolean {
   const p = log.healthPause
   if (!p) return false
   const u = nowIso()
-  for (const d of p.heldDays || []) if (s.days?.[d]) meta.days[d] = { u, dirty: true }
-  if (p.heldSettings) meta.settings = { u, dirty: true }
+  // the server's values from when each was held go with them, so sync can check the server
+  // hasn't moved on (another device) before uploading this device's
+  const r: HealthHeld = log.healthResume || {}
+  for (const [d, snap] of Object.entries(p.days || {})) {
+    if (!s.days?.[d]) continue
+    meta.days[d] = { u, dirty: true }
+    ;(r.days ||= {})[d] ??= snap
+  }
+  if (p.profile) { meta.settings = { u, dirty: true }; r.profile ??= p.profile }
+  if (r.days || r.profile) log.healthResume = r
   delete log.healthPause
   return true
+}
+
+/** Same health values? Key order doesn't matter (Postgres jsonb reorders keys); undefined is null. */
+export function sameHealth(a: unknown, b: unknown): boolean {
+  const norm = (x: unknown): unknown => x === undefined || x === null ? null
+    : Array.isArray(x) ? x.map(norm)
+    : typeof x === 'object' ? Object.fromEntries(Object.keys(x as object).sort().map((k) => [k, norm((x as Record<string, unknown>)[k])] as const).filter(([, v]) => v !== null))
+    : x
+  return JSON.stringify(norm(a)) === JSON.stringify(norm(b))
 }
 
 /**
@@ -361,16 +403,20 @@ export function settleHealthPause(s: PersistedState, meta: SyncMeta): boolean {
   return true
 }
 
-/** Sync notes a day or the settings as uploaded without their health fields. */
-export function holdHealth(s: PersistedState, what: { day?: string; settings?: boolean }): void {
+/**
+ * Sync notes a day or the settings as uploaded without their health fields, with the server's
+ * values at that moment. The first snapshot is kept: nothing on this device changes the server's
+ * health values while paused, so a later difference means another device changed them.
+ */
+export function holdHealth(s: PersistedState, what: { day?: string; server?: DaySnap; profile?: ProfileSnap }): void {
   const p = s.consents?.healthPause
   if (!p) return
-  if (what.day && !(p.heldDays || []).includes(what.day)) p.heldDays = [...(p.heldDays || []), what.day]
-  if (what.settings) p.heldSettings = true
+  if (what.day) (p.days ||= {})[what.day] ??= what.server ?? { weight: null, checkin: null }
+  if (what.profile) p.profile ??= what.profile
 }
 
 /** The health fields of a profile, for keeping the server's (or this device's) side as it is. */
-export function profileHealth(p: Partial<Profile> | null | undefined): { weight?: unknown; bodyFat?: unknown; limitations?: unknown; limitationsNote?: unknown } {
+export function profileHealth(p: Partial<Profile> | null | undefined): ProfileSnap {
   const t = p?.training
   return { weight: p?.weight, bodyFat: p?.bodyFat, limitations: t?.limitations, limitationsNote: t?.limitationsNote }
 }

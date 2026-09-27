@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
-import { healthSyncPaused, latestConsent } from '@/data/consent'
+import { healthDataSummary, healthSyncPaused, latestConsent } from '@/data/consent'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -41,6 +41,7 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
   const [step, setStep] = useState<null | ReturnType<typeof prepare>>(() => (start === 'withdraw' ? prepare() : null))
   const [saved, setSaved] = useState(false)
   const [privacy, setPrivacy] = useState(false)
+  const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields > 0 || !!s.data._meta?.lastPull })
   const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
 
   if (step) {
@@ -64,15 +65,16 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
     <Sheet title="Health data" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
         {status === 'on' ? 'Tali keeps your weight, check-ins and body details to build your plan and targets.'
-          : status === 'paused' ? 'Until you say yes, your health data stays on this phone and doesn’t sync.'
+          : status === 'paused' ? 'Kept on this phone only until you agree. What’s already in your account stays until you choose.'
           : 'To build your plan, Tali asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
       </div>
       <Ticks items={HEALTH_TICKS} />
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
       <div className="stack">
-        {status === 'on'
-          ? <button className="btn danger" onClick={() => setStep(prepare())}>Stop keeping my health data</button>
-          : <button className="btn" onClick={onAgree}>Yes, keep it</button>}
+        {status !== 'on' && <button className="btn" onClick={onAgree}>Yes, keep it</button>}
+        {/* withdraw (download first) whenever there's health data to remove: on, or paused / not
+            asked with data on this phone or (after a sync) in the account */}
+        {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>Stop keeping my health data</button>}
       </div>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
     </Sheet>

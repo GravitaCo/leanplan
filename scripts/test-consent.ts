@@ -312,10 +312,15 @@ async function consentFirst(fakeServer: FakeServer): Promise<void> {
 function mergingServer(rows: Record<string, any[]>) {
   const keyOf = (t: string) => (t === 'day_logs' ? ['user_id', 'log_date'] : t === 'settings' ? ['user_id'] : ['id'])
   const res = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status })
+  const gets: string[] = []
   const fetchFn = (async (url: string, o: RequestInit = {}) => {
-    const [path] = String(url).split('/rest/v1/')[1].split('?')
+    const [path, q = ''] = String(url).split('/rest/v1/')[1].split('?')
     const t = path.replace(/^\//, '')
-    if (!o.method) return res(200, (rows[t] || []).filter((r) => r.user_id === LOCAL_USER))
+    if (!o.method) {
+      gets.push(t + '?' + decodeURIComponent(q))
+      const within = new URLSearchParams(q).get('log_date')?.match(/^in\.\((.*)\)$/)?.[1].split(',')
+      return res(200, (rows[t] || []).filter((r) => r.user_id === LOCAL_USER && (!within || within.includes(r.log_date))))
+    }
     const next = [...(rows[t] || [])]
     for (const row of JSON.parse(String(o.body))) {
       const i = next.findIndex((r) => keyOf(t).every((k) => r[k] === row[k]))
@@ -324,8 +329,11 @@ function mergingServer(rows: Record<string, any[]>) {
     rows[t] = next
     return res(201)
   }) as typeof fetch
-  return { fetchFn }
+  return { fetchFn, gets }
 }
+
+/** Nothing health-related in what went up: no weight column, the check-in and profile health fields as the server had them. */
+const HEALTHY = (rows: Record<string, any[]>) => JSON.stringify([rows.day_logs.map((r) => [r.log_date, r.weight ?? null, r.supps?._checkin ?? null]), (({ weight, bodyFat, training }) => [weight, bodyFat, training?.limitations, training?.limitationsNote])(rows.settings[0]?.profile || {})])
 
 /** Existing users' "Not now" (plan §14): health data stays on the phone, its sync pauses. */
 async function healthPause(): Promise<void> {
@@ -352,38 +360,70 @@ async function healthPause(): Promise<void> {
   s.days[D1].foods.push({ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 } as never)
   s.days[D2] = { foods: [], supps: {}, weight: 70.2, workout: null, checkin: { mood: 4, hunger: 2, sleep: 3 } } as never
   m.days[D1] = { u: 'x', dirty: true }; m.days[D2] = { u: 'x', dirty: true }
-  s.profile.weight = 70; s.profile.name = 'Sam B'
+  s.profile.weight = 70; s.profile.bodyFat = 18; s.profile.name = 'Sam B'
+  s.profile.training = { ...(s.profile.training || {}), limitations: ['knees', 'back'] as any, limitationsNote: 'sore back' }
   m.settings.dirty = true
+  const before = HEALTHY(rows)
+  srv.gets.length = 0
   const failed = await withFetch(srv.fetchFn, () => pushDirty(s, m))
   const r1 = rows.day_logs.find((r) => r.log_date === D1), r2 = rows.day_logs.find((r) => r.log_date === D2)
-  checks.push(['paused push: the rest of the day syncs', failed.length === 0 && r1.foods.length === 1 && r1.supps.vitD === true && !m.days[D1].dirty && !m.days[D2].dirty])
-  checks.push(['paused push: the server keeps its weight and check-in; no new health data goes up', r1.weight === 71 && r1.supps._checkin?.mood === 3 && r2.weight === null && !('_checkin' in r2.supps)])
-  const sp = rows.settings[0].profile
-  checks.push(['paused push: settings sync with the server’s own health fields', sp.name === 'Sam B' && sp.weight === 72 && sp.bodyFat === 20 && sp.training.limitations[0] === 'knees' && sp.training.equipment[0] === 'dumbbells'])
-  checks.push(['what was held back is remembered', JSON.stringify(s.consents!.healthPause!.heldDays) === JSON.stringify([D1, D2]) && s.consents!.healthPause!.heldSettings === true])
+  checks.push(['paused push: the rest of the day syncs', failed.length === 0 && r1.foods.length === 1 && r1.supps.vitD === true && !m.days[D1].dirty && !m.days[D2].dirty && rows.settings[0].profile.name === 'Sam B'])
+  checks.push(['paused push: nothing health-related leaves the phone (weight, check-ins, body fat, limitations)', HEALTHY(rows) === before.replace(']]', `],["${D2}",null,null]]`) && r2.weight === null && !('_checkin' in r2.supps) && rows.settings[0].profile.training.equipment[0] === 'dumbbells'])
+  const dayGets = srv.gets.filter((g) => g.startsWith('day_logs'))
+  checks.push(['paused push: reads only the days being written', dayGets.length === 1 && dayGets[0].includes(`log_date=in.(${D1},${D2})`)])
+  const held = s.consents!.healthPause!
+  checks.push(['what was held back is remembered with the server’s values at the time', held.days?.[D1]?.weight === 71 && (held.days?.[D1]?.checkin as any)?.mood === 3 && held.days?.[D2]?.weight === null && held.profile?.weight === 72 && held.profile?.bodyFat === 20])
   await withFetch(srv.fetchFn, () => pullAll(s, m))
-  checks.push(['paused pull: the phone keeps its newer health data', s.days[D1].weight === 70.5 && s.days[D2].weight === 70.2 && s.days[D2].checkin?.mood === 4 && s.days[D1].foods.length === 1 && s.profile.weight === 70 && s.profile.name === 'Sam B'])
+  checks.push(['paused pull: the phone keeps its newer health data', s.days[D1].weight === 70.5 && s.days[D2].weight === 70.2 && s.days[D2].checkin?.mood === 4 && s.days[D1].foods.length === 1 && s.profile.weight === 70 && s.profile.bodyFat === 18 && s.profile.name === 'Sam B'])
+  // held again on a later push: the first snapshot stays
+  m.days[D1] = { u: 'x', dirty: true }
+  await withFetch(srv.fetchFn, () => pushDirty(s, m))
+  checks.push(['a later push while paused still leaks nothing and keeps the first snapshot', HEALTHY(rows) === before.replace(']]', `],["${D2}",null,null]]`) && s.consents!.healthPause!.days![D1].weight === 71])
   const again = loadStateFrom(JSON.parse(JSON.stringify(s)))
-  checks.push(['the pause survives a reload', healthSyncPaused(again) && again.consents!.healthPause!.heldDays!.length === 2])
+  checks.push(['the pause survives a reload', healthSyncPaused(again) && Object.keys(again.consents!.healthPause!.days!).length === 2 && again.consents!.healthPause!.profile?.weight === 72])
 
   // the one re-ask, then never again
   pauseHealthSync(s)
   checks.push(['a second "Not now" answers the re-ask: never asked again, still paused', !existingConsentDue(s, t0 + 60 * 86400_000) && healthSyncPaused(s) && s.consents!.healthPause!.at === new Date(t0).toISOString()])
 
-  // yes: what was held uploads
+  // yes: what was held uploads, where the server hasn't moved on. Meanwhile another device
+  // (with consent) logged a newer weight on D1: the server's wins there
+  rows.day_logs.find((r) => r.log_date === D1).weight = 71.8
   grantHealth(s, m)
-  checks.push(['a yes ends the pause and marks what was held to upload', !healthSyncPaused(s) && !s.consents!.healthPause && m.days[D1].dirty && m.days[D2].dirty && m.settings.dirty])
+  checks.push(['a yes ends the pause and marks what was held to upload, with its snapshots', !healthSyncPaused(s) && !s.consents!.healthPause && m.days[D1].dirty && m.days[D2].dirty && m.settings.dirty && !!s.consents!.healthResume?.days?.[D1]])
   await withFetch(srv.fetchFn, () => pushDirty(s, m))
   const u1 = rows.day_logs.find((r) => r.log_date === D1), u2 = rows.day_logs.find((r) => r.log_date === D2)
-  checks.push(['after the yes, the phone’s health data reaches the server', u1.weight === 70.5 && u2.weight === 70.2 && u2.supps._checkin?.mood === 4 && rows.settings[0].profile.weight === 70])
+  checks.push(['resume: a newer server value from another device is kept (server wins, taken onto the phone)', u1.weight === 71.8 && s.days[D1].weight === 71.8 && u1.supps._checkin?.mood === 3])
+  checks.push(['resume: where the server is unchanged, the phone’s held values upload', u2.weight === 70.2 && u2.supps._checkin?.mood === 4 && rows.settings[0].profile.weight === 70 && rows.settings[0].profile.bodyFat === 18 && rows.settings[0].profile.training.limitationsNote === 'sore back'])
+  checks.push(['resume: done once everything held is up', !s.consents!.healthResume])
 
-  // an answer on another device ends the pause here
-  const s2 = stateFromBackup({ days: { [D1]: day(69) } } as never)
+  // consent given on another device: the pull brings the yes, and the same check applies
+  const rows2: Record<string, any[]> = {
+    settings: [{ user_id: LOCAL_USER, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', weight: 72 } }],
+    day_logs: [{ user_id: LOCAL_USER, log_date: D1, foods: [], supps: {}, weight: 71, workout: null }, { user_id: LOCAL_USER, log_date: D2, foods: [], supps: {}, weight: 70, workout: null }],
+    custom_foods: [], recipes: [], consents: [],
+  }
+  const srv2 = mergingServer(rows2)
+  const s2 = stateFromBackup({ days: {} } as never)
   const m2 = ensureMeta(s2, false)
+  m2.settings.dirty = false
+  await withFetch(srv2.fetchFn, () => pullAll(s2, m2))
   pauseHealthSync(s2)
-  holdHealth(s2, { day: D1 }); m2.days[D1].dirty = false
-  recordConsent(s2, 'health', true) // as if pulled from another device
-  checks.push(["another device's yes uploads what this one held", settleHealthPause(s2, m2) && m2.days[D1].dirty && !s2.consents!.healthPause])
+  s2.days[D1].weight = 69; s2.days[D2].weight = 68.5
+  m2.days[D1] = { u: 'x', dirty: true }; m2.days[D2] = { u: 'x', dirty: true }
+  await withFetch(srv2.fetchFn, () => pushDirty(s2, m2))
+  // the other device agrees, and logs a new weight on D2
+  rows2.consents.push({ id: uuid(), user_id: LOCAL_USER, type: 'health', version: '2026-09-v1', granted: true, recorded_at: new Date().toISOString() })
+  rows2.day_logs.find((r) => r.log_date === D2).weight = 70.4
+  await withFetch(srv2.fetchFn, () => pullAll(s2, m2))
+  checks.push(['paused pull keeps the phone’s held values until the yes is settled', s2.days[D1].weight === 69 && s2.days[D2].weight === 68.5])
+  const settled = settleHealthPause(s2, m2)
+  checks.push(["another device's yes ends the pause here and marks what was held", settled && !s2.consents!.healthPause && m2.days[D1].dirty && m2.days[D2].dirty])
+  await withFetch(srv2.fetchFn, () => pushDirty(s2, m2))
+  checks.push(['consent on another device: unchanged day uploads the phone’s value, the changed one keeps the server’s', rows2.day_logs.find((r) => r.log_date === D1).weight === 69 && rows2.day_logs.find((r) => r.log_date === D2).weight === 70.4 && s2.days[D2].weight === 70.4])
+  const s2b = stateFromBackup({ days: { [D1]: day(69) } } as never)
+  pauseHealthSync(s2b); holdHealth(s2b, { day: D1, server: { weight: 70, checkin: null } })
+  checks.push(['a held snapshot survives a reload', loadStateFrom(JSON.parse(JSON.stringify(s2b))).consents!.healthPause!.days![D1].weight === 70])
   const s3 = stateFromBackup({ days: { [D1]: day(69) } } as never)
   const m3 = ensureMeta(s3, false)
   pauseHealthSync(s3)

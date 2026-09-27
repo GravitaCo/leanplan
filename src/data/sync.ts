@@ -8,7 +8,7 @@ import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/cor
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { pushConsents, pullConsents, latestConsent, healthSyncPaused, holdHealth, profileHealth, withProfileHealth } from './consent'
+import { pushConsents, pullConsents, latestConsent, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -207,6 +207,19 @@ function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => str
   }
 }
 
+/** The server's weight and check-in for these days only (log_date=in.(…), a few dozen at a time). */
+async function serverDays(uid: string, days: string[]): Promise<Map<string, DaySnap>> {
+  const out = new Map<string, DaySnap>()
+  for (let i = 0; i < days.length; i += 40) {
+    const part = days.slice(i, i + 40).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    if (!part.length) continue
+    const rows = await sbGet<{ log_date: string; weight: number | null; supps: Record<string, unknown> | null }[]>(
+      '/day_logs?user_id=eq.' + uid + '&log_date=in.(' + part.join(',') + ')&select=log_date,weight,supps')
+    for (const r of rows) out.set(r.log_date, { weight: r.weight ?? null, checkin: r.supps?.[CHECKIN_KEY] ?? null })
+  }
+  return out
+}
+
 /**
  * Push every dirty record. The log (days) and settings go first, then each other table in its
  * own step, so one rejected record can't block the rest or the pull that follows. Rejected
@@ -242,26 +255,53 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   // health sync paused ("Not now", consent.ts): health fields stay on this device, and what the
   // server already has for them is sent back unchanged
+  //
+  // Accepted race (security-data review): the server's values are read just before the write, and
+  // PostgREST's upsert can't be made conditional on updated_at, so a check-in or profile health
+  // field another device saves in that gap (well under a second) is written back to the value read.
+  // Resuming uses the same read-then-write.
   const paused = healthSyncPaused(s)
+  const resume = !paused ? s.consents?.healthResume : undefined
   await step('days', async () => {
-    if (!paused) return upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false))
-    if (!dirtyDays.length) return
-    const have = await sbGet<{ log_date: string; supps: Record<string, unknown> | null }[]>('/day_logs?user_id=eq.' + uid + '&select=log_date,supps')
-    const theirs = new Map(have.map((r) => [r.log_date, r.supps?.[CHECKIN_KEY] ?? null]))
-    await upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid, { serverCheckin: theirs.get(d) ?? null }), 'user_id,log_date', (d) => { meta.days[d].dirty = false; holdHealth(s, { day: d }) })
+    const resumeDays = resume?.days ? dirtyDays.filter((d) => resume.days![d]) : []
+    if (!paused && !resumeDays.length) return upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false))
+    const theirs = await serverDays(uid, paused ? dirtyDays : resumeDays)
+    if (paused) {
+      return upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid, { serverCheckin: theirs.get(d)?.checkin ?? null }), 'user_id,log_date',
+        (d) => { meta.days[d].dirty = false; holdHealth(s, { day: d, server: theirs.get(d) ?? { weight: null, checkin: null } }) })
+    }
+    // after a yes: a held value uploads only if the server still has what it had when held;
+    // otherwise another device changed it since, and the server's wins (taken onto this device)
+    for (const d of resumeDays) {
+      const now = theirs.get(d) ?? { weight: null, checkin: null }
+      const then = resume!.days![d]
+      if (!sameHealth(now.weight, then.weight) || !sameHealth(now.checkin, then.checkin)) {
+        if (!s.days[d]) continue
+        s.days[d].weight = now.weight
+        s.days[d].checkin = (now.checkin as DayLog['checkin']) ?? null
+      }
+    }
+    await upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => { meta.days[d].dirty = false; if (resume?.days) delete resume.days[d] })
   })
   if (meta.settings.dirty) {
     await step('settings', async () => {
       let profile = s.profile
-      if (paused) {
+      if (paused || resume?.profile) {
         const have = await sbGet<{ profile: Profile | null }[]>('/settings?user_id=eq.' + uid + '&select=profile')
-        profile = withProfileHealth(s.profile, profileHealth(have[0]?.profile))
+        const now = profileHealth(have[0]?.profile)
+        if (paused) profile = withProfileHealth(s.profile, now)
+        else if (!sameHealth(now, resume!.profile)) profile = s.profile = withProfileHealth(s.profile, now) // the server's is newer
+        await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
+        meta.settings.dirty = false
+        if (paused) holdHealth(s, { profile: now })
+        else delete resume!.profile
+        return
       }
       await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
       meta.settings.dirty = false
-      if (paused) holdHealth(s, { settings: true })
     })
   }
+  if (resume && s.consents && !Object.keys(resume.days || {}).length && !resume.profile) delete s.consents.healthResume
   // Deletes before upserts: a food deleted and re-created under the same name would otherwise
   // hit the name index while the old row is still there.
   const deletes = async (table: string, list: 'foodDeletes' | 'recipeDeletes') => {
@@ -295,7 +335,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     s.target = settings[0].target
     s.schedule = settings[0].schedule
     if (settings[0].profile) {
-      const mine = pause?.heldSettings ? profileHealth(s.profile) : null
+      const mine = pause?.profile ? profileHealth(s.profile) : null
       // keep the earliest D5 switch date across devices (and one from an older app version's
       // copy that lacks it), so days between two dates never flip back and forth
       const sw = s.profile.burnSwitch
@@ -335,7 +375,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   dl.forEach((row) => {
     const d = row.log_date
     if (meta.days[d] && meta.days[d].dirty) return // keep unpushed local day
-    const mine = pause?.heldDays?.includes(d) ? s.days[d] : null
+    const mine = pause?.days?.[d] ? s.days[d] : null
     s.days[d] = fromServerDay(row)
     if (mine) { s.days[d].weight = mine.weight ?? null; s.days[d].checkin = mine.checkin ?? null }
     meta.days[d] = { u: row.updated_at, dirty: false }

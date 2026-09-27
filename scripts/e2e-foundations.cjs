@@ -261,9 +261,22 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
   }, { state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] } }) })
 
+  await run('withdraw when never asked: offered, with the download first', async ({ page, rows }) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Not asked yet' }).click()
+    await page.getByRole('button', { name: 'Stop keeping my health data' }).click()
+    await page.getByRole('button', { name: 'Download a copy' }).waitFor()
+    await page.getByRole('button', { name: 'Remove my health data' }).click()
+    const st = await stored(page)
+    expect(st.days[today].weight === null && latest(st, 'health')?.granted === false, 'cleared and recorded')
+    await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
+    expect(rows.day_logs.find((x) => x.log_date === today)?.weight === null, 'server copy cleared')
+  }, { state: deviceState({ days: { [today]: aDay(70) } }) })
+
   const EXISTING = { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }
   await run('existing user: the sheet shows once; Not now keeps health data on the phone and pauses its sync', async ({ page, rows, net }) => {
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor()
+    await page.getByText('New health data stays on this phone. What’s already in your account stays until you choose. We’ll ask once more in 2 weeks.').waitFor()
     await shot(page, 'ob6-3-existing')
     await page.getByRole('button', { name: 'Not now' }).click()
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor({ state: 'detached' })
@@ -286,9 +299,16 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.waitForTimeout(800)
     expect((await page.getByText('Is it OK to keep your health data?').count()) === 0, 'shown once')
     expect((await stored(page)).days[today].checkin.mood === 5, 'the phone keeps its own check-in after a pull')
+    // held back: the pill stays "Up to date" and its line says so
+    await page.locator('.hdr .cpill[data-conn="up-to-date"]').click()
+    await page.getByText('Health data is kept on this phone until you agree.').waitFor()
+    await shot(page, 'pill-held')
     // agree later in Profile: what was held uploads
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Paused' }).click()
+    await page.getByText('Kept on this phone only until you agree. What’s already in your account stays until you choose.').waitFor()
+    await page.getByRole('button', { name: 'Stop keeping my health data' }).waitFor() // withdrawal offered while paused too
+    await shot(page, 'profile-health-paused')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
     await page.waitForTimeout(1500)
@@ -299,6 +319,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
   const pausedAgo = (days, reasked) => deviceState({ days: EXISTING, consents: { records: [], healthPause: { at: new Date(Date.now() - days * 86400_000).toISOString(), ...(reasked ? { reasked: true } : {}) } } })
   await run('existing user: asked again once after 2 weeks, then never', async ({ page }) => {
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor()
+    await page.getByText('New health data stays on this phone. What’s already in your account stays until you choose.', { exact: true }).waitFor() // no "once more" at the re-ask
     await page.getByRole('button', { name: 'Not now' }).click()
     const st = await stored(page)
     expect(st.consents.healthPause.reasked === true, 'the re-ask is answered')

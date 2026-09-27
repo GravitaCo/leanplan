@@ -6,6 +6,7 @@
 import { useStore } from '@/store/store'
 import { useConnection } from '@/store/hooks'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
+import { healthSyncPaused } from '@/data/consent'
 import { Icon, type IconName } from './icons'
 
 /** The note beside an online-only feature (plan §7; board ob6-8). */
@@ -46,6 +47,9 @@ export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: 
 
 export function ConnectionLine() {
   const c = useConnection()
+  const held = useStore((s) => healthSyncPaused(s.data))
   const l = connectionLine(c)
+  // an existing user's "Not now": the state stays "Up to date", and says what's held back (Benn)
+  if (c.kind === 'up-to-date' && held) l.body = 'Health data is kept on this phone until you agree.'
   return <div className="cline" role="status"><b>{l.head}</b> {l.body}</div>
 }

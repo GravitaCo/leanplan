@@ -145,6 +145,8 @@ export function FirstRunConsent({ step }: { step: 'health' | 'ai' }) {
 export function ExistingConsentSheet() {
   const grant = useStore((s) => s.grantConsent)
   const notNow = useStore((s) => s.notNowHealth)
+  // the first time, a "Not now" leads to one more ask in 2 weeks; at that re-ask it doesn't
+  const first = useStore((s) => !s.data.consents?.healthPause)
   return (
     <BareSheet label="Is it OK to keep your health data?" onClose={notNow} className="consent">
       <h2 className="cs-t">Is it OK to keep your health data?</h2>
@@ -152,7 +154,7 @@ export function ExistingConsentSheet() {
       <Ticks tight items={['Private to your account, never sold or used for ads.', 'Download or delete it any time in Profile.']} />
       <button className="btn ob-btn" onClick={() => grant('health')}>Yes, keep it</button>
       <button className="linkbtn ob-alt" onClick={notNow}>Not now</button>
-      <div className="cs-foot">Until you say yes, your health data stays on this phone and doesn’t sync. You’ll see this once.</div>
+      <div className="cs-foot">New health data stays on this phone. What’s already in your account stays until you choose.{first ? ' We’ll ask once more in 2 weeks.' : ''}</div>
     </BareSheet>
   )
 }
