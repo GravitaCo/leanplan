@@ -6,21 +6,24 @@ import { ConnectionLine, ConnectionPill } from './ConnectionPill'
 /** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
 
-/** A tab's large-title header. The connection pill sits on the top line (tap it for the line
- *  underneath), across from the eyebrow; `right` sits beside the title. */
-export function PageHeader({ eyebrow, title, right }: { eyebrow?: ReactNode; title: string; right?: ReactNode }) {
+/**
+ * A tab's large-title header. The connection pill sits on the top line (tap it for the line
+ * underneath), across from the eyebrow; `right` sits beside the title. The pill belongs to the
+ * five tab headers only: any other screen that uses this header passes `pill={false}`.
+ */
+export function PageHeader({ eyebrow, title, right, pill = true }: { eyebrow?: ReactNode; title: string; right?: ReactNode; pill?: boolean }) {
   const [line, setLine] = useState(false)
   return (
     <header className="hdr">
       <div className="hdr-top">
         <div className="eyebrow">{eyebrow}</div>
-        <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />
+        {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
       </div>
       <div className="hdr-row">
         <h1 className="ltitle">{title}</h1>
         {right}
       </div>
-      {line && <ConnectionLine />}
+      {pill && line && <ConnectionLine />}
     </header>
   )
 }

@@ -2,7 +2,7 @@
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
 import { healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
-  REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
+  consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
@@ -440,12 +440,70 @@ async function healthPause(): Promise<void> {
   report('health pause', checks)
 }
 
+/**
+ * Where the live consent gate (sync waits for the health answer; only the latest health record
+ * holds data back; pre-2026 clock floor) meets the "Not now" pause (held health fields, server wins).
+ */
+async function gateAndPause(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const D1 = '2026-09-20'
+  const fresh = stateFromBackup({ days: { [D1]: day(70) } } as never)
+  checks.push(['no answer and no pause: sync sends consent records only', !consentLetsSync(fresh)])
+  pauseHealthSync(fresh)
+  checks.push(['a "Not now" pause lets the rest sync (health fields held back), without counting as an answer', consentLetsSync(fresh) && !healthConsentAnswered(fresh)])
+  const answered = stateFromBackup({ days: {} } as never)
+  recordConsent(answered, 'health', true)
+  checks.push(['an answer lets everything sync', consentLetsSync(answered)])
+
+  // a yes after a pause: nothing (held or not) goes up until that yes is on the server
+  const rows: Record<string, any[]> = {
+    settings: [{ user_id: LOCAL_USER, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', weight: 72 } }],
+    day_logs: [{ user_id: LOCAL_USER, log_date: D1, foods: [], supps: { _checkin: { mood: 3, hunger: 2, sleep: 2 } }, weight: 71, workout: null }],
+    custom_foods: [], recipes: [], consents: [],
+  }
+  const srv = mergingServer(rows)
+  let consentsDown = true
+  const posts: string[] = []
+  const fetchFn = (async (url: string, o: RequestInit = {}) => {
+    const t = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
+    if (o.method) posts.push(t)
+    if (o.method && t === 'consents' && consentsDown) return new Response('{}', { status: 500 })
+    return srv.fetchFn(url, o)
+  }) as typeof fetch
+  const s = stateFromBackup({ days: {} } as never)
+  const m = ensureMeta(s, false)
+  m.settings.dirty = false
+  await withFetch(fetchFn, () => pullAll(s, m))
+  pauseHealthSync(s)
+  s.days[D1].weight = 70.4
+  m.days[D1] = { u: 'x', dirty: true }
+  await withFetch(fetchFn, () => pushDirty(s, m))
+  checks.push(['paused: the day syncs without its weight', rows.day_logs[0].weight === 71 && !m.days[D1].dirty && !!s.consents!.healthPause!.days?.[D1]])
+  const rec = grantHealth(s, m)
+  rec.at = '1970-01-01T00:00:00.000Z' // a phone clock reset while it was answered
+  posts.length = 0
+  const failed = await withFetch(fetchFn, () => pushDirty(s, m))
+  checks.push(['the yes isn’t on the server yet: nothing else goes up, the held day stays dirty and held', failed.length > 0 && !posts.includes('day_logs') && m.days[D1].dirty && !!s.consents!.healthResume?.days?.[D1] && rows.day_logs[0].weight === 71])
+  checks.push(['the 1970 clock is floored before upload', Date.parse(rec.at) >= Date.parse('2026-01-01')])
+  consentsDown = false
+  const ok = await withFetch(fetchFn, () => pushDirty(s, m))
+  checks.push(['once the yes is up, the held weight follows (the server hadn’t changed)', ok.length === 0 && rows.day_logs[0].weight === 70.4 && !s.consents!.healthResume && rows.consents.length === 1])
+
+  // "keep this device's log" in another account: that account answers for itself
+  const s2 = stateFromBackup({ days: { [D1]: day(70) } } as never)
+  pauseHealthSync(s2)
+  const kept = keepForAccount(s2, uuid())
+  checks.push(['keeping this device’s log in another account drops the pause with the consent log', !healthSyncPaused(kept) && !consentLetsSync(kept)])
+  report('consent gate and pause', checks)
+}
+
 export async function consentSuite(fakeServer: FakeServer): Promise<number> {
   bad = 0
   gate()
   await consentFirst(fakeServer)
   await consent(fakeServer)
   await healthPause()
+  await gateAndPause()
   await deletion()
   connection()
   return bad
