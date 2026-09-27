@@ -434,10 +434,11 @@ const GOAL_WORDS: Record<Goal, string> = {
 /**
  * A plan's eating line, from the same targets engine as Food (PROTEIN_PER_KG, goalAdjustPct), true
  * whatever the person's own goal (nutrition-accuracy); gentle mode leaves the numbers out
- * (mental-performance). Never "from your Food targets" unless their goal is the plan's.
+ * (mental-performance). When the plan fits their goal, the line is for that goal (it's what their
+ * Food targets give, and matches "Fits your goal"); otherwise it's the plan's own, never "yours".
  */
-export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra'>, goal: Goal | undefined, gentle?: boolean): string {
-  const g = t.nutritionGoal
+export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra' | 'goals'>, goal: Goal | undefined, gentle?: boolean): string {
+  const g = goal && t.goals.includes(goal) ? goal : t.nutritionGoal
   const figures = t.eatingExtra ? `protein about ${PROTEIN_PER_KG[g]} g per kg a day, ${t.eatingExtra}, and ${ENERGY_WORDS[g]}` : `protein about ${PROTEIN_PER_KG[g]} g per kg a day and ${ENERGY_WORDS[g]}`
   if (!goal) return 'Set a goal in Profile and your Food targets will follow it.'
   if (goal === g) return gentle ? 'Enough protein through the day, and enough food to fuel your training. Your Food targets cover this.' : `${figures[0].toUpperCase()}${figures.slice(1)}. Your Food targets for ${GOAL_WORDS[g]} cover this.`

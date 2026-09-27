@@ -1673,6 +1673,14 @@ async function timeouts(): Promise<void> {
   console.log(ok ? 'PASS' : 'FAIL', 'plans: Tali plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 {
+  // the eating line matches "Fits your goal": a plan that fits the person's goal speaks for that goal
+  const swa = PLAN_TEMPLATES.find((t) => t.id === 'stronger-with-age')!
+  const got = [eatingLine(swa, 'build-muscle'), eatingLine(swa, 'feel-better').endsWith('for feeling better cover this.'), eatingLine(swa, 'lose-fat').startsWith('For feeling better, Food targets suggest')].join(' | ')
+  const want = 'Protein about 1.8 g per kg a day, around 25–30 g at each main meal, and a small surplus. Your Food targets for building muscle cover this. | true | true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: eating line follows a goal the plan fits', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
   // maintenance counts from the day it's chosen; junk over the year's cap never drops it
   const t = PLAN_TEMPLATES[0]
   const plan: any = { id: 'm', name: 'x', source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: cleanPhases([...phasesOf(t), { id: 'a', name: 'M', weeks: 1, after: true, since: '2027-01-04', week: t.maintenance }]) }
