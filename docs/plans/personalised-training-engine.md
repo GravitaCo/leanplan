@@ -91,7 +91,8 @@ personModel(days: Record<string, DayLog>, plan, prefs): PersonModel             
   plan id, so variety is reproducible and testable.
 - **Output uses shipped shapes.** A `TrainingPlan` (`source: 'recommended'`) plus generated
   `Routine`s (`source: 'recommended'`). No new tables. The trace rides the existing JSON bodies
-  (`RoutineSlot.why`, `TrainingPlan.why`), within the 64 KB cap.
+  (`RoutineSlot.why`, `TrainingPlan.why`) as `WhyCode` plus data only, never rendered text, so it
+  stays well within the 64 KB settings cap (§3.6).
 - **`PersonModel` is computed from `days`** (sessions, sets, `SetFeel`, `effort`, check-ins).
   Only explicit preferences are stored (`training.exPrefs`: liked or disliked exercise ids).
 - **No calendar edits by itself.** Every change is a `Suggestion` the person accepts. The week
@@ -106,11 +107,17 @@ Taken from `first-run-onboarding.md` §2. Each one has a job below; any without 
 | Confidence / experience | `training.experience` | volume band, difficulty and skill ceiling, calibration length |
 | Moving now | `training.movingNow` *(new)* | starting dose (Ease-in length, first volume), cardio starting stage |
 | Days, minutes | `daysPerWeek`, `minutesPerSession` | session count, per-session set budget, split |
+| Weekdays | `training.weekdays` *(new)* | placement (step 8); unanswered → the fixed spread in `first-run-onboarding.md` §2 (3 days → Mon/Wed/Fri) |
 | Place, equipment | `place`, `equipment` | candidate filter, load increments |
 | Enjoyment | `modalities` | the mix within the goal's floor, selection score |
 | Body areas | `limitations` | gentler-first selection, `care` filter |
 | Readiness outcome, sleep/stress baseline | outcome only | starting dose cap (days, volume at the band's low end), impact filter |
 | Age | `profile.age` | edges only: from 55, balance and position rules; 16–17 routing |
+
+Skipped inputs take the defaults in `first-run-onboarding.md` §2.1 and are traced with the
+`default` WhyCode. With no training details at all, the engine returns the **Starter week**
+(3 days full body, bodyweight plus known kit, 30 min), labelled "Starter week: tell us more to
+personalise it" and exempt from §3.7 test 1 because it claims nothing.
 
 ### 3.3 Generation pipeline
 1. **Weekly budget.** Sessions S = min(days, the guardrail cap). A poor baseline or a readiness
@@ -158,7 +165,9 @@ Taken from `first-run-onboarding.md` §2. Each one has a job below; any without 
      a weight that leaves about 3–4 reps to spare, then log how it felt. This is honest where
      Fitbod-style population seeding isn't.
 8. **Placement and guardrails.**
-   - Spread the resistance days out.
+   - Sessions go on the chosen weekdays; unanswered, the deterministic default spread. Never a
+     rotation.
+   - Spread the resistance days out within those weekdays.
    - Mind-body sessions go after legs or before rest.
    - At least one rest day, and no 6-day `lose-fat` default.
    - Guardrails only ever lighten (plan §3.3). A big deficit sets volume to the low end and holds
@@ -188,6 +197,8 @@ interface PersonModel {
   unvalidated). Sets marked "stopped" count as a warning sign, not a performance point.
 - **Equation limits:** e1RM equations drift past about 10 reps and far from failure [23]. So Tali
   shows trends only, never an absolute "1RM" number.
+- **Where trends show:** only on the exercise detail screen, never mid-session. Hidden in gentle
+  mode, for anyone wellbeing-routed and for 16–17s (words only there, e.g. "Going well").
 
 ### 3.5 Adaptation rules (all suggest-only; thresholds are judgement calls unless cited)
 
@@ -197,11 +208,15 @@ interface PersonModel {
   plate or band, or the next step in the progression chain.
 - **Within the range:** same load, and aim for one more rep.
 - **Below the bottom of the range in 2 exposures, or any "stopped":** suggest about 5–10% less,
-  or the easier step.
+  or the easier step. Copy: "Try 17.5 kg next time. Some days are like that." Never "failed",
+  "dropped" or "regressed".
+- **Stopped early:** "Stopped early: good call. We'll go lighter next time." With a pain note,
+  add the §4.0.4 disclaimer.
 - **Held steady instead:** in a big deficit, on a low-signal day, in an Ease-in or lighter week,
   and in gentle mode (where it's shown in words).
 
 **B. Volume per muscle (`reviewWeek`):** at most every 2 weeks, ±2 sets, inside the experience band.
+No increases in the first 4 weeks, in gentle mode, for anyone wellbeing-routed, or for 16–17s.
 - **Offer less:** 2 or more of the muscle's exercises trend down, or it's often very sore, or
   recovery is often low. Offer −2 sets or a lighter week. This is where Tali acts first: it
   lightens.
@@ -217,9 +232,13 @@ interface PersonModel {
 
 **C. Swaps:**
 - **Stalled** (3 exposures flat or down, with good adherence): offer a variation with the same
-  pattern and primary muscle.
+  pattern and primary muscle. "Stalled" is an internal state only; the copy is "Fancy a change?
+  Goblet squat works the same muscles. Or keep squats."
+- **No stall detection while in a calorie deficit.** Copy instead: "Holding steady while you're
+  eating less is a good result."
 - **Disliked** (thumbs down, or swapped away twice): replace it in the plan and remember the
-  preference.
+  preference. A thumbs down swaps quietly with no reason asked: "Got it. We'll pick something
+  else."
 - **"Stopped" with a pain note:** offer the gentler alternative, with the §4.0.4 disclaimer.
 
 **D. Reshaping the schedule to actual adherence:**
@@ -228,6 +247,10 @@ interface PersonModel {
 - **Under half of planned sessions for 2 weeks:** offer to rebuild with one day fewer, or shorter
   sessions if logged minutes run under plan. Exercise history carries over.
 - **Nothing "missed" and no blame.** Plans still slide (plan §4.1b).
+- **How it's offered:** never show percentages or done-vs-planned counts. Offer at most once per
+  4 weeks; "Not now" dismisses it for 4 weeks. After 10 or more days away, "Welcome back" comes
+  first and no reshaping offer shows that day. Copy: "Want a week that fits better? Two days,
+  same exercises. Or keep it as it is."
 
 **E. Lighter weeks from data, not only the calendar:** offer one when recovery is low on 5 or
 more of the last 14 days, or several lifts trend down together. Only the week 1 Ease-in is fixed,
@@ -239,13 +262,26 @@ because there's no data yet.
 - Minutes go up by no more than about 10% a week (judgement call).
 - Without distance or heart rate, progress is minutes at an effort, never pace claims.
 
+**G. Wellbeing guardrails (mental-performance):**
+- **One suggestion per screen,** at most. When several apply, lightening comes before increasing.
+- **Compulsive-pattern check:** if sets are mostly "a real struggle" or "stopped", sessions run
+  over the plan (more sessions or minutes than planned), and there's a deficit, show the load note
+  and the supportive script, and never suggest more (no load, volume or day increases).
+- **No volume increases** in the first 4 weeks, in gentle mode, when wellbeing-routed or for
+  16–17s (B).
+- Each rule here has a unit test (§3.7 test 10).
+
 ### 3.6 The why trace
 ```ts
 type WhyCode = 'goal' | 'experience' | 'moving-now' | 'days' | 'minutes' | 'kit' | 'enjoy' | 'body-area'
   | 'baseline' | 'age-edge' | 'guardrail' | 'time-limited' | 'variety' | 'liked' | 'disliked'
   | 'perf-top-of-range' | 'perf-below-range' | 'perf-stalled' | 'feel' | 'recovery' | 'adherence' | 'evidence'
-interface Why { code: WhyCode; field?: string; data?: { exId?: string; date?: string; value?: string }; text: string }
+  | 'default'   // a skipped answer fell back (first-run-onboarding.md §2.1)
+interface Why { code: WhyCode; field?: string; data?: { exId?: string; date?: string; value?: string } }
+renderWhy(why: Why, lib: Exercise[]): string   // text built at display time, never stored
 ```
+- **Stored as code plus data only.** The text is rendered at display time, which keeps plans
+  well under the 64 KB settings cap and lets copy change without migrating data.
 - Every split, day, exercise, sets, reps, rest and suggestion carries a non-empty `why[]`.
 - Examples of what the UI shows:
   - "Dumbbell RDL, not barbell: you train at home with dumbbells."
@@ -255,14 +291,21 @@ interface Why { code: WhyCode; field?: string; data?: { exId?: string; date?: st
   offline.
 
 ### 3.7 Fairness and honesty checks (`npm test`, property-based)
-1. **No fake questions.** For every onboarding field the UI claims to use, there are two inputs
-   differing only in that field whose plans differ materially. "Materially" means any of:
-   - a different split
-   - exercise-set Jaccard below 0.8
-   - total weekly sets differing by 2 or more
-   - different rest or rep bands
+0. **Gate: library coverage first.** The §4.2 coverage test runs first; tests 1 and 3 (the
+   "materially different" and Jaccard targets) are skipped with a failing gate, not passed, until
+   it's green. A thin library can't make different plans, and that isn't the engine's fault.
+1. **No fake questions.** Every onboarding field declares its **scope**: `plan`, `targets`,
+   `copy` or `safety` (a field can have more than one). It's tested only against its scope:
+   - `plan`: two inputs differing only in that field give plans that differ materially, meaning
+     any of: a different split; exercise-set Jaccard below 0.8; total weekly sets differing by 2
+     or more; different rest or rep bands; different weekdays.
+   - `targets`: the nutrition target or range changes.
+   - `copy`: the rendered copy changes (e.g. "your why").
+   - `safety`: the routing outcome changes for the inputs that trigger it (e.g. age 16–17,
+     readiness "yes").
 
-   A field that fails is either used or removed from the questionnaire.
+   A field that fails its scope is either used or removed from the questionnaire. Scope is
+   declared next to the field so the test reads it, not a hand-kept list.
 2. **Reasons are real.** Inputs are wrapped in a recording proxy. Every `Why.field` must have been
    read, and every read field that changes the output must appear in some `Why`.
 3. **Different people, different plans.** Across a sampled grid of goal × days × minutes × kit ×
@@ -280,9 +323,19 @@ interface Why { code: WhyCode; field?: string; data?: { exId?: string; date?: st
    - guardrails only lower load
    - progression is never applied without acceptance
 6. **Determinism.** The same inputs, logs and seed give identical output.
-7. **Copy lint.** Screens using the engine contain none of: "AI-powered", "learns your body",
-   "optimal", "perfect for you", "just for you" (unless a data `Why` backs it), "earn", "streak",
-   "missed".
+7. **Copy lint.** Screens using the engine (and every `renderWhy` output) contain none of:
+   "AI-powered", "learns your body", "optimal", "perfect for you", "just for you" (unless a data
+   `Why` backs it), "earn", "streak", "missed", "failed", "stalled", "behind", "fell off",
+   "only", "should", or an adherence percentage ("% adherence", "x of y done").
+8. **Weekdays.** The plan lands on the chosen weekdays; with none chosen, days 1–6 map to the
+   fixed spread (3 → Mon/Wed/Fri) every time. No output ever contains a rotation or sequence
+   pointer.
+9. **Re-run safety.** Changing an answer or the goal produces a rebuild `Suggestion`, never a
+   changed plan; accepting it keeps `exPrefs`, calibrated loads and accepted suggestions.
+10. **Wellbeing guardrails (§3.5 G).** No stall suggestion in a deficit; no volume increase in
+    weeks 1–4, gentle mode, wellbeing routing or 16–17; at most one suggestion per screen,
+    lightening first; reshaping offers at most once per 4 weeks and suppressed by "Not now" and
+    on a "Welcome back" day; the compulsive-pattern inputs never yield an increase.
 
 ---
 
@@ -324,12 +377,14 @@ interface Why { code: WhyCode; field?: string; data?: { exId?: string; date?: st
 ### 4.3 Phases (each reviewed by ship-critic; mental-performance for copy and guardrails)
 | Phase | Ships | Personal on |
 |---|---|---|
-| **E1** | Library attributes and coverage; `generatePlan` (budget, capacity, structure, selection, prescription, placement, trace); "find your weight" calibration; the §3.7 tests 1–3 and 5–7 | **Day 1**: constraints, preferences, dose |
-| **E2** | `personModel`; per-exercise `nextTargets` (A); like/dislike; swaps (C); "Why this?" on every card | **Week 1–2**: their own sets |
-| **E3** | `reviewWeek`: volume (B), schedule (D), lighter weeks from data (E); test 4 | **Week 3–4**: trends, recovery, adherence |
+| **E1** | Library attributes and coverage; `generatePlan` (budget, capacity, structure, selection, prescription, placement, trace); "find your weight" calibration; Starter week; the §3.7 tests 0–3 and 5–9 | **Day 1**: constraints, preferences, dose |
+| **E2** | `personModel`; per-exercise `nextTargets` (A); like/dislike; swaps (C); "Why this?" on every card; test 10 for A and C | **Week 1–2**: their own sets |
+| **E3** | `reviewWeek`: volume (B), schedule (D), lighter weeks from data (E), guardrails (G); tests 4 and 10 | **Week 3–4**: trends, recovery, adherence |
 | **E4** | Cardio stages (F) for walk-to-run; optional AI rewording of `Why` | Ongoing |
 
-This replaces step 3 of `first-run-onboarding.md` §10 ("pick and adapt"). The three new plans
+E1 ships with the onboarding questionnaire (`first-run-onboarding.md` §10 phases 3 and 4), or
+the questionnaire stays behind a flag until E1 is in: the summary never describes a plan nothing
+generated. This replaces the old "pick and adapt" step. The three new plans
 Benn asked for (home/no-kit, walk-to-run, 4-day upper/lower) become **test fixtures the generator
 must reproduce** for matching inputs, rather than templates people are routed into. The existing
 Tali plans stay in the library for anyone who wants to choose one.
@@ -350,6 +405,14 @@ Tali plans stay in the library for anyone who wants to choose one.
     3 sessions**".
   - Never "AI coach", "learns your body", "optimal" or "the best plan for you". Say "a good
     starting point, and it changes with you".
+  - The Starter week says "Starter week: tell us more to personalise it", never "Built from your
+    answers".
+- **Calibration and feel copy:**
+  - "Find your weight": "No wrong answer. Pick something that feels comfortable. We'll adjust
+    from how it felt."
+  - "How was that set?" always has a Skip. A skipped rating holds the load (no change either
+    way) and is never nagged.
+  - Thumbs down: "Got it. We'll pick something else." No reason asked.
 - **Unvalidated thresholds stay unvalidated.** Every threshold marked judgement call is shown
   that way in code comments. The §3.4 RIR mapping and the ±2-set step are the first ones to
   validate against real logs (aggregate only, with consent).
