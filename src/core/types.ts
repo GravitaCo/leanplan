@@ -243,6 +243,53 @@ export type Sex = 'M' | 'F'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active'
 
 /**
+ * The onboarding sex answer (first-run-onboarding §2 screen 7). 'unspecified' is "Prefer not to
+ * say" or skipped: Mifflin midpoint constant, the lower floor and a wider range. Stored alongside
+ * the legacy `sex` (which stays 'M' | 'F' for older consumers), never in place of it.
+ */
+export type SexAnswer = 'female' | 'male' | 'unspecified'
+
+export type WeightUnit = 'kg' | 'st-lb' | 'lb'
+export type HeightUnit = 'cm' | 'ft-in'
+/** Display and entry units only: values are always stored in kg and cm. */
+export interface UnitPrefs {
+  weight: WeightUnit
+  height: HeightUnit
+}
+
+/** Everyday steps, in the Tudor-Locke & Bassett (2004) bands. */
+export type StepsBand = 'under-5k' | '5k-7.5k' | '7.5k-10k' | '10k-12.5k' | 'over-12.5k'
+/** The alternative to steps: what a working day asks of the body. */
+export type JobType = 'desk' | 'standing' | 'on-feet' | 'manual'
+/**
+ * Daily movement outside training (onboarding screen 8). Training is counted separately from the
+ * plan's sessions, so this never includes exercise (no double count).
+ */
+export type DailyMovement = { kind: 'steps'; band: StepsBand } | { kind: 'job'; job: JobType }
+
+/**
+ * Screener outcomes only (onboarding §8: raw answers, diagnoses and medication are never stored).
+ * Absent = skipped (or, for `medical`, not asked). `baseline` is the sleep/stress screen.
+ */
+export interface OnboardingOutcomes {
+  /** PAR-Q+ style readiness: any "yes" is 'flagged' */
+  readiness?: 'clear' | 'flagged'
+  /** diabetes on insulin or sulfonylureas, kidney disease or a GLP-1 medicine: 'flagged' */
+  medical?: 'clear' | 'flagged'
+  /** Yes/Sometimes → 'flagged'; No → 'clear'; "Rather not say" → 'undisclosed' */
+  wellbeing?: 'flagged' | 'clear' | 'undisclosed'
+  /** poor sleep, high stress or little room for change → 'low' */
+  baseline?: 'ok' | 'low'
+}
+
+/** Pregnant or breastfeeding, re-asked gently every 12 weeks and clearable in Profile (§13, §14). */
+export interface PregnancyFlag {
+  flagged: boolean
+  /** ISO date (YYYY-MM-DD) the question was last answered */
+  askedAt: string
+}
+
+/**
  * The user's main goal (onboarding question #6). Canonical enum owned by the fitness
  * domain; nutrition consumes the same values to set energy direction. Lives at the top
  * level of Profile (not TrainingPrefs) because both domains read it — one field, one
@@ -370,6 +417,19 @@ export interface Profile {
   activityShown?: string
   /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
   loadNoteSeen?: string
+  // First-run onboarding (first-run-onboarding.md). All optional and additive: `name` above is
+  // the optional first name and `age` the required age; weight stays optional.
+  /** the onboarding sex answer; absent on older profiles, read through `sexOf` */
+  sexAnswer?: SexAnswer
+  /** entry and display units (values stay kg and cm) */
+  units?: UnitPrefs
+  /** daily movement outside training; `activityLevel` is re-mapped from it plus training */
+  movement?: DailyMovement
+  /** screener outcomes only, never raw answers */
+  outcomes?: OnboardingOutcomes
+  pregnancy?: PregnancyFlag
+  /** ISO time the wizard finished; a device that sees it doesn't show the wizard */
+  onboardedAt?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

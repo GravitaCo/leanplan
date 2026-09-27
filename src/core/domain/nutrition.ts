@@ -1,5 +1,6 @@
-import type { DayLog, Food, FoodUnit, Recipe, Profile, ActivityLevel, Goal, TargetRate } from '@/core/types'
+import type { DayLog, Food, FoodUnit, Recipe, Profile, ActivityLevel, Goal, TargetRate, SexAnswer } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
+import { sexOf } from './onboarding'
 
 export interface MacroTotals {
   k: number
@@ -125,6 +126,19 @@ export interface GoalNeeded {
   maint: number
 }
 
+/**
+ * Mifflin–St Jeor sex constants (Mifflin et al. 1990, doi:10.1093/ajcn/51.2.241): +5 men, −161
+ * women. "Prefer not to say" takes the midpoint, −78, with a wider range around it
+ * (first-run-onboarding §5); half the gap between the two, 83 kcal, is the extra uncertainty.
+ */
+export const MIFFLIN_SEX_CONSTANT: Record<SexAnswer, number> = { male: 5, female: -161, unspecified: -78 }
+export const MIFFLIN_SEX_HALF_GAP = (MIFFLIN_SEX_CONSTANT.male - MIFFLIN_SEX_CONSTANT.female) / 2
+
+/** Resting energy (kcal/day), Mifflin–St Jeor: 10·kg + 6.25·cm − 5·age + sex constant. */
+export function mifflinBmr(kg: number, cm: number, age: number, sex: SexAnswer): number {
+  return 10 * kg + 6.25 * cm - 5 * age + MIFFLIN_SEX_CONSTANT[sex]
+}
+
 /** Interpolate x from [x0,x1] onto [y0,y1], clamped to the segment ends. */
 function lerp(x: number, x0: number, x1: number, y0: number, y1: number): number {
   const t = Math.min(1, Math.max(0, (x - x0) / (x1 - x0)))
@@ -143,7 +157,7 @@ function clamp(x: number, lo: number, hi: number): number {
  * person — it protects small or lean users from an over-deep cut while still moving
  * larger users at a useful pace, aiming at the safe 0.5–1% of bodyweight per week range.
  */
-function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, rate: TargetRate): number {
+export function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, rate: TargetRate): number {
   switch (goal) {
     case 'lose-fat': {
       // Deficit band −10…−25% of maintenance. Higher body fat → a deeper cut is well
@@ -220,10 +234,8 @@ export function suggestedTargets(profile: Profile, weight: number | null): Sugge
   if (!profile.age || !profile.height || !weight) return null
 
   // Step 1 — TDEE: Mifflin–St Jeor BMR × activity multiplier (unchanged basis).
-  const bmr =
-    profile.sex === 'F'
-      ? 10 * weight + 6.25 * profile.height - 5 * profile.age - 161
-      : 10 * weight + 6.25 * profile.height - 5 * profile.age + 5
+  // identical to before for 'M' / 'F' profiles; an onboarding "Prefer not to say" takes the midpoint
+  const bmr = mifflinBmr(weight, profile.height, profile.age, sexOf(profile))
   const activity: ActivityLevel = ACTIVITY[profile.activityLevel as ActivityLevel] ? profile.activityLevel : 'light'
   const maint = Math.round(bmr * ACTIVITY[activity].mult)
 
