@@ -13,7 +13,7 @@ import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
 import { measureFrame, qualityIssue, toGray, QUALITY_EDGE, QUALITY_PROMPT, type QualityIssue } from '@/core/domain/labelQuality'
-import { hasLabelConsent, readLabel, setLabelConsent, type LabelReadResult } from '@/data/labelReader'
+import { readLabel, type LabelReadResult } from '@/data/labelReader'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { scaledCanvas, startRearCamera, stopCamera, type CameraFail } from './camera'
@@ -81,7 +81,9 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   onDone: (draft: ScanDraft, notice?: string) => void
 }) {
   const customFoods = useStore((s) => s.data.customFoods)
-  const [step, setStep] = useState<Step>(() => (hasLabelConsent() ? 'panel' : 'consent'))
+  const hasConsent = useStore((s) => s.hasConsent)
+  const grantConsent = useStore((s) => s.grantConsent)
+  const [step, setStep] = useState<Step>(() => (hasConsent('label-photo') ? 'panel' : 'consent'))
   const [panel, setPanel] = useState<Shot | null>(null)
   const [front, setFront] = useState<Shot | null>(null)
   const [camera, setCamera] = useState<'starting' | 'on' | CameraFail>('starting')
@@ -197,7 +199,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
           <div className="foot" style={{ padding: '10px 0 0' }}>Nothing else about you is sent.</div>
         </div>
         <div className="stack">
-          <button className="btn tinted" onClick={() => { setLabelConsent(true); setStep('panel') }}>OK, take a photo</button>
+          <button className="btn tinted" onClick={() => { grantConsent('label-photo'); setStep('panel') }}>OK, take a photo</button>
           <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>
         </div>
       </Sheet>

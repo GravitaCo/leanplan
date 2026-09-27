@@ -81,15 +81,5 @@ export async function readLabel(images: { panel: string; front?: string }, opts:
   }
 }
 
-/* ---------------- consent (per device) ---------------- */
-
-const CONSENT_KEY = 'tali.labelConsent'
-
-/** The user agreed, on this device, to photos being sent to be read. */
-export function hasLabelConsent(): boolean {
-  try { return localStorage.getItem(CONSENT_KEY) === '1' } catch { return false }
-}
-
-export function setLabelConsent(on: boolean): void {
-  try { if (on) localStorage.setItem(CONSENT_KEY, '1'); else localStorage.removeItem(CONSENT_KEY) } catch { /* private mode: asked again next time */ }
-}
+/* Consent to send label photos is a consent record now ('label-photo', src/data/consent.ts);
+   the old device-only flag `tali.labelConsent` is migrated into it on launch. */

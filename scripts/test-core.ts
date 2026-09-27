@@ -51,6 +51,7 @@ import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/s
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
 import type { Food } from '@/core/types'
+import { consentSuite } from './test-consent'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -643,7 +644,7 @@ async function backupRestore(): Promise<void> {
     ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
   ]
   // a stale server: different day 1, no foods or recipes; push then pull as runSync does
-  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], training_plans: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], training_plans: [], consents: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
@@ -1743,4 +1744,4 @@ async function timeouts(): Promise<void> {
   console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

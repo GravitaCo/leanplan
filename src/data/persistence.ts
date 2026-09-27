@@ -5,6 +5,7 @@ import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid, UUID_RE } from './supabase'
+import { cleanConsents, rekeyForAccount, unsyncedConsents, type ConsentLog } from './consent'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
@@ -25,6 +26,8 @@ export interface SyncMeta {
 
 export interface PersistedState extends AppState {
   _meta?: SyncMeta
+  /** consent acts recorded on this device (src/data/consent.ts); dirty ones upload to `consents` */
+  consents?: ConsentLog
 }
 
 function emptyState(): AppState {
@@ -88,6 +91,7 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
+  s.consents = cleanConsents(s.consents)
   // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
   // read through sessionsOf without being rewritten
   for (const d of Object.keys(s.days)) {
@@ -213,6 +217,9 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   if (switches.length) s.profile.burnSwitch = switches.sort()[0]
   if (current?.profile) s.profile.notificationsEnabled = !!current.profile.notificationsEnabled
   const meta = ensureMeta(s, true)
+  // consent is an act on this device, never restored from a file (it could be anyone's, or
+  // edited): this device's own records stay, with their sync flags
+  s.consents = cleanConsents(current?.consents)
   const pending = current?._meta
   // a backup never changes whose device this is (its own _meta was discarded above)
   if (pending?.owner) meta.owner = pending.owner
@@ -299,11 +306,11 @@ export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
 /** Changes on this device that haven't reached the server, for the sign-out choice. */
 export function unsyncedCount(s: PersistedState): number {
   const m = s._meta
-  if (!m) return 0
+  if (!m) return unsyncedConsents(s)
   return (m.settings?.dirty ? 1 : 0) + Object.values(m.days || {}).filter((x) => x.dirty).length +
     (s.customFoods || []).filter((f) => f._dirty).length + (s.recipes || []).filter((r) => r._dirty).length +
     (s.routines || []).filter((r) => r._dirty).length + (s.trainingPlans || []).filter((p) => p._dirty).length +
-    (m.foodDeletes || []).length + (m.recipeDeletes || []).length
+    (m.foodDeletes || []).length + (m.recipeDeletes || []).length + unsyncedConsents(s)
 }
 
 /** An empty device state: no owner, nothing synced (sign out and remove). */
@@ -318,6 +325,7 @@ export function freshForDevice(): PersistedState {
 export function keepForAccount(s: PersistedState, uid: string): PersistedState {
   delete s._meta
   ensureMeta(s, true).owner = uid
+  rekeyForAccount(s)
   return s
 }
 

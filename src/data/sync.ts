@@ -8,6 +8,7 @@ import type { DayLog, Food, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
+import { pushConsents, pullConsents } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -212,6 +213,8 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
       return false
     }
   }
+  // consent first: a record reaches the server before (or with) the health data it covers
+  await step('consents', () => pushConsents(s))
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   await step('days', () => upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
   if (meta.settings.dirty) {
@@ -308,6 +311,8 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     ;(s.trainingPlans || []).filter((p) => p._dirty).forEach((p) => { pById[p.id] = p })
     s.trainingPlans = Object.values(pById)
   }
+  // after the log; no table yet = keep the device's records (they upload once it exists)
+  await pullConsents(s)
   meta.lastPull = nowIso()
 }
 

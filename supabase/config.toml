@@ -7,3 +7,9 @@ project_id = "exvblofwiwbvycomxvmj"
 # path). The function itself rejects a missing or malformed Authorization with 401, and the
 # ai_usage_take RPC, called with the caller's JWT before any model call, is the real gate.
 verify_jwt = false
+
+[functions.delete-account]
+# Same gate as ai-read-label: the gateway's JWT check is off, and the function itself refuses a
+# missing or malformed Authorization with 401, then has Auth verify the token (auth.getUser) and
+# takes the user id only from that answer. The service role key never leaves the function.
+verify_jwt = false

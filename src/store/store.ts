@@ -37,18 +37,21 @@ import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
-import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
+import { canSaveHealthAnswers, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, type ConsentType } from '@/data/consent'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, type DeleteResult } from '@/data/account'
+import { connectionState, type ConnectionState } from '@/core/domain/connection'
 
 enableMapSet()
 
 export type Tab = 'today' | 'food' | 'train' | 'plan' | 'profile'
 
-interface StoreState {
+export interface StoreState {
   data: PersistedState
   cur: string
   tab: Tab
@@ -170,6 +173,26 @@ interface StoreState {
   beginSignIn: () => void
   /** Answer ownerAsk: keep this device's data in the account, start fresh, or sign out. */
   resolveOwner: (choice: 'keep' | 'fresh' | 'cancel') => Promise<void>
+
+  // consent (onboarding plan §8): recorded on this device first, synced when online
+  /** the device says it has a connection (navigator.onLine, kept current by initAuth) */
+  online: boolean
+  /** record a yes for a consent type at its current version (see CONSENT_VERSIONS) */
+  grantConsent: (type: ConsentType) => void
+  /** record a no; for 'health' this also clears the health data (consent.ts HEALTH_FIELDS) here
+   *  and, through sync, on the server */
+  withdrawConsent: (type: ConsentType) => void
+  hasConsent: (type: ConsentType) => boolean
+  /** the questionnaire's guard: false until a local health consent says yes */
+  canSaveHealth: () => boolean
+  /** save onboarding health answers (weight, limitations …); refused (false) without health consent */
+  saveHealthAnswers: (patch: Partial<Profile>) => boolean
+
+  // account deletion (onboarding plan §8)
+  /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
+  deletingAccount: boolean
+  /** needs a connection; wipes this device and signs out only after the server confirms */
+  deleteAccount: () => Promise<DeleteResult>
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -252,6 +275,9 @@ const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is s
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
+/** Set while an account deletion runs: no sync may start, so nothing re-uploads rows the server
+ *  function is deleting (the JWT stays valid for a while after the login is gone). */
+let deleting = false
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
@@ -293,6 +319,8 @@ export const useStore = create<StoreState>()(
       syncPaused: false,
       authNotice: null,
       ownerAsk: null,
+      online: typeof navigator === 'undefined' || navigator.onLine !== false,
+      deletingAccount: false,
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
@@ -438,6 +466,7 @@ export const useStore = create<StoreState>()(
       },
 
       setCheckin: (c) => {
+        if (c && !healthLoggingAllowed(get().data)) return
         set((st) => {
           ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
@@ -488,6 +517,7 @@ export const useStore = create<StoreState>()(
       },
 
       setWeight: (kg) => {
+        if (!healthLoggingAllowed(get().data)) return
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
@@ -735,6 +765,8 @@ export const useStore = create<StoreState>()(
       },
 
       saveProfileMetrics: (patch) => {
+        // health consent withdrawn: the health fields (weight, body fat) aren't saved; the rest is
+        if (!healthLoggingAllowed(get().data)) { patch = { ...patch }; delete patch.weight; delete patch.bodyFat }
         set((st) => {
           // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
           const today = todayStr()
@@ -827,6 +859,15 @@ export const useStore = create<StoreState>()(
           ensureMeta(d, migrate)
         })
         saveState(get().data)
+        // the old device-only label-photo consent becomes a consent record (once); the old flag
+        // goes only after the record is safely saved
+        let legacyStore: Storage | null = null
+        try { legacyStore = localStorage } catch { /* blocked */ }
+        const copy = structuredClone(get().data) as PersistedState
+        if (migrateLabelConsent(copy, legacyStore)) {
+          set((st) => { st.data = copy })
+          if (saveState(get().data)) removeLegacyLabelFlag(legacyStore)
+        } else if (copy.consents?.records.some((r) => r.type === 'label-photo')) removeLegacyLabelFlag(legacyStore)
 
         const live = (s: Session) => {
           const uid = s.user.id
@@ -921,7 +962,9 @@ export const useStore = create<StoreState>()(
         set((st) => { st.authReady = true })
 
         if (session) get().runSync()
+        window.addEventListener('offline', () => set((st) => { st.online = false }))
         window.addEventListener('online', async () => {
+          set((st) => { st.online = true })
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -941,7 +984,7 @@ export const useStore = create<StoreState>()(
         // Only sync with a real authenticated session (none while offline or while asking whose
         // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
-        if (syncing) return
+        if (syncing || deleting) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         syncing = true
         let rerun = false
@@ -955,6 +998,8 @@ export const useStore = create<StoreState>()(
           const m = ensureMeta(d, false)
           const failed = await pushDirty(d, m)
           await pullAll(d, m)
+          // a health withdrawal made on another device clears this one's health data too (once)
+          if (applyHealthWithdrawal(d, m)) rerun = true
           // the plan's week moved on (a new phase) while settings were current: upload the mirror next run
           if (mirrorPlan(d, true)) rerun = true
           // Data changed while we were on the network (an edit, a backup import): writing this
@@ -980,6 +1025,7 @@ export const useStore = create<StoreState>()(
 
       scheduleSync: () => {
         if (syncTimer) clearTimeout(syncTimer)
+        if (deleting) return
         syncTimer = setTimeout(() => get().runSync(), 800)
       },
 
@@ -1010,6 +1056,66 @@ export const useStore = create<StoreState>()(
         }
       },
 
+      grantConsent: (type) => {
+        set((st) => { recordConsent(st.data, type, true) })
+        saved()
+      },
+
+      withdrawConsent: (type) => {
+        set((st) => { withdraw(st.data, meta(st.data), type) })
+        saved()
+      },
+
+      hasConsent: (type) => consented(get().data, type),
+
+      canSaveHealth: () => canSaveHealthAnswers(get().data),
+
+      saveHealthAnswers: (patch) => {
+        if (!canSaveHealthAnswers(get().data)) return false
+        get().setPrefs(patch)
+        return true
+      },
+
+      deleteAccount: async () => {
+        if (deleting) return { status: 'busy' }
+        if (!navigator.onLine) return { status: 'offline' }
+        if (!get().authed) return { status: 'no-session' }
+        deleting = true
+        let failed = false
+        set((st) => { st.deletingAccount = true })
+        try {
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          // let a sync already in flight finish, so none is mid-upload while rows are deleted
+          for (let i = 0; syncing && i < 50; i++) await new Promise((r) => setTimeout(r, 200))
+          if (syncing) { failed = true; return { status: 'busy' } }
+          const res = await deleteAccountData({
+            ...defaultDeleteDeps,
+            hasSession: () => get().authed,
+            signOut: async () => {
+              // late session events from here on are ignored, as after a sign-out
+              signingOut = true
+              // the browser's push subscription ends here (its row went with the account)
+              await withTimeout(unsubscribePush(), 2000, undefined)
+              setSession(null, null)
+              await defaultDeleteDeps.signOut()
+              clearSavedSession()
+            },
+          })
+          if (res.status !== 'ok') { failed = true; return res }
+          // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
+          set((st) => {
+            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = null; st.sync = 'idle'
+          })
+          return res
+        } finally {
+          deleting = false
+          set((st) => { st.deletingAccount = false })
+          // nothing was deleted: the sync that was held back runs again
+          if (failed) get().scheduleSync()
+        }
+      },
+
       signOut: async (opts) => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
         // (offline), which would sign the user straight back in: clear it locally as well, and
@@ -1036,3 +1142,11 @@ export const useStore = create<StoreState>()(
     }
   }),
 )
+
+/** The header indicator's state (onboarding plan §7), derived from the store alone. */
+export function selectConnection(st: Pick<StoreState, 'signedIn' | 'authed' | 'syncPaused' | 'ownerAsk' | 'online' | 'sync' | 'data'>): ConnectionState {
+  return connectionState({
+    signedIn: st.signedIn, authed: st.authed, syncPaused: st.syncPaused, ownerAsk: !!st.ownerAsk,
+    online: st.online, sync: st.sync, pending: unsyncedCount(st.data),
+  })
+}
