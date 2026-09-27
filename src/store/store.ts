@@ -15,6 +15,8 @@ import type {
   MealSlot,
   Recipe,
   RoutineEffort,
+  PlanPhase,
+  TrainingPlan,
   RoutineSlot,
   Workout,
   Supplement,
@@ -26,6 +28,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { activePlan, cleanPhases, positionOn, scheduleMirror } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -130,6 +133,12 @@ interface StoreState {
   // plan / settings
   /** replace the whole weekly schedule (swap two days, undo) */
   setSchedule: (s: Schedule, quiet?: boolean) => void
+  /** weekly plans (plan P5): start one (any active one is put away), edit it, finish it */
+  startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
+  updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
+  finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
+  syncPlanMirror: () => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
   /** quiet profile update for preferences (accuracy, display, hands…) */
@@ -160,6 +169,21 @@ function ensureDay(s: PersistedState, d: string): DayLog {
 }
 
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
+/**
+ * With an active plan, the weekly schedule mirrors its current week (plan P5): older installs and
+ * one-workout readers see it; nothing reads it back while the plan is active. Marks settings to
+ * sync only when something changed.
+ */
+function mirrorPlan(s: PersistedState): void {
+  const p = activePlan(s)
+  const pos = p ? positionOn(p, todayStr()) : null
+  if (!pos) return
+  const next = scheduleMirror(pos.planWeek, s.routines)
+  let changed = false
+  for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
+  if (changed) { const m = ensureMeta(s, false); m.settings.dirty = true; m.settings.u = nowIso() }
+}
+
 function setSessions(day: DayLog, list: TrainingSession[]): void {
   day.sessions = list
   day.workout = mirrorOf(list)
@@ -550,6 +574,62 @@ export const useStore = create<StoreState>()(
         saved(quiet ? undefined : 'Schedule updated')
       },
 
+      startPlan: (input) => {
+        const id = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          const today = todayStr()
+          // one active plan: the one in progress is finished (or put away if it never started)
+          for (const p of st.data.trainingPlans) {
+            if (p.state !== 'active') continue
+            p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
+            if (p.state === 'completed') p.completedAt = nowIso()
+            p._dirty = true; p._u = nowIso()
+          }
+          st.data.trainingPlans.push({
+            id, name: input.name.trim().slice(0, 120) || 'My plan', source: input.source, state: 'active',
+            phases: cleanPhases(input.phases), startedAt: input.startedAt ?? today,
+            ...(input.baseTemplateId ? { baseTemplateId: input.baseTemplateId } : {}), ...(input.clonedFromId ? { clonedFromId: input.clonedFromId } : {}),
+            _dirty: true, _u: nowIso(),
+          })
+          mirrorPlan(st.data)
+        })
+        saved('Plan started')
+        return id
+      },
+
+      updatePlan: (id, patch) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          if (patch.name != null) p.name = patch.name.trim().slice(0, 120) || p.name
+          if (patch.phases) p.phases = cleanPhases(patch.phases)
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data)
+        })
+        saved('Plan updated')
+      },
+
+      finishPlan: (id, reflection, state = 'completed') => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          p.state = state
+          if (state === 'completed') p.completedAt = nowIso()
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+          // the schedule keeps the last week, so nothing changes until a new plan or an edit
+        })
+        saved(state === 'completed' ? 'Plan finished' : 'Plan put away')
+      },
+
+      syncPlanMirror: () => {
+        const before = JSON.stringify(get().data.schedule)
+        set((st) => { mirrorPlan(st.data) })
+        if (JSON.stringify(get().data.schedule) !== before) persist()
+      },
+
       saveTargets: (t, rangeWidth) => {
         const floored = t.kcal < KCAL_FLOOR
         // when the floor lifts calories, top up carbs so the macros still add up to it
@@ -651,7 +731,9 @@ export const useStore = create<StoreState>()(
             !d._meta &&
             (Object.keys(d.days || {}).length > 0 ||
               (d.customFoods || []).length > 0 ||
-              (d.recipes || []).length > 0)
+              (d.recipes || []).length > 0 ||
+              (d.routines || []).length > 0 ||
+              (d.trainingPlans || []).length > 0)
           ensureMeta(d, migrate)
         })
         saveState(get().data)
@@ -761,7 +843,8 @@ export const useStore = create<StoreState>()(
           }
           get().runSync()
         })
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) { get().syncPlanMirror(); get().runSync() } })
+        get().syncPlanMirror()
       },
 
       runSync: async () => {

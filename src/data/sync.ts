@@ -4,7 +4,7 @@
  * merge with last-write-wins per record. Ported from the LeanPlan vanilla app and kept
  * framework-agnostic so it can back a native client later.
  */
-import type { DayLog, Food, Recipe, Routine } from '@/core/types'
+import type { DayLog, Food, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 
@@ -71,6 +71,22 @@ function toServerRecipe(r: Recipe, uid: string) {
 }
 function fromServerRecipe(r: any): Recipe {
   return { id: r.id, name: r.name, items: r.items || [], servings: +r.servings || 1, _u: r.updated_at, _dirty: false }
+}
+/* training_plans: weekly plans (plan P5), one row each like routines; never hard-deleted */
+function toServerPlan(p: TrainingPlan, uid: string) {
+  return {
+    id: p.id, user_id: uid, name: p.name, source: p.source === 'recommended' ? 'recommended' : 'custom', state: p.state,
+    phases: Array.isArray(p.phases) ? p.phases : [], started_at: p.startedAt ?? null, completed_at: p.completedAt ?? null,
+    reflection: p.reflection ?? null, base_template_id: p.baseTemplateId ?? null, cloned_from_id: p.clonedFromId ?? null,
+  }
+}
+function fromServerPlan(r: any): TrainingPlan {
+  return {
+    id: r.id, name: r.name, source: r.source === 'recommended' ? 'recommended' : 'custom', state: r.state, phases: Array.isArray(r.phases) ? r.phases : [],
+    ...(r.started_at ? { startedAt: String(r.started_at).slice(0, 10) } : {}), ...(r.completed_at ? { completedAt: r.completed_at } : {}),
+    ...(r.reflection ? { reflection: r.reflection } : {}), ...(r.base_template_id ? { baseTemplateId: r.base_template_id } : {}),
+    ...(r.cloned_from_id ? { clonedFromId: r.cloned_from_id } : {}), _u: r.updated_at, _dirty: false,
+  }
 }
 /* routines: the user's own workouts (plan P4), one row each like recipes; never hard-deleted */
 function toServerRoutine(r: Routine, uid: string) {
@@ -217,6 +233,8 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes, s.recipes)))
   // workouts have no name index (two may share a name), so only the 403 repair can apply
   const dirtyRoutines = (s.routines || []).filter((r) => r._dirty)
+  const dirtyPlans = (s.trainingPlans || []).filter((p) => p._dirty)
+  await step('plans', () => upsertEach('training_plans', dirtyPlans, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', (p: TrainingPlan) => p.name, uid, [], s.trainingPlans)))
   await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', (r: Routine) => r.name, uid, [], s.routines)))
   return failed
 }
@@ -278,20 +296,28 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     ;(s.routines || []).filter((r) => r._dirty).forEach((r) => { wById[r.id] = r })
     s.routines = Object.values(wById)
   }
+  const tp = await missing(sbGet<any[]>('/training_plans?user_id=eq.' + uid + '&select=*'))
+  if (tp) {
+    const pById: Record<string, TrainingPlan> = {}
+    tp.map(fromServerPlan).forEach((p) => { pById[p.id] = p })
+    ;(s.trainingPlans || []).filter((p) => p._dirty).forEach((p) => { pById[p.id] = p })
+    s.trainingPlans = Object.values(pById)
+  }
   meta.lastPull = nowIso()
 }
 
 /** The rows sameAccount compares, read with a session that isn't applied yet. */
 export async function accountRows(uid: string, token: string): Promise<AccountRows> {
   const q = '?user_id=eq.' + uid + '&select='
-  const [days, foods, recipes, routines] = await Promise.all([
+  const [days, foods, recipes, routines, plans] = await Promise.all([
     sbGet<AccountRows['days']>('/day_logs' + q + 'log_date,updated_at', token),
     sbGet<AccountRows['foods']>('/custom_foods' + q + 'id', token),
     sbGet<AccountRows['recipes']>('/recipes' + q + 'id', token),
     // before the table exists no workout can have synced, so none counts either way
     missing(sbGet<AccountRows['routines']>('/routines' + q + 'id', token)).then((x) => x ?? []),
+    missing(sbGet<AccountRows['plans']>('/training_plans' + q + 'id', token)).then((x) => x ?? []),
   ])
-  return { days, foods, recipes, routines }
+  return { days, foods, recipes, routines, plans }
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'

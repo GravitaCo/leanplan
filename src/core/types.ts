@@ -380,6 +380,47 @@ export interface AppState {
   recipes: Recipe[]
   /** the user's own workouts (plan P4); built-ins stay static core data */
   routines: Routine[]
+  /** weekly plans (plan P5): at most one active; the rest completed, archived or templates */
+  trainingPlans: TrainingPlan[]
+}
+
+/** Weekday (0 = Sunday … 6 = Saturday) → workout keys for that day, in order; none = rest. */
+export type PlanWeek = Record<number, string[]>
+
+/**
+ * A block of weeks in a plan (plan P5, Benn's model): a build phase has its own week; a
+ * maintain phase reuses the previous phase's week with its workouts opening lighter.
+ */
+export interface PlanPhase {
+  id: string
+  name: string
+  weeks: number
+  maintain?: boolean
+  week?: PlanWeek
+}
+
+export type PlanState = 'active' | 'completed' | 'archived' | 'template'
+
+/**
+ * A weekly plan that runs for a set number of weeks in phases. The current week comes from
+ * `startedAt` by the calendar and is never stored (no sequence position, plan §2.4).
+ */
+export interface TrainingPlan {
+  id: string
+  name: string
+  /** 'community' is reserved for marketplace plans later */
+  source: 'recommended' | 'custom'
+  state: PlanState
+  phases: PlanPhase[]
+  /** YYYY-MM-DD: week 1 is the 7 days from here */
+  startedAt?: string
+  completedAt?: string
+  reflection?: { at: string; good?: string; change?: string }
+  /** the Tali plan it came from ("Suggested next" skips it) */
+  baseTemplateId?: string
+  clonedFromId?: string
+  _u?: string
+  _dirty?: boolean
 }
 
 /** One exercise in a workout, with its own prescription (plan §2.3). */

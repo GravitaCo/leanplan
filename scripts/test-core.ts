@@ -28,6 +28,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
+import { activePlan, maintainOn, nextSuggestions, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
 import { aboutMins, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
@@ -982,7 +983,7 @@ async function routinesMissing(): Promise<void> {
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const t = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
-    if (t === 'routines') return new Response('{"message":"relation does not exist"}', { status: 404 })
+    if (t === 'routines' || t === 'training_plans') return new Response('{"message":"relation does not exist"}', { status: 404 })
     if (o.method) return new Response(null, { status: 204 })
     return new Response(JSON.stringify(t === 'day_logs' ? [{ log_date: '2026-09-20', foods: [], supps: {}, weight: 70, workout: null, updated_at: 'z' }] : []), { status: 200 })
   }) as typeof fetch
@@ -992,7 +993,7 @@ async function routinesMissing(): Promise<void> {
     await pullAll(s, m); pulled = true
     rows = await accountRows(LOCAL_USER, 't')
   } catch (e) { console.error(e) } finally { globalThis.fetch = realFetch }
-  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0
+  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0 && Array.isArray(rows?.plans) && rows.plans.length === 0
   if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: a missing routines table never stops the log syncing', pulled, JSON.stringify(failed), s.routines.length)
 }
@@ -1513,6 +1514,56 @@ async function timeouts(): Promise<void> {
     ['a failure before the deadline still fails', failed === 'down'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'timeout:', n) }
+}
+
+// weekly plans (P5, Benn's model): phases of weeks, maintenance reuses the week lighter, the
+// calendar decides the week (never stored), a plan's week drives planned workouts and the mirror
+{
+  const W = '55555555-5555-4555-8555-555555555555'
+  const R = [{ id: W, name: 'Yoga reset', modality: 'yoga', effort: 'light', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'downward-dog' }] }] }] as any
+  const week = { 0: [], 1: ['Legs'], 2: [W, 'Cardio'], 3: ['Push'], 4: [], 5: ['Pull', W], 6: [] }
+  const plan = { id: 'p', name: 'Mine', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'a', name: 'Build', weeks: 8, week }, { id: 'b', name: 'Maintain', weeks: 4, maintain: true }] } as any
+  const st = (extra = {}) => ({ trainingPlans: [plan], routines: R, schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, ...extra }) as any
+  const pos = (d: string) => { const x = positionOn(plan, d); return x ? `${x.week}/${x.total}:${x.phase.name}:${x.weekInPhase}${x.ended ? ':end' : ''}` : 'none' }
+  const got = [
+    totalWeeks(plan), pos('2026-09-27'), pos('2026-09-28'), pos('2026-10-04'), pos('2026-10-05'), pos('2026-11-23'), pos('2026-12-20'), pos('2026-12-21'),
+    plannedKeys(st(), '2026-09-29').join('+'), plannedKeys(st(), '2026-12-01').join('+'), plannedKeys(st(), '2026-09-27').join('+'),  // Tue build, Tue maintain, before start (schedule)
+    [maintainOn(st(), '2026-11-02'), maintainOn(st(), '2026-11-23'), maintainOn(st(), '2026-12-22')].join(','),
+    JSON.stringify(scheduleMirror(week, R)),
+    plannedKeys(st({ routines: [{ ...R[0], archived: true }] }), '2026-09-29').join('+'),        // a removed own workout drops out
+  ].join(' ')
+  const want = '12 none 1/12:Build:1 1/12:Build:1 2/12:Build:2 9/12:Maintain:1 12/12:Maintain:4 13/12:Maintain:4:end ' +
+    W + '+Cardio ' + W + '+Cardio Rest'.replace('Rest', '') + ' false,true,false ' +
+    '{"0":"Rest","1":"Legs","2":"Cardio","3":"Push","4":"Rest","5":"Pull","6":"Rest"} Cardio'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: weeks, phases, planned workouts, maintenance, mirror', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const H = '66666666-6666-4666-8666-666666666666'
+  const R = [{ id: H, name: 'Hard one', modality: 'strength', effort: 'hard', source: 'custom', blocks: [] }] as any
+  const two = planWeekNotes({ 1: ['Legs', H], 2: [], 3: [] }, R).filter((n) => n.includes('harder workouts')).length
+  const none = planWeekNotes({ 0: ['Cardio'], 1: ['Legs'], 2: ['Cardio'], 3: ['Push'], 4: ['Cardio'], 5: ['Pull'], 6: ['Cardio'] }, R).some((n) => n.includes('no rest day'))
+  const fine = planWeekNotes(weekFromSchedule({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any), R).length
+  const two_active = activePlan({ trainingPlans: [
+    { id: 'a', state: 'active', startedAt: '2026-09-01', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'b', state: 'active', startedAt: '2026-09-20', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'c', state: 'completed', startedAt: '2026-09-25', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] }] } as any)?.id
+  const clean = cleanPhases([{ id: 'a', name: '', weeks: 40, week: { 1: ['Legs', 'Push', 'Pull', 'Cardio', 'Legs'] } }, { id: 'b', name: 'M', weeks: 30, maintain: true, week: { 1: ['x'] } }, { id: 'c', name: 'Z', weeks: 5 }] as any)
+  const cleanTxt = clean.map((p) => `${p.name}:${p.weeks}:${p.maintain ? 'm' : (p.week?.[1] || []).length}`).join(',')
+  const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases[0].week && !t.phases[0].maintain) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
+  const got = [two, none, fine, two_active, cleanTxt, tpl].join(' ')
+  const want = '1 true 0 b Build:26:4,M:26:m true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: week notes, one active plan, limits, templates', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const a = '77777777-7777-4777-8777-777777777777'
+  const P = (id: string, extra = {}) => ({ id, name: 'Plan ' + id, source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'x', name: 'Build', weeks: 8, week: { 1: ['Legs'] } }], ...extra })
+  const loaded = stateFromBackup({ days: {}, trainingPlans: [P(a), null, { name: 'no phases' }, P('bad-id', { state: 'weird', startedAt: 'soon' })] } as never)
+  const got = [loaded.trainingPlans.length, loaded.trainingPlans[0].id, loaded.trainingPlans[1].state, String(loaded.trainingPlans[1].startedAt), loaded.trainingPlans.every((p: any) => p._dirty),
+    backupSummary({ days: {}, trainingPlans: [P(a), P('z', { state: 'archived' })] } as never).plans].join(' ')
+  const ok = got.startsWith(`2 ${a} archived undefined true 1`); if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: local data made valid, backup', JSON.stringify(got))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
