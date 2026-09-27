@@ -629,7 +629,7 @@ async function backupRestore(): Promise<void> {
     ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
   ]
   // a stale server: different day 1, no foods or recipes; push then pull as runSync does
-  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], training_plans: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
