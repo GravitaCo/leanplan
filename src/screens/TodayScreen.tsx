@@ -165,7 +165,7 @@ export function TodayScreen() {
               {suggest.up ? ' Want to update your activity level to match?' : ' If you do more than you log, your current setting may still be right. Want to update it?'}</div>
             <div className="chips">
               <button className="chip" onClick={() => {
-                setPrefs({ activityLevel: suggest.level, activityAsked: cur })
+                setPrefs({ activityLevel: suggest.level, activityAsked: cur, activityMult: undefined })
                 showToast('Activity level updated. Your targets only change if you choose to.')
                 openProfile('metrics')
               }}>Update</button>

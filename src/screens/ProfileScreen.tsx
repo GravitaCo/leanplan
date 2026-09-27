@@ -4,7 +4,9 @@ import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex }
 import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
-import { suggestedTargets } from '@/core/domain/nutrition'
+import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
+import { profileRouting } from '@/core/domain/onboarding'
+import { useConsent } from '@/store/hooks'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { latestWeight, rangeWidth } from '@/core/domain/insights'
 import { pushSupported } from '@/data/push'
@@ -94,7 +96,11 @@ export function ProfileScreen() {
   const [suppForm, setSuppForm] = useState<{ id: string | null; name: string; time: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const sug = suggestedTargets({ ...pr, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null }, parseFloat(metrics.weight) || null)
+  const healthConsent = useConsent('health').granted
+  const sugProfile = { ...pr, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null }
+  const sugWeight = parseFloat(metrics.weight) || null
+  // the same safety routing as the onboarding summary, so the two never disagree
+  const sug = suggestedTargets(sugProfile, sugWeight, profileRouting(sugProfile, sugWeight, healthConsent))
   const notifReady = pushSupported()
   const notifStatus = !notifReady ? 'Not supported in this browser'
     : Notification.permission === 'denied' ? 'Blocked in your phone settings'
@@ -155,8 +161,11 @@ export function ProfileScreen() {
             sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
             weight: parseFloat(metrics.weight) || null, activityLevel: metrics.activityLevel,
             // choosing a level yourself starts the suggestion's cool-down, so the app never
-            // offers a different level based on logs from before the decision
-            ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr() } : {}),
+            // offers a different level based on logs from before the decision; it also replaces
+            // the onboarding multiplier, which would otherwise keep overriding it
+            ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr(), activityMult: undefined } : {}),
+            // picking Male or Female here is a real answer; leaving it keeps the onboarding one
+            ...(metrics.sex !== pr.sex ? { sexAnswer: metrics.sex === 'M' ? 'male' as const : 'female' as const } : {}),
           })}>Save metrics</button>
 
           <div className="lbl" style={{ paddingLeft: 0 }}>Main goal</div>
@@ -167,14 +176,17 @@ export function ProfileScreen() {
           </div>
           {sug ? (
             <div className="card" id="sug-targets" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
-              {'goalNeeded' in sug ? (
+              {'hidden' in sug ? (
+                <span className="muted">Calorie suggestions are off for now, so there's no number here.</span>
+              ) : 'goalNeeded' in sug ? (
                 <>Maintenance about <b className="num">{fmt(sug.maint)} kcal</b>.<br /><span className="muted">Choose your main goal to see a suggested daily target.</span></>
               ) : (
                 <>
                   Maintenance <b className="num">{fmt(sug.maint)} kcal</b> · {GOAL_TARGET_LABEL[sug.goal]} <b className="num">{fmt(sug.kcal)} kcal</b>{' '}
                   <span className="muted">({directionLabel(sug.adjustPct)})</span><br />
-                  Protein <b className="num">{sug.p} g</b> · Carbs <b className="num">{sug.c} g</b> · Fat <b className="num">{sug.f} g</b>
+                  Protein <b className="num">{sug.proteinMinimum ? 'at least ' : ''}{sug.p} g</b> · Carbs <b className="num">{sug.c} g</b> · Fat <b className="num">{sug.f} g</b>
                   {sug.floored && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>Held at a safe minimum. We never suggest eating below your resting metabolic rate.</div>}
+                  {sug.heldAtMaintenance && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{HELD_AT_MAINTENANCE_NOTE}</div>}
                   <button className="btn" style={{ marginTop: 10 }} onClick={() => {
                     saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
                     setTargets({ ...targets, kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })
