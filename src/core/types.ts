@@ -395,7 +395,15 @@ export interface PlanPhase {
   id: string
   name: string
   weeks: number
+  /** a lighter week: the week before it on the shorter version */
   maintain?: boolean
+  /** an easier block with its own week (a first week or two to find your weights); drawn striped */
+  easier?: boolean
+  /**
+   * maintenance after the plan, when the person chooses it: open-ended (weeks is ignored), its
+   * own week (or the last build week) on the shorter version (design canvas, Plans 4)
+   */
+  after?: boolean
   week?: PlanWeek
 }
 

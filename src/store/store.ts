@@ -11,6 +11,7 @@ import type {
   DayLog,
   Food,
   IfThenPlan,
+  PlanWeek,
   LoggedFood,
   MealSlot,
   Recipe,
@@ -137,6 +138,10 @@ interface StoreState {
   startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
   updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
   finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** after a plan: maintenance, its own week (or the plan's last build week) on the shorter version, open-ended */
+  startMaintenance: (id: string, week?: PlanWeek) => void
+  /** keep a plan as one of the person's own, to start again later (a template) */
+  savePlanCopy: (id: string, name?: string) => string | null
   /** keep a plan's look back without finishing it (its next plan starts later) */
   notePlan: (id: string, reflection: { good?: string; change?: string }) => void
   /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
@@ -621,6 +626,33 @@ export const useStore = create<StoreState>()(
           mirrorPlan(st.data, true)
         })
         saved('Plan updated')
+      },
+
+      startMaintenance: (id, week) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Maintenance', weeks: 1, after: true, week: week ?? {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Maintenance started')
+      },
+
+      savePlanCopy: (id, name) => {
+        const src = (get().data.trainingPlans || []).find((x) => x.id === id)
+        if (!src) return null
+        const nid = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          st.data.trainingPlans.push({
+            id: nid, name: (name ?? src.name).trim().slice(0, 120) || 'My plan', source: 'custom', state: 'template',
+            phases: cleanPhases(src.phases.filter((x) => !x.after)), clonedFromId: src.id,
+            ...(src.baseTemplateId ? { baseTemplateId: src.baseTemplateId } : {}), _dirty: true, _u: nowIso(),
+          })
+        })
+        saved('Saved to your plans')
+        return nid
       },
 
       notePlan: (id, reflection) => {

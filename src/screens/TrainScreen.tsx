@@ -9,7 +9,8 @@ import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
-import { isHardKey, maintainOn, plannedKeys } from '@/core/domain/plans'
+import { activePlan, isHardKey, maintainOn, plannedKeys, positionOn } from '@/core/domain/plans'
+import { planArt } from './plan/PlanParts'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { isBuiltinKey, keyOfSession, keyRoutineId, keyTitle, keyVideo, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { EXERCISES } from '@/core/data/exercises'
@@ -78,6 +79,9 @@ export function TrainScreen() {
   const restDay = planned.length === 0
   // a maintenance week of the plan: planned workouts open on the lighter version (Benn's model)
   const maintain = maintainOn(data, cur)
+  // the plan in charge on this day, for the line above Today
+  const planNow = activePlan(data, cur)
+  const planPos = planNow ? positionOn(planNow, cur) : null
   const isToday = cur === todayStr()
   const dayName = fd.dow
 
@@ -179,8 +183,12 @@ export function TrainScreen() {
     // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
     const inProgress = !!session && !cardio && session.open === true
     const n = tpl?.ex.length ?? 0
-    const sub = cardio ? WORKOUTS.Cardio.ex[0].t : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
-    return { k, session, inProgress, show: !session || inProgress, sets, done, sub, video: keyVideo(k, routines) }
+    // a plan's lighter week or maintenance opens hard workouts shorter, with a way back to the full one (Plans 3)
+    const planShort = maintain && !easyWeek && shorterK && !cardio
+    const sub = cardio ? WORKOUTS.Cardio.ex[0].t
+      : planShort ? `Shorter version · ${setCount(tpl?.ex ?? [], true)}`
+      : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
+    return { k, session, inProgress, show: !session || inProgress, sets, done, sub, planShort, video: keyVideo(k, routines) }
   }
   const rows = planned.map(rowOf)
   // the lighter options apply to the day's first workout; on a lighter week, its first hard one (the one shortened)
@@ -188,7 +196,8 @@ export function TrainScreen() {
   const allDone = rows.length > 0 && rows.every((r) => !r.show)
   const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && !planned.includes(pickUp)
   const lighterShown = !logged && !restDay
-  const lighterUp = lighterShown && (offer || easy)
+  // a plan's lighter week says so on the workout itself, so the options card stays folded
+  const lighterUp = lighterShown && (offer || easyWeek)
 
   const lighter = (
     <div className={'card lighter' + (lighterUp || lighterOpen ? ' open' : '')}>
@@ -258,6 +267,12 @@ export function TrainScreen() {
       {lighterUp && lighter}
 
       <section className="tsec" aria-labelledby="today-h">
+        {planNow && planPos && (
+          <div className="t-plan">
+            {planArt(planNow.baseTemplateId) ? <img src={planArt(planNow.baseTemplateId)} alt="" /> : <span className="dot" aria-hidden="true" />}
+            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `Maintenance, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.maintain ? 'Lighter week' : planPos.phase.name}`}</span>
+          </div>
+        )}
         <h2 id="today-h" className="tsec-h">{isToday ? 'Today' : dayName}</h2>
         <div className="list tlist">
           {rows.filter((r) => r.show).map((r) => (
@@ -269,6 +284,12 @@ export function TrainScreen() {
                 <div className="s num">{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</div>
               </div>
               <button className="btn sm startb" onClick={(e) => { e.stopPropagation(); openWorkout(r.k) }}>{r.inProgress ? 'Resume' : 'Start'}</button>
+              {r.planShort && !r.inProgress && (
+                <div className="trow-note" onClick={(e) => e.stopPropagation()}>
+                  {planPos?.maintenanceWeek != null ? 'Maintenance: fewer sets, the same weights.' : 'This week is lighter to help you recover for the next stretch.'} Feeling good?{' '}
+                  <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>Do the full workout</button>
+                </div>
+              )}
             </div>
           ))}
           {restDay && (

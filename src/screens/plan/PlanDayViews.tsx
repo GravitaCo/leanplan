@@ -67,15 +67,33 @@ export function PlanDayView({ planId, phaseIndex, idx, backLabel = 'My week', on
   onBack: () => void
   onOpenWorkout: (k: WorkoutKey) => void
 }) {
-  const routines = useStore((s) => s.data.routines)
   const { plan, week, change } = usePlanWeek(planId, phaseIndex)
-  const [sheet, setSheet] = useState<null | 'add' | 'copy' | 'swap'>(null)
   if (!plan) return null
+  const ph = plan.phases[phaseIndex]
+  const lighterAfter = plan.phases.some((x, j) => j > phaseIndex && (x.maintain || x.after))
+  return <DayEditor week={week} change={change} idx={idx} phaseName={ph?.name} lighterAfter={lighterAfter} backLabel={backLabel} onBack={onBack} onOpenWorkout={onOpenWorkout} />
+}
+
+/**
+ * The Flow 3 day page over any week: a running plan's (saved with Undo) or a plan being built
+ * (Plans 2, step 2), which is only kept once it starts.
+ */
+export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabel = 'My week', onBack, onOpenWorkout }: {
+  week: PlanWeek
+  change: (next: PlanWeek, msg: string) => void
+  idx: number
+  phaseName?: string
+  lighterAfter?: boolean
+  backLabel?: string
+  onBack: () => void
+  onOpenWorkout: (k: WorkoutKey) => void
+}) {
+  const routines = useStore((s) => s.data.routines)
+  const [sheet, setSheet] = useState<null | 'add' | 'copy' | 'swap'>(null)
   const day = DAY_NAME[idx]
   const keys = known(week[idx], routines)
   const rest = keys.length === 0
-  const ph = plan.phases[phaseIndex]
-  const lighterAfter = plan.phases.some((x, j) => j > phaseIndex && x.maintain)
+  const ph = phaseName ? { name: phaseName } : undefined
   // keys this device doesn't know (a newer app's) are kept, after the ones shown
   const unknownOn = (d: number) => (week[d] || []).filter((k) => !isBuiltinKey(k) && !routineFor(k, routines))
   const setDay = (next: WorkoutKey[], msg: string) => change({ ...copyWeek(week), [idx]: [...next, ...unknownOn(idx)].slice(0, MAX_A_DAY) }, msg)

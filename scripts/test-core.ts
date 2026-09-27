@@ -28,7 +28,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
 import { aboutMins, isBuiltinKey, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
@@ -1621,6 +1621,36 @@ async function timeouts(): Promise<void> {
   const want = 'o n true Push n Push o 0 none false true none'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: next plan waits its turn, no plan before its start, own keys', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // the approved plan model (design canvas, Plans 1 to 4): maintenance after a plan, easier and lighter weeks
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', baseTemplateId: t.id, phases: phasesOf(t) }
+  const cellStr = (cs: any[]) => cs.map((c) => (c.kind === 'after' ? 'a' : c.kind === 'easier' ? 'e' : 'f') + (c.state === 'done' ? 'D' : c.state === 'now' ? 'N' : '')).join('')
+  const ended = positionOn(plan, '2027-01-04')!                     // week 15: past the 12 weeks, no maintenance chosen
+  const withM = { ...plan, phases: cleanPhases([...plan.phases, { id: 'x', name: 'Maintenance', weeks: 1, after: true, week: maintenanceWeekOf(plan) }]) }
+  const inM = positionOn(withM, '2027-01-04')!
+  const st = { trainingPlans: [withM], schedule: {}, routines: [] } as any
+  const lighter = withLighterWeek(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any), 5)
+  const easier = withEasierStart(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any))
+  const lib = catalogue({ trainingPlans: [{ id: 'o', name: 'My 8-week plan', source: 'custom', state: 'template', phases: [{ id: 'a', name: 'Build', weeks: 8, week: { 1: ['Legs'], 3: ['Push'], 5: ['Pull'] } }] }] } as any, 'build-muscle')
+  const days = { '2026-09-28': { foods: [], supps: {}, weight: null, workout: { type: 'Legs' } }, '2026-09-20': { foods: [], supps: {}, weight: null, workout: { type: 'Push' } } } as any
+  const got = [
+    totalWeeks(plan), cellStr(timeline(plan, '2026-10-05')),
+    [ended.ended, ended.maintain, ended.maintenanceWeek].join(','), [inM.ended, inM.maintain, inM.maintenanceWeek, inM.phase.name].join(','),
+    String(maintainOn(st, '2027-01-04')), plannedKeys(st, '2027-01-04').join('+'), String(totalWeeks(withM)), afterPhase(withM)?.name,
+    phaseRows(plan, '2026-10-12').map((r) => `${r.name}:${r.from}-${r.to}:${r.kind}:${r.state}`).join(','),
+    lighter.map((x) => x.name + x.weeks + (x.maintain ? 'M' : '')).join(','), easier.map((x) => x.name + (x.easier ? 'E' : '')).join(','),
+    lib.map((e) => e.name + ':' + e.madeBy + ':' + e.days).join(','),
+    filterCatalogue(lib, { madeBy: ['me'] }).length, filterCatalogue(lib, { goal: ['build-muscle'] }).length, filterCatalogue(lib, { q: 'muscle' }).length, filterCatalogue(lib, { length: ['8'] }).length,
+    workoutsDone({ days }, plan, '2026-10-05'),
+  ].join(' | ')
+  const want = ['12', 'eDeNffffefffffaaa', 'true,false,', 'false,true,3,Maintenance', 'true', 'Legs', '12', 'Maintenance',
+    'Foundation:1-2:easier:done,Build:3-6:full:now,Lighter week:7-7:lighter:,Build:8-12:full:',
+    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,My 8-week plan:me:3', '1', '1', '1', '1', '1'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance after, timeline, phase rows, added weeks, library filters', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

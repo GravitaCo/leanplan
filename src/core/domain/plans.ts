@@ -1,9 +1,10 @@
-import type { AppState, MuscleGroup, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
+import type { AppState, Goal, MuscleGroup, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { DEFAULT_SCHEDULE, LIFTS } from '@/core/data/workouts'
 import { DAY_NAME, parseYmd, shiftDay, todayStr } from './date'
 import { isBuiltinKey, keyTitle, routineFor, slotsOf, type WorkoutKey } from './routines'
 import { mainMuscles, plannedOn, weekWarnings, WEEK_ORDER } from './week'
+import { sessionsOf } from './sessions'
 
 /**
  * Weekly plans (plan P5, Benn's model, §6 "P5 as built"): a set number of weeks in phases. A
@@ -47,14 +48,26 @@ export function supersededPlans(s: Pick<AppState, 'trainingPlans'>, date: string
   return activeList(s).filter((p) => p !== cur && p.startedAt! <= date)
 }
 
-export const totalWeeks = (p: Pick<TrainingPlan, 'phases'>) => p.phases.reduce((a, x) => a + Math.max(0, x.weeks), 0)
+/** A phase with a week of its own to train (not a lighter week, not maintenance after the plan). */
+const isBuild = (ph: PlanPhase) => !ph.maintain && !ph.after
 
-/** The week a phase trains: its own, or (maintain) the nearest build week before it, else after it. */
+/** The plan's weeks, maintenance after it left out (that runs for as long as the person likes). */
+export const totalWeeks = (p: { phases: Pick<PlanPhase, 'weeks' | 'after'>[] }) => p.phases.reduce((a, x) => a + (x.after ? 0 : Math.max(0, x.weeks)), 0)
+
+/** Maintenance after the plan, when the person has chosen it. */
+export const afterPhase = (p: Pick<TrainingPlan, 'phases'>) => p.phases.find((x) => x.after)
+
+/**
+ * The week a phase trains: its own; a lighter week, the nearest build week before it (else
+ * after it); maintenance, its own week or else the last build week.
+ */
 export function phaseWeek(p: Pick<TrainingPlan, 'phases'>, i: number): PlanWeek {
   const ph = p.phases[i]
-  if (ph && !ph.maintain && ph.week) return ph.week
-  for (let j = i - 1; j >= 0; j--) if (!p.phases[j].maintain && p.phases[j].week) return p.phases[j].week!
-  for (let j = i + 1; j < p.phases.length; j++) if (!p.phases[j].maintain && p.phases[j].week) return p.phases[j].week!
+  const hasAny = (w?: PlanWeek) => !!w && Object.values(w).some((k) => k && k.length)
+  if (ph && isBuild(ph) && ph.week) return ph.week
+  if (ph && ph.after && hasAny(ph.week)) return ph.week!
+  for (let j = i - 1; j >= 0; j--) if (isBuild(p.phases[j]) && p.phases[j].week) return p.phases[j].week!
+  for (let j = i + 1; j < p.phases.length; j++) if (isBuild(p.phases[j]) && p.phases[j].week) return p.phases[j].week!
   return {}
 }
 
@@ -69,6 +82,8 @@ export interface PlanPosition {
   maintain: boolean
   /** past the last week: the last week carries on until the person chooses what's next */
   ended: boolean
+  /** past the last week in maintenance, which the person chose: its 1-based week */
+  maintenanceWeek: number | null
   planWeek: PlanWeek
 }
 
@@ -79,11 +94,18 @@ export function positionOn(p: TrainingPlan, date: string): PlanPosition | null {
   if (d < 0) return null
   const week = Math.floor(d / 7) + 1
   const total = totalWeeks(p)
+  const after = p.phases.findIndex((x) => x.after)
+  // past the end with maintenance chosen: its weeks count on, for as long as it runs
+  if (week > total && after >= 0) {
+    return { week, total, phaseIndex: after, phase: p.phases[after], weekInPhase: week - total, maintain: true, ended: false, maintenanceWeek: week - total, planWeek: phaseWeek(p, after) }
+  }
+  const idx = p.phases.map((x, k) => (x.after ? -1 : k)).filter((k) => k >= 0)
   let left = Math.min(week, Math.max(total, 1))
-  let i = 0
-  while (i < p.phases.length - 1 && left > p.phases[i].weeks) { left -= p.phases[i].weeks; i++ }
+  let n = 0
+  while (n < idx.length - 1 && left > p.phases[idx[n]].weeks) { left -= p.phases[idx[n]].weeks; n++ }
+  const i = idx[n] ?? 0
   const phase = p.phases[i]
-  return { week, total, phaseIndex: i, phase, weekInPhase: Math.min(left, phase.weeks), maintain: !!phase.maintain, ended: week > total, planWeek: phaseWeek(p, i) }
+  return { week, total, phaseIndex: i, phase, weekInPhase: Math.min(left, phase.weeks), maintain: !!phase.maintain, ended: week > total, maintenanceWeek: null, planWeek: phaseWeek(p, i) }
 }
 
 /** The first date after the plan's last week (when "what's next" is asked). */
@@ -117,6 +139,53 @@ export function maintainOn(s: Pick<AppState, 'trainingPlans'>, date: string): bo
   const pos = p ? positionOn(p, date) : null
   return !!pos?.maintain
 }
+
+/** Where each of a plan's weeks sits, for the timeline strip: done, this week, or to come. */
+export interface WeekCell { kind: 'full' | 'easier' | 'after'; state: 'done' | 'now' | 'next' }
+
+/** The plan's weeks as cells (easier blocks and lighter weeks striped), then three for maintenance after. */
+export function timeline(p: Pick<TrainingPlan, 'phases' | 'startedAt'>, date?: string): WeekCell[] {
+  const cur = date && p.startedAt ? Math.floor(daysBetween(p.startedAt, date) / 7) + 1 : 0
+  const out: WeekCell[] = []
+  for (const ph of p.phases) {
+    if (ph.after) continue
+    for (let k = 0; k < Math.max(0, ph.weeks); k++) {
+      const n = out.length + 1
+      out.push({ kind: ph.maintain || ph.easier ? 'easier' : 'full', state: n < cur ? 'done' : n === cur ? 'now' : 'next' })
+    }
+  }
+  const total = out.length
+  for (let k = 0; k < 3; k++) out.push({ kind: 'after', state: cur > total && k === 0 && p.phases.some((x) => x.after) ? 'now' : 'next' })
+  return out
+}
+
+/** Days in a week with a harder workout (a lift, or an own workout saved as hard). */
+export function liftingDays(week: PlanWeek | undefined, routines: Routine[] | undefined): number {
+  return WEEK_ORDER.filter((d) => (week?.[d] || []).some((k) => isHardKey(k, routines))).length
+}
+
+/** Days in a week with anything planned. */
+export const trainingDays = (week: PlanWeek | undefined) => WEEK_ORDER.filter((d) => (week?.[d] || []).length > 0).length
+
+export interface PhaseRow { index: number; name: string; from: number; to: number; kind: 'full' | 'easier' | 'lighter'; state: 'done' | 'now' | '' }
+
+/** A plan's phases as rows ("Build · Weeks 3–6"), each marked done or now on a date. */
+export function phaseRows(p: TrainingPlan, date: string): PhaseRow[] {
+  const pos = positionOn(p, date)
+  let from = 1
+  const out: PhaseRow[] = []
+  p.phases.forEach((ph, index) => {
+    if (ph.after) return
+    const to = from + Math.max(1, ph.weeks) - 1
+    const state = !pos ? '' : pos.maintenanceWeek != null || pos.week > to ? 'done' : pos.week >= from ? 'now' : ''
+    out.push({ index, name: ph.name, from, to, kind: ph.maintain ? 'lighter' : ph.easier ? 'easier' : 'full', state })
+    from = to + 1
+  })
+  return out
+}
+
+/** "Weeks 3–6" or "Week 7". */
+export const weeksSpan = (r: Pick<PhaseRow, 'from' | 'to'>) => (r.from === r.to ? `Week ${r.from}` : `Weeks ${r.from}–${r.to}`)
 
 /**
  * The weekly schedule older installs and one-workout readers see while a plan is active
@@ -191,55 +260,101 @@ export function weekFromSchedule(s: Schedule): PlanWeek {
   return out
 }
 
+export type PlanExperience = 'new' | 'comfortable' | 'confident'
+export type PlanWhere = 'gym' | 'home' | 'none'
+
+/** One of Tali's plans (source 'recommended'), as the plan library shows it (design canvas, Plans 1). */
 export interface PlanTemplate {
   id: string
   name: string
+  /** the tile's line: "12 weeks · 3 lifting days, then 6" */
+  tagline: string
   about: string
+  /** the goal it fits ("Fits your goal"), from the profile's goals */
+  goal: Goal
+  experience: PlanExperience[]
+  where: PlanWhere[]
+  /** the preview's facts */
+  forWho: string
+  kit: string
+  time: string
+  /** the preview's eating line, from the Food targets */
+  eating?: string
+  /** how the weeks go, in words, under the timeline */
+  weeksText: string
   phases: Omit<PlanPhase, 'id'>[]
+  /** the week maintenance runs, on the shorter version, if the person chooses it after the plan */
+  maintenance: PlanWeek
 }
 
-const PPL = weekFromSchedule(DEFAULT_SCHEDULE as Schedule)
+const wk = (days: Partial<Record<number, string[]>>): PlanWeek => { const out: PlanWeek = {}; for (let d = 0; d < 7; d++) out[d] = days[d] ?? []; return out }
+/** Mon Legs, Tue cardio, Wed Push, Fri Pull, Sat cardio: the app's default week. */
+const PPL3 = weekFromSchedule(DEFAULT_SCHEDULE as Schedule)
+/** Push, pull and legs twice a week, Sunday off. */
+const PPL6 = wk({ 1: ['Legs'], 2: ['Push'], 3: ['Pull'], 4: ['Legs'], 5: ['Push'], 6: ['Pull'] })
 
 /**
- * Tali's plans (source 'recommended'). Lengths and the build/maintain split are judgement calls
- * for fitness-workouts to confirm: several weeks of steady building, then a lighter block that
- * keeps what was built (strength and muscle hold with much less volume for a while; Bickel et al.
- * 2011, Med Sci Sports Exerc).
+ * Tali's plans (design canvas, Plans 1, approved 27 Sept 2026). "Stronger with age" and "Full body
+ * system" join once their workouts exist (full-body and balance workouts aren't in the app yet).
+ * The maintenance week for Pure muscle growth is a judgement call for fitness-workouts to confirm:
+ * the Foundation week on the shorter version, three lifting days (the maintenance card: "usually 2
+ * sets instead of 3, on two or three days a week"; Bickel et al. 2011, Med Sci Sports Exerc).
  */
 export const PLAN_TEMPLATES: PlanTemplate[] = [
   {
-    id: 'tpl-ppl-12', name: 'Push, Pull, Legs · 12 weeks',
-    about: 'Three lifting days, light cardio on the days in between and a rest day. Eight weeks building, then four lighter weeks to help keep what you built.',
-    phases: [{ name: 'Build', weeks: 8, week: PPL }, { name: 'Maintain', weeks: 4, maintain: true }],
-  },
-  {
-    id: 'tpl-ppl-8', name: 'Push, Pull, Legs · 8 weeks',
-    about: 'The same week over 8 weeks: six building, then two lighter weeks.',
-    phases: [{ name: 'Build', weeks: 6, week: PPL }, { name: 'Maintain', weeks: 2, maintain: true }],
+    id: 'pure-muscle-growth', name: 'Pure muscle growth', tagline: '12 weeks · 3 lifting days, then 6', goal: 'build-muscle',
+    about: "Push, pull and legs, twice a week once you've settled in: enough work for each muscle to grow, with a few days for each to recover. Two easier weeks come first to find your weights, and a lighter week in the middle helps you recover for the final stretch.",
+    experience: ['comfortable', 'confident'], where: ['gym'],
+    forWho: 'Build muscle; getting comfortable or confident lifters', kit: 'Gym: barbell, cables, machines', time: 'About 5 hours a week from week 3',
+    eating: 'Protein about 1.8 g per kg a day and a small surplus, from your Food targets',
+    weeksText: 'Weeks 1–2 Foundation, 3 lifting days · 3–6 Build, 6 days · 7 Lighter week · 8–12 Build',
+    phases: [
+      { name: 'Foundation', weeks: 2, easier: true, week: PPL3 },
+      { name: 'Build', weeks: 4, week: PPL6 },
+      { name: 'Lighter week', weeks: 1, maintain: true },
+      { name: 'Build', weeks: 5, week: PPL6 },
+    ],
+    maintenance: PPL3,
   },
 ]
 
 export const templateById = (id: string | undefined) => PLAN_TEMPLATES.find((t) => t.id === id)
 
-/** Tali plans to suggest when one ends: any but the one just done. */
-export function nextSuggestions(done: TrainingPlan | undefined): PlanTemplate[] {
-  return PLAN_TEMPLATES.filter((t) => t.id !== done?.baseTemplateId)
+/** Tali plans to suggest when one ends: the one that fits the goal first, never the one just done. */
+export function nextSuggestions(done: TrainingPlan | undefined, goal?: Goal): PlanTemplate[] {
+  return fitsFirst(PLAN_TEMPLATES.filter((t) => t.id !== done?.baseTemplateId), goal)
+}
+
+/** The plans that fit the person's goal first; nothing is ever hidden or locked. */
+export function fitsFirst<T extends { goal?: Goal }>(list: T[], goal?: Goal): T[] {
+  return [...list].sort((a, b) => Number(b.goal === goal && !!goal) - Number(a.goal === goal && !!goal))
 }
 
 /** Clamp a phase's weeks to what the app allows; a plan's total can't pass a year. */
 export function cleanPhases(phases: PlanPhase[]): PlanPhase[] {
   let left = MAX_PLAN_WEEKS
   const out: PlanPhase[] = []
-  for (const ph of phases) {
+  // maintenance after the plan goes last, once, and doesn't count towards the year
+  const list = [...phases.filter((x) => !(x && x.after === true)), ...phases.filter((x) => x && x.after === true).slice(0, 1)]
+  for (const ph of list) {
+    if (ph.after === true && ph.maintain !== true) {
+      if (!out.length) break
+      const week: PlanWeek = {}
+      for (let d = 0; d < 7; d++) { const v = ph.week && typeof ph.week === 'object' ? ph.week[d] : undefined; week[d] = (Array.isArray(v) ? v : []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4) }
+      out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: 'Maintenance', weeks: 1, after: true, week })
+      continue
+    }
     const weeks = Math.max(1, Math.min(MAX_PHASE_WEEKS, left, Math.round(+ph.weeks || 1)))
     if (left <= 0) break
     left -= weeks
     const week: PlanWeek = {}
     // every field checked, so a plan from a newer or buggy client can't break a launch
     const maintain = ph.maintain === true
+    const after = ph.after === true && !maintain
+    const easier = ph.easier === true && !maintain && !after
     if (!maintain) for (let d = 0; d < 7; d++) { const v = ph.week && typeof ph.week === 'object' ? ph.week[d] : undefined; week[d] = (Array.isArray(v) ? v : []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4) }
     const name = typeof ph.name === 'string' && ph.name.trim() ? ph.name.trim() : maintain ? 'Maintain' : 'Build'
-    out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: [...name].slice(0, 40).join(''), weeks, ...(maintain ? { maintain: true } : { week }) })
+    out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: [...name].slice(0, 40).join(''), weeks, ...(maintain ? { maintain: true } : { week }), ...(easier ? { easier: true } : {}), ...(after ? { after: true } : {}) })
   }
   return out
 }
@@ -273,8 +388,121 @@ export function planStart(today: string, when: 'today' | 'monday'): string {
 /** The build phase whose week a phase trains (itself, or the one a maintain phase reuses); -1 for none. */
 export function weekSource(p: Pick<TrainingPlan, 'phases'>, i: number): number {
   const ph = p.phases[i]
-  if (ph && !ph.maintain) return i
-  for (let j = i - 1; j >= 0; j--) if (!p.phases[j].maintain) return j
-  for (let j = i + 1; j < p.phases.length; j++) if (!p.phases[j].maintain) return j
+  if (ph && (isBuild(ph) || (ph.after && ph.week && Object.values(ph.week).some((k) => k.length)))) return i
+  for (let j = i - 1; j >= 0; j--) if (isBuild(p.phases[j])) return j
+  for (let j = i + 1; j < p.phases.length; j++) if (isBuild(p.phases[j])) return j
   return -1
+}
+
+/** A plan in the library: one of Tali's, or one of the person's own (design canvas, Plans 1). */
+export interface CatalogueEntry {
+  key: string
+  name: string
+  line: string
+  madeBy: 'tali' | 'me'
+  goal?: Goal
+  weeks: number
+  /** the most days a week it trains */
+  days: number
+  experience: PlanExperience[]
+  where: PlanWhere[]
+  template?: PlanTemplate
+  plan?: TrainingPlan
+}
+
+const maxDays = (phases: Pick<PlanPhase, 'week' | 'maintain' | 'after'>[]) => Math.max(0, ...phases.filter((x) => !x.maintain && !x.after).map((x) => trainingDays(x.week)))
+
+/**
+ * Every plan in one list, Tali's and the person's own (their saved ones and those they've run,
+ * newest first, one per name); the one that fits their goal leads. Nothing is locked.
+ */
+export function catalogue(s: Pick<AppState, 'trainingPlans'>, goal?: Goal): CatalogueEntry[] {
+  const tali: CatalogueEntry[] = PLAN_TEMPLATES.map((t) => ({
+    key: t.id, name: t.name, line: t.tagline, madeBy: 'tali', goal: t.goal, weeks: totalWeeks(t), days: maxDays(t.phases), experience: t.experience, where: t.where, template: t,
+  }))
+  const seen = new Set<string>()
+  const own: CatalogueEntry[] = []
+  for (const p of [...(s.trainingPlans || [])].filter((x) => x.source === 'custom' && x.state !== 'archived' && x.phases.length).sort((a, b) => ((b._u || '') > (a._u || '') ? 1 : -1))) {
+    const k = p.name.trim().toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    const n = totalWeeks(p), d = maxDays(p.phases)
+    own.push({ key: p.id, name: p.name, line: `${n} ${n === 1 ? 'week' : 'weeks'} · ${d} ${d === 1 ? 'workout day' : 'workout days'} · yours`, madeBy: 'me', weeks: n, days: d, experience: [], where: [], plan: p })
+  }
+  return [...fitsFirst(tali, goal), ...own]
+}
+
+export interface PlanFilters { q?: string; goal?: Goal[]; days?: ('2-3' | '4-5' | '6')[]; experience?: PlanExperience[]; where?: PlanWhere[]; length?: ('6' | '8' | '12')[]; madeBy?: ('tali' | 'me')[] }
+
+/** Narrow the library: search by name, then each filter group (any of its choices). */
+export function filterCatalogue(list: CatalogueEntry[], f: PlanFilters): CatalogueEntry[] {
+  const words = (f.q || '').toLowerCase().split(/\s+/).filter(Boolean)
+  const dayBand = (n: number) => (n <= 3 ? '2-3' : n <= 5 ? '4-5' : '6')
+  const lenBand = (n: number) => (n <= 6 ? '6' : n <= 9 ? '8' : '12')
+  const some = <T,>(sel: T[] | undefined, test: (v: T) => boolean) => !sel?.length || sel.some(test)
+  return list.filter((e) =>
+    words.every((w) => e.name.toLowerCase().includes(w) || (e.template?.about.toLowerCase().includes(w) ?? false)) &&
+    some(f.goal, (g) => e.goal === g) && some(f.days, (d) => dayBand(e.days) === d) && some(f.experience, (x) => e.experience.includes(x)) &&
+    some(f.where, (w) => e.where.includes(w)) && some(f.length, (l) => lenBand(e.weeks) === l) && some(f.madeBy, (m) => e.madeBy === m))
+}
+
+/** A date plans can start on: today or any day after, as YYYY-MM-DD; anything else is today. */
+export function startOn(today: string, pick: string | undefined): string {
+  return pick && /^\d{4}-\d{2}-\d{2}$/.test(pick) && pick >= today ? pick : today
+}
+
+/** Workouts logged from a plan's start up to a date (any session counts: the plan is a shape, not a checklist). */
+export function workoutsDone(s: Pick<AppState, 'days'>, p: Pick<TrainingPlan, 'startedAt'>, upTo: string): number {
+  if (!p.startedAt) return 0
+  let n = 0
+  for (const [d, day] of Object.entries(s.days || {})) if (d >= p.startedAt && d <= upTo) n += sessionsOf(day, d).length
+  return n
+}
+
+/** The week maintenance runs after a plan: the Tali plan's own, else the plan's last build week. */
+export function maintenanceWeekOf(p: Pick<TrainingPlan, 'phases' | 'baseTemplateId'>): PlanWeek {
+  const t = templateById(p.baseTemplateId)
+  if (t) return copyWeek(t.maintenance)
+  for (let i = p.phases.length - 1; i >= 0; i--) if (isBuild(p.phases[i]) && p.phases[i].week) return copyWeek(p.phases[i].week)
+  return copyWeek({})
+}
+
+/** Maintenance in words: "Legs & Core, Push and Pull on Monday, Wednesday and Friday, shorter version." */
+export function maintenanceLine(week: PlanWeek, routines: Routine[] | undefined): string {
+  const days = WEEK_ORDER.filter((d) => (week[d] || []).some((k) => isHardKey(k, routines)))
+  const names = [...new Set(days.flatMap((d) => (week[d] || []).filter((k) => isHardKey(k, routines)).map((k) => keyTitle(k, routines))))]
+  const and = (xs: string[]) => (xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1])
+  if (!days.length) return 'Your last week on the shorter version.'
+  return `${and(names)} on ${and(days.map((d) => DAY_NAME[d]))}, shorter version. Keep your weights.`
+}
+
+/** An easier first week (to find your weights): the first build week, drawn striped. Only before the plan starts. */
+export function withEasierStart(phases: PlanPhase[]): PlanPhase[] {
+  const first = phases.find(isBuild)
+  if (!first || phases[0]?.easier) return phases
+  return [{ id: newPhaseId(), name: 'Easier first week', weeks: 1, easier: true, week: copyWeek(first.week) }, ...phases]
+}
+
+/**
+ * A lighter week at a plan week (1-based): the build phase that holds it splits around one week on
+ * the shorter version. The plan gets a week longer; weeks already done don't move.
+ */
+export function withLighterWeek(phases: PlanPhase[], at: number): PlanPhase[] {
+  let from = 1
+  for (let i = 0; i < phases.length; i++) {
+    const ph = phases[i]
+    if (ph.after) break
+    const to = from + ph.weeks - 1
+    if (at >= from && at <= to + 1 && isBuild(ph)) {
+      const before = Math.min(ph.weeks, at - from)
+      const rest = ph.weeks - before
+      const out: PlanPhase[] = [...phases.slice(0, i)]
+      if (before > 0) out.push({ ...ph, weeks: before, week: copyWeek(ph.week) })
+      out.push({ id: newPhaseId(), name: 'Lighter week', weeks: 1, maintain: true })
+      if (rest > 0) out.push({ ...ph, id: newPhaseId(), weeks: rest, week: copyWeek(ph.week) })
+      return [...out, ...phases.slice(i + 1)]
+    }
+    from = to + 1
+  }
+  return phases
 }
