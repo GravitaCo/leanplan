@@ -356,6 +356,8 @@ export interface Profile {
   welcomeAsked?: string
   /** the look-back note (its `at`) the person hid when setting up a next plan */
   planNoteHidden?: string
+  /** the weekly schedule from before the first plan started, put back when plans stop (never lost to the mirror) */
+  weekBeforePlan?: Schedule
   /** an accepted "easier first week" pre-selects the shorter version up to this date */
   easyUntil?: string
   /** and from this date (absent = from when "welcome back" was answered) */
@@ -408,6 +410,8 @@ export interface PlanPhase {
   after?: boolean
   /** YYYY-MM-DD: when maintenance was chosen (its weeks count from here) */
   since?: string
+  /** after the plan, the last week carrying on at the full version ("Keep going without a plan"), not maintenance */
+  full?: boolean
   week?: PlanWeek
 }
 

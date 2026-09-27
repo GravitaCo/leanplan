@@ -4,6 +4,8 @@ import { dayStat, weekOf } from '@/core/domain/insights'
 import { Rings } from './charts'
 import { Icon } from './icons'
 import { sessionsOf } from '@/core/domain/sessions'
+import { plannedKeys } from '@/core/domain/plans'
+import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 
 
 /** Monday–Sunday strip: each day shows a mini energy ring and its planned session. */
@@ -16,7 +18,9 @@ export function WeekStrip() {
     <div className="week">
       {weekOf(cur).map((d, i) => {
         const st = dayStat(data, d)
-        const sched = data.schedule[parseYmd(d).getDay()] || 'Rest'
+        // what's planned that day: the plan's workouts (several, own and Tali's too) or the schedule's one
+        const keys = plannedKeys(data, d)
+        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : 'Rest'
         const f = fmtDate(d)
         return (
           <button key={d} className={'wd' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '') + (st.future ? ' future' : '')}

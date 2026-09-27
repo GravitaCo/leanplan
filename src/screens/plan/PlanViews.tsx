@@ -4,6 +4,8 @@ import type { Schedule, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { exById } from '@/core/domain/library'
 import { todayStr } from '@/core/domain/date'
+import { weekOf } from '@/core/domain/insights'
+import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
@@ -252,7 +254,6 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   /** one of the user's own: edit it */
   onEdit?: () => void
 }) {
-  const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
@@ -261,7 +262,10 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   const own = r && r.source === 'custom' ? r : undefined
   const v = keyVideo(type, routines)
   const [failed, setFailed] = useState(false)
-  const on = WEEK_ORDER.filter((d) => schedule[d] === type).map((d) => DAY_NAME[d] + 's')
+  // the days it's planned this week: the plan's week (several a day, own and Tali's) or the schedule's
+  const data = useStore((s) => s.data)
+  const thisWeek = weekOf(todayStr())
+  const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
   const sub = r
     ? [`${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')

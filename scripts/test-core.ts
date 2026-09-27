@@ -1648,7 +1648,7 @@ async function timeouts(): Promise<void> {
   ].join(' | ')
   const want = ['12', 'eDeNffffefffffaaa', 'true,false,', 'false,true,3,Maintenance', 'true', 'Legs', '12', 'Maintenance',
     'Foundation:1-2:easier:done,Build:3-6:full:now,Lighter week:7-7:lighter:,Build:8-12:full:',
-    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,Stronger with age:tali:5,Full body system:tali:5,My 8-week plan:me:3', '1', '3', '2', '2', '1'].join(' | ')
+    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,Full body system:tali:5,Stronger with age:tali:5,My 8-week plan:me:3', '1', '3', '2', '2', '1'].join(' | ')
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance after, timeline, phase rows, added weeks, library filters', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

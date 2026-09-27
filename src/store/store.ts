@@ -138,6 +138,8 @@ interface StoreState {
   startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
   updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
   finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** "Keep going without a plan": the last week repeats at the full version, open-ended, until another plan */
+  carryOn: (id: string, reflection?: { good?: string; change?: string }) => void
   /** after a plan: maintenance, its own week (or the plan's last build week) on the shorter version, open-ended */
   startMaintenance: (id: string, week?: PlanWeek) => void
   /** keep a plan as one of the person's own, to start again later (a template) */
@@ -196,6 +198,17 @@ function mirrorPlan(s: PersistedState, mark: boolean): boolean {
   if (changed && mark) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
   return changed || done.length > 0
 }
+
+/** Plans all stopped: the weekly schedule from before them comes back, and is forgotten. */
+function putBackWeek(s: PersistedState): void {
+  if (activeCount(s)) return
+  const prev = s.profile.weekBeforePlan
+  if (!prev) return
+  for (let d = 0; d < 7; d++) s.schedule[d] = prev[d] ?? 'Rest'
+  delete s.profile.weekBeforePlan
+  ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+}
+const activeCount = (s: PersistedState) => (s.trainingPlans || []).filter((p) => p.state === 'active').length
 
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
 
@@ -595,6 +608,8 @@ export const useStore = create<StoreState>()(
           if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
           const today = todayStr()
           const start = input.startedAt ?? today
+          // the person's own week, kept before the first plan's mirror writes over it
+          if (!activeCount(st.data) && !st.data.profile.weekBeforePlan) { st.data.profile.weekBeforePlan = { ...st.data.schedule }; ensureMeta(st.data, false).settings = { u: nowIso(), dirty: true } }
           // one plan in charge: the one in progress is finished (or put away if it never started).
           // A plan chosen to start later leaves it running until then (mirrorPlan finishes it).
           for (const p of st.data.trainingPlans) {
@@ -626,6 +641,19 @@ export const useStore = create<StoreState>()(
           mirrorPlan(st.data, true)
         })
         saved('Plan updated')
+      },
+
+      carryOn: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Carrying on', weeks: 1, after: true, full: true, since: todayStr(), week: {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Your last week carries on')
       },
 
       startMaintenance: (id, week) => {
@@ -676,7 +704,9 @@ export const useStore = create<StoreState>()(
           const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
           if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
           p._dirty = true; p._u = nowIso()
-          // the schedule keeps the last week, so nothing changes until a new plan or an edit
+          // no plan left running: the week the person had before plans comes back (the mirror only
+          // holds one ready-made workout a day, so keeping it would turn Tali's plan workouts into cardio)
+          putBackWeek(st.data)
         })
         saved(state === 'completed' ? 'Plan finished' : 'Plan put away')
       },

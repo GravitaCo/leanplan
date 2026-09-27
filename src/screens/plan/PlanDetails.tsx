@@ -53,9 +53,10 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
   const started = !!pos
   const cur = pos && pos.maintenanceWeek == null ? pos : null
   const inMaint = pos?.maintenanceWeek != null
+  const carrying = inMaint && !!pos?.phase.full
   const sub = plan.startedAt ? (started ? `Started ${day(plan.startedAt)}` : `Starts ${day(plan.startedAt)}`) + (end ? ` · ends ${day(shiftDay(end, -1))}` : '') : ''
   const where = !pos ? `${n} weeks · starts ${day(plan.startedAt!)}`
-    : inMaint ? `Maintenance · week ${pos.maintenanceWeek}`
+    : inMaint ? `${carrying ? 'Carrying on' : 'Maintenance'} · week ${pos.maintenanceWeek}`
     : pos.ended ? `${n} weeks, done${done ? ` · ${done} ${done === 1 ? 'workout' : 'workouts'}` : ''}`
     : `Week ${pos.week} of ${n}${done ? ` · ${done} ${done === 1 ? 'workout' : 'workouts'} so far` : ''}`
   // a lighter week goes after this week, and no earlier than halfway
@@ -89,7 +90,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
         })}
         <button className="li" onClick={onMaintenance}>
           <span className="tl-c pd-sq after" aria-hidden="true" />
-          <div className="m"><div className="t">Then maintenance</div><div className="s num">{inMaint ? 'Now, for as long as you like' : end ? `From ${day(end)}, if you choose it` : 'If you choose it'}</div></div>
+          <div className="m"><div className="t">{carrying ? 'Carrying on' : 'Then maintenance'}</div><div className="s num">{carrying ? 'Your last week at the full version, for as long as you like' : inMaint ? 'Now, for as long as you like' : end ? `From ${day(end)}, if you choose it` : 'If you choose it'}</div></div>
           <span className="linkbtn">Read</span>
         </button>
       </div>
@@ -127,7 +128,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
       )}
       {sheet === 'stop' && (
         <Sheet title="Stop plan" onClose={() => setSheet(null)}>
-          <div className="foot" style={{ padding: '0 4px 12px' }}>Everything you've logged stays. Without a plan, your week repeats: the ready-made workouts stay on their days, and days with only your own workouts become light cardio. You can change any day, and start another plan whenever it suits you.</div>
+          <div className="foot" style={{ padding: '0 4px 12px' }}>Everything you've logged stays. {data.profile.weekBeforePlan ? 'Your week goes back to the one you had before this plan.' : 'Without a plan, your week repeats with the ready-made workouts on their days, and days with only other workouts become light cardio.'} You can change any day, and start another plan whenever it suits you.</div>
           <div className="stack">
             <button className="btn" onClick={() => { finishPlan(plan.id, undefined, 'archived'); setSheet(null); onBack() }}>Stop plan</button>
             <button className="btn gray" onClick={() => setSheet(null)}>Keep the plan</button>
@@ -156,7 +157,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
 }) {
   const data = useStore((s) => s.data)
   const startMaintenance = useStore((s) => s.startMaintenance)
-  const finishPlan = useStore((s) => s.finishPlan)
+  const carryOn = useStore((s) => s.carryOn)
   const notePlan = useStore((s) => s.notePlan)
   const [step, setStep] = useState<number>(step0 ?? 1)
   const [good, setGood] = useState('')
@@ -219,8 +220,8 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
         <button className="li" onClick={() => onBuild(reflection)}>
           <div className="m"><div className="t">Build your own</div><div className="s">Pick the length, then fill the week</div></div><Chevron />
         </button>
-        <button className="li" onClick={() => { finishPlan(plan.id, reflection); onClose() }}>
-          <div className="m"><div className="t">Keep going without a plan</div><div className="s">Your week repeats at the full version</div></div><Chevron />
+        <button className="li" onClick={() => { carryOn(plan.id, reflection); onClose() }}>
+          <div className="m"><div className="t">Keep going without a plan</div><div className="s">Your last week repeats at the full version, for as long as you like</div></div><Chevron />
         </button>
       </div>
     </div>

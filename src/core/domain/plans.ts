@@ -101,7 +101,7 @@ export function positionOn(p: TrainingPlan, date: string): PlanPosition | null {
   const since = after >= 0 ? p.phases[after].since : undefined
   if (week > total && after >= 0 && (!since || date >= since)) {
     const mw = since ? Math.floor(daysBetween(since, date) / 7) + 1 : week - total
-    return { week, total, phaseIndex: after, phase: p.phases[after], weekInPhase: mw, maintain: true, ended: false, maintenanceWeek: mw, planWeek: phaseWeek(p, after) }
+    return { week, total, phaseIndex: after, phase: p.phases[after], weekInPhase: mw, maintain: !p.phases[after].full, ended: false, maintenanceWeek: mw, planWeek: phaseWeek(p, after) }
   }
   const idx = p.phases.map((x, k) => (x.after ? -1 : k)).filter((k) => k >= 0)
   let left = Math.min(week, Math.max(total, 1))
@@ -234,7 +234,7 @@ export function planWeekNotes(week: PlanWeek, routines: Routine[] | undefined): 
     const hard = hardOn(d)
     if (hard.length > 1) out.push(`${DAY_NAME[d]} has ${WORDS[hard.length] ?? hard.length} harder workouts. One hard session a day, with anything else light, leaves more room to recover.`)
     // lifting and cardio on one day: lift first (Flow 3 notes)
-    else if (hard.length === 1 && (week[d] || []).includes('Cardio')) out.push(`${DAY_NAME[d]} has lifting and cardio. Doing both? Lift first, then cardio.`)
+    else if (hard.length === 1 && (week[d] || []).includes('Cardio') && (LIFTS.includes(hard[0] as WorkoutType) || routineFor(hard[0], routines)?.modality === 'strength')) out.push(`${DAY_NAME[d]} has lifting and cardio. Doing both? Lift first, then cardio.`)
   }
   for (let i = 0; i < 7; i++) {
     const a = WEEK_ORDER[i], b = WEEK_ORDER[(i + 1) % 7]
@@ -382,7 +382,7 @@ export function fits(t: Pick<PlanTemplate, 'goals' | 'experience'>, p: Fit | und
 function fitScore(t: Pick<PlanTemplate, 'id' | 'goals' | 'experience'>, p: Fit | undefined): number {
   if (!p) return 0
   let n = fits(t, p) ? (t.goals[0] === p.goal ? 3 : 2) : p.goal && t.goals.includes(p.goal) ? 1 : 0
-  if (t.id === 'stronger-with-age' && (p.age ?? 0) >= 55) n += 4
+  if (t.id === 'stronger-with-age') n += (p.age ?? 0) >= 55 ? 4 : -0.5
   return n
 }
 
@@ -453,7 +453,7 @@ export function cleanPhases(phases: PlanPhase[]): PlanPhase[] {
   }
   if (after && out.length) {
     const since = typeof after.since === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(after.since) ? after.since : undefined
-    out.push({ id: typeof after.id === 'string' && after.id ? after.id.slice(0, 40) : newPhaseId(), name: 'Maintenance', weeks: 1, after: true, week: cleanWeek(after.week), ...(since ? { since } : {}) })
+    out.push({ id: typeof after.id === 'string' && after.id ? after.id.slice(0, 40) : newPhaseId(), name: after.full === true ? 'Carrying on' : 'Maintenance', weeks: 1, after: true, week: cleanWeek(after.week), ...(since ? { since } : {}), ...(after.full === true ? { full: true } : {}) })
   }
   // the server caps a plan's phases at 64 KB: trim whole build phases from the end, never below one
   while (out.filter((x) => !x.after).length > 1 && JSON.stringify(out).length > 60000) out.splice(out[out.length - 1].after ? out.length - 2 : out.length - 1, 1)

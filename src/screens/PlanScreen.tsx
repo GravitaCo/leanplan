@@ -122,6 +122,7 @@ export function PlanScreen() {
     : pos.maintenanceWeek != null
       ? pos.maintenanceWeek >= 12 ? "About 12 weeks holding steady. When you'd like something new, choose a plan in Plan details."
         : pos.maintenanceWeek >= 8 ? 'About 8 weeks holding steady. Carry on as long as you like.'
+        : pos.phase.full ? 'Your last week repeats at the full version. Choose a new plan in Plan details whenever you like.'
         : 'Your workouts open on the shorter version. Lift the same weights as before.'
       : nextLighter && active.startedAt ? `Lighter week: week ${nextLighter.from}, from ${dayLabel(shiftDay(active.startedAt, (nextLighter.from - 1) * 7))}.`
       : pos.maintain ? (isEaseIn(active, pos.phaseIndex) ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week: workouts open on the shorter version.') : null
@@ -151,7 +152,7 @@ export function PlanScreen() {
   if (flow?.v === 'build') {
     const after = flow.after
     return <>
-      <PlanBuilder note={after?.reflection.change?.trim() || lastNote} onHideNote={() => { if (lastRef) setPrefs({ planNoteHidden: lastRef.at }) }} onCancel={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} onOpenWorkout={setWorkout}
+      <PlanBuilder note={after?.reflection.change?.trim() || lastNote} onHideNote={() => { if (lastRef && !after?.reflection.change?.trim()) setPrefs({ planNoteHidden: lastRef.at }) }} onCancel={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} onOpenWorkout={setWorkout}
         onStart={(b) => begin({ name: b.name, phases: builtPhases(b), source: 'custom', startedAt: b.startedAt }, after)} />
       {overlay}
     </>
@@ -201,7 +202,7 @@ export function PlanScreen() {
             {!pos ? (
               <span className="pl-big"><span className="num b">Starts</span><span className="num s">{shortDateOf(active.startedAt!)} · {totalWeeks(active)} weeks</span></span>
             ) : pos.maintenanceWeek != null ? (
-              <span className="pl-big"><span className="num b">Maintenance</span><span className="num s">week {pos.maintenanceWeek}</span></span>
+              <span className="pl-big"><span className="num b">{pos.phase.full ? 'Carrying on' : 'Maintenance'}</span><span className="num s">week {pos.maintenanceWeek}</span></span>
             ) : pos.ended ? (
               <span className="pl-big"><span className="num b">{pos.total} weeks</span><span className="num s">done</span></span>
             ) : (

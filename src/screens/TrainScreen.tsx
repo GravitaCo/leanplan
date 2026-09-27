@@ -272,7 +272,7 @@ export function TrainScreen() {
         {planNow && planPos && (
           <div className="t-plan">
             {planArt(planNow.baseTemplateId) ? <img src={planArt(planNow.baseTemplateId)} alt="" /> : <span className="dot" aria-hidden="true" />}
-            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `Maintenance, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.phase.name}`}</span>
+            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `${planPos.phase.full ? 'Carrying on' : 'Maintenance'}, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.phase.name}`}</span>
           </div>
         )}
         <h2 id="today-h" className="tsec-h">{isToday ? 'Today' : dayName}</h2>
