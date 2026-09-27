@@ -29,7 +29,7 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'The short version',
         ul: [
-          `Tali stores your log on your phone so it works offline, and syncs it to a private database in Ireland (EU) that only you can read.`,
+          `Tali stores your log on your phone so it works offline, and syncs it to a database in Ireland (EU) that's private to your account.`,
           `When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.`,
           `No ads, no analytics, no tracking cookies, and we never sell your data or share it for marketing.`,
           `You can export everything or delete your account from the app at any time.`,
@@ -53,7 +53,7 @@ export function privacyPolicy(): LegalDoc {
         h: 'What we collect on the website',
         ul: [
           `Early access: if you join the list, your email address.`,
-          `Technical: like any website, the servers that deliver and run the site and app see your IP address, browser and the time of each request, and keep short-term logs for security and fault-finding.`,
+          `Technical: like any website, the servers that deliver and run the site and app see your IP address, browser and the time of each request, which our providers keep for a short time under their own retention periods, for security and fault-finding.`,
           `Bot protection: when a website page with the sign-up form opens, it loads Cloudflare Turnstile, which checks technical signals from your browser to tell people from bots, whether or not you use the form.`,
         ],
       },
