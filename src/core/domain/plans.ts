@@ -233,6 +233,8 @@ export function planWeekNotes(week: PlanWeek, routines: Routine[] | undefined): 
   for (const d of WEEK_ORDER) {
     const hard = hardOn(d)
     if (hard.length > 1) out.push(`${DAY_NAME[d]} has ${WORDS[hard.length] ?? hard.length} harder workouts. One hard session a day, with anything else light, leaves more room to recover.`)
+    // lifting and cardio on one day: lift first (Flow 3 notes)
+    else if (hard.length === 1 && (week[d] || []).includes('Cardio')) out.push(`${DAY_NAME[d]} has lifting and cardio. Doing both? Lift first, then cardio.`)
   }
   for (let i = 0; i < 7; i++) {
     const a = WEEK_ORDER[i], b = WEEK_ORDER[(i + 1) % 7]

@@ -354,6 +354,8 @@ export interface Profile {
   burnNoteSeen?: boolean
   /** date the "welcome back" question was last answered, so it's asked once per break */
   welcomeAsked?: string
+  /** the look-back note (its `at`) the person hid when setting up a next plan */
+  planNoteHidden?: string
   /** an accepted "easier first week" pre-selects the shorter version up to this date */
   easyUntil?: string
   /** and from this date (absent = from when "welcome back" was answered) */

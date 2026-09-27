@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
-import { copyWeek, MAX_PHASE_WEEKS, newPhaseId, timeline, trainingDays, weekFromSchedule } from '@/core/domain/plans'
+import { copyWeek, MAX_PHASE_WEEKS, newPhaseId, timeline, trainingDays, weekFromSchedule, withEasierStart } from '@/core/domain/plans'
+import { Toggle } from '@/ui/primitives'
 import { type WorkoutKey } from '@/core/domain/routines'
 import { WEEK_ORDER } from '@/core/domain/week'
 import { Icon, Chevron } from '@/ui/icons'
@@ -10,19 +11,21 @@ import { Timeline, WeekRows } from './PlanParts'
 import { DayEditor } from './PlanDayViews'
 import { StartChoice } from './PlanLibrary'
 
-export interface BuiltPlan { name: string; weeks: number; week: PlanWeek; startedAt: string }
+export interface BuiltPlan { name: string; weeks: number; week: PlanWeek; startedAt: string; easier: boolean }
 
 /**
  * Build your own plan in three steps, one question each (design canvas, Plans 2): how long, what
  * the week looks like (Flow 3's day page), when to start. Nothing is kept until it starts.
  */
-export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, note }: {
+export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, note, onHideNote }: {
   onCancel: () => void
   onStart: (p: BuiltPlan) => void
   onMaintenance: () => void
   onOpenWorkout: (k: WorkoutKey) => void
   /** the last plan's "do differently", shown while setting up the next */
   note?: string
+  /** hide that note for good */
+  onHideNote?: () => void
 }) {
   const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
@@ -34,12 +37,13 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
   const [day, setDay] = useState<number | null>(null)
   const [start, setStart] = useState(todayStr())
   const [noteShown, setNoteShown] = useState(true)
+  const [easier, setEasier] = useState(false)
   const setLen = (n: number) => {
     const w = Math.max(1, Math.min(MAX_PHASE_WEEKS, n))
     setWeeks(w)
     if (!named) setName(`My ${w}-week plan`)
   }
-  const cells = timeline({ phases: [{ id: 'x', name: 'Build', weeks, week }] })
+  const cells = timeline({ phases: [...(easier && step === 3 ? [{ id: 'e', name: 'Easier', weeks: 1, easier: true, week }] : []), { id: 'x', name: 'Build', weeks, week }] })
   const workouts = WEEK_ORDER.reduce((a, d) => a + (week[d] || []).length, 0)
   const rest = 7 - trainingDays(week)
   const fromSchedule = weekFromSchedule(schedule)
@@ -68,7 +72,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         {note && noteShown && (
           <div className="card plan-note pw-last">
             <span>From your last plan: “{note}”</span>
-            <button className="x-btn" aria-label="Hide this note" onClick={() => setNoteShown(false)}><Icon name="x" size={14} stroke={2.6} /></button>
+            <button className="x-btn" aria-label="Hide this note" onClick={() => { setNoteShown(false); onHideNote?.() }}><Icon name="x" size={14} stroke={2.6} /></button>
           </div>
         )}
         <label className="card pb-name"><span className="pb-k">Name</span>
@@ -126,11 +130,20 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         <Timeline cells={cells} />
       </section>
       <StartChoice value={start} onChange={setStart} />
-      <div className="foot" style={{ padding: '12px 4px 0' }}>Ends {shortDateOf(end)}. Week 1 is the first 7 days from the start. When it ends, you can choose maintenance.</div>
-      <div className="pl-cta"><button className="btn" onClick={() => onStart({ name: name.trim() || 'My plan', weeks, week, startedAt: start })}>Start plan</button></div>
+      <div className="list" style={{ marginTop: 16 }}>
+        <div className="li">
+          <div className="m"><div className="t">Start with an easier week</div><div className="s">One week to find your weights before the plan builds. Adds a week.</div></div>
+          <Toggle on={easier} label="Start with an easier week" onChange={() => setEasier(!easier)} />
+        </div>
+      </div>
+      <div className="foot" style={{ padding: '12px 4px 0' }}>Ends {shortDateOf(easier ? shiftDay(end, 7) : end)}. Week 1 is the first 7 days from the start. When it ends, you can choose maintenance.</div>
+      <div className="pl-cta"><button className="btn" onClick={() => onStart({ name: name.trim() || 'My plan', weeks, week, startedAt: start, easier })}>Start plan</button></div>
     </div>
   )
 }
 
 /** The phases a built plan starts with: one build phase (easier or lighter weeks come later, in Plan details). */
-export const builtPhases = (p: BuiltPlan) => [{ id: newPhaseId(), name: 'Build', weeks: p.weeks, week: copyWeek(p.week) }]
+export const builtPhases = (p: BuiltPlan) => {
+  const phases = [{ id: newPhaseId(), name: 'Build', weeks: p.weeks, week: copyWeek(p.week) }]
+  return p.easier ? withEasierStart(phases) : phases
+}

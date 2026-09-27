@@ -1684,4 +1684,13 @@ async function timeouts(): Promise<void> {
   console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance counts from its start, never dropped by the cap', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
+{
+  // Flow 3's note: lifting and cardio on one day, lift first (never blocks); two hard ones keep their own note
+  const one = planWeekNotes({ 1: ['Legs', 'Cardio'] } as any, [])
+  const two = planWeekNotes({ 1: ['Legs', 'Push', 'Cardio'] } as any, [])
+  const got = [one.some((n) => n === 'Monday has lifting and cardio. Doing both? Lift first, then cardio.'), two.some((n) => n.includes('Lift first')), two.some((n) => n.includes('two harder'))].join(' ')
+  const ok = got === 'true false true'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: lift first when a day has lifting and cardio', JSON.stringify(got))
+}
+
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

@@ -21,6 +21,16 @@ const ART: Record<string, string> = {
 }
 export const planArt = (templateId: string | undefined): string | undefined => (templateId ? ART[templateId] : undefined)
 
+/**
+ * Fetch the plan photographs once while online, so the service worker keeps them (hashed assets
+ * are cached for good) and the library looks right offline. Never waits on anything; failures
+ * just leave the tile colour showing.
+ */
+export function warmPlanArt(): void {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+  for (const u of Object.values(ART)) fetch(u).catch(() => {})
+}
+
 /** The goal chips and filters, in the profile's own words where they exist. */
 export const GOAL_CHIP: [Goal, string][] = [
   ['build-muscle', 'Build muscle'], ['increase-strength', 'Get stronger'], ['lose-fat', 'Lose fat'], ['feel-better', 'Feel better'], ['increase-endurance', 'Endurance'],

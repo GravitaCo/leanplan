@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Goal, PlanPhase, PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
@@ -59,6 +59,17 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
   const [sheet, setSheet] = useState(false)
   // a goal chosen in the filter sheet shows as a removable chip like the other filters
   const [viaSheet, setViaSheet] = useState(false)
+  // built to grow: tiles come in pages as you scroll, with a quiet placeholder tile (Plans 1)
+  const PAGE = 12
+  const [shown, setShown] = useState(PAGE)
+  const more = useRef<HTMLSpanElement | null>(null)
+  useEffect(() => {
+    const el = more.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) setShown((n) => n + PAGE) })
+    io.observe(el)
+    return () => io.disconnect()
+  })
   const all = useMemo(() => catalogue({ trainingPlans }, fit), [trainingPlans, fit.goal, fit.age, fit.experience])
   const list = filterCatalogue(all, f)
   const filtered = !!(f.days?.length || f.experience?.length || f.where?.length || f.length?.length || f.madeBy?.length || (f.goal?.length ?? 0) > 1 || (viaSheet && f.goal?.length))
@@ -103,7 +114,12 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
       )}
       {narrowed && <div className="foot num" style={{ padding: '0 4px' }}>{list.length} {list.length === 1 ? 'plan' : 'plans'}</div>}
       {lead && tile(lead, true)}
-      {rest.length > 0 && <div className="pgrid">{rest.map((e) => tile(e))}</div>}
+      {rest.length > 0 && (
+        <div className="pgrid">
+          {rest.slice(0, shown).map((e) => tile(e))}
+          {rest.length > shown && <span ref={more} className="ptile skel" aria-hidden="true" />}
+        </div>
+      )}
       {list.length === 0 && <div className="dash-empty">{f.q && !filtered && !f.goal?.length ? `No plans called “${f.q}”.` : 'No plans match yet. Try removing a filter, or build your own.'}</div>}
       <button className="dash-add" onClick={onNew}><Icon name="plus" size={18} stroke={2.4} />New plan</button>
       {sheet && <FilterSheet value={f} onChange={(v) => { setViaSheet(true); setF(v) }} onClose={() => setSheet(false)} count={filterCatalogue(all, f).length} />}
@@ -213,6 +229,9 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
           <div className="li"><span className="k">Kit</span><span>{t.kit}</span></div>
           <div className="li"><span className="k">Time</span><span>{t.time}</span></div>
         </div>
+      )}
+      {t?.id === 'pure-muscle-growth' && (!profile.training?.experience || profile.training.experience === 'beginner') && (
+        <div className="foot" style={{ padding: '0 4px 8px' }}>New to lifting? Full body system is a better first plan.</div>
       )}
       <div className="foot" style={{ padding: '0 4px' }}>{t?.safety ? t.safety + ' ' : ''}General fitness information only, not medical advice. Talk to a GP before starting a new exercise programme.</div>
       <div className="pp-cta">

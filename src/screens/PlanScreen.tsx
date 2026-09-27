@@ -53,6 +53,7 @@ export function PlanScreen() {
   const startPlan = useStore((s) => s.startPlan)
   const finishPlan = useStore((s) => s.finishPlan)
   const notePlan = useStore((s) => s.notePlan)
+  const setPrefs = useStore((s) => s.setPrefs)
   // a plan's week (a phase, from the editor) and one of its days (Flow 3, as for the one-workout week)
   // each carries its plan: the running one, or the next one waiting to start
   const [planWeekAt, setPlanWeekAt] = useState<{ planId: string; phase: number } | null>(null)
@@ -131,7 +132,9 @@ export function PlanScreen() {
     setFlow(null)
   }
   const overlay = mcard && <MaintenanceCard onClose={() => setMcard(false)} />
-  const lastNote = (trainingPlans || []).filter((p) => p.reflection?.change).sort((a, b) => (b.reflection!.at > a.reflection!.at ? 1 : -1))[0]?.reflection?.change
+  // the last plan's "do differently", until the person hides it
+  const lastRef = (trainingPlans || []).filter((p) => p.reflection?.change).sort((a, b) => (b.reflection!.at > a.reflection!.at ? 1 : -1))[0]?.reflection
+  const lastNote = lastRef && lastRef.at !== profile.planNoteHidden ? lastRef.change : undefined
   if (flow?.v === 'library') {
     return <>{<PlanLibrary onBack={() => setFlow(null)} onOpen={(e) => setFlow({ v: 'preview', e })} onNew={() => setFlow({ v: 'build' })} />}{overlay}</>
   }
@@ -148,7 +151,7 @@ export function PlanScreen() {
   if (flow?.v === 'build') {
     const after = flow.after
     return <>
-      <PlanBuilder note={after?.reflection.change?.trim() || lastNote} onCancel={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} onOpenWorkout={setWorkout}
+      <PlanBuilder note={after?.reflection.change?.trim() || lastNote} onHideNote={() => { if (lastRef) setPrefs({ planNoteHidden: lastRef.at }) }} onCancel={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} onOpenWorkout={setWorkout}
         onStart={(b) => begin({ name: b.name, phases: builtPhases(b), source: 'custom', startedAt: b.startedAt }, after)} />
       {overlay}
     </>
