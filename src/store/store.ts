@@ -29,7 +29,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { activePlan, cleanPhases, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
+import { activePlan, cleanPhases, keptAfterEdit, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -595,6 +595,8 @@ export const useStore = create<StoreState>()(
       setSchedule: (sch, quiet) => {
         set((st) => {
           for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
+          const kept = keptAfterEdit(st.data, st.data.schedule, todayStr())
+          if (kept) st.data.profile.weekBeforePlan = kept
           markSettingsDirty(st.data)
         })
         saved(quiet ? undefined : 'Schedule updated')

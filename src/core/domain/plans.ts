@@ -142,6 +142,17 @@ export function weekToKeep(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'pro
   return running || s.profile.weekBeforePlan ? null : { ...s.schedule }
 }
 
+/**
+ * The kept week after the person edits their schedule on `today`: while a plan waits to start
+ * (no mirror written yet), the schedule is still their own week, so the kept copy follows the edit
+ * and Stop keeps it. Null when nothing is kept or a plan is in charge today (its mirror is the schedule).
+ */
+export function keptAfterEdit(s: Pick<AppState, 'trainingPlans' | 'routines' | 'profile'>, sch: Schedule, today: string): Schedule | null {
+  if (!s.profile.weekBeforePlan) return null
+  const p = activePlan(s, today)
+  return p && positionOn(p, today) ? null : { ...sch }
+}
+
 /** The kept week to put back once no plan is left running (never while one still is). */
 export function weekToPutBack(s: Pick<AppState, 'trainingPlans' | 'profile'>): Schedule | null {
   if ((s.trainingPlans || []).some((p) => p.state === 'active')) return null

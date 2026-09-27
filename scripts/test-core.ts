@@ -28,7 +28,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { keptAfterEdit, weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
 import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
@@ -1710,6 +1710,13 @@ async function timeouts(): Promise<void> {
   const got = [JSON.stringify(keptOnStart) === JSON.stringify(own), notTwice, whileRunning, JSON.stringify(afterStop) === JSON.stringify(own), beforeStart.join('+'),
     c1.maintain, c1.maintenanceWeek, c1.phase.name, String(maintainOn({ trainingPlans: [carry] } as any, '2026-12-14')), plannedKeys({ trainingPlans: [carry], schedule: mirror, routines: [] } as any, '2026-12-14').join('+')].join(' | ')
   const want = 'true |  |  | true | Legs | false | 2 | Carrying on | false | tali-full-body-a'
+  // a plan picked for next Monday: an edit made while it waits is what Train, Summary and Stop see
+  const edited = { ...own, 4: 'Rest', 5: 'Rest' }
+  const waiting = { trainingPlans: [running], schedule: edited, routines: [], profile: { weekBeforePlan: own } } as any
+  waiting.profile.weekBeforePlan = keptAfterEdit(waiting, edited, '2026-09-24')
+  const waitGot = [plannedKeys(waiting, '2026-09-25').join('+') || 'rest', JSON.stringify(weekToPutBack({ ...waiting, trainingPlans: [] })) === JSON.stringify(edited),
+    String(keptAfterEdit({ trainingPlans: [running], routines: [], profile: { weekBeforePlan: own } } as any, edited, '2026-09-30'))].join(' | ')
+  if (waitGot !== 'rest | true | null') { bad++; console.log('FAIL', 'plans: edits while a plan waits', JSON.stringify(waitGot)) } else console.log('PASS', 'plans: edits while a plan waits are kept')
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
