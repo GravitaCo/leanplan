@@ -16,10 +16,9 @@ import { Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/pri
 import { Icon, Chevron } from '@/ui/icons'
 import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
-import { DeleteAccountSheet, RegrantHealthSheet, WithdrawHealthSheet } from './legal/PrivacySheets'
-import { takeReauthReturn } from '@/data/account'
-import { getUid } from '@/data/supabase'
-import { latestConsent } from '@/data/consent'
+import { RegrantHealthSheet } from './legal/PrivacySheets'
+import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
+import { hasConsent, latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
 
 const GOALS: { value: Goal; label: string }[] = [
@@ -62,10 +61,20 @@ export function ProfileScreen() {
   // a card elsewhere can ask for a section to be open on arrival (e.g. after an activity update)
   const profileOpen = useStore((s) => s.profileOpen)
   const clearProfileOpen = useStore((s) => s.clearProfileOpen)
-  const [open, setOpen] = useState<Section | null>(() => (profileOpen as Section | null) ?? null)
+  // 'health' opens the health data sheet; 'delete-confirm' (back from a Google re-sign-in) the
+  // delete confirm step; anything else is a section to open
+  const arrival = profileOpen
+  const [open, setOpen] = useState<Section | null>(() => (arrival && arrival !== 'health' && arrival !== 'delete-confirm' ? arrival as Section : null))
+  const [view, setView] = useState<'main' | 'delete'>(() => (arrival === 'delete-confirm' ? 'delete' : 'main'))
+  const [confirmOpen, setConfirmOpen] = useState(arrival === 'delete-confirm')
+  // the health data sheet, opened at its start or straight at the withdraw step (Privacy's button)
+  const [healthOpen, setHealthOpen] = useState<false | 'main' | 'withdraw'>(arrival === 'health' ? 'main' : false)
+  const [aiOpen, setAiOpen] = useState(false)
+  const healthStatus = useHealthStatus()
   useEffect(() => {
     if (!profileOpen) return
     clearProfileOpen()
+    if (profileOpen === 'health' || profileOpen === 'delete-confirm') return
     // bring the suggested targets into view: accepting them is the next step (plan P1.5)
     requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,9 +82,7 @@ export function ProfileScreen() {
   const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const [withdrawOpen, setWithdrawOpen] = useState(false)
-  // back from a Google re-sign-in started to delete the account: reopen that step
-  const [deleteOpen, setDeleteOpen] = useState(() => takeReauthReturn(getUid()))
+  // giving health consent from Profile: the explicit statement and unticked box (legal/PrivacySheets)
   const [regrantOpen, setRegrantOpen] = useState(false)
   const health = useConsent('health')
   const healthRec = latestConsent(data, 'health')
@@ -114,6 +121,8 @@ export function ProfileScreen() {
   const trainDays = Object.values(data.schedule).filter((x) => x && x !== 'Rest').length
   const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
   const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
+
+  if (view === 'delete') return <DeleteAccountView onBack={() => { setView('main'); setConfirmOpen(false) }} confirmOpen={confirmOpen} setConfirmOpen={setConfirmOpen} />
 
   return (
     <div className="screen">
@@ -286,6 +295,8 @@ export function ProfileScreen() {
           <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? 'Your account (not syncing right now)' : email}</div>
           {authed && <div className="foot" style={{ padding: '8px 0 0' }}>Change your name or email from the card at the top.</div>}
         </Disclosure>
+        <SettingRow icon="heart" color={MINDF} soft label="Health data" value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
+        <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />
         <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</div>
           <div className="grid2">
@@ -300,6 +311,7 @@ export function ProfileScreen() {
             try { setPendingBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
           }} />
         </Disclosure>
+        <SettingRow icon="x" color={GRAY} soft label="Delete account" onPress={() => setView('delete')} />
       </div>
 
       <div className="lbl">Testing</div>
@@ -317,7 +329,7 @@ export function ProfileScreen() {
         <Disclosure icon="key" color={GRAY} soft label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? <>You agreed to Tali using your health information on {healthAt}. </> : <>You’ve withdrawn consent, so Tali doesn’t keep your weigh-ins, check-ins or body details. </>}
+              {health.granted && healthAt ? <>You agreed to Tali using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so Tali doesn’t keep your weigh-ins, check-ins or body details. </> : null}
               Your data is stored on this phone and in your private account database. It’s never sold or used for ads.
             </p>
           </div>
@@ -326,10 +338,12 @@ export function ProfileScreen() {
               <LegalLink key={id} id={id} className="li act"><div className="m"><div className="t">{LEGAL_LABEL[id]}</div></div><Chevron /></LegalLink>
             ))}
           </div>
+          {/* the same flows as the Health data and Delete account rows above (one of each; the
+              legal texts point here, at Profile, then Privacy) */}
           {health.granted
-            ? <button className="btn gray" onClick={() => setWithdrawOpen(true)}>Withdraw consent for health data</button>
+            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>Withdraw consent for health data</button>
             : <button className="btn gray" onClick={() => setRegrantOpen(true)}>Turn health data back on</button>}
-          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setDeleteOpen(true)}>Delete account</button>
+          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>Delete account</button>
         </Disclosure>
       </div>
 
@@ -339,9 +353,9 @@ export function ProfileScreen() {
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {withdrawOpen && <WithdrawHealthSheet onClose={() => setWithdrawOpen(false)} />}
-      {deleteOpen && <DeleteAccountSheet onClose={() => setDeleteOpen(false)} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); setRegrantOpen(true) }} />}
       {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
+      {aiOpen && <AiSheet onClose={() => setAiOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </div>
   )

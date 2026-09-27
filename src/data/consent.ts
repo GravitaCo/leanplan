@@ -52,7 +52,31 @@ export interface ConsentLog {
   records: ConsentRecord[]
   /** id of the health withdrawal whose data clear has been applied on this device (once each) */
   healthCleared?: string
+  /** an existing user said "Not now" to the one-time health consent sheet (plan §14): device only */
+  healthPause?: HealthPause
 }
+
+/**
+ * "Not now" from someone who already had health data in Tali before consent was asked (plan §14,
+ * PENDING security-data review). Their health data stays on this phone and its upload is paused:
+ * while paused, a sync sends day logs without `weight` (the server keeps what it has) and with the
+ * server's own check-in in `supps._checkin`, and settings with the server's own health fields in
+ * `profile`, so nothing health-related leaves the device and nothing already on the server is
+ * lost. What was held back is remembered (`heldDays`, `heldSettings`) and uploads when they agree.
+ */
+export interface HealthPause {
+  /** when they said "Not now" the first time */
+  at: string
+  /** the one re-ask, 2 weeks later, has been answered */
+  reasked?: boolean
+  /** days uploaded while paused: their weight and check-in on this device are newer than the server's */
+  heldDays?: string[]
+  /** settings uploaded while paused: the profile's health fields here are newer than the server's */
+  heldSettings?: boolean
+}
+
+/** The one re-ask after "Not now" comes this long after it (plan §14: 2 weeks). */
+export const REASK_AFTER_MS = 14 * 86400_000
 
 const VERSION_RE = /^[a-z0-9.-]{1,32}$/
 
@@ -69,7 +93,21 @@ export function cleanConsents(x: unknown): ConsentLog {
     !!r && typeof r === 'object' && typeof r.id === 'string' && UUID_RE.test(r.id) &&
     (CONSENT_TYPES as readonly string[]).includes(r.type) && typeof r.version === 'string' && VERSION_RE.test(r.version) &&
     typeof r.granted === 'boolean' && typeof r.at === 'string' && !isNaN(Date.parse(r.at)))
-  return { records: records.map((r) => ({ id: r.id, type: r.type, version: r.version, granted: r.granted, at: r.at, ...(r._dirty ? { _dirty: true } : {}) })), ...(typeof log.healthCleared === 'string' ? { healthCleared: log.healthCleared } : {}) }
+  const pause = cleanPause(log.healthPause)
+  return {
+    records: records.map((r) => ({ id: r.id, type: r.type, version: r.version, granted: r.granted, at: r.at, ...(r._dirty ? { _dirty: true } : {}) })),
+    ...(typeof log.healthCleared === 'string' ? { healthCleared: log.healthCleared } : {}),
+    ...(pause ? { healthPause: pause } : {}),
+  }
+}
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
+function cleanPause(x: unknown): HealthPause | null {
+  if (!x || typeof x !== 'object') return null
+  const p = x as Partial<HealthPause>
+  if (typeof p.at !== 'string' || isNaN(Date.parse(p.at))) return null
+  const days = Array.isArray(p.heldDays) ? [...new Set(p.heldDays.filter((d): d is string => typeof d === 'string' && DAY_RE.test(d)))] : []
+  return { at: p.at, ...(p.reasked === true ? { reasked: true } : {}), ...(days.length ? { heldDays: days } : {}), ...(p.heldSettings === true ? { heldSettings: true } : {}) }
 }
 
 /** The latest record of a type (latest `at` wins; ties go to the later one in the list). */
@@ -114,6 +152,30 @@ export function healthLoggingAllowed(s: PersistedState): boolean {
 export function healthConsentAnswered(s: PersistedState): boolean {
   const r = latestConsent(s, 'health')
   return !!r && (!r.granted || r.version === CONSENT_VERSIONS.health)
+}
+
+/**
+ * The person said no to keeping health data (declined, or withdrew). Tali still works (food,
+ * workouts) but shows no weight, check-ins or calorie numbers until they agree (plan §14).
+ */
+export function healthDeclined(s: PersistedState): boolean {
+  return latestConsent(s, 'health')?.granted === false
+}
+
+/** Calorie numbers are hidden: the person chose Gentle display, or said no to health data. */
+export function quietNumbers(s: PersistedState): boolean {
+  return !!s.profile?.gentle || healthDeclined(s)
+}
+
+/**
+ * Whether sync may send more than consent records: the health consent screen is answered, or an
+ * existing user's "Not now" pause is on (behind ONBOARDING_ENABLED: screens/onboarding/Consent),
+ * in which case the health fields are held back on this device (HealthPause) while the rest syncs.
+ * Nothing else syncs before an answer (store scheduleSync; pushDirty also waits for the latest
+ * health record to reach the server).
+ */
+export function consentLetsSync(s: PersistedState): boolean {
+  return healthConsentAnswered(s) || healthSyncPaused(s)
 }
 
 /** Record a grant or withdrawal on the device. Returns the new record (dirty until synced). */
@@ -223,9 +285,109 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
   const rec = recordConsent(s, type, false)
   if (type === 'health') {
     clearHealthData(s, meta)
-    consentLog(s).healthCleared = rec.id
+    const log = consentLog(s)
+    log.healthCleared = rec.id
+    // the clear uploads everywhere, so nothing is held back any more
+    delete log.healthPause
   }
   return rec
+}
+
+/**
+ * Agree to keeping health data. A pause ends: what was held back on this device is marked to
+ * upload (the days and settings pushed without their health fields while paused).
+ */
+export function grantHealth(s: PersistedState, meta: SyncMeta): ConsentRecord {
+  const rec = recordConsent(s, 'health', true)
+  resumeHealthSync(s, meta)
+  return rec
+}
+
+/* ---------------- existing users: the one-time sheet and "Not now" ---------------- */
+
+/** Whether this device's health data is held back from sync: "Not now", and no answer since. */
+export function healthSyncPaused(s: PersistedState): boolean {
+  return !!s.consents?.healthPause && !latestConsent(s, 'health')
+}
+
+/** Someone who used Tali before consent was asked (anything logged or saved on this device). */
+export function hasExistingData(s: PersistedState): boolean {
+  return Object.values(s.days || {}).some((d) => d && ((d.foods || []).length > 0 || d.weight != null || !!d.checkin || !!d.workout || (d.sessions || []).length > 0)) ||
+    (s.customFoods || []).length > 0 || (s.recipes || []).length > 0 || (s.routines || []).length > 0
+}
+
+/**
+ * The existing-user health consent sheet is due: no answer on record, they have data here, and
+ * either they haven't seen it, or said "Not now" 2 weeks ago and haven't been asked again.
+ */
+export function existingConsentDue(s: PersistedState, now = Date.now()): boolean {
+  if (latestConsent(s, 'health') || !hasExistingData(s)) return false
+  const p = s.consents?.healthPause
+  if (!p) return true
+  return !p.reasked && now - Date.parse(p.at) >= REASK_AFTER_MS
+}
+
+/**
+ * "Not now" on the existing-user sheet: pause the health data's sync (the first time), or mark
+ * the one re-ask as answered. Nothing is recorded as a withdrawal and nothing is cleared.
+ */
+export function pauseHealthSync(s: PersistedState, at = nowIso()): void {
+  const log = consentLog(s)
+  if (log.healthPause) log.healthPause.reasked = true
+  else log.healthPause = { at }
+}
+
+/** Mark what was held back while paused to upload, and end the pause. Returns whether it did. */
+export function resumeHealthSync(s: PersistedState, meta: SyncMeta): boolean {
+  const log = consentLog(s)
+  const p = log.healthPause
+  if (!p) return false
+  const u = nowIso()
+  for (const d of p.heldDays || []) if (s.days?.[d]) meta.days[d] = { u, dirty: true }
+  if (p.heldSettings) meta.settings = { u, dirty: true }
+  delete log.healthPause
+  return true
+}
+
+/**
+ * After a pull: an answer given on another device ends this device's pause. A yes uploads what
+ * was held here; a no (its clear runs through applyHealthWithdrawal) drops the pause.
+ */
+export function settleHealthPause(s: PersistedState, meta: SyncMeta): boolean {
+  const r = latestConsent(s, 'health')
+  if (!r || !s.consents?.healthPause) return false
+  if (r.granted) return resumeHealthSync(s, meta)
+  delete s.consents.healthPause
+  return true
+}
+
+/** Sync notes a day or the settings as uploaded without their health fields. */
+export function holdHealth(s: PersistedState, what: { day?: string; settings?: boolean }): void {
+  const p = s.consents?.healthPause
+  if (!p) return
+  if (what.day && !(p.heldDays || []).includes(what.day)) p.heldDays = [...(p.heldDays || []), what.day]
+  if (what.settings) p.heldSettings = true
+}
+
+/** The health fields of a profile, for keeping the server's (or this device's) side as it is. */
+export function profileHealth(p: Partial<Profile> | null | undefined): { weight?: unknown; bodyFat?: unknown; limitations?: unknown; limitationsNote?: unknown } {
+  const t = p?.training
+  return { weight: p?.weight, bodyFat: p?.bodyFat, limitations: t?.limitations, limitationsNote: t?.limitationsNote }
+}
+
+/** A copy of `p` with its health fields replaced by `h` (undefined ones removed). */
+export function withProfileHealth<P extends Partial<Profile>>(p: P, h: ReturnType<typeof profileHealth>): P {
+  const out = { ...p } as P & Record<string, unknown>
+  const set = (o: Record<string, unknown>, k: string, v: unknown) => { if (v === undefined || v === null) delete o[k]; else o[k] = v }
+  set(out, 'weight', h.weight)
+  set(out, 'bodyFat', h.bodyFat)
+  if (out.training || h.limitations !== undefined || h.limitationsNote !== undefined) {
+    const t = { ...(out.training || {}) } as Record<string, unknown>
+    set(t, 'limitations', h.limitations)
+    set(t, 'limitationsNote', h.limitationsNote)
+    out.training = t as P['training']
+  }
+  return out
 }
 
 /* ---------------- the old device-only label consent ---------------- */
@@ -311,7 +473,7 @@ export async function pullConsents(s: PersistedState): Promise<void> {
 
 /* ---------------- export before withdrawing health consent ---------------- */
 
-/** Draft copy for the withdrawal confirm step (PENDING design approval; nothing renders it yet). */
+/** Copy for the withdrawal step in Profile's Health data sheet (not on a board yet: flagged for Benn). */
 export const HEALTH_WITHDRAW_PROMPT = 'This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?'
 
 /**

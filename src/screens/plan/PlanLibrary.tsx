@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import type { Goal, PlanPhase, PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
 import {
@@ -169,6 +170,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
 }) {
   const routines = useStore((s) => s.data.routines)
   const profile = useStore((s) => s.data.profile)
+  const quiet = useStore((s) => quietNumbers(s.data))
   const t = entry.template
   const phases = t?.phases ?? entry.plan?.phases ?? []
   const weeks = buildWeeks(phases)
@@ -219,7 +221,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
         {t && (
           <div className="li">
             <span className="catsq sm" style={{ background: 'var(--food-fill)' }} aria-hidden="true" />
-            <div className="m"><div className="t">Eating for this plan</div><div className="s">{eatingLine(t, profile.goal, !!profile.gentle)}</div></div>
+            <div className="m"><div className="t">Eating for this plan</div><div className="s">{eatingLine(t, profile.goal, quiet)}</div></div>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 /** Recipes: build once from ingredients (you know exactly what went in), log a serving in a tap. */
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import type { MealSlot, RecipeItem } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { fmt, r0, r1 } from '@/core/domain/date'
@@ -24,7 +25,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   const saveRecipe = useStore((s) => s.saveRecipe)
   const deleteRecipe = useStore((s) => s.deleteRecipe)
   const showToast = useStore((s) => s.showToast)
-  const gentle = useStore((s) => !!s.data.profile.gentle)
+  const gentle = useStore((s) => quietNumbers(s.data))
   const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
 
   const [draft, setDraft] = useState<Draft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)

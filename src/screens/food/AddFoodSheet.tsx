@@ -4,6 +4,7 @@
  */
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
@@ -14,6 +15,7 @@ import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByU
 import { Sheet, BackButton, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
+import { ConnectionPill, NEEDS_NET } from '@/ui/ConnectionPill'
 import { PortionView } from './PortionView'
 import { RecipeLogView } from './RecipeLogView'
 import { QuickEstimateView } from './QuickEstimateView'
@@ -109,7 +111,8 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   const removeCustomFood = useStore((s) => s.removeCustomFood)
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const query = q.trim().toLowerCase()
-  const gentle = !!data.profile.gentle
+  const gentle = quietNumbers(data)
+  const online = useStore((s) => s.online)
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
     <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
@@ -195,7 +198,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   }
 
   return (
-    <Sheet title="Add food" tall onClose={onClose} animate={animate}>
+    <Sheet title="Add food" tall onClose={onClose} animate={animate} right={online ? undefined : <ConnectionPill />}>
       <div className="searchbar">
         <Icon name="search" size={17} />
         <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
@@ -211,13 +214,21 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         </button>
         <button className="li" onClick={() => go({ kind: 'scan' })}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
-          <div className="m"><div className="t">Scan barcode</div><div className="s">Packaged food, from the pack</div></div><Chevron />
+          <div className="m"><div className="t">Scan barcode</div><div className="s">{online ? 'Packaged food, from the pack' : 'Works for products you’ve scanned before'}</div></div><Chevron />
         </button>
         {LABEL_SCAN_ENABLED && (
-          <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
-            <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-            <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
-          </button>
+          online ? (
+            <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
+              <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
+              <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
+            </button>
+          ) : (
+            // online only (ob6-8): shown, off, with the note
+            <div className="li needsnet" aria-disabled="true">
+              <span className="ico" style={{ background: 'var(--fill2)' }}><Icon name="camera" size={18} /></span>
+              <div className="m"><div className="t">Scan the label</div><div className="s">{NEEDS_NET}</div></div>
+            </div>
+          )
         )}
         <button className="li" onClick={() => go({ kind: 'create' })}>
           <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>

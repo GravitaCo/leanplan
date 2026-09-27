@@ -33,7 +33,8 @@ export type DeleteResult =
   | { status: 'error' }
 
 /**
- * Draft copy for the confirm UI (PENDING Benn's design approval; nothing renders it yet).
+ * Copy for the delete confirm step (screens/profile/AccountData.tsx). Not on the boards beyond
+ * "Needs a connection": neutral, and every failure says nothing was deleted.
  * The data layer returns a status; the UI chooses the words.
  */
 export const DELETE_MESSAGES: Record<Exclude<DeleteResult['status'], 'ok'>, string> = {

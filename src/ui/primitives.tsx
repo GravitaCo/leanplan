@@ -1,18 +1,26 @@
 /** Presentational primitives shared across screens (iOS grouped-list idiom). */
-import { useEffect, type ReactNode, type KeyboardEvent } from 'react'
+import { useEffect, useState, type ReactNode, type KeyboardEvent } from 'react'
 import { Icon, Chevron, type IconName } from './icons'
+import { ConnectionLine, ConnectionPill } from './ConnectionPill'
 
 /** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
 
+/** A tab's large-title header. The connection pill sits on the top line (tap it for the line
+ *  underneath), across from the eyebrow; `right` sits beside the title. */
 export function PageHeader({ eyebrow, title, right }: { eyebrow?: ReactNode; title: string; right?: ReactNode }) {
+  const [line, setLine] = useState(false)
   return (
     <header className="hdr">
-      <div>
+      <div className="hdr-top">
         <div className="eyebrow">{eyebrow}</div>
-        <h1 className="ltitle">{title}</h1>
+        <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />
       </div>
-      {right}
+      <div className="hdr-row">
+        <h1 className="ltitle">{title}</h1>
+        {right}
+      </div>
+      {line && <ConnectionLine />}
     </header>
   )
 }

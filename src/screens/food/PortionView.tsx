@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
@@ -25,7 +26,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const data = useStore((s) => s.data)
   const logEntries = useStore((s) => s.logEntries)
   const profile = data.profile
-  const gentle = !!profile.gentle
+  const gentle = quietNumbers(data)
   const u = unitOf(food)
 
   const last = lastUse(data, food.n)

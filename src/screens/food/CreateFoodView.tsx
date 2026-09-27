@@ -3,8 +3,7 @@ import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
-import { Icon } from '@/ui/icons'
-import { Checks } from './common'
+import { Checks, LabelPhotoButton } from './common'
 
 /** Save a food from its packet label, then pick the portion. */
 export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note, onLabelPhoto }: {
@@ -46,7 +45,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
       {note && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><span>{note}{barcode && <span className="num muted"> Barcode {barcode}.</span>}</span></div>}
       {onLabelPhoto && (
         <div className="stack" style={{ marginTop: 0, marginBottom: 12 }}>
-          <button className="btn gray" onClick={onLabelPhoto}><Icon name="camera" size={17} /> Photo of the label</button>
+          <LabelPhotoButton onPress={onLabelPhoto} />
         </div>
       )}
       <div className="sub" style={{ padding: '0 4px 12px' }}>

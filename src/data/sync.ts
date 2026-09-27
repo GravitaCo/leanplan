@@ -4,11 +4,11 @@
  * merge with last-write-wins per record. Ported from the LeanPlan vanilla app and kept
  * framework-agnostic so it can back a native client later.
  */
-import type { DayLog, Food, Recipe, Routine, TrainingPlan } from '@/core/types'
+import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { pushConsents, pullConsents, latestConsent } from './consent'
+import { pushConsents, pullConsents, latestConsent, healthSyncPaused, holdHealth, profileHealth, withProfileHealth } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -56,11 +56,23 @@ const hasMeta = (r: any) => !!r.meta && typeof r.meta === 'object' && !Array.isA
 /* day_logs has no check-in column, so the check-in travels inside the supps jsonb under a
    reserved key and is unpacked on pull. Additive: no table or column changes. */
 const CHECKIN_KEY = '_checkin'
-function toServerDay(s: PersistedState, d: string, uid: string) {
+/**
+ * `held`: health sync is paused (consent.ts HealthPause). The row then has no `weight` column, so
+ * the server keeps the weight it has (an upsert only sets the columns it sends), and its check-in
+ * is the server's own (`serverCheckin`, read just before), never this device's.
+ */
+export function toServerDay(s: PersistedState, d: string, uid: string, held?: { serverCheckin: unknown }) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }
-  const supps = x.checkin ? { ...(x.supps || {}), [CHECKIN_KEY]: x.checkin } : x.supps || {}
+  const checkin = held ? held.serverCheckin : x.checkin
+  const { [CHECKIN_KEY]: _drop, ...own } = (x.supps || {}) as Record<string, unknown>
+  void _drop
+  const supps = checkin ? { ...own, [CHECKIN_KEY]: checkin } : own
   // sessions: an additive day_logs column (workout plan P2); workout stays as the legacy mirror
-  return { user_id: uid, log_date: d, foods: x.foods || [], supps, weight: x.weight ?? null, workout: x.workout ?? null, sessions: Array.isArray(x.sessions) ? x.sessions : null }
+  const row = { user_id: uid, log_date: d, foods: x.foods || [], supps, weight: x.weight ?? null, workout: x.workout ?? null, sessions: Array.isArray(x.sessions) ? x.sessions : null }
+  if (!held) return row
+  const { weight: _w, ...rest } = row
+  void _w
+  return rest
 }
 function fromServerDay(row: any): DayLog {
   const { [CHECKIN_KEY]: checkin, ...supps } = row.supps || {}
@@ -228,11 +240,26 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
     return failed
   }
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
-  await step('days', () => upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
+  // health sync paused ("Not now", consent.ts): health fields stay on this device, and what the
+  // server already has for them is sent back unchanged
+  const paused = healthSyncPaused(s)
+  await step('days', async () => {
+    if (!paused) return upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false))
+    if (!dirtyDays.length) return
+    const have = await sbGet<{ log_date: string; supps: Record<string, unknown> | null }[]>('/day_logs?user_id=eq.' + uid + '&select=log_date,supps')
+    const theirs = new Map(have.map((r) => [r.log_date, r.supps?.[CHECKIN_KEY] ?? null]))
+    await upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid, { serverCheckin: theirs.get(d) ?? null }), 'user_id,log_date', (d) => { meta.days[d].dirty = false; holdHealth(s, { day: d }) })
+  })
   if (meta.settings.dirty) {
     await step('settings', async () => {
-      await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: s.profile }], 'user_id')
+      let profile = s.profile
+      if (paused) {
+        const have = await sbGet<{ profile: Profile | null }[]>('/settings?user_id=eq.' + uid + '&select=profile')
+        profile = withProfileHealth(s.profile, profileHealth(have[0]?.profile))
+      }
+      await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
       meta.settings.dirty = false
+      if (paused) holdHealth(s, { settings: true })
     })
   }
   // Deletes before upserts: a food deleted and re-created under the same name would otherwise
@@ -262,15 +289,19 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
 export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> {
   const uid = getUid()
   const settings = await sbGet<any[]>('/settings?user_id=eq.' + uid + '&select=*')
+  // health sync paused: what this device held back stays as it is here (the server's is older)
+  const pause = healthSyncPaused(s) ? s.consents!.healthPause! : null
   if (settings.length && !meta.settings.dirty) {
     s.target = settings[0].target
     s.schedule = settings[0].schedule
     if (settings[0].profile) {
+      const mine = pause?.heldSettings ? profileHealth(s.profile) : null
       // keep the earliest D5 switch date across devices (and one from an older app version's
       // copy that lacks it), so days between two dates never flip back and forth
       const sw = s.profile.burnSwitch
       s.profile = settings[0].profile
       if (sw && (!s.profile.burnSwitch || sw < s.profile.burnSwitch)) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
+      if (mine) s.profile = withProfileHealth(s.profile, mine)
     }
     meta.settings.u = settings[0].updated_at
   }
@@ -304,7 +335,9 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   dl.forEach((row) => {
     const d = row.log_date
     if (meta.days[d] && meta.days[d].dirty) return // keep unpushed local day
+    const mine = pause?.heldDays?.includes(d) ? s.days[d] : null
     s.days[d] = fromServerDay(row)
+    if (mine) { s.days[d].weight = mine.weight ?? null; s.days[d].checkin = mine.checkin ?? null }
     meta.days[d] = { u: row.updated_at, dirty: false }
   })
 

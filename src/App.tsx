@@ -1,5 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './store/store'
+import { healthConsentAnswered, healthSyncPaused, latestConsent } from './data/consent'
+import { takeReauthReturn } from './data/account'
+import { getUid } from './data/supabase'
+import { ExistingConsentSheet, FirstRunConsent, existingDue, firstRunDue } from './screens/onboarding/Consent'
 import { BottomNav } from './ui/BottomNav'
 import { warmPlanArt } from './screens/plan/PlanParts'
 import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
@@ -10,8 +14,6 @@ import { PlanScreen } from './screens/PlanScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { ConsentScreen } from './screens/legal/ConsentScreen'
 import { legalRedirect } from './screens/legal/LegalDoc'
-import { healthConsentAnswered } from './data/consent'
-import { REAUTH_FLAG } from './data/account'
 
 /** Old /?doc=… links go to the document on the website. */
 const moved = legalRedirect()
@@ -31,11 +33,29 @@ function TaliApp() {
   const toastAction = useStore((s) => s.toastAction)
   const initAuth = useStore((s) => s.initAuth)
   const ownerAsk = useStore((s) => s.ownerAsk)
-  const answered = useStore((s) => healthConsentAnswered(s.data))
+  const data = useStore((s) => s.data)
+  const online = useStore((s) => s.online)
+  const authed = useStore((s) => s.authed)
+  const openProfile = useStore((s) => s.openProfile)
+  const answered = healthConsentAnswered(data)
 
   useEffect(() => {
     initAuth()
   }, [initAuth])
+
+  // back from a Google re-sign-in for account deletion: reopen its confirm step (once, same account)
+  useEffect(() => {
+    if (authed && takeReauthReturn(getUid())) openProfile('delete-confirm')
+  }, [authed, openProfile])
+
+  // first-run consent (behind ONBOARDING_ENABLED): health, then AI, once each
+  const [firstRun, setFirstRun] = useState<'health' | 'ai' | null>(null)
+  useEffect(() => {
+    if (!signedIn || ownerAsk) return
+    if (!firstRun && firstRunDue(data, online)) setFirstRun('health')
+    else if (firstRun === 'health' && latestConsent(data, 'health')) setFirstRun(latestConsent(data, 'ai') ? null : 'ai')
+    else if (firstRun === 'ai' && latestConsent(data, 'ai')) setFirstRun(null)
+  }, [data, online, signedIn, ownerAsk, firstRun])
 
   // the plan photographs, fetched once when idle so the library looks right offline
   useEffect(() => {
@@ -44,13 +64,6 @@ function TaliApp() {
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
     if (w.requestIdleCallback) w.requestIdleCallback(run); else setTimeout(run, 3000)
   }, [signedIn])
-
-  // back from a Google re-sign-in started in Profile to delete the account: go back there (Profile
-  // reads and clears the flag, and reopens the delete step)
-  useEffect(() => {
-    if (!signedIn) return
-    try { if (sessionStorage.getItem(REAUTH_FLAG)) setTab('profile') } catch { /* blocked */ }
-  }, [signedIn, setTab])
 
   // Each tab opens at the top, like a native tab bar.
   useEffect(() => {
@@ -75,8 +88,12 @@ function TaliApp() {
 
   if (ownerAsk) return <OwnerChoiceScreen />
   if (!signedIn) return <AuthScreen />
-  // explicit consent before any health data is stored or synced (sync waits for it too)
-  if (!answered) return <ConsentScreen />
+  // One consent screen at a time. Live: the consent screen (screens/legal/ConsentScreen.tsx) until
+  // the health answer is in; sync waits for it too (store scheduleSync, consentLetsSync). Behind
+  // ONBOARDING_ENABLED, the Onboarding 6 flow takes its place: first-run ob6-1 → ob6-2, or for
+  // someone who already has data here the ob6-3 sheet over the app ("Not now" pauses health sync).
+  if (firstRun || firstRunDue(data, online)) return <FirstRunConsent step={firstRun ?? 'health'} />
+  if (!answered && !healthSyncPaused(data) && !existingDue(data, online)) return <ConsentScreen />
 
   return (
     <div className="app-shell">
@@ -94,6 +111,7 @@ function TaliApp() {
         )}
       </div>
       <BottomNav active={tab} onChange={setTab} />
+      {existingDue(data, online) && <ExistingConsentSheet />}
     </div>
   )
 }

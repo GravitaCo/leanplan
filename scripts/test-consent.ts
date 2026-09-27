@@ -1,7 +1,8 @@
 /* Consent, account deletion and the connection indicator (onboarding plan §7, §8). Run from
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
-import { healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw } from '@/data/consent'
+import { healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
+  REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
@@ -304,11 +305,107 @@ async function consentFirst(fakeServer: FakeServer): Promise<void> {
   report('consent first', checks)
 }
 
+/**
+ * A PostgREST stand-in that merges an upsert into the row like the real one (only the columns
+ * sent are set), and answers `select=` reads with the rows as stored.
+ */
+function mergingServer(rows: Record<string, any[]>) {
+  const keyOf = (t: string) => (t === 'day_logs' ? ['user_id', 'log_date'] : t === 'settings' ? ['user_id'] : ['id'])
+  const res = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status })
+  const fetchFn = (async (url: string, o: RequestInit = {}) => {
+    const [path] = String(url).split('/rest/v1/')[1].split('?')
+    const t = path.replace(/^\//, '')
+    if (!o.method) return res(200, (rows[t] || []).filter((r) => r.user_id === LOCAL_USER))
+    const next = [...(rows[t] || [])]
+    for (const row of JSON.parse(String(o.body))) {
+      const i = next.findIndex((r) => keyOf(t).every((k) => r[k] === row[k]))
+      if (i >= 0) next[i] = { ...next[i], ...row, updated_at: 'y' }; else next.push({ weight: null, ...row, updated_at: 'y' })
+    }
+    rows[t] = next
+    return res(201)
+  }) as typeof fetch
+  return { fetchFn }
+}
+
+/** Existing users' "Not now" (plan §14): health data stays on the phone, its sync pauses. */
+async function healthPause(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const D1 = '2026-09-20', D2 = '2026-09-21'
+  const rows: Record<string, any[]> = {
+    settings: [{ user_id: LOCAL_USER, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', weight: 72, bodyFat: 20, training: { limitations: ['knees'], equipment: ['dumbbells'] } } }],
+    day_logs: [{ user_id: LOCAL_USER, log_date: D1, foods: [], supps: { vitD: true, _checkin: { mood: 3, hunger: 2, sleep: 2 } }, weight: 71, workout: null }],
+    custom_foods: [], recipes: [], consents: [],
+  }
+  const srv = mergingServer(rows)
+  const s = stateFromBackup({ days: {} } as never)
+  const m = ensureMeta(s, false)
+  m.settings.dirty = false
+  await withFetch(srv.fetchFn, () => pullAll(s, m))
+  checks.push(['the one-time sheet is due for someone with data and no answer', existingConsentDue(s) && s.days[D1].weight === 71])
+  const t0 = Date.now()
+  pauseHealthSync(s, new Date(t0).toISOString())
+  checks.push(['"Not now" pauses sync, records nothing, clears nothing', healthSyncPaused(s) && !latestConsent(s, 'health') && s.consents!.records.length === 0 && s.days[D1].weight === 71 && healthLoggingAllowed(s)])
+  checks.push(['not due again before 2 weeks; due once after', !existingConsentDue(s, t0 + 13 * 86400_000) && existingConsentDue(s, t0 + REASK_AFTER_MS + 1)])
+
+  // while paused: new health data on the phone, and other changes that do sync
+  s.days[D1].weight = 70.5
+  s.days[D1].foods.push({ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 } as never)
+  s.days[D2] = { foods: [], supps: {}, weight: 70.2, workout: null, checkin: { mood: 4, hunger: 2, sleep: 3 } } as never
+  m.days[D1] = { u: 'x', dirty: true }; m.days[D2] = { u: 'x', dirty: true }
+  s.profile.weight = 70; s.profile.name = 'Sam B'
+  m.settings.dirty = true
+  const failed = await withFetch(srv.fetchFn, () => pushDirty(s, m))
+  const r1 = rows.day_logs.find((r) => r.log_date === D1), r2 = rows.day_logs.find((r) => r.log_date === D2)
+  checks.push(['paused push: the rest of the day syncs', failed.length === 0 && r1.foods.length === 1 && r1.supps.vitD === true && !m.days[D1].dirty && !m.days[D2].dirty])
+  checks.push(['paused push: the server keeps its weight and check-in; no new health data goes up', r1.weight === 71 && r1.supps._checkin?.mood === 3 && r2.weight === null && !('_checkin' in r2.supps)])
+  const sp = rows.settings[0].profile
+  checks.push(['paused push: settings sync with the server’s own health fields', sp.name === 'Sam B' && sp.weight === 72 && sp.bodyFat === 20 && sp.training.limitations[0] === 'knees' && sp.training.equipment[0] === 'dumbbells'])
+  checks.push(['what was held back is remembered', JSON.stringify(s.consents!.healthPause!.heldDays) === JSON.stringify([D1, D2]) && s.consents!.healthPause!.heldSettings === true])
+  await withFetch(srv.fetchFn, () => pullAll(s, m))
+  checks.push(['paused pull: the phone keeps its newer health data', s.days[D1].weight === 70.5 && s.days[D2].weight === 70.2 && s.days[D2].checkin?.mood === 4 && s.days[D1].foods.length === 1 && s.profile.weight === 70 && s.profile.name === 'Sam B'])
+  const again = loadStateFrom(JSON.parse(JSON.stringify(s)))
+  checks.push(['the pause survives a reload', healthSyncPaused(again) && again.consents!.healthPause!.heldDays!.length === 2])
+
+  // the one re-ask, then never again
+  pauseHealthSync(s)
+  checks.push(['a second "Not now" answers the re-ask: never asked again, still paused', !existingConsentDue(s, t0 + 60 * 86400_000) && healthSyncPaused(s) && s.consents!.healthPause!.at === new Date(t0).toISOString()])
+
+  // yes: what was held uploads
+  grantHealth(s, m)
+  checks.push(['a yes ends the pause and marks what was held to upload', !healthSyncPaused(s) && !s.consents!.healthPause && m.days[D1].dirty && m.days[D2].dirty && m.settings.dirty])
+  await withFetch(srv.fetchFn, () => pushDirty(s, m))
+  const u1 = rows.day_logs.find((r) => r.log_date === D1), u2 = rows.day_logs.find((r) => r.log_date === D2)
+  checks.push(['after the yes, the phone’s health data reaches the server', u1.weight === 70.5 && u2.weight === 70.2 && u2.supps._checkin?.mood === 4 && rows.settings[0].profile.weight === 70])
+
+  // an answer on another device ends the pause here
+  const s2 = stateFromBackup({ days: { [D1]: day(69) } } as never)
+  const m2 = ensureMeta(s2, false)
+  pauseHealthSync(s2)
+  holdHealth(s2, { day: D1 }); m2.days[D1].dirty = false
+  recordConsent(s2, 'health', true) // as if pulled from another device
+  checks.push(["another device's yes uploads what this one held", settleHealthPause(s2, m2) && m2.days[D1].dirty && !s2.consents!.healthPause])
+  const s3 = stateFromBackup({ days: { [D1]: day(69) } } as never)
+  const m3 = ensureMeta(s3, false)
+  pauseHealthSync(s3)
+  withdraw(s3, m3, 'health')
+  checks.push(['withdrawing ends the pause (the clear uploads everywhere)', !s3.consents!.healthPause && !healthSyncPaused(s3) && s3.days[D1].weight === null])
+
+  // declined: no calorie numbers until they agree
+  const s4 = stateFromBackup({ days: {} } as never)
+  checks.push(['numbers show by default; Gentle hides them', !quietNumbers(s4) && (s4.profile.gentle = true, quietNumbers(s4))])
+  s4.profile.gentle = false
+  withdraw(s4, ensureMeta(s4, false), 'health')
+  checks.push(['saying no to health data hides calorie numbers and stops weigh-ins', healthDeclined(s4) && quietNumbers(s4) && !healthLoggingAllowed(s4)])
+  checks.push(['someone new with nothing logged is not an existing user', !existingConsentDue(stateFromBackup({ days: {} } as never))])
+  report('health pause', checks)
+}
+
 export async function consentSuite(fakeServer: FakeServer): Promise<number> {
   bad = 0
   gate()
   await consentFirst(fakeServer)
   await consent(fakeServer)
+  await healthPause()
   await deletion()
   connection()
   return bad

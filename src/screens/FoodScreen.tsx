@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import type { LoggedFood, MealSlot, RecipeItem } from '@/core/types'
 import { fmt, shiftDay } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
@@ -33,7 +34,7 @@ export function FoodScreen() {
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
-  const gentle = !!data.profile.gentle
+  const gentle = quietNumbers(data)
   const day = dayOf(data, cur)
   const t = dayTotals(day)
   const tg = data.target

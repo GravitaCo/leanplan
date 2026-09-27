@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import { keyRoutineId, keyTitle, type WorkoutKey } from '@/core/domain/routines'
 import type { Effort, ExerciseMedia, LoggedExercise, SetEntry, Workout } from '@/core/types'
 import { mediaUrl } from '@/core/data/media'
@@ -94,7 +95,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
 }) {
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
-  const gentle = useStore((s) => !!s.data.profile.gentle)
+  const gentle = useStore((s) => quietNumbers(s.data))
   const saveWorkout = useStore((s) => s.saveWorkout)
   const removeSession = useStore((s) => s.removeSession)
   const restoreSession = useStore((s) => s.restoreSession)

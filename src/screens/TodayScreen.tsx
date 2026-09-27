@@ -5,6 +5,7 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
+import { healthDeclined, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
@@ -45,12 +46,9 @@ function weekSpan(a: string, b: string): string {
 export function TodayScreen() {
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
-  const sync = useStore((s) => s.sync)
-  const authed = useStore((s) => s.authed)
   const setTab = useStore((s) => s.setTab)
   const toggleSupp = useStore((s) => s.toggleSupp)
   const logEntries = useStore((s) => s.logEntries)
-  const runSync = useStore((s) => s.runSync)
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
   const openProfile = useStore((s) => s.openProfile)
@@ -58,7 +56,7 @@ export function TodayScreen() {
   const [dismissedMissed, setDismissedMissed] = useState(false)
 
   const p = data.profile
-  const gentle = !!p.gentle
+  const gentle = quietNumbers(data)
   const day = dayOf(data, cur)
   const t = dayTotals(day)
   const tg = data.target
@@ -99,7 +97,6 @@ export function TodayScreen() {
   const wDelta = weightWeekDelta(data, cur)
   const supps = p.supplements || []
   const baseLo = tg.kcal - rangeWidth(p), baseHi = tg.kcal + rangeWidth(p)
-  const syncLabel = !authed ? 'not syncing' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
 
   // Move card: what today holds (a logged session wins over the plan)
   const plan = first ? templateFor(first, data.routines) : null
@@ -129,8 +126,7 @@ export function TodayScreen() {
   return (
     <div className="screen">
       <PageHeader
-        eyebrow={<>{isToday ? 'Today' : f.dow} · {f.full.split(' ').slice(0, 2).join(' ')}
-          {syncLabel && <button className="navbtn" style={{ fontSize: 13, color: 'var(--label3)' }} onClick={() => runSync()}>{syncLabel}</button>}</>}
+        eyebrow={<>{isToday ? 'Today' : f.dow} · {f.full.split(' ').slice(0, 2).join(' ')}</>}
         title="Summary"
         right={<button className="avatar" aria-label="Profile" onClick={() => setTab('profile')}>{initials(p.name) || <Icon name="person" />}</button>}
       />
@@ -138,7 +134,7 @@ export function TodayScreen() {
 
       <div className="pillars">
         {/* ---------- Mind ---------- */}
-        <button className="card pcard mind-row" onClick={() => setSheet({ k: 'checkin' })}>
+        <button className="card pcard mind-row" onClick={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}>
           <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="smile" size={20} /></span>
           <span className="m">
             <span className="pk" style={{ color: 'var(--mind-ink)' }}>Mind</span>

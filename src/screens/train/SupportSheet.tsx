@@ -1,4 +1,5 @@
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import { Sheet, Toggle } from '@/ui/primitives'
 
 /**
@@ -16,7 +17,7 @@ const LINES: [string, string, string][] = [
 ]
 
 export function SupportSheet({ onClose }: { onClose: () => void }) {
-  const gentle = useStore((s) => !!s.data.profile.gentle)
+  const gentle = useStore((s) => quietNumbers(s.data))
   const setPrefs = useStore((s) => s.setPrefs)
   return (
     <Sheet title="Support" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>

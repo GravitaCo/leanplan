@@ -16,6 +16,7 @@ import { Thumb } from './train/Thumb'
 import { DayView, WorkoutView, workoutSub } from './plan/PlanViews'
 import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
+import { BuildPlanCard, ONBOARDING_ENABLED } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
@@ -175,6 +176,8 @@ export function PlanScreen() {
   return (
     <div className="screen">
       <PageHeader title="Plan" />
+      {/* ob6-4, behind the onboarding flag: the wizard it opens ships later */}
+      {ONBOARDING_ENABLED && <BuildPlanCard />}
 
       {!active && (
         <>

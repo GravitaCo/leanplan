@@ -15,6 +15,7 @@ import { checkLabel, foodFromConfirmed, type FoodKind, type LabelField, type Lab
 import { cellId, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
 import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
+import { LabelPhotoButton } from './common'
 
 /** UK label order. `sub` rows are the "of which" lines; `unit` is shown beside the name. */
 const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: number }[] = [
@@ -156,7 +157,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
       </div>
       {onLabelPhoto && (
         <div className="stack" style={{ marginTop: 0, marginBottom: 12 }}>
-          <button className="btn gray" onClick={onLabelPhoto}><Icon name="camera" size={17} /> Photo of the label</button>
+          <LabelPhotoButton onPress={onLabelPhoto} />
           {!fromLabel && <div className="foot" style={{ padding: 0 }}>If these numbers don’t match your pack, read them from a photo instead.</div>}
         </div>
       )}

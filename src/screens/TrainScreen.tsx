@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
+import { quietNumbers } from '@/data/consent'
 import type { ExerciseTemplate, LoggedExercise, Session } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
@@ -64,7 +65,7 @@ export function TrainScreen() {
   // the person's pick for today, for the workout it was made on (it never carries into another)
   const [pick0, setPick0] = useState<{ c: Choice; k: WorkoutKey } | null>(null)
   const setPicked = (c: Choice | null, k: WorkoutKey | null = open) => setPick0(c && k ? { c, k } : null)
-  const gentle = !!data.profile.gentle
+  const gentle = quietNumbers(data)
 
   const day = data.days[cur]
   const sessions = sessionsOf(day, cur)

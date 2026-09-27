@@ -3,6 +3,19 @@ import type { Check } from '@/core/domain/checks'
 import { MEALS, MEAL_LABEL } from '@/core/domain/insights'
 import { Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
+import { useStore } from '@/store/store'
+import { NEEDS_NET } from '@/ui/ConnectionPill'
+
+/** "Photo of the label": online only, so offline it stays in view, off, with the note (ob6-8). */
+export function LabelPhotoButton({ onPress }: { onPress: () => void }) {
+  const online = useStore((s) => s.online)
+  return (
+    <>
+      <button className="btn gray" disabled={!online} onClick={onPress}><Icon name="camera" size={17} /> Photo of the label</button>
+      {!online && <div className="foot" style={{ padding: 0 }}>{NEEDS_NET}</div>}
+    </>
+  )
+}
 
 /** Accuracy check results. `ok` is shown only when there's nothing to flag and the numbers
  *  have been checked, so a confirmation always means something. */

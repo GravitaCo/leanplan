@@ -43,7 +43,7 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, healthConsentAnswered, pullConsents, clearHealthData, type ConsentType } from '@/data/consent'
+import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -184,6 +184,11 @@ export interface StoreState {
    *  and, through sync, on the server */
   withdrawConsent: (type: ConsentType) => void
   hasConsent: (type: ConsentType) => boolean
+  /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
+   *  (a second "Not now", at the one re-ask, keeps it paused) */
+  notNowHealth: () => void
+  /** "Not now" on first-run consent (onboarding): recorded as a no for that type */
+  declineConsent: (type: ConsentType) => void
   /** the questionnaire's guard: false until a local health consent says yes */
   canSaveHealth: () => boolean
   /** save onboarding health answers (weight, limitations …); refused (false) without health consent */
@@ -1006,7 +1011,7 @@ export const useStore = create<StoreState>()(
         // Nothing reaches the cloud until the person has answered the health consent screen
         // (UK GDPR Art. 9(2)(a)). Until then, only read their consent records, so an answer given
         // on another device counts here (and the screen goes away) without asking twice.
-        if (!healthConsentAnswered(get().data)) {
+        if (!consentLetsSync(get().data)) {
           syncing = true
           // data changed while the pull ran (e.g. Continue was tapped): run again afterwards, since
           // that tap's own scheduled sync was dropped while this one was in flight
@@ -1017,7 +1022,7 @@ export const useStore = create<StoreState>()(
             const d = structuredClone(src) as PersistedState
             await pullConsents(d)
             if (get().data !== src) { again = true; return }
-            if (!get().authed || getUid() !== uid0 || !healthConsentAnswered(d)) return
+            if (!get().authed || getUid() !== uid0 || !consentLetsSync(d)) return
             // a withdrawal that came in isn't applied here: the log on this copy hasn't been pulled,
             // and clearing it would upload stale days over newer ones. The full run next applies it
             // after pullAll (healthCleared isn't set for it yet).
@@ -1046,6 +1051,8 @@ export const useStore = create<StoreState>()(
           await pullAll(d, m)
           // a health withdrawal made on another device clears this one's health data too (once)
           if (applyHealthWithdrawal(d, m)) rerun = true
+          // an answer given on another device ends a "Not now" pause here (a yes uploads what was held)
+          if (settleHealthPause(d, m)) rerun = true
           // the plan's week moved on (a new phase) while settings were current: upload the mirror next run
           if (mirrorPlan(d, true)) rerun = true
           // Data changed while we were on the network (an edit, a backup import): writing this
@@ -1103,7 +1110,19 @@ export const useStore = create<StoreState>()(
       },
 
       grantConsent: (type) => {
-        set((st) => { recordConsent(st.data, type, true) })
+        // a yes to health also uploads what a "Not now" held back on this device
+        set((st) => { if (type === 'health') grantHealth(st.data, meta(st.data)); else recordConsent(st.data, type, true) })
+        saved()
+      },
+
+      notNowHealth: () => {
+        set((st) => { pauseHealthSync(st.data) })
+        saved()
+      },
+
+      declineConsent: (type) => {
+        // nothing to clear for someone new, but withdraw() also covers anything logged meanwhile
+        set((st) => { withdraw(st.data, meta(st.data), type) })
         saved()
       },
 

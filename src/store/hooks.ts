@@ -1,6 +1,6 @@
 /**
- * Hooks for screens still awaiting design approval (onboarding plan §7, §8). Nothing renders
- * them yet; they're the seams the approved UI plugs into.
+ * Hooks for the foundations UI (onboarding plan §7, §8; Design canvas row "Onboarding 6"): the
+ * connection pill, consent screens, health withdrawal and account deletion.
  */
 import { useCallback } from 'react'
 import { useStore, selectConnection } from './store'
