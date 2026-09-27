@@ -9,7 +9,7 @@ import { LEGAL_URLS, fact, type LegalDoc } from './index'
 export function cookiePolicy(): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: '2026-09-28',
+    updated: '2026-09-27',
     intro:
       `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +

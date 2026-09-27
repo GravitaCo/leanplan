@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-09-24. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-09-27. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -36,7 +36,6 @@ Last reviewed: 2026-09-24. Controller: Gravita Creative Ltd (company 08348225), 
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
 | Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
-| Guest mode data | Run the app locally | Not processed by us: never leaves the device | Browser local storage | Until the user deletes it |
 
 ## Processors and transfers
 
@@ -70,16 +69,15 @@ above feeds it, but the DPIA itself has not been written. **Open.**
 ## Status
 
 Build and test phase. Gravita Creative Ltd is the controller for now (decided 2026-09-24);
-a separate company will be formed before public launch (see item 15). This branch stays off
-`main` until the ICO fee is paid, because `check:legal` (run by the deploy workflow) fails
-without the number.
+a separate company will be formed before public launch (see item 15). Closed-group testing
+with the consent screen from 2026-09-27; the full app texts are published with that release.
 
 While testing: anyone other than Benn using Tali with real data is still covered by GDPR.
 Keep testers few, tell them it's a test build, and delete their data when testing ends.
 
 ## Open items (Benn)
 
-Blocking before the legal texts can go live:
+Owed now (processing is happening whether or not the texts are live):
 
 1. Pay the ICO data protection fee for Gravita Creative Ltd and add the number to `LEGAL`
    (the only fact still missing; the new company will need its own later).
@@ -102,30 +100,19 @@ Should fix:
     response body, which may end up in function logs. Consider returning counts only.
 11. Breach response: decide who checks for incidents and how the 72-hour ICO notice (Art. 33)
     would be made.
-12. A consent record is written to user metadata fire-and-forget. If an account never
-    reconnects after consenting, the only record is on the device. Acceptable, but know it.
-13. Consent given while an account is open offline (no live session) isn't tied to the
-    account id, so the person is asked once more when they're back online. Harmless.
-14. The deploy workflow runs `npm run check:legal`, so main will not deploy until item 1 is done.
-16. Exception, 2026-09-24: interim website-only texts (`src/core/legal/website.ts`,
-    `npm run legal:html -- --site`) are published at the same URLs, since they describe only
-    the website and the early-access form. The full texts replace them at go-live.
-    Also: the full pages can only be published once the app on `main` has the consent screen
-    and deletion (this branch, now built on main's consent records and `delete-account`). Until then they would describe safeguards the live app doesn't have.
-17. Turnstile loads for every visitor to a page with the early-access form, not only people
-    who submit it. Moving the form to its own page (or loading Turnstile only when someone
-    starts typing) keeps it strictly necessary under PECR.
-18. Early-access invites: the site says the email is used only for the invite. Removal is by
-    email request; if an email service is used to send invites, add it as a processor first.
-19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
-    (Supabase MCP): title, supplement name, tag, icon. Keep a copy of the function in the repo.
+12. (Superseded 2026-09-27: consents are in the `consents` table; see "What's in the app".)
+13. Owner choice "keep" carries the previous account's health grant to the new account, so it
+    skips the consent screen. Arguably the same person; consider dropping health grants on keep.
+14. (Superseded 2026-09-27: a missing ICO number now warns, it no longer blocks deploys.)
 15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
     texts, bump `CONSENT_VERSION` so everyone consents to the new company, and tell the
     early-access list.
 
 Added 2026-09-28 (consent release):
 
-20. Existing testers' data (9 accounts) was synced before consent existed. They see the consent
+20. People who decline consent can ask by email for their account to be deleted (the consent
+    screen says so); do it with the `delete-account` flow or the Supabase dashboard.
+    Existing testers' data (9 accounts) was synced before consent existed. They see the consent
     screen on their next launch and nothing more syncs until they answer; if anyone declines,
     delete their account on request. Consider a short email to them explaining the change.
 21. Age: the texts, sign-up line and consent screen say 18+ (`MIN_AGE`). The onboarding plan's

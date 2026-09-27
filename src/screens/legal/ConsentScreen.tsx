@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { MIN_AGE } from '@/core/legal'
+import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
 import { LegalLink } from './LegalDoc'
 
@@ -30,8 +30,8 @@ export function ConsentScreen() {
       <h1>Before you start</h1>
       <p className="sub">
         What you log in Tali, like your weight, food, workouts, sleep, stress, mood and any injuries, is health
-        information. It’s stored on this phone and in your private account database in Ireland (EU), which only
-        you can read. It’s never sold, shared for marketing or used for ads.
+        information. It’s stored on this phone and in a database in Ireland (EU) that’s private to your
+        account. It’s never sold, shared for marketing or used for ads.
       </p>
 
       <div className="list">
@@ -42,6 +42,9 @@ export function ConsentScreen() {
 
       <button className="btn" disabled={!(health && terms && adult)} onClick={() => grantConsent('health')}>Continue</button>
       <button className="btn gray" onClick={() => signOut()}>Not now, sign out</button>
+      <div className="foot">
+        Already have data in Tali and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.
+      </div>
       <div className="foot">
         If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tali to guide your eating.
       </div>

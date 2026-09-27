@@ -11,6 +11,7 @@ import { ProfileScreen } from './screens/ProfileScreen'
 import { ConsentScreen } from './screens/legal/ConsentScreen'
 import { legalRedirect } from './screens/legal/LegalDoc'
 import { healthConsentAnswered } from './data/consent'
+import { REAUTH_FLAG } from './data/account'
 
 /** Old /?doc=… links go to the document on the website. */
 const moved = legalRedirect()
@@ -43,6 +44,13 @@ function TaliApp() {
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
     if (w.requestIdleCallback) w.requestIdleCallback(run); else setTimeout(run, 3000)
   }, [signedIn])
+
+  // back from a Google re-sign-in started in Profile to delete the account: go back there (Profile
+  // reads and clears the flag, and reopens the delete step)
+  useEffect(() => {
+    if (!signedIn) return
+    try { if (sessionStorage.getItem(REAUTH_FLAG)) setTab('profile') } catch { /* blocked */ }
+  }, [signedIn, setTab])
 
   // Each tab opens at the top, like a native tab bar.
   useEffect(() => {

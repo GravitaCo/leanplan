@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAccountDeletion, useHealthWithdrawal } from '@/store/hooks'
+import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
 import { Sheet } from '@/ui/primitives'
+import { LegalLink } from './LegalDoc'
 
 /**
  * Withdrawing health consent (UK GDPR Art. 7(3): as easy as giving it). Offers the backup taken
@@ -22,7 +23,7 @@ export function WithdrawHealthSheet({ onClose }: { onClose: () => void }) {
         <p style={{ margin: 0 }}>{parts.length ? 'This clears ' + parts.join(', ') + '.' : 'There’s nothing to clear yet.'} You can keep using Tali, and give consent again later.</p>
       </div>
       <button className="btn gray" onClick={download}>Download a copy first</button>
-      <button className="btn destructive" style={{ marginTop: 10 }} onClick={() => { withdraw(); onClose() }}>Withdraw and clear</button>
+      <button className="btn danger" style={{ marginTop: 10 }} onClick={() => { withdraw(); onClose() }}>Withdraw and clear</button>
     </Sheet>
   )
 }
@@ -74,13 +75,36 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
             <>
               <div className="field"><label htmlFor="del_pw">Password</label>
                 <input id="del_pw" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-              <button className="btn destructive" disabled={busy || !password} onClick={confirm}>{busy ? 'Checking…' : 'Confirm and delete'}</button>
+              <button className="btn danger" disabled={busy || !password} onClick={confirm}>{busy ? 'Checking…' : 'Confirm and delete'}</button>
             </>
           )}
         </>
       ) : (
-        <button className="btn destructive" disabled={!canDelete || deleting} onClick={go}>{deleting ? 'Deleting…' : 'Delete account and data'}</button>
+        <button className="btn danger" disabled={!canDelete || deleting} onClick={go}>{deleting ? 'Deleting…' : 'Delete account and data'}</button>
       )}
+    </Sheet>
+  )
+}
+
+/**
+ * Giving health consent again after a withdrawal: the same explicit statement and unticked box as
+ * the consent screen, never a bare tap (Art. 7: consent must be specific and informed).
+ */
+export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
+  const { grant } = useConsent('health')
+  const [on, setOn] = useState(false)
+  return (
+    <Sheet title="Health data" onClose={onClose}>
+      <div className="card prose">
+        <p style={{ margin: 0 }}>Turning this back on lets Tali save your weigh-ins, check-ins and body details again, and sync them to your account.</p>
+      </div>
+      <div className="list">
+        <div className="li consent-row">
+          <input id="c_regrant" type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} />
+          <label htmlFor="c_regrant">I agree to Tali storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time.</label>
+        </div>
+      </div>
+      <button className="btn" disabled={!on} onClick={() => { grant(); onClose() }}>Turn health data back on</button>
     </Sheet>
   )
 }

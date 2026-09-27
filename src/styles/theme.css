@@ -965,5 +965,4 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .consent-row input { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 1px; padding: 0; accent-color: var(--tint); -webkit-appearance: checkbox; appearance: auto; }
 .consent-row label { flex: 1; font-size: 15px; line-height: 1.4; }
 label a, .prose a { color: var(--tint); text-decoration: none; }
-.btn.destructive { background: var(--red); color: #fff; }
 .legal-rows a.li { color: inherit; text-decoration: none; }

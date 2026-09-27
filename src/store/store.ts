@@ -282,6 +282,8 @@ function clearSavedSession() {
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
 const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
+/** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
+const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
@@ -479,7 +481,7 @@ export const useStore = create<StoreState>()(
       },
 
       setCheckin: (c) => {
-        if (c && !healthLoggingAllowed(get().data)) return
+        if (c && !healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
         set((st) => {
           ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
@@ -530,7 +532,7 @@ export const useStore = create<StoreState>()(
       },
 
       setWeight: (kg) => {
-        if (!healthLoggingAllowed(get().data)) return
+        if (!healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
@@ -1004,20 +1006,25 @@ export const useStore = create<StoreState>()(
         // on another device counts here (and the screen goes away) without asking twice.
         if (!healthConsentAnswered(get().data)) {
           syncing = true
+          // data changed while the pull ran (e.g. Continue was tapped): run again afterwards, since
+          // that tap's own scheduled sync was dropped while this one was in flight
+          let again = false
           try {
             const src = get().data
             const uid0 = getUid()
             const d = structuredClone(src) as PersistedState
             await pullConsents(d)
-            if (get().data !== src || !get().authed || getUid() !== uid0 || !healthConsentAnswered(d)) return
+            if (get().data !== src) { again = true; return }
+            if (!get().authed || getUid() !== uid0 || !healthConsentAnswered(d)) return
             applyHealthWithdrawal(d, ensureMeta(d, false))
             saveState(d)
             set((st) => { st.data = d })
-            get().scheduleSync()
+            again = true
           } catch (e) {
             console.warn('consent check failed:', e)
           } finally {
             syncing = false
+            if (again) get().scheduleSync()
           }
           return
         }

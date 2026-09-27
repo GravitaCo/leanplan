@@ -13,7 +13,7 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-09-28',
+    updated: '2026-09-27',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -60,10 +60,10 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'Health data',
         p: [
-          `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) is health data, a special category of personal data. ` +
-            `Your diet pattern may also reveal beliefs. We only process this information with your explicit consent, which the app asks for when you first sign in, before anything is synced, and records with the date and version.`,
-          `You can withdraw it at any time in the app (Profile, then Privacy). That clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from all your devices, and you can keep using Tali without them. ` +
-            `To remove everything else too, including your food and workout logs, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
+          `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
+            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw.`,
+          `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from all your devices, and Tali stops saving them. ` +
+            `Your food, workout and supplement logs stay in your account so the app keeps working. If you don't want us to keep those either, delete your account (Profile, then Privacy, then Delete account; this needs a connection), which removes everything. Withdrawing does not affect what happened before.`,
         ],
       },
       {

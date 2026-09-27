@@ -14,7 +14,9 @@ import { Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/pri
 import { Icon, Chevron } from '@/ui/icons'
 import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
-import { DeleteAccountSheet, WithdrawHealthSheet } from './legal/PrivacySheets'
+import { DeleteAccountSheet, RegrantHealthSheet, WithdrawHealthSheet } from './legal/PrivacySheets'
+import { takeReauthReturn } from '@/data/account'
+import { getUid } from '@/data/supabase'
 import { useConsent } from '@/store/hooks'
 import { latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
@@ -71,7 +73,9 @@ export function ProfileScreen() {
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  // back from a Google re-sign-in started to delete the account: reopen that step
+  const [deleteOpen, setDeleteOpen] = useState(() => takeReauthReturn(getUid()))
+  const [regrantOpen, setRegrantOpen] = useState(false)
   const health = useConsent('health')
   const healthRec = latestConsent(data, 'health')
   const healthAt = healthRec?.granted ? new Date(healthRec.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null
@@ -313,7 +317,7 @@ export function ProfileScreen() {
           </div>
           {health.granted
             ? <button className="btn gray" onClick={() => setWithdrawOpen(true)}>Withdraw consent for health data</button>
-            : <button className="btn gray" onClick={health.grant}>Give consent again</button>}
+            : <button className="btn gray" onClick={() => setRegrantOpen(true)}>Turn health data back on</button>}
           <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setDeleteOpen(true)}>Delete account</button>
         </Disclosure>
       </div>
@@ -326,6 +330,7 @@ export function ProfileScreen() {
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
       {withdrawOpen && <WithdrawHealthSheet onClose={() => setWithdrawOpen(false)} />}
       {deleteOpen && <DeleteAccountSheet onClose={() => setDeleteOpen(false)} />}
+      {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </div>
   )

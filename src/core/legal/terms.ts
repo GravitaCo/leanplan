@@ -9,7 +9,7 @@ const who = () => fact('controller', 'legal name')
 export function termsOfUse(): LegalDoc {
   return {
     title: 'Terms and conditions',
-    updated: '2026-09-28',
+    updated: '2026-09-27',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
