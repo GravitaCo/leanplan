@@ -55,4 +55,10 @@ export const TALI_WORKOUTS: Routine[] = [
   },
 ]
 
+/** Short names for narrow places (the Summary week strip, about six letters wide): the names' initials. */
+export const TALI_SHORT: Record<string, string> = {
+  'tali-strength-balance-a': 'S&B A', 'tali-strength-balance-b': 'S&B B', 'tali-balance-mobility': 'B&M',
+  'tali-full-body-a': 'FB A', 'tali-full-body-b': 'FB B', 'tali-full-body-c': 'FB C',
+}
+
 export const TALI_WORKOUT_BY_ID: Record<string, Routine> = Object.fromEntries(TALI_WORKOUTS.map((r) => [r.id, r]))

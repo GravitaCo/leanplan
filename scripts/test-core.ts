@@ -28,7 +28,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
 import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
@@ -1691,6 +1691,27 @@ async function timeouts(): Promise<void> {
   const got = [one.some((n) => n === 'Monday has lifting and cardio. Doing both? Lift first, then cardio.'), two.some((n) => n.includes('Lift first')), two.some((n) => n.includes('two harder'))].join(' ')
   const ok = got === 'true false true'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: lift first when a day has lifting and cardio', JSON.stringify(got))
+}
+
+{
+  // stopping a plan never loses the week: it's kept when the first plan starts and comes back when none runs;
+  // carrying on repeats the last week at the full version, counted from the day it's chosen
+  const own = { 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Rest', 5: 'Pull', 6: 'Cardio' } as any
+  const mirror = { 0: 'Rest', 1: 'Cardio', 2: 'Cardio', 3: 'Cardio', 4: 'Cardio', 5: 'Cardio', 6: 'Rest' } as any
+  const t = PLAN_TEMPLATES[2]
+  const running: any = { id: 'r', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: phasesOf(t) }
+  const keptOnStart = weekToKeep({ trainingPlans: [], schedule: own, profile: {} } as any)
+  const notTwice = weekToKeep({ trainingPlans: [running], schedule: mirror, profile: { weekBeforePlan: own } } as any)
+  const whileRunning = weekToPutBack({ trainingPlans: [running], profile: { weekBeforePlan: own } } as any)
+  const afterStop = weekToPutBack({ trainingPlans: [{ ...running, state: 'archived' }], profile: { weekBeforePlan: own } } as any)
+  const beforeStart = plannedKeys({ trainingPlans: [running], schedule: mirror, routines: [], profile: { weekBeforePlan: own } } as any, '2026-09-21')
+  const carry: any = { ...running, phases: cleanPhases([...phasesOf(t), { id: 'c', name: 'Carrying on', weeks: 1, after: true, full: true, since: '2026-12-07' }] as any) }
+  const c1 = positionOn(carry, '2026-12-14')!
+  const got = [JSON.stringify(keptOnStart) === JSON.stringify(own), notTwice, whileRunning, JSON.stringify(afterStop) === JSON.stringify(own), beforeStart.join('+'),
+    c1.maintain, c1.maintenanceWeek, c1.phase.name, String(maintainOn({ trainingPlans: [carry] } as any, '2026-12-14')), plannedKeys({ trainingPlans: [carry], schedule: mirror, routines: [] } as any, '2026-12-14').join('+')].join(' | ')
+  const want = 'true |  |  | true | Legs | false | 2 | Carrying on | false | tali-full-body-a'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

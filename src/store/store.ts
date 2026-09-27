@@ -29,7 +29,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { activePlan, cleanPhases, positionOn, scheduleMirror, supersededPlans } from '@/core/domain/plans'
+import { activePlan, cleanPhases, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -201,14 +201,12 @@ function mirrorPlan(s: PersistedState, mark: boolean): boolean {
 
 /** Plans all stopped: the weekly schedule from before them comes back, and is forgotten. */
 function putBackWeek(s: PersistedState): void {
-  if (activeCount(s)) return
-  const prev = s.profile.weekBeforePlan
+  const prev = weekToPutBack(s)
   if (!prev) return
   for (let d = 0; d < 7; d++) s.schedule[d] = prev[d] ?? 'Rest'
   delete s.profile.weekBeforePlan
   ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
 }
-const activeCount = (s: PersistedState) => (s.trainingPlans || []).filter((p) => p.state === 'active').length
 
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
 
@@ -609,7 +607,8 @@ export const useStore = create<StoreState>()(
           const today = todayStr()
           const start = input.startedAt ?? today
           // the person's own week, kept before the first plan's mirror writes over it
-          if (!activeCount(st.data) && !st.data.profile.weekBeforePlan) { st.data.profile.weekBeforePlan = { ...st.data.schedule }; ensureMeta(st.data, false).settings = { u: nowIso(), dirty: true } }
+          const keep = weekToKeep(st.data)
+          if (keep) { st.data.profile.weekBeforePlan = keep; ensureMeta(st.data, false).settings = { u: nowIso(), dirty: true } }
           // one plan in charge: the one in progress is finished (or put away if it never started).
           // A plan chosen to start later leaves it running until then (mirrorPlan finishes it).
           for (const p of st.data.trainingPlans) {

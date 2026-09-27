@@ -129,8 +129,23 @@ export function plannedKeys(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'ro
   if (pos) {
     return (pos.planWeek[idx] || []).filter((k) => { if (isBuiltinKey(k)) return true; const r = routineFor(k, s.routines); return !!r && !r.archived })
   }
-  const v = plannedOn(s.schedule, idx)
+  // no plan on this date: while a plan runs, the schedule is its mirror, so days before it began
+  // read the week the person had before plans (kept when the first one started)
+  const kept = p && (s as Partial<Pick<AppState, 'profile'>>).profile?.weekBeforePlan
+  const v = plannedOn(kept || s.schedule, idx)
   return v === 'Rest' ? [] : [v]
+}
+
+/** The schedule to keep when a plan starts: the person's own week, only if no plan runs and none is kept yet. */
+export function weekToKeep(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'profile'>): Schedule | null {
+  const running = (s.trainingPlans || []).some((p) => p.state === 'active')
+  return running || s.profile.weekBeforePlan ? null : { ...s.schedule }
+}
+
+/** The kept week to put back once no plan is left running (never while one still is). */
+export function weekToPutBack(s: Pick<AppState, 'trainingPlans' | 'profile'>): Schedule | null {
+  if ((s.trainingPlans || []).some((p) => p.state === 'active')) return null
+  return s.profile.weekBeforePlan ?? null
 }
 
 /**

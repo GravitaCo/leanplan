@@ -186,15 +186,15 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .prose h3 { font-size: 17px; margin: 16px 0 6px; }
 
 /* ===================== WEEK STRIP ===================== */
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin: 0 -4px 12px; }
-.wd { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; border-radius: 12px; padding: 6px 0 5px; color: var(--label); }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin: 0 -4px 12px; }
+.wd { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; border-radius: 12px; padding: 6px 0 5px; color: var(--label); }
 .wd.sel { background: var(--card); box-shadow: var(--shadow); }
 .wd .l { font-size: 12px; font-weight: 600; color: var(--label2); }
 .wd.today .l { color: var(--tint); }
 .wd .rw { position: relative; width: 34px; height: 34px; }
 .wd .rw .num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
 .wd.future .rw .num { color: var(--label2); }
-.wd .t { font-size: 10px; font-weight: 600; color: var(--label3); text-transform: uppercase; letter-spacing: 0.2px; white-space: nowrap; }
+.wd .t { font-size: 10px; font-weight: 600; color: var(--label3); text-transform: uppercase; letter-spacing: 0.2px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; box-sizing: border-box; }
 .wd .t.done { color: var(--activity-ink); }
 
 /* ===================== RINGS LEGEND ===================== */
