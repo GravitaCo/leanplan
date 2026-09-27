@@ -67,7 +67,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         <h1 className="pb-h">How long?</h1>
         {note && noteShown && (
           <div className="card plan-note pw-last">
-            <span>Last time you said you'd do differently: “{note}”</span>
+            <span>From your last plan: “{note}”</span>
             <button className="x-btn" aria-label="Hide this note" onClick={() => setNoteShown(false)}><Icon name="x" size={14} stroke={2.6} /></button>
           </div>
         )}
@@ -83,11 +83,11 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         <div className="list">
           <button className="li" onClick={onMaintenance}>
             <span className="catsq sm" style={{ background: 'var(--fill)' }} aria-hidden="true" />
-            <div className="m"><div className="t">When it ends: maintenance</div><div className="s">The same workouts with fewer sets, to keep what you built. Read how it works</div></div>
+            <div className="m"><div className="t">When it ends: maintenance, if you choose it</div><div className="s">The same workouts with fewer sets, to keep what you built. Read how it works</div></div>
             <Chevron />
           </button>
         </div>
-        <div className="foot" style={{ padding: '0 4px' }}>Most plans run 6 to 12 weeks. You can add an easier first week or a lighter week later, in Plan details.</div>
+        <div className="foot" style={{ padding: '0 4px' }}>Most plans run 6 to 12 weeks. You can add a lighter week later in Plan details, and an easier first week until the plan starts.</div>
         <div className="pl-cta"><button className="btn" onClick={() => setStep(2)}>Next: your week</button></div>
       </div>
     )
@@ -106,6 +106,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         )}
         <WeekRows week={week} routines={routines} onDay={setDay} emptyAdd />
         <div className="foot" style={{ padding: '0 4px' }}>Tap a day to add a workout, several on one day if you like. Empty days are rest days.</div>
+        {!empty && rest === 0 && <div className="card plan-note">No rest days in this week. Most plans keep at least one, because recovery is when training pays off.</div>}
         <div className="pl-cta">
           <div className="foot num" style={{ textAlign: 'center', padding: 0 }}>{workouts} {workouts === 1 ? 'workout' : 'workouts'} · {rest} rest {rest === 1 ? 'day' : 'days'}</div>
           <button className="btn" disabled={empty} onClick={() => setStep(3)}>Next: when to start</button>
@@ -121,11 +122,11 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
       <h1 className="pb-h">Ready to start</h1>
       <section className="card pp-weeks">
         <div><div className="pb-title">{name.trim() || 'My plan'}</div>
-          <div className="foot num" style={{ padding: 0 }}>{weeks} {weeks === 1 ? 'week' : 'weeks'} · {workouts} {workouts === 1 ? 'workout' : 'workouts'} a week, then maintenance</div></div>
+          <div className="foot num" style={{ padding: 0 }}>{weeks} {weeks === 1 ? 'week' : 'weeks'} · {workouts} {workouts === 1 ? 'workout' : 'workouts'} a week</div></div>
         <Timeline cells={cells} />
       </section>
       <StartChoice value={start} onChange={setStart} />
-      <div className="foot" style={{ padding: '12px 4px 0' }}>Ends {shortDateOf(end)}. Week 1 is the first 7 days from the start.</div>
+      <div className="foot" style={{ padding: '12px 4px 0' }}>Ends {shortDateOf(end)}. Week 1 is the first 7 days from the start. When it ends, you can choose maintenance.</div>
       <div className="pl-cta"><button className="btn" onClick={() => onStart({ name: name.trim() || 'My plan', weeks, week, startedAt: start })}>Start plan</button></div>
     </div>
   )

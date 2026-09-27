@@ -9,7 +9,7 @@ import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
-import { activePlan, isHardKey, maintainOn, plannedKeys, positionOn } from '@/core/domain/plans'
+import { activePlan, isEaseIn, isHardKey, maintainOn, plannedKeys, positionOn } from '@/core/domain/plans'
 import { planArt } from './plan/PlanParts'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { isBuiltinKey, keyOfSession, keyRoutineId, keyTitle, keyVideo, templateFor, type WorkoutKey } from '@/core/domain/routines'
@@ -146,7 +146,9 @@ export function TrainScreen() {
   }
   const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
 
-  const easyNote = !easyWeek && maintain ? 'Lighter week: the shorter version is selected. Change it any time.'
+  // what kind of shorter week the plan is in: easing in, a lighter week, or maintenance after it
+  const planShortKind = planPos?.maintenanceWeek != null ? 'maintenance' : planNow && planPos && isEaseIn(planNow, planPos.phaseIndex) ? 'ease' : 'lighter'
+  const easyNote = !easyWeek && maintain ? (planShortKind === 'maintenance' ? 'Maintenance: the shorter version is selected. Change it any time.' : planShortKind === 'ease' ? 'Easing in: the shorter version is selected while you find your weights. Change it any time.' : 'Lighter week: the shorter version is selected. Change it any time.')
     : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
     ? 'Lighter day: the shorter version is selected for today. Change it any time.'
     : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`) : null
@@ -270,7 +272,7 @@ export function TrainScreen() {
         {planNow && planPos && (
           <div className="t-plan">
             {planArt(planNow.baseTemplateId) ? <img src={planArt(planNow.baseTemplateId)} alt="" /> : <span className="dot" aria-hidden="true" />}
-            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `Maintenance, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.maintain ? 'Lighter week' : planPos.phase.name}`}</span>
+            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `Maintenance, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.phase.name}`}</span>
           </div>
         )}
         <h2 id="today-h" className="tsec-h">{isToday ? 'Today' : dayName}</h2>
@@ -284,10 +286,13 @@ export function TrainScreen() {
                 <div className="s num">{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</div>
               </div>
               <button className="btn sm startb" onClick={(e) => { e.stopPropagation(); openWorkout(r.k) }}>{r.inProgress ? 'Resume' : 'Start'}</button>
+              {/* a lighter week or maintenance: a quiet way back to the full workout, never a nudge on a
+                  low check-in day or in gentle mode, and after maintenance's first week only the link */}
               {r.planShort && !r.inProgress && (
                 <div className="trow-note" onClick={(e) => e.stopPropagation()}>
-                  {planPos?.maintenanceWeek != null ? 'Maintenance: fewer sets, the same weights.' : 'This week is lighter to help you recover for the next stretch.'} Feeling good?{' '}
-                  <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>Do the full workout</button>
+                  {planPos?.maintenanceWeek != null
+                    ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>Full workout</button>}</>
+                    : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>The full workout</button> is here if you'd like it.</>}</>}
                 </div>
               )}
             </div>

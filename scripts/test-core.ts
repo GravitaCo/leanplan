@@ -28,8 +28,8 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
-import { aboutMins, isBuiltinKey, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
+import { eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
@@ -1550,7 +1550,7 @@ async function timeouts(): Promise<void> {
     { id: 'c', state: 'completed', startedAt: '2026-09-25', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] }] } as any)?.id
   const clean = cleanPhases([{ id: 'a', name: '', weeks: 40, week: { 1: ['Legs', 'Push', 'Pull', 'Cardio', 'Legs'] } }, { id: 'b', name: 'M', weeks: 30, maintain: true, week: { 1: ['x'] } }, { id: 'c', name: 'Z', weeks: 5 }] as any)
   const cleanTxt = clean.map((p) => `${p.name}:${p.weeks}:${p.maintain ? 'm' : (p.week?.[1] || []).length}`).join(',')
-  const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases[0].week && !t.phases[0].maintain) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
+  const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases.some((x) => x.week && !x.maintain) && t.goals.includes(t.nutritionGoal) && t.phases.every((x) => !x.after)) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
   // back-to-back from every hard workout of each day: a day's second lift, and an own copy of Legs
   const L = '77777777-7777-4777-8777-77777777aaaa'
   const RL = [...R, { id: L, name: 'My legs', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'm', slots: [{ exId: 'back-squat' }, { exId: 'romanian-deadlift' }, { exId: 'leg-extension' }] }] }]
@@ -1648,9 +1648,40 @@ async function timeouts(): Promise<void> {
   ].join(' | ')
   const want = ['12', 'eDeNffffefffffaaa', 'true,false,', 'false,true,3,Maintenance', 'true', 'Legs', '12', 'Maintenance',
     'Foundation:1-2:easier:done,Build:3-6:full:now,Lighter week:7-7:lighter:,Build:8-12:full:',
-    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,My 8-week plan:me:3', '1', '1', '1', '1', '1'].join(' | ')
+    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,Stronger with age:tali:5,Full body system:tali:5,My 8-week plan:me:3', '1', '3', '2', '2', '1'].join(' | ')
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance after, timeline, phase rows, added weeks, library filters', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // Tali's three plans: every key resolves, the new workouts use library exercises, fit and eating lines follow the profile
+  const [pmg, swa, fbs] = PLAN_TEMPLATES
+  const keys = PLAN_TEMPLATES.flatMap((t) => [...t.phases.flatMap((ph) => Object.values(ph.week ?? {}).flat()), ...Object.values(t.maintenance).flat()])
+  const unresolved = keys.filter((k) => !isBuiltinKey(k) && !routineFor(k, []))
+  const badEx = taliWorkouts().flatMap((r) => r.blocks.flatMap((b) => b.slots)).filter((sl) => !EXERCISES.some((x) => x.id === sl.exId)).map((sl) => sl.exId)
+  const order = (f: any) => fitsFirst(PLAN_TEMPLATES, f).map((t) => t.id.split('-')[0]).join(',')
+  const got = [
+    unresolved.length, badEx.length, String(isTaliKey('tali-full-body-a')), String(isTaliKey('constructor')), routineFor('tali-full-body-a', [])?.effort, (routineFor('tali-full-body-a', [])?.estMins ?? 0) > 0,
+    String(fits(pmg, { goal: 'build-muscle', experience: 'intermediate' })), String(fits(pmg, { goal: 'build-muscle', experience: 'beginner' })), String(fits(fbs, { goal: 'lose-fat' })), String(fits(pmg, {})),
+    order({ goal: 'lose-fat' }), order({ goal: 'build-muscle', age: 60 }),
+    String(isEaseIn({ phases: phasesOf(swa) }, 0)), String(isEaseIn({ phases: phasesOf(pmg) }, 2)),
+    eatingLine(pmg, 'build-muscle'), eatingLine(pmg, 'lose-fat').startsWith('For building muscle, Food targets suggest protein about 1.8'), eatingLine(pmg, undefined), eatingLine(pmg, 'build-muscle', true).includes('g per kg'),
+  ].join(' | ')
+  const want = ['0', '0', 'true', 'false', 'hard', 'true', 'true', 'false', 'true', 'false', 'full,pure,stronger', 'stronger,pure,full', 'true', 'false',
+    'Protein about 1.8 g per kg a day and a small surplus. Your Food targets for building muscle cover this.', 'true', 'Set a goal in Profile and your Food targets will follow it.', 'false'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: Tali plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  // maintenance counts from the day it's chosen; junk over the year's cap never drops it
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: 'x', source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: cleanPhases([...phasesOf(t), { id: 'a', name: 'M', weeks: 1, after: true, since: '2027-01-04', week: t.maintenance }]) }
+  const before = positionOn(plan, '2026-12-28')!, day1 = positionOn(plan, '2027-01-04')!, wk3 = positionOn(plan, '2027-01-18')!
+  const junk = cleanPhases([{ id: 'a', name: 'a', weeks: 26, week: {} }, { id: 'b', name: 'b', weeks: 26, week: {} }, { id: 'c', name: 'c', weeks: 3, week: {} }, { id: 'x', name: 'x', weeks: 1, after: true, maintain: true }, { id: 'z', name: 'z', weeks: 1, after: true, week: { 1: ['Legs', 'bad key!'] } }] as any)
+  const got = [before.ended, before.maintenanceWeek, day1.maintenanceWeek, wk3.maintenanceWeek, junk.map((x) => x.name + (x.after ? 'A' : '')).join(','), JSON.stringify(junk[junk.length - 1].week?.[1])].join(' | ')
+  const want = 'true |  | 1 | 3 | a,b,MaintenanceA | ["Legs"]'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance counts from its start, never dropped by the cap', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

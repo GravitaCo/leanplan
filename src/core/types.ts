@@ -404,6 +404,8 @@ export interface PlanPhase {
    * own week (or the last build week) on the shorter version (design canvas, Plans 4)
    */
   after?: boolean
+  /** YYYY-MM-DD: when maintenance was chosen (its weeks count from here) */
+  since?: string
   week?: PlanWeek
 }
 

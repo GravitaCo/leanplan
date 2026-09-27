@@ -1,10 +1,11 @@
-import type { AppState, Goal, MuscleGroup, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
+import type { AppState, Experience, Goal, MuscleGroup, Profile, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { DEFAULT_SCHEDULE, LIFTS } from '@/core/data/workouts'
 import { DAY_NAME, parseYmd, shiftDay, todayStr } from './date'
 import { isBuiltinKey, keyTitle, routineFor, slotsOf, type WorkoutKey } from './routines'
 import { mainMuscles, plannedOn, weekWarnings, WEEK_ORDER } from './week'
 import { sessionsOf } from './sessions'
+import { PROTEIN_PER_KG } from './nutrition'
 
 /**
  * Weekly plans (plan P5, Benn's model, §6 "P5 as built"): a set number of weeks in phases. A
@@ -96,8 +97,11 @@ export function positionOn(p: TrainingPlan, date: string): PlanPosition | null {
   const total = totalWeeks(p)
   const after = p.phases.findIndex((x) => x.after)
   // past the end with maintenance chosen: its weeks count on, for as long as it runs
-  if (week > total && after >= 0) {
-    return { week, total, phaseIndex: after, phase: p.phases[after], weekInPhase: week - total, maintain: true, ended: false, maintenanceWeek: week - total, planWeek: phaseWeek(p, after) }
+  // (counted from the day it was chosen, so a few weeks deciding don't count as maintenance)
+  const since = after >= 0 ? p.phases[after].since : undefined
+  if (week > total && after >= 0 && (!since || date >= since)) {
+    const mw = since ? Math.floor(daysBetween(since, date) / 7) + 1 : week - total
+    return { week, total, phaseIndex: after, phase: p.phases[after], weekInPhase: mw, maintain: true, ended: false, maintenanceWeek: mw, planWeek: phaseWeek(p, after) }
   }
   const idx = p.phases.map((x, k) => (x.after ? -1 : k)).filter((k) => k >= 0)
   let left = Math.min(week, Math.max(total, 1))
@@ -270,16 +274,22 @@ export interface PlanTemplate {
   /** the tile's line: "12 weeks · 3 lifting days, then 6" */
   tagline: string
   about: string
-  /** the goal it fits ("Fits your goal"), from the profile's goals */
-  goal: Goal
+  /** the profile goals it fits, the main one first ("Fits your goal"; nothing is ever locked) */
+  goals: Goal[]
+  /** the Food targets goal its eating line comes from (the same engine as Food) */
+  nutritionGoal: Goal
+  /** a line after the engine's figures, when the plan needs one */
+  eatingExtra?: string
+  /** a safety line for the preview, before the GP line */
+  safety?: string
+  /** a photograph position for its tiles and header */
+  artAt: string
   experience: PlanExperience[]
   where: PlanWhere[]
   /** the preview's facts */
   forWho: string
   kit: string
   time: string
-  /** the preview's eating line, from the Food targets */
-  eating?: string
   /** how the weeks go, in words, under the timeline */
   weeksText: string
   phases: Omit<PlanPhase, 'id'>[]
@@ -293,20 +303,22 @@ const PPL3 = weekFromSchedule(DEFAULT_SCHEDULE as Schedule)
 /** Push, pull and legs twice a week, Sunday off. */
 const PPL6 = wk({ 1: ['Legs'], 2: ['Push'], 3: ['Pull'], 4: ['Legs'], 5: ['Push'], 6: ['Pull'] })
 
+const SBA = 'tali-strength-balance-a', SBB = 'tali-strength-balance-b', BM = 'tali-balance-mobility'
+const FBA = 'tali-full-body-a', FBB = 'tali-full-body-b', FBC = 'tali-full-body-c'
+
 /**
- * Tali's plans (design canvas, Plans 1, approved 27 Sept 2026). "Stronger with age" and "Full body
- * system" join once their workouts exist (full-body and balance workouts aren't in the app yet).
- * The maintenance week for Pure muscle growth is a judgement call for fitness-workouts to confirm:
- * the Foundation week on the shorter version, three lifting days (the maintenance card: "usually 2
- * sets instead of 3, on two or three days a week"; Bickel et al. 2011, Med Sci Sports Exerc).
+ * Tali's three interim plans (design canvas, Plans 1; defined by fitness-workouts and approved by
+ * Benn, 27 Sept 2026). Each has a set length (no variants). Maintenance comes after a plan, when the
+ * person chooses it: each plan's maintenance week, on the shorter version (Bickel et al. 2011, Med
+ * Sci Sports Exerc; Spiering et al. 2021, J Strength Cond Res). Benn's principle: Tali's plans
+ * follow the profile's recommended goals and the science, and people are free to choose any plan.
  */
 export const PLAN_TEMPLATES: PlanTemplate[] = [
   {
-    id: 'pure-muscle-growth', name: 'Pure muscle growth', tagline: '12 weeks · 3 lifting days, then 6', goal: 'build-muscle',
+    id: 'pure-muscle-growth', name: 'Pure muscle growth', tagline: '12 weeks · 3 lifting days, then 6', goals: ['build-muscle', 'increase-strength'], nutritionGoal: 'build-muscle', artAt: '50% 40%',
     about: "Push, pull and legs, twice a week once you've settled in: enough work for each muscle to grow, with a few days for each to recover. Two easier weeks come first to find your weights, and a lighter week in the middle helps you recover for the final stretch.",
     experience: ['comfortable', 'confident'], where: ['gym'],
-    forWho: 'Build muscle; getting comfortable or confident lifters', kit: 'Gym: barbell, cables, machines', time: 'About 5 hours a week from week 3',
-    eating: 'Protein about 1.8 g per kg a day and a small surplus, from your Food targets',
+    forWho: 'Build muscle; getting comfortable or confident lifters', kit: 'Gym: barbell and rack, dumbbells, cables, machines', time: 'About 4 hours a week from week 3 (six sessions of 35–50 minutes)',
     weeksText: 'Weeks 1–2 Foundation, 3 lifting days · 3–6 Build, 6 days · 7 Lighter week · 8–12 Build',
     phases: [
       { name: 'Foundation', weeks: 2, easier: true, week: PPL3 },
@@ -314,48 +326,135 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
       { name: 'Lighter week', weeks: 1, maintain: true },
       { name: 'Build', weeks: 5, week: PPL6 },
     ],
+    // the Foundation week's three lifts (light cardio stays if wanted), on the shorter version
     maintenance: PPL3,
+  },
+  {
+    id: 'stronger-with-age', name: 'Stronger with age', tagline: '12 weeks · 2 strength, 1 balance, 2 cardio', goals: ['increase-strength', 'feel-better', 'build-muscle'], nutritionGoal: 'feel-better', artAt: '50% 35%',
+    about: 'Two strength sessions of about 40 minutes and one balance session a week, built around everyday moves like standing up, stepping and carrying. Strength and balance training together are among the best-supported ways to stay steady and independent as the years go by. You start gently and build from there.',
+    experience: ['new', 'comfortable'], where: ['home'],
+    forWho: 'Getting stronger and steadier; just starting or getting comfortable', kit: 'Dumbbells, a chair, a wall and a low step or the bottom stair', time: 'About 2½ hours a week',
+    eatingExtra: 'around 25–30 g at each main meal',
+    safety: 'No barbell, nothing overhead and no jumping. A few moves are on the floor: use a mat and get down and up next to a chair, or skip them if the floor is hard. Had a recent fall, dizziness, chest pain, a heart condition, surgery or a fracture? Speak to your GP first.',
+    weeksText: 'Weeks 1–2 Ease in, shorter sessions · 3–12 Build',
+    phases: [
+      { name: 'Ease in', weeks: 2, maintain: true },
+      { name: 'Build', weeks: 10, week: wk({ 1: [SBA], 2: ['Cardio'], 3: [BM], 4: [SBB], 5: ['Cardio'] }) },
+    ],
+    // both strength days on the shorter version, with Balance & Mobility and one cardio kept
+    maintenance: wk({ 1: [SBA], 2: ['Cardio'], 3: [BM], 4: [SBB] }),
+  },
+  {
+    id: 'full-body-system', name: 'Full body system', tagline: '8 weeks · 3 full-body, 2 cardio', goals: ['lose-fat', 'feel-better', 'build-muscle', 'increase-strength'], nutritionGoal: 'lose-fat', artAt: '50% 40%',
+    about: 'Three sessions a week, each working your whole body with a squat or lunge, a hip or hamstring move, a push and a pull. A simple, complete way to build strength and muscle with plenty of room to recover. A great first plan, and it fits well alongside fat-loss eating.',
+    experience: ['new', 'comfortable'], where: ['gym'],
+    forWho: 'A first plan; losing fat, feeling better or building strength', kit: 'Gym: dumbbells, cables, machines', time: 'About 3 hours a week',
+    weeksText: 'Week 1 Ease in, shorter sessions · 2–8 Build',
+    phases: [
+      { name: 'Ease in', weeks: 1, maintain: true },
+      { name: 'Build', weeks: 7, week: wk({ 1: [FBA], 2: ['Cardio'], 3: [FBB], 4: ['Cardio'], 5: [FBC] }) },
+    ],
+    // the two full-body days shorter; light cardio stays (a fat-loss plan)
+    maintenance: wk({ 1: [FBA], 2: ['Cardio'], 4: [FBB], 6: ['Cardio'] }),
   },
 ]
 
 export const templateById = (id: string | undefined) => PLAN_TEMPLATES.find((t) => t.id === id)
 
-/** Tali plans to suggest when one ends: the one that fits the goal first, never the one just done. */
-export function nextSuggestions(done: TrainingPlan | undefined, goal?: Goal): PlanTemplate[] {
-  return fitsFirst(PLAN_TEMPLATES.filter((t) => t.id !== done?.baseTemplateId), goal)
+/** What the profile says, for matching plans to it. */
+export interface Fit { goal?: Goal; age?: number | null; experience?: Experience }
+export const fitOf = (p: Pick<Profile, 'goal' | 'age' | 'training'> | undefined): Fit => ({ goal: p?.goal, age: p?.age, experience: p?.training?.experience })
+
+const EXP: Record<Experience, PlanExperience> = { beginner: 'new', intermediate: 'comfortable', advanced: 'confident' }
+
+/**
+ * Whether a Tali plan fits the person ("Fits your goal"): their goal is one it names, and their
+ * experience (when given) is one it's for. Never a gate: every plan stays open to everyone.
+ */
+export function fits(t: Pick<PlanTemplate, 'goals' | 'experience'>, p: Fit | undefined): boolean {
+  if (!p?.goal || !t.goals.includes(p.goal)) return false
+  return !p.experience || t.experience.includes(EXP[p.experience])
 }
 
-/** The plans that fit the person's goal first; nothing is ever hidden or locked. */
-export function fitsFirst<T extends { goal?: Goal }>(list: T[], goal?: Goal): T[] {
-  return [...list].sort((a, b) => Number(b.goal === goal && !!goal) - Number(a.goal === goal && !!goal))
+/** How well a plan suits someone, for ordering: a fit first (its main goal before a side one); from 55, Stronger with age leads. */
+function fitScore(t: Pick<PlanTemplate, 'id' | 'goals' | 'experience'>, p: Fit | undefined): number {
+  if (!p) return 0
+  let n = fits(t, p) ? (t.goals[0] === p.goal ? 3 : 2) : p.goal && t.goals.includes(p.goal) ? 1 : 0
+  if (t.id === 'stronger-with-age' && (p.age ?? 0) >= 55) n += 4
+  return n
+}
+
+/** The plans that suit the person first; nothing is ever hidden or locked. */
+export function fitsFirst<T extends Pick<PlanTemplate, 'id' | 'goals' | 'experience'>>(list: T[], p: Fit | undefined): T[] {
+  return [...list].sort((a, b) => fitScore(b, p) - fitScore(a, p))
+}
+
+/** Tali plans to suggest when one ends: the one that suits the person first, never the one just done. */
+export function nextSuggestions(done: TrainingPlan | undefined, p?: Fit): PlanTemplate[] {
+  return fitsFirst(PLAN_TEMPLATES.filter((t) => t.id !== done?.baseTemplateId), p)
+}
+
+/** Energy in the Food targets for each goal, in words (goalAdjustPct in nutrition.ts). */
+const ENERGY_WORDS: Record<Goal, string> = {
+  'build-muscle': 'a small surplus', 'lose-fat': 'a moderate deficit', 'increase-strength': 'energy at about maintenance',
+  'increase-endurance': 'enough energy to fuel your training', 'feel-better': 'energy at about maintenance',
+}
+const GOAL_WORDS: Record<Goal, string> = {
+  'build-muscle': 'building muscle', 'lose-fat': 'losing fat', 'increase-strength': 'getting stronger', 'increase-endurance': 'endurance', 'feel-better': 'feeling better',
+}
+
+/**
+ * A plan's eating line, from the same targets engine as Food (PROTEIN_PER_KG, goalAdjustPct), true
+ * whatever the person's own goal (nutrition-accuracy); gentle mode leaves the numbers out
+ * (mental-performance). Never "from your Food targets" unless their goal is the plan's.
+ */
+export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra'>, goal: Goal | undefined, gentle?: boolean): string {
+  const g = t.nutritionGoal
+  const figures = t.eatingExtra ? `protein about ${PROTEIN_PER_KG[g]} g per kg a day, ${t.eatingExtra}, and ${ENERGY_WORDS[g]}` : `protein about ${PROTEIN_PER_KG[g]} g per kg a day and ${ENERGY_WORDS[g]}`
+  if (!goal) return 'Set a goal in Profile and your Food targets will follow it.'
+  if (goal === g) return gentle ? 'Enough protein through the day, and enough food to fuel your training. Your Food targets cover this.' : `${figures[0].toUpperCase()}${figures.slice(1)}. Your Food targets for ${GOAL_WORDS[g]} cover this.`
+  return gentle ? 'Your Food targets follow your own goal. You can change your goal in Profile if you like.'
+    : `For ${GOAL_WORDS[g]}, Food targets suggest ${figures}. Yours follow your own goal; you can change it in Profile if you like.`
+}
+
+/** A workout key a plan may hold: a built-in type, a Tali or own workout id (letters, digits, - and _). */
+const KEY_RE = /^[A-Za-z0-9_-]{1,64}$/
+
+/** A week made valid: each day a list of up to four well-formed keys. */
+function cleanWeek(w: unknown): PlanWeek {
+  const out: PlanWeek = {}
+  for (let d = 0; d < 7; d++) {
+    const v = w && typeof w === 'object' ? (w as Record<number, unknown>)[d] : undefined
+    out[d] = (Array.isArray(v) ? v : []).filter((k): k is string => typeof k === 'string' && KEY_RE.test(k)).slice(0, 4)
+  }
+  return out
 }
 
 /** Clamp a phase's weeks to what the app allows; a plan's total can't pass a year. */
 export function cleanPhases(phases: PlanPhase[]): PlanPhase[] {
   let left = MAX_PLAN_WEEKS
   const out: PlanPhase[] = []
-  // maintenance after the plan goes last, once, and doesn't count towards the year
-  const list = [...phases.filter((x) => !(x && x.after === true)), ...phases.filter((x) => x && x.after === true).slice(0, 1)]
-  for (const ph of list) {
-    if (ph.after === true && ph.maintain !== true) {
-      if (!out.length) break
-      const week: PlanWeek = {}
-      for (let d = 0; d < 7; d++) { const v = ph.week && typeof ph.week === 'object' ? ph.week[d] : undefined; week[d] = (Array.isArray(v) ? v : []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4) }
-      out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: 'Maintenance', weeks: 1, after: true, week })
-      continue
-    }
+  // maintenance after the plan: the first real one, kept apart so the year's cap can never drop it
+  const isAfter = (x: PlanPhase) => !!x && x.after === true && x.maintain !== true
+  const after = phases.find(isAfter)
+  for (const ph of phases.filter((x) => !isAfter(x))) {
     const weeks = Math.max(1, Math.min(MAX_PHASE_WEEKS, left, Math.round(+ph.weeks || 1)))
     if (left <= 0) break
     left -= weeks
     const week: PlanWeek = {}
     // every field checked, so a plan from a newer or buggy client can't break a launch
     const maintain = ph.maintain === true
-    const after = ph.after === true && !maintain
-    const easier = ph.easier === true && !maintain && !after
-    if (!maintain) for (let d = 0; d < 7; d++) { const v = ph.week && typeof ph.week === 'object' ? ph.week[d] : undefined; week[d] = (Array.isArray(v) ? v : []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4) }
+    const easier = ph.easier === true && !maintain
+    if (!maintain) Object.assign(week, cleanWeek(ph.week))
     const name = typeof ph.name === 'string' && ph.name.trim() ? ph.name.trim() : maintain ? 'Maintain' : 'Build'
-    out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: [...name].slice(0, 40).join(''), weeks, ...(maintain ? { maintain: true } : { week }), ...(easier ? { easier: true } : {}), ...(after ? { after: true } : {}) })
+    out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: [...name].slice(0, 40).join(''), weeks, ...(maintain ? { maintain: true } : { week }), ...(easier ? { easier: true } : {}) })
   }
+  if (after && out.length) {
+    const since = typeof after.since === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(after.since) ? after.since : undefined
+    out.push({ id: typeof after.id === 'string' && after.id ? after.id.slice(0, 40) : newPhaseId(), name: 'Maintenance', weeks: 1, after: true, week: cleanWeek(after.week), ...(since ? { since } : {}) })
+  }
+  // the server caps a plan's phases at 64 KB: trim whole build phases from the end, never below one
+  while (out.filter((x) => !x.after).length > 1 && JSON.stringify(out).length > 60000) out.splice(out[out.length - 1].after ? out.length - 2 : out.length - 1, 1)
   return out
 }
 
@@ -400,7 +499,7 @@ export interface CatalogueEntry {
   name: string
   line: string
   madeBy: 'tali' | 'me'
-  goal?: Goal
+  goals: Goal[]
   weeks: number
   /** the most days a week it trains */
   days: number
@@ -416,9 +515,9 @@ const maxDays = (phases: Pick<PlanPhase, 'week' | 'maintain' | 'after'>[]) => Ma
  * Every plan in one list, Tali's and the person's own (their saved ones and those they've run,
  * newest first, one per name); the one that fits their goal leads. Nothing is locked.
  */
-export function catalogue(s: Pick<AppState, 'trainingPlans'>, goal?: Goal): CatalogueEntry[] {
+export function catalogue(s: Pick<AppState, 'trainingPlans'>, fit?: Fit): CatalogueEntry[] {
   const tali: CatalogueEntry[] = PLAN_TEMPLATES.map((t) => ({
-    key: t.id, name: t.name, line: t.tagline, madeBy: 'tali', goal: t.goal, weeks: totalWeeks(t), days: maxDays(t.phases), experience: t.experience, where: t.where, template: t,
+    key: t.id, name: t.name, line: t.tagline, madeBy: 'tali', goals: t.goals, weeks: totalWeeks(t), days: maxDays(t.phases), experience: t.experience, where: t.where, template: t,
   }))
   const seen = new Set<string>()
   const own: CatalogueEntry[] = []
@@ -427,9 +526,9 @@ export function catalogue(s: Pick<AppState, 'trainingPlans'>, goal?: Goal): Cata
     if (seen.has(k)) continue
     seen.add(k)
     const n = totalWeeks(p), d = maxDays(p.phases)
-    own.push({ key: p.id, name: p.name, line: `${n} ${n === 1 ? 'week' : 'weeks'} · ${d} ${d === 1 ? 'workout day' : 'workout days'} · yours`, madeBy: 'me', weeks: n, days: d, experience: [], where: [], plan: p })
+    own.push({ key: p.id, goals: [], name: p.name, line: `${n} ${n === 1 ? 'week' : 'weeks'} · ${d} ${d === 1 ? 'workout day' : 'workout days'} · yours`, madeBy: 'me', weeks: n, days: d, experience: [], where: [], plan: p })
   }
-  return [...fitsFirst(tali, goal), ...own]
+  return [...fitsFirst(tali.map((e) => ({ ...e, id: e.key, experience: e.experience })), fit), ...own]
 }
 
 export interface PlanFilters { q?: string; goal?: Goal[]; days?: ('2-3' | '4-5' | '6')[]; experience?: PlanExperience[]; where?: PlanWhere[]; length?: ('6' | '8' | '12')[]; madeBy?: ('tali' | 'me')[] }
@@ -442,7 +541,7 @@ export function filterCatalogue(list: CatalogueEntry[], f: PlanFilters): Catalog
   const some = <T,>(sel: T[] | undefined, test: (v: T) => boolean) => !sel?.length || sel.some(test)
   return list.filter((e) =>
     words.every((w) => e.name.toLowerCase().includes(w) || (e.template?.about.toLowerCase().includes(w) ?? false)) &&
-    some(f.goal, (g) => e.goal === g) && some(f.days, (d) => dayBand(e.days) === d) && some(f.experience, (x) => e.experience.includes(x)) &&
+    some(f.goal, (g) => e.goals.includes(g)) && some(f.days, (d) => dayBand(e.days) === d) && some(f.experience, (x) => e.experience.includes(x)) &&
     some(f.where, (w) => e.where.includes(w)) && some(f.length, (l) => lenBand(e.weeks) === l) && some(f.madeBy, (m) => e.madeBy === m))
 }
 
@@ -479,7 +578,7 @@ export function maintenanceLine(week: PlanWeek, routines: Routine[] | undefined)
 /** An easier first week (to find your weights): the first build week, drawn striped. Only before the plan starts. */
 export function withEasierStart(phases: PlanPhase[]): PlanPhase[] {
   const first = phases.find(isBuild)
-  if (!first || phases[0]?.easier) return phases
+  if (!first || phases[0]?.easier || phases[0]?.maintain) return phases
   return [{ id: newPhaseId(), name: 'Easier first week', weeks: 1, easier: true, week: copyWeek(first.week) }, ...phases]
 }
 
@@ -505,4 +604,14 @@ export function withLighterWeek(phases: PlanPhase[], at: number): PlanPhase[] {
     from = to + 1
   }
   return phases
+}
+
+/** An "Ease in" block: shorter sessions before any build week (a plan's start, not a mid-plan lighter week). */
+export const isEaseIn = (p: Pick<TrainingPlan, 'phases'>, i: number): boolean =>
+  !!p.phases[i]?.maintain && p.phases.slice(0, i).every((x) => x.maintain || x.easier)
+
+/** The one plan to mark "Fits your goal" and lead with: the best-suited, when it fits at all. */
+export function bestFit<T extends Pick<PlanTemplate, 'id' | 'goals' | 'experience'>>(list: T[], p: Fit | undefined): T | undefined {
+  const top = fitsFirst(list, p)[0]
+  return top && fits(top, p) ? top : undefined
 }

@@ -3,17 +3,17 @@ import { useStore } from '@/store/store'
 import type { Goal, PlanPhase, PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
 import {
-  catalogue, filterCatalogue, phaseWeek, planStart, startOn, timeline, totalWeeks,
+  bestFit, catalogue, eatingLine, filterCatalogue, fitOf, fits, PLAN_TEMPLATES, phaseWeek, planStart, startOn, timeline, totalWeeks,
   type CatalogueEntry, type PlanExperience, type PlanFilters, type PlanWhere,
 } from '@/core/domain/plans'
 import { BackButton, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { GOAL_CHIP, goalLabel, planArt, PlanTile, Timeline, TimelineKey, WeekRows } from './PlanParts'
 
-const DAYS: [NonNullable<PlanFilters['days']>[number], string][] = [['2-3', '2–3'], ['4-5', '4–5'], ['6', '6']]
+const DAYS: [NonNullable<PlanFilters['days']>[number], string][] = [['2-3', 'Up to 3'], ['4-5', '4–5'], ['6', '6 or more']]
 const EXPERIENCE: [PlanExperience, string][] = [['new', 'Just starting'], ['comfortable', 'Getting comfortable'], ['confident', 'Confident']]
 const WHERE: [PlanWhere, string][] = [['gym', 'Gym'], ['home', 'Home, some kit'], ['none', 'No equipment']]
-const LENGTH: [NonNullable<PlanFilters['length']>[number], string][] = [['6', 'Up to 6 weeks'], ['8', '8 weeks'], ['12', '12 weeks']]
+const LENGTH: [NonNullable<PlanFilters['length']>[number], string][] = [['6', 'Up to 6 weeks'], ['8', '7 to 9 weeks'], ['12', '10 weeks or more']]
 const MADE: [NonNullable<PlanFilters['madeBy']>[number], string][] = [['tali', 'Tali'], ['me', 'Me']]
 
 const toggle = <T,>(list: T[] | undefined, v: T): T[] => (list?.includes(v) ? list.filter((x) => x !== v) : [...(list ?? []), v])
@@ -42,7 +42,7 @@ function FilterSheet({ value, onChange, onClose, count }: { value: PlanFilters; 
       <FilterGroup label="Where" options={WHERE} value={value.where} onChange={(where) => onChange({ ...value, where })} />
       <FilterGroup label="Length" options={LENGTH} value={value.length} onChange={(length) => onChange({ ...value, length })} />
       <FilterGroup label="Made by" options={MADE} value={value.madeBy} onChange={(madeBy) => onChange({ ...value, madeBy })} />
-      <div className="stack sheet-cta"><button className="btn" onClick={onClose}>Show {count} {count === 1 ? 'plan' : 'plans'}</button></div>
+      <div className="stack sheet-cta"><button className="btn" disabled={count === 0} onClick={onClose}>{count === 0 ? 'No plans match' : `Show ${count} ${count === 1 ? 'plan' : 'plans'}`}</button></div>
     </Sheet>
   )
 }
@@ -53,27 +53,29 @@ function FilterSheet({ value, onChange, onClose, count }: { value: PlanFilters; 
  */
 export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onOpen: (e: CatalogueEntry) => void; onNew: () => void }) {
   const trainingPlans = useStore((s) => s.data.trainingPlans)
-  const goal = useStore((s) => s.data.profile.goal)
+  const profile = useStore((s) => s.data.profile)
+  const fit = fitOf(profile)
   const [f, setF] = useState<PlanFilters>({})
   const [sheet, setSheet] = useState(false)
   // a goal chosen in the filter sheet shows as a removable chip like the other filters
   const [viaSheet, setViaSheet] = useState(false)
-  const all = useMemo(() => catalogue({ trainingPlans }, goal), [trainingPlans, goal])
+  const all = useMemo(() => catalogue({ trainingPlans }, fit), [trainingPlans, fit.goal, fit.age, fit.experience])
   const list = filterCatalogue(all, f)
   const filtered = !!(f.days?.length || f.experience?.length || f.where?.length || f.length?.length || f.madeBy?.length || (f.goal?.length ?? 0) > 1 || (viaSheet && f.goal?.length))
   const narrowed = filtered || !!f.q || !!f.goal?.length
-  const lead = !narrowed ? list.find((e) => e.template && e.goal === goal && goal) : undefined
+  const best = bestFit(PLAN_TEMPLATES, fit)
+  const lead = !narrowed ? list.find((e) => e.template === best && !!best) : undefined
   const rest = list.filter((e) => e !== lead)
   const chipsOn: { label: string; clear: () => void }[] = filtered ? [
     ...(f.goal ?? []).map((g) => ({ label: goalLabel(g) ?? g, clear: () => setF({ ...f, goal: f.goal!.filter((x) => x !== g) }) })),
-    ...(f.days ?? []).map((d) => ({ label: `${DAYS.find(([k]) => k === d)?.[1]} days`, clear: () => setF({ ...f, days: f.days!.filter((x) => x !== d) }) })),
+    ...(f.days ?? []).map((d) => ({ label: `${DAYS.find(([k]) => k === d)?.[1]} days a week`, clear: () => setF({ ...f, days: f.days!.filter((x) => x !== d) }) })),
     ...(f.experience ?? []).map((x) => ({ label: EXPERIENCE.find(([k]) => k === x)![1], clear: () => setF({ ...f, experience: f.experience!.filter((y) => y !== x) }) })),
     ...(f.where ?? []).map((x) => ({ label: WHERE.find(([k]) => k === x)![1], clear: () => setF({ ...f, where: f.where!.filter((y) => y !== x) }) })),
     ...(f.length ?? []).map((x) => ({ label: LENGTH.find(([k]) => k === x)![1], clear: () => setF({ ...f, length: f.length!.filter((y) => y !== x) }) })),
     ...(f.madeBy ?? []).map((x) => ({ label: MADE.find(([k]) => k === x)![1], clear: () => setF({ ...f, madeBy: f.madeBy!.filter((y) => y !== x) }) })),
   ] : []
   const tile = (e: CatalogueEntry, big = false) => (
-    <PlanTile key={e.key} name={e.name} line={e.line} art={planArt(e.template?.id ?? e.plan?.baseTemplateId)} fits={!!goal && e.goal === goal} big={big} onClick={() => onOpen(e)} />
+    <PlanTile key={e.key} name={e.name} line={e.line} art={planArt(e.template?.id ?? e.plan?.baseTemplateId)} artAt={e.template?.artAt} fits={!!best && e.template === best} big={big} onClick={() => onOpen(e)} />
   )
   const goalChip = (g: Goal | null, label: string) => {
     const on = g ? f.goal?.length === 1 && f.goal[0] === g : !f.goal?.length
@@ -102,7 +104,7 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
       {narrowed && <div className="foot num" style={{ padding: '0 4px' }}>{list.length} {list.length === 1 ? 'plan' : 'plans'}</div>}
       {lead && tile(lead, true)}
       {rest.length > 0 && <div className="pgrid">{rest.map((e) => tile(e))}</div>}
-      {list.length === 0 && <div className="dash-empty">No plans match. Try fewer filters.</div>}
+      {list.length === 0 && <div className="dash-empty">{f.q && !filtered && !f.goal?.length ? `No plans called “${f.q}”.` : 'No plans match yet. Try removing a filter, or build your own.'}</div>}
       <button className="dash-add" onClick={onNew}><Icon name="plus" size={18} stroke={2.4} />New plan</button>
       {sheet && <FilterSheet value={f} onChange={(v) => { setViaSheet(true); setF(v) }} onClose={() => setSheet(false)} count={filterCatalogue(all, f).length} />}
     </div>
@@ -141,15 +143,16 @@ function buildWeeks(phases: Omit<PlanPhase, 'id'>[]): { name: string; week: Plan
  * A plan before it starts (Plans 1, step 3): its photograph, what it is, how the weeks go, a build
  * week, maintenance after, eating for it, who it's for, and when to start.
  */
-export function PlanPreview({ entry, onBack, onStart, onMaintenance, onFood }: {
+export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
   entry: CatalogueEntry
   onBack: () => void
   onStart: (startedAt: string) => void
   onMaintenance: () => void
-  onFood: () => void
+  /** the last plan's "do differently", when this one follows it */
+  note?: string
 }) {
   const routines = useStore((s) => s.data.routines)
-  const goal = useStore((s) => s.data.profile.goal)
+  const profile = useStore((s) => s.data.profile)
   const t = entry.template
   const phases = t?.phases ?? entry.plan?.phases ?? []
   const weeks = buildWeeks(phases)
@@ -157,19 +160,20 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, onFood }: {
   const [start, setStart] = useState(todayStr())
   const n = totalWeeks({ phases })
   const art = planArt(t?.id ?? entry.plan?.baseTemplateId)
-  const fits = !!t && !!goal && t.goal === goal
+  const fitsHere = !!t && fits(t, fitOf(profile))
   return (
     <div className="screen pp">
       <div className={'pp-hero' + (art ? '' : ' plain')}>
-        {art && <img src={art} alt="" />}
+        {art && <img src={art} alt="" style={{ objectPosition: t?.artAt }} onError={(e) => { e.currentTarget.style.display = 'none' }} />}
         {art && <span className="shade" aria-hidden="true" />}
         <button className="pp-back" aria-label="Back" onClick={onBack}><Icon name="chevL" size={18} stroke={2.6} /></button>
         <div className="pp-cap">
-          {fits && <span className="fits">Fits your goal: {goalLabel(t!.goal)}</span>}
+          {fitsHere && <span className="fits">Fits your goal: {goalLabel(profile.goal)}</span>}
           <h1>{entry.name}</h1>
           <div className="num">{entry.line}</div>
         </div>
       </div>
+      {note && <div className="card plan-note">From your last plan: “{note}”</div>}
       {t && <p className="pp-about">{t.about}</p>}
       <section className="card pp-weeks">
         <div className="pp-k">How the {n} weeks go</div>
@@ -193,15 +197,14 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, onFood }: {
       <div className="list">
         <button className="li" onClick={onMaintenance}>
           <span className="catsq sm" style={{ background: 'var(--fill)' }} aria-hidden="true" />
-          <div className="m"><div className="t">After the plan: maintenance</div><div className="s">Keep what you built with fewer sets, for as long as you need. Read how it works</div></div>
+          <div className="m"><div className="t">After the plan: maintenance</div><div className="s">When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need.</div></div>
           <Chevron />
         </button>
-        {t?.eating && (
-          <button className="li" onClick={onFood}>
+        {t && (
+          <div className="li">
             <span className="catsq sm" style={{ background: 'var(--food-fill)' }} aria-hidden="true" />
-            <div className="m"><div className="t">Eating for this plan</div><div className="s">{t.eating}</div></div>
-            <Chevron />
-          </button>
+            <div className="m"><div className="t">Eating for this plan</div><div className="s">{eatingLine(t, profile.goal, !!profile.gentle)}</div></div>
+          </div>
         )}
       </div>
       {t && (
@@ -211,7 +214,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, onFood }: {
           <div className="li"><span className="k">Time</span><span>{t.time}</span></div>
         </div>
       )}
-      <div className="foot" style={{ padding: '0 4px' }}>General fitness information only, not medical advice. Talk to a GP before starting a new exercise programme.</div>
+      <div className="foot" style={{ padding: '0 4px' }}>{t?.safety ? t.safety + ' ' : ''}General fitness information only, not medical advice. Talk to a GP before starting a new exercise programme.</div>
       <div className="pp-cta">
         <StartChoice value={start} onChange={setStart} />
         <button className="btn" onClick={() => onStart(start)}>Start plan</button>
@@ -224,7 +227,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, onFood }: {
 export function MaintenanceCard({ onClose }: { onClose: () => void }) {
   const steps: [string, string][] = [
     ['What maintenance is', "A lighter way to train once a plan ends. You keep doing the same workouts, just with fewer sets. It's for busy spells, a breather between plans, or whenever you'd like to hold steady."],
-    ['Why it works', 'People who had trained for a few months kept most of their strength and muscle for months on about a third of their usual sets, sometimes training just once a week. Older adults kept more when they did a bit more, so for them Tali keeps about two thirds.'],
+    ['Why it works', 'People who had trained for a few months kept most of their strength and muscle for months on about a third of their usual sets, sometimes training just once a week. Older adults kept more when they did a bit more, so Stronger with age keeps about two thirds.'],
     ['What changes in Tali', 'Your workouts open on the shorter version, usually 2 sets instead of 3, on two or three days a week. Light cardio and balance sessions stay if you want them. You can do the full workout any day.'],
     ['The one thing to keep: the weight', "Lift the same weights you finished the plan on, and stop a couple of reps before you couldn't do another. Fewer sets is fine. Much lighter weights is what lets progress slip."],
     ["How long, and what's next", "As long as you need. We'll check in after about 8 weeks and suggest a new plan around 12, whenever you're ready. A week or two off along the way won't undo your work."],

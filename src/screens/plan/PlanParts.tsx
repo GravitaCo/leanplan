@@ -57,8 +57,8 @@ export function TimelineKey() {
 }
 
 /** A plan tile: its photograph with the name on it, or (an own plan) a plain card with a dot. */
-export function PlanTile({ name, line, art, fits, big, onClick }: {
-  name: string; line: string; art?: string; fits?: boolean; big?: boolean; onClick: () => void
+export function PlanTile({ name, line, art, artAt, fits, big, onClick }: {
+  name: string; line: string; art?: string; artAt?: string; fits?: boolean; big?: boolean; onClick: () => void
 }) {
   if (!art) {
     return (
@@ -70,7 +70,8 @@ export function PlanTile({ name, line, art, fits, big, onClick }: {
   }
   return (
     <button className={'ptile' + (big ? ' big' : '')} onClick={onClick}>
-      <img src={art} alt="" />
+      {/* offline before the photo was ever seen: the tile's own colour stands in */}
+      <img src={art} alt="" style={artAt ? { objectPosition: artAt } : undefined} onError={(e) => { e.currentTarget.style.display = 'none' }} />
       <span className="shade" aria-hidden="true" />
       {fits && <span className="fits">Fits your goal</span>}
       <span className="cap"><span className="n">{name}</span><span className="s num">{line}</span></span>

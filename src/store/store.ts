@@ -632,7 +632,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           const p = (st.data.trainingPlans || []).find((x) => x.id === id)
           if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
-          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Maintenance', weeks: 1, after: true, week: week ?? {} }])
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Maintenance', weeks: 1, after: true, since: todayStr(), week: week ?? {} }])
           p._dirty = true; p._u = nowIso()
           mirrorPlan(st.data, true)
         })
@@ -646,7 +646,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
           st.data.trainingPlans.push({
-            id: nid, name: (name ?? src.name).trim().slice(0, 120) || 'My plan', source: 'custom', state: 'template',
+            id: nid, name: [...(name ?? src.name).trim()].slice(0, 120).join('') || 'My plan', source: 'custom', state: 'template',
             phases: cleanPhases(src.phases.filter((x) => !x.after)), clonedFromId: src.id,
             ...(src.baseTemplateId ? { baseTemplateId: src.baseTemplateId } : {}), _dirty: true, _u: nowIso(),
           })

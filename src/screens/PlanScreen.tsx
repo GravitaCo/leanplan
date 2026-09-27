@@ -4,8 +4,8 @@ import type { WorkoutType } from '@/core/types'
 import { SESSIONS, WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { EXERCISES } from '@/core/data/exercises'
 import { WEEK_ORDER, plannedOn, shortTitle, weekWarnings } from '@/core/domain/week'
-import { DAY_NAME, fmtDate, shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
-import { activePlan, catalogue, endDate, fitsFirst, phaseRows, phasesOf, planWeekNotes, positionOn, PLAN_TEMPLATES, templateById, timeline, totalWeeks, upcomingPlan, weekSource, type CatalogueEntry } from '@/core/domain/plans'
+import { DAY_NAME, shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
+import { activePlan, bestFit, catalogue, fitOf, isEaseIn, endDate, phaseRows, phasesOf, planWeekNotes, positionOn, PLAN_TEMPLATES, templateById, timeline, totalWeeks, upcomingPlan, weekSource, type CatalogueEntry } from '@/core/domain/plans'
 import { planArt, PlanTile, Timeline, WeekRows } from './plan/PlanParts'
 import { MaintenanceCard, PlanLibrary, PlanPreview } from './plan/PlanLibrary'
 import { PlanBuilder, builtPhases } from './plan/PlanBuilder'
@@ -19,7 +19,7 @@ import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
-import { aboutMins, builtinSlots, canBuild, isBuiltinKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
+import { aboutMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 
 type Guide = 'split' | 'basics'
@@ -48,12 +48,11 @@ export function PlanScreen() {
   type After = { id: string; reflection: { good?: string; change?: string } }
   const [flow, setFlow] = useState<
     | { v: 'library' } | { v: 'preview'; e: CatalogueEntry; after?: After } | { v: 'build'; after?: After }
-    | { v: 'details'; planId: string } | { v: 'end'; planId: string } | null>(null)
+    | { v: 'details'; planId: string } | { v: 'end'; planId: string; step?: 1 | 2 } | null>(null)
   const [mcard, setMcard] = useState(false)
   const startPlan = useStore((s) => s.startPlan)
   const finishPlan = useStore((s) => s.finishPlan)
   const notePlan = useStore((s) => s.notePlan)
-  const setTab = useStore((s) => s.setTab)
   // a plan's week (a phase, from the editor) and one of its days (Flow 3, as for the one-workout week)
   // each carries its plan: the running one, or the next one waiting to start
   const [planWeekAt, setPlanWeekAt] = useState<{ planId: string; phase: number } | null>(null)
@@ -73,20 +72,23 @@ export function PlanScreen() {
   }, [planOpen, clearOpen])
   useEffect(() => { window.scrollTo(0, 0) }, [dayIdx, workout, planDay, planWeekAt, flow])
   // one of the user's own workouts removed (archived) while open: back to the plan
-  const gone = !!workout && !isBuiltinKey(workout) && !mine.some((r) => r.id === workout)
+  const gone = !!workout && !isBuiltinKey(workout) && !isTaliKey(workout) && !mine.some((r) => r.id === workout)
   useEffect(() => { if (gone && !builder) setWorkout(null) }, [gone, builder])
 
   const builderSheet = builder && (
     <RoutineBuilderSheet start={builder} onClose={() => setBuilder(null)} onSaved={(id) => { setBuilder(null); setSheet(null); setWorkout(id) }} />
   )
   if (workout && !gone) {
-    const own = routineFor(workout, routines)
+    const r = routineFor(workout, routines)
+    // Tali's plan workouts copy like the built-in cards; only the person's own are edited in place
+    const own = r && r.source === 'custom' ? r : undefined
     return (
       <>
         <WorkoutView type={workout} onBack={() => setWorkout(null)}
           onEdit={own && build ? () => setBuilder({ routine: own }) : undefined}
-          onCopy={!own && build && LIFTS.includes(workout as WorkoutType)
-            ? () => setBuilder({ name: 'My ' + shortTitle(workout), slots: builtinSlots(workout as WorkoutType), baseId: 'builtin-' + workout }) : undefined} />
+          onCopy={!build ? undefined
+            : r && !own ? () => setBuilder({ name: 'My ' + r.name, slots: routineSlots(r), baseId: r.id })
+            : !r && LIFTS.includes(workout as WorkoutType) ? () => setBuilder({ name: 'My ' + shortTitle(workout), slots: builtinSlots(workout as WorkoutType), baseId: 'builtin-' + workout }) : undefined} />
         {builderSheet}
       </>
     )
@@ -112,16 +114,16 @@ export function PlanScreen() {
     if (src >= 0) setPlanDay({ planId: active.id, phase: src, idx: d })
   }
   const dayLabel = shortDateOf
-  const suggested = fitsFirst(PLAN_TEMPLATES, profile.goal)[0]
+  const suggested = bestFit(PLAN_TEMPLATES, fitOf(profile))
   // the card's line: the next lighter week, or maintenance check-ins at about 8 and 12 weeks
   const nextLighter = active && pos && !pos.ended ? phaseRows(active, today).find((r) => r.kind === 'lighter' && r.from > pos.week) : undefined
   const planLine = !active || !pos ? null
     : pos.maintenanceWeek != null
-      ? pos.maintenanceWeek >= 12 ? 'About 12 weeks holding steady. Ready for something new? Plans are in Plan details.'
-        : pos.maintenanceWeek >= 8 ? "8 weeks of maintenance. How's it going? Carry on as long as you like."
-        : 'Your workouts open on the shorter version. Keep your weights.'
+      ? pos.maintenanceWeek >= 12 ? "About 12 weeks holding steady. When you'd like something new, choose a plan in Plan details."
+        : pos.maintenanceWeek >= 8 ? 'About 8 weeks holding steady. Carry on as long as you like.'
+        : 'Your workouts open on the shorter version. Lift the same weights as before.'
       : nextLighter && active.startedAt ? `Lighter week: week ${nextLighter.from}, from ${dayLabel(shiftDay(active.startedAt, (nextLighter.from - 1) * 7))}.`
-      : pos.maintain ? 'A lighter week: workouts open on the shorter version.' : null
+      : pos.maintain ? (isEaseIn(active, pos.phaseIndex) ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week: workouts open on the shorter version.') : null
   // start a plan from a preview, a run-again or a build; the plan that ended keeps going until the new one starts
   const begin = (input: Parameters<typeof startPlan>[0], after?: After) => {
     if (after) { if ((input.startedAt ?? today) <= today) finishPlan(after.id, after.reflection); else notePlan(after.id, after.reflection) }
@@ -136,7 +138,7 @@ export function PlanScreen() {
   if (flow?.v === 'preview') {
     const { e, after } = flow
     return <>
-      <PlanPreview entry={e} onBack={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} onFood={() => setTab('profile')}
+      <PlanPreview entry={e} onBack={() => setFlow(after ? null : { v: 'library' })} onMaintenance={() => setMcard(true)} note={after ? after.reflection.change?.trim() || undefined : undefined}
         onStart={(startedAt) => begin(e.template
           ? { name: e.template.name, phases: phasesOf(e.template), source: 'recommended', baseTemplateId: e.template.id, startedAt }
           : { name: e.name, phases: phasesOf({ phases: (e.plan?.phases ?? []).filter((x) => !x.after) }), source: 'custom', clonedFromId: e.plan?.id, baseTemplateId: e.plan?.baseTemplateId, startedAt }, after)} />
@@ -153,13 +155,13 @@ export function PlanScreen() {
   }
   const flowPlan = flow && (flow.v === 'details' || flow.v === 'end') ? (trainingPlans || []).find((p) => p.id === flow.planId) : undefined
   if (flow?.v === 'details' && flowPlan) {
-    return <><PlanDetails plan={flowPlan} onBack={() => setFlow(null)} onMaintenance={() => setMcard(true)} onEditWeek={(i) => { setFlow(null); setPlanWeekAt({ planId: flowPlan.id, phase: i }) }} />{overlay}</>
+    return <><PlanDetails plan={flowPlan} onBack={() => setFlow(null)} onMaintenance={() => setMcard(true)} onChoose={() => setFlow({ v: 'end', planId: flowPlan.id, step: 2 })} onEditWeek={(i) => { setFlow(null); setPlanWeekAt({ planId: flowPlan.id, phase: i }) }} />{overlay}</>
   }
   if (flow?.v === 'end' && flowPlan) {
     const end = endDate(flowPlan) ?? today
     return <>
-      <PlanEnd plan={flowPlan} onClose={() => setFlow(null)} onMaintenance={() => setMcard(true)}
-        onPreview={(id, reflection) => { const e = catalogue({ trainingPlans }, profile.goal).find((x) => x.key === id); if (e) setFlow({ v: 'preview', e, after: { id: flowPlan.id, reflection } }) }}
+      <PlanEnd plan={flowPlan} step0={flow.step} onClose={() => setFlow(null)} onMaintenance={() => setMcard(true)}
+        onPreview={(id, reflection) => { const e = catalogue({ trainingPlans }, fitOf(profile)).find((x) => x.key === id); if (e) setFlow({ v: 'preview', e, after: { id: flowPlan.id, reflection } }) }}
         onAgain={(reflection) => begin({ name: flowPlan.name, phases: phasesOf({ phases: flowPlan.phases.filter((x) => !x.after) }), source: flowPlan.source, baseTemplateId: templateById(flowPlan.baseTemplateId)?.id, clonedFromId: flowPlan.id, startedAt: end > today ? end : today }, { id: flowPlan.id, reflection })}
         onBuild={(reflection) => setFlow({ v: 'build', after: { id: flowPlan.id, reflection } })} />
       {overlay}
@@ -177,8 +179,8 @@ export function PlanScreen() {
             <>
               <h2 className="grp-h sm">Suggested for your goal</h2>
               <div style={{ marginBottom: 12 }}>
-                <PlanTile name={suggested.name} line={suggested.tagline} art={planArt(suggested.id)} fits={!!profile.goal && suggested.goal === profile.goal} big
-                  onClick={() => setFlow({ v: 'preview', e: catalogue({ trainingPlans }, profile.goal).find((x) => x.key === suggested.id)! })} />
+                <PlanTile name={suggested.name} line={suggested.tagline} art={planArt(suggested.id)} fits big
+                  onClick={() => setFlow({ v: 'preview', e: catalogue({ trainingPlans }, fitOf(profile)).find((x) => x.key === suggested.id)! })} />
               </div>
             </>
           )}
@@ -217,7 +219,7 @@ export function PlanScreen() {
       {next && (
         <div className="list">
           <button className="li" onClick={() => setFlow({ v: 'details', planId: next.id })}>
-            <div className="m"><div className="t">Next: {next.name}</div><div className="s">Starts {fmtDate(next.startedAt!).dow}. Until then, this week carries on.</div></div>
+            <div className="m"><div className="t">Next: {next.name}</div><div className="s">Starts {shortDateOf(next.startedAt!)}. Until then, this week carries on.</div></div>
             <Chevron />
           </button>
         </div>
@@ -251,9 +253,9 @@ export function PlanScreen() {
       )}
       {warns.map((w) => <div className="card plan-note" key={w.text}>{w.text}</div>)}
       <div className="foot">
-        {pos ? <>Tap a day to change this phase's week. </> : <>Tap a day to change it. Changes repeat every week. </>}Aim for three lifts a week with a rest day between where you can.
+        {pos ? <>Tap a day to change this phase's week. Daily steps burn more across a week than the gym sessions do.</> : <>Tap a day to change it. Changes repeat every week. Aim for three lifts a week with a rest day between where you can.
         Legs, then Push, then Pull means back-to-back sessions train different muscles. Daily steps burn more across a
-        week than the gym sessions do.
+        week than the gym sessions do.</>}
       </div>
 
       <div className="tiles plantiles">

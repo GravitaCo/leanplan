@@ -1468,6 +1468,33 @@ Table `training_plans` (the same pattern as `routines`: owner-only RLS, anon rev
 `set_updated_at` trigger, a size cap on `phases`, a foreign key to `auth.users` with cascade;
 never hard-deleted, `archived` instead).
 
+#### P5 as designed: the approved plan screens (27 September 2026)
+
+The Design canvas ("Tali App · Train & Plan review", row 6, Plans 1 to 4) replaced the earlier plan
+screens; the app follows it.
+
+- **Benn's principle.** "Our plans should align with the profile's recommended goals. Our system
+  can create plans based on our goals and biometrics, but plans can work if they meet those
+  parameters. Workout plans are for users to make their own choices or follow others. At the core,
+  though, we make recommendations based on the science and facts and what is best for the user;
+  this includes nutrition." So every Tali plan names the goals it fits; "Fits your goal" matches
+  the profile goal and experience (Stronger with age leads from age 55); nothing is gated; each
+  plan's eating line comes from the same targets engine as Food (PROTEIN_PER_KG, goalAdjustPct)
+  and says so only when the person's goal is the plan's.
+- **Length is set by the plan.** No length variants (tpl-ppl-12 and tpl-ppl-8 are retired).
+- **Maintenance comes after a plan**, when the person chooses it: the plan's maintenance week on
+  the shorter version, open-ended, counted from the day it's chosen, with a check-in at about 8
+  weeks and a new plan suggested by about 12. Until they choose, the last week carries on.
+  In-plan easier weeks are "Ease in" (shorter, before any build week), "Foundation" (fewer days,
+  full sessions) or "Lighter week" (shorter, mid-plan), never "maintenance".
+- **Three interim Tali plans** (fitness-workouts): Pure muscle growth (12 weeks: 2 Foundation, 4
+  Build, 1 Lighter, 5 Build; push/pull/legs twice a week), Stronger with age (12 weeks: 2 Ease in,
+  10 Build; Strength & Balance A and B, Balance & Mobility, two light cardio; dumbbells, a chair, a
+  wall and a low step), Full body system (8 weeks: 1 Ease in, 7 Build; Full body A, B and C, two
+  light cardio). The six new workouts are built-ins in `core/data/taliWorkouts.ts`.
+- **Gaps to raise with Benn**: no plan for Improve endurance; no heavier, low-rep strength plan;
+  10-minute mobility and Easy walk are swaps, not plannable workouts, so layouts use Light cardio.
+
 #### After P5: the workout library (Benn, 27 September 2026)
 Not gone deep on yet, and next after P5:
 - **Builders per kind.** Yoga, pilates and mobility need a way to put moves into a session
