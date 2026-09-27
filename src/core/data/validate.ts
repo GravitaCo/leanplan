@@ -5,7 +5,7 @@
  */
 import type { Food } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
-import { scaleFood } from '@/core/domain/nutrition'
+import { scaleStored } from '@/core/domain/nutrition'
 import { SOURCES } from './sources'
 
 /** Published macros are given to 0.1 g, so the app may differ by no more than that. */
@@ -18,7 +18,8 @@ const MACRO_TOL = 0.1 + 1e-9
  */
 export function refMismatches(f: Food): string[] {
   if (!f.ref) return []
-  const s = scaleFood(f, f.ref.g)
+  // the stored values themselves, not the published figure scaleFood substitutes at this amount
+  const s = scaleStored(f, f.ref.g)
   const out: string[] = []
   // the default serving is what users tap: it must be the published amount itself, unless the
   // name states a pack size ("…500ml") and the serving is that size. A rounded portion

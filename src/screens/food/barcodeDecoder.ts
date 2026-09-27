@@ -6,6 +6,7 @@
  * caches it on first use and scanning works offline afterwards.
  */
 import { SCAN_FORMATS } from '@/core/domain/barcode'
+import { scaledCanvas } from './camera'
 
 export interface Hit { raw: string; format: string }
 export interface Decoder { native: boolean; detect: (src: ImageBitmapSource) => Promise<Hit[]> }
@@ -60,14 +61,10 @@ export async function decodePhoto(file: Blob): Promise<Hit[]> {
   const bmp = await createImageBitmap(file)
   try {
     for (const max of [1800, 900]) {
-      const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
-      const c = document.createElement('canvas')
-      c.width = Math.round(bmp.width * scale)
-      c.height = Math.round(bmp.height * scale)
-      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+      const c = scaledCanvas(bmp, max)
       const hits = await d.detect(c)
       if (hits.length) return hits
-      if (scale === 1) break
+      if (c.width === bmp.width && c.height === bmp.height) break
     }
     return []
   } finally {

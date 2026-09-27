@@ -7,8 +7,9 @@
  * the per-100 g column, misread digits), so nothing from it is saved without the user checking
  * it against their pack: checkLabel() says which fields to look at, never blocks.
  */
-import type { Food, FoodCategory } from '@/core/types'
+import type { Food, FoodCategory, FoodRef } from '@/core/types'
 import { checkPer100 } from './checks'
+import type { LabelInfo } from './label'
 
 /* ---------------- barcodes ---------------- */
 
@@ -116,6 +117,7 @@ export type FoodKind = 'cook' | 'eat'
 
 /** What the confirm view starts from. */
 export interface ScanDraft {
+  /** '' for a label photo taken without a barcode */
   barcode: string
   name: string
   values: LabelValues
@@ -146,6 +148,10 @@ export interface ScanDraft {
   usLabel: boolean
   /** the year OFF last saw an edit, when that's more than three years ago */
   staleYear?: number
+  /** where the numbers came from: Open Food Facts (the default) or the user's photo of the label */
+  source?: 'off' | 'label'
+  /** a label photo's read: the texts, the suggested fix and what to highlight (core/domain/label.ts) */
+  label?: LabelInfo
 }
 
 const KJ_PER_KCAL = 4.184
@@ -398,7 +404,7 @@ export function draftFromOff(barcode: string, raw: unknown, taken: Iterable<stri
   const bigPack = !given && !multi.multi && pack !== undefined && !singleServe(pack, packKind)
   const notes = servingNotes(p, ml)
   if (wholePack) notes.push({ field: 'serving', kind: 'odd', msg: 'Open Food Facts lists the whole pack as one serving. Check the serving size on the pack.' })
-  else if (bigPack && classifyProduct(p.categories_tags) === 'eat') notes.push({ field: 'serving', kind: 'odd', msg: 'This pack is more than one serving. Check the serving size on the pack.' })
+  else if (bigPack && classifyProduct(p.categories_tags) === 'eat') notes.push({ field: 'serving', kind: 'odd', msg: 'No serving size is listed for this pack. Check the pack for one.' })
   return {
     barcode,
     name: baseName ? uniqueName(baseName, taken) : '',
@@ -433,12 +439,16 @@ export function linkableFood(foods: Food[], name: string): Food | undefined {
 }
 
 /** The food to save once the user has confirmed the values (per-100 values kept exactly). */
-export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; meal?: boolean; cat?: FoodCategory; g: number }): Omit<Food, 'id'> {
+export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; meal?: boolean; cat?: FoodCategory; g: number; source?: 'off' | 'label'; ref?: FoodRef }): Omit<Food, 'id'> {
   const v = d.values
+  // a label photo is the user's own pack: cited like a typed label, with the barcode when there was one
   const food: Omit<Food, 'id'> = {
     n: d.name.trim(), k: v.k ?? 0, p: v.p ?? 0, c: v.c ?? 0, f: v.f ?? 0,
-    g: d.g > 0 ? d.g : 100, ml: d.ml, src: 'off:' + d.barcode, barcode: d.barcode,
+    g: d.g > 0 ? d.g : 100, ml: d.ml, src: d.source === 'label' ? 'label' : 'off:' + d.barcode,
   }
+  if (d.barcode) food.barcode = d.barcode
+  // the pack's own per-serving line: one serving then logs exactly what the pack prints
+  if (d.ref && d.ref.g === food.g) food.ref = d.ref
   if (d.kind === 'eat') food.eat = true
   // only a true meal eaten as is becomes 'ready'; crisps stay 'snacks', a drink 'drinks'
   const cat = d.kind === 'eat' && d.meal ? 'ready' : d.cat

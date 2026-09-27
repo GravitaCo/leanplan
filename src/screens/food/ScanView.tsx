@@ -13,6 +13,7 @@ import { lookupProduct } from '@/data/products'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecoder'
+import { startRearCamera, stopCamera as stopStream } from './camera'
 
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }
@@ -47,9 +48,8 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
   const [msg, setMsg] = useState<string | null>(null)
 
   const stopCamera = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop())
+    stopStream(streamRef.current, videoRef.current)
     streamRef.current = null
-    if (videoRef.current) videoRef.current.srcObject = null
   }
 
   /** A code from any path: validate, then local, then Open Food Facts. */
@@ -99,20 +99,14 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       timer = window.setTimeout(loop, SCAN_EVERY_MS)
     }
     ;(async () => {
-      if (!navigator.mediaDevices?.getUserMedia) { setCamera('none'); getDecoder().catch(() => {}); return }
-      let stream: MediaStream
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-      } catch (e) {
-        const name = (e as { name?: string })?.name
-        if (aliveRef.current) setCamera(name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : 'none')
+      const cam = await startRearCamera(videoRef.current, () => aliveRef.current && !doneRef.current)
+      if (!cam) return
+      if ('fail' in cam) {
+        if (aliveRef.current) setCamera(cam.fail)
         getDecoder().catch(() => {}) // warm up for "Take a photo"
         return
       }
-      if (!aliveRef.current || doneRef.current) { stream.getTracks().forEach((t) => t.stop()); return }
-      streamRef.current = stream
-      const v = videoRef.current
-      if (v) { v.srcObject = stream; v.play().catch(() => {}) }
+      streamRef.current = cam.stream
       try {
         decoder = await getDecoder()
       } catch {
