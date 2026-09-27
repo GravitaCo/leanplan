@@ -12,6 +12,7 @@ import { exportBackup, readBackup } from '@/data/backup'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
+import { FeedbackSheet } from './profile/FeedbackSheet'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -63,6 +64,7 @@ export function ProfileScreen() {
   const [handsOpen, setHandsOpen] = useState(false)
   const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
   const [signOutOpen, setSignOutOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
 
   const [name, setName] = useState(pr.name || '')
@@ -275,6 +277,11 @@ export function ProfileScreen() {
         </Disclosure>
       </div>
 
+      <div className="lbl">Testing</div>
+      <div className="list icons">
+        <SettingRow icon="mail" color={MINDF} soft label="Send feedback" sub="What’s working, and what you’d like to see" onPress={() => setFeedbackOpen(true)} />
+      </div>
+
       <div className="list icons" style={{ marginTop: 24 }}>
         <Disclosure icon="info" color={GRAY} soft label="About Tali" open={open === 'about'} onToggle={() => toggle('about')}>
           <div className="prose sub">
@@ -294,6 +301,7 @@ export function ProfileScreen() {
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
+      {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </div>
   )

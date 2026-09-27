@@ -265,6 +265,9 @@ svg.bars text.on { fill: var(--label); }
 .btn.danger { background: none; color: var(--red); font-weight: 400; }
 .btn.sm { height: 36px; width: auto; padding: 0 16px; font-size: 15px; border-radius: 18px; }
 .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+/* tester feedback */
+.fb-q { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; margin: 4px 0 6px; }
+.fb-preview { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; color: var(--label2); }
 .seg { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; }
 .seg button { flex: 1; border: 0; background: none; border-radius: 7px; padding: 6px 4px; font-size: 13px; font-weight: 600; color: var(--label); white-space: nowrap; }
 .seg button.on { background: var(--segon); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04); }

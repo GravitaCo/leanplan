@@ -1,4 +1,5 @@
 /** `npm test` — unit tests for the accuracy checks and unit maths (core/, no DOM). */
+import { feedbackEmail, feedbackMailto, hasFeedback } from '@/core/domain/feedback'
 import { withTimeout } from '@/data/timeout'
 import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
@@ -1744,4 +1745,20 @@ async function timeouts(): Promise<void> {
   console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+// Tester feedback email: only what was answered, open questions after the areas, app and device last.
+function feedbackForm(): void {
+  const empty = { areas: {}, wishes: '', other: '' }
+  const a = { areas: { food: { rating: 'Needs work' as const, note: '  Barcode missed my yoghurt ' }, plan: { rating: 'Works well' as const } }, wishes: 'Recipes from a photo', other: '' }
+  const e = feedbackEmail(a, { version: 'tali-v55', device: 'iPhone' })
+  const url = feedbackMailto(e)
+  const checks: [string, boolean][] = [
+    ['nothing answered: nothing to send', !hasFeedback(empty) && hasFeedback(a) && hasFeedback({ ...empty, other: 'hi' })],
+    ['a skipped area is left out, answered ones keep their order', e.body.indexOf('Logging food: Needs work') === 0 && e.body.includes('Planning your week: Works well') && !e.body.includes('Workouts')],
+    ['notes are trimmed and wishes follow the areas', e.body.includes('\nBarcode missed my yoghurt\n') && e.body.indexOf('What I’d like to see in Tali:\nRecipes from a photo') > e.body.indexOf('Planning')],
+    ['app and device at the end', e.body.endsWith('---\nApp: tali-v55\nDevice: iPhone')],
+    ['mailto addressed to Benn, subject and body encoded', url.startsWith('mailto:benn@gravita.co?subject=Tali%20tester%20feedback&body=') && decodeURIComponent(url.split('&body=')[1]) === e.body],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
