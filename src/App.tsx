@@ -91,7 +91,8 @@ function TaliApp() {
   // One consent screen at a time. Live: the consent screen (screens/legal/ConsentScreen.tsx) until
   // the health answer is in; sync waits for it too (store scheduleSync, consentLetsSync). Behind
   // ONBOARDING_ENABLED, the Onboarding 6 flow takes its place: first-run ob6-1 → ob6-2, or for
-  // someone who already has data here the ob6-3 sheet over the app ("Not now" pauses health sync).
+  // someone who already has data here the ob6-3 sheet over the app ("Not now" keeps everything on
+  // this phone: sync still waits for an answer).
   if (firstRun || firstRunDue(data, online)) return <FirstRunConsent step={firstRun ?? 'health'} />
   if (!answered && !healthSyncPaused(data) && !existingDue(data, online)) return <ConsentScreen />
 

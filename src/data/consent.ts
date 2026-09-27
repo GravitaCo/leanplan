@@ -192,14 +192,15 @@ export function quietNumbers(s: PersistedState): boolean {
 }
 
 /**
- * Whether sync may send more than consent records: the health consent screen is answered, or an
- * existing user's "Not now" pause is on (behind ONBOARDING_ENABLED: screens/onboarding/Consent),
- * in which case the health fields are held back on this device (HealthPause) while the rest syncs.
- * Nothing else syncs before an answer (store scheduleSync; pushDirty also waits for the latest
- * health record to reach the server).
+ * Whether sync may send more than consent records: only once the health consent screen is
+ * answered (CLAUDE.md: nothing syncs to the cloud without it). An existing user's "Not now" pause
+ * (behind ONBOARDING_ENABLED: screens/onboarding/Consent) doesn't count: until they answer,
+ * everything stays on this device. pushDirty's held-fields path (HealthPause) is kept, and
+ * tested, for if Benn and compliance decide a pause may sync the rest (it doesn't run today).
+ * pushDirty also waits for the latest health record to reach the server.
  */
 export function consentLetsSync(s: PersistedState): boolean {
-  return healthConsentAnswered(s) || healthSyncPaused(s)
+  return healthConsentAnswered(s)
 }
 
 /** Record a grant or withdrawal on the device. Returns the new record (dirty until synced). */

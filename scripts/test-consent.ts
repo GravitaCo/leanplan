@@ -450,7 +450,7 @@ async function gateAndPause(): Promise<void> {
   const fresh = stateFromBackup({ days: { [D1]: day(70) } } as never)
   checks.push(['no answer and no pause: sync sends consent records only', !consentLetsSync(fresh)])
   pauseHealthSync(fresh)
-  checks.push(['a "Not now" pause lets the rest sync (health fields held back), without counting as an answer', consentLetsSync(fresh) && !healthConsentAnswered(fresh)])
+  checks.push(['a "Not now" pause isn’t an answer: still consent records only', !consentLetsSync(fresh) && !healthConsentAnswered(fresh)])
   const answered = stateFromBackup({ days: {} } as never)
   recordConsent(answered, 'health', true)
   checks.push(['an answer lets everything sync', consentLetsSync(answered)])
@@ -477,8 +477,9 @@ async function gateAndPause(): Promise<void> {
   pauseHealthSync(s)
   s.days[D1].weight = 70.4
   m.days[D1] = { u: 'x', dirty: true }
+  // (the store doesn't run this while paused: consentLetsSync. The data layer's held path, direct:)
   await withFetch(fetchFn, () => pushDirty(s, m))
-  checks.push(['paused: the day syncs without its weight', rows.day_logs[0].weight === 71 && !m.days[D1].dirty && !!s.consents!.healthPause!.days?.[D1]])
+  checks.push(['paused push (data layer): the day goes up without its weight', rows.day_logs[0].weight === 71 && !m.days[D1].dirty && !!s.consents!.healthPause!.days?.[D1]])
   const rec = grantHealth(s, m)
   rec.at = '1970-01-01T00:00:00.000Z' // a phone clock reset while it was answered
   posts.length = 0

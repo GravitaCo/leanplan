@@ -36,8 +36,12 @@ function fakeJwt(uid, authAgoS = 10) {
 const USER = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'e2e@example.com', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const sessionOf = (authAgoS) => ({ access_token: fakeJwt(UID, authAgoS), token_type: 'bearer', expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: 'r', user: USER })
 
-/** A device state as the app saves it: `days`, synced once (lastPull), owned by UID. */
-function deviceState({ days = {}, dirty = [], consents, pulled = true } = {}) {
+/** Health consent given (and synced) on the live consent screen: the app past it. */
+const GRANTED = { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] }
+/** Nothing answered yet: the live consent screen, or (flag on) the Onboarding 6 flow. */
+const NONE = { records: [] }
+/** A device state as the app saves it: `days`, synced once (lastPull), owned by UID; health consent given unless `consents` says otherwise. */
+function deviceState({ days = {}, dirty = [], consents = GRANTED, pulled = true } = {}) {
   const u = new Date().toISOString()
   return {
     days,
@@ -119,6 +123,14 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
 const pill = (page) => page.locator('.hdr .cpill')
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
 const latest = (st, type) => (st?.consents?.records || []).filter((r) => r.type === type).sort((a, b) => a.at.localeCompare(b.at)).pop()
+/** Giving health consent from Profile: the explicit statement and unticked box, then the button. */
+async function agreeInProfile(page) {
+  const btn = page.getByRole('button', { name: 'Turn health data back on' })
+  await btn.waitFor()
+  expect(await btn.isDisabled(), 'waits for the tick')
+  await page.locator('label[for="c_regrant"]').click()
+  await btn.click()
+}
 const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
 
 ;(async () => {
@@ -134,9 +146,12 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await pill(page).click()
     await page.getByText('Everything is saved to your account.').waitFor()
     await shot(page, 'pill-up-to-date')
-    await tab(page, 'Plan')
-    await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor() // every tab
-  })
+    for (const t of ['Food', 'Train', 'Plan', 'Profile']) { // every tab header has it (and only those)
+      await tab(page, t)
+      await page.locator('.hdr .ltitle', { hasText: t }).waitFor()
+      await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
+    }
+  }, { state: deviceState() })
 
   await run('pill: saved on this phone, will sync (n)', async ({ page }) => {
     await page.locator('.hdr .cpill[data-conn="pending"]').waitFor()
@@ -215,7 +230,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(400)
     expect((await page.getByRole('heading', { name: 'Your health data' }).count()) === 0, 'asked once')
-  }, { url: ON, state: deviceState({}) })
+  }, { url: ON, state: deviceState({ consents: NONE }) })
 
   await run('first run: not now to health → app works, no weight or calorie numbers, agree later in Profile', async ({ page }) => {
     await page.getByRole('heading', { name: 'Your health data' }).waitFor()
@@ -233,11 +248,11 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.getByRole('dialog', { name: 'Health data' }).waitFor()
     await shot(page, 'profile-health-agree')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
-    await page.getByRole('button', { name: 'Done' }).click()
+    await agreeInProfile(page)
     expect(latest(await stored(page), 'health')?.granted === true, 'agreed later')
     await tab(page, 'Food')
     await page.getByText('kcal eaten').waitFor()
-  }, { url: ON, state: deviceState({}) })
+  }, { url: ON, state: deviceState({ consents: NONE }) })
 
   await run('withdraw health consent in Profile: export offered first', async ({ page, rows }) => {
     await tab(page, 'Profile')
@@ -261,20 +276,41 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
   }, { state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] } }) })
 
-  await run('withdraw when never asked: offered, with the download first', async ({ page, rows }) => {
-    await tab(page, 'Profile')
-    await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Not asked yet' }).click()
-    await page.getByRole('button', { name: 'Stop keeping my health data' }).click()
-    await page.getByRole('button', { name: 'Download a copy' }).waitFor()
-    await page.getByRole('button', { name: 'Remove my health data' }).click()
-    const st = await stored(page)
-    expect(st.days[today].weight === null && latest(st, 'health')?.granted === false, 'cleared and recorded')
+  await run('live consent screen: shows until answered, only consent syncs before, then the rest', async ({ page, rows, net }) => {
+    await page.getByRole('heading', { name: 'Before you start' }).waitFor()
+    await page.waitForTimeout(800)
+    expect((await page.getByText('Your health data').count()) === 0, 'not the Onboarding 6 screen too')
+    expect(!net.posts.some((p) => p.t !== 'consents'), 'nothing but consent before the answer: ' + net.posts.map((p) => p.t).join())
+    const cont = page.getByRole('button', { name: 'Continue' })
+    for (const id of ['c_health', 'c_terms']) { await page.locator(`label[for="${id}"]`).click(); expect(await cont.isDisabled(), 'Continue waits for all three') }
+    await page.locator('label[for="c_age"]').click()
+    await cont.click()
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
-    expect(rows.day_logs.find((x) => x.log_date === today)?.weight === null, 'server copy cleared')
+    expect(rows.consents.length === 1 && rows.consents[0].granted === true, 'the answer synced')
+    expect(rows.day_logs.some((x) => x.log_date === today && x.weight === 70), 'then the log')
+    const i = net.posts.findIndex((p) => p.t === 'consents'), j = net.posts.findIndex((p) => p.t === 'day_logs')
+    expect(i >= 0 && j > i, 'consent before data')
+  }, { state: deviceState({ days: { [today]: aDay(70) }, dirty: [today], consents: NONE }) })
+
+  await run('Profile, then Privacy: its buttons open the same withdraw and delete flows', async ({ page }) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Privacy/ }).click()
+    await page.getByRole('button', { name: 'Withdraw consent for health data' }).click()
+    await page.getByText('This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?').waitFor()
+    await page.getByRole('button', { name: 'Download a copy' }).waitFor()
+    await page.getByRole('button', { name: 'Back' }).first().click().catch(() => {})
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.goto(page.url()) // close whatever is open
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Privacy/ }).click()
+    await page.locator('.btn.danger', { hasText: 'Delete account' }).click()
+    await page.getByRole('heading', { name: 'Delete your account' }).waitFor()
+    expect((await page.locator('.hdr .cpill').count()) === 0, 'no connection pill off the tabs')
   }, { state: deviceState({ days: { [today]: aDay(70) } }) })
 
   const EXISTING = { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }
-  await run('existing user: the sheet shows once; Not now keeps health data on the phone and pauses its sync', async ({ page, rows, net }) => {
+  await run('existing user: the sheet shows once; Not now keeps it all on the phone until an answer', async ({ page, rows, net }) => {
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor()
     await page.getByText('New health data stays on this phone. What’s already in your account stays until you choose. We’ll ask once more in 2 weeks.').waitFor()
     await shot(page, 'ob6-3-existing')
@@ -282,39 +318,34 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor({ state: 'detached' })
     const st = await stored(page)
     expect(st.consents.healthPause && !latest(st, 'health') && st.days[today].weight === 70, 'paused, nothing recorded or cleared')
-    // new health data while paused: a check-in. It stays on the phone; the day syncs without it
-    await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
+    // new health data while paused: a check-in. Until there's an answer nothing but consent syncs
+    // (CLAUDE.md), so it and the rest of the day stay on the phone
     await page.locator('.mind-row').click()
     await page.getByRole('button', { name: 'Great' }).first().click()
     await page.getByRole('button', { name: 'Done' }).click()
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).days[new Date().toISOString().slice(0, 10)].checkin.mood === 5)
-    await page.waitForFunction(() => document.querySelector('.hdr .cpill')?.getAttribute('data-conn') === 'up-to-date')
-    await page.waitForTimeout(300)
-    const dayPost = net.posts.filter((p) => p.t === 'day_logs').pop()
-    expect(dayPost && !('weight' in dayPost.list[0]) && dayPost.list[0].supps._checkin?.mood === 3, 'no health data uploaded: ' + JSON.stringify(dayPost?.list[0]))
+    await page.waitForTimeout(1500)
+    expect(!net.posts.some((p) => p.t !== 'consents'), 'nothing but consent while paused: ' + net.posts.map((p) => p.t).join())
     const srv = rows.day_logs.find((x) => x.log_date === today)
     expect(srv.weight === 70 && srv.supps._checkin.mood === 3, 'the server keeps what it had')
     await page.reload()
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(800)
     expect((await page.getByText('Is it OK to keep your health data?').count()) === 0, 'shown once')
-    expect((await stored(page)).days[today].checkin.mood === 5, 'the phone keeps its own check-in after a pull')
-    // held back: the pill stays "Up to date" and its line says so
-    await page.locator('.hdr .cpill[data-conn="up-to-date"]').click()
-    await page.getByText('Health data is kept on this phone until you agree.').waitFor()
-    await shot(page, 'pill-held')
-    // agree later in Profile: what was held uploads
+    expect((await stored(page)).days[today].checkin.mood === 5, 'the phone keeps its own check-in')
+    // agree later in Profile: then everything on the phone uploads
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Paused' }).click()
     await page.getByText('Kept on this phone only until you agree. What’s already in your account stays until you choose.').waitFor()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).waitFor() // withdrawal offered while paused too
     await shot(page, 'profile-health-paused')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
+    await agreeInProfile(page)
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
     await page.waitForTimeout(1500)
     const after = rows.day_logs.find((x) => x.log_date === today)
-    expect(after.supps._checkin.mood === 5 && after.weight === 70, 'held check-in uploaded after the yes: ' + JSON.stringify(after))
-  }, { url: ON, state: deviceState({ days: EXISTING }), rows: { day_logs: [{ user_id: UID, log_date: today, foods: EXISTING[today].foods, supps: { _checkin: EXISTING[today].checkin }, weight: 70, workout: null }] } })
+    expect(after.supps._checkin.mood === 5 && after.weight === 70, 'the phone’s check-in uploaded after the yes: ' + JSON.stringify(after))
+  }, { url: ON, state: deviceState({ days: EXISTING, consents: NONE }), rows: { day_logs: [{ user_id: UID, log_date: today, foods: EXISTING[today].foods, supps: { _checkin: EXISTING[today].checkin }, weight: 70, workout: null }] } })
 
   const pausedAgo = (days, reasked) => deviceState({ days: EXISTING, consents: { records: [], healthPause: { at: new Date(Date.now() - days * 86400_000).toISOString(), ...(reasked ? { reasked: true } : {}) } } })
   await run('existing user: asked again once after 2 weeks, then never', async ({ page }) => {
@@ -341,7 +372,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await tab(page, 'Plan')
     await page.locator('.buildplan').waitFor() // ob6-4, behind the flag
     await shot(page, 'ob6-4-buildplan')
-  }, { url: ON, state: deviceState({ days: EXISTING }) })
+  }, { url: ON, state: deviceState({ days: EXISTING, consents: NONE }) })
 
   /* ---------------- delete account ---------------- */
 

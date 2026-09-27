@@ -92,10 +92,16 @@ async function scenario(browser, name, fn, opts = {}) {
   const uid = '11111111-2222-4333-8444-555555555555'
   const user = { id: uid, aud: 'authenticated', role: 'authenticated', email: 'e2e@example.com', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
   const session = { access_token: fakeJwt(uid), token_type: 'bearer', expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: 'r', user }
-  await ctx.addInitScript(([s]) => {
+  // health consent already given on the consent screen (screens/legal/ConsentScreen.tsx), so the
+  // app opens past it; only seeded once, so a reload keeps what the app saved
+  const u = new Date().toISOString()
+  const device = { days: {}, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] },
+    _meta: { settings: { u, dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, owner: uid } }
+  await ctx.addInitScript(([s, st]) => {
     localStorage.setItem('sb-exvblofwiwbvycomxvmj-auth-token', s)
     localStorage.setItem('tali.mode', 'account')
-  }, [JSON.stringify(session)])
+    if (!localStorage.getItem('leanplan.v1')) localStorage.setItem('leanplan.v1', st)
+  }, [JSON.stringify(session), JSON.stringify(device)])
   const calls = { fn: 0, bodies: [] }
   let reply = { status: 200, body: { ok: true, read: readOf(GRANOLA) } }
   let missing = false
