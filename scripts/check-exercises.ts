@@ -19,7 +19,7 @@ const RESIST_PATTERNS = ['horizontal-push', 'vertical-push', 'horizontal-pull', 
 const PATTERNS = [...RESIST_PATTERNS, 'mobility', 'cardio']
 // engine attributes (personalised-training-engine.md §4.2)
 const POSITIONS = ['standing', 'seated', 'bench', 'floor', 'hanging', 'water']
-const PROPS = ['chair', 'sofa', 'step', 'wall', 'doorway']
+const PROPS = ['chair', 'sofa', 'step', 'wall', 'doorway', 'table', 'towel']
 const STEPS = ['plate-2.5', 'next-weight', 'next-stack', 'next-band', 'chain', 'reps', 'time']
 const LEVEL_N = { beginner: 0, intermediate: 1, advanced: 2 } as const
 const MUSCLES = ['chest', 'back', 'quads', 'hamstrings', 'glutes', 'shoulders', 'biceps', 'triceps', 'calves', 'core', 'forearms']

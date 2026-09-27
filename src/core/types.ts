@@ -521,7 +521,7 @@ export type LoadStep = 'plate-2.5' | 'next-weight' | 'next-stack' | 'next-band' 
  * frame). Kept apart from `Equipment` on purpose: `Equipment` drives the library's kit filter and
  * labels, so these never change what the library shows.
  */
-export type HouseholdProp = 'chair' | 'sofa' | 'step' | 'wall' | 'doorway'
+export type HouseholdProp = 'chair' | 'sofa' | 'step' | 'wall' | 'doorway' | 'table' | 'towel'
 
 /** Where the body is for most of the set (floor transitions matter in short sessions and from 55). */
 export type BodyPosition = 'standing' | 'seated' | 'bench' | 'floor' | 'hanging' | 'water'
