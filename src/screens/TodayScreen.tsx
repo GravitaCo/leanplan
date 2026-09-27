@@ -34,6 +34,14 @@ function initials(name: string) {
   return name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
+/** "22–28 Sept", or "29 Sept – 5 Oct" across a month end. */
+function weekSpan(a: string, b: string): string {
+  const d = (x: string, o: Intl.DateTimeFormatOptions) => new Date(x + 'T12:00').toLocaleDateString('en-GB', o)
+  return d(a, { month: 'short' }) === d(b, { month: 'short' })
+    ? `${d(a, { day: 'numeric' })}–${d(b, { day: 'numeric', month: 'short' })}`
+    : `${d(a, { day: 'numeric', month: 'short' })} – ${d(b, { day: 'numeric', month: 'short' })}`
+}
+
 export function TodayScreen() {
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
@@ -290,13 +298,19 @@ export function TodayScreen() {
         <section className="card pcard" aria-labelledby="sum-week">
           <div className="ph">
             <h2 id="sum-week" className="pk2">This week</h2>
-            <span className="sub" style={{ fontSize: 13 }}>{gentle ? 'Mon to Sun' : <span className="num">Range {fmt(baseLo)}–{fmt(baseHi)} kcal</span>}</span>
+            <span className="sub num" style={{ fontSize: 13 }}>{weekSpan(rows[0].d, rows[6].d)}</span>
           </div>
           <div>
             <div className="sk">Energy</div>
             <div className="wline">{energyLine}</div>
           </div>
-          <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} />
+          <div>
+            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} />
+            <div className="wkey">
+              <span><i className="bar" />Eaten{gentle ? '' : ', kcal'}</span>
+              <span><i className="band" /><span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span></span>
+            </div>
+          </div>
           <div className="stat3">
             <div>
               <div className="sk">Protein</div>

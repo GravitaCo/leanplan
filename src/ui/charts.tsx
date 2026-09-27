@@ -77,26 +77,39 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
   )
 }
 
-/** Fitbit-style week bars against the target band. A missed day is a quiet stub, not a gap to feel bad about. */
-export function WeekBars({ rows, lo, hi, cur }: { rows: DayStat[]; lo: number; hi: number; cur: string }) {
-  const W = 320, H = 128, base = H - 20, bw = 24
-  const max = Math.max(...rows.map((x) => x.t.k), hi) * 1.08 || 1
-  const y = (v: number) => base - (v / max) * (base - 4)
+/** Week bars against the target range. Each logged day carries its number; each day's range is a
+ *  thin line at its middle (higher on a workout day; the exact range is in the key under the
+ *  chart), and a day with nothing logged is a small stub, not a gap to feel bad about. `numbers` is
+ *  off in gentle mode. */
+export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
+  const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
+  const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
+  const y = (v: number) => base - (v / max) * (base - top0)
   const step = W / 7
+  const label = `Energy this week${numbers ? `, range ${Math.round(lo)} to ${Math.round(hi)} kcal${rows.some((x) => x.r.hi !== hi) ? ', higher on workout days' : ''}` : ''}: ` +
+    (rows.filter((x) => x.logged).map((x) => `${new Date(x.d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })} ${numbers ? Math.round(x.t.k) + ' kcal' : 'logged'}`).join(', ') || 'nothing logged yet')
   return (
-    <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Energy this week against your range">
-      <rect x={0} y={y(hi)} width={W} height={y(lo) - y(hi)} rx={5} fill="var(--band)" />
+    <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
+      {/* each day's own range as a thin line at its middle (the numbers are in the key): it rises on a day
+          with a logged workout, so it always agrees with "in your range" */}
+      <g className="band">{rows.map((x, i) => (
+        <rect key={'r' + x.d} x={step * i} y={y(x.r.mid) - 2} width={step + (i < 6 ? 0.5 : 0)} height={4} rx={i === 0 || i === 6 ? 2 : 0} fill="var(--band)" />
+      ))}</g>
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)
+        const on = x.d === cur
         return (
           <g key={x.d}>
             {x.logged ? (
-              <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={x.d === cur ? 'var(--energy-ink)' : 'var(--energy)'} />
+              <>
+                <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={on ? 'var(--energy-ink)' : 'var(--energy)'} />
+                {numbers && <text x={cx} y={top - 5} textAnchor="middle" className={'v num' + (on ? ' on' : '')}>{Math.round(x.t.k).toLocaleString('en-GB')}</text>}
+              </>
             ) : !x.future ? (
               <rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill="var(--fill3)" />
             ) : null}
-            <text x={cx} y={H - 4} textAnchor="middle" className={x.d === cur ? 'on' : ''}>{DOW[i]}</text>
+            <text x={cx} y={H - 4} textAnchor="middle" className={on ? 'on' : ''}>{DOW[i]}</text>
           </g>
         )
       })}
