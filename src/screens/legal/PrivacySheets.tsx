@@ -43,7 +43,8 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
   const go = async () => {
     setMsg(null)
     if (needsReauth()) { setConfirming(true); return }
-    const { message } = await run()
+    const { result, message } = await run()
+    if (result.status === 'reauth') setConfirming(true)
     if (message) setMsg(message)
   }
   const confirm = async () => {
@@ -54,7 +55,8 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
     if (r === 'redirecting') return
     if (r !== 'ok') { setMsg(r === 'wrong-password' ? 'That password isn’t right.' : r === 'offline' ? 'You’re offline. Nothing has been deleted.' : 'Couldn’t confirm it’s you. Nothing has been deleted.'); return }
     setConfirming(false)
-    const { message } = await run()
+    const { result, message } = await run()
+    if (result.status === 'reauth') setConfirming(true)
     if (message) setMsg(message)
   }
 

@@ -326,6 +326,9 @@ export function keepForAccount(s: PersistedState, uid: string): PersistedState {
   delete s._meta
   ensureMeta(s, true).owner = uid
   rekeyForAccount(s)
+  // consent is a person's own act: the new account answers the consent screen for itself, and
+  // nothing of this log syncs until it does (never carry another account's grant or withdrawal)
+  s.consents = { records: [] }
   return s
 }
 

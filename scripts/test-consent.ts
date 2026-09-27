@@ -129,7 +129,7 @@ async function consent(fakeServer: FakeServer): Promise<void> {
   const restored = stateFromBackup(file, stateFromBackup({ days: {} } as never))
   checks.push(["a backup file's consent records are not restored", restored.consents?.records.length === 0])
   const kept = keepForAccount(JSON.parse(JSON.stringify(s)) as PersistedState, '77777777-7777-4777-8777-777777777777')
-  checks.push(['"keep" uploads the device\'s acts under new ids', kept.consents!.records.length === s.consents!.records.length && kept.consents!.records.every((r, i) => r._dirty && r.id !== s.consents!.records[i].id)])
+  checks.push(['"keep" never carries another account\'s consent: the new account answers for itself', s.consents!.records.length > 0 && kept.consents!.records.length === 0 && !healthConsentAnswered(kept)])
   checks.push(['"start fresh" has no consent', freshForAccount('77777777-7777-4777-8777-777777777777').consents!.records.length === 0])
   const now = new Date().toISOString()
   const junk = loadStateFrom({ days: {}, consents: { records: [{ id: 'x', type: 'health', version: 'v', granted: true, at: now }, { id: uuid(), type: 'mood', version: 'v1', granted: true, at: now }, { id: uuid(), type: 'ai', version: 'v1', granted: 'yes', at: now }] } } as never)
@@ -280,9 +280,27 @@ function gate(): void {
   report('consent gate', checks)
 }
 
+/** No health data goes up while the health consent record hasn't reached the server. */
+async function consentFirst(fakeServer: FakeServer): Promise<void> {
+  const s = stateFromBackup({ days: { '2026-09-01': day(70) } } as never)
+  const m = ensureMeta(s, true)
+  recordConsent(s, 'health', true)
+  const down = fakeServer(emptyRows(), ['consents'])
+  const failed = await withFetch(down.fetchFn, () => pushDirty(s, m))
+  const checks: [string, boolean][] = [
+    ['a failed consent upload stops the data upload', failed.length > 0 && !down.calls.some((c) => c.startsWith('POST day_logs') || c.startsWith('POST settings'))],
+    ['the day stays dirty for the next run', m.days['2026-09-01']?.dirty === true],
+  ]
+  const up = fakeServer(emptyRows())
+  const ok = await withFetch(up.fetchFn, () => pushDirty(s, m))
+  checks.push(['once the consent is up, the data follows', ok.length === 0 && up.calls.some((c) => c.startsWith('POST day_logs'))])
+  report('consent first', checks)
+}
+
 export async function consentSuite(fakeServer: FakeServer): Promise<number> {
   bad = 0
   gate()
+  await consentFirst(fakeServer)
   await consent(fakeServer)
   await deletion()
   connection()

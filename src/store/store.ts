@@ -43,7 +43,7 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, healthConsentAnswered, pullConsents, type ConsentType } from '@/data/consent'
+import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, healthConsentAnswered, pullConsents, clearHealthData, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -849,6 +849,8 @@ export const useStore = create<StoreState>()(
 
       importBackup: (incoming) => {
         const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
+        // health consent withdrawn: a restored backup must not bring the health fields back (or sync them)
+        if (!healthLoggingAllowed(get().data)) clearHealthData(fresh, ensureMeta(fresh, false))
         set((st) => { st.data = fresh })
         const stored = persist()
         set((st) => { st.cur = todayStr() })
@@ -1016,7 +1018,9 @@ export const useStore = create<StoreState>()(
             await pullConsents(d)
             if (get().data !== src) { again = true; return }
             if (!get().authed || getUid() !== uid0 || !healthConsentAnswered(d)) return
-            applyHealthWithdrawal(d, ensureMeta(d, false))
+            // a withdrawal that came in isn't applied here: the log on this copy hasn't been pulled,
+            // and clearing it would upload stale days over newer ones. The full run next applies it
+            // after pullAll (healthCleared isn't set for it yet).
             saveState(d)
             set((st) => { st.data = d })
             again = true

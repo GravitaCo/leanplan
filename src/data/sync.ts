@@ -215,6 +215,12 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   }
   // consent first: a record reaches the server before (or with) the health data it covers
   await step('consents', () => pushConsents(s))
+  // enforced, not hoped for: while the health consent record isn't on the server, no data goes up
+  // (it stays dirty on the device and the next run retries)
+  if ((s.consents?.records || []).some((r) => r.type === 'health' && r._dirty)) {
+    if (!failed.length) failed.push('consents: health consent not uploaded yet')
+    return failed
+  }
   const dirtyDays = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   await step('days', () => upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
   if (meta.settings.dirty) {
