@@ -163,30 +163,38 @@ has a one-line "Why we ask" and a progress line ("About 2 minutes left").
   the device). This blocks shipping onboarding.
 - **Export:** the existing JSON backup.
 
-## 9. Open questions for Benn
+## 9. Decisions (Benn, 27 Sept 2026)
 
-These are asked in rounds. The recommended default is in brackets.
+**Flow and safety**
+- **Flow:** a short wizard (age, readiness, why, goal, body), then a "finish your setup" card for
+  the training details.
+- **Age:** 16+. Under-16s get a kind stop; 16–17s get no deficit, no AI and weight hidden. Needs a
+  quick legal check.
+- **Wellbeing:** the one non-diagnostic food and weight question, with routing. Only the outcome is
+  stored, and it gets clinical review before wider launch.
+- **BMI under 18.5:** used as a safety gate only (no deficit). Never shown, never used for targets.
+- **Readiness check, medical conditions question and sleep/stress baseline:** all included.
 
-1. Wizard or card? (A short wizard for age, readiness, why, goal and body; then a "finish your
-   setup" card for the training details.)
-2. Minimum age? (16+, with under-18s getting no deficit and no AI; needs a legal check.)
-3. Is the one-question wellbeing check with routing OK before a clinically validated screener?
-   (Yes, non-diagnostic, pending clinical review.)
-4. Is BMI under 18.5 OK as a safety gate only? (Yes.)
-5. Remove body-fat % and "Aggressive" from onboarding? (Yes.)
-6. Is current weight required? (Optional, with a fallback target.)
-7. Show a target range rather than a single number? (Yes.)
-8. Should poor sleep or high stress set the gentler start automatically? (Pre-select it with
-   "change".)
-9. Pick-and-adapt a Tali plan in v1? (Yes.)
-10. Floors split by sex, 1,500 / 1,200? (Yes.)
-11. Daily movement as steps bands? (Yes, with job type as an alternative.)
-12. Medical conditions question (diabetes medication, kidney disease, GLP-1): include it? (Yes,
-    routing only, nothing stored beyond the outcome.)
-13. Which plans come next? (Home with no kit, walk-to-run, 4-day upper/lower.)
-14. Should account deletion and the consent table block the onboarding launch? (Yes.)
-15. Does AI "why this plan" wording ship in v1, or does it come later with the rules-based copy
-    first? (Rules-based copy first.)
+**Body and nutrition**
+- **Weight:** optional, with a fallback range.
+- **Target:** a rounded number plus the likely maintenance range, and a weigh-in check after
+  3–4 weeks.
+- **Activity:** steps bands, with job type as the alternative. Training is counted separately.
+- **Floors:** split by sex, 1,500 men / 1,200 women, plus the BMR floor and never below 800.
+
+**Training**
+- **Progression:** suggest only.
+- **New plans first:** Home with no equipment, walk-to-run, and 4-day upper/lower.
+- **Plan engine:** **not** pick-and-adapt. Benn: "workouts tailored to that specific person are
+  the goal; in our early research the pain point was faked personalisation. I do not want us
+  falling into that trap. Let's do the work to figure the best plan for this." The engine design
+  is being researched: see §11.
+
+**Launch gate:** all four of these block launch:
+- consents table
+- account deletion
+- privacy notice and DPIA
+- connection indicator
 
 ## 10. Build phases (each reviewed by the relevant agents and `ship-critic`)
 
@@ -196,3 +204,13 @@ These are asked in rounds. The recommended default is in brackets.
 4. Target range output, units and floors.
 5. `suggestRateAdjustment` and the plan adaptation loop.
 6. New plans, and the optional AI "why this plan".
+
+## 11. Real personalisation (in progress)
+
+**Test for "not fake":**
+- Two people with different answers get materially different plans.
+- Every choice in a plan (split, days, exercises, sets, reps, rest, cardio, progression) traces
+  to one of their answers or their own logged data, and the app can say which.
+- The plan changes because of what that person did, not on a fixed calendar.
+
+The design is being worked on by `fitness-workouts`, with research into what current apps do.
