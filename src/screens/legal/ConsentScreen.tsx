@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
+import { hasExistingData, healthSyncPaused } from '@/data/consent'
 import { LegalLink } from './LegalDoc'
 
 /**
@@ -14,6 +15,12 @@ import { LegalLink } from './LegalDoc'
 export function ConsentScreen() {
   const grantConsent = useStore((s) => s.grantConsent)
   const signOut = useStore((s) => s.signOut)
+  const notNow = useStore((s) => s.notNowHealth)
+  // someone who used Tali before consent was asked may say "Not now": everything stays on this
+  // phone and nothing syncs until they agree (asked once more after 2 weeks); for someone new,
+  // "Not now" is signing out, since there's nothing to keep
+  const existing = useStore((s) => hasExistingData(s.data))
+  const reasked = useStore((s) => healthSyncPaused(s.data))
   const [health, setHealth] = useState(false)
   const [terms, setTerms] = useState(false)
   const [adult, setAdult] = useState(false)
@@ -41,7 +48,18 @@ export function ConsentScreen() {
       </div>
 
       <button className="btn" disabled={!(health && terms && adult)} onClick={() => grantConsent('health')}>Continue</button>
-      <button className="btn gray" onClick={() => signOut()}>Not now, sign out</button>
+      {existing ? (
+        <>
+          <button className="btn gray" onClick={notNow}>Not now, keep it on this phone</button>
+          <div className="foot">
+            Until you agree, nothing you log syncs to your account or is backed up there.{' '}
+            {reasked ? 'We won’t ask again: you can agree any time in Profile, then Privacy.' : 'We’ll ask once more in 2 weeks.'}
+          </div>
+          <button type="button" className="linkbtn muted" onClick={() => signOut()}>Sign out</button>
+        </>
+      ) : (
+        <button className="btn gray" onClick={() => signOut()}>Not now, sign out</button>
+      )}
       <div className="foot">
         Already have data in Tali and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.
       </div>

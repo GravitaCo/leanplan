@@ -331,6 +331,16 @@ export function grantHealth(s: PersistedState, meta: SyncMeta): ConsentRecord {
 
 /* ---------------- existing users: the one-time sheet and "Not now" ---------------- */
 
+/**
+ * The live consent screen (screens/legal/ConsentScreen.tsx) is due: no answer yet, and either no
+ * "Not now" here, or the one re-ask 2 weeks after it has come round. A "Not now" keeps the whole
+ * log on this phone (consentLetsSync stays false), so it's only offered to someone with data here.
+ */
+export function liveConsentDue(s: PersistedState, now = Date.now()): boolean {
+  if (healthConsentAnswered(s)) return false
+  return !healthSyncPaused(s) || existingConsentDue(s, now)
+}
+
 /** Whether this device's health data is held back from sync: "Not now", and no answer since. */
 export function healthSyncPaused(s: PersistedState): boolean {
   return !!s.consents?.healthPause && !latestConsent(s, 'health')

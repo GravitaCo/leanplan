@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './store/store'
-import { healthConsentAnswered, healthSyncPaused, latestConsent } from './data/consent'
+import { healthConsentAnswered, latestConsent, liveConsentDue } from './data/consent'
 import { takeReauthReturn } from './data/account'
 import { getUid } from './data/supabase'
 import { ExistingConsentSheet, FirstRunConsent, existingDue, firstRunDue } from './screens/onboarding/Consent'
@@ -94,7 +94,7 @@ function TaliApp() {
   // someone who already has data here the ob6-3 sheet over the app ("Not now" keeps everything on
   // this phone: sync still waits for an answer).
   if (firstRun || firstRunDue(data, online)) return <FirstRunConsent step={firstRun ?? 'health'} />
-  if (!answered && !healthSyncPaused(data) && !existingDue(data, online)) return <ConsentScreen />
+  if (!answered && liveConsentDue(data) && !existingDue(data, online)) return <ConsentScreen />
 
   return (
     <div className="app-shell">

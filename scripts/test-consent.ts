@@ -1,7 +1,7 @@
 /* Consent, account deletion and the connection indicator (onboarding plan §7, §8). Run from
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
-import { healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
+import { liveConsentDue, pauseHealthSync, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
   consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
@@ -278,6 +278,18 @@ function gate(): void {
   checks.push(['a grant at the current version is answered', healthConsentAnswered(s) && CONSENT_VERSIONS.health.length > 0])
   withdraw(s, ensureMeta(s, false), 'health')
   checks.push(['a withdrawal is an answer too (not asked again)', healthConsentAnswered(s) && !hasConsent(s, 'health')])
+  // the live screen's "Not now" (existing users): screen away, asked once more after 2 weeks
+  const e = stateFromBackup({ days: { '2026-09-01': day(null) } } as never)
+  const DAY = 86400_000
+  const t0 = Date.now()
+  checks.push(['live screen due for someone with data and no answer', liveConsentDue(e, t0)])
+  pauseHealthSync(e, new Date(t0).toISOString())
+  checks.push(['after Not now: not due, and still not answered (so nothing syncs)', !liveConsentDue(e, t0 + DAY) && !healthConsentAnswered(e)])
+  checks.push(['due again after 2 weeks', liveConsentDue(e, t0 + 15 * DAY)])
+  pauseHealthSync(e)
+  checks.push(['a second Not now: not asked again', !liveConsentDue(e, t0 + 60 * DAY) && !healthConsentAnswered(e)])
+  recordConsent(e, 'health', true)
+  checks.push(['a yes ends it', !liveConsentDue(e, t0 + 60 * DAY) && healthConsentAnswered(e)])
   report('consent gate', checks)
 }
 

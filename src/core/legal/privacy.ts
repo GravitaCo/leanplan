@@ -61,7 +61,8 @@ export function privacyPolicy(): LegalDoc {
         h: 'Health data',
         p: [
           `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
-            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw.`,
+            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. ` +
+            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there, and we ask once more after two weeks.`,
           `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from all your devices, and Tali stops saving them. ` +
             `Your food, workout and supplement logs stay in your account so the app keeps working. If you don't want us to keep those either, delete your account (Profile, then Privacy, then Delete account; this needs a connection), which removes everything. Withdrawing does not affect what happened before.`,
         ],
