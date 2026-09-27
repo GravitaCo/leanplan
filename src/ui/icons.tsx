@@ -12,13 +12,13 @@ const PATHS = {
   smile: <><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14c.9 1.3 2.1 2 3.5 2s2.6-.7 3.5-2M9 9.5h.01M15 9.5h.01" /></>,
   check: <path d="M5 12.5l4.2 4.2L19 7" />,
   checkc: <><circle cx="12" cy="12" r="8.5" /><path d="M8 12.3l2.7 2.7L16 9.6" /></>,
-  chart: <path d="M5 20V11M10 20V5M15 20v-7M20 20v-4" />,
   plus: <path d="M12 5v14M5 12h14" />,
   chevR: <path d="M9 5l7 7-7 7" />,
   chevL: <path d="M15 5l-7 7 7 7" />,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.3-4.3" /></>,
   x: <path d="M6 6l12 12M18 6L6 18" />,
   play: <path d="M8 5.5v13l10.5-6.5z" />,
+  pause: <path d="M8.5 5.5v13M15.5 5.5v13" />,
   target: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r=".8" /></>,
   bolt: <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />,
   book: <><path d="M5 5.5a2 2 0 0 1 2-2h11.5v14H7a2 2 0 0 0-2 2z" /><path d="M5 19.5a2 2 0 0 0 2 2h11.5v-4" /></>,
@@ -29,16 +29,18 @@ const PATHS = {
   key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l8-8M16 7l2 2" /></>,
   cloud: <path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.8 3.8 0 0 1-.3 7.4z" />,
   info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>,
-  shield: <path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.9-7 9-4-1.1-7-4.7-7-9V6.3z" />,
+  barcode: <><path d="M3.5 7.5v-2a2 2 0 0 1 2-2h2M16.5 3.5h2a2 2 0 0 1 2 2v2M20.5 16.5v2a2 2 0 0 1-2 2h-2M7.5 20.5h-2a2 2 0 0 1-2-2v-2" /><path d="M8 8v8M11 8v8M13.5 8v8M16 8v8" /></>,
+  camera: <><path d="M3.5 9a2 2 0 0 1 2-2h2.2l1.6-2.5h5.4L16.3 7h2.2a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" /><circle cx="12" cy="13" r="3.6" /></>,
+  sliders: <><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>,
   mail: <><rect x="3.5" y="5.5" width="17" height="13" rx="3" /><path d="M4.5 7.5l7.5 5.5 7.5-5.5" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS
 
-export function Icon({ name, size = 20, stroke = 2, className }: { name: IconName; size?: number; stroke?: number; className?: string }) {
+export function Icon({ name, size = 20, stroke = 2 }: { name: IconName; size?: number; stroke?: number }) {
   return (
     <svg
-      className={'i' + (className ? ' ' + className : '')}
+      className="i"
       width={size}
       height={size}
       viewBox="0 0 24 24"

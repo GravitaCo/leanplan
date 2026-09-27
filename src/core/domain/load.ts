@@ -23,7 +23,11 @@ export interface LoadSignals {
  * ai-platform-plan §4.2 will read (with intake and mood trends); nothing here scores a person.
  */
 export function loadSignals(s: AppState, today: string): LoadSignals {
-  const hardOn = (d: string) => sessionsOf(s.days[d], d).filter(isHardSession).length
+  // one of the user's own workouts saved as hard counts as hard whatever its headline kind (a
+  // mostly-pilates workout with a lift in it); its effort isn't copied onto the session because
+  // that would change the burn estimate
+  const ownHard = new Set((s.routines || []).filter((r) => r.effort === 'hard').map((r) => r.id))
+  const hardOn = (d: string) => sessionsOf(s.days[d], d).filter((x) => isHardSession(x) || (!!x.routineId && ownHard.has(x.routineId))).length
   let hard7 = 0
   for (let i = 0; i < 7; i++) hard7 += hardOn(shiftDay(today, -i))
   const run = (from: string) => { let n = 0; while (n < 30 && hardOn(shiftDay(from, -n)) >= 2) n++; return n }

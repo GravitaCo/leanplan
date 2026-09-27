@@ -14,6 +14,7 @@ import type {
   MealSlot,
   Profile,
 } from '@/core/types'
+import { r1 } from './date'
 import { amountText, roundAmount, scaleFood, unitOf } from './nutrition'
 import { sourceErr } from '@/core/data/sources'
 
@@ -145,11 +146,6 @@ export function isCookable(f: Food, grams: number): boolean {
   return !!f.cook && grams >= MIN_COOK_GRAMS
 }
 
-
-/** Stored values keep one decimal: finer than anything shown, and no float noise
- *  (0.30000000000000004) bloating device storage and sync. */
-const d1 = (x: number) => Math.round(x * 10) / 10
-
 /** Portion as chosen in the add-food flow. */
 export type Portion =
   | { mode: 'serv'; serv: number }
@@ -175,7 +171,7 @@ export function buildEntry(
   // labels copied by hand are a little less certain than the curated database
   // menu-label sources (restaurant chains) are wider than a weighed portion can make them
   const err = +Math.max(CAPTURE_ERR[how] + (opts.custom ? 0.03 : 0), sourceErr(food)).toFixed(2)
-  const entry: LoggedFood = { n: food.n, grams, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f), meal, src: opts.custom ? 'custom' : 'db', how, err }
+  const entry: LoggedFood = { n: food.n, grams, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f), meal, src: opts.custom ? 'custom' : 'db', how, err }
   if (unit !== 'g') entry.unit = unit
   if (portion.mode === 'hand') entry.hand = { type: portion.type, count: portion.count }
   if (portion.mode === 'serv') entry.serv = portion.serv
@@ -204,7 +200,7 @@ export function combinedMargin(...xs: (LoggedFood | null)[]): number {
  */
 export function scaleEntry(x: LoggedFood, mult: number): LoggedFood {
   if (Math.abs(mult - 1) < 0.001) return x
-  const out: LoggedFood = { ...x, k: d1(x.k * mult), p: d1(x.p * mult), c: d1(x.c * mult), f: d1(x.f * mult), grams: roundAmount((x.grams || 0) * mult, x.unit ?? 'g'), ok: true }
+  const out: LoggedFood = { ...x, k: r1(x.k * mult), p: r1(x.p * mult), c: r1(x.c * mult), f: r1(x.f * mult), grams: roundAmount((x.grams || 0) * mult, x.unit ?? 'g'), ok: true }
   if (x.hand) out.hand = { ...x.hand, count: Math.round(x.hand.count * mult * 10) / 10 }
   if (x.serv) out.serv = Math.round(x.serv * mult * 10) / 10
   return out

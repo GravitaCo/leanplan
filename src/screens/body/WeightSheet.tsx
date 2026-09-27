@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
 import { weightWeekDelta } from '@/core/domain/insights'
-import { Sheet } from '@/ui/primitives'
+import { Sheet, focusOnMount } from '@/ui/primitives'
 
 interface Point { d: string; w: number }
 
@@ -39,7 +39,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Body weight" tall onClose={onClose} right={<button className="navbtn b" onClick={save}>Save</button>}>
       <div className="card">
         <div className="gram">
-          <input autoFocus className="num" type="number" inputMode="decimal" step="0.1" placeholder="0.0" value={bw}
+          <input ref={focusOnMount} className="num" type="number" inputMode="decimal" step="0.1" placeholder="0.0" value={bw}
             aria-label={`Weight for ${fmtDate(cur).dow} in kg`} onChange={(e) => setBw(e.target.value)} />
           <span>kg</span>
         </div>
@@ -61,8 +61,8 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
               </linearGradient>
             </defs>
             <path d={area} fill="url(#wfill)" />
-            <path d={line} fill="none" stroke="var(--body)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--body)" />}
+            <path d={line} fill="none" stroke="var(--body-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            {dots.length > 0 && <circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r="4.5" fill="var(--body-ink)" />}
           </svg>
         </div>
       )}

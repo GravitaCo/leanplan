@@ -7,6 +7,7 @@ import { fmt, r0, r1 } from '@/core/domain/date'
 import { basisOf, headline, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
 import { mealNow, queryWords } from '@/core/domain/insights'
 import { rankByName } from '@/core/domain/search'
+import { ingredientsFirst } from '@/core/domain/suggest'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
@@ -39,11 +40,13 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     const totals = recipeTotals({ id: '', name: draft.name, servings: s, items: draft.items })
     const query = q.trim().toLowerCase()
     const words = queryWords(query)
-    const matches = query ? rankByName(all, (f) => f.n, words.length ? words : [query]).slice(0, 30) : []
+    // ready meals and menu items stay addable, but after the ingredients that match
+    const matches = query ? ingredientsFirst(rankByName(all, (f) => f.n, words.length ? words : [query]), (f) => f).slice(0, 30) : []
     const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
     const save = () => {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
       if (!draft.items.length) { showToast('Add at least one ingredient'); return }
+      if (draft.id && recipes.some((r) => r.id !== draft.id && r.name.toLowerCase() === draft.name.trim().toLowerCase())) { showToast('You already have a recipe with that name'); return }
       saveRecipe({ id: draft.id, name: draft.name.trim(), servings: s, items: draft.items })
       if (initialDraft) onClose()
       else setDraft(null)

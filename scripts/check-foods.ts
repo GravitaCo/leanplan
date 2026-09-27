@@ -33,6 +33,13 @@ for (const f of FOODS) {
 const sourced = FOODS.length - r.unsourced.length
 const withRef = FOODS.filter((f) => f.ref).length
 console.log(`${FOODS.length} foods · ${sourced} with a cited source · ${withRef} checked against a published figure · ${r.unsourced.length} not yet checked`)
+// Published figures we keep as published even though kcal exceeds the macros (the rule is that
+// what the user sees equals the source; the 20% menu margin covers it). Reviewed by
+// nutrition-accuracy, Sep 2026.
+const EXPLAINED = [/^Popeyes .*Shake/]
+const explained = r.warnings.filter((w) => EXPLAINED.some((re) => re.test(w)))
+r.warnings = r.warnings.filter((w) => !explained.includes(w))
+if (explained.length) console.log(`${explained.length} explained warning(s) (published figures kept as published)`)
 if (r.warnings.length) console.log(`\n${r.warnings.length} warning(s):\n  ` + r.warnings.join('\n  '))
 if (r.errors.length) {
   console.error(`\n${r.errors.length} error(s):\n  ` + r.errors.join('\n  '))

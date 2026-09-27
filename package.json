@@ -13,14 +13,16 @@
     "check:legal": "esbuild scripts/check-legal.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-legal.cjs && node node_modules/.cache/check-legal.cjs",
     "legal:html": "esbuild scripts/legal-html.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/legal-html.cjs && node node_modules/.cache/legal-html.cjs",
     "check:exercises": "esbuild scripts/check-exercises.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/check-exercises.cjs && node node_modules/.cache/check-exercises.cjs",
-    "test": "esbuild scripts/test-core.ts --bundle --platform=node --alias:@=./src --log-level=error --outfile=node_modules/.cache/test-core.cjs && node node_modules/.cache/test-core.cjs"
+    "test": "esbuild scripts/test-core.ts --bundle --platform=node --alias:@=./src --define:import.meta.env={} --log-level=error --outfile=node_modules/.cache/test-core.cjs && node node_modules/.cache/test-core.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "barcode-detector": "^3.2.2",
     "immer": "^11.1.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zustand": "^4.5.5"
+    "zustand": "^4.5.5",
+    "zxing-wasm": "3.1.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
@@ -28,5 +30,8 @@
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.4",
     "vite": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

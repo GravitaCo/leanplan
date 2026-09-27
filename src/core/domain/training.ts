@@ -1,10 +1,12 @@
-import type { AppState, WorkoutType } from '@/core/types'
-import { fmtDate, shiftDay } from './date'
+import type { AppState } from '@/core/types'
+import { shiftDay } from './date'
 import { weekOf } from './insights'
 import { sessionsOf } from './sessions'
+import { keyRoutineId, type WorkoutKey } from './routines'
+import { activePlan, plannedKeys } from './plans'
 
 const did = (s: AppState, d: string) => sessionsOf(s.days[d], d).length > 0
-const didRoutine = (s: AppState, d: string, type: string) => sessionsOf(s.days[d], d).some((x) => x.routineId === 'builtin-' + type)
+const didRoutine = (s: AppState, d: string, k: WorkoutKey) => sessionsOf(s.days[d], d).some((x) => x.routineId === keyRoutineId(k))
 
 /**
  * Plans that slide (workout plan §0.3, §0.4, §4.1b). Nothing is ever "missed" and the calendar
@@ -21,21 +23,27 @@ const EASY_DAYS = 7
  * today's plan and hasn't been done since. Only days after the person started logging count,
  * so a new install never offers sessions from before they joined. Never edits the schedule.
  */
-export function catchUp(s: AppState, today: string): { type: WorkoutType; d: string } | null {
+export function catchUp(s: AppState, today: string): { type: WorkoutKey; d: string } | null {
   if (did(s, today)) return null
   const first = Object.keys(s.days).sort()[0]
   if (!first) return null
-  const todays = s.schedule[fmtDate(today).idx]
+  // the plan's workouts (several a day, own ones too) or the schedule's one (plan P5)
+  const todays = plannedKeys(s, today)
+  // nothing from before the plan in charge today began: its week was never the plan on those
+  // days (the schedule now mirrors it), so nothing there is anyone's to pick up
+  const since = activePlan(s, today)?.startedAt
   for (let i = 1; i <= CATCH_UP_DAYS; i++) {
     const d = shiftDay(today, -i)
     if (d < first) return null
-    const planned = s.schedule[fmtDate(d).idx]
-    if (!planned || planned === 'Rest') continue
+    if (since && since <= today && d < since) return null
+    const planned = plannedKeys(s, d)
+    if (!planned.length) continue
     if (did(s, d)) return null // the most recent planned day was done
-    if (planned === todays) return null
+    const missed = planned.find((k) => !todays.includes(k))
+    if (!missed) return null
     // done on another day since then? then there's nothing to pick up
-    for (let j = i - 1; j >= 1; j--) if (didRoutine(s, shiftDay(today, -j), planned)) return null
-    return s.profile.pickUpDismissed === d ? null : { type: planned, d }
+    for (let j = i - 1; j >= 1; j--) if (didRoutine(s, shiftDay(today, -j), missed)) return null
+    return s.profile.pickUpDismissed === d ? null : { type: missed, d }
   }
   return null
 }

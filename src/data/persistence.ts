@@ -1,11 +1,15 @@
-import type { AppState } from '@/core/types'
+import type { AppState, Modality, PlanState } from '@/core/types'
+import { cleanPhases } from '@/core/domain/plans'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
-import { todayStr } from '@/core/domain/date'
+import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
-import { nowIso, uuid } from './supabase'
+import { nowIso, uuid, UUID_RE } from './supabase'
+import { cleanConsents, rekeyForAccount, unsyncedConsents, type ConsentLog } from './consent'
 
 const KEY = 'leanplan.v1'
+const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
+const PLAN_STATES: PlanState[] = ['active', 'completed', 'archived', 'template']
 
 /** Per-record sync bookkeeping, persisted alongside the app state. */
 export interface SyncMeta {
@@ -14,10 +18,16 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
+  /** Supabase user id this device's data belongs to; unset for data never synced (from the
+   *  retired guest mode, or before a first sign-in) and
+   *  for data synced by a version before this was recorded). */
+  owner?: string
 }
 
 export interface PersistedState extends AppState {
   _meta?: SyncMeta
+  /** consent acts recorded on this device (src/data/consent.ts); dirty ones upload to `consents` */
+  consents?: ConsentLog
 }
 
 function emptyState(): AppState {
@@ -28,6 +38,8 @@ function emptyState(): AppState {
     days: {},
     customFoods: [],
     recipes: [],
+    routines: [],
+    trainingPlans: [],
   }
 }
 
@@ -42,16 +54,79 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (s.profile.notificationsEnabled === undefined) s.profile.notificationsEnabled = false
   if (!Array.isArray(s.customFoods)) s.customFoods = []
   if (!Array.isArray(s.recipes)) s.recipes = []
+  // the user's own workouts (plan P4): anything malformed is dropped rather than breaking the screen
+  s.routines = (Array.isArray(s.routines) ? s.routines : []).filter((r) => !!r && typeof r === 'object' && typeof r.name === 'string' && Array.isArray(r.blocks))
+  // and every field the server checks is made valid, so an odd one (a hand-edited backup) can't
+  // fail every sync
+  for (const r of s.routines) {
+    r.name = r.name.trim().slice(0, 120) || 'My workout'
+    if (!ROUTINE_KINDS.includes(r.modality)) r.modality = 'strength'
+    r.effort = r.effort === 'light' ? 'light' : 'hard'
+    r.source = r.source === 'recommended' ? 'recommended' : 'custom'
+    if (r.baseId != null && (typeof r.baseId !== 'string' || r.baseId.length > 64)) delete r.baseId
+    if (r.estMins != null) r.estMins = Math.min(1440, Math.max(0, Math.round(+r.estMins || 0)))
+  }
+  // weekly plans (plan P5): malformed ones dropped; every field the server checks made valid
+  s.trainingPlans = (Array.isArray(s.trainingPlans) ? s.trainingPlans : []).filter((p) => !!p && typeof p === 'object' && typeof p.name === 'string' && Array.isArray(p.phases))
+  for (const p of s.trainingPlans) {
+    p.name = [...p.name.trim()].slice(0, 120).join('') || 'My plan'
+    p.source = p.source === 'recommended' ? 'recommended' : 'custom'
+    if (!PLAN_STATES.includes(p.state)) p.state = 'archived'
+    p.phases = cleanPhases(p.phases.filter((x) => !!x && typeof x === 'object').map((x, i) => ({ ...x, id: typeof x.id === 'string' && x.id ? x.id.slice(0, 40) : 'ph' + i })))
+    if (!p.phases.length) p.state = 'archived'
+    // a real calendar date only ("2026-02-31" is refused by the server and would never sync)
+    if (p.startedAt != null && !(/^\d{4}-\d{2}-\d{2}$/.test(String(p.startedAt)) && ymd(parseYmd(p.startedAt)) === p.startedAt)) delete p.startedAt
+    if (p.completedAt != null && (typeof p.completedAt !== 'string' || isNaN(Date.parse(p.completedAt)))) delete p.completedAt
+    if (p.clonedFromId != null && (typeof p.clonedFromId !== 'string' || !UUID_RE.test(p.clonedFromId))) delete p.clonedFromId
+    if (p.reflection != null) {
+      const r = p.reflection as unknown as Record<string, unknown>
+      const txt = (v: unknown) => (typeof v === 'string' && v.trim() ? [...v.trim()].slice(0, 500).join('') : undefined)
+      const good = txt(r && typeof r === 'object' ? r.good : undefined), change = txt(r && typeof r === 'object' ? r.change : undefined)
+      const at = r && typeof r === 'object' && typeof r.at === 'string' && !isNaN(Date.parse(r.at)) ? r.at : nowIso()
+      if (good || change) p.reflection = { at, ...(good ? { good } : {}), ...(change ? { change } : {}) }
+      else delete p.reflection
+    }
+    if (p.baseTemplateId != null && (typeof p.baseTemplateId !== 'string' || p.baseTemplateId.length > 64)) delete p.baseTemplateId
+  }
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
+  s.consents = cleanConsents(s.consents)
   // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
   // read through sessionsOf without being rewritten
   for (const d of Object.keys(s.days)) {
     const day = s.days[d]
     if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
+    if (day && Array.isArray(day.sessions)) cleanGuided(day.sessions)
   }
   return s
+}
+
+const FEELS = ['spare', 'right', 'struggle', 'stopped']
+
+/**
+ * Guided-session fields (Train redesign, stage 4) are all optional and additive: `note` and the
+ * set flags `warmup` / `feel`, and `rx` on a logged exercise. Old logs have none of them and
+ * render as before. Anything malformed (from a hand-edited backup, say) is dropped, never
+ * guessed, so it can't skew targets or "last time".
+ */
+function cleanGuided(list: unknown[]): void {
+  for (const x of list as Record<string, unknown>[]) {
+    if (!x || typeof x !== 'object') continue
+    if (x.note !== undefined && typeof x.note !== 'string') delete x.note
+    if (x.open !== undefined && x.open !== true) delete x.open
+    if (!Array.isArray(x.ex)) continue
+    for (const e of x.ex as Record<string, unknown>[]) {
+      if (!e || typeof e !== 'object') continue
+      if (e.rx !== undefined && typeof e.rx !== 'string') delete e.rx
+      if (!Array.isArray(e.sets)) continue
+      for (const st of e.sets as Record<string, unknown>[]) {
+        if (!st || typeof st !== 'object') continue
+        if (st.feel !== undefined && !FEELS.includes(st.feel as string)) delete st.feel
+        if (st.warmup !== undefined && st.warmup !== true) delete st.warmup
+      }
+    }
+  }
 }
 
 /** Load persisted state from localStorage. */
@@ -76,15 +151,6 @@ export function saveState(s: PersistedState): boolean {
   }
 }
 
-/** Erase everything Tali keeps on this device (the user asked to delete their data). */
-export function clearDevice(): void {
-  try {
-    Object.keys(localStorage)
-      .filter((k) => k === KEY || k.startsWith('tali.') || k.startsWith('sb-'))
-      .forEach((k) => localStorage.removeItem(k))
-  } catch { /* storage blocked */ }
-}
-
 /** Ask the browser to keep Tali's storage rather than clear it under pressure (Safari clears
  *  site data it thinks is unused). Harmless if unsupported or refused. */
 export async function requestPersistentStorage(): Promise<void> {
@@ -103,8 +169,9 @@ export function saveKitchen(have: string[]): void {
   try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(have)) } catch { /* blocked */ }
 }
 
-/** How this device last used Tali, so launch never needs the network to decide: 'guest'
- *  (local-only) or 'account' (signed in; works offline, syncs when back online). */
+/** How this device last used Tali, so launch never needs the network to decide: 'account'
+ *  (signed in; works offline, syncs when back online). 'guest' is only read, from devices that
+ *  used the retired guest mode; launch sends them to the sign-in screen. */
 export type SessionMode = 'guest' | 'account'
 const MODE_KEY = 'tali.mode'
 export function loadMode(): SessionMode | null {
@@ -112,6 +179,162 @@ export function loadMode(): SessionMode | null {
 }
 export function saveMode(m: SessionMode | null): void {
   try { if (m) localStorage.setItem(MODE_KEY, m); else localStorage.removeItem(MODE_KEY) } catch { /* blocked */ }
+}
+
+/** What a backup holds, for the confirm step before importing it. */
+export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number; plans: number } {
+  const days = Object.keys(b.days || {}).sort()
+  return {
+    days: days.length,
+    first: days[0] ?? null,
+    last: days[days.length - 1] ?? null,
+    foods: Array.isArray(b.customFoods) ? b.customFoods.length : 0,
+    recipes: Array.isArray(b.recipes) ? b.recipes.length : 0,
+    workouts: Array.isArray(b.routines) ? b.routines.filter((r) => r && !r.archived).length : 0,
+    plans: Array.isArray(b.trainingPlans) ? b.trainingPlans.filter((p) => p && p.state !== 'archived').length : 0,
+  }
+}
+
+/**
+ * Turn a backup file into the state to restore. A backup is the user's intended current data,
+ * so its own sync flags (exported with it, usually all clean) are discarded and every day,
+ * the settings, custom foods and recipes are marked dirty with fresh stamps: the next sync
+ * uploads them before it pulls, so the pull can't overwrite or drop them.
+ *
+ * Pass this device's `current` state and whatever the backup doesn't hold stays: its days,
+ * custom foods and recipes (a food or recipe with the same id or name as one in the backup is
+ * replaced by the backup's), with their own sync flags, so unsynced edits still upload and
+ * synced ones don't upload again. Queued deletes from both are kept, except for ids that still
+ * exist after the import and ids that aren't UUIDs (the server rejects those, which would stall
+ * sync). This device keeps its reminders setting (it follows its own push subscription) and the
+ * earliest D5 switch date either side has.
+ */
+export function stateFromBackup(incoming: PersistedState, current?: PersistedState): PersistedState {
+  const old = incoming._meta
+  delete incoming._meta
+  const switches = [incoming.profile?.burnSwitch, current?.profile?.burnSwitch].filter((x): x is string => !!x)
+  const s = loadStateFrom(incoming)
+  if (switches.length) s.profile.burnSwitch = switches.sort()[0]
+  if (current?.profile) s.profile.notificationsEnabled = !!current.profile.notificationsEnabled
+  const meta = ensureMeta(s, true)
+  // consent is an act on this device, never restored from a file (it could be anyone's, or
+  // edited): this device's own records stay, with their sync flags
+  s.consents = cleanConsents(current?.consents)
+  const pending = current?._meta
+  // a backup never changes whose device this is (its own _meta was discarded above)
+  if (pending?.owner) meta.owner = pending.owner
+  // and never makes data this device synced look never-synced (ownerCheck reads lastPull)
+  meta.lastPull = pending?.lastPull ?? null
+  if (current) {
+    for (const d of Object.keys(current.days || {})) {
+      if (s.days[d]) continue
+      s.days[d] = current.days[d]
+      const m = pending?.days?.[d]
+      if (m) meta.days[d] = { ...m }
+    }
+    const taken = <T,>(list: T[], id: (x: T) => string | undefined, name: (x: T) => string) => {
+      const ids = new Set(list.map(id)), names = new Set(list.map((x) => (name(x) || '').toLowerCase()))
+      return (x: T) => ids.has(id(x)) || names.has((name(x) || '').toLowerCase())
+    }
+    const foodTaken = taken(s.customFoods, (f) => f.id, (f) => f.n)
+    s.customFoods.push(...(current.customFoods || []).filter((f) => !foodTaken(f)))
+    const recipeTaken = taken(s.recipes, (r) => r.id, (r) => r.name)
+    s.recipes.push(...(current.recipes || []).filter((r) => !recipeTaken(r)))
+    // workouts match by id only: two workouts may share a name
+    const routineIds = new Set(s.routines.map((r) => r.id))
+    s.routines.push(...(current.routines || []).filter((r) => !routineIds.has(r.id)))
+    const planIds = new Set(s.trainingPlans.map((p) => p.id))
+    s.trainingPlans.push(...(current.trainingPlans || []).filter((p) => !planIds.has(p.id)))
+  }
+  const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
+  const keep = (lists: unknown[], live: Set<unknown>) =>
+    [...new Set(lists.flatMap(ids))].filter((id): id is string => typeof id === 'string' && UUID_RE.test(id) && !live.has(id))
+  meta.foodDeletes = keep([old?.foodDeletes, pending?.foodDeletes], new Set(s.customFoods.map((f) => f.id)))
+  meta.recipeDeletes = keep([old?.recipeDeletes, pending?.recipeDeletes], new Set(s.recipes.map((r) => r.id)))
+  return s
+}
+
+/**
+ * What a sign-in as `uid` means for the data on this device. 'same' or 'claim' (record `uid` as
+ * the owner) carry on as before; 'ask' means the data may be someone else's, so the user chooses
+ * between keeping it in this account and starting fresh. Never merge that silently: a shared
+ * phone would show one person's log to the next and upload it into their account.
+ * `stayedSignedIn`: this device was still signed in to an account (not a fresh sign-in).
+ */
+export function ownerCheck(s: PersistedState, uid: string, stayedSignedIn: boolean): 'same' | 'claim' | 'ask' | 'verify' {
+  const owner = s._meta?.owner
+  if (owner) return owner === uid ? 'same' : 'ask'
+  // Never synced (the retired guest mode, a first sign-in): it moves into the account, as it
+  // always has.
+  if (!s._meta?.lastPull) return 'claim'
+  // Synced by an older version that didn't record the owner: still the signed-in account's if
+  // the device never signed out. After a sign-out, 'verify': compare it with this account's
+  // rows (sameAccount) before asking.
+  return stayedSignedIn ? 'claim' : 'verify'
+}
+
+/** This account's rows, as much as sameAccount needs (ids and server timestamps only). */
+export interface AccountRows {
+  days: { log_date: string; updated_at: string }[]
+  foods: { id: string }[]
+  recipes: { id: string }[]
+  routines: { id: string }[]
+  plans: { id: string }[]
+}
+
+/**
+ * Whether data an older version synced (no owner recorded) came from this account. Needs
+ * evidence the server alone could have given this device (a synced day whose stored server
+ * timestamp matches this account's row for that date, or a synced custom food or recipe whose id,
+ * a random UUID, this account holds; RLS only returns the signed-in account's rows) and nothing
+ * against it: every synced day must be a date this account has (the app never deletes day rows)
+ * and every synced food and recipe must be one it holds. A shared phone that older versions left
+ * holding two accounts' days fails that, and asks. So does any doubt.
+ */
+export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
+  const m = s._meta
+  if (!m) return false
+  const at = new Map(rows.days.map((r) => [r.log_date, r.updated_at]))
+  const syncedDays = Object.entries(m.days || {}).filter(([d, x]) => !x.dirty && !!x.u && !!s.days?.[d])
+  const ids = new Set([...rows.foods, ...rows.recipes, ...(rows.routines || []), ...(rows.plans || [])].map((r) => r.id))
+  const syncedItems = [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])].filter((x) => !x._dirty && !!x.id)
+  const match = syncedDays.some(([d, x]) => at.get(d) === x.u) || syncedItems.some((x) => ids.has(x.id!))
+  const against = syncedDays.some(([d]) => !at.has(d)) || syncedItems.some((x) => !ids.has(x.id!))
+  return match && !against
+}
+
+/** Changes on this device that haven't reached the server, for the sign-out choice. */
+export function unsyncedCount(s: PersistedState): number {
+  const m = s._meta
+  if (!m) return unsyncedConsents(s)
+  return (m.settings?.dirty ? 1 : 0) + Object.values(m.days || {}).filter((x) => x.dirty).length +
+    (s.customFoods || []).filter((f) => f._dirty).length + (s.recipes || []).filter((r) => r._dirty).length +
+    (s.routines || []).filter((r) => r._dirty).length + (s.trainingPlans || []).filter((p) => p._dirty).length +
+    (m.foodDeletes || []).length + (m.recipeDeletes || []).length + unsyncedConsents(s)
+}
+
+/** An empty device state: no owner, nothing synced (sign out and remove). */
+export function freshForDevice(): PersistedState {
+  const s = loadStateFrom(null)
+  ensureMeta(s, false)
+  return s
+}
+
+/** "Keep this device's data in this account": everything on the device uploads to `uid`. The
+ *  queued deletes named the other account's rows, so they go. */
+export function keepForAccount(s: PersistedState, uid: string): PersistedState {
+  delete s._meta
+  ensureMeta(s, true).owner = uid
+  rekeyForAccount(s)
+  return s
+}
+
+/** "Start fresh with this account": an empty device state that the next sync fills from `uid`'s
+ *  cloud data. */
+export function freshForAccount(uid: string): PersistedState {
+  const s = loadStateFrom(null)
+  ensureMeta(s, false).owner = uid
+  return s
 }
 
 /** Ensure sync metadata exists, optionally flagging all existing data dirty for first upload. */
@@ -134,16 +357,24 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
   if (!s._meta.days) s._meta.days = {}
   if (!Array.isArray(s._meta.foodDeletes)) s._meta.foodDeletes = []
   if (!Array.isArray(s._meta.recipeDeletes)) s._meta.recipeDeletes = []
-  // Backfill ids on custom foods / recipes
+  // Backfill ids on custom foods / recipes; an id the server can't store (the old non-UUID
+  // fallback) was never uploaded, so it gets a real one and uploads
   ;(s.customFoods || []).forEach((f) => {
-    if (!f.id) f.id = uuid('f')
+    if (!f.id || !UUID_RE.test(f.id)) { f.id = uuid(); f._dirty = true; f._u = nowIso() }
     if (migrate) {
       f._dirty = true
       f._u = nowIso()
     }
   })
   ;(s.recipes || []).forEach((r) => {
-    if (!r.id) r.id = uuid('r')
+    if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
+    if (migrate) {
+      r._dirty = true
+      r._u = nowIso()
+    }
+  })
+  ;[...(s.routines || []), ...(s.trainingPlans || [])].forEach((r) => {
+    if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
     if (migrate) {
       r._dirty = true
       r._u = nowIso()

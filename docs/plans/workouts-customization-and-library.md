@@ -157,9 +157,9 @@ every phase must meet them, and ship-critic checks each phase against this list.
   through `ExerciseTemplate.video` from `DEMOS` in `src/core/data/media.ts`. The shipped
   `ExerciseMedia` is `{ src, poster?, durationSec, tempo: TempoPhase[] }`, where each phase is
   `{ at, kind: 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch', rep? }` measured from the
-  footage at 8 fps. "Watch example" opens `train/DemoPlayer.tsx`: a full-screen player that
-  reads the video clock and overlays phase, rep and a 1-2-3 count (`core/domain/tempo.ts`),
-  plus a pace row. Exercises without a clip fall back to a YouTube search (`howToLink`).
+  footage at 8 fps. The guided session (`train/GuidedPlayer.tsx`) reads the video clock and overlays
+  the phase and a 1-2-3 count (`core/domain/tempo.ts`). The demo player (`train/DemoPlayer.tsx`)
+  also shows the clip's own rep and a pace row. Neither counts the user's reps. Exercises without a clip fall back to a YouTube search (`howToLink`).
   `VIDEO_BASE` is the one switch for moving clips to Bunny CDN. The service worker leaves
   `/videos/` to the network. `npm test` checks every clip file exists and the timeline is
   ordered. Clips are generated from the Seedance prompts in `docs/exercise-video-prompts.md`.
@@ -194,8 +194,8 @@ every phase must meet them, and ship-critic checks each phase against this list.
 - Supabase tables: `settings` (one row per user: JSON `target`, `schedule`, `profile`),
   `custom_foods`, `recipes`, `day_logs` (`foods`, `supps`, `weight`, `workout` JSONB),
   `push_subscriptions`. Sync is offline-first with per-record dirty flags and last-write-wins
-  (`sync.ts`). RLS locks every row to `auth.uid()` (`docs/security-rls.sql`). Guest mode is
-  local-only (`authed = false`). **Never rename existing tables or columns.**
+  (`sync.ts`). RLS locks every row to `auth.uid()` (`docs/security-rls.sql`). There is no guest
+  mode (retired Sept 2026); `authed` gates every cloud call. **Never rename existing tables or columns.**
 - `recipes` is the proven pattern for a reusable user-authored unit: its own table, a JSON
   body column, client-generated ids, `_u`/`_dirty`, a delete queue in `SyncMeta`.
 
@@ -662,7 +662,7 @@ create policy "owner_full_access" on public.training_plans
   dirty for first upload exactly as it does recipes.
 - **`sync.ts`.** `to/fromServerRoutine` and `to/fromServerPlan` mappers plus dirty loops
   mirroring recipes; `toServerDay` adds `sessions: x.sessions ?? null` and `fromServerDay`
-  reads `row.sessions`. All behind `authed`, so guests stay local-only. Local dirty records win
+  reads `row.sessions`. All behind `authed`, so nothing reaches the server without a signed-in session. Local dirty records win
   on pull, as today.
 - **`activePlanId`** rides `settings.profile` (a pointer, not the body).
 - **The exercise library, built-in routines and blueprints stay app-shipped static data**: no
@@ -1411,6 +1411,100 @@ weekday calendar with several workouts a day, the legacy `schedule` mirror, and 
   session a day in generated plans, at least one rest day, `week` keys only 0–6 and no stored
   sequence position (the no-rotation rule as a test); the legacy `schedule` mirror matches the
   rule in §2.4; session-count completion counts only sessions from the plan's routines.
+
+#### P5 as built: Benn's plan model (27 September 2026)
+Benn's answers change the §2.4 body. A plan now runs for a **set number of weeks** in
+**phases**, and maintenance is the same workouts made lighter:
+- **Length and phases.** A plan is a list of phases, each a number of weeks: for example
+  "Build" for 8 weeks, then "Maintain" for 4 (a 12-week plan). The current week is worked out
+  from `startedAt` by the calendar (week 1 = the first 7 days), never stored, so the no-rotation
+  rule still holds. Completion is by weeks, replacing `targetSessions`.
+- **Each phase has its week.** A build phase carries a `PlanWeek`: weekday → an ordered list of
+  workout keys (a built-in type or an own workout id), several a day allowed, none = rest.
+- **Maintenance = lighter same workouts.** A maintain phase has no week of its own: it uses the
+  previous phase's week, and its hard workouts open on the Shorter version by default (about 60%
+  of each exercise's sets, which comes to about two thirds of a session's sets after rounding; the
+  existing day-of rule). Light cardio and mobility stay as planned: the maintenance evidence
+  (Bickel et al. 2011) is about resistance volume. The person can still choose As planned any day.
+- **The end.** After the last week: an optional look back ("What worked for you? Anything you'd
+  do differently?", private, kept with the plan), then **Suggested next** (a Tali plan), **Run
+  this plan again** (from this week or next), **Build your own**, or **Keep going without a plan**
+  (the schedule keeps one workout a day from the last week, at the full version). Nothing is
+  forced: until they choose, the last week carries on as it was, lighter if it was lighter. The
+  next plan's editor shows the last "do differently" note, which can be dismissed.
+- **Templates to add with the library work** (fitness-workouts, 27 Sept): a 2–3 day getting-started
+  plan (needs a full-body built-in), PPL with lighter weeks spread through (5 + 1 + 5 + 1), a 4-day
+  upper/lower plan (needs Upper and Lower built-ins), a movement-first plan (walks, cardio,
+  mobility) and a return-after-a-break plan (a lighter phase first).
+- **Sources.** `source` is `'recommended' | 'custom'` now; `'community'` is reserved for
+  marketplace plans later (no table or UI for it yet).
+- **One active plan.** With none, everything works from `settings.schedule` as today. With one,
+  `settings.schedule` becomes a written-only mirror of the current week (the first built-in lift
+  that day, else `'Cardio'` for any other workout, else `'Rest'`), so older installs and every
+  existing reader keep working.
+
+```ts
+export interface PlanPhase {
+  id: string
+  name: string              // "Build", "Maintain"
+  weeks: number             // 1–26
+  maintain?: boolean        // lighter same workouts: no week of its own
+  week?: PlanWeek           // build phases only
+}
+export interface TrainingPlan {
+  id: string; name: string
+  source: 'recommended' | 'custom'      // 'community' later
+  state: 'active' | 'completed' | 'archived' | 'template'
+  phases: PlanPhase[]
+  startedAt?: string                    // YYYY-MM-DD
+  completedAt?: string
+  reflection?: { at: string; good?: string; change?: string }
+  baseTemplateId?: string; clonedFromId?: string
+  _u?: string; _dirty?: boolean
+}
+```
+
+Table `training_plans` (the same pattern as `routines`: owner-only RLS, anon revoked, the
+`set_updated_at` trigger, a size cap on `phases`, a foreign key to `auth.users` with cascade;
+never hard-deleted, `archived` instead).
+
+#### P5 as designed: the approved plan screens (27 September 2026)
+
+The Design canvas ("Tali App · Train & Plan review", row 6, Plans 1 to 4) replaced the earlier plan
+screens; the app follows it.
+
+- **Benn's principle.** "Our plans should align with the profile's recommended goals. Our system
+  can create plans based on our goals and biometrics, but plans can work if they meet those
+  parameters. Workout plans are for users to make their own choices or follow others. At the core,
+  though, we make recommendations based on the science and facts and what is best for the user;
+  this includes nutrition." So every Tali plan names the goals it fits; "Fits your goal" matches
+  the profile goal and experience (Stronger with age leads from age 55); nothing is gated; each
+  plan's eating line comes from the same targets engine as Food (PROTEIN_PER_KG, goalAdjustPct)
+  and says so only when the person's goal is the plan's.
+- **Length is set by the plan.** No length variants (tpl-ppl-12 and tpl-ppl-8 are retired).
+- **Maintenance comes after a plan**, when the person chooses it: the plan's maintenance week on
+  the shorter version, open-ended, counted from the day it's chosen, with a check-in at about 8
+  weeks and a new plan suggested by about 12. Until they choose, the last week carries on.
+  In-plan easier weeks are "Ease in" (shorter, before any build week), "Foundation" (fewer days,
+  full sessions) or "Lighter week" (shorter, mid-plan), never "maintenance".
+- **Three interim Tali plans** (fitness-workouts): Pure muscle growth (12 weeks: 2 Foundation, 4
+  Build, 1 Lighter, 5 Build; push/pull/legs twice a week), Stronger with age (12 weeks: 2 Ease in,
+  10 Build; Strength & Balance A and B, Balance & Mobility, two light cardio; dumbbells, a chair, a
+  wall and a low step), Full body system (8 weeks: 1 Ease in, 7 Build; Full body A, B and C, two
+  light cardio). The six new workouts are built-ins in `core/data/taliWorkouts.ts`.
+- **Gaps to raise with Benn**: no plan for Improve endurance; no heavier, low-rep strength plan;
+  10-minute mobility and Easy walk are swaps, not plannable workouts, so layouts use Light cardio.
+
+#### After P5: the workout library (Benn, 27 September 2026)
+Not gone deep on yet, and next after P5:
+- **Builders per kind.** Yoga, pilates and mobility need a way to put moves into a session
+  (who builds the flow: Tali's ready-made sessions, the person, or both). Cardio needs the type
+  first (rowing, HIIT, running, swimming, cycling, walking…) and then its shape (steady minutes,
+  intervals with work and rest).
+- **Visuals.** Every move that is shown gets its own clip (yoga, pilates, mobility,
+  calisthenics, strength). Running, cycling and swimming get no video: they need a different
+  visual (for example an animated interval timeline or effort bar), and their timings still show.
+- **Marketplace/community plans** later, on the `source` field above.
 
 ### P6. Tailored plans (no schema: settings JSON)
 `TrainingPrefs` and `Profile` additions, the F1–F6 questionnaire (built with the onboarding

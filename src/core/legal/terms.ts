@@ -9,7 +9,7 @@ const who = () => fact('controller', 'legal name')
 export function termsOfUse(): LegalDoc {
   return {
     title: 'Terms and conditions',
-    updated: '2026-09-24',
+    updated: '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -49,14 +49,15 @@ export function termsOfUse(): LegalDoc {
           'Calorie and nutrient values come from published sources such as UK CoFID and brand information, and portions are often estimated. ' +
             'Tali shows a margin (±) for this reason. Targets are calculated with standard formulas and are a starting point, not a prescription. ' +
             'Always check the label if you have an allergy or a medical reason to be exact. Tali does not provide allergen information.',
+          'Scanned products come from Open Food Facts, a public database, and can be wrong or out of date, so check the numbers against the pack before you save.',
         ],
       },
       {
         h: 'Your account',
         ul: [
           'Keep your password safe. You are responsible for activity under your account.',
-          'Without an account, your data is only on your device. We cannot recover it if the device is lost or its browser data is cleared, so export a backup now and then.',
-          'You can delete your account at any time in Profile, then Privacy.',
+          'Your log is stored on your phone and synced to your account. Changes made offline only reach your account once you are back online, so export a backup now and then.',
+          'You can delete your account at any time in Profile, then Privacy, then Delete account.',
         ],
       },
       {
@@ -64,6 +65,10 @@ export function termsOfUse(): LegalDoc {
         p: [
           'What you log is yours. You let us store and process it only to run Tali for you, as described in the privacy policy. We do not claim ownership of it.',
         ],
+      },
+      {
+        h: 'Feedback',
+        p: ['If you send us ideas or feedback, we may use them to improve Tali without owing you anything for them.'],
       },
       {
         h: 'Fair use',

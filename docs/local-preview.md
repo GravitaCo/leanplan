@@ -28,17 +28,28 @@ To try it on your phone, open the **Network** address the script prints (for exa
 
 For live-reloading while editing code, `npm run dev` serves http://localhost:5173/ instead.
 
+## Testing the camera (barcode scanning) on a phone
+
+iPhone Safari only allows the camera on https, so the Wi-Fi address above can't scan. Use a free
+Cloudflare quick tunnel instead: install it once with `brew install cloudflared`, start the
+preview as above, then in a second Terminal window run
+
+```
+cloudflared tunnel --url http://localhost:4173
+```
+
+and open the `https://….trycloudflare.com` address it prints on the phone. `Ctrl+C` stops it.
+
 ## Things to know
 
-- **Your real data is safe in guest mode.** localhost is a different site from app.tali.fit,
-  so it starts with empty local data. Use "Continue without an account" to test.
-- **Signing in uses the live database.** There is only one Supabase project, so signing in on a
-  preview reads and writes your real account. Do that only for changes you trust.
+- **Testing needs an account, and it's the live database.** There is no guest mode, and there
+  is only one Supabase project, so signing in on a preview reads and writes that account's real
+  data. Use a separate test account (a second email address) for anything you don't trust yet.
+  localhost is a different site from app.tali.fit, so the preview starts with empty local data.
 - **Offline mode isn't testable over Wi-Fi.** The service worker only runs on https or
   localhost, so on the phone's Wi-Fi address the app works but won't install or cache for
   offline use. Offline behaviour can be tested on the Mac at localhost:4173.
 - **Google sign-in and password-reset links may land on app.tali.fit instead of localhost.**
   Supabase only returns to addresses on its allowed redirect list and otherwise falls back to
   the live site. Add `http://localhost:4173` and `http://localhost:5173` to the list under
-  Supabase > Authentication > URL Configuration if you need them. Email sign-in and guest mode
-  aren't affected.
+  Supabase > Authentication > URL Configuration if you need them. Email sign-in isn't affected.

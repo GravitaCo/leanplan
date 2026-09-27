@@ -102,7 +102,7 @@ column only if needed (security-data sign-off):
   to `auth.uid()`), which forwards only the meal text, never the user's history or profile.
 - The Edge Function returns structured JSON (items + candidate questions). Matching to the food database
   and all arithmetic stay in `core/` (pure TS), so the same logic serves a future native client.
-- Guest (local-only) users get the non-AI path: search, Save as recipe, recipe builder.
+- Offline use gets the non-AI path: search, Save as recipe, recipe builder. (There is no guest mode; it was retired in Sept 2026.)
 - Cost control: one short call per new recipe; repeat meals are resolved locally by `findRecipe` with no
   model call at all.
 

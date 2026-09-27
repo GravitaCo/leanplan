@@ -26,11 +26,7 @@ export const LEGAL = {
 /** Minimum age to use Tali. */
 export const MIN_AGE = 18
 
-/**
- * Bump only when what people consent to changes materially (new data type, new
- * recipient, new purpose). Every user is asked again on their next launch.
- */
-export const CONSENT_VERSION = '2026-09-24'
+/** Consent wording versions live with the consent records: CONSENT_VERSIONS in src/data/consent.ts. */
 
 /** Where the documents are published: the Webflow site's "Legals" collection. The text is
  *  written here and pushed there (see docs/compliance/README.md, "Publishing"). */

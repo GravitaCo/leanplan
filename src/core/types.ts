@@ -33,6 +33,11 @@ export interface Food {
   cat?: FoodCategory
   /** plain food usually cooked in fat (pan, roast, grill) — gets the cooking-fat question */
   cook?: boolean
+  /** the pack's barcode (EAN-13 / EAN-8 digits), on foods saved from a scan or a label with one */
+  barcode?: string
+  /** eaten as it comes (a ready meal, crisps, a drink): logged by the serving, never offered as a
+   *  "What can I make?" ingredient and ranked after ingredients in the recipe builder */
+  eat?: true
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
@@ -137,7 +142,14 @@ export interface SetEntry {
   side?: 'L' | 'R'
   /** 'check' */
   done?: boolean
+  /** a warm-up set: shown, but never counted towards targets or "last time" */
+  warmup?: boolean
+  /** optional "How was that set?" answer (guided player) */
+  feel?: SetFeel
 }
+
+/** "How was that set?": had lots to spare, about right (two or three left), a real struggle, stopped early. */
+export type SetFeel = 'spare' | 'right' | 'struggle' | 'stopped'
 
 export interface LoggedExercise {
   /** snapshot of the display name: history never depends on the library */
@@ -146,6 +158,8 @@ export interface LoggedExercise {
   exId?: string
   /** the shape used, so history renders correctly later */
   log?: LogShape
+  /** the prescription it was logged against ("3 × 10–12"); "last time" only counts the same rep range */
+  rx?: string
   sets: SetEntry[]
 }
 
@@ -180,11 +194,17 @@ export interface Session {
   at?: string
   /** minutes; when absent the modality's default is used for estimates */
   mins?: number
+  /** a time estimate (an own workout's, plan §2.9), used when `mins` wasn't logged; never shown as logged */
+  estMins?: number
   effort?: Effort
   ex?: LoggedExercise[]
   /** cardio: a CARDIO_MET key, and optional distance */
   cardio?: { key: string; km?: number }
   option?: 'shorter' | 'swap'
+  /** optional note from the finish sheet */
+  note?: string
+  /** a guided session left part-way ("Leave for now"): Train offers Resume; cleared by Finish or any other save */
+  open?: boolean
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
@@ -300,6 +320,7 @@ export interface Profile {
   sex: Sex
   age: number | null
   height: number | null
+  /** The weight last set on Profile, a fallback only: the current weight is `latestWeight` (day logs first). */
   weight?: number | null
   activityLevel: ActivityLevel
   supplements: Supplement[]
@@ -333,6 +354,10 @@ export interface Profile {
   burnNoteSeen?: boolean
   /** date the "welcome back" question was last answered, so it's asked once per break */
   welcomeAsked?: string
+  /** the look-back note (its `at`) the person hid when setting up a next plan */
+  planNoteHidden?: string
+  /** the weekly schedule from before the first plan started, put back when plans stop (never lost to the mirror) */
+  weekBeforePlan?: Schedule
   /** an accepted "easier first week" pre-selects the shorter version up to this date */
   easyUntil?: string
   /** and from this date (absent = from when "welcome back" was answered) */
@@ -357,11 +382,149 @@ export interface AppState {
   days: Record<string, DayLog>
   customFoods: Food[]
   recipes: Recipe[]
+  /** the user's own workouts (plan P4); built-ins stay static core data */
+  routines: Routine[]
+  /** weekly plans (plan P5): at most one active; the rest completed, archived or templates */
+  trainingPlans: TrainingPlan[]
 }
 
+/** Weekday (0 = Sunday … 6 = Saturday) → workout keys for that day, in order; none = rest. */
+export type PlanWeek = Record<number, string[]>
+
+/**
+ * A block of weeks in a plan (plan P5, Benn's model): a build phase has its own week; a
+ * maintain phase reuses the previous phase's week with its workouts opening lighter.
+ */
+export interface PlanPhase {
+  id: string
+  name: string
+  weeks: number
+  /** a lighter week: the week before it on the shorter version */
+  maintain?: boolean
+  /** an easier block with its own week (a first week or two to find your weights); drawn striped */
+  easier?: boolean
+  /**
+   * maintenance after the plan, when the person chooses it: open-ended (weeks is ignored), its
+   * own week (or the last build week) on the shorter version (design canvas, Plans 4)
+   */
+  after?: boolean
+  /** YYYY-MM-DD: when maintenance was chosen (its weeks count from here) */
+  since?: string
+  /** after the plan, the last week carrying on at the full version ("Keep going without a plan"), not maintenance */
+  full?: boolean
+  week?: PlanWeek
+}
+
+export type PlanState = 'active' | 'completed' | 'archived' | 'template'
+
+/**
+ * A weekly plan that runs for a set number of weeks in phases. The current week comes from
+ * `startedAt` by the calendar and is never stored (no sequence position, plan §2.4).
+ */
+export interface TrainingPlan {
+  id: string
+  name: string
+  /** 'community' is reserved for marketplace plans later */
+  source: 'recommended' | 'custom'
+  state: PlanState
+  phases: PlanPhase[]
+  /** YYYY-MM-DD: week 1 is the 7 days from here */
+  startedAt?: string
+  completedAt?: string
+  reflection?: { at: string; good?: string; change?: string }
+  /** the Tali plan it came from ("Suggested next" skips it) */
+  baseTemplateId?: string
+  clonedFromId?: string
+  _u?: string
+  _dirty?: boolean
+}
+
+/** One exercise in a workout, with its own prescription (plan §2.3). */
+export interface RoutineSlot {
+  /** library id (`core/data/exercises.ts`) */
+  exId: string
+  /** this slot's prescription; the library's `defaultRx` when absent */
+  rx?: string
+  note?: string
+}
+
+/** sets: each exercise's sets in turn · circuit: one of each, repeated · flow: follow along in order. */
+export type BlockKind = 'sets' | 'circuit' | 'flow'
+
+export interface RoutineBlock {
+  id: string
+  label?: string
+  kind: BlockKind
+  rounds?: number
+  slots: RoutineSlot[]
+}
+
+/** For the one-hard-session-a-day guard (plan §3.3); derived at save, the user can change it. */
+export type RoutineEffort = 'light' | 'hard'
+
+/**
+ * A workout the user built (plan §2.3, P4). Stored in its own `routines` table, like recipes.
+ * Never hard-deleted: `archived` hides it, and logged sessions keep their own snapshot of names.
+ */
+export interface Routine {
+  id: string
+  name: string
+  modality: Modality
+  effort: RoutineEffort
+  blocks: RoutineBlock[]
+  /** computed at save from the prescriptions (plan §2.9), minutes */
+  estMins?: number
+  source: 'custom' | 'recommended'
+  /** the built-in it was customised from, e.g. 'builtin-Push' */
+  baseId?: string
+  archived?: boolean
+  _u?: string
+  _dirty?: boolean
+}
+
+/**
+ * Movement pattern. The resistance patterns follow the NSCA / ExRx-style split into push and pull
+ * (horizontal and vertical), squat (knee-dominant, both feet), lunge (knee-dominant, split stance),
+ * hinge (hip-dominant), carry, core and single-joint isolation. `mobility` (stretches, yoga poses
+ * and flows, pilates spine and hip work) and `cardio` are engine buckets for everything else: they
+ * never count toward weekly muscle volume, so those entries carry `targets`, not `primary`.
+ */
 export type MovementPattern =
   | 'horizontal-push' | 'vertical-push' | 'horizontal-pull' | 'vertical-pull'
   | 'squat' | 'hinge' | 'lunge' | 'isolation' | 'carry' | 'core'
+  | 'mobility' | 'cardio'
+
+/**
+ * Time one exercise takes, before rest (personalised-training-engine.md §3.3 step 2). `setupSec` is
+ * paid once per exercise (loading a bar ~120 s, a machine or cable ~45 s, dumbbells ~30 s, getting
+ * down to the floor ~15 s); `setSec` is one working set, both sides for `perSide` entries, at a
+ * controlled ~3 s a rep (about 2 s down, 1 s up) plus ~5 s to get set, a hold's mid-range time, or
+ * ~6 s a slow breath. For `duration` entries one "set" is one minute (60), so the prescribed minutes
+ * are the cost. Rest is added by the engine from the goal. Judgement calls, unvalidated.
+ */
+export interface TimeCost { setupSec: number; setSec: number }
+
+/**
+ * The smallest next step the kit allows (engine §3.5 A, double progression per ACSM 2009: add reps
+ * inside the range, then load). The engine takes the step that matches the kit in use.
+ * - `plate-2.5`: barbell or landmine, +2.5 kg total (1.25 kg a side)
+ * - `next-weight`: the next dumbbell or kettlebell up
+ * - `next-stack`: the next pin on a machine or cable stack
+ * - `next-band`: the next band (or, for assisted moves, a lighter one)
+ * - `chain`: the next step on its `ladders` once the top of the range is reached
+ * - `reps` / `time`: no load to add; more reps, seconds or minutes inside the range
+ */
+export type LoadStep = 'plate-2.5' | 'next-weight' | 'next-stack' | 'next-band' | 'chain' | 'reps' | 'time'
+
+/**
+ * Household things that stand in for kit (a chair or sofa for a bench, a step, a wall, a door
+ * frame). Kept apart from `Equipment` on purpose: `Equipment` drives the library's kit filter and
+ * labels, so these never change what the library shows.
+ */
+export type HouseholdProp = 'chair' | 'sofa' | 'step' | 'wall' | 'doorway' | 'table' | 'towel'
+
+/** Where the body is for most of the set (floor transitions matter in short sessions and from 55). */
+export type BodyPosition = 'standing' | 'seated' | 'bench' | 'floor' | 'hanging' | 'water'
 
 /** What a mobility, yoga or pilates movement mostly works on (filters, swaps). */
 export type MobilityTarget =
@@ -404,6 +567,35 @@ export interface Exercise {
   /** CARDIO_MET key for burn */
   cardioKey?: string
   video?: ExerciseMedia
+
+  // ─── Engine attributes (personalised-training-engine.md §4.2). Data only: nothing on screen
+  // reads them yet. `npm run check:exercises` requires them on every entry.
+  /** setup once, then per working set, before rest */
+  timeCost?: TimeCost
+  /** technical demand, separate from `difficulty` (how hard it is): 1 simple, 2 some coordination
+   *  or balance, 3 a lift worth coaching (barbell squat, swing, dip) */
+  skill?: 1 | 2 | 3
+  /** jumping, running or landing: `high` is filtered out with a readiness "yes", knees flagged or
+   *  from 55 unless chosen; `low` is stepping or marching */
+  impact?: 'none' | 'low' | 'high'
+  position?: BodyPosition
+  /** one side at a time (the other side rests or balances) */
+  unilateral?: boolean
+  /** how much it tires the whole body, not just the working muscle */
+  systemicCost?: 'low' | 'medium' | 'high'
+  /** fine indoors in a small space without disturbing anyone, given the kit it lists */
+  homeFriendly?: boolean
+  /** household props that do the job of the listed kit (a sofa for the bench) */
+  props?: HouseholdProp[]
+  /** the next steps the kit allows; see LoadStep */
+  increment?: LoadStep[]
+  /**
+   * The engine's progression ladders: one exercise can sit on several (split squat is on the
+   * no-kit squat and lunge ladders). Steps run easier (1) to harder, with no gaps; two entries may
+   * share a step. `progression` above stays the swap sheet's chain, so these change nothing on
+   * screen.
+   */
+  ladders?: { chain: string; step: number }[]
 }
 
 /** A definition for a built-in exercise within a workout template. */
@@ -417,6 +609,8 @@ export interface ExerciseTemplate {
   title?: string
   /** owned demo clip; without one the card falls back to a YouTube search link */
   video?: ExerciseMedia
+  /** rest between sets in seconds; overrides the default for the movement pattern */
+  restSec?: number
 }
 
 /** What the lifter is doing during one stretch of a demo clip. */

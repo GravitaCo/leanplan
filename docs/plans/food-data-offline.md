@@ -106,8 +106,9 @@ Beyond that (e.g. UK branded products):
   - serves hashed assets from cache;
   - fetches the page network-first with a 3-second timeout, so a weak signal never stalls launch.
 - **Launch never waits on the network:**
-  - the device remembers guest or account (`tali.mode`);
-  - guests go straight in;
+  - the device remembers a signed-in account (`tali.mode`);
+  - there is no guest mode (retired Sept 2026), so a first sign-in needs a connection; a device
+    from the old guest mode opens the sign-in screen and its log moves into the account;
   - an account opened offline uses its local data and resumes sync when the connection and session return;
   - session restore is capped at 4 seconds.
 - **If a session has truly expired online**, the user signs in again, and local changes upload afterwards

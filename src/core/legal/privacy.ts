@@ -6,12 +6,14 @@ const email = () => fact('contactEmail', 'privacy email')
 /**
  * Privacy policy for the app (app.tali.fit) and the website (www.tali.fit). Must describe
  * what the code and the site actually do: any new data field, recipient, SDK, embed or
- * purpose means this changes in the same commit.
+ * purpose means this changes in the same commit. Label photo reading (Anthropic) is switched off
+ * (LABEL_SCAN_ENABLED in src/data/labelReader.ts) and deliberately not described yet: add it, with
+ * its transfer and retention, before that flag is turned on.
  */
 export function privacyPolicy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-09-24',
+    updated: '2026-09-28',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -27,9 +29,8 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'The short version',
         ul: [
-          `Tali stores your log on your device so it works offline.`,
-          `With an account, it also syncs to a private database in Ireland (EU) that only you can read.`,
-          `Without an account, nothing you log leaves your device.`,
+          `Tali stores your log on your phone so it works offline, and syncs it to a private database in Ireland (EU) that only you can read.`,
+          `When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.`,
           `No ads, no analytics, no tracking cookies, and we never sell your data or share it for marketing.`,
           `You can export everything or delete your account from the app at any time.`,
         ],
@@ -40,11 +41,12 @@ export function privacyPolicy(): LegalDoc {
         ul: [
           `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
           `Profile: display name, sex, age, height, weight, body fat (if you add it), activity level, goal, pace, diet pattern (such as vegetarian or vegan), training experience, equipment, days per week, cardio preferences, muscle groups to focus on, and any body areas to train around, with a note if you add one.`,
-          `Your log: food and drink, portions, recipes and custom foods; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.`,
+          `Your log: food and drink, portions, recipes and custom foods, including foods you scan with their barcode and where the numbers came from; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); workouts you create and weekly training plans, with any notes you add when a plan ends; supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.`,
           `Settings: calorie and macro targets and ranges, weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.`,
           `On your device only: the list of ingredients you have at home, used for meal suggestions. It is never uploaded.`,
           `Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send supplement reminders.`,
-          `Your consent record: the date you agreed and the version of this policy.`,
+          `Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.`,
+          `Feedback: if you send feedback from the app, it goes from your own email app to us, with the app version and your browser and device type. Please leave out health details you'd rather keep private.`,
         ],
       },
       {
@@ -59,15 +61,17 @@ export function privacyPolicy(): LegalDoc {
         h: 'Health data',
         p: [
           `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) is health data, a special category of personal data. ` +
-            `Your diet pattern may also reveal beliefs. We only process this information with your explicit consent, which the app asks for before you start and records with the date.`,
-          `Tali runs on this information, so the app can't work without that consent. You can withdraw it at any time by deleting your account in the app ` +
-            `(Profile, then Privacy; this needs a connection) or, without an account, by deleting your data on the device. Withdrawing does not affect what happened before.`,
+            `Your diet pattern may also reveal beliefs. We only process this information with your explicit consent, which the app asks for when you first sign in, before anything is synced, and records with the date and version.`,
+          `You can withdraw it at any time in the app (Profile, then Privacy). That clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from all your devices, and you can keep using Tali without them. ` +
+            `To remove everything else too, including your food and workout logs, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
         ],
       },
       {
         h: 'Why we use it, and our legal basis',
         ul: [
           `To provide the app: store and sync your log, calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.`,
+          `To look up a product when you scan its barcode. Basis: our contract with you.`,
+          `To read and answer feedback you send us. Basis: our legitimate interest in improving Tali.`,
           `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.`,
           `To keep accounts, the app and the site secure and working (sign-in, stopping bots and abuse, fixing faults). Basis: our legitimate interest in running a secure service.`,
           `To send account emails you need, such as confirming your address or resetting your password. Basis: our contract with you.`,
@@ -90,7 +94,14 @@ export function privacyPolicy(): LegalDoc {
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos, and sees technical request data when you play one.`,
           `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A reminder carries only the supplement name, and it is encrypted so the push service can't read it.`,
+          `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
+        ],
+      },
+      {
+        h: '',
+        p: [
+          `Open Food Facts is not our service provider. When you scan a barcode, your phone asks Open Food Facts (openfoodfacts.org, a non-profit in France) for that product, so it sees the barcode and your IP address, under its own privacy policy. Nothing else you log is sent to it.`,
         ],
       },
       {
@@ -104,7 +115,7 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'How long we keep it',
         ul: [
-          `App account data is kept while you have an account. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups are deleted as those backups expire on its regular cycle.`,
+          `App account data is kept while you have an account. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups, and our providers' security logs, are deleted as they expire on those providers' regular cycles. Early access emails on the website are separate and aren't affected.`,
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tali.`,
           `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,
@@ -128,9 +139,9 @@ export function privacyPolicy(): LegalDoc {
         h: 'Your rights',
         p: [`You have the right to:`],
         ul: [
-          `access your data and get a copy in a portable format (in the app: Profile, then Data and backup, then Export);`,
+          `access your data and get a copy in a portable format (in the app: Profile, then Back up and restore, then Export);`,
           `correct it (you can edit everything in the app);`,
-          `have it deleted (in the app: Profile, then Privacy);`,
+          `have it deleted (in the app: Profile, then Privacy, then Delete account);`,
           `restrict or object to how we use it;`,
           `withdraw consent at any time, including leaving the early access list.`,
         ],

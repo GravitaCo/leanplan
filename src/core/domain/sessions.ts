@@ -4,6 +4,18 @@ import { DEFAULT_MINS, MODALITY_MET } from '@/core/data/modalities'
 import { WORKOUTS, LIFTS } from '@/core/data/workouts'
 
 /**
+ * Built-in routines are stored as `routineId: 'builtin-' + type` ('builtin-Legs', 'builtin-Cardio').
+ * The stored string never changes (synced data depends on it); these are the one place that reads
+ * or writes it.
+ */
+const BUILTIN = 'builtin-'
+export const builtinId = (type: string): string => BUILTIN + type
+/** The built-in type a session came from ('Legs', 'Cardio'…): its routineId with the 'builtin-' tag removed. */
+export const builtinType = (x: Pick<Session, 'routineId'>): string => (x.routineId || '').replace(BUILTIN, '')
+export const isBuiltin = (x: Pick<Session, 'routineId'>): boolean => (x.routineId || '').startsWith(BUILTIN)
+export const isBuiltinLift = (x: Pick<Session, 'routineId'>): boolean => LIFTS.includes(builtinType(x) as WorkoutType)
+
+/**
  * Sessions: a day can hold several (workout plan §2.5). Days logged before this change only
  * have the single `workout`; they are read through `fromLegacy` without being rewritten, so no
  * old day changes or re-uploads on update. Every save also writes a legacy mirror into
@@ -17,7 +29,7 @@ export function fromLegacy(wk: Workout, date: string): Session {
     const mobility = wk.cardioType === 'Mobility'
     return {
       id: 'legacy-' + date, modality: mobility ? 'mobility' : 'cardio',
-      title: wk.cardioType || 'Cardio', routineId: 'builtin-Cardio',
+      title: wk.cardioType || 'Cardio', routineId: builtinId('Cardio'),
       // blank minutes on the Cardio card always meant 25; keep that for Mobility too
       mins: Number.isFinite(typed) ? typed : mobility ? 25 : undefined,
       cardio: { key: wk.cardioType || '' }, option: wk.option,
@@ -25,7 +37,7 @@ export function fromLegacy(wk: Workout, date: string): Session {
   }
   return {
     id: 'legacy-' + date, modality: 'strength', title: WORKOUTS[wk.type]?.title || wk.type,
-    routineId: 'builtin-' + wk.type, ex: wk.ex, option: wk.option,
+    routineId: builtinId(wk.type), ex: wk.ex, option: wk.option,
   }
 }
 
@@ -48,19 +60,19 @@ export function sessionsOf(day: DayLog | undefined, date: string): Session[] {
   return [...list, { ...incoming, id: 'legacy-extra-' + date }]
 }
 
+/** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
+export function mirroredIndex(sessions: Session[]): number {
+  const i = sessions.findIndex(isBuiltinLift)
+  return i >= 0 ? i : sessions.length ? 0 : -1
+}
+
 /**
  * The single-workout copy older installs read: the first built-in lift as `{ type, ex }`,
  * otherwise the first session as cardio (older installs only know the four types), or null.
  */
-/** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
-export function mirroredIndex(sessions: Session[]): number {
-  const i = sessions.findIndex((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
-  return i >= 0 ? i : sessions.length ? 0 : -1
-}
-
 export function mirrorOf(sessions: Session[]): Workout | null {
-  const lift = sessions.find((x) => LIFTS.includes((x.routineId || '').replace('builtin-', '') as WorkoutType))
-  if (lift) return { type: lift.routineId!.replace('builtin-', '') as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }
+  const lift = sessions.find(isBuiltinLift)
+  if (lift) return { type: builtinType(lift) as WorkoutType, ex: lift.ex || [], ...(lift.option ? { option: lift.option } : {}), _mirror: true }
   const first = sessions[0]
   if (!first) return null
   const key = first.cardio?.key && CARDIO_MET[first.cardio.key] != null ? first.cardio.key : first.modality === 'mobility' ? 'Mobility' : 'Other'
@@ -72,7 +84,9 @@ const level = (e?: Effort) => (e === 'easy' ? 'light' : e === 'hard' || e === 'v
 /** MET and minutes for a session (Compendium values; see modalities.ts and constants.ts). */
 export function sessionMetMins(x: Session): { met: number; mins: number } {
   // capped at 4 hours so a typo ("300" for 30) can't add a day's worth (a judgement call)
-  const mins = x.mins != null && Number.isFinite(x.mins) ? Math.min(240, Math.max(0, x.mins)) : DEFAULT_MINS[x.modality] ?? 30
+  // logged minutes, else a workout's own estimate (plan §2.9), else the modality default
+  const given = x.mins != null && Number.isFinite(x.mins) ? x.mins : x.estMins != null && Number.isFinite(x.estMins) ? x.estMins : null
+  const mins = given != null ? Math.min(240, Math.max(0, given)) : DEFAULT_MINS[x.modality] ?? 30
   if (x.modality === 'cardio') return { met: CARDIO_MET[x.cardio?.key || ''] ?? CARDIO_MET.Other, mins }
   const m = MODALITY_MET[x.modality]
   return { met: m ? m[level(x.effort)] : CARDIO_MET.Other, mins }
@@ -108,4 +122,13 @@ export function isHardSession(x: Session): boolean {
   if (x.modality === 'strength' || x.modality === 'calisthenics') return x.effort !== 'easy'
   if (x.modality === 'cardio') { const { met, mins } = sessionMetMins(x); return met >= 6 && mins > 20 }
   return false
+}
+
+/**
+ * Fields a re-save of a built-in session carries over from the earlier save when the caller
+ * doesn't set them. An explicit null effort or an explicitly empty note clears that field
+ * (the finish sheet), so a note can be removed.
+ */
+export function keptOnSave(extra?: { effort?: Effort | null; note?: string }): ('effort' | 'note' | 'mins')[] {
+  return (['effort', 'note', 'mins'] as const).filter((k) => !(k === 'effort' && extra?.effort === null) && !(k === 'note' && extra?.note === ''))
 }

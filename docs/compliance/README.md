@@ -11,17 +11,18 @@ Last reviewed: 2026-09-24. Controller: Gravita Creative Ltd (company 08348225), 
 
 | Requirement | Where |
 |---|---|
-| Privacy policy (Art. 13), app and website | `src/core/legal/privacy.ts` → https://www.tali.fit/legals/privacy |
+| Privacy policy (Art. 13), app and website | `src/core/legal/privacy.ts` → https://www.tali.fit/legals/privacy (the live page is the interim website-only text until the app release that carries the consent screen; publish the full text with that release) |
 | Terms and conditions | `src/core/legal/terms.ts` → https://www.tali.fit/legals/terms |
 | Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tali.fit/legals/cookie-policy |
-| Links from the app | Sign-in footer, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
-| Explicit consent for health data (Art. 9(2)(a)), terms, 18+ | `src/screens/legal/ConsentScreen.tsx`: three separate unticked boxes, shown before the app opens. Recorded on the device (`tali.consent`) and in the account's Supabase user metadata (`tali_consent`, with version, time and user id). Consent is per person: it is cleared on sign-out, and a guest's consent (worded for on-device only) is asked again when they sign in. Bumping `CONSENT_VERSION` asks everyone again. |
-| Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts` returns early without a consent record |
-| Right of access and portability (Art. 15, 20) | Profile → Data & backup → Export (JSON of everything logged) |
-| Right to erasure and withdrawal of consent (Art. 17, 7(3)) | Profile → Privacy → Delete account (pauses sync, calls `delete_my_account()`, then wipes the device; needs a connection), Only remove from this device, or for guests Delete data on this device |
+| Explicit consent for health data (Art. 9(2)(a)), terms, age | `screens/legal/ConsentScreen.tsx`, shown after sign-in until `healthConsentAnswered` (`src/data/consent.ts`): three unticked boxes; Continue records a `health` consent at `CONSENT_VERSIONS.health`. The screen can't be submitted without the terms and age boxes, so the account's first health grant at a version is also the record of those two (no separate `terms`/`age` consent types yet: adding them needs a migration of the `consents` type check). Records are append-only in the `consents` table (owner-only RLS, applied). |
+| Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
+| Withdrawal (Art. 7(3)) | Profile → Privacy → Withdraw consent for health data (offers a backup first; clears weigh-ins, check-ins, weight, body fat, limitations on every device). "Give consent again" there afterwards |
+| Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
+| Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
 | Rectification (Art. 16) | Every field is editable in the app |
-| Storage and PECR | Only strictly necessary local storage (log, session, mode, consent). No cookies, analytics, ads or trackers, so no cookie banner is needed |
-| Release gate | `npm run check:legal` fails while any fact in `LEGAL` is unset |
+| Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
+| Storage and PECR | Only strictly necessary local storage (see `cookies.ts`). No cookies, analytics, ads or trackers in the app |
+| Release gate | `npm run check:legal` (in the deploy workflow) fails on any placeholder the texts print; a missing ICO number only warns |
 
 ## Record of processing (Art. 30)
 
@@ -85,8 +86,8 @@ Blocking before the legal texts can go live:
 2. Early access: every invite email needs a working unsubscribe, and the list must be deleted
    once people are invited (the privacy policy promises both). Webflow forms have no
    unsubscribe of their own.
-3. Apply `docs/compliance/delete-account.sql` in the Supabase SQL editor. Until then,
-   Delete account shows an error and deletes nothing.
+3. Done: account deletion is the `delete-account` Edge Function (deployed); the old
+   `delete_my_account()` SQL was never applied and is removed.
 4. Accept the Supabase, Webflow and Bunny.net DPAs, confirm GitHub's and Cloudflare Turnstile's
    terms, and record them here.
 5. Add https://www.tali.fit/legals/privacy and /legals/terms to the Google OAuth consent screen.
@@ -110,8 +111,7 @@ Should fix:
     `npm run legal:html -- --site`) are published at the same URLs, since they describe only
     the website and the early-access form. The full texts replace them at go-live.
     Also: the full pages can only be published once the app on `main` has the consent screen
-    and deletion (this branch) and `delete_my_account()` is applied (checked 2026-09-24: not
-    in the database). Until then they would describe safeguards the live app doesn't have.
+    and deletion (this branch, now built on main's consent records and `delete-account`). Until then they would describe safeguards the live app doesn't have.
 17. Turnstile loads for every visitor to a page with the early-access form, not only people
     who submit it. Moving the form to its own page (or loading Turnstile only when someone
     starts typing) keeps it strictly necessary under PECR.
@@ -122,6 +122,25 @@ Should fix:
 15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
     texts, bump `CONSENT_VERSION` so everyone consents to the new company, and tell the
     early-access list.
+
+Added 2026-09-28 (consent release):
+
+20. Existing testers' data (9 accounts) was synced before consent existed. They see the consent
+    screen on their next launch and nothing more syncs until they answer; if anyone declines,
+    delete their account on request. Consider a short email to them explaining the change.
+21. Age: the texts, sign-up line and consent screen say 18+ (`MIN_AGE`). The onboarding plan's
+    16+ with 16–17 safeguards needs those safeguards built first, and brings the ICO Children's
+    Code into scope (DPIA and high-privacy defaults for under-18s). Benn to decide.
+22. Scope of health withdrawal: it clears weigh-ins, check-ins and body details, but keeps food
+    and workout logs, which the policy also calls health data. Get a view (solicitor or DPIA)
+    on whether that is enough, or widen what withdrawal clears.
+23. Open Food Facts: barcode lookups go from the phone, so OFF sees users' IP addresses
+    (disclosed). Proxying them through an Edge Function would stop that.
+24. Label photo scanning (Anthropic) is off. Before turning it on: Anthropic DPA, transfer
+    mechanism and TIA, retention/zero retention, consent copy fix, withdrawal toggle, privacy
+    policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
+25. Repo markers: `docs/migrations/2026-09-consents.sql`, `2026-09-owner-fks.sql` and the
+    `delete-account` function say NOT APPLIED / NOT DEPLOYED but are live (checked 2026-09-27).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

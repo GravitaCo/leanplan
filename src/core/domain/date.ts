@@ -25,13 +25,15 @@ export function shiftDay(d: string, n: number): string {
   return ymd(t)
 }
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+export const DAY_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+/** Monday-first initials for week strips and bars. */
+export const DOW = 'MTWTFSS'
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function fmtDate(d: string): { dow: string; full: string; idx: number } {
   const t = parseYmd(d)
   return {
-    dow: DAYS[t.getDay()],
+    dow: DAY_NAME[t.getDay()],
     full: t.getDate() + ' ' + MONTHS[t.getMonth()] + ' ' + t.getFullYear(),
     idx: t.getDay(),
   }
@@ -41,6 +43,7 @@ export function r0(x: number): number {
   return Math.round(x)
 }
 
+/** One decimal: what stored food values keep (finer than anything shown, no float noise in storage and sync). */
 export function r1(x: number): number {
   return Math.round(x * 10) / 10
 }
@@ -49,3 +52,8 @@ export function r1(x: number): number {
 export function fmt(x: number): string {
   return Math.round(x || 0).toLocaleString('en-GB')
 }
+
+/** "3 Nov". */
+export const dayMonthOf = (d: string): string => fmtDate(d).full.split(' ').slice(0, 2).join(' ')
+/** "Mon 3 Nov". */
+export const shortDateOf = (d: string): string => `${fmtDate(d).dow.slice(0, 3)} ${dayMonthOf(d)}`

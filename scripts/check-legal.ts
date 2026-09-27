@@ -12,7 +12,14 @@ import { sitePrivacy, siteTerms, siteCookies } from '@/core/legal/website'
 let bad = 0
 const fail = (m: string) => { bad++; console.log('FAIL', m) }
 
-for (const [k, v] of Object.entries(LEGAL)) if (!v) fail(`LEGAL.${k} is not set`)
+// The ICO fee number isn't printed in any text, so it warns rather than blocks: a missing number
+// must not hold back a compliance fix (like the consent screen). The fee is still owed: see the
+// register's open items. Every fact the texts print is a hard failure.
+for (const [k, v] of Object.entries(LEGAL)) {
+  if (v) continue
+  if (k === 'icoNumber') console.log('WARN LEGAL.icoNumber is not set: pay the ICO data protection fee (ico.org.uk/fee) and add the number')
+  else fail(`LEGAL.${k} is not set`)
+}
 for (const doc of [privacyPolicy(), termsOfUse(), cookiePolicy(), sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)

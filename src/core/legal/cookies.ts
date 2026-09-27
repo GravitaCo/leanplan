@@ -9,7 +9,7 @@ import { LEGAL_URLS, fact, type LegalDoc } from './index'
 export function cookiePolicy(): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: '2026-09-24',
+    updated: '2026-09-28',
     intro:
       `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
@@ -28,12 +28,14 @@ export function cookiePolicy(): LegalDoc {
           `The app sets no cookies. It uses your browser's local storage, which stays on your device, so that it works offline and keeps you signed in:`,
         ],
         ul: [
-          `leanplan.v1: your log, profile and settings. Kept until you delete your data in the app or clear your browser data.`,
-          `tali.mode: whether you use Tali with an account or on this device only. Kept until you sign out.`,
-          `tali.consent: the date you agreed to Tali using your health information, and the policy version. Kept until you sign out or delete your data.`,
+          `leanplan.v1: your log, profile, settings and consent choices. Kept until you remove this device's log when signing out, delete your account, or clear your browser data.`,
+          `tali.mode: which kind of account this device's log belongs to. Kept until you sign out.`,
           `tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.`,
+          `tali.sound: whether the workout player plays sounds. Kept until you change it or clear your data.`,
+          `tali.labelConsent: an older record of a label-photo choice, moved into leanplan.v1 the next time the app opens, then removed.`,
           `sb-… (keys starting "sb-"): keeps you signed in to your account. Set by our sign-in provider, Supabase. Kept until you sign out.`,
-          `App files: the app saves its own code and icons in your browser's cache so it opens with no connection. These contain no personal data.`,
+          `tali.reauthForDelete (session storage): set for a few minutes while you confirm it's you to delete your account. Cleared when you come back or close the tab.`,
+          `App files: the app saves its own code, icons and font in your browser's cache so it opens with no connection. These contain no personal data.`,
         ],
       },
       {
@@ -54,7 +56,7 @@ export function cookiePolicy(): LegalDoc {
         h: 'Your choices',
         p: [
           `You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. ` +
-            `In the app, Profile, then Privacy lets you delete everything on your device.`,
+            `In the app, Sign out, then "Sign out and remove this device's log" deletes your log from this device, and Profile, then Privacy, then Delete account deletes everything.`,
           `Questions: ${fact('contactEmail', 'contact email')}. More about how we handle personal data: ${LEGAL_URLS.privacy}.`,
         ],
       },

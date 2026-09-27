@@ -1,10 +1,13 @@
 import { useStore } from '@/store/store'
-import { fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
+import { DOW, fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Rings } from './charts'
 import { Icon } from './icons'
+import { sessionsOf } from '@/core/domain/sessions'
+import { plannedKeys } from '@/core/domain/plans'
+import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
+import { TALI_SHORT } from '@/core/data/taliWorkouts'
 
-const DOW = 'MTWTFSS'
 
 /** Monday–Sunday strip: each day shows a mini energy ring and its planned session. */
 export function WeekStrip() {
@@ -16,7 +19,9 @@ export function WeekStrip() {
     <div className="week">
       {weekOf(cur).map((d, i) => {
         const st = dayStat(data, d)
-        const sched = data.schedule[parseYmd(d).getDay()] || 'Rest'
+        // what's planned that day: the plan's workouts (several, own and Tali's too) or the schedule's one
+        const keys = plannedKeys(data, d)
+        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : 'Rest'
         const f = fmtDate(d)
         return (
           <button key={d} className={'wd' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '') + (st.future ? ' future' : '')}
@@ -46,5 +51,32 @@ export function DayNav() {
       <span>{cur === todayStr() ? 'Today' : f.dow} · {short}</span>
       <button onClick={() => setDate(shiftDay(cur, 1))} aria-label="Next day"><Icon name="chevR" size={16} stroke={2.6} /></button>
     </span>
+  )
+}
+
+/**
+ * Train's week (Monday–Sunday): the chosen day filled, today's letter in the tint, and a dot on
+ * each day with any logged movement. Dots only: no connecting line and no "days in a row".
+ */
+export function MoveStrip() {
+  const cur = useStore((s) => s.cur)
+  const days = useStore((s) => s.data.days)
+  const setDate = useStore((s) => s.setDate)
+  const today = todayStr()
+  return (
+    <div className="mstrip" role="list" aria-label="This week">
+      {weekOf(cur).map((d, i) => {
+        const f = fmtDate(d)
+        const moved = sessionsOf(days[d], d).length > 0
+        return (
+          <button key={d} role="listitem" className={'md' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '')}
+            onClick={() => setDate(d)} aria-label={`${f.dow} ${f.full}${moved ? ', moved' : ''}`} aria-current={d === today ? 'date' : undefined} aria-pressed={d === cur}>
+            <span className="l">{DOW[i]}</span>
+            <span className="c num">{parseYmd(d).getDate()}</span>
+            <span className={'dot' + (moved ? ' on' : '')} />
+          </button>
+        )
+      })}
+    </div>
   )
 }

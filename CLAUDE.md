@@ -46,51 +46,64 @@ The core is deliberately **UI-framework-agnostic** so a future React Native / Ca
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
-  TDEE, `library.ts` for swaps and "last time"); `data/` (the ~336-item food DB, the exercise
-  library `exercises.ts` with its committed id list `docs/data/exercise-ids.json`,
-  Push/Pull/Legs workouts, constants).
+  TDEE, `library.ts` for swaps and "last time", `guided.ts` for guided-session targets, rest
+  and "last time" by rep range, `week.ts` for week warnings, `routines.ts` for the user's own workouts); `data/` (the food DB with its
+  chain menus, the exercise library `exercises.ts` with its committed id list
+  `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, demo media, constants).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
   migrations), `sync.ts` (offline-first, per-record dirty flags, last-write-wins),
   `push.ts` (Web Push), `backup.ts` (JSON export/import).
 - `src/store/store.ts` — Zustand + Immer store; wires core/data to React; owns the
   debounced sync loop.
-- `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `Seg`, `Toggle`,
-  `Disclosure`, `Tile`, `CatHead`, `PageHeader`, `pressable`), `charts.tsx` (`Rings`,
-  `RangeBar`, `MacroCol`, `Sparkline`, `WeekBars`), `WeekStrip` + `DayNav`, `BottomNav`, `icons`.
+- `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `BareSheet`, `Seg`,
+  `Toggle`, `Disclosure`, `SettingRow`, `CatHead`, `PageHeader`, `BackButton`, `pressable`,
+  `useScrollLock`), `charts.tsx` (`Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`,
+  `WeekBars`), `WeekStrip` + `DayNav` + `MoveStrip`, `BottomNav`, `brand.tsx` (`TaliMark`), `icons`.
 - `src/screens/` — Today (Summary), Food (+ `food/AddFoodSheet` → Portion / RecipeLog /
-  QuickEstimate / CreateFood views, `food/EditEntrySheet`, `food/MealsSheet`, `food/MarginSheet`),
-  Train, Plan (+ `plan/PlanSheets`), Profile, AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
+  QuickEstimate / CreateFood / Scan views, `food/EditEntrySheet`, `food/MealsSheet`,
+  `food/MarginSheet`), Train (today only: `train/Preview` → `train/GuidedPlayer` with
+  `AdjustSheet`, `FinishSheet`, `ManualLog`, `AddSomethingSheet`), Plan (the week: `plan/PlanViews`
+  for day, category and workout, `plan/PlanSheets` for if-then plans), Profile (grouped settings),
+  AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
 - Logging model: `core/domain/estimate.ts` gives every entry a capture method + typical
   error (days show a ± margin; the cooking-fat question only for foods flagged `cook`);
   `core/domain/insights.ts` holds ranges, neutral status copy, usuals and weekly trends.
 
 ## Design system
 
-Tokens live in `src/styles/theme.css` (`:root` CSS variables). Use these, don't hardcode:
-
-Apple Health / Fitbit-inspired (replaced the earlier dark coral / Hanken Grotesk look in
-Sept 2026, at Benn's request). Light or dark always follows the device's appearance
+"Studio" (Sept 2026, at Benn's request; replaced the Apple Health look). Designs are reviewed on
+the claude.ai Design canvas before they're built. Tokens live in `src/styles/theme.css` (`:root`
+CSS variables): use them, don't hardcode. Light or dark always follows the device's appearance
 setting (`prefers-color-scheme`); there is no in-app override.
 
-- Surfaces & labels follow iOS system colours: `--bg`, `--card`, `--elev`, `--sheet`,
-  `--fill`/`--fill2`/`--fill3`, `--label`/`--label2`/`--label3`, `--sep`. Interactive: `--tint`.
-- One category colour per data type, each with a contrast-safe `-ink` text variant:
-  `--energy`, `--activity`, `--protein`, `--carbs`, `--fat`, `--body`, `--supps`, `--mind`.
-  No status red/amber for eating — targets are ranges and copy stays neutral.
-- Type: system font (`--font-sans`, SF Pro on iOS); numbers use `.num` (SF Pro Rounded,
-  tabular). iOS scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
-- Shared classes: `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.sec-t`, `.lbl`,
-  `.foot`, `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`,
-  `.frow` (form rows), `.tile`, `.banner`, `.toast`.
-- Legacy token names (`--accent`, `--muted`, `--line`, `--card-2`, …) remain as aliases
-  so older markup (AuthScreen) keeps rendering; prefer the new names in new code.
-- App icon source: `Tali-App.svg` (mauve `#cd7fae` mark on black). PWA PNGs in `public/`
-  are generated from it.
+- **Surfaces:** light is warm stone `--bg` #F4F2EF with paper `--card` #FFFFFF; dark is neutral
+  iOS black and graphite (`--bg` #000, `--card` #1C1C1E, `--elev` #2C2C2E), never warm or brown.
+  Labels `--label`/`--label2`/`--label3`, separators `--sep`, fills `--fill`/`--fill2`/`--fill3`.
+- **One accent:** Tali mauve `--tint` (#9A4A7A light, #CD7FAE dark) with `--tint-soft` for
+  selected rows. Primary buttons are ink pills (`--btn`/`--btn-ink`): black in light, white in dark.
+- **Three pillars** (mind, food, move), each with a base (bars, rings, dots), an `-ink` for text
+  (4.5:1 on `--card` and `--bg`) and a `-fill`. Food is #87CF59 with ink #437722 in light, #9FEC85 in
+  dark; use `--on-food` for icons on a solid food square. Data-type names map onto them:
+  `--energy` and `--body` → food, `--activity` → move, `--mind`. Protein, carbs, fat and
+  supplements share the food colour and are told apart by their labels.
+- **Target ranges** use the neutral grey `--band`, never a pillar colour. No status red/amber for
+  eating: targets are ranges and copy stays neutral.
+- **Type:** Geist (variable, bundled in `public/fonts/` under the OFL, preloaded so it works
+  offline). Numbers use `.num` (tabular). Scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
+- **Video screens** (guided player, rest) look the same in both modes: footage full-bleed, never
+  blurred, only a light shade top and bottom, white controls.
+- **Shared classes:** `.card`, `.list`/`.li` (inset grouped rows), `.grp-h`, `.lbl`, `.foot`,
+  `.btn` (+ `.tinted`/`.gray`/`.danger`/`.sm`), `.seg`, `.chip`, `.scale`, `.frow` (form rows),
+  `.tile`, `.banner`, `.toast`.
+- **Logo:** the Tali mark (plum #3A2734). `Tali-App.svg` is the app icon: plum frame, white mark;
+  `public/favicon.svg` switches to a mauve #CD7FAE frame in light system mode. The PWA PNGs in
+  `public/` are generated from `Tali-App.svg`. In the app, `TaliMark` draws the mark in `--mark` (plum on light,
+  white on dark).
 
 ## Food data & offline (important)
 
-- **Offline-first:** Tali must open, search, log and save with no connection. Never add a
-  launch or save path that waits on the network. See `docs/plans/food-data-offline.md`.
+- **Offline-first:** once signed in, Tali must open, search, log and save with no connection.
+  Never add a launch or save path that waits on the network. (The first sign-in needs one.) See `docs/plans/food-data-offline.md`.
 - Every food cites its source (`src`, keys in `src/core/data/sources.ts`); foods are per 100 g,
   per 100 ml (`ml`) or per item (`each`). Prefer UK CoFID, then the brand's own UK figures, then
   the pack label; USDA only as a fallback. Never invent values: leave a food unsourced instead.
@@ -108,9 +121,11 @@ setting (`prefers-color-scheme`); there is no in-app override.
   with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
   Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
-- Each clip carries a **tempo timeline measured from the footage**; the Train screen's
-  "Watch example" full-screen player shows phase, rep and a 1-2-3 count from it. Re-time it whenever a clip
-  changes; `npm test` checks the files exist and the timeline is ordered.
+- Each clip carries a **tempo timeline measured from the footage**. The guided player
+  (`train/GuidedPlayer.tsx`) shows the phase and a 1-2-3 count from it. The demo player
+  (`train/DemoPlayer.tsx`, opened from the library, the session preview and "Log sets by hand")
+  also shows the clip's own rep ("Rep 2 of 3") and a pace row. Neither counts the user's reps.
+  Re-time it whenever a clip changes; `npm test` checks the files exist and the timeline is ordered.
 - The service worker leaves `/videos/` to the network (Safari streams video with Range
   requests), so clips need a connection; logging never does.
 
@@ -120,13 +135,18 @@ setting (`prefers-color-scheme`); there is no in-app override.
   row is private to `auth.uid()` (see `docs/security-rls.sql`). Don't loosen it.
 - **Never rename the localStorage key `leanplan.v1`** or the Supabase table/column names —
   doing so orphans existing user data.
-- Guest mode is **local-only**: the `authed` flag gates all cloud sync, so we never hit the
-  DB without a real session.
+- **No guest mode** (retired Sept 2026, Benn's call): everyone signs up. The `authed` flag
+  gates all cloud sync, so we never hit the DB without a real session (it stays false offline
+  and while the app asks whose data is on the device). A device from the old guest mode opens
+  the sign-in screen, and its log moves into the account on first sign-in.
+- The device's data records its owner (`_meta.owner`); signing in as a different account asks
+  before showing or syncing it (`ownerCheck` in `src/data/persistence.ts`).
 
 ## Legal & compliance (important)
 
 - Tali processes **health data** (special category, UK/EU GDPR Art. 9) on the basis of
-  **explicit consent**, collected by `screens/legal/ConsentScreen.tsx` before the app opens.
+  **explicit consent**, collected by `screens/legal/ConsentScreen.tsx` after sign-in, recorded through
+  `src/data/consent.ts` (the `consents` table).
   Nothing syncs to the cloud without it. Don't bypass or pre-tick it.
 - Legal texts are written in `src/core/legal/` (facts in `LEGAL`, `privacy.ts`, `terms.ts`,
   `cookies.ts`) and published to the Webflow website's "Legals" collection at
@@ -137,21 +157,27 @@ setting (`prefers-color-scheme`); there is no in-app override.
   as the app (app.tali.fit). A new site script, form, embed or cookie is a policy change too.
 - **Any change to what data is collected, where it goes or who processes it** (new field,
   table, SDK, analytics, AI API, font CDN) updates the privacy policy and register in the same
-  change, and goes past the `compliance` agent. A new user-data table also joins the delete
-  list in `docs/compliance/delete-account.sql`.
+  change, and goes past the `compliance` agent. A new user-data table also joins `USER_TABLES` in
+  `supabase/functions/_shared/account.ts` (the delete-account function).
 - `npm run check:legal` must pass before the legal texts go live (it fails while `LEGAL` has
   placeholders).
 
-## Working agreement: Figma → code
+## Working agreement: design → code
 
-The user designs in **Figma**; Claude implements. Run the **local** Figma Dev Mode MCP
-(`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`) — it's only
-reachable from a Claude Code running on the user's machine, not from a cloud session.
+Benn is the creative director and approves designs; Claude implements, and code goes through
+review (`ship-critic`, see Conventions). Designs come from **Figma** or from the claude.ai
+**Design canvas**, where Claude drafts boards for Benn to review. For Figma, run the **local**
+Figma Dev Mode MCP (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`);
+it's only reachable from a Claude Code running on the user's machine, not from a cloud session.
 
 Per screen/flow: read the frame → reconcile its styles against the tokens above (flag, don't
 silently diverge) → build with existing primitives (extract a new shared component when a
-pattern repeats) → wire to the store → verify in a headless browser → push to deploy.
+pattern repeats) → wire to the store → verify in a headless browser → push to the working
+branch → `ship-critic` → merge to `main` (see Conventions).
 Where a design has gaps, implement the obvious case and call out the decisions made.
+**No design change ships without Benn's approval.** Build to the approved boards; any change to
+what the user sees that isn't on an approved design goes back to the Design canvas for Benn to
+approve first. Once approved, the build ships through `ship-critic` as usual.
 
 ## Conventions
 
