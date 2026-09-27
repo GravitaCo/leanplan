@@ -1533,7 +1533,7 @@ async function timeouts(): Promise<void> {
     plannedKeys(st({ routines: [{ ...R[0], archived: true }] }), '2026-09-29').join('+'),        // a removed own workout drops out
   ].join(' ')
   const want = '12 none 1/12:Build:1 1/12:Build:1 2/12:Build:2 9/12:Maintain:1 12/12:Maintain:4 13/12:Maintain:4:end ' +
-    W + '+Cardio ' + W + '+Cardio Rest'.replace('Rest', '') + ' false,true,false ' +
+    W + '+Cardio ' + W + '+Cardio Rest'.replace('Rest', '') + ' false,true,true ' +
     '{"0":"Rest","1":"Legs","2":"Cardio","3":"Push","4":"Rest","5":"Pull","6":"Rest"} Cardio'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: weeks, phases, planned workouts, maintenance, mirror', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
@@ -1551,8 +1551,12 @@ async function timeouts(): Promise<void> {
   const clean = cleanPhases([{ id: 'a', name: '', weeks: 40, week: { 1: ['Legs', 'Push', 'Pull', 'Cardio', 'Legs'] } }, { id: 'b', name: 'M', weeks: 30, maintain: true, week: { 1: ['x'] } }, { id: 'c', name: 'Z', weeks: 5 }] as any)
   const cleanTxt = clean.map((p) => `${p.name}:${p.weeks}:${p.maintain ? 'm' : (p.week?.[1] || []).length}`).join(',')
   const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases[0].week && !t.phases[0].maintain) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
-  const got = [two, none, fine, two_active, cleanTxt, tpl].join(' ')
-  const want = '1 true 0 b Build:26:4,M:26:m true'
+  // back-to-back from every hard workout of each day: a day's second lift, and an own copy of Legs
+  const L = '77777777-7777-4777-8777-77777777aaaa'
+  const RL = [...R, { id: L, name: 'My legs', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'm', slots: [{ exId: 'back-squat' }, { exId: 'romanian-deadlift' }, { exId: 'leg-extension' }] }] }]
+  const b2b = (w: any) => planWeekNotes(w, RL).filter((n) => n.includes('back-to-back')).map((n) => n.split(' on ')[0]).join('|')
+  const got = [two, none, fine, two_active, cleanTxt, tpl, b2b({ 1: ['Push', 'Pull'], 2: ['Pull'] }), b2b({ 1: ['Legs'], 2: [L] }), b2b({ 1: ['Legs'], 2: ['Cardio'], 3: ['Push'] })].join(' ')
+  const want = '1 true 0 b Build:26:4,M:26:m true Pull is Two workouts for the same muscles are '
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: week notes, one active plan, limits, templates', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
@@ -1582,6 +1586,21 @@ async function timeouts(): Promise<void> {
   const want = `Legs ${r1.id} 2026-09-21 2026-09-28 2026-09-21 2 1`
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: pick up from the plan, start dates, which week a phase trains', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // junk from a newer or buggy client never breaks a launch, and nothing the server would refuse stays queued
+  let threw = ''
+  let phases: any[] = []
+  try { phases = cleanPhases([{ id: 7, name: 42, weeks: 'x', week: { 1: 'Legs', 2: ['Push', 9] } }, { name: 'M', weeks: 2, maintain: 'yes' }] as any) } catch (e) { threw = String(e) }
+  const P = { id: '77777777-7777-4777-8777-777777777777', name: 'x', source: 'custom', state: 'completed', startedAt: '2026-02-31', completedAt: 'soon', clonedFromId: 'nope',
+    reflection: { good: 5, change: '  Fewer days  ', at: 'x' }, phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs'] } }] }
+  const L = stateFromBackup({ days: {}, trainingPlans: [P] } as never).trainingPlans[0] as any
+  const got = [threw || 'ok', phases.map((ph) => `${ph.name}:${ph.weeks}:${ph.maintain ? 'm' : JSON.stringify(ph.week[1]) + JSON.stringify(ph.week[2])}`).join(','),
+    String(L.startedAt), String(L.completedAt), String(L.clonedFromId), L.reflection?.change, String(L.reflection?.good), typeof L.reflection?.at].join(' ')
+  const want = 'ok Build:1:[]["Push"],M:2:[][] undefined undefined undefined Fewer days undefined string'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: junk phases and fields made valid', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

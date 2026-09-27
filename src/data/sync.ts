@@ -7,6 +7,7 @@
 import type { DayLog, Food, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
+import { cleanPhases } from '@/core/domain/plans'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -82,7 +83,10 @@ function toServerPlan(p: TrainingPlan, uid: string) {
 }
 function fromServerPlan(r: any): TrainingPlan {
   return {
-    id: r.id, name: r.name, source: r.source === 'recommended' ? 'recommended' : 'custom', state: r.state, phases: Array.isArray(r.phases) ? r.phases : [],
+    // made valid here too, so a row from a newer or buggy client can't break the next launch
+    id: r.id, name: typeof r.name === 'string' && r.name ? r.name : 'My plan', source: r.source === 'recommended' ? 'recommended' : 'custom',
+    state: ['active', 'completed', 'archived', 'template'].includes(r.state) ? r.state : 'archived',
+    phases: cleanPhases((Array.isArray(r.phases) ? r.phases : []).filter((x: unknown) => !!x && typeof x === 'object')),
     ...(r.started_at ? { startedAt: String(r.started_at).slice(0, 10) } : {}), ...(r.completed_at ? { completedAt: r.completed_at } : {}),
     ...(r.reflection ? { reflection: r.reflection } : {}), ...(r.base_template_id ? { baseTemplateId: r.base_template_id } : {}),
     ...(r.cloned_from_id ? { clonedFromId: r.cloned_from_id } : {}), _u: r.updated_at, _dirty: false,
@@ -167,7 +171,8 @@ function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => str
   let names: { id: string; name: string }[] | null = null
   return async (x: T, e: HttpError): Promise<Undo | null> => {
     const was = x.id
-    if (e.status === 409) {
+    // no name to match (tables without a name index): only the 403 repair applies
+    if (e.status === 409 && nameOf(x)) {
       names ??= await sbGet<{ id: string; name: string }[]>('/' + table + '?user_id=eq.' + uid + '&select=id,name')
       const key = nameOf(x).toLowerCase()
       const hit = names.find((r) => r.id !== x.id && (r.name || '').toLowerCase() === key)
@@ -234,8 +239,8 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   // workouts have no name index (two may share a name), so only the 403 repair can apply
   const dirtyRoutines = (s.routines || []).filter((r) => r._dirty)
   const dirtyPlans = (s.trainingPlans || []).filter((p) => p._dirty)
-  await step('plans', () => upsertEach('training_plans', dirtyPlans, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', (p: TrainingPlan) => p.name, uid, [], s.trainingPlans)))
-  await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', (r: Routine) => r.name, uid, [], s.routines)))
+  await step('plans', () => upsertEach('training_plans', dirtyPlans, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', () => '', uid, [], s.trainingPlans)))
+  await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', () => '', uid, [], s.routines)))
   return failed
 }
 

@@ -2,7 +2,7 @@ import type { AppState, Modality, PlanState } from '@/core/types'
 import { cleanPhases } from '@/core/domain/plans'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
-import { todayStr } from '@/core/domain/date'
+import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid, UUID_RE } from './supabase'
 
@@ -66,12 +66,23 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // weekly plans (plan P5): malformed ones dropped; every field the server checks made valid
   s.trainingPlans = (Array.isArray(s.trainingPlans) ? s.trainingPlans : []).filter((p) => !!p && typeof p === 'object' && typeof p.name === 'string' && Array.isArray(p.phases))
   for (const p of s.trainingPlans) {
-    p.name = p.name.trim().slice(0, 120) || 'My plan'
+    p.name = [...p.name.trim()].slice(0, 120).join('') || 'My plan'
     p.source = p.source === 'recommended' ? 'recommended' : 'custom'
     if (!PLAN_STATES.includes(p.state)) p.state = 'archived'
     p.phases = cleanPhases(p.phases.filter((x) => !!x && typeof x === 'object').map((x, i) => ({ ...x, id: typeof x.id === 'string' && x.id ? x.id.slice(0, 40) : 'ph' + i })))
     if (!p.phases.length) p.state = 'archived'
-    if (p.startedAt != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.startedAt))) delete p.startedAt
+    // a real calendar date only ("2026-02-31" is refused by the server and would never sync)
+    if (p.startedAt != null && !(/^\d{4}-\d{2}-\d{2}$/.test(String(p.startedAt)) && ymd(parseYmd(p.startedAt)) === p.startedAt)) delete p.startedAt
+    if (p.completedAt != null && (typeof p.completedAt !== 'string' || isNaN(Date.parse(p.completedAt)))) delete p.completedAt
+    if (p.clonedFromId != null && (typeof p.clonedFromId !== 'string' || !UUID_RE.test(p.clonedFromId))) delete p.clonedFromId
+    if (p.reflection != null) {
+      const r = p.reflection as unknown as Record<string, unknown>
+      const txt = (v: unknown) => (typeof v === 'string' && v.trim() ? [...v.trim()].slice(0, 500).join('') : undefined)
+      const good = txt(r && typeof r === 'object' ? r.good : undefined), change = txt(r && typeof r === 'object' ? r.change : undefined)
+      const at = r && typeof r === 'object' && typeof r.at === 'string' && !isNaN(Date.parse(r.at)) ? r.at : nowIso()
+      if (good || change) p.reflection = { at, ...(good ? { good } : {}), ...(change ? { change } : {}) }
+      else delete p.reflection
+    }
     if (p.baseTemplateId != null && (typeof p.baseTemplateId !== 'string' || p.baseTemplateId.length > 64)) delete p.baseTemplateId
   }
   // workout plan D5: logged workouts stop widening the food range from today; earlier days

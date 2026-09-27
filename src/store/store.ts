@@ -168,21 +168,25 @@ function ensureDay(s: PersistedState, d: string): DayLog {
   return s.days[d]
 }
 
-/** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
 /**
  * With an active plan, the weekly schedule mirrors its current week (plan P5): older installs and
- * one-workout readers see it; nothing reads it back while the plan is active. Marks settings to
- * sync only when something changed.
+ * one-workout readers see it; nothing reads it back while the plan is active. `mark` sends the
+ * settings to sync when something changed: only for a person's own edit, or on a copy freshly
+ * pulled in runSync, so a stale device never uploads its old target or profile over newer ones
+ * (security-data). Returns whether the schedule changed.
  */
-function mirrorPlan(s: PersistedState): void {
+function mirrorPlan(s: PersistedState, mark: boolean): boolean {
   const p = activePlan(s)
   const pos = p ? positionOn(p, todayStr()) : null
-  if (!pos) return
+  if (!pos) return false
   const next = scheduleMirror(pos.planWeek, s.routines)
   let changed = false
   for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
-  if (changed) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+  if (changed && mark) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+  return changed
 }
+
+/** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
 
 function setSessions(day: DayLog, list: TrainingSession[]): void {
   day.sessions = list
@@ -592,7 +596,7 @@ export const useStore = create<StoreState>()(
             ...(input.baseTemplateId ? { baseTemplateId: input.baseTemplateId } : {}), ...(input.clonedFromId ? { clonedFromId: input.clonedFromId } : {}),
             _dirty: true, _u: nowIso(),
           })
-          mirrorPlan(st.data)
+          mirrorPlan(st.data, true)
         })
         saved('Plan started')
         return id
@@ -605,7 +609,7 @@ export const useStore = create<StoreState>()(
           if (patch.name != null) p.name = patch.name.trim().slice(0, 120) || p.name
           if (patch.phases) p.phases = cleanPhases(patch.phases)
           p._dirty = true; p._u = nowIso()
-          mirrorPlan(st.data)
+          mirrorPlan(st.data, true)
         })
         saved('Plan updated')
       },
@@ -626,7 +630,8 @@ export const useStore = create<StoreState>()(
 
       syncPlanMirror: () => {
         const before = JSON.stringify(get().data.schedule)
-        set((st) => { mirrorPlan(st.data) })
+        // local only (launch, back to the app): the next sync mirrors again on fresh data and uploads
+        set((st) => { mirrorPlan(st.data, false) })
         if (JSON.stringify(get().data.schedule) !== before) persist()
       },
 
@@ -865,6 +870,8 @@ export const useStore = create<StoreState>()(
           const m = ensureMeta(d, false)
           const failed = await pushDirty(d, m)
           await pullAll(d, m)
+          // the plan's week moved on (a new phase) while settings were current: upload the mirror next run
+          if (mirrorPlan(d, true)) rerun = true
           // Data changed while we were on the network (an edit, a backup import): writing this
           // copy back would lose that change. Drop it; live records are still dirty, so the
           // next run pushes them again and pulls afresh.

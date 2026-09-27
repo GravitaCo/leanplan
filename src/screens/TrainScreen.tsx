@@ -9,7 +9,7 @@ import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
-import { maintainOn, plannedKeys } from '@/core/domain/plans'
+import { isHardKey, maintainOn, plannedKeys } from '@/core/domain/plans'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { isBuiltinKey, keyOfSession, keyRoutineId, keyTitle, keyVideo, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { EXERCISES } from '@/core/data/exercises'
@@ -90,7 +90,10 @@ export function TrainScreen() {
   // an accepted "easier first week" pre-selects the shorter version (still just a choice), and so
   // does a maintenance week
   const easyWeek = !logged && !restDay && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
-  const easy = easyWeek || (!restDay && maintain)
+  // lighter weeks shorten the hard workouts only: light cardio and mobility stay as planned
+  // (the maintenance evidence is about resistance volume; fitness-workouts)
+  const easyFor = (k: WorkoutKey) => easyWeek || (maintain && isHardKey(k, routines))
+  const easy = easyWeek || (!restDay && maintain && planned.some((k) => isHardKey(k, routines)))
   const [lighterOpen, setLighterOpen] = useState(false)
 
   useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
@@ -112,7 +115,7 @@ export function TrainScreen() {
     if (pick0 && pick0.k === t) return pick0.c
     const own = builtin(t)
     if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
-    return easy ? 'shorter' : 'planned'
+    return easyFor(t) ? 'shorter' : 'planned'
   }
   const swapsFor = (t: WorkoutKey): Record<number, string> => {
     if (swapsBy[t]) return swapsBy[t]
@@ -139,7 +142,7 @@ export function TrainScreen() {
   }
   const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
 
-  const easyNote = !easyWeek && maintain ? "Maintenance weeks: the lighter version is selected, to hold what you've built. Change it any time."
+  const easyNote = !easyWeek && maintain ? 'Lighter week: the shorter version is selected. Change it any time.'
     : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
     ? 'Lighter day: the shorter version is selected for today. Change it any time.'
     : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`) : null

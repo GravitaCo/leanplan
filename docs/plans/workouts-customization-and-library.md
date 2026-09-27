@@ -1422,11 +1422,20 @@ Benn's answers change the §2.4 body. A plan now runs for a **set number of week
 - **Each phase has its week.** A build phase carries a `PlanWeek`: weekday → an ordered list of
   workout keys (a built-in type or an own workout id), several a day allowed, none = rest.
 - **Maintenance = lighter same workouts.** A maintain phase has no week of its own: it uses the
-  previous phase's week, and its workouts open on the Shorter version by default (about 60% of
-  the sets, the existing day-of rule). The person can still choose As planned any day.
-- **The end.** After the last week: a short reflection ("What felt good? What would you
-  change?"), then **Suggested next** (a Tali plan), **Build your own**, or **Keep going** (the
-  same plan again from this week). Nothing is forced: until they choose, the last week carries on.
+  previous phase's week, and its hard workouts open on the Shorter version by default (about 60%
+  of each exercise's sets, which comes to about two thirds of a session's sets after rounding; the
+  existing day-of rule). Light cardio and mobility stay as planned: the maintenance evidence
+  (Bickel et al. 2011) is about resistance volume. The person can still choose As planned any day.
+- **The end.** After the last week: an optional look back ("What worked for you? Anything you'd
+  do differently?", private, kept with the plan), then **Suggested next** (a Tali plan), **Run
+  this plan again** (from this week or next), **Build your own**, or **Keep going without a plan**
+  (the schedule keeps one workout a day from the last week, at the full version). Nothing is
+  forced: until they choose, the last week carries on as it was, lighter if it was lighter. The
+  next plan's editor shows the last "do differently" note, which can be dismissed.
+- **Templates to add with the library work** (fitness-workouts, 27 Sept): a 2–3 day getting-started
+  plan (needs a full-body built-in), PPL with lighter weeks spread through (5 + 1 + 5 + 1), a 4-day
+  upper/lower plan (needs Upper and Lower built-ins), a movement-first plan (walks, cardio,
+  mobility) and a return-after-a-break plan (a lighter phase first).
 - **Sources.** `source` is `'recommended' | 'custom'` now; `'community'` is reserved for
   marketplace plans later (no table or UI for it yet).
 - **One active plan.** With none, everything works from `settings.schedule` as today. With one,

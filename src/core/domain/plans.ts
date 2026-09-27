@@ -1,8 +1,9 @@
-import type { AppState, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
+import type { AppState, MuscleGroup, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
+import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { DEFAULT_SCHEDULE, LIFTS } from '@/core/data/workouts'
 import { DAY_NAME, parseYmd, shiftDay } from './date'
-import { isBuiltinKey, keyTitle, routineFor, type WorkoutKey } from './routines'
-import { plannedOn, weekWarnings, WEEK_ORDER } from './week'
+import { isBuiltinKey, keyTitle, routineFor, slotsOf, type WorkoutKey } from './routines'
+import { mainMuscles, plannedOn, weekWarnings, WEEK_ORDER } from './week'
 
 /**
  * Weekly plans (plan P5, Benn's model, §6 "P5 as built"): a set number of weeks in phases. A
@@ -16,6 +17,7 @@ export const MAX_PHASE_WEEKS = 26
 export const MAX_PLAN_WEEKS = 52
 
 const DAY_MS = 86400000
+const WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four' }
 const daysBetween = (a: string, b: string) => Math.round((parseYmd(b).getTime() - parseYmd(a).getTime()) / DAY_MS)
 
 /** The active plan: at most one; if two devices each started one, the later start wins. */
@@ -84,11 +86,15 @@ export function plannedKeys(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'ro
   return v === 'Rest' ? [] : [v]
 }
 
-/** A maintenance week of the active plan: planned workouts open on the lighter version. */
+/**
+ * A lighter week of the active plan: planned workouts open on the shorter version. Past the end
+ * the last phase carries on as it was, so a plan ending on lighter weeks stays lighter until the
+ * person chooses what's next (never a silent step up).
+ */
 export function maintainOn(s: Pick<AppState, 'trainingPlans'>, date: string): boolean {
   const p = activePlan(s)
   const pos = p ? positionOn(p, date) : null
-  return !!pos?.maintain && !pos.ended
+  return !!pos?.maintain
 }
 
 /**
@@ -112,19 +118,41 @@ export function isHardKey(k: WorkoutKey, routines: Routine[] | undefined): boole
   return routineFor(k, routines)?.effort === 'hard'
 }
 
+/** Main muscles a hard workout trains (core left out, as in mainMuscles): a built-in lift's, or an own workout's moves. */
+function keyMuscles(k: WorkoutKey, routines: Routine[] | undefined): Set<MuscleGroup> {
+  if (isBuiltinKey(k)) return mainMuscles(k as WorkoutType)
+  const out = new Set<MuscleGroup>()
+  const r = routineFor(k, routines)
+  for (const sl of r ? slotsOf(r) : []) { const m = EXERCISE_BY_ID[sl.exId]?.primary; if (m && m !== 'core') out.add(m) }
+  return out
+}
+
 /**
  * Gentle notes about a plan's week (plan §3.3; they never block): more than one hard workout on
- * a day, the same muscles on back-to-back days and no rest day (the existing week rules). All
- * thresholds are judgement calls, unvalidated.
+ * a day, the same workout or two sharing two or more main muscles on back-to-back days (every hard
+ * workout of each day, own ones too, Sunday wrapping to Monday), and no rest day (the existing
+ * week rule). All thresholds are judgement calls, unvalidated.
  */
 export function planWeekNotes(week: PlanWeek, routines: Routine[] | undefined): string[] {
   const out: string[] = []
+  const hardOn = (d: number) => (week[d] || []).filter((k) => isHardKey(k, routines))
   for (const d of WEEK_ORDER) {
-    const hard = (week[d] || []).filter((k) => isHardKey(k, routines))
-    if (hard.length > 1) out.push(`${DAY_NAME[d]} has ${hard.length} harder workouts. One hard session a day, with anything else kept light, gives your body time to recover.`)
+    const hard = hardOn(d)
+    if (hard.length > 1) out.push(`${DAY_NAME[d]} has ${WORDS[hard.length] ?? hard.length} harder workouts. One hard session a day, with anything else light, leaves more room to recover.`)
   }
-  // back-to-back muscles and a week with no rest day, as the one-workout week already says them
-  for (const w of weekWarnings(scheduleMirror(week, routines))) out.push(w.text)
+  for (let i = 0; i < 7; i++) {
+    const a = WEEK_ORDER[i], b = WEEK_ORDER[(i + 1) % 7]
+    const A = hardOn(a), B = hardOn(b)
+    if (!A.length || !B.length) continue
+    const same = A.find((k) => B.includes(k))
+    const mb = new Set(B.flatMap((k) => [...keyMuscles(k, routines)]))
+    const shared = new Set(A.flatMap((k) => [...keyMuscles(k, routines)]).filter((m) => mb.has(m)))
+    if (same || shared.size >= 2) {
+      out.push(`${same ? keyTitle(same, routines) + ' is' : 'Two workouts for the same muscles are'} on back-to-back days (${DAY_NAME[a]} and ${DAY_NAME[b]}). Legs, then Push, then Pull gives each area time to recover.`)
+    }
+  }
+  // a week with no rest day, as the one-workout week already says it
+  for (const w of weekWarnings(scheduleMirror(week, routines))) if (w.kind === 'no-rest') out.push(w.text)
   return [...new Set(out)]
 }
 
@@ -160,12 +188,12 @@ const PPL = weekFromSchedule(DEFAULT_SCHEDULE as Schedule)
 export const PLAN_TEMPLATES: PlanTemplate[] = [
   {
     id: 'tpl-ppl-12', name: 'Push, Pull, Legs · 12 weeks',
-    about: 'Three lifting days and light cardio between them. Eight weeks building, then four lighter weeks to hold what you built.',
+    about: 'Three lifting days, light cardio on the days in between and a rest day. Eight weeks building, then four lighter weeks to help keep what you built.',
     phases: [{ name: 'Build', weeks: 8, week: PPL }, { name: 'Maintain', weeks: 4, maintain: true }],
   },
   {
     id: 'tpl-ppl-8', name: 'Push, Pull, Legs · 8 weeks',
-    about: 'The same week in a shorter block: six weeks building, then two lighter weeks.',
+    about: 'The same week over 8 weeks: six building, then two lighter weeks.',
     phases: [{ name: 'Build', weeks: 6, week: PPL }, { name: 'Maintain', weeks: 2, maintain: true }],
   },
 ]
@@ -186,8 +214,11 @@ export function cleanPhases(phases: PlanPhase[]): PlanPhase[] {
     if (left <= 0) break
     left -= weeks
     const week: PlanWeek = {}
-    if (!ph.maintain) for (let d = 0; d < 7; d++) week[d] = (ph.week?.[d] || []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4)
-    out.push({ id: ph.id, name: (ph.name || (ph.maintain ? 'Maintain' : 'Build')).slice(0, 40), weeks, ...(ph.maintain ? { maintain: true } : { week }) })
+    // every field checked, so a plan from a newer or buggy client can't break a launch
+    const maintain = ph.maintain === true
+    if (!maintain) for (let d = 0; d < 7; d++) { const v = ph.week && typeof ph.week === 'object' ? ph.week[d] : undefined; week[d] = (Array.isArray(v) ? v : []).filter((k) => typeof k === 'string' && k.length <= 64).slice(0, 4) }
+    const name = typeof ph.name === 'string' && ph.name.trim() ? ph.name.trim() : maintain ? 'Maintain' : 'Build'
+    out.push({ id: typeof ph.id === 'string' && ph.id ? ph.id.slice(0, 40) : newPhaseId(), name: [...name].slice(0, 40).join(''), weeks, ...(maintain ? { maintain: true } : { week }) })
   }
   return out
 }

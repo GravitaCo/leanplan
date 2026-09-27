@@ -109,7 +109,7 @@ export function PlanScreen() {
             <span className="s num">{!pos
               ? `Starts ${fmtDate(active.startedAt!).dow}`
               : pos.ended ? `Finished · ${pos.total} weeks`
-              : `Week ${pos.week} of ${pos.total} · ${pos.maintain ? `${pos.phase.name}, lighter` : pos.phase.name}`}</span>
+              : `Week ${pos.week} of ${pos.total} · ${pos.maintain ? 'Lighter week' : pos.phase.name}`}</span>
             <button className="linkbtn inl" onClick={() => setDraft({ d: { planId: active.id } })}>Edit</button>
           </div>
         </div>
@@ -126,11 +126,11 @@ export function PlanScreen() {
       {pos?.ended && (
         <div className="card dayopt">
           <div className="t">You've reached the end of {active!.name}.</div>
-          <div className="foot" style={{ padding: '0 0 10px' }}>Take a moment to look back, then choose what's next. Until you do, the last week carries on.</div>
+          <div className="foot" style={{ padding: '0 0 10px' }}>When you're ready, you can look back and choose what's next. Until then, your week carries on as it is.</div>
           <div className="chips"><button className="chip" onClick={() => setSheet('end')}>See what's next</button></div>
         </div>
       )}
-      {pos?.maintain && !pos.ended && (
+      {pos?.maintain && (
         <div className="foot" style={{ padding: '8px 4px 0' }}>Lighter weeks: the same workouts, opening on the shorter version. The full one is always there if you feel like it.</div>
       )}
 
@@ -149,7 +149,7 @@ export function PlanScreen() {
                 ) : (
                   <div className="m">
                     <div className="t">{names.join(' + ')}</div>
-                    {isToday && <div className="s">{pos.maintain && !pos.ended ? 'Today · lighter' : 'Today'}</div>}
+                    {isToday && <div className="s">{pos.maintain ? 'Today · lighter' : 'Today'}</div>}
                   </div>
                 )}
                 {keys.length > 0 && (keys[0] === 'Cardio' ? <span className="cdot" aria-hidden="true" /> : <Thumb video={keyVideo(keys[0], routines)} />)}

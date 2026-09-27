@@ -748,6 +748,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .pw-name { flex: 1; min-width: 0; background: none; border: 0; padding: 4px 0; font-size: 17px; font-weight: 600; color: var(--label); }
 .pw-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; font-size: 17px; }
 .pw-s { font-size: 13px; padding: 4px 0 2px; line-height: 1.35; }
+.pw-last { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; }
+.pw-last span { flex: 1; }
 .pw-week { padding: 8px 0 0; background: none !important; border-top: 1px solid var(--sep); margin-top: 6px; width: 100%; }
 .plan-note { font-size: 14px; line-height: 1.4; margin: 8px 0 0; border-radius: 16px; }
 .plantiles { grid-template-columns: 1fr 1fr; margin-top: 16px; }
