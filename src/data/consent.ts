@@ -308,15 +308,6 @@ export async function pullConsents(s: PersistedState): Promise<void> {
   }
 }
 
-/** "Keep this device's data in this account": its consent acts upload to that account under new
- *  ids (the old ids may already be another account's rows). */
-export function rekeyForAccount(s: PersistedState): void {
-  const log = consentLog(s)
-  const map = new Map<string, string>()
-  for (const r of log.records) { const id = uuid(); map.set(r.id, id); r.id = id; r._dirty = true }
-  if (log.healthCleared) log.healthCleared = map.get(log.healthCleared)
-  if (!log.healthCleared) delete log.healthCleared
-}
 
 /* ---------------- export before withdrawing health consent ---------------- */
 

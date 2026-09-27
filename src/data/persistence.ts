@@ -5,7 +5,7 @@ import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid, UUID_RE } from './supabase'
-import { cleanConsents, rekeyForAccount, unsyncedConsents, type ConsentLog } from './consent'
+import { cleanConsents, unsyncedConsents, type ConsentLog } from './consent'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
@@ -325,7 +325,6 @@ export function freshForDevice(): PersistedState {
 export function keepForAccount(s: PersistedState, uid: string): PersistedState {
   delete s._meta
   ensureMeta(s, true).owner = uid
-  rekeyForAccount(s)
   // consent is a person's own act: the new account answers the consent screen for itself, and
   // nothing of this log syncs until it does (never carry another account's grant or withdrawal)
   s.consents = { records: [] }

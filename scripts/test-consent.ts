@@ -294,6 +294,13 @@ async function consentFirst(fakeServer: FakeServer): Promise<void> {
   const up = fakeServer(emptyRows())
   const ok = await withFetch(up.fetchFn, () => pushDirty(s, m))
   checks.push(['once the consent is up, the data follows', ok.length === 0 && up.calls.some((c) => c.startsWith('POST day_logs'))])
+  // a health answer made under a clock the server refuses gets the upload's real time
+  const s2 = stateFromBackup({ days: {} } as never)
+  const m2 = ensureMeta(s2, false)
+  const r2 = recordConsent(s2, 'health', true)
+  r2.at = '1970-01-01T00:00:00.000Z'
+  await withFetch(fakeServer(emptyRows()).fetchFn, () => pushDirty(s2, m2))
+  checks.push(['a 1970 clock is repaired before upload, so sync isn\'t blocked for good', Date.parse(r2.at) >= Date.parse('2026-01-01') && !r2._dirty])
   report('consent first', checks)
 }
 

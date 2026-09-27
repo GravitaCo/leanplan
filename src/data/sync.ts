@@ -8,7 +8,7 @@ import type { DayLog, Food, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { pushConsents, pullConsents } from './consent'
+import { pushConsents, pullConsents, latestConsent } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -214,10 +214,16 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
     }
   }
   // consent first: a record reaches the server before (or with) the health data it covers
+  // a health answer recorded under a clock the server refuses (before 2026, e.g. a phone reset to
+  // 1970) would never upload and would hold the data back for good: it isn't on the server yet,
+  // so give it the real time of this upload instead
+  const health = latestConsent(s, 'health')
+  if (health?._dirty && !(Date.parse(health.at) >= Date.parse('2026-01-01'))) health.at = nowIso()
   await step('consents', () => pushConsents(s))
-  // enforced, not hoped for: while the health consent record isn't on the server, no data goes up
-  // (it stays dirty on the device and the next run retries)
-  if ((s.consents?.records || []).some((r) => r.type === 'health' && r._dirty)) {
+  // enforced, not hoped for: while the person's current health answer isn't on the server, no data
+  // goes up (it stays dirty on the device and the next run retries). Only the latest record counts:
+  // an older one the server refuses mustn't block everything behind it.
+  if (latestConsent(s, 'health')?._dirty) {
     if (!failed.length) failed.push('consents: health consent not uploaded yet')
     return failed
   }
