@@ -326,3 +326,25 @@ if they tap it. Nothing is regenerated for them automatically.
    Profile. (Default, not yet confirmed by Benn.)
 6. **16–17 no-AI rule:** enforced from self-declared age during the beta. This is flagged for the
    legal review. (Default.)
+
+## 14. Build decisions after design sign-off (Benn, 27 Sept 2026)
+
+The designs are on the Design canvas (https://claude.ai/artifact/EYDHM6mLouqwPsWxcDsWEb),
+rows "Onboarding 1" to "Onboarding 6". The notes s-ob1 … s-ob6 are the approved defaults.
+
+- **Under-16s:** after the kind stop, the new account and everything on the device are deleted
+  automatically. They're welcome back at 16.
+- **Declining health consent** ("Not now"): the person can still use Tali (food, workouts) with a
+  Starter week. There are no health questions, weight, check-ins or calorie numbers until they
+  agree, and they can agree later from Profile.
+- **Existing users who tap "Not now"** on the one-time sheet: their health data stays on the phone,
+  its sync is paused, and they're asked again once after 2 weeks. This needs a `security-data`
+  review.
+- **Pregnancy flag:** re-asked every 12 weeks and can be cleared any time in Profile. Confirmed.
+- **Draft option lists** (your-why chips, step bands, job types, minutes, enjoy options): approved
+  for the beta.
+- **Helplines** (checked 27 Sept 2026):
+  - **Beat:** England 0808 801 0677, Scotland 0808 801 0432, Wales 0808 801 0433, Northern Ireland
+    0808 801 0434. Open 3pm–8pm Monday to Friday; webchat and email too.
+  - **Others:** Samaritans 116 123 (free, 24/7), Childline 0800 1111 (free, 24/7), NHS 111
+    (England, Wales, Scotland; in Northern Ireland, your GP), 999.
