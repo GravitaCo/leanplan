@@ -4,7 +4,9 @@ import type { WorkoutType } from '@/core/types'
 import { SESSIONS, WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { EXERCISES } from '@/core/data/exercises'
 import { WEEK_ORDER, plannedOn, shortTitle, weekWarnings } from '@/core/domain/week'
-import { DAY_NAME } from '@/core/domain/date'
+import { DAY_NAME, fmtDate, todayStr } from '@/core/domain/date'
+import { activePlan, planWeekNotes, positionOn, weekSource } from '@/core/domain/plans'
+import { PlanEditorSheet, PlanEndSheet, PlanStartSheet, type PlanDraft } from './plan/TrainingPlanSheets'
 import { LibrarySheet } from './train/LibrarySheet'
 import { Thumb } from './train/Thumb'
 import { DayView, WorkoutView, workoutSub } from './plan/PlanViews'
@@ -13,7 +15,7 @@ import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
-import { aboutMins, builtinSlots, canBuild, isBuiltinKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
+import { aboutMins, builtinSlots, canBuild, isBuiltinKey, keyTitle, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 
 type Guide = 'split' | 'basics'
@@ -37,7 +39,13 @@ export function PlanScreen() {
   const profile = useStore((s) => s.data.profile)
   const mine = (routines || []).filter((r) => !r.archived)
   const build = canBuild(profile)
-  const [sheet, setSheet] = useState<null | 'workouts' | 'library'>(null)
+  const [sheet, setSheet] = useState<null | 'workouts' | 'library' | 'start' | 'end'>(null)
+  // the weekly plan (P5): being edited or started, and at which week (a tapped day)
+  const [draft, setDraft] = useState<{ d: PlanDraft; week?: number } | null>(null)
+  const trainingPlans = useStore((s) => s.data.trainingPlans)
+  const active = activePlan({ trainingPlans })
+  const today = todayStr()
+  const pos = active ? positionOn(active, today) : null
   const todayIdx = new Date().getDay()
 
   // Train's "Edit <workout> in Plan" opens that workout here
@@ -65,36 +73,93 @@ export function PlanScreen() {
       </>
     )
   }
-  if (dayIdx != null) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
+  if (dayIdx != null && !active) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
 
   const vals = WEEK_ORDER.map((d) => plannedOn(schedule, d))
   const lifts = vals.filter((v) => LIFTS.includes(v as WorkoutType)).length
   const cardio = vals.filter((v) => v === 'Cardio').length
   const rest = vals.filter((v) => v === 'Rest').length
   const ppl = LIFTS.every((l) => vals.includes(l))
-  const warns = weekWarnings(schedule)
+  const warns = pos ? planWeekNotes(pos.planWeek, routines).map((text) => ({ text })) : weekWarnings(schedule)
+  // a tapped day with a plan running edits the week this phase trains (a lighter phase's comes from its build phase)
+  const editDay = (d: number) => {
+    if (!active) { setDayIdx(d); return }
+    // before its start Monday, the plan's first week
+    const src = weekSource(active, pos?.phaseIndex ?? 0)
+    setDraft({ d: { planId: active.id }, week: src >= 0 ? src : undefined })
+  }
+  const planSheets = (
+    <>
+      {sheet === 'start' && <PlanStartSheet onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
+      {sheet === 'end' && active && <PlanEndSheet plan={active} onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
+      {draft && <PlanEditorSheet draft={draft.d} initialWeek={draft.week} onClose={() => setDraft(null)} />}
+    </>
+  )
   const n = (k: number, one: string, many = one + 's') => `${k} ${k === 1 ? one : many}`
 
   return (
     <div className="screen">
       <PageHeader title="Plan" />
 
-      <div className="plancard">
-        <div className="k">Your plan</div>
-        <div className="t">{ppl ? 'Push / Pull / Legs' : 'Your week'}</div>
-        <div className="pc-f">
-          <span className="s">{[n(lifts, 'lift'), cardio ? `${cardio} cardio` : '', n(rest, 'rest day')].filter(Boolean).join(' · ')}</span>
-          <button className="linkbtn inl" onClick={() => setGuide('split')}>About</button>
+      {active ? (
+        <div className="plancard">
+          <div className="k">Your plan</div>
+          <div className="t">{active.name}</div>
+          <div className="pc-f">
+            <span className="s num">{!pos
+              ? `Starts ${fmtDate(active.startedAt!).dow}`
+              : pos.ended ? `Finished · ${pos.total} weeks`
+              : `Week ${pos.week} of ${pos.total} · ${pos.maintain ? `${pos.phase.name}, lighter` : pos.phase.name}`}</span>
+            <button className="linkbtn inl" onClick={() => setDraft({ d: { planId: active.id } })}>Edit</button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="plancard">
+          <div className="k">Your week</div>
+          <div className="t">{ppl ? 'Push / Pull / Legs' : 'Your week'}</div>
+          <div className="pc-f">
+            <span className="s">{[n(lifts, 'lift'), cardio ? `${cardio} cardio` : '', n(rest, 'rest day')].filter(Boolean).join(' · ')}</span>
+            <button className="linkbtn inl" onClick={() => setGuide('split')}>About</button>
+          </div>
+        </div>
+      )}
+      {pos?.ended && (
+        <div className="card dayopt">
+          <div className="t">You've reached the end of {active!.name}.</div>
+          <div className="foot" style={{ padding: '0 0 10px' }}>Take a moment to look back, then choose what's next. Until you do, the last week carries on.</div>
+          <div className="chips"><button className="chip" onClick={() => setSheet('end')}>See what's next</button></div>
+        </div>
+      )}
+      {pos?.maintain && !pos.ended && (
+        <div className="foot" style={{ padding: '8px 4px 0' }}>Lighter weeks: the same workouts, opening on the shorter version. The full one is always there if you feel like it.</div>
+      )}
 
       <h2 className="grp-h">This week</h2>
       <div className="list wk">
         {WEEK_ORDER.map((d) => {
+          const isToday = d === todayIdx
+          if (pos) {
+            const keys = (pos.planWeek[d] || []).filter((k) => isBuiltinKey(k) || mine.some((r) => r.id === k))
+            const names = keys.map((k) => keyTitle(k, routines))
+            return (
+              <button className={'li wk-row' + (isToday ? ' today' : '')} key={d} onClick={() => editDay(d)} aria-label={`${DAY_NAME[d]}: ${names.length ? names.join(' and ') : 'Rest'}${isToday ? ', today' : ''}`}>
+                <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
+                {keys.length === 0 ? (
+                  <div className="m"><div className="t muted">Rest · recovery counts too</div></div>
+                ) : (
+                  <div className="m">
+                    <div className="t">{names.join(' + ')}</div>
+                    {isToday && <div className="s">{pos.maintain && !pos.ended ? 'Today · lighter' : 'Today'}</div>}
+                  </div>
+                )}
+                {keys.length > 0 && (keys[0] === 'Cardio' ? <span className="cdot" aria-hidden="true" /> : <Thumb video={keyVideo(keys[0], routines)} />)}
+              </button>
+            )
+          }
           const v = plannedOn(schedule, d)
-          const today = d === todayIdx
+          const today = isToday
           return (
-            <button className={'li wk-row' + (today ? ' today' : '')} key={d} onClick={() => setDayIdx(d)} aria-label={`${DAY_NAME[d]}: ${v === 'Rest' ? 'Rest' : shortTitle(v)}${today ? ', today' : ''}`}>
+            <button className={'li wk-row' + (today ? ' today' : '')} key={d} onClick={() => editDay(d)} aria-label={`${DAY_NAME[d]}: ${v === 'Rest' ? 'Rest' : shortTitle(v)}${today ? ', today' : ''}`}>
               <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
               {v === 'Rest' ? (
                 <div className="m"><div className="t muted">Rest · recovery counts too</div></div>
@@ -112,10 +177,16 @@ export function PlanScreen() {
       </div>
       {warns.map((w) => <div className="card plan-note" key={w.text}>{w.text}</div>)}
       <div className="foot">
-        Tap a day to change it. Changes repeat every week. Aim for three lifts a week with a rest day between where you can.
+        {pos ? <>Tap a day to change this phase's week. </> : <>Tap a day to change it. Changes repeat every week. </>}Aim for three lifts a week with a rest day between where you can.
         Legs, then Push, then Pull means back-to-back sessions train different muscles. Daily steps burn more across a
         week than the gym sessions do.
       </div>
+
+      {!active && (
+        <div className="list">
+          <button className="li act" onClick={() => setSheet('start')}><Icon name="plus" size={17} /><span>Start a plan</span></button>
+        </div>
+      )}
 
       <div className="tiles plantiles">
         <button className="tile st" onClick={() => setSheet('workouts')}>
@@ -165,6 +236,7 @@ export function PlanScreen() {
       )}
       {sheet === 'library' && <LibrarySheet onClose={() => setSheet(null)} />}
       {builderSheet}
+      {planSheets}
       {sheet === 'workouts' && (
         <Sheet title="Workouts" onClose={() => setSheet(null)} left={null} right={<button className="navbtn b" onClick={() => setSheet(null)}>Done</button>}>
           <div className="lbl" style={{ paddingTop: 0 }}>Ready-made</div>

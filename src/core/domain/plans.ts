@@ -191,3 +191,33 @@ export function cleanPhases(phases: PlanPhase[]): PlanPhase[] {
   }
   return out
 }
+
+/** A phase id: only needs to be unique within its plan. */
+export const newPhaseId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `ph-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+/** A template's phases, ready to edit or start (each with its own id and its own copy of the week). */
+export function phasesOf(t: Pick<PlanTemplate, 'phases'>): PlanPhase[] {
+  return t.phases.map((ph) => ({ ...ph, id: newPhaseId(), ...(ph.week ? { week: copyWeek(ph.week) } : {}) }))
+}
+
+export function copyWeek(w: PlanWeek | undefined): PlanWeek {
+  const out: PlanWeek = {}
+  for (let d = 0; d < 7; d++) out[d] = [...(w?.[d] || [])]
+  return out
+}
+
+/** When a new plan starts: the Monday of this week, or of next week, so plan weeks match the week view. */
+export function planStart(today: string, when: 'this' | 'next'): string {
+  const back = (parseYmd(today).getDay() + 6) % 7
+  return shiftDay(today, -back + (when === 'next' ? 7 : 0))
+}
+
+/** The build phase whose week a phase trains (itself, or the one a maintain phase reuses); -1 for none. */
+export function weekSource(p: Pick<TrainingPlan, 'phases'>, i: number): number {
+  const ph = p.phases[i]
+  if (ph && !ph.maintain) return i
+  for (let j = i - 1; j >= 0; j--) if (!p.phases[j].maintain) return j
+  for (let j = i + 1; j < p.phases.length; j++) if (!p.phases[j].maintain) return j
+  return -1
+}

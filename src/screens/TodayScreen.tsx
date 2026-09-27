@@ -5,14 +5,13 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { WorkoutType } from '@/core/types'
-import { plannedOn } from '@/core/domain/week'
+import { plannedKeys } from '@/core/domain/plans'
+import { keyTitle, templateFor } from '@/core/domain/routines'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
 import { builtinType, sessionsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
-import { WORKOUTS } from '@/core/data/workouts'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
@@ -63,11 +62,12 @@ export function TodayScreen() {
   const f = fmtDate(cur)
 
   const sess = sessionsOf(day, cur)
-  // anything unknown in the schedule reads as Rest (see plannedOn)
-  const sched = plannedOn(data.schedule, f.idx)
+  // the plan's workouts for the day, or the schedule's one (unknown keys are left out)
+  const planned = plannedKeys(data, cur)
+  const first = planned[0]
   const openTrain = useStore((s) => s.openTrain)
   const logged = sess.length > 0
-  const isRest = !logged && sched === 'Rest'
+  const isRest = !logged && !first
 
   const meal = mealNow()
   const us = isToday ? usuals(data, cur, meal) : []
@@ -94,14 +94,14 @@ export function TodayScreen() {
   const syncLabel = !authed ? 'not syncing' : sync === 'syncing' ? 'syncing…' : sync === 'error' ? 'sync error' : sync === 'offline' ? 'offline' : sync === 'synced' ? 'synced' : ''
 
   // Move card: what today holds (a logged session wins over the plan)
-  const plan = WORKOUTS[sched]
+  const plan = first ? templateFor(first, data.routines) : null
   const moveTitle = logged
     ? sess.length > 1 ? `${sess.length} sessions` : sess[0].title || builtinType(sess[0])
-    : isRest ? 'Rest day' : plan?.title || sched
+    : isRest ? 'Rest day' : planned.length > 1 ? planned.map((k) => keyTitle(k, data.routines)).join(' + ') : plan?.title || keyTitle(first!, data.routines)
   const moveSub = logged
     ? sess.length > 1 ? 'Logged today' : sess[0].modality === 'strength' ? 'Logged' : `Logged${sess[0].mins ? ` · ${sess[0].mins} min` : ''}`
     : isRest ? 'Recovery counts too'
-    : sched === 'Cardio' ? (plan?.ex[0]?.t || 'Cardio') : plan ? `${plan.ex.length} exercises` : 'Planned'
+    : planned.length > 1 ? `${planned.length} workouts planned` : first === 'Cardio' ? (plan?.ex[0]?.t || 'Cardio') : plan ? `${plan.ex.length} ${plan.ex.length === 1 ? 'exercise' : 'exercises'}` : 'Planned'
 
   const loggedDays = past.filter((x) => x.logged).length
   const dl = ws.prevAvgP != null ? Math.round(ws.avgP - ws.prevAvgP) : null
@@ -253,7 +253,7 @@ export function TodayScreen() {
               <span className="ps">{moveSub}</span>
             </span>
             {!logged && !isRest
-              ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(sched as WorkoutType) }}>Start</button>
+              ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(first!) }}>Start</button>
               : <Chevron />}
           </div>
         </section>

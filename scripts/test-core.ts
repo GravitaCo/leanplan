@@ -28,7 +28,7 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { activePlan, maintainOn, nextSuggestions, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
 import { aboutMins, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
@@ -1564,6 +1564,24 @@ async function timeouts(): Promise<void> {
     backupSummary({ days: {}, trainingPlans: [P(a), P('z', { state: 'archived' })] } as never).plans].join(' ')
   const ok = got.startsWith(`2 ${a} archived undefined true 1`); if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: local data made valid, backup', JSON.stringify(got))
+}
+
+{
+  // a plan's day can hold several workouts and own ones: "pick it up" and the start date follow it
+  const r1 = { id: '88888888-8888-4888-8888-888888888888', name: 'Mine', blocks: [], modality: 'strength' }
+  const plan = { id: 'p', name: 'P', source: 'custom', state: 'active', startedAt: '2026-09-21', phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs', 'Cardio'], 3: ['Push'], 5: [r1.id] } }] }
+  const e = { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null }
+  const st = (days: any) => ({ target: { kcal: 2000 }, schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, profile: {}, days, customFoods: [], recipes: [], routines: [r1], trainingPlans: [plan] }) as any
+  const got = [
+    catchUp(st({ '2026-09-20': e }), '2026-09-23')?.type ?? '-',  // Wed (Push): Monday's Legs from the plan, not the empty schedule
+    catchUp(st({ '2026-09-20': e }), '2026-09-26')?.type ?? '-',  // Sat: Friday's own workout
+    planStart('2026-09-23', 'this'), planStart('2026-09-23', 'next'), planStart('2026-09-27', 'this'),
+    weekSource({ phases: [{ maintain: false }, { maintain: true }, { maintain: false }, { maintain: true }] as any }, 3),
+    weekSource({ phases: [{ maintain: true }, { maintain: false }] as any }, 0),
+  ].join(' ')
+  const want = `Legs ${r1.id} 2026-09-21 2026-09-28 2026-09-21 2 1`
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: pick up from the plan, start dates, which week a phase trains', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

@@ -13,16 +13,17 @@ import { Icon } from '@/ui/icons'
  * or the exercise library. Nothing here changes the weekly plan.
  */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
-  planned?: WorkoutType | 'Rest'
+  /** today's planned workouts, left out of "a different workout" */
+  planned?: string[]
   onLog: () => void
   /** a built-in's type or the id of one of the user's own workouts */
   onWorkout: (w: string) => void
   onLibrary: () => void
   onClose: () => void
 }) {
-  const others = SESSIONS.filter((s): s is WorkoutType => s !== 'Rest' && s !== planned)
+  const others = SESSIONS.filter((s): s is WorkoutType => s !== 'Rest' && !planned?.includes(s))
   const all = useStore((s) => s.data.routines)
-  const mine = (all || []).filter((r) => !r.archived)
+  const mine = (all || []).filter((r) => !r.archived && !planned?.includes(r.id))
   return (
     <Sheet title="Add something" onClose={onClose}>
       <div className="list icons">

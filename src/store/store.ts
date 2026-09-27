@@ -181,7 +181,7 @@ function mirrorPlan(s: PersistedState): void {
   const next = scheduleMirror(pos.planWeek, s.routines)
   let changed = false
   for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
-  if (changed) { const m = ensureMeta(s, false); m.settings.dirty = true; m.settings.u = nowIso() }
+  if (changed) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
 }
 
 function setSessions(day: DayLog, list: TrainingSession[]): void {
