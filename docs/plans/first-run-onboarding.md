@@ -196,16 +196,33 @@ has a one-line "Why we ask" and a progress line ("About 2 minutes left").
 - privacy notice and DPIA
 - connection indicator
 
-## 10. Build phases (each reviewed by the relevant agents and `ship-critic`)
+## 10. Build phases
 
-1. Consent table, account deletion and the connection indicator.
-2. Questionnaire UI and safety routing (the gentle and maintenance paths).
-3. `recommend.ts`: pick and adapt a plan, with the summary screen.
-4. Target range output, units and floors.
-5. `suggestRateAdjustment` and the plan adaptation loop.
-6. New plans, and the optional AI "why this plan".
+Each screen is drafted on the claude.ai Design canvas and approved by Benn before it's built.
+Each build is then reviewed by the relevant agents and `ship-critic`.
 
-## 11. Real personalisation (in progress)
+1. **Foundations:**
+   - consents table
+   - account deletion
+   - privacy notice and DPIA
+   - connection indicator
+   - exercise-library data gaps filled (movement pattern, muscles, time cost, skill, impact,
+     home-friendly, progression chains; see the engine doc)
+2. **Design boards:** the wizard, the setup card, the summary / "why this plan", and the
+   signposting screens.
+3. **Questionnaire UI and safety routing** (gentle and maintenance paths).
+4. **Personalised training engine, day 1:** constraint-based generation with a "why" trace and
+   "find your weight" sessions. See [`personalised-training-engine.md`](./personalised-training-engine.md).
+5. **Nutrition:** target range output, units and sex-split floors.
+6. **Learning loop:**
+   - per-exercise strength estimate
+   - load and swap suggestions
+   - schedule fitted to adherence
+   - `suggestRateAdjustment`
+7. **New plans:** home with no equipment, walk-to-run, 4-day upper/lower.
+8. **Later:** optional AI wording for "why this plan".
+
+## 11. Real personalisation
 
 **Test for "not fake":**
 - Two people with different answers get materially different plans.
@@ -213,4 +230,17 @@ has a one-line "Why we ask" and a progress line ("About 2 minutes left").
   to one of their answers or their own logged data, and the app can say which.
 - The plan changes because of what that person did, not on a fixed calendar.
 
-The design is being worked on by `fitness-workouts`, with research into what current apps do.
+Design: [`personalised-training-engine.md`](./personalised-training-engine.md). This replaces
+pick-and-adapt.
+
+**Engine decisions (Benn, 27 Sept 2026):**
+- **Plans:** the generated plan is the recommendation. Tali's hand-made plans stay browsable,
+  marked "made by Tali".
+- **Starting weights:** "Find your weight" sessions 1–2, with an optional "I know my weights".
+- **Effort:** "How was that set?" is asked on the last set of each exercise only.
+- **Likes:** a quiet thumbs up/down on exercises. Swapping an exercise away twice counts as a
+  dislike.
+- **Volume increases:** optional and rare. At most every 2 weeks, never during a deficit or after
+  a load note. Reductions are always offered first.
+- **Aggregate log data:** not used in v1. Revisit after the consents table and DPIA.
+- **"Why this plan":** rules-based in v1. AI wording comes later.
