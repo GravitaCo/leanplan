@@ -168,7 +168,8 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
  */
 export type WorkoutKey = string
 
-export const isBuiltinKey = (key: WorkoutKey): boolean => !!WORKOUTS[key]
+// own property only: a synced key like "constructor" is never taken for a built-in
+export const isBuiltinKey = (key: WorkoutKey): boolean => typeof key === 'string' && Object.prototype.hasOwnProperty.call(WORKOUTS, key)
 
 /** The user's own workout a key names (archived ones too, so a logged day still opens). */
 export function routineFor(key: WorkoutKey, routines: Routine[] | undefined): Routine | undefined {

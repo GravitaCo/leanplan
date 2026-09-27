@@ -28,7 +28,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { activePlan, cleanPhases, positionOn, scheduleMirror } from '@/core/domain/plans'
+import { activePlan, cleanPhases, positionOn, scheduleMirror, supersededPlans } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -137,6 +137,8 @@ interface StoreState {
   startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
   updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
   finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** keep a plan's look back without finishing it (its next plan starts later) */
+  notePlan: (id: string, reflection: { good?: string; change?: string }) => void
   /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
   syncPlanMirror: () => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
@@ -176,8 +178,11 @@ function ensureDay(s: PersistedState, d: string): DayLog {
  * (security-data). Returns whether the schedule changed.
  */
 function mirrorPlan(s: PersistedState, mark: boolean): boolean {
-  const p = activePlan(s)
-  const pos = p ? positionOn(p, todayStr()) : null
+  const today = todayStr()
+  // a plan chosen to start later has now started: the one it replaces is finished
+  for (const old of supersededPlans(s, today)) { old.state = 'completed'; old.completedAt = nowIso(); old._dirty = true; old._u = nowIso() }
+  const p = activePlan(s, today)
+  const pos = p ? positionOn(p, today) : null
   if (!pos) return false
   const next = scheduleMirror(pos.planWeek, s.routines)
   let changed = false
@@ -583,9 +588,12 @@ export const useStore = create<StoreState>()(
         set((st) => {
           if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
           const today = todayStr()
-          // one active plan: the one in progress is finished (or put away if it never started)
+          const start = input.startedAt ?? today
+          // one plan in charge: the one in progress is finished (or put away if it never started).
+          // A plan chosen to start later leaves it running until then (mirrorPlan finishes it).
           for (const p of st.data.trainingPlans) {
             if (p.state !== 'active') continue
+            if (start > today && p.startedAt && p.startedAt <= today) continue
             p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
             if (p.state === 'completed') p.completedAt = nowIso()
             p._dirty = true; p._u = nowIso()
@@ -614,6 +622,18 @@ export const useStore = create<StoreState>()(
         saved('Plan updated')
       },
 
+      notePlan: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          const good = reflection.good?.trim().slice(0, 500), change = reflection.change?.trim().slice(0, 500)
+          if (!good && !change) return
+          p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+        })
+        saved()
+      },
+
       finishPlan: (id, reflection, state = 'completed') => {
         set((st) => {
           const p = (st.data.trainingPlans || []).find((x) => x.id === id)
@@ -629,10 +649,11 @@ export const useStore = create<StoreState>()(
       },
 
       syncPlanMirror: () => {
-        const before = JSON.stringify(get().data.schedule)
+        const snap = () => JSON.stringify([get().data.schedule, (get().data.trainingPlans || []).map((p) => p.state)])
+        const before = snap()
         // local only (launch, back to the app): the next sync mirrors again on fresh data and uploads
         set((st) => { mirrorPlan(st.data, false) })
-        if (JSON.stringify(get().data.schedule) !== before) persist()
+        if (snap() !== before) persist()
       },
 
       saveTargets: (t, rangeWidth) => {

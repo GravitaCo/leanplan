@@ -183,7 +183,8 @@ export function TrainScreen() {
     return { k, session, inProgress, show: !session || inProgress, sets, done, sub, video: keyVideo(k, routines) }
   }
   const rows = planned.map(rowOf)
-  const first = planned[0] as WorkoutKey | undefined
+  // the lighter options apply to the day's first workout; on a lighter week, its first hard one (the one shortened)
+  const first = ((maintain ? planned.find((k) => isHardKey(k, routines)) : undefined) ?? planned[0]) as WorkoutKey | undefined
   const allDone = rows.length > 0 && rows.every((r) => !r.show)
   const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && !planned.includes(pickUp)
   const lighterShown = !logged && !restDay

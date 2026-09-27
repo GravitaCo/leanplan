@@ -28,8 +28,8 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
-import { aboutMins, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
+import { activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { aboutMins, isBuiltinKey, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
@@ -1579,11 +1579,11 @@ async function timeouts(): Promise<void> {
   const got = [
     catchUp(st({ '2026-09-20': e }), '2026-09-23')?.type ?? '-',  // Wed (Push): Monday's Legs from the plan, not the empty schedule
     catchUp(st({ '2026-09-20': e }), '2026-09-26')?.type ?? '-',  // Sat: Friday's own workout
-    planStart('2026-09-23', 'this'), planStart('2026-09-23', 'next'), planStart('2026-09-27', 'this'),
+    planStart('2026-09-23', 'today'), planStart('2026-09-23', 'monday'), planStart('2026-09-27', 'monday'), planStart('2026-09-28', 'monday'),
     weekSource({ phases: [{ maintain: false }, { maintain: true }, { maintain: false }, { maintain: true }] as any }, 3),
     weekSource({ phases: [{ maintain: true }, { maintain: false }] as any }, 0),
   ].join(' ')
-  const want = `Legs ${r1.id} 2026-09-21 2026-09-28 2026-09-21 2 1`
+  const want = `Legs ${r1.id} 2026-09-23 2026-09-28 2026-09-28 2026-10-05 2 1`
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: pick up from the plan, start dates, which week a phase trains', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
@@ -1601,6 +1601,23 @@ async function timeouts(): Promise<void> {
   const want = 'ok Build:1:[]["Push"],M:2:[][] undefined undefined undefined Fewer days undefined string'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: junk phases and fields made valid', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // a next plan chosen to start later leaves the current one in charge until then; a plan started today plans nothing before today
+  const ph = (w: any) => [{ id: 'a', name: 'Build', weeks: 4, week: w }]
+  const old = { id: 'o', name: 'Old', source: 'custom', state: 'active', startedAt: '2026-06-29', phases: [{ id: 'a', name: 'Build', weeks: 12, week: { 1: ['Legs', 'Pull'], 6: ['Push'] } }, { id: 'b', name: 'M', weeks: 1, maintain: true }] }
+  const nxt = { id: 'n', name: 'New', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: ph({ 1: ['Push'] }) }
+  const s = { trainingPlans: [old, nxt], schedule: { 0: 'Rest', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const fresh = { trainingPlans: [{ id: 'f', name: 'F', source: 'custom', state: 'active', startedAt: '2026-09-27', phases: ph({ 6: ['Push'] }) }], schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const got = [
+    activePlan(s, '2026-09-27')?.id, upcomingPlan(s, '2026-09-27')?.id, String(maintainOn(s, '2026-09-27')), plannedKeys(s, '2026-09-26').join('+'),
+    activePlan(s, '2026-09-28')?.id, plannedKeys(s, '2026-09-28').join('+'), supersededPlans(s, '2026-09-28').map((p) => p.id).join(','), supersededPlans(s, '2026-09-27').length,
+    plannedKeys(fresh, '2026-09-26').join('+') || 'none', isBuiltinKey('constructor'), isBuiltinKey('Push'),
+  ].join(' ')
+  const want = 'o n true Push n Push o 0 none false true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: next plan waits its turn, no plan before its start, own keys', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

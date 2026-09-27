@@ -87,11 +87,12 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
   const startPlan = useStore((s) => s.startPlan)
   const updatePlan = useStore((s) => s.updatePlan)
   const finishPlan = useStore((s) => s.finishPlan)
+  const notePlan = useStore((s) => s.notePlan)
   const showToast = useStore((s) => s.showToast)
   const init = existing ?? ('planId' in draft ? undefined : draft)
   const [name, setName] = useState(init?.name ?? 'My plan')
   const [phases, setPhases] = useState<PlanPhase[]>(() => (init?.phases ?? []).map((ph) => ({ ...ph, ...(ph.maintain ? {} : { week: copyWeek(ph.week) }) })))
-  const [when, setWhen] = useState<'this' | 'next'>('this')
+  const [when, setWhen] = useState<'today' | 'monday'>('today')
   const [weekAt, setWeekAt] = useState<number | null>(initialWeek ?? null)
   const direct = initialWeek != null
   // a view swap inside the open sheet doesn't slide it up again
@@ -134,8 +135,10 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
     if (!hasBuild) { showToast('Add a build phase, so the lighter weeks have workouts to repeat'); return }
     if (existing) updatePlan(existing.id, { name, phases })
     else if (!('planId' in draft)) {
-      if (draft.after) finishPlan(draft.after.id, draft.after.reflection)
-      startPlan({ name, phases, source: draft.source, baseTemplateId: draft.baseTemplateId, clonedFromId: draft.clonedFromId, startedAt: planStart(todayStr(), when) })
+      const start = planStart(todayStr(), when)
+      // the plan that ended keeps going until this one starts; its look back is kept either way
+      if (draft.after) { if (start <= todayStr()) finishPlan(draft.after.id, draft.after.reflection); else notePlan(draft.after.id, draft.after.reflection) }
+      startPlan({ name, phases, source: draft.source, baseTemplateId: draft.baseTemplateId, clonedFromId: draft.clonedFromId, startedAt: start })
     }
     onClose()
   }
@@ -223,7 +226,7 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
       {!existing && (
         <>
           <div className="lbl">Starts</div>
-          <Seg options={[['this', 'This week'], ['next', 'Next week']]} value={when} onChange={setWhen} />
+          <Seg options={[['today', 'Today'], ['monday', 'Next Monday']]} value={when} onChange={setWhen} />
         </>
       )}
       <div className="lbl">Phases · {weeksLabel(total)}</div>
@@ -261,13 +264,13 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
         <button className="li act" onClick={addPhase}><Icon name="plus" size={17} /><span>Add a phase</span></button>
       </div>
       <div className="foot" style={{ padding: '8px 4px 0' }}>
-        Weeks are counted from the Monday the plan starts. Where you are follows the calendar, so days off never push the plan back.
+        Weeks are counted from the day the plan starts. Where you are follows the calendar, so days off never push the plan back.
       </div>
       {existing && (
         <div className="stack">
           {stopping ? (
             <>
-              <div className="foot" style={{ padding: '0 4px' }}>Stop this plan? Your weekly schedule keeps one workout a day from this week, and your logged workouts are kept. You can start another plan whenever it suits you.</div>
+              <div className="foot" style={{ padding: '0 4px' }}>Stop this plan? Your weekly schedule keeps one ready-made workout a day from this week (a day with only your own workouts shows as light cardio), and your logged workouts are kept. You can start another plan whenever it suits you.</div>
               <button className="btn" onClick={() => { finishPlan(existing.id, undefined, 'archived'); onClose() }}>Stop plan</button>
               <button className="btn gray" onClick={() => setStopping(false)}>Keep it</button>
             </>
@@ -317,7 +320,7 @@ export function PlanEndSheet({ plan, onClose, onDraft }: { plan: TrainingPlan; o
           <div className="m"><div className="t">Build your own</div><div className="s">Start with an empty week</div></div><Chevron />
         </button>
         <button className="li" onClick={() => { finishPlan(plan.id, reflection); onClose() }}>
-          <div className="m"><div className="t">Keep going without a plan</div><div className="s">Your weekly schedule keeps one workout a day from your last week, at the full version</div></div>
+          <div className="m"><div className="t">Keep going without a plan</div><div className="s">One ready-made workout a day from your last week, at the full version. Days with only your own workouts show as light cardio</div></div>
         </button>
       </div>
       <div className="foot" style={{ padding: '8px 4px 0' }}>Not ready to choose? Close this and your last week carries on as it is until you are.</div>

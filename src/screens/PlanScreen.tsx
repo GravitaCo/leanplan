@@ -5,7 +5,7 @@ import { SESSIONS, WORKOUTS, LIFTS } from '@/core/data/workouts'
 import { EXERCISES } from '@/core/data/exercises'
 import { WEEK_ORDER, plannedOn, shortTitle, weekWarnings } from '@/core/domain/week'
 import { DAY_NAME, fmtDate, todayStr } from '@/core/domain/date'
-import { activePlan, planWeekNotes, positionOn, weekSource } from '@/core/domain/plans'
+import { activePlan, planWeekNotes, positionOn, upcomingPlan, weekSource } from '@/core/domain/plans'
 import { PlanEditorSheet, PlanEndSheet, PlanStartSheet, type PlanDraft } from './plan/TrainingPlanSheets'
 import { LibrarySheet } from './train/LibrarySheet'
 import { Thumb } from './train/Thumb'
@@ -43,9 +43,11 @@ export function PlanScreen() {
   // the weekly plan (P5): being edited or started, and at which week (a tapped day)
   const [draft, setDraft] = useState<{ d: PlanDraft; week?: number } | null>(null)
   const trainingPlans = useStore((s) => s.data.trainingPlans)
-  const active = activePlan({ trainingPlans })
   const today = todayStr()
+  const active = activePlan({ trainingPlans }, today)
   const pos = active ? positionOn(active, today) : null
+  // the next plan, chosen at the end of this one, waiting for its start day
+  const next = upcomingPlan({ trainingPlans }, today)
   const todayIdx = new Date().getDay()
 
   // Train's "Edit <workout> in Plan" opens that workout here
@@ -73,7 +75,7 @@ export function PlanScreen() {
       </>
     )
   }
-  if (dayIdx != null && !active) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
+  if (dayIdx != null && !pos) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
 
   const vals = WEEK_ORDER.map((d) => plannedOn(schedule, d))
   const lifts = vals.filter((v) => LIFTS.includes(v as WorkoutType)).length
@@ -83,9 +85,9 @@ export function PlanScreen() {
   const warns = pos ? planWeekNotes(pos.planWeek, routines).map((text) => ({ text })) : weekWarnings(schedule)
   // a tapped day with a plan running edits the week this phase trains (a lighter phase's comes from its build phase)
   const editDay = (d: number) => {
-    if (!active) { setDayIdx(d); return }
-    // before its start Monday, the plan's first week
-    const src = weekSource(active, pos?.phaseIndex ?? 0)
+    // no plan running yet (none, or one starting later): this week's schedule, as before
+    if (!active || !pos) { setDayIdx(d); return }
+    const src = weekSource(active, pos.phaseIndex)
     setDraft({ d: { planId: active.id }, week: src >= 0 ? src : undefined })
   }
   const planSheets = (
@@ -123,7 +125,15 @@ export function PlanScreen() {
           </div>
         </div>
       )}
-      {pos?.ended && (
+      {next && (
+        <div className="list">
+          <button className="li" onClick={() => setDraft({ d: { planId: next.id } })}>
+            <div className="m"><div className="t">Next: {next.name}</div><div className="s">Starts {fmtDate(next.startedAt!).dow}. Until then, this week carries on.</div></div>
+            <Chevron />
+          </button>
+        </div>
+      )}
+      {pos?.ended && !next && (
         <div className="card dayopt">
           <div className="t">You've reached the end of {active!.name}.</div>
           <div className="foot" style={{ padding: '0 0 10px' }}>When you're ready, you can look back and choose what's next. Until then, your week carries on as it is.</div>

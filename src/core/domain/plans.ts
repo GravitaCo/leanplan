@@ -1,7 +1,7 @@
 import type { AppState, MuscleGroup, PlanPhase, PlanWeek, Routine, Schedule, TrainingPlan, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { DEFAULT_SCHEDULE, LIFTS } from '@/core/data/workouts'
-import { DAY_NAME, parseYmd, shiftDay } from './date'
+import { DAY_NAME, parseYmd, shiftDay, todayStr } from './date'
 import { isBuiltinKey, keyTitle, routineFor, slotsOf, type WorkoutKey } from './routines'
 import { mainMuscles, plannedOn, weekWarnings, WEEK_ORDER } from './week'
 
@@ -20,10 +20,31 @@ const DAY_MS = 86400000
 const WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four' }
 const daysBetween = (a: string, b: string) => Math.round((parseYmd(b).getTime() - parseYmd(a).getTime()) / DAY_MS)
 
-/** The active plan: at most one; if two devices each started one, the later start wins. */
-export function activePlan(s: Pick<AppState, 'trainingPlans'>): TrainingPlan | undefined {
-  const act = (s.trainingPlans || []).filter((p) => p.state === 'active' && p.startedAt && p.phases.length)
-  return act.sort((a, b) => (b.startedAt! > a.startedAt! ? 1 : b.startedAt! < a.startedAt! ? -1 : (b._u || '') > (a._u || '') ? 1 : -1))[0]
+const byStart = (a: TrainingPlan, b: TrainingPlan) => (b.startedAt! > a.startedAt! ? 1 : b.startedAt! < a.startedAt! ? -1 : (b._u || '') > (a._u || '') ? 1 : -1)
+const activeList = (s: Pick<AppState, 'trainingPlans'>) => (s.trainingPlans || []).filter((p) => p.state === 'active' && p.startedAt && p.phases.length)
+
+/**
+ * The plan in charge on a date (today by default): the active plan with the latest start on or
+ * before it (two devices each starting one: the later start wins). A plan chosen to start later
+ * leaves the current one running until then. With none started yet, the next one to start (so
+ * the Plan screen can say when), which plans nothing before its start.
+ */
+export function activePlan(s: Pick<AppState, 'trainingPlans'>, date: string = todayStr()): TrainingPlan | undefined {
+  const act = activeList(s)
+  return act.filter((p) => p.startedAt! <= date).sort(byStart)[0] ?? act.sort((a, b) => -byStart(a, b))[0]
+}
+
+/** A plan waiting to start after the one in charge today (chosen at the end of a plan). */
+export function upcomingPlan(s: Pick<AppState, 'trainingPlans'>, date: string = todayStr()): TrainingPlan | undefined {
+  const cur = activePlan(s, date)
+  return activeList(s).filter((p) => p !== cur && p.startedAt! > date).sort((a, b) => -byStart(a, b))[0]
+}
+
+/** Active plans a later-started one has replaced by this date: they're finished (completed). */
+export function supersededPlans(s: Pick<AppState, 'trainingPlans'>, date: string = todayStr()): TrainingPlan[] {
+  const cur = activePlan(s, date)
+  if (!cur || cur.startedAt! > date) return []
+  return activeList(s).filter((p) => p !== cur && p.startedAt! <= date)
 }
 
 export const totalWeeks = (p: Pick<TrainingPlan, 'phases'>) => p.phases.reduce((a, x) => a + Math.max(0, x.weeks), 0)
@@ -76,7 +97,7 @@ export function endDate(p: TrainingPlan): string | null {
  * own workout removed, or from a newer app) are left out rather than breaking the day.
  */
 export function plannedKeys(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'routines'>, date: string): WorkoutKey[] {
-  const p = activePlan(s)
+  const p = activePlan(s, date)
   const pos = p ? positionOn(p, date) : null
   const idx = parseYmd(date).getDay()
   if (pos) {
@@ -92,7 +113,7 @@ export function plannedKeys(s: Pick<AppState, 'trainingPlans' | 'schedule' | 'ro
  * person chooses what's next (never a silent step up).
  */
 export function maintainOn(s: Pick<AppState, 'trainingPlans'>, date: string): boolean {
-  const p = activePlan(s)
+  const p = activePlan(s, date)
   const pos = p ? positionOn(p, date) : null
   return !!pos?.maintain
 }
@@ -238,10 +259,15 @@ export function copyWeek(w: PlanWeek | undefined): PlanWeek {
   return out
 }
 
-/** When a new plan starts: the Monday of this week, or of next week, so plan weeks match the week view. */
-export function planStart(today: string, when: 'this' | 'next'): string {
-  const back = (parseYmd(today).getDay() + 6) % 7
-  return shiftDay(today, -back + (when === 'next' ? 7 : 0))
+/**
+ * When a new plan starts: today, or next Monday. Never an earlier day, so a plan never rewrites
+ * days already lived (no "pick it up" for a workout that wasn't planned then); its weeks run
+ * seven days from the start.
+ */
+export function planStart(today: string, when: 'today' | 'monday'): string {
+  if (when === 'today') return today
+  const ahead = (8 - parseYmd(today).getDay()) % 7 || 7
+  return shiftDay(today, ahead)
 }
 
 /** The build phase whose week a phase trains (itself, or the one a maintain phase reuses); -1 for none. */
