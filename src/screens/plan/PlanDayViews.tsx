@@ -76,7 +76,9 @@ export function PlanDayView({ planId, phaseIndex, idx, backLabel = 'My week', on
   const rest = keys.length === 0
   const ph = plan.phases[phaseIndex]
   const lighterAfter = plan.phases.some((x, j) => j > phaseIndex && x.maintain)
-  const setDay = (next: WorkoutKey[], msg: string) => change({ ...copyWeek(week), [idx]: next }, msg)
+  // keys this device doesn't know (a newer app's) are kept, after the ones shown
+  const unknownOn = (d: number) => (week[d] || []).filter((k) => !isBuiltinKey(k) && !routineFor(k, routines))
+  const setDay = (next: WorkoutKey[], msg: string) => change({ ...copyWeek(week), [idx]: [...next, ...unknownOn(idx)].slice(0, MAX_A_DAY) }, msg)
   const notes = planWeekNotes(week, routines).filter((n) => n.includes(day) || n.includes('no rest day'))
   const subOf = (k: WorkoutKey) => {
     const r = routineFor(k, routines)

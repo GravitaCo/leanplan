@@ -44,8 +44,9 @@ export function PlanScreen() {
   // the weekly plan (P5): being edited or started, and at which week (a tapped day)
   const [draft, setDraft] = useState<{ d: PlanDraft } | null>(null)
   // a plan's week (a phase, from the editor) and one of its days (Flow 3, as for the one-workout week)
-  const [planWeekAt, setPlanWeekAt] = useState<number | null>(null)
-  const [planDay, setPlanDay] = useState<{ phase: number; idx: number } | null>(null)
+  // each carries its plan: the running one, or the next one waiting to start
+  const [planWeekAt, setPlanWeekAt] = useState<{ planId: string; phase: number } | null>(null)
+  const [planDay, setPlanDay] = useState<{ planId: string; phase: number; idx: number } | null>(null)
   const trainingPlans = useStore((s) => s.data.trainingPlans)
   const today = todayStr()
   const active = activePlan({ trainingPlans }, today)
@@ -79,12 +80,15 @@ export function PlanScreen() {
       </>
     )
   }
-  if (planDay && active) {
-    return <PlanDayView planId={active.id} phaseIndex={planDay.phase} idx={planDay.idx} backLabel={planWeekAt != null ? active.phases[planWeekAt]?.name ?? 'Week' : 'My week'}
+  const planOf = (id: string) => (trainingPlans || []).find((p) => p.id === id && p.phases.length)
+  if (planDay && planOf(planDay.planId)) {
+    const wk = planWeekAt ? planOf(planWeekAt.planId)?.phases[planWeekAt.phase]?.name : undefined
+    return <PlanDayView planId={planDay.planId} phaseIndex={planDay.phase} idx={planDay.idx} backLabel={wk ?? 'My week'}
       onBack={() => setPlanDay(null)} onOpenWorkout={setWorkout} />
   }
-  if (planWeekAt != null && active) {
-    return <PlanWeekView planId={active.id} phaseIndex={planWeekAt} onBack={() => setPlanWeekAt(null)} onDay={(idx) => setPlanDay({ phase: planWeekAt, idx })} />
+  if (planWeekAt && planOf(planWeekAt.planId)) {
+    return <PlanWeekView planId={planWeekAt.planId} phaseIndex={planWeekAt.phase} onBack={() => setPlanWeekAt(null)}
+      onDay={(idx) => setPlanDay({ planId: planWeekAt.planId, phase: planWeekAt.phase, idx })} />
   }
   if (dayIdx != null && !pos) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
 
@@ -99,13 +103,13 @@ export function PlanScreen() {
     // no plan running yet (none, or one starting later): this week's schedule, as before
     if (!active || !pos) { setDayIdx(d); return }
     const src = weekSource(active, pos.phaseIndex)
-    if (src >= 0) setPlanDay({ phase: src, idx: d })
+    if (src >= 0) setPlanDay({ planId: active.id, phase: src, idx: d })
   }
   const planSheets = (
     <>
       {sheet === 'start' && <PlanStartSheet onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
       {sheet === 'end' && active && <PlanEndSheet plan={active} onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
-      {draft && <PlanEditorSheet draft={draft.d} onClose={() => setDraft(null)} onEditWeek={(i) => { setDraft(null); setPlanWeekAt(i) }} />}
+      {draft && <PlanEditorSheet draft={draft.d} onClose={() => setDraft(null)} onEditWeek={(i) => { const d = draft.d; setDraft(null); if ('planId' in d) setPlanWeekAt({ planId: d.planId, phase: i }) }} />}
     </>
   )
   const n = (k: number, one: string, many = one + 's') => `${k} ${k === 1 ? one : many}`
