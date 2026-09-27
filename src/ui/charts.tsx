@@ -89,9 +89,10 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
     (rows.filter((x) => x.logged).map((x) => `${new Date(x.d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })} ${numbers ? Math.round(x.t.k) + ' kcal' : 'logged'}`).join(', ') || 'nothing logged yet')
   return (
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
-      {/* each day's own range: it rises on a day with a logged workout, so it always agrees with "in your range" */}
+      {/* each day's own range as a thin line at its middle (the numbers are in the key): it rises on a day
+          with a logged workout, so it always agrees with "in your range" */}
       <g className="band">{rows.map((x, i) => (
-        <rect key={'r' + x.d} x={step * i} y={y(x.r.hi)} width={step + (i < 6 ? 0.5 : 0)} height={Math.max(2, y(x.r.lo) - y(x.r.hi))} fill="var(--band)" />
+        <rect key={'r' + x.d} x={step * i} y={y(x.r.mid) - 2} width={step + (i < 6 ? 0.5 : 0)} height={4} rx={i === 0 || i === 6 ? 2 : 0} fill="var(--band)" />
       ))}</g>
       {rows.map((x, i) => {
         const cx = step * i + step / 2
