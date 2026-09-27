@@ -40,6 +40,8 @@ export function exName(id: string | undefined, other?: string): string {
   if (other && other !== id && bare === ((EXERCISE_BY_ID[other]?.n || '').replace(/\s*\([^)]*\)\s*$/, ''))) return n
   return bare
 }
+const AMOUNT: Record<string, string> = { light: 'a light amount', moderate: 'a moderate amount' }
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
 const list = (w: string[]) => (w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : w.join(''))
 const areas = (v?: string) => list((v || '').split(',').filter(Boolean).map((a) => CARE_LABEL[a as BodyArea] ?? a))
@@ -57,14 +59,14 @@ const DEFAULT_TEXT: Record<string, string> = {
   enjoy: "You haven't told us what you enjoy, so the mix follows your goal.",
   bodyAreas: "You haven't told us about any areas to go easy on, so we've kept things low-impact.",
   readiness: "You haven't told us about your health, so we've started gently.",
-  lately: "You haven't told us how things are lately, so we've kept week 1 light.",
-  ageBand: "You haven't told us your age, so we're keeping things gentle.",
+  lately: "You skipped how things are lately, so we've started gently. You can change this.",
+  ageBand: "You haven't told us your age, so there are no AI features for now and sets stay steady.",
 }
 
 const GUARDRAIL_TEXT: Record<string, string> = {
   'rest-day': 'Every week keeps at least one rest day.',
   'days-cap': 'Up to 3 days to start, so there is room to recover. You can add more later.',
-  'readiness': "You mentioned something about your health, so we've started gently and kept it low-impact. It's a good idea to check with your GP.",
+  'readiness': "You mentioned something about your health, so we've started gently and kept it low-impact. It's worth checking with your GP or a health professional before you start.",
   'hold-volume': 'Sets stay the same for the first 4 weeks while you settle in.',
   'no-volume-increase': "Sets stay steady. Tali won't suggest adding more.",
   'deficit': "While you're eating less, sets stay at the lower end and weights hold steady.",
@@ -72,11 +74,13 @@ const GUARDRAIL_TEXT: Record<string, string> = {
   'lose-fat-six': 'Six days is a lot while losing fat, so the sixth is a light, optional session.',
   'words-only': 'Progress shows in words, not numbers.',
   'no-ai': 'At 16 or 17 there are no AI features, and sets stay steady.',
+  // age missing (legacy and starter paths only: onboarding requires it); never the 16–17 line
+  'no-ai-age': "You haven't told us your age, so there are no AI features for now and sets stay steady.",
   'no-impact': 'No jumping to start.',
 }
 
 const EVIDENCE_TEXT: Record<string, string> = {
-  'who-strength': 'Strength work on 2 days a week makes the biggest difference for health, whatever your goal. Want to add it?',
+  'who-strength': 'The WHO recommends strength work on 2 or more days a week for health. Want to add a day?',
   'add-cardio': 'Cardio builds stamina most directly. Want to add a session?',
   'twice-a-week': 'Each main muscle gets worked at least twice a week, which suits most people well.',
   'recovery': 'A short, easy session helps you recover between harder days.',
@@ -108,8 +112,9 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       return `Set for ${g}.`
     }
     case 'experience':
-      if (about === 'sets') return `${n ?? 'These'} sets here, from about ${value ?? 'a steady number of'} hard sets a week per muscle.`
-      if (about === 'dose') return `About ${value} hard sets a week per muscle to start, a good dose for someone ${EXP_WORDS[alt ?? ''] ?? 'at your level'}.`
+      // gentle mode: the weekly amount in words, never a number (Benn)
+      if (about === 'sets') return /^\d/.test(value ?? '') ? `${n ?? 'These'} sets here, from about ${value} hard sets a week per muscle.` : `${n ?? 'These'} sets here, ${AMOUNT[value ?? ''] ?? 'a steady amount'} this week.`
+      if (about === 'dose') return /^\d/.test(value ?? '') ? `About ${value} hard sets a week per muscle to start, a good dose for someone ${EXP_WORDS[alt ?? ''] ?? 'at your level'}.` : `${cap(AMOUNT[value ?? ''] ?? 'a steady amount')} this week, a good start for someone ${EXP_WORDS[alt ?? ''] ?? 'at your level'}.`
       if (about === 'exercise') return alt ? `${name}, not ${lower(exName(alt, exId))}: a good match for where you are now.` : `${name}: a good match for where you are now.`
       return 'Matched to how confident you feel.'
     case 'moving-now':
@@ -118,7 +123,7 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       if (about === 'exercise') return `${name} to start: a comfortable first step.`
       return 'Matched to how much you move at the moment.'
     case 'days':
-      if (about === 'offer' || (about === 'days' && n === 1)) return "One day is a great start. Two gets you the full benefit when you're ready."
+      if (about === 'offer' || (about === 'days' && n === 1)) return "One day is a good start. A second day adds more when you're ready, if you'd like."
       if (about === 'split') return n === 1 ? 'One full-body session covers every main muscle.' : `${SPLIT_WORDS[value ?? ''] ?? 'This split'} across ${n ?? 'your'} strength days, so each muscle has time to recover.`
       if (field === 'weekdays') return `On ${days(value)}, the days you picked.`
       return `${n ?? 'These'} days a week, as you chose.`
@@ -139,6 +144,7 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       if (!exId) return `No ${PATTERN_WORDS[alt as MovementPattern] ?? 'extra'} move here, to go easy on ${areas(value)}.`
       return alt ? `${name} instead of ${lower(exName(alt, exId))}: a gentler choice for ${areas(value)}.` : `${name}: a gentler choice for ${areas(value)}.`
     case 'baseline':
+      if (value === 'skipped') return "You skipped how things are lately, so we've started gently. You can change this."
       if (about === 'ease-in') return "A gentle start for the first two weeks, as things have been a lot lately. You can switch it off."
       if (about === 'dose') return "Things have been a lot lately, so we've started gently: fewer sets to begin with. You can change this."
       if (about === 'days') return "Up to 3 days to start, as things have been a lot lately. You can add more later."
@@ -146,14 +152,14 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       if (value === 'pre-selected') return 'A gentle start is switched on for you. You can switch it off any time.'
       return "We've started gently. You can change this."
     case 'age-edge':
-      if (value === 'balance') return `${name}: balance work helps you stay steady as the years go by.`
+      if (value === 'balance') return `${name}: balance work helps you stay steady on your feet.`
       if (about === 'exercise') return alt ? `${name}, not ${lower(exName(alt, exId))}: fewer trips down to the floor.` : `${name}: fewer trips down to the floor.`
       return 'A few changes to keep things steady and comfortable.'
     case 'guardrail':
       if (about === 'exercise' || about === 'reps') return alt ? `${name} instead of ${lower(exName(alt, exId))}: no jumping to start.` : `${name}: no jumping to start.`
       return GUARDRAIL_TEXT[value ?? ''] ?? 'Kept on the lighter side to start.'
     case 'time-limited':
-      return 'Short sessions still work. Two hard sets per exercise is enough to make progress.'
+      return 'Short sessions still count. Two hard sets per exercise is a good start.'
     case 'variety':
       return alt ? `${name} here and ${lower(exName(alt, exId))} on another day, for variety.` : `${name}: a change from the other days, for variety.`
     case 'liked':
@@ -183,7 +189,7 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       if (field === 'weekdays') return `You haven't picked days, so we've spread them out: ${days(value)}.`
       return DEFAULT_TEXT[field ?? ''] ?? "You haven't told us this yet, so we've kept to the safe side."
     case 'calibration':
-      return "No wrong answer. Pick something that feels comfortable. We'll adjust from how it felt."
+      return "No wrong answer. Pick a weight that feels comfortable, with a few reps to spare. We'll adjust from how it felt."
     case 'starter':
       return 'Starter week: tell us more to personalise it.'
   }

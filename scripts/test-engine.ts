@@ -364,7 +364,14 @@ function guardrails() {
   const readiness = R({ ...b, readiness: 'flagged' }).signpostHealth && R({ ...b, readiness: 'flagged' }).lowImpact && plan({ ...b, readiness: 'flagged' }).plan.easeInWeeks === 2
   const noImpact55 = plan({ ...BASES[8], ageBand: '65+' }).plan.sessions.every((s) => s.slots.every((x) => EXERCISE_BY_ID[x.exId].impact !== 'high'))
   const balance65 = plan({ ...b, ageBand: '65+' }).plan.sessions.filter((s) => s.kind === 'resistance').every((s) => s.slots.some((x) => x.role === 'balance'))
+  const texts = (r: BuildResult) => allWhys(r).map(renderWhy)
+  const gentleWords = [plan({ ...b, gentle: true }), plan({ ...b, wellbeing: 'yes' })].every((r) => r.plan.routing.gentleMode && texts(r).every((t) => !/\d+ hard sets a week/.test(t)) && texts(r).some((t) => /amount this week/.test(t))) && texts(plan(b)).some((t) => /\d+ hard sets a week/.test(t))
+  const skippedLately = texts(plan({ ...b, lately: undefined })).includes("You skipped how things are lately, so we've started gently. You can change this.") && texts(plan({ ...b, lately: undefined })).every((t) => !/a lot lately/.test(t))
+  const noAge = texts(plan({ ...b, ageBand: undefined })).includes("You haven't told us your age, so there are no AI features for now and sets stay steady.") && !texts(plan({ ...b, ageBand: undefined })).some((t) => /16 or 17/.test(t))
   report('guardrails (§0, §3.5 G, mental-performance)', [
+    ['gentle mode: weekly sets per muscle in words, never numbers', gentleWords],
+    ['a skipped "lately" says it was skipped, never "a lot lately"', skippedLately],
+    ['a missing age has its own line, not the 16–17 one', noAge],
     ['guardrails only ever lighten: fewer or equal sets, sessions and dose, never a shorter ease-in', only.length === 0, only.join('; ')],
     ['a gentle start is pre-selected for poor sleep, high stress, little room or a skipped answer', gentlePre],
     ['the person can switch the gentle start off', changeable],
@@ -438,7 +445,7 @@ function weekdays() {
   const oneDay = GOALS.map((goal) => plan({ ...b, goal, daysPerWeek: 1 }))
   report('1-day week', [
     ['one full-body session on Wednesday, for every goal', oneDay.every((r) => r.plan.sessions.length === 1 && r.plan.sessions[0].focus === 'full-body' && r.plan.weekdays.join() === '3')],
-    ['with the gentle note offered, never pushed', oneDay.every((r) => r.plan.offers.some((o) => o.kind === 'second-day') && renderWhy(r.plan.offers.find((o) => o.kind === 'second-day')!.why) === "One day is a great start. Two gets you the full benefit when you're ready.")],
+    ['with the gentle note offered, never pushed', oneDay.every((r) => r.plan.offers.some((o) => o.kind === 'second-day') && renderWhy(r.plan.offers.find((o) => o.kind === 'second-day')!.why) === "One day is a good start. A second day adds more when you're ready, if you'd like.")],
   ])
 
   const starters = GOALS.map((goal) => plan({ goal, readiness: 'clear', ageBand: '18-54' }))
@@ -479,7 +486,7 @@ function calibration() {
     ['sessions 1–2 of every loaded exercise calibrate, with no weight guessed', r.plan.sessions.flatMap((s) => s.slots).filter((x) => EXERCISE_BY_ID[x.exId].log === 'weight-reps' && !/steps/.test(x.rx)).every((x) => x.calibrate) && t0?.w === null && t0.step === 'pick' && t0.rir.lo === 3 && t0.rir.hi === 4],
     ['session 2 follows how session 1 felt; a skipped rating holds', t1?.step === 'heavier' && t1s?.step === 'lighter' && t1x?.step === 'same'],
     ['from session 3 (or a bodyweight move) the usual targets take over', t2 === null && (!bw || calibrationTarget(bw, 0) === null)],
-    ['with the "no wrong answer" copy', renderWhy(t0!.why[0]) === "No wrong answer. Pick something that feels comfortable. We'll adjust from how it felt."],
+    ['with the "no wrong answer" copy', renderWhy(t0!.why[0]) === "No wrong answer. Pick a weight that feels comfortable, with a few reps to spare. We'll adjust from how it felt."],
   ])
 }
 

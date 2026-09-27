@@ -82,6 +82,8 @@ export interface Routing {
   trends: 'numbers' | 'words'
   /** 16–17 (and age not given): no AI features */
   ai: boolean
+  /** gentle mode (profile.gentle or wellbeing-routed): weekly volume shown in words, never numbers */
+  gentleMode: boolean
   /** show the GP / midwife / NHS 111 line quietly */
   signpostHealth: boolean
   why: Why[]
@@ -962,7 +964,7 @@ function routingOf(inp: PlanInputs, c: Ctx): Routing {
   const never = !!inp.gentle || wellbeingRouted || teen
   if (inp.gentle) why.push({ code: 'guardrail', about: 'safety', field: 'gentle', data: { value: 'no-volume-increase' } })
   if (wellbeingRouted) why.push({ code: 'guardrail', about: 'safety', field: 'wellbeing', data: { value: 'no-volume-increase' } })
-  if (teen) why.push({ code: 'guardrail', about: 'safety', field: 'ageBand', data: { value: 'no-ai' } })
+  if (teen) why.push({ code: 'guardrail', about: 'safety', field: 'ageBand', data: { value: inp.ageBand === undefined ? 'no-ai-age' : 'no-ai' } })
   if (!never) why.push({ code: 'guardrail', about: 'safety', data: { value: 'hold-volume' } })
   if (inp.gentle || wellbeingRouted || teen) why.push({ code: 'guardrail', about: 'safety', field: inp.gentle ? 'gentle' : wellbeingRouted ? 'wellbeing' : 'ageBand', data: { value: 'words-only' } })
   if (c.deficit === 'big') why.push({ code: 'guardrail', about: 'safety', field: 'deficit', data: { value: 'deficit' } })
@@ -975,7 +977,7 @@ function routingOf(inp: PlanInputs, c: Ctx): Routing {
   why.push({ code: 'guardrail', about: 'safety', data: { value: 'rest-day' } })
   return {
     gentleStart: c.gentleStart, lowImpact: c.noImpact, volumeIncreases: never ? 'never' : 'after-week-4', holdProgression: c.deficit === 'big',
-    stallChecks: c.deficit === 'none', trends: inp.gentle || wellbeingRouted || teen ? 'words' : 'numbers', ai: !teen, signpostHealth: c.readinessFlag, why,
+    gentleMode: !!inp.gentle || wellbeingRouted, stallChecks: c.deficit === 'none', trends: inp.gentle || wellbeingRouted || teen ? 'words' : 'numbers', ai: !teen, signpostHealth: c.readinessFlag, why,
   }
 }
 
@@ -1051,6 +1053,15 @@ export function buildPlan(inputs: PlanInputs, personModel?: PersonModel, seed?: 
       s.why = [{ code: 'starter', about: 'plan' }]
       for (const sl of s.slots) sl.why = [{ code: 'starter', about: 'exercise', data: { exId: sl.exId } }, ...sl.why.filter((w) => w.code === 'calibration')]
     }
+  }
+
+  // copy data the reasons need: a skipped "lately" says so; gentle mode has no weekly-set numbers
+  const skippedLately = !inputs.lately || (inputs.lately.sleep == null && inputs.lately.stress == null && inputs.lately.room == null)
+  const amount = c.V <= VOLUME[c.exp].low ? 'light' : 'moderate'
+  const every = [...why, ...routing.why, ...core.sessions.flatMap((s) => [...s.why, ...s.slots.flatMap((x) => x.why)])]
+  for (const w of every) {
+    if (w.code === 'baseline' && w.field === 'lately' && skippedLately && w.about !== 'exercise') w.data = { ...w.data, value: 'skipped' }
+    if (routing.gentleMode && w.code === 'experience' && (w.about === 'dose' || w.about === 'sets')) w.data = { ...w.data, value: amount }
   }
 
   const planId = seededUuid(sd, 'plan')
