@@ -74,8 +74,9 @@ export function AuthScreen() {
       ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect() })
       : await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirect() } })
     setBusy(false)
-    if (error) setErr(error.message)
-    else setResent(true)
+    if (!error) return setResent(true)
+    setResent(false)
+    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? 'Give it a minute, then try again.' : error.message)
   }
 
   const copy = {
@@ -105,8 +106,8 @@ export function AuthScreen() {
             {err && <div className="auth-err" role="alert">{err}</div>}
             <button className="btn gray" onClick={() => { setResent(false); setMode('signin') }}>Back to sign in</button>
             <p className="auth2-foot" role="status">
-              {resent ? 'Sent again. It can take a minute or two.' : <>Nothing yet? Check your spam folder, or{' '}
-                <button type="button" className="linkbtn" disabled={busy} onClick={resend}>send it again</button>.</>}
+              {resent ? 'Sent again. It can take a minute or two. ' : 'Nothing yet? Check your spam folder, or '}
+              <button type="button" className="linkbtn" disabled={busy} onClick={resend}>{resent ? 'Send another' : 'send it again'}</button>{resent ? '' : '.'}
             </p>
           </>
         ) : (
@@ -137,7 +138,7 @@ export function AuthScreen() {
                 />
               </div>
               {mode !== 'forgot' && (
-                <div className="auth2-f">
+                <div className={'auth2-f' + (mode === 'signin' ? ' has-forgot' : '')}>
                   <label htmlFor="auth-pw">Password</label>
                   <input
                     id="auth-pw"
