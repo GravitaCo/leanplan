@@ -837,6 +837,8 @@ export const useStore = create<StoreState>()(
       },
 
       setNotifications: async (enabled) => {
+        // registering for reminders writes to the account: not before the health answer
+        if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
         if (enabled) {
           const ok = await subscribePush()
           if (!ok) return false

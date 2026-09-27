@@ -8,7 +8,7 @@ import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/cor
 import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { pushConsents, pullConsents, latestConsent, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap } from './consent'
+import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -61,6 +61,13 @@ const CHECKIN_KEY = '_checkin'
  * the server keeps the weight it has (an upsert only sets the columns it sends), and its check-in
  * is the server's own (`serverCheckin`, read just before), never this device's.
  */
+/** A day row with its health fields (weigh-in, check-in) removed. */
+function withoutHealth<R extends { supps: Record<string, unknown> }>(row: R): R & { weight: null } {
+  const { [CHECKIN_KEY]: _c, ...supps } = row.supps
+  void _c
+  return { ...row, weight: null, supps }
+}
+
 export function toServerDay(s: PersistedState, d: string, uid: string, held?: { serverCheckin: unknown }) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }
   const checkin = held ? held.serverCheckin : x.checkin
@@ -262,6 +269,17 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   // Resuming uses the same read-then-write.
   const paused = healthSyncPaused(s)
   const resume = !paused ? s.consents?.healthResume : undefined
+  // health consent withdrawn (here or pulled from another device): no health field goes up, even
+  // one logged before the withdrawal arrived and not cleared yet (the clear runs after pullAll)
+  if (healthDeclined(s)) {
+    await step('days', () => upsertEach('day_logs', dirtyDays, (d) => withoutHealth(toServerDay(s, d, uid)), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
+    if (meta.settings.dirty) {
+      await step('settings', async () => {
+        await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: withProfileHealth(s.profile, profileHealth(null)) }], 'user_id')
+        meta.settings.dirty = false
+      })
+    }
+  } else {
   await step('days', async () => {
     const resumeDays = resume?.days ? dirtyDays.filter((d) => resume.days![d]) : []
     if (!paused && !resumeDays.length) return upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => (meta.days[d].dirty = false))
@@ -300,6 +318,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
       await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
       meta.settings.dirty = false
     })
+  }
   }
   if (resume && s.consents && !Object.keys(resume.days || {}).length && !resume.profile) delete s.consents.healthResume
   // Deletes before upserts: a food deleted and re-created under the same name would otherwise

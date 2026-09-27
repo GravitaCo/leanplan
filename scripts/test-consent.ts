@@ -1,7 +1,7 @@
 /* Consent, account deletion and the connection indicator (onboarding plan §7, §8). Run from
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
-import { liveConsentDue, pauseHealthSync, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
+import { liveConsentDue, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
   consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
@@ -314,6 +314,16 @@ async function consentFirst(fakeServer: FakeServer): Promise<void> {
   r2.at = '1970-01-01T00:00:00.000Z'
   await withFetch(fakeServer(emptyRows()).fetchFn, () => pushDirty(s2, m2))
   checks.push(['a 1970 clock is repaired before upload, so sync isn\'t blocked for good', Date.parse(r2.at) >= Date.parse('2026-01-01') && !r2._dirty])
+  // a withdrawal (here, or pulled from another device before its clear has run): no health field goes up
+  const s3 = stateFromBackup({ days: { '2026-09-02': day(71, 3) } } as never)
+  const m3 = ensureMeta(s3, true)
+  s3.profile.weight = 71
+  recordConsent(s3, 'health', true)
+  recordConsent(s3, 'health', false) // withdrawal recorded, clear not applied yet
+  const rows3 = emptyRows()
+  await withFetch(fakeServer(rows3).fetchFn, () => pushDirty(s3, m3))
+  const up3 = rows3.day_logs.find((r) => r.log_date === '2026-09-02')
+  checks.push(['after a withdrawal no weigh-in, check-in or profile weight is uploaded', !!up3 && up3.weight === null && !up3.supps?._checkin && (up3.foods || []).length === 1 && rows3.settings[0]?.profile?.weight === undefined])
   report('consent first', checks)
 }
 

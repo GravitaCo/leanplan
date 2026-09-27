@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
-import { hasExistingData, healthSyncPaused } from '@/data/consent'
+import { hasExistingData, healthSyncPaused, latestConsent } from '@/data/consent'
 import { LegalLink } from './LegalDoc'
 
 /**
@@ -19,7 +19,7 @@ export function ConsentScreen() {
   // someone who used Tali before consent was asked may say "Not now": everything stays on this
   // phone and nothing syncs until they agree (asked once more after 2 weeks); for someone new,
   // "Not now" is signing out, since there's nothing to keep
-  const existing = useStore((s) => hasExistingData(s.data))
+  const existing = useStore((s) => hasExistingData(s.data) && !latestConsent(s.data, 'health'))
   const reasked = useStore((s) => healthSyncPaused(s.data))
   const [health, setHealth] = useState(false)
   const [terms, setTerms] = useState(false)

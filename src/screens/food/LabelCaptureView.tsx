@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
+import { consentLetsSync } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
@@ -172,6 +173,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     readRef.current = ctl
     let res: LabelReadResult
     try {
+      // a photo goes to the server: not before the health answer (its consent record can't sync yet)
+      if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
       res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }, { signal: ctl.signal })
     } catch {
       res = { status: 'error' }
