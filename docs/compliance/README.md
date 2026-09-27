@@ -101,15 +101,25 @@ Should fix:
 11. Breach response: decide who checks for incidents and how the 72-hour ICO notice (Art. 33)
     would be made.
 12. (Superseded 2026-09-27: consents are in the `consents` table; see "What's in the app".)
-13. Owner choice "keep" carries the previous account's health grant to the new account, so it
-    skips the consent screen. Arguably the same person; consider dropping health grants on keep.
+13. (Superseded 2026-09-27: "keep" now drops the consent log, so a new account answers the
+    consent screen itself.)
 14. (Superseded 2026-09-27: a missing ICO number now warns, it no longer blocks deploys.)
 15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
     texts, bump `CONSENT_VERSION` so everyone consents to the new company, and tell the
     early-access list.
 
-Added 2026-09-28 (consent release):
+Added 2026-09-27 (consent release):
 
+16. Interim website-only texts (`src/core/legal/website.ts`, `npm run legal:html -- --site`)
+    were live from 2026-09-24. The full texts replace them with the consent release, which
+    has the consent screen and account deletion on main.
+17. Turnstile loads for every visitor to a page with the early-access form, not only people
+    who submit it. Moving the form to its own page (or loading Turnstile only when someone
+    starts typing) keeps it strictly necessary under PECR.
+18. Early-access invites: the site says the email is used only for the invite. Removal is by
+    email request; if an email service is used to send invites, add it as a processor first.
+19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
+    (Supabase MCP): title, supplement name, tag, icon. Keep a copy of the function in the repo.
 20. People who decline consent can ask by email for their account to be deleted (the consent
     screen says so); do it with the `delete-account` flow or the Supabase dashboard.
     Existing testers' data (9 accounts) was synced before consent existed. They see the consent
