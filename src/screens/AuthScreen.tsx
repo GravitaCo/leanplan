@@ -15,6 +15,9 @@ export function AuthScreen() {
   const [pw2, setPw2] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  // what the last email was for, so "send it again" repeats the right one
+  const [sentFor, setSentFor] = useState<'signup' | 'forgot'>('signup')
+  const [resent, setResent] = useState(false)
   const beginSignIn = useStore((st) => st.beginSignIn)
   const notice = useStore((st) => st.authNotice)
   const setMode = (m: Mode) => {
@@ -31,6 +34,7 @@ export function AuthScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect() })
       setBusy(false)
       if (error) return setErr(error.message)
+      setSentFor('forgot')
       setModeRaw('check-email')
       return
     }
@@ -46,6 +50,7 @@ export function AuthScreen() {
       })
       setBusy(false)
       if (error) return setErr(error.message)
+      setSentFor('signup')
       setModeRaw('check-email')
       return
     }
@@ -61,133 +66,159 @@ export function AuthScreen() {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirect() } })
   }
 
-  const title = mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Reset password' : 'Welcome back'
+  async function resend() {
+    if (busy || !email) return
+    setErr('')
+    setBusy(true)
+    const { error } = sentFor === 'forgot'
+      ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect() })
+      : await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirect() } })
+    setBusy(false)
+    if (error) setErr(error.message)
+    else setResent(true)
+  }
+
+  const copy = {
+    signin: { t: 'Welcome back', s: 'Eat well, move often, feel better.', cta: 'Sign in' },
+    signup: { t: 'Create your account', s: 'Two minutes to set up, then it works offline.', cta: 'Create account' },
+    forgot: { t: 'Reset your password', s: 'Enter your email and we\u2019ll send you a link to set a new one.', cta: 'Send reset link' },
+    'check-email': { t: 'Check your email', s: '', cta: '' },
+  }[mode]
 
   return (
-    <div className="auth">
-      <div className="auth-brand">
-        <TaliMark width={112} />
-        <h1>Tali</h1>
-        <p>Eat well, move often, feel better.</p>
+    <div className={'auth2 m-' + mode}>
+      <div className="auth2-photo">
+        <img src="images/auth-hero.jpg" alt="" />
+        <TaliMark width={76} />
       </div>
 
-      {notice && mode !== 'check-email' && <div className="banner" role="status">{notice}</div>}
+      <div className="auth2-panel">
+        {notice && mode !== 'check-email' && <div className="banner" role="status">{notice}</div>}
 
-      {mode === 'check-email' ? (
-        <div className="card auth-check">
-          <div className="ico">
-            <Icon name="mail" />
-          </div>
-          <h2>Check your email</h2>
-          <p>We sent a link to your inbox. Open it to continue.</p>
-          <button className="btn gray" onClick={() => setMode('signin')}>
-            Back to sign in
-          </button>
-        </div>
-      ) : (
-        <form
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!busy) submit()
-          }}
-        >
-          <h2 className="auth-t">{title}</h2>
-
-          <div className="list">
-            <div className="frow">
-              <label htmlFor="auth-email">Email</label>
-              <input
-                id="auth-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                autoCapitalize="off"
-                value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
-                placeholder="you@example.com"
-              />
+        {mode === 'check-email' ? (
+          <>
+            <div className="auth2-ico"><Icon name="mail" /></div>
+            <div>
+              <h1 className="auth2-t">{copy.t}</h1>
+              <p className="auth2-s">We sent a link to {email || 'your inbox'}. Open it on this phone to continue.</p>
             </div>
+            {err && <div className="auth-err" role="alert">{err}</div>}
+            <button className="btn gray" onClick={() => { setResent(false); setMode('signin') }}>Back to sign in</button>
+            <p className="auth2-foot" role="status">
+              {resent ? 'Sent again. It can take a minute or two.' : <>Nothing yet? Check your spam folder, or{' '}
+                <button type="button" className="linkbtn" disabled={busy} onClick={resend}>send it again</button>.</>}
+            </p>
+          </>
+        ) : (
+          <form
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!busy) submit()
+            }}
+          >
+            <div>
+              <h1 className="auth2-t">{copy.t}</h1>
+              <p className="auth2-s">{copy.s}</p>
+            </div>
+
+            <div className="auth2-fields">
+              <div className="auth2-f">
+                <label htmlFor="auth-email">Email</label>
+                <input
+                  id="auth-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="off"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.trim())}
+                  placeholder="you@example.com"
+                />
+              </div>
+              {mode !== 'forgot' && (
+                <div className="auth2-f">
+                  <label htmlFor="auth-pw">Password</label>
+                  <input
+                    id="auth-pw"
+                    type="password"
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                    value={pw}
+                    onChange={(e) => setPw(e.target.value)}
+                    placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
+                  />
+                  {mode === 'signin' && (
+                    <button type="button" className="auth2-forgot" onClick={() => setMode('forgot')}>Forgot?</button>
+                  )}
+                </div>
+              )}
+              {mode === 'signup' && (
+                <div className="auth2-f">
+                  <label htmlFor="auth-pw2">Confirm password</label>
+                  <input
+                    id="auth-pw2"
+                    type="password"
+                    autoComplete="new-password"
+                    value={pw2}
+                    onChange={(e) => setPw2(e.target.value)}
+                    placeholder="Repeat password"
+                  />
+                </div>
+              )}
+            </div>
+
+            {err && (
+              <div className="auth-err" role="alert">
+                {err}
+              </div>
+            )}
+
+            <button type="submit" className="btn auth2-go" disabled={busy}>
+              {busy ? 'Please wait\u2026' : <>{copy.cta}<Arrow /></>}
+            </button>
+
             {mode !== 'forgot' && (
-              <div className="frow">
-                <label htmlFor="auth-pw">Password</label>
-                <input
-                  id="auth-pw"
-                  type="password"
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                  value={pw}
-                  onChange={(e) => setPw(e.target.value)}
-                  placeholder={mode === 'signup' ? 'At least 8 characters' : 'Required'}
-                />
-              </div>
-            )}
-            {mode === 'signup' && (
-              <div className="frow">
-                <label htmlFor="auth-pw2">Confirm</label>
-                <input
-                  id="auth-pw2"
-                  type="password"
-                  autoComplete="new-password"
-                  value={pw2}
-                  onChange={(e) => setPw2(e.target.value)}
-                  placeholder="Repeat password"
-                />
-              </div>
-            )}
-          </div>
-
-          {err && (
-            <div className="auth-err" role="alert">
-              {err}
-            </div>
-          )}
-
-          <button type="submit" className="btn" disabled={busy}>
-            {busy
-              ? 'Please wait…'
-              : mode === 'signup'
-                ? 'Create account'
-                : mode === 'forgot'
-                  ? 'Send reset link'
-                  : 'Sign in'}
-          </button>
-
-          {mode !== 'forgot' && (
-            <>
-              <div className="auth-or">or</div>
-              <button type="button" className="btn gray" onClick={google}>
-                <GoogleG />
-                Continue with Google
-              </button>
-            </>
-          )}
-
-          <div className="auth-links">
-            {mode === 'signin' && (
-              <button type="button" className="linkbtn" onClick={() => setMode('forgot')}>
-                Forgot password?
-              </button>
-            )}
-            {mode === 'forgot' ? (
-              <button type="button" className="linkbtn" onClick={() => setMode('signin')}>
-                Back to sign in
-              </button>
-            ) : (
-              <span>
-                {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
-                <button
-                  type="button"
-                  className="linkbtn"
-                  onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
-                >
-                  {mode === 'signup' ? 'Sign in' : 'Sign up'}
+              <>
+                {mode === 'signin' && <div className="auth-or">or</div>}
+                <button type="button" className="btn auth2-google" onClick={google}>
+                  <GoogleG />
+                  Continue with Google
                 </button>
-              </span>
+              </>
             )}
-          </div>
-        </form>
-      )}
+
+            {mode === 'signup' && (
+              <p className="auth2-legal">
+                Tali is for people aged 16 and over. By continuing you agree to the{' '}
+                <a href="https://www.tali.fit/legals/terms" target="_blank" rel="noopener noreferrer">Terms</a> and{' '}
+                <a href="https://www.tali.fit/legals/privacy" target="_blank" rel="noopener noreferrer">Privacy notice</a>.
+              </p>
+            )}
+
+            <p className="auth2-foot">
+              {mode === 'forgot' ? (
+                <button type="button" className="linkbtn" onClick={() => setMode('signin')}>Back to sign in</button>
+              ) : (
+                <>
+                  {mode === 'signup' ? 'Already have an account?' : 'New to Tali?'}{' '}
+                  <button type="button" className="linkbtn" onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
+                    {mode === 'signup' ? 'Sign in' : 'Create an account'}
+                  </button>
+                </>
+              )}
+            </p>
+          </form>
+        )}
+      </div>
     </div>
+  )
+}
+
+function Arrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   )
 }
 

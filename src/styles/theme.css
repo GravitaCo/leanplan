@@ -452,11 +452,41 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .linkbtn { background: none; border: 0; padding: 6px 4px; font-size: 15px; color: var(--tint); }
 .linkbtn.muted { color: var(--label2); }
 .auth-links { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 18px; font-size: 15px; color: var(--label2); text-align: center; }
-.auth-check { text-align: center; padding: 28px 20px 20px; }
-.auth-check .ico { width: 56px; height: 56px; border-radius: 16px; background: var(--tint); margin: 0 auto 14px; }
-.auth-check .ico svg.i { width: 28px; height: 28px; }
-.auth-check h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
-.auth-check p { font-size: 15px; color: var(--label2); margin: 0 0 18px; line-height: 1.38; }
+/* Sign in and sign up (approved canvas row "Sign in and sign up"): a photo at the top with the
+   mark on it, and every word on a solid panel below for legibility, never glass over the photo */
+.auth2 { min-height: 100vh; min-height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); }
+.auth2-photo { position: relative; flex-shrink: 0; height: 48dvh; min-height: 260px; background: var(--fill); overflow: hidden; }
+.m-signup .auth2-photo { height: 36dvh; min-height: 200px; }
+.m-forgot .auth2-photo, .m-check-email .auth2-photo { height: 52dvh; }
+.auth2-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.auth2-photo::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 140px; background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0)); z-index: 1; }
+.auth2-photo .tali-mark { position: absolute; left: 20px; top: calc(env(safe-area-inset-top) + 18px); color: #fff; z-index: 2; }
+.auth2-panel {
+  position: relative; flex: 1; margin-top: -48px; background: var(--bg); border-radius: 28px 28px 0 0;
+  padding: 26px 20px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16px;
+}
+.auth2-panel form { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.auth2-t { font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+.auth2-s { font-size: 16px; line-height: 1.45; color: var(--label2); margin: 4px 0 0; }
+.auth2-fields { background: var(--card); border-radius: 22px; overflow: hidden; }
+.auth2-f { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 11px 16px; }
+.auth2-f + .auth2-f { border-top: 1px solid var(--sep); }
+.auth2-f:focus-within { box-shadow: inset 3px 0 0 var(--tint); }
+.auth2-f label { font-size: 13px; color: var(--label2); }
+.auth2-f input { background: none; border: 0; border-radius: 0; padding: 0; height: 26px; font-size: 17px; color: var(--label); width: 100%; }
+.auth2-f input:focus { outline: none; }
+.auth2-f:has(.auth2-forgot) input { padding-right: 92px; }
+.auth2-forgot { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); border: 0; font-size: 14px; font-weight: 600; color: var(--tint); background: var(--fill); padding: 8px 12px; border-radius: 16px; }
+.auth2 .auth-err { padding: 0 4px; margin-top: -6px; }
+.auth2 .btn { height: 54px; border-radius: 27px; }
+.auth2-google { background: var(--card); color: var(--label); box-shadow: inset 0 0 0 1px var(--sep); font-size: 16px; gap: 10px; }
+.auth2 .auth-or { margin: 0 4px; }
+.auth2-ico { width: 56px; height: 56px; border-radius: 18px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; }
+.auth2-ico svg.i { width: 26px; height: 26px; }
+.auth2-legal { font-size: 13px; line-height: 1.45; color: var(--label2); text-align: center; margin: 0; }
+.auth2-legal a { color: var(--tint); }
+.auth2-foot { margin: auto 0 0; text-align: center; font-size: 15px; color: var(--label2); }
+.auth2-foot .linkbtn { font-weight: 600; padding: 6px 2px; }
 
 /* ===================== STUDIO: SUMMARY / FOOD / PROFILE ===================== */
 /* pillar stack on Summary: Mind, Food, Move, tiles, week */
