@@ -4,7 +4,7 @@ import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex }
 import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
-import { suggestedTargets } from '@/core/domain/nutrition'
+import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
 import { profileRouting } from '@/core/domain/onboarding'
 import { useConsent } from '@/store/hooks'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
@@ -172,6 +172,7 @@ export function ProfileScreen() {
                   <span className="muted">({directionLabel(sug.adjustPct)})</span><br />
                   Protein <b className="num">{sug.proteinMinimum ? 'at least ' : ''}{sug.p} g</b> · Carbs <b className="num">{sug.c} g</b> · Fat <b className="num">{sug.f} g</b>
                   {sug.floored && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>Held at a safe minimum. We never suggest eating below your resting metabolic rate.</div>}
+                  {sug.heldAtMaintenance && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{HELD_AT_MAINTENANCE_NOTE}</div>}
                   <button className="btn" style={{ marginTop: 10 }} onClick={() => {
                     saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
                     setTargets({ ...targets, kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })

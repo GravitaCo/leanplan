@@ -6,7 +6,7 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
 import { asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
-import { PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
+import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
 let bad = 0
@@ -287,6 +287,19 @@ function profileMatchesSummary(): void {
     ['wellbeing undisclosed: maintenance until the deficit is chosen', onProfile(unsaid).adjustPct === 0 && onProfile({ ...unsaid, deficitChosen: true }).adjustPct < 0],
     ['poor sleep: no deeper than −10% on Profile', sleepy.adjustPct === -10],
     ['no health consent after onboarding: nothing shown', onProfile(done({}), false).hidden === 'no-consent'],
+    ['held at maintenance: the note shows for 16–17, BMI under 18.5 and medical', teen.heldAtMaintenance && med.heldAtMaintenance
+      && onProfile({ ...legacy, height: 200 }).heldAtMaintenance && onProfile(unsaid).heldAtMaintenance],
+    ['no note without a clamp, without a deficit goal, or once the deficit is chosen', !adultLegacy.heldAtMaintenance
+      && !onProfile({ ...legacy, age: 17, goal: 'build-muscle' }).heldAtMaintenance && !onProfile({ ...legacy, age: 17, goal: 'feel-better' }).heldAtMaintenance
+      && !onProfile({ ...unsaid, deficitChosen: true }).heldAtMaintenance && !sleepy.heldAtMaintenance],
+    ['no note when the floor note shows', (() => {
+      const x = suggestedTargets({ ...legacy, age: 17, height: 140, activityLevel: 'sedentary' }, 35, profileRouting({ ...legacy, age: 17, height: 140 }, 35, true)) as any
+      return x.floored && !x.heldAtMaintenance })()],
+    ['the note never says why', HELD_AT_MAINTENANCE_NOTE === 'Tali keeps this at maintenance for now, to keep things safe.' && !/age|bmi|weight|16|17|18/i.test(HELD_AT_MAINTENANCE_NOTE)],
+    ['summary and Profile agree on the note', (() => {
+      const p = done({ age: 17 }); const t = startingTargets(p, lift3, routeSafety(safetyAnswersFrom(p, kg, true)), kg)
+      const p1 = { ...p, activityMult: t.effectiveMultiplier! }
+      return t.heldAtMaintenance && onProfile(p1).heldAtMaintenance })()],
     ['desk job: Profile shows the summary numbers exactly', same(desk, null)],
     ['7,500–10,000 steps and 3 × 45 min: Profile shows the summary numbers exactly', same(walker, lift3)],
     [`${n} combinations: Profile and summary always match`, sweep],

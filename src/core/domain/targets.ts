@@ -1,6 +1,6 @@
 import type { DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
 import { MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinMinimumG, type FloorApplied } from './nutrition'
-export { ABSOLUTE_FLOOR, SEX_FLOOR, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT, PROTEIN_RNI_PER_KG, type FloorApplied } from './nutrition'
+export { HELD_AT_MAINTENANCE_NOTE, ABSOLUTE_FLOOR, SEX_FLOOR, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT, PROTEIN_RNI_PER_KG, type FloorApplied } from './nutrition'
 import { sexOf, type DefaultField, type HiddenReason, type SafetyRouting } from './onboarding'
 
 /**
@@ -123,6 +123,8 @@ export interface StartingTargets {
   adjustPct: number | null
   /** what capped the target; empty when nothing did */
   floorsApplied: FloorApplied[]
+  /** a safety clamp held a deficit goal at maintenance: show HELD_AT_MAINTENANCE_NOTE (never with a floor) */
+  heldAtMaintenance: boolean
   /** under ~30 kcal/kg fat-free mass on a training day, for endurance */
   lowEnergyAvailability: boolean
   /** maintenance ÷ BMR, unrounded: store it as `profile.activityMult` (and `activityLevelFor` it for display) */
@@ -172,7 +174,7 @@ export function startingTargets(
   if (!kg) defaults.push('weight')
   if (!p.height) defaults.push('height')
   const none = (hidden: HiddenReason): StartingTargets => ({
-    hidden, kcal: null, maintenance: null, protein: null, adjustPct: null, floorsApplied: [],
+    hidden, kcal: null, maintenance: null, protein: null, adjustPct: null, floorsApplied: [], heldAtMaintenance: false,
     lowEnergyAvailability: false, effectiveMultiplier: null, defaults, reviewAfter: REVIEW_AFTER,
   })
   if (routing.stop) return none('under16')
@@ -209,6 +211,7 @@ export function startingTargets(
     protein,
     adjustPct: e.adjustPct,
     floorsApplied: e.floorsApplied,
+    heldAtMaintenance: e.heldAtMaintenance && !e.floorsApplied.some((x) => x !== 'weekly-loss-cap'),
     lowEnergyAvailability: lowEA,
     effectiveMultiplier: mult,
     defaults,

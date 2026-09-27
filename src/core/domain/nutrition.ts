@@ -119,6 +119,8 @@ export interface SuggestedTargets {
   floorsApplied: FloorApplied[]
   /** protein is a minimum (the medical flag's reference intake), not a goal anchor */
   proteinMinimum: boolean
+  /** a safety clamp turned the goal's deficit into maintenance (show HELD_AT_MAINTENANCE_NOTE) */
+  heldAtMaintenance: boolean
 }
 
 /** Safety routing hides calorie numbers (gentle mode, pregnancy, no consent…): show none. */
@@ -181,7 +183,15 @@ export interface EnergyTarget {
   /** signed % applied, from the unrounded target */
   adjustPct: number
   floorsApplied: FloorApplied[]
+  /** the goal asked for a deficit and a routing clamp (16–17, BMI gate, medical, wellbeing…) held it at maintenance */
+  heldAtMaintenance: boolean
 }
+
+/**
+ * Benn's approved line under the number when `heldAtMaintenance` (not shown when the floor note
+ * is). It never says why: age, BMI and screener answers are never shown back.
+ */
+export const HELD_AT_MAINTENANCE_NOTE = 'Tali keeps this at maintenance for now, to keep things safe.'
 
 const r50 = (x: number) => Math.round(x / 50) * 50
 const ceil50 = (x: number) => Math.ceil(x / 50) * 50
@@ -197,10 +207,12 @@ export function energyTarget(
   p: Pick<Profile, 'goal' | 'bodyFat' | 'targetRate' | 'deficitChosen'>,
   clamps: EnergyClamps = NO_CLAMPS, acceptDeficit = !!p.deficitChosen,
 ): EnergyTarget {
-  let pct = p.goal ? goalAdjustPct(p.goal, p.bodyFat ?? 15, nearestLevel(maint / bmr), p.targetRate ?? 'standard') : 0
+  const band = p.goal ? goalAdjustPct(p.goal, p.bodyFat ?? 15, nearestLevel(maint / bmr), p.targetRate ?? 'standard') : 0
+  let pct = band
   if (clamps.maintenanceOnly) pct = 0
   if (clamps.noDeficit || (clamps.startAtMaintenance && !acceptDeficit)) pct = Math.max(0, pct)
   if (clamps.nearMaintenance) pct = Math.max(NEAR_MAINTENANCE_PCT, pct)
+  const asked = pct
 
   const floorsApplied: FloorApplied[] = []
   let kcal = maint * (1 + pct / 100)
@@ -217,7 +229,7 @@ export function energyTarget(
   if (shown < floor) shown = ceil50(floor)
   if (capped && maint - shown > maxDeficit) shown = ceil50(maint - maxDeficit)
   // adjustPct from the unrounded target, so maintenance rounded to 50 doesn't read as a 1% deficit
-  return { kcal: shown, adjustPct: Math.round((kcal / maint - 1) * 100) || 0, floorsApplied }
+  return { kcal: shown, adjustPct: Math.round((kcal / maint - 1) * 100) || 0, floorsApplied, heldAtMaintenance: band < 0 && asked >= 0 }
 }
 
 /** The legacy activity level nearest a multiplier (maintenance / BMR). */
@@ -376,5 +388,5 @@ export function suggestedTargets(profile: Profile, weight: number | null, routin
   const c = Math.max(0, Math.round((kcal - p * 4 - f * 9) / 4))
 
   const floored = e.floorsApplied.some((x) => x !== 'weekly-loss-cap')
-  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: e.adjustPct, floored, bodyFatAssumed, floorsApplied: e.floorsApplied, proteinMinimum }
+  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: e.adjustPct, floored, bodyFatAssumed, floorsApplied: e.floorsApplied, proteinMinimum, heldAtMaintenance: e.heldAtMaintenance && !floored }
 }
