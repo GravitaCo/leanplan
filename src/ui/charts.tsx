@@ -78,8 +78,9 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
 }
 
 /** Week bars against the target range. Each logged day carries its number; each day's range is a
- *  thin line at its middle (higher on a workout day; the exact range is in the key) (see the key under the chart), and a day with nothing logged is a
- *  small stub, not a gap to feel bad about. `numbers` is off in gentle mode. */
+ *  thin line at its middle (higher on a workout day; the exact range is in the key under the
+ *  chart), and a day with nothing logged is a small stub, not a gap to feel bad about. `numbers` is
+ *  off in gentle mode. */
 export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
   const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
   const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
