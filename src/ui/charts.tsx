@@ -90,9 +90,9 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
   return (
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       {/* each day's own range: it rises on a day with a logged workout, so it always agrees with "in your range" */}
-      {rows.map((x, i) => (
-        <rect key={'r' + x.d} className="band" x={step * i} y={y(x.r.hi)} width={step + (i < 6 ? 0.5 : 0)} height={Math.max(2, y(x.r.lo) - y(x.r.hi))} fill="var(--band)" />
-      ))}
+      <g className="band">{rows.map((x, i) => (
+        <rect key={'r' + x.d} x={step * i} y={y(x.r.hi)} width={step + (i < 6 ? 0.5 : 0)} height={Math.max(2, y(x.r.lo) - y(x.r.hi))} fill="var(--band)" />
+      ))}</g>
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)
