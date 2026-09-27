@@ -11,6 +11,9 @@
  *   time, not `iat` (a background token refresh renews iat hourly without anyone signing in), and
  *   not auth.users.last_sign_in_at (a recent sign-in on another device would let an older, stolen
  *   token through). Otherwise 403 { error: 'reauth' } and nothing is deleted.
+ * - Then every session of the account is revoked (global sign-out) before any row is deleted.
+ *   A retry after that finds the session gone (401): the app asks the person to sign in again,
+ *   which is also the fresh sign-in the check above needs.
  * - The body must be { confirm: "delete my account" } (src/data/account.ts), so a stray POST
  *   can't delete anything.
  * - Deletes the account's rows from every table the app writes (USER_TABLES in ../_shared/account.ts), then the login. Rows go
@@ -100,6 +103,13 @@ Deno.serve(async (req) => {
   const uid = who.data.user.id
   // Auth has verified this token, so its payload can be read: the sign-in behind it must be recent
   if (!signedInRecently(jwtPayload(jwt), Math.floor(Date.now() / 1000))) return fail('reauth')
+
+  // End every session of this account (all devices) before touching data, so no other device's
+  // refresh token can mint a new token and write rows back while they're deleted. Access tokens
+  // already issued stay valid until they expire; the owner FKs (2026-09-owner-fks.sql) make any
+  // row written with one after the login is gone fail. A session already gone is fine (a retry).
+  const out = await admin.auth.admin.signOut(jwt, 'global')
+  if (out.error && out.error.status !== 404 && out.error.code !== 'session_not_found' && out.error.code !== 'user_not_found') return fail('failed', { step: 'sessions' })
 
   let skipped = 0
   for (const t of TABLES) {

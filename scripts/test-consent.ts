@@ -2,7 +2,7 @@
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
 import { HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw } from '@/data/consent'
-import { deleteAccount, sessionSignedInRecently, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
+import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
@@ -134,17 +134,40 @@ async function consent(fakeServer: FakeServer): Promise<void> {
   const now = new Date().toISOString()
   const junk = loadStateFrom({ days: {}, consents: { records: [{ id: 'x', type: 'health', version: 'v', granted: true, at: now }, { id: uuid(), type: 'mood', version: 'v1', granted: true, at: now }, { id: uuid(), type: 'ai', version: 'v1', granted: 'yes', at: now }] } } as never)
   checks.push(['malformed consent records are dropped', junk.consents!.records.length === 0])
+  // a time in the future is clamped to now when recorded
+  const s6 = stateFromBackup({ days: {} } as never)
+  const fut = recordConsent(s6, 'ai', true, undefined, new Date(Date.now() + 3 * 86400_000).toISOString())
+  checks.push(['a future time is clamped to now', Date.parse(fut.at) <= Date.now()])
+  // one row the server refuses (a check violation) stays unsynced; the rest go through
+  const s7 = stateFromBackup({ days: {} } as never)
+  const m7 = ensureMeta(s7, false)
+  const good1 = recordConsent(s7, 'health', true), bad1 = recordConsent(s7, 'ai', true), good2 = recordConsent(s7, 'label-photo', true)
+  bad1.version = 'BAD VERSION' // as an older build might have stored
+  const got7: any[] = []
+  const posts: number[] = []
+  const f7 = fakeServer({ settings: [], day_logs: [], custom_foods: [], recipes: [] })
+  const checkFetch = (async (url: string, o: RequestInit = {}) => {
+    if (!String(url).includes('/consents') || o.method !== 'POST') return String(url).includes('/consents') ? new Response('[]', { status: 200 }) : f7.fetchFn(url, o)
+    const list = JSON.parse(String(o.body))
+    posts.push(list.length)
+    if (list.some((x: any) => !/^[a-z0-9.-]{1,32}$/.test(x.version))) return new Response(JSON.stringify({ code: '23514', message: 'check' }), { status: 400 })
+    got7.push(...list)
+    return new Response(null, { status: 201 })
+  }) as typeof fetch
+  const failed7 = await withFetch(checkFetch, () => pushDirty(s7, m7))
+  checks.push(['a rejected consent row is retried alone and stays unsynced; the others sync', posts.join() === '3,1,1,1' && got7.length === 2 && !good1._dirty && !good2._dirty && bad1._dirty === true && failed7.length === 1 && failed7[0].startsWith('consents')])
   report('consent', checks)
 }
 
 async function deletion(): Promise<void> {
   const checks: [string, boolean][] = []
-  const run = async (o: { online?: boolean; session?: boolean; fresh?: boolean; call?: () => Promise<{ status: number; body: unknown }> }) => {
+  const run = async (o: { online?: boolean; session?: boolean; fresh?: boolean; owner?: boolean; call?: () => Promise<{ status: number; body: unknown }> }) => {
     const log: string[] = []
     const res = await deleteAccount({
       online: () => o.online ?? true,
       hasSession: () => o.session ?? true,
       fresh: () => o.fresh ?? true,
+      accountMatches: () => o.owner ?? true,
       call: async () => { log.push('call'); return o.call ? o.call() : { status: 200, body: { ok: true } } },
       wipe: () => { log.push('wipe') },
       signOut: async () => { log.push('signOut') },
@@ -155,6 +178,8 @@ async function deletion(): Promise<void> {
   checks.push(['offline: refused, nothing sent, nothing wiped', off.res === 'offline' && off.log === ''])
   const nos = await run({ session: false })
   checks.push(['no live session: refused, nothing sent', nos.res === 'no-session' && nos.log === ''])
+  const notOwner = await run({ owner: false })
+  checks.push(["session isn't the device data's owner (or an owner question is pending): refused, nothing sent", notOwner.res === 'wrong-account' && notOwner.log === ''])
   const stale = await run({ fresh: false })
   checks.push(['sign-in over 5 minutes old: asks to re-confirm, nothing sent', stale.res === 'reauth' && stale.log === ''])
   const refused = await run({ call: async () => ({ status: 403, body: { ok: false, error: 'reauth' } }) })
@@ -192,6 +217,23 @@ async function deletion(): Promise<void> {
   checks.push(['a fresh Google sign-in counts', signedInRecently({ amr: [{ method: 'password', timestamp: now - 86400 }, { method: 'oauth', timestamp: now - 10 }] }, now)])
   checks.push(['a sign-in 6 minutes ago is not, even with a just-refreshed token (new iat)', !signedInRecently({ iat: now, amr: [{ method: 'password', timestamp: now - 360 }] }, now)])
   checks.push(['no sign-in time, a malformed one or one far in the future: not fresh', !signedInRecently({ iat: now }, now) && !signedInRecently({ amr: [{ timestamp: 'x' }] }, now) && !signedInRecently({ amr: [{ timestamp: now + 3600 }] }, now) && !signedInRecently(null, now) && !sessionSignedInRecently('not-a-jwt', now)])
+  // the token's subject must be the recorded owner, with no owner question pending
+  const A = '11111111-1111-4111-8111-111111111111', B = '22222222-2222-4222-8222-222222222222'
+  checks.push(['owner check: same sub passes; other sub, no owner, or a pending ask fails', tokenMatchesOwner(tok({ sub: A }), A, false) && !tokenMatchesOwner(tok({ sub: B }), A, false) &&
+    !tokenMatchesOwner(tok({ sub: A }), undefined, false) && !tokenMatchesOwner(tok({ sub: A }), A, true) && !tokenMatchesOwner('garbage', A, false)])
+  // back from Google: only the same account, only within 10 minutes, only once
+  const fs = fakeStorage({})
+  const t0 = 1_790_000_000_000
+  markReauth(A, fs, t0)
+  const same = takeReauthReturn(A, fs, t0 + 60_000)
+  const once = takeReauthReturn(A, fs, t0 + 61_000)
+  markReauth(A, fs, t0)
+  const other = takeReauthReturn(B, fs, t0 + 60_000)
+  markReauth(A, fs, t0)
+  const late = takeReauthReturn(A, fs, t0 + 11 * 60_000)
+  fs.setItem('tali.reauthForDelete', String(t0))
+  const oldFormat = takeReauthReturn(A, fs, t0 + 1000)
+  checks.push(['Google return: same account within 10 min, once; another account, late or an old flag: no', same && !once && !other && !late && !oldFormat && fs.getItem('tali.reauthForDelete') === null])
   report('delete account', checks)
 }
 

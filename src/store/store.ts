@@ -44,7 +44,7 @@ import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/sup
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, type ConsentType } from '@/data/consent'
-import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, type DeleteResult, type ReauthResult } from '@/data/account'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 
@@ -1099,8 +1099,8 @@ export const useStore = create<StoreState>()(
       deleteNeedsReauth: () => !sessionSignedInRecently(getToken()),
 
       reauthForDeletion: async (how) => {
-        if ('google' in how) return reauthWithGoogle()
         const email = get().email
+        if ('google' in how) return email ? reauthWithGoogle(email, getUid()) : 'error'
         if (!email) return 'error'
         const r = await reauthWithPassword(email, how.password)
         if (r !== 'ok') return r
@@ -1125,6 +1125,7 @@ export const useStore = create<StoreState>()(
           const res = await deleteAccountData({
             ...defaultDeleteDeps,
             hasSession: () => get().authed,
+            accountMatches: () => tokenMatchesOwner(getToken(), get().data._meta?.owner, !!get().ownerAsk),
             signOut: async () => {
               // late session events from here on are ignored, as after a sign-out
               signingOut = true

@@ -105,6 +105,10 @@ export function healthLoggingAllowed(s: PersistedState): boolean {
 export function recordConsent(s: PersistedState, type: ConsentType, granted: boolean, version = CONSENT_VERSIONS[type], at = nowIso()): ConsentRecord {
   if (!VERSION_RE.test(version)) throw new Error('bad consent version')
   const log = consentLog(s)
+  // never later than now: a record can't claim a time that hasn't happened (the server refuses
+  // one more than a day ahead, which would leave it unsynced for good)
+  const nowMs = Date.now()
+  if (!(Date.parse(at) <= nowMs)) at = new Date(nowMs).toISOString()
   // never earlier than the latest record already here, so a clock that went backwards can't
   // make this act lose to the one before it
   const prev = latestConsent(s, type)
@@ -240,14 +244,34 @@ export async function pushConsents(s: PersistedState): Promise<void> {
   const dirty = (s.consents?.records || []).filter((r) => r._dirty)
   if (!dirty.length) return
   const uid = getUid()
-  const r = await sbFetch('/consents?on_conflict=id', {
+  const send = (list: ConsentRecord[]) => sbFetch('/consents?on_conflict=id', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=minimal' },
-    body: JSON.stringify(dirty.map((x) => ({ id: x.id, user_id: uid, type: x.type, version: x.version, granted: x.granted, recorded_at: x.at }))),
+    body: JSON.stringify(list.map((x) => ({ id: x.id, user_id: uid, type: x.type, version: x.version, granted: x.granted, recorded_at: x.at }))),
   })
+  const r = await send(dirty)
   if (r.status === 404) return
-  if (!r.ok) throw new HttpError('INSERT consents -> ' + r.status, r.status)
-  dirty.forEach((x) => { delete x._dirty })
+  if (r.ok) { dirty.forEach((x) => { delete x._dirty }); return }
+  if (!(await isRowRejection(r))) throw new HttpError('INSERT consents -> ' + r.status, r.status)
+  // one row broke a check (a bad time or version from an older build): send them one by one,
+  // so only that row stays unsynced and the rest reach the server
+  let last: HttpError | null = null
+  for (const x of dirty) {
+    const one = await send([x])
+    if (one.ok) delete x._dirty
+    else if (await isRowRejection(one)) last = new HttpError('INSERT consents -> ' + one.status, one.status)
+    else throw new HttpError('INSERT consents -> ' + one.status, one.status)
+  }
+  if (last) throw last
+}
+
+/** A refusal of a row's content (400, or Postgres 23514 check_violation / 22xxx data errors) as
+ *  opposed to the whole request (auth, rate limit, server trouble). */
+async function isRowRejection(r: Response): Promise<boolean> {
+  if (r.status !== 400) return false
+  const body = await r.clone().json().catch(() => null)
+  const code = body && typeof body === 'object' ? String((body as { code?: unknown }).code ?? '') : ''
+  return !code || code === '23514' || code.startsWith('22') || code === '23502' || code === '54000'
 }
 
 /** Merge the account's records from the server (records are immutable, so a union by id). */

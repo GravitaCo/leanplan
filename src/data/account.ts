@@ -23,6 +23,8 @@ export type DeleteResult =
   | { status: 'no-session' }
   /** the session's sign-in is older than 5 minutes: confirm who you are (reauthenticate), then retry */
   | { status: 'reauth' }
+  /** the session isn't the account this device's data belongs to, or that's still being asked */
+  | { status: 'wrong-account' }
   /** a sync is still running; try again in a moment */
   | { status: 'busy' }
   /** online, but the function couldn't be reached (not deployed, or its host is down) */
@@ -38,6 +40,7 @@ export const DELETE_MESSAGES: Record<Exclude<DeleteResult['status'], 'ok'>, stri
   offline: 'Deleting your account needs a connection. Nothing has been deleted.',
   'no-session': 'Sign in again to delete your account. Nothing has been deleted.',
   reauth: 'To delete your account, confirm it’s you: enter your password, or sign in with Google again.',
+  'wrong-account': 'This phone’s data isn’t settled for this account yet, so it can’t be deleted from here. Nothing has been deleted.',
   busy: 'Tali is still syncing. Try again in a moment. Nothing has been deleted.',
   unavailable: 'Couldn’t reach Tali just now. Nothing has been deleted. Try again later.',
   error: 'Something went wrong, so nothing has been deleted. Try again later.',
@@ -76,6 +79,8 @@ export interface DeleteDeps {
   /** the current session's sign-in is recent enough (the server checks again; this only saves a
    *  call that would be refused) */
   fresh: () => boolean
+  /** the session is the device data's owner, with no owner question pending (tokenMatchesOwner) */
+  accountMatches: () => boolean
   /** POST to the function; resolves with the HTTP status and parsed body, or rejects on no connection */
   call: () => Promise<{ status: number; body: unknown }>
   wipe: () => void
@@ -96,6 +101,8 @@ export const defaultDeleteDeps: DeleteDeps = {
   online: () => typeof navigator === 'undefined' || navigator.onLine !== false,
   hasSession,
   fresh: () => sessionSignedInRecently(getToken()),
+  // fail closed: the store passes the real check (it knows _meta.owner and ownerAsk)
+  accountMatches: () => false,
   call: callFunction,
   wipe: wipeDevice,
   // local only: the server session died with the login; never wait long for it
@@ -110,6 +117,7 @@ export const defaultDeleteDeps: DeleteDeps = {
 export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps): Promise<DeleteResult> {
   if (!deps.online()) return { status: 'offline' }
   if (!deps.hasSession()) return { status: 'no-session' }
+  if (!deps.accountMatches()) return { status: 'wrong-account' }
   if (!deps.fresh()) return { status: 'reauth' }
   let res: { status: number; body: unknown }
   try {
@@ -161,25 +169,53 @@ export async function reauthWithPassword(email: string, password: string): Promi
   }
 }
 
-/** Google accounts: a fresh Google sign-in (the page leaves and comes back to this origin). */
-export async function reauthWithGoogle(): Promise<ReauthResult> {
+type FlagStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+const session = (): FlagStore | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage } catch { return null } }
+
+/** Note, before leaving for Google, that the return is a re-sign-in for deletion by `uid`. */
+export function markReauth(uid: string, storage: FlagStore | null = session(), now = Date.now()): void {
+  try { storage?.setItem(REAUTH_FLAG, JSON.stringify({ at: now, uid })) } catch { /* blocked: the UI just won't reopen */ }
+}
+
+/**
+ * Google accounts: a fresh Google sign-in (the page leaves and comes back to this origin).
+ * `select_account` makes Google show the account chooser (Google rejects `login`), hinted to this
+ * account's email; the server still decides on the sign-in time.
+ */
+export async function reauthWithGoogle(email: string, uid: string): Promise<ReauthResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'offline'
-  try { sessionStorage.setItem(REAUTH_FLAG, String(Date.now())) } catch { /* blocked: the UI just won't reopen */ }
+  markReauth(uid)
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     // dynamic, as on the sign-in screen: the allow-list lives in the Supabase dashboard
-    options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } },
+    options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account', login_hint: email } },
   })
   return error ? 'error' : 'redirecting'
 }
 
-/** After returning from a Google re-sign-in for deletion (within 10 minutes): true once. */
-export function takeReauthReturn(): boolean {
+/**
+ * Back from a Google re-sign-in: true once, only for the same account that left (`currentUid`,
+ * the session now applied) and within 10 minutes. Any other account or an old flag: false, and
+ * the flag is gone either way.
+ */
+export function takeReauthReturn(currentUid: string | null, storage: FlagStore | null = session(), now = Date.now()): boolean {
   try {
-    const at = Number(sessionStorage.getItem(REAUTH_FLAG) || 0)
-    sessionStorage.removeItem(REAUTH_FLAG)
-    return at > 0 && Date.now() - at < 10 * 60_000
+    const raw = storage?.getItem(REAUTH_FLAG)
+    storage?.removeItem(REAUTH_FLAG)
+    const f = raw ? JSON.parse(raw) : null
+    return !!currentUid && !!f && typeof f === 'object' && f.uid === currentUid && typeof f.at === 'number' && now - f.at >= 0 && now - f.at < 10 * 60_000
   } catch {
     return false
   }
+}
+
+/**
+ * Deletion may only run for the account this device's data belongs to, with nothing unresolved:
+ * the session token's subject must be the recorded owner (`_meta.owner`) and no "whose data is
+ * this?" question may be pending. Read from the token, not verified (the server verifies it).
+ */
+export function tokenMatchesOwner(token: string, owner: string | undefined, ownerAsk: boolean): boolean {
+  if (ownerAsk || !owner) return false
+  const sub = (jwtPayload(token) as { sub?: unknown } | null)?.sub
+  return typeof sub === 'string' && sub === owner
 }
