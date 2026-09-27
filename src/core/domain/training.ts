@@ -3,7 +3,7 @@ import { shiftDay } from './date'
 import { weekOf } from './insights'
 import { sessionsOf } from './sessions'
 import { keyRoutineId, type WorkoutKey } from './routines'
-import { plannedKeys } from './plans'
+import { activePlan, plannedKeys } from './plans'
 
 const did = (s: AppState, d: string) => sessionsOf(s.days[d], d).length > 0
 const didRoutine = (s: AppState, d: string, k: WorkoutKey) => sessionsOf(s.days[d], d).some((x) => x.routineId === keyRoutineId(k))
@@ -29,9 +29,13 @@ export function catchUp(s: AppState, today: string): { type: WorkoutKey; d: stri
   if (!first) return null
   // the plan's workouts (several a day, own ones too) or the schedule's one (plan P5)
   const todays = plannedKeys(s, today)
+  // nothing from before the plan in charge today began: its week was never the plan on those
+  // days (the schedule now mirrors it), so nothing there is anyone's to pick up
+  const since = activePlan(s, today)?.startedAt
   for (let i = 1; i <= CATCH_UP_DAYS; i++) {
     const d = shiftDay(today, -i)
     if (d < first) return null
+    if (since && since <= today && d < since) return null
     const planned = plannedKeys(s, d)
     if (!planned.length) continue
     if (did(s, d)) return null // the most recent planned day was done

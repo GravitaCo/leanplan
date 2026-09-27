@@ -1614,8 +1614,11 @@ async function timeouts(): Promise<void> {
     activePlan(s, '2026-09-27')?.id, upcomingPlan(s, '2026-09-27')?.id, String(maintainOn(s, '2026-09-27')), plannedKeys(s, '2026-09-26').join('+'),
     activePlan(s, '2026-09-28')?.id, plannedKeys(s, '2026-09-28').join('+'), supersededPlans(s, '2026-09-28').map((p) => p.id).join(','), supersededPlans(s, '2026-09-27').length,
     plannedKeys(fresh, '2026-09-26').join('+') || 'none', isBuiltinKey('constructor'), isBuiltinKey('Push'),
+    // started today with the schedule already mirrored to its week (Sat Push): Saturday was a rest day, nothing to pick up
+    catchUp({ ...fresh, schedule: { ...fresh.schedule, 6: 'Push' }, target: { kcal: 2000 }, profile: {}, customFoods: [], recipes: [],
+      days: { '2026-09-20': { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null } } }, '2026-09-27')?.type ?? 'none',
   ].join(' ')
-  const want = 'o n true Push n Push o 0 none false true'
+  const want = 'o n true Push n Push o 0 none false true none'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: next plan waits its turn, no plan before its start, own keys', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

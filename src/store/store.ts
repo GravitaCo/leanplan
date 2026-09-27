@@ -180,15 +180,16 @@ function ensureDay(s: PersistedState, d: string): DayLog {
 function mirrorPlan(s: PersistedState, mark: boolean): boolean {
   const today = todayStr()
   // a plan chosen to start later has now started: the one it replaces is finished
-  for (const old of supersededPlans(s, today)) { old.state = 'completed'; old.completedAt = nowIso(); old._dirty = true; old._u = nowIso() }
+  const done = supersededPlans(s, today)
+  for (const old of done) { old.state = 'completed'; old.completedAt = nowIso(); old._dirty = true; old._u = nowIso() }
   const p = activePlan(s, today)
   const pos = p ? positionOn(p, today) : null
-  if (!pos) return false
+  if (!pos) return done.length > 0
   const next = scheduleMirror(pos.planWeek, s.routines)
   let changed = false
   for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
   if (changed && mark) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
-  return changed
+  return changed || done.length > 0
 }
 
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
