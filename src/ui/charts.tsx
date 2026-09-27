@@ -77,19 +77,22 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
   )
 }
 
-/** Week bars against the target range. Each logged day carries its number; the range is a quiet
- *  labelled zone behind the bars (see the key under the chart), and a day with nothing logged is a
+/** Week bars against the target range. Each logged day carries its number; each day's range is a
+ *  quiet zone behind its bar (higher on a workout day) (see the key under the chart), and a day with nothing logged is a
  *  small stub, not a gap to feel bad about. `numbers` is off in gentle mode. */
 export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
   const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
-  const max = Math.max(...rows.map((x) => x.t.k), hi) * 1.04 || 1
+  const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
   const y = (v: number) => base - (v / max) * (base - top0)
   const step = W / 7
-  const label = `Energy this week${numbers ? `, range ${Math.round(lo)} to ${Math.round(hi)} kcal` : ''}: ` +
+  const label = `Energy this week${numbers ? `, range ${Math.round(lo)} to ${Math.round(hi)} kcal${rows.some((x) => x.r.hi !== hi) ? ', higher on workout days' : ''}` : ''}: ` +
     (rows.filter((x) => x.logged).map((x) => `${new Date(x.d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })} ${numbers ? Math.round(x.t.k) + ' kcal' : 'logged'}`).join(', ') || 'nothing logged yet')
   return (
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
-      <rect x={0} y={y(hi)} width={W} height={Math.max(2, y(lo) - y(hi))} fill="var(--band)" opacity={0.45} />
+      {/* each day's own range: it rises on a day with a logged workout, so it always agrees with "in your range" */}
+      {rows.map((x, i) => (
+        <rect key={'r' + x.d} className="band" x={step * i} y={y(x.r.hi)} width={step + (i < 6 ? 0.5 : 0)} height={Math.max(2, y(x.r.lo) - y(x.r.hi))} fill="var(--band)" />
+      ))}
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)

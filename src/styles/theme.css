@@ -252,12 +252,14 @@ button.li:active, .li[role='button']:active { background: var(--fill); }
 svg.bars { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
 svg.bars text { font-size: 11px; fill: var(--label2); font-weight: 600; }
 svg.bars text.on { fill: var(--label); }
-svg.bars text.v { font-size: 10px; font-weight: 500; }
-.wkey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--label2); margin-top: 8px; }
-.wkey span { display: inline-flex; align-items: center; gap: 6px; }
+svg.bars text.v { font-size: 11px; font-weight: 500; }
+svg.bars .band, .wkey i.band { opacity: 0.45; }
+@media (prefers-color-scheme: dark) { svg.bars .band, .wkey i.band { opacity: 0.7; } }
+.wkey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--label2); margin-top: 8px; }
+.wkey > span { display: inline-flex; align-items: center; gap: 6px; }
 .wkey i { display: inline-block; flex-shrink: 0; }
 .wkey i.bar { width: 8px; height: 12px; border-radius: 3px; background: var(--energy); }
-.wkey i.band { width: 16px; height: 8px; background: var(--band); opacity: 0.45; }
+.wkey i.band { width: 16px; height: 8px; background: var(--band); }
 
 /* ===================== CONTROLS ===================== */
 .btn {
