@@ -35,7 +35,7 @@ export function routineTemplate(r: Routine): WorkoutTemplate {
   const ex: ExerciseTemplate[] = []
   for (const s of slotsOf(r)) {
     const x = exOf(s)
-    if (x) ex.push({ id: x.id, n: x.n, t: s.rx || x.defaultRx || '', cue: x.cue, video: x.video })
+    if (x) ex.push({ id: x.id, n: x.n, t: s.rx || x.defaultRx || '', cue: x.cue, video: x.video, ...(s.restSec != null ? { restSec: s.restSec } : {}) })
   }
   return { title: r.name, ex }
 }

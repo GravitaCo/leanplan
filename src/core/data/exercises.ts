@@ -64,7 +64,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'calf-raise', n: 'Calf raise', modality: 'strength', log: 'weight-reps',
     equipment: ['machine', 'dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 12–15',
-    pattern: 'isolation', primary: 'calves',
+    pattern: 'isolation', primary: 'calves', care: ['ankles'],
     timeCost: { setupSec: 20, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['next-stack', 'next-weight', 'reps'],
     cue: "Push up onto the balls of your feet as high as you can, pause at the top, lower slowly for a full stretch. Don't bounce.",
@@ -690,7 +690,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'cossack-squat', n: 'Cossack squat', modality: 'calisthenics', log: 'reps', perSide: true,
     equipment: [], difficulty: 'intermediate', defaultRx: '3 × 5–8 each side',
-    pattern: 'squat', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'bodyweight-squat',
+    pattern: 'squat', primary: 'quads', secondary: ['glutes'], care: ['knees', 'hips', 'ankles'], gentler: 'bodyweight-squat',
     timeCost: { setupSec: 10, setSec: 50 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], ladders: [{ chain: 'squat-home', step: 3 }],
     cue: "Stand with feet wide and toes turned slightly out, holding a support if you like. Bend one knee and sit your hips down towards that heel while the other leg stays straight, then push back up to the middle and switch. Only go as low as the bent-knee heel stays down, and don't let that knee cave inwards.",
@@ -745,7 +745,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'trap-bar-deadlift', n: 'Trap-bar deadlift', modality: 'strength', log: 'weight-reps',
-    equipment: ['barbell'], difficulty: 'intermediate', defaultRx: '3 × 5–8',
+    equipment: ['trap-bar'], difficulty: 'intermediate', defaultRx: '3 × 5–8',
     pattern: 'hinge', primary: 'glutes', secondary: ['quads', 'hamstrings', 'back'], care: ['lower-back'], gentler: 'hip-thrust',
     timeCost: { setupSec: 120, setSec: 30 }, skill: 2, impact: 'none', position: 'standing', systemicCost: 'high', homeFriendly: false,
     increment: ['plate-2.5'], ladders: [{ chain: 'hinge-loaded', step: 3 }],
@@ -770,7 +770,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'copenhagen-plank', n: 'Copenhagen plank (short lever)', modality: 'calisthenics', log: 'hold', perSide: true,
     equipment: ['bench'], difficulty: 'advanced', defaultRx: '3 × 10–20 sec each side',
-    pattern: 'core', primary: 'core', care: ['knees'], gentler: 'side-plank',
+    pattern: 'core', primary: 'core', care: ['knees', 'hips'], gentler: 'side-plank',
     timeCost: { setupSec: 20, setSec: 40 }, skill: 2, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time', 'chain'], props: ['chair', 'sofa'], ladders: [{ chain: 'core-side', step: 4 }],
     cue: "Lie on your side next to a bench or sturdy sofa and rest the inside of your top knee on it, bottom leg tucked under and elbow under your shoulder. Press the top knee down into the bench and lift your hips until your body is straight, then hold. Keep the knee, not the foot, on the bench; come down if you feel it in the knee rather than the inner thigh.",
@@ -952,7 +952,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'pigeon', n: 'Pigeon pose', modality: 'yoga', log: 'hold', perSide: true,
     equipment: ['mat', 'yoga-props'], difficulty: 'intermediate', defaultRx: '30–60 sec each side', targets: ['hips'],
-    care: ['knees'], gentler: 'reclined-figure-four',
+    care: ['knees', 'hips'], gentler: 'reclined-figure-four',
     pattern: 'mobility',
     timeCost: { setupSec: 20, setSec: 95 }, skill: 2, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
@@ -1169,7 +1169,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'hip-90-90', n: 'Hip 90/90 switch', modality: 'mobility', log: 'reps',
     equipment: [], difficulty: 'beginner', defaultRx: '1 × 6–8 each way', targets: ['hips'],
-    care: ['knees'],
+    care: ['knees', 'hips'],
     pattern: 'mobility',
     timeCost: { setupSec: 10, setSec: 45 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
@@ -1253,7 +1253,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'supported-deep-squat', n: 'Supported deep squat', modality: 'mobility', log: 'hold',
     equipment: [], difficulty: 'beginner', defaultRx: '3 × 20–30 sec', targets: ['hips', 'ankles'],
-    care: ['knees'],
+    care: ['knees', 'hips', 'ankles'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 25 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['time'], props: ['doorway'],
@@ -1304,7 +1304,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'cardio-run', n: 'Run', modality: 'cardio', log: 'duration',
     equipment: [], difficulty: 'beginner', defaultRx: '20–30 min', cardioVariation: 'running',
-    care: ['knees'], gentler: 'cardio-walk',
+    care: ['knees', 'ankles'], gentler: 'cardio-walk',
     pattern: 'cardio',
     timeCost: { setupSec: 30, setSec: 60 }, skill: 1, impact: 'high', position: 'standing', systemicCost: 'medium', homeFriendly: false,
     increment: ['time'],
@@ -1362,7 +1362,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'cardio-jump-rope', n: 'Jump rope', modality: 'cardio', log: 'duration',
     equipment: [], difficulty: 'intermediate', defaultRx: '5–10 min', cardioVariation: 'jump-rope',
-    care: ['knees'], gentler: 'cardio-walk',
+    care: ['knees', 'ankles'], gentler: 'cardio-walk',
     pattern: 'cardio',
     timeCost: { setupSec: 10, setSec: 60 }, skill: 2, impact: 'high', position: 'standing', systemicCost: 'medium', homeFriendly: false,
     increment: ['time'],

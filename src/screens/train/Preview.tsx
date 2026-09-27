@@ -141,7 +141,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           )}
           <div className="list">
             {rows.map(({ s, detail }) => {
-              const gentler = !s.swapped && s.x?.gentler && s.x.equipment[0] === 'barbell' && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
+              const gentler = !s.swapped && s.x?.gentler && (s.x.equipment[0] === 'barbell' || s.x.equipment[0] === 'trap-bar') && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
               return (
                 <div className="li pv-row" key={s.i}>
                   {s.shown.video

@@ -54,6 +54,7 @@ import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
 import type { Food } from '@/core/types'
 import { consentSuite } from './test-consent'
 import { onboardingSuite } from './test-onboarding'
+import { engineSuite } from './test-engine'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -1762,4 +1763,4 @@ function feedbackForm(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

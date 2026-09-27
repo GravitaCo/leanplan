@@ -3,6 +3,7 @@ import type { BodyArea, Equipment, Experience, LogShape, MobilityTarget } from '
 /** Words for the exercise library's tags (en-GB, plain). */
 export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   barbell: 'Barbell',
+  'trap-bar': 'Trap bar',
   dumbbell: 'Dumbbells',
   machine: 'Machine',
   cable: 'Cable',
@@ -27,6 +28,8 @@ export const LEVEL_LABEL: Record<Experience, string> = {
 export const CARE_LABEL: Record<BodyArea, string> = {
   'lower-back': 'the lower back',
   knees: 'the knees',
+  hips: 'the hips',
+  ankles: 'the ankles',
   shoulders: 'the shoulders',
   elbows: 'the elbows',
   wrists: 'the wrists',

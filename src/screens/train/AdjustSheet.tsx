@@ -62,7 +62,8 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
   const [warmup, setWarmup] = useState(!!warm0)
   const [help, setHelp] = useState(false)
   const kitStep = x?.equipment.some((q) => q === 'dumbbell' || q === 'kettlebell') && !x.equipment.includes('barbell') ? 1 : 2.5
-  const barbell = !!x?.equipment.includes('barbell')
+  // a trap bar loads like a barbell: plates, and the bar's own weight counts
+  const barbell = !!x?.equipment.some((q) => q === 'barbell' || q === 'trap-bar')
   const barOnly = barbell && !x!.equipment.includes('dumbbell')
 
   const log = () => {

@@ -80,13 +80,13 @@ for (const e of EXERCISES) {
   for (const p of e.props ?? []) if (!PROPS.includes(p)) errors.push(`${at}: bad prop ${p}`)
   // a load step has to match the kit the entry lists
   const kit = (...q: string[]) => e.equipment.some((x) => q.includes(x))
-  if (e.increment?.includes('plate-2.5') && !kit('barbell')) errors.push(`${at}: plate-2.5 without a barbell`)
+  if (e.increment?.includes('plate-2.5') && !kit('barbell', 'trap-bar')) errors.push(`${at}: plate-2.5 without a barbell or trap bar`)
   if (e.increment?.includes('next-weight') && !kit('dumbbell', 'kettlebell')) errors.push(`${at}: next-weight without dumbbells or a kettlebell`)
   if (e.increment?.includes('next-stack') && !kit('machine', 'cable')) errors.push(`${at}: next-stack without a machine or cable`)
   // (the band-assisted pull-up's band is part of the move, so its kit is just the bar)
   if (e.increment?.includes('next-band') && !kit('band') && !e.id.startsWith('band-')) errors.push(`${at}: next-band without a band`)
   if (e.increment?.includes('chain') && !e.ladders?.length) errors.push(`${at}: increment "chain" but on no ladder`)
-  if (e.homeFriendly && kit('barbell', 'machine', 'cable', 'cardio-machine') && !kit('dumbbell', 'kettlebell', 'band', 'bodyweight')) errors.push(`${at}: gym-only kit can't be homeFriendly`)
+  if (e.homeFriendly && kit('barbell', 'trap-bar', 'machine', 'cable', 'cardio-machine') && !kit('dumbbell', 'kettlebell', 'band', 'bodyweight')) errors.push(`${at}: gym-only kit can't be homeFriendly`)
   if (e.impact === 'high' && !e.care?.includes('knees')) errors.push(`${at}: high-impact entries should flag the knees`)
 }
 const byId = new Map(EXERCISES.map((e) => [e.id, e]))

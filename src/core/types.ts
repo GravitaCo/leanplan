@@ -302,8 +302,12 @@ export type TargetRate = 'steady' | 'standard' | 'aggressive'
 
 export type Experience = 'beginner' | 'intermediate' | 'advanced'
 
+/**
+ * Kit an exercise can use. `trap-bar` is its own type (not `barbell`): someone with a straight bar
+ * and plates doesn't necessarily have a trap bar, so the engine never suggests one to them.
+ */
 export type Equipment =
-  | 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band'
+  | 'barbell' | 'trap-bar' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'kettlebell' | 'band'
   | 'cardio-machine'
   | 'bench' | 'pull-up-bar' | 'mat' | 'yoga-props' | 'reformer'
 
@@ -313,7 +317,13 @@ export type CardioVariation =
   | 'elliptical' | 'stair' | 'jump-rope' | 'hiit' | 'other'
 
 /** Body areas the user needs to train around (onboarding #13, safety-first). */
-export type BodyArea = 'lower-back' | 'knees' | 'shoulders' | 'elbows' | 'wrists' | 'neck'
+export type BodyArea = 'lower-back' | 'knees' | 'hips' | 'ankles' | 'shoulders' | 'elbows' | 'wrists' | 'neck'
+
+/** "Are you moving much at the moment?" (onboarding setup card; engine §3.2 starting dose). */
+export type MovingNow = 'not-at-all' | 'some' | 'regularly'
+
+/** "Where will you usually move?" (multi: plan §4.0.2 F4). */
+export type TrainingPlace = 'home' | 'gym' | 'outdoors'
 
 export type MuscleGroup =
   | 'chest' | 'back' | 'quads' | 'hamstrings' | 'glutes' | 'shoulders'
@@ -325,7 +335,17 @@ export type MuscleGroup =
  */
 export interface TrainingPrefs {
   experience?: Experience
-  daysPerWeek?: 2 | 3 | 4 | 5 | 6
+  /** 1 is allowed: one full-body session (onboarding §13.3) */
+  daysPerWeek?: 1 | 2 | 3 | 4 | 5 | 6
+  /** the weekdays picked (0 = Sun … 6 = Sat); picking days sets the count. Never a rotation. */
+  weekdays?: number[]
+  minutesPerSession?: 10 | 20 | 30 | 45 | 60
+  place?: TrainingPlace[]
+  movingNow?: MovingNow
+  /** what they enjoy or want to try (F1); absent = "not sure yet" */
+  modalities?: Modality[]
+  /** explicit thumbs up / down on exercises (library ids); the only stored engine preference */
+  exPrefs?: { liked?: string[]; disliked?: string[] }
   /** what the user can access; filters exercise selection & substitution */
   equipment?: Equipment[]
   /** preferred cardio variations (esp. for increase-endurance) */
@@ -503,6 +523,8 @@ export interface TrainingPlan {
   reflection?: { at: string; good?: string; change?: string }
   /** the Tali plan it came from ("Suggested next" skips it) */
   baseTemplateId?: string
+  /** a generated plan's reasons (engine §3.6): codes and data only, text rendered at display time */
+  why?: Why[]
   clonedFromId?: string
   _u?: string
   _dirty?: boolean
@@ -514,7 +536,11 @@ export interface RoutineSlot {
   exId: string
   /** this slot's prescription; the library's `defaultRx` when absent */
   rx?: string
+  /** rest between sets in seconds; the pattern default (guided.restFor) when absent */
+  restSec?: number
   note?: string
+  /** why the engine chose this exercise, sets, reps and rest (codes and data only) */
+  why?: Why[]
 }
 
 /** sets: each exercise's sets in turn · circuit: one of each, repeated · flow: follow along in order. */
@@ -546,6 +572,8 @@ export interface Routine {
   source: 'custom' | 'recommended'
   /** the built-in it was customised from, e.g. 'builtin-Push' */
   baseId?: string
+  /** a generated workout's reasons (its day and focus); codes and data only */
+  why?: Why[]
   archived?: boolean
   _u?: string
   _dirty?: boolean
@@ -665,6 +693,47 @@ export interface Exercise {
    * screen.
    */
   ladders?: { chain: string; step: number }[]
+}
+
+/**
+ * The training engine's reasons (personalised-training-engine.md §3.6). Stored as a code plus small
+ * data, never as text: `whyText` in `core/domain/engine/why.ts` renders the sentence at display
+ * time, so plans stay well inside the 64 KB settings cap and copy can change without a migration.
+ * `perf-*`, `feel`, `recovery` and `adherence` belong to the learning loop (engine E2/E3).
+ */
+export type WhyCode = 'goal' | 'experience' | 'moving-now' | 'days' | 'minutes' | 'kit' | 'enjoy' | 'body-area'
+  | 'baseline' | 'age-edge' | 'guardrail' | 'time-limited' | 'variety' | 'liked' | 'disliked'
+  | 'perf-top-of-range' | 'perf-below-range' | 'perf-stalled' | 'feel' | 'recovery' | 'adherence' | 'evidence'
+  /** a skipped answer fell back to its safe default (first-run-onboarding.md §2.1) */
+  | 'default'
+  /** "find your weight" sessions 1–2 */
+  | 'calibration'
+  /** the Starter week: claims nothing about the person */
+  | 'starter'
+
+/** What a reason is about, so a card can show the right one next to the right thing. */
+export type WhyAbout = 'plan' | 'split' | 'mix' | 'days' | 'dose' | 'ease-in' | 'exercise' | 'sets' | 'reps' | 'rest' | 'safety' | 'offer'
+
+export interface WhyData {
+  /** the exercise chosen */
+  exId?: string
+  /** the exercise it was chosen over */
+  alt?: string
+  value?: string
+  n?: number
+  /** the number before a change (sets before a time trim) */
+  was?: number
+  /** a rep or time range, "8–12" */
+  range?: string
+  date?: string
+}
+
+export interface Why {
+  code: WhyCode
+  about?: WhyAbout
+  /** the onboarding field it came from (engine inputs), when it came from one */
+  field?: string
+  data?: WhyData
 }
 
 /** A definition for a built-in exercise within a workout template. */
