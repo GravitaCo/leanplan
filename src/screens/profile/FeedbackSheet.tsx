@@ -2,6 +2,7 @@
  * Tester feedback, one step at a time: each key area (a quick rating and an optional note), then
  * what they'd like to see, then a review. Sending opens the tester's email app with it all filled
  * in, addressed to Benn; Copy is there for a phone without a mail app. Every question can be skipped.
+ * Closing the sheet by accident keeps the answers for next time; they clear once it's sent.
  */
 import { useEffect, useState } from 'react'
 import { useStore } from '@/store/store'
@@ -9,11 +10,17 @@ import { FEEDBACK_AREAS, FEEDBACK_RATINGS, FEEDBACK_TO, feedbackEmail, feedbackM
 import { BackButton, Sheet } from '@/ui/primitives'
 
 const STEPS = FEEDBACK_AREAS.length + 3 // intro, the areas, open questions, review
+const EMPTY: FeedbackAnswers = { areas: {}, wishes: '', other: '' }
+// the unsent draft, kept while the app is open (a stray tap on the backdrop shouldn't lose it)
+let draft: { step: number; a: FeedbackAnswers } = { step: 0, a: EMPTY }
 
 export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   const showToast = useStore((s) => s.showToast)
-  const [step, setStep] = useState(0)
-  const [a, setA] = useState<FeedbackAnswers>({ areas: {}, wishes: '', other: '' })
+  const [step, setStep] = useState(draft.step)
+  const [a, setA] = useState<FeedbackAnswers>(draft.a)
+  useEffect(() => { draft = { step, a } }, [step, a])
+  // each step starts at the top of the sheet
+  useEffect(() => { document.querySelector('.sheet .sheet-bd')?.scrollTo(0, 0) }, [step])
   const [opened, setOpened] = useState(false)
   const [version, setVersion] = useState<string>()
   // the service worker's cache name is the deployed version (tali-vNN)
@@ -48,26 +55,26 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
 
       {area && (
         <>
-          <p className="fb-q">How is {area.label.toLowerCase()} working for you?</p>
+          <p className="fb-q" id="fb-q">{area.question}</p>
           <div className="foot" style={{ padding: '0 0 12px' }}>{area.hint}</div>
-          <div className="scale" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="scale" role="radiogroup" aria-labelledby="fb-q" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {FEEDBACK_RATINGS.map((r) => (
-              <button key={r} className={cur.rating === r ? 'on' : ''} aria-pressed={cur.rating === r}
+              <button key={r} role="radio" className={cur.rating === r ? 'on' : ''} aria-checked={cur.rating === r}
                 onClick={() => setArea({ rating: cur.rating === r ? undefined : r })}>{r}</button>
             ))}
           </div>
-          <div className="lbl">What worked, or what got in the way?</div>
-          <textarea rows={4} value={cur.note ?? ''} placeholder="Optional" onChange={(e) => setArea({ note: e.target.value })} />
+          <label className="lbl" htmlFor="fb-note" style={{ display: 'block' }}>What worked, or what got in the way?</label>
+          <textarea id="fb-note" rows={4} value={cur.note ?? ''} placeholder="Optional" onChange={(e) => setArea({ note: e.target.value })} />
         </>
       )}
 
       {step === FEEDBACK_AREAS.length + 1 && (
         <>
-          <p className="fb-q">What would you like to see in Tali?</p>
+          <label className="fb-q" htmlFor="fb-wishes" style={{ display: 'block' }}>What would you like to see in Tali?</label>
           <div className="foot" style={{ padding: '0 0 12px' }}>Features, foods, workouts, anything that would make it more useful for you.</div>
-          <textarea rows={5} value={a.wishes} placeholder="Optional" onChange={(e) => setA({ ...a, wishes: e.target.value })} />
-          <div className="lbl">Anything else?</div>
-          <textarea rows={3} value={a.other} placeholder="Optional" onChange={(e) => setA({ ...a, other: e.target.value })} />
+          <textarea id="fb-wishes" rows={5} value={a.wishes} placeholder="Optional" onChange={(e) => setA({ ...a, wishes: e.target.value })} />
+          <label className="lbl" htmlFor="fb-other" style={{ display: 'block' }}>Anything else?</label>
+          <textarea id="fb-other" rows={3} value={a.other} placeholder="Optional" onChange={(e) => setA({ ...a, other: e.target.value })} />
         </>
       )}
 
@@ -84,8 +91,8 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
           )}
           <div className="stack">
             {opened
-              ? <button className="btn" onClick={onClose}>Done</button>
-              : <button className="btn" disabled={!ready} onClick={() => { window.location.href = feedbackMailto(email); setOpened(true) }}>Send by email</button>}
+              ? <button className="btn" onClick={() => { draft = { step: 0, a: EMPTY }; onClose() }}>Done</button>
+              : <button className="btn" disabled={!ready} onClick={() => { window.location.href = feedbackMailto(email); setOpened(true); draft = { step: 0, a: EMPTY } }}>Send by email</button>}
             <button className="btn gray" disabled={!ready} onClick={copy}>Copy instead</button>
           </div>
         </>

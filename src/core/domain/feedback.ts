@@ -3,11 +3,11 @@
 export const FEEDBACK_TO = 'benn@gravita.co'
 
 export const FEEDBACK_AREAS = [
-  { id: 'food', label: 'Logging food', hint: 'Searching, scanning barcodes, portions, meals' },
-  { id: 'train', label: 'Workouts', hint: 'Train, following a workout, logging sets' },
-  { id: 'plan', label: 'Planning your week', hint: 'Plan and your weekly schedule' },
-  { id: 'summary', label: 'Summary and check-ins', hint: 'Your day at a glance, how you’re feeling' },
-  { id: 'feel', label: 'Look and feel', hint: 'Speed, layout, how easy it is to use' },
+  { id: 'food', label: 'Logging food', question: 'How is logging food going?', hint: 'Searching, scanning barcodes, portions, meals' },
+  { id: 'train', label: 'Workouts', question: 'How are workouts going?', hint: 'Train, following a workout, logging sets' },
+  { id: 'plan', label: 'Planning your week', question: 'How is planning your week going?', hint: 'Plan and your weekly schedule' },
+  { id: 'summary', label: 'Summary and check-ins', question: 'How are the Summary and check-ins working for you?', hint: 'Your day at a glance, how you’re feeling' },
+  { id: 'feel', label: 'Look and feel', question: 'How does Tali look and feel to use?', hint: 'Speed, layout, how easy it is to use' },
 ] as const
 
 export type FeedbackAreaId = (typeof FEEDBACK_AREAS)[number]['id']
