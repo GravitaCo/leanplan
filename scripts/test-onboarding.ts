@@ -3,9 +3,9 @@
    returns the number of failures. */
 import type { OnboardingOutcomes, Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
-import { SIGNPOSTS, beatFor, urgentAdviceFor } from '@/core/data/signposts'
-import { asksMedical, legacySex, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
-import { ABSOLUTE_FLOOR, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
+import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
+import { asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
+import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
 import { PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
@@ -109,6 +109,15 @@ function signposts(): void {
     ['Beat per nation (checked 27 Sept 2026)', beatFor('england') === '0808 801 0677' && beatFor('scotland') === '0808 801 0432' && beatFor('wales') === '0808 801 0433' && beatFor('northern-ireland') === '0808 801 0434'],
     ['Beat hours', SIGNPOSTS.beat.hours === '3pm–8pm, Monday to Friday'],
     ['Samaritans 116 123, Childline 0800 1111, 999', SIGNPOSTS.samaritans.phone === '116 123' && SIGNPOSTS.childline.phone === '0800 1111' && SIGNPOSTS.emergency.phone === '999'],
+    ['Beat is free', SIGNPOSTS.beat.free === true],
+    ['Scotland calls it NHS 24 (111)', signpostName(SIGNPOSTS.nhs111, 'scotland') === 'NHS 24 (111)' && signpostName(SIGNPOSTS.nhs111, 'england') === 'NHS 111'],
+    ['NHS 111 option 2 (mental health) in England with the wellbeing signposts', SIGNPOSTS['nhs111-mental-health'].nations!.join() === 'england'
+      && routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost.includes('nhs111-mental-health')],
+    ['per nation: Northern Ireland gets the GP, no option 2', (() => {
+      const kinds = routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost
+      const ni = signpostsFor(kinds, 'northern-ireland').map((x) => x.kind), en = signpostsFor(kinds, 'england').map((x) => x.kind)
+      return !ni.includes('nhs111') && !ni.includes('nhs111-mental-health') && ni.includes('gp') && en.includes('nhs111-mental-health') && en.includes('nhs111') })()],
+    ['steps and job questions say "not counting workouts"', STEPS_QUESTION.includes('not counting workouts') && JOB_QUESTION.includes('not counting workouts')],
     ['NHS 111 in England, Wales, Scotland; GP in Northern Ireland', urgentAdviceFor('wales').kind === 'nhs111' && urgentAdviceFor('northern-ireland').kind === 'gp' && !SIGNPOSTS.nhs111.nations!.includes('northern-ireland')],
   ])
 }
@@ -200,7 +209,7 @@ function targets(): void {
     ['16–17 building muscle may still eat a little more, never less', muscle.hidden === null && muscle.adjustPct! > 0],
     ['BMI under 18.5: maintenance, no BMI in the output', thinT.adjustPct === 0 && !('bmi' in thinT)],
     ['wellbeing "Rather not say": maintenance until they choose otherwise', unsaidT.adjustPct === 0 && unsaidChosen.adjustPct! < 0],
-    ['medical: maintenance allowed, protein at 0.75 g/kg (no anchor)', med.adjustPct === 0 && med.kcal !== null && JSON.stringify(med.protein) === JSON.stringify({ low: 55, high: 55, anchor: false })],
+    ['medical: maintenance allowed, protein a minimum of 0.75 g/kg (no anchor)', med.adjustPct === 0 && med.kcal !== null && JSON.stringify(med.protein) === JSON.stringify({ low: 55, high: null, anchor: false })],
     ['poor sleep/stress: no deeper than −10%', poorSleep.adjustPct === -10],
     ['every hidden reason: no calorie, maintenance or protein number', Object.entries(hiddenCases).every(([why, t]) => t.hidden === why && noNumbers(t))],
     ['endurance: low energy availability warns', ea.lowEnergyAvailability && !base.lowEnergyAvailability],
@@ -221,21 +230,74 @@ function targets(): void {
   for (const [sex, sexAnswer] of [['M', 'male'], ['F', 'female'], ['F', 'unspecified']] as const) for (const age of [18, 40, 70]) for (const height of [150, 170, 190]) for (const kg of [50, 70, 100, 140]) {
     const t = st(sex, sexAnswer, { age, height, bodyFat: 40 }, kg)
     const floor = Math.ceil(calorieFloor(mifflinBmr(kg, height, age, sexAnswer), sexAnswer))
-    if (t.kcal < floor || (t.floored && t.kcal !== floor)) agree = false
+    if (t.kcal < floor || (t.floored && t.kcal !== Math.ceil(floor / 50) * 50)) agree = false
     const s2 = targetsFor(adult({ sex, sexAnswer, age, height, weight: kg, bodyFat: 40, targetRate: 'aggressive', movement: undefined }), null)
     if (s2.kcal !== null && s2.floorsApplied.some((f) => f !== 'weekly-loss-cap') && s2.kcal !== Math.ceil(floor / 50) * 50) agree = false
   }
   report('suggestedTargets', [
     ['floor: men 1,500 on Profile too', st('M', 'male', tiny, 60).kcal === 1500 && st('M', 'male', tiny, 60).floored],
-    ['floor: women and unspecified 1,200 on Profile too', st('F', 'female', tiny, 60).kcal === 1200 && st('F', 'unspecified', { ...tiny, age: 70 }, 60).kcal === 1200 && st('F', 'unspecified', tiny, 60).kcal === 1222],
-    ['floor: BMR above the sex floor holds', st('F', 'female', { age: 25, height: 180, bodyFat: 40 }, 120).kcal === 2039],
+    ['floor: women and unspecified 1,200 on Profile too', st('F', 'female', tiny, 60).kcal === 1200 && st('F', 'unspecified', { ...tiny, age: 70 }, 60).kcal === 1200 && st('F', 'unspecified', tiny, 60).kcal === 1250],
+    ['floor: BMR above the sex floor holds', st('F', 'female', { age: 25, height: 180, bodyFat: 40 }, 120).kcal === 2050],
     ['Profile and summary floors agree across a sweep', agree],
-    ['M / F unchanged, unspecified at the midpoint', s().maint === Math.round((750 + 1093.75 - 200 + 5) * 1.375) && s('unspecified').maint < s().maint && s('unspecified').maint > sF.maint],
+    ['M / F unchanged, unspecified at the midpoint', s().maint === Math.round(((750 + 1093.75 - 200 + 5) * 1.375) / 10) * 10 && s('unspecified').maint < s().maint && s('unspecified').maint > sF.maint],
+  ])
+}
+
+function profileMatchesSummary(): void {
+  const kg = 70
+  const onProfile = (p: Profile, consent = true) => suggestedTargets(p, kg, profileRouting(p, kg, consent)) as any
+  // not onboarded: age and pregnancy rules still apply on Profile
+  const legacy = { ...DEFAULT_PROFILE, sex: 'F' as const, age: 35, height: 165, activityLevel: 'light' as const, goal: 'lose-fat' as const }
+  const teen = onProfile({ ...legacy, age: 17 })
+  const adultLegacy = onProfile(legacy)
+  const done = (x: Partial<Profile>) => ({ ...adult(x), onboardedAt: '2026-09-27T10:00:00Z' })
+  const med = onProfile(done({ outcomes: { ...CLEAR, medical: 'flagged' } }))
+  const med70 = onProfile(done({ age: 70, outcomes: { ...CLEAR, medical: 'flagged' } }))
+  const gentle = onProfile(done({ outcomes: { ...CLEAR, wellbeing: 'flagged' } }))
+  const preg = onProfile({ ...legacy, pregnancy: { flagged: true, askedAt: '2026-09-27' } })
+  const unsaid = done({ outcomes: { ...CLEAR, wellbeing: 'undisclosed' } })
+  const sleepy = onProfile(done({ bodyFat: 35, outcomes: { ...CLEAR, baseline: 'low' } }))
+  // the summary stores its multiplier; Profile then shows the same numbers
+  const same = (p0: Profile, t: TrainingLoad | null) => {
+    const sum = startingTargets(p0, t, routeSafety(safetyAnswersFrom(p0, kg, true)), kg)
+    const p1: Profile = { ...p0, activityMult: sum.effectiveMultiplier!, activityLevel: activityLevelFor(sum.effectiveMultiplier!) }
+    const prof = onProfile(p1)
+    const again = startingTargets(p1, t, routeSafety(safetyAnswersFrom(p1, kg, true)), kg)
+    const mid = (sum.maintenance!.low + sum.maintenance!.high) / 2
+    return sum.kcal !== null && prof.kcal === sum.kcal && prof.adjustPct === sum.adjustPct && again.kcal === sum.kcal
+      && JSON.stringify(again.maintenance) === JSON.stringify(sum.maintenance) && Math.abs(prof.maint - mid) <= 10
+      && (sum.protein!.high === null ? prof.p === sum.protein!.low : prof.p >= sum.protein!.low - 5 && prof.p <= sum.protein!.high! + 5)
+  }
+  const desk = done({ movement: { kind: 'job', job: 'desk' } })
+  const walker = done({ movement: { kind: 'steps', band: '7.5k-10k' } })
+  let sweep = true, n = 0
+  for (const movement of [{ kind: 'steps', band: 'under-5k' }, { kind: 'steps', band: 'over-12.5k' }, { kind: 'job', job: 'manual' }, undefined] as Profile['movement'][])
+    for (const goal of ['lose-fat', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better'] as const)
+      for (const t of [null, lift3, { daysPerWeek: 5, minutes: 60, met: 8, endurance: true }])
+        for (const outcomes of [CLEAR, { ...CLEAR, medical: 'flagged' as const }, { ...CLEAR, baseline: 'low' as const }, { ...CLEAR, wellbeing: 'undisclosed' as const }])
+          for (const sexAnswer of ['female', 'male', 'unspecified'] as const) {
+            n++; if (!same(done({ movement, goal, outcomes, sexAnswer, sex: legacySex(sexAnswer), bodyFat: 30 }), t)) sweep = false
+          }
+  report('profile routing', [
+    ['17-year-old losing fat: no deficit on Profile', teen.adjustPct === 0 && teen.kcal % 50 === 0],
+    ['older profiles keep their deficit (§12)', adultLegacy.adjustPct < 0],
+    ['medical flag: no deficit on Profile, protein at least 0.75 g/kg', med.adjustPct === 0 && med.proteinMinimum && med.p === 55],
+    ['medical flag at 70: at least 1.0 g/kg', med70.proteinMinimum && med70.p === 70],
+    ['gentle mode and pregnancy: no calorie number on Profile', gentle.hidden === 'gentle' && preg.hidden === 'pregnancy' && !('kcal' in gentle) && !('kcal' in preg)],
+    ['wellbeing undisclosed: maintenance until the deficit is chosen', onProfile(unsaid).adjustPct === 0 && onProfile({ ...unsaid, deficitChosen: true }).adjustPct < 0],
+    ['poor sleep: no deeper than −10% on Profile', sleepy.adjustPct === -10],
+    ['no health consent after onboarding: nothing shown', onProfile(done({}), false).hidden === 'no-consent'],
+    ['desk job: Profile shows the summary numbers exactly', same(desk, null)],
+    ['7,500–10,000 steps and 3 × 45 min: Profile shows the summary numbers exactly', same(walker, lift3)],
+    [`${n} combinations: Profile and summary always match`, sweep],
+    ['"Prefer not to say" stored as F still uses the midpoint', (() => {
+      const u = onProfile({ ...legacy, sex: 'F', sexAnswer: 'unspecified' }), f = onProfile(legacy), m = onProfile({ ...legacy, sex: 'M' })
+      return u.maint > f.maint && u.maint < m.maint })()],
   ])
 }
 
 export function onboardingSuite(): number {
   bad = 0
-  units(); routing(); signposts(); profileBits(); targets()
+  units(); routing(); signposts(); profileBits(); targets(); profileMatchesSummary()
   return bad
 }

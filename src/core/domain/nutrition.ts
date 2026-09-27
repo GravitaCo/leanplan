@@ -1,6 +1,6 @@
 import type { DayLog, Food, FoodUnit, Recipe, Profile, ActivityLevel, Goal, TargetRate, SexAnswer } from '@/core/types'
 import { ACTIVITY } from '@/core/data/constants'
-import { sexOf } from './onboarding'
+import { sexOf, type HiddenReason, type SafetyRouting } from './onboarding'
 
 export interface MacroTotals {
   k: number
@@ -115,6 +115,15 @@ export interface SuggestedTargets {
   floored: boolean
   /** true when body-fat % was absent and the 15% fallback was assumed */
   bodyFatAssumed: boolean
+  /** what capped the target, as in startingTargets */
+  floorsApplied: FloorApplied[]
+  /** protein is a minimum (the medical flag's reference intake), not a goal anchor */
+  proteinMinimum: boolean
+}
+
+/** Safety routing hides calorie numbers (gentle mode, pregnancy, no consent…): show none. */
+export interface TargetsHidden {
+  hidden: HiddenReason
 }
 
 /**
@@ -139,7 +148,12 @@ export function mifflinBmr(kg: number, cm: number, age: number, sex: SexAnswer):
   return 10 * kg + 6.25 * cm - 5 * age + MIFFLIN_SEX_CONSTANT[sex]
 }
 
-/** §9 floors (first-run-onboarding): 1,500 men, 1,200 women and "Prefer not to say" */
+/**
+ * §9 floors (first-run-onboarding): 1,500 men, 1,200 women and "Prefer not to say". The lower
+ * floor goes to 'unspecified' because a floor is a minimum: using 1,500 for someone who may be a
+ * smaller woman would push the target up by assumption, while 1,200 is still a safe minimum for a
+ * man, and the BMR floor (on the midpoint constant) still applies on top.
+ */
 export const SEX_FLOOR: Record<SexAnswer, number> = { male: 1500, female: 1200, unspecified: 1200 }
 export const ABSOLUTE_FLOOR = 800
 
@@ -147,6 +161,84 @@ export const ABSOLUTE_FLOOR = 800
 export function calorieFloor(bmr: number, sex: SexAnswer): number {
   return Math.max(ABSOLUTE_FLOOR, bmr, SEX_FLOOR[sex])
 }
+
+/** weight loss at most 1% of body weight a week (first-run-onboarding §5) */
+export const MAX_LOSS_PCT_PER_WEEK = 1
+/** the usual ~7,700 kcal per kg of body weight lost (≈3,500 kcal/lb); an upper-bound rule of thumb */
+export const KCAL_PER_KG_LOST = 7700
+/** poor sleep or stress: no deeper than the shallowest lose-fat band, −10% (§4, §2.1) */
+export const NEAR_MAINTENANCE_PCT = -10
+
+export type FloorApplied = 'bmr' | 'sex-minimum' | 'absolute' | 'weekly-loss-cap'
+
+/** The routing clamps the energy pipeline applies (a SafetyRouting has them all). */
+export type EnergyClamps = Pick<SafetyRouting, 'maintenanceOnly' | 'noDeficit' | 'startAtMaintenance' | 'nearMaintenance'>
+export const NO_CLAMPS: EnergyClamps = { maintenanceOnly: false, noDeficit: false, startAtMaintenance: false, nearMaintenance: false }
+
+export interface EnergyTarget {
+  /** nearest 50 kcal, never across a floor or the weekly cap */
+  kcal: number
+  /** signed % applied, from the unrounded target */
+  adjustPct: number
+  floorsApplied: FloorApplied[]
+}
+
+const r50 = (x: number) => Math.round(x / 50) * 50
+const ceil50 = (x: number) => Math.ceil(x / 50) * 50
+
+/**
+ * The one kcal pipeline, shared by the Profile suggestion and the onboarding summary so they
+ * can never disagree: goal band -> routing (safer, never deeper) -> at most 1% body weight a week
+ * -> floors max(BMR, sex floor, 800) -> nearest 50.
+ * `acceptDeficit`: the person chose their goal's deficit over the pre-selected maintenance start.
+ */
+export function energyTarget(
+  bmr: number, maint: number, kg: number, sex: SexAnswer,
+  p: Pick<Profile, 'goal' | 'bodyFat' | 'targetRate' | 'deficitChosen'>,
+  clamps: EnergyClamps = NO_CLAMPS, acceptDeficit = !!p.deficitChosen,
+): EnergyTarget {
+  let pct = p.goal ? goalAdjustPct(p.goal, p.bodyFat ?? 15, nearestLevel(maint / bmr), p.targetRate ?? 'standard') : 0
+  if (clamps.maintenanceOnly) pct = 0
+  if (clamps.noDeficit || (clamps.startAtMaintenance && !acceptDeficit)) pct = Math.max(0, pct)
+  if (clamps.nearMaintenance) pct = Math.max(NEAR_MAINTENANCE_PCT, pct)
+
+  const floorsApplied: FloorApplied[] = []
+  let kcal = maint * (1 + pct / 100)
+  const maxDeficit = (kg * (MAX_LOSS_PCT_PER_WEEK / 100) * KCAL_PER_KG_LOST) / 7
+  const capped = maint - kcal > maxDeficit
+  if (capped) { kcal = maint - maxDeficit; floorsApplied.push('weekly-loss-cap') }
+  const floor = calorieFloor(bmr, sex)
+  if (kcal < floor) {
+    kcal = floor
+    floorsApplied.push(floor === bmr ? 'bmr' : floor === ABSOLUTE_FLOOR ? 'absolute' : 'sex-minimum')
+  }
+  // round, but never let rounding cross a floor or the weekly cap
+  let shown = r50(kcal)
+  if (shown < floor) shown = ceil50(floor)
+  if (capped && maint - shown > maxDeficit) shown = ceil50(maint - maxDeficit)
+  // adjustPct from the unrounded target, so maintenance rounded to 50 doesn't read as a 1% deficit
+  return { kcal: shown, adjustPct: Math.round((kcal / maint - 1) * 100) || 0, floorsApplied }
+}
+
+/** The legacy activity level nearest a multiplier (maintenance / BMR). */
+export function nearestLevel(mult: number): ActivityLevel {
+  let best: ActivityLevel = 'sedentary'
+  for (const k of Object.keys(ACTIVITY) as ActivityLevel[]) {
+    if (Math.abs(ACTIVITY[k].mult - mult) < Math.abs(ACTIVITY[best].mult - mult)) best = k
+  }
+  return best
+}
+
+/**
+ * Protein minimum when the high-protein anchor is off (medical flag), g/kg: the UK reference
+ * nutrient intake, 0.75 (COMA, DH 1991); from 65, 1.0 (PROT-AGE, Bauer et al. 2013,
+ * doi:10.1016/j.jamda.2013.05.021). Shown as "at least", never as a target to hit.
+ */
+export const PROTEIN_RNI_PER_KG = 0.75
+export const PROTEIN_MIN_65_PER_KG = 1.0
+export const proteinMinimumPerKg = (age: number | null): number => (age != null && age >= 65 ? PROTEIN_MIN_65_PER_KG : PROTEIN_RNI_PER_KG)
+/** grams, rounded up to 5 so it stays a minimum */
+export const proteinMinimumG = (kg: number, age: number | null): number => Math.ceil((kg * proteinMinimumPerKg(age)) / 5) * 5
 
 /** Interpolate x from [x0,x1] onto [y0,y1], clamped to the segment ends. */
 function lerp(x: number, x0: number, x1: number, y0: number, y1: number): number {
@@ -232,63 +324,57 @@ export const PROTEIN_PER_KG: Record<Goal, number> = {
 }
 
 /**
- * Goal-aware suggested daily target.
+ * Goal-aware suggested daily target (the Profile screen).
  *
- * The chain: Mifflin–St Jeor BMR × activity = maintenance → goal picks direction + band →
- * body fat / activity / pace pick the exact % within the band → safety floors →
- * protein-first macro split. Every input traces to a captured profile answer; when `goal`
- * is unset the engine returns `GoalNeeded` rather than assuming fat loss.
+ * The chain: Mifflin-St Jeor BMR x multiplier = maintenance -> `energyTarget` (goal band, safety
+ * routing, 1%/week cap, floors, nearest 50: the same pipeline as the onboarding summary) ->
+ * protein-first macro split. The multiplier is the one stored at onboarding (`activityMult`,
+ * daily movement plus training) when there is one, else the activity level's. When `goal` is
+ * unset the engine returns `GoalNeeded` rather than assuming fat loss; when routing hides
+ * calories it returns `TargetsHidden`. Pass `profileRouting(...)` as `routing`.
  */
-export function suggestedTargets(profile: Profile, weight: number | null): SuggestedTargets | GoalNeeded | null {
+export function suggestedTargets(profile: Profile, weight: number | null, routing?: SafetyRouting): SuggestedTargets | GoalNeeded | TargetsHidden | null {
   if (!profile.age || !profile.height || !weight) return null
+  if (routing?.stop) return { hidden: 'under16' }
+  if (routing?.hideCalories) return { hidden: routing.hiddenReason ?? 'gentle' }
 
-  // Step 1 — TDEE: Mifflin–St Jeor BMR × activity multiplier (unchanged basis).
-  // identical to before for 'M' / 'F' profiles; an onboarding "Prefer not to say" takes the midpoint
-  const bmr = mifflinBmr(weight, profile.height, profile.age, sexOf(profile))
+  // Step 1 - maintenance. Identical BMR to before for 'M' / 'F' profiles; an onboarding
+  // "Prefer not to say" takes the midpoint.
+  const sex = sexOf(profile)
+  const bmr = mifflinBmr(weight, profile.height, profile.age, sex)
   const activity: ActivityLevel = ACTIVITY[profile.activityLevel as ActivityLevel] ? profile.activityLevel : 'light'
-  const maint = Math.round(bmr * ACTIVITY[activity].mult)
+  const maintRaw = bmr * (profile.activityMult ?? ACTIVITY[activity].mult)
+  // never 1-kcal precision (first-run-onboarding §5)
+  const maint = Math.round(maintRaw / 10) * 10
 
-  // Step 2 — goal decides direction. No goal → no direction; never deficit-by-assumption.
+  // Step 2 - goal decides direction. No goal -> no direction; never deficit-by-assumption.
   if (!profile.goal) return { goalNeeded: true, maint }
 
-  // Step 3 — exact % within the band. Body-fat % absent → assume 15%: a moderate,
-  // non-lean value that lands mid-band — conservative enough not to over-cut a lean
-  // user who skipped the question, useful for an average one.
+  // Steps 3-4 - band, routing, cap and floors, shared with startingTargets. Body-fat % absent ->
+  // 15%: a moderate, non-lean value that lands mid-band.
   const bodyFatAssumed = profile.bodyFat == null
-  const bf = profile.bodyFat ?? 15
-  const rate: TargetRate = profile.targetRate ?? 'standard'
-  let adjustPct = goalAdjustPct(profile.goal, bf, activity, rate)
-  let kcal = Math.round(maint * (1 + adjustPct / 100))
+  const e = energyTarget(bmr, maintRaw, weight, sex, profile, routing ?? NO_CLAMPS)
+  const kcal = e.kcal
 
-  // Step 4 — safety floors: never below resting metabolic rate (a target under BMR is
-  // unsafe and unsustainable), nor the sex floor (1,500 men, 1,200 women and unspecified), nor
-  // 800. The same rule as startingTargets, so Profile and the onboarding summary agree.
-  const floor = Math.ceil(calorieFloor(bmr, sexOf(profile)))
-  const floored = kcal < floor
-  if (floored) {
-    kcal = floor
-    // Report the adjustment actually applied, not the one the band asked for — the UI
-    // shows this % next to the kcal, and the two must agree.
-    adjustPct = (kcal / maint - 1) * 100
-  }
-
-  // Step 5 — macros, protein first (the evidence-based lever, anchored to bodyweight),
+  // Step 5 - macros, protein first (the evidence-based lever, anchored to bodyweight),
   // fat as an essential/hormonal floor, carbs fill the remainder to fuel training.
   // Feel-better has no training target to fuel and lower protein, so a 25% fat share would leave
-  // carbs above the 45–60% range (EFSA 2010); it takes the UK Reference Intake share instead (70 g
+  // carbs above the 45-60% range (EFSA 2010); it takes the UK Reference Intake share instead (70 g
   // fat per 2000 kcal, 31.5%; Regulation (EU) 1169/2011 Annex XIII, assimilated law in GB). Where
   // the 0.8 g/kg floor binds (heavier, shorter people), fat is higher and carbs can fall below 45%.
   const fatShare = profile.goal === 'feel-better' ? (70 * 9) / 2000 : 0.25
   const f = Math.round(Math.max(0.8 * weight, (kcal * fatShare) / 9))
-  let p = Math.round(weight * PROTEIN_PER_KG[profile.goal])
+  // the medical flag turns the high-protein anchor off: protein is the minimum instead
+  const proteinMinimum = !!routing?.noProteinAnchor
+  let p = proteinMinimum ? proteinMinimumG(weight, profile.age) : Math.round(weight * PROTEIN_PER_KG[profile.goal])
   // Reconciliation: for very heavy users on a low calorie target, bodyweight-anchored
-  // protein plus the fat floor can exceed the whole budget on their own — an impossible
-  // prescription that a carbs-≥-0 clamp would only mask. Keep the fat floor (it is the
+  // protein plus the fat floor can exceed the whole budget on their own - an impossible
+  // prescription that a carbs->=0 clamp would only mask. Keep the fat floor (it is the
   // essential/hormonal health minimum) and scale protein down to what the budget allows;
   // protein is prescribed generously, so it is the anchor with headroom to give.
   if (p * 4 + f * 9 > kcal) p = Math.max(0, Math.floor((kcal - f * 9) / 4))
   const c = Math.max(0, Math.round((kcal - p * 4 - f * 9) / 4))
 
-  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: Math.round(adjustPct), floored, bodyFatAssumed }
+  const floored = e.floorsApplied.some((x) => x !== 'weekly-loss-cap')
+  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: e.adjustPct, floored, bodyFatAssumed, floorsApplied: e.floorsApplied, proteinMinimum }
 }
-

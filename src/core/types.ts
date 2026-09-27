@@ -430,6 +430,15 @@ export interface Profile {
   pregnancy?: PregnancyFlag
   /** ISO time the wizard finished; a device that sees it doesn't show the wizard */
   onboardedAt?: string
+  /**
+   * Maintenance ÷ BMR from onboarding (daily movement plus planned training, `startingTargets`
+   * `effectiveMultiplier`, unrounded). Every target computation uses it when set, so Profile and
+   * the summary match; `activityLevel` stays for legacy display. Cleared when the person picks an
+   * activity level themselves, and before onboarding is re-run.
+   */
+  activityMult?: number
+  /** after "Rather not say" on wellbeing, the person chose their goal's deficit over maintenance */
+  deficitChosen?: boolean
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

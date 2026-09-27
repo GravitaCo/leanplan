@@ -1,7 +1,6 @@
-import type { ActivityLevel, DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
-import { ACTIVITY } from '@/core/data/constants'
-import { MIFFLIN_SEX_HALF_GAP, calorieFloor, goalAdjustPct, mifflinBmr, ABSOLUTE_FLOOR } from './nutrition'
-export { ABSOLUTE_FLOOR, SEX_FLOOR } from './nutrition'
+import type { DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
+import { MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinMinimumG, type FloorApplied } from './nutrition'
+export { ABSOLUTE_FLOOR, SEX_FLOOR, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT, PROTEIN_RNI_PER_KG, type FloorApplied } from './nutrition'
 import { sexOf, type DefaultField, type HiddenReason, type SafetyRouting } from './onboarding'
 
 /**
@@ -40,6 +39,14 @@ export const JOB_MULT: Record<JobType, number> = {
 }
 export const LOWEST_MOVEMENT_MULT = 1.2
 
+/**
+ * Draft copy for the daily-movement screen (the approved option lists live on board ob1; UI build
+ * to reconcile the wording). It must say "not counting workouts": training is added separately,
+ * and steps that include workouts would count them twice.
+ */
+export const STEPS_QUESTION = 'On a typical day, about how many steps do you take, not counting workouts?'
+export const JOB_QUESTION = 'Or, what is a typical working day like for you, not counting workouts?'
+
 export function movementMultiplier(m: DailyMovement | undefined): number {
   if (!m) return LOWEST_MOVEMENT_MULT
   return (m.kind === 'steps' ? STEPS_MULT[m.band] : JOB_MULT[m.job]) ?? LOWEST_MOVEMENT_MULT
@@ -70,23 +77,11 @@ export function trainingKcalPerDay(t: TrainingLoad | null | undefined, kg: numbe
   return (sessionNetKcal(t, kg) * Math.min(t.daysPerWeek, 7)) / 7
 }
 
-/** The legacy activity level nearest an effective multiplier (maintenance ÷ BMR), for `profile.activityLevel`. */
-export function activityLevelFor(mult: number): ActivityLevel {
-  let best: ActivityLevel = 'sedentary'
-  for (const k of Object.keys(ACTIVITY) as ActivityLevel[]) {
-    if (Math.abs(ACTIVITY[k].mult - mult) < Math.abs(ACTIVITY[best].mult - mult)) best = k
-  }
-  return best
-}
+/** The legacy activity level nearest an effective multiplier, for `profile.activityLevel` (display only). */
+export const activityLevelFor = nearestLevel
 
 /** ±15%: Mifflin is within ±10% for about 70–80% of adults and the multiplier adds the rest (§5). */
 export const RANGE_MARGIN = 0.15
-/** weight loss at most 1% of body weight a week (§5) */
-export const MAX_LOSS_PCT_PER_WEEK = 1
-/** the usual ~7,700 kcal per kg of body weight lost (≈3,500 kcal/lb); an upper-bound rule of thumb */
-export const KCAL_PER_KG_LOST = 7700
-/** poor sleep or stress: no deeper than the shallowest lose-fat band, −10% (§4, §2.1) */
-export const NEAR_MAINTENANCE_PCT = -10
 /**
  * Energy availability warning line, kcal per kg fat-free mass a day (§5; Loucks et al. 2011,
  * doi:10.1080/02640414.2011.588958). Fat-free mass uses the body-fat %, or the engine's 15%
@@ -100,8 +95,8 @@ export const REVIEW_AFTER = '3–4 weeks' as const
  * 1.6–2.2 (Morton et al. 2018, doi:10.1136/bjsports-2017-097608). Endurance: 1.2–1.6, the lower
  * part of the ACSM/AND/DC 1.2–2.0 (Thomas et al. 2016, doi:10.1016/j.jand.2015.12.006).
  * Feel better: 1.0–1.2 (PROT-AGE, Bauer et al. 2013, doi:10.1016/j.jamda.2013.05.021). Each
- * contains the `PROTEIN_PER_KG` anchor. No high-protein anchor (medical flag): the UK reference
- * nutrient intake, 0.75 g/kg (COMA, DH 1991).
+ * contains the `PROTEIN_PER_KG` anchor. No high-protein anchor (medical flag): a minimum only,
+ * `proteinMinimumG` (0.75 g/kg, 1.0 from 65).
  */
 export const PROTEIN_RANGE_PER_KG: Record<Goal, { low: number; high: number }> = {
   'lose-fat': { low: 1.6, high: 2.2 },
@@ -110,9 +105,7 @@ export const PROTEIN_RANGE_PER_KG: Record<Goal, { low: number; high: number }> =
   'increase-endurance': { low: 1.2, high: 1.6 },
   'feel-better': { low: 1.0, high: 1.2 },
 }
-export const PROTEIN_RNI_PER_KG = 0.75
 
-export type FloorApplied = 'bmr' | 'sex-minimum' | 'absolute' | 'weekly-loss-cap'
 
 export interface StartingTargets {
   /** why no numbers are shown, or null; when set, every number below is null */
@@ -121,15 +114,18 @@ export interface StartingTargets {
   kcal: number | null
   /** likely maintenance, nearest 10 kcal */
   maintenance: { low: number; high: number } | null
-  /** grams a day, nearest 5 g; `anchor` false = the reference intake (medical flag) */
-  protein: { low: number; high: number; anchor: boolean } | null
+  /**
+   * grams a day, nearest 5 g. `anchor` false (medical flag): `high` is null and `low` is a
+   * minimum, shown as "at least {low} g"
+   */
+  protein: { low: number; high: number | null; anchor: boolean } | null
   /** signed % actually applied to maintenance, after routing, caps and floors */
   adjustPct: number | null
   /** what capped the target; empty when nothing did */
   floorsApplied: FloorApplied[]
   /** under ~30 kcal/kg fat-free mass on a training day, for endurance */
   lowEnergyAvailability: boolean
-  /** maintenance ÷ BMR, for re-mapping `profile.activityLevel` with `activityLevelFor` */
+  /** maintenance ÷ BMR, unrounded: store it as `profile.activityMult` (and `activityLevelFor` it for display) */
   effectiveMultiplier: number | null
   /** skipped fields that fell back to a default, for "You haven't told us…" */
   defaults: DefaultField[]
@@ -138,21 +134,23 @@ export interface StartingTargets {
 
 export interface MaintenanceEstimate { bmr: number; maint: number; mult: number }
 
-/** BMR and likely maintenance (unrounded), or null without age, height and weight. */
+/**
+ * BMR and likely maintenance (unrounded), or null without age, height and weight. A stored
+ * `activityMult` wins (training is already in it, so `training` is ignored); clear it before
+ * re-running onboarding so new answers are used.
+ */
 export function maintenanceEstimate(p: Profile, training: TrainingLoad | null | undefined, kg: number | null | undefined): MaintenanceEstimate | null {
   if (!p.age || !p.height || !kg) return null
   const bmr = mifflinBmr(kg, p.height, p.age, sexOf(p))
-  const maint = bmr * movementMultiplier(p.movement) + trainingKcalPerDay(training, kg)
+  const maint = p.activityMult ? bmr * p.activityMult : bmr * movementMultiplier(p.movement) + trainingKcalPerDay(training, kg)
   return { bmr, maint, mult: maint / bmr }
 }
 
 const r10 = (x: number) => Math.round(x / 10) * 10
-const r50 = (x: number) => Math.round(x / 50) * 50
-const ceil50 = (x: number) => Math.ceil(x / 50) * 50
 const r5 = (x: number) => Math.round(x / 5) * 5
 
 export interface StartingOptions {
-  /** the person changed the pre-selected maintenance start (wellbeing undisclosed) to their goal */
+  /** the person changed the pre-selected maintenance start (wellbeing undisclosed) to their goal; defaults to `profile.deficitChosen` */
   acceptDeficit?: boolean
 }
 
@@ -185,31 +183,18 @@ export function startingTargets(
   if (!est) return none('no-age')
   const { bmr, maint, mult } = est
 
-  // goal band (as suggestedTargets), then routing makes it safer, never deeper
+  // the one kcal pipeline, shared with suggestedTargets: band, routing, 1%/week cap, floors, 50s
   const goal = p.goal
-  let pct = goal ? goalAdjustPct(goal, p.bodyFat ?? 15, activityLevelFor(mult), p.targetRate ?? 'standard') : 0
-  if (routing.maintenanceOnly) pct = 0
-  if (routing.noDeficit || (routing.startAtMaintenance && !opts.acceptDeficit)) pct = Math.max(0, pct)
-  if (routing.nearMaintenance) pct = Math.max(NEAR_MAINTENANCE_PCT, pct)
+  const e = energyTarget(bmr, maint, kg, sex, p, routing, opts.acceptDeficit ?? !!p.deficitChosen)
+  const shown = e.kcal
 
-  const floorsApplied: FloorApplied[] = []
-  let kcal = maint * (1 + pct / 100)
-  const maxDeficit = (kg * (MAX_LOSS_PCT_PER_WEEK / 100) * KCAL_PER_KG_LOST) / 7
-  const capped = maint - kcal > maxDeficit
-  if (capped) { kcal = maint - maxDeficit; floorsApplied.push('weekly-loss-cap') }
-  const floor = calorieFloor(bmr, sex)
-  if (kcal < floor) {
-    kcal = floor
-    floorsApplied.push(floor === bmr ? 'bmr' : floor === ABSOLUTE_FLOOR ? 'absolute' : 'sex-minimum')
-  }
-  // round, but never let rounding cross a floor or the weekly cap
-  let shown = r50(kcal)
-  if (shown < floor) shown = ceil50(floor)
-  if (capped && maint - shown > maxDeficit) shown = ceil50(maint - maxDeficit)
+  // "Prefer not to say": the sex constant's ±83 kcal carries through the whole multiplier
+  const margin = RANGE_MARGIN * maint + (sex === 'unspecified' ? MIFFLIN_SEX_HALF_GAP * mult : 0)
 
-  const margin = RANGE_MARGIN * maint + (sex === 'unspecified' ? MIFFLIN_SEX_HALF_GAP * movementMultiplier(p.movement) : 0)
-
-  const band = routing.noProteinAnchor ? { low: PROTEIN_RNI_PER_KG, high: PROTEIN_RNI_PER_KG } : PROTEIN_RANGE_PER_KG[goal ?? 'feel-better']
+  const band = PROTEIN_RANGE_PER_KG[goal ?? 'feel-better']
+  const protein = routing.noProteinAnchor
+    ? { low: proteinMinimumG(kg, p.age), high: null, anchor: false }
+    : { low: r5(kg * band.low), high: r5(kg * band.high), anchor: true }
 
   let lowEA = false
   if (training && training.daysPerWeek > 0 && (goal === 'increase-endurance' || training.endurance)) {
@@ -221,12 +206,11 @@ export function startingTargets(
     hidden: null,
     kcal: shown,
     maintenance: { low: r10(maint - margin), high: r10(maint + margin) },
-    protein: { low: r5(kg * band.low), high: r5(kg * band.high), anchor: !routing.noProteinAnchor },
-    // from the unrounded target, so maintenance rounded to 50 doesn't read as a 1% deficit
-    adjustPct: Math.round((kcal / maint - 1) * 100) || 0,
-    floorsApplied,
+    protein,
+    adjustPct: e.adjustPct,
+    floorsApplied: e.floorsApplied,
     lowEnergyAvailability: lowEA,
-    effectiveMultiplier: Math.round(mult * 1000) / 1000,
+    effectiveMultiplier: mult,
     defaults,
     reviewAfter: REVIEW_AFTER,
   }

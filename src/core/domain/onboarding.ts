@@ -68,7 +68,7 @@ export interface SafetyRouting {
 }
 
 /** Display order for signposts. */
-const SIGNPOST_ORDER: SignpostKind[] = ['emergency', 'beat', 'samaritans', 'childline', 'nhs111', 'midwife', 'gp']
+const SIGNPOST_ORDER: SignpostKind[] = ['emergency', 'beat', 'samaritans', 'childline', 'nhs111-mental-health', 'nhs111', 'midwife', 'gp']
 
 /** BMI under this is a safety gate only (no deficit): never shown, never used for targets (§9). */
 export const LOW_BMI = 18.5
@@ -121,6 +121,20 @@ export function safetyAnswersFrom(p: Profile, weightKg: number | null, healthCon
     pregnant: !!p.pregnancy?.flagged,
     healthConsent,
   }
+}
+
+/**
+ * Routing for screens outside onboarding (Profile's suggestion), from what's stored. A profile
+ * that hasn't onboarded has no screener answers, and §12 keeps existing users' numbers as they
+ * are, so its missing outcomes count as clear and consent as given (the one-time consent sheet
+ * handles that separately). The rules that don't depend on screener answers always apply:
+ * age (under 16, 16–17), the pregnancy flag and the BMI gate. Onboarded profiles route exactly
+ * as the summary did.
+ */
+export function profileRouting(p: Profile, weightKg: number | null, healthConsent: boolean): SafetyRouting {
+  const a = safetyAnswersFrom(p, weightKg, healthConsent)
+  if (p.onboardedAt) return routeSafety(a)
+  return routeSafety({ ...a, healthConsent: true, outcomes: { readiness: 'clear', medical: 'clear', wellbeing: 'clear', baseline: 'ok', ...p.outcomes } })
 }
 
 /** BMI for the safety gate only. Never returned to the UI. */
@@ -178,7 +192,7 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
     r.reasons.push('wellbeing')
     r.noDeficit = true; r.gentle = true; r.hideWeight = true
     hide('gentle')
-    for (const k of ['beat', 'nhs111', 'samaritans', 'emergency'] as const) sp.add(k)
+    for (const k of ['beat', 'nhs111-mental-health', 'nhs111', 'samaritans', 'emergency'] as const) sp.add(k)
   } else if (o.wellbeing !== 'clear') {
     if (o.wellbeing == null) r.defaults.push('wellbeing')
     r.startAtMaintenance = true; r.offerGentle = true
