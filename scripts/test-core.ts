@@ -1676,7 +1676,7 @@ async function timeouts(): Promise<void> {
   // the eating line matches "Fits your goal": a plan that fits the person's goal speaks for that goal
   const swa = PLAN_TEMPLATES.find((t) => t.id === 'stronger-with-age')!
   const got = [eatingLine(swa, 'build-muscle'), eatingLine(swa, 'feel-better').endsWith('for feeling better cover this.'), eatingLine(swa, 'lose-fat').startsWith('For feeling better, Food targets suggest')].join(' | ')
-  const want = 'Protein about 1.8 g per kg a day, around 25–30 g at each main meal, and a small surplus. Your Food targets for building muscle cover this. | true | true'
+  const want = 'Protein about 1.8 g per kg a day, at least 25–30 g at each main meal, and a small surplus. Your Food targets for building muscle cover this. | true | true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'plans: eating line follows a goal the plan fits', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

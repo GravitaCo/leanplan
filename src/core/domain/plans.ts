@@ -362,7 +362,7 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     about: 'Two strength sessions of about 40 minutes and one balance session a week, built around everyday moves like standing up, stepping and carrying. Strength and balance training together are among the best-supported ways to stay steady and independent as the years go by. You start gently and build from there.',
     experience: ['new', 'comfortable'], where: ['home'],
     forWho: 'Getting stronger and steadier; just starting or getting comfortable', kit: 'Dumbbells, a chair, a wall and a low step or the bottom stair', time: 'About 2½ hours a week',
-    eatingExtra: 'around 25–30 g at each main meal',
+    eatingExtra: 'at least 25–30 g at each main meal',
     safety: 'No barbell, nothing overhead and no jumping. A few moves are on the floor: use a mat and get down and up next to a chair, or skip them if the floor is hard. Had a recent fall, dizziness, chest pain, a heart condition, surgery or a fracture? Speak to your GP first.',
     weeksText: 'Weeks 1–2 Ease in, shorter sessions · 3–12 Build',
     phases: [
