@@ -362,7 +362,7 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     about: 'Two strength sessions of about 40 minutes and one balance session a week, built around everyday moves like standing up, stepping and carrying. Strength and balance training together are among the best-supported ways to stay steady and independent as the years go by. You start gently and build from there.',
     experience: ['new', 'comfortable'], where: ['home'],
     forWho: 'Getting stronger and steadier; just starting or getting comfortable', kit: 'Dumbbells, a chair, a wall and a low step or the bottom stair', time: 'About 2½ hours a week',
-    eatingExtra: 'around 25–30 g at each main meal',
+    eatingExtra: 'at least 25–30 g at each main meal',
     safety: 'No barbell, nothing overhead and no jumping. A few moves are on the floor: use a mat and get down and up next to a chair, or skip them if the floor is hard. Had a recent fall, dizziness, chest pain, a heart condition, surgery or a fracture? Speak to your GP first.',
     weeksText: 'Weeks 1–2 Ease in, shorter sessions · 3–12 Build',
     phases: [
@@ -434,10 +434,11 @@ const GOAL_WORDS: Record<Goal, string> = {
 /**
  * A plan's eating line, from the same targets engine as Food (PROTEIN_PER_KG, goalAdjustPct), true
  * whatever the person's own goal (nutrition-accuracy); gentle mode leaves the numbers out
- * (mental-performance). Never "from your Food targets" unless their goal is the plan's.
+ * (mental-performance). When the plan fits their goal, the line is for that goal (it's what their
+ * Food targets give, and matches "Fits your goal"); otherwise it's the plan's own, never "yours".
  */
-export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra'>, goal: Goal | undefined, gentle?: boolean): string {
-  const g = t.nutritionGoal
+export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra' | 'goals'>, goal: Goal | undefined, gentle?: boolean): string {
+  const g = goal && t.goals.includes(goal) ? goal : t.nutritionGoal
   const figures = t.eatingExtra ? `protein about ${PROTEIN_PER_KG[g]} g per kg a day, ${t.eatingExtra}, and ${ENERGY_WORDS[g]}` : `protein about ${PROTEIN_PER_KG[g]} g per kg a day and ${ENERGY_WORDS[g]}`
   if (!goal) return 'Set a goal in Profile and your Food targets will follow it.'
   if (goal === g) return gentle ? 'Enough protein through the day, and enough food to fuel your training. Your Food targets cover this.' : `${figures[0].toUpperCase()}${figures.slice(1)}. Your Food targets for ${GOAL_WORDS[g]} cover this.`
