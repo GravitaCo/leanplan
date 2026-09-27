@@ -28,7 +28,8 @@ import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
-import { aboutMins, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
+import { keptAfterEdit, weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
@@ -628,7 +629,7 @@ async function backupRestore(): Promise<void> {
     ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
   ]
   // a stale server: different day 1, no foods or recipes; push then pull as runSync does
-  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], training_plans: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
@@ -832,7 +833,7 @@ function importCarryOver(): void {
     ['a food with the same name as the backup one: the backup wins', food('flapjack').length === 0 && food('Flapjack')[0]?.k === 400],
     ["this device's own recipe stays", got.recipes.map((r) => r.name).sort().join() === 'Chilli,Soup'],
     ["a queued delete of a food that stays is dropped; this device's own is kept", !gm.foodDeletes.includes(A) && gm.foodDeletes.join() === dm.foodDeletes.join()],
-    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0 })],
+    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0, plans: 0 })],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
 }
@@ -982,7 +983,7 @@ async function routinesMissing(): Promise<void> {
   const realFetch = globalThis.fetch
   globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
     const t = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
-    if (t === 'routines') return new Response('{"message":"relation does not exist"}', { status: 404 })
+    if (t === 'routines' || t === 'training_plans') return new Response('{"message":"relation does not exist"}', { status: 404 })
     if (o.method) return new Response(null, { status: 204 })
     return new Response(JSON.stringify(t === 'day_logs' ? [{ log_date: '2026-09-20', foods: [], supps: {}, weight: 70, workout: null, updated_at: 'z' }] : []), { status: 200 })
   }) as typeof fetch
@@ -992,7 +993,7 @@ async function routinesMissing(): Promise<void> {
     await pullAll(s, m); pulled = true
     rows = await accountRows(LOCAL_USER, 't')
   } catch (e) { console.error(e) } finally { globalThis.fetch = realFetch }
-  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0
+  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0 && Array.isArray(rows?.plans) && rows.plans.length === 0
   if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: a missing routines table never stops the log syncing', pulled, JSON.stringify(failed), s.routines.length)
 }
@@ -1513,6 +1514,211 @@ async function timeouts(): Promise<void> {
     ['a failure before the deadline still fails', failed === 'down'],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'timeout:', n) }
+}
+
+// weekly plans (P5, Benn's model): phases of weeks, maintenance reuses the week lighter, the
+// calendar decides the week (never stored), a plan's week drives planned workouts and the mirror
+{
+  const W = '55555555-5555-4555-8555-555555555555'
+  const R = [{ id: W, name: 'Yoga reset', modality: 'yoga', effort: 'light', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'downward-dog' }] }] }] as any
+  const week = { 0: [], 1: ['Legs'], 2: [W, 'Cardio'], 3: ['Push'], 4: [], 5: ['Pull', W], 6: [] }
+  const plan = { id: 'p', name: 'Mine', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'a', name: 'Build', weeks: 8, week }, { id: 'b', name: 'Maintain', weeks: 4, maintain: true }] } as any
+  const st = (extra = {}) => ({ trainingPlans: [plan], routines: R, schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, ...extra }) as any
+  const pos = (d: string) => { const x = positionOn(plan, d); return x ? `${x.week}/${x.total}:${x.phase.name}:${x.weekInPhase}${x.ended ? ':end' : ''}` : 'none' }
+  const got = [
+    totalWeeks(plan), pos('2026-09-27'), pos('2026-09-28'), pos('2026-10-04'), pos('2026-10-05'), pos('2026-11-23'), pos('2026-12-20'), pos('2026-12-21'),
+    plannedKeys(st(), '2026-09-29').join('+'), plannedKeys(st(), '2026-12-01').join('+'), plannedKeys(st(), '2026-09-27').join('+'),  // Tue build, Tue maintain, before start (schedule)
+    [maintainOn(st(), '2026-11-02'), maintainOn(st(), '2026-11-23'), maintainOn(st(), '2026-12-22')].join(','),
+    JSON.stringify(scheduleMirror(week, R)),
+    plannedKeys(st({ routines: [{ ...R[0], archived: true }] }), '2026-09-29').join('+'),        // a removed own workout drops out
+  ].join(' ')
+  const want = '12 none 1/12:Build:1 1/12:Build:1 2/12:Build:2 9/12:Maintain:1 12/12:Maintain:4 13/12:Maintain:4:end ' +
+    W + '+Cardio ' + W + '+Cardio Rest'.replace('Rest', '') + ' false,true,true ' +
+    '{"0":"Rest","1":"Legs","2":"Cardio","3":"Push","4":"Rest","5":"Pull","6":"Rest"} Cardio'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: weeks, phases, planned workouts, maintenance, mirror', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const H = '66666666-6666-4666-8666-666666666666'
+  const R = [{ id: H, name: 'Hard one', modality: 'strength', effort: 'hard', source: 'custom', blocks: [] }] as any
+  const two = planWeekNotes({ 1: ['Legs', H], 2: [], 3: [] }, R).filter((n) => n.includes('harder workouts')).length
+  const none = planWeekNotes({ 0: ['Cardio'], 1: ['Legs'], 2: ['Cardio'], 3: ['Push'], 4: ['Cardio'], 5: ['Pull'], 6: ['Cardio'] }, R).some((n) => n.includes('no rest day'))
+  const fine = planWeekNotes(weekFromSchedule({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any), R).length
+  const two_active = activePlan({ trainingPlans: [
+    { id: 'a', state: 'active', startedAt: '2026-09-01', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'b', state: 'active', startedAt: '2026-09-20', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'c', state: 'completed', startedAt: '2026-09-25', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] }] } as any)?.id
+  const clean = cleanPhases([{ id: 'a', name: '', weeks: 40, week: { 1: ['Legs', 'Push', 'Pull', 'Cardio', 'Legs'] } }, { id: 'b', name: 'M', weeks: 30, maintain: true, week: { 1: ['x'] } }, { id: 'c', name: 'Z', weeks: 5 }] as any)
+  const cleanTxt = clean.map((p) => `${p.name}:${p.weeks}:${p.maintain ? 'm' : (p.week?.[1] || []).length}`).join(',')
+  const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases.some((x) => x.week && !x.maintain) && t.goals.includes(t.nutritionGoal) && t.phases.every((x) => !x.after)) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
+  // back-to-back from every hard workout of each day: a day's second lift, and an own copy of Legs
+  const L = '77777777-7777-4777-8777-77777777aaaa'
+  const RL = [...R, { id: L, name: 'My legs', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'm', slots: [{ exId: 'back-squat' }, { exId: 'romanian-deadlift' }, { exId: 'leg-extension' }] }] }]
+  const b2b = (w: any) => planWeekNotes(w, RL).filter((n) => n.includes('back-to-back')).map((n) => n.split(' on ')[0]).join('|')
+  const got = [two, none, fine, two_active, cleanTxt, tpl, b2b({ 1: ['Push', 'Pull'], 2: ['Pull'] }), b2b({ 1: ['Legs'], 2: [L] }), b2b({ 1: ['Legs'], 2: ['Cardio'], 3: ['Push'] })].join(' ')
+  const want = '1 true 0 b Build:26:4,M:26:m true Pull is Two workouts for the same muscles are '
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: week notes, one active plan, limits, templates', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const a = '77777777-7777-4777-8777-777777777777'
+  const P = (id: string, extra = {}) => ({ id, name: 'Plan ' + id, source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'x', name: 'Build', weeks: 8, week: { 1: ['Legs'] } }], ...extra })
+  const loaded = stateFromBackup({ days: {}, trainingPlans: [P(a), null, { name: 'no phases' }, P('bad-id', { state: 'weird', startedAt: 'soon' })] } as never)
+  const got = [loaded.trainingPlans.length, loaded.trainingPlans[0].id, loaded.trainingPlans[1].state, String(loaded.trainingPlans[1].startedAt), loaded.trainingPlans.every((p: any) => p._dirty),
+    backupSummary({ days: {}, trainingPlans: [P(a), P('z', { state: 'archived' })] } as never).plans].join(' ')
+  const ok = got.startsWith(`2 ${a} archived undefined true 1`); if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: local data made valid, backup', JSON.stringify(got))
+}
+
+{
+  // a plan's day can hold several workouts and own ones: "pick it up" and the start date follow it
+  const r1 = { id: '88888888-8888-4888-8888-888888888888', name: 'Mine', blocks: [], modality: 'strength' }
+  const plan = { id: 'p', name: 'P', source: 'custom', state: 'active', startedAt: '2026-09-21', phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs', 'Cardio'], 3: ['Push'], 5: [r1.id] } }] }
+  const e = { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null }
+  const st = (days: any) => ({ target: { kcal: 2000 }, schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, profile: {}, days, customFoods: [], recipes: [], routines: [r1], trainingPlans: [plan] }) as any
+  const got = [
+    catchUp(st({ '2026-09-20': e }), '2026-09-23')?.type ?? '-',  // Wed (Push): Monday's Legs from the plan, not the empty schedule
+    catchUp(st({ '2026-09-20': e }), '2026-09-26')?.type ?? '-',  // Sat: Friday's own workout
+    planStart('2026-09-23', 'today'), planStart('2026-09-23', 'monday'), planStart('2026-09-27', 'monday'), planStart('2026-09-28', 'monday'),
+    weekSource({ phases: [{ maintain: false }, { maintain: true }, { maintain: false }, { maintain: true }] as any }, 3),
+    weekSource({ phases: [{ maintain: true }, { maintain: false }] as any }, 0),
+  ].join(' ')
+  const want = `Legs ${r1.id} 2026-09-23 2026-09-28 2026-09-28 2026-10-05 2 1`
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: pick up from the plan, start dates, which week a phase trains', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // junk from a newer or buggy client never breaks a launch, and nothing the server would refuse stays queued
+  let threw = ''
+  let phases: any[] = []
+  try { phases = cleanPhases([{ id: 7, name: 42, weeks: 'x', week: { 1: 'Legs', 2: ['Push', 9] } }, { name: 'M', weeks: 2, maintain: 'yes' }] as any) } catch (e) { threw = String(e) }
+  const P = { id: '77777777-7777-4777-8777-777777777777', name: 'x', source: 'custom', state: 'completed', startedAt: '2026-02-31', completedAt: 'soon', clonedFromId: 'nope',
+    reflection: { good: 5, change: '  Fewer days  ', at: 'x' }, phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs'] } }] }
+  const L = stateFromBackup({ days: {}, trainingPlans: [P] } as never).trainingPlans[0] as any
+  const got = [threw || 'ok', phases.map((ph) => `${ph.name}:${ph.weeks}:${ph.maintain ? 'm' : JSON.stringify(ph.week[1]) + JSON.stringify(ph.week[2])}`).join(','),
+    String(L.startedAt), String(L.completedAt), String(L.clonedFromId), L.reflection?.change, String(L.reflection?.good), typeof L.reflection?.at].join(' ')
+  const want = 'ok Build:1:[]["Push"],M:2:[][] undefined undefined undefined Fewer days undefined string'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: junk phases and fields made valid', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // a next plan chosen to start later leaves the current one in charge until then; a plan started today plans nothing before today
+  const ph = (w: any) => [{ id: 'a', name: 'Build', weeks: 4, week: w }]
+  const old = { id: 'o', name: 'Old', source: 'custom', state: 'active', startedAt: '2026-06-29', phases: [{ id: 'a', name: 'Build', weeks: 12, week: { 1: ['Legs', 'Pull'], 6: ['Push'] } }, { id: 'b', name: 'M', weeks: 1, maintain: true }] }
+  const nxt = { id: 'n', name: 'New', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: ph({ 1: ['Push'] }) }
+  const s = { trainingPlans: [old, nxt], schedule: { 0: 'Rest', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const fresh = { trainingPlans: [{ id: 'f', name: 'F', source: 'custom', state: 'active', startedAt: '2026-09-27', phases: ph({ 6: ['Push'] }) }], schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const got = [
+    activePlan(s, '2026-09-27')?.id, upcomingPlan(s, '2026-09-27')?.id, String(maintainOn(s, '2026-09-27')), plannedKeys(s, '2026-09-26').join('+'),
+    activePlan(s, '2026-09-28')?.id, plannedKeys(s, '2026-09-28').join('+'), supersededPlans(s, '2026-09-28').map((p) => p.id).join(','), supersededPlans(s, '2026-09-27').length,
+    plannedKeys(fresh, '2026-09-26').join('+') || 'none', isBuiltinKey('constructor'), isBuiltinKey('Push'),
+    // started today with the schedule already mirrored to its week (Sat Push): Saturday was a rest day, nothing to pick up
+    catchUp({ ...fresh, schedule: { ...fresh.schedule, 6: 'Push' }, target: { kcal: 2000 }, profile: {}, customFoods: [], recipes: [],
+      days: { '2026-09-20': { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null } } }, '2026-09-27')?.type ?? 'none',
+  ].join(' ')
+  const want = 'o n true Push n Push o 0 none false true none'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: next plan waits its turn, no plan before its start, own keys', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // the approved plan model (design canvas, Plans 1 to 4): maintenance after a plan, easier and lighter weeks
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', baseTemplateId: t.id, phases: phasesOf(t) }
+  const cellStr = (cs: any[]) => cs.map((c) => (c.kind === 'after' ? 'a' : c.kind === 'easier' ? 'e' : 'f') + (c.state === 'done' ? 'D' : c.state === 'now' ? 'N' : '')).join('')
+  const ended = positionOn(plan, '2027-01-04')!                     // week 15: past the 12 weeks, no maintenance chosen
+  const withM = { ...plan, phases: cleanPhases([...plan.phases, { id: 'x', name: 'Maintenance', weeks: 1, after: true, week: maintenanceWeekOf(plan) }]) }
+  const inM = positionOn(withM, '2027-01-04')!
+  const st = { trainingPlans: [withM], schedule: {}, routines: [] } as any
+  const lighter = withLighterWeek(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any), 5)
+  const easier = withEasierStart(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any))
+  const lib = catalogue({ trainingPlans: [{ id: 'o', name: 'My 8-week plan', source: 'custom', state: 'template', phases: [{ id: 'a', name: 'Build', weeks: 8, week: { 1: ['Legs'], 3: ['Push'], 5: ['Pull'] } }] }] } as any, 'build-muscle')
+  const days = { '2026-09-28': { foods: [], supps: {}, weight: null, workout: { type: 'Legs' } }, '2026-09-20': { foods: [], supps: {}, weight: null, workout: { type: 'Push' } } } as any
+  const got = [
+    totalWeeks(plan), cellStr(timeline(plan, '2026-10-05')),
+    [ended.ended, ended.maintain, ended.maintenanceWeek].join(','), [inM.ended, inM.maintain, inM.maintenanceWeek, inM.phase.name].join(','),
+    String(maintainOn(st, '2027-01-04')), plannedKeys(st, '2027-01-04').join('+'), String(totalWeeks(withM)), afterPhase(withM)?.name,
+    phaseRows(plan, '2026-10-12').map((r) => `${r.name}:${r.from}-${r.to}:${r.kind}:${r.state}`).join(','),
+    lighter.map((x) => x.name + x.weeks + (x.maintain ? 'M' : '')).join(','), easier.map((x) => x.name + (x.easier ? 'E' : '')).join(','),
+    lib.map((e) => e.name + ':' + e.madeBy + ':' + e.days).join(','),
+    filterCatalogue(lib, { madeBy: ['me'] }).length, filterCatalogue(lib, { goal: ['build-muscle'] }).length, filterCatalogue(lib, { q: 'muscle' }).length, filterCatalogue(lib, { length: ['8'] }).length,
+    workoutsDone({ days }, plan, '2026-10-05'),
+  ].join(' | ')
+  const want = ['12', 'eDeNffffefffffaaa', 'true,false,', 'false,true,3,Maintenance', 'true', 'Legs', '12', 'Maintenance',
+    'Foundation:1-2:easier:done,Build:3-6:full:now,Lighter week:7-7:lighter:,Build:8-12:full:',
+    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,Full body system:tali:5,Stronger with age:tali:5,My 8-week plan:me:3', '1', '3', '2', '2', '1'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance after, timeline, phase rows, added weeks, library filters', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // Tali's three plans: every key resolves, the new workouts use library exercises, fit and eating lines follow the profile
+  const [pmg, swa, fbs] = PLAN_TEMPLATES
+  const keys = PLAN_TEMPLATES.flatMap((t) => [...t.phases.flatMap((ph) => Object.values(ph.week ?? {}).flat()), ...Object.values(t.maintenance).flat()])
+  const unresolved = keys.filter((k) => !isBuiltinKey(k) && !routineFor(k, []))
+  const badEx = taliWorkouts().flatMap((r) => r.blocks.flatMap((b) => b.slots)).filter((sl) => !EXERCISES.some((x) => x.id === sl.exId)).map((sl) => sl.exId)
+  const order = (f: any) => fitsFirst(PLAN_TEMPLATES, f).map((t) => t.id.split('-')[0]).join(',')
+  const got = [
+    unresolved.length, badEx.length, String(isTaliKey('tali-full-body-a')), String(isTaliKey('constructor')), routineFor('tali-full-body-a', [])?.effort, (routineFor('tali-full-body-a', [])?.estMins ?? 0) > 0,
+    String(fits(pmg, { goal: 'build-muscle', experience: 'intermediate' })), String(fits(pmg, { goal: 'build-muscle', experience: 'beginner' })), String(fits(fbs, { goal: 'lose-fat' })), String(fits(pmg, {})),
+    order({ goal: 'lose-fat' }), order({ goal: 'build-muscle', age: 60 }),
+    String(isEaseIn({ phases: phasesOf(swa) }, 0)), String(isEaseIn({ phases: phasesOf(pmg) }, 2)),
+    eatingLine(pmg, 'build-muscle'), eatingLine(pmg, 'lose-fat').startsWith('For building muscle, Food targets suggest protein about 1.8'), eatingLine(pmg, undefined), eatingLine(pmg, 'build-muscle', true).includes('g per kg'),
+  ].join(' | ')
+  const want = ['0', '0', 'true', 'false', 'hard', 'true', 'true', 'false', 'true', 'false', 'full,pure,stronger', 'stronger,pure,full', 'true', 'false',
+    'Protein about 1.8 g per kg a day and a small surplus. Your Food targets for building muscle cover this.', 'true', 'Set a goal in Profile and your Food targets will follow it.', 'false'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: Tali plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  // maintenance counts from the day it's chosen; junk over the year's cap never drops it
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: 'x', source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: cleanPhases([...phasesOf(t), { id: 'a', name: 'M', weeks: 1, after: true, since: '2027-01-04', week: t.maintenance }]) }
+  const before = positionOn(plan, '2026-12-28')!, day1 = positionOn(plan, '2027-01-04')!, wk3 = positionOn(plan, '2027-01-18')!
+  const junk = cleanPhases([{ id: 'a', name: 'a', weeks: 26, week: {} }, { id: 'b', name: 'b', weeks: 26, week: {} }, { id: 'c', name: 'c', weeks: 3, week: {} }, { id: 'x', name: 'x', weeks: 1, after: true, maintain: true }, { id: 'z', name: 'z', weeks: 1, after: true, week: { 1: ['Legs', 'bad key!'] } }] as any)
+  const got = [before.ended, before.maintenanceWeek, day1.maintenanceWeek, wk3.maintenanceWeek, junk.map((x) => x.name + (x.after ? 'A' : '')).join(','), JSON.stringify(junk[junk.length - 1].week?.[1])].join(' | ')
+  const want = 'true |  | 1 | 3 | a,b,MaintenanceA | ["Legs"]'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance counts from its start, never dropped by the cap', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // Flow 3's note: lifting and cardio on one day, lift first (never blocks); two hard ones keep their own note
+  const one = planWeekNotes({ 1: ['Legs', 'Cardio'] } as any, [])
+  const two = planWeekNotes({ 1: ['Legs', 'Push', 'Cardio'] } as any, [])
+  const got = [one.some((n) => n === 'Monday has lifting and cardio. Doing both? Lift first, then cardio.'), two.some((n) => n.includes('Lift first')), two.some((n) => n.includes('two harder'))].join(' ')
+  const ok = got === 'true false true'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: lift first when a day has lifting and cardio', JSON.stringify(got))
+}
+
+{
+  // stopping a plan never loses the week: it's kept when the first plan starts and comes back when none runs;
+  // carrying on repeats the last week at the full version, counted from the day it's chosen
+  const own = { 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Rest', 5: 'Pull', 6: 'Cardio' } as any
+  const mirror = { 0: 'Rest', 1: 'Cardio', 2: 'Cardio', 3: 'Cardio', 4: 'Cardio', 5: 'Cardio', 6: 'Rest' } as any
+  const t = PLAN_TEMPLATES[2]
+  const running: any = { id: 'r', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: phasesOf(t) }
+  const keptOnStart = weekToKeep({ trainingPlans: [], schedule: own, profile: {} } as any)
+  const notTwice = weekToKeep({ trainingPlans: [running], schedule: mirror, profile: { weekBeforePlan: own } } as any)
+  const whileRunning = weekToPutBack({ trainingPlans: [running], profile: { weekBeforePlan: own } } as any)
+  const afterStop = weekToPutBack({ trainingPlans: [{ ...running, state: 'archived' }], profile: { weekBeforePlan: own } } as any)
+  const beforeStart = plannedKeys({ trainingPlans: [running], schedule: mirror, routines: [], profile: { weekBeforePlan: own } } as any, '2026-09-21')
+  const carry: any = { ...running, phases: cleanPhases([...phasesOf(t), { id: 'c', name: 'Carrying on', weeks: 1, after: true, full: true, since: '2026-12-07' }] as any) }
+  const c1 = positionOn(carry, '2026-12-14')!
+  const got = [JSON.stringify(keptOnStart) === JSON.stringify(own), notTwice, whileRunning, JSON.stringify(afterStop) === JSON.stringify(own), beforeStart.join('+'),
+    c1.maintain, c1.maintenanceWeek, c1.phase.name, String(maintainOn({ trainingPlans: [carry] } as any, '2026-12-14')), plannedKeys({ trainingPlans: [carry], schedule: mirror, routines: [] } as any, '2026-12-14').join('+')].join(' | ')
+  const want = 'true |  |  | true | Legs | false | 2 | Carrying on | false | tali-full-body-a'
+  // a plan picked for next Monday: an edit made while it waits is what Train, Summary and Stop see
+  const edited = { ...own, 4: 'Rest', 5: 'Rest' }
+  const waiting = { trainingPlans: [running], schedule: edited, routines: [], profile: { weekBeforePlan: own } } as any
+  waiting.profile.weekBeforePlan = keptAfterEdit(waiting, edited, '2026-09-24')
+  const waitGot = [plannedKeys(waiting, '2026-09-25').join('+') || 'rest', JSON.stringify(weekToPutBack({ ...waiting, trainingPlans: [] })) === JSON.stringify(edited),
+    String(keptAfterEdit({ trainingPlans: [running], routines: [], profile: { weekBeforePlan: own } } as any, edited, '2026-09-30'))].join(' | ')
+  if (waitGot !== 'rest | true | null') { bad++; console.log('FAIL', 'plans: edits while a plan waits', JSON.stringify(waitGot)) } else console.log('PASS', 'plans: edits while a plan waits are kept')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
 backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(routinesMissing).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

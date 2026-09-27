@@ -11,10 +11,13 @@ import type {
   DayLog,
   Food,
   IfThenPlan,
+  PlanWeek,
   LoggedFood,
   MealSlot,
   Recipe,
   RoutineEffort,
+  PlanPhase,
+  TrainingPlan,
   RoutineSlot,
   Workout,
   Supplement,
@@ -26,6 +29,7 @@ import type {
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { activePlan, cleanPhases, keptAfterEdit, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -130,6 +134,20 @@ interface StoreState {
   // plan / settings
   /** replace the whole weekly schedule (swap two days, undo) */
   setSchedule: (s: Schedule, quiet?: boolean) => void
+  /** weekly plans (plan P5): start one (any active one is put away), edit it, finish it */
+  startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
+  updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
+  finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** "Keep going without a plan": the last week repeats at the full version, open-ended, until another plan */
+  carryOn: (id: string, reflection?: { good?: string; change?: string }) => void
+  /** after a plan: maintenance, its own week (or the plan's last build week) on the shorter version, open-ended */
+  startMaintenance: (id: string, week?: PlanWeek) => void
+  /** keep a plan as one of the person's own, to start again later (a template) */
+  savePlanCopy: (id: string, name?: string) => string | null
+  /** keep a plan's look back without finishing it (its next plan starts later) */
+  notePlan: (id: string, reflection: { good?: string; change?: string }) => void
+  /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
+  syncPlanMirror: () => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
   saveProfileMetrics: (patch: Partial<Profile>) => void
   /** quiet profile update for preferences (accuracy, display, hands…) */
@@ -159,7 +177,39 @@ function ensureDay(s: PersistedState, d: string): DayLog {
   return s.days[d]
 }
 
+/**
+ * With an active plan, the weekly schedule mirrors its current week (plan P5): older installs and
+ * one-workout readers see it; nothing reads it back while the plan is active. `mark` sends the
+ * settings to sync when something changed: only for a person's own edit, or on a copy freshly
+ * pulled in runSync, so a stale device never uploads its old target or profile over newer ones
+ * (security-data). Returns whether the schedule changed.
+ */
+function mirrorPlan(s: PersistedState, mark: boolean): boolean {
+  const today = todayStr()
+  // a plan chosen to start later has now started: the one it replaces is finished
+  const done = supersededPlans(s, today)
+  for (const old of done) { old.state = 'completed'; old.completedAt = nowIso(); old._dirty = true; old._u = nowIso() }
+  const p = activePlan(s, today)
+  const pos = p ? positionOn(p, today) : null
+  if (!pos) return done.length > 0
+  const next = scheduleMirror(pos.planWeek, s.routines)
+  let changed = false
+  for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
+  if (changed && mark) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+  return changed || done.length > 0
+}
+
+/** Plans all stopped: the weekly schedule from before them comes back, and is forgotten. */
+function putBackWeek(s: PersistedState): void {
+  const prev = weekToPutBack(s)
+  if (!prev) return
+  for (let d = 0; d < 7; d++) s.schedule[d] = prev[d] ?? 'Rest'
+  delete s.profile.weekBeforePlan
+  ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+}
+
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
+
 function setSessions(day: DayLog, list: TrainingSession[]): void {
   day.sessions = list
   day.workout = mirrorOf(list)
@@ -545,9 +595,129 @@ export const useStore = create<StoreState>()(
       setSchedule: (sch, quiet) => {
         set((st) => {
           for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
+          const kept = keptAfterEdit(st.data, st.data.schedule, todayStr())
+          if (kept) st.data.profile.weekBeforePlan = kept
           markSettingsDirty(st.data)
         })
         saved(quiet ? undefined : 'Schedule updated')
+      },
+
+      startPlan: (input) => {
+        const id = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          const today = todayStr()
+          const start = input.startedAt ?? today
+          // the person's own week, kept before the first plan's mirror writes over it
+          const keep = weekToKeep(st.data)
+          if (keep) { st.data.profile.weekBeforePlan = keep; ensureMeta(st.data, false).settings = { u: nowIso(), dirty: true } }
+          // one plan in charge: the one in progress is finished (or put away if it never started).
+          // A plan chosen to start later leaves it running until then (mirrorPlan finishes it).
+          for (const p of st.data.trainingPlans) {
+            if (p.state !== 'active') continue
+            if (start > today && p.startedAt && p.startedAt <= today) continue
+            p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
+            if (p.state === 'completed') p.completedAt = nowIso()
+            p._dirty = true; p._u = nowIso()
+          }
+          st.data.trainingPlans.push({
+            id, name: input.name.trim().slice(0, 120) || 'My plan', source: input.source, state: 'active',
+            phases: cleanPhases(input.phases), startedAt: input.startedAt ?? today,
+            ...(input.baseTemplateId ? { baseTemplateId: input.baseTemplateId } : {}), ...(input.clonedFromId ? { clonedFromId: input.clonedFromId } : {}),
+            _dirty: true, _u: nowIso(),
+          })
+          mirrorPlan(st.data, true)
+        })
+        saved('Plan started')
+        return id
+      },
+
+      updatePlan: (id, patch) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          if (patch.name != null) p.name = patch.name.trim().slice(0, 120) || p.name
+          if (patch.phases) p.phases = cleanPhases(patch.phases)
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Plan updated')
+      },
+
+      carryOn: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Carrying on', weeks: 1, after: true, full: true, since: todayStr(), week: {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Your last week carries on')
+      },
+
+      startMaintenance: (id, week) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Maintenance', weeks: 1, after: true, since: todayStr(), week: week ?? {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Maintenance started')
+      },
+
+      savePlanCopy: (id, name) => {
+        const src = (get().data.trainingPlans || []).find((x) => x.id === id)
+        if (!src) return null
+        const nid = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          st.data.trainingPlans.push({
+            id: nid, name: [...(name ?? src.name).trim()].slice(0, 120).join('') || 'My plan', source: 'custom', state: 'template',
+            phases: cleanPhases(src.phases.filter((x) => !x.after)), clonedFromId: src.id,
+            ...(src.baseTemplateId ? { baseTemplateId: src.baseTemplateId } : {}), _dirty: true, _u: nowIso(),
+          })
+        })
+        saved('Saved to your plans')
+        return nid
+      },
+
+      notePlan: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          const good = reflection.good?.trim().slice(0, 500), change = reflection.change?.trim().slice(0, 500)
+          if (!good && !change) return
+          p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+        })
+        saved()
+      },
+
+      finishPlan: (id, reflection, state = 'completed') => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          p.state = state
+          if (state === 'completed') p.completedAt = nowIso()
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+          // no plan left running: the week the person had before plans comes back (the mirror only
+          // holds one ready-made workout a day, so keeping it would turn Tali's plan workouts into cardio)
+          putBackWeek(st.data)
+        })
+        saved(state === 'completed' ? 'Plan finished' : 'Plan put away')
+      },
+
+      syncPlanMirror: () => {
+        const snap = () => JSON.stringify([get().data.schedule, (get().data.trainingPlans || []).map((p) => p.state)])
+        const before = snap()
+        // local only (launch, back to the app): the next sync mirrors again on fresh data and uploads
+        set((st) => { mirrorPlan(st.data, false) })
+        if (snap() !== before) persist()
       },
 
       saveTargets: (t, rangeWidth) => {
@@ -651,7 +821,9 @@ export const useStore = create<StoreState>()(
             !d._meta &&
             (Object.keys(d.days || {}).length > 0 ||
               (d.customFoods || []).length > 0 ||
-              (d.recipes || []).length > 0)
+              (d.recipes || []).length > 0 ||
+              (d.routines || []).length > 0 ||
+              (d.trainingPlans || []).length > 0)
           ensureMeta(d, migrate)
         })
         saveState(get().data)
@@ -761,7 +933,8 @@ export const useStore = create<StoreState>()(
           }
           get().runSync()
         })
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) { get().syncPlanMirror(); get().runSync() } })
+        get().syncPlanMirror()
       },
 
       runSync: async () => {
@@ -782,6 +955,8 @@ export const useStore = create<StoreState>()(
           const m = ensureMeta(d, false)
           const failed = await pushDirty(d, m)
           await pullAll(d, m)
+          // the plan's week moved on (a new phase) while settings were current: upload the mirror next run
+          if (mirrorPlan(d, true)) rerun = true
           // Data changed while we were on the network (an edit, a backup import): writing this
           // copy back would lose that change. Drop it; live records are still dirty, so the
           // next run pushes them again and pulls afresh.

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { ExerciseTemplate, LoggedExercise, Session, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
+import type { ExerciseTemplate, LoggedExercise, Session } from '@/core/types'
+import { WORKOUTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
 import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
@@ -9,9 +9,10 @@ import { sessionsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
-import { plannedOn, shortTitle } from '@/core/domain/week'
+import { activePlan, isEaseIn, isHardKey, maintainOn, plannedKeys, positionOn } from '@/core/domain/plans'
+import { planArt } from './plan/PlanParts'
 import { MODALITY_LABEL } from '@/core/data/modalities'
-import { isBuiltinKey, keyOfSession, keyRoutineId, templateFor, type WorkoutKey } from '@/core/domain/routines'
+import { isBuiltinKey, keyOfSession, keyRoutineId, keyTitle, keyVideo, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { EXERCISES } from '@/core/data/exercises'
 import { PageHeader } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
@@ -73,7 +74,14 @@ export function TrainScreen() {
   const builtin = (t: WorkoutKey) => sessions.find((x) => x.routineId === keyRoutineId(t))
   const fd = fmtDate(cur)
   // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
-  const sched = plannedOn(data.schedule, fd.idx)
+  // what's planned: the active plan's day (several workouts, own ones too) or the schedule's one
+  const planned = plannedKeys(data, cur)
+  const restDay = planned.length === 0
+  // a maintenance week of the plan: planned workouts open on the lighter version (Benn's model)
+  const maintain = maintainOn(data, cur)
+  // the plan in charge on this day, for the line above Today
+  const planNow = activePlan(data, cur)
+  const planPos = planNow ? positionOn(planNow, cur) : null
   const isToday = cur === todayStr()
   const dayName = fd.dow
 
@@ -82,9 +90,14 @@ export function TrainScreen() {
   const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
   const low = lowSignals(day?.checkin, recent)
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
-  const offer = !logged && sched !== 'Rest' && offerLighter(day?.checkin, recent)
-  // an accepted "easier first week" pre-selects the shorter version (still just a choice)
-  const easy = !logged && sched !== 'Rest' && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  const offer = !logged && !restDay && offerLighter(day?.checkin, recent)
+  // an accepted "easier first week" pre-selects the shorter version (still just a choice), and so
+  // does a maintenance week
+  const easyWeek = !logged && !restDay && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
+  // lighter weeks shorten the hard workouts only: light cardio and mobility stay as planned
+  // (the maintenance evidence is about resistance volume; fitness-workouts)
+  const easyFor = (k: WorkoutKey) => easyWeek || (maintain && isHardKey(k, routines))
+  const easy = easyWeek || (!restDay && maintain && planned.some((k) => isHardKey(k, routines)))
   const [lighterOpen, setLighterOpen] = useState(false)
 
   useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
@@ -106,7 +119,7 @@ export function TrainScreen() {
     if (pick0 && pick0.k === t) return pick0.c
     const own = builtin(t)
     if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
-    return easy ? 'shorter' : 'planned'
+    return easyFor(t) ? 'shorter' : 'planned'
   }
   const swapsFor = (t: WorkoutKey): Record<number, string> => {
     if (swapsBy[t]) return swapsBy[t]
@@ -133,7 +146,10 @@ export function TrainScreen() {
   }
   const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
 
-  const easyNote = easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
+  // what kind of shorter week the plan is in: easing in, a lighter week, or maintenance after it
+  const planShortKind = planPos?.maintenanceWeek != null ? 'maintenance' : planNow && planPos && isEaseIn(planNow, planPos.phaseIndex) ? 'ease' : 'lighter'
+  const easyNote = !easyWeek && maintain ? (planShortKind === 'maintenance' ? 'Maintenance: the shorter version is selected. Change it any time.' : planShortKind === 'ease' ? 'Easing in: the shorter version is selected while you find your weights. Change it any time.' : 'Lighter week: the shorter version is selected. Change it any time.')
+    : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
     ? 'Lighter day: the shorter version is selected for today. Change it any time.'
     : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`) : null
 
@@ -159,21 +175,31 @@ export function TrainScreen() {
   }
 
   // ---------- the today list ----------
-  const plannedType = sched !== 'Rest' ? (sched as WorkoutType) : null
-  const own = plannedType ? builtin(plannedType) : undefined
-  const plannedShorter = plannedType ? choiceFor(plannedType) === 'shorter' : false
-  const plannedSets = plannedType && LIFTS.includes(plannedType)
-    ? slotsOf(WORKOUTS[plannedType].ex, swapsFor(plannedType), plannedShorter, exById).reduce((a, s) => a + s.sets, 0) : 0
-  const ownDone = own?.ex ? own.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
-  // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
-  const inProgress = !!own && plannedType !== 'Cardio' && own.open === true
-  const showPlanned = !!plannedType && (!own || inProgress)
-  const plannedSub = plannedType === 'Cardio' ? WORKOUTS.Cardio.ex[0].t
-    : plannedType ? `${WORKOUTS[plannedType].ex.length} exercises · ${setCount(WORKOUTS[plannedType].ex, plannedShorter)}${plannedShorter ? ' · shorter' : ''}` : ''
-  const plannedVideo = plannedType ? firstVideo(plannedType) : undefined
-  const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && pickUp !== sched
-  const lighterShown = !logged && sched !== 'Rest'
-  const lighterUp = lighterShown && (offer || easy)
+  const rowOf = (k: WorkoutKey) => {
+    const tpl = templateFor(k, routines)
+    const session = builtin(k)
+    const shorterK = choiceFor(k) === 'shorter'
+    const cardio = k === 'Cardio'
+    const sets = !cardio && tpl ? slotsOf(tpl.ex, swapsFor(k), shorterK, exById).reduce((a, x) => a + x.sets, 0) : 0
+    const done = session?.ex ? session.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
+    // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
+    const inProgress = !!session && !cardio && session.open === true
+    const n = tpl?.ex.length ?? 0
+    // a plan's lighter week or maintenance opens hard workouts shorter, with a way back to the full one (Plans 3)
+    const planShort = maintain && !easyWeek && shorterK && !cardio
+    const sub = cardio ? WORKOUTS.Cardio.ex[0].t
+      : planShort ? `Shorter version · ${setCount(tpl?.ex ?? [], true)}`
+      : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
+    return { k, session, inProgress, show: !session || inProgress, sets, done, sub, planShort, video: keyVideo(k, routines) }
+  }
+  const rows = planned.map(rowOf)
+  // the lighter options apply to the day's first workout; on a lighter week, its first hard one (the one shortened)
+  const first = ((maintain ? planned.find((k) => isHardKey(k, routines)) : undefined) ?? planned[0]) as WorkoutKey | undefined
+  const allDone = rows.length > 0 && rows.every((r) => !r.show)
+  const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && !planned.includes(pickUp)
+  const lighterShown = !logged && !restDay
+  // a plan's lighter week says so on the workout itself, so the options card stays folded
+  const lighterUp = lighterShown && (offer || easyWeek)
 
   const lighter = (
     <div className={'card lighter' + (lighterUp || lighterOpen ? ' open' : '')}>
@@ -190,7 +216,7 @@ export function TrainScreen() {
       {(lighterUp || lighterOpen) && (
         <div className="chips" role="group" aria-label="Today's session" style={{ marginTop: 10 }}>
           {CHOICES.map(([k, label]) => (
-            <button key={k} className={'chip' + (plannedType && choiceFor(plannedType) === k ? ' on' : '')} onClick={() => plannedType && openWorkout(plannedType, k)}>{label}</button>
+            <button key={k} className={'chip' + (first && choiceFor(first) === k ? ' on' : '')} onClick={() => first && openWorkout(first, k)}>{label}</button>
           ))}
         </div>
       )}
@@ -214,7 +240,7 @@ export function TrainScreen() {
           <div className="t">You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</div>
           <div className="chips">
             <button className="chip" onClick={() => setPrefs({ loadNoteSeen: cur })}>Thanks</button>
-            {plannedOn(data.schedule, fmtDate(shiftDay(cur, 1)).idx) !== 'Rest' && (
+            {plannedKeys(data, shiftDay(cur, 1)).length > 0 && (
               <button className="chip" onClick={() => {
                 const tmr = shiftDay(cur, 1)
                 const p = data.profile
@@ -243,35 +269,50 @@ export function TrainScreen() {
       {lighterUp && lighter}
 
       <section className="tsec" aria-labelledby="today-h">
+        {planNow && planPos && (
+          <div className="t-plan">
+            {planArt(planNow.baseTemplateId) ? <img src={planArt(planNow.baseTemplateId)} alt="" /> : <span className="dot" aria-hidden="true" />}
+            <span><b>{planNow.name}</b> · {planPos.maintenanceWeek != null ? `${planPos.phase.full ? 'Carrying on' : 'Maintenance'}, week ${planPos.maintenanceWeek}` : planPos.ended ? `${planPos.total} weeks, done` : `Week ${planPos.week} of ${planPos.total} · ${planPos.phase.name}`}</span>
+          </div>
+        )}
         <h2 id="today-h" className="tsec-h">{isToday ? 'Today' : dayName}</h2>
         <div className="list tlist">
-          {showPlanned && plannedType && (
-            <div className="li trow" role="button" tabIndex={0} onClick={() => openWorkout(plannedType)}
-              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openWorkout(plannedType) } }}>
-              <Thumb video={plannedVideo} big />
+          {rows.filter((r) => r.show).map((r) => (
+            <div key={r.k} className="li trow" role="button" tabIndex={0} onClick={() => openWorkout(r.k)}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openWorkout(r.k) } }}>
+              <Thumb video={r.video} big />
               <div className="m">
-                <div className="t b">{shortTitle(plannedType)}</div>
-                <div className="s num">{inProgress ? `In progress · ${ownDone} of ${plannedSets} sets` : plannedSub}</div>
+                <div className="t b">{keyTitle(r.k, routines)}</div>
+                <div className="s num">{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</div>
               </div>
-              <button className="btn sm startb" onClick={(e) => { e.stopPropagation(); openWorkout(plannedType) }}>{inProgress ? 'Resume' : 'Start'}</button>
+              <button className="btn sm startb" onClick={(e) => { e.stopPropagation(); openWorkout(r.k) }}>{r.inProgress ? 'Resume' : 'Start'}</button>
+              {/* a lighter week or maintenance: a quiet way back to the full workout, never a nudge on a
+                  low check-in day or in gentle mode, and after maintenance's first week only the link */}
+              {r.planShort && !r.inProgress && (
+                <div className="trow-note" onClick={(e) => e.stopPropagation()}>
+                  {planPos?.maintenanceWeek != null
+                    ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>Full workout</button>}</>
+                    : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <button className="linkbtn inl" onClick={() => openWorkout(r.k, 'planned')}>The full workout</button> is here if you'd like it.</>}</>}
+                </div>
+              )}
             </div>
-          )}
-          {sched === 'Rest' && (
+          ))}
+          {restDay && (
             <div className="li trow">
               <span className="thumb big ph" aria-hidden="true"><Icon name="leaf" size={22} /></span>
               <div className="m"><div className="t b">Rest day</div><div className="s">Recovery counts too. A gentle walk is fine.</div></div>
             </div>
           )}
-          {plannedType && own && !inProgress && !showPick && (
+          {allDone && !showPick && (
             <div className="li trow">
               <span className="done-chk" aria-hidden="true"><Icon name="check" size={16} stroke={2.6} /></span>
-              <div className="m"><div className="t b">All done for today</div><div className="s">{shortTitle(plannedType)} is in Done today</div></div>
+              <div className="m"><div className="t b">All done for today</div><div className="s">{rows.length === 1 ? `${keyTitle(rows[0].k, routines)} is` : 'Your workouts are'} in Done today</div></div>
             </div>
           )}
           {showPick && pickUp && (
             <div className="li trow">
               <span className="thumb big ph" aria-hidden="true"><Icon name="dumbbell" size={22} /></span>
-              <div className="m"><div className="t muted">{shortTitle(pickUp)}, from {fmtDate(pick!.d).dow}</div><div className="s">If you'd like to pick it up</div></div>
+              <div className="m"><div className="t muted">{keyTitle(pickUp, routines)}, from {fmtDate(pick!.d).dow}</div><div className="s">If you'd like to pick it up</div></div>
               <button className="linkbtn" onClick={() => openWorkout(pickUp)}>Add</button>
               <button className="x-btn" aria-label="Not this time" onClick={() => setPrefs({ pickUpDismissed: pick!.d })}><Icon name="x" size={14} stroke={2.6} /></button>
             </div>
@@ -311,7 +352,7 @@ export function TrainScreen() {
         )}
       </section>
 
-      {addOpen && <AddSomethingSheet planned={sched} onClose={() => setAddOpen(false)}
+      {addOpen && <AddSomethingSheet planned={planned} onClose={() => setAddOpen(false)}
         onLog={() => { setAddOpen(false); setLogOpen(true) }}
         onWorkout={(w) => { setAddOpen(false); openWorkout(w) }}
         onLibrary={() => { setAddOpen(false); setLibOpen(true) }} />}

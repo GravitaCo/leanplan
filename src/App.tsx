@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from './store/store'
 import { BottomNav } from './ui/BottomNav'
+import { warmPlanArt } from './screens/plan/PlanParts'
 import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FoodScreen } from './screens/FoodScreen'
@@ -21,6 +22,14 @@ export default function App() {
   useEffect(() => {
     initAuth()
   }, [initAuth])
+
+  // the plan photographs, fetched once when idle so the library looks right offline
+  useEffect(() => {
+    if (!signedIn) return
+    const run = () => warmPlanArt()
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
+    if (w.requestIdleCallback) w.requestIdleCallback(run); else setTimeout(run, 3000)
+  }, [signedIn])
 
   // Each tab opens at the top, like a native tab bar.
   useEffect(() => {

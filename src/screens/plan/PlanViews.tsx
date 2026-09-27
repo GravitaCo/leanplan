@@ -4,10 +4,12 @@ import type { Schedule, WorkoutType } from '@/core/types'
 import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
 import { exById } from '@/core/domain/library'
 import { todayStr } from '@/core/domain/date'
+import { weekOf } from '@/core/domain/insights'
+import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
-import { aboutMins, keyTitle, keyVideo, routineFor, slotsOf as routineSlots, templateFor, type WorkoutKey } from '@/core/domain/routines'
+import { aboutMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -39,20 +41,56 @@ function useWeekChange() {
   }
 }
 
-/** Choose a category, then a ready-made workout, then "Add to Monday" (never "Start": that lives in Train). */
-export function AddWorkoutSheet({ idx, onClose }: { idx: number; onClose: () => void }) {
+/**
+ * Choose a category, then a workout, then "Add to Monday" (never "Start": that lives in Train).
+ * Without `onAdd` it sets the weekly schedule's one workout; with it (a plan's day, which holds
+ * several, own workouts too) it hands the choice back and "My workouts" leads the list (Flow 3).
+ */
+export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
+  idx: number
+  onClose: () => void
+  onAdd?: (k: WorkoutKey) => void
+  /** already on the day (a plan's): left out */
+  have?: WorkoutKey[]
+  /** the plan's gentle notes for the day with this workout added */
+  notesFor?: (k: WorkoutKey) => string[]
+}) {
   const schedule = useStore((s) => s.data.schedule)
+  const routines = useStore((s) => s.data.routines)
   const change = useWeekChange()
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number] | null>(null)
-  const [sel, setSel] = useState<WorkoutType | null>(null)
-  const [see, setSee] = useState<WorkoutType | null>(null)
+  type Cat = { id: string; label: string; items: WorkoutKey[]; color: string; sub?: string }
+  const mine = (routines || []).filter((r) => !r.archived && !have.includes(r.id))
+  const cats: Cat[] = [
+    ...(onAdd && mine.length ? [{ id: 'mine', label: 'My workouts', items: mine.map((r) => r.id), color: 'var(--btn)', sub: 'Ones you made or saved' }] : []),
+    ...CATEGORIES.map((c) => ({ ...c, items: c.items.filter((t) => !have.includes(t)) as WorkoutKey[] })).filter((c) => c.items.length),
+  ]
+  // a plan's day can also hold Tali's plan workouts (Full body A…, Strength & Balance A…), by kind
+  if (onAdd) {
+    const tali = taliWorkouts().filter((r) => !have.includes(r.id))
+    const weights = cats.find((c) => c.id === 'weights')
+    const lifts = tali.filter((r) => r.modality === 'strength').map((r) => r.id)
+    if (weights) weights.items = [...weights.items, ...lifts]
+    else if (lifts.length) cats.push({ id: 'weights', label: MODALITY_LABEL.strength, items: lifts, color: 'var(--move-fill)' })
+    const mob = tali.filter((r) => r.modality === 'mobility').map((r) => r.id)
+    if (mob.length) cats.push({ id: 'mobility', label: MODALITY_LABEL.mobility, items: mob, color: 'var(--mind-fill)' })
+  }
+  const [cat, setCat] = useState<Cat | null>(null)
+  const [sel, setSel] = useState<WorkoutKey | null>(null)
+  const [see, setSee] = useState<WorkoutKey | null>(null)
   const day = DAY_NAME[idx]
   const cancel = <button className="navbtn" onClick={onClose}>Cancel</button>
-  const warn = sel ? weekWarnings({ ...schedule, [idx]: sel }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)) : []
+  const warn = !sel ? [] : notesFor ? notesFor(sel)
+    : weekWarnings({ ...schedule, [idx]: sel as WorkoutType }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)).map((w) => w.text)
+  const subOf = (k: WorkoutKey) => {
+    const r = routineFor(k, routines)
+    if (!r) return workoutSub(k as WorkoutType)
+    const n = routineSlots(r).length
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+  }
 
   if (see) {
     return (
-      <Sheet title={shortTitle(see)} onClose={onClose} tall animate={false} left={<BackButton label={cat?.label ?? 'Back'} onClick={() => setSee(null)} />} right={cancel}>
+      <Sheet title={keyTitle(see, routines)} onClose={onClose} tall animate={false} left={<BackButton label={cat?.label ?? 'Back'} onClick={() => setSee(null)} />} right={cancel}>
         <ExerciseList type={see} />
       </Sheet>
     )
@@ -63,38 +101,41 @@ export function AddWorkoutSheet({ idx, onClose }: { idx: number; onClose: () => 
         <div className="list" role="radiogroup" aria-label={`${cat.label} workouts`}>
           {cat.items.map((t) => (
             <button className="li pv-row" key={t} role="radio" aria-checked={sel === t} onClick={() => setSel(t)}>
-              <Thumb video={firstVideo(t)} shape={t === 'Cardio' ? 'duration' : undefined} />
-              <div className="m"><div className="t">{shortTitle(t)}</div><div className="s num">{workoutSub(t)}{schedule[idx] === t ? ' · on ' + day + ' now' : ''}</div></div>
+              <Thumb video={keyVideo(t, routines)} shape={t === 'Cardio' ? 'duration' : undefined} />
+              <div className="m"><div className="t">{keyTitle(t, routines)}</div><div className="s num">{subOf(t)}{!onAdd && schedule[idx] === t ? ' · on ' + day + ' now' : ''}</div></div>
               <span className={'chk' + (sel === t ? ' on' : '')} aria-hidden="true">{sel === t && <Icon name="check" size={14} stroke={3} />}</span>
             </button>
           ))}
         </div>
-        {sel && sel !== 'Cardio' && <button className="linkbtn" style={{ paddingLeft: 4 }} onClick={() => setSee(sel)}>See what's in {shortTitle(sel)}</button>}
-        {warn.map((w) => <div className="card plan-note" key={w.text}>{w.text}</div>)}
+        {sel && sel !== 'Cardio' && <button className="linkbtn" style={{ paddingLeft: 4 }} onClick={() => setSee(sel)}>See what's in {keyTitle(sel, routines)}</button>}
+        {warn.map((w) => <div className="card plan-note" key={w}>{w}</div>)}
         <div className="stack sheet-cta">
           <button className="btn" disabled={!sel} onClick={() => {
             if (!sel) return
-            change({ ...schedule, [idx]: sel }, `${shortTitle(sel)} added to ${day}`)
+            if (onAdd) onAdd(sel)
+            else change({ ...schedule, [idx]: sel as WorkoutType }, `${shortTitle(sel)} added to ${day}`)
             onClose()
           }}>Add to {day}</button>
         </div>
       </Sheet>
     )
   }
+  const ready = cats.filter((c) => c.id !== 'mine')
+  const own = cats.find((c) => c.id === 'mine')
+  const row = (c: Cat) => (
+    <button className="li pv-row" key={c.id} onClick={() => setCat(c)}>
+      <span className="catsq" style={{ background: c.color }} aria-hidden="true" />
+      <div className="m"><div className="t">{c.label}</div><div className="s">{c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`}</div></div>
+      <Chevron />
+    </button>
+  )
   return (
     <Sheet title={`Add to ${day}`} onClose={onClose} tall left={null} right={cancel}>
-      <div className="lbl" style={{ paddingTop: 0 }}>Ready-made</div>
-      <div className="list">
-        {CATEGORIES.map((c) => (
-          <button className="li pv-row" key={c.id} onClick={() => setCat(c)}>
-            <span className="catsq" style={{ background: c.color }} aria-hidden="true" />
-            <div className="m"><div className="t">{c.label}</div><div className="s">{c.items.length} {c.items.length === 1 ? 'workout' : 'workouts'} · {c.items.map(shortTitle).join(', ')}</div></div>
-            <Chevron />
-          </button>
-        ))}
-      </div>
+      {own && <div className="list" style={{ marginBottom: 4 }}>{row(own)}</div>}
+      <div className="lbl" style={{ paddingTop: own ? undefined : 0 }}>Ready-made</div>
+      <div className="list">{ready.map(row)}</div>
       <div className="foot" style={{ padding: '14px 4px 0' }}>
-        Bodyweight, Yoga, Pilates and Mobility appear here once they have ready-made workouts. Building your own workout is coming later.
+        {cats.some((c) => c.id === 'mobility') ? 'Bodyweight, Yoga and Pilates' : 'Bodyweight, Yoga, Pilates and Mobility'} appear here once they have ready-made workouts.
       </div>
     </Sheet>
   )
@@ -213,17 +254,21 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   /** one of the user's own: edit it */
   onEdit?: () => void
 }) {
-  const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
-  const own = routineFor(type, routines)
+  const r = routineFor(type, routines)
+  // Tali's plan workouts read like the ready-made cards; only the person's own say "Your workout"
+  const own = r && r.source === 'custom' ? r : undefined
   const v = keyVideo(type, routines)
   const [failed, setFailed] = useState(false)
-  const on = WEEK_ORDER.filter((d) => schedule[d] === type).map((d) => DAY_NAME[d] + 's')
+  // the days it's planned this week: the plan's week (several a day, own and Tali's) or the schedule's
+  const data = useStore((s) => s.data)
+  const thisWeek = weekOf(todayStr())
+  const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
-  const sub = own
-    ? [`${routineSlots(own).length} ${routineSlots(own).length === 1 ? 'exercise' : 'exercises'}`, own.estMins ? `about ${aboutMins(own.estMins)} min` : ''].filter(Boolean).join(' · ')
+  const sub = r
+    ? [`${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
   return (
     <div className="wv">
@@ -232,13 +277,13 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
         <button className="wv-back" aria-label="Back" onClick={onBack}><Icon name="chevL" size={18} stroke={2.6} /></button>
         <div className="wv-t">
           <h1>{keyTitle(type, routines)}</h1>
-          <div className="s num">{own ? `Your workout · ${sub}` : `${when} · ${sub}`}</div>
+          <div className="s num">{own ? `Your workout · ${sub}` : r ? `Tali workout · ${sub}` : `${when} · ${sub}`}</div>
         </div>
       </div>
       <div className="screen" style={{ paddingTop: 16 }}>
         <ExerciseList type={type} />
         {own ? (
-          <div className="foot" style={{ padding: '4px 4px 0' }}>Do it today with Do this today, or on any day from Add something in Train. Adding your own workouts to your week is coming in a later update.</div>
+          <div className="foot" style={{ padding: '4px 4px 0' }}>Do it today with Do this today, or on any day from Add something in Train. With a plan running, you can add it to any day of the plan's week.</div>
         ) : (
           <div className="foot" style={{ padding: '4px 4px 0' }}>Ready-made workouts stay as they are.{onCopy ? ' Make your own copy to change the exercises.' : ''} To change a move for one day, use Swap in Train.</div>
         )}

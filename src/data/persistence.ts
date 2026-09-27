@@ -1,12 +1,14 @@
-import type { AppState, Modality } from '@/core/types'
+import type { AppState, Modality, PlanState } from '@/core/types'
+import { cleanPhases } from '@/core/domain/plans'
 import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
-import { todayStr } from '@/core/domain/date'
+import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
 import { nowIso, uuid, UUID_RE } from './supabase'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
+const PLAN_STATES: PlanState[] = ['active', 'completed', 'archived', 'template']
 
 /** Per-record sync bookkeeping, persisted alongside the app state. */
 export interface SyncMeta {
@@ -34,6 +36,7 @@ function emptyState(): AppState {
     customFoods: [],
     recipes: [],
     routines: [],
+    trainingPlans: [],
   }
 }
 
@@ -59,6 +62,28 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
     r.source = r.source === 'recommended' ? 'recommended' : 'custom'
     if (r.baseId != null && (typeof r.baseId !== 'string' || r.baseId.length > 64)) delete r.baseId
     if (r.estMins != null) r.estMins = Math.min(1440, Math.max(0, Math.round(+r.estMins || 0)))
+  }
+  // weekly plans (plan P5): malformed ones dropped; every field the server checks made valid
+  s.trainingPlans = (Array.isArray(s.trainingPlans) ? s.trainingPlans : []).filter((p) => !!p && typeof p === 'object' && typeof p.name === 'string' && Array.isArray(p.phases))
+  for (const p of s.trainingPlans) {
+    p.name = [...p.name.trim()].slice(0, 120).join('') || 'My plan'
+    p.source = p.source === 'recommended' ? 'recommended' : 'custom'
+    if (!PLAN_STATES.includes(p.state)) p.state = 'archived'
+    p.phases = cleanPhases(p.phases.filter((x) => !!x && typeof x === 'object').map((x, i) => ({ ...x, id: typeof x.id === 'string' && x.id ? x.id.slice(0, 40) : 'ph' + i })))
+    if (!p.phases.length) p.state = 'archived'
+    // a real calendar date only ("2026-02-31" is refused by the server and would never sync)
+    if (p.startedAt != null && !(/^\d{4}-\d{2}-\d{2}$/.test(String(p.startedAt)) && ymd(parseYmd(p.startedAt)) === p.startedAt)) delete p.startedAt
+    if (p.completedAt != null && (typeof p.completedAt !== 'string' || isNaN(Date.parse(p.completedAt)))) delete p.completedAt
+    if (p.clonedFromId != null && (typeof p.clonedFromId !== 'string' || !UUID_RE.test(p.clonedFromId))) delete p.clonedFromId
+    if (p.reflection != null) {
+      const r = p.reflection as unknown as Record<string, unknown>
+      const txt = (v: unknown) => (typeof v === 'string' && v.trim() ? [...v.trim()].slice(0, 500).join('') : undefined)
+      const good = txt(r && typeof r === 'object' ? r.good : undefined), change = txt(r && typeof r === 'object' ? r.change : undefined)
+      const at = r && typeof r === 'object' && typeof r.at === 'string' && !isNaN(Date.parse(r.at)) ? r.at : nowIso()
+      if (good || change) p.reflection = { at, ...(good ? { good } : {}), ...(change ? { change } : {}) }
+      else delete p.reflection
+    }
+    if (p.baseTemplateId != null && (typeof p.baseTemplateId !== 'string' || p.baseTemplateId.length > 64)) delete p.baseTemplateId
   }
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
@@ -153,7 +178,7 @@ export function saveMode(m: SessionMode | null): void {
 }
 
 /** What a backup holds, for the confirm step before importing it. */
-export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number } {
+export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number; plans: number } {
   const days = Object.keys(b.days || {}).sort()
   return {
     days: days.length,
@@ -162,6 +187,7 @@ export function backupSummary(b: PersistedState): { days: number; first: string 
     foods: Array.isArray(b.customFoods) ? b.customFoods.length : 0,
     recipes: Array.isArray(b.recipes) ? b.recipes.length : 0,
     workouts: Array.isArray(b.routines) ? b.routines.filter((r) => r && !r.archived).length : 0,
+    plans: Array.isArray(b.trainingPlans) ? b.trainingPlans.filter((p) => p && p.state !== 'archived').length : 0,
   }
 }
 
@@ -210,6 +236,8 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
     // workouts match by id only: two workouts may share a name
     const routineIds = new Set(s.routines.map((r) => r.id))
     s.routines.push(...(current.routines || []).filter((r) => !routineIds.has(r.id)))
+    const planIds = new Set(s.trainingPlans.map((p) => p.id))
+    s.trainingPlans.push(...(current.trainingPlans || []).filter((p) => !planIds.has(p.id)))
   }
   const ids = (x: unknown): unknown[] => (Array.isArray(x) ? x : [])
   const keep = (lists: unknown[], live: Set<unknown>) =>
@@ -244,6 +272,7 @@ export interface AccountRows {
   foods: { id: string }[]
   recipes: { id: string }[]
   routines: { id: string }[]
+  plans: { id: string }[]
 }
 
 /**
@@ -260,8 +289,8 @@ export function sameAccount(s: PersistedState, rows: AccountRows): boolean {
   if (!m) return false
   const at = new Map(rows.days.map((r) => [r.log_date, r.updated_at]))
   const syncedDays = Object.entries(m.days || {}).filter(([d, x]) => !x.dirty && !!x.u && !!s.days?.[d])
-  const ids = new Set([...rows.foods, ...rows.recipes, ...(rows.routines || [])].map((r) => r.id))
-  const syncedItems = [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || [])].filter((x) => !x._dirty && !!x.id)
+  const ids = new Set([...rows.foods, ...rows.recipes, ...(rows.routines || []), ...(rows.plans || [])].map((r) => r.id))
+  const syncedItems = [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])].filter((x) => !x._dirty && !!x.id)
   const match = syncedDays.some(([d, x]) => at.get(d) === x.u) || syncedItems.some((x) => ids.has(x.id!))
   const against = syncedDays.some(([d]) => !at.has(d)) || syncedItems.some((x) => !ids.has(x.id!))
   return match && !against
@@ -273,7 +302,7 @@ export function unsyncedCount(s: PersistedState): number {
   if (!m) return 0
   return (m.settings?.dirty ? 1 : 0) + Object.values(m.days || {}).filter((x) => x.dirty).length +
     (s.customFoods || []).filter((f) => f._dirty).length + (s.recipes || []).filter((r) => r._dirty).length +
-    (s.routines || []).filter((r) => r._dirty).length +
+    (s.routines || []).filter((r) => r._dirty).length + (s.trainingPlans || []).filter((p) => p._dirty).length +
     (m.foodDeletes || []).length + (m.recipeDeletes || []).length
 }
 
@@ -336,7 +365,7 @@ export function ensureMeta(s: PersistedState, migrate: boolean): SyncMeta {
       r._u = nowIso()
     }
   })
-  ;(s.routines || []).forEach((r) => {
+  ;[...(s.routines || []), ...(s.trainingPlans || [])].forEach((r) => {
     if (!r.id || !UUID_RE.test(r.id)) { r.id = uuid(); r._dirty = true; r._u = nowIso() }
     if (migrate) {
       r._dirty = true

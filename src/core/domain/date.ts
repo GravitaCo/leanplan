@@ -52,3 +52,8 @@ export function r1(x: number): number {
 export function fmt(x: number): string {
   return Math.round(x || 0).toLocaleString('en-GB')
 }
+
+/** "3 Nov". */
+export const dayMonthOf = (d: string): string => fmtDate(d).full.split(' ').slice(0, 2).join(' ')
+/** "Mon 3 Nov". */
+export const shortDateOf = (d: string): string => `${fmtDate(d).dow.slice(0, 3)} ${dayMonthOf(d)}`

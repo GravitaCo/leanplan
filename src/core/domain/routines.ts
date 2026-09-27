@@ -1,6 +1,7 @@
 import type { Exercise, ExerciseTemplate, Modality, Profile, Routine, RoutineEffort, RoutineSlot, WorkoutTemplate, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { WORKOUTS } from '@/core/data/workouts'
+import { TALI_WORKOUTS } from '@/core/data/taliWorkouts'
 import { builtinId, isBuiltin } from './sessions'
 import { shortTitle } from './week'
 import { CARDIO_MET } from '@/core/data/constants'
@@ -168,11 +169,20 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
  */
 export type WorkoutKey = string
 
-export const isBuiltinKey = (key: WorkoutKey): boolean => !!WORKOUTS[key]
+// own property only: a synced key like "constructor" is never taken for a built-in
+export const isBuiltinKey = (key: WorkoutKey): boolean => typeof key === 'string' && Object.prototype.hasOwnProperty.call(WORKOUTS, key)
 
-/** The user's own workout a key names (archived ones too, so a logged day still opens). */
+/** Tali's own workouts for its plans, with their time estimates worked out like the user's. */
+const TALI: Record<string, Routine> = Object.fromEntries(TALI_WORKOUTS.map((r) => [r.id, { ...r, estMins: estMins(slotsOf(r)) }]))
+
+/** One of Tali's plan workouts (Full body A, Strength & Balance A…): built in, never edited. */
+export const isTaliKey = (key: WorkoutKey): boolean => typeof key === 'string' && Object.prototype.hasOwnProperty.call(TALI, key)
+export const taliWorkouts = (): Routine[] => Object.values(TALI)
+
+/** The workout a key names beyond the four built-in cards: the user's own (archived ones too, so a logged day still opens), or one of Tali's plan workouts. */
 export function routineFor(key: WorkoutKey, routines: Routine[] | undefined): Routine | undefined {
-  return isBuiltinKey(key) ? undefined : (routines || []).find((r) => r.id === key)
+  if (isBuiltinKey(key)) return undefined
+  return (routines || []).find((r) => r.id === key) ?? (isTaliKey(key) ? TALI[key] : undefined)
 }
 
 /** The cards for a key; null when it names nothing this device knows. */
