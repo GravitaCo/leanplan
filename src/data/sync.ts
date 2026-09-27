@@ -215,10 +215,11 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   }
   // consent first: a record reaches the server before (or with) the health data it covers
   // a health answer recorded under a clock the server refuses (before 2026, e.g. a phone reset to
-  // 1970) would never upload and would hold the data back for good: it isn't on the server yet,
+  // 1970, or ahead of now) would never upload and would hold the data back for good: it isn't on the server yet,
   // so give it the real time of this upload instead
   const health = latestConsent(s, 'health')
-  if (health?._dirty && !(Date.parse(health.at) >= Date.parse('2026-01-01'))) health.at = nowIso()
+  // (and a time ahead of now, from a clock that was fast: the server refuses more than a day ahead)
+  if (health?._dirty && !(Date.parse(health.at) >= Date.parse('2026-01-01') && Date.parse(health.at) <= Date.now())) health.at = nowIso()
   await step('consents', () => pushConsents(s))
   // enforced, not hoped for: while the person's current health answer isn't on the server, no data
   // goes up (it stays dirty on the device and the next run retries). Only the latest record counts:

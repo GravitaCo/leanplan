@@ -19,7 +19,6 @@ import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { DeleteAccountSheet, RegrantHealthSheet, WithdrawHealthSheet } from './legal/PrivacySheets'
 import { takeReauthReturn } from '@/data/account'
 import { getUid } from '@/data/supabase'
-import { useConsent } from '@/store/hooks'
 import { latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
 
