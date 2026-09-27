@@ -39,20 +39,46 @@ function useWeekChange() {
   }
 }
 
-/** Choose a category, then a ready-made workout, then "Add to Monday" (never "Start": that lives in Train). */
-export function AddWorkoutSheet({ idx, onClose }: { idx: number; onClose: () => void }) {
+/**
+ * Choose a category, then a workout, then "Add to Monday" (never "Start": that lives in Train).
+ * Without `onAdd` it sets the weekly schedule's one workout; with it (a plan's day, which holds
+ * several, own workouts too) it hands the choice back and "My workouts" leads the list (Flow 3).
+ */
+export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
+  idx: number
+  onClose: () => void
+  onAdd?: (k: WorkoutKey) => void
+  /** already on the day (a plan's): left out */
+  have?: WorkoutKey[]
+  /** the plan's gentle notes for the day with this workout added */
+  notesFor?: (k: WorkoutKey) => string[]
+}) {
   const schedule = useStore((s) => s.data.schedule)
+  const routines = useStore((s) => s.data.routines)
   const change = useWeekChange()
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number] | null>(null)
-  const [sel, setSel] = useState<WorkoutType | null>(null)
-  const [see, setSee] = useState<WorkoutType | null>(null)
+  type Cat = { id: string; label: string; items: WorkoutKey[]; color: string; sub?: string }
+  const mine = (routines || []).filter((r) => !r.archived && !have.includes(r.id))
+  const cats: Cat[] = [
+    ...(onAdd && mine.length ? [{ id: 'mine', label: 'My workouts', items: mine.map((r) => r.id), color: 'var(--btn)', sub: 'Ones you made or saved' }] : []),
+    ...CATEGORIES.map((c) => ({ ...c, items: c.items.filter((t) => !have.includes(t)) as WorkoutKey[] })).filter((c) => c.items.length),
+  ]
+  const [cat, setCat] = useState<Cat | null>(null)
+  const [sel, setSel] = useState<WorkoutKey | null>(null)
+  const [see, setSee] = useState<WorkoutKey | null>(null)
   const day = DAY_NAME[idx]
   const cancel = <button className="navbtn" onClick={onClose}>Cancel</button>
-  const warn = sel ? weekWarnings({ ...schedule, [idx]: sel }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)) : []
+  const warn = !sel ? [] : notesFor ? notesFor(sel)
+    : weekWarnings({ ...schedule, [idx]: sel as WorkoutType }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)).map((w) => w.text)
+  const subOf = (k: WorkoutKey) => {
+    const r = routineFor(k, routines)
+    if (!r) return workoutSub(k as WorkoutType)
+    const n = routineSlots(r).length
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+  }
 
   if (see) {
     return (
-      <Sheet title={shortTitle(see)} onClose={onClose} tall animate={false} left={<BackButton label={cat?.label ?? 'Back'} onClick={() => setSee(null)} />} right={cancel}>
+      <Sheet title={keyTitle(see, routines)} onClose={onClose} tall animate={false} left={<BackButton label={cat?.label ?? 'Back'} onClick={() => setSee(null)} />} right={cancel}>
         <ExerciseList type={see} />
       </Sheet>
     )
@@ -63,38 +89,41 @@ export function AddWorkoutSheet({ idx, onClose }: { idx: number; onClose: () => 
         <div className="list" role="radiogroup" aria-label={`${cat.label} workouts`}>
           {cat.items.map((t) => (
             <button className="li pv-row" key={t} role="radio" aria-checked={sel === t} onClick={() => setSel(t)}>
-              <Thumb video={firstVideo(t)} shape={t === 'Cardio' ? 'duration' : undefined} />
-              <div className="m"><div className="t">{shortTitle(t)}</div><div className="s num">{workoutSub(t)}{schedule[idx] === t ? ' · on ' + day + ' now' : ''}</div></div>
+              <Thumb video={keyVideo(t, routines)} shape={t === 'Cardio' ? 'duration' : undefined} />
+              <div className="m"><div className="t">{keyTitle(t, routines)}</div><div className="s num">{subOf(t)}{!onAdd && schedule[idx] === t ? ' · on ' + day + ' now' : ''}</div></div>
               <span className={'chk' + (sel === t ? ' on' : '')} aria-hidden="true">{sel === t && <Icon name="check" size={14} stroke={3} />}</span>
             </button>
           ))}
         </div>
-        {sel && sel !== 'Cardio' && <button className="linkbtn" style={{ paddingLeft: 4 }} onClick={() => setSee(sel)}>See what's in {shortTitle(sel)}</button>}
-        {warn.map((w) => <div className="card plan-note" key={w.text}>{w.text}</div>)}
+        {sel && sel !== 'Cardio' && <button className="linkbtn" style={{ paddingLeft: 4 }} onClick={() => setSee(sel)}>See what's in {keyTitle(sel, routines)}</button>}
+        {warn.map((w) => <div className="card plan-note" key={w}>{w}</div>)}
         <div className="stack sheet-cta">
           <button className="btn" disabled={!sel} onClick={() => {
             if (!sel) return
-            change({ ...schedule, [idx]: sel }, `${shortTitle(sel)} added to ${day}`)
+            if (onAdd) onAdd(sel)
+            else change({ ...schedule, [idx]: sel as WorkoutType }, `${shortTitle(sel)} added to ${day}`)
             onClose()
           }}>Add to {day}</button>
         </div>
       </Sheet>
     )
   }
+  const ready = cats.filter((c) => c.id !== 'mine')
+  const own = cats.find((c) => c.id === 'mine')
+  const row = (c: Cat) => (
+    <button className="li pv-row" key={c.id} onClick={() => setCat(c)}>
+      <span className="catsq" style={{ background: c.color }} aria-hidden="true" />
+      <div className="m"><div className="t">{c.label}</div><div className="s">{c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`}</div></div>
+      <Chevron />
+    </button>
+  )
   return (
     <Sheet title={`Add to ${day}`} onClose={onClose} tall left={null} right={cancel}>
-      <div className="lbl" style={{ paddingTop: 0 }}>Ready-made</div>
-      <div className="list">
-        {CATEGORIES.map((c) => (
-          <button className="li pv-row" key={c.id} onClick={() => setCat(c)}>
-            <span className="catsq" style={{ background: c.color }} aria-hidden="true" />
-            <div className="m"><div className="t">{c.label}</div><div className="s">{c.items.length} {c.items.length === 1 ? 'workout' : 'workouts'} · {c.items.map(shortTitle).join(', ')}</div></div>
-            <Chevron />
-          </button>
-        ))}
-      </div>
+      {own && <div className="list" style={{ marginBottom: 4 }}>{row(own)}</div>}
+      <div className="lbl" style={{ paddingTop: own ? undefined : 0 }}>Ready-made</div>
+      <div className="list">{ready.map(row)}</div>
       <div className="foot" style={{ padding: '14px 4px 0' }}>
-        Bodyweight, Yoga, Pilates and Mobility appear here once they have ready-made workouts. Building your own workout is coming later.
+        Bodyweight, Yoga, Pilates and Mobility appear here once they have ready-made workouts.
       </div>
     </Sheet>
   )

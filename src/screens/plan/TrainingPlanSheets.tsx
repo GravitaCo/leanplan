@@ -1,19 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import type { PlanPhase, PlanWeek, TrainingPlan, WorkoutType } from '@/core/types'
-import { SESSIONS } from '@/core/data/workouts'
-import { DAY_NAME, todayStr } from '@/core/domain/date'
-import { WEEK_ORDER } from '@/core/domain/week'
-import { keyTitle } from '@/core/domain/routines'
+import type { PlanPhase, TrainingPlan } from '@/core/types'
+import { todayStr } from '@/core/domain/date'
 import {
-  copyWeek, MAX_PHASE_WEEKS, MAX_PLAN_WEEKS, newPhaseId, nextSuggestions, phasesOf, planStart, planWeekNotes,
+  copyWeek, MAX_PHASE_WEEKS, MAX_PLAN_WEEKS, newPhaseId, nextSuggestions, phasesOf, planStart,
   PLAN_TEMPLATES, totalWeeks, weekFromSchedule, weekSource, weekSummary, type PlanTemplate,
 } from '@/core/domain/plans'
-import { BackButton, Seg, Sheet, Toggle } from '@/ui/primitives'
+import { Seg, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
-
-/** Most workouts a day in a plan (the same cap cleanPhases applies). */
-const MAX_A_DAY = 4
 
 /** What the editor starts from: a plan to change, or a new one. */
 export type PlanDraft =
@@ -76,11 +70,11 @@ export function PlanStartSheet({ onClose, onDraft }: { onClose: () => void; onDr
  * Name a plan, set its phases (weeks, build or lighter) and each build phase's week. New plans also
  * choose this week or next. Notes about the week are gentle and never stop a save.
  */
-export function PlanEditorSheet({ draft, onClose, initialWeek }: {
+export function PlanEditorSheet({ draft, onClose, onEditWeek }: {
   draft: PlanDraft
   onClose: () => void
-  /** open straight on this phase's week (a day tapped on the Plan screen); Done then saves */
-  initialWeek?: number
+  /** a running plan: open a build phase's week on the Plan tab (Option A's week, then Flow 3's day) */
+  onEditWeek?: (phaseIndex: number) => void
 }) {
   const existing = useStore((s) => ('planId' in draft ? s.data.trainingPlans?.find((p) => p.id === draft.planId) : undefined))
   const routines = useStore((s) => s.data.routines)
@@ -93,11 +87,6 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
   const [name, setName] = useState(init?.name ?? 'My plan')
   const [phases, setPhases] = useState<PlanPhase[]>(() => (init?.phases ?? []).map((ph) => ({ ...ph, ...(ph.maintain ? {} : { week: copyWeek(ph.week) }) })))
   const [when, setWhen] = useState<'today' | 'monday'>('today')
-  const [weekAt, setWeekAt] = useState<number | null>(initialWeek ?? null)
-  const direct = initialWeek != null
-  // a view swap inside the open sheet doesn't slide it up again
-  const [moved, setMoved] = useState(false)
-  const [adding, setAdding] = useState<number | null>(null)
   const [stopping, setStopping] = useState(false)
   // the last plan's "do differently" note comes back when the next one is set up (the follow-up
   // is what makes a look back useful; mental-performance)
@@ -130,9 +119,13 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
   const removePhase = (i: number) => setPhases(phases.filter((_, j) => j !== i))
   const hasBuild = phases.some((ph) => !ph.maintain)
 
+  const valid = () => {
+    if (!phases.length) { showToast('Add at least one phase'); return false }
+    if (!hasBuild) { showToast('Add a build phase, so the lighter weeks have workouts to repeat'); return false }
+    return true
+  }
   const save = () => {
-    if (!phases.length) { showToast('Add at least one phase'); return }
-    if (!hasBuild) { showToast('Add a build phase, so the lighter weeks have workouts to repeat'); return }
+    if (!valid()) return
     if (existing) updatePlan(existing.id, { name, phases })
     else if (!('planId' in draft)) {
       const start = planStart(todayStr(), when)
@@ -143,76 +136,10 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
     onClose()
   }
 
-  // ---------- a build phase's week ----------
-  if (weekAt != null && phases[weekAt] && !phases[weekAt].maintain) {
-    const ph = phases[weekAt]
-    const week: PlanWeek = ph.week ?? {}
-    const setDay = (d: number, keys: string[]) => setPhase(weekAt, { week: { ...week, [d]: keys } })
-    if (adding != null) {
-      const have = week[adding] || []
-      const pick = (k: string) => { setDay(adding, [...have, k]); setMoved(true); setAdding(null) }
-      const mine = (routines || []).filter((r) => !r.archived)
-      return (
-        <Sheet title={`Add to ${DAY_NAME[adding]}`} onClose={onClose} animate={false} left={<BackButton onClick={() => { setMoved(true); setAdding(null) }} />}>
-          <div className="lbl" style={{ paddingTop: 0 }}>Ready-made</div>
-          <div className="list">
-            {SESSIONS.filter((x): x is WorkoutType => x !== 'Rest' && !have.includes(x)).map((k) => (
-              <button className="li" key={k} onClick={() => pick(k)}><div className="m"><div className="t">{keyTitle(k, routines)}</div></div><Icon name="plus" size={17} /></button>
-            ))}
-          </div>
-          {mine.length > 0 && (
-            <>
-              <div className="lbl">Yours</div>
-              <div className="list">
-                {mine.filter((r) => !have.includes(r.id)).map((r) => (
-                  <button className="li" key={r.id} onClick={() => pick(r.id)}><div className="m"><div className="t">{r.name}</div></div><Icon name="plus" size={17} /></button>
-                ))}
-              </div>
-            </>
-          )}
-        </Sheet>
-      )
-    }
-    const notes = planWeekNotes(week, routines)
-    return (
-      <Sheet title={`${ph.name} week`} onClose={onClose} animate={direct && !moved}
-        left={direct ? <button className="navbtn" onClick={onClose}>Cancel</button> : <BackButton onClick={() => { setMoved(true); setWeekAt(null) }} />}
-        right={<button className="navbtn b" onClick={() => (direct ? save() : (setMoved(true), setWeekAt(null)))}>{direct ? 'Save' : 'Done'}</button>}>
-        <div className="foot" style={{ padding: '0 4px 8px' }}>This week repeats for {weeksLabel(ph.weeks)}{phases.some((x, j) => x.maintain && weekSource({ phases }, j) === weekAt) ? ', and the lighter weeks after it use it too' : ''}.</div>
-        <div className="list">
-          {WEEK_ORDER.map((d) => {
-            const keys = week[d] || []
-            return (
-              <div className="li pw-day" key={d}>
-                <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
-                <div className="m">
-                  <div className="chips">
-                    {keys.length === 0 && <span className="s muted">Rest</span>}
-                    {keys.map((k, i) => (
-                      <span className="chip pw-chip" key={k + i}>
-                        {keyTitle(k, routines)}
-                        <button className="x-btn" aria-label={`Remove ${keyTitle(k, routines)} from ${DAY_NAME[d]}`} onClick={() => setDay(d, keys.filter((_, j) => j !== i))}><Icon name="x" size={12} stroke={2.6} /></button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                {keys.length < MAX_A_DAY && (
-                  <button className="linkbtn" aria-label={`Add a workout to ${DAY_NAME[d]}`} onClick={() => { setMoved(true); setAdding(d) }}><Icon name="plus" size={18} /></button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-        {notes.map((t) => <div className="card plan-note" key={t}>{t}</div>)}
-      </Sheet>
-    )
-  }
-
   // ---------- the plan ----------
   return (
-    <Sheet title={existing ? 'Edit plan' : 'New plan'} onClose={onClose} tall animate={!!existing && !moved}
-      left={<button className="navbtn" onClick={onClose}>Cancel</button>}
-      right={<button className="navbtn b" onClick={save}>{existing ? 'Save' : 'Start'}</button>}>
+    <Sheet title={existing ? 'Edit plan' : 'New plan'} onClose={onClose} tall animate={!!existing}
+      left={null} right={<button className="navbtn" onClick={onClose}>Cancel</button>}>
       <div className="list">
         <div className="frow"><label htmlFor="tp_name">Name</label>
           <input id="tp_name" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} style={{ flex: 1, minWidth: 0 }} /></div>
@@ -253,10 +180,14 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
           {ph.maintain ? (
             <div className="s muted pw-s">The same workouts as {phases[weekSource({ phases }, i)]?.name ?? 'your build week'}, opening on the shorter version. You can pick the full one any day.</div>
           ) : (
-            <button className="li pw-week" onClick={() => { setMoved(true); setWeekAt(i) }}>
-              <div className="m"><div className="t">Week</div><div className="s">{weekSummary(ph.week ?? {}, routines)}</div></div>
-              <Chevron />
-            </button>
+            existing && onEditWeek ? (
+              <button className="li pw-week" onClick={() => { if (!valid()) return; updatePlan(existing.id, { name, phases }); onEditWeek(i) }}>
+                <div className="m"><div className="t">Week</div><div className="s">{weekSummary(ph.week ?? {}, routines)}</div></div>
+                <Chevron />
+              </button>
+            ) : (
+              <div className="li pw-week"><div className="m"><div className="t">Week</div><div className="s">{weekSummary(ph.week ?? {}, routines)}</div></div></div>
+            )
           )}
         </div>
       ))}
@@ -264,7 +195,10 @@ export function PlanEditorSheet({ draft, onClose, initialWeek }: {
         <button className="li act" onClick={addPhase}><Icon name="plus" size={17} /><span>Add a phase</span></button>
       </div>
       <div className="foot" style={{ padding: '8px 4px 0' }}>
-        Weeks are counted from the day the plan starts. Where you are follows the calendar, so days off never push the plan back.
+        Weeks are counted from the day the plan starts. Where you are follows the calendar, so days off never push the plan back.{!existing ? ' Once it starts, tap any day in This week to change it.' : ''}
+      </div>
+      <div className="stack sheet-cta">
+        <button className="btn" onClick={save}>{existing ? 'Save changes' : 'Start plan'}</button>
       </div>
       {existing && (
         <div className="stack">

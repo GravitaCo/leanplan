@@ -7,6 +7,7 @@ import { WEEK_ORDER, plannedOn, shortTitle, weekWarnings } from '@/core/domain/w
 import { DAY_NAME, fmtDate, todayStr } from '@/core/domain/date'
 import { activePlan, planWeekNotes, positionOn, upcomingPlan, weekSource } from '@/core/domain/plans'
 import { PlanEditorSheet, PlanEndSheet, PlanStartSheet, type PlanDraft } from './plan/TrainingPlanSheets'
+import { PlanDayView, PlanWeekView } from './plan/PlanDayViews'
 import { LibrarySheet } from './train/LibrarySheet'
 import { Thumb } from './train/Thumb'
 import { DayView, WorkoutView, workoutSub } from './plan/PlanViews'
@@ -41,7 +42,10 @@ export function PlanScreen() {
   const build = canBuild(profile)
   const [sheet, setSheet] = useState<null | 'workouts' | 'library' | 'start' | 'end'>(null)
   // the weekly plan (P5): being edited or started, and at which week (a tapped day)
-  const [draft, setDraft] = useState<{ d: PlanDraft; week?: number } | null>(null)
+  const [draft, setDraft] = useState<{ d: PlanDraft } | null>(null)
+  // a plan's week (a phase, from the editor) and one of its days (Flow 3, as for the one-workout week)
+  const [planWeekAt, setPlanWeekAt] = useState<number | null>(null)
+  const [planDay, setPlanDay] = useState<{ phase: number; idx: number } | null>(null)
   const trainingPlans = useStore((s) => s.data.trainingPlans)
   const today = todayStr()
   const active = activePlan({ trainingPlans }, today)
@@ -55,7 +59,7 @@ export function PlanScreen() {
     if (!planOpen) return
     setWorkout(planOpen); setDayIdx(null); clearOpen()
   }, [planOpen, clearOpen])
-  useEffect(() => { window.scrollTo(0, 0) }, [dayIdx, workout])
+  useEffect(() => { window.scrollTo(0, 0) }, [dayIdx, workout, planDay, planWeekAt])
   // one of the user's own workouts removed (archived) while open: back to the plan
   const gone = !!workout && !isBuiltinKey(workout) && !mine.some((r) => r.id === workout)
   useEffect(() => { if (gone && !builder) setWorkout(null) }, [gone, builder])
@@ -75,6 +79,13 @@ export function PlanScreen() {
       </>
     )
   }
+  if (planDay && active) {
+    return <PlanDayView planId={active.id} phaseIndex={planDay.phase} idx={planDay.idx} backLabel={planWeekAt != null ? active.phases[planWeekAt]?.name ?? 'Week' : 'My week'}
+      onBack={() => setPlanDay(null)} onOpenWorkout={setWorkout} />
+  }
+  if (planWeekAt != null && active) {
+    return <PlanWeekView planId={active.id} phaseIndex={planWeekAt} onBack={() => setPlanWeekAt(null)} onDay={(idx) => setPlanDay({ phase: planWeekAt, idx })} />
+  }
   if (dayIdx != null && !pos) return <DayView idx={dayIdx} onBack={() => setDayIdx(null)} onOpenWorkout={setWorkout} />
 
   const vals = WEEK_ORDER.map((d) => plannedOn(schedule, d))
@@ -88,13 +99,13 @@ export function PlanScreen() {
     // no plan running yet (none, or one starting later): this week's schedule, as before
     if (!active || !pos) { setDayIdx(d); return }
     const src = weekSource(active, pos.phaseIndex)
-    setDraft({ d: { planId: active.id }, week: src >= 0 ? src : undefined })
+    if (src >= 0) setPlanDay({ phase: src, idx: d })
   }
   const planSheets = (
     <>
       {sheet === 'start' && <PlanStartSheet onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
       {sheet === 'end' && active && <PlanEndSheet plan={active} onClose={() => setSheet(null)} onDraft={(d) => { setSheet(null); setDraft({ d }) }} />}
-      {draft && <PlanEditorSheet draft={draft.d} initialWeek={draft.week} onClose={() => setDraft(null)} />}
+      {draft && <PlanEditorSheet draft={draft.d} onClose={() => setDraft(null)} onEditWeek={(i) => { setDraft(null); setPlanWeekAt(i) }} />}
     </>
   )
   const n = (k: number, one: string, many = one + 's') => `${k} ${k === 1 ? one : many}`
