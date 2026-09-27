@@ -6,6 +6,11 @@
  *   Auth who the token belongs to (auth.getUser(jwt): checks the signature, expiry and that the
  *   user exists). The user id comes only from that answer, never from the request body, so a
  *   caller can only ever delete their own account.
+ * - Re-confirmed identity: the session must come from a sign-in in the last 5 minutes (password
+ *   re-entered, or a fresh Google sign-in). Checked here from the verified token's `amr` sign-in
+ *   time, not `iat` (a background token refresh renews iat hourly without anyone signing in), and
+ *   not auth.users.last_sign_in_at (a recent sign-in on another device would let an older, stolen
+ *   token through). Otherwise 403 { error: 'reauth' } and nothing is deleted.
  * - The body must be { confirm: "delete my account" } (src/data/account.ts), so a stray POST
  *   can't delete anything.
  * - Deletes the account's rows from every table the app writes (USER_TABLES in ../_shared/account.ts), then the login. Rows go
@@ -20,7 +25,7 @@
  * Secrets: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
-import { DELETE_CONFIRM as CONFIRM, USER_TABLES as TABLES } from '../_shared/account.ts'
+import { DELETE_CONFIRM as CONFIRM, USER_TABLES as TABLES, jwtPayload, signedInRecently } from '../_shared/account.ts'
 
 const ORIGINS = [
   /^https:\/\/app\.tali\.fit$/,
@@ -30,8 +35,8 @@ const ORIGINS = [
   /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/,
 ]
 
-type ErrorCode = 'bad_request' | 'forbidden' | 'unauthorized' | 'failed' | 'config'
-const STATUS: Record<ErrorCode, number> = { bad_request: 400, forbidden: 403, unauthorized: 401, failed: 500, config: 500 }
+type ErrorCode = 'bad_request' | 'forbidden' | 'unauthorized' | 'reauth' | 'failed' | 'config'
+const STATUS: Record<ErrorCode, number> = { bad_request: 400, forbidden: 403, unauthorized: 401, reauth: 403, failed: 500, config: 500 }
 
 const corsFor = (origin: string | null): Record<string, string> | null =>
   origin && ORIGINS.some((re) => re.test(origin))
@@ -93,6 +98,8 @@ Deno.serve(async (req) => {
     return fail('unauthorized')
   }
   const uid = who.data.user.id
+  // Auth has verified this token, so its payload can be read: the sign-in behind it must be recent
+  if (!signedInRecently(jwtPayload(jwt), Math.floor(Date.now() / 1000))) return fail('reauth')
 
   let skipped = 0
   for (const t of TABLES) {

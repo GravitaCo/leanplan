@@ -40,11 +40,12 @@ import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
-import { supabase, setSession, uuid, nowIso, getUid } from '@/data/supabase'
+import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, type ConsentType } from '@/data/consent'
-import { deleteAccount as deleteAccountData, defaultDeleteDeps, type DeleteResult } from '@/data/account'
+import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, type ConsentType } from '@/data/consent'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, type DeleteResult, type ReauthResult } from '@/data/account'
+import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 
 enableMapSet()
@@ -187,12 +188,23 @@ export interface StoreState {
   canSaveHealth: () => boolean
   /** save onboarding health answers (weight, limitations …); refused (false) without health consent */
   saveHealthAnswers: (patch: Partial<Profile>) => boolean
+  /** step 1 of withdrawing health consent: what will be cleared, the backup JSON taken before
+   *  anything is cleared, and the prompt ("Download a copy first?") */
+  prepareHealthWithdrawal: () => { summary: HealthDataSummary; backup: string; prompt: string }
+  /** step 2, when the person says yes: download that copy (the usual backup file) */
+  downloadBeforeWithdrawal: () => void
 
   // account deletion (onboarding plan §8)
   /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
   deletingAccount: boolean
   /** needs a connection; wipes this device and signs out only after the server confirms */
   deleteAccount: () => Promise<DeleteResult>
+  /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
+  authProvider: string | null
+  /** deletion needs a sign-in from the last 5 minutes: true when this session's is older */
+  deleteNeedsReauth: () => boolean
+  /** re-confirm identity: the password (email accounts) or a fresh Google sign-in (leaves the page) */
+  reauthForDeletion: (how: { password: string } | { google: true }) => Promise<ReauthResult>
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -321,6 +333,7 @@ export const useStore = create<StoreState>()(
       ownerAsk: null,
       online: typeof navigator === 'undefined' || navigator.onLine !== false,
       deletingAccount: false,
+      authProvider: null,
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
@@ -911,7 +924,7 @@ export const useStore = create<StoreState>()(
           }
           setSession(s.access_token, uid)
           saveMode('account')
-          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null })
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null; st.authProvider = (s.user.app_metadata?.provider as string | undefined) ?? null })
         }
         applySession = live
         const toSignIn = (msg?: string) => {
@@ -1074,6 +1087,27 @@ export const useStore = create<StoreState>()(
         if (!canSaveHealthAnswers(get().data)) return false
         get().setPrefs(patch)
         return true
+      },
+
+      prepareHealthWithdrawal: () => {
+        const { json, summary } = healthWithdrawalBackup(get().data)
+        return { summary, backup: json, prompt: HEALTH_WITHDRAW_PROMPT }
+      },
+
+      downloadBeforeWithdrawal: () => exportBackup(get().data),
+
+      deleteNeedsReauth: () => !sessionSignedInRecently(getToken()),
+
+      reauthForDeletion: async (how) => {
+        if ('google' in how) return reauthWithGoogle()
+        const email = get().email
+        if (!email) return 'error'
+        const r = await reauthWithPassword(email, how.password)
+        if (r !== 'ok') return r
+        // the new session arrives through onAuthStateChange; make sure it's the one applied
+        const now = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
+        if (now?.data.session && applySession) applySession(now.data.session)
+        return 'ok'
       },
 
       deleteAccount: async () => {

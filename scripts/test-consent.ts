@@ -1,9 +1,9 @@
 /* Consent, account deletion and the connection indicator (onboarding plan §7, §8). Run from
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
-import { CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw } from '@/data/consent'
-import { deleteAccount, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
-import { USER_TABLES, DELETE_CONFIRM } from '../supabase/functions/_shared/account'
+import { HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw } from '@/data/consent'
+import { deleteAccount, sessionSignedInRecently, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
+import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll } from '@/data/sync'
@@ -61,14 +61,21 @@ async function consent(fakeServer: FakeServer): Promise<void> {
   checks.push(['sync uploads the consent (device time, own user id) before the log', rows.consents.length === 1 && rows.consents[0].recorded_at === g.at && rows.consents[0].granted === true && rows.consents[0].user_id === LOCAL_USER && !g._dirty && f.calls.indexOf('POST consents') >= 0 && firstLog > f.calls.indexOf('POST consents')])
   checks.push(['the pull merges by id (still one record)', s.consents!.records.length === 1])
 
+  // the export step comes first: its copy is taken before anything is cleared
+  const before = healthWithdrawalBackup(s)
+  const beforeState = JSON.parse(before.json) as PersistedState
   // latest wins, even against a clock that went backwards
   const w = withdraw(s, m, 'health')
+  checks.push(['the backup offered before withdrawal keeps the health data and everything else', beforeState.days['2026-09-20'].weight === 71 && !!beforeState.days['2026-09-20'].checkin && beforeState.profile.weight === 72 &&
+    before.summary.weighIns === 1 && before.summary.checkins === 1 && before.summary.profileFields === 4 && s.days['2026-09-20'].weight === null && HEALTH_WITHDRAW_PROMPT.startsWith('This removes your weigh-ins, check-ins and body details')])
   checks.push(['withdrawal is a new record and wins', s.consents!.records.length === 2 && !w.granted && !hasConsent(s, 'health') && Date.parse(w.at) > Date.parse(g.at)])
   const a1 = recordConsent(s, 'ai', true, undefined, '2026-09-27T10:00:00.000Z')
   const a2 = recordConsent(s, 'ai', false, undefined, '2026-09-27T09:00:00.000Z')
   checks.push(['a later act never loses to an earlier one on a skewed clock', !hasConsent(s, 'ai') && Date.parse(a2.at) > Date.parse(a1.at)])
 
   // withdrawal clears the health fields, marks them to sync, leaves the rest
+  s.profile.age = 40; s.profile.height = 175
+  checks.push(['age, sex and height are kept', s.profile.age === 40 && s.profile.height === 175 && !!s.profile.sex])
   checks.push(['withdrawal clears weigh-ins and check-ins, keeps food', s.days['2026-09-20'].weight === null && !s.days['2026-09-20'].checkin && s.days['2026-09-20'].foods.length === 1])
   checks.push(['withdrawal clears profile weight, body fat and limitations (keeps equipment)', s.profile.weight === undefined && s.profile.bodyFat === undefined && s.profile.training?.limitations === undefined && s.profile.training?.limitationsNote === undefined && (s.profile.training?.equipment || []).length === 1])
   checks.push(['cleared days and settings are marked to sync; untouched days are not', m.days['2026-09-20'].dirty && !m.days['2026-09-21']?.dirty && m.settings.dirty])
@@ -132,11 +139,12 @@ async function consent(fakeServer: FakeServer): Promise<void> {
 
 async function deletion(): Promise<void> {
   const checks: [string, boolean][] = []
-  const run = async (o: { online?: boolean; session?: boolean; call?: () => Promise<{ status: number; body: unknown }> }) => {
+  const run = async (o: { online?: boolean; session?: boolean; fresh?: boolean; call?: () => Promise<{ status: number; body: unknown }> }) => {
     const log: string[] = []
     const res = await deleteAccount({
       online: () => o.online ?? true,
       hasSession: () => o.session ?? true,
+      fresh: () => o.fresh ?? true,
       call: async () => { log.push('call'); return o.call ? o.call() : { status: 200, body: { ok: true } } },
       wipe: () => { log.push('wipe') },
       signOut: async () => { log.push('signOut') },
@@ -147,6 +155,10 @@ async function deletion(): Promise<void> {
   checks.push(['offline: refused, nothing sent, nothing wiped', off.res === 'offline' && off.log === ''])
   const nos = await run({ session: false })
   checks.push(['no live session: refused, nothing sent', nos.res === 'no-session' && nos.log === ''])
+  const stale = await run({ fresh: false })
+  checks.push(['sign-in over 5 minutes old: asks to re-confirm, nothing sent', stale.res === 'reauth' && stale.log === ''])
+  const refused = await run({ call: async () => ({ status: 403, body: { ok: false, error: 'reauth' } }) })
+  checks.push(['the server refusing a stale sign-in: re-confirm, nothing wiped', refused.res === 'reauth' && refused.log === 'call'])
   const ok = await run({})
   checks.push(['success: wiped and signed out only after the server confirms', ok.res === 'ok' && ok.log === 'call,wipe,signOut,wipe'])
   const already = await run({ call: async () => ({ status: 200, body: { ok: true, already: true } }) })
@@ -172,6 +184,14 @@ async function deletion(): Promise<void> {
   const gap = need.filter((t) => !(USER_TABLES as readonly string[]).includes(t))
   checks.push(['delete-account deletes from every user table in the schema docs' + (gap.length ? ' (missing ' + gap.join() + ')' : ''), need.length >= 9 && gap.length === 0])
   checks.push(['client and function agree on the confirm phrase', CLIENT_CONFIRM === DELETE_CONFIRM])
+  // re-confirmed identity: the verified token's sign-in time (amr), never iat
+  const now = 1_790_000_000
+  const tok = (p: object) => 'h.' + Buffer.from(JSON.stringify(p)).toString('base64url') + '.s'
+  const pw = { iat: now, amr: [{ method: 'password', timestamp: now - 60 }] }
+  checks.push(['a password sign-in a minute ago is fresh', signedInRecently(pw, now) && sessionSignedInRecently(tok(pw), now) && authTime(jwtPayload(tok(pw))) === now - 60])
+  checks.push(['a fresh Google sign-in counts', signedInRecently({ amr: [{ method: 'password', timestamp: now - 86400 }, { method: 'oauth', timestamp: now - 10 }] }, now)])
+  checks.push(['a sign-in 6 minutes ago is not, even with a just-refreshed token (new iat)', !signedInRecently({ iat: now, amr: [{ method: 'password', timestamp: now - 360 }] }, now)])
+  checks.push(['no sign-in time, a malformed one or one far in the future: not fresh', !signedInRecently({ iat: now }, now) && !signedInRecently({ amr: [{ timestamp: 'x' }] }, now) && !signedInRecently({ amr: [{ timestamp: now + 3600 }] }, now) && !signedInRecently(null, now) && !sessionSignedInRecently('not-a-jwt', now)])
   report('delete account', checks)
 }
 

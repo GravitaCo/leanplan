@@ -278,3 +278,17 @@ export function rekeyForAccount(s: PersistedState): void {
   if (log.healthCleared) log.healthCleared = map.get(log.healthCleared)
   if (!log.healthCleared) delete log.healthCleared
 }
+
+/* ---------------- export before withdrawing health consent ---------------- */
+
+/** Draft copy for the withdrawal confirm step (PENDING design approval; nothing renders it yet). */
+export const HEALTH_WITHDRAW_PROMPT = 'This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?'
+
+/**
+ * The backup to offer before a health withdrawal: the whole device state as the JSON backup
+ * (the same format exportBackup writes and Profile imports), taken before anything is cleared.
+ * Food logs, workouts, age, sex and height stay after the withdrawal either way.
+ */
+export function healthWithdrawalBackup(s: PersistedState): { json: string; summary: HealthDataSummary } {
+  return { json: JSON.stringify(s), summary: healthDataSummary(s) }
+}

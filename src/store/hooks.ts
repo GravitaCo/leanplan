@@ -6,7 +6,7 @@ import { useCallback } from 'react'
 import { useStore, selectConnection } from './store'
 import { connectionLabel, type ConnectionState } from '@/core/domain/connection'
 import { hasConsent, type ConsentType } from '@/data/consent'
-import { DELETE_MESSAGES, type DeleteResult } from '@/data/account'
+import { DELETE_MESSAGES, type DeleteResult, type ReauthResult } from '@/data/account'
 
 /** The header's connection indicator: its state and the plan's words for it. */
 export function useConnection(): ConnectionState & { label: string } {
@@ -38,8 +38,16 @@ export function useAccountDeletion(): {
   canDelete: boolean
   reason: string | null
   deleting: boolean
+  /** 'email': ask for the password; 'google': offer a fresh Google sign-in (see reauth) */
+  provider: string | null
+  /** true when the sign-in behind this session is over 5 minutes old: re-confirm first */
+  needsReauth: () => boolean
+  reauth: (how: { password: string } | { google: true }) => Promise<ReauthResult>
   run: () => Promise<{ result: DeleteResult; message: string | null }>
 } {
+  const provider = useStore((s) => s.authProvider)
+  const needsReauth = useStore((s) => s.deleteNeedsReauth)
+  const reauth = useStore((s) => s.reauthForDeletion)
   const online = useStore((s) => s.online)
   const authed = useStore((s) => s.authed)
   const deleting = useStore((s) => s.deletingAccount)
@@ -49,5 +57,17 @@ export function useAccountDeletion(): {
     const result = await del()
     return { result, message: result.status === 'ok' ? null : DELETE_MESSAGES[result.status] }
   }, [del])
-  return { canDelete: !reason && !deleting, reason, deleting, run }
+  return { canDelete: !reason && !deleting, reason, deleting, provider, needsReauth, reauth, run }
+}
+
+/**
+ * Withdrawing health consent: `prepare` gives what will be cleared, the backup JSON (taken
+ * before anything is cleared) and the prompt; `download` saves that copy; `withdraw` clears.
+ */
+export function useHealthWithdrawal() {
+  const prepare = useStore((s) => s.prepareHealthWithdrawal)
+  const download = useStore((s) => s.downloadBeforeWithdrawal)
+  const withdrawConsent = useStore((s) => s.withdrawConsent)
+  const withdraw = useCallback(() => withdrawConsent('health'), [withdrawConsent])
+  return { prepare, download, withdraw }
 }
