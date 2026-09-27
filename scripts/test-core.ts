@@ -833,7 +833,7 @@ function importCarryOver(): void {
     ['a food with the same name as the backup one: the backup wins', food('flapjack').length === 0 && food('Flapjack')[0]?.k === 400],
     ["this device's own recipe stays", got.recipes.map((r) => r.name).sort().join() === 'Chilli,Soup'],
     ["a queued delete of a food that stays is dropped; this device's own is kept", !gm.foodDeletes.includes(A) && gm.foodDeletes.join() === dm.foodDeletes.join()],
-    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0 })],
+    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0, plans: 0 })],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
 }
