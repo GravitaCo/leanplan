@@ -8,9 +8,9 @@
  */
 import { SB_URL, SB_KEY, getToken, hasSession, supabase } from './supabase'
 import { withTimeout } from './timeout'
-import { DELETE_CONFIRM, REAUTH_MAX_AGE_S, jwtPayload, signedInRecently } from '../../supabase/functions/_shared/account'
+import { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON, jwtPayload, signedInRecently } from '../../supabase/functions/_shared/account'
 
-export { DELETE_CONFIRM, REAUTH_MAX_AGE_S }
+export { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON }
 export const DELETE_FUNCTION = 'delete-account'
 export const DELETE_TIMEOUT_MS = 20_000
 
@@ -83,16 +83,16 @@ export interface DeleteDeps {
   /** the session is the device data's owner, with no owner question pending (tokenMatchesOwner) */
   accountMatches: () => boolean
   /** POST to the function; resolves with the HTTP status and parsed body, or rejects on no connection */
-  call: () => Promise<{ status: number; body: unknown }>
+  call: (reason?: typeof UNDER_AGE_REASON) => Promise<{ status: number; body: unknown }>
   wipe: () => void
   signOut: () => Promise<void>
 }
 
-async function callFunction(): Promise<{ status: number; body: unknown }> {
+async function callFunction(reason?: typeof UNDER_AGE_REASON): Promise<{ status: number; body: unknown }> {
   const res = await fetch(SB_URL + '/functions/v1/' + DELETE_FUNCTION, {
     method: 'POST',
     headers: { apikey: SB_KEY, Authorization: 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ confirm: DELETE_CONFIRM }),
+    body: JSON.stringify({ confirm: DELETE_CONFIRM, ...(reason ? { reason } : {}) }),
     signal: AbortSignal.timeout(DELETE_TIMEOUT_MS),
   })
   return { status: res.status, body: await res.json().catch(() => null) }
@@ -115,14 +115,15 @@ export const defaultDeleteDeps: DeleteDeps = {
  * says the account is gone ({ ok: true }); on anything else it is left untouched. Safe to call
  * again after a lost reply: the function treats an account that's already gone as done.
  */
-export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps): Promise<DeleteResult> {
+export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason?: typeof UNDER_AGE_REASON): Promise<DeleteResult> {
   if (!deps.online()) return { status: 'offline' }
   if (!deps.hasSession()) return { status: 'no-session' }
   if (!deps.accountMatches()) return { status: 'wrong-account' }
-  if (!deps.fresh()) return { status: 'reauth' }
+  // under age: the server decides (it waives re-auth only for an account under 24 hours old)
+  if (!reason && !deps.fresh()) return { status: 'reauth' }
   let res: { status: number; body: unknown }
   try {
-    res = await deps.call()
+    res = await deps.call(reason)
   } catch {
     // a timeout or dropped connection: the server may or may not have finished, so the device
     // keeps everything and the person can try again (a repeat is safe)

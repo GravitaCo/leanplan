@@ -186,3 +186,7 @@
 .pv-thumbs button { width: 36px; height: 36px; border-radius: 18px; border: 0; background: var(--fill); color: var(--label); display: flex; align-items: center; justify-content: center; padding: 0; }
 .pv-thumbs button.on { background: var(--label); color: var(--card); }
 .pv-thumbs svg.i { width: 17px; height: 17px; }
+.wz-sp.multi { align-items: flex-start; }
+.wz-sp .ln { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0 0; font-size: 15px; color: var(--label); text-decoration: none; }
+.wz-sp .ln + .ln { border-top: 1px solid var(--sep); margin-top: 8px; }
+.wz-sp .ln.web .n { font-weight: 600; }

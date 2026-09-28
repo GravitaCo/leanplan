@@ -221,7 +221,7 @@ export interface StoreState {
   /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
   deletingAccount: boolean
   /** needs a connection; wipes this device and signs out only after the server confirms */
-  deleteAccount: () => Promise<DeleteResult>
+  deleteAccount: (reason?: 'under-age') => Promise<DeleteResult>
   /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
   authProvider: string | null
   /** deletion needs a sign-in from the last 5 minutes: true when this session's is older */
@@ -1236,7 +1236,7 @@ export const useStore = create<StoreState>()(
           set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
           get().setKitchen([])
         }
-        const res = await get().deleteAccount()
+        const res = await get().deleteAccount('under-age')
         if (res.status === 'ok') clearPendingDeletion()
         return res
       },
@@ -1304,7 +1304,7 @@ export const useStore = create<StoreState>()(
         return 'ok'
       },
 
-      deleteAccount: async () => {
+      deleteAccount: async (reason) => {
         if (deleting) return { status: 'busy' }
         if (!navigator.onLine) return { status: 'offline' }
         if (!get().authed) return { status: 'no-session' }
@@ -1329,7 +1329,7 @@ export const useStore = create<StoreState>()(
               await defaultDeleteDeps.signOut()
               clearSavedSession()
             },
-          })
+          }, reason)
           if (res.status !== 'ok') { failed = true; return res }
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {

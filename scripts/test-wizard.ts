@@ -5,7 +5,7 @@ import type { Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import {
   HEALTH_STEPS, applyDraft, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
-  outcomeInputs, readinessOutcome, replacementFor, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, type WizardDraft,
+  outcomeInputs, readinessOutcome, replacementFor, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
 import { routeSafety, safetyAnswersFrom } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
@@ -18,6 +18,10 @@ import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { allCopy } from '../src/screens/onboarding/copy'
+import { deleteAccount } from '@/data/account'
+import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
+import { readFileSync } from 'node:fs'
+const FN = readFileSync('supabase/functions/delete-account/index.ts', 'utf8')
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -44,6 +48,7 @@ function steps(): void {
   report('steps', [
     ['s-ob1 order, then the setup card, then the summary', s.join() === 'intro,name,age,ready,why,goal,lately,wellbeing,body,medical,weight,move,handoff,moving,confidence,days,minutes,where,kit,enjoy,areas,summary', s.join()],
     ['the medical question only when the goal means eating less', !stepsFor(full({ goal: 'build-muscle' }), true).includes('medical')],
+    ['18+ for now (Benn): 17 gets the kind stop too; 18 goes on', stepsFor(full({ age: 17 }), true).slice(-1)[0] === 'under16' && WIZARD_MIN_AGE === 18 && stepsFor(full({ age: 18 }), true).includes('ready')],
     ['under 16: the kind stop, and nothing after it', stepsFor(full({ age: 15 }), true).slice(-1)[0] === 'under16' && !stepsFor(full({ age: 15 }), true).includes('ready')],
     ['readiness yes: the gentle-start screen straight after', stepsFor(full({ outcomes: { readiness: 'flagged' } }), true).join().includes('ready,ready-note,why')],
     ['pregnant: the pregnancy screen instead', stepsFor(full({ outcomes: { readiness: 'flagged' }, pregnant: true }), true).join().includes('ready,pregnancy-note,why')],
@@ -220,8 +225,24 @@ function firstSession(): void {
   ])
 }
 
+async function underAgeDeletion(): Promise<void> {
+  const now = Math.floor(Date.parse('2026-09-28T12:00:00Z') / 1000)
+  const sent: unknown[] = []
+  const deps = { online: () => true, hasSession: () => true, fresh: () => false, accountMatches: () => true, wipe: () => {}, signOut: async () => {},
+    call: async (reason?: string) => { sent.push(reason); return { status: 200, body: { ok: true } } } }
+  const stale = await deleteAccount(deps)
+  const minor = await deleteAccount(deps, UNDER_AGE_REASON)
+  report('under-age deletion (not deployed; security-data review)', [
+    ['a new account (under 24 h, from Auth) skips the re-auth window', newAccount('2026-09-28T02:00:00Z', now) && !newAccount('2026-09-27T11:59:00Z', now)],
+    ['fails closed: no or odd created_at, or one in the future', !newAccount(undefined, now) && !newAccount('soon', now) && !newAccount('2026-09-29T12:00:00Z', now)],
+    ['the app asks for it only for the age stop, and the server decides', stale.status === 'reauth' && minor.status === 'ok' && JSON.stringify(sent) === JSON.stringify(['under-age'])],
+    ['the function checks created_at itself and refuses any other reason', /UNDER_AGE_REASON && newAccount\(who\.data\.user\.created_at/.test(FN) && /body\.reason !== UNDER_AGE_REASON\) return fail\('bad_request'\)/.test(FN)],
+  ])
+}
+
 export async function wizardSuite(fakeServer: FakeServer): Promise<number> {
   steps(); outcomes(); summary(); withdrawal(); firstSession()
+  await underAgeDeletion()
   await sync(fakeServer)
   return bad
 }

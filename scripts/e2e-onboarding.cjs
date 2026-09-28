@@ -129,7 +129,7 @@ async function wizard(page, a = {}, snap) {
   await page.getByPlaceholder('Sam').fill(a.name ?? 'Sam'); await s('ob1-0c-name'); await cont(page)
   await h1(page, 'How old are you?')
   await page.getByLabel('Age in years').fill(String(a.age ?? 34)); await s('ob1-1-age'); await cont(page)
-  if ((a.age ?? 34) < 16) return
+  if ((a.age ?? 34) < 18) return
   await h1(page, 'A quick health check')
   const yes = a.ready ?? [false, false, false]
   const groups = page.getByRole('radiogroup')
@@ -149,7 +149,13 @@ async function wizard(page, a = {}, snap) {
   await s('ob1-5-lately'); await cont(page)
   await h1(page, 'How food and weight feel for you')
   await radio(page, a.wellbeing ?? 'No'); await s('ob1-6-wellbeing'); await cont(page)
-  if (a.wellbeing === 'Yes' || a.wellbeing === 'Sometimes') { await h1(page, 'Thanks for telling us'); await s('ob4-2-wellbeing'); await cont(page) }
+  if (a.wellbeing === 'Yes' || a.wellbeing === 'Sometimes') {
+    await h1(page, 'Thanks for telling us')
+    // Beat: every nation's number, labelled, and the webchat (Benn)
+    for (const [l, n] of [['England', '0808 801 0677'], ['Scotland', '0808 801 0432'], ['Wales', '0808 801 0433'], ['Northern Ireland', '0808 801 0434']]) await page.getByRole('link', { name: `Beat, ${l}: call ${n}` }).waitFor()
+    await page.getByRole('link', { name: /Webchat and email/ }).waitFor()
+    await s('ob4-2-wellbeing'); await cont(page)
+  }
   await h1(page, 'About your body')
   await page.getByLabel('Height in centimetres').fill('172')
   await radio(page, 'Female'); await s('ob1-7-body'); await cont(page)
@@ -352,6 +358,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await wizard(page, { wellbeing: 'Yes' }, 'route-wellbeing/')
     await btn(page, 'Later').click(); await summaryUp(page)
     await page.getByText('Eating at maintenance').waitFor(); await shot(page, 'ob4-7-maint', true)
+    expect(fs.existsSync(path.join(OUT, 'route-wellbeing/ob4-2-wellbeing.png')), 'signposting shown')
     await btn(page, 'Start').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     const st = await stored(page)
     expect(st.profile.gentle === true && st.profile.outcomes.wellbeing === 'flagged', 'gentle on, outcome only')
@@ -387,22 +394,22 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await wizard(page, { goal: 'Build muscle' })
   })
 
-  await run('safety: under 16 → kind stop → Close deletes the account and this device’s data', async ({ page, net }) => {
-    await wizard(page, { age: 15 }, 'route-under16/')
-    await h1(page, 'Tali is for 16+'); await shot(page, 'ob4-1-under16')
+  await run('safety: under 18 → kind stop → Close deletes the account and this device’s data', async ({ page, net }) => {
+    await wizard(page, { age: 17 }, 'route-under18/')
+    await h1(page, 'Tali is for 18+'); await shot(page, 'ob4-1-under18')
     await btn(page, 'I typed my age wrong').click(); await h1(page, 'How old are you?')
-    await page.getByLabel('Age in years').fill('15'); await cont(page)
+    await page.getByLabel('Age in years').fill('16'); await cont(page)
     await btn(page, 'Close').click()
     await page.getByRole('button', { name: /Sign in|Log in/ }).first().waitFor({ timeout: 8000 })
-    expect(net.fnCalls.length === 1, 'the delete-account function ran once')
+    expect(net.fnCalls.length === 1 && net.fnCalls[0].body.reason === 'under-age', 'the delete-account function ran once, as the under-age deletion')
     const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => k === 'leanplan.v1' || k.startsWith('sb-') || k.startsWith('tali.')))
     const st = await stored(page)
     expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding') && (!st || !Object.keys(st.days || {}).length), 'device wiped: ' + left.join())
   })
 
-  await run('safety: under 16 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
+  await run('safety: under 18 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
     await wizard(page, { age: 14 })
-    await h1(page, 'Tali is for 16+')
+    await h1(page, 'Tali is for 18+')
     await ctx.setOffline(true)
     await btn(page, 'Close').click()
     await page.waitForFunction(() => !!localStorage.getItem('tali.pendingDelete'))

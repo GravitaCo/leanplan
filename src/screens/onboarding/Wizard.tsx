@@ -15,9 +15,9 @@ import { uuid } from '@/data/supabase'
 import {
   AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, JOB_OPTIONS, KIT_OPTIONS, MINUTES_OPTIONS, MOVING_OPTIONS,
   STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, nextStep, prevStep,
-  progressOf, readinessOutcome, stepsFor, summaryFor, finishedProfile, type StepId, type WizardDraft, type WizardMode,
+  progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
-import { MIN_AGE, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
+import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { cmFromFtIn, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 import { SIGNPOSTS, beatFor } from '@/core/data/signposts'
@@ -178,7 +178,7 @@ function SkipAge({ d, patch }: Common) {
   const c = COPY['skip-age']!
   const start = () => {
     const age = +v
-    if (age < MIN_AGE) { patch({ age, step: 'under16' }); return }
+    if (age < WIZARD_MIN_AGE) { patch({ age, step: 'under16' }); return }
     // straight in: the Starter week, no calorie numbers until the rest is answered
     const nd = { ...d, age }
     const today = todayStr()
@@ -563,10 +563,12 @@ function Areas({ d, go, back }: Common) {
 
 /* ---------------- Onboarding 4: signposting ---------------- */
 
-type SP = { name: string; desc: string; num?: string; tel?: string }
+type SP = { name: string; desc: string; num?: string; tel?: string; lines?: [string, string][]; web?: string }
 const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'under16', SP[]> = {
   wellbeing: [
-    { name: 'Beat', desc: 'The UK’s eating disorder charity', num: beatFor('england'), tel: beatFor('england') },
+    // every nation's number, labelled (Benn: no nation question), and the webchat
+    { name: 'Beat', desc: `The UK’s eating disorder charity. ${SIGNPOSTS.beat.hours}.`, web: SIGNPOSTS.beat.web,
+      lines: ([['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']] as const).map(([k, l]) => [l, beatFor(k)]) },
     { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time', num: '111', tel: SIGNPOSTS.nhs111.phone },
     { name: 'Samaritans', desc: 'Talk about anything, any time, free', num: '116 123', tel: SIGNPOSTS.samaritans.phone },
     { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
@@ -592,6 +594,16 @@ function Signposts({ list }: { list: SP[] }) {
   return (
     <div className="wz-group">
       {list.map((s) => {
+        if (s.lines) {
+          return (
+            <div key={s.name} className="wz-sp multi">
+              <span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span>
+                {s.lines.map(([l, n]) => <a key={l} className="ln" href={'tel:' + n.replace(/\s/g, '')} aria-label={`${s.name}, ${l}: call ${n}`}><span>{l}</span><span className="n num">{n}</span></a>)}
+                {s.web && <a className="ln web" href={s.web} target="_blank" rel="noopener noreferrer"><span>Webchat and email</span><span className="n">Open</span></a>}
+              </span>
+            </div>
+          )
+        }
         const inner = <><span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span></span><span className="n num">{s.num}</span></>
         return s.tel
           ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{inner}</a>

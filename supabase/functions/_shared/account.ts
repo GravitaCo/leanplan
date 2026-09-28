@@ -42,6 +42,22 @@ export function signedInRecently(payload: unknown, nowS: number, maxAgeS = REAUT
   return t !== null && t <= nowS + SKEW_S && nowS - t <= maxAgeS
 }
 
+/**
+ * Under-age deletion (first-run-onboarding §14; PENDING security-data review, not deployed): after
+ * the age stop, the app deletes the new account by itself, and offline it retries on the next
+ * connection, often after the 5-minute re-auth window. A request that says `reason: 'under-age'`
+ * may skip the re-auth check only while the account itself is new: created (auth.users.created_at,
+ * read server-side by the function, never taken from the request) under 24 hours ago.
+ */
+export const UNDER_AGE_REASON = 'under-age'
+export const UNDER_AGE_WINDOW_S = 24 * 3600
+
+/** Whether an account created at `createdAt` (ISO) is still inside the under-age window. Fails closed. */
+export function newAccount(createdAt: unknown, nowS: number, windowS = UNDER_AGE_WINDOW_S): boolean {
+  const t = typeof createdAt === 'string' ? Date.parse(createdAt) / 1000 : NaN
+  return Number.isFinite(t) && t <= nowS + SKEW_S && nowS - t < windowS
+}
+
 /** The payload of a JWT, decoded without checking it. The function only reads it after Auth
  *  has verified the token; the app only uses it to skip a call that would be refused. */
 export function jwtPayload(jwt: string): unknown {

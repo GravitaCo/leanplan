@@ -2,7 +2,8 @@ import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
   OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, routeSafety, safetyAnswersFrom, MIN_AGE, type SafetyRouting } from './onboarding'
+import { asksMedical, legacySex, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
+import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { activityLevelFor, startingTargets, type StartingTargets, type TrainingLoad } from './targets'
 import { allWhys, buildPlan, inputsFromProfile, type BuildResult, type PersonModel, type PlanInputs } from './engine'
 import { DEFAULT_WEEKDAYS, WEEK_ORDER, type Lately } from './engine/inputs'
@@ -79,6 +80,13 @@ export interface WizardDraft {
 export const newDraft = (mode: WizardMode, seed: string): WizardDraft =>
   ({ v: 1, mode, step: mode === 'setup' ? 'moving' : 'intro', seed, outcomes: {} })
 
+/**
+ * The wizard's age stop (Benn, Sept 2026): 18+ for now, matching the legal texts and the live
+ * consent screen. Under it, the kind stop and the automatic deletion (the step keeps its id,
+ * 'under16', from the boards). routeSafety's 16–17 rules stay in place but can't be reached from here.
+ */
+export const WIZARD_MIN_AGE = LEGAL_MIN_AGE
+
 /** Screens that ask for health data (plan §8): never shown without a local health consent. */
 export const HEALTH_STEPS: StepId[] = ['ready', 'ready-note', 'pregnancy-note', 'lately', 'wellbeing', 'wellbeing-note', 'body', 'medical', 'medical-note', 'weight', 'move', 'areas']
 
@@ -98,7 +106,7 @@ function setupSteps(d: WizardDraft): StepId[] {
 export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   const health = (s: StepId[]) => (healthConsent ? s : s.filter((x) => !HEALTH_STEPS.includes(x)))
   if (d.mode === 'setup') return [...health(setupSteps(d)), 'summary']
-  const young = d.age != null && d.age < MIN_AGE
+  const young = d.age != null && d.age < WIZARD_MIN_AGE
   if (d.skipped) return ['intro', 'skip-age', ...(young ? ['under16' as const] : [])]
   const s: StepId[] = ['intro', 'name', 'age']
   if (young) return [...s, 'under16']

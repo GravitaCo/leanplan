@@ -11,7 +11,7 @@ export const COPY: Partial<Record<StepId, ScreenCopy>> = {
   intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. Here’s what your answers do:', note: 'Skip any question you like. Your answers are private to your account, and you can change them any time in Profile.' },
   'skip-age': { title: 'No problem. Just your age, then you’re in.', lead: 'It’s the one thing we need to keep Tali safe for you.', note: 'You’ll start on a simple starter week with no calorie numbers. Build your own plan whenever you like from Today or Plan.' },
   name: { title: 'What do you like to be called?', why: 'so Tali can greet you. Your first name is plenty.' },
-  age: { title: 'How old are you?', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tali is for people aged 16 and over. We keep your age, never your date of birth.' },
+  age: { title: 'How old are you?', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tali is for people aged 18 and over. We keep your age, never your date of birth.' },
   ready: { title: 'A quick health check', lead: 'Do any of these apply to you right now?', why: 'a yes just means we start more gently. It never stops you using Tali.', note: 'We keep the result (gentler start or not), never your answers.' },
   why: { title: 'What would make this worth it for you?', lead: 'Pick any that feel true.', why: 'we’ll remind you of it in your weekly look-back.' },
   goal: { title: 'What’s your main goal?', why: 'it shapes both your training and your food targets. You can change it any time.' },
@@ -59,7 +59,7 @@ export const ONE_DAY_NOTE = 'One day is a good start. A second day adds more whe
 
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
-  under16: { title: 'Tali is for 16+', lead: 'Thanks for giving it a try. Tali is made for people aged 16 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, moving more or how you’re feeling, a parent, a school nurse or your GP is a good place to start.', note: 'We haven’t kept any of your answers.' },
+  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, moving more or how you’re feeling, a parent, a school nurse or your GP is a good place to start.', note: 'We haven’t kept any of your answers.' },
   wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no calorie target to hit. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep whether gentle mode is on, nothing else.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain or feeling faint during a workout? Stop, rest, and call 999 if it doesn’t pass.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali keeps food at maintenance with no calorie number, and training gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'We’ll ask again in 12 weeks. You can clear this in Profile any time.' },
