@@ -2,8 +2,8 @@
 -- Tali — per-user daily cap for AI features (first user: label photo reading)
 -- Plan: docs/plans/label-scan-and-shared-products.md §1.2, ai-platform-plan.md §5.
 --
--- NOT APPLIED. Review with `security-data`, then run once in the Supabase dashboard
--- (SQL Editor) before deploying the ai-read-label Edge Function. Safe to re-run.
+-- Applied 2026-09-28 after `security-data` review (owner postgres; verified). Run before
+-- deploying the ai-read-label Edge Function. Safe to re-run.
 --
 -- Design (the smallest safe mechanism):
 -- - ai_usage holds one counter per user, task and UTC day. No content, no values: counts only.

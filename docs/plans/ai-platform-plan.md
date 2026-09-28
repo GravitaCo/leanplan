@@ -1,6 +1,10 @@
 # AI platform plan — capabilities, costs, architecture, safety
 
-**Status:** Plan only. Nothing here is built except the local groundwork in `ai-recipe-capture.md` §6.
+**Status:** Plan. Built so far: the local groundwork in `ai-recipe-capture.md` §6, and the first AI
+feature, label photo reading (`ai-read-label`), specified and tracked in
+`label-scan-and-shared-products.md` ("Phase 1 as built"). It is deployed server-side with the app
+flag `LABEL_SCAN_ENABLED` off. That plan and its code are canonical for label reading; this plan
+covers the rest.
 **Owner:** Benn. Security review (`security-data`) and a pre-ship gate (`ship-critic`) are required for
 every phase. Nutrition features also go through `nutrition-accuracy`; wellbeing features through
 `mental-performance`.
@@ -39,6 +43,9 @@ Prices below were checked in September 2026 and change often. Re-verify before c
 | F | **Audio**: voice logging (speech to text); spoken coaching tracks (text to speech) | Typing; screen time | Medium | 3 (voice in), 4 (audio out) |
 | G | **Video**: exercise demos, guided sessions | Finding trustworthy content | **High** (injury, likeness, labelling) | 5 |
 
+Label photo reading (transcribe a pack's nutrition panel, never estimate) came first, outside this
+roadmap: see `label-scan-and-shared-products.md`.
+
 ## 2. Architecture
 
 ```
@@ -46,7 +53,7 @@ Web PWA / native app
    │  (Supabase auth JWT)
    ▼
 Supabase Edge Function  ai-<task>          ← the only place a model key exists
-   ├─ verify JWT, check consent flag, per-user rate limit + monthly spend cap
+   ├─ verify JWT, check consent server-side, per-user rate limit + spend cap
    ├─ minimise input (strip names/emails; send meal text or image only)
    ├─ call the model with a fixed system prompt, structured output schema
    ├─ validate output against the schema; reject anything malformed
@@ -58,8 +65,12 @@ core/ (pure TS, shared by web + native)
    └─ UI shows the proposal → user confirms → normal store action logs it
 ```
 
-- **One Edge Function per task** (`ai-parse-meal`, `ai-recipe-chat`, `ai-weekly-summary`,
-  `ai-photo`), each with its own prompt, schema, token caps and rate limits. That keeps blast radius
+- **As built for `ai-read-label`:** the gateway's `verify_jwt` is off; the function rejects a
+  missing or malformed token, and the `ai_usage_take` RPC, called with the user's JWT before any
+  model call, is the gate for session, consent and daily cap (`supabase/config.toml`,
+  `docs/migrations/2026-09-ai-usage.sql`). New AI functions should follow the same pattern.
+- **One Edge Function per task** (`ai-read-label` built; planned `ai-parse-meal`, `ai-recipe-chat`,
+  `ai-weekly-summary`, `ai-photo`), each with its own prompt, schema, token caps and rate limits. That keeps blast radius
   small and makes evals per task.
 - **Structured outputs** (`output_config.format` with a JSON schema, or strict tools) for every
   parsing task, so the app never scrapes free text.
@@ -87,7 +98,8 @@ core/ (pure TS, shared by web + native)
 
 Batch API: 50% off. Cache reads: about 0.1× input; cache writes about 1.25× input.
 **Model choice per task is a decision for Benn after evals** (§6). The plan starts every task on
-Opus 5 as the quality baseline and measures whether a cheaper model matches it.
+Opus 5 as the quality baseline and measures whether a cheaper model matches it. (Open: `ai-read-label`
+defaults to Sonnet 5, `LABEL_MODEL`, without an eval on record; see §6.)
 
 ### 3.2 Per-call estimates (approximate)
 
@@ -133,7 +145,9 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
   "high-risk" use cases. They require a qualified professional to review output before it reaches
   the user, plus AI disclosure. **General wellness guidance (sleep, stress, nutrition, exercise) is
   explicitly excluded.** Tali stays in wellness scope. Any future clinical feature needs a
-  professional-in-the-loop design and a fresh legal review.
+  professional-in-the-loop design and a fresh legal review. For chatbots, the policy also requires
+  disclosing AI at the start of each session, and it prohibits content that promotes disordered
+  eating or compulsive exercise.
 - **MHRA (UK):** a product's regulatory status follows its **intended purpose** and functionality.
   Wellbeing and lifestyle tools can fall outside device regulation. AI chatbots that contribute to
   diagnosis or treatment can be Class IIa or higher. Copy, onboarding and prompts must never claim
@@ -141,8 +155,6 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
 - **EU AI Act, Article 50** (in force since 2 August 2026, relevant for EU users): disclose AI
   interaction at first contact, and mark AI-generated content. There is a transitional deadline of
   2 December 2026 for marking content from generative systems already on the market.
-- **Anthropic usage policy on chatbots:** disclose that users are talking to AI at the start of each
-  session. It also prohibits content that promotes disordered eating or compulsive exercise.
 
 ### 4.2 Product guardrails
 
@@ -166,19 +178,18 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
    so photo entries start at about ±35% and always get a portion question.
 5. **Gentle mode is respected by AI:** in gentle mode, prompts forbid calorie numbers and weight
    talk, and output is checked for digits followed by "kcal".
-6. **Confirmation before writes:** AI output is a proposal. Prompt injection in user text can at
-   worst change a proposal the user then sees, never the database.
+6. **Confirmation before writes** (§0.3): prompt injection in user text can at worst change a
+   proposal the user then sees, never the database.
 7. **Age:** AI features are 18+ at launch (confirm policy for 16–17). Anthropic's policy has extra
    requirements for minors.
-8. **Tone:** neutral and encouraging, gender-neutral, no gym-bro language, and no moralising about
-   food. The same copy rules as the app.
+8. **Tone:** the same copy rules as the app (`CLAUDE.md`, §0.5), and no moralising about food.
 
 ### 4.3 AI video and audio (later phases)
 
 - **Every generated exercise video is reviewed** by a qualified coach (and the `fitness-workouts`
   agent) for form and safety before publishing. Nothing is auto-published.
 - **No real-person likeness or voice cloning** without written consent and a licence. No deepfakes.
-- **Label all synthetic media** (EU AI Act marking; C2PA content credentials where the provider supports them).
+- **Label all synthetic media** (§4.2 item 1; EU AI Act marking; C2PA content credentials where the provider supports them).
 - **Accessibility:** captions for every video, and transcripts for every audio track.
 
 ## 5. Security and privacy
@@ -204,7 +215,9 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
 - **Keys and abuse:**
   - Keys live only in Edge Function secrets.
   - Per-user rate limits (e.g. 60 parse calls a day) and a hard monthly spend cap per user and
-    globally, with alerts.
+    globally, with alerts. As built for label reading: 30 reads per user and 500 in total per UTC
+    day (counts only, `ai_usage`), plus a monthly limit on the Anthropic account. No alerts and no
+    per-user monthly cap yet.
   - Reject oversized inputs.
 - **RLS unchanged:** AI functions run as the calling user (JWT), so existing `auth.uid()` policies
   still apply. No service-role access from AI paths.
@@ -228,7 +241,7 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
 
 | Phase | Scope | Main risk to retire |
 |---|---|---|
-| 0 | DPIA, consent screen, privacy notice, Edge Function skeleton with rate limits and spend caps, eval harness | Legal and privacy basics |
+| 0 | DPIA, consent screen, privacy notice, Edge Function skeleton with rate limits and spend caps, eval harness. Done with label reading: the `ai` and `label-photo` consents (`src/data/consent.ts`), the function pattern and the daily cap. Still open: the DPIA and the privacy-policy section (`docs/compliance/README.md`), and an eval harness. | Legal and privacy basics |
 | 1 | A: type the meal → parse → confirm. Text only. | Parsing accuracy; cost per call |
 | 2 | B: recipe by conversation. C: weekly reflection (batch). | Tone; question quality |
 | 3 | D: photo logging with ±. F: voice input (on-device first on native). | Portion error honesty |
@@ -238,7 +251,8 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
 ## 8. Decisions for Benn
 
 - Provider: Anthropic for text and vision is assumed. Choose speech and video vendors at phases 3–5.
-- Are AI features free (they are the accuracy product) or part of a paid tier?
+- Are AI features free (they are the accuracy product) or part of a paid tier? (Label reading is
+  free for now: Benn, 26 Sept 2026, `label-scan-and-shared-products.md`.)
 - Minimum age for AI features (proposal: 18+).
 - Whether to commission a regulatory opinion before phase 4 (the coach).
 - Budget ceiling per user per month (proposal: hard cap at $2 with graceful fallback).
