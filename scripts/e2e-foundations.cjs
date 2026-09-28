@@ -322,7 +322,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
   const EXISTING = { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }
   await run('existing user: the sheet shows once; Not now keeps it all on the phone until an answer', async ({ page, rows, net }) => {
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor()
-    await page.getByText('New health data stays on this phone. What’s already in your account stays until you choose. We’ll ask once more in 2 weeks.').waitFor()
+    await page.getByText('New health data stays on this phone. What’s already in your account is deleted after 30 days unless you agree; your phone keeps its copy. We’ll ask once more in 2 weeks.').waitFor()
     await shot(page, 'ob6-3-existing')
     await page.getByRole('button', { name: 'Not now' }).click()
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor({ state: 'detached' })
@@ -346,7 +346,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     // agree later in Profile: then everything on the phone uploads
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Paused' }).click()
-    await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. Anything already in your account from before stays until you agree, stop, or delete your account.').waitFor()
+    await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. Anything already in your account from before is deleted after 30 days unless you agree; your phone keeps its copy.').waitFor()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).waitFor() // withdrawal offered while paused too
     await shot(page, 'profile-health-paused')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
@@ -360,7 +360,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
   const pausedAgo = (days, reasked) => deviceState({ days: EXISTING, consents: { records: [], healthPause: { at: new Date(Date.now() - days * 86400_000).toISOString(), ...(reasked ? { reasked: true } : {}) } } })
   await run('existing user: asked again once after 2 weeks, then never', async ({ page }) => {
     await page.getByRole('dialog', { name: 'Is it OK to keep your health data?' }).waitFor()
-    await page.getByText('New health data stays on this phone. What’s already in your account stays until you choose.', { exact: true }).waitFor() // no "once more" at the re-ask
+    await page.getByText('New health data stays on this phone. What’s already in your account is deleted after 30 days unless you agree; your phone keeps its copy.', { exact: true }).waitFor() // no "once more" at the re-ask
     await page.getByRole('button', { name: 'Not now' }).click()
     const st = await stored(page)
     expect(st.consents.healthPause.reasked === true, 'the re-ask is answered')

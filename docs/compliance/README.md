@@ -38,7 +38,7 @@ Last reviewed: 2026-09-27. Controller: Gravita Creative Ltd (company 08348225), 
 | Custom foods, recipes, workouts you create (`routines`), weekly plans (`training_plans`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes` | Until account deletion |
 | Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off or account deletion; dead endpoints (404/410) are removed by the function |
 | Consent records (type, version, yes or no, time) | Show what was agreed and when (Art. 7(1), 5(2)) | 6(1)(c); 9(2)(f) if treated as special category | `consents` (append-only) and the device | Until account deletion |
-| Pre-consent log already in the account, during a "Not now" | None active: kept unused, not read or updated | Unresolved (see item 26) | Account tables | Until the person agrees, withdraws or deletes the account |
+| Pre-consent log already in the account, with no answer yet ("Not now", or not opened since) | None active: kept unused, not read or updated | None needed for a short hold before deletion (item 26) | Account tables | 30 days from being asked, then deleted by `purge_unconsented_logs()` (daily, pg_cron); the phone keeps its copy and a later yes uploads it again |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
 | Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
@@ -148,10 +148,12 @@ Added 2026-09-27 (consent release):
 
 Added 2026-09-28 (server-side enforcement):
 
-26. DECISION (Benn, with a solicitor's view): how long a "Not now" person's pre-consent log may
-    stay in the account unused. No Art. 9(2) condition covers storing it, and storage limitation
-    (Art. 5(1)(e)) points to a deadline. Options: delete it at the second "Not now" (after an
-    export offer), or after a fixed period (e.g. 30 days) without an answer.
+26. DECIDED (Benn, 28 Sept 2026): a pre-consent log with no yes is deleted from the account 30
+    days after the person is first asked (from the release for existing accounts), by
+    `docs/migrations/2026-09-28-unconsented-purge.sql`. They're offered consent again when they
+    return, and a first yes uploads the whole log from the phone. It's also a backstop for a
+    withdrawal whose clear didn't run (a no over a day old). Still worth a solicitor's view on
+    whether the 30-day hold itself needs a basis.
 27. On-phone processing while phone-only is still processing by Tali's code (CJEU C-25/17,
     C-210/16; Recital 18), so "phone-only" lowers risk but may not take it outside GDPR. Record
     this in the DPIA; it's also why withdrawal still clears weigh-ins, check-ins and body details.

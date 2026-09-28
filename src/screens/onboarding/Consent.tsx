@@ -155,7 +155,7 @@ export function ExistingConsentSheet() {
       <Ticks tight items={['Private to your account, never sold or used for ads.', 'Download or delete it any time in Profile.']} />
       <button className="btn ob-btn" onClick={() => grant('health')}>Yes, keep it</button>
       <button className="linkbtn ob-alt" onClick={notNow}>Not now</button>
-      <div className="cs-foot">New health data stays on this phone. What’s already in your account stays until you choose.{first ? ' We’ll ask once more in 2 weeks.' : ''}</div>
+      <div className="cs-foot">New health data stays on this phone. What’s already in your account is deleted after 30 days unless you agree; your phone keeps its copy.{first ? ' We’ll ask once more in 2 weeks.' : ''}</div>
     </BareSheet>
   )
 }

@@ -55,7 +55,7 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
         <>
           <button className="btn gray" onClick={notNow}>Not now, keep it on this phone</button>
           <div className="foot">
-            Until you agree, nothing you log syncs to your account or is backed up there.{' '}
+            Until you agree, nothing you log syncs to your account or is backed up there. What’s in your account from before is deleted after 30 days; your phone keeps its copy.{' '}
             {reasked ? 'We won’t ask again: you can agree any time in Profile, then Privacy.' : 'We’ll ask once more in 2 weeks.'}
           </div>
           <button type="button" className="linkbtn muted" onClick={() => signOut()}>Sign out</button>

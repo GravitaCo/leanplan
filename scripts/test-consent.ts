@@ -452,6 +452,29 @@ async function healthPause(): Promise<void> {
   withdraw(s3, m3, 'health')
   checks.push(['withdrawing ends the pause (the clear uploads everywhere)', !s3.consents!.healthPause && !healthSyncPaused(s3) && s3.days[D1].weight === null])
 
+  // 30 days without an answer: the server deleted the account's copy. A first yes uploads the
+  // whole log from the phone, not just what changed since
+  const rows5: Record<string, any[]> = {
+    settings: [{ user_id: LOCAL_USER, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', weight: 72 } }],
+    day_logs: [{ user_id: LOCAL_USER, log_date: D1, foods: [], supps: {}, weight: 71, workout: null }],
+    custom_foods: [], recipes: [], consents: [],
+  }
+  const srv5 = mergingServer(rows5)
+  const s5 = stateFromBackup({ days: {} } as never)
+  const m5 = ensureMeta(s5, false)
+  m5.settings.dirty = false
+  await withFetch(srv5.fetchFn, () => pullAll(s5, m5))
+  m5.settings.dirty = false
+  checks.push(['(setup) synced before consent was asked: nothing dirty', !m5.days[D1]?.dirty && !m5.settings.dirty && s5.days[D1]?.weight === 71])
+  pauseHealthSync(s5)
+  rows5.day_logs = []; rows5.settings = []
+  grantHealth(s5, m5)
+  checks.push(['a first yes with a log here marks all of it to upload, from the last pull', m5.days[D1].dirty && m5.settings.dirty && !!s5.consents!.resumeFrom])
+  rows5.consents.push({ id: s5.consents!.records![0].id, user_id: LOCAL_USER, type: 'health', version: '2026-09-v1', granted: true, recorded_at: s5.consents!.records![0].at })
+  s5.consents!.records![0].dirty = false
+  await withFetch(srv5.fetchFn, () => pushDirty(s5, m5))
+  checks.push(['after the 30-day deletion, a yes puts the whole log back in the account', rows5.day_logs.some((r) => r.log_date === D1 && r.weight === 71) && rows5.settings.length === 1 && s5.days[D1].weight === 71 && !s5.consents!.resumeFrom])
+
   // declined: no calorie numbers until they agree
   const s4 = stateFromBackup({ days: {} } as never)
   checks.push(['numbers show by default; Gentle hides them', !quietNumbers(s4) && (s4.profile.gentle = true, quietNumbers(s4))])

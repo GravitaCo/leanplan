@@ -360,12 +360,17 @@ export function needsReupload(s: PersistedState): ConsentRecord | null {
 }
 
 /** Mark the whole log to upload after a yes that follows a withdrawal (needsReupload). */
-export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentRecord): void {
-  const log = consentLog(s)
+/** Everything on this device uploads on the next sync. */
+function markAllDirty(s: PersistedState, meta: SyncMeta): void {
   const u = nowIso()
   for (const d of Object.keys(s.days || {})) meta.days[d] = { u, dirty: true }
   meta.settings = { u, dirty: true }
   for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string }[]) { x._dirty = true; x._u = u }
+}
+
+export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentRecord): void {
+  const log = consentLog(s)
+  markAllDirty(s, meta)
   // rows another device uploaded since the withdrawal win over this device's (settleResume)
   const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]
   if (decline && !log.resumeFrom) log.resumeFrom = decline.at
@@ -401,9 +406,18 @@ export function resumeAfterYes(s: PersistedState): void {
 
 /**
  * Agree to keeping health data. A pause ends: what was held back on this device is marked to
- * upload (the days and settings pushed without their health fields while paused).
+ * upload (the days and settings pushed without their health fields while paused). A first yes
+ * from someone with a log here uploads all of it: the account's copy may have been deleted
+ * after 30 days without an answer (docs/migrations/2026-09-28-unconsented-purge.sql). Rows
+ * another device changed since this one last pulled win, and this phone's are kept
+ * (settleResume).
  */
 export function grantHealth(s: PersistedState, meta: SyncMeta): ConsentRecord {
+  if (!latestConsent(s, 'health') && hasExistingData(s)) {
+    markAllDirty(s, meta)
+    const log = consentLog(s)
+    if (!log.resumeFrom) log.resumeFrom = meta.lastPull ?? log.healthPause?.at ?? nowIso()
+  }
   resumeAfterYes(s)
   const rec = recordConsent(s, 'health', true)
   resumeHealthSync(s, meta)
