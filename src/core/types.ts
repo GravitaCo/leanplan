@@ -459,6 +459,14 @@ export interface Profile {
   activityMult?: number
   /** after "Rather not say" on wellbeing, the person chose their goal's deficit over maintenance */
   deficitChosen?: boolean
+  /** "What would make this worth it for you?" (onboarding screen 3): chip keys, or their own words (≤ 60 chars) */
+  motivations?: string[]
+  /**
+   * When each onboarding answer was last set on some device (ISO time), keyed by field path
+   * ('goal', 'outcomes.readiness', 'training.daysPerWeek' …). Sync merges `profile` field by field
+   * with these (latest wins) so answers given on two devices don't overwrite each other (plan §12).
+   */
+  answeredAt?: Record<string, string>
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

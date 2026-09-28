@@ -22,6 +22,8 @@ export interface Signpost {
   hours: string
   free?: boolean
   note?: string
+  /** the service's own page (webchat, email); re-check with the numbers */
+  web?: string
 }
 
 export const CHECKED_ON = '2026-09-27'
@@ -39,6 +41,7 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     hours: '3pm–8pm, Monday to Friday',
     free: true,
     note: 'Webchat and email too.',
+    web: 'https://www.beateatingdisorders.org.uk/',
   },
   samaritans: { kind: 'samaritans', name: 'Samaritans', phone: '116 123', hours: '24 hours, every day', free: true },
   childline: { kind: 'childline', name: 'Childline', phone: '0800 1111', hours: '24 hours, every day', free: true },
@@ -56,7 +59,7 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     kind: 'nhs111-mental-health',
     name: 'NHS 111, option 2 (mental health)',
     phone: '111',
-    nations: ['england'],
+    nations: ['england', 'wales'],
     hours: '24 hours, every day',
     free: true,
     note: 'Call 111 and choose option 2 for your local NHS mental health crisis line.',

@@ -111,7 +111,7 @@ function signposts(): void {
     ['Samaritans 116 123, Childline 0800 1111, 999', SIGNPOSTS.samaritans.phone === '116 123' && SIGNPOSTS.childline.phone === '0800 1111' && SIGNPOSTS.emergency.phone === '999'],
     ['Beat is free', SIGNPOSTS.beat.free === true],
     ['Scotland calls it NHS 24 (111)', signpostName(SIGNPOSTS.nhs111, 'scotland') === 'NHS 24 (111)' && signpostName(SIGNPOSTS.nhs111, 'england') === 'NHS 111'],
-    ['NHS 111 option 2 (mental health) in England with the wellbeing signposts', SIGNPOSTS['nhs111-mental-health'].nations!.join() === 'england'
+    ['NHS 111 option 2 (mental health) in England and Wales with the wellbeing signposts', SIGNPOSTS['nhs111-mental-health'].nations!.join() === 'england,wales'
       && routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost.includes('nhs111-mental-health')],
     ['per nation: Northern Ireland gets the GP, no option 2', (() => {
       const kinds = routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost

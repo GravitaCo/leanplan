@@ -16,6 +16,10 @@
  *   which is also the fresh sign-in the check above needs.
  * - The body must be { confirm: "delete my account" } (src/data/account.ts), so a stray POST
  *   can't delete anything.
+ * - Under-age (onboarding §14, PENDING security-data review): with { reason: "under-age" } the
+ *   re-auth check is waived only for an account created under 24 hours ago, read from Auth's own
+ *   answer (user.created_at), so the app's automatic deletion after the age stop still works when
+ *   it retries later offline. Any other account, or no reason, needs the recent sign-in as before.
  * - Deletes the account's rows from every table the app writes (USER_TABLES in ../_shared/account.ts), then the login. Rows go
  *   first: if any delete fails the login stays, the function answers 500, and a retry picks up
  *   where it stopped. A table that doesn't exist yet (a migration not applied) is skipped.
@@ -28,7 +32,7 @@
  * Secrets: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
-import { DELETE_CONFIRM as CONFIRM, USER_TABLES as TABLES, jwtPayload, signedInRecently } from '../_shared/account.ts'
+import { DELETE_CONFIRM as CONFIRM, UNDER_AGE_REASON, USER_TABLES as TABLES, jwtPayload, newAccount, signedInRecently } from '../_shared/account.ts'
 
 const ORIGINS = [
   /^https:\/\/app\.tali\.fit$/,
@@ -78,7 +82,7 @@ Deno.serve(async (req) => {
   if (!m) return fail('unauthorized')
   const jwt = m[1]
 
-  let body: { confirm?: unknown }
+  let body: { confirm?: unknown; reason?: unknown }
   if (Number(req.headers.get('Content-Length') || 0) > 1000) return fail('bad_request')
   try {
     const raw = await req.text()
@@ -88,6 +92,7 @@ Deno.serve(async (req) => {
     return fail('bad_request')
   }
   if (!body || typeof body !== 'object' || body.confirm !== CONFIRM) return fail('bad_request')
+  if (body.reason !== undefined && body.reason !== UNDER_AGE_REASON) return fail('bad_request')
 
   const url = Deno.env.get('SUPABASE_URL'), service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !service) return fail('config')
@@ -102,7 +107,10 @@ Deno.serve(async (req) => {
   }
   const uid = who.data.user.id
   // Auth has verified this token, so its payload can be read: the sign-in behind it must be recent
-  if (!signedInRecently(jwtPayload(jwt), Math.floor(Date.now() / 1000))) return fail('reauth')
+  const nowS = Math.floor(Date.now() / 1000)
+  // under age: a brand-new account (Auth's created_at, never the request's word) needs no re-auth
+  const underAge = body.reason === UNDER_AGE_REASON && newAccount(who.data.user.created_at, nowS)
+  if (!underAge && !signedInRecently(jwtPayload(jwt), nowS)) return fail('reauth')
 
   // End every session of this account (all devices) before touching data, so no other device's
   // refresh token can mint a new token and write rows back while they're deleted. Access tokens
@@ -122,6 +130,6 @@ Deno.serve(async (req) => {
   const del = await admin.auth.admin.deleteUser(uid, false)
   if (del.error && del.error.status !== 404 && del.error.code !== 'user_not_found') return fail('failed', { step: 'auth' })
 
-  log('ok', { ms: Date.now() - started, tables: TABLES.length, skipped })
+  log('ok', { ms: Date.now() - started, tables: TABLES.length, skipped, ...(underAge ? { path: 'under-age' } : {}) })
   return json({ ok: true }, 200, cors)
 })

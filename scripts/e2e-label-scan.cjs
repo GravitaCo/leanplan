@@ -5,6 +5,7 @@
  * (optionally) check the normal build hides it:
  *
  *   VITE_LABEL_SCAN=1 npx vite build --outDir dist-e2e && npx vite preview --outDir dist-e2e --port 4173 &
+ *   (the fixture is an onboarded profile, so VITE_ONBOARDING=1 on the same build passes too)
  *   npm run build && npx vite preview --port 4174 &
  *   E2E_URL_OFF=http://localhost:4174/ NODE_PATH=$(npm root -g) node scripts/e2e-label-scan.cjs
  *
@@ -96,7 +97,9 @@ async function scenario(browser, name, fn, opts = {}) {
   // app opens past it; only seeded once, so a reload keeps what the app saved
   const u = new Date().toISOString()
   const device = { days: {}, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] },
-    _meta: { settings: { u, dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, owner: uid } }
+    _meta: { settings: { u, dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, owner: uid },
+    // already onboarded, so a build with ONBOARDING_ENABLED on opens the app, not the wizard
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', activityMult: 1.3 } }
   await ctx.addInitScript(([s, st]) => {
     localStorage.setItem('sb-exvblofwiwbvycomxvmj-auth-token', s)
     localStorage.setItem('tali.mode', 'account')

@@ -16,7 +16,7 @@ import { Thumb } from './train/Thumb'
 import { DayView, WorkoutView, workoutSub } from './plan/PlanViews'
 import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
-import { BuildPlanCard, ONBOARDING_ENABLED } from './onboarding/Consent'
+import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
@@ -55,6 +55,8 @@ export function PlanScreen() {
   const finishPlan = useStore((s) => s.finishPlan)
   const notePlan = useStore((s) => s.notePlan)
   const setPrefs = useStore((s) => s.setPrefs)
+  const openSetup = useStore((s) => s.openSetup)
+  const buildDue = useStore((s) => buildCardDue(s.data))
   // a plan's week (a phase, from the editor) and one of its days (Flow 3, as for the one-workout week)
   // each carries its plan: the running one, or the next one waiting to start
   const [planWeekAt, setPlanWeekAt] = useState<{ planId: string; phase: number } | null>(null)
@@ -176,8 +178,8 @@ export function PlanScreen() {
   return (
     <div className="screen">
       <PageHeader title="Plan" />
-      {/* ob6-4, behind the onboarding flag: the wizard it opens ships later */}
-      {ONBOARDING_ENABLED && <BuildPlanCard />}
+      {/* ob6-4, behind the onboarding flag: opens the setup card; the current week stays until Start */}
+      {buildDue && <BuildPlanCard onBuild={() => openSetup(true)} />}
 
       {!active && (
         <>

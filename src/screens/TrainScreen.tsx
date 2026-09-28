@@ -24,6 +24,7 @@ import { LibrarySheet } from './train/LibrarySheet'
 import { AddSomethingSheet } from './train/AddSomethingSheet'
 import { Preview, CHOICES, type Choice } from './train/Preview'
 import { GuidedPlayer } from './train/GuidedPlayer'
+import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { ManualLog } from './train/ManualLog'
 import { Thumb } from './train/Thumb'
 
@@ -161,6 +162,8 @@ export function TrainScreen() {
     const swaps = swapsFor(open)
     const slots = slotsOf(templateFor(open, routines)?.ex ?? [], swaps, shorter, exById)
     const option = shorter ? 'shorter' as const : undefined
+    // a workout the engine generated (behind the onboarding flag): thumbs, find your weight, how was that set
+    const generated = ONBOARDING_ENABLED ? (routines || []).find((r) => r.id === open && r.source === 'recommended' && r.blocks.some((b) => b.slots.some((x) => x.why?.length))) : undefined
     if (mode === 'manual') {
       return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} />
     }
@@ -169,8 +172,8 @@ export function TrainScreen() {
         <Preview type={open} choice={choice} onChoice={(c) => setPicked(c, open)} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
           session={builtin(open)} note={choice === 'shorter' ? easyNote : null} dayName={dayName} isToday={isToday}
           onStart={() => setPlaying(true)} onManual={() => { setMode('manual'); window.scrollTo(0, 0) }} onBack={closeWorkout}
-          onEditPlan={() => openPlan(open)} />
-        {playing && <GuidedPlayer type={open} slots={slots} option={option} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
+          onEditPlan={() => openPlan(open)} generated={generated} />
+        {playing && <GuidedPlayer type={open} slots={slots} option={option} generated={generated} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
       </>
     )
   }

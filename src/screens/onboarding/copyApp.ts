@@ -1,0 +1,21 @@
+/**
+ * The onboarding lines shown inside the app itself (Today's setup card, the first session), apart
+ * from copy.ts so the main bundle doesn't carry the wizard's words. Linted with the rest (copy.ts allCopy).
+ */
+/** Onboarding 2: Today's card and the handoff. */
+export const SETUP_CARD = {
+  k: 'Finish your setup', r: 'About a minute', t: 'Tell us how you like to train, and we’ll build your week from it.',
+  s: 'Until then you’re on a starter week: 3 short full-body sessions.', go: 'Continue setup', later: 'Not now',
+}
+
+/** Onboarding 5. */
+export const FIRST_SESSION = {
+  findK: (n: number) => `Find your weight · ${n === 1 ? 'first' : 'second'} session`,
+  find: 'No wrong answer. Pick something that feels comfortable. We’ll adjust from how it felt.',
+  know: 'I know my weights',
+  feelT: 'How was that set?',
+  feelNote: 'We ask on the last set of each exercise. Skipping keeps next time the same.',
+  thumbsNote: 'Like or not for me: tap the thumbs on any exercise. No reason needed.',
+  feels: [['spare', 'Easy, lots left'], ['right', 'About right, 2 or 3 left'], ['struggle', 'Hard, the last rep was a struggle'], ['stopped', 'Stopped early']] as const,
+}
+

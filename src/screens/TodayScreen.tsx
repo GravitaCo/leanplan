@@ -28,6 +28,7 @@ import { AddFoodSheet } from './food/AddFoodSheet'
 import { MarginSheet } from './food/MarginSheet'
 import { CheckinSheet } from './today/CheckinSheet'
 import { PlanReviewSheet } from './plan/PlanSheets'
+import { SetupCard, setupCardDue } from './onboarding/Consent'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
 
@@ -131,6 +132,8 @@ export function TodayScreen() {
         right={<button className="avatar" aria-label="Profile" onClick={() => setTab('profile')}>{initials(p.name) || <Icon name="person" />}</button>}
       />
       <WeekStrip />
+      {/* ob2-0b, behind the onboarding flag: on the Starter week until the setup card is done */}
+      {setupCardDue(data) && <SetupCard />}
 
       <div className="pillars">
         {/* ---------- Mind ---------- */}

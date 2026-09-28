@@ -8,6 +8,7 @@ import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/cor
 import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, ConsentRequiredError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
+import { mergeProfiles } from '@/core/domain/profileMerge'
 import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap, type ResumeCopy } from './consent'
 
 /* ---- client <-> server row mapping ---- */
@@ -93,13 +94,25 @@ function toServerRecipe(r: Recipe, uid: string) {
 function fromServerRecipe(r: any): Recipe {
   return { id: r.id, name: r.name, items: r.items || [], servings: +r.servings || 1, _u: r.updated_at, _dirty: false }
 }
+/**
+ * Send a generated plan's reasons (`TrainingPlan.why`, codes and data only) in the additive
+ * `training_plans.why` jsonb column (docs/migrations/2026-09-plan-why.sql, applied 28 Sept 2026
+ * after security review). Once a build with this on has shipped, never drop the column: installed
+ * apps still running it would have every plan upsert refused. To roll back, turn this off and
+ * deploy first. While off, a pull keeps the device's own reasons
+ * (fromServerPlan's caller), so they're never lost here; another device rebuilds none, it just
+ * shows the plan without its plan-level reasons. Slot and workout reasons ride `routines.blocks`.
+ */
+export const PLAN_WHY_SYNC = true
+
 /* training_plans: weekly plans (plan P5), one row each like routines; never hard-deleted */
-function toServerPlan(p: TrainingPlan, uid: string) {
-  return {
+export function toServerPlan(p: TrainingPlan, uid: string, withWhy = PLAN_WHY_SYNC) {
+  const row = {
     id: p.id, user_id: uid, name: p.name, source: p.source === 'recommended' ? 'recommended' : 'custom', state: p.state,
     phases: Array.isArray(p.phases) ? p.phases : [], started_at: p.startedAt ?? null, completed_at: p.completedAt ?? null,
     reflection: p.reflection ?? null, base_template_id: p.baseTemplateId ?? null, cloned_from_id: p.clonedFromId ?? null,
   }
+  return withWhy ? { ...row, why: Array.isArray(p.why) && p.why.length ? p.why : null } : row
 }
 function fromServerPlan(r: any): TrainingPlan {
   return {
@@ -109,9 +122,12 @@ function fromServerPlan(r: any): TrainingPlan {
     phases: cleanPhases((Array.isArray(r.phases) ? r.phases : []).filter((x: unknown) => !!x && typeof x === 'object')),
     ...(r.started_at ? { startedAt: String(r.started_at).slice(0, 10) } : {}), ...(r.completed_at ? { completedAt: r.completed_at } : {}),
     ...(r.reflection ? { reflection: r.reflection } : {}), ...(r.base_template_id ? { baseTemplateId: r.base_template_id } : {}),
-    ...(r.cloned_from_id ? { clonedFromId: r.cloned_from_id } : {}), _u: r.updated_at, _dirty: false,
+    ...(r.cloned_from_id ? { clonedFromId: r.cloned_from_id } : {}), ...(Array.isArray(r.why) ? { why: r.why.filter(isWhy) } : {}),
+    _u: r.updated_at, _dirty: false,
   }
 }
+/** A stored reason as the engine writes it: a code, optional about/field and small data. */
+const isWhy = (w: unknown): w is NonNullable<TrainingPlan['why']>[number] => !!w && typeof w === 'object' && typeof (w as { code?: unknown }).code === 'string'
 /* routines: the user's own workouts (plan P4), one row each like recipes; never hard-deleted */
 function toServerRoutine(r: Routine, uid: string) {
   return {
@@ -320,6 +336,11 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
         else delete resume!.profile
         return
       }
+      // onboarding answers merge field by field (plan §12): read the server's first, latest answer wins
+      if (profile.answeredAt) {
+        const have = await sbGet<{ profile: Profile | null }[]>('/settings?user_id=eq.' + uid + '&select=profile')
+        if (have[0]?.profile) profile = s.profile = mergeProfiles(s.profile, have[0].profile)
+      }
       await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
       meta.settings.dirty = false
     })
@@ -520,14 +541,23 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   const rt = await missing(sbGet<any[]>('/routines?user_id=eq.' + uid + '&select=*'))
   if (rt) {
     const wById: Record<string, Routine> = {}
-    rt.map(fromServerRoutine).forEach((r) => { wById[r.id] = r })
+    const localRoutines = new Map((s.routines || []).map((r) => [r.id, r]))
+    // a workout's own reasons (Routine.why) have no column: this device's copy is kept
+    rt.map(fromServerRoutine).forEach((r) => { const mine = localRoutines.get(r.id); if (mine?.why?.length) r.why = mine.why; wById[r.id] = r })
     ;(s.routines || []).filter((r) => r._dirty).forEach((r) => { wById[r.id] = r })
     s.routines = Object.values(wById)
   }
   const tp = await missing(sbGet<any[]>('/training_plans?user_id=eq.' + uid + '&select=*'))
   if (tp) {
     const pById: Record<string, TrainingPlan> = {}
-    tp.map(fromServerPlan).forEach((p) => { pById[p.id] = p })
+    const localPlans = new Map((s.trainingPlans || []).map((p) => [p.id, p]))
+    tp.forEach((row) => {
+      const p = fromServerPlan(row)
+      // a row without `why` (the column isn't there yet, or PLAN_WHY_SYNC is off) keeps this device's
+      const mine = localPlans.get(p.id)
+      if (!Array.isArray(row.why) && mine?.why?.length) p.why = mine.why
+      pById[p.id] = p
+    })
     ;(s.trainingPlans || []).filter((p) => p._dirty).forEach((p) => { pById[p.id] = p })
     s.trainingPlans = Object.values(pById)
   }

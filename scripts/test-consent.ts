@@ -69,20 +69,20 @@ async function consent(fakeServer: FakeServer): Promise<void> {
   // latest wins, even against a clock that went backwards
   const w = withdraw(s, m, 'health')
   checks.push(['the backup offered before withdrawal keeps the health data and everything else', beforeState.days['2026-09-20'].weight === 71 && !!beforeState.days['2026-09-20'].checkin && beforeState.profile.weight === 72 &&
-    before.summary.weighIns === 1 && before.summary.checkins === 1 && before.summary.profileFields === 4 && s.days['2026-09-20'].weight === null && HEALTH_WITHDRAW_PROMPT.includes('delete it from your account') && HEALTH_WITHDRAW_PROMPT.includes('weigh-ins, check-ins and body details')])
+    before.summary.weighIns === 1 && before.summary.checkins === 1 && before.summary.profileFields === 2 && before.summary.trainingPrefs === 3 && s.days['2026-09-20'].weight === null && HEALTH_WITHDRAW_PROMPT.includes('delete it from your account') && HEALTH_WITHDRAW_PROMPT.includes('weigh-ins, check-ins, body details and training preferences')])
   checks.push(['withdrawal is a new record and wins', s.consents!.records.length === 2 && !w.granted && !hasConsent(s, 'health') && Date.parse(w.at) > Date.parse(g.at)])
   const a1 = recordConsent(s, 'ai', true, undefined, '2026-09-27T10:00:00.000Z')
   const a2 = recordConsent(s, 'ai', false, undefined, '2026-09-27T09:00:00.000Z')
   checks.push(['a later act never loses to an earlier one on a skewed clock', !hasConsent(s, 'ai') && Date.parse(a2.at) > Date.parse(a1.at)])
 
   // withdrawal clears the health fields, marks them to sync, leaves the rest
-  s.profile.age = 40; s.profile.height = 175
-  checks.push(['age, sex and height are kept', s.profile.age === 40 && s.profile.height === 175 && !!s.profile.sex])
+  s.profile.age = 40
+  checks.push(['age and sex are kept', s.profile.age === 40 && !!s.profile.sex])
   checks.push(['withdrawal clears weigh-ins and check-ins, keeps food', s.days['2026-09-20'].weight === null && !s.days['2026-09-20'].checkin && s.days['2026-09-20'].foods.length === 1])
-  checks.push(['withdrawal clears profile weight, body fat and limitations (keeps equipment)', s.profile.weight === undefined && s.profile.bodyFat === undefined && s.profile.training?.limitations === undefined && s.profile.training?.limitationsNote === undefined && (s.profile.training?.equipment || []).length === 1])
+  checks.push(['withdrawal clears profile weight, body fat and every training preference (limitations, kit …)', s.profile.weight === undefined && s.profile.bodyFat === undefined && s.profile.training?.limitations === undefined && s.profile.training?.limitationsNote === undefined && s.profile.training?.equipment === undefined])
   checks.push(['cleared days and settings are marked to sync; untouched days are not', m.days['2026-09-20'].dirty && !m.days['2026-09-21']?.dirty && m.settings.dirty])
   checks.push(['after withdrawal: the guard refuses and the old logging paths stop', !canSaveHealthAnswers(s) && !healthLoggingAllowed(s)])
-  checks.push(['nothing left to clear', JSON.stringify(healthDataSummary(s)) === '{"weighIns":0,"checkins":0,"profileFields":0}'])
+  checks.push(['nothing left to clear', JSON.stringify(healthDataSummary(s)) === '{"weighIns":0,"checkins":0,"profileFields":0,"trainingPrefs":0}'])
 
   // withdrawal before the grant synced: both upload, the server's latest is the withdrawal
   const s2 = stateFromBackup({ days: {} } as never)
