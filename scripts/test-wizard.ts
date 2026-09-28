@@ -21,7 +21,7 @@ import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES, REDO } from '../src/screens/onboarding/copy'
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
-import { deleteAccount, refreshSaysGone, savedSessionUid } from '@/data/account'
+import { deleteAccount, refreshFailure, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { wizardDueFor, FIRST_PULL_WAIT_MS } from '@/data/firstRun'
 import { readFileSync } from 'node:fs'
@@ -397,18 +397,20 @@ async function compliance(): Promise<void> {
   report('under-age deletion ends safely (register 37)', [
     ['a retry answered { ok: true, already: true } is done', already.status === 'ok' && underAgeNext(already.status, p0, now).kind === 'done'],
     ['a 401 is marked as refused by the server (not "no session here")', fn401.status === 'no-session' && 'rejected' in fn401 && fn401.rejected === true],
-    ['a refresh refused as user not found or an invalid refresh token means the account is gone', refreshSaysGone({ code: 'user_not_found' }) && refreshSaysGone({ code: 'refresh_token_not_found' })
-      && refreshSaysGone({ message: 'Invalid Refresh Token: Refresh Token Not Found' }) && refreshSaysGone({ message: 'User from sub claim in JWT does not exist' }) === false
-      && !refreshSaysGone({ message: 'Failed to fetch' }) && !refreshSaysGone(null)],
+    ['only "user not found" proves the account is gone', refreshFailure({ code: 'user_not_found' }) === 'gone' && refreshFailure({ message: 'User from sub claim in JWT does not exist' }) === 'gone'],
+    ['a dead refresh token proves nothing: sign in again (refresh_token_not_found, already used, invalid, no session)', refreshFailure({ code: 'refresh_token_not_found' }) === 'dead'
+      && refreshFailure({ message: 'Invalid Refresh Token: Already Used' }) === 'dead' && refreshFailure({ message: 'Invalid Refresh Token: Refresh Token Not Found' }) === 'dead' && refreshFailure({ code: 'session_not_found' }) === 'dead'],
+    ['anything else (no connection) just fails', refreshFailure({ message: 'Failed to fetch' }) === 'failed' && refreshFailure(null) === 'failed'],
+    ['a dead token goes to the sign-in stage and keeps the record', (() => { const st = underAgeNext('reauth', { ...p0, tries: 3, stage: 'retry' }, now); return st.kind === 'sign-in' && st.pending.uid === U && st.pending.stage === 'sign-in' })()],
   ])
   const STORE = readFileSync('src/store/store.ts', 'utf8')
   report('under-age deletion ends safely (register 37)', [
     ['the store backs off, stops with the sign-in note, and wipes only through underAgeWipesDevice', /underAgeRetryDue\(pend, Date\.now\(\)\)/.test(STORE) && /step\.kind === 'wait'/.test(STORE)
       && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 3 && !/owner === uid\)/.test(STORE)],
     ['only the pending account\'s sync waits', /pend && pend\.uid === getUid\(\)/.test(STORE)],
-    ['a 401 tries one refresh: gone is done (signed out, pending cleared), a new token retries once', (() => {
+    ['a 401 tries one refresh: gone is done (signed out, pending cleared), a dead token is the sign-in stage (record kept), a new token retries once', (() => {
       const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
-      return /res\.status === 'no-session' && res\.rejected/.test(f) && /refreshForRetry\(\)/.test(f) && /r === 'gone'\) gone = true/.test(f)
+      return /res\.status === 'no-session' && res\.rejected/.test(f) && /refreshForRetry\(\)/.test(f) && /r === 'gone'\) gone = true/.test(f) && /r === 'dead'\) dead = true/.test(f) && /underAgeNext\(dead \? 'reauth' : res\.status/.test(f)
         && /r === 'ok'\) res = await get\(\)\.deleteAccount\('under-age'\)/.test(f) && /gone \? \{ kind: 'done' as const \}/.test(f) })()],
     ['no uid at all: returns before recording or wiping anything (the stop screen stays), clearing only the draft (37b)', (() => {
       const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))

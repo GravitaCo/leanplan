@@ -1391,15 +1391,17 @@ export const useStore = create<StoreState>()(
         }
         let res = await get().deleteAccount('under-age')
         // a 401: maybe the server already deleted it and the reply was lost. One token refresh
-        // tells: a refused refresh (user not found, invalid refresh token) means the account is
-        // gone, so this is done; a working one retries once with the new token
-        let gone = false
+        // tells: "user not found" means the account is gone, so this is done; a dead refresh token
+        // proves nothing (delete-account signs out globally first), so it's the sign-in stage,
+        // keeping the record; a working refresh retries once with the new token
+        let gone = false, dead = false
         if (res.status === 'no-session' && res.rejected) {
           const r = await refreshForRetry()
           if (r === 'gone') gone = true
+          else if (r === 'dead') dead = true
           else if (r === 'ok') res = await get().deleteAccount('under-age')
         }
-        const step = gone ? { kind: 'done' as const } : underAgeNext(res.status, pend, Date.now())
+        const step = gone ? { kind: 'done' as const } : underAgeNext(dead ? 'reauth' : res.status, pend, Date.now())
         if (gone) {
           // nothing left on the server: sign this dead session out, and wipe the device when it's
           // that account's (never another's)
@@ -1419,8 +1421,8 @@ export const useStore = create<StoreState>()(
         if (step.kind === 'done') clearPendingDeletion()
         else if (step.kind === 'wait') markPendingDeletion(step.pending)
         else {
-          // stop trying by itself (the server refused re-auth for an account over 24 hours old, or it
-          // kept failing): sign this device out, wipe it, and ask for a fresh sign-in, which passes
+          // stop trying by itself (the server refused re-auth for an account over 24 hours old, it
+          // kept failing, or this device's session can't be renewed): sign this device out, wipe it, and ask for a fresh sign-in, which passes
           // re-auth and finishes the deletion (runSync). Another account's data is never touched.
           signingOut = true
           if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }

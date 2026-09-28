@@ -152,21 +152,26 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
 }
 
 /**
- * After a 401 on an under-age retry: whether the account is gone. A reply lost after the server
- * deleted it leaves this device with a token for an account that no longer exists; refreshing
- * that session then fails with user-not-found or an invalid refresh token. Pure.
+ * After a 401 on an under-age retry, what a failed token refresh proves. Only "user not found"
+ * (e.g. "User from sub claim in JWT does not exist") shows the account is gone. A dead refresh
+ * token ("Invalid Refresh Token", "Already Used", refresh_token_not_found, session_not_found)
+ * doesn't: delete-account signs out globally before deleting, so a failed deletion leaves dead
+ * tokens behind; that's 'dead' (ask for a fresh sign-in). Anything else (offline …): 'failed'. Pure.
  */
-export function refreshSaysGone(err: { code?: string; message?: string } | null | undefined): boolean {
-  if (!err) return false
-  if (err.code === 'user_not_found' || err.code === 'refresh_token_not_found' || err.code === 'session_not_found') return true
-  return /user.*not found|invalid refresh token|refresh token not found/i.test(err.message || '')
+export function refreshFailure(err: { code?: string; message?: string } | null | undefined): 'gone' | 'dead' | 'failed' {
+  if (!err) return 'failed'
+  const m = err.message || ''
+  if (err.code === 'user_not_found' || /user from sub claim in jwt does not exist|user not found/i.test(m)) return 'gone'
+  if (err.code === 'refresh_token_not_found' || err.code === 'refresh_token_already_used' || err.code === 'session_not_found' || /invalid refresh token|refresh token not found|already used|session not found/i.test(m)) return 'dead'
+  return 'failed'
 }
 
-/** Try one token refresh: 'ok' (retry with it), 'gone' (the account no longer exists) or 'failed'. */
-export async function refreshForRetry(): Promise<'ok' | 'gone' | 'failed'> {
+/** Try one token refresh: 'ok' (retry with it), 'gone' (the account no longer exists), 'dead'
+ *  (this device's session can't be renewed: sign in again) or 'failed'. */
+export async function refreshForRetry(): Promise<'ok' | 'gone' | 'dead' | 'failed'> {
   try {
     const { data, error } = await withTimeout(supabase.auth.refreshSession(), 8000, { data: { session: null }, error: null } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>)
-    if (error) return refreshSaysGone(error) ? 'gone' : 'failed'
+    if (error) return refreshFailure(error)
     return data?.session ? 'ok' : 'failed'
   } catch { return 'failed' }
 }
