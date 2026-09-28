@@ -36,6 +36,7 @@ const FAIL_NOTE: Record<Exclude<LabelReadResult['status'], 'ok'>, string> = {
   offline: 'Couldn’t read the photo without a connection, or it took too long.',
   unavailable: 'Photo reading isn’t available right now.',
   'no-session': 'Sign in again to read photos.',
+  consent: 'Couldn’t confirm your OK to read photos yet. Try again in a moment.',
   limit: 'You’ve used today’s photo reads. They reset tomorrow.',
   unreadable: 'The photo couldn’t be read. A flatter, brighter shot often helps.',
   error: 'Couldn’t read the photo right now.',
@@ -175,6 +176,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     try {
       // a photo goes to the server: not before the health answer (its consent record can't sync yet)
       if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
+      // the server checks the label-photo consent itself: send a yes given moments ago first
+      await useStore.getState().flushConsents()
       res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }, { signal: ctl.signal })
     } catch {
       res = { status: 'error' }

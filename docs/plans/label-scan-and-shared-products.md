@@ -178,10 +178,13 @@ The confirm view says where the figures came from:
 - A confirmed label whose per-serving column agrees is saved with the pack's per-serving line as
   `ref`, so one serving logs exactly what the pack prints (`scaleFood`).
 - Not in phase 1: the photo crop beside each field (the reader returns no positions yet).
+- The server checks consent too: `ai_usage_take` returns -2 (the function answers 403 `consent`)
+  unless the caller's latest `label-photo` consent is a yes (compliance register #28); the app
+  sends unsynced consents (`flushConsents`) just before a read.
 - To deploy, in order: reviews; run the migration in the SQL editor; `supabase secrets set
-  ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-sonnet-5, and `LABEL_EFFORT`), plus
-  `SUPABASE_PUBLISHABLE_KEY=sb_publishable_…` if the platform doesn't provide `SUPABASE_ANON_KEY`;
-  `supabase functions deploy ai-read-label` (config.toml sets verify_jwt = false); set a monthly
+  ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-sonnet-5, and `LABEL_EFFORT`); the
+  RPC's apikey comes from the platform (`SUPABASE_PUBLISHABLE_KEYS` default, else the legacy
+  `SUPABASE_ANON_KEY`); `supabase functions deploy ai-read-label` (config.toml sets verify_jwt = false); set a monthly
   spend limit on the Anthropic account; smoke-test; then flip `LABEL_SCAN_ENABLED` and merge.
 - E2E: `scripts/e2e-label-scan.cjs` (fake camera, mocked function; never calls the API).
 

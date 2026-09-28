@@ -26,6 +26,8 @@ export type LabelReadResult =
   | { status: 'unavailable' }
   /** not signed in on this device right now (e.g. offline since launch) */
   | { status: 'no-session' }
+  /** the server has no yes to label photos for this account yet (e.g. the consent hasn't synced) */
+  | { status: 'consent' }
   /** today's allowance used */
   | { status: 'limit' }
   /** the photo had no table the reader could make out */
@@ -58,6 +60,10 @@ export async function readLabel(images: { panel: string; front?: string }, opts:
         // the function isn't deployed (the gateway's own 404)
         if (status === 404) return { status: 'unavailable' }
         if (status === 429) return { status: 'limit' }
+        if (status === 403) {
+          const body = await (error.context as Response).clone().json().catch(() => null)
+          return body?.error === 'consent' ? { status: 'consent' } : { status: 'error' }
+        }
         if (status === 422) {
           const body = await (error.context as Response).json().catch(() => null)
           return body?.error === 'unreadable' ? { status: 'unreadable' } : { status: 'error' }
