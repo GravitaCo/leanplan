@@ -228,6 +228,11 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     sensitive, so a solicitor may prefer a bump: revisit with item 6. Publish the updated texts
     with the release that turns the wizard on, not before (they describe it as live).
 
+39. Done (2026-09-28): Supabase leaked password protection is on (HaveIBeenPwned check on new
+    passwords). The organisation moved to the Pro plan for it; Supabase stays the same processor,
+    so no policy change. The security advisor no longer flags it. Open, low: `pg_net` sits in the
+    public schema (advisor 0014); move it when convenient.
+
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR
 opt-in), paid plans (consumer and subscription law), native app store release (Apple and
