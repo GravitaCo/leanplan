@@ -235,11 +235,11 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     Update 2026-09-28: `tali.pendingDelete` now survives the in-app wipes (Delete account, and
     sign out and remove this device's log) so an under-age deletion can finish; it goes once that
     under-age deletion finishes (`clearPendingDeletion` when `underAgeNext` is done) or when
-    browser data is cleared; the cookie policy says only that. Open (compliance, 2026-09-28): an
-    ordinary Delete account of the same account, a deletion whose reply was lost (later tries get
-    401 and ask to sign in to an account that's gone), or one done outside the app, leaves the
-    record with no end. Fix in the store's deleteAccount (clear it when the pending uid is the
-    account deleted) and treat 401 or user-not-found for the pending uid as done, with a test.
+    browser data is cleared; the cookie policy says only that. Fixed on main a9fc1bd (checked
+    2026-09-28): the record is also cleared when an ordinary Delete account removes that account,
+    when the function answers already:true, when a token refresh answers user_not_found (the
+    account is gone), and after 30 days (`PENDING_MAX_DAYS`, removed the next time it's read). Any other refresh failure keeps it,
+    signs the device out, and the next sign-in finishes the deletion. The cookie policy says so.
 38. Note, re-checked 2026-09-28: still no `CONSENT_VERSIONS.health` bump. The Profile controls,
     the re-ask and `snoozedAt` serve the same purpose, add no new category and no recipient, and
     the consent wording is unchanged. The solicitor question (item 6) stands. Publish the texts
