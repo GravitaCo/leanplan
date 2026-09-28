@@ -4,6 +4,7 @@ import { healthConsentAnswered, liveConsentDue } from './data/consent'
 import { takeReauthReturn } from './data/account'
 import { getUid } from './data/supabase'
 import { ONBOARDING_ENABLED, wizardDue } from './screens/onboarding/Consent'
+import { preloadHealthAnswers } from './screens/profile/lazyHealthAnswers'
 // the wizard, its summary and the training engine load on demand (most launches never need them)
 const Onboarding = lazy(() => import('./screens/onboarding/Wizard').then((m) => ({ default: m.Onboarding })))
 const Under16 = lazy(() => import('./screens/onboarding/Wizard').then((m) => ({ default: m.Under16 })))
@@ -60,7 +61,7 @@ function TaliApp() {
   useEffect(() => { const t = setTimeout(() => setWaited(true), 6000); return () => clearTimeout(t) }, [])
   // with the flag on, fetch the wizard's chunk while online, so the service worker keeps it for
   // a first run (or a resume) with no connection
-  useEffect(() => { if (ONBOARDING_ENABLED && online) import('./screens/onboarding/Wizard').catch(() => {}) }, [online])
+  useEffect(() => { if (ONBOARDING_ENABLED && online) { import('./screens/onboarding/Wizard').catch(() => {}); preloadHealthAnswers() } }, [online])
 
   // the plan photographs, fetched once when idle so the library looks right offline
   useEffect(() => {

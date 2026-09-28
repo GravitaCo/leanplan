@@ -72,7 +72,14 @@ export const underAgeRetryDue = (p: PendingDeletion, now: number): boolean => p.
  * Whether the under-age stop may wipe this device's data: it's the under-age account's (`owner`
  * equals `uid`), or nobody's yet (no owner: a new device). Never another account's data.
  */
-export const underAgeWipesDevice = (owner: string | undefined, uid: string | undefined): boolean => !owner || owner === uid
+export const underAgeWipesDevice = (owner: string | undefined, uid: string | undefined): boolean => !!uid && (!owner || owner === uid)
+
+/**
+ * Whose account the under-age stop deletes: the live session's, else (offline) the device's owner,
+ * else the saved session's (a new device with no owner yet). None: nothing is recorded or wiped,
+ * and the stop screen stays (there'd be no server deletion to follow a wipe).
+ */
+export const underAgeUid = (live: string | null, owner: string | undefined, saved: string | null): string | null => live ?? owner ?? saved ?? null
 
 export type UnderAgeStep =
   /** the account is gone: forget the pending deletion */

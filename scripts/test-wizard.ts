@@ -13,14 +13,14 @@ import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
-import { loadDraft, markPendingDeletion, pendingDeletion, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
+import { loadDraft, markPendingDeletion, pendingDeletion, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES } from '../src/screens/onboarding/copy'
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
-import { deleteAccount } from '@/data/account'
+import { deleteAccount, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { readFileSync } from 'node:fs'
 const FN = readFileSync('supabase/functions/delete-account/index.ts', 'utf8')
@@ -330,10 +330,21 @@ function compliance(): void {
     ['a backed-off try waits; at the sign-in stage the fresh sign-in tries straight away', !underAgeRetryDue({ ...p0, next: now + 1000 }, now) && underAgeRetryDue({ ...p0, next: now + 1000 }, now + 1000)
       && underAgeRetryDue({ ...p0, stage: 'sign-in', next: now + 999_999 }, now) && underAgeRetryDue(p0, now)],
     ['a fresh sign-in that is refused again asks again (never loops by itself)', again.kind === 'sign-in'],
-    ['wipes this device for the under-age account, or when nobody owns it yet (new device)', underAgeWipesDevice(U, U) && underAgeWipesDevice(undefined, U) && underAgeWipesDevice(undefined, undefined)],
+    ['wipes this device for the under-age account, or when nobody owns it yet (new device)', underAgeWipesDevice(U, U) && underAgeWipesDevice(undefined, U)],
+    ['no account known: no wipe (no server deletion would follow)', !underAgeWipesDevice(undefined, undefined) && underAgeUid(null, undefined, null) === null],
+    ['whose: the live session, else the owner (offline), else the saved session (new device)', underAgeUid(U, OTHER, OTHER) === U && underAgeUid(null, U, OTHER) === U && underAgeUid(null, undefined, U) === U],
     ['never another account\'s data', !underAgeWipesDevice(OTHER, U)],
   ])
   withFakeStorage((ls) => {
+    const none = savedSessionUid(ls)
+    ls.setItem('sb-proj-auth-token', JSON.stringify({ access_token: 'x', user: { id: U } }))
+    const saved = savedSessionUid(ls)
+    ls.setItem('sb-proj-auth-token', '{bad')
+    const bad = savedSessionUid(ls)
+    ls.removeItem('sb-proj-auth-token')
+    report('under-age deletion ends safely (register 37)', [
+      ['the saved session\'s uid is read for a new device; none or malformed gives none', none === null && saved === U && bad === null],
+    ])
     markPendingDeletion({ uid: U, at: AT, tries: 2, next: now, stage: 'retry' })
     const back = pendingDeletion()
     ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: AT }))

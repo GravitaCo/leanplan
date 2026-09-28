@@ -28,7 +28,7 @@ import { AddFoodSheet } from './food/AddFoodSheet'
 import { MarginSheet } from './food/MarginSheet'
 import { CheckinSheet } from './today/CheckinSheet'
 import { PlanReviewSheet } from './plan/PlanSheets'
-import { PregnancyCheckSheet } from './profile/HealthAnswers'
+import { LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { pregnancyReaskDue } from '@/core/domain/onboarding'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
@@ -340,7 +340,7 @@ export function TodayScreen() {
       </div>
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
-      {reask && <PregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
+      {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'plans' && <PlanReviewSheet onClose={() => setSheet(null)} />}

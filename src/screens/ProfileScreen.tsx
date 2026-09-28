@@ -18,7 +18,7 @@ import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
-import { HealthAnswersScreen } from './profile/HealthAnswers'
+import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
 
@@ -153,7 +153,7 @@ export function ProfileScreen() {
   const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
 
   // ob7-1: back goes to the Health data sheet it came from
-  if (view === 'answers') return <HealthAnswersScreen onBack={() => { setView('main'); setHealthOpen('main') }} />
+  if (view === 'answers') return <LazyHealthAnswersScreen onBack={() => { setView('main'); setHealthOpen('main') }} />
   if (view === 'delete') return <DeleteAccountView onBack={() => { setView('main'); setConfirmOpen(false) }} confirmOpen={confirmOpen} setConfirmOpen={setConfirmOpen} />
 
   return (

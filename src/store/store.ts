@@ -44,14 +44,14 @@ import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredEr
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
-import { deleteAccount as deleteAccountData, defaultDeleteDeps, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
-import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
-import { rerunForAnswers } from '@/core/domain/wizard'
+import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 
 enableMapSet()
 
@@ -225,6 +225,8 @@ export interface StoreState {
   setHealthAnswer: (a: ChangeableAnswer) => boolean
   /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
   confirmPregnancy: (status: PregnancyStatus) => boolean
+  /** re-run the plan and targets after a health answer changed (the engine loads on demand) */
+  rerunHealthAnswers: () => Promise<void>
   /** "Ask me later" on the re-ask: asked again in 2 weeks */
   snoozePregnancyReask: () => boolean
   /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
@@ -337,7 +339,7 @@ function acceptGenerated(s: PersistedState, gen: GeneratedPlan): void {
  * replaced where it stands (same id and start, so the week carries on); its old workouts are put
  * away. Targets change only when routing gives a number (a hidden one keeps what's stored).
  */
-function rerunAnswers(s: PersistedState): void {
+function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void {
   const today = todayStr()
   const active = activePlan(s, today)
   const r = rerunForAnswers(s.profile, active, { healthConsent: consented(s, 'health'), kg: latestWeight(s, today), days: s.days })
@@ -1091,6 +1093,8 @@ export const useStore = create<StoreState>()(
 
         if (session) get().runSync()
         window.addEventListener('offline', () => set((st) => { st.online = false }))
+        // a health answer changed while the engine couldn't load (offline): re-run it now
+        void get().rerunHealthAnswers()
         window.addEventListener('online', async () => {
           set((st) => { st.online = true })
           // back online: an under-18 deletion still to do retries straight away (runSync)
@@ -1353,22 +1357,23 @@ export const useStore = create<StoreState>()(
       deleteUnderAge: async () => {
         underAgeTried = Date.now()
         const owner = get().data._meta?.owner
-        // offline (no live session) the device's owner is the account: its session is still saved here
-        const uid = get().authed ? getUid() : owner
+        // offline (no live session) the device's owner is the account, or on a new device the
+        // saved session's; with none, nothing is wiped or recorded and the stop screen stays
+        const uid = underAgeUid(get().authed ? getUid() : null, owner, savedSessionUid())
+        if (!uid) return { status: 'no-session' }
         const prev = pendingDeletion()
-        const pend = prev && prev.uid === uid ? prev : uid ? { uid, at: nowIso() } : null
-        if (pend) markPendingDeletion(pend)
+        const pend = prev && prev.uid === uid ? prev : { uid, at: nowIso() }
+        markPendingDeletion(pend)
         // this device's data goes now, whatever the connection; the account follows (plan §14).
         // Its own data or nobody's yet (a new device), never another account's (underAgeWipesDevice)
-        clearDraft()
         if (underAgeWipesDevice(owner, uid)) {
-          const next = uid ? freshForAccount(uid) : freshForDevice()
+          clearDraft()
+          const next = freshForAccount(uid)
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
           get().setKitchen([])
         }
         const res = await get().deleteAccount('under-age')
-        if (!pend) return res
         const step = underAgeNext(res.status, pend, Date.now())
         if (step.kind === 'done') clearPendingDeletion()
         else if (step.kind === 'wait') markPendingDeletion(step.pending)
@@ -1401,8 +1406,8 @@ export const useStore = create<StoreState>()(
         // removing is always allowed (no consent needed to delete); the clear is stamped to sync,
         // and the plan and targets follow straight away (ob7-1 footer)
         let changed = false
-        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { rerunAnswers(st.data); markSettingsDirty(st.data) } })
-        if (changed) saved()
+        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { ensureMeta(st.data, false).rerunAnswers = true; markSettingsDirty(st.data) } })
+        if (changed) { saved(); void get().rerunHealthAnswers() }
         return changed
       },
 
@@ -1410,8 +1415,8 @@ export const useStore = create<StoreState>()(
         // a new answer is health data: only with the local health yes
         if (!canSaveHealthAnswers(get().data)) return false
         let changed = false
-        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { rerunAnswers(st.data); markSettingsDirty(st.data) } })
-        if (changed) saved()
+        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { ensureMeta(st.data, false).rerunAnswers = true; markSettingsDirty(st.data) } })
+        if (changed) { saved(); void get().rerunHealthAnswers() }
         return true
       },
 
@@ -1421,11 +1426,24 @@ export const useStore = create<StoreState>()(
         set((st) => {
           confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso())
           // "still" only re-dates it: nothing to re-run
-          if (status === 'no-longer') rerunAnswers(st.data)
+          if (status === 'no-longer') ensureMeta(st.data, false).rerunAnswers = true
           markSettingsDirty(st.data)
         })
         saved()
+        if (status === 'no-longer') void get().rerunHealthAnswers()
         return true
+      },
+
+      rerunHealthAnswers: async () => {
+        if (!get().data._meta?.rerunAnswers) return
+        // the engine is a chunk of its own (kept off the main bundle): loaded on demand, so the
+        // answer itself saves at once, offline too, and this re-run waits for a connection if the
+        // chunk isn't cached yet (retried when back online and at the next launch)
+        let mod: typeof import('@/core/domain/wizard')
+        try { mod = await import('@/core/domain/wizard') } catch { window.addEventListener('online', () => void get().rerunHealthAnswers(), { once: true }); return }
+        set((st) => { rerunAnswers(st.data, mod.rerunForAnswers); delete ensureMeta(st.data, false).rerunAnswers })
+        persist()
+        get().scheduleSync()
       },
 
       snoozePregnancyReask: () => {

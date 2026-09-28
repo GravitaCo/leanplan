@@ -4,7 +4,7 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, SETUP_CARD } from './copyApp'
+import { FIRST_SESSION, HEALTH_ANSWERS_ROW, SETUP_CARD } from './copyApp'
 export { FIRST_SESSION, SETUP_CARD }
 
 export interface ScreenCopy { title: string; lead?: string; why?: string; note?: string }
@@ -106,7 +106,7 @@ export const SUMMARY = {
  * are lately" stays unlisted.
  */
 export const HEALTH_ANSWERS = {
-  row: 'Health check answers',
+  row: HEALTH_ANSWERS_ROW,
   title: 'Health check answers',
   lead: 'What Tali kept from your health questions, and what each one changes.',
   empty: 'Nothing kept from your health check.',

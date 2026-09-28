@@ -13,8 +13,8 @@ import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { AI_TICKS, HEALTH_TICKS, ONBOARDING_ENABLED, PrivacySheet, Ticks } from '../onboarding/Consent'
-import { HEALTH_ANSWERS } from '../onboarding/copy'
-import { answerRows } from './healthAnswerRows'
+import { HEALTH_ANSWERS_ROW } from '../onboarding/copyApp'
+import { healthAnswersView } from '@/core/domain/onboarding'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
 export const DELETE_WORD = 'DELETE'
@@ -46,7 +46,8 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }:
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
   const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
   // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
-  const hasAnswers = useStore((s) => ONBOARDING_ENABLED && answerRows(s.data.profile).length > 0)
+  // ("how things are lately" has no row: answerRows)
+  const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
 
   if (step) {
     const s = step.summary
@@ -77,7 +78,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }:
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
       {hasAnswers && onAnswers && (
         <div className="list" style={{ marginTop: 12 }}>
-          <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS.row}</div></div><Chevron /></button>
+          <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>
         </div>
       )}
       <div className="stack">

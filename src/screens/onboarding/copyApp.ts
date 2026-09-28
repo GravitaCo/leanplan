@@ -19,3 +19,6 @@ export const FIRST_SESSION = {
   feels: [['spare', 'Easy, lots left'], ['right', 'About right, 2 or 3 left'], ['struggle', 'Hard, the last rep was a struggle'], ['stopped', 'Stopped early']] as const,
 }
 
+
+/** Onboarding 7: Profile › Health data's row to the answers (ob7-1). */
+export const HEALTH_ANSWERS_ROW = 'Health check answers'

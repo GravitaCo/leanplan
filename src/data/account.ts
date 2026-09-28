@@ -221,3 +221,21 @@ export function tokenMatchesOwner(token: string, owner: string | undefined, owne
   const sub = (jwtPayload(token) as { sub?: unknown } | null)?.sub
   return typeof sub === 'string' && sub === owner
 }
+
+/**
+ * The user id in Supabase's saved session on this device (sb-<project>-auth-token), read without
+ * checking it: only for the under-age stop on a device that has no owner yet and no live session
+ * (offline), so its pending deletion can still be recorded. The server verifies the real session.
+ */
+export function savedSessionUid(storage: Pick<Storage, 'length' | 'key' | 'getItem'> | null = typeof localStorage === 'undefined' ? null : localStorage): string | null {
+  try {
+    if (!storage) return null
+    for (let i = 0; i < storage.length; i++) {
+      const k = storage.key(i)
+      if (!k || !k.startsWith('sb-') || !k.endsWith('-auth-token')) continue
+      const id = (JSON.parse(storage.getItem(k) || 'null') as { user?: { id?: unknown } } | null)?.user?.id
+      if (typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return id
+    }
+  } catch { /* blocked or malformed */ }
+  return null
+}
