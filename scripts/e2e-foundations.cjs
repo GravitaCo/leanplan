@@ -82,6 +82,14 @@ async function scenario(browser, name, fn, opts = {}) {
     }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(USER) })
     if (url.includes('/auth/v1/logout')) return route.fulfill({ status: 204 })
+    // clear_log_after_withdrawal(): only while the latest health answer is a no
+    if (url.includes('/rest/v1/rpc/clear_log_after_withdrawal')) {
+      net.posts.push({ t: 'rpc/clear_log_after_withdrawal', list: [] })
+      const h = (rows.consents || []).filter((r) => r.type === 'health').sort((a, b) => String(a.recorded_at).localeCompare(String(b.recorded_at))).pop()
+      if (!h || h.granted) return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ cleared: false }) })
+      for (const t of ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'push_subscriptions', 'settings']) rows[t] = []
+      return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ cleared: true }) })
+    }
     const m = url.match(/\/rest\/v1\/([a-z_]+)/)
     if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     const t = m[1]
@@ -254,7 +262,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.getByText('kcal eaten').waitFor()
   }, { url: ON, state: deviceState({ consents: NONE }) })
 
-  await run('withdraw health consent in Profile: export offered first', async ({ page, rows }) => {
+  await run('withdraw health consent in Profile: export offered first', async ({ page, rows, net }) => {
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).click()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).click()
@@ -272,7 +280,8 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     expect(latest(st, 'health')?.granted === false, 'withdrawal recorded')
     // a withdrawal keeps the whole log on the phone: the account's copy is deleted, consent records stay
     await page.locator('.hdr .cpill[data-conn="phone-only"]').waitFor()
-    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1')).consents.cloudCleared)
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1')).consents.cloudClearedFor)
+    expect(net.posts.some((p) => p.t === 'rpc/clear_log_after_withdrawal'), 'cleared through the server function')
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
     expect(!rows.day_logs.some((x) => x.user_id === UID) && !rows.settings.some((x) => x.user_id === UID), 'the account\'s copy of the log is deleted')
   }, { state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] } }) })
