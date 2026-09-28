@@ -16,7 +16,7 @@
 --    calls it after a withdrawal. Serialised with the guard through a per-person advisory lock,
 --    so no upload can land between the check and the delete.
 --
--- Safe to re-run. Review with security-data before applying. Rollback: drop the triggers, then
+-- Applied to production 2026-09-28 after security-data review. Safe to re-run. Rollback: drop the triggers, then
 -- the three functions (the app then can't clear after a withdrawal: don't ship it without them).
 -- ============================================================================
 

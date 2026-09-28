@@ -2,6 +2,7 @@
 -- Tali: delete an account's log after 30 days without a yes (Benn's decision, 28 Sept 2026)
 --
 -- Needs 2026-09-28-health-consent-server.sql first (health_consent_current).
+-- Applied to production 2026-09-28 after security-data review.
 --
 -- Someone who used Tali before consent was asked may say "Not now" (the log stays on their
 -- phone), or may not open the app at all. Either way, the copy already in their account is
