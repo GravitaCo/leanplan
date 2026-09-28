@@ -89,7 +89,8 @@ export const newDraft = (mode: WizardMode, seed: string): WizardDraft =>
 const MOVING_BACK: Record<MovingNow, MovingAnswer> = { 'not-at-all': 'not-now', some: 'now-and-then', regularly: 'three-plus' }
 
 /**
- * Profile's "Redo setup": a first-run draft prefilled with the current answers, opening at the
+ * Profile's "Redo setup", and "Set up my plan" for someone who used Tali before onboarding and
+ * never ran it (age, height, weight, sex and goal are known from Profile): a first-run draft prefilled with the current answers, opening at the
  * first question (the intro's "Skip" would drop everything). Health answers only with a local
  * health consent (without it the wizard doesn't ask them, and the profile keeps none). Training
  * prefs map back onto the setup card's options where they can; applyDraft keeps the stored value
@@ -107,7 +108,9 @@ export function draftFromProfile(p: Profile, seed: string, ctx: { healthConsent:
     if (p.pregnancy) d.pregnant = p.pregnancy.flagged
     if (p.height) d.height = p.height
     if (p.units?.height) d.heightUnit = p.units.height
+    // someone who never onboarded has only the older M/F field (Profile's own)
     if (p.sexAnswer) d.sexAnswer = p.sexAnswer
+    else if (!p.onboardedAt && (p.sex === 'F' || p.sex === 'M')) d.sexAnswer = p.sex === 'F' ? 'female' : 'male'
     if (ctx.weight) d.weight = ctx.weight
     if (p.units?.weight) d.weightUnit = p.units.weight
     if (p.movement) d.movement = structuredClone(p.movement)

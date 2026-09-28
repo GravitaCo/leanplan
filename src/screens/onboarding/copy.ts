@@ -4,7 +4,7 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_CARD } from './copyApp'
+import { FIRST_SESSION, HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
 export { FIRST_SESSION, SETUP_CARD }
 
 export interface ScreenCopy { title: string; lead?: string; why?: string; note?: string }
@@ -146,6 +146,8 @@ export const HEALTH_ANSWERS = {
  */
 export const REDO = {
   row: REDO_ROW,
+  /** the same, for someone who never ran setup */
+  setupRow: SETUP_ROW,
   offerT: 'Rebuild your week too?',
   offer: 'Your new answers are saved either way. Rebuilding makes a new week from them. What you’ve logged and the exercises you’ve liked or skipped stay.',
   rebuild: 'Rebuild my week',

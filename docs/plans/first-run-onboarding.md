@@ -387,3 +387,19 @@ anything synced stay on the server with nothing there knowing it's under-age.
 - Needs: a migration, the function change and redeploy, a `security-data` review (service-role
   deletion without a fresh sign-in), the privacy policy's "Age" section and the register
   updated, and `compliance` sign-off. Open question for Benn: 7 days, or sooner.
+
+**Follow-ups from Benn's device test (28 Sept 2026).**
+- *No flash of the wizard.* The first run waits for the first pull for up to 10 s counted from
+  when the wait starts (`FIRST_PULL_WAIT_MS`, `data/firstRun.ts wizardDueFor`); it used to be 6 s
+  from launch, which the sign-in and consent screens could use up. Offline it runs at once. If the
+  wait runs out and the pull then shows someone who used Tali before (or onboarded elsewhere),
+  the wizard gives way to the app only while nothing has been tapped; once the person has
+  started, it stays and the answers merge per field.
+- *Set up my plan.* Someone who used Tali before onboarding and never ran it gets a Profile ›
+  Health data row "Set up my plan" (Benn approved), in Redo setup's place: the same prefilled
+  first run (age, height, weight, sex from the older M/F field, goal), and the same "Rebuild your
+  week too?" offer. Finishing sets `onboardedAt`, after which the row reads "Redo setup".
+- *Plan reasons sync.* A plan with no reasons on this device leaves the server's copy alone (no
+  `why` sent); an empty list still clears it. Plans with and without `why` go in separate requests.
+- *Pending under-age record.* A normal account deletion that succeeds clears it when it's that
+  account's; another account's stays through the wipe.

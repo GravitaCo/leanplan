@@ -1,9 +1,10 @@
-import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from './store/store'
 import { healthConsentAnswered, liveConsentDue } from './data/consent'
 import { takeReauthReturn } from './data/account'
 import { getUid } from './data/supabase'
 import { ONBOARDING_ENABLED, wizardDue } from './screens/onboarding/Consent'
+import { FIRST_PULL_WAIT_MS } from './data/firstRun'
 import { preloadHealthAnswers } from './screens/profile/lazyHealthAnswers'
 // the wizard, its summary and the training engine load on demand (most launches never need them)
 const Onboarding = lazy(() => import('./screens/onboarding/Wizard').then((m) => ({ default: m.Onboarding })))
@@ -58,9 +59,15 @@ function TaliApp() {
   const openSetup = useStore((s) => s.openSetup)
   const redoOpen = useStore((s) => s.redoOpen)
   const openRedo = useStore((s) => s.openRedo)
-  // the first-run wizard waits a moment for the first pull (a second device), never for long
+  // the first-run wizard waits for the first pull (a second device, or someone who used Tali
+  // before), at most FIRST_PULL_WAIT_MS from when the wait starts (not from launch: the sign-in and
+  // consent screens can take longer than that). Once it's on screen, `showing` keeps a run the
+  // person has started from being pulled away by a late pull.
   const [waited, setWaited] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setWaited(true), 6000); return () => clearTimeout(t) }, [])
+  const showing = useRef(false)
+  const due = signedIn ? wizardDue(data, { online, signedIn, showing: showing.current }) : false
+  const waiting = due === 'wait'
+  useEffect(() => { if (!waiting) return; const t = setTimeout(() => setWaited(true), FIRST_PULL_WAIT_MS); return () => clearTimeout(t) }, [waiting])
   // with the flag on, fetch the wizard's chunk while online, so the service worker keeps it for
   // a first run (or a resume) with no connection
   // and, once there are health answers, the answers screens and the engine that re-runs a changed
@@ -113,8 +120,8 @@ function TaliApp() {
   if (consentOpen) return <ConsentScreen fromProfile />
   if (!answered && liveConsentDue(data)) return <ConsentScreen />
   // then, behind ONBOARDING_ENABLED, the first-run wizard for someone new
-  const due = wizardDue(data, { online, authed })
   if (due === 'wait' && !waited) return <Loading />
+  showing.current = !!due
   if (due) return <Lazy><Onboarding mode="first" /></Lazy>
   if (ONBOARDING_ENABLED && redoOpen) return <Lazy><Onboarding mode="first" redo onClose={() => openRedo(false)} /></Lazy>
   if (ONBOARDING_ENABLED && setupOpen) return <Lazy><Onboarding mode="setup" onClose={() => openSetup(false)} /></Lazy>

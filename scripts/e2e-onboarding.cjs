@@ -84,6 +84,8 @@ async function scenario(browser, name, fn, opts = {}) {
     const m = url.match(/\/rest\/v1\/([a-z_]+)/)
     if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     const t = m[1]
+    // opts.pullDelay: a slow first pull (ms)
+    if (req.method() === 'GET' && opts.pullDelay && t === 'settings') await new Promise((r) => setTimeout(r, opts.pullDelay))
     if (req.method() === 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows[t] || []) })
     const body = JSON.parse(req.postData() || '[]')
     const list = Array.isArray(body) ? body : [body]
@@ -763,6 +765,55 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     }, redoState())
   }
 
+  // ─── the first-run wait (Benn's device test): no flash of the wizard before the first pull ───
+  const usedBeforeRows = { settings: [{ user_id: UID, target: { kcal: 1800, p: 140, c: 180, f: 60 }, schedule: {}, profile: { name: 'Pat', sex: 'F', age: 44, height: 168, activityLevel: 'light', supplements: [], notificationsEnabled: false, goal: 'lose-fat' } }] }
+  const unpulled = { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }
+  const wizardUp = (page) => page.getByRole('heading', { name: 'A few questions, so Tali fits you', exact: true }).count()
+  await run('slow pull (4 s), used before: loading, then the app; the wizard never shows', async ({ page }) => {
+    for (let i = 0; i < 60; i++) {
+      expect((await wizardUp(page)) === 0, 'the wizard flashed up at ' + i * 100 + ' ms')
+      if (await page.locator('.hdr .ltitle', { hasText: 'Summary' }).count()) break
+      await page.waitForTimeout(100)
+    }
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    expect((await wizardUp(page)) === 0, 'no wizard after the pull')
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 4000 })
+  await run('pull slower than the wait (13 s): the wizard shows; untouched, the pull switches to the app', async ({ page }) => {
+    await h1(page, 'A few questions, so Tali fits you')
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor({ timeout: 20000 })
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
+  await run('pull slower than the wait (13 s): once started, the wizard stays', async ({ page }) => {
+    await h1(page, 'A few questions, so Tali fits you')
+    await btn(page, 'Let’s go').click()
+    await h1(page, 'What do you like to be called?')
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1'))._meta.lastPull, null, { timeout: 20000 })
+    await page.waitForTimeout(800)
+    expect((await page.getByRole('heading', { name: 'What do you like to be called?', exact: true }).count()) === 1, 'still in the wizard after the pull')
+    expect((await stored(page)).profile.goal === 'lose-fat', 'the pulled profile is in')
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
+
+  // ─── Set up my plan: someone who used Tali before and never onboarded ───
+  await run('set up my plan: prefilled from Profile; Start offers the rebuild; setup is then done', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    const before = await stored(page)
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    expect((await btn(page, 'Redo setup').count()) === 0, 'not Redo setup before a first run')
+    await btn(page, 'Set up my plan').click()
+    await h1(page, 'What do you like to be called?')
+    expect((await page.getByLabel('First name').inputValue()) === 'Pat', 'name prefilled')
+    await cont(page)
+    expect((await page.getByLabel('Age in years').inputValue()) === '44', 'age prefilled')
+    await toSummary(page)
+    await btn(page, 'Start').click()
+    await h1(page, 'Rebuild your week too?')
+    await btn(page, 'Keep my current week').click()
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    const st = await stored(page)
+    expect(!!st.profile.onboardedAt && st.profile.goal === 'lose-fat' && st.profile.sexAnswer === 'female' && st.profile.height === 168 && st.profile.age === 44, 'answers kept, setup done: ' + JSON.stringify(st.profile))
+    expect((st.trainingPlans || []).length === (before.trainingPlans || []).length && st.days[today].weight === 70, 'week and weigh-ins as they were')
+  }, { state: { ...newAccount(), target: { kcal: 1800, p: 140, c: 180, f: 60 }, days: { [today]: { foods: [{ n: 'Toast', k: 100, p: 4, c: 18, f: 1, grams: 40 }], supps: {}, weight: 70, workout: null } }, profile: { name: 'Pat', sex: 'F', age: 44, height: 168, activityLevel: 'light', supplements: [], notificationsEnabled: false, goal: 'lose-fat' } } })
+
   await run('flag off: no Health check answers row, no check-in', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(600)
@@ -771,7 +822,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await page.getByRole('button', { name: /Health data/ }).first().click()
     await page.waitForTimeout(300)
     expect((await btn(page, 'Health check answers').count()) === 0, 'no row')
-    expect((await btn(page, 'Redo setup').count()) === 0, 'no Redo setup row')
+    expect((await btn(page, 'Redo setup').count()) === 0 && (await btn(page, 'Set up my plan').count()) === 0, 'no Redo setup or Set up my plan row')
   }, { ...answered({ ...BOARD, pregnancy: { flagged: true, askedAt: weeksAgo(13) } }), url: OFF })
 
   await run('flag off: nothing new shows', async ({ page }) => {

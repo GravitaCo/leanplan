@@ -13,7 +13,7 @@ import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { AI_TICKS, HEALTH_TICKS, ONBOARDING_ENABLED, PrivacySheet, Ticks } from '../onboarding/Consent'
-import { HEALTH_ANSWERS_ROW, REDO_ROW } from '../onboarding/copyApp'
+import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW } from '../onboarding/copyApp'
 import { healthAnswersView } from '@/core/domain/onboarding'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
@@ -48,9 +48,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
   // ("how things are lately" has no row: answerRows)
   const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
-  // Redo setup (compliance item 32), behind the wizard: once setup has been finished
-  const canRedo = useStore((s) => ONBOARDING_ENABLED && !!s.data.profile.onboardedAt)
-  const answersRow = hasAnswers && !!onAnswers, redoRow = canRedo && !!onRedo
+  // Redo setup (compliance item 32) once setup has been finished, or Set up my plan for someone who
+  // never ran it (they used Tali before onboarding); behind the wizard. Both open it prefilled
+  const onboarded = useStore((s) => !!s.data.profile.onboardedAt)
+  const answersRow = hasAnswers && !!onAnswers, redoRow = ONBOARDING_ENABLED && !!onRedo
 
   if (step) {
     const s = step.summary
@@ -82,7 +83,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
       {(answersRow || redoRow) && (
         <div className="list" style={{ marginTop: 12 }}>
           {answersRow && <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>}
-          {redoRow && <button className="li" onClick={onRedo}><div className="m"><div className="t">{REDO_ROW}</div></div><Chevron /></button>}
+          {redoRow && <button className="li" onClick={onRedo}><div className="m"><div className="t">{onboarded ? REDO_ROW : SETUP_ROW}</div></div><Chevron /></button>}
         </div>
       )}
       <div className="stack">

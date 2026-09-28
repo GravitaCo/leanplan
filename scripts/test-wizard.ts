@@ -23,6 +23,7 @@ import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES, REDO } from '../src/scre
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
 import { deleteAccount, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
+import { wizardDueFor, FIRST_PULL_WAIT_MS } from '@/data/firstRun'
 import { readFileSync } from 'node:fs'
 const FN = readFileSync('supabase/functions/delete-account/index.ts', 'utf8')
 
@@ -193,7 +194,28 @@ async function sync(fakeServer: FakeServer): Promise<void> {
     ['PLAN_WHY_SYNC is on (2026-09-plan-why.sql applied), and off sends no why', PLAN_WHY_SYNC === true && !('why' in toServerPlan(plan, LOCAL_USER, false))],
     ['with it on, the reasons go in the new column', JSON.stringify((toServerPlan(plan, LOCAL_USER, true) as { why?: unknown }).why) === JSON.stringify(plan.why)],
     ['a pull without the column keeps this device\'s reasons', JSON.stringify(s2.trainingPlans[0].why) === JSON.stringify(plan.why) && !!plan.why?.length],
+    ['no reasons on this device (why undefined): no why sent, the server\'s copy stays', (() => { const { why: _w, ...bare } = plan; void _w; return !('why' in toServerPlan(bare, LOCAL_USER, true)) })()],
+    ['an empty list (a withdrawal) is sent as null, clearing the server\'s copy', (toServerPlan({ ...plan, why: [] }, LOCAL_USER, true) as { why?: unknown }).why === null],
   ])
+  // a push with both kinds: two requests, each one shape, and the server keeps the reasons it had
+  {
+    const { why: _w, ...bare } = plan; void _w
+    const s3 = stateFromBackup({ days: {} } as never)
+    s3.trainingPlans = [{ ...bare, id: 'aaaaaaaa-0000-4000-8000-00000000000b', startedAt: TODAY, _dirty: true }, { ...plan, id: 'aaaaaaaa-0000-4000-8000-00000000000c', startedAt: TODAY, _dirty: true }]
+    const meta3 = ensureMeta(s3, false)
+    const serverWhy = [{ code: 'goal', about: 'plan' }]
+    const rows3: Record<string, any[]> = { settings: [], day_logs: [], custom_foods: [], recipes: [], consents: [], routines: [], training_plans: [{ id: 'aaaaaaaa-0000-4000-8000-00000000000b', user_id: LOCAL_USER, why: serverWhy }] }
+    const bodies: unknown[][] = []
+    const inner = fakeServer(rows3).fetchFn
+    globalThis.fetch = (async (url: string, o: RequestInit = {}) => { if (o.method === 'POST' && String(url).includes('/training_plans')) bodies.push(JSON.parse(String(o.body))); return inner(url as never, o) }) as typeof fetch
+    try { await pushDirty(s3, meta3) } finally { globalThis.fetch = real }
+    const shapes = bodies.map((b) => [...new Set(b.map((r) => 'why' in (r as object)))])
+    report('plan why sync', [
+      ['mixed plans go as two requests, each of one shape', bodies.length === 2 && shapes.every((x) => x.length === 1), JSON.stringify(shapes)],
+      ['the plan without reasons leaves the server\'s reasons as they were', JSON.stringify(rows3.training_plans.find((r) => r.id === 'aaaaaaaa-0000-4000-8000-00000000000b')?.why) === JSON.stringify(serverWhy)
+        && JSON.stringify(rows3.training_plans.find((r) => r.id === 'aaaaaaaa-0000-4000-8000-00000000000c')?.why) === JSON.stringify(plan.why), JSON.stringify(rows3.training_plans.map((r) => [r.id, r.why]))],
+    ])
+  }
 }
 
 function withdrawal(): void {
@@ -367,6 +389,10 @@ function compliance(): void {
       const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
       const stop = f.indexOf("if (!uid) { clearDraft(); return { status: 'no-session' } }")
       return stop > 0 && stop < f.indexOf('markPendingDeletion(') && stop < f.indexOf('saveState(') && stop < f.indexOf('freshForAccount(') })()],
+    ['a normal account deletion clears the pending record only when it is that account\'s', (() => {
+      const f = STORE.slice(STORE.indexOf('deleteAccount: async (reason)'), STORE.indexOf('signOut: async (opts)'))
+      return /const goneUid = getUid\(\)/.test(f) && /if \(goneUid && pendingDeletion\(\)\?\.uid === goneUid\) clearPendingDeletion\(\)/.test(f)
+        && f.indexOf('clearPendingDeletion()') > f.indexOf("if (res.status !== 'ok')") })()],
     ['sign out and remove this device\'s log: the draft and setup-card choice go, the pending record stays (37c)', (() => {
       const f = STORE.slice(STORE.indexOf('signOut: async (opts)'))
       const r = f.slice(f.indexOf('if (opts?.remove)'), f.indexOf('freshForDevice()'))
@@ -505,6 +531,32 @@ function redo(): void {
     ['keeps when setup was first finished', fin.onboardedAt === base.onboardedAt && !!base.onboardedAt],
     ['the summary offers the rebuild: two plain choices, linted', !!REDO.offerT && !!REDO.rebuild && !!REDO.keep && REDO.row === 'Redo setup'],
   ])
+  // Set up my plan: someone who used Tali before and never onboarded
+  const legacy: Profile = { ...DEFAULT_PROFILE, age: 44, height: 168, sex: 'F', goal: 'lose-fat' }
+  const ld = draftFromProfile(legacy, 's', { healthConsent: true, weight: 70 })
+  const lfin = finishedProfile(summaryFor(legacy, ld, ctx), ld, AT, TODAY, legacy)
+  report('set up my plan (existing users)', [
+    ['prefilled with what Profile knows: age, height, weight, sex, goal', ld.age === 44 && ld.height === 168 && ld.weight === 70 && ld.sexAnswer === 'female' && ld.goal === 'lose-fat' && !!ld.redo],
+    ['finishing marks setup done (their first run)', lfin.onboardedAt === AT],
+  ])
+
+  // the first-run wait (Benn's device test: no flash of the wizard before the first pull)
+  const fresh = stateFromBackup({ days: {} } as never); ensureMeta(fresh, false)
+  const pulled = structuredClone(fresh); pulled._meta!.lastPull = AT
+  const existing = structuredClone(pulled); existing.profile = { ...existing.profile, goal: 'lose-fat', age: 40 }
+  const started = { ...newDraft('first', 's'), step: 'name' as const }
+  const on = { online: true, signedIn: true, showing: false, draft: null }
+  report('first run waits for the first pull', [
+    ['online, signed in, no pull yet: wait (not the wizard)', wizardDueFor(fresh, on) === 'wait' && FIRST_PULL_WAIT_MS === 10_000],
+    ['offline: straight in', wizardDueFor(fresh, { ...on, online: false }) === true],
+    ['the pull says someone new: the wizard; used before: the app', wizardDueFor(pulled, on) === true && wizardDueFor(existing, on) === false],
+    ['slow pull, wizard up but nothing tapped yet: the pull switches to the app', wizardDueFor(existing, { ...on, showing: true }) === false],
+    ['slow pull, the person has started: keeps going (answers merge per field)', wizardDueFor(existing, { ...on, showing: true, draft: started }) === true
+      && wizardDueFor({ ...existing, profile: { ...existing.profile, onboardedAt: AT } }, { ...on, showing: true, draft: started }) === true],
+    ['a left-over draft after a relaunch, onboarded elsewhere: no wizard', wizardDueFor({ ...existing, profile: { ...existing.profile, onboardedAt: AT } }, { ...on, draft: started }) === false],
+    ['a Redo setup or Set up my plan draft never opens the first run by itself', wizardDueFor(existing, { ...on, draft: { ...started, redo: { training: {} } } }) === false],
+  ])
+
   report('softened edit promises (compliance 32)', [
     ['intro and lately point to Redo setup', COPY.intro!.note!.endsWith('You can redo setup any time from Profile.') && COPY.lately!.why!.endsWith('You can update this by redoing setup.')],
     ['no line promises changing answers in Profile generally, or the lately answer "later"', !allCopy().some((t) => /change them any time in Profile|You can change this later/.test(t))],

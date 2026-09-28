@@ -1534,6 +1534,8 @@ export const useStore = create<StoreState>()(
 
       deleteAccount: async (reason) => {
         if (deleting) return { status: 'busy' }
+        // whose account this is, for the pending under-age record after it's gone
+        const goneUid = getUid()
         if (!navigator.onLine) return { status: 'offline' }
         if (!get().authed) return { status: 'no-session' }
         deleting = true
@@ -1559,6 +1561,9 @@ export const useStore = create<StoreState>()(
             },
           }, reason)
           if (res.status !== 'ok') { failed = true; return res }
+          // the wipe keeps a pending under-age record (wipeStorage); this account's is done now.
+          // Another account's stays, so that one still gets deleted
+          if (goneUid && pendingDeletion()?.uid === goneUid) clearPendingDeletion()
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
             st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []
