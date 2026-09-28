@@ -48,18 +48,16 @@ Rules for the questions:
 
 ### After: the name is enough
 
-- Search already ranks the user's recipes first and resolves filler words ("a bowl of my curry" →
-  *Chicken curry*) via `findRecipe` / `queryWords`.
-- Logging defaults to the servings they had last time (`recipeServing`).
+- Already built (§6): recipes rank first, filler words resolve ("a bowl of my curry" → *Chicken
+  curry*), and logging defaults to last time's servings.
 - The conversational entry point becomes a single text/voice field on Food: "had my curry" → confirm chip →
   logged. If the name is ambiguous, show the top two recipes as chips. If it matches nothing, fall into the
   first-time flow above.
 
 ### Recipes from meals already logged (shipped)
 
-If the user already logged a meal item by item, **Save as recipe** on that meal turns those entries —
-cooking fat included — into a recipe (`recipeItemsFrom`). No retyping. The AI flow should offer the same
-thing proactively: "You've logged these four things together three times. Save as a recipe?"
+**Save as recipe** on a meal logged item by item already turns it into a recipe (§6). The AI flow
+should offer the same thing proactively: "You've logged these four things together three times. Save as a recipe?"
 
 ## 2. How the model is used (and not used)
 
@@ -102,7 +100,7 @@ column only if needed (security-data sign-off):
   to `auth.uid()`), which forwards only the meal text, never the user's history or profile.
 - The Edge Function returns structured JSON (items + candidate questions). Matching to the food database
   and all arithmetic stay in `core/` (pure TS), so the same logic serves a future native client.
-- Offline use gets the non-AI path: search, Save as recipe, recipe builder. (There is no guest mode; it was retired in Sept 2026.)
+- Offline use gets the non-AI path: search, Save as recipe, recipe builder.
 - Cost control: one short call per new recipe; repeat meals are resolved locally by `findRecipe` with no
   model call at all.
 

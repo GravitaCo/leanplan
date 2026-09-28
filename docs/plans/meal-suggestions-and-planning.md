@@ -1,6 +1,8 @@
 # "What can I make?" and meal planning — plan
 
-**Status:** plan only. Nothing is built. For Benn to decide scope before any build.
+**Status:** plan. Phase 1 ("What can I make?") is built: `core/domain/suggest.ts`,
+`screens/food/SuggestSheet.tsx`, with diet patterns as swaps in `core/domain/diet.ts` and the kitchen
+kept on the device. The later phases are for Benn to decide.
 **Builds on:**
 - recipes (`Recipe`, `recipesByUse`, `recipeServing`);
 - the sourced food database and guardrails (`food-data-offline.md`);
@@ -90,7 +92,7 @@ Library recipes go through the same guardrails:
 | 5 | **Voice or photo of fridge/receipt** to fill the kitchen list | Yes | Later |
 
 ## 6. Decisions for Benn
-1. **Where to start:** Phase 1 (fast, uses what exists), or straight into the recipe library? Proposed: 1 then 2.
+1. **Where to start:** Phase 1 (fast, uses what exists), or straight into the recipe library? Proposed: 1 then 2. *Phase 1 is built.*
 2. **Who writes the library recipes:** you or a recipe writer, with Tali building the nutrition. Or AI drafts that a person reviews?
 3. **Allergens:** allergy filtering is a safety feature. Should it wait until allergen data exists per ingredient, rather than being partial?
 4. **AI ideas:** free, or part of a paid tier (same question as the AI plan)?
