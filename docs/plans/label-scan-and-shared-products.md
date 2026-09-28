@@ -1,6 +1,6 @@
 # Label photo scanning and the shared product list
 
-Status: plan (Sept 2026). Builds on barcode scanning (live 25–26 Sept: `core/domain/barcode.ts`,
+Status: phase 1 built (see "Phase 1 as built"); phases 2 and 3 are plans (Sept 2026). Builds on barcode scanning (live 25–26 Sept: `core/domain/barcode.ts`,
 `screens/food/ScanView.tsx`, `ScanConfirmView.tsx`, `data/products.ts`).
 
 **Principle (Benn):** the pack in the user's hand is the most accurate information we have. Any
@@ -62,7 +62,7 @@ reliable and to catch misreads before anything is saved.
 A UK label prints the same facts several ways, so one misread digit almost always breaks a
 relationship:
 
-1. **kJ ↔ kcal:** kJ ÷ 4.184 ≈ kcal, within 2%, in both columns.
+1. **kJ ↔ kcal:** kJ ÷ 4.184 ≈ kcal, within 2.5% or 1 kcal, whichever is larger, in both columns (widened from 2% in the nutrition-accuracy review).
 2. **Per 100 ↔ per serving:** every row's per-serving value ≈ per-100 × serving ÷ 100, within
    rounding. This check is the strongest, because the two columns are read separately.
 3. **Energy ↔ macros:** 4P + 4C + 9F + 2 fibre (+ 7 × alcohol) ≈ kcal (the existing
@@ -163,7 +163,7 @@ The confirm view says where the figures came from:
 2. **Shared product list:** tables, RPC, lookup order, labels in the confirm view, audits.
 3. **Native:** on-device reading, free and offline.
 
-### Phase 1 as built (branch `claude/label-scan`, not deployed)
+### Phase 1 as built (on `main`; `ai-read-label` deployed 28 Sept with the server consent check; `LABEL_SCAN_ENABLED` still false)
 
 - Code: `supabase/functions/ai-read-label/` (Edge Function), `supabase/functions/_shared/label-read.ts`
   (schema + validator, shared with the app), `src/core/domain/label.ts` (parsing, checks, the
@@ -172,7 +172,7 @@ The confirm view says where the figures came from:
 - Cap: `docs/migrations/2026-09-ai-usage.sql` (30 reads per user and 500 in total per UTC day,
   counts only; the total can overshoot by a few under concurrency).
 - Off by default: `LABEL_SCAN_ENABLED` in `src/data/labelReader.ts` hides every entry point until
-  the function is deployed and smoke-tested (a `VITE_LABEL_SCAN=1` build turns it on locally).
+  the deployed function is smoke-tested (a `VITE_LABEL_SCAN=1` build turns it on locally).
 - The gateway's `verify_jwt` is off; the function rejects a missing or malformed token (401), and
   the `ai_usage_take` RPC, called with the user's JWT before any model call, is the gate.
 - A confirmed label whose per-serving column agrees is saved with the pack's per-serving line as
@@ -181,10 +181,10 @@ The confirm view says where the figures came from:
 - The server checks consent too: `ai_usage_take` returns -2 (the function answers 403 `consent`)
   unless the caller's latest `label-photo` consent is a yes (compliance register #28); the app
   sends unsynced consents (`flushConsents`) just before a read.
-- To deploy, in order: reviews; run the migration in the SQL editor; `supabase secrets set
+- Deploy steps (reviews, migration and function done 28 Sept; still to do before launch: confirm the spend limit, smoke-test, flip the flag): reviews; run the migration in the SQL editor; `supabase secrets set
   ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-sonnet-5, and `LABEL_EFFORT`); the
   RPC's apikey comes from the platform (`SUPABASE_PUBLISHABLE_KEYS` default, else the legacy
-  `SUPABASE_ANON_KEY`); `supabase functions deploy ai-read-label` (config.toml sets verify_jwt = false); set a monthly
+  `SUPABASE_ANON_KEY`); `supabase functions deploy ai-read-label`; set a monthly
   spend limit on the Anthropic account; smoke-test; then flip `LABEL_SCAN_ENABLED` and merge.
 - E2E: `scripts/e2e-label-scan.cjs` (fake camera, mocked function; never calls the API).
 
