@@ -68,6 +68,8 @@ export interface ConsentLog {
   /** after a yes that ends a pause or a withdrawal: rows the server changed since this time are
    *  another device's newer edits and win; this device's versions go to `resumeCopy` */
   resumeFrom?: string
+  /** resumeFrom is this phone's own last pull, not another device's time: no clock margin */
+  resumeExact?: boolean
   /** this device's versions of days and settings replaced by newer ones from another device when
    *  sync resumed, kept for the person to download (Profile, Back up and restore) */
   resumeCopy?: ResumeCopy
@@ -140,6 +142,7 @@ export function cleanConsents(x: unknown): ConsentLog {
     ...(typeof log.cloudClearedFor === 'string' ? { cloudClearedFor: log.cloudClearedFor } : {}),
     ...(typeof log.reuploadedFor === 'string' ? { reuploadedFor: log.reuploadedFor } : {}),
     ...(isTime(log.resumeFrom) ? { resumeFrom: log.resumeFrom } : {}),
+    ...(isTime(log.resumeFrom) && log.resumeExact === true ? { resumeExact: true } : {}),
     ...(log.resumeCopy && typeof log.resumeCopy === 'object' && isTime(log.resumeCopy.at) ? { resumeCopy: log.resumeCopy } : {}),
   }
 }
@@ -374,7 +377,12 @@ export function needsReupload(s: PersistedState): ConsentRecord | null {
   const decline = [...recs].reverse().find((r) => !r.granted)
   // a first yes, given here or on another phone: the account's copy may have been deleted after
   // the pre-consent hold (deletion day, UNCONSENTED_DELETION), so a phone with a log here uploads all of it
-  if (!decline && !(recs.length === 1 && hasExistingData(s))) return null
+  if (!decline) {
+    // a first yes: only on a phone that hasn't synced since it (one that has, has nothing deleted)
+    if (recs.length !== 1 || !hasExistingData(s)) return null
+    const pulled = s._meta?.lastPull ? Date.parse(s._meta.lastPull) : NaN
+    if (pulled > effectiveAt(last)) return null
+  }
   return last
 }
 
@@ -392,11 +400,21 @@ export function unconsentedCopyLine(now = Date.now()): string {
 
 /** Mark the whole log to upload after a yes that follows a withdrawal (needsReupload). */
 /** Everything on this device uploads on the next sync. */
+/**
+ * Everything on this device uploads on the next sync. What was already in sync here is marked
+ * `reup`: it only uploads where the server doesn't have it (settleResume), so it can't replace a
+ * newer version from another device.
+ */
 function markAllDirty(s: PersistedState, meta: SyncMeta): void {
   const u = nowIso()
-  for (const d of Object.keys(s.days || {})) meta.days[d] = { u, dirty: true }
-  meta.settings = { u, dirty: true }
-  for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string }[]) { x._dirty = true; x._u = u }
+  for (const d of Object.keys(s.days || {})) {
+    const m = meta.days[d]
+    if (!m?.dirty) meta.days[d] = { u: m?.u ?? u, dirty: true, reup: true }
+  }
+  if (!meta.settings.dirty) meta.settings = { ...meta.settings, dirty: true, reup: true }
+  for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string; _reup?: boolean }[]) {
+    if (!x._dirty) { x._dirty = true; x._reup = true; x._u ??= u }
+  }
 }
 
 export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentRecord): void {
@@ -404,7 +422,11 @@ export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentReco
   markAllDirty(s, meta)
   // rows another device uploaded since the withdrawal win over this device's (settleResume)
   const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => effectiveAt(b) - effectiveAt(a))[0]
-  if (!log.resumeFrom) log.resumeFrom = decline?.at ?? meta.lastPull ?? nowIso()
+  if (!log.resumeFrom) {
+    if (decline) log.resumeFrom = decline.at
+    else if (meta.lastPull) { log.resumeFrom = meta.lastPull; log.resumeExact = true }
+    else log.resumeFrom = nowIso()
+  }
   log.reuploadedFor = yes.id
 }
 
@@ -422,6 +444,7 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
     delete log.healthPause
     delete log.healthResume
     delete log.resumeFrom
+    delete log.resumeExact
     stripResumeCopy(log)
     // the account's copy of the log is deleted by the next sync (pendingCloudClear), once this
     // withdrawal has reached the server

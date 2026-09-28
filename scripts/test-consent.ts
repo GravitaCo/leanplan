@@ -663,14 +663,37 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   const r = stateFromBackup({ days: {} } as never)
   const rm = ensureMeta(r, true)
   const RID = uuid()
-  r.recipes = [{ id: RID, name: 'Porridge', items: [], servings: 1 }]
+  const RID2 = uuid(), RID3 = uuid()
+  // RID edited here (dirty); RID2 and RID3 were in sync here
+  r.recipes = [{ id: RID, name: 'Porridge', items: [], servings: 1, _dirty: true }, { id: RID2, name: 'Soup', items: [], servings: 1 }, { id: RID3, name: 'Stew', items: [], servings: 1 }]
   recordConsent(r, 'health', true); withdraw(r, rm, 'health'); const ryes = recordConsent(r, 'health', true)
   r.consents!.records.forEach((x) => delete x._dirty)
   markReupload(r, rm, ryes)
-  const rrows = { ...emptyRows(), recipes: [{ id: RID, user_id: LOCAL_USER, name: 'Porridge with honey', items: [], servings: 2, updated_at: new Date(Date.now() + 1000).toISOString() }] }
+  const rrows = { ...emptyRows(), recipes: [
+    { id: RID, user_id: LOCAL_USER, name: 'Porridge with honey', items: [], servings: 2, updated_at: new Date(Date.now() + 1000).toISOString() },
+    { id: RID2, user_id: LOCAL_USER, name: 'Soup, spicy', items: [], servings: 2, updated_at: '2026-09-01T00:00:00.000Z' }] }
   await withFetch(fakeServer(rrows).fetchFn, () => pushDirty(r, rm))
   checks.push(['resume: a recipe changed on another device keeps that version, on the server and the phone', rrows.recipes[0].name === 'Porridge with honey' && r.recipes[0].name === 'Porridge with honey' && !r.recipes[0]._dirty])
   checks.push(['resume: this phone\'s recipe is kept to download', r.consents?.resumeCopy?.recipes?.[RID]?.name === 'Porridge'])
+  const soup = r.recipes!.find((x) => x.id === RID2), stew = r.recipes!.find((x) => x.id === RID3)
+  checks.push(['resume: one in sync here that the server has keeps the server\'s, and isn\'t copied', soup?.name === 'Soup, spicy' && rrows.recipes.find((x) => x.id === RID2)?.name === 'Soup, spicy' && !r.consents?.resumeCopy?.recipes?.[RID2]])
+  checks.push(['resume: one in sync here that the server lacks (cleared) uploads', rrows.recipes.some((x) => x.id === RID3 && x.name === 'Stew') && !stew?._dirty && !(stew as { _reup?: boolean })?._reup])
+
+  // a phone that already had a yes and has synced since: no re-upload on this update
+  const k = stateFromBackup({ days: { '2026-09-08': day(70) } } as never)
+  const km = ensureMeta(k, false)
+  const kyes = recordConsent(k, 'health', true)
+  kyes.at = '2026-09-20T08:00:00.000Z'; delete kyes._dirty
+  km.lastPull = '2026-09-27T08:00:00.000Z'
+  checks.push(['a phone that synced after its yes isn\'t re-uploaded', !needsReupload(k)])
+  km.lastPull = '2026-09-19T08:00:00.000Z'
+  checks.push(['one that last pulled before its first yes is', needsReupload(k)?.id === kyes.id])
+  // in-sync days are only marked reup; a day edited here keeps its plain dirty mark
+  km.days['2026-09-08'] = { u: 'x', dirty: false }
+  km.days['2026-09-09'] = { u: 'y', dirty: true }
+  k.days['2026-09-09'] = day(71)
+  markReupload(k, km, kyes)
+  checks.push(['marking: in-sync items are reup, edited ones stay plain dirty, from the exact last pull', km.days['2026-09-08'].reup === true && km.days['2026-09-09'].reup === undefined && km.days['2026-09-09'].u === 'y' && k.consents!.resumeExact === true && k.consents!.resumeFrom === km.lastPull])
   // the date the app names for the pre-consent deletion is the one the server job uses
   const sql = readFileSync('docs/migrations/2026-09-28-unconsented-purge.sql', 'utf8')
   const from = /timestamptz '(\d{4}-\d{2}-\d{2})[^']*'; -- PURGE_FROM/.exec(sql)?.[1]

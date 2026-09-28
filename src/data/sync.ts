@@ -377,7 +377,8 @@ const IN_BATCH = 60
  */
 async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Promise<void> {
   const log = s.consents!
-  const since = Date.parse(log.resumeFrom!) - RESUME_MARGIN_MS
+  // a time from this phone's own last pull is exact; one from an answer may be on another clock
+  const since = Date.parse(log.resumeFrom!) - (log.resumeExact ? 0 : RESUME_MARGIN_MS)
   const dirty = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   const rows: any[] = []
   for (let i = 0; i < dirty.length; i += IN_BATCH) {
@@ -386,16 +387,29 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
   const st = meta.settings.dirty ? await sbGet<any[]>('/settings?user_id=eq.' + uid + '&select=*') : []
   const copy: ResumeCopy = { ...(log.resumeCopy || {}), at: log.resumeCopy?.at ?? nowIso() }
   const newer = (r: any) => Date.parse(r.updated_at) > since
+  // What happens to each dirty item the server has:
+  // - 'server': one that was already in sync here, marked only in case the account's copy was
+  //   deleted (`reup`): the server has it, so the server's is kept, and nothing is copied (this
+  //   phone's is the same or older)
+  // - 'kept': one changed here that another device changed since: the server's wins, this
+  //   phone's goes to the copy
+  // - null: this phone's uploads
+  const settle = (reup: boolean | undefined, row: any): 'server' | 'kept' | null => (reup ? 'server' : newer(row) ? 'kept' : null)
   let kept = false
+  const days: { d: string; r: any }[] = []
   for (const r of rows) {
     const d = r.log_date
-    if (!dirty.includes(d) || !newer(r)) continue
-    if (s.days[d] && !copy.days?.[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
+    if (!dirty.includes(d)) continue
+    const how = settle(meta.days[d].reup, r)
+    if (!how) continue
+    days.push({ d, r })
+    if (how === 'kept' && s.days[d] && !copy.days?.[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
   }
-  if (st[0] && newer(st[0]) && !copy.settings) { copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }; kept = true }
+  const stHow = st[0] ? settle(meta.settings.reup, st[0]) : null
+  if (stHow === 'kept' && !copy.settings) { copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }; kept = true }
   // saved foods, recipes, workouts and plans: the same rule by id. A dirty record the server
   // doesn't have uploads (the account's copy was cleared, or it's new here)
-  type Rec = { id: string; _dirty?: boolean }
+  type Rec = { id: string; _dirty?: boolean; _reup?: boolean }
   const lists = [
     ['customFoods', 'custom_foods', fromServerFood],
     ['recipes', 'recipes', fromServerRecipe],
@@ -410,17 +424,17 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
     const byId = new Map(mine.map((x) => [x.id, x]))
     for (const row of rows) {
       const x = byId.get(row.id)
-      if (!x || !newer(row)) continue
+      const how = x ? settle(x._reup, row) : null
+      if (!x || !how) continue
       theirs.push({ key, row, mine: x, from })
+      if (how !== 'kept') continue
       const c = ((copy as unknown as Record<string, unknown>)[key] ||= {}) as Record<string, unknown>
-      if (!c[x.id]) { c[x.id] = x; kept = true }
+      if (!c[x.id]) { const { _reup, ...plain } = x; c[x.id] = plain; kept = true }
     }
   }
   // the copy first, then the replacements: nothing of this phone's is ever only in memory
   if (kept) log.resumeCopy = copy
-  for (const r of rows) {
-    const d = r.log_date
-    if (!dirty.includes(d) || !newer(r)) continue
+  for (const { d, r } of days) {
     s.days[d] = fromServerDay(r)
     meta.days[d] = { u: r.updated_at, dirty: false }
   }
@@ -430,13 +444,18 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
     const next = { ...t.from(t.row), _dirty: false }
     if (i >= 0) list[i] = next
   }
-  if (st[0] && newer(st[0])) {
+  if (stHow) {
     s.target = st[0].target
     s.schedule = st[0].schedule
     if (st[0].profile) s.profile = st[0].profile
     meta.settings = { u: st[0].updated_at, dirty: false }
   }
+  // what's left marked uploads as this phone's
+  for (const d of Object.keys(meta.days)) delete meta.days[d].reup
+  delete meta.settings.reup
+  for (const [key] of lists) for (const x of (s[key] || []) as Rec[]) delete x._reup
   delete log.resumeFrom
+  delete log.resumeExact
 }
 
 export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> {

@@ -24,7 +24,31 @@
 -- full 30 days; the app names the resulting date (UNCONSENTED_DELETION in src/core/legal/index.ts,
 -- npm test checks they agree). Safe to re-run.
 -- Rollback: select cron.unschedule('tali-purge-unconsented'); drop function public.purge_unconsented_logs();
+--   drop function public.unconsented_log_due(uuid, timestamptz);
 -- ============================================================================
+
+-- Due now: no yes, and either no health answer 30 days after the later of PURGE_FROM and the
+-- account's creation, or a no over a day old. Counted from the earlier of the phone's time and
+-- the arrival, as health_consent_current orders them.
+create or replace function public.unconsented_log_due(uid uuid, purge_from timestamptz)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select not public.health_consent_current(uid) and (
+    (not exists (select 1 from public.consents k where k.user_id = uid and k.type = 'health')
+      and now() > greatest(purge_from, (select u.created_at from auth.users u where u.id = uid)) + interval '30 days')
+    or exists (
+      select 1 from (
+        select k.granted, least(k.recorded_at, k.created_at) as at from public.consents k
+        where k.user_id = uid and k.type = 'health'
+        order by least(k.recorded_at, k.created_at) desc, k.created_at desc limit 1
+      ) l where not l.granted and l.at < now() - interval '1 day'))
+$$;
+
+revoke all on function public.unconsented_log_due(uuid, timestamptz) from public, anon, authenticated, service_role;
 
 create or replace function public.purge_unconsented_logs()
 returns jsonb
@@ -39,28 +63,23 @@ declare
   c integer;
   uid uuid;
 begin
+  -- only people due now, at most 200 a run: each holds a lock until the run commits, so a
+  -- backlog clears over the following days rather than in one long transaction
   for uid in
     select u.id from auth.users u
-    where exists (select 1 from public.day_logs x where x.user_id = u.id)
+    where (exists (select 1 from public.day_logs x where x.user_id = u.id)
        or exists (select 1 from public.custom_foods x where x.user_id = u.id)
        or exists (select 1 from public.recipes x where x.user_id = u.id)
        or exists (select 1 from public.routines x where x.user_id = u.id)
        or exists (select 1 from public.training_plans x where x.user_id = u.id)
        or exists (select 1 from public.push_subscriptions x where x.user_id = u.id)
-       or exists (select 1 from public.settings x where x.user_id = u.id)
+       or exists (select 1 from public.settings x where x.user_id = u.id))
+      and public.unconsented_log_due(u.id, purge_from)
+    limit 200
   loop
     perform pg_advisory_xact_lock(hashtextextended('tali-log:' || uid::text, 0));
-    if public.health_consent_current(uid) then continue; end if;
-    if not (
-      (not exists (select 1 from public.consents k where k.user_id = uid and k.type = 'health')
-        and now() > greatest(purge_from, (select u.created_at from auth.users u where u.id = uid)) + interval '30 days')
-      or exists (
-        select 1 from (
-          select k.granted, least(k.recorded_at, k.created_at) as at from public.consents k
-          where k.user_id = uid and k.type = 'health'
-          order by least(k.recorded_at, k.created_at) desc, k.created_at desc limit 1
-        ) l where not l.granted and l.at < now() - interval '1 day')
-    ) then continue; end if;
+    -- again under the lock: a yes may have arrived since
+    if not public.unconsented_log_due(uid, purge_from) then continue; end if;
     delete from public.day_logs where user_id = uid;           get diagnostics c = row_count; n := n + c;
     delete from public.custom_foods where user_id = uid;       get diagnostics c = row_count; n := n + c;
     delete from public.recipes where user_id = uid;            get diagnostics c = row_count; n := n + c;
@@ -74,11 +93,13 @@ begin
 end;
 $$;
 
-revoke all on function public.purge_unconsented_logs() from public, anon, authenticated;
+-- cron runs it as postgres; no API role may call it
+revoke all on function public.purge_unconsented_logs() from public, anon, authenticated, service_role;
 
 select cron.schedule('tali-purge-unconsented', '17 3 * * *', 'select public.purge_unconsented_logs()');
 
 -- Verify (optional):
+-- select proname, proacl from pg_proc where proname in ('purge_unconsented_logs','unconsented_log_due');
 -- select jobname, schedule, command from cron.job where jobname = 'tali-purge-unconsented';
 -- Who it would clear, and when (read-only):
 -- select u.id, greatest(timestamptz '2026-09-28', u.created_at) + interval '30 days' as due

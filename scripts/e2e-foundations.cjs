@@ -374,7 +374,8 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
     await agreeFullScreen(page)
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
-    await page.waitForTimeout(1500)
+    // the re-upload is marked on one sync and sent on the next
+    for (let i = 0; i < 40 && rows.day_logs.find((x) => x.log_date === today)?.supps?._checkin?.mood !== 5; i++) await page.waitForTimeout(250)
     const after = rows.day_logs.find((x) => x.log_date === today)
     expect(after.supps._checkin.mood === 5 && after.weight === 70, 'the phone’s check-in uploaded after the yes: ' + JSON.stringify(after))
   }, { url: ON, state: deviceState({ days: EXISTING, consents: NONE }), rows: { day_logs: [{ user_id: UID, log_date: today, foods: EXISTING[today].foods, supps: { _checkin: EXISTING[today].checkin }, weight: 70, workout: null }] } })

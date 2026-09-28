@@ -276,6 +276,9 @@ function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | '
 /** Lowest calorie target the app will set without medical support. */
 const KCAL_FLOOR = 1200
 
+/** Consent refusals from the server in a row (sync backs off after two). */
+let consentRefusals = 0
+
 function meta(s: PersistedState): SyncMeta {
   return ensureMeta(s, false)
 }
@@ -1088,13 +1091,26 @@ export const useStore = create<StoreState>()(
           // a yes after a withdrawal: the account's copy was deleted, so the whole log goes up
           const re = needsReupload(d)
           if (re) {
-            markReupload(d, m, re)
+            // marked on the live state and saved first, so a run that stops part-way doesn't mark
+            // it all again; the next run (with the consent records this one pulled) uploads it
+            if (get().data !== src || !get().authed || getUid() !== uid0) { rerun = true; return }
+            const synced = d.consents!.records
+            set((st) => {
+              const log = consentLog(st.data)
+              for (const r of synced) if (!log.records.some((x) => x.id === r.id)) log.records.push(r)
+              markReupload(st.data, meta(st.data), re)
+            })
+            persist()
             // the account's reminders went with its copy of the log: register this phone again
             if (d.profile.notificationsEnabled) void withTimeout(resubscribePush(), 5000, false)
+            set((st) => { st.sync = 'idle' })
+            rerun = true
+            return
           }
           let failed: string[]
           try {
             failed = await pushDirty(d, m)
+            consentRefusals = 0
           } catch (e) {
             // the server says there's no current yes (a no from another phone arrived meanwhile):
             // drop this copy without pulling (the account's copy may be being cleared, and a pull
@@ -1102,7 +1118,9 @@ export const useStore = create<StoreState>()(
             // stay dirty, and the consent-only path takes over
             if (!(e instanceof ConsentRequiredError)) throw e
             set((st) => { st.sync = 'idle' })
-            rerun = true
+            // straight away once; if the server still refuses, wait for the next edit, focus or
+            // connection rather than asking every 800 ms
+            rerun = ++consentRefusals < 2
             return
           }
           await pullAll(d, m)

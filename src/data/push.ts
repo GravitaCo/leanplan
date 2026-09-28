@@ -35,7 +35,8 @@ export async function subscribePush(): Promise<boolean> {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     })
     const j = sub.toJSON()
-    const r = await sbFetch('/push_subscriptions', {
+    // on_conflict names the (user_id, endpoint) key, so registering again updates the row
+    const r = await sbFetch('/push_subscriptions?on_conflict=user_id,endpoint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
       body: JSON.stringify({

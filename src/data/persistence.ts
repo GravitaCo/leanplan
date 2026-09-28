@@ -13,8 +13,10 @@ const PLAN_STATES: PlanState[] = ['active', 'completed', 'archived', 'template']
 
 /** Per-record sync bookkeeping, persisted alongside the app state. */
 export interface SyncMeta {
-  settings: { u: string; dirty: boolean }
-  days: Record<string, { u: string; dirty: boolean }>
+  /** `reup`: marked to upload only in case the account's copy was deleted (consent.ts markReupload):
+   *  where the server has it, the server's is kept */
+  settings: { u: string; dirty: boolean; reup?: boolean }
+  days: Record<string, { u: string; dirty: boolean; reup?: boolean }>
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
