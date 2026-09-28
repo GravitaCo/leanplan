@@ -105,12 +105,12 @@ export function sexOf(p: Pick<Profile, 'sex' | 'sexAnswer'>): SexAnswer {
  */
 export const legacySex = (a: SexAnswer): Sex => (a === 'male' ? 'M' : 'F')
 
-/** "Not now" on the re-ask brings it back this many days later */
-export const PREGNANCY_SNOOZE_DAYS = 7
+/** "Ask me later" on the re-ask brings it back this many days later (2 weeks, design brief) */
+export const PREGNANCY_SNOOZE_DAYS = 14
 
 /**
- * Whether it's time to ask "Does this still apply?" (12 weeks after the pregnancy answer, and a
- * week after a "Not now"). Only a yes is re-asked: there's nothing to re-check otherwise.
+ * Whether it's time to ask "Does this still apply?" (12 weeks after the pregnancy answer, and 2
+ * weeks after an "Ask me later"). Only a yes is re-asked: there's nothing to re-check otherwise.
  */
 export function pregnancyReaskDue(flag: PregnancyFlag | undefined, today: string): boolean {
   if (!flag?.flagged || flag.askedAt > shiftDay(today, -PREGNANCY_REASK_DAYS)) return false
@@ -192,7 +192,7 @@ export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: s
   p.answeredAt = { ...p.answeredAt, pregnancy: at }
 }
 
-/** "Not now" on the re-ask: the flag and its date stay; it comes back in a week. */
+/** "Ask me later" on the re-ask: the flag and its date stay; it comes back in 2 weeks. */
 export function snoozePregnancyIn(p: Profile, today: string, at: string): boolean {
   if (!p.pregnancy?.flagged) return false
   p.pregnancy = { ...p.pregnancy, snoozedAt: today }

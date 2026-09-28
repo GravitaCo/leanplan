@@ -222,7 +222,7 @@ export interface StoreState {
   clearHealthAnswer: (kind: HealthAnswerKind) => boolean
   /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
   confirmPregnancy: (status: PregnancyStatus) => boolean
-  /** "Not now" on the re-ask: asked again in a week */
+  /** "Ask me later" on the re-ask: asked again in 2 weeks */
   snoozePregnancyReask: () => boolean
   /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
   rateExercise: (routineId: string, slot: number, rating: 'up' | 'down') => void

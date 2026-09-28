@@ -7,7 +7,7 @@ import {
   HEALTH_STEPS, applyDraft, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
   outcomeInputs, readinessOutcome, replacementFor, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
-import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, pregnancyReaskDue, routeSafety, safetyAnswersFrom, snoozePregnancyIn } from '@/core/domain/onboarding'
+import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, routeSafety, safetyAnswersFrom, snoozePregnancyIn } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
@@ -384,7 +384,7 @@ function compliance(): void {
   report('the 12-week "Does this still apply?"', [
     ['still applies: re-dated today, asked again in 12 weeks', still.pregnancy?.flagged === true && still.pregnancy.askedAt === TODAY && !pregnancyReaskDue(still.pregnancy, TODAY) && pregnancyReaskDue(still.pregnancy, '2026-12-21') && still.answeredAt?.pregnancy === AT],
     ['no longer: the flag goes (stamped), and routing no longer holds for it', !gone.pregnancy && gone.answeredAt?.pregnancy === AT && !safetyAnswersFrom(gone, 80, true).pregnant],
-    ['not now: the answer stays, asked again in a week', sn && snoozed.pregnancy?.flagged === true && snoozed.pregnancy.askedAt === '2026-07-01' && !pregnancyReaskDue(snoozed.pregnancy, '2026-10-04') && pregnancyReaskDue(snoozed.pregnancy, '2026-10-05')],
+    ['ask me later: the answer stays, asked again in 2 weeks', sn && snoozed.pregnancy?.flagged === true && snoozed.pregnancy.askedAt === '2026-07-01' && !pregnancyReaskDue(snoozed.pregnancy, '2026-10-11') && pregnancyReaskDue(snoozed.pregnancy, '2026-10-12') && PREGNANCY_SNOOZE_DAYS === 14],
     ['nothing to snooze without a yes', !snoozePregnancyIn(prof(), TODAY, AT)],
   ])
 }
