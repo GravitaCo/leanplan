@@ -159,9 +159,13 @@ Added 2026-09-28 (server-side enforcement):
 27. On-phone processing while phone-only is still processing by Tali's code (CJEU C-25/17,
     C-210/16; Recital 18), so "phone-only" lowers risk but may not take it outside GDPR. Record
     this in the DPIA; it's also why withdrawal still clears weigh-ins, check-ins and body details.
-28. `ai-read-label` has no server-side consent check (label-photo or health). Add one before it's
-    deployed. The AI features row in Profile is hidden until an AI feature ships; bump
-    `CONSENT_VERSIONS.ai` then.
+28. Done 2026-09-28: `ai-read-label` is deployed with a server-side consent check. `ai_usage_take`
+    refuses (the function answers 403 `consent`) unless the caller's latest `label-photo` consent is a
+    yes; the app sends a new yes just before a read. Health consent is checked in the app only
+    (`consentLetsSync`): a label read sends a pack photo and uses the caller's own allowance, nothing
+    about their health (security-data, 2026-09-28). When the `ai` switch ships, decide whether it also
+    governs label reading. The AI features row in Profile is hidden until an AI feature ships; bump
+    `CONSENT_VERSIONS.ai` then. Label scanning itself stays off in the app until item 24 is done.
 29. Item 10 is done: the deployed reminder function returns counts only. Its source is now in the
     repo (`supabase/functions/send-supplement-reminders`). Item 20: 6 accounts have cloud data, 0
     consent records (checked 2026-09-28).
