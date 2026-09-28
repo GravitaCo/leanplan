@@ -43,10 +43,13 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
+import type { GeneratedPlan } from '@/core/domain/engine'
+import { replacementFor } from '@/core/domain/wizard'
+import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion } from '@/data/onboardingDraft'
 
 enableMapSet()
 
@@ -199,6 +202,21 @@ export interface StoreState {
   /** step 2, when the person says yes: download that copy (the usual backup file) */
   downloadBeforeWithdrawal: () => void
 
+  // first-run onboarding (behind ONBOARDING_ENABLED)
+  /** the setup card opened on its own (Build my plan on Plan, Finish your setup on Today) */
+  setupOpen: boolean
+  openSetup: (open: boolean) => void
+  /**
+   * The summary's Start: the answers into the profile (outcomes only), today's weigh-in, the
+   * targets, and the generated plan into the person's plans. Refused (false) for health answers
+   * without a local health consent. `plan` null keeps the current plan.
+   */
+  finishOnboarding: (x: { profile: Profile; plan: GeneratedPlan | null; target: MacroTarget | null; weightKg: number | null }) => boolean
+  /** under 16 (§14): this device's data goes now; the account is deleted now, or on the next connection */
+  deleteUnder16: () => Promise<DeleteResult>
+  /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
+  rateExercise: (routineId: string, slot: number, rating: 'up' | 'down') => void
+
   // account deletion (onboarding plan §8)
   /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
   deletingAccount: boolean
@@ -270,6 +288,36 @@ function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | '
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
 
+/**
+ * A generated plan (engine output) into the person's plans, on the summary's confirm only: its
+ * workouts join `routines`, the plan starts today, and whatever plan was running is finished or
+ * put away, as startPlan does. The week before plans is kept for when plans stop.
+ */
+function acceptGenerated(s: PersistedState, gen: GeneratedPlan): void {
+  const now = nowIso()
+  const today = todayStr()
+  if (!Array.isArray(s.routines)) s.routines = []
+  if (!Array.isArray(s.trainingPlans)) s.trainingPlans = []
+  const keep = weekToKeep(s)
+  if (keep) s.profile.weekBeforePlan = keep
+  for (const p of s.trainingPlans) {
+    if (p.state !== 'active') continue
+    p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
+    if (p.state === 'completed') p.completedAt = now
+    p._dirty = true; p._u = now
+  }
+  for (const r of gen.routines) {
+    const i = s.routines.findIndex((x) => x.id === r.id)
+    const row = { ...structuredClone(r), _dirty: true, _u: now }
+    if (i >= 0) s.routines[i] = row; else s.routines.push(row)
+  }
+  const plan = structuredClone(gen.trainingPlan)
+  const i = s.trainingPlans.findIndex((x) => x.id === plan.id)
+  const row = { ...plan, phases: cleanPhases(plan.phases), startedAt: today, _dirty: true, _u: now }
+  if (i >= 0) s.trainingPlans[i] = row; else s.trainingPlans.push(row)
+  mirrorPlan(s, true)
+}
+
 /** Lowest calorie target the app will set without medical support. */
 const KCAL_FLOOR = 1200
 
@@ -297,6 +345,8 @@ let syncing = false
 /** Set while an account deletion runs: no sync may start, so nothing re-uploads rows the server
  *  function is deleting (the JWT stays valid for a while after the login is gone). */
 let deleting = false
+/** When an under-16 deletion was last retried (runSync). */
+let under16Tried = 0
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
@@ -786,7 +836,7 @@ export const useStore = create<StoreState>()(
 
       saveProfileMetrics: (patch) => {
         // health consent withdrawn: the health fields (weight, body fat) aren't saved; the rest is
-        if (!healthLoggingAllowed(get().data)) { patch = { ...patch }; delete patch.weight; delete patch.bodyFat }
+        if (!healthLoggingAllowed(get().data)) patch = withoutHealth(patch)
         set((st) => {
           // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
           const today = todayStr()
@@ -987,6 +1037,8 @@ export const useStore = create<StoreState>()(
         window.addEventListener('offline', () => set((st) => { st.online = false }))
         window.addEventListener('online', async () => {
           set((st) => { st.online = true })
+          // back online: an under-16 deletion still to do retries straight away (runSync)
+          under16Tried = 0
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1007,6 +1059,13 @@ export const useStore = create<StoreState>()(
         // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
         if (syncing || deleting) return
+        // an under-16 account still to delete (onboarding §14): nothing syncs, the deletion retries
+        // (at most once a minute: a failed deletion schedules a sync of its own)
+        const pend = pendingDeletion()
+        if (pend) {
+          if (pend.uid === getUid() && navigator.onLine && Date.now() - under16Tried > 60_000) { under16Tried = Date.now(); void get().deleteUnder16() }
+          return
+        }
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         // Nothing reaches the cloud until the person has answered the health consent screen
         // (UK GDPR Art. 9(2)(a)). Until then, only read their consent records, so an answer given
@@ -1139,6 +1198,89 @@ export const useStore = create<StoreState>()(
         if (!canSaveHealthAnswers(get().data)) return false
         get().setPrefs(patch)
         return true
+      },
+
+      setupOpen: false,
+      openSetup: (open) => set((st) => { st.setupOpen = open }),
+
+      finishOnboarding: ({ profile, plan, target, weightKg }) => {
+        const consent = canSaveHealthAnswers(get().data)
+        set((st) => {
+          // no health consent: nothing health-related is kept (the wizard didn't ask it either)
+          st.data.profile = consent ? profile : { ...st.data.profile, ...withoutHealth(profile) }
+          if (consent && weightKg) {
+            const today = todayStr()
+            // the wizard's weight is today's weigh-in (as a weight saved on Profile is)
+            if (st.data.days[today]?.weight !== weightKg) { ensureDay(st.data, today).weight = weightKg; markDayDirty(st.data, today) }
+          }
+          if (target) st.data.target = target
+          markSettingsDirty(st.data)
+          if (plan) acceptGenerated(st.data, plan)
+        })
+        clearDraft()
+        saved()
+        return consent
+      },
+
+      deleteUnder16: async () => {
+        under16Tried = Date.now()
+        const owner = get().data._meta?.owner
+        // offline (no live session) the device's owner is the account: its session is still saved here
+        const uid = get().authed ? getUid() : owner
+        // this device's data goes now, whatever the connection; the account follows (plan §14)
+        if (uid && owner === uid) {
+          markPendingDeletion(uid, nowIso())
+          const next = freshForAccount(uid)
+          saveState(next)
+          clearDraft()
+          set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
+          get().setKitchen([])
+        }
+        const res = await get().deleteAccount()
+        if (res.status === 'ok') clearPendingDeletion()
+        return res
+      },
+
+      rateExercise: (routineId, slot, rating) => {
+        const before = get().data
+        const r = (before.routines || []).find((x) => x.id === routineId)
+        const sl = r?.blocks[0]?.slots[slot]
+        if (!r || !sl) return
+        const exId = sl.exId
+        let swapped: string | null = null
+        set((st) => {
+          const t = (st.data.profile.training ??= {})
+          const prefs = (t.exPrefs ??= {})
+          const liked = new Set(prefs.liked ?? []), disliked = new Set(prefs.disliked ?? [])
+          if (rating === 'up') { if (liked.has(exId)) liked.delete(exId); else { liked.add(exId); disliked.delete(exId) } }
+          else {
+            disliked.add(exId); liked.delete(exId)
+            const rr = (st.data.routines || []).find((x) => x.id === routineId)!
+            const all = rr.blocks.flatMap((b) => b.slots.map((x) => x.exId))
+            swapped = replacementFor(exId, { ...t, exPrefs: { liked: [...liked], disliked: [...disliked] } }, all)
+            if (swapped) {
+              const target = rr.blocks[0].slots[slot]
+              rr.blocks[0].slots[slot] = { ...target, exId: swapped, why: [{ code: 'disliked', about: 'exercise', data: { exId: swapped, alt: exId } }] }
+              rr._dirty = true; rr._u = nowIso()
+            }
+          }
+          prefs.liked = [...liked]; prefs.disliked = [...disliked]
+          markSettingsDirty(st.data)
+        })
+        saved()
+        if (rating === 'down') {
+          const prevPrefs = before.profile.training?.exPrefs
+          get().showToast('Got it. We’ll pick something else.', { label: 'Undo', run: () => {
+            set((st) => {
+              const t = (st.data.profile.training ??= {})
+              t.exPrefs = structuredClone(prevPrefs ?? {})
+              const rr = (st.data.routines || []).find((x) => x.id === routineId)
+              if (rr && swapped) { rr.blocks[0].slots[slot] = structuredClone(sl); rr._dirty = true; rr._u = nowIso() }
+              markSettingsDirty(st.data)
+            })
+            saved()
+          } })
+        }
       },
 
       prepareHealthWithdrawal: () => {

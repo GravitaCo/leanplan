@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { keyTitle, type WorkoutKey } from '@/core/domain/routines'
-import type { Session } from '@/core/types'
+import type { Routine, Session } from '@/core/types'
+import { Icon } from '@/ui/icons'
+import { FIRST_SESSION } from '../onboarding/copy'
 import { WORKOUTS, SWAPS } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { shorterPrescription } from '@/core/domain/dayOptions'
@@ -23,7 +25,7 @@ export const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter
  * Session preview (Flow 1 step 2): the version for today, the exercise list with what to aim
  * for, swaps for today only, then Start. Cardio days and the gentle swaps save from here.
  */
-export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan }: {
+export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan, generated }: {
   /** a built-in's type or the id of one of the user's own workouts */
   type: WorkoutKey
   choice: Choice
@@ -40,7 +42,11 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   onManual: () => void
   onBack: () => void
   onEditPlan: () => void
+  /** a workout the engine generated (onboarding flag): a quiet thumbs up or down on each exercise (ob5-3) */
+  generated?: Routine
 }) {
+  const rate = useStore((s) => s.rateExercise)
+  const prefs = useStore((s) => s.data.profile.training?.exPrefs)
   const routines = useStore((s) => s.data.routines)
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
@@ -154,11 +160,18 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                       {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}</div>}
                     {gentler && <div className="s2">New to this? The {gentler.n.toLowerCase()} is a good place to start. Tap Swap.</div>}
                   </div>
+                  {generated && s.x && !s.swapped && (
+                    <span className="pv-thumbs">
+                      <button aria-label={`I like ${bareName(s.shown.n)}`} aria-pressed={!!prefs?.liked?.includes(s.x.id)} className={prefs?.liked?.includes(s.x.id) ? 'on' : ''} onClick={() => rate(generated.id, s.i, 'up')}><Icon name="thumbUp" size={17} /></button>
+                      <button aria-label={`Not for me: ${bareName(s.shown.n)}`} onClick={() => rate(generated.id, s.i, 'down')}><Icon name="thumbDown" size={17} /></button>
+                    </span>
+                  )}
                   {s.x && <button className="linkbtn" onClick={() => setSwapFor(s.i)} aria-label={`Swap ${s.shown.n}`}>Swap</button>}
                 </div>
               )
             })}
           </div>
+          {generated && <div className="foot" style={{ padding: '4px 4px 0' }}>{FIRST_SESSION.thumbsNote}</div>}
           <div className="foot" style={{ padding: '4px 4px 0' }}>
             Swaps here only change today. Stop each set with two or three reps to spare.{slots.some((s) => s.swapped && s.x?.care?.length) ? ' ' + CARE_DISCLAIMER : ''} {RED_FLAG}
           </div>

@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { useStore } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
 import { keyRoutineId, keyTitle, type WorkoutKey } from '@/core/domain/routines'
-import type { Effort, ExerciseMedia, LoggedExercise, SetEntry, Workout } from '@/core/types'
+import type { Effort, ExerciseMedia, LoggedExercise, Routine, SetEntry, SetFeel, Workout } from '@/core/types'
+import { calibrationTarget } from '@/core/domain/engine'
+import { exposureOf } from '@/core/domain/wizard'
+import { BareSheet } from '@/ui/primitives'
+import { FIRST_SESSION } from '../onboarding/copy'
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
-import { buildLogged, fmtClock, fmtTarget, lastTime, later, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { buildLogged, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { sessionsOf } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
@@ -83,7 +87,7 @@ type SheetKind = null | 'adjust' | 'warmup' | 'menu' | 'leave' | 'finish' | 'hol
  * leaving part-way keeps it. Nothing here waits on the network: a clip that can't load falls
  * back to its poster or the cue.
  */
-export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished }: {
+export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished, generated }: {
   /** a built-in's type or the id of one of the user's own workouts */
   type: WorkoutKey
   slots: Slot[]
@@ -92,6 +96,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
   onClose: () => void
   /** after Finish: back to the today list */
   onFinished?: () => void
+  /** a workout the engine generated (onboarding flag): "Find your weight" and "How was that set?" (ob5-1, ob5-2) */
+  generated?: Routine
 }) {
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
@@ -131,7 +137,26 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
   const setNo = done.length
   const complete = setNo >= slot.sets
   const last = useMemo(() => lastTime(days, cur, slot.x?.id, slot.shown.n, slot.fullRx), [days, cur, slot.x?.id, slot.shown.n, slot.fullRx])
-  const target = complete ? null : targetFor(slot.shape, slot.rx, last, setNo, done)
+  // "Find your weight" (engine §3.3 step 7): sessions 1–2 of a loaded move start from no number
+  const calib = useMemo(() => {
+    if (!generated || slot.swapped || slot.shape !== 'weight-reps' || !slot.x) return null
+    const rs = generated.blocks[0]?.slots[slot.i]
+    if (!rs || rs.exId !== slot.x.id || !rs.why?.some((w) => w.code === 'calibration')) return null
+    const ex = exposureOf(days, cur, slot.x.id)
+    const t = calibrationTarget({ exId: slot.x.id, sets: slot.sets, reps: parseRx(slot.rx).reps, calibrate: true }, ex.n, ex.last?.feel)
+    return t ? { t, n: ex.n, lastW: ex.last?.w } : null
+  }, [generated, slot.i, slot.swapped, slot.shape, slot.x, slot.sets, slot.rx, days, cur])
+  const [found, setFound] = useState<Record<number, string>>({})
+  const [findW, setFindW] = useState<number | null>(null)
+  const finding = !!calib && setNo === 0 && found[slot.i] === undefined && !complete
+  const lastW = calib?.lastW && +calib.lastW ? +calib.lastW : null
+  useEffect(() => { setFindW(lastW) }, [slot.i, lastW])
+  const t0 = complete ? null : targetFor(slot.shape, slot.rx, last, setNo, done)
+  const target = t0 && found[slot.i] !== undefined && setNo === 0 ? { ...t0, w: found[slot.i] }
+    : !t0 && found[slot.i] !== undefined && setNo === 0 && !complete ? { w: found[slot.i], reps: String(calib?.t.reps?.hi ?? parseRx(slot.rx).reps?.hi ?? 10) } : t0
+  // "How was that set?" on the last set of each exercise (ob5-2), with Skip
+  const [askFeel, setAskFeel] = useState<{ i: number; k: number; line: string } | null>(null)
+  const [feel, setFeel] = useState<SetFeel | null>(null)
   const isLastSlot = pos >= order.length - 1
   const name = bareName(slot.shown.n)
   const video = slot.shown.video
@@ -197,6 +222,10 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
     // stopped early: no rest timer, ask what next (the pain check lives in Adjust)
     if (entry.feel === 'stopped') { setRest(null); setSheet('stopped'); return }
     const nowDone = working(next[slot.i]).length >= slot.sets
+    if (nowDone && generated && !entry.feel && (slot.shape === 'weight-reps' || slot.shape === 'reps')) {
+      setFeel(null)
+      setAskFeel({ i: slot.i, k: next[slot.i].length - 1, line: `Last set · ${name} · ${entry.w ? entry.w + ' kg × ' : ''}${entry.reps}` })
+    }
     if (nowDone) {
       const k = nextOpen(pos, next)
       if (k < 0) { setRest(null); setSheet('finish'); return }
@@ -305,6 +334,22 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
             <button className="gp-main" onClick={() => setRest(null)}>Skip rest</button>
           </div>
         </section>
+      ) : finding && calib ? (
+        <section className="gp-bot gp-find" aria-label={`Find your weight: ${name}`}>
+          <div>
+            <div className="k">{FIRST_SESSION.findK(calib.n + 1)}</div>
+            <h1 className="gp-name">{name}</h1>
+            <p className="lead">{FIRST_SESSION.find}</p>
+          </div>
+          <div className="gp-step">
+            <button aria-label="Lighter" onClick={() => setFindW(Math.max(0, (findW ?? 0) - ((findW ?? 0) > 10 ? 2.5 : 1)))}>−</button>
+            <span className="v num" aria-live="polite">{findW == null ? '–' : findW}<small>kg</small></span>
+            <button aria-label="Heavier" onClick={() => setFindW((findW ?? 0) + ((findW ?? 0) >= 10 ? 2.5 : 1))}>+</button>
+          </div>
+          <div className="gp-aim num">Aim for {calib.t.reps?.hi ?? 10} reps with {calib.t.rir.lo} or {calib.t.rir.hi} to spare</div>
+          <button className="gp-main" disabled={findW == null} onClick={() => setFound({ ...found, [slot.i]: String(findW) })}>Start set 1</button>
+          <button className="gp-know" onClick={() => { setFound({ ...found, [slot.i]: '' }); setSheet('adjust') }}>{FIRST_SESSION.know}</button>
+        </section>
       ) : (
         <section className="gp-bot" aria-label={name}>
           <div>
@@ -386,6 +431,25 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished 
               : <button className="btn danger" onClick={() => setDiscard(true)}>Discard this session</button>)}
           </div>
         </Sheet>
+      )}
+      {askFeel && (
+        <BareSheet label={FIRST_SESSION.feelT} onClose={() => setAskFeel(null)}>
+          <div className="feel-hd"><h2>{FIRST_SESSION.feelT}</h2><button className="navbtn" onClick={() => setAskFeel(null)}>Skip</button></div>
+          <div className="feel-sub num">{askFeel.line}</div>
+          <div className="feel-grid" role="radiogroup" aria-label={FIRST_SESSION.feelT}>
+            {FIRST_SESSION.feels.map(([k, t]) => <button key={k} role="radio" aria-checked={feel === k} className={feel === k ? 'on' : ''} onClick={() => setFeel(k)}>{t}</button>)}
+          </div>
+          <div className="foot" style={{ padding: '12px 4px 14px' }}>{FIRST_SESSION.feelNote}</div>
+          <button className="btn ob-btn" style={{ width: '100%' }} disabled={!feel} onClick={() => {
+            if (feel) {
+              const list = [...(logged[askFeel.i] || [])]
+              if (list[askFeel.k]) list[askFeel.k] = { ...list[askFeel.k], feel }
+              const next = { ...logged, [askFeel.i]: list }
+              setLogged(next); save(next)
+            }
+            setAskFeel(null)
+          }}>Done</button>
+        </BareSheet>
       )}
       {sheet === 'finish' && (
         <FinishSheet title={title} gentle={gentle} mins={stintMins(prevMins, now - started, isToday)}

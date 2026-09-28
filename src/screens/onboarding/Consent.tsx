@@ -10,31 +10,66 @@
  */
 import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import { existingConsentDue, latestConsent } from '@/data/consent'
+import { hasExistingData } from '@/data/consent'
+import { loadDraft, setupCardHidden, hideSetupCard } from '@/data/onboardingDraft'
 import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
+import { SETUP_CARD } from './copy'
 
 export const ONBOARDING_ENABLED: boolean = false || import.meta.env?.VITE_ONBOARDING === '1'
 
 /* ---------------- when each one shows ---------------- */
 
 /**
- * First run: nothing answered for health yet, and nothing on this device from before (someone
- * new). A second device of someone who already answered doesn't ask again (plan §12): until an
- * answer is here, sync reads only consent records (store scheduleSync), and one pulled from
- * another device moves this screen on. (It no longer waits for the first full pull: that pull now
- * waits for the answer.) `online` is kept for the callers.
+ * Benn (Sept 2026): the live consent screen (screens/legal/ConsentScreen.tsx) stays the one consent
+ * screen, flag or not. The Onboarding 6 first-run screens (ob6-1, ob6-2) and the existing-user
+ * sheet (ob6-3, with its dormant health pause) are no longer shown; these stay false so nothing
+ * routes to them. The components are kept for the record of the boards.
  */
-export function firstRunDue(s: PersistedState, _online: boolean): boolean {
-  if (!ONBOARDING_ENABLED) return false
-  return !latestConsent(s, 'health') && !existingConsentDue(s) && !s.consents?.healthPause
+export function firstRunDue(_s: PersistedState, _online: boolean): boolean {
+  return false
 }
 
-/** The existing-user sheet (ob6-3) is due (behind ONBOARDING_ENABLED; see firstRunDue on pulls). */
-export function existingDue(s: PersistedState, _online: boolean): boolean {
+/** The existing-user sheet (ob6-3): not shown (see firstRunDue). */
+export function existingDue(_s: PersistedState, _online: boolean): boolean {
+  return false
+}
+
+/**
+ * Someone who used Tali before onboarding (plan §12): anything logged or saved, a plan, or a goal
+ * or age set in Profile. They keep their current week and targets, and get the Build my plan card.
+ */
+export function usedBefore(s: PersistedState): boolean {
+  return hasExistingData(s) || (s.trainingPlans || []).length > 0 || !!s.profile?.goal || s.profile?.age != null
+}
+
+/**
+ * The first-run wizard is due (behind ONBOARDING_ENABLED): not finished here or on another device
+ * (`profile.onboardedAt`), and either under way on this device or someone new. Online with a live
+ * session, it waits for the first full pull (`_meta.lastPull`) so a second device of someone who
+ * already onboarded doesn't ask again (plan §12); offline it runs, and the answers merge on sync.
+ */
+export function wizardDue(s: PersistedState, x: { online: boolean; authed: boolean }): boolean | 'wait' {
+  if (!ONBOARDING_ENABLED || s.profile?.onboardedAt) return false
+  if (loadDraft()?.mode === 'first') return true
+  if (usedBefore(s)) return false
+  if (x.online && x.authed && !s._meta?.lastPull) return 'wait'
+  return true
+}
+
+/** Today's "Finish your setup" card (ob2-0b): onboarded, on the Starter week, not waved off here. */
+export function setupCardDue(s: PersistedState): boolean {
+  if (!ONBOARDING_ENABLED || !s.profile?.onboardedAt || setupCardHidden()) return false
+  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
+  return !!p && !!p.why?.some((w) => w.code === 'starter')
+}
+
+/** Plan's "Build my plan" card (ob6-4): anyone whose running week wasn't built from their answers. */
+export function buildCardDue(s: PersistedState): boolean {
   if (!ONBOARDING_ENABLED) return false
-  return existingConsentDue(s)
+  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
+  return !(p?.source === 'recommended' && p.why?.length && !p.why.some((w) => w.code === 'starter'))
 }
 
 /* ---------------- shared pieces ---------------- */
@@ -161,7 +196,7 @@ export function ExistingConsentSheet() {
 
 /* ---------------- ob6-4 Build my plan ---------------- */
 
-/** On Plan, above the week (behind ONBOARDING_ENABLED). The wizard it opens ships later. */
+/** On Plan, above the week (behind ONBOARDING_ENABLED): opens the setup card on its own. */
 export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
   return (
     <section className="card buildplan" aria-label="Build my plan">
@@ -169,6 +204,23 @@ export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
       <div className="bp-t">Build my plan</div>
       <div className="bp-s">Answer a few questions about your time, kit and what you enjoy, and Tali builds a week from your answers. Your current week stays until you choose.</div>
       <button className="btn gray bp-btn" onClick={onBuild}>Build my plan</button>
+    </section>
+  )
+}
+
+/* ---------------- ob2-0b Finish your setup (Today) ---------------- */
+
+export function SetupCard() {
+  const openSetup = useStore((s) => s.openSetup)
+  const [hidden, setHidden] = useState(false)
+  if (hidden) return null
+  return (
+    <section className="card setupcard" aria-label="Finish your setup">
+      <div className="hd"><span className="k">{SETUP_CARD.k}</span><span className="r">{SETUP_CARD.r}</span></div>
+      <div className="t">{SETUP_CARD.t}</div>
+      <div className="s">{SETUP_CARD.s}</div>
+      <button className="btn" onClick={() => openSetup(true)}>{SETUP_CARD.go}</button>
+      <button className="wz-link" onClick={() => { hideSetupCard(); setHidden(true) }}>{SETUP_CARD.later}</button>
     </section>
   )
 }

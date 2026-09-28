@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './store/store'
-import { healthConsentAnswered, healthSyncPaused, latestConsent } from './data/consent'
+import { healthConsentAnswered, healthSyncPaused } from './data/consent'
 import { takeReauthReturn } from './data/account'
 import { getUid } from './data/supabase'
-import { ExistingConsentSheet, FirstRunConsent, existingDue, firstRunDue } from './screens/onboarding/Consent'
+import { ONBOARDING_ENABLED, wizardDue } from './screens/onboarding/Consent'
+import { Onboarding, Under16 } from './screens/onboarding/Wizard'
+import { pendingDeletion } from './data/onboardingDraft'
 import { BottomNav } from './ui/BottomNav'
 import { warmPlanArt } from './screens/plan/PlanParts'
 import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
@@ -48,14 +50,11 @@ function TaliApp() {
     if (authed && takeReauthReturn(getUid())) openProfile('delete-confirm')
   }, [authed, openProfile])
 
-  // first-run consent (behind ONBOARDING_ENABLED): health, then AI, once each
-  const [firstRun, setFirstRun] = useState<'health' | 'ai' | null>(null)
-  useEffect(() => {
-    if (!signedIn || ownerAsk) return
-    if (!firstRun && firstRunDue(data, online)) setFirstRun('health')
-    else if (firstRun === 'health' && latestConsent(data, 'health')) setFirstRun(latestConsent(data, 'ai') ? null : 'ai')
-    else if (firstRun === 'ai' && latestConsent(data, 'ai')) setFirstRun(null)
-  }, [data, online, signedIn, ownerAsk, firstRun])
+  const setupOpen = useStore((s) => s.setupOpen)
+  const openSetup = useStore((s) => s.openSetup)
+  // the first-run wizard waits a moment for the first pull (a second device), never for long
+  const [waited, setWaited] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setWaited(true), 6000); return () => clearTimeout(t) }, [])
 
   // the plan photographs, fetched once when idle so the library looks right offline
   useEffect(() => {
@@ -88,13 +87,18 @@ function TaliApp() {
 
   if (ownerAsk) return <OwnerChoiceScreen />
   if (!signedIn) return <AuthScreen />
-  // One consent screen at a time. Live: the consent screen (screens/legal/ConsentScreen.tsx) until
-  // the health answer is in; sync waits for it too (store scheduleSync, consentLetsSync). Behind
-  // ONBOARDING_ENABLED, the Onboarding 6 flow takes its place: first-run ob6-1 → ob6-2, or for
-  // someone who already has data here the ob6-3 sheet over the app ("Not now" keeps everything on
-  // this phone: sync still waits for an answer).
-  if (firstRun || firstRunDue(data, online)) return <FirstRunConsent step={firstRun ?? 'health'} />
-  if (!answered && !healthSyncPaused(data) && !existingDue(data, online)) return <ConsentScreen />
+  // under 16 (onboarding §14): the device is already wiped; the account's deletion retries on the
+  // next connection (store runSync), and until then only the kind stop shows
+  if (ONBOARDING_ENABLED && pendingDeletion()) return <Under16 deleting onClose={() => {}} />
+  // One consent screen: the live one (screens/legal/ConsentScreen.tsx) until the health answer is
+  // in; sync waits for it too (store scheduleSync, consentLetsSync). Benn: it stays the one consent
+  // screen with the onboarding flag on as well (the Onboarding 6 consent boards aren't shown).
+  if (!answered && !healthSyncPaused(data)) return <ConsentScreen />
+  // then, behind ONBOARDING_ENABLED, the first-run wizard for someone new
+  const due = wizardDue(data, { online, authed })
+  if (due === 'wait' && !waited) return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--label2)' }}><span className="mono">Loading…</span></div>
+  if (due) return <Onboarding mode="first" />
+  if (ONBOARDING_ENABLED && setupOpen) return <Onboarding mode="setup" onClose={() => openSetup(false)} />
 
   return (
     <div className="app-shell">
@@ -112,7 +116,6 @@ function TaliApp() {
         )}
       </div>
       <BottomNav active={tab} onChange={setTab} />
-      {existingDue(data, online) && <ExistingConsentSheet />}
     </div>
   )
 }
