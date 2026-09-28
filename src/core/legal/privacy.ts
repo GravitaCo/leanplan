@@ -13,7 +13,7 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-09-27',
+    updated: '2026-09-28',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -29,7 +29,7 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'The short version',
         ul: [
-          `Tali stores your log on your phone so it works offline, and syncs it to a database in Ireland (EU) that's private to your account.`,
+          `Tali stores your log on your phone so it works offline. Once you agree, it also syncs to a database in Ireland (EU) that's private to your account.`,
           `When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.`,
           `No ads, no analytics, no tracking cookies, and we never sell your data or share it for marketing.`,
           `You can export everything or delete your account from the app at any time.`,
@@ -61,9 +61,10 @@ export function privacyPolicy(): LegalDoc {
         h: 'Health data',
         p: [
           `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
-            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. ` +
-            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there (anything already in your account from before stays until you agree, withdraw or delete your account), and we ask once more after two weeks. Turning on reminders registers your phone for them only after you agree.`,
-          `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log from your account, so it stays only on your phones, and clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from them too. ` +
+            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. If you used Tali before we asked, what you logged then was already synced to your account. ` +
+            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there (anything already in your account from before is kept there, unused, until you agree, withdraw or delete your account), and we ask once more after two weeks. Reminders only run once you've agreed.`,
+          `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log, profile, settings and reminders from your account, so your log stays only on your phones. ` +
+            `It also clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from this phone straight away, and from your other phones the next time each one connects. ` +
             `Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
         ],
       },
@@ -76,6 +77,7 @@ export function privacyPolicy(): LegalDoc {
           `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.`,
           `To keep accounts, the app and the site secure and working (sign-in, stopping bots and abuse, fixing faults). Basis: our legitimate interest in running a secure service.`,
           `To send account emails you need, such as confirming your address or resetting your password. Basis: our contract with you.`,
+          `To keep a record of the consents you give and withdraw, so we can show what you agreed to and when. Basis: legal obligation (the law requires us to be able to show consent). Kept until you delete your account.`,
           `To answer your requests and meet legal duties. Basis: legal obligation.`,
         ],
       },
@@ -117,6 +119,7 @@ export function privacyPolicy(): LegalDoc {
         h: 'How long we keep it',
         ul: [
           `App account data is kept while you have an account. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups, and our providers' security logs, are deleted as they expire on those providers' regular cycles. Early access emails on the website are separate and aren't affected.`,
+          `If you withdraw consent for health data, we delete your log, profile and settings from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.`,
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tali.`,
           `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,

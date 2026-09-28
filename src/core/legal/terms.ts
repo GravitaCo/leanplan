@@ -9,7 +9,7 @@ const who = () => fact('controller', 'legal name')
 export function termsOfUse(): LegalDoc {
   return {
     title: 'Terms and conditions',
-    updated: '2026-09-27',
+    updated: '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -56,7 +56,7 @@ export function termsOfUse(): LegalDoc {
         h: 'Your account',
         ul: [
           'Keep your password safe. You are responsible for activity under your account.',
-          'Your log is stored on your phone and synced to your account. Changes made offline only reach your account once you are back online, so export a backup now and then.',
+          'Once you’ve agreed to Tali keeping your health data, your log is stored on your phone and synced to your account. Until then, or if you withdraw, it’s kept only on your phone. Changes made offline only reach your account once you’re back online. Export a backup now and then: if you lose or reset your phone or clear its browser data, anything that isn’t in your account is gone.',
           'You can delete your account at any time in Profile, then Privacy, then Delete account.',
         ],
       },

@@ -9,7 +9,7 @@ import { LEGAL_URLS, fact, type LegalDoc } from './index'
 export function cookiePolicy(): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: '2026-09-27',
+    updated: '2026-09-28',
     intro:
       `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
@@ -55,7 +55,7 @@ export function cookiePolicy(): LegalDoc {
       {
         h: 'Your choices',
         p: [
-          `You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. ` +
+          `You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. If you haven't agreed to Tali keeping your health data, or have withdrawn it, your whole log is only on this device, so clearing it deletes it for good. ` +
             `In the app, Sign out, then "Sign out and remove this device's log" deletes your log from this device, and Profile, then Privacy, then Delete account deletes everything.`,
           `Questions: ${fact('contactEmail', 'contact email')}. More about how we handle personal data: ${LEGAL_URLS.privacy}.`,
         ],

@@ -159,8 +159,12 @@ setting (`prefers-color-scheme`); there is no in-app override.
   table, SDK, analytics, AI API, font CDN) updates the privacy policy and register in the same
   change, and goes past the `compliance` agent. A new user-data table also joins `USER_TABLES` in
   `supabase/functions/_shared/account.ts` (the delete-account function).
-- `npm run check:legal` must pass before the legal texts go live (it fails while `LEGAL` has
-  placeholders).
+- `npm run check:legal` must pass before the legal texts go live (it fails on any placeholder the
+  texts print; a missing ICO number only warns, though the fee is owed).
+- The server enforces health consent too (`docs/migrations/2026-09-28-health-consent-server.sql`):
+  log uploads need a current yes, and a withdrawal clears the account's copy through
+  `clear_log_after_withdrawal()`. A new log table needs the `require_health_consent` trigger and a
+  line in that function.
 
 ## Working agreement: design → code
 

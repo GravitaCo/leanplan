@@ -693,6 +693,15 @@ function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
       const id = params.get('id')
       return res(200, id ? mine.filter((r) => 'eq.' + r.id === id) : mine)
     }
+    // the server's clear after a withdrawal (docs/migrations/2026-09-28-health-consent-server.sql):
+    // only while the latest health answer is a no, all log tables at once, consents kept
+    if (t === 'rpc/clear_log_after_withdrawal') {
+      const hs = (rows.consents || []).filter((r) => r.user_id === uid && r.type === 'health').sort((a, b) => String(a.recorded_at).localeCompare(String(b.recorded_at)))
+      const last = hs[hs.length - 1]
+      if (!last || last.granted) return res(200, { cleared: false })
+      for (const x of ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'push_subscriptions', 'settings']) rows[x] = (rows[x] || []).filter((r) => r.user_id !== uid)
+      return res(200, { cleared: true })
+    }
     if (o.method === 'DELETE') {
       // a whole account's rows of one table (the cloud clear after a health withdrawal)
       if (params.get('user_id') && !params.get('id')) {

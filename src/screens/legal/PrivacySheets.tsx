@@ -19,7 +19,7 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Health data" onClose={onClose}>
       <div className="card prose">
-        <p style={{ margin: 0 }}>Turning this back on lets Tali save your weigh-ins, check-ins and body details again, and sync them to your account.</p>
+        <p style={{ margin: 0 }}>Turning this back on lets Tali save your weigh-ins, check-ins and body details again, and uploads your whole log from this phone to your account.</p>
       </div>
       <div className="list">
         <div className="li consent-row">

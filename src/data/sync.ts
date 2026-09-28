@@ -5,10 +5,10 @@
  * framework-agnostic so it can back a native client later.
  */
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/core/types'
-import { sbGet, sbUpsert, sbDelete, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
+import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap } from './consent'
+import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap, type ResumeCopy } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -350,56 +350,63 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   return failed
 }
 
-/** Tables holding a person's log in their account (not their consent records). */
-const LOG_TABLES = ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'push_subscriptions', 'ai_usage', 'settings']
-
 /**
- * After a health withdrawal: delete the account's copy of the log, so it lives only on the
- * person's devices (food and workouts are treated as health data). Consent records stay: they
- * show the withdrawal. Idempotent; a table that isn't there (404) counts as cleared.
+ * After a health withdrawal: ask the server to delete the account's copy of the log
+ * (clear_log_after_withdrawal, docs/migrations/2026-09-28-health-consent-server.sql). It does it in
+ * one transaction, and only while the latest health answer on the server is still a no, so a yes
+ * given on another phone meanwhile is never undone. Returns whether it cleared.
  */
-export async function clearCloudLog(s: PersistedState): Promise<void> {
-  const log = s.consents
-  if (!log?.cloudClear) return
-  const uid = getUid()
-  for (const t of LOG_TABLES) await sbDelete(t, 'user_id=eq.' + uid)
-  log.cloudCleared = log.cloudClear
-  delete log.cloudClear
+export async function clearCloudLog(): Promise<boolean> {
+  const r = await sbFetch('/rpc/clear_log_after_withdrawal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+  if (!r.ok) throw new HttpError('RPC clear_log_after_withdrawal -> ' + r.status, r.status)
+  const out = (await r.json().catch(() => null)) as { cleared?: boolean } | null
+  return out?.cleared === true
 }
+
+/** Server rows changed within this long before the pause or withdrawal also count as newer:
+ *  `since` is this phone's clock and `updated_at` the server's, so a fast phone clock can't make
+ *  another device's edit look older. Erring this way only keeps more of this phone's versions aside. */
+const RESUME_MARGIN_MS = 24 * 3600_000
+const IN_BATCH = 60
 
 /**
  * Sync resumes after a pause or a withdrawal: a dirty day or settings row that the server changed
  * since then was edited on another device, so the server's wins; this device's version is kept in
- * `resumeCopy` for the person to download. Everything else uploads as usual.
+ * `resumeCopy` for the person to download. Reads everything first, then changes anything, so a
+ * failed read leaves this device as it was (and the resume is retried next run).
  */
 async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Promise<void> {
   const log = s.consents!
-  const since = Date.parse(log.resumeFrom!)
-  const copy = { at: log.resumeCopy?.at ?? nowIso(), ...(log.resumeCopy || {}) }
-  let kept = false
+  const since = Date.parse(log.resumeFrom!) - RESUME_MARGIN_MS
   const dirty = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
-  if (dirty.length) {
-    const rows = await sbGet<any[]>('/day_logs?user_id=eq.' + uid + '&log_date=in.(' + dirty.join(',') + ')&select=*')
-    for (const r of rows) {
-      const d = r.log_date
-      if (!dirty.includes(d) || !(Date.parse(r.updated_at) > since)) continue
-      if (s.days[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
-      s.days[d] = fromServerDay(r)
-      meta.days[d] = { u: r.updated_at, dirty: false }
-    }
+  const rows: any[] = []
+  for (let i = 0; i < dirty.length; i += IN_BATCH) {
+    rows.push(...await sbGet<any[]>('/day_logs?user_id=eq.' + uid + '&log_date=in.(' + dirty.slice(i, i + IN_BATCH).join(',') + ')&select=*'))
   }
-  if (meta.settings.dirty) {
-    const st = await sbGet<any[]>('/settings?user_id=eq.' + uid + '&select=*')
-    if (st[0] && Date.parse(st[0].updated_at) > since) {
-      copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }
-      kept = true
-      s.target = st[0].target
-      s.schedule = st[0].schedule
-      if (st[0].profile) s.profile = st[0].profile
-      meta.settings = { u: st[0].updated_at, dirty: false }
-    }
+  const st = meta.settings.dirty ? await sbGet<any[]>('/settings?user_id=eq.' + uid + '&select=*') : []
+  const copy: ResumeCopy = { ...(log.resumeCopy || {}), at: log.resumeCopy?.at ?? nowIso() }
+  const newer = (r: any) => Date.parse(r.updated_at) > since
+  let kept = false
+  for (const r of rows) {
+    const d = r.log_date
+    if (!dirty.includes(d) || !newer(r)) continue
+    if (s.days[d] && !copy.days?.[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
   }
+  if (st[0] && newer(st[0]) && !copy.settings) { copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }; kept = true }
+  // the copy first, then the replacements: nothing of this phone's is ever only in memory
   if (kept) log.resumeCopy = copy
+  for (const r of rows) {
+    const d = r.log_date
+    if (!dirty.includes(d) || !newer(r)) continue
+    s.days[d] = fromServerDay(r)
+    meta.days[d] = { u: r.updated_at, dirty: false }
+  }
+  if (st[0] && newer(st[0])) {
+    s.target = st[0].target
+    s.schedule = st[0].schedule
+    if (st[0].profile) s.profile = st[0].profile
+    meta.settings = { u: st[0].updated_at, dirty: false }
+  }
   delete log.resumeFrom
 }
 

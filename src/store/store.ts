@@ -43,7 +43,7 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
-import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, latestConsent, consentLog, resumeAfterYes, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -1030,21 +1030,30 @@ export const useStore = create<StoreState>()(
             const d = structuredClone(src) as PersistedState
             await pushConsents(d)
             await pullConsents(d)
-            // still withdrawn after the latest records (another device may have said yes since):
-            // delete the account's copy of the log, once the withdrawal itself is on the server
-            const latest = latestConsent(d, 'health')
             const m = ensureMeta(d, false)
-            if (latest && !latest.granted && !latest._dirty) {
-              const log = consentLog(d)
-              // a withdrawal made on another device: this device's log becomes its only copy too
-              if (applyHealthWithdrawal(d, m) && !log.cloudCleared) log.cloudClear ??= latest.at
-              await clearCloudLog(d)
+            // a withdrawal made on another device: this device's health data is cleared too (once)
+            applyHealthWithdrawal(d, m)
+            // the latest answer is a no that's on the server, and this device hasn't seen its clear
+            // done: ask the server to delete the account's copy (it re-checks the latest answer
+            // itself, in one transaction, so a yes given on another phone meanwhile is kept)
+            const owed = pendingCloudClear(d)
+            let cleared: string | null = null
+            if (owed && get().authed && getUid() === uid0 && (await clearCloudLog())) cleared = owed.id
+            if (cleared) {
+              // reminders were deleted with the log: say so on this phone
+              d.consents!.cloudClearedFor = cleared
+              d.profile.notificationsEnabled = false
+              void withTimeout(unsubscribePush(), 2000, undefined)
             }
-            if (get().data !== src) { again = true; return }
+            if (get().data !== src) {
+              // something changed meanwhile: keep that, and still record the clear so it isn't lost
+              if (cleared) { set((st) => { consentLog(st.data).cloudClearedFor = cleared!; st.data.profile.notificationsEnabled = false }); persist() }
+              again = true
+              return
+            }
             if (!get().authed || getUid() !== uid0) return
-            // a yes that came in from another device ends this device's pause or withdrawal
-            const log = consentLog(d)
-            if (consentLetsSync(d) && (log.healthPause || log.cloudClear || log.cloudCleared)) resumeAfterYes(d, m)
+            // a yes that came in from another device ends this device's pause here
+            if (consentLetsSync(d)) resumeAfterYes(d)
             saveState(d)
             set((st) => { st.data = d })
             again = consentLetsSync(d)
@@ -1066,6 +1075,19 @@ export const useStore = create<StoreState>()(
           const uid0 = getUid()
           const d = structuredClone(src) as PersistedState
           const m = ensureMeta(d, false)
+          // consent first: a no (or a pause) made on another device must be known before any of the
+          // log moves, or this phone would upload over, or pull away, what that answer protects
+          await pushConsents(d)
+          await pullConsents(d)
+          if (!consentLetsSync(d)) {
+            if (get().data === src && get().authed && getUid() === uid0) { saveState(d); set((st) => { st.data = d }) }
+            set((st) => { st.sync = 'idle' })
+            rerun = true // the consent-only path takes over
+            return
+          }
+          // a yes after a withdrawal: the account's copy was deleted, so the whole log goes up
+          const re = needsReupload(d)
+          if (re) markReupload(d, m, re)
           const failed = await pushDirty(d, m)
           await pullAll(d, m)
           // a health withdrawal made on another device clears this one's health data too (once)

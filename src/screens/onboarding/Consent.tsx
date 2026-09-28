@@ -9,6 +9,7 @@
  * (for the headless tests only).
  */
 import { useState, type ReactNode } from 'react'
+import { LegalLink } from '../legal/LegalDoc'
 import { useStore } from '@/store/store'
 import { existingConsentDue, latestConsent } from '@/data/consent'
 import type { PersistedState } from '@/data/persistence'
@@ -68,8 +69,8 @@ export function PrivacySheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Privacy" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="prose sub" style={{ padding: '0 4px' }}>
-        <p>Your data is stored on this device and synced to a private database tied to your account. It's never shared or sold.</p>
-        <p style={{ margin: 0 }}>AI features, like reading a food label from a photo, send what you share to Anthropic, the company that makes the AI Tali uses. Nothing is sent unless you use one of them.</p>
+        <p>Your log is stored on this phone and, once you agree, synced to a private database tied to your account. It’s never sold or used for ads.</p>
+        <p style={{ margin: 0 }}>The full details are in the <LegalLink id="privacy">privacy policy</LegalLink>.</p>
       </div>
     </Sheet>
   )

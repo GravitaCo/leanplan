@@ -16,7 +16,8 @@ Last reviewed: 2026-09-27. Controller: Gravita Creative Ltd (company 08348225), 
 | Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tali.fit/legals/cookie-policy |
 | Explicit consent for health data (Art. 9(2)(a)), terms, age | `screens/legal/ConsentScreen.tsx`, shown after sign-in until `healthConsentAnswered` (`src/data/consent.ts`): three unticked boxes; Continue records a `health` consent at `CONSENT_VERSIONS.health`. The screen can't be submitted without the terms and age boxes, so the account's first health grant at a version is also the record of those two (no separate `terms`/`age` consent types yet: adding them needs a migration of the `consents` type check). Records are append-only in the `consents` table (owner-only RLS, applied). |
 | "Not now" (existing users, decided 2026-09-27) | The live consent screen offers "Not now, keep it on this phone" to someone who already has data on the device (`hasExistingData`). It sets a device-only pause (`consents.healthPause`); `consentLetsSync` stays false, so the whole log stays on the phone (food and workouts are treated as health data here: Art. 4(15), CJEU C-184/20 and C-21/23). The screen comes back once after 2 weeks (`liveConsentDue`); a second "Not now" isn't asked again. New users' "Not now" signs out |
-| Withdrawal (decided 2026-09-27) | A health "no" stops all log sync (`consentLetsSync` needs a current yes) and deletes the account's copy of the log (`clearCloudLog`: day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions, ai_usage, settings); consent records stay. Weigh-ins, check-ins and body details are cleared on the phones too. A later yes re-uploads the phone's log. |
+| Server-side enforcement (2026-09-28) | `docs/migrations/2026-09-28-health-consent-server.sql`: a trigger on every log table refuses a signed-in person's insert or update unless their latest health consent is a yes (so a phone that hasn't heard of a withdrawal, or an old app version, can't upload); `clear_log_after_withdrawal()` deletes the account's copy in one transaction, only while the latest answer is a no, serialised with uploads by a per-person lock. `send-supplement-reminders` skips anyone without a current yes |
+| Withdrawal (decided 2026-09-27) | A health "no" stops all log sync (`consentLetsSync` needs a current yes) and deletes the account's copy of the log through `clear_log_after_withdrawal()` (day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions, settings), once per withdrawal record on every device (`pendingCloudClear`); consent records stay. Weigh-ins, check-ins and body details are cleared on the phones too. A later yes re-uploads the phone's log. |
 | Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
 | Withdrawal (Art. 7(3)) | Profile → Privacy → Withdraw consent for health data (offers a backup first; clears weigh-ins, check-ins, weight, body fat, limitations on every device). "Give consent again" there afterwards |
@@ -34,8 +35,10 @@ Last reviewed: 2026-09-27. Controller: Gravita Creative Ltd (company 08348225), 
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
 | Profile: name, sex, age, height, weight, body fat, activity, goal, pace, training prefs, injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until account deletion |
 | Day logs: foods, weight, workout, supplements taken, mood/hunger check-in and note | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until account deletion |
-| Custom foods, recipes | Run the service | 6(1)(b) | `custom_foods`, `recipes` | Until account deletion |
+| Custom foods, recipes, workouts you create (`routines`), weekly plans (`training_plans`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes` | Until account deletion |
 | Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off or account deletion; dead endpoints (404/410) are removed by the function |
+| Consent records (type, version, yes or no, time) | Show what was agreed and when (Art. 7(1), 5(2)) | 6(1)(c); 9(2)(f) if treated as special category | `consents` (append-only) and the device | Until account deletion |
+| Pre-consent log already in the account, during a "Not now" | None active: kept unused, not read or updated | Unresolved (see item 26) | Account tables | Until the person agrees, withdraws or deletes the account |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
 | Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
@@ -142,6 +145,22 @@ Added 2026-09-27 (consent release):
     policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
 25. Repo markers: `docs/migrations/2026-09-consents.sql`, `2026-09-owner-fks.sql` and the
     `delete-account` function say NOT APPLIED / NOT DEPLOYED but are live (checked 2026-09-27).
+
+Added 2026-09-28 (server-side enforcement):
+
+26. DECISION (Benn, with a solicitor's view): how long a "Not now" person's pre-consent log may
+    stay in the account unused. No Art. 9(2) condition covers storing it, and storage limitation
+    (Art. 5(1)(e)) points to a deadline. Options: delete it at the second "Not now" (after an
+    export offer), or after a fixed period (e.g. 30 days) without an answer.
+27. On-phone processing while phone-only is still processing by Tali's code (CJEU C-25/17,
+    C-210/16; Recital 18), so "phone-only" lowers risk but may not take it outside GDPR. Record
+    this in the DPIA; it's also why withdrawal still clears weigh-ins, check-ins and body details.
+28. `ai-read-label` has no server-side consent check (label-photo or health). Add one before it's
+    deployed. The AI features row in Profile is hidden until an AI feature ships; bump
+    `CONSENT_VERSIONS.ai` then.
+29. Item 10 is done: the deployed reminder function returns counts only. Its source is now in the
+    repo (`supabase/functions/send-supplement-reminders`). Item 20: 6 accounts have cloud data, 0
+    consent records (checked 2026-09-28).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

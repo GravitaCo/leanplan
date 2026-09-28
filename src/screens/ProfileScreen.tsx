@@ -39,6 +39,9 @@ function directionLabel(pct: number): string {
 
 type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
 
+/** No AI feature is live (label reading is off): the AI consent row stays hidden until one is. */
+const AI_FEATURES_LIVE = false
+
 export function ProfileScreen() {
   const data = useStore((s) => s.data)
   const resumeCopy = data.consents?.resumeCopy
@@ -86,6 +89,13 @@ export function ProfileScreen() {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   // giving health consent from Profile: the explicit statement and unticked box (legal/PrivacySheets)
   const [regrantOpen, setRegrantOpen] = useState(false)
+  // agreeing to health data from Profile: someone who never agreed on the full screen (a "Not now",
+  // or not asked yet) gets its three boxes, so the record covers the terms and age too; after a
+  // withdrawal, the one-box sheet
+  const agree = () => {
+    if ((data.consents?.records || []).some((r) => r.type === 'health' && r.granted)) setRegrantOpen(true)
+    else useStore.getState().setConsentOpen(true)
+  }
   const health = useConsent('health')
   const healthRec = latestConsent(data, 'health')
   const healthAt = healthRec?.granted ? new Date(healthRec.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null
@@ -298,7 +308,9 @@ export function ProfileScreen() {
           {authed && <div className="foot" style={{ padding: '8px 0 0' }}>Change your name or email from the card at the top.</div>}
         </Disclosure>
         <SettingRow icon="heart" color={MINDF} soft label="Health data" value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
-        <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />
+        {/* AI features: hidden until one ships (the privacy policy doesn't describe AI processing yet,
+            so a consent given here wouldn't be informed) */}
+        {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />}
         <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
             ? 'Your log is only on this phone until you agree to Tali keeping your health data, so export a copy now and then.'
@@ -341,8 +353,8 @@ export function ProfileScreen() {
         <Disclosure icon="key" color={GRAY} soft label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? <>You agreed to Tali using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so Tali doesn’t keep your weigh-ins, check-ins or body details. </> : null}
-              Your data is stored on this phone and in your private account database. It’s never sold or used for ads.
+              {health.granted && healthAt ? <>You agreed to Tali using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so your log is on your phones only and Tali doesn’t keep your weigh-ins, check-ins or body details. </> : null}
+              {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
             </p>
           </div>
           <div className="list legal-rows" style={{ margin: '0 0 8px' }}>
@@ -354,7 +366,7 @@ export function ProfileScreen() {
               legal texts point here, at Profile, then Privacy) */}
           {health.granted
             ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>Withdraw consent for health data</button>
-            : <button className="btn gray" onClick={() => setRegrantOpen(true)}>Turn health data back on</button>}
+            : <button className="btn gray" onClick={agree}>Turn health data back on</button>}
           <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>Delete account</button>
         </Disclosure>
       </div>
@@ -365,13 +377,7 @@ export function ProfileScreen() {
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => {
-        setHealthOpen(false)
-        // never agreed on the full screen (a "Not now", or not asked yet): the three boxes, so the
-        // record covers the terms and age too; after a withdrawal, the one-box sheet
-        if ((data.consents?.records || []).some((r) => r.type === 'health' && r.granted)) setRegrantOpen(true)
-        else useStore.getState().setConsentOpen(true)
-      }} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} />}
       {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
       {aiOpen && <AiSheet onClose={() => setAiOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
@@ -415,7 +421,7 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Sign out" onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         {phoneOnly ? (
-          <p>Your log is only on this phone: it isn’t in your account, because nothing syncs until you agree to Tali keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it for good, so export a copy first.</p>
+          <p>What you log now is only on this phone: nothing syncs to your account until you agree to Tali keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</p>
         ) : <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>}
         {!phoneOnly && unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
       </div>
