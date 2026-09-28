@@ -14,14 +14,14 @@ import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
-import { loadDraft, markPendingDeletion, pendingDeletion, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
+import { loadDraft, markPendingDeletion, pendingDeletion, pendingExpired, PENDING_MAX_DAYS, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES, REDO } from '../src/screens/onboarding/copy'
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
-import { deleteAccount, savedSessionUid } from '@/data/account'
+import { deleteAccount, refreshSaysGone, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { wizardDueFor, FIRST_PULL_WAIT_MS } from '@/data/firstRun'
 import { readFileSync } from 'node:fs'
@@ -299,7 +299,7 @@ function withFakeStorage(run: (ls: Storage) => void): void {
   try { run(ls) } finally { if (had) g.localStorage = had; else delete g.localStorage }
 }
 
-function compliance(): void {
+async function compliance(): Promise<void> {
   // register item 34: the notes say what is kept (Benn approved the wording, 28 Sept 2026)
   const lines = allCopy().join('\n')
   const KEPT = 'We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.'
@@ -369,22 +369,47 @@ function compliance(): void {
       ['the saved session\'s uid is read for a new device; none or malformed gives none', none === null && saved === U && bad === null],
     ])
     markPendingDeletion({ uid: U, at: AT, tries: 2, next: now, stage: 'retry' })
-    const back = pendingDeletion()
+    const back = pendingDeletion(now)
     ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: AT }))
-    const old = pendingDeletion()
+    const old = pendingDeletion(now)
     ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: AT, tries: 'x', stage: 'weird' }))
-    const odd = pendingDeletion()
+    const odd = pendingDeletion(now)
     report('under-age deletion ends safely (register 37)', [
       ['the record round-trips', JSON.stringify(back) === JSON.stringify({ uid: U, at: AT, tries: 2, next: now, stage: 'retry' })],
       ['an older record (uid and time only) still reads, and tries at once', !!old && old.uid === U && underAgeRetryDue(old, now)],
       ['odd fields are dropped', JSON.stringify(odd) === JSON.stringify({ uid: U, at: AT })],
     ])
+    // (c) the record is only a device-side helper: it expires after 30 days
+    markPendingDeletion({ uid: U, at: AT })
+    const day29 = pendingDeletion(now + 29 * 86_400_000)
+    const day31 = pendingDeletion(now + 31 * 86_400_000)
+    const after = ls.getItem('tali.pendingDelete')
+    ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: 'not a date' }))
+    const junk = pendingDeletion(now)
+    report('under-age deletion ends safely (register 37)', [
+      ['kept for 30 days, then dropped (and removed from the device)', !!day29 && day31 === null && after === null && PENDING_MAX_DAYS === 30],
+      ['an unreadable time counts as expired', junk === null && !pendingExpired({ at: AT }, now)],
+    ])
   })
+  // (b) the reply was lost after the server deleted it: a retry's 401, then one refresh decides
+  const fn401 = await deleteAccount({ online: () => true, hasSession: () => true, fresh: () => true, accountMatches: () => true, call: async () => ({ status: 401, body: null }), wipe: () => {}, signOut: async () => {} }, UNDER_AGE_REASON)
+  const already = await deleteAccount({ online: () => true, hasSession: () => true, fresh: () => true, accountMatches: () => true, call: async () => ({ status: 200, body: { ok: true, already: true } }), wipe: () => {}, signOut: async () => {} }, UNDER_AGE_REASON)
+  report('under-age deletion ends safely (register 37)', [
+    ['a retry answered { ok: true, already: true } is done', already.status === 'ok' && underAgeNext(already.status, p0, now).kind === 'done'],
+    ['a 401 is marked as refused by the server (not "no session here")', fn401.status === 'no-session' && 'rejected' in fn401 && fn401.rejected === true],
+    ['a refresh refused as user not found or an invalid refresh token means the account is gone', refreshSaysGone({ code: 'user_not_found' }) && refreshSaysGone({ code: 'refresh_token_not_found' })
+      && refreshSaysGone({ message: 'Invalid Refresh Token: Refresh Token Not Found' }) && refreshSaysGone({ message: 'User from sub claim in JWT does not exist' }) === false
+      && !refreshSaysGone({ message: 'Failed to fetch' }) && !refreshSaysGone(null)],
+  ])
   const STORE = readFileSync('src/store/store.ts', 'utf8')
   report('under-age deletion ends safely (register 37)', [
     ['the store backs off, stops with the sign-in note, and wipes only through underAgeWipesDevice', /underAgeRetryDue\(pend, Date\.now\(\)\)/.test(STORE) && /step\.kind === 'wait'/.test(STORE)
-      && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 2 && !/owner === uid\)/.test(STORE)],
+      && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 3 && !/owner === uid\)/.test(STORE)],
     ['only the pending account\'s sync waits', /pend && pend\.uid === getUid\(\)/.test(STORE)],
+    ['a 401 tries one refresh: gone is done (signed out, pending cleared), a new token retries once', (() => {
+      const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
+      return /res\.status === 'no-session' && res\.rejected/.test(f) && /refreshForRetry\(\)/.test(f) && /r === 'gone'\) gone = true/.test(f)
+        && /r === 'ok'\) res = await get\(\)\.deleteAccount\('under-age'\)/.test(f) && /gone \? \{ kind: 'done' as const \}/.test(f) })()],
     ['no uid at all: returns before recording or wiping anything (the stop screen stays), clearing only the draft (37b)', (() => {
       const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
       const stop = f.indexOf("if (!uid) { clearDraft(); return { status: 'no-session' } }")
@@ -565,7 +590,7 @@ function redo(): void {
 }
 
 export async function wizardSuite(fakeServer: FakeServer): Promise<number> {
-  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance(); healthAnswersUi(); redo()
+  steps(); outcomes(); summary(); withdrawal(); firstSession(); await compliance(); healthAnswersUi(); redo()
   await underAgeDeletion()
   await sync(fakeServer)
   return bad

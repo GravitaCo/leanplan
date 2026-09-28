@@ -44,7 +44,7 @@ import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredEr
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
-import { deleteAccount as deleteAccountData, defaultDeleteDeps, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
@@ -1389,8 +1389,33 @@ export const useStore = create<StoreState>()(
           set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
           get().setKitchen([])
         }
-        const res = await get().deleteAccount('under-age')
-        const step = underAgeNext(res.status, pend, Date.now())
+        let res = await get().deleteAccount('under-age')
+        // a 401: maybe the server already deleted it and the reply was lost. One token refresh
+        // tells: a refused refresh (user not found, invalid refresh token) means the account is
+        // gone, so this is done; a working one retries once with the new token
+        let gone = false
+        if (res.status === 'no-session' && res.rejected) {
+          const r = await refreshForRetry()
+          if (r === 'gone') gone = true
+          else if (r === 'ok') res = await get().deleteAccount('under-age')
+        }
+        const step = gone ? { kind: 'done' as const } : underAgeNext(res.status, pend, Date.now())
+        if (gone) {
+          // nothing left on the server: sign this dead session out, and wipe the device when it's
+          // that account's (never another's)
+          signingOut = true
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          setSession(null, null)
+          await defaultDeleteDeps.signOut()
+          clearSavedSession()
+          saveMode(null)
+          const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
+          if (wipe) wipeDevice()
+          set((st) => {
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = [] }
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+          })
+        }
         if (step.kind === 'done') clearPendingDeletion()
         else if (step.kind === 'wait') markPendingDeletion(step.pending)
         else {

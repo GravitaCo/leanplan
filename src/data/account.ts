@@ -19,8 +19,9 @@ export type DeleteResult =
   | { status: 'ok' }
   /** no connection: nothing was sent */
   | { status: 'offline' }
-  /** no live session on this device (e.g. opened offline): sign in again first */
-  | { status: 'no-session' }
+  /** no live session on this device (e.g. opened offline): sign in again first. `rejected`: the
+   *  server refused the token (401), e.g. because the account was already deleted */
+  | { status: 'no-session'; rejected?: true }
   /** the session's sign-in is older than 5 minutes: confirm who you are (reauthenticate), then retry */
   | { status: 'reauth' }
   /** the session isn't the account this device's data belongs to, or that's still being asked */
@@ -138,7 +139,7 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   }
   const ok = res.status === 200 && !!res.body && typeof res.body === 'object' && (res.body as { ok?: unknown }).ok === true
   if (!ok) {
-    if (res.status === 401) return { status: 'no-session' }
+    if (res.status === 401) return { status: 'no-session', rejected: true }
     if (res.status === 403 && (res.body as { error?: unknown } | null)?.error === 'reauth') return { status: 'reauth' }
     if (res.status === 404) return { status: 'unavailable' } // not deployed (the gateway's 404)
     return { status: 'error' }
@@ -148,6 +149,26 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   // a sign-out can re-save a session that was mid-refresh: wipe once more after it
   deps.wipe()
   return { status: 'ok' }
+}
+
+/**
+ * After a 401 on an under-age retry: whether the account is gone. A reply lost after the server
+ * deleted it leaves this device with a token for an account that no longer exists; refreshing
+ * that session then fails with user-not-found or an invalid refresh token. Pure.
+ */
+export function refreshSaysGone(err: { code?: string; message?: string } | null | undefined): boolean {
+  if (!err) return false
+  if (err.code === 'user_not_found' || err.code === 'refresh_token_not_found' || err.code === 'session_not_found') return true
+  return /user.*not found|invalid refresh token|refresh token not found/i.test(err.message || '')
+}
+
+/** Try one token refresh: 'ok' (retry with it), 'gone' (the account no longer exists) or 'failed'. */
+export async function refreshForRetry(): Promise<'ok' | 'gone' | 'failed'> {
+  try {
+    const { data, error } = await withTimeout(supabase.auth.refreshSession(), 8000, { data: { session: null }, error: null } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>)
+    if (error) return refreshSaysGone(error) ? 'gone' : 'failed'
+    return data?.session ? 'ok' : 'failed'
+  } catch { return 'failed' }
 }
 
 /** Whether a session token's sign-in is within the deletion window (read, not verified: the

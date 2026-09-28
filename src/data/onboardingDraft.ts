@@ -38,10 +38,21 @@ export function clearDraft(): void {
  */
 export interface PendingDeletion { uid: string; at: string; tries?: number; next?: number; stage?: 'retry' | 'sign-in' }
 
-export function pendingDeletion(): PendingDeletion | null {
+/**
+ * The record is a device-side retry helper only: it's dropped this many days after it was made
+ * (the account may have been deleted another way; the server-side cleanup proposal covers the rest).
+ */
+export const PENDING_MAX_DAYS = 30
+export const pendingExpired = (p: Pick<PendingDeletion, 'at'>, now: number): boolean => {
+  const t = Date.parse(p.at)
+  return !Number.isFinite(t) || now - t > PENDING_MAX_DAYS * 86_400_000
+}
+
+export function pendingDeletion(now = Date.now()): PendingDeletion | null {
   try {
     const p = JSON.parse(store()?.getItem(PENDING_KEY) || 'null')
     if (!p || typeof p.uid !== 'string' || typeof p.at !== 'string') return null
+    if (pendingExpired(p, now)) { clearPendingDeletion(); return null }
     return {
       uid: p.uid, at: p.at,
       ...(Number.isFinite(p.tries) ? { tries: p.tries } : {}),
