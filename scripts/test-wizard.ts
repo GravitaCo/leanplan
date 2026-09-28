@@ -12,6 +12,7 @@ import { startingTargets } from '@/core/domain/targets'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
 import { loadDraft, markPendingDeletion, pendingDeletion, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
@@ -362,6 +363,10 @@ function compliance(): void {
     ['the store backs off, stops with the sign-in note, and wipes only through underAgeWipesDevice', /underAgeRetryDue\(pend, Date\.now\(\)\)/.test(STORE) && /step\.kind === 'wait'/.test(STORE)
       && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 2 && !/owner === uid\)/.test(STORE)],
     ['only the pending account\'s sync waits', /pend && pend\.uid === getUid\(\)/.test(STORE)],
+    ['no uid at all: returns before recording or wiping anything (the stop screen stays)', (() => {
+      const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
+      const stop = f.indexOf('if (!uid) return')
+      return stop > 0 && stop < f.indexOf('markPendingDeletion(') && stop < f.indexOf('clearDraft()') && stop < f.indexOf('saveState(') })()],
   ])
 
   // the Profile control and the 12-week re-ask (boards on the Design canvas; the logic is ready)
@@ -459,6 +464,8 @@ function healthAnswersUi(): void {
     ['targets are Profile\'s suggestion for the new answers', !!after.target && !!sug && 'kcal' in sug && after.target.kcal === sug.kcal && after.target.p === sug.p],
     ['the same answers give the same plan (seeded by the plan\'s id)', JSON.stringify(after.plan?.routines.map((r) => r.id)) === JSON.stringify(again.plan?.routines.map((r) => r.id))],
     ['pregnancy hides numbers: no target to set', hidden.target === null],
+    ['the light half (main bundle, offline) gives the same target', JSON.stringify(answerTargets(cleared, 87, true)) === JSON.stringify(after.target) && answerTargets(preg, 87, true) === null],
+    ['a rebuild is pending only for a plan built from the answers', planFromAnswers(active) && !planFromAnswers({ ...active, source: 'custom' }) && !planFromAnswers({ ...active, why: [] }) && !planFromAnswers(undefined)],
     ['only a plan built from the answers is rebuilt', rerunForAnswers(cleared, { ...active, source: 'custom' }, { healthConsent: true, kg: 87 }).plan === null && rerunForAnswers(cleared, undefined, { healthConsent: true, kg: 87 }).plan === null],
   ])
   report('12-week check-in (ob7-3, ob7-4)', [

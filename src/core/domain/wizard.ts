@@ -4,6 +4,7 @@ import type {
 } from '@/core/types'
 import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
 import { suggestedTargets } from './nutrition'
+import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { activityLevelFor, startingTargets, type StartingTargets, type TrainingLoad } from './targets'
@@ -172,7 +173,7 @@ export function baselineOutcome(l: Lately): OnboardingOutcomes['baseline'] {
 }
 
 /** The medical question (ob4-5): any condition ticked → 'flagged'; "None of these" → 'clear'. */
-export const medicalOutcome = (ticked: number, none: boolean): OnboardingOutcomes['medical'] => (ticked > 0 ? 'flagged' : none ? 'clear' : undefined)
+export { medicalOutcome } from './onboarding'
 
 /** What the engine reads from the stored outcomes (it never needs the raw answers). */
 export function outcomeInputs(o: OnboardingOutcomes | undefined): Pick<PlanInputs, 'readiness' | 'lately' | 'wellbeing'> {
@@ -393,10 +394,9 @@ export interface AnswerRerun {
  * target is the Profile suggestion (suggestedTargets with profileRouting), as Profile shows it. Pure.
  */
 export function rerunForAnswers(profile: Profile, active: TrainingPlan | undefined, ctx: { healthConsent: boolean; kg: number | null; days?: Record<string, DayLog> }): AnswerRerun {
-  const routing = profileRouting(profile, ctx.kg, ctx.healthConsent)
-  const sug = suggestedTargets(profile, ctx.kg, routing)
-  const target = sug && 'kcal' in sug ? { kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f } : null
-  if (!active || active.source !== 'recommended' || !active.why?.length) return { target, plan: null }
+  const sug = suggestedTargets(profile, ctx.kg, profileRouting(profile, ctx.kg, ctx.healthConsent))
+  const target = answerTargets(profile, ctx.kg, ctx.healthConsent)
+  if (!planFromAnswers(active)) return { target, plan: null }
   const pm = personModelFrom(ctx.days, profile.training?.exPrefs)
   const inputs0 = inputsFromProfile(profile, outcomeInputs(profile.outcomes))
   let result = buildPlan(inputs0, pm, active.id)

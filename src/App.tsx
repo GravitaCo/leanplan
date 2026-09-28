@@ -61,7 +61,11 @@ function TaliApp() {
   useEffect(() => { const t = setTimeout(() => setWaited(true), 6000); return () => clearTimeout(t) }, [])
   // with the flag on, fetch the wizard's chunk while online, so the service worker keeps it for
   // a first run (or a resume) with no connection
-  useEffect(() => { if (ONBOARDING_ENABLED && online) { import('./screens/onboarding/Wizard').catch(() => {}); preloadHealthAnswers() } }, [online])
+  // and, once there are health answers, the answers screens and the engine that re-runs a changed
+  // answer's plan, so Profile's control and the check-in work offline too
+  const hasAnswers = useStore((s) => !!(s.data.profile.outcomes || s.data.profile.pregnancy))
+  useEffect(() => { if (ONBOARDING_ENABLED && online) import('./screens/onboarding/Wizard').catch(() => {}) }, [online])
+  useEffect(() => { if (ONBOARDING_ENABLED && online && hasAnswers) { preloadHealthAnswers(); import('./core/domain/wizard').catch(() => {}) } }, [online, hasAnswers])
 
   // the plan photographs, fetched once when idle so the library looks right offline
   useEffect(() => {

@@ -52,6 +52,7 @@ import { replacementFor } from '@/core/domain/firstSession'
 import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
+import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 
 enableMapSet()
 
@@ -339,6 +340,14 @@ function acceptGenerated(s: PersistedState, gen: GeneratedPlan): void {
  * replaced where it stands (same id and start, so the week carries on); its old workouts are put
  * away. Targets change only when routing gives a number (a hidden one keeps what's stored).
  */
+function answerChanged(s: PersistedState): void {
+  // routing and targets at once (main bundle, offline too); the plan rebuild needs the engine
+  const today = todayStr()
+  const t = answerTargets(s.profile, latestWeight(s, today), consented(s, 'health'))
+  if (t) s.target = { ...s.target, ...t }
+  if (planFromAnswers(activePlan(s, today))) ensureMeta(s, false).rerunAnswers = true
+}
+
 function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void {
   const today = todayStr()
   const active = activePlan(s, today)
@@ -1406,7 +1415,7 @@ export const useStore = create<StoreState>()(
         // removing is always allowed (no consent needed to delete); the clear is stamped to sync,
         // and the plan and targets follow straight away (ob7-1 footer)
         let changed = false
-        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { ensureMeta(st.data, false).rerunAnswers = true; markSettingsDirty(st.data) } })
+        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
         if (changed) { saved(); void get().rerunHealthAnswers() }
         return changed
       },
@@ -1415,7 +1424,7 @@ export const useStore = create<StoreState>()(
         // a new answer is health data: only with the local health yes
         if (!canSaveHealthAnswers(get().data)) return false
         let changed = false
-        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { ensureMeta(st.data, false).rerunAnswers = true; markSettingsDirty(st.data) } })
+        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
         if (changed) { saved(); void get().rerunHealthAnswers() }
         return true
       },
@@ -1426,7 +1435,7 @@ export const useStore = create<StoreState>()(
         set((st) => {
           confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso())
           // "still" only re-dates it: nothing to re-run
-          if (status === 'no-longer') ensureMeta(st.data, false).rerunAnswers = true
+          if (status === 'no-longer') answerChanged(st.data)
           markSettingsDirty(st.data)
         })
         saved()
@@ -1436,9 +1445,9 @@ export const useStore = create<StoreState>()(
 
       rerunHealthAnswers: async () => {
         if (!get().data._meta?.rerunAnswers) return
-        // the engine is a chunk of its own (kept off the main bundle): loaded on demand, so the
-        // answer itself saves at once, offline too, and this re-run waits for a connection if the
-        // chunk isn't cached yet (retried when back online and at the next launch)
+        // the plan rebuild: the engine is a chunk of its own (kept off the main bundle, prefetched
+        // while online by App). The answer, routing and targets are already applied; if the chunk
+        // can't load (offline, never fetched) the rebuild stays pending for the next launch or connection
         let mod: typeof import('@/core/domain/wizard')
         try { mod = await import('@/core/domain/wizard') } catch { window.addEventListener('online', () => void get().rerunHealthAnswers(), { once: true }); return }
         set((st) => { rerunAnswers(st.data, mod.rerunForAnswers); delete ensureMeta(st.data, false).rerunAnswers })

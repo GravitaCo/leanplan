@@ -6,8 +6,7 @@
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
-import { medicalOutcome } from '@/core/domain/wizard'
+import { medicalOutcome, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { BackButton, BareSheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '../onboarding/copy'

@@ -91,6 +91,9 @@ export function wellbeingOutcome(a: WellbeingAnswer | undefined): OnboardingOutc
   return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : 'flagged'
 }
 
+/** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
+export const medicalOutcome = (ticked: number, none: boolean): OnboardingOutcomes['medical'] => (ticked > 0 ? 'flagged' : none ? 'clear' : undefined)
+
 /** The medical-conditions question is only asked when the goal means eating less (§3). */
 export const asksMedical = (goal: Goal | undefined): boolean => goal === 'lose-fat'
 

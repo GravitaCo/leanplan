@@ -29,7 +29,7 @@ const KEY = 'sb-exvblofwiwbvycomxvmj-auth-token'
 const ROOT = path.resolve(__dirname, '..')
 const EXPECT = path.join(ROOT, 'node_modules/.cache/e2e-onboarding-expect.cjs')
 execFileSync(path.join(ROOT, 'node_modules/.bin/esbuild'), ['scripts/e2e-onboarding-expect.ts', '--bundle', '--platform=node', '--alias:@=./src', '--define:import.meta.env={}', '--log-level=error', '--format=cjs', '--outfile=' + EXPECT], { cwd: ROOT })
-const { expected } = require(EXPECT)
+const { expected, finished } = require(EXPECT)
 
 function fakeJwt(uid, authAgoS = 10) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -95,6 +95,8 @@ async function scenario(browser, name, fn, opts = {}) {
     return route.fulfill({ status: 201, body: '' })
   })
   await ctx.route(/openfoodfacts\.org|b-cdn\.net/, (r) => r.abort())
+  // opts.block: assets that fail to load (a cold cache offline)
+  if (opts.block) await ctx.route(opts.block, (r) => r.abort())
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -658,6 +660,46 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await h1(page, 'Health check answers')
     await page.getByText('Nothing kept from your health check.').waitFor()
   }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  // offline-first: a changed answer re-runs routing and targets at once; the plan rebuild needs the
+  // engine chunk, prefetched while online (warm), or pending until it can load (cold)
+  const planState = () => {
+    const f = finished({ v: 1, mode: 'first', step: 'summary', seed: 'e2e-ob7', name: 'Sam', age: 34, goal: 'feel-better', motivations: [],
+      outcomes: { readiness: 'flagged', wellbeing: 'clear', baseline: 'ok', medical: 'clear' }, height: 168, heightUnit: 'cm', sexAnswer: 'female', weight: 70, weightUnit: 'kg',
+      movement: { kind: 'steps', band: '5k-7.5k' }, moving: 'now-and-then', experience: 'beginner', daysPerWeek: 3, minutes: 30, where: 'home', kit: ['dumbbell', 'mat'], enjoy: ['walking'] }, today, '2026-09-20T08:00:00.000Z')
+    return { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } }, profile: f.profile, trainingPlans: f.trainingPlans.map((p) => ({ ...p, _dirty: true })), routines: f.routines.map((r) => ({ ...r, _dirty: true })) } }
+  }
+  const readinessGuard = (st) => /"code":"guardrail","about":"[a-z-]+","field":"readiness"/.test(JSON.stringify([st.trainingPlans.find((p) => p.state === 'active').why, st.routines.filter((r) => !r.archived)]))
+  const clearHealthCheck = async (page) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear health check' }).click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+  }
+
+  await run('offline, warm cache: clearing an answer re-runs targets and the plan with no connection', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    expect(readinessGuard(await stored(page)), 'the plan starts with the readiness guardrail')
+    await page.waitForTimeout(1500) // the prefetch (App) while online
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers)
+    const st = await stored(page)
+    expect(!st.profile.outcomes.readiness && !readinessGuard(st), 'plan rebuilt offline without the guardrail')
+  }, planState())
+
+  await run('offline, cold cache: targets at once, the plan rebuild pending until the engine loads', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForTimeout(800)
+    const st = await stored(page)
+    expect(st.target.kcal !== 2000 && st._meta.rerunAnswers === true && readinessGuard(st), 'targets re-run, plan pending: ' + st.target.kcal + ' ' + st._meta.rerunAnswers)
+    await ctx.unroute(/\/assets\/(wizard|Wizard)-/)
+    await ctx.setOffline(false)
+    await page.reload()
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers, null, { timeout: 15000 })
+    expect(!readinessGuard(await stored(page)), 'plan rebuilt at the next launch')
+  }, { ...planState(), block: /\/assets\/(wizard|Wizard)-/ })
 
   await run('flag off: no Health check answers row, no check-in', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
