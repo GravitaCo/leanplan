@@ -39,6 +39,8 @@ export function termsOfUse(): LegalDoc {
       {
         h: '',
         p: [
+          'Tali\'s setup questions about your health only decide how gently your plan starts and whether Tali suggests eating less. They are not a medical check, and they can\'t tell you whether exercise or a change in diet is safe for you. ' +
+            'If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won\'t suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.',
           'Stop exercising and get medical help if you feel pain, dizziness or shortness of breath. ' +
             'If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time.',
         ],

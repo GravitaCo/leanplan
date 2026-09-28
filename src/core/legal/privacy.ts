@@ -40,10 +40,12 @@ export function privacyPolicy(): LegalDoc {
         p: [`Only what you enter, or what is needed to run your account:`],
         ul: [
           `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
-          `Profile: display name, sex, age, height, weight, body fat (if you add it), activity level, goal, pace, diet pattern (such as vegetarian or vegan), training experience, equipment, days per week, cardio preferences, muscle groups to focus on, and any body areas to train around, with a note if you add one.`,
-          `Your log: food and drink, portions, recipes and custom foods, including foods you scan with their barcode and where the numbers came from; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); workouts you create and weekly training plans, with any notes you add when a plan ends; supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.`,
+          `Profile: display name, sex (and, if you set Tali up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tali worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`,
+          `Setup health questions: when you set Tali up, it asks a few questions so your plan starts safely. Each one is optional. For the health check (heart, dizziness, pregnancy or recent surgery), the question about some conditions and medicines (diabetes treated with insulin or tablets that can cause lows, kidney disease, a weight-loss injection) and how things have been lately (sleep, stress and how much room you have for change), we keep only the result, such as "start gently" or "don't suggest eating less", never which item you picked (apart from pregnancy, below). We never keep which condition or medicine applies to you. We do keep your answer about how food and weight feel for you (as "yes or sometimes", "no" or "rather not say") and whether it turned Gentle mode on, and whether you're pregnant or breastfeeding (not which) with the date you told us. We also keep when each answer was last changed, so answers given on two phones don't overwrite each other.`,
+          `Your log: food and drink, portions, recipes and custom foods, including foods you scan with their barcode and where the numbers came from; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); workouts you create and weekly training plans, with the reasons Tali gives for their choices (some come from your answers above, such as going easy on your knees or starting gently) and any notes you add when a plan ends; supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.`,
           `Settings: calorie and macro targets and ranges, weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.`,
           `On your device only: the list of ingredients you have at home, used for meal suggestions. It is never uploaded.`,
+          `On your device only, while you set Tali up: your answers so far, so you can pick up where you left off. This draft is never uploaded, and is deleted when you finish setup, remove this device's log or delete your account.`,
           `Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send supplement reminders.`,
           `Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.`,
           `Feedback: if you send feedback from the app, it goes from your own email app to us, with the app version and your browser and device type. Please leave out health details you'd rather keep private.`,
@@ -60,11 +62,11 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'Health data',
         p: [
-          `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
-            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. If you used Tali before we asked, what you logged then was already synced to your account. ` +
+          `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood, and your answers to the setup health questions, including pregnancy) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
+            `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. The setup questions about your health only appear once you've agreed. If you used Tali before we asked, what you logged then was already synced to your account. ` +
             `If you used Tali before we asked, you can choose "Not now". Everything you log then stays on your phone, and nothing syncs to your account or is backed up there. What was already in your account is kept there, unused, until ${UNCONSENTED_DELETION.long}, and then deleted unless you've agreed. Your phone keeps its copy, and if you agree later it uploads again from your phone. We ask once more after two weeks. Reminders only run once you've agreed.`,
           `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log, profile, settings and reminders from your account, so your log stays only on your phones. ` +
-            `It also clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from this phone straight away, and from your other phones the next time each one connects. ` +
+            `It also clears your weigh-ins, check-ins, body details (weight, body fat, height and the sex answer used for your energy estimate), your setup answers (the health check, medical and lately results, pregnancy, how food and weight feel, what would make Tali worth it, daily movement), your training preferences (including any injuries you've noted), and the reasons in your plans and workouts that came from them, from this phone straight away, and from your other phones the next time each one connects. Your name, age, goal, the sex shown in Profile and whether Gentle mode is on stay on your phones. ` +
             `Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
         ],
       },
@@ -85,6 +87,7 @@ export function privacyPolicy(): LegalDoc {
         h: 'Automatic calculations',
         p: [
           `Tali suggests calorie and macro targets, meals and workout adjustments from what you enter, using standard formulas. They are suggestions you can change at any time. ` +
+            `Some setup answers change what Tali shows, as safety settings: a yes in the health check starts your plan more gently; a yes to the question about conditions and medicines means Tali won't suggest eating less; if you tell Tali you're pregnant or breastfeeding, food stays at maintenance with no calorie number; and a yes or sometimes about food and weight turns on Gentle mode, with no weight or calorie target on screen. These don't diagnose anything and aren't medical advice. ` +
             `They have no legal or similarly significant effect on you, and nobody makes decisions about you from them.`,
         ],
       },
@@ -146,7 +149,7 @@ export function privacyPolicy(): LegalDoc {
         p: [`You have the right to:`],
         ul: [
           `access your data and get a copy in a portable format (in the app: Profile, then Back up and restore, then Export);`,
-          `correct it (you can edit everything in the app);`,
+          `correct it (you can edit most of it in the app, and we'll correct anything else if you email us);`,
           `have it deleted (in the app: Profile, then Privacy, then Delete account);`,
           `restrict or object to how we use it;`,
           `withdraw consent at any time, including leaving the early access list.`,
@@ -161,7 +164,7 @@ export function privacyPolicy(): LegalDoc {
       },
       {
         h: 'Age',
-        p: [`Tali is for people aged ${MIN_AGE} and over. We don't knowingly collect data from anyone younger. If you think a child has used Tali, contact us and we will delete their data.`],
+        p: [`Tali is for people aged ${MIN_AGE} and over. We don't knowingly collect data from anyone younger. If you tell Tali during setup that you're under ${MIN_AGE}, it stops there, deletes what's on your phone and deletes your new account, straight away or the next time your phone connects. If you think a child has used Tali, contact us and we will delete their data.`],
       },
       {
         h: 'Changes',
