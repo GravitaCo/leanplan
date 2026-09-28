@@ -263,7 +263,10 @@ export const HEALTH_FIELDS = [
 export interface HealthDataSummary {
   weighIns: number
   checkins: number
+  /** body details and onboarding answers on the profile */
   profileFields: number
+  /** training preferences answered (body areas, days, kit, likes …) */
+  trainingPrefs: number
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
@@ -287,8 +290,8 @@ export function healthDataSummary(s: PersistedState): HealthDataSummary {
   return {
     weighIns: days.filter((d) => d && d.weight != null).length,
     checkins: days.filter((d) => d && d.checkin).length,
-    profileFields: PROFILE_HEALTH.filter((k) => s.profile?.[k] != null).length + (t?.limitations?.length ? 1 : 0) + (t?.limitationsNote ? 1 : 0) +
-      Object.keys(t ?? {}).filter((k) => k !== 'limitations' && k !== 'limitationsNote').length,
+    profileFields: PROFILE_HEALTH.filter((k) => s.profile?.[k] != null).length,
+    trainingPrefs: Object.values(t ?? {}).filter((v) => v != null && !(Array.isArray(v) && !v.length) && v !== '').length,
   }
 }
 
@@ -585,8 +588,8 @@ export async function pullConsents(s: PersistedState): Promise<void> {
 
 /* ---------------- export before withdrawing health consent ---------------- */
 
-/** Copy for the withdrawal step in Profile's Health data sheet (not on a board yet: flagged for Benn). */
-export const HEALTH_WITHDRAW_PROMPT = 'This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?'
+/** Copy for the withdrawal step in Profile's Health data sheet (Benn approved, Sept 2026). */
+export const HEALTH_WITHDRAW_PROMPT = 'This removes your weigh-ins, check-ins, body details and training preferences from all your devices. Download a copy first?'
 
 /**
  * The backup to offer before a health withdrawal: the whole device state as the JSON backup

@@ -201,7 +201,7 @@ function withdrawal(): void {
   s.profile.activityMult = s.profile.activityMult ?? 1.4
   s.profile.training = { ...s.profile.training, exPrefs: { liked: ['goblet-squat'] } }
   const meta = ensureMeta(s, false); meta.settings.dirty = false
-  const before = healthDataSummary(s).profileFields
+  const hs = healthDataSummary(s), before = hs.profileFields + hs.trainingPrefs
   clearHealthData(s, meta)
   const p = s.profile
   // the plan's health-derived reasons go too, from workouts and plans, marked to sync
@@ -224,7 +224,7 @@ function withdrawal(): void {
     ['outcomes, pregnancy, why, body, movement, multiplier and training prefs are gone',
       !p.outcomes && !p.pregnancy && !p.motivations && p.height === null && !p.sexAnswer && !p.movement && !p.activityMult && !p.deficitChosen && !Object.keys(p.training ?? {}).length, JSON.stringify(p)],
     ['the activity level set from movement goes back to the default with the multiplier', p.activityLevel === 'light' && p.answeredAt?.activityLevel !== AT],
-    ['counted before, nothing left after', before >= 8 && healthDataSummary(s).profileFields === 0],
+    ['counted before, nothing left after', before >= 8 && healthDataSummary(s).profileFields === 0 && healthDataSummary(s).trainingPrefs === 0],
     ['the clear is stamped, so an older copy elsewhere can\'t bring an answer back', p.answeredAt?.['outcomes.readiness'] !== AT && !!p.answeredAt?.['training.limitations'] && meta.settings.dirty],
     ['age stays (the one required answer), as does the goal', p.age === 34 && p.goal === 'lose-fat'],
     ['a patch saved without consent drops the health fields', (() => { const x = withoutHealth({ name: 'A', height: 180, outcomes: { readiness: 'clear' }, training: { daysPerWeek: 3 } }); return x.name === 'A' && x.height === undefined && !x.outcomes && !x.training })()],

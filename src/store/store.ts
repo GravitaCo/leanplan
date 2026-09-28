@@ -47,8 +47,8 @@ import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WIT
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
-import type { GeneratedPlan } from '@/core/domain/engine'
-import { replacementFor } from '@/core/domain/wizard'
+import type { GeneratedPlan } from '@/core/domain/engine/generate'
+import { replacementFor } from '@/core/domain/firstSession'
 import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion } from '@/data/onboardingDraft'
 
 enableMapSet()
@@ -337,6 +337,8 @@ let signingOut = false
 const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
 /** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
 const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
+/** Shown when a height isn't kept because health consent was withdrawn. */
+export const HEIGHT_OFF_MSG = 'Height isn’t kept while health data is off. Turn it back on in Profile, then Privacy.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
@@ -835,7 +837,9 @@ export const useStore = create<StoreState>()(
       },
 
       saveProfileMetrics: (patch) => {
-        // health consent withdrawn: the health fields (weight, body fat) aren't saved; the rest is
+        // health consent withdrawn: the health fields (weight, body fat, height …) aren't saved, the
+        // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)
+        const dropped = !healthLoggingAllowed(get().data) && patch.height != null
         if (!healthLoggingAllowed(get().data)) patch = withoutHealth(patch)
         set((st) => {
           // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
@@ -847,7 +851,7 @@ export const useStore = create<StoreState>()(
           Object.assign(st.data.profile, patch)
           markSettingsDirty(st.data)
         })
-        saved('Saved')
+        saved(dropped ? HEIGHT_OFF_MSG : 'Saved')
       },
 
       setPrefs: (patch) => {

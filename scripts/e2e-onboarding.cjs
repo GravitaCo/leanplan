@@ -438,6 +438,17 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     expect((await page.getByText('Tali is for 18+').count()) === 0, 'no stop screen for another account')
   }, { state: { ...newAccount(), profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', activityMult: 1.3 } } })
 
+  await run('health data off: a height saved on Profile says it isn’t kept', async ({ page }) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Body and goal/ }).click()
+    await page.getByPlaceholder('178').fill('180')
+    await btn(page, 'Save metrics').click()
+    await page.getByText('Height isn’t kept while health data is off. Turn it back on in Profile, then Privacy.').waitFor()
+    expect((await stored(page)).profile.height == null, 'not kept')
+    await shot(page, 'height-not-kept')
+  }, { state: { ...newAccount(), consents: { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' },
+    profile: { name: 'Sam', sex: 'F', age: 34, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } } })
+
   await run('a 1-day week', async ({ page }) => {
     await wizard(page, { goal: 'Feel better and move more' })
     await btn(page, 'Finish setup').click(); await setup(page, { oneDay: true }, 'oneday/')

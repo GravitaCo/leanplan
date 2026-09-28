@@ -10,9 +10,6 @@ import { DEFAULT_WEEKDAYS, WEEK_ORDER, type Lately } from './engine/inputs'
 import { sessionsOf } from './sessions'
 import { stampFields, type MergedField } from './profileMerge'
 import { DAY_NAME } from './date'
-import { KIT_PROFILES } from './libraryCoverage'
-import { alternativesFor } from './library'
-import { EXERCISE_BY_ID } from '@/core/data/exercises'
 
 /**
  * The first-run wizard and the "Finish your setup" card (first-run-onboarding §2, §2.1, §9, §14;
@@ -469,51 +466,5 @@ export const restLine = (d: WizardDraft) => (d.enjoy?.includes('walking') ? 'Res
 /** The fixed spread the days screen promises when no weekdays are picked (§2). */
 export const defaultSpread = (n: WizardDraft['daysPerWeek']) => dayList(DEFAULT_WEEKDAYS[n ?? 3])
 
-/**
- * For "Find your weight" (engine calibrationTarget): how many earlier days logged working sets of
- * this exercise, and how the last working set felt on the most recent of them.
- */
-export function exposureOf(days: Record<string, DayLog> | undefined, before: string, exId: string): { n: number; last?: { w: string; feel?: import('@/core/types').SetFeel } } {
-  let n = 0
-  let lastDay = ''
-  let last: { w: string; feel?: import('@/core/types').SetFeel } | undefined
-  for (const [d, day] of Object.entries(days || {})) {
-    if (d >= before) continue
-    for (const s of sessionsOf(day, d)) for (const e of s.ex || []) {
-      if (e.exId !== exId) continue
-      const work = (e.sets || []).filter((x) => !x.warmup && (x.reps || x.w))
-      if (!work.length) continue
-      n++
-      if (d >= lastDay) { lastDay = d; const x = work[work.length - 1]; last = { w: x.w, ...(x.feel ? { feel: x.feel } : {}) } }
-    }
-  }
-  return { n, ...(last ? { last } : {}) }
-}
-
-// ─── Thumbs down (board ob5-3): a quiet swap to something else for the same slot ─────────────
-
-/** The kit a person has, as the engine reads it: bodyweight, a mat at home or the gym, what's ticked, the gym's own. */
-export function kitOf(t: TrainingPrefs | undefined): Set<Equipment> {
-  const kit = new Set<Equipment>(['bodyweight'])
-  const place = t?.place
-  if (place?.includes('gym')) KIT_PROFILES.gym.forEach((q) => kit.add(q))
-  if (!place || place.includes('home') || place.includes('gym')) kit.add('mat')
-  for (const q of t?.equipment ?? []) kit.add(q)
-  return kit
-}
-
-/**
- * What replaces a thumbed-down exercise: the first like-for-like alternative (same pattern and
- * main muscle, gentler first) the person has the kit for, that isn't disliked or already in the
- * workout. Null when there's nothing suitable: the exercise then stays, and only the dislike is kept.
- */
-export function replacementFor(exId: string, t: TrainingPrefs | undefined, inWorkout: string[]): string | null {
-  const e = EXERCISE_BY_ID[exId]
-  if (!e) return null
-  const kit = kitOf(t)
-  const disliked = new Set([...(t?.exPrefs?.disliked ?? []), exId])
-  const alt = alternativesFor(e)
-  const pool = [...alt.similar, ...(alt.easier ? [alt.easier] : [])]
-  const ok = pool.find((x) => !disliked.has(x.id) && !inWorkout.includes(x.id) && (!x.equipment.length || x.equipment.some((q) => kit.has(q))))
-  return ok?.id ?? null
-}
+// the first-session helpers live in firstSession.ts (no engine import: the player and the store use them)
+export { exposureOf, kitOf, replacementFor } from './firstSession'

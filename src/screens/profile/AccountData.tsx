@@ -41,12 +41,12 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
   const [step, setStep] = useState<null | ReturnType<typeof prepare>>(() => (start === 'withdraw' ? prepare() : null))
   const [saved, setSaved] = useState(false)
   const [privacy, setPrivacy] = useState(false)
-  const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields > 0 || !!s.data._meta?.lastPull })
+  const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
   const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
 
   if (step) {
     const s = step.summary
-    const parts = [s.weighIns ? n(s.weighIns, 'weigh-in', 'weigh-ins') : '', s.checkins ? n(s.checkins, 'check-in', 'check-ins') : '', s.profileFields ? n(s.profileFields, 'body detail', 'body details') : ''].filter(Boolean)
+    const parts = [s.weighIns ? n(s.weighIns, 'weigh-in', 'weigh-ins') : '', s.checkins ? n(s.checkins, 'check-in', 'check-ins') : '', s.profileFields ? n(s.profileFields, 'body detail', 'body details') : '', s.trainingPrefs ? n(s.trainingPrefs, 'training preference', 'training preferences') : ''].filter(Boolean)
     return (
       <Sheet title="Health data" onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
         <div className="prose sub" style={{ padding: '0 4px' }}>

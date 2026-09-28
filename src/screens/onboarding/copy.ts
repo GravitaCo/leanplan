@@ -4,6 +4,8 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
+import { FIRST_SESSION, SETUP_CARD } from './copyApp'
+export { FIRST_SESSION, SETUP_CARD }
 
 export interface ScreenCopy { title: string; lead?: string; why?: string; note?: string }
 
@@ -94,23 +96,6 @@ export const SUMMARY = {
     'That gives your likely maintenance, as a range, since any estimate like this can be out by about a sixth. Your goal then sets the starting number, never below a safe minimum.',
     'After 3–4 weeks of weigh-ins, Tali checks it against what actually happened.',
   ],
-}
-
-/** Onboarding 2: Today's card and the handoff. */
-export const SETUP_CARD = {
-  k: 'Finish your setup', r: 'About a minute', t: 'Tell us how you like to train, and we’ll build your week from it.',
-  s: 'Until then you’re on a starter week: 3 short full-body sessions.', go: 'Continue setup', later: 'Not now',
-}
-
-/** Onboarding 5. */
-export const FIRST_SESSION = {
-  findK: (n: number) => `Find your weight · ${n === 1 ? 'first' : 'second'} session`,
-  find: 'No wrong answer. Pick something that feels comfortable. We’ll adjust from how it felt.',
-  know: 'I know my weights',
-  feelT: 'How was that set?',
-  feelNote: 'We ask on the last set of each exercise. Skipping keeps next time the same.',
-  thumbsNote: 'Like or not for me: tap the thumbs on any exercise. No reason needed.',
-  feels: [['spare', 'Easy, lots left'], ['right', 'About right, 2 or 3 left'], ['struggle', 'Hard, the last rep was a struggle'], ['stopped', 'Stopped early']] as const,
 }
 
 /** Every line above, for the copy lint. */

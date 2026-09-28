@@ -15,7 +15,7 @@ import { loadDraft, setupCardHidden, hideSetupCard } from '@/data/onboardingDraf
 import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
-import { SETUP_CARD } from './copy'
+import { SETUP_CARD } from './copyApp'
 
 export const ONBOARDING_ENABLED: boolean = false || import.meta.env?.VITE_ONBOARDING === '1'
 
