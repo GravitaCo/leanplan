@@ -26,7 +26,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnderAge` records `tali.pendingDelete`, wipes the device only when it's that account's or nobody's (`underAgeWipesDevice`; uid from the live session, else the owner, else the saved session: `underAgeUid`; no uid, nothing recorded or wiped), and calls `delete-account` with `reason: 'under-age'`. That account's sync stays blocked; failures back off (1, 2, 4 min … at most an hour) and stop after 6 tries, and a 403 re-auth stops at once (`underAgeNext`): the device is then signed out and wiped, keeping `tali.pendingDelete`, and the sign-in screen says "Please sign in again to finish removing your account."; the next sign-in of that account finishes it. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). `delete-account` v2 deployed 2026-09-28 with this path; security-data reviewed it SAFE (repo comments record both) |
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
 | Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
-| Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). Not editable in the app: the lately baseline, motivations, daily movement, and going back to "prefer not to say" for sex: by email (the privacy policy says so) |
+| Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). The lately baseline, motivations and daily movement change through Profile › Redo setup (the wizard again, prefilled; skipping a question deletes that answer). Not editable in the app: going back to "prefer not to say" for sex: by email |
 | Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
 | Storage and PECR | Only strictly necessary local storage (see `cookies.ts`). No cookies, analytics, ads or trackers in the app |
 | Release gate | `npm run check:legal` (in the deploy workflow) fails on any placeholder the texts print; a missing ICO number only warns |
@@ -201,12 +201,10 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     or clears pregnancy and conditions, clears the gentler start and changes food and weight;
     a clear or change re-runs routing and targets (and the plan). `NOTES.pregnancy` and
     `NOTES.medical` are now true. Privacy policy updated to name the screen and the exception.
-    Still open, should fix before the flag goes on (copy only, Benn's wording): `COPY.intro.note`
-    ("you can change them any time in Profile") and `COPY.lately.why` ("You can change this
-    later") overstate: the lately baseline, "what would make Tali worth it" (`motivations`) and
-    daily movement can't be changed in the app, and the answers screen's lead ("What Tali kept
-    from your health questions") leaves out the lately result. Add a lately row or soften the
-    two lines (Art. 5(1)(a), 12(1)).
+    Done 2026-09-28 (Benn's wording): the copy now says "You can redo setup any time from
+    Profile." and "You can update this by redoing setup.", the answers screen's lead is "Answers
+    from your health check, and what each one changes.", and Profile › Redo setup (behind the
+    flag) changes the lately baseline, motivations and daily movement. Privacy policy updated.
 33. Done (re-checked 2026-09-28): the 12-week re-ask opens once on Today when due
     (`TodayScreen.tsx`, `pregnancyReaskDue`, only for a yes); "Still pregnant" or "Breastfeeding
     now" re-dates `askedAt`, "No longer" clears the flag and re-runs the plan, and "Ask me later"
@@ -234,6 +232,10 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     says "We haven't kept any of your answers" (near-unreachable: the wizard runs after sign-in);
     (c) "remove this device's log" or clearing site data drops the pending record. The client
     stop path (sign-out and wipe) has no recorded `security-data` review.
+    Update 2026-09-28: `tali.pendingDelete` now survives the in-app wipes (Delete account, and
+    sign out and remove this device's log) so an under-age deletion can finish; it goes once that
+    account's deletion succeeds (the Nutrition session's fix, in progress: re-check before the flip)
+    or when browser data is cleared. Cookie policy updated.
 38. Note, re-checked 2026-09-28: still no `CONSENT_VERSIONS.health` bump. The Profile controls,
     the re-ask and `snoozedAt` serve the same purpose, add no new category and no recipient, and
     the consent wording is unchanged. The solicitor question (item 6) stands. Publish the texts
