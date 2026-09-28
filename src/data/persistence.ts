@@ -26,6 +26,9 @@ export interface SyncMeta {
    *  retired guest mode, or before a first sign-in) and
    *  for data synced by a version before this was recorded). */
   owner?: string
+  /** a health answer changed and its plan and targets still have to be re-run (store
+   *  rerunHealthAnswers: the engine loads on demand, so offline it waits for a connection) */
+  rerunAnswers?: boolean
 }
 
 export interface PersistedState extends AppState {

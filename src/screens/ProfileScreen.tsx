@@ -18,6 +18,7 @@ import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
+import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
 
@@ -85,8 +86,8 @@ export function ProfileScreen() {
   // 'health' opens the health data sheet; 'delete-confirm' (back from a Google re-sign-in) the
   // delete confirm step; anything else is a section to open
   const arrival = profileOpen
-  const [open, setOpen] = useState<Section | null>(() => (arrival && arrival !== 'health' && arrival !== 'delete-confirm' ? arrival as Section : null))
-  const [view, setView] = useState<'main' | 'delete'>(() => (arrival === 'delete-confirm' ? 'delete' : 'main'))
+  const [open, setOpen] = useState<Section | null>(() => (arrival && arrival !== 'health' && arrival !== 'delete-confirm' && arrival !== 'health-answers' ? arrival as Section : null))
+  const [view, setView] = useState<'main' | 'delete' | 'answers'>(() => (arrival === 'delete-confirm' ? 'delete' : arrival === 'health-answers' ? 'answers' : 'main'))
   const [confirmOpen, setConfirmOpen] = useState(arrival === 'delete-confirm')
   // the health data sheet, opened at its start or straight at the withdraw step (Privacy's button)
   const [healthOpen, setHealthOpen] = useState<false | 'main' | 'withdraw'>(arrival === 'health' ? 'main' : false)
@@ -95,6 +96,7 @@ export function ProfileScreen() {
   useEffect(() => {
     if (!profileOpen) return
     clearProfileOpen()
+    if (profileOpen === 'health-answers') { setView('answers'); return }
     if (profileOpen === 'health' || profileOpen === 'delete-confirm') return
     // bring the suggested targets into view: accepting them is the next step (plan P1.5)
     requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
@@ -150,6 +152,8 @@ export function ProfileScreen() {
   const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
   const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
 
+  // ob7-1: back goes to the Health data sheet it came from
+  if (view === 'answers') return <LazyHealthAnswersScreen onBack={() => { setView('main'); setHealthOpen('main') }} />
   if (view === 'delete') return <DeleteAccountView onBack={() => { setView('main'); setConfirmOpen(false) }} confirmOpen={confirmOpen} setConfirmOpen={setConfirmOpen} />
 
   return (
@@ -393,7 +397,7 @@ export function ProfileScreen() {
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} onAnswers={() => { setHealthOpen(false); setView('answers') }} />}
       {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
       {aiOpen && <AiSheet onClose={() => setAiOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}

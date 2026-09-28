@@ -24,6 +24,7 @@ import { SIGNPOSTS, beatFor } from '@/core/data/signposts'
 import type { Lately } from '@/core/domain/engine'
 import type { OnboardingOutcomes } from '@/core/types'
 import { Icon } from '@/ui/icons'
+import { Opts } from './Opts'
 import { useScrollLock } from '@/ui/primitives'
 import { COPY, INTRO_POINTS, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
@@ -41,7 +42,7 @@ const hasHealth = (d: WizardDraft) => Object.keys(d.outcomes).length > 0 || d.pr
 export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () => void }) {
   const data = useStore((s) => s.data)
   const health = canSaveHealthAnswers(data)
-  const deleteUnder16 = useStore((s) => s.deleteUnder16)
+  const deleteUnderAge = useStore((s) => s.deleteUnderAge)
   const [d, setD] = useState<WizardDraft>(() => {
     const saved = loadDraft()
     return saved && saved.mode === mode ? saved : newDraft(mode, uuid())
@@ -79,7 +80,7 @@ export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () =
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
-    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnder16() }} />
+    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
     case 'ready': return <Ready {...common} />
     case 'ready-note': return <Note kind="readiness" onGo={() => go()} />
     case 'pregnancy-note': return <Note kind="pregnancy" onGo={() => go()} />
@@ -277,20 +278,6 @@ function Why({ d, go, back }: Common) {
       </div>
       <label className="wz-field"><input value={other} maxLength={60} placeholder="Something else" aria-label="Something else" onChange={(e) => setOther(e.target.value)} /></label>
     </Frame>
-  )
-}
-
-function Opts<T extends string>({ opts, value, onPick, label, multi }: { opts: readonly (readonly [T, string, string?])[]; value: T | T[] | undefined; onPick: (v: T) => void; label: string; multi?: boolean }) {
-  const on = (k: T) => (Array.isArray(value) ? value.includes(k) : value === k)
-  return (
-    <div className="wz-opts" role={multi ? 'group' : 'radiogroup'} aria-label={label}>
-      {opts.map(([k, t, s]) => (
-        <button key={k} role={multi ? 'checkbox' : 'radio'} aria-checked={on(k)} className={'wz-opt' + (on(k) ? ' on' : '')} onClick={() => onPick(k)}>
-          <span className="m"><span className="t">{t}</span>{s && <span className="s">{s}</span>}</span>
-          <span className={'wz-dot' + (multi ? ' sq' : '')}>{on(k) && <Icon name="check" size={14} stroke={2.6} />}</span>
-        </button>
-      ))}
-    </div>
   )
 }
 

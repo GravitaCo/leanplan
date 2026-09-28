@@ -29,7 +29,7 @@ const KEY = 'sb-exvblofwiwbvycomxvmj-auth-token'
 const ROOT = path.resolve(__dirname, '..')
 const EXPECT = path.join(ROOT, 'node_modules/.cache/e2e-onboarding-expect.cjs')
 execFileSync(path.join(ROOT, 'node_modules/.bin/esbuild'), ['scripts/e2e-onboarding-expect.ts', '--bundle', '--platform=node', '--alias:@=./src', '--define:import.meta.env={}', '--log-level=error', '--format=cjs', '--outfile=' + EXPECT], { cwd: ROOT })
-const { expected } = require(EXPECT)
+const { expected, finished } = require(EXPECT)
 
 function fakeJwt(uid, authAgoS = 10) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -65,7 +65,9 @@ async function scenario(browser, name, fn, opts = {}) {
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     if (url.includes('/functions/v1/delete-account')) {
       net.fnCalls.push({ body: JSON.parse(req.postData() || '{}') })
-      return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true }) })
+      // opts.fnReply: what the function answers instead of { ok: true } (e.g. the re-auth refusal)
+      const r = opts.fnReply || { status: 200, body: { ok: true } }
+      return route.fulfill({ status: r.status, contentType: 'application/json', headers: cors, body: JSON.stringify(r.body) })
     }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(USER) })
     if (url.includes('/auth/v1/logout')) return route.fulfill({ status: 204 })
@@ -93,6 +95,8 @@ async function scenario(browser, name, fn, opts = {}) {
     return route.fulfill({ status: 201, body: '' })
   })
   await ctx.route(/openfoodfacts\.org|b-cdn\.net/, (r) => r.abort())
+  // opts.block: assets that fail to load (a cold cache offline)
+  if (opts.block) await ctx.route(opts.block, (r) => r.abort())
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -417,6 +421,20 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding') && (!st || !Object.keys(st.days || {}).length), 'device wiped: ' + left.join())
   })
 
+  await run('safety: under 18, account over 24 h (re-auth refused) → stops, wipes, asks to sign in again', async ({ page, net }) => {
+    await wizard(page, { age: 15 })
+    await h1(page, 'Tali is for 18+')
+    await btn(page, 'Close').click()
+    await page.getByText('Please sign in again to finish removing your account.').waitFor({ timeout: 8000 })
+    await shot(page, 'route-under18/reauth-sign-in')
+    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => k === 'leanplan.v1' || k.startsWith('sb-') || k.startsWith('tali.')))
+    const pend = await page.evaluate(() => JSON.parse(localStorage.getItem('tali.pendingDelete') || 'null'))
+    expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding' || k === 'leanplan.v1'), 'device wiped and signed out: ' + left.join())
+    expect(pend && pend.uid === UID && pend.stage === 'sign-in', 'kept to finish at the next sign-in: ' + JSON.stringify(pend))
+    await page.waitForTimeout(2500)
+    expect(net.fnCalls.length === 1, 'no automatic retries: ' + net.fnCalls.length)
+  }, { fnReply: { status: 403, body: { ok: false, error: 'reauth' } } })
+
   await run('safety: under 18 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
     await wizard(page, { age: 14 })
     await h1(page, 'Tali is for 18+')
@@ -518,6 +536,180 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     expect((await page.getByText('A few questions, so Tali fits you').count()) === 0, 'no wizard')
   }, { state: { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }, rows: { settings: [{ user_id: UID, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', sex: 'F', age: 34, height: 172, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }] } })
+
+  // ─── Onboarding 7: Health check answers and the 12-week check-in (boards ob7-1 to ob7-4) ───
+  const weeksAgo = (w) => { const d = new Date(); d.setDate(d.getDate() - w * 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  const answered = ({ dark, ...x } = {}) => ({ state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } },
+    profile: { name: 'Sam', sex: 'F', sexAnswer: 'female', age: 34, height: 168, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, goal: 'feel-better', onboardedAt: '2026-09-20T08:00:00.000Z', ...x } }, ...(dark ? { dark: true } : {}) })
+  const BOARD = { outcomes: { readiness: 'flagged', medical: 'flagged', wellbeing: 'flagged', baseline: 'ok' }, pregnancy: { flagged: true, askedAt: today }, gentle: true }
+  const toAnswers = async (page) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await btn(page, 'Health check answers').click()
+    await h1(page, 'Health check answers')
+  }
+  const rowTexts = (page) => page.locator('.ha-row').allInnerTexts()
+
+  for (const dark of [false, true]) {
+    await run(`ob7-1 health check answers${dark ? ' (dark)' : ''}: every answer kept, with what it changes`, async ({ page }) => {
+      await toAnswers(page)
+      await shot(page, 'ob7/ob7-1-answers' + (dark ? '-dark' : ''))
+      const rows = await rowTexts(page)
+      expect(rows.length === 4 && /^Pregnant or breastfeeding\nYes\nFood stays at maintenance/.test(rows[0]) && /^Conditions or medicines\nYes/.test(rows[1]) && /^Health check\nGentler start/.test(rows[2]) && /^Food and weight\nYes or sometimes/.test(rows[3]), rows.join(' ¶ '))
+      expect((await page.getByRole('button', { name: /^Change/ }).count()) === 3 && (await page.getByRole('button', { name: /^Clear/ }).count()) === 3, 'Change ×3, Clear ×3 (health check Clear only, food and weight Change only)')
+      await page.getByText('Clearing these changes your plan and targets straight away.').waitFor()
+    }, answered({ ...BOARD, dark }))
+  }
+
+  await run('ob7-2 clear pregnancy: asks first, then the row goes and targets show again', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await h1(page, 'Clear pregnant or breastfeeding?')
+    await page.getByText('Your food targets will show calorie numbers again, and training goes back to your usual pace.').waitFor()
+    await shot(page, 'ob7/ob7-2-confirm')
+    await btn(page, 'Keep it').click()
+    expect(!!(await stored(page)).profile.pregnancy, 'Keep it keeps it')
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.locator('.sheet .btn', { hasText: 'Clear' }).click()
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy)
+    const st = await stored(page)
+    expect(!st.profile.pregnancy && !!st.profile.answeredAt.pregnancy, 'cleared and stamped')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+    { const t = (await stored(page)).target.kcal; expect(t !== 2000 && t > 1200, 'targets re-run: ' + t) }
+    expect((await rowTexts(page)).length === 1, 'one row left')
+  }, answered({ outcomes: { readiness: 'clear' }, pregnancy: { flagged: true, askedAt: today } }))
+
+  await run('ob7-2 variant: numbers stay hidden while gentle mode is on', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.getByText('Your plan goes back to your usual pace. Calorie numbers stay hidden while gentle mode is on.').waitFor()
+    await shot(page, 'ob7/ob7-2b-confirm-hidden')
+  }, answered(BOARD))
+
+  await run('ob7-2 a gentler start remains: says it stays', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.getByText('Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.').waitFor()
+    await shot(page, 'ob7/ob7-2c-confirm-gentler')
+  }, answered({ outcomes: { readiness: 'flagged' }, pregnancy: { flagged: true, askedAt: today } }))
+
+  await run('ob7-1b clear everything: nothing kept', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear health check' }).click()
+    await page.getByRole('button', { name: 'Clear conditions or medicines' }).click()
+    await page.locator('.sheet .btn', { hasText: 'Clear' }).click()
+    await page.getByText('Nothing kept from your health check.').waitFor()
+    await shot(page, 'ob7/ob7-1b-empty')
+    const p = (await stored(page)).profile
+    expect(!p.outcomes, 'no outcomes left: ' + JSON.stringify(p.outcomes))
+  }, answered({ outcomes: { readiness: 'flagged', medical: 'flagged' } }))
+
+  await run('change conditions and food and weight: outcomes only, gentle mode follows', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Change conditions or medicines' }).click()
+    await check(page, 'None of these')
+    await shot(page, 'ob7/change-conditions')
+    await btn(page, 'Done').click()
+    await page.getByRole('button', { name: 'Change food and weight' }).click()
+    await shot(page, 'ob7/change-wellbeing')
+    await radio(page, 'No')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.outcomes.wellbeing === 'clear')
+    const p = (await stored(page)).profile
+    expect(p.outcomes.medical === 'clear' && p.outcomes.wellbeing === 'clear' && p.gentle === false, JSON.stringify(p.outcomes) + ' gentle ' + p.gentle)
+    const rows = await rowTexts(page)
+    expect(/^Conditions or medicines\nNone of these/.test(rows[0]) && /^Food and weight\nNo\n/.test(rows[1]), rows.join(' ¶ '))
+    expect(!JSON.stringify(p).match(/insulin|kidney|semaglutide/i), 'no condition kept')
+  }, answered({ outcomes: { medical: 'flagged', wellbeing: 'flagged' }, gentle: true }))
+
+  for (const dark of [false, true]) {
+    await run(`ob7-3 12-week check-in on Today${dark ? ' (dark)' : ''}: once; Ask me later snoozes 2 weeks`, async ({ page }) => {
+      await h1(page, 'Does this still apply?')
+      await shot(page, 'ob7/ob7-3-checkin' + (dark ? '-dark' : ''))
+      await page.getByRole('button', { name: 'Ask me later' }).click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.snoozedAt)
+      const p = (await stored(page)).profile.pregnancy
+      expect(p.flagged && p.snoozedAt === today && p.askedAt === weeksAgo(13), JSON.stringify(p))
+      await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(600)
+      expect((await page.getByText('Does this still apply?').count()) === 0, 'not again until the snooze ends')
+    }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) }, dark }))
+  }
+
+  await run('ob7-3 closing the sheet counts as Ask me later', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.snoozedAt)
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  await run('ob7-3 Breastfeeding now: closes quietly and restarts the 12 weeks', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await radio(page, 'Breastfeeding now')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.askedAt !== undefined && document.querySelectorAll('.sheet').length === 0)
+    const p = (await stored(page)).profile.pregnancy
+    expect(p.flagged && p.askedAt === today && !p.snoozedAt, JSON.stringify(p))
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  await run('ob7-4 No longer: thanks, then the answers', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await radio(page, 'No longer')
+    await page.getByRole('heading', { name: 'Thanks. Your plan and targets will update.' }).waitFor()
+    await shot(page, 'ob7/ob7-4-nolonger')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+    const st = await stored(page)
+    expect(!st.profile.pregnancy && st.target.kcal !== 2000, 'flag gone, targets re-run: ' + st.target.kcal)
+    await btn(page, 'See your health check answers').click()
+    await h1(page, 'Health check answers')
+    await page.getByText('Nothing kept from your health check.').waitFor()
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  // offline-first: a changed answer re-runs routing and targets at once; the plan rebuild needs the
+  // engine chunk, prefetched while online (warm), or pending until it can load (cold)
+  const planState = () => {
+    const f = finished({ v: 1, mode: 'first', step: 'summary', seed: 'e2e-ob7', name: 'Sam', age: 34, goal: 'feel-better', motivations: [],
+      outcomes: { readiness: 'flagged', wellbeing: 'clear', baseline: 'ok', medical: 'clear' }, height: 168, heightUnit: 'cm', sexAnswer: 'female', weight: 70, weightUnit: 'kg',
+      movement: { kind: 'steps', band: '5k-7.5k' }, moving: 'now-and-then', experience: 'beginner', daysPerWeek: 3, minutes: 30, where: 'home', kit: ['dumbbell', 'mat'], enjoy: ['walking'] }, today, '2026-09-20T08:00:00.000Z')
+    return { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } }, profile: f.profile, trainingPlans: f.trainingPlans.map((p) => ({ ...p, _dirty: true })), routines: f.routines.map((r) => ({ ...r, _dirty: true })) } }
+  }
+  const readinessGuard = (st) => /"code":"guardrail","about":"[a-z-]+","field":"readiness"/.test(JSON.stringify([st.trainingPlans.find((p) => p.state === 'active').why, st.routines.filter((r) => !r.archived)]))
+  const clearHealthCheck = async (page) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear health check' }).click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+  }
+
+  await run('offline, warm cache: clearing an answer re-runs targets and the plan with no connection', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    expect(readinessGuard(await stored(page)), 'the plan starts with the readiness guardrail')
+    await page.waitForTimeout(1500) // the prefetch (App) while online
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers)
+    const st = await stored(page)
+    expect(!st.profile.outcomes.readiness && !readinessGuard(st), 'plan rebuilt offline without the guardrail')
+  }, planState())
+
+  await run('offline, cold cache: targets at once, the plan rebuild pending until the engine loads', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForTimeout(800)
+    const st = await stored(page)
+    expect(st.target.kcal !== 2000 && st._meta.rerunAnswers === true && readinessGuard(st), 'targets re-run, plan pending: ' + st.target.kcal + ' ' + st._meta.rerunAnswers)
+    await ctx.unroute(/\/assets\/(wizard|Wizard)-/)
+    await ctx.setOffline(false)
+    await page.reload()
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers, null, { timeout: 15000 })
+    expect(!readinessGuard(await stored(page)), 'plan rebuilt at the next launch')
+  }, { ...planState(), block: /\/assets\/(wizard|Wizard)-/ })
+
+  await run('flag off: no Health check answers row, no check-in', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await page.waitForTimeout(600)
+    expect((await page.getByText('Does this still apply?').count()) === 0, 'no check-in')
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await page.waitForTimeout(300)
+    expect((await btn(page, 'Health check answers').count()) === 0, 'no row')
+  }, { ...answered({ ...BOARD, pregnancy: { flagged: true, askedAt: weeksAgo(13) } }), url: OFF })
 
   await run('flag off: nothing new shows', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()

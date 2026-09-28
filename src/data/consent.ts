@@ -14,6 +14,7 @@ import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
+import { clearDraft } from './onboardingDraft'
 
 export const CONSENT_TYPES = ['health', 'ai', 'label-photo'] as const
 export type ConsentType = (typeof CONSENT_TYPES)[number]
@@ -411,6 +412,8 @@ export function applyHealthWithdrawal(s: PersistedState, meta: SyncMeta): boolea
   const log = consentLog(s)
   if (!r || r.granted || log.healthCleared === r.id) return false
   clearHealthData(s, meta)
+  // an unfinished onboarding draft on this phone holds health answers too (register item 35)
+  clearDraft()
   stripResumeCopy(log)
   log.healthCleared = r.id
   return true
@@ -497,12 +500,14 @@ export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentReco
 
 /**
  * Withdraw consent for a type. Health also clears the health data on this device (and, through
- * sync, the server), and applies once, as above.
+ * sync, the server) and the unfinished onboarding draft, and applies once, as above.
  */
 export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): ConsentRecord {
   const rec = recordConsent(s, type, false)
   if (type === 'health') {
     clearHealthData(s, meta)
+    // an unfinished onboarding draft on this phone holds health answers too (register item 35)
+    clearDraft()
     const log = consentLog(s)
     log.healthCleared = rec.id
     // nothing is held back any more: the whole log is now this device's only
