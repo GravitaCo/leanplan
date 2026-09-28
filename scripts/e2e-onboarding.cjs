@@ -583,6 +583,13 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await shot(page, 'ob7/ob7-2b-confirm-hidden')
   }, answered(BOARD))
 
+  await run('ob7-2 a gentler start remains: says it stays', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.getByText('Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.').waitFor()
+    await shot(page, 'ob7/ob7-2c-confirm-gentler')
+  }, answered({ outcomes: { readiness: 'flagged' }, pregnancy: { flagged: true, askedAt: today } }))
+
   await run('ob7-1b clear everything: nothing kept', async ({ page }) => {
     await toAnswers(page)
     await page.getByRole('button', { name: 'Clear health check' }).click()

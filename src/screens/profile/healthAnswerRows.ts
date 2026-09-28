@@ -4,7 +4,7 @@
  * is stored (healthAnswersView). No React, so `npm test` checks it.
  */
 import type { Profile } from '@/core/types'
-import { healthAnswersView, type HealthAnswerKind } from '@/core/domain/onboarding'
+import { healthAnswersView, numbersStayHidden, type HealthAnswerKind } from '@/core/domain/onboarding'
 import { HEALTH_ANSWERS as H } from '../onboarding/copy'
 
 export type RowKind = Exclude<HealthAnswerKind, 'baseline'>
@@ -45,4 +45,14 @@ export function answerRows(p: Profile): AnswerRow[] {
     })
   }
   return out
+}
+
+/**
+ * The clear confirm's line (ob7-2): numbers stay hidden by something else (the approved variant),
+ * or a gentler start is still kept (Benn's line), or the board's line when nothing remains.
+ */
+export function clearConfirmLine(p: Profile, kind: RowKind): string {
+  if (numbersStayHidden(p, kind)) return H.confirmHidden
+  if (kind !== 'readiness' && p.outcomes?.readiness === 'flagged') return H.confirmGentler
+  return H.confirm
 }

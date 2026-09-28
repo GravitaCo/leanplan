@@ -101,8 +101,9 @@ export const SUMMARY = {
 /**
  * Onboarding 7: Profile › Health data › Health check answers, and the 12-week check-in on Today
  * (boards ob7-1 to ob7-4, s-ob7, approved 28 Sept 2026). Values show only what is stored (outcomes,
- * never the condition, and pregnancy and breastfeeding aren't told apart); where a board value
- * needs more than that, or a value has no board, the line is marked GAP.
+ * never the condition, and pregnancy and breastfeeding aren't told apart): Benn approved these
+ * values and the lines for stored "no" and "Rather not say" answers (28 Sept 2026). "How things
+ * are lately" stays unlisted.
  */
 export const HEALTH_ANSWERS = {
   row: 'Health check answers',
@@ -113,13 +114,12 @@ export const HEALTH_ANSWERS = {
   change: 'Change',
   clear: 'Clear',
   labels: { pregnancy: 'Pregnant or breastfeeding', medical: 'Conditions or medicines', readiness: 'Health check', wellbeing: 'Food and weight' },
-  /** GAP: the boards show "Breastfeeding" and "A weight-loss injection"; only a yes is stored */
+  /** only a yes is stored (not the condition, not pregnant vs breastfeeding) */
   yes: 'Yes',
-  /** GAP: no board for a stored "no" */
   no: 'No',
   none: 'None of these',
   gentler: 'Gentler start',
-  /** GAP: the board shows "Sometimes"; Yes and Sometimes are stored as one */
+  /** Yes and Sometimes are stored as one */
   wellbeingFlagged: 'Yes or sometimes',
   rather: 'Rather not say',
   does: {
@@ -127,15 +127,17 @@ export const HEALTH_ANSWERS = {
     medical: 'Food stays at maintenance, with no high-protein target.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
     wellbeing: 'Weight is hidden and there’s no calorie target to hit.',
-    /** GAP: "Rather not say" without the deficit chosen */
+    /** "Rather not say" without the deficit chosen */
     rather: 'Food stays at maintenance for now.',
-    /** GAP: a stored answer that changes nothing */
+    /** a stored answer that changes nothing */
     nothing: 'Nothing changes in your plan.',
   },
   confirmT: (label: string) => { const l = String(label); return `Clear ${l.charAt(0).toLowerCase() + l.slice(1)}?` },
   confirm: 'Your food targets will show calorie numbers again, and training goes back to your usual pace.',
   /** s-ob7's undrawn variant: something else still hides the numbers */
   confirmHidden: 'Your plan goes back to your usual pace. Calorie numbers stay hidden while gentle mode is on.',
+  /** a gentler start (the health check) is still kept after this clear (Benn, 28 Sept 2026) */
+  confirmGentler: 'Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.',
   keep: 'Keep it',
 }
 export const CHECKIN = {

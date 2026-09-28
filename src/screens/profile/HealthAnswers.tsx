@@ -6,13 +6,13 @@
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { numbersStayHidden, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
+import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { medicalOutcome } from '@/core/domain/wizard'
 import { BackButton, BareSheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '../onboarding/copy'
 import { Opts } from '../onboarding/Opts'
-import { answerRows, type AnswerRow } from './healthAnswerRows'
+import { answerRows, clearConfirmLine, type AnswerRow } from './healthAnswerRows'
 
 type Open = { sheet: 'confirm'; row: AnswerRow } | { sheet: 'pregnancy' | 'medical' | 'wellbeing' } | null
 
@@ -54,15 +54,15 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-/** ob7-2: Clear asks first for pregnancy and conditions; the undrawn variant when numbers stay hidden. */
+/** ob7-2: Clear asks first for pregnancy and conditions; its line says what stays (clearConfirmLine). */
 function ClearConfirmSheet({ row, onClose }: { row: AnswerRow; onClose: () => void }) {
   const clear = useStore((s) => s.clearHealthAnswer)
-  const hidden = useStore((s) => numbersStayHidden(s.data.profile, row.kind))
+  const line = useStore((s) => clearConfirmLine(s.data.profile, row.kind))
   const title = H.confirmT(row.label)
   return (
     <BareSheet label={title} onClose={onClose} className="consent">
       <h2 className="cs-t">{title}</h2>
-      <div className="cs-lead">{hidden ? H.confirmHidden : H.confirm}</div>
+      <div className="cs-lead">{line}</div>
       <button className="btn ob-btn" onClick={() => { clear(row.kind); onClose() }}>{H.clear}</button>
       <button className="linkbtn ob-alt" onClick={onClose}>{H.keep}</button>
     </BareSheet>

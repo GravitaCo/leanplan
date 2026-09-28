@@ -19,7 +19,7 @@ import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES } from '../src/screens/onboarding/copy'
-import { answerRows } from '../src/screens/profile/healthAnswerRows'
+import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
 import { deleteAccount } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { readFileSync } from 'node:fs'
@@ -408,7 +408,12 @@ function healthAnswersUi(): void {
     ['a kept "no" still shows, changing nothing', (() => { const x = answerRows(prof({ outcomes: { medical: 'clear' } })); return x.length === 1 && x[0].value === 'None of these' && x[0].does === 'Nothing changes in your plan.' && !x[0].confirm })()],
     ['"Rather not say" keeps food at maintenance until the deficit is chosen', answerRows(prof({ outcomes: { wellbeing: 'undisclosed' } }))[0].does === 'Food stays at maintenance for now.' && answerRows(prof({ outcomes: { wellbeing: 'undisclosed' }, deficitChosen: true }))[0].does === 'Nothing changes in your plan.'],
   ])
+  const cl = (x: Partial<Profile>, k: 'pregnancy' | 'medical') => clearConfirmLine(prof({ age: 30, ...x }), k)
   report('clear confirm (ob7-2)', [
+    ['nothing remains: the board\'s line', cl({ pregnancy: { flagged: true, askedAt: TODAY } }, 'pregnancy') === HEALTH_ANSWERS.confirm],
+    ['a gentler start remains: Benn\'s line', cl({ pregnancy: { flagged: true, askedAt: TODAY }, outcomes: { readiness: 'flagged' } }, 'pregnancy') === 'Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.'
+      && cl({ outcomes: { medical: 'flagged', readiness: 'flagged' } }, 'medical') === HEALTH_ANSWERS.confirmGentler],
+    ['numbers stay hidden: the approved variant', cl({ gentle: true, outcomes: { readiness: 'flagged' } }, 'pregnancy') === HEALTH_ANSWERS.confirmHidden],
     ['the board\'s title and line', HEALTH_ANSWERS.confirmT('Pregnant or breastfeeding') === 'Clear pregnant or breastfeeding?' && HEALTH_ANSWERS.confirm === 'Your food targets will show calorie numbers again, and training goes back to your usual pace.'],
     ['numbers stay hidden: wellbeing yes/sometimes, gentle mode, 16–17, or the pregnancy flag when clearing conditions', numbersStayHidden(prof({ age: 30, outcomes: { wellbeing: 'flagged' } }), 'pregnancy')
       && numbersStayHidden(prof({ age: 30, gentle: true }), 'medical') && numbersStayHidden(prof({ age: 17 }), 'pregnancy')
