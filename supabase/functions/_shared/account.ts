@@ -43,7 +43,8 @@ export function signedInRecently(payload: unknown, nowS: number, maxAgeS = REAUT
 }
 
 /**
- * Under-age deletion (first-run-onboarding §14; PENDING security-data review, not deployed): after
+ * Under-age deletion (first-run-onboarding §14; reviewed by security-data: SAFE; deployed in
+ * delete-account v2, 28 Sept 2026): after
  * the age stop, the app deletes the new account by itself, and offline it retries on the next
  * connection, often after the 5-minute re-auth window. A request that says `reason: 'under-age'`
  * may skip the re-auth check only while the account itself is new: created (auth.users.created_at,

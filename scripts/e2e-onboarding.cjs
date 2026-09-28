@@ -65,7 +65,9 @@ async function scenario(browser, name, fn, opts = {}) {
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     if (url.includes('/functions/v1/delete-account')) {
       net.fnCalls.push({ body: JSON.parse(req.postData() || '{}') })
-      return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true }) })
+      // opts.fnReply: what the function answers instead of { ok: true } (e.g. the re-auth refusal)
+      const r = opts.fnReply || { status: 200, body: { ok: true } }
+      return route.fulfill({ status: r.status, contentType: 'application/json', headers: cors, body: JSON.stringify(r.body) })
     }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(USER) })
     if (url.includes('/auth/v1/logout')) return route.fulfill({ status: 204 })
@@ -416,6 +418,20 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     const st = await stored(page)
     expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding') && (!st || !Object.keys(st.days || {}).length), 'device wiped: ' + left.join())
   })
+
+  await run('safety: under 18, account over 24 h (re-auth refused) → stops, wipes, asks to sign in again', async ({ page, net }) => {
+    await wizard(page, { age: 15 })
+    await h1(page, 'Tali is for 18+')
+    await btn(page, 'Close').click()
+    await page.getByText('Please sign in again to finish removing your account.').waitFor({ timeout: 8000 })
+    await shot(page, 'route-under18/reauth-sign-in')
+    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => k === 'leanplan.v1' || k.startsWith('sb-') || k.startsWith('tali.')))
+    const pend = await page.evaluate(() => JSON.parse(localStorage.getItem('tali.pendingDelete') || 'null'))
+    expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding' || k === 'leanplan.v1'), 'device wiped and signed out: ' + left.join())
+    expect(pend && pend.uid === UID && pend.stage === 'sign-in', 'kept to finish at the next sign-in: ' + JSON.stringify(pend))
+    await page.waitForTimeout(2500)
+    expect(net.fnCalls.length === 1, 'no automatic retries: ' + net.fnCalls.length)
+  }, { fnReply: { status: 403, body: { ok: false, error: 'reauth' } } })
 
   await run('safety: under 18 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
     await wizard(page, { age: 14 })

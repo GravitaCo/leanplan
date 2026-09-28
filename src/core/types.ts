@@ -287,6 +287,8 @@ export interface PregnancyFlag {
   flagged: boolean
   /** ISO date (YYYY-MM-DD) the question was last answered */
   askedAt: string
+  /** ISO date "Not now" was tapped on the 12-week re-ask; it comes back a week later */
+  snoozedAt?: string
 }
 
 /**

@@ -41,7 +41,7 @@ const hasHealth = (d: WizardDraft) => Object.keys(d.outcomes).length > 0 || d.pr
 export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () => void }) {
   const data = useStore((s) => s.data)
   const health = canSaveHealthAnswers(data)
-  const deleteUnder16 = useStore((s) => s.deleteUnder16)
+  const deleteUnderAge = useStore((s) => s.deleteUnderAge)
   const [d, setD] = useState<WizardDraft>(() => {
     const saved = loadDraft()
     return saved && saved.mode === mode ? saved : newDraft(mode, uuid())
@@ -79,7 +79,7 @@ export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () =
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
-    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnder16() }} />
+    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
     case 'ready': return <Ready {...common} />
     case 'ready-note': return <Note kind="readiness" onGo={() => go()} />
     case 'pregnancy-note': return <Note kind="pregnancy" onGo={() => go()} />

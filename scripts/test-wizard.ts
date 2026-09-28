@@ -7,17 +7,18 @@ import {
   HEALTH_STEPS, applyDraft, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
   outcomeInputs, readinessOutcome, replacementFor, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
-import { routeSafety, safetyAnswersFrom } from '@/core/domain/onboarding'
+import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, pregnancyReaskDue, routeSafety, safetyAnswersFrom, snoozePregnancyIn } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
-import { clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, withoutHealth } from '@/data/consent'
+import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
+import { loadDraft, markPendingDeletion, pendingDeletion, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { allCopy } from '../src/screens/onboarding/copy'
+import { allCopy, COPY, NOTES } from '../src/screens/onboarding/copy'
 import { deleteAccount } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { readFileSync } from 'node:fs'
@@ -253,7 +254,7 @@ async function underAgeDeletion(): Promise<void> {
     call: async (reason?: string) => { sent.push(reason); return { status: 200, body: { ok: true } } } }
   const stale = await deleteAccount(deps)
   const minor = await deleteAccount(deps, UNDER_AGE_REASON)
-  report('under-age deletion (not deployed; security-data review)', [
+  report('under-age deletion (delete-account v2, security-data SAFE)', [
     ['a new account (under 24 h, from Auth) skips the re-auth window', newAccount('2026-09-28T02:00:00Z', now) && !newAccount('2026-09-27T11:59:00Z', now)],
     ['fails closed: no or odd created_at, or one in the future', !newAccount(undefined, now) && !newAccount('soon', now) && !newAccount('2026-09-29T12:00:00Z', now)],
     ['the app asks for it only for the age stop, and the server decides', stale.status === 'reauth' && minor.status === 'ok' && JSON.stringify(sent) === JSON.stringify(['under-age'])],
@@ -261,8 +262,135 @@ async function underAgeDeletion(): Promise<void> {
   ])
 }
 
+/** A Map-backed localStorage for the device-only keys (tali.onboarding, tali.pendingDelete). */
+function withFakeStorage(run: (ls: Storage) => void): void {
+  const m = new Map<string, string>()
+  const ls = {
+    get length() { return m.size }, key: (i: number) => [...m.keys()][i] ?? null, clear: () => m.clear(),
+    getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)) }, removeItem: (k: string) => { m.delete(k) },
+  } as Storage
+  const g = globalThis as { localStorage?: Storage }
+  const had = g.localStorage
+  g.localStorage = ls
+  try { run(ls) } finally { if (had) g.localStorage = had; else delete g.localStorage }
+}
+
+function compliance(): void {
+  // register item 34: the notes say what is kept (Benn approved the wording, 28 Sept 2026)
+  const lines = allCopy().join('\n')
+  const KEPT = 'We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.'
+  report('what the notes say is kept (register 34)', [
+    ['the health check: a short note of what applies, never a medical record', COPY.ready?.note === 'We keep a short note of what applies (like pregnancy), never a medical record.'],
+    ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.endsWith(KEPT) && NOTES.wellbeing.note.endsWith(KEPT)],
+    ['no line still claims only the result or only gentle mode is kept', !/never your answers|whether gentle mode is on|whether that’s on/i.test(lines)],
+  ])
+
+  // register item 35: a health withdrawal also removes the unfinished onboarding draft
+  withFakeStorage((ls) => {
+    const draft: WizardDraft = { ...full(), step: 'weight', pregnant: true, outcomes: { readiness: 'flagged' } }
+    const s = stateFromBackup({ days: {} } as never)
+    recordConsent(s, 'health', true)
+    saveDraft(draft)
+    const hadIt = !!loadDraft()
+    recordConsent(s, 'ai', true); withdraw(s, ensureMeta(s, false), 'ai')
+    const keptOnOther = !!loadDraft()
+    withdraw(s, ensureMeta(s, false), 'health')
+    const goneHere = !loadDraft() && ls.getItem('tali.onboarding') === null
+    // a withdrawal made on another device and pulled here clears it too
+    const s2 = stateFromBackup({ days: {} } as never)
+    recordConsent(s2, 'health', true); saveDraft(draft)
+    recordConsent(s2, 'health', false)
+    const applied = applyHealthWithdrawal(s2, ensureMeta(s2, false))
+    report('a health withdrawal clears the onboarding draft (register 35)', [
+      ['the draft held health answers', hadIt],
+      ['withdrawing another consent leaves it', keptOnOther],
+      ['withdrawing health on this phone removes it', goneHere],
+      ['a withdrawal from another device removes it once seen', applied && !loadDraft()],
+    ])
+  })
+
+  // register item 37: under-age deletion always ends, and never touches another account's data
+  const U = '11111111-1111-4111-8111-111111111111', OTHER = '22222222-2222-4222-8222-222222222222'
+  const p0: PendingDeletion = { uid: U, at: AT }
+  const now = Date.parse(AT)
+  let p: PendingDeletion = p0, tries = 0, stopped = false
+  for (let i = 0; i < 20 && !stopped; i++) {
+    const st = underAgeNext('unavailable', p, now)
+    if (st.kind === 'sign-in') { stopped = true; p = st.pending } else if (st.kind === 'wait') { p = st.pending; tries++ }
+  }
+  const reauth = underAgeNext('reauth', { uid: U, at: AT, tries: 2, next: now + 5, stage: 'retry' }, now)
+  const again = underAgeNext('reauth', { uid: U, at: AT, stage: 'sign-in' }, now)
+  report('under-age deletion ends safely (register 37)', [
+    ['a re-auth refusal (account over 24 h) stops at once: sign in again', reauth.kind === 'sign-in' && reauth.pending.stage === 'sign-in' && reauth.pending.uid === U && !reauth.pending.tries],
+    ['other failures back off (1, 2, 4 … min, at most an hour)', underAgeRetryDelayMs(1) === 60_000 && underAgeRetryDelayMs(2) === 120_000 && underAgeRetryDelayMs(3) === 240_000 && underAgeRetryDelayMs(20) === 3_600_000],
+    ['and stop after a cap, never for ever', stopped && tries === UNDER_AGE_MAX_TRIES - 1 && p.stage === 'sign-in', String(tries)],
+    ['no connection or a busy sync counts nothing', (() => { const x = underAgeNext('offline', { uid: U, at: AT, tries: 3 }, now); const y = underAgeNext('busy', p0, now); return x.kind === 'wait' && x.pending.tries === 3 && y.kind === 'wait' && !y.pending.tries })()],
+    ['success forgets it', underAgeNext('ok', p0, now).kind === 'done'],
+    ['a backed-off try waits; at the sign-in stage the fresh sign-in tries straight away', !underAgeRetryDue({ ...p0, next: now + 1000 }, now) && underAgeRetryDue({ ...p0, next: now + 1000 }, now + 1000)
+      && underAgeRetryDue({ ...p0, stage: 'sign-in', next: now + 999_999 }, now) && underAgeRetryDue(p0, now)],
+    ['a fresh sign-in that is refused again asks again (never loops by itself)', again.kind === 'sign-in'],
+    ['wipes this device for the under-age account, or when nobody owns it yet (new device)', underAgeWipesDevice(U, U) && underAgeWipesDevice(undefined, U) && underAgeWipesDevice(undefined, undefined)],
+    ['never another account\'s data', !underAgeWipesDevice(OTHER, U)],
+  ])
+  withFakeStorage((ls) => {
+    markPendingDeletion({ uid: U, at: AT, tries: 2, next: now, stage: 'retry' })
+    const back = pendingDeletion()
+    ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: AT }))
+    const old = pendingDeletion()
+    ls.setItem('tali.pendingDelete', JSON.stringify({ uid: U, at: AT, tries: 'x', stage: 'weird' }))
+    const odd = pendingDeletion()
+    report('under-age deletion ends safely (register 37)', [
+      ['the record round-trips', JSON.stringify(back) === JSON.stringify({ uid: U, at: AT, tries: 2, next: now, stage: 'retry' })],
+      ['an older record (uid and time only) still reads, and tries at once', !!old && old.uid === U && underAgeRetryDue(old, now)],
+      ['odd fields are dropped', JSON.stringify(odd) === JSON.stringify({ uid: U, at: AT })],
+    ])
+  })
+  const STORE = readFileSync('src/store/store.ts', 'utf8')
+  report('under-age deletion ends safely (register 37)', [
+    ['the store backs off, stops with the sign-in note, and wipes only through underAgeWipesDevice', /underAgeRetryDue\(pend, Date\.now\(\)\)/.test(STORE) && /step\.kind === 'wait'/.test(STORE)
+      && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 2 && !/owner === uid\)/.test(STORE)],
+    ['only the pending account\'s sync waits', /pend && pend\.uid === getUid\(\)/.test(STORE)],
+  ])
+
+  // the Profile control and the 12-week re-ask (boards on the Design canvas; the logic is ready)
+  const prof = (x: Partial<Profile> = {}): Profile => ({ ...DEFAULT_PROFILE, ...structuredClone(x) })
+  const answered = prof({ outcomes: { readiness: 'flagged', wellbeing: 'undisclosed', baseline: 'low', medical: 'clear' }, pregnancy: { flagged: true, askedAt: '2026-07-01' }, answeredAt: { 'outcomes.readiness': AT } })
+  const v = healthAnswersView(answered, TODAY)
+  report('health check answers view', [
+    ['every stored answer, in wizard order, with what is stored', v.rows.map((r) => `${r.kind}:${r.value}:${r.flagged}`).join() === 'readiness:flagged:true,pregnancy:flagged:true,baseline:low:true,wellbeing:undisclosed:false,medical:clear:false', v.rows.map((r) => r.kind + r.value).join()],
+    ['answered times: the merge stamp, or the pregnancy date', v.rows[0].answeredAt === AT && v.rows[1].answeredAt === '2026-07-01' && !v.rows[2].answeredAt],
+    ['the re-ask is due after 12 weeks', v.pregnancyReask && !healthAnswersView(answered).pregnancyReask],
+    ['nothing stored: no rows, nothing due', healthAnswersView(prof(), TODAY).rows.length === 0 && !healthAnswersView(prof(), TODAY).pregnancyReask],
+    ['a "no" isn\'t re-asked', !pregnancyReaskDue({ flagged: false, askedAt: '2026-01-01' }, TODAY)],
+  ])
+  const c = prof(answered)
+  const T2 = '2026-09-28T10:00:00.000Z'
+  const cleared = clearHealthAnswerIn(c, 'readiness', T2) && clearHealthAnswerIn(c, 'pregnancy', T2)
+  const all = prof(answered)
+  for (const k of ['readiness', 'pregnancy', 'baseline', 'wellbeing', 'medical'] as const) clearHealthAnswerIn(all, k, AT)
+  const merged = mergeProfiles(c, answered)
+  report('clear one health answer', [
+    ['removes just that answer', cleared && c.outcomes?.readiness === undefined && !c.pregnancy && c.outcomes?.baseline === 'low'],
+    ['stamps the clear, so an older copy elsewhere can\'t bring it back', c.answeredAt?.['outcomes.readiness'] === T2 && c.answeredAt?.pregnancy === T2
+      && !merged.pregnancy && merged.outcomes?.readiness === undefined, JSON.stringify(merged)],
+    ['clearing everything leaves no outcomes object', !all.outcomes && !all.pregnancy && healthAnswersView(all).rows.length === 0],
+    ['nothing to clear: false', !clearHealthAnswerIn(prof(), 'medical', AT)],
+    ['routing follows: no longer treated as pregnant', !safetyAnswersFrom(c, 80, true).pregnant && safetyAnswersFrom(answered, 80, true).pregnant],
+  ])
+  const still = prof(answered), gone = prof(answered), snoozed = prof(answered)
+  confirmPregnancyIn(still, 'still-applies', TODAY, AT)
+  confirmPregnancyIn(gone, 'no-longer', TODAY, AT)
+  const sn = snoozePregnancyIn(snoozed, TODAY, AT)
+  report('the 12-week "Does this still apply?"', [
+    ['still applies: re-dated today, asked again in 12 weeks', still.pregnancy?.flagged === true && still.pregnancy.askedAt === TODAY && !pregnancyReaskDue(still.pregnancy, TODAY) && pregnancyReaskDue(still.pregnancy, '2026-12-21') && still.answeredAt?.pregnancy === AT],
+    ['no longer: the flag goes (stamped), and routing no longer holds for it', !gone.pregnancy && gone.answeredAt?.pregnancy === AT && !safetyAnswersFrom(gone, 80, true).pregnant],
+    ['not now: the answer stays, asked again in a week', sn && snoozed.pregnancy?.flagged === true && snoozed.pregnancy.askedAt === '2026-07-01' && !pregnancyReaskDue(snoozed.pregnancy, '2026-10-04') && pregnancyReaskDue(snoozed.pregnancy, '2026-10-05')],
+    ['nothing to snooze without a yes', !snoozePregnancyIn(prof(), TODAY, AT)],
+  ])
+}
+
 export async function wizardSuite(fakeServer: FakeServer): Promise<number> {
-  steps(); outcomes(); summary(); withdrawal(); firstSession()
+  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance()
   await underAgeDeletion()
   await sync(fakeServer)
   return bad

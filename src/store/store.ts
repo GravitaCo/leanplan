@@ -44,12 +44,13 @@ import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredEr
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
-import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
-import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion } from '@/data/onboardingDraft'
+import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { clearHealthAnswerIn, confirmPregnancyIn, snoozePregnancyIn, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 
 enableMapSet()
 
@@ -216,7 +217,13 @@ export interface StoreState {
    */
   finishOnboarding: (x: { profile: Profile; plan: GeneratedPlan | null; target: MacroTarget | null; weightKg: number | null }) => boolean
   /** under 18 (§14; the wizard's age stop is 18+ for now): this device's data goes now; the account is deleted now, or on the next connection */
-  deleteUnder16: () => Promise<DeleteResult>
+  deleteUnderAge: () => Promise<DeleteResult>
+  /** Profile's "Health check answers" (UI not built yet): remove one stored answer, as if skipped */
+  clearHealthAnswer: (kind: HealthAnswerKind) => boolean
+  /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
+  confirmPregnancy: (status: PregnancyStatus) => boolean
+  /** "Not now" on the re-ask: asked again in a week */
+  snoozePregnancyReask: () => boolean
   /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
   rateExercise: (routineId: string, slot: number, rating: 'up' | 'down') => void
 
@@ -346,6 +353,8 @@ const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profil
 /** Shown when a height isn't kept because health consent was withdrawn. */
 export const HEIGHT_OFF_MSG = 'Height isn’t kept while health data is off. Turn it back on in Profile, then Privacy.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
+/** An under-age deletion that stopped trying by itself (register item 37): a fresh sign-in finishes it. */
+export const UNDER_AGE_SIGN_IN_MSG = 'Please sign in again to finish removing your account.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
@@ -354,7 +363,7 @@ let syncing = false
  *  function is deleting (the JWT stays valid for a while after the login is gone). */
 let deleting = false
 /** When an under-18 deletion was last retried (runSync). */
-let under16Tried = 0
+let underAgeTried = 0
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
@@ -1052,7 +1061,7 @@ export const useStore = create<StoreState>()(
         window.addEventListener('online', async () => {
           set((st) => { st.online = true })
           // back online: an under-18 deletion still to do retries straight away (runSync)
-          under16Tried = 0
+          underAgeTried = 0
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1078,7 +1087,8 @@ export const useStore = create<StoreState>()(
         const pend = pendingDeletion()
         // only this account's: another account signed in on the device syncs as normal
         if (pend && pend.uid === getUid()) {
-          if (navigator.onLine && Date.now() - under16Tried > 60_000) { under16Tried = Date.now(); void get().deleteUnder16() }
+          // backed off after a failure (underAgeNext); at most once a minute either way
+          if (navigator.onLine && Date.now() - underAgeTried > 60_000 && underAgeRetryDue(pend, Date.now())) { underAgeTried = Date.now(); void get().deleteUnderAge() }
           return
         }
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
@@ -1307,23 +1317,74 @@ export const useStore = create<StoreState>()(
         return consent
       },
 
-      deleteUnder16: async () => {
-        under16Tried = Date.now()
+      deleteUnderAge: async () => {
+        underAgeTried = Date.now()
         const owner = get().data._meta?.owner
         // offline (no live session) the device's owner is the account: its session is still saved here
         const uid = get().authed ? getUid() : owner
-        // this device's data goes now, whatever the connection; the account follows (plan §14)
-        if (uid && owner === uid) {
-          markPendingDeletion(uid, nowIso())
-          const next = freshForAccount(uid)
+        const prev = pendingDeletion()
+        const pend = prev && prev.uid === uid ? prev : uid ? { uid, at: nowIso() } : null
+        if (pend) markPendingDeletion(pend)
+        // this device's data goes now, whatever the connection; the account follows (plan §14).
+        // Its own data or nobody's yet (a new device), never another account's (underAgeWipesDevice)
+        clearDraft()
+        if (underAgeWipesDevice(owner, uid)) {
+          const next = uid ? freshForAccount(uid) : freshForDevice()
           saveState(next)
-          clearDraft()
           set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
           get().setKitchen([])
         }
         const res = await get().deleteAccount('under-age')
-        if (res.status === 'ok') clearPendingDeletion()
+        if (!pend) return res
+        const step = underAgeNext(res.status, pend, Date.now())
+        if (step.kind === 'done') clearPendingDeletion()
+        else if (step.kind === 'wait') markPendingDeletion(step.pending)
+        else {
+          // stop trying by itself (the server refused re-auth for an account over 24 hours old, or it
+          // kept failing): sign this device out, wipe it, and ask for a fresh sign-in, which passes
+          // re-auth and finishes the deletion (runSync). Another account's data is never touched.
+          signingOut = true
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          await withTimeout(unsubscribePush(), 2000, undefined)
+          setSession(null, null)
+          await defaultDeleteDeps.signOut()
+          clearSavedSession()
+          saveMode(null)
+          const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
+          if (wipe) wipeDevice()
+          // the wipe takes every tali.* key: the record goes back, so the next sign-in finishes it
+          markPendingDeletion(step.pending)
+          underAgeTried = 0
+          set((st) => {
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = [] }
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            st.authNotice = UNDER_AGE_SIGN_IN_MSG
+          })
+        }
         return res
+      },
+
+      clearHealthAnswer: (kind) => {
+        // removing is always allowed (no consent needed to delete); the clear is stamped to sync
+        let changed = false
+        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
+        return changed
+      },
+
+      confirmPregnancy: (status) => {
+        // "still applies" keeps a health answer: only with the local health yes; "no longer" removes it
+        if (status === 'still-applies' && !canSaveHealthAnswers(get().data)) return false
+        set((st) => { confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso()); markSettingsDirty(st.data) })
+        saved()
+        return true
+      },
+
+      snoozePregnancyReask: () => {
+        let changed = false
+        set((st) => { changed = snoozePregnancyIn(st.data.profile, todayStr(), nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
+        return changed
       },
 
       rateExercise: (routineId, slot, rating) => {
