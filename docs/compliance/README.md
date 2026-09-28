@@ -16,6 +16,8 @@ Last reviewed: 2026-09-27. Controller: Gravita Creative Ltd (company 08348225), 
 | Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tali.fit/legals/cookie-policy |
 | Explicit consent for health data (Art. 9(2)(a)), terms, age | `screens/legal/ConsentScreen.tsx`, shown after sign-in until `healthConsentAnswered` (`src/data/consent.ts`): three unticked boxes; Continue records a `health` consent at `CONSENT_VERSIONS.health`. The screen can't be submitted without the terms and age boxes, so the account's first health grant at a version is also the record of those two (no separate `terms`/`age` consent types yet: adding them needs a migration of the `consents` type check). Records are append-only in the `consents` table (owner-only RLS, applied). |
 | "Not now" (existing users, decided 2026-09-27) | The live consent screen offers "Not now, keep it on this phone" to someone who already has data on the device (`hasExistingData`). It sets a device-only pause (`consents.healthPause`); `consentLetsSync` stays false, so the whole log stays on the phone (food and workouts are treated as health data here: Art. 4(15), CJEU C-184/20 and C-21/23). The screen comes back once after 2 weeks (`liveConsentDue`); a second "Not now" isn't asked again. New users' "Not now" signs out |
+| Withdrawal (decided 2026-09-27) | A health "no" stops all log sync (`consentLetsSync` needs a current yes) and deletes the account's copy of the log (`clearCloudLog`: day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions, ai_usage, settings); consent records stay. Weigh-ins, check-ins and body details are cleared on the phones too. A later yes re-uploads the phone's log. |
+| Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
 | Withdrawal (Art. 7(3)) | Profile → Privacy → Withdraw consent for health data (offers a backup first; clears weigh-ins, check-ins, weight, body fat, limitations on every device). "Give consent again" there afterwards |
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
@@ -129,7 +131,8 @@ Added 2026-09-27 (consent release):
 21. Age: the texts, sign-up line and consent screen say 18+ (`MIN_AGE`). The onboarding plan's
     16+ with 16–17 safeguards needs those safeguards built first, and brings the ICO Children's
     Code into scope (DPIA and high-privacy defaults for under-18s). Benn to decide.
-22. Scope of health withdrawal: it clears weigh-ins, check-ins and body details, but keeps food
+22. (Resolved 2026-09-27: withdrawal now keeps the whole log on the phone and deletes the
+    account's copy.) Previously: it cleared weigh-ins, check-ins and body details, but kept food
     and workout logs, which the policy also calls health data. Get a view (solicitor or DPIA)
     on whether that is enough, or widen what withdrawal clears.
 23. Open Food Facts: barcode lookups go from the phone, so OFF sees users' IP addresses

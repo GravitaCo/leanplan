@@ -37,6 +37,7 @@ function TaliApp() {
   const online = useStore((s) => s.online)
   const authed = useStore((s) => s.authed)
   const openProfile = useStore((s) => s.openProfile)
+  const consentOpen = useStore((s) => s.consentOpen)
   const answered = healthConsentAnswered(data)
 
   useEffect(() => {
@@ -94,6 +95,7 @@ function TaliApp() {
   // someone who already has data here the ob6-3 sheet over the app ("Not now" keeps everything on
   // this phone: sync still waits for an answer).
   if (firstRun || firstRunDue(data, online)) return <FirstRunConsent step={firstRun ?? 'health'} />
+  if (consentOpen) return <ConsentScreen fromProfile />
   if (!answered && liveConsentDue(data) && !existingDue(data, online)) return <ConsentScreen />
 
   return (

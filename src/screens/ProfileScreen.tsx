@@ -18,7 +18,7 @@ import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
-import { hasConsent, latestConsent } from '@/data/consent'
+import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import type { LegalDocId } from '@/core/legal'
 
 const GOALS: { value: Goal; label: string }[] = [
@@ -41,6 +41,8 @@ type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'acc
 
 export function ProfileScreen() {
   const data = useStore((s) => s.data)
+  const resumeCopy = data.consents?.resumeCopy
+  const resumeDays = Object.keys(resumeCopy?.days || {}).length
   const email = useStore((s) => s.email)
   const authed = useStore((s) => s.authed)
   const syncPaused = useStore((s) => s.syncPaused)
@@ -298,11 +300,21 @@ export function ProfileScreen() {
         <SettingRow icon="heart" color={MINDF} soft label="Health data" value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
         <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />
         <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
-          <div className="sub" style={{ marginBottom: 10 }}>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</div>
+          <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
+            ? 'Your log is only on this phone until you agree to Tali keeping your health data, so export a copy now and then.'
+            : <>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</>}</div>
           <div className="grid2">
             <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
             <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>
           </div>
+          {resumeCopy && (
+            <div style={{ marginTop: 12 }}>
+              <div className="sub" style={{ marginBottom: 8 }}>
+                When sync started again, {resumeDays === 1 ? '1 day' : resumeDays + ' days'}{resumeCopy.settings ? (resumeDays ? ' and your settings' : 'your settings') : ''} had changed on another device, so Tali kept those. This phone’s earlier version is saved here: download it as a backup you can import.
+              </div>
+              <button className="btn gray" onClick={() => exportBackup({ ...data, days: { ...data.days, ...(resumeCopy.days || {}) }, ...(resumeCopy.settings ? (resumeCopy.settings as Pick<PersistedState, 'target' | 'schedule' | 'profile'>) : {}) })}>Download this phone’s earlier version</button>
+            </div>
+          )}
           <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={async (e) => {
             const input = e.target
             const file = input.files?.[0]
@@ -353,7 +365,13 @@ export function ProfileScreen() {
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); setRegrantOpen(true) }} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => {
+        setHealthOpen(false)
+        // never agreed on the full screen (a "Not now", or not asked yet): the three boxes, so the
+        // record covers the terms and age too; after a withdrawal, the one-box sheet
+        if ((data.consents?.records || []).some((r) => r.type === 'health' && r.granted)) setRegrantOpen(true)
+        else useStore.getState().setConsentOpen(true)
+      }} />}
       {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
       {aiOpen && <AiSheet onClose={() => setAiOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
@@ -385,21 +403,26 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState<'keep' | 'remove' | null>(null)
   const [sure, setSure] = useState(false)
   const unsynced = unsyncedCount(data)
+  // no yes to health data: the log isn't in the account at all, so removing it deletes the only copy
+  const phoneOnly = !consentLetsSync(data) && hasExistingData(data)
   const go = async (remove: boolean) => {
     if (busy) return
-    if (remove && unsynced > 0 && !sure) { setSure(true); return } // losing changes takes a second tap
+    if (remove && (unsynced > 0 || phoneOnly) && !sure) { setSure(true); return } // losing data takes a second tap
     setBusy(remove ? 'remove' : 'keep')
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
   return (
     <Sheet title="Sign out" onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
-        <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>
-        {unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
+        {phoneOnly ? (
+          <p>Your log is only on this phone: it isn’t in your account, because nothing syncs until you agree to Tali keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it for good, so export a copy first.</p>
+        ) : <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>}
+        {!phoneOnly && unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
       </div>
       <div className="stack">
         <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
+        {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>Export a copy</button>}
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure && phoneOnly ? 'Remove anyway and delete your log' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
       </div>
     </Sheet>
   )

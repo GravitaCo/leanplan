@@ -62,15 +62,15 @@ export function privacyPolicy(): LegalDoc {
         p: [
           `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
             `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. ` +
-            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there, and we ask once more after two weeks.`,
-          `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from all your devices, and Tali stops saving them. ` +
-            `Your food, workout and supplement logs stay in your account so the app keeps working. If you don't want us to keep those either, delete your account (Profile, then Privacy, then Delete account; this needs a connection), which removes everything. Withdrawing does not affect what happened before.`,
+            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there (anything already in your account from before stays until you agree, withdraw or delete your account), and we ask once more after two weeks. Turning on reminders registers your phone for them only after you agree.`,
+          `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log from your account, so it stays only on your phones, and clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from them too. ` +
+            `Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
         ],
       },
       {
         h: 'Why we use it, and our legal basis',
         ul: [
-          `To provide the app: store and sync your log, calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.`,
+          `To provide the app: store and sync your log (only once you've agreed), calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.`,
           `To look up a product when you scan its barcode. Basis: our contract with you.`,
           `To read and answer feedback you send us. Basis: our legitimate interest in improving Tali.`,
           `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.`,

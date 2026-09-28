@@ -6,14 +6,13 @@
 import { useStore } from '@/store/store'
 import { useConnection } from '@/store/hooks'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
-import { healthSyncPaused } from '@/data/consent'
 import { Icon, type IconName } from './icons'
 
 /** The note beside an online-only feature (plan §7; board ob6-8). */
 export const NEEDS_NET = 'Needs a connection. Search works offline.'
 
 const ICON: Record<ConnectionKind, IconName> = {
-  'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert',
+  'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert', 'phone-only': 'cloudOff',
 }
 
 /** The line under the pill (board ob6-7): the state's name in bold, then what it means. */
@@ -29,6 +28,7 @@ export function connectionLine(c: ConnectionState): { head: string; body: string
     case 'offline': return { head: 'Offline.', body: 'Logging, search, plans and workouts all still work.' }
     case 'sign-in': return { head: 'Sign in to sync.', body: 'Your data is safe on this phone. Sign in again to back it up.' }
     case 'problem': return { head: 'Sync problem.', body: 'Your data is safe on this phone. Tap to try again, or see what happened.' }
+    case 'phone-only': return { head: 'On this phone only.', body: 'Nothing you log syncs to your account or is backed up there until you agree to Tali keeping your health data (Profile, then Privacy).' }
   }
 }
 
@@ -47,9 +47,6 @@ export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: 
 
 export function ConnectionLine() {
   const c = useConnection()
-  const held = useStore((s) => healthSyncPaused(s.data))
   const l = connectionLine(c)
-  // an existing user's "Not now": the state stays "Up to date", and says what's held back (Benn)
-  if (c.kind === 'up-to-date' && held) l.body = 'Health data is kept on this phone until you agree.'
   return <div className="cline" role="status"><b>{l.head}</b> {l.body}</div>
 }

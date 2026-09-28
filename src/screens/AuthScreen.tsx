@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { exportBackup } from '@/data/backup'
+import { unsyncedCount } from '@/data/persistence'
+import { consentLetsSync, hasExistingData } from '@/data/consent'
 import { LEGAL_URLS, MIN_AGE } from '@/core/legal'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
@@ -233,9 +236,14 @@ export function OwnerChoiceScreen() {
   const ask = useStore((st) => st.ownerAsk)
   const resolveOwner = useStore((st) => st.resolveOwner)
   const [busy, setBusy] = useState(false)
+  const data = useStore((st) => st.data)
+  // the log here that "Start fresh" would remove: changes never uploaded, or a log kept on this phone only
+  const atRisk = unsyncedCount(data) > 0 || (!consentLetsSync(data) && hasExistingData(data))
+  const [sure, setSure] = useState(false)
   const who = ask?.email || 'this account'
   const pick = async (c: 'keep' | 'fresh' | 'cancel') => {
     if (busy) return
+    if (c === 'fresh' && atRisk && !sure) { setSure(true); return } // losing a log takes a second tap
     setBusy(true)
     try { await resolveOwner(c) } finally { setBusy(false) }
   }
@@ -256,7 +264,13 @@ export function OwnerChoiceScreen() {
             <p>Starting fresh removes it from this device and loads {who}’s own data. If the log is yours from another account, cancel and sign in to that one instead: anything that hadn’t synced yet is still there.</p>
             <p style={{ margin: 0 }}>Keeping it adds it to {who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.</p>
           </div>
-          <button className="btn" disabled={busy} onClick={() => pick('fresh')}>Start fresh with {who}</button>
+          {sure && (
+            <div className="card prose" role="alert">
+              <p style={{ margin: 0 }}>Some of the log on this device isn’t in any account, so starting fresh deletes it for good. Export a copy first if you might want it.</p>
+            </div>
+          )}
+          {sure && <button className="btn gray" disabled={busy} onClick={() => exportBackup(data)}>Export a copy</button>}
+          <button className="btn" disabled={busy} onClick={() => pick('fresh')}>{sure ? 'Start fresh and delete it' : `Start fresh with ${who}`}</button>
           <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>
         </>
       )}

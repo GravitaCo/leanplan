@@ -75,6 +75,9 @@ export interface StoreState {
   kitchen: string[]
   setKitchen: (have: string[]) => void
   toast: string | null
+  /** the full consent screen opened from Profile (agreeing after a "Not now" or never asked) */
+  consentOpen: boolean
+  setConsentOpen: (open: boolean) => void
   /** an action on the current toast ("Undo"); cleared with the toast */
   toastAction: { label: string; run: () => void } | null
   /** one-shot hand-offs between tabs (UI only, never persisted): Plan's "Do this today" opens
@@ -344,6 +347,8 @@ export const useStore = create<StoreState>()(
       kitchen: loadKitchen(),
       setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
+      consentOpen: false,
+      setConsentOpen: (open) => set((st) => { st.consentOpen = open }),
       toastAction: null,
       trainOpen: null,
       planOpen: null,
@@ -1248,6 +1253,6 @@ export const useStore = create<StoreState>()(
 export function selectConnection(st: Pick<StoreState, 'signedIn' | 'authed' | 'syncPaused' | 'ownerAsk' | 'online' | 'sync' | 'data'>): ConnectionState {
   return connectionState({
     signedIn: st.signedIn, authed: st.authed, syncPaused: st.syncPaused, ownerAsk: !!st.ownerAsk,
-    online: st.online, sync: st.sync, pending: unsyncedCount(st.data),
+    online: st.online, sync: st.sync, pending: unsyncedCount(st.data), phoneOnly: !consentLetsSync(st.data),
   })
 }

@@ -123,13 +123,13 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
 const pill = (page) => page.locator('.hdr .cpill')
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
 const latest = (st, type) => (st?.consents?.records || []).filter((r) => r.type === type).sort((a, b) => a.at.localeCompare(b.at)).pop()
-/** Giving health consent from Profile: the explicit statement and unticked box, then the button. */
-async function agreeInProfile(page) {
-  const btn = page.getByRole('button', { name: 'Turn health data back on' })
-  await btn.waitFor()
-  expect(await btn.isDisabled(), 'waits for the tick')
-  await page.locator('label[for="c_regrant"]').click()
-  await btn.click()
+/** Agreeing from Profile for someone who never agreed on the full screen: the three boxes. */
+async function agreeFullScreen(page) {
+  await page.getByRole('heading', { name: 'Before you start' }).waitFor()
+  const cont = page.getByRole('button', { name: 'Continue' })
+  expect(await cont.isDisabled(), 'waits for all three ticks')
+  for (const id of ['c_health', 'c_terms', 'c_age']) await page.locator(`label[for="${id}"]`).click()
+  await cont.click()
 }
 const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
 
@@ -248,7 +248,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await page.getByRole('dialog', { name: 'Health data' }).waitFor()
     await shot(page, 'profile-health-agree')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
-    await agreeInProfile(page)
+    await agreeFullScreen(page) // never agreed on the full screen: terms and age boxes too
     expect(latest(await stored(page), 'health')?.granted === true, 'agreed later')
     await tab(page, 'Food')
     await page.getByText('kcal eaten').waitFor()
@@ -258,7 +258,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).click()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).click()
-    await page.getByText('This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?').waitFor()
+    await page.getByText('Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins and body details are removed from them too. Download a copy first?').waitFor()
     await page.getByText('On this phone: 1 weigh-in, 1 check-in.').waitFor()
     await shot(page, 'withdraw-export')
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download a copy' }).click()])
@@ -270,10 +270,11 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     const st = await stored(page)
     expect(st.days[today].weight === null && !st.days[today].checkin && st.days[today].foods.length === 1, 'cleared, food kept')
     expect(latest(st, 'health')?.granted === false, 'withdrawal recorded')
-    await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
-    const r = rows.day_logs.find((x) => x.log_date === today)
-    expect(r && r.weight === null && !r.supps._checkin, 'the server copy is cleared too')
+    // a withdrawal keeps the whole log on the phone: the account's copy is deleted, consent records stay
+    await page.locator('.hdr .cpill[data-conn="phone-only"]').waitFor()
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1')).consents.cloudCleared)
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
+    expect(!rows.day_logs.some((x) => x.user_id === UID) && !rows.settings.some((x) => x.user_id === UID), 'the account\'s copy of the log is deleted')
   }, { state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] } }) })
 
   await run('live consent screen: shows until answered, only consent syncs before, then the rest', async ({ page, rows, net }) => {
@@ -297,7 +298,7 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Privacy/ }).click()
     await page.getByRole('button', { name: 'Withdraw consent for health data' }).click()
-    await page.getByText('This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?').waitFor()
+    await page.getByText('Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins and body details are removed from them too. Download a copy first?').waitFor()
     await page.getByRole('button', { name: 'Download a copy' }).waitFor()
     await page.getByRole('button', { name: 'Back' }).first().click().catch(() => {})
     await page.keyboard.press('Escape').catch(() => {})
@@ -336,11 +337,11 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     // agree later in Profile: then everything on the phone uploads
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Paused' }).click()
-    await page.getByText('Kept on this phone only until you agree. What’s already in your account stays until you choose.').waitFor()
+    await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. Anything already in your account from before stays until you agree, stop, or delete your account.').waitFor()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).waitFor() // withdrawal offered while paused too
     await shot(page, 'profile-health-paused')
     await page.getByRole('button', { name: 'Yes, keep it' }).click()
-    await agreeInProfile(page)
+    await agreeFullScreen(page)
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
     await page.waitForTimeout(1500)
     const after = rows.day_logs.find((x) => x.log_date === today)

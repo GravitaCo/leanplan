@@ -579,7 +579,7 @@ export async function pullConsents(s: PersistedState): Promise<void> {
 /* ---------------- export before withdrawing health consent ---------------- */
 
 /** Copy for the withdrawal step in Profile's Health data sheet (not on a board yet: flagged for Benn). */
-export const HEALTH_WITHDRAW_PROMPT = 'This removes your weigh-ins, check-ins and body details from all your devices. Download a copy first?'
+export const HEALTH_WITHDRAW_PROMPT = 'Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins and body details are removed from them too. Download a copy first?'
 
 /**
  * The backup to offer before a health withdrawal: the whole device state as the JSON backup

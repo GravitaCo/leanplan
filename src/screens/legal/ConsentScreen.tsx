@@ -12,10 +12,11 @@ import { LegalLink } from './LegalDoc'
  * screen can't be submitted without the terms and age boxes, so that record stands for all three
  * (CONSENT_VERSIONS in src/data/consent.ts). Works offline: the record saves on the device first.
  */
-export function ConsentScreen() {
+export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }) {
   const grantConsent = useStore((s) => s.grantConsent)
   const signOut = useStore((s) => s.signOut)
   const notNow = useStore((s) => s.notNowHealth)
+  const setConsentOpen = useStore((s) => s.setConsentOpen)
   // someone who used Tali before consent was asked may say "Not now": everything stays on this
   // phone and nothing syncs until they agree (asked once more after 2 weeks); for someone new,
   // "Not now" is signing out, since there's nothing to keep
@@ -47,8 +48,10 @@ export function ConsentScreen() {
         {box(adult, setAdult, 'c_age', <>I’m {MIN_AGE} or over.</>)}
       </div>
 
-      <button className="btn" disabled={!(health && terms && adult)} onClick={() => grantConsent('health')}>Continue</button>
-      {existing ? (
+      <button className="btn" disabled={!(health && terms && adult)} onClick={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }}>Continue</button>
+      {fromProfile ? (
+        <button className="btn gray" onClick={() => setConsentOpen(false)}>Back</button>
+      ) : existing ? (
         <>
           <button className="btn gray" onClick={notNow}>Not now, keep it on this phone</button>
           <div className="foot">
