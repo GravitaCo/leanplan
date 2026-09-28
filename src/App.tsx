@@ -87,9 +87,11 @@ function TaliApp() {
 
   if (ownerAsk) return <OwnerChoiceScreen />
   if (!signedIn) return <AuthScreen />
-  // under 16 (onboarding §14): the device is already wiped; the account's deletion retries on the
+  // under 18 (onboarding §14, Benn: 18+ for now): the device is already wiped; the account's deletion retries on the
   // next connection (store runSync), and until then only the kind stop shows
-  if (ONBOARDING_ENABLED && pendingDeletion()) return <Under16 deleting onClose={() => {}} />
+  // only for the account it belongs to (the live session's, or offline this device's owner)
+  const pend = ONBOARDING_ENABLED ? pendingDeletion() : null
+  if (pend && pend.uid === (authed ? getUid() : data._meta?.owner)) return <Under16 deleting onClose={() => {}} />
   // One consent screen: the live one (screens/legal/ConsentScreen.tsx) until the health answer is
   // in; sync waits for it too (store scheduleSync, consentLetsSync). Benn: it stays the one consent
   // screen with the onboarding flag on as well (the Onboarding 6 consent boards aren't shown).

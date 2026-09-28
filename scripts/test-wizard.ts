@@ -12,7 +12,7 @@ import { startingTargets } from '@/core/domain/targets'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
-import { clearHealthData, HEALTH_FIELDS, healthDataSummary, withoutHealth } from '@/data/consent'
+import { clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, withoutHealth } from '@/data/consent'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
@@ -130,6 +130,11 @@ function summary(): void {
     ['medical: held at maintenance, no high-protein anchor', med.targets.heldAtMaintenance && med.targets.protein?.anchor === false && (med.targets.adjustPct ?? -1) >= 0],
     ['16–17: no deficit, weight hidden, no AI', teen.routing.noDeficit && teen.routing.hideWeight && teen.routing.noAI && (teen.targets.adjustPct ?? -1) >= 0],
   ])
+  const thin = summaryFor(DEFAULT_PROFILE, full({ weight: 50, height: 172 }), ctx)
+  report('summary: BMI under 18.5', [
+    ['lose fat, BMI 16.9: food held at maintenance, a number still shown', thin.routing.reasons.includes('low-bmi') && thin.routing.noDeficit && thin.targets.kcal != null && (thin.targets.adjustPct ?? -1) >= 0 && thin.targets.heldAtMaintenance],
+    ['and the engine gets no deficit', thin.inputs.deficit === undefined || thin.inputs.deficit === 'none'],
+  ])
   const one = summaryFor(DEFAULT_PROFILE, full({ daysPerWeek: undefined, weekdays: [3] }), ctx)
   const oneDefault = summaryFor(DEFAULT_PROFILE, full({ daysPerWeek: 1, weekdays: undefined }), ctx)
   report('summary: a 1-day week', [
@@ -199,10 +204,26 @@ function withdrawal(): void {
   const before = healthDataSummary(s).profileFields
   clearHealthData(s, meta)
   const p = s.profile
+  // the plan's health-derived reasons go too, from workouts and plans, marked to sync
+  const gen = summaryFor(DEFAULT_PROFILE, full({ outcomes: { readiness: 'flagged', baseline: 'low', wellbeing: 'clear', medical: 'clear' } }), ctx).result.plan
+  const s2 = stateFromBackup({ days: {} } as never)
+  s2.profile = { ...DEFAULT_PROFILE, height: 170 }
+  s2.routines = structuredClone(gen.routines).map((r) => ({ ...r, _dirty: false }))
+  s2.trainingPlans = [{ ...structuredClone(gen.trainingPlan), _dirty: false }]
+  const every = (st: typeof s2) => [...st.trainingPlans.flatMap((p) => p.why ?? []), ...st.routines.flatMap((r) => [...(r.why ?? []), ...r.blocks.flatMap((b) => b.slots.flatMap((x) => x.why ?? []))])]
+  const hadHealth = every(s2).filter(healthWhy).length
+  const routinesWith = s2.routines.filter((r) => [...(r.why ?? []), ...r.blocks.flatMap((b) => b.slots.flatMap((x) => x.why ?? []))].some(healthWhy)).map((r) => r.id)
+  clearHealthData(s2, ensureMeta(s2, false))
+  report('withdrawal strips health-derived reasons', [
+    ['the plan had some (areas, readiness, the lately baseline)', hadHealth > 0 && every(s2).length > 0, String(hadHealth)],
+    ['none left in workouts or the plan', every(s2).filter(healthWhy).length === 0 && !JSON.stringify(every(s2)).includes('knees')],
+    ['what changed is marked to sync (and only that)', s2.routines.every((r) => !!r._dirty === routinesWith.includes(r.id)) && s2.trainingPlans[0]._dirty === true],
+  ])
   report('withdrawal clears the onboarding answers', [
     ['HEALTH_FIELDS names them', ['profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.height', 'profile.movement', 'profile.activityMult', 'profile.training'].every((f) => (HEALTH_FIELDS as readonly string[]).includes(f))],
     ['outcomes, pregnancy, why, body, movement, multiplier and training prefs are gone',
       !p.outcomes && !p.pregnancy && !p.motivations && p.height === null && !p.sexAnswer && !p.movement && !p.activityMult && !p.deficitChosen && !Object.keys(p.training ?? {}).length, JSON.stringify(p)],
+    ['the activity level set from movement goes back to the default with the multiplier', p.activityLevel === 'light' && p.answeredAt?.activityLevel !== AT],
     ['counted before, nothing left after', before >= 8 && healthDataSummary(s).profileFields === 0],
     ['the clear is stamped, so an older copy elsewhere can\'t bring an answer back', p.answeredAt?.['outcomes.readiness'] !== AT && !!p.answeredAt?.['training.limitations'] && meta.settings.dirty],
     ['age stays (the one required answer), as does the goal', p.age === 34 && p.goal === 'lose-fat'],

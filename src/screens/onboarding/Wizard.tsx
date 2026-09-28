@@ -25,7 +25,7 @@ import type { Lately } from '@/core/domain/engine'
 import type { OnboardingOutcomes } from '@/core/types'
 import { Icon } from '@/ui/icons'
 import { useScrollLock } from '@/ui/primitives'
-import { COPY, INTRO_POINTS, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
+import { COPY, INTRO_POINTS, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
@@ -231,13 +231,14 @@ function Ready({ d, go, back }: Common) {
   // the answers stay on this screen: only the outcome is kept (§8)
   const clear = d.outcomes.readiness === 'clear'
   const [items, setItems] = useState<(boolean | undefined)[]>(clear ? [false, false, false] : [undefined, undefined, d.pregnant ? true : undefined])
-  const [preg, setPreg] = useState<boolean | undefined>(d.pregnant)
+  // which of the third item it is: pregnant or breastfeeding route to ob4-4, recent surgery to ob4-3
+  const [which, setWhich] = useState<'pregnant' | 'breastfeeding' | 'surgery' | undefined>(d.pregnant ? 'pregnant' : undefined)
   const set = (i: number, v: boolean) => setItems(items.map((x, j) => (j === i ? v : x)))
   const done = () => {
     const readiness = readinessOutcome(items) ?? (d.outcomes.readiness === 'flagged' && items.every((x) => x === undefined) ? 'flagged' : undefined)
     const outcomes: OnboardingOutcomes = { ...d.outcomes, readiness }
     if (!readiness) delete outcomes.readiness
-    go({ outcomes, pregnant: items[2] === true ? preg === true : items[2] === false ? false : undefined })
+    go({ outcomes, pregnant: items[2] === true ? (which ? which !== 'surgery' : d.pregnant) : items[2] === false ? false : undefined })
   }
   const skip = () => { const o = { ...d.outcomes }; delete o.readiness; go({ outcomes: o, pregnant: undefined }) }
   return (
@@ -250,7 +251,9 @@ function Ready({ d, go, back }: Common) {
             {i === 2 && items[2] === true && (
               <>
                 <span className="t">{PREGNANCY_FOLLOWUP}</span>
-                <YesNo label={PREGNANCY_FOLLOWUP} value={preg} onChange={setPreg} />
+                <div className="wz-seg" role="radiogroup" aria-label={PREGNANCY_FOLLOWUP}>
+                  {PREGNANCY_OPTIONS.map(([k, t]) => <button key={k} role="radio" aria-checked={which === k} className={which === k ? 'on' : ''} onClick={() => setWhich(k)}>{t}</button>)}
+                </div>
               </>
             )}
           </div>
@@ -567,25 +570,25 @@ type SP = { name: string; desc: string; num?: string; tel?: string; lines?: [str
 const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'under16', SP[]> = {
   wellbeing: [
     // every nation's number, labelled (Benn: no nation question), and the webchat
-    { name: 'Beat', desc: `The UK’s eating disorder charity. ${SIGNPOSTS.beat.hours}.`, web: SIGNPOSTS.beat.web,
+    { name: 'Beat', desc: `For anyone worried about food, eating or their body. ${SIGNPOSTS.beat.hours}. Webchat too.`, web: SIGNPOSTS.beat.web,
       lines: ([['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']] as const).map(([k, l]) => [l, beatFor(k)]) },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time', num: '111', tel: SIGNPOSTS.nhs111.phone },
+    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
     { name: 'Samaritans', desc: 'Talk about anything, any time, free', num: '116 123', tel: SIGNPOSTS.samaritans.phone },
     { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
   ],
   readiness: [
     { name: 'Your GP', desc: 'Before you build up, or if anything changes', num: 'Book' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time', num: '111', tel: SIGNPOSTS.nhs111.phone },
+    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
     { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
   ],
   pregnancy: [
     { name: 'Your midwife or GP', desc: 'For anything about you or your baby', num: 'Contact' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time', num: '111', tel: SIGNPOSTS.nhs111.phone },
+    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
     { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
   ],
   medical: [
     { name: 'Your GP or care team', desc: 'Before changing how much you eat', num: 'Contact' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time', num: '111', tel: SIGNPOSTS.nhs111.phone },
+    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
   ],
   under16: [{ name: 'Childline', desc: 'Free and confidential, for anyone under 19', num: '0800 1111', tel: SIGNPOSTS.childline.phone }],
 }

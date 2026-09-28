@@ -9,7 +9,7 @@
  * same owner rules as the log: "start fresh" drops them, sign out and remove drops them.
  * No React, no DOM beyond an injected Storage for the one-off label-consent migration.
  */
-import type { DayLog, Profile } from '@/core/types'
+import type { DayLog, Profile, Why, WhyCode } from '@/core/types'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
@@ -246,7 +246,10 @@ export function unsyncedConsents(s: PersistedState): number {
  * - the onboarding answers: the screener outcomes (`profile.outcomes`: readiness, medical,
  *   wellbeing, the sleep/stress baseline), the pregnancy flag and when it was asked, "your why"
  *   (`profile.motivations`), body details (`profile.height`, `profile.sexAnswer`), daily movement
- *   and the multiplier it set (`profile.movement`, `profile.activityMult`), the deficit choice
+ *   and the multiplier it set (`profile.movement`, `profile.activityMult`, with `activityLevel` back
+ *   to the default), the deficit choice
+ * - the health-derived reasons in generated workouts and plans (healthWhy: body areas, the lately
+ *   baseline, set feel, recovery, readiness, wellbeing …), in `routines` and `training_plans`
  * - every training preference (`profile.training.*`: body areas, limitations note, experience,
  *   days, weekdays, minutes, place, kit, what they enjoy, likes and dislikes)
  * Age is a plan input and the one answer onboarding requires; it's kept (PENDING Benn / legal
@@ -254,7 +257,7 @@ export function unsyncedConsents(s: PersistedState): number {
  */
 export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
-  'profile.activityMult', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.training',
+  'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.training',
 ] as const
 
 export interface HealthDataSummary {
@@ -266,7 +269,7 @@ export interface HealthDataSummary {
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
 const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
-const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'activityLevel']
+const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
 
 /** A profile patch without its health fields (saved while health consent is withdrawn). */
@@ -310,6 +313,8 @@ export function clearHealthData(s: PersistedState, meta: SyncMeta): boolean {
     for (const k of PROFILE_HEALTH) {
       if (p[k] == null) continue
       if (k === 'height') p.height = null; else delete p[k]
+      // the multiplier came from daily movement: the activity level derived from it goes with it
+      if (k === 'activityMult') p.activityLevel = 'light'
       settings = true
     }
     if (p.training && Object.keys(p.training).length) { p.training = {}; settings = true }
@@ -321,8 +326,32 @@ export function clearHealthData(s: PersistedState, meta: SyncMeta): boolean {
     }
   }
   if (settings) { meta.settings = { u, dirty: true }; changed = true }
+  // generated plans' reasons that came from health answers (areas, the lately baseline, how sets
+  // felt, recovery, readiness, wellbeing …) go too, from every workout and plan, marked to sync
+  // so the server copy is cleaned
+  const strip = (list: Why[] | undefined): Why[] | undefined => list?.filter((w) => !healthWhy(w))
+  for (const r of s.routines || []) {
+    let touched = false
+    const why = strip(r.why)
+    if (r.why && why!.length !== r.why.length) { r.why = why; touched = true }
+    for (const b of r.blocks || []) for (const sl of b.slots || []) {
+      const w = strip(sl.why)
+      if (sl.why && w!.length !== sl.why.length) { sl.why = w; touched = true }
+    }
+    if (touched) { r._dirty = true; r._u = u; changed = true }
+  }
+  for (const pl of s.trainingPlans || []) {
+    const w = strip(pl.why)
+    if (pl.why && w!.length !== pl.why.length) { pl.why = w; pl._dirty = true; pl._u = u; changed = true }
+  }
   return changed
 }
+
+/** Why codes and input fields that carry health answers (engine §3.6 traces). */
+const HEALTH_WHY_CODES: WhyCode[] = ['body-area', 'baseline', 'feel', 'recovery']
+const HEALTH_WHY_FIELDS = ['bodyAreas', 'readiness', 'lately', 'wellbeing', 'gentle', 'gentleStart', 'deficit']
+/** A reason derived from health data: stripped on withdrawal. */
+export const healthWhy = (w: Why): boolean => HEALTH_WHY_CODES.includes(w.code) || (!!w.field && HEALTH_WHY_FIELDS.includes(w.field))
 
 /**
  * After a pull: a health withdrawal made on another device clears this device's health data too,

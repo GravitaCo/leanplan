@@ -43,8 +43,11 @@ export const READINESS_ITEMS = [
   'Dizziness, fainting or losing your balance',
   'Pregnant, breastfeeding, or recent surgery',
 ]
-/** GAP: the boards don't split pregnancy from recent surgery; this follow-up does (for the ob4-4 route). */
-export const PREGNANCY_FOLLOWUP = 'Is that pregnancy or breastfeeding?'
+/** The boards don't split pregnancy from recent surgery; this follow-up does (Benn approved; wording mental-performance). */
+export const PREGNANCY_FOLLOWUP = 'Which of these is it?'
+export const PREGNANCY_OPTIONS = [['pregnant', 'Pregnant'], ['breastfeeding', 'Breastfeeding'], ['surgery', 'Recent surgery']] as const
+/** The 12-week re-ask (§13.5, §14). The screen that asks it isn't built yet. */
+export const PREGNANCY_REASK = 'Does this still apply?'
 
 export const WELLBEING_STATEMENT = '"Food or weight sometimes feels stressful or all-consuming for me."'
 export const WELLBEING_OPTIONS = [['yes', 'Yes'], ['sometimes', 'Sometimes'], ['no', 'No'], ['rather-not-say', 'Rather not say']] as const
@@ -59,11 +62,11 @@ export const ONE_DAY_NOTE = 'One day is a good start. A second day adds more whe
 
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
-  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, moving more or how you’re feeling, a parent, a school nurse or your GP is a good place to start.', note: 'We haven’t kept any of your answers.' },
+  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, moving more or how you’re feeling, a parent or carer, a school or college nurse, or your GP is a good place to start.', note: 'We haven’t kept any of your answers.' },
   wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no calorie target to hit. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep whether gentle mode is on, nothing else.' },
-  readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain or feeling faint during a workout? Stop, rest, and call 999 if it doesn’t pass.' },
-  pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali keeps food at maintenance with no calorie number, and training gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'We’ll ask again in 12 weeks. You can clear this in Profile any time.' },
-  medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or diabetes team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
+  readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
+  pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
+  medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
 }
 
 /** Onboarding 3: the summary. */
@@ -119,6 +122,6 @@ export function allCopy(): string[] {
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION])
+  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION])
   return out
 }

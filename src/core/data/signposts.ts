@@ -59,7 +59,7 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     kind: 'nhs111-mental-health',
     name: 'NHS 111, option 2 (mental health)',
     phone: '111',
-    nations: ['england'],
+    nations: ['england', 'wales'],
     hours: '24 hours, every day',
     free: true,
     note: 'Call 111 and choose option 2 for your local NHS mental health crisis line.',

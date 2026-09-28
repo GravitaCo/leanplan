@@ -134,7 +134,7 @@ async function wizard(page, a = {}, snap) {
   const yes = a.ready ?? [false, false, false]
   const groups = page.getByRole('radiogroup')
   for (let i = 0; i < 3; i++) await groups.nth(i).getByRole('radio', { name: yes[i] ? 'Yes' : 'No', exact: true }).click()
-  if (yes[2]) await page.getByRole('radiogroup', { name: 'Is that pregnancy or breastfeeding?' }).getByRole('radio', { name: a.pregnant ? 'Yes' : 'No', exact: true }).click()
+  if (yes[2]) await page.getByRole('radiogroup', { name: 'Which of these is it?' }).getByRole('radio', { name: a.pregnant ? 'Pregnant' : 'Recent surgery', exact: true }).click()
   await s('ob1-2-ready'); await cont(page)
   if (a.pregnant) { await h1(page, 'We’ll keep things gentle'); await s('ob4-4-pregnancy'); await cont(page) }
   else if (yes.some(Boolean)) { await h1(page, 'We’ll start gently'); await s('ob4-3-readiness'); await cont(page) }
@@ -421,6 +421,22 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await page.getByRole('button', { name: /Sign in|Log in/ }).first().waitFor({ timeout: 15000 })
     expect(net.fnCalls.length === 1 && !(await page.evaluate(() => localStorage.getItem('tali.pendingDelete'))), 'deleted once back online')
   })
+
+  await run('safety: recent surgery → the gentle-start screen, not the pregnancy one', async ({ page }) => {
+    await wizard(page, { ready: [false, false, true], pregnant: false }, 'route-surgery/')
+    const dr = await draft(page)
+    expect(dr.pregnant === false && dr.outcomes.readiness === 'flagged', 'readiness flagged, not pregnant')
+    expect(fs.existsSync(path.join(OUT, 'route-surgery/ob4-3-readiness.png')) && !fs.existsSync(path.join(OUT, 'route-surgery/ob4-4-pregnancy.png')), 'the readiness route')
+  })
+
+  await run('a pending under-18 deletion for another account doesn’t block this one', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await page.evaluate(() => localStorage.setItem('tali.pendingDelete', JSON.stringify({ uid: '99999999-9999-4999-8999-999999999999', at: new Date().toISOString() })))
+    await page.reload()
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await page.waitForTimeout(500)
+    expect((await page.getByText('Tali is for 18+').count()) === 0, 'no stop screen for another account')
+  }, { state: { ...newAccount(), profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', activityMult: 1.3 } } })
 
   await run('a 1-day week', async ({ page }) => {
     await wizard(page, { goal: 'Feel better and move more' })

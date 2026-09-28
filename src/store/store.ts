@@ -212,7 +212,7 @@ export interface StoreState {
    * without a local health consent. `plan` null keeps the current plan.
    */
   finishOnboarding: (x: { profile: Profile; plan: GeneratedPlan | null; target: MacroTarget | null; weightKg: number | null }) => boolean
-  /** under 16 (§14): this device's data goes now; the account is deleted now, or on the next connection */
+  /** under 18 (§14; the wizard's age stop is 18+ for now): this device's data goes now; the account is deleted now, or on the next connection */
   deleteUnder16: () => Promise<DeleteResult>
   /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
   rateExercise: (routineId: string, slot: number, rating: 'up' | 'down') => void
@@ -345,7 +345,7 @@ let syncing = false
 /** Set while an account deletion runs: no sync may start, so nothing re-uploads rows the server
  *  function is deleting (the JWT stays valid for a while after the login is gone). */
 let deleting = false
-/** When an under-16 deletion was last retried (runSync). */
+/** When an under-18 deletion was last retried (runSync). */
 let under16Tried = 0
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
@@ -1037,7 +1037,7 @@ export const useStore = create<StoreState>()(
         window.addEventListener('offline', () => set((st) => { st.online = false }))
         window.addEventListener('online', async () => {
           set((st) => { st.online = true })
-          // back online: an under-16 deletion still to do retries straight away (runSync)
+          // back online: an under-18 deletion still to do retries straight away (runSync)
           under16Tried = 0
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
@@ -1059,11 +1059,12 @@ export const useStore = create<StoreState>()(
         // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
         if (syncing || deleting) return
-        // an under-16 account still to delete (onboarding §14): nothing syncs, the deletion retries
+        // an under-18 account still to delete (onboarding §14): nothing syncs, the deletion retries
         // (at most once a minute: a failed deletion schedules a sync of its own)
         const pend = pendingDeletion()
-        if (pend) {
-          if (pend.uid === getUid() && navigator.onLine && Date.now() - under16Tried > 60_000) { under16Tried = Date.now(); void get().deleteUnder16() }
+        // only this account's: another account signed in on the device syncs as normal
+        if (pend && pend.uid === getUid()) {
+          if (navigator.onLine && Date.now() - under16Tried > 60_000) { under16Tried = Date.now(); void get().deleteUnder16() }
           return
         }
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }

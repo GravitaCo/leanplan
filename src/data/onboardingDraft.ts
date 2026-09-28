@@ -4,7 +4,7 @@
  * written only once a local health consent exists (the guard in the store). Under `tali.`, so
  * sign-out-and-remove and account deletion wipe it (account.ts isPersonalKey).
  *
- * Also the under-16 deletion that couldn't reach the server yet (onboarding §14): the device's
+ * Also the under-18 deletion (the wizard's age stop, 18+ for now) that couldn't reach the server yet (onboarding §14): the device's
  * data is wiped at once; the account is deleted on the next connection.
  */
 import type { WizardDraft } from '@/core/domain/wizard'
@@ -28,7 +28,7 @@ export function clearDraft(): void {
   try { store()?.removeItem(DRAFT_KEY) } catch { /* blocked */ }
 }
 
-/** An under-16 account whose server deletion still has to run (the uid it belongs to). */
+/** An under-18 account whose server deletion still has to run (the uid it belongs to). */
 export function pendingDeletion(): { uid: string; at: string } | null {
   try {
     const p = JSON.parse(store()?.getItem(PENDING_KEY) || 'null')
