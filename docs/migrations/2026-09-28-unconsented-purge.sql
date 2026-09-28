@@ -20,7 +20,9 @@
 -- delete, so a yes arriving meanwhile wins. Returns counts only.
 --
 -- Runs daily at 03:17 UTC through pg_cron. Service only: no app user can call it.
--- Set PURGE_FROM below to the day this is applied. Safe to re-run.
+-- PURGE_FROM is the release day, or the day the notice emails go out if later, so everyone gets the
+-- full 30 days; the app names the resulting date (UNCONSENTED_DELETION in src/core/legal/index.ts,
+-- npm test checks they agree). Safe to re-run.
 -- Rollback: select cron.unschedule('tali-purge-unconsented'); drop function public.purge_unconsented_logs();
 -- ============================================================================
 
@@ -54,10 +56,10 @@ begin
         and now() > greatest(purge_from, (select u.created_at from auth.users u where u.id = uid)) + interval '30 days')
       or exists (
         select 1 from (
-          select k.granted, k.recorded_at from public.consents k
+          select k.granted, least(k.recorded_at, k.created_at) as at from public.consents k
           where k.user_id = uid and k.type = 'health'
           order by least(k.recorded_at, k.created_at) desc, k.created_at desc limit 1
-        ) l where not l.granted and l.recorded_at < now() - interval '1 day')
+        ) l where not l.granted and l.at < now() - interval '1 day')
     ) then continue; end if;
     delete from public.day_logs where user_id = uid;           get diagnostics c = row_count; n := n + c;
     delete from public.custom_foods where user_id = uid;       get diagnostics c = row_count; n := n + c;

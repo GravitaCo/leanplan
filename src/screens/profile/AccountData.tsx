@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
-import { healthDataSummary, healthSyncPaused, latestConsent } from '@/data/consent'
+import { healthDataSummary, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -65,7 +65,7 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
     <Sheet title="Health data" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
         {status === 'on' ? 'Tali keeps your log, including your weight, check-ins and body details, to run the app and build your plan and targets.'
-          : status === 'paused' ? 'Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. Anything already in your account from before is deleted after 30 days unless you agree; your phone keeps its copy.'
+          : status === 'paused' ? 'Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. ' + unconsentedCopyLine()
           : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tali uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
           : 'To build your plan, Tali asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
       </div>

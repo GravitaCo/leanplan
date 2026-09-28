@@ -17,6 +17,13 @@ function urlBase64ToUint8Array(b64: string): Uint8Array<ArrayBuffer> {
   return arr
 }
 
+/** Register this browser again without asking (only where reminders are already allowed): after
+ *  the account's copy of the log, reminders included, was deleted and a yes brings it back. */
+export async function resubscribePush(): Promise<boolean> {
+  if (!pushSupported() || Notification.permission !== 'granted') return false
+  return subscribePush()
+}
+
 export async function subscribePush(): Promise<boolean> {
   if (!pushSupported()) return false
   const perm = await Notification.requestPermission()

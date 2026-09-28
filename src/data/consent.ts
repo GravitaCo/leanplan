@@ -10,6 +10,7 @@
  * No React, no DOM beyond an injected Storage for the one-off label-consent migration.
  */
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/core/types'
+import { UNCONSENTED_DELETION } from '@/core/legal'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 
@@ -371,7 +372,22 @@ export function needsReupload(s: PersistedState): ConsentRecord | null {
   const last = recs[recs.length - 1]
   if (!last?.granted || s.consents?.reuploadedFor === last.id) return null
   const decline = [...recs].reverse().find((r) => !r.granted)
-  return decline ? last : null
+  // a first yes, given here or on another phone: the account's copy may have been deleted after
+  // the pre-consent hold (deletion day, UNCONSENTED_DELETION), so a phone with a log here uploads all of it
+  if (!decline && !(recs.length === 1 && hasExistingData(s))) return null
+  return last
+}
+
+/** Whether the pre-consent deletion day (UNCONSENTED_DELETION) has come: the copy then says it's done. */
+export function unconsentedDeleted(now = Date.now()): boolean {
+  return now >= Date.parse(UNCONSENTED_DELETION.iso + 'T00:00:00Z')
+}
+
+/** The line about an account's pre-consent copy, for someone with no answer yet. */
+export function unconsentedCopyLine(now = Date.now()): string {
+  return unconsentedDeleted(now)
+    ? 'What was in your account from before has been deleted; your phone keeps its copy.'
+    : `What’s in your account from before is deleted on ${UNCONSENTED_DELETION.short} unless you agree; your phone keeps its copy.`
 }
 
 /** Mark the whole log to upload after a yes that follows a withdrawal (needsReupload). */
@@ -388,7 +404,7 @@ export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentReco
   markAllDirty(s, meta)
   // rows another device uploaded since the withdrawal win over this device's (settleResume)
   const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => effectiveAt(b) - effectiveAt(a))[0]
-  if (decline && !log.resumeFrom) log.resumeFrom = decline.at
+  if (!log.resumeFrom) log.resumeFrom = decline?.at ?? meta.lastPull ?? nowIso()
   log.reuploadedFor = yes.id
 }
 
@@ -422,17 +438,9 @@ export function resumeAfterYes(s: PersistedState): void {
 /**
  * Agree to keeping health data. A pause ends: what was held back on this device is marked to
  * upload (the days and settings pushed without their health fields while paused). A first yes
- * from someone with a log here uploads all of it: the account's copy may have been deleted
- * after 30 days without an answer (docs/migrations/2026-09-28-unconsented-purge.sql). Rows
- * another device changed since this one last pulled win, and this phone's are kept
- * (settleResume).
+ * from someone with a log here uploads all of it on the next sync (needsReupload).
  */
 export function grantHealth(s: PersistedState, meta: SyncMeta): ConsentRecord {
-  if (!latestConsent(s, 'health') && hasExistingData(s)) {
-    markAllDirty(s, meta)
-    const log = consentLog(s)
-    if (!log.resumeFrom) log.resumeFrom = meta.lastPull ?? log.healthPause?.at ?? nowIso()
-  }
   resumeAfterYes(s)
   const rec = recordConsent(s, 'health', true)
   resumeHealthSync(s, meta)

@@ -1,4 +1,4 @@
-import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
+import { LEGAL_URLS, MIN_AGE, UNCONSENTED_DELETION, fact, type LegalDoc } from './index'
 
 const who = () => fact('controller', 'legal name')
 const email = () => fact('contactEmail', 'privacy email')
@@ -62,7 +62,7 @@ export function privacyPolicy(): LegalDoc {
         p: [
           `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
             `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. If you used Tali before we asked, what you logged then was already synced to your account. ` +
-            `If you used Tali before we asked, you can choose "Not now": everything you log then stays on your phone, nothing syncs to your account or is backed up there (anything already in your account from before is kept there, unused, for 30 days and then deleted; your phone keeps its copy, and if you agree later it uploads again), and we ask once more after two weeks. Reminders only run once you've agreed.`,
+            `If you used Tali before we asked, you can choose "Not now". Everything you log then stays on your phone, and nothing syncs to your account or is backed up there. What was already in your account is kept there, unused, until ${UNCONSENTED_DELETION.long}, and then deleted unless you've agreed. Your phone keeps its copy, and if you agree later it uploads again from your phone. We ask once more after two weeks. Reminders only run once you've agreed.`,
           `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log, profile, settings and reminders from your account, so your log stays only on your phones. ` +
             `It also clears your weigh-ins, check-ins and body details (weight, body fat and any injuries you've noted) from this phone straight away, and from your other phones the next time each one connects. ` +
             `Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
@@ -97,7 +97,7 @@ export function privacyPolicy(): LegalDoc {
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos, and sees technical request data when you play one.`,
           `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A reminder carries only the supplement name, and it is encrypted so the push service can't read it.`,
-          `Google Workspace: our email, which receives feedback and requests you send us.`,
+          `Google Workspace: our email, which receives feedback and requests you send us, and sends the occasional email about your account.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
         ],
       },
@@ -118,9 +118,10 @@ export function privacyPolicy(): LegalDoc {
       {
         h: 'How long we keep it',
         ul: [
-          `App account data is kept while you have an account. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups, and our providers' security logs, are deleted as they expire on those providers' regular cycles. Early access emails on the website are separate and aren't affected.`,
-          `If you withdraw consent for health data, we delete your log, profile and settings from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.`,
-          `If you used Tali before we asked for consent and haven't agreed within 30 days of being asked (whether you chose "Not now" or haven't opened the app since), we delete your log, profile and settings from your account, and keep your account and your consent choices. What's on your phone stays there.`,
+          `App account data is kept while you have an account, except as described below. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups, and our providers' security logs, are deleted as they expire on those providers' regular cycles. Early access emails on the website are separate and aren't affected.`,
+          `If you withdraw consent for health data, we delete your log, profile, settings and reminders from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.`,
+          `If you used Tali before we asked for consent and haven't agreed by ${UNCONSENTED_DELETION.long} (whether you chose "Not now" or haven't opened the app since), we delete your log, profile, settings and reminders from your account on that date, and keep your account. What's on your phone stays there.`,
+          `When we delete data from your account for either of these reasons, copies in our database provider's backups are deleted as they expire on its regular cycle.`,
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tali.`,
           `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,

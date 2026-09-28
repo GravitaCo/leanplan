@@ -1,4 +1,4 @@
-import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
+import { LEGAL_URLS, MIN_AGE, UNCONSENTED_DELETION, fact, type LegalDoc } from './index'
 
 const who = () => fact('controller', 'legal name')
 
@@ -56,7 +56,7 @@ export function termsOfUse(): LegalDoc {
         h: 'Your account',
         ul: [
           'Keep your password safe. You are responsible for activity under your account.',
-          'Once you’ve agreed to Tali keeping your health data, your log is stored on your phone and synced to your account. Until then, or if you withdraw, it’s kept only on your phone. Changes made offline only reach your account once you’re back online. Export a backup now and then: if you lose or reset your phone or clear its browser data, anything that isn’t in your account is gone.',
+          `Once you’ve agreed to Tali keeping your health data, your log is stored on your phone and synced to your account. Until then, or if you withdraw, new entries are kept only on your phone. If you used Tali before we asked and haven’t agreed by ${UNCONSENTED_DELETION.long}, we delete the copy in your account then. Changes made offline only reach your account once you’re back online. Export a backup now and then: if you lose or reset your phone or clear its browser data, anything that isn’t in your account is gone.`,
           'You can delete your account at any time in Profile, then Privacy, then Delete account.',
         ],
       },

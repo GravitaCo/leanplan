@@ -42,7 +42,7 @@ import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from 
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
-import { subscribePush, unsubscribePush } from '@/data/push'
+import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
@@ -1087,7 +1087,11 @@ export const useStore = create<StoreState>()(
           }
           // a yes after a withdrawal: the account's copy was deleted, so the whole log goes up
           const re = needsReupload(d)
-          if (re) markReupload(d, m, re)
+          if (re) {
+            markReupload(d, m, re)
+            // the account's reminders went with its copy of the log: register this phone again
+            if (d.profile.notificationsEnabled) void withTimeout(resubscribePush(), 5000, false)
+          }
           let failed: string[]
           try {
             failed = await pushDirty(d, m)

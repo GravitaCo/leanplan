@@ -165,7 +165,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   log uploads need a current yes, and a withdrawal clears the account's copy through
   `clear_log_after_withdrawal()`. A new log table needs the `require_health_consent` trigger and a
   line in that function (and in `purge_unconsented_logs()`, which deletes a log that has no yes 30
-  days after the person was asked: `docs/migrations/2026-09-28-unconsented-purge.sql`).
+  days after PURGE_FROM, the date the app names as `UNCONSENTED_DELETION`: `docs/migrations/2026-09-28-unconsented-purge.sql`).
 
 ## Working agreement: design → code
 

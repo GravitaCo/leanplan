@@ -2,13 +2,14 @@
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
 import { liveConsentDue, pendingCloudClear, needsReupload, markReupload, pushConsents, pullConsents, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
-  consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause } from '@/data/consent'
+  consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause, unconsentedCopyLine } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, clearCloudLog } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER, ConsentRequiredError } from '@/data/supabase'
+import { UNCONSENTED_DELETION } from '@/core/legal'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -468,8 +469,17 @@ async function healthPause(): Promise<void> {
   checks.push(['(setup) synced before consent was asked: nothing dirty', !m5.days[D1]?.dirty && !m5.settings.dirty && s5.days[D1]?.weight === 71])
   pauseHealthSync(s5)
   rows5.day_logs = []; rows5.settings = []
-  grantHealth(s5, m5)
-  checks.push(['a first yes with a log here marks all of it to upload, from the last pull', m5.days[D1].dirty && m5.settings.dirty && !!s5.consents!.resumeFrom])
+  const y5 = grantHealth(s5, m5)
+  // the sync does this (store runSync): a first yes with a log here uploads all of it, once
+  const re5 = needsReupload(s5)
+  if (re5) markReupload(s5, m5, re5)
+  checks.push(['a first yes with a log here marks all of it to upload, once', re5?.id === y5.id && m5.days[D1].dirty && m5.settings.dirty && !!s5.consents!.resumeFrom && !needsReupload(s5)])
+  // a second phone that learns of that yes through sync uploads its log too
+  const s6 = stateFromBackup({ days: { [D2]: day(70) } } as never)
+  ensureMeta(s6, false)
+  s6.consents = { records: [{ ...y5, _dirty: undefined }] }
+  checks.push(['another phone with a log, learning of a first yes, uploads its log too', needsReupload(s6)?.id === y5.id])
+  checks.push(['a first yes on a phone with nothing logged uploads nothing extra', !needsReupload({ ...stateFromBackup({ days: {} } as never), consents: { records: [y5] } } as never)])
   rows5.consents.push({ id: s5.consents!.records![0].id, user_id: LOCAL_USER, type: 'health', version: '2026-09-v1', granted: true, recorded_at: s5.consents!.records![0].at })
   s5.consents!.records![0].dirty = false
   await withFetch(srv5.fetchFn, () => pushDirty(s5, m5))
@@ -661,6 +671,12 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   await withFetch(fakeServer(rrows).fetchFn, () => pushDirty(r, rm))
   checks.push(['resume: a recipe changed on another device keeps that version, on the server and the phone', rrows.recipes[0].name === 'Porridge with honey' && r.recipes[0].name === 'Porridge with honey' && !r.recipes[0]._dirty])
   checks.push(['resume: this phone\'s recipe is kept to download', r.consents?.resumeCopy?.recipes?.[RID]?.name === 'Porridge'])
+  // the date the app names for the pre-consent deletion is the one the server job uses
+  const sql = readFileSync('docs/migrations/2026-09-28-unconsented-purge.sql', 'utf8')
+  const from = /timestamptz '(\d{4}-\d{2}-\d{2})[^']*'; -- PURGE_FROM/.exec(sql)?.[1]
+  checks.push(['the app’s deletion date is the purge job’s PURGE_FROM + 30 days', !!from && new Date(Date.parse(from + 'T00:00:00Z') + 30 * 86400_000).toISOString().slice(0, 10) === UNCONSENTED_DELETION.iso])
+  const day0 = Date.parse(UNCONSENTED_DELETION.iso + 'T00:00:00Z')
+  checks.push(['the copy names the date before it, and says it’s done from then', unconsentedCopyLine(day0 - 1).includes(UNCONSENTED_DELETION.short) && unconsentedCopyLine(day0).includes('has been deleted')])
   report('withdrawal and resume', checks)
 }
 
