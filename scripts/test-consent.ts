@@ -679,6 +679,19 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   checks.push(['resume: one in sync here that the server has keeps the server\'s, and isn\'t copied', soup?.name === 'Soup, spicy' && rrows.recipes.find((x) => x.id === RID2)?.name === 'Soup, spicy' && !r.consents?.resumeCopy?.recipes?.[RID2]])
   checks.push(['resume: one in sync here that the server lacks (cleared) uploads', rrows.recipes.some((x) => x.id === RID3 && x.name === 'Stew') && !stew?._dirty && !(stew as { _reup?: boolean })?._reup])
 
+  // an edit made while the re-upload waits: it isn't taken for "in sync here" and lost
+  const e = stateFromBackup({ days: {} } as never)
+  const em = ensureMeta(e, true)
+  const EID = uuid()
+  e.recipes = [{ id: EID, name: 'Oats', items: [], servings: 1, _u: '2026-09-01T00:00:00.000Z' }]
+  recordConsent(e, 'health', true); withdraw(e, em, 'health'); const eyes = recordConsent(e, 'health', true)
+  e.consents!.records.forEach((x) => delete x._dirty)
+  markReupload(e, em, eyes)
+  Object.assign(e.recipes[0], { name: 'Oats with berries', _dirty: true, _u: new Date(Date.now() + 5).toISOString() }) // the store's edit path
+  const erows = { ...emptyRows(), recipes: [{ id: EID, user_id: LOCAL_USER, name: 'Oats', items: [], servings: 1, updated_at: '2026-09-01T00:00:00.000Z' }] }
+  await withFetch(fakeServer(erows).fetchFn, () => pushDirty(e, em))
+  checks.push(['an edit made while the re-upload waits uploads, not the server\'s older copy', erows.recipes[0].name === 'Oats with berries' && e.recipes[0].name === 'Oats with berries'])
+
   // a phone that already had a yes and has synced since: no re-upload on this update
   const k = stateFromBackup({ days: { '2026-09-08': day(70) } } as never)
   const km = ensureMeta(k, false)

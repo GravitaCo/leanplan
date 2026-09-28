@@ -412,8 +412,10 @@ function markAllDirty(s: PersistedState, meta: SyncMeta): void {
     if (!m?.dirty) meta.days[d] = { u: m?.u ?? u, dirty: true, reup: true }
   }
   if (!meta.settings.dirty) meta.settings = { ...meta.settings, dirty: true, reup: true }
-  for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string; _reup?: boolean }[]) {
-    if (!x._dirty) { x._dirty = true; x._reup = true; x._u ??= u }
+  // a record's tag is its edit time then: an edit before the upload changes `_u`, and it then
+  // uploads as this phone's (settleResume)
+  for (const x of [...(s.customFoods || []), ...(s.recipes || []), ...(s.routines || []), ...(s.trainingPlans || [])] as { _dirty?: boolean; _u?: string; _reup?: string }[]) {
+    if (!x._dirty) { x._u ??= u; x._dirty = true; x._reup = x._u }
   }
 }
 

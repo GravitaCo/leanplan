@@ -367,6 +367,7 @@ export async function clearCloudLog(): Promise<boolean> {
  *  `since` is this phone's clock and `updated_at` the server's, so a fast phone clock can't make
  *  another device's edit look older. Erring this way only keeps more of this phone's versions aside. */
 const RESUME_MARGIN_MS = 24 * 3600_000
+const EXACT_MARGIN_MS = 5 * 60_000
 const IN_BATCH = 60
 
 /**
@@ -377,8 +378,9 @@ const IN_BATCH = 60
  */
 async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Promise<void> {
   const log = s.consents!
-  // a time from this phone's own last pull is exact; one from an answer may be on another clock
-  const since = Date.parse(log.resumeFrom!) - (log.resumeExact ? 0 : RESUME_MARGIN_MS)
+  // a time from this phone's own last pull needs only a few minutes for this phone's clock against
+  // the server's; one from an answer may be on another device's clock
+  const since = Date.parse(log.resumeFrom!) - (log.resumeExact ? EXACT_MARGIN_MS : RESUME_MARGIN_MS)
   const dirty = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   const rows: any[] = []
   for (let i = 0; i < dirty.length; i += IN_BATCH) {
@@ -409,7 +411,7 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
   if (stHow === 'kept' && !copy.settings) { copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }; kept = true }
   // saved foods, recipes, workouts and plans: the same rule by id. A dirty record the server
   // doesn't have uploads (the account's copy was cleared, or it's new here)
-  type Rec = { id: string; _dirty?: boolean; _reup?: boolean }
+  type Rec = { id: string; _dirty?: boolean; _u?: string; _reup?: string }
   const lists = [
     ['customFoods', 'custom_foods', fromServerFood],
     ['recipes', 'recipes', fromServerRecipe],
@@ -424,7 +426,8 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
     const byId = new Map(mine.map((x) => [x.id, x]))
     for (const row of rows) {
       const x = byId.get(row.id)
-      const how = x ? settle(x._reup, row) : null
+      // still tagged only if it hasn't been edited since it was marked
+      const how = x ? settle(!!x._reup && x._reup === x._u, row) : null
       if (!x || !how) continue
       theirs.push({ key, row, mine: x, from })
       if (how !== 'kept') continue

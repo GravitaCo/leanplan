@@ -1031,6 +1031,7 @@ export const useStore = create<StoreState>()(
             const src = get().data
             const uid0 = getUid()
             const d = structuredClone(src) as PersistedState
+            consentRefusals = 0
             await pushConsents(d)
             await pullConsents(d)
             const m = ensureMeta(d, false)
