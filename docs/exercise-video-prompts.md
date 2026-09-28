@@ -45,8 +45,9 @@ poster, so MP4 fallback must stay switched on in the library. The library refuse
 referrer, so the links don't open on their own but do play inside the app.
 
 **How the app will use each kind of clip.** Rep clips (most of the list) get the tempo counter
-that the curl and deadlift already have. The plank is a hold: until the planned hold timer is
-built (workout plan §5.5), it plays without a counter. Cardio clips show a steady pace and have
+that the curl and deadlift already have. The plank is a hold: the app's hold timer runs on the
+device clock, and a hold clip plays without a counter until the hold mode for clips (workout plan
+§5.5) is built. Cardio clips show a steady pace and have
 no counter; they are there to show posture and set-up.
 
 ## Tips for a clip that works in the app

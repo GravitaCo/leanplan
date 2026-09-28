@@ -1,6 +1,7 @@
 # Workouts: customisation, recommendations & exercise library
 
-**Author:** fitness-workouts specialist · **Status:** plan, revision 3 (no code for this revision yet) ·
+**Author:** fitness-workouts specialist · **Status:** plan, revision 3 (P1 to P5 are built; P6 is replaced by
+`personalised-training-engine.md`; P7 and the media track's hold and flow modes are not built) ·
 **Audience:** Benn + ship-critic (every phase), security-data (the phases flagged in §6),
 mental-performance (wellbeing requirements in §0)
 
@@ -54,11 +55,7 @@ reintroduced), and `src/core/` stays framework-agnostic.**
 > 10. **The split is chosen by resistance sessions a week**, not days a week, because days can now
 >     hold yoga, cardio or mobility too.
 >
-> **Earlier revision note (kept for history).** Plans are table-backed in owner-RLS'd Supabase
-> tables, not nested in `settings`/`profile` JSON. Four goals (`lose-fat`, `increase-strength`,
-> `build-muscle`, `increase-endurance`). Cardio is first-class. Broad library. Explicit plan
-> lifecycle (active / completed / archived + templates via clone). Demo video hosting targets
-> Bunny CDN. The builder can be gated later; the core stays free; monetization is out of scope.
+> Benn's earlier decisions (revision 2) are kept in §7.1.
 
 ---
 
@@ -100,6 +97,7 @@ every phase must meet them, and ship-critic checks each phase against this list.
 - The weekday calendar does not move (Tuesday is still Tuesday's workout). Moving it would bring
   back the rotation schedule that was tried and reverted. Detail in §4.1b.
 - Plans finish by **sessions done**, not weeks passed, and close with a short reflection.
+  (Changed by Benn's plan model, "P5 as built" in §6: plans now run for a set number of weeks.)
 
 ### 0.5 Load guardrails
 - At most **one hard session a day**; a second one that day is light (walk, mobility, yoga).
@@ -122,9 +120,8 @@ every phase must meet them, and ship-critic checks each phase against this list.
 ### 0.8 Exercise is never a way to earn food
 - No copy says a workout "gives you room" or "earns" calories. Cardio is for fitness and
   enjoyment, not for burning off food.
-- Today's copy breaks this in two places: the Train banner ("That gives you about X kcal more
-  room today", `TrainScreen.tsx` about line 78) and the Today workout tile ("+X kcal of room",
-  `TodayScreen.tsx` about line 180). **Phase 1 replaces both** with neutral copy (§6).
+- Phase 1 replaced the two places that broke this (the Train banner's "That gives you about X
+  kcal more room today" and the Today tile's "+X kcal of room") with neutral copy (§6).
 - Whether burn keeps widening the food range behind the scenes is a nutrition decision (D5). It is
   never presented as a reward.
 
@@ -133,6 +130,8 @@ every phase must meet them, and ship-critic checks each phase against this list.
 ## 1. Current-state analysis
 
 ### How it works today (checked against the code, September 2026)
+This is the state before P1. P1 to P5 have since changed most of it (see §6).
+
 - **Templates are fixed.** `WORKOUTS` (`src/core/data/workouts.ts`) is a hardcoded
   `Record<string, WorkoutTemplate>` keyed by the four `WorkoutType`s (`Legs`, `Push`, `Pull`,
   `Cardio`). An `ExerciseTemplate` is `{ n, t, cue, title?, video? }`: name, a free-text
@@ -152,29 +151,19 @@ every phase must meet them, and ship-critic checks each phase against this list.
   Cardio is a type picker over the six `CARDIO_MET` keys (Walk, Incline treadmill, Stationary
   bike, Cross-trainer, Rower, Other) plus minutes. A static footer coaches 2–3 RIR and adding
   weight at the top of the range.
-- **Owned demo videos and the tempo player have shipped.** Two clips (barbell curl, Romanian
-  deadlift) live in `public/videos/` (vertical 540×960 H.264, no audio, poster JPG) and attach
-  through `ExerciseTemplate.video` from `DEMOS` in `src/core/data/media.ts`. The shipped
-  `ExerciseMedia` is `{ src, poster?, durationSec, tempo: TempoPhase[] }`, where each phase is
-  `{ at, kind: 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch', rep? }` measured from the
-  footage at 8 fps. The guided session (`train/GuidedPlayer.tsx`) reads the video clock and overlays
-  the phase and a 1-2-3 count (`core/domain/tempo.ts`). The demo player (`train/DemoPlayer.tsx`)
-  also shows the clip's own rep and a pace row. Neither counts the user's reps. Exercises without a clip fall back to a YouTube search (`howToLink`).
-  `VIDEO_BASE` is the one switch for moving clips to Bunny CDN. The service worker leaves
-  `/videos/` to the network. `npm test` checks every clip file exists and the timeline is
-  ordered. Clips are generated from the Seedance prompts in `docs/exercise-video-prompts.md`.
+- **Owned demo videos and the tempo player have shipped**, as CLAUDE.md ("Exercise demo videos")
+  describes. Two clips at the time (barbell curl, Romanian deadlift) attach through
+  `ExerciseTemplate.video` from `DEMOS` in `src/core/data/media.ts`. The shipped `ExerciseMedia`
+  is `{ src, poster?, durationSec, tempo: TempoPhase[] }`, where each phase is `{ at, kind:
+  'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch', rep? }` measured from the footage at 8 fps
+  and read by `core/domain/tempo.ts`. Exercises without a clip fall back to a YouTube search
+  (`howToLink`).
 - **Calorie burn** (`core/domain/workout.ts > workoutBurn`): cardio uses `CARDIO_MET[type]` ×
   kg × hours (25 min when blank); any strength session is a flat 3.5 MET × 45 min. Both use
-  **gross** MET. The result extends the day's calorie range (`insights.rangeFor`) and shows on
-  Today ("+X kcal of room", `TodayScreen.tsx`) and Train ("That gives you about X kcal more room
-  today", `TrainScreen.tsx`). Two accuracy problems, both checked: the `ACTIVITY` multipliers in
-  `constants.ts` already count exercise days ("Lightly active (1–3 days/week)"), so logged
-  sessions are counted twice (confirmed by nutrition-accuracy: about 135–160 kcal a day for 3 lifts
-  and 3 cardio sessions a week); and only `Walk` (3.8), `Incline treadmill` (5.0, but only the
-  "very slow" graded code) and the flat strength value (3.5) match a 2024 Compendium code. The
-  other four `CARDIO_MET` values differ or have no source, and a blank cardio type silently uses
-  4.0, which matches nothing
-  (§2.9).
+  **gross** MET. The result extends the day's calorie range (`insights.rangeFor`) and is shown as
+  food "room" on Today and Train (§0.8). Two accuracy problems, both checked and sized in §2.9:
+  logged sessions are counted twice (the `ACTIVITY` multipliers already count exercise days, D5),
+  and most `CARDIO_MET` values have no matching 2024 Compendium code (D11).
 - **The goal and onboarding contract types have shipped; the questionnaire has not.**
   `Profile.goal` (the four-value `Goal`), `bodyFat`, `targetRate` and `training?: TrainingPrefs`
   exist in `src/core/types.ts`. `TrainingPrefs` holds `experience`, `daysPerWeek` (2–6),
@@ -422,28 +411,12 @@ export interface Routine {
 /** Weekday (0 = Sun … 6 = Sat) → routine ids for that day, in order. Missing or [] = rest.
  *  An editable calendar: no sequence pointer, no cycle index, no "next workout" state. */
 export type PlanWeek = Record<number, string[]>
-
-export type PlanSource = 'recommended' | 'custom' | 'edited-recommended'
-export type PlanState = 'active' | 'completed' | 'archived' | 'template'
-
-export interface TrainingPlan {
-  id: string
-  name: string
-  source: PlanSource
-  state: PlanState               // at most one 'active' per user (store/domain rule)
-  baseTemplateId?: string        // blueprint provenance, for "reset to recommended"
-  clonedFromId?: string          // re-use provenance
-  goal?: Goal
-  week: PlanWeek                 // replaces the earlier PlanDay[] body
-  /** completion is by sessions done, not calendar weeks (§4.1a); e.g. 18 */
-  targetSessions?: number
-  startedAt?: string
-  completedAt?: string
-  reflection?: { at: string; note?: string }
-  _u?: string
-  _dirty?: boolean
-}
 ```
+
+The `TrainingPlan` shape first drafted here (one `week`, `targetSessions`, an
+`'edited-recommended'` source) was replaced by Benn's plan model: see "P5 as built" in §6 and
+`TrainingPlan` in `src/core/types.ts`, which is canonical. At most one plan is `'active'` per user
+(store/domain rule).
 
 **The calendar rule (the reverted rotation stays reverted).** A plan says "Monday: Legs;
 Tuesday: yoga reset + walk". What you train is decided by the weekday, exactly as today.
@@ -609,49 +582,12 @@ plan-body decision.
 -- covers new columns, but this is new synced data, so it goes through security-data review.
 alter table public.day_logs add column if not exists sessions jsonb;
 
--- P4: routines (the user's own workouts).
-create table public.routines (
-  id          uuid primary key,                 -- client-generated, mirrors recipes
-  user_id     uuid not null,
-  name        text not null,
-  modality    text not null,
-  effort      text not null default 'hard',
-  source      text not null default 'custom',   -- 'custom' | 'recommended'
-  base_id     text,                             -- built-in or routine it was cloned from
-  blocks      jsonb not null,                   -- RoutineBlock[]
-  est_mins    integer,
-  archived    boolean not null default false,
-  updated_at  timestamptz not null default now()
-);
-alter table public.routines enable row level security;
-create policy "owner_full_access" on public.routines
-  for all to authenticated
-  using ((select auth.uid())::text = user_id::text)
-  with check ((select auth.uid())::text = user_id::text);
-
--- P5: training plans (a weekly arrangement of routines).
-create table public.training_plans (
-  id               uuid primary key,
-  user_id          uuid not null,
-  name             text not null,
-  source           text not null,                -- 'recommended' | 'custom' | 'edited-recommended'
-  state            text not null default 'active',
-  goal             text,
-  base_template_id text,
-  cloned_from_id   uuid,
-  week             jsonb not null,               -- PlanWeek
-  target_sessions  integer,
-  started_at       timestamptz,
-  reflection       jsonb,
-  completed_at     timestamptz,
-  updated_at       timestamptz not null default now()
-);
-alter table public.training_plans enable row level security;
-create policy "owner_full_access" on public.training_plans
-  for all to authenticated
-  using ((select auth.uid())::text = user_id::text)
-  with check ((select auth.uid())::text = user_id::text);
 ```
+
+The P4 `routines` and P5 `training_plans` tables, each with owner-only RLS in the same
+migration, are as built in `docs/migrations/20260924_routines.sql` and
+`docs/migrations/20260927_training_plans.sql` (canonical; `training_plans` stores `phases`, not
+the `week` and `target_sessions` first drafted here).
 
 - **RLS ships in the same migration as each table**, copied from `docs/security-rls.sql`, and
   both tables are added to that file's `tablename in (...)` arrays. Match `recipes`' column
@@ -765,12 +701,14 @@ active level the session is already in the multiplier, so net MET shrinks the do
 does not remove it. Any change to burn needs **nutrition-accuracy**
 sign-off, because it moves the food range.
 
-**Tone (§0.8).** Gentle mode hides burn. No copy presents burn as food room. Phase 1 replaces
-the two places that do today.
+**Tone (§0.8).** Gentle mode hides burn. No copy presents burn as food room.
 
 ---
 
 ## 3. Recommendation engine (`src/core/domain/recommend.ts`, pure TS)
+
+`recommend.ts` was never built: `personalised-training-engine.md` (`core/domain/engine/`) replaces
+it and builds on the mix table, guardrails, prescriptions and sources here (§3.2 to §3.6).
 
 Maps what the person told us → a recommended weekly plan built from §2.7 blueprints and
 built-in routines. Deterministic, framework-agnostic and unit-testable. **Customising to the
@@ -931,9 +869,9 @@ field → recommender decision → plan.* All additions are optional fields on t
 | `increase-strength` | Get stronger on key lifts | Main compounds 3–6 reps, 2–4 min rest; accessories 6–12 | **About maintenance** |
 | `increase-endurance` | Improve stamina and muscular endurance | Cardio-led mix; 12–20+ reps and circuits | **Maintenance or a small deficit** (`goalAdjustPct` allows −10…0%) |
 
-This coupling is wired: `suggestedTargets()` reads `profile.goal`. A possible fifth goal
-("feel better / move more") would change this shared enum and the nutrition engine, so it is a
-decision for Benn (D6), not assumed here.
+This coupling is wired: `suggestedTargets()` reads `profile.goal`. A fifth goal, `feel-better`
+("Feel better and move more", maintenance energy), changes this shared enum and the nutrition
+engine; Benn added it in Phase 1 (D6, §7.3a), so the table above predates it.
 
 ### 4.0.2 Fitness onboarding questions (mental-performance recommendations)
 
@@ -963,16 +901,8 @@ any of them falls back to a sensible default, never a blocker.
   re-asked, and are not duplicated into `TrainingPrefs`.
 
 ### 4.0.3 Recommender consumption map
-- **Session count** ← `daysPerWeek` (+ builder `sessionsPerWeek`, `doubles`).
-- **Mix (R / C / M)** ← `goal` (§3.2), then filled from `modalities`, `place`, `equipment`,
-  `cardioPrefs`.
-- **Resistance split** ← the R count: 1–3 full body · 4 upper/lower · 5–6 PPL.
-- **Session size** ← `minutesPerSession`.
-- **Volume** ← `experience` (and `experienceBy`), skewed by `goal`, plus builder `emphasis`.
-- **Prescriptions** ← `goal`, by modality (§3.4).
-- **Exercise choice** ← equipment ∩ difficulty, then "Areas to go easy on" prefers gentler
-  alternatives.
-- **Guardrails** ← §3.3 (can only lighten).
+Which answer drives which decision is the "Driven by" column of the §3.1 table (plus `doubles`,
+§3.2).
 - **Output** → a `TrainingPlan` (`source: 'recommended'`, `state: 'active'`, `goal` stamped),
   any new recommended routines, and `profile.activePlanId`.
 
@@ -1042,6 +972,9 @@ calendar, unchanged. A plain-English "Why this plan" explains the mix, the days 
 ranges, and names what the person said would make it worth it.
 
 ### 4.1a Plan lifecycle UX
+Completion by sessions done and the end-of-plan choices below were replaced by Benn's plan model
+("P5 as built" and "P5 as designed" in §6: a set number of weeks in phases). The rest still holds.
+
 - **Active plan** is what Train and Plan render from. At most one active at a time.
 - **Completion is by sessions done, not calendar weeks.** A plan carries `targetSessions` (for
   example 18 for a 3-a-week plan, six full weeks; the default block length is a **judgement
@@ -1315,13 +1248,10 @@ model. It generalises to routines later without rework.
   chips; the recommender (P6) builds an enjoyment-led balanced mix for it. TypeScript flags every
   exhaustive `switch` and `Record<Goal, …>` that needs the new case (`nutrition.ts`,
   `ProfileScreen.tsx`). **Sign-off: nutrition-accuracy and mental-performance.**
-- **Plans slide.** If the most recent planned session in the last 6 days wasn't logged and
-  differs from today's, Train offers "Pick up with Legs whenever you're ready." Choosing it only
-  changes today (the existing "it only changes today" behaviour). The calendar never moves.
-- **No streaks, no "missed".** Where the week's sessions show, say "2 this week, your plan is
-  2–3". Nothing labelled missed, nothing red.
-- **Welcome back.** After 10 or more days with no session: "Welcome back. Want an easier first
-  week?" Yes sets `profile.easyUntil` 7 days out, which pre-selects the shorter version.
+- **Plans slide, no streaks, welcome back**, as §4.1b sets out, on today's templates. The
+  catch-up is offered only when the most recent unlogged planned session in the last 6 days
+  differs from today's, and choosing it only changes today (the existing "it only changes today"
+  behaviour).
 - **Gentle mode** already hides burn on Train and Today; keep it that way.
 - **Accuracy checks** (in `npm test`, `scripts/test-core.ts`): `dayOptions` table tests
   (own-pattern comparison, the 2-low rule, and a type with no score field, so a score can't leak
@@ -1406,7 +1336,8 @@ sync, the workout builder (§4.3), "Customise" on built-ins, start any workout o
 weekday calendar with several workouts a day, the legacy `schedule` mirror, and the lifecycle.
 - **Must ship with:** one hard session a day (enforced in generated plans, a gentle warning in
   custom ones); at least one rest day; plans that slide, extended to user workouts; completion by
-  sessions done with the reflection prompt; welcome back; the sessions-per-week range.
+  sessions done with the reflection prompt (by weeks as built, below); welcome back; the
+  sessions-per-week range.
 - **Accuracy checks:** property tests over every blueprint and every edit path: at most one hard
   session a day in generated plans, at least one rest day, `week` keys only 0–6 and no stored
   sequence position (the no-rotation rule as a test); the legacy `schedule` mirror matches the
@@ -1555,7 +1486,7 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
    dismiss or re-use after completion; re-use is always a clone. *Refined:* completion is by
    sessions done and closes with a reflection (§4.1a).
 3. **Four goals, fully supported**, each with distinct programming; app focus stays
-   hypertrophy. *Open addition:* a fifth "feel better / move more" goal (D6).
+   hypertrophy. *Addition:* a fifth "feel better / move more" goal, added in P1 (D6, §7.3a).
 4. **Video hosting → Bunny CDN.** Owned clips off the bundle and out of Supabase. *Refined:*
    clips currently ship in `public/videos/` behind `VIDEO_BASE`; the move is one switch.
 5. **Cardio is first-class.** Typed variations, first-class cardio days, cardio-led endurance
@@ -1615,9 +1546,7 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
   - **History:** `rangeFor` is computed live, so past training days' ranges would drop by about
     119–197 kcal and past "in range" counts would change. Freeze history (old maths before the
     switch date) or accept and explain the shift.
-  - **Tell users once**, neutrally: "Your range no longer adds workout estimates, because your
-    activity level already includes training. You can update your activity level in Profile."
-    Numbers hidden in gentle mode.
+  - **Tell users once**, neutrally (the copy is in P1, §6). Numbers hidden in gentle mode.
   - Stored `target.kcal` is unchanged.
 - **D6. A fifth goal, "feel better / move more".** Many people aren't after a body change. It
   touches the shared `Goal` enum, `goalAdjustPct()` (an exhaustive `switch`) and `PROTEIN_PER_KG` (a
@@ -1625,6 +1554,7 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
   `ProfileScreen.tsx`; TypeScript flags each place that needs the new case. It would map to
   maintenance, and the recommender would build a balanced mix. **Recommend adding it in P6** as a
   coordinated change with the nutrition owner; `motivations` covers the "why" until then.
+  (Benn chose Phase 1 instead: §7.3a.)
 - **D7. Onboarding changes vs the shipped contract.** Accept F1–F6 (confidence labels, 1 day a
   week allowed, place before equipment, focus areas and cardio preferences out of onboarding) and
   update `onboarding-and-data-flow.md` in the P6 change? And on the nutrition side, take body-fat %
@@ -1653,8 +1583,5 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
 ### 7.4 Flagged separately (not part of this plan's phases)
 - **`onboarding-and-data-flow.md`** still lists the revision-2 fitness questions (9–14) and
   `daysPerWeek` 2–6. It needs updating once D7 is decided.
-- **References in §3.6** come from the specialist's reference list. They must be checked against
-  the papers before any appears in user-facing copy, and the yoga and pilates references are not
-  chosen yet.
-- **The "kcal of room" copy** (Train banner and Today tile) is now in P1 at Benn's direction;
-  mental-performance still owns the final wording.
+- **References in §3.6** still need checking against the papers before user-facing use, and the
+  yoga and pilates ones are not chosen yet (§3.6).
