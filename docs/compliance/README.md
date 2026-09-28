@@ -167,8 +167,10 @@ Added 2026-09-28 (server-side enforcement):
     consent records (checked 2026-09-28).
 
 30. Open from the 30-day deletion (compliance, 2026-09-28):
-    (a) Email each account with cloud data and no consent (6 on 2026-09-28) before the first
-        purge, one by one from Google Workspace, no health details: "We've changed how Tali
+    (a) DECIDED (Benn, 2026-09-28): no notice emails for now. Accepted risk: someone who doesn't
+        open the app before 28 Oct, and no longer has the phone that holds their log, loses it.
+        Revisit before 28 Oct. If emails are sent later: each account with cloud data and no
+        consent (6 on 2026-09-28), before the first purge, one by one from Google Workspace, no health details: "We've changed how Tali
         handles health data: we now ask before keeping it in your account. Open Tali and choose
         whether it's OK. If you haven't agreed by 28 October 2026, we'll delete the copy in your
         account. What's on your phone stays there. To have your account deleted instead, reply to

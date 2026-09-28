@@ -97,7 +97,7 @@ export function privacyPolicy(): LegalDoc {
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos, and sees technical request data when you play one.`,
           `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A reminder carries only the supplement name, and it is encrypted so the push service can't read it.`,
-          `Google Workspace: our email, which receives feedback and requests you send us, and sends the occasional email about your account.`,
+          `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
         ],
       },
