@@ -26,7 +26,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnderAge` records `tali.pendingDelete`, wipes the device only when it's that account's or nobody's (`underAgeWipesDevice`; uid from the live session, else the owner, else the saved session: `underAgeUid`; no uid, nothing recorded or wiped), and calls `delete-account` with `reason: 'under-age'`. That account's sync stays blocked; failures back off (1, 2, 4 min … at most an hour) and stop after 6 tries, and a 403 re-auth stops at once (`underAgeNext`): the device is then signed out and wiped, keeping `tali.pendingDelete`, and the sign-in screen says "Please sign in again to finish removing your account."; the next sign-in of that account finishes it. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). `delete-account` v2 deployed 2026-09-28 with this path; security-data reviewed it SAFE (repo comments record both) |
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
 | Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
-| Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). The lately baseline, motivations and daily movement change through Profile › Redo setup (the wizard again, prefilled; skipping a question deletes that answer). Not editable in the app: going back to "prefer not to say" for sex: by email |
+| Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). The lately baseline, motivations and daily movement change through Profile › Health data › Redo setup (the wizard again, prefilled; skipping a question deletes that answer). Not editable in the app: going back to "prefer not to say" for sex: by email |
 | Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
 | Storage and PECR | Only strictly necessary local storage (see `cookies.ts`). No cookies, analytics, ads or trackers in the app |
 | Release gate | `npm run check:legal` (in the deploy workflow) fails on any placeholder the texts print; a missing ICO number only warns |
@@ -234,8 +234,12 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     stop path (sign-out and wipe) has no recorded `security-data` review.
     Update 2026-09-28: `tali.pendingDelete` now survives the in-app wipes (Delete account, and
     sign out and remove this device's log) so an under-age deletion can finish; it goes once that
-    account's deletion succeeds (the Nutrition session's fix, in progress: re-check before the flip)
-    or when browser data is cleared. Cookie policy updated.
+    under-age deletion finishes (`clearPendingDeletion` when `underAgeNext` is done) or when
+    browser data is cleared; the cookie policy says only that. Open (compliance, 2026-09-28): an
+    ordinary Delete account of the same account, a deletion whose reply was lost (later tries get
+    401 and ask to sign in to an account that's gone), or one done outside the app, leaves the
+    record with no end. Fix in the store's deleteAccount (clear it when the pending uid is the
+    account deleted) and treat 401 or user-not-found for the pending uid as done, with a test.
 38. Note, re-checked 2026-09-28: still no `CONSENT_VERSIONS.health` bump. The Profile controls,
     the re-ask and `snoozedAt` serve the same purpose, add no new category and no recipient, and
     the consent wording is unchanged. The solicitor question (item 6) stands. Publish the texts
