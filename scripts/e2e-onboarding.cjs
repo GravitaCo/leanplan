@@ -701,6 +701,68 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     expect(!readinessGuard(await stored(page)), 'plan rebuilt at the next launch')
   }, { ...planState(), block: /\/assets\/(wizard|Wizard)-/ })
 
+  // ─── Redo setup (compliance item 32): prefilled, replaces the answers, the rebuild is offered ───
+  const toRedo = async (page) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await btn(page, 'Redo setup').click()
+    await h1(page, 'What do you like to be called?')
+  }
+  /** Continue through every (prefilled) screen to the summary */
+  const toSummary = async (page) => {
+    for (let i = 0; i < 40; i++) {
+      if (await page.getByRole('heading', { name: 'Here’s a starting point, not a test', exact: true }).count()) return
+      for (const n of ['Continue', 'Done', 'Finish setup', 'Build my week']) {
+        const b = btn(page, n).first()
+        if (await b.count() && await b.isVisible() && await b.isEnabled()) { await b.click(); break }
+      }
+      await page.waitForTimeout(120)
+    }
+    throw new Error('never reached the summary')
+  }
+  const redoState = () => answered({ outcomes: { readiness: 'clear', baseline: 'low' }, motivations: ['energy'], movement: { kind: 'steps', band: '5k-7.5k' }, units: { weight: 'kg', height: 'cm' },
+    training: { daysPerWeek: 3, minutesPerSession: 30, place: ['home'], equipment: ['dumbbell'], limitations: ['knees', 'hips'], exPrefs: { liked: ['goblet-squat'] } } })
+  await run('redo setup: prefilled from the current answers; back from the first question closes it', async ({ page }) => {
+    await toRedo(page)
+    expect((await page.getByLabel('First name').inputValue()) === 'Sam', 'name prefilled')
+    await shot(page, 'redo/redo-1-name')
+    await page.getByRole('button', { name: 'Back' }).click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    expect(!(await draft(page)), 'draft gone')
+  }, redoState())
+  for (const rebuild of [false, true]) {
+    await run(`redo setup: a changed answer replaces the old one; ${rebuild ? '"Rebuild my week" rebuilds' : '"Keep my current week" keeps the plan'}`, async ({ page }) => {
+      const before = await stored(page)
+      await toRedo(page)
+      await cont(page) // name
+      expect((await page.getByLabel('Age in years').inputValue()) === '34', 'age prefilled')
+      await cont(page) // age
+      await h1(page, 'A quick health check')
+      await cont(page)
+      await h1(page, 'What would make this worth it for you?')
+      expect((await page.getByRole('checkbox', { name: 'More energy', exact: true }).getAttribute('aria-checked')) === 'true', 'why prefilled')
+      await cont(page)
+      await h1(page, 'What’s your main goal?')
+      await radio(page, 'Build muscle')
+      await cont(page)
+      await toSummary(page)
+      await shot(page, 'redo/redo-2-summary', true)
+      await btn(page, 'Start').click()
+      await h1(page, 'Rebuild your week too?')
+      await shot(page, 'redo/redo-3-offer')
+      await btn(page, rebuild ? 'Rebuild my week' : 'Keep my current week').click()
+      await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+      const st = await stored(page)
+      expect(st.profile.goal === 'build-muscle' && st.profile.onboardedAt === before.profile.onboardedAt, 'goal replaced, onboardedAt kept')
+      expect(st.profile.outcomes.baseline === 'low' && st.profile.motivations.join() === 'energy' && st.profile.movement.band === '5k-7.5k', 'unchanged answers kept: ' + JSON.stringify({ o: st.profile.outcomes, m: st.profile.motivations, mv: st.profile.movement }))
+      expect(st.profile.training.limitations.slice().sort().join() === 'hips,knees' && st.profile.training.exPrefs.liked.join() === 'goblet-squat', 'hips kept, likes kept: ' + JSON.stringify(st.profile.training))
+      expect(Object.keys(st.days).length === Object.keys(before.days).length && st.days[today].weight === 70, 'no new weigh-in')
+      const n0 = (before.trainingPlans || []).length, n1 = (st.trainingPlans || []).length
+      expect(rebuild ? n1 === n0 + 1 : n1 === n0, `plans ${n0} → ${n1}`)
+      expect(!(await draft(page)), 'draft gone')
+    }, redoState())
+  }
+
   await run('flag off: no Health check answers row, no check-in', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(600)
@@ -709,6 +771,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await page.getByRole('button', { name: /Health data/ }).first().click()
     await page.waitForTimeout(300)
     expect((await btn(page, 'Health check answers').count()) === 0, 'no row')
+    expect((await btn(page, 'Redo setup').count()) === 0, 'no Redo setup row')
   }, { ...answered({ ...BOARD, pregnancy: { flagged: true, askedAt: weeksAgo(13) } }), url: OFF })
 
   await run('flag off: nothing new shows', async ({ page }) => {

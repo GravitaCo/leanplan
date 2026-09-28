@@ -22,3 +22,6 @@ export const FIRST_SESSION = {
 
 /** Onboarding 7: Profile › Health data's row to the answers (ob7-1). */
 export const HEALTH_ANSWERS_ROW = 'Health check answers'
+
+/** Profile › Health data's row to redo the first-run setup, prefilled (compliance item 32). */
+export const REDO_ROW = 'Redo setup'

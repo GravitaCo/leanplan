@@ -104,6 +104,7 @@ export function ProfileScreen() {
   const [handsOpen, setHandsOpen] = useState(false)
   const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
   const [signOutOpen, setSignOutOpen] = useState(false)
+  const openRedo = useStore((s) => s.openRedo)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   // giving health consent from Profile: the explicit statement and unticked box (legal/PrivacySheets)
   const [regrantOpen, setRegrantOpen] = useState(false)
@@ -397,7 +398,7 @@ export function ProfileScreen() {
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} onAnswers={() => { setHealthOpen(false); setView('answers') }} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} onAnswers={() => { setHealthOpen(false); setView('answers') }} onRedo={() => { setHealthOpen(false); openRedo(true) }} />}
       {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
       {aiOpen && <AiSheet onClose={() => setAiOpen(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}

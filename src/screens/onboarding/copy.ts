@@ -4,20 +4,20 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, HEALTH_ANSWERS_ROW, SETUP_CARD } from './copyApp'
+import { FIRST_SESSION, HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_CARD } from './copyApp'
 export { FIRST_SESSION, SETUP_CARD }
 
 export interface ScreenCopy { title: string; lead?: string; why?: string; note?: string }
 
 export const COPY: Partial<Record<StepId, ScreenCopy>> = {
-  intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. Here’s what your answers do:', note: 'Skip any question you like. Your answers are private to your account, and you can change them any time in Profile.' },
+  intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. Here’s what your answers do:', note: 'Skip any question you like. Your answers are private to your account. You can redo setup any time from Profile.' },
   'skip-age': { title: 'No problem. Just your age, then you’re in.', lead: 'It’s the one thing we need to keep Tali safe for you.', note: 'You’ll start on a simple starter week with no calorie numbers. Build your own plan whenever you like from Today or Plan.' },
   name: { title: 'What do you like to be called?', why: 'so Tali can greet you. Your first name is plenty.' },
   age: { title: 'How old are you?', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tali is for people aged 18 and over. We keep your age, never your date of birth.' },
   ready: { title: 'A quick health check', lead: 'Do any of these apply to you right now?', why: 'a yes just means we start more gently. It never stops you using Tali.', note: 'We keep a short note of what applies (like pregnancy), never a medical record.' },
   why: { title: 'What would make this worth it for you?', lead: 'Pick any that feel true.', why: 'we’ll remind you of it in your weekly look-back.' },
   goal: { title: 'What’s your main goal?', why: 'it shapes both your training and your food targets. You can change it any time.' },
-  lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can change this later.' },
+  lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can update this by redoing setup.' },
   wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides weight and calorie targets and keeps things gentle. We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.' },
   body: { title: 'About your body', why: 'your height and sex set your energy needs.', note: 'Sex changes the energy estimate a little. "Prefer not to say" uses a middle estimate with a wider range.' },
   medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how eating less affects you. We keep what it means for your plan, not the condition.' },
@@ -108,7 +108,7 @@ export const SUMMARY = {
 export const HEALTH_ANSWERS = {
   row: HEALTH_ANSWERS_ROW,
   title: 'Health check answers',
-  lead: 'What Tali kept from your health questions, and what each one changes.',
+  lead: 'Answers from your health check, and what each one changes.',
   empty: 'Nothing kept from your health check.',
   foot: 'Clearing these changes your plan and targets straight away.',
   change: 'Change',
@@ -140,6 +140,18 @@ export const HEALTH_ANSWERS = {
   confirmGentler: 'Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.',
   keep: 'Keep it',
 }
+/**
+ * Profile › Health data › Redo setup (Benn approved the row, compliance item 32). GAP: the offer
+ * after the summary's Start has no board; plain words for "the rebuild is offered, never automatic".
+ */
+export const REDO = {
+  row: REDO_ROW,
+  offerT: 'Rebuild your week too?',
+  offer: 'Your new answers are saved either way. Rebuilding makes a new week from them. What you’ve logged and the exercises you’ve liked or skipped stay.',
+  rebuild: 'Rebuild my week',
+  keep: 'Keep my current week',
+}
+
 export const CHECKIN = {
   title: PREGNANCY_REASK,
   lead: 'You told us you were pregnant or breastfeeding. We’ll keep things gentle while it does.',
@@ -159,6 +171,6 @@ export function allCopy(): string[] {
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, CHECKIN])
+  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, REDO, CHECKIN])
   return out
 }

@@ -56,6 +56,8 @@ function TaliApp() {
 
   const setupOpen = useStore((s) => s.setupOpen)
   const openSetup = useStore((s) => s.openSetup)
+  const redoOpen = useStore((s) => s.redoOpen)
+  const openRedo = useStore((s) => s.openRedo)
   // the first-run wizard waits a moment for the first pull (a second device), never for long
   const [waited, setWaited] = useState(false)
   useEffect(() => { const t = setTimeout(() => setWaited(true), 6000); return () => clearTimeout(t) }, [])
@@ -114,6 +116,7 @@ function TaliApp() {
   const due = wizardDue(data, { online, authed })
   if (due === 'wait' && !waited) return <Loading />
   if (due) return <Lazy><Onboarding mode="first" /></Lazy>
+  if (ONBOARDING_ENABLED && redoOpen) return <Lazy><Onboarding mode="first" redo onClose={() => openRedo(false)} /></Lazy>
   if (ONBOARDING_ENABLED && setupOpen) return <Lazy><Onboarding mode="setup" onClose={() => openSetup(false)} /></Lazy>
 
   return (

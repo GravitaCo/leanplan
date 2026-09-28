@@ -366,7 +366,7 @@ function guardrails() {
   const balance65 = plan({ ...b, ageBand: '65+' }).plan.sessions.filter((s) => s.kind === 'resistance').every((s) => s.slots.some((x) => x.role === 'balance'))
   const texts = (r: BuildResult) => allWhys(r).map(renderWhy)
   const gentleWords = [plan({ ...b, gentle: true }), plan({ ...b, wellbeing: 'yes' })].every((r) => r.plan.routing.gentleMode && texts(r).every((t) => !/\d+ hard sets a week/.test(t)) && texts(r).some((t) => /amount this week/.test(t))) && texts(plan(b)).some((t) => /\d+ hard sets a week/.test(t))
-  const skippedLately = texts(plan({ ...b, lately: undefined })).includes("You skipped how things are lately, so we've started gently. You can change this.") && texts(plan({ ...b, lately: undefined })).every((t) => !/a lot lately/.test(t))
+  const skippedLately = texts(plan({ ...b, lately: undefined })).includes("You skipped how things are lately, so we've started gently. You can update this by redoing setup.") && texts(plan({ ...b, lately: undefined })).every((t) => !/a lot lately/.test(t))
   const noAge = texts(plan({ ...b, ageBand: undefined })).includes("You haven't told us your age, so there are no AI features for now and sets stay steady.") && !texts(plan({ ...b, ageBand: undefined })).some((t) => /16 or 17/.test(t))
   report('guardrails (§0, §3.5 G, mental-performance)', [
     ['gentle mode: weekly sets per muscle in words, never numbers', gentleWords],

@@ -13,7 +13,7 @@ import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { AI_TICKS, HEALTH_TICKS, ONBOARDING_ENABLED, PrivacySheet, Ticks } from '../onboarding/Consent'
-import { HEALTH_ANSWERS_ROW } from '../onboarding/copyApp'
+import { HEALTH_ANSWERS_ROW, REDO_ROW } from '../onboarding/copyApp'
 import { healthAnswersView } from '@/core/domain/onboarding'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
@@ -36,7 +36,7 @@ export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', pau
  * button). "Yes, keep it" hands over to `onAgree`: giving consent from Profile goes through the
  * explicit statement and unticked box (legal/PrivacySheets RegrantHealthSheet), never a bare tap.
  */
-export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }: { onClose: () => void; onAgree: () => void; onAnswers?: () => void; start?: 'main' | 'withdraw' }) {
+export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = 'main' }: { onClose: () => void; onAgree: () => void; onAnswers?: () => void; onRedo?: () => void; start?: 'main' | 'withdraw' }) {
   const status = useHealthStatus()
   const { prepare, download, withdraw } = useHealthWithdrawal()
   const showToast = useStore((s) => s.showToast)
@@ -48,6 +48,9 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }:
   // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
   // ("how things are lately" has no row: answerRows)
   const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
+  // Redo setup (compliance item 32), behind the wizard: once setup has been finished
+  const canRedo = useStore((s) => ONBOARDING_ENABLED && !!s.data.profile.onboardedAt)
+  const answersRow = hasAnswers && !!onAnswers, redoRow = canRedo && !!onRedo
 
   if (step) {
     const s = step.summary
@@ -76,9 +79,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }:
       </div>
       <Ticks items={HEALTH_TICKS} />
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
-      {hasAnswers && onAnswers && (
+      {(answersRow || redoRow) && (
         <div className="list" style={{ marginTop: 12 }}>
-          <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>
+          {answersRow && <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>}
+          {redoRow && <button className="li" onClick={onRedo}><div className="m"><div className="t">{REDO_ROW}</div></div><Chevron /></button>}
         </div>
       )}
       <div className="stack">

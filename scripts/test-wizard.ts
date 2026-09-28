@@ -4,7 +4,7 @@
 import type { Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import {
-  HEALTH_STEPS, applyDraft, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
+  HEALTH_STEPS, applyDraft, draftFromProfile, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
   outcomeInputs, readinessOutcome, replacementFor, rerunForAnswers, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
 import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, numbersStayHidden, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, profileRouting, routeSafety, safetyAnswersFrom, setHealthAnswerIn, snoozePregnancyIn } from '@/core/domain/onboarding'
@@ -19,7 +19,7 @@ import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES } from '../src/screens/onboarding/copy'
+import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES, REDO } from '../src/screens/onboarding/copy'
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
 import { deleteAccount, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
@@ -363,10 +363,14 @@ function compliance(): void {
     ['the store backs off, stops with the sign-in note, and wipes only through underAgeWipesDevice', /underAgeRetryDue\(pend, Date\.now\(\)\)/.test(STORE) && /step\.kind === 'wait'/.test(STORE)
       && /authNotice = UNDER_AGE_SIGN_IN_MSG/.test(STORE) && (STORE.match(/underAgeWipesDevice\(/g) || []).length === 2 && !/owner === uid\)/.test(STORE)],
     ['only the pending account\'s sync waits', /pend && pend\.uid === getUid\(\)/.test(STORE)],
-    ['no uid at all: returns before recording or wiping anything (the stop screen stays)', (() => {
+    ['no uid at all: returns before recording or wiping anything (the stop screen stays), clearing only the draft (37b)', (() => {
       const f = STORE.slice(STORE.indexOf('deleteUnderAge: async'), STORE.indexOf('clearHealthAnswer: (kind)'))
-      const stop = f.indexOf('if (!uid) return')
-      return stop > 0 && stop < f.indexOf('markPendingDeletion(') && stop < f.indexOf('clearDraft()') && stop < f.indexOf('saveState(') })()],
+      const stop = f.indexOf("if (!uid) { clearDraft(); return { status: 'no-session' } }")
+      return stop > 0 && stop < f.indexOf('markPendingDeletion(') && stop < f.indexOf('saveState(') && stop < f.indexOf('freshForAccount(') })()],
+    ['sign out and remove this device\'s log: the draft and setup-card choice go, the pending record stays (37c)', (() => {
+      const f = STORE.slice(STORE.indexOf('signOut: async (opts)'))
+      const r = f.slice(f.indexOf('if (opts?.remove)'), f.indexOf('freshForDevice()'))
+      return /clearDraft\(\)/.test(r) && /showSetupCard\(\)/.test(r) && !/PendingDeletion|wipeDevice/.test(r) })()],
   ])
 
   // the Profile control and the 12-week re-ask (boards on the Design canvas; the logic is ready)
@@ -475,8 +479,41 @@ function healthAnswersUi(): void {
 }
 const allWhysOf = (p: { trainingPlan: { why?: unknown }; routines: { why?: unknown; blocks: unknown }[] } | null) => p ? [p.trainingPlan.why, ...p.routines.map((r) => [r.why, r.blocks])] : []
 
+/** Profile's "Redo setup" (compliance item 32): prefilled, replaces the answers, keeps the rest. */
+function redo(): void {
+  const first = full({ pregnant: true, outcomes: { readiness: 'flagged', wellbeing: 'clear', baseline: 'low', medical: 'clear' } })
+  const base = finishedProfile(summaryFor(DEFAULT_PROFILE, first, ctx), first, AT, TODAY, DEFAULT_PROFILE)
+  base.pregnancy = { flagged: true, askedAt: '2026-07-01', snoozedAt: '2026-09-20' } as Profile['pregnancy']
+  base.training = { ...base.training, exPrefs: { liked: ['goblet-squat'], disliked: ['burpee'] }, limitations: ['knees', 'hips'], modalities: ['strength', 'mobility'], place: ['home', 'gym'] }
+  const d = draftFromProfile(base, 'seed-r', { healthConsent: true, weight: 86 })
+  const same = applyDraft(base, d, '2026-10-01', '2026-10-01T09:00:00.000Z')
+  const T = (p: Profile) => JSON.stringify({ ...p.training })
+  const noHealth = draftFromProfile(base, 'seed-r', { healthConsent: false, weight: 86 })
+  const changed = applyDraft(base, { ...d, goal: 'build-muscle', movement: { kind: 'job', job: 'desk' }, outcomes: { ...d.outcomes, baseline: 'ok' }, motivations: undefined, areas: ['shoulders'] }, '2026-10-01')
+  const m = summaryFor(base, d, ctx)
+  const fin = finishedProfile(m, d, '2026-10-01T09:00:00.000Z', '2026-10-01', base)
+  report('redo setup (compliance 32)', [
+    ['prefilled with the current answers, from the first question', d.step === 'name' && d.mode === 'first' && d.name === 'Sam' && d.age === 34 && d.goal === 'lose-fat' && d.weight === 86
+      && d.outcomes.baseline === 'low' && d.pregnant === true && d.movement?.kind === 'steps' && d.motivations?.join() === 'energy,stronger' && d.daysPerWeek === 3 && d.minutes === 30 && d.areas?.join() === 'knees', JSON.stringify(d)],
+    ['no health consent: no health answers in the draft', !noHealth.height && !noHealth.weight && !noHealth.movement && !Object.keys(noHealth.outcomes).length && noHealth.pregnant === undefined && !noHealth.areas],
+    ['left as it was: every answer and training pref stays exactly (hips, mobility, home and gym too)', T(same) === T(base) && same.goal === base.goal && JSON.stringify(same.outcomes) === JSON.stringify(base.outcomes)
+      && JSON.stringify(same.movement) === JSON.stringify(base.movement) && same.height === base.height, T(same) + ' vs ' + T(base)],
+    ['left as it was: the pregnancy answer keeps its date and "ask me later"', JSON.stringify(same.pregnancy) === JSON.stringify(base.pregnancy)],
+    ['changed: the new answers replace the old, skipped ones clear', changed.goal === 'build-muscle' && changed.movement?.kind === 'job' && changed.outcomes?.baseline === 'ok' && changed.motivations === undefined],
+    ['changed areas keep the ones the screen doesn\'t offer', changed.training?.limitations?.slice().sort().join() === 'hips,shoulders', JSON.stringify(changed.training?.limitations)],
+    ['exercise likes stay (the person model)', JSON.stringify(changed.training?.exPrefs) === JSON.stringify(base.training.exPrefs) && JSON.stringify(same.training?.exPrefs) === JSON.stringify(base.training.exPrefs)],
+    ['keeps when setup was first finished', fin.onboardedAt === base.onboardedAt && !!base.onboardedAt],
+    ['the summary offers the rebuild: two plain choices, linted', !!REDO.offerT && !!REDO.rebuild && !!REDO.keep && REDO.row === 'Redo setup'],
+  ])
+  report('softened edit promises (compliance 32)', [
+    ['intro and lately point to Redo setup', COPY.intro!.note!.endsWith('You can redo setup any time from Profile.') && COPY.lately!.why!.endsWith('You can update this by redoing setup.')],
+    ['no line promises changing answers in Profile generally, or the lately answer "later"', !allCopy().some((t) => /change them any time in Profile|You can change this later/.test(t))],
+    ['the answers screen doesn\'t claim to list everything kept', HEALTH_ANSWERS.lead === 'Answers from your health check, and what each one changes.'],
+  ])
+}
+
 export async function wizardSuite(fakeServer: FakeServer): Promise<number> {
-  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance(); healthAnswersUi()
+  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance(); healthAnswersUi(); redo()
   await underAgeDeletion()
   await sync(fakeServer)
   return bad

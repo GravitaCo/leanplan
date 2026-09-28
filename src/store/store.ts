@@ -49,7 +49,7 @@ import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
-import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, showSetupCard, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
@@ -212,6 +212,9 @@ export interface StoreState {
   /** the setup card opened on its own (Build my plan on Plan, Finish your setup on Today) */
   setupOpen: boolean
   openSetup: (open: boolean) => void
+  /** Profile's "Redo setup": the first run again, prefilled with the current answers */
+  redoOpen: boolean
+  openRedo: (open: boolean) => void
   /**
    * The summary's Start: the answers into the profile (outcomes only), today's weigh-in, the
    * targets, and the generated plan into the person's plans. Refused (false) for health answers
@@ -1343,6 +1346,8 @@ export const useStore = create<StoreState>()(
 
       setupOpen: false,
       openSetup: (open) => set((st) => { st.setupOpen = open }),
+      redoOpen: false,
+      openRedo: (open) => set((st) => { st.redoOpen = open }),
 
       finishOnboarding: ({ profile, plan, target, weightKg }) => {
         const consent = canSaveHealthAnswers(get().data)
@@ -1369,7 +1374,9 @@ export const useStore = create<StoreState>()(
         // offline (no live session) the device's owner is the account, or on a new device the
         // saved session's; with none, nothing is wiped or recorded and the stop screen stays
         const uid = underAgeUid(get().authed ? getUid() : null, owner, savedSessionUid())
-        if (!uid) return { status: 'no-session' }
+        // no account to delete: nothing is recorded or wiped and the stop screen stays, but the
+        // wizard's draft (device only) goes, so "We haven't kept any of your answers" holds (register 37b)
+        if (!uid) { clearDraft(); return { status: 'no-session' } }
         const prev = pendingDeletion()
         const pend = prev && prev.uid === uid ? prev : { uid, at: nowIso() }
         markPendingDeletion(pend)
@@ -1399,7 +1406,7 @@ export const useStore = create<StoreState>()(
           saveMode(null)
           const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
           if (wipe) wipeDevice()
-          // the wipe takes every tali.* key: the record goes back, so the next sign-in finishes it
+          // the wipe keeps the pending record (wipeStorage); this one says to wait for a sign-in
           markPendingDeletion(step.pending)
           underAgeTried = 0
           set((st) => {
@@ -1582,7 +1589,10 @@ export const useStore = create<StoreState>()(
         setSession(null, null)
         saveMode(null)
         if (opts?.remove) {
-          // shared phones: the next person finds an empty device, not this log
+          // shared phones: the next person finds an empty device, not this log. The wizard's draft
+          // and the setup-card choice go with it; a pending under-age deletion stays (register 37c)
+          clearDraft()
+          showSetupCard()
           const next = freshForDevice()
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr() })

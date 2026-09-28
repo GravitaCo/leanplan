@@ -53,12 +53,19 @@ export function isPersonalKey(k: string): boolean {
   return k === 'leanplan.v1' || k.startsWith('tali.') || k.startsWith('sb-')
 }
 
-/** Remove every personal key from a Storage. Returns the keys removed. */
+/**
+ * Kept through a wipe: a pending under-age deletion (onboardingDraft.ts PENDING_KEY) is how that
+ * account still gets deleted after the device is cleared (register 37c). It holds the account id
+ * and the tries only; the under-age flow clears it once the server confirms.
+ */
+export const WIPE_KEEPS = ['tali.pendingDelete']
+
+/** Remove every personal key from a Storage but WIPE_KEEPS. Returns the keys removed. */
 export function wipeStorage(storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null): string[] {
   if (!storage) return []
   const keys: string[] = []
   try {
-    for (let i = 0; i < storage.length; i++) { const k = storage.key(i); if (k && isPersonalKey(k)) keys.push(k) }
+    for (let i = 0; i < storage.length; i++) { const k = storage.key(i); if (k && isPersonalKey(k) && !WIPE_KEEPS.includes(k)) keys.push(k) }
     keys.forEach((k) => storage.removeItem(k))
   } catch { /* storage blocked: nothing we can reach */ }
   return keys

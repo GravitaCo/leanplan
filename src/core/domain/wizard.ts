@@ -75,10 +75,65 @@ export interface WizardDraft {
   deficitChosen?: boolean
   /** a screen opened from the summary ("Add weight"): back to the summary after it */
   ret?: 'summary'
+  /**
+   * Profile's "Redo setup": the first run again, prefilled from the profile (draftFromProfile).
+   * What was prefilled, so an answer left as it was keeps its stored value exactly (applyDraft)
+   * and an unchanged weight isn't logged as a new weigh-in.
+   */
+  redo?: { weight?: number; pregnant?: boolean; training: TrainingPrefs }
 }
 
 export const newDraft = (mode: WizardMode, seed: string): WizardDraft =>
   ({ v: 1, mode, step: mode === 'setup' ? 'moving' : 'intro', seed, outcomes: {} })
+
+const MOVING_BACK: Record<MovingNow, MovingAnswer> = { 'not-at-all': 'not-now', some: 'now-and-then', regularly: 'three-plus' }
+
+/**
+ * Profile's "Redo setup": a first-run draft prefilled with the current answers, opening at the
+ * first question (the intro's "Skip" would drop everything). Health answers only with a local
+ * health consent (without it the wizard doesn't ask them, and the profile keeps none). Training
+ * prefs map back onto the setup card's options where they can; applyDraft keeps the stored value
+ * of any answer left as it was, so nothing is lost to the mapping. Pure.
+ */
+export function draftFromProfile(p: Profile, seed: string, ctx: { healthConsent: boolean; weight: number | null }): WizardDraft {
+  const t = p.training ?? {}
+  const d: WizardDraft = { v: 1, mode: 'first', step: 'name', seed, outcomes: {} }
+  if (p.name) d.name = p.name
+  if (p.age) d.age = p.age
+  if (p.goal) d.goal = p.goal
+  if (p.motivations?.length) d.motivations = [...p.motivations]
+  if (ctx.healthConsent) {
+    if (p.outcomes) d.outcomes = { ...p.outcomes }
+    if (p.pregnancy) d.pregnant = p.pregnancy.flagged
+    if (p.height) d.height = p.height
+    if (p.units?.height) d.heightUnit = p.units.height
+    if (p.sexAnswer) d.sexAnswer = p.sexAnswer
+    if (ctx.weight) d.weight = ctx.weight
+    if (p.units?.weight) d.weightUnit = p.units.weight
+    if (p.movement) d.movement = structuredClone(p.movement)
+    if (p.deficitChosen !== undefined) d.deficitChosen = p.deficitChosen
+    if (t.limitations) { const offered = new Set<string>(AREA_OPTIONS.map(([k]) => k)); d.areas = t.limitations.filter((a) => offered.has(a)) }
+  }
+  if (t.movingNow) d.moving = MOVING_BACK[t.movingNow]
+  if (t.experience) d.experience = t.experience
+  if (t.weekdays?.length) d.weekdays = [...t.weekdays]
+  else if (t.daysPerWeek) d.daysPerWeek = t.daysPerWeek
+  if (t.minutesPerSession) d.minutes = t.minutesPerSession === 10 ? 15 : t.minutesPerSession
+  if (t.place?.length) d.where = t.place.length > 1 ? 'mix' : t.place[0]
+  if (t.equipment) { const kit = new Set<string>(KIT_OPTIONS.map(([k]) => k)); const k = t.equipment.filter((x): x is Exclude<KitAnswer, 'nothing'> => kit.has(x)); d.kit = k.length ? k : ['nothing'] }
+  if (t.modalities || t.cardioPrefs) {
+    const m = new Set(t.modalities ?? [])
+    const e: EnjoyAnswer[] = [
+      ...(m.has('strength') ? ['weights' as const] : []),
+      ...(t.cardioPrefs ?? []).filter((c): c is 'walking' | 'running' | 'cycling' | 'swimming' => c === 'walking' || c === 'running' || c === 'cycling' || c === 'swimming'),
+      ...(m.has('yoga') || m.has('pilates') ? ['yoga-pilates' as const] : []),
+      ...(m.has('calisthenics') ? ['classes' as const] : []),
+    ]
+    if (e.length) d.enjoy = [...new Set(e)]
+  }
+  d.redo = { ...(d.weight != null ? { weight: d.weight } : {}), ...(d.pregnant !== undefined ? { pregnant: d.pregnant } : {}), training: trainingFrom(d) }
+  return d
+}
 
 /**
  * The wizard's age stop (Benn, Sept 2026): 18+ for now, matching the legal texts and the live
@@ -291,7 +346,9 @@ export function applyDraft(base: Profile, d: WizardDraft, today: string, at?: st
       if (v !== undefined) { (o as Record<string, string>)[k] = v; stamped.push(`outcomes.${k}` as MergedField) }
     }
     if (Object.keys(o).length) p.outcomes = o; else delete p.outcomes
-    if (d.pregnant !== undefined) { p.pregnancy = { flagged: d.pregnant, askedAt: today }; stamped.push('pregnancy') } else delete p.pregnancy
+    // a redo that leaves it as it was keeps the stored one (its date and any "ask me later")
+    if (d.redo && base.pregnancy && d.pregnant === d.redo.pregnant) { /* kept */ }
+    else if (d.pregnant !== undefined) { p.pregnancy = { flagged: d.pregnant, askedAt: today }; stamped.push('pregnancy') } else delete p.pregnancy
     // wellbeing Yes or Sometimes: gentle mode on (§3). Otherwise the person's own setting stays.
     if (d.outcomes.wellbeing === 'flagged') { p.gentle = true; stamped.push('gentle') }
     if (d.deficitChosen !== undefined) { p.deficitChosen = d.deficitChosen; stamped.push('deficitChosen') } else delete p.deficitChosen
@@ -301,9 +358,15 @@ export function applyDraft(base: Profile, d: WizardDraft, today: string, at?: st
   const next: TrainingPrefs = { ...keep }
   for (const k of TRAINING_KEYS) {
     const v = t[k]
+    // a redo's answer left as it was: the stored value stays exactly (the options can't show every value)
+    if (d.redo && keep[k] !== undefined && JSON.stringify(v) === JSON.stringify(d.redo.training[k])) continue
     if (v !== undefined) { (next as Record<string, unknown>)[k] = v; stamped.push(`training.${k}` as MergedField) }
     else delete (next as Record<string, unknown>)[k]
   }
+  // areas the screen doesn't offer (hips, ankles) stay on a redo: never dropped unseen
+  const unseen = d.redo ? (keep.limitations ?? []).filter((a) => !AREA_OPTIONS.some(([k]) => k === a)) : []
+  if (unseen.length && next.limitations) next.limitations = [...new Set([...next.limitations, ...unseen])]
+  else if (unseen.length && d.areas) next.limitations = unseen
   p.training = next
   if (at) stampFields(p, stamped, at)
   return p
@@ -411,8 +474,10 @@ export function finishedProfile(m: SummaryModel, d: WizardDraft, at: string, tod
   const mult = d.mode === 'first' ? m.targets.effectiveMultiplier : null
   if (mult) { p.activityMult = mult; p.activityLevel = activityLevelFor(mult) }
   else if (d.mode === 'setup' && base.activityMult) p.activityMult = base.activityMult
-  if (d.mode === 'first') p.onboardedAt = at
-  stampFields(p, [...(mult ? ['activityMult', 'activityLevel'] as const : []), ...(d.mode === 'first' ? ['onboardedAt'] as const : [])], at)
+  // a redo keeps when setup was first finished
+  const stampDone = d.mode === 'first' && !(d.redo && base.onboardedAt)
+  if (stampDone) p.onboardedAt = at
+  stampFields(p, [...(mult ? ['activityMult', 'activityLevel'] as const : []), ...(stampDone ? ['onboardedAt'] as const : [])], at)
   return p
 }
 

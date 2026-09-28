@@ -11,6 +11,7 @@ import type { WizardDraft } from '@/core/domain/wizard'
 import type { DeleteResult } from './account'
 
 const DRAFT_KEY = 'tali.onboarding'
+/** Kept through a device wipe (account.ts wipeStorage): it's how the account still gets deleted */
 const PENDING_KEY = 'tali.pendingDelete'
 const SETUP_HIDDEN_KEY = 'tali.setupCardHidden'
 
@@ -107,3 +108,5 @@ export function underAgeNext(status: DeleteResult['status'], p: PendingDeletion,
 /** "Not now" on Today's "Finish your setup" card (ob2-0b), on this device. */
 export const setupCardHidden = (): boolean => { try { return store()?.getItem(SETUP_HIDDEN_KEY) === '1' } catch { return false } }
 export const hideSetupCard = (): void => { try { store()?.setItem(SETUP_HIDDEN_KEY, '1') } catch { /* blocked */ } }
+/** "Sign out and remove this device's log": the choice goes with the log. */
+export const showSetupCard = (): void => { try { store()?.removeItem(SETUP_HIDDEN_KEY) } catch { /* blocked */ } }

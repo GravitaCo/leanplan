@@ -15,8 +15,9 @@ import { uuid } from '@/data/supabase'
 import {
   AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, JOB_OPTIONS, KIT_OPTIONS, MINUTES_OPTIONS, MOVING_OPTIONS,
   STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, nextStep, prevStep,
-  progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, type StepId, type WizardDraft, type WizardMode,
+  progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
+import { latestWeight } from '@/core/domain/insights'
 import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { cmFromFtIn, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
@@ -38,15 +39,19 @@ const hasHealth = (d: WizardDraft) => Object.keys(d.outcomes).length > 0 || d.pr
 /**
  * The wizard, full screen. `mode` 'first' is the whole first run; 'setup' the setup card on its
  * own (Today's "Finish your setup", Plan's "Build my plan"), which only ever changes the plan.
+ * `redo`: Profile's "Redo setup", the first run prefilled with the current answers (draftFromProfile);
+ * back from the first question closes it, and the summary offers the plan rebuild.
  */
-export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () => void }) {
+export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: boolean; onClose?: () => void }) {
   const data = useStore((s) => s.data)
   const health = canSaveHealthAnswers(data)
   const deleteUnderAge = useStore((s) => s.deleteUnderAge)
   const [d, setD] = useState<WizardDraft>(() => {
     const saved = loadDraft()
-    return saved && saved.mode === mode ? saved : newDraft(mode, uuid())
+    if (saved && saved.mode === mode && !!saved.redo === !!redo) return saved
+    return redo ? draftFromProfile(data.profile, uuid(), { healthConsent: health, weight: latestWeight(data, todayStr()) }) : newDraft(mode, uuid())
   })
+  const closable = mode === 'setup' || !!d.redo
   // the page opens at the top of each screen
   useEffect(() => { window.scrollTo(0, 0) }, [d.step])
   const put = (next: WizardDraft) => {
@@ -56,7 +61,7 @@ export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () =
   }
   const patch = (x: Partial<WizardDraft>) => put({ ...d, ...x })
   const go = (x: Partial<WizardDraft> = {}) => { const n = { ...d, ...x }; put(n.ret ? { ...n, ret: undefined, step: 'summary' } : { ...n, step: nextStep(n, health) }) }
-  const back = () => { const p = prevStep(d, health); if (p) put({ ...d, step: p }); else if (mode === 'setup') { clearDraft(); onClose?.() } }
+  const back = () => { const p = prevStep(d, health); if (p) put({ ...d, step: p }); else if (closable) { clearDraft(); onClose?.() } }
   const jump = (step: StepId) => put({ ...d, step })
   // a step that isn't in this run (a health step without consent, a skipped branch): move on
   useEffect(() => {
@@ -67,10 +72,10 @@ export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () =
 
   // the kind stop keeps nothing but the age it was given ("We haven't kept any of your answers")
   useEffect(() => {
-    if (d.step === 'under16' && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped })
+    if (d.step === 'under16' && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
-  const common = { d, go, back, patch }
+  const common = { d, go, back, patch, closable }
   // each screen starts from the draft: a fresh component per step (two chip screens in a row
   // would otherwise share their state)
   return <Fragment key={d.step}>{screen()}</Fragment>
@@ -111,7 +116,7 @@ export function Onboarding({ mode, onClose }: { mode: WizardMode; onClose?: () =
 
 /* ---------------- the frame every question shares ---------------- */
 
-type Common = { d: WizardDraft; go: (x?: Partial<WizardDraft>) => void; back: () => void; patch: (x: Partial<WizardDraft>) => void }
+type Common = { d: WizardDraft; go: (x?: Partial<WizardDraft>) => void; back: () => void; patch: (x: Partial<WizardDraft>) => void; closable?: boolean }
 
 function Frame({ step, back, onSkip, cta, children, title, lead }: { step: StepId; back: (() => void) | null; onSkip?: () => void; cta: ReactNode; children: ReactNode; title?: string; lead?: string | null }) {
   const p = progressOf(step)
@@ -199,10 +204,10 @@ function SkipAge({ d, patch }: Common) {
   )
 }
 
-function Name({ d, go }: Common) {
+function Name({ d, go, back, closable }: Common) {
   const [v, setV] = useState(d.name ?? '')
   return (
-    <Frame step="name" back={null} onSkip={() => go({ name: undefined })} cta={<Cta onClick={() => go({ name: v.trim() || undefined })} />}>
+    <Frame step="name" back={closable ? back : null} onSkip={() => go({ name: undefined })} cta={<Cta onClick={() => go({ name: v.trim() || undefined })} />}>
       <label className="wz-field"><span className="l">First name</span>
         <input value={v} maxLength={40} autoComplete="given-name" onChange={(e) => setV(e.target.value)} placeholder="Sam" /></label>
     </Frame>
@@ -303,7 +308,8 @@ function Three<T extends string>({ k, opts, value, onPick }: { k: string; opts: 
 function LatelyQ({ d, go, back }: Common) {
   // only the outcome (ok or low) is kept; the three answers stay on this screen
   const [l, setL] = useState<Lately>(d.outcomes.baseline === 'ok' ? { sleep: 'good', stress: 'low', room: 'plenty' } : {})
-  const done = () => { const o = { ...d.outcomes, baseline: baselineOutcome(l) }; if (!o.baseline) delete o.baseline; go({ outcomes: o }) }
+  // a kept 'low' (back, or Redo setup) can't be shown as picks: nothing picked keeps it
+  const done = () => { const o = { ...d.outcomes, baseline: baselineOutcome(l) ?? (d.outcomes.baseline === 'low' ? 'low' : undefined) }; if (!o.baseline) delete o.baseline; go({ outcomes: o }) }
   const skip = () => { const o = { ...d.outcomes }; delete o.baseline; go({ outcomes: o }) }
   return (
     <Frame step="lately" back={back} onSkip={skip} cta={<Cta onClick={done} />}>

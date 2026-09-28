@@ -20,7 +20,7 @@ import { BareSheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { PlanEditSheet } from '../plan/PlanSheets'
-import { SUMMARY } from './copy'
+import { REDO, SUMMARY } from './copy'
 
 const SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const k = (n: number) => n.toLocaleString('en-GB')
@@ -42,17 +42,21 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   const [row, setRow] = useState<WhyRow | null>(null)
   const [how, setHow] = useState(false)
   const [ifThen, setIfThen] = useState(false)
+  // Redo setup: Start saves the answers, then asks before touching the week (never automatic)
+  const [offer, setOffer] = useState(false)
   const r = m.result
   const plan = r.plan
   const rows = whyRows(m, d)
   const first = d.mode === 'first'
 
-  const start = () => {
+  const start = (rebuild = true) => {
     const at = new Date().toISOString()
     const profile = finishedProfile(m, d, at, today, data.profile)
     const sug = first && m.targets.kcal != null ? suggestedTargets(profile, m.kg, m.routing) : null
     const target = sug && 'kcal' in sug ? { kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f } : null
-    finish({ profile, plan: plan, target, weightKg: first ? m.kg : null })
+    // a redo's weight left as it was is no new weigh-in
+    const weightKg = !first || (d.redo && d.weight === d.redo.weight) ? null : m.kg
+    finish({ profile, plan: rebuild ? plan : null, target, weightKg })
     setTab('today')
     onClose?.()
   }
@@ -112,7 +116,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       </div>
 
       <div className="stack" style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button className="btn ob-btn" onClick={start}>Start</button>
+        <button className="btn ob-btn" onClick={() => (d.redo ? setOffer(true) : start())}>Start</button>
         <button className="linkbtn ob-alt" onClick={onEdit}>Change my answers</button>
       </div>
 
@@ -125,6 +129,14 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
         </BareSheet>
       )}
       {ifThen && <PlanEditSheet onClose={() => setIfThen(false)} />}
+      {offer && (
+        <BareSheet label={REDO.offerT} onClose={() => setOffer(false)}>
+          <h2 className="cs-t">{REDO.offerT}</h2>
+          <div className="cs-lead">{REDO.offer}</div>
+          <button className="btn ob-btn" onClick={() => start(true)}>{REDO.rebuild}</button>
+          <button className="linkbtn ob-alt" onClick={() => start(false)}>{REDO.keep}</button>
+        </BareSheet>
+      )}
     </div>
   )
 }
