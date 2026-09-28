@@ -1,8 +1,10 @@
 import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
-  OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPrefs, WeightUnit, Why,
+  MacroTarget, OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPlan, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
+import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
+import { suggestedTargets } from './nutrition'
+import type { GeneratedPlan } from './engine/generate'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { activityLevelFor, startingTargets, type StartingTargets, type TrainingLoad } from './targets'
 import { allWhys, buildPlan, inputsFromProfile, type BuildResult, type PersonModel, type PlanInputs } from './engine'
@@ -373,6 +375,34 @@ export function summaryFor(base: Profile, d: WizardDraft, ctx: { healthConsent: 
     targets = startingTargets(forTargets, load, routing, kg)
   }
   return { profile, kg, routing, inputs, result, load, targets }
+}
+
+/** What an answer changed from Profile (ob7) re-runs: the targets and the generated plan. */
+export interface AnswerRerun {
+  /** the new daily target, or null when routing hides numbers (the stored one stays, unshown) */
+  target: MacroTarget | null
+  /** the plan rebuilt from the answers with the same guardrails as the summary, or null to leave it */
+  plan: GeneratedPlan | null
+}
+
+/**
+ * Changing or clearing a health answer re-runs routing, targets and the plan's guardrails, the
+ * summary's way (summaryFor): the plan without a deficit for its load, the targets, then the plan
+ * again with the deficit they set. Only a plan built from the answers (source 'recommended' with
+ * its reasons) is rebuilt; its id is the seed, so the same answers always give the same plan. The
+ * target is the Profile suggestion (suggestedTargets with profileRouting), as Profile shows it. Pure.
+ */
+export function rerunForAnswers(profile: Profile, active: TrainingPlan | undefined, ctx: { healthConsent: boolean; kg: number | null; days?: Record<string, DayLog> }): AnswerRerun {
+  const routing = profileRouting(profile, ctx.kg, ctx.healthConsent)
+  const sug = suggestedTargets(profile, ctx.kg, routing)
+  const target = sug && 'kcal' in sug ? { kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f } : null
+  if (!active || active.source !== 'recommended' || !active.why?.length) return { target, plan: null }
+  const pm = personModelFrom(ctx.days, profile.training?.exPrefs)
+  const inputs0 = inputsFromProfile(profile, outcomeInputs(profile.outcomes))
+  let result = buildPlan(inputs0, pm, active.id)
+  const deficit = deficitOf(sug && 'kcal' in sug ? sug.adjustPct : null)
+  if (deficit !== 'none') result = buildPlan({ ...inputs0, deficit }, pm, active.id)
+  return { target, plan: result.plan }
 }
 
 /** What finishing saves on the profile: the answers, onboardedAt and the effective multiplier. */

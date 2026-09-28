@@ -5,9 +5,9 @@ import type { Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import {
   HEALTH_STEPS, applyDraft, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
-  outcomeInputs, readinessOutcome, replacementFor, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
+  outcomeInputs, readinessOutcome, replacementFor, rerunForAnswers, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
-import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, routeSafety, safetyAnswersFrom, snoozePregnancyIn } from '@/core/domain/onboarding'
+import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, numbersStayHidden, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, profileRouting, routeSafety, safetyAnswersFrom, setHealthAnswerIn, snoozePregnancyIn } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
@@ -18,7 +18,8 @@ import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { allCopy, COPY, NOTES } from '../src/screens/onboarding/copy'
+import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES } from '../src/screens/onboarding/copy'
+import { answerRows } from '../src/screens/profile/healthAnswerRows'
 import { deleteAccount } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { readFileSync } from 'node:fs'
@@ -389,8 +390,70 @@ function compliance(): void {
   ])
 }
 
+function healthAnswersUi(): void {
+  // Onboarding 7 (boards ob7-1 to ob7-4, s-ob7): rows, actions and what re-runs
+  const prof = (x: Partial<Profile> = {}): Profile => ({ ...DEFAULT_PROFILE, ...structuredClone(x) })
+  const board = prof({ outcomes: { readiness: 'flagged', medical: 'flagged', wellbeing: 'flagged', baseline: 'ok' }, pregnancy: { flagged: true, askedAt: '2026-07-01' } })
+  const rows = answerRows(board)
+  const acts = (r: (typeof rows)[number]) => [r.change && 'Change', r.clear && 'Clear'].filter(Boolean).join('+')
+  report('health check answers (ob7-1)', [
+    ['board order and labels', rows.map((r) => r.label).join() === 'Pregnant or breastfeeding,Conditions or medicines,Health check,Food and weight', rows.map((r) => r.label).join()],
+    ['actions: Change and Clear; Change and Clear; Clear only; Change only', rows.map(acts).join() === 'Change+Clear,Change+Clear,Clear,Change', rows.map(acts).join()],
+    ['what each changes, in the board\'s words', rows.map((r) => r.does).join('|') === [
+      'Food stays at maintenance with no calorie number, and training stays gentle.', 'Food stays at maintenance, with no high-protein target.',
+      'Your plan starts with lighter, low-impact sessions.', 'Weight is hidden and there’s no calorie target to hit.'].join('|')],
+    ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes or sometimes'],
+    ['Clear asks first only for pregnancy and conditions', rows.map((r) => r.confirm).join() === 'true,true,false,false'],
+    ['nothing kept: no rows (the empty board)', answerRows(prof()).length === 0 && HEALTH_ANSWERS.empty === 'Nothing kept from your health check.'],
+    ['a kept "no" still shows, changing nothing', (() => { const x = answerRows(prof({ outcomes: { medical: 'clear' } })); return x.length === 1 && x[0].value === 'None of these' && x[0].does === 'Nothing changes in your plan.' && !x[0].confirm })()],
+    ['"Rather not say" keeps food at maintenance until the deficit is chosen', answerRows(prof({ outcomes: { wellbeing: 'undisclosed' } }))[0].does === 'Food stays at maintenance for now.' && answerRows(prof({ outcomes: { wellbeing: 'undisclosed' }, deficitChosen: true }))[0].does === 'Nothing changes in your plan.'],
+  ])
+  report('clear confirm (ob7-2)', [
+    ['the board\'s title and line', HEALTH_ANSWERS.confirmT('Pregnant or breastfeeding') === 'Clear pregnant or breastfeeding?' && HEALTH_ANSWERS.confirm === 'Your food targets will show calorie numbers again, and training goes back to your usual pace.'],
+    ['numbers stay hidden: wellbeing yes/sometimes, gentle mode, 16–17, or the pregnancy flag when clearing conditions', numbersStayHidden(prof({ age: 30, outcomes: { wellbeing: 'flagged' } }), 'pregnancy')
+      && numbersStayHidden(prof({ age: 30, gentle: true }), 'medical') && numbersStayHidden(prof({ age: 17 }), 'pregnancy')
+      && numbersStayHidden(prof({ age: 30, pregnancy: { flagged: true, askedAt: TODAY } }), 'medical') && !numbersStayHidden(prof({ age: 30, pregnancy: { flagged: true, askedAt: TODAY } }), 'pregnancy')],
+  ])
+  const w = prof({ outcomes: { wellbeing: 'clear' } })
+  const on = setHealthAnswerIn(w, { kind: 'wellbeing', value: 'flagged' }, AT)
+  const wasOn = w.gentle === true && w.answeredAt?.gentle === AT && w.answeredAt?.['outcomes.wellbeing'] === AT
+  setHealthAnswerIn(w, { kind: 'wellbeing', value: 'undisclosed' }, '2026-09-28T10:00:00.000Z')
+  const m = prof({})
+  report('change an answer', [
+    ['food and weight yes: gentle mode on, as in the wizard', on && wasOn],
+    ['and off again when the answer moves off it', w.gentle === false && w.outcomes?.wellbeing === 'undisclosed'],
+    ['conditions: the outcome only, stamped', setHealthAnswerIn(m, { kind: 'medical', value: 'flagged' }, AT) && m.outcomes?.medical === 'flagged' && m.answeredAt?.['outcomes.medical'] === AT && !setHealthAnswerIn(m, { kind: 'medical', value: 'flagged' }, AT)],
+  ])
+
+  // re-run: the answers' plan and the targets, the summary's way
+  const d = full({ outcomes: { readiness: 'flagged', wellbeing: 'clear', baseline: 'ok', medical: 'clear' } })
+  const sm = summaryFor(DEFAULT_PROFILE, d, ctx)
+  const done = finishedProfile(sm, d, AT, TODAY, DEFAULT_PROFILE)
+  const active = { ...sm.result.plan.trainingPlan, startedAt: TODAY }
+  const cleared = structuredClone(done); clearHealthAnswerIn(cleared, 'readiness', AT)
+  const before = rerunForAnswers(done, active, { healthConsent: true, kg: 87 })
+  const after = rerunForAnswers(cleared, active, { healthConsent: true, kg: 87 })
+  const again = rerunForAnswers(cleared, active, { healthConsent: true, kg: 87 })
+  const preg = structuredClone(done); preg.pregnancy = { flagged: true, askedAt: TODAY }
+  const hidden = rerunForAnswers(preg, active, { healthConsent: true, kg: 87 })
+  const sug = suggestedTargets(cleared, 87, profileRouting(cleared, 87, true))
+  const guard = (r: typeof after) => /"code":"guardrail","about":"[a-z-]+","field":"readiness"/.test(JSON.stringify(allWhysOf(r.plan)))
+  report('changing an answer re-runs routing, targets and the plan', [
+    ['the readiness guardrail goes when its answer is cleared', guard(before) && !guard(after)],
+    ['targets are Profile\'s suggestion for the new answers', !!after.target && !!sug && 'kcal' in sug && after.target.kcal === sug.kcal && after.target.p === sug.p],
+    ['the same answers give the same plan (seeded by the plan\'s id)', JSON.stringify(after.plan?.routines.map((r) => r.id)) === JSON.stringify(again.plan?.routines.map((r) => r.id))],
+    ['pregnancy hides numbers: no target to set', hidden.target === null],
+    ['only a plan built from the answers is rebuilt', rerunForAnswers(cleared, { ...active, source: 'custom' }, { healthConsent: true, kg: 87 }).plan === null && rerunForAnswers(cleared, undefined, { healthConsent: true, kg: 87 }).plan === null],
+  ])
+  report('12-week check-in (ob7-3, ob7-4)', [
+    ['three options, Ask me later, the thanks and its link', CHECKIN.options.map((o) => o[1]).join() === 'Still pregnant,Breastfeeding now,No longer' && CHECKIN.later === 'Ask me later'
+      && CHECKIN.doneT === 'Thanks. Your plan and targets will update.' && CHECKIN.seeAnswers === 'See your health check answers' && CHECKIN.title === 'Does this still apply?'],
+  ])
+}
+const allWhysOf = (p: { trainingPlan: { why?: unknown }; routines: { why?: unknown; blocks: unknown }[] } | null) => p ? [p.trainingPlan.why, ...p.routines.map((r) => [r.why, r.blocks])] : []
+
 export async function wizardSuite(fakeServer: FakeServer): Promise<number> {
-  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance()
+  steps(); outcomes(); summary(); withdrawal(); firstSession(); compliance(); healthAnswersUi()
   await underAgeDeletion()
   await sync(fakeServer)
   return bad

@@ -192,6 +192,39 @@ export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: s
   p.answeredAt = { ...p.answeredAt, pregnancy: at }
 }
 
+/** Answers Profile's "Change" can set (board ob7-1): the conditions outcome and the wellbeing answer. */
+export type ChangeableAnswer =
+  | { kind: 'medical'; value: 'flagged' | 'clear' }
+  | { kind: 'wellbeing'; value: 'flagged' | 'clear' | 'undisclosed' }
+
+/**
+ * Set one answer from Profile, as the wizard would: outcomes only, stamped for the per-field
+ * merge. Wellbeing Yes or Sometimes turns gentle mode on (as in the wizard, §3); moving off it
+ * turns gentle mode off again, since that answer is what turned it on. Returns whether it changed.
+ */
+export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): boolean {
+  const before = p.outcomes?.[a.kind]
+  if (before === a.value) return false
+  p.outcomes = { ...p.outcomes, [a.kind]: a.value }
+  const stamps: Record<string, string> = { [healthAnswerField(a.kind)]: at }
+  if (a.kind === 'wellbeing') {
+    if (a.value === 'flagged' && !p.gentle) { p.gentle = true; stamps.gentle = at }
+    else if (before === 'flagged' && a.value !== 'flagged' && p.gentle) { p.gentle = false; stamps.gentle = at }
+  }
+  p.answeredAt = { ...p.answeredAt, ...stamps }
+  return true
+}
+
+/**
+ * After clearing `kind`, calorie numbers would still be hidden by something else: gentle mode or
+ * a wellbeing Yes/Sometimes, 16–17, or the other answer that hides them (pregnancy). The clear
+ * confirm then says so instead of promising numbers (s-ob7, the undrawn variant).
+ */
+export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy' | 'age'>, kind: HealthAnswerKind): boolean {
+  const teen = p.age != null && p.age >= MIN_AGE && p.age < ADULT_AGE
+  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || teen || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
+}
+
 /** "Ask me later" on the re-ask: the flag and its date stay; it comes back in 2 weeks. */
 export function snoozePregnancyIn(p: Profile, today: string, at: string): boolean {
   if (!p.pregnancy?.flagged) return false

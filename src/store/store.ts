@@ -50,7 +50,8 @@ import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
 import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, underAgeNext, underAgeRetryDue, underAgeWipesDevice } from '@/data/onboardingDraft'
-import { clearHealthAnswerIn, confirmPregnancyIn, snoozePregnancyIn, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
+import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
+import { rerunForAnswers } from '@/core/domain/wizard'
 
 enableMapSet()
 
@@ -220,6 +221,8 @@ export interface StoreState {
   deleteUnderAge: () => Promise<DeleteResult>
   /** Profile's "Health check answers" (UI not built yet): remove one stored answer, as if skipped */
   clearHealthAnswer: (kind: HealthAnswerKind) => boolean
+  /** Profile's "Change" for conditions and food and weight; false without a local health yes */
+  setHealthAnswer: (a: ChangeableAnswer) => boolean
   /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
   confirmPregnancy: (status: PregnancyStatus) => boolean
   /** "Ask me later" on the re-ask: asked again in 2 weeks */
@@ -325,6 +328,36 @@ function acceptGenerated(s: PersistedState, gen: GeneratedPlan): void {
   const i = s.trainingPlans.findIndex((x) => x.id === plan.id)
   const row = { ...plan, phases: cleanPhases(plan.phases), startedAt: today, _dirty: true, _u: now }
   if (i >= 0) s.trainingPlans[i] = row; else s.trainingPlans.push(row)
+  mirrorPlan(s, true)
+}
+
+/**
+ * A health answer changed from Profile or the 12-week check-in (ob7): re-run the targets and,
+ * for a plan built from the answers, the plan with its guardrails (rerunForAnswers). The plan is
+ * replaced where it stands (same id and start, so the week carries on); its old workouts are put
+ * away. Targets change only when routing gives a number (a hidden one keeps what's stored).
+ */
+function rerunAnswers(s: PersistedState): void {
+  const today = todayStr()
+  const active = activePlan(s, today)
+  const r = rerunForAnswers(s.profile, active, { healthConsent: consented(s, 'health'), kg: latestWeight(s, today), days: s.days })
+  if (r.target) s.target = { ...s.target, ...r.target }
+  if (!r.plan || !active) return
+  const now = nowIso()
+  const oldRefs = JSON.stringify(active.phases)
+  const keep = new Set(r.plan.routines.map((x) => x.id))
+  for (const x of s.routines || []) {
+    if (x.source === 'recommended' && !keep.has(x.id) && !x.archived && oldRefs.includes(x.id)) { x.archived = true; x._dirty = true; x._u = now }
+  }
+  if (!Array.isArray(s.routines)) s.routines = []
+  for (const x of r.plan.routines) {
+    const i = s.routines.findIndex((y) => y.id === x.id)
+    const row = { ...structuredClone(x), _dirty: true, _u: now }
+    if (i >= 0) s.routines[i] = row; else s.routines.push(row)
+  }
+  const i = s.trainingPlans.findIndex((x) => x.id === active.id)
+  const plan = structuredClone(r.plan.trainingPlan)
+  s.trainingPlans[i] = { ...plan, id: active.id, phases: cleanPhases(plan.phases), startedAt: active.startedAt, _dirty: true, _u: now }
   mirrorPlan(s, true)
 }
 
@@ -1365,17 +1398,32 @@ export const useStore = create<StoreState>()(
       },
 
       clearHealthAnswer: (kind) => {
-        // removing is always allowed (no consent needed to delete); the clear is stamped to sync
+        // removing is always allowed (no consent needed to delete); the clear is stamped to sync,
+        // and the plan and targets follow straight away (ob7-1 footer)
         let changed = false
-        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) markSettingsDirty(st.data) })
+        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { rerunAnswers(st.data); markSettingsDirty(st.data) } })
         if (changed) saved()
         return changed
+      },
+
+      setHealthAnswer: (a) => {
+        // a new answer is health data: only with the local health yes
+        if (!canSaveHealthAnswers(get().data)) return false
+        let changed = false
+        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { rerunAnswers(st.data); markSettingsDirty(st.data) } })
+        if (changed) saved()
+        return true
       },
 
       confirmPregnancy: (status) => {
         // "still applies" keeps a health answer: only with the local health yes; "no longer" removes it
         if (status === 'still-applies' && !canSaveHealthAnswers(get().data)) return false
-        set((st) => { confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso()); markSettingsDirty(st.data) })
+        set((st) => {
+          confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso())
+          // "still" only re-dates it: nothing to re-run
+          if (status === 'no-longer') rerunAnswers(st.data)
+          markSettingsDirty(st.data)
+        })
         saved()
         return true
       },

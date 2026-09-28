@@ -12,7 +12,9 @@ import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
-import { AI_TICKS, HEALTH_TICKS, PrivacySheet, Ticks } from '../onboarding/Consent'
+import { AI_TICKS, HEALTH_TICKS, ONBOARDING_ENABLED, PrivacySheet, Ticks } from '../onboarding/Consent'
+import { HEALTH_ANSWERS } from '../onboarding/copy'
+import { answerRows } from './healthAnswerRows'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
 export const DELETE_WORD = 'DELETE'
@@ -34,7 +36,7 @@ export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', pau
  * button). "Yes, keep it" hands over to `onAgree`: giving consent from Profile goes through the
  * explicit statement and unticked box (legal/PrivacySheets RegrantHealthSheet), never a bare tap.
  */
-export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose: () => void; onAgree: () => void; start?: 'main' | 'withdraw' }) {
+export function HealthDataSheet({ onClose, onAgree, onAnswers, start = 'main' }: { onClose: () => void; onAgree: () => void; onAnswers?: () => void; start?: 'main' | 'withdraw' }) {
   const status = useHealthStatus()
   const { prepare, download, withdraw } = useHealthWithdrawal()
   const showToast = useStore((s) => s.showToast)
@@ -43,6 +45,8 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
   const [privacy, setPrivacy] = useState(false)
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
   const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
+  // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
+  const hasAnswers = useStore((s) => ONBOARDING_ENABLED && answerRows(s.data.profile).length > 0)
 
   if (step) {
     const s = step.summary
@@ -71,6 +75,11 @@ export function HealthDataSheet({ onClose, onAgree, start = 'main' }: { onClose:
       </div>
       <Ticks items={HEALTH_TICKS} />
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
+      {hasAnswers && onAnswers && (
+        <div className="list" style={{ marginTop: 12 }}>
+          <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS.row}</div></div><Chevron /></button>
+        </div>
+      )}
       <div className="stack">
         {status !== 'on' && <button className="btn" onClick={onAgree}>Yes, keep it</button>}
         {/* withdraw (download first) whenever there's health data to remove: on, or paused / not

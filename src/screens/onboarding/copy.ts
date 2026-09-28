@@ -48,7 +48,7 @@ export const READINESS_ITEMS = [
 /** The boards don't split pregnancy from recent surgery; this follow-up does (Benn approved; wording mental-performance). */
 export const PREGNANCY_FOLLOWUP = 'Which of these is it?'
 export const PREGNANCY_OPTIONS = [['pregnant', 'Pregnant'], ['breastfeeding', 'Breastfeeding'], ['surgery', 'Recent surgery']] as const
-/** The 12-week re-ask (§13.5, §14). The screen that asks it isn't built yet. */
+/** The 12-week re-ask (§13.5, §14; board ob7-3). */
 export const PREGNANCY_REASK = 'Does this still apply?'
 
 export const WELLBEING_STATEMENT = '"Food or weight sometimes feels stressful or all-consuming for me."'
@@ -98,6 +98,56 @@ export const SUMMARY = {
   ],
 }
 
+/**
+ * Onboarding 7: Profile › Health data › Health check answers, and the 12-week check-in on Today
+ * (boards ob7-1 to ob7-4, s-ob7, approved 28 Sept 2026). Values show only what is stored (outcomes,
+ * never the condition, and pregnancy and breastfeeding aren't told apart); where a board value
+ * needs more than that, or a value has no board, the line is marked GAP.
+ */
+export const HEALTH_ANSWERS = {
+  row: 'Health check answers',
+  title: 'Health check answers',
+  lead: 'What Tali kept from your health questions, and what each one changes.',
+  empty: 'Nothing kept from your health check.',
+  foot: 'Clearing these changes your plan and targets straight away.',
+  change: 'Change',
+  clear: 'Clear',
+  labels: { pregnancy: 'Pregnant or breastfeeding', medical: 'Conditions or medicines', readiness: 'Health check', wellbeing: 'Food and weight' },
+  /** GAP: the boards show "Breastfeeding" and "A weight-loss injection"; only a yes is stored */
+  yes: 'Yes',
+  /** GAP: no board for a stored "no" */
+  no: 'No',
+  none: 'None of these',
+  gentler: 'Gentler start',
+  /** GAP: the board shows "Sometimes"; Yes and Sometimes are stored as one */
+  wellbeingFlagged: 'Yes or sometimes',
+  rather: 'Rather not say',
+  does: {
+    pregnancy: 'Food stays at maintenance with no calorie number, and training stays gentle.',
+    medical: 'Food stays at maintenance, with no high-protein target.',
+    readiness: 'Your plan starts with lighter, low-impact sessions.',
+    wellbeing: 'Weight is hidden and there’s no calorie target to hit.',
+    /** GAP: "Rather not say" without the deficit chosen */
+    rather: 'Food stays at maintenance for now.',
+    /** GAP: a stored answer that changes nothing */
+    nothing: 'Nothing changes in your plan.',
+  },
+  confirmT: (label: string) => { const l = String(label); return `Clear ${l.charAt(0).toLowerCase() + l.slice(1)}?` },
+  confirm: 'Your food targets will show calorie numbers again, and training goes back to your usual pace.',
+  /** s-ob7's undrawn variant: something else still hides the numbers */
+  confirmHidden: 'Your plan goes back to your usual pace. Calorie numbers stay hidden while gentle mode is on.',
+  keep: 'Keep it',
+}
+export const CHECKIN = {
+  title: PREGNANCY_REASK,
+  lead: 'You told us you were pregnant or breastfeeding. We’ll keep things gentle while it does.',
+  options: [['pregnant', 'Still pregnant'], ['breastfeeding', 'Breastfeeding now'], ['no-longer', 'No longer']] as const,
+  later: 'Ask me later',
+  doneT: 'Thanks. Your plan and targets will update.',
+  seeAnswers: 'See your health check answers',
+  done: 'Done',
+}
+
 /** Every line above, for the copy lint. */
 export function allCopy(): string[] {
   const out: string[] = []
@@ -107,6 +157,6 @@ export function allCopy(): string[] {
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION])
+  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, CHECKIN])
   return out
 }
