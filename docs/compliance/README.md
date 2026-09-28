@@ -55,9 +55,10 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | GitHub Inc. (Pages) | Processor for hosting and request logs | US | Confirm GitHub's DPA covers Pages for your account type; record the transfer mechanism |
 | Webflow Inc. | Processor: website hosting, form submissions | US | Accept Webflow's DPA; record transfer mechanism |
 | Cloudflare Inc. | Processor: delivers the website (as Webflow's CDN), Turnstile | US / global | Covered through Webflow for delivery; Turnstile has its own terms: confirm and record |
-| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`), sees IP addresses | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
+| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`), sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
+| Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name) |
 
@@ -66,7 +67,8 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 The text is written in `src/core/legal/` and rendered with `npm run legal:html`
 (output `node_modules/.cache/legal-html.json`), then written to the Webflow site "Tali",
 collection "Legals" (`content` rich text, `last-updated` date), as drafts via the Webflow MCP.
-Publishing is a separate, explicit step. Don't edit the pages in Webflow: the next push from
+Publishing is a separate, explicit step. When the full texts get published is still undecided
+(Benn, 28 Sept 2026; see item 16). Don't edit the pages in Webflow: the next push from
 the repo would overwrite the edit. Webflow item ids: privacy `6ab56fd7d03958d70ceaf976`,
 terms `6ab56fd7d03958d70ceaf978`, cookie-policy `6ab56fd7d03958d70ceaf97a`.
 
@@ -144,9 +146,9 @@ Added 2026-09-27 (consent release):
     screen on their next launch and nothing more syncs until they answer; if anyone declines,
     delete their account on request. Now see item 29 (6 accounts with cloud data, 0 consent
     records, 2026-09-28) and item 30(a) (no notice emails for now, Benn's decision).
-21. Age: the texts, sign-up line and consent screen say 18+ (`MIN_AGE`). The onboarding plan's
-    16+ with 16–17 safeguards needs those safeguards built first, and brings the ICO Children's
-    Code into scope (DPIA and high-privacy defaults for under-18s). Benn to decide.
+21. DECIDED (Benn, 28 Sept 2026): the minimum age is 18. The texts, sign-up line, consent screen
+    and wizard say 18+ (`MIN_AGE`), and the onboarding plan now says so too. The ICO Children's
+    Code stays out of scope while under-18s are turned away.
 22. Resolved 2026-09-27 (as built: the Withdrawal row above). Withdrawal used to clear
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.

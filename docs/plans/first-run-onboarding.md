@@ -114,8 +114,7 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 
 | Signal | Result |
 |---|---|
-| Under 16 | Kind stop: "Tali is for 16+" |
-| 16–17 | No deficit, weight hidden, no AI features |
+| Under 18 | Kind stop: "Tali is for 18+" (minimum age 18, Benn, 28 Sept 2026) |
 | Pregnant or breastfeeding | Maintenance only with no calorie number shown, gentle training, signpost midwife/GP |
 | BMI under 18.5 (safety gate only, never used for targets) | No deficit |
 | Wellbeing question Yes or Sometimes | No deficit, gentle mode on, weight hidden, calm signposting (Beat, NHS 111, Samaritans 116 123, 999; numbers checked in §14) |
@@ -208,8 +207,8 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 **Flow and safety**
 - **Flow:** a short wizard (age, readiness, why, goal, body), then a "finish your setup" card for
   the training details.
-- **Age:** 16+. Under-16s get a kind stop; 16–17s get no deficit, no AI and weight hidden. Needs a
-  quick legal check.
+- **Age:** 18+ (Benn, 28 Sept 2026). Under-18s get a kind stop. The old 16–17 rules (no deficit, no
+  AI, weight hidden) remain in `routeSafety` as a fallback but can't be reached from the wizard.
 - **Wellbeing:** the one non-diagnostic food and weight question, with routing. Only the outcome is
   stored, and it gets clinical review before wider launch.
 - **BMI under 18.5:** used as a safety gate only (no deficit). Never shown, never used for targets.
@@ -219,7 +218,8 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 - **Weight:** optional, with a fallback range. (Refined by review, §2.1: without weight there's
   no honest range, so no calorie or protein numbers are shown until weight is added.)
 - **Target:** a rounded number plus the likely maintenance range, and a weigh-in check after
-  3–4 weeks.
+  3–4 weeks. The check itself is coming soon (not built yet; Benn, 28 Sept 2026): the copy that
+  promises it stays.
 - **Activity:** steps bands, with job type as the alternative. Training is counted separately.
 - **Floors:** split by sex, 1,500 men / 1,200 women, plus the BMR floor and never below 800.
 
@@ -329,16 +329,15 @@ if they tap it. Nothing is regenerated for them automatically.
    "Wider launch" means opening beyond the invited beta, and it needs both sign-offs.
 5. **Pregnancy flag:** re-asked gently every 12 weeks, and the user can clear it any time in
    Profile. Confirmed by Benn after design sign-off, 27 Sept 2026.
-6. **16–17 no-AI rule:** enforced from self-declared age during the beta. This is flagged for the
-   legal review. (Default.)
+6. **Minimum age:** 18, self-declared (Benn, 28 Sept 2026). This replaces the 16–17 no-AI rule.
 
 ## 14. Build decisions after design sign-off (Benn, 27 Sept 2026)
 
 The designs are on the Design canvas (https://claude.ai/artifact/EYDHM6mLouqwPsWxcDsWEb),
 rows "Onboarding 1" to "Onboarding 6". The notes s-ob1 … s-ob6 are the approved defaults.
 
-- **Under-16s:** after the kind stop, the new account and everything on the device are deleted
-  automatically. They're welcome back at 16.
+- **Under-18s:** after the kind stop, the new account and everything on the device are deleted
+  automatically. They're welcome back at 18.
 - **Declining health consent** ("Not now"): the person can still use Tali (food, workouts) with a
   Starter week. There are no health questions, weight, check-ins or calorie numbers until they
   agree, and they can agree later from Profile.

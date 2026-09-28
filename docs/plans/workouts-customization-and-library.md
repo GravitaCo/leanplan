@@ -921,7 +921,8 @@ Which answer drives which decision is the "Driven by" column of the §3.1 table 
   starting or changing exercise. Stop any movement that causes pain."
 - **Red flags** (chest pain, dizziness or faintness, sudden severe pain during exercise): "Stop if
   you get chest pain, feel dizzy or faint, or have sudden severe pain. Call 999 for chest pain that
-  doesn't go away, or NHS 111 if you're not sure." (Revised in P3 after mental-performance checked
+  feels tight or heavy, spreads to your arm, jaw or back, or doesn't ease with rest. Call NHS 111 if
+  you're not sure." (Matches `RED_FLAG` in `train/HoldTimer.tsx`, the app's wording. Revised in P3 after mental-performance checked
   the NHS chest-pain page: 999 first for chest pain.) Outside the P6 question, the disclaimer's
   first sentence fits its place (Swap sheet: "Easier and gentler options are here for any day, for
   any reason."; library entry: "This move asks quite a lot of {areas}.").

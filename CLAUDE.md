@@ -192,6 +192,6 @@ approve first.
 - TypeScript strict; no unused locals. Match surrounding style.
 - Commit/push only when asked. Keep commits focused.
 - **Nothing goes live without `ship-critic` approval.** Even when Benn says "push live" or
-  "merge", run `ship-critic` on the change first and merge to `main` only on SHIP (or SHIP WITH
-  FIXES once those fixes are in and re-checked). If it hasn't approved, push to the working
-  branch and report its verdict instead. This keeps accountability for what reaches users.
+  "merge", run `ship-critic` on the change first and merge to `main` only on SHIP. Nothing ships
+  with fixes outstanding: fix, re-run `ship-critic`, merge on SHIP. If it hasn't approved, push
+  to the working branch and report its verdict instead. This keeps accountability for what reaches users.

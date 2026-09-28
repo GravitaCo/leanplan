@@ -98,8 +98,9 @@ core/ (pure TS, shared by web + native)
 
 Batch API: 50% off. Cache reads: about 0.1× input; cache writes about 1.25× input.
 **Model choice per task is a decision for Benn after evals** (§6). The plan starts every task on
-Opus 5 as the quality baseline and measures whether a cheaper model matches it. (Open: `ai-read-label`
-defaults to Sonnet 5, `LABEL_MODEL`, without an eval on record; see §6.)
+Opus 5 as the quality baseline and measures whether a cheaper model matches it. `ai-read-label`
+starts on Opus 5 too (Benn, 28 Sept 2026); `LABEL_MODEL` switches it to Sonnet 5 once an eval shows
+it reads labels as well (§6).
 
 ### 3.2 Per-call estimates (approximate)
 
