@@ -388,7 +388,6 @@ export async function clearCloudLog(): Promise<boolean> {
  *  `since` is this phone's clock and `updated_at` the server's, so a fast phone clock can't make
  *  another device's edit look older. Erring this way only keeps more of this phone's versions aside. */
 const RESUME_MARGIN_MS = 24 * 3600_000
-const EXACT_MARGIN_MS = 5 * 60_000
 const IN_BATCH = 60
 
 /**
@@ -399,9 +398,9 @@ const IN_BATCH = 60
  */
 async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Promise<void> {
   const log = s.consents!
-  // a time from this phone's own last pull needs only a few minutes for this phone's clock against
-  // the server's; one from an answer may be on another device's clock
-  const since = Date.parse(log.resumeFrom!) - (log.resumeExact ? EXACT_MARGIN_MS : RESUME_MARGIN_MS)
+  // this phone's own sync point is exact (consent.ts setResumeFrom); a time from an answer may be
+  // on another device's clock
+  const since = Date.parse(log.resumeFrom!) - (log.resumeExact ? 0 : RESUME_MARGIN_MS)
   const dirty = Object.keys(meta.days).filter((d) => meta.days[d].dirty)
   const rows: any[] = []
   for (let i = 0; i < dirty.length; i += IN_BATCH) {
@@ -564,6 +563,14 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
   // after the log; no table yet = keep the device's records (they upload once it exists)
   await pullConsents(s)
   meta.lastPull = nowIso()
+  // the newest change this pull saw, on the server's clock: anything this phone uploaded before it
+  // is at or before it, so a later row can only be another device's (settleResume)
+  let newest = meta.lastPullServer ? Date.parse(meta.lastPullServer) : NaN
+  for (const r of [...settings, ...cf, ...rc, ...dl, ...(rt || []), ...(tp || [])]) {
+    const t = Date.parse(r?.updated_at)
+    if (!isNaN(t) && !(t <= newest)) newest = t
+  }
+  if (!isNaN(newest)) meta.lastPullServer = new Date(newest).toISOString()
 }
 
 /** The rows sameAccount compares, read with a session that isn't applied yet. */

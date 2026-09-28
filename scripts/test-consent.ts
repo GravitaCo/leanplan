@@ -706,7 +706,60 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   km.days['2026-09-09'] = { u: 'y', dirty: true }
   k.days['2026-09-09'] = day(71)
   markReupload(k, km, kyes)
-  checks.push(['marking: in-sync items are reup, edited ones stay plain dirty, from the exact last pull', km.days['2026-09-08'].reup === true && km.days['2026-09-09'].reup === undefined && km.days['2026-09-09'].u === 'y' && k.consents!.resumeExact === true && k.consents!.resumeFrom === km.lastPull])
+  checks.push(['marking: in-sync items are reup, edited ones stay plain dirty, from the exact last pull', km.days['2026-09-08'].reup === true && km.days['2026-09-09'].reup === undefined && km.days['2026-09-09'].u === 'y' && k.consents!.resumeExact === true && k.consents!.resumeFrom === new Date(Date.parse(km.lastPull!) + 5 * 60_000).toISOString()])
+
+  // one phone: synced a day, "Not now", logged more that day, then yes. Nothing else changed it, so
+  // this phone's day uploads and stays (ship-critic's case), from this version's pull (server
+  // time) and from an older version's (phone time only)
+  for (const serverClock of [true, false]) {
+    const H = 3600_000, t = Date.now(), D = '2026-09-27'
+    const bf = { n: 'Breakfast', k: 300, p: 10, c: 40, f: 8, grams: 100 }, lunch = { n: 'Lunch', k: 500, p: 30, c: 50, f: 15, grams: 300 }
+    const o = stateFromBackup({ days: { [D]: { foods: [bf], supps: {}, weight: null, workout: null } } } as never)
+    const om = ensureMeta(o, false)
+    const orow = { ...emptyRows(), day_logs: [{ user_id: LOCAL_USER, log_date: D, foods: [bf], supps: {}, weight: null, workout: null, updated_at: new Date(t - 2 * H + 200).toISOString() }] }
+    om.days[D] = { u: orow.day_logs[0].updated_at, dirty: false }
+    om.settings.dirty = false
+    om.lastPull = new Date(t - 2 * H).toISOString() // this phone's clock a little behind the server's
+    if (serverClock) om.lastPullServer = orow.day_logs[0].updated_at
+    pauseHealthSync(o, new Date(t - H).toISOString())
+    o.days[D] = { ...o.days[D], foods: [bf, lunch] }
+    om.days[D] = { u: new Date().toISOString(), dirty: true }
+    const oy = grantHealth(o, om)
+    const ore = needsReupload(o)
+    if (ore) markReupload(o, om, ore)
+    orow.consents = [{ id: oy.id, user_id: LOCAL_USER, type: 'health', version: oy.version, granted: true, recorded_at: oy.at }]
+    o.consents!.records.forEach((x) => delete x._dirty)
+    await withFetch(fakeServer(orow).fetchFn, () => pushDirty(o, om))
+    const sd = orow.day_logs.find((x) => x.log_date === D)
+    checks.push([`one phone, Not now then yes: its own later lunch uploads and stays (${serverClock ? 'server' : 'phone'} clock)`, o.days[D].foods.length === 2 && sd?.foods?.length === 2 && !o.consents?.resumeCopy])
+  }
+  {
+    const h = stateFromBackup({ days: {} } as never)
+    const hm = ensureMeta(h, false)
+    const hrows = { ...emptyRows(), day_logs: [
+      { user_id: LOCAL_USER, log_date: '2026-09-20', foods: [], supps: {}, weight: null, workout: null, updated_at: '2026-09-20T10:00:00.000Z' },
+      { user_id: LOCAL_USER, log_date: '2026-09-21', foods: [], supps: {}, weight: null, workout: null, updated_at: '2026-09-21T09:00:00.000Z' }],
+      recipes: [{ id: uuid(), user_id: LOCAL_USER, name: 'R', items: [], servings: 1, updated_at: '2026-09-22T08:00:00.000Z' }] }
+    await withFetch(fakeServer(hrows).fetchFn, () => pullAll(h, hm))
+    checks.push(['a pull keeps the newest server time it saw, as this phone\'s sync point', hm.lastPullServer === '2026-09-22T08:00:00.000Z'])
+  }
+  // and a change another phone made after this one's last pull still wins, with this phone's kept
+  {
+    const D = '2026-09-26', pulledAt = new Date(Date.now() - 3 * 3600_000).toISOString()
+    const g = stateFromBackup({ days: { [D]: day(70) } } as never)
+    const gm = ensureMeta(g, false)
+    gm.settings.dirty = false
+    gm.lastPull = pulledAt; gm.lastPullServer = pulledAt
+    gm.days[D] = { u: new Date().toISOString(), dirty: true }
+    pauseHealthSync(g, new Date(Date.now() - 2 * 3600_000).toISOString())
+    const gy = grantHealth(g, gm)
+    const gre = needsReupload(g); if (gre) markReupload(g, gm, gre)
+    const grow = { ...emptyRows(), consents: [{ id: gy.id, user_id: LOCAL_USER, type: 'health', version: gy.version, granted: true, recorded_at: gy.at }],
+      day_logs: [{ user_id: LOCAL_USER, log_date: D, foods: [{ n: 'Apple', k: 50, p: 0, c: 12, f: 0, grams: 100 }], supps: {}, weight: null, workout: null, updated_at: new Date(Date.now() - 3600_000).toISOString() }] }
+    g.consents!.records.forEach((x) => delete x._dirty)
+    await withFetch(fakeServer(grow).fetchFn, () => pushDirty(g, gm))
+    checks.push(['another phone\'s change after this one\'s last pull wins, this phone\'s is kept', g.days[D].foods[0]?.n === 'Apple' && g.consents?.resumeCopy?.days?.[D]?.foods?.[0]?.n === 'Toast'])
+  }
   // the date the app names for the pre-consent deletion is the one the server job uses
   const sql = readFileSync('docs/migrations/2026-09-28-unconsented-purge.sql', 'utf8')
   const from = /timestamptz '(\d{4}-\d{2}-\d{2})[^']*'; -- PURGE_FROM/.exec(sql)?.[1]

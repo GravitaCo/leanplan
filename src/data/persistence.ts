@@ -20,6 +20,8 @@ export interface SyncMeta {
   foodDeletes: string[]
   recipeDeletes: string[]
   lastPull: string | null
+  /** the newest `updated_at` the last pull saw (the server's clock): this phone's sync point */
+  lastPullServer?: string
   /** Supabase user id this device's data belongs to; unset for data never synced (from the
    *  retired guest mode, or before a first sign-in) and
    *  for data synced by a version before this was recorded). */
@@ -227,6 +229,7 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   if (pending?.owner) meta.owner = pending.owner
   // and never makes data this device synced look never-synced (ownerCheck reads lastPull)
   meta.lastPull = pending?.lastPull ?? null
+  if (pending?.lastPullServer) meta.lastPullServer = pending.lastPullServer
   if (current) {
     for (const d of Object.keys(current.days || {})) {
       if (s.days[d]) continue

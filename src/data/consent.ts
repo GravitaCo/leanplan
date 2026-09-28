@@ -170,7 +170,6 @@ function cleanPause(x: unknown): HealthPause | null {
   return { at: p.at, ...(p.reasked === true ? { reasked: true } : {}), ...cleanHeld(p) }
 }
 
-/** The latest record of a type (latest `at` wins; ties go to the later one in the list). */
 /** When a record counts from: the earlier of the phone's time and the server's arrival time. */
 export function effectiveAt(r: ConsentRecord): number {
   const at = Date.parse(r.at)
@@ -178,6 +177,7 @@ export function effectiveAt(r: ConsentRecord): number {
   return isNaN(arrived) ? at : Math.min(at, arrived)
 }
 
+/** The latest record of a type (by effectiveAt; ties go to the later one in the list). */
 export function latestConsent(s: PersistedState, type: ConsentType): ConsentRecord | null {
   let best: ConsentRecord | null = null
   for (const r of s.consents?.records || []) {
@@ -466,8 +466,6 @@ export function unconsentedCopyLine(now = Date.now()): string {
     : `What’s in your account from before is deleted on ${UNCONSENTED_DELETION.short} unless you agree; your phone keeps its copy.`
 }
 
-/** Mark the whole log to upload after a yes that follows a withdrawal (needsReupload). */
-/** Everything on this device uploads on the next sync. */
 /**
  * Everything on this device uploads on the next sync. What was already in sync here is marked
  * `reup`: it only uploads where the server doesn't have it (settleResume), so it can't replace a
@@ -487,16 +485,13 @@ function markAllDirty(s: PersistedState, meta: SyncMeta): void {
   }
 }
 
+/** Mark the whole log to upload after a yes that follows a withdrawal, or a first yes (needsReupload). */
 export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentRecord): void {
   const log = consentLog(s)
   markAllDirty(s, meta)
   // rows another device uploaded since the withdrawal win over this device's (settleResume)
   const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => effectiveAt(b) - effectiveAt(a))[0]
-  if (!log.resumeFrom) {
-    if (decline) log.resumeFrom = decline.at
-    else if (meta.lastPull) { log.resumeFrom = meta.lastPull; log.resumeExact = true }
-    else log.resumeFrom = nowIso()
-  }
+  setResumeFrom(s, decline?.at ?? nowIso())
   log.reuploadedFor = yes.id
 }
 
@@ -522,10 +517,29 @@ export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): 
   return rec
 }
 
-/** A yes that ends a pause: rows another device changed since the pause win (settleResume). */
+/**
+ * Where a resume counts other devices' changes from (settleResume). This phone's own last pull
+ * whenever it has one (the newest server time it saw): everything it uploaded before that is in
+ * that pull, so only a row changed after it can be another device's. `updated_at` can't tell this phone's own uploads apart, so the
+ * time of a pause or a withdrawal would take this phone's own recent syncs for another device's.
+ * Without a pull, that time is all there is (with the clock margin).
+ */
+function setResumeFrom(s: PersistedState, fallback: string | undefined): void {
+  const log = consentLog(s)
+  if (log.resumeFrom) return
+  const server = s._meta?.lastPullServer, pulled = s._meta?.lastPull
+  if (server) { log.resumeFrom = server; log.resumeExact = true }
+  // a pull from before the server's time was kept (an older version): this phone's clock, with
+  // room for it running slow, so its own uploads never look like another device's
+  else if (pulled && !isNaN(Date.parse(pulled))) { log.resumeFrom = new Date(Date.parse(pulled) + OWN_CLOCK_MS).toISOString(); log.resumeExact = true }
+  else if (fallback) { log.resumeFrom = fallback; delete log.resumeExact }
+}
+const OWN_CLOCK_MS = 5 * 60_000
+
+/** A yes that ends a pause: rows another device changed since this phone last synced win. */
 export function resumeAfterYes(s: PersistedState): void {
   const log = consentLog(s)
-  if (log.healthPause?.at && !log.resumeFrom) log.resumeFrom = log.healthPause.at
+  if (log.healthPause?.at) setResumeFrom(s, log.healthPause.at)
 }
 
 /**
