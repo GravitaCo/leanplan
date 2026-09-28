@@ -187,7 +187,7 @@ async function sync(fakeServer: FakeServer): Promise<void> {
   globalThis.fetch = fakeServer(rows2).fetchFn
   try { await pullAll(s2, meta2) } finally { globalThis.fetch = real }
   report('plan why sync', [
-    ['PLAN_WHY_SYNC is off until 2026-09-plan-why.sql is applied', PLAN_WHY_SYNC === false && !('why' in toServerPlan(plan, LOCAL_USER))],
+    ['PLAN_WHY_SYNC is on (2026-09-plan-why.sql applied), and off sends no why', PLAN_WHY_SYNC === true && !('why' in toServerPlan(plan, LOCAL_USER, false))],
     ['with it on, the reasons go in the new column', JSON.stringify((toServerPlan(plan, LOCAL_USER, true) as { why?: unknown }).why) === JSON.stringify(plan.why)],
     ['a pull without the column keeps this device\'s reasons', JSON.stringify(s2.trainingPlans[0].why) === JSON.stringify(plan.why) && !!plan.why?.length],
   ])

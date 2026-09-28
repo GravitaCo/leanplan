@@ -89,13 +89,14 @@ function fromServerRecipe(r: any): Recipe {
 }
 /**
  * Send a generated plan's reasons (`TrainingPlan.why`, codes and data only) in the additive
- * `training_plans.why` jsonb column (docs/migrations/2026-09-plan-why.sql). OFF until that
- * migration is applied (after security review): PostgREST refuses an upsert with an unknown
- * column, which would stop every plan syncing. While off, a pull keeps the device's own reasons
+ * `training_plans.why` jsonb column (docs/migrations/2026-09-plan-why.sql, applied 28 Sept 2026
+ * after security review). Once a build with this on has shipped, never drop the column: installed
+ * apps still running it would have every plan upsert refused. To roll back, turn this off and
+ * deploy first. While off, a pull keeps the device's own reasons
  * (fromServerPlan's caller), so they're never lost here; another device rebuilds none, it just
  * shows the plan without its plan-level reasons. Slot and workout reasons ride `routines.blocks`.
  */
-export const PLAN_WHY_SYNC = false
+export const PLAN_WHY_SYNC = true
 
 /* training_plans: weekly plans (plan P5), one row each like routines; never hard-deleted */
 export function toServerPlan(p: TrainingPlan, uid: string, withWhy = PLAN_WHY_SYNC) {
