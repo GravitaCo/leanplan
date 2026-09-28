@@ -99,6 +99,14 @@ async function scenario(browser, name, fn, opts = {}) {
     net.posts.push({ t, list })
     if (net.mode === 'hang') await new Promise((r) => { net.release = r })
     if (net.mode === 'fail') return route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+    // another phone withdraws while this one uploads: the no lands, the account's copy is cleared,
+    // and the server's consent guard refuses this write
+    if (net.mode === 'withdrawn-elsewhere' && t !== 'consents') {
+      net.mode = 'ok'
+      rows.consents.push({ id: 'ffffffff-bbbb-4ccc-8ddd-eeeeeeeeeeee', user_id: UID, type: 'health', version: '2026-09-v1', granted: false, recorded_at: new Date().toISOString() })
+      for (const x of ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'settings']) rows[x] = []
+      return route.fulfill({ status: 400, contentType: 'application/json', headers: cors, body: JSON.stringify({ code: 'TL001', message: 'tali: health consent required' }) })
+    }
     for (const row of list) {
       const i = (rows[t] ||= []).findIndex((r) => keyOf(t).every((k) => r[k] === row[k]))
       if (i >= 0) rows[t][i] = { ...rows[t][i], ...row }; else rows[t].push(row)
@@ -285,6 +293,20 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
     expect(!rows.day_logs.some((x) => x.user_id === UID) && !rows.settings.some((x) => x.user_id === UID), 'the account\'s copy of the log is deleted')
   }, { state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }, consents: { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] } }) })
+
+  await run('a withdrawal on another phone mid-upload: this phone keeps its saved foods', async ({ page, rows, net }) => {
+    await page.locator('.hdr .cpill[data-conn="phone-only"]').waitFor({ timeout: 20000 })
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1')).consents.cloudClearedFor, null, { timeout: 20000 })
+    const st = await stored(page)
+    expect((st.customFoods || []).some((f) => f.n === 'My granola'), 'the saved food stays on the phone')
+    expect((st.days[today]?.foods || []).length === 1, 'the day stays on the phone')
+    expect(latest(st, 'health')?.granted === false, 'the other phone\'s withdrawal is here')
+    expect(rows.custom_foods.length === 0 && rows.day_logs.length === 0, 'the account copy stays cleared')
+  }, {
+    state: { ...deviceState({ days: { [today]: aDay(null) }, dirty: [today] }), customFoods: [{ id: '11111111-2222-4333-8444-555555555555', n: 'My granola', k: 450, p: 10, c: 60, f: 18, _dirty: false }] },
+    rows: { consents: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', user_id: UID, type: 'health', version: '2026-09-v1', granted: true, recorded_at: '2026-09-20T08:00:00.000Z' }], custom_foods: [{ id: '11111111-2222-4333-8444-555555555555', user_id: UID, name: 'My granola', k: 450, p: 10, c: 60, f: 18 }] },
+    before: (net) => { net.mode = 'withdrawn-elsewhere' },
+  })
 
   await run('live consent screen: shows until answered, only consent syncs before, then the rest', async ({ page, rows, net }) => {
     await page.getByRole('heading', { name: 'Before you start' }).waitFor()

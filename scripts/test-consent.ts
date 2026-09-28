@@ -8,7 +8,7 @@ import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } f
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, clearCloudLog } from '@/data/sync'
-import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
+import { uuid, UUID_RE, LOCAL_USER, ConsentRequiredError } from '@/data/supabase'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -616,6 +616,51 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   p.consents!.resumeCopy!.days!['2026-09-04'].weight = 70
   withdraw(p, pm, 'health')
   checks.push(['a withdrawal also clears health fields from the kept copy', p.consents?.resumeCopy?.days?.['2026-09-04']?.weight === null])
+
+  // a phone clock running fast can't put a yes after a later withdrawal: a synced record counts
+  // from the earlier of its time and its arrival on the server (as the server orders them)
+  const c = stateFromBackup({ days: {} } as never)
+  c.consents = { records: [
+    { id: uuid(), type: 'health', version: CONSENT_VERSIONS.health, granted: true, at: '2026-09-20T20:00:00.000Z', arrived: '2026-09-20T00:00:00.000Z' },
+    { id: uuid(), type: 'health', version: CONSENT_VERSIONS.health, granted: false, at: '2026-09-20T01:00:00.000Z', arrived: '2026-09-20T01:00:05.000Z' },
+  ] }
+  checks.push(['a withdrawal after a fast-clock yes is the latest answer', latestConsent(c, 'health')?.granted === false && !consentLetsSync(c)])
+  checks.push(['the arrival time survives a reload', loadStateFrom(JSON.parse(JSON.stringify(c))).consents!.records[0].arrived === '2026-09-20T00:00:00.000Z'])
+  const crow = { ...emptyRows(), consents: [{ id: c.consents.records[0].id, user_id: LOCAL_USER, type: 'health', version: CONSENT_VERSIONS.health, granted: true, recorded_at: '2026-09-20T20:00:00.000Z', created_at: '2026-09-20T00:00:00.000Z' }] }
+  const c2 = stateFromBackup({ days: {} } as never)
+  await withFetch(fakeServer(crow).fetchFn, () => pullConsents(c2))
+  checks.push(['a pull records when each answer reached the server', c2.consents!.records[0].arrived === '2026-09-20T00:00:00.000Z'])
+
+  // the server refuses a log write (no current yes, a no from another phone arrived meanwhile):
+  // one request, the sync stops as a whole, and nothing on the phone is marked done
+  const q = stateFromBackup({ days: { '2026-09-07': day(70) } } as never)
+  const qm = ensureMeta(q, true)
+  recordConsent(q, 'health', true)
+  q.consents!.records.forEach((r) => delete r._dirty)
+  qm.days['2026-09-07'] = { u: 'x', dirty: true }
+  const qbase = fakeServer(emptyRows())
+  let refused = 0
+  const refuse = (async (url: string, o: RequestInit = {}) => {
+    if (o.method === 'POST' && !String(url).includes('/consents')) { refused++; return new Response(JSON.stringify({ code: 'TL001', message: 'tali: health consent required' }), { status: 400 }) }
+    return qbase.fetchFn(url, o)
+  }) as typeof fetch
+  let threw: unknown = null
+  try { await withFetch(refuse, () => pushDirty(q, qm)) } catch (e) { threw = e }
+  checks.push(['a consent refusal stops the whole push in one request, the day stays to upload', threw instanceof ConsentRequiredError && refused === 1 && qm.days['2026-09-07'].dirty])
+
+  // a re-upload after a yes: a saved recipe another device changed since keeps that device's
+  // version, and this phone's is kept to download
+  const r = stateFromBackup({ days: {} } as never)
+  const rm = ensureMeta(r, true)
+  const RID = uuid()
+  r.recipes = [{ id: RID, name: 'Porridge', items: [], servings: 1 }]
+  recordConsent(r, 'health', true); withdraw(r, rm, 'health'); const ryes = recordConsent(r, 'health', true)
+  r.consents!.records.forEach((x) => delete x._dirty)
+  markReupload(r, rm, ryes)
+  const rrows = { ...emptyRows(), recipes: [{ id: RID, user_id: LOCAL_USER, name: 'Porridge with honey', items: [], servings: 2, updated_at: new Date(Date.now() + 1000).toISOString() }] }
+  await withFetch(fakeServer(rrows).fetchFn, () => pushDirty(r, rm))
+  checks.push(['resume: a recipe changed on another device keeps that version, on the server and the phone', rrows.recipes[0].name === 'Porridge with honey' && r.recipes[0].name === 'Porridge with honey' && !r.recipes[0]._dirty])
+  checks.push(['resume: this phone\'s recipe is kept to download', r.consents?.resumeCopy?.recipes?.[RID]?.name === 'Porridge'])
   report('withdrawal and resume', checks)
 }
 

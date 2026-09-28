@@ -56,7 +56,7 @@ begin
         select 1 from (
           select k.granted, k.recorded_at from public.consents k
           where k.user_id = uid and k.type = 'health'
-          order by k.recorded_at desc, k.created_at desc limit 1
+          order by least(k.recorded_at, k.created_at) desc, k.created_at desc limit 1
         ) l where not l.granted and l.recorded_at < now() - interval '1 day')
     ) then continue; end if;
     delete from public.day_logs where user_id = uid;           get diagnostics c = row_count; n := n + c;

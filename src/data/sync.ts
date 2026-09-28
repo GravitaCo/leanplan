@@ -5,7 +5,7 @@
  * framework-agnostic so it can back a native client later.
  */
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/core/types'
-import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
+import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, ConsentRequiredError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
 import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap, type ResumeCopy } from './consent'
@@ -137,7 +137,7 @@ type Undo = () => void
 /** A refusal of the whole request (signed-out token, rate limit, server trouble), as opposed to
  *  one record the server won't take: retrying record by record would only repeat it N times, so
  *  the table's step fails once and its records wait for the next sync. */
-const wholeRequest = (e: HttpError) => e.status === 401 || e.status === 429 || e.status >= 500
+const wholeRequest = (e: HttpError) => e instanceof ConsentRequiredError || e.status === 401 || e.status === 429 || e.status >= 500
 
 /**
  * Upsert records in one request; if the server rejects it, retry them one by one so a single bad
@@ -240,7 +240,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
       await fn()
       return true
     } catch (e) {
-      if (!(e instanceof HttpError)) throw e
+      if (!(e instanceof HttpError) || e instanceof ConsentRequiredError) throw e
       failed.push(what + ': ' + e.message)
       return false
     }
@@ -393,6 +393,29 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
     if (s.days[d] && !copy.days?.[d]) { (copy.days ||= {})[d] = s.days[d]; kept = true }
   }
   if (st[0] && newer(st[0]) && !copy.settings) { copy.settings = { target: s.target, schedule: s.schedule, profile: s.profile }; kept = true }
+  // saved foods, recipes, workouts and plans: the same rule by id. A dirty record the server
+  // doesn't have uploads (the account's copy was cleared, or it's new here)
+  type Rec = { id: string; _dirty?: boolean }
+  const lists = [
+    ['customFoods', 'custom_foods', fromServerFood],
+    ['recipes', 'recipes', fromServerRecipe],
+    ['routines', 'routines', fromServerRoutine],
+    ['trainingPlans', 'training_plans', fromServerPlan],
+  ] as const
+  const theirs: { key: (typeof lists)[number][0]; row: any; mine: Rec; from: (r: any) => any }[] = []
+  for (const [key, table, from] of lists) {
+    const mine = ((s[key] || []) as Rec[]).filter((x) => x._dirty && x.id)
+    if (!mine.length) continue
+    const rows = (await missing(sbGet<any[]>('/' + table + '?user_id=eq.' + uid + '&select=*'))) || []
+    const byId = new Map(mine.map((x) => [x.id, x]))
+    for (const row of rows) {
+      const x = byId.get(row.id)
+      if (!x || !newer(row)) continue
+      theirs.push({ key, row, mine: x, from })
+      const c = ((copy as unknown as Record<string, unknown>)[key] ||= {}) as Record<string, unknown>
+      if (!c[x.id]) { c[x.id] = x; kept = true }
+    }
+  }
   // the copy first, then the replacements: nothing of this phone's is ever only in memory
   if (kept) log.resumeCopy = copy
   for (const r of rows) {
@@ -400,6 +423,12 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
     if (!dirty.includes(d) || !newer(r)) continue
     s.days[d] = fromServerDay(r)
     meta.days[d] = { u: r.updated_at, dirty: false }
+  }
+  for (const t of theirs) {
+    const list = (s[t.key] || []) as Rec[]
+    const i = list.findIndex((x) => x === t.mine)
+    const next = { ...t.from(t.row), _dirty: false }
+    if (i >= 0) list[i] = next
   }
   if (st[0] && newer(st[0])) {
     s.target = st[0].target

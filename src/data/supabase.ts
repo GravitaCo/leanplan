@@ -44,6 +44,12 @@ export class HttpError extends Error {
   }
 }
 
+/** The server refused a log write: no current yes to health data (require_health_consent,
+ *  docs/migrations/2026-09-28-health-consent-server.sql). The whole sync stops and hands over to
+ *  the consent-only path, which learns the answer. */
+export class ConsentRequiredError extends HttpError {}
+const CONSENT_REQUIRED = 'TL001'
+
 /** Thin REST wrappers around PostgREST, authorised with the current session token. */
 export function sbFetch(path: string, opts: RequestInit = {}, token?: string): Promise<Response> {
   opts.headers = {
@@ -75,7 +81,11 @@ export async function sbUpsert(
     },
     body: JSON.stringify(rows),
   })
-  if (!r.ok) throw new HttpError('UPSERT ' + table + ' -> ' + r.status, r.status)
+  if (!r.ok) {
+    const body = await r.json().catch(() => null)
+    if (body && typeof body === 'object' && (body as { code?: unknown }).code === CONSENT_REQUIRED) throw new ConsentRequiredError('UPSERT ' + table + ' -> consent required', r.status)
+    throw new HttpError('UPSERT ' + table + ' -> ' + r.status, r.status)
+  }
 }
 
 export async function sbDelete(table: string, filter: string): Promise<void> {

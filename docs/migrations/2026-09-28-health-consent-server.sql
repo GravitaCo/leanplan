@@ -8,7 +8,7 @@
 -- about a withdrawal, an old cached app version, or a race between phones can't put data back.
 --
 -- 1. health_consent_current(uid): the person's latest health consent record is a yes.
--- 2. A guard on every log table: an insert or update by a signed-in person is refused (P0001,
+-- 2. A guard on every log table: an insert or update by a signed-in person is refused (TL001,
 --    'tali: health consent required') unless their latest health answer is a yes. The service
 --    role (server jobs, account deletion) isn't a person's upload and passes.
 -- 3. clear_log_after_withdrawal(): in one transaction, only while the latest health answer is a
@@ -20,7 +20,9 @@
 -- the three functions (the app then can't clear after a withdrawal: don't ship it without them).
 -- ============================================================================
 
--- 1. Latest health answer (ties: the later server insert wins, as on the device)
+-- 1. Latest health answer. A record counts from the earlier of the phone's time and its arrival
+--    (created_at, set by the server), so a phone clock running fast (recorded_at may be up to a
+--    day ahead) can't put a yes after a later withdrawal. Ties: the later arrival wins.
 create or replace function public.health_consent_current(uid uuid)
 returns boolean
 language sql
@@ -31,7 +33,7 @@ as $$
   select coalesce((
     select c.granted from public.consents c
     where c.user_id = uid and c.type = 'health'
-    order by c.recorded_at desc, c.created_at desc
+    order by least(c.recorded_at, c.created_at) desc, c.created_at desc
     limit 1
   ), false)
 $$;
@@ -49,13 +51,19 @@ as $$
 declare
   uid uuid := auth.uid();
 begin
-  -- server-side jobs (service role, no user) aren't a person's upload
-  if uid is null then return new; end if;
+  -- server-side jobs (service role, no user) aren't a person's upload; an app role without a
+  -- user (anon) never writes the log
+  if uid is null then
+    if current_user in ('anon', 'authenticated') then
+      raise exception 'tali: health consent required' using errcode = 'TL001';
+    end if;
+    return new;
+  end if;
   -- shares the lock clear_log_after_withdrawal takes exclusively: a clear and an upload for the
   -- same person never interleave
   perform pg_advisory_xact_lock_shared(hashtextextended('tali-log:' || uid::text, 0));
   if not public.health_consent_current(uid) then
-    raise exception 'tali: health consent required' using errcode = 'P0001';
+    raise exception 'tali: health consent required' using errcode = 'TL001';
   end if;
   return new;
 end;

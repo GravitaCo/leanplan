@@ -9,7 +9,7 @@
  * same owner rules as the log: "start fresh" drops them, sign out and remove drops them.
  * No React, no DOM beyond an injected Storage for the one-off label-consent migration.
  */
-import type { DayLog, Profile } from '@/core/types'
+import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/core/types'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 
@@ -44,6 +44,9 @@ export interface ConsentRecord {
   granted: boolean
   /** when the person acted (ISO time, this device's clock) */
   at: string
+  /** when the server received it (its created_at), once synced: a record counts from the earlier
+   *  of the two, as on the server, so a fast phone clock can't put a yes after a later no */
+  arrived?: string
   /** not yet on the server */
   _dirty?: boolean
 }
@@ -73,6 +76,11 @@ export interface ResumeCopy {
   at: string
   days?: Record<string, DayLog>
   settings?: { target: unknown; schedule: unknown; profile: unknown }
+  /** saved foods, recipes, workouts and plans another device changed, by id */
+  customFoods?: Record<string, Food>
+  recipes?: Record<string, Recipe>
+  routines?: Record<string, Routine>
+  trainingPlans?: Record<string, TrainingPlan>
 }
 
 /** The server's health values for a day, as they were when this device first held it back. */
@@ -124,7 +132,7 @@ export function cleanConsents(x: unknown): ConsentLog {
   const pause = cleanPause(log.healthPause)
   const resume = cleanHeld(log.healthResume)
   return {
-    records: records.map((r) => ({ id: r.id, type: r.type, version: r.version, granted: r.granted, at: r.at, ...(r._dirty ? { _dirty: true } : {}) })),
+    records: records.map((r) => ({ id: r.id, type: r.type, version: r.version, granted: r.granted, at: r.at, ...(isTime(r.arrived) ? { arrived: r.arrived } : {}), ...(r._dirty ? { _dirty: true } : {}) })),
     ...(typeof log.healthCleared === 'string' ? { healthCleared: log.healthCleared } : {}),
     ...(pause ? { healthPause: pause } : {}),
     ...(resume.days || resume.profile ? { healthResume: resume } : {}),
@@ -158,11 +166,18 @@ function cleanPause(x: unknown): HealthPause | null {
 }
 
 /** The latest record of a type (latest `at` wins; ties go to the later one in the list). */
+/** When a record counts from: the earlier of the phone's time and the server's arrival time. */
+export function effectiveAt(r: ConsentRecord): number {
+  const at = Date.parse(r.at)
+  const arrived = r.arrived ? Date.parse(r.arrived) : NaN
+  return isNaN(arrived) ? at : Math.min(at, arrived)
+}
+
 export function latestConsent(s: PersistedState, type: ConsentType): ConsentRecord | null {
   let best: ConsentRecord | null = null
   for (const r of s.consents?.records || []) {
     if (r.type !== type) continue
-    if (!best || Date.parse(r.at) >= Date.parse(best.at)) best = r
+    if (!best || effectiveAt(r) >= effectiveAt(best)) best = r
   }
   return best
 }
@@ -352,7 +367,7 @@ export function pendingCloudClear(s: PersistedState): ConsentRecord | null {
  * its log to upload for it: the account's copy was (or is being) deleted, so all of it goes up.
  */
 export function needsReupload(s: PersistedState): ConsentRecord | null {
-  const recs = (s.consents?.records || []).filter((r) => r.type === 'health').sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+  const recs = (s.consents?.records || []).filter((r) => r.type === 'health').sort((a, b) => effectiveAt(a) - effectiveAt(b))
   const last = recs[recs.length - 1]
   if (!last?.granted || s.consents?.reuploadedFor === last.id) return null
   const decline = [...recs].reverse().find((r) => !r.granted)
@@ -372,7 +387,7 @@ export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentReco
   const log = consentLog(s)
   markAllDirty(s, meta)
   // rows another device uploaded since the withdrawal win over this device's (settleResume)
-  const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]
+  const decline = (log.records || []).filter((r) => r.type === 'health' && !r.granted).sort((a, b) => effectiveAt(b) - effectiveAt(a))[0]
   if (decline && !log.resumeFrom) log.resumeFrom = decline.at
   log.reuploadedFor = yes.id
 }
@@ -605,20 +620,22 @@ async function isRowRejection(r: Response): Promise<boolean> {
 
 /** Merge the account's records from the server (records are immutable, so a union by id). */
 export async function pullConsents(s: PersistedState): Promise<void> {
-  let rows: { id: string; type: string; version: string; granted: boolean; recorded_at: string }[]
+  let rows: { id: string; type: string; version: string; granted: boolean; recorded_at: string; created_at?: string }[]
   try {
-    rows = await sbGet('/consents?user_id=eq.' + getUid() + '&select=id,type,version,granted,recorded_at')
+    rows = await sbGet('/consents?user_id=eq.' + getUid() + '&select=id,type,version,granted,recorded_at,created_at')
   } catch (e) {
     if (e instanceof HttpError && e.status === 404) return // no table yet
     throw e
   }
   const log = consentLog(s)
   const have = new Map(log.records.map((r) => [r.id, r]))
-  const incoming = cleanConsents({ records: rows.map((x) => ({ id: x.id, type: x.type, version: x.version, granted: x.granted, at: x.recorded_at })) }).records
+  const incoming = cleanConsents({ records: rows.map((x) => ({ id: x.id, type: x.type, version: x.version, granted: x.granted, at: x.recorded_at, arrived: x.created_at })) }).records
   for (const r of incoming) {
     const mine = have.get(r.id)
-    if (mine) delete mine._dirty // it's on the server
-    else log.records.push(r)
+    if (mine) {
+      delete mine._dirty // it's on the server
+      if (r.arrived) mine.arrived = r.arrived
+    } else log.records.push(r)
   }
 }
 

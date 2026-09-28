@@ -46,6 +46,22 @@ export function ProfileScreen() {
   const data = useStore((s) => s.data)
   const resumeCopy = data.consents?.resumeCopy
   const resumeDays = Object.keys(resumeCopy?.days || {}).length
+  const resumeSaved = (['customFoods', 'recipes', 'routines', 'trainingPlans'] as const).reduce((n, k) => n + Object.keys(resumeCopy?.[k] || {}).length, 0)
+  const resumeWhat = [resumeDays ? (resumeDays === 1 ? '1 day' : resumeDays + ' days') : '', resumeSaved ? (resumeSaved === 1 ? '1 saved food, recipe or workout' : resumeSaved + ' saved foods, recipes or workouts') : '', resumeCopy?.settings ? 'your settings' : ''].filter(Boolean)
+  const resumeList = resumeWhat.length > 1 ? resumeWhat.slice(0, -1).join(', ') + ' and ' + resumeWhat[resumeWhat.length - 1] : resumeWhat[0] || 'some of your log'
+  // this phone's earlier version: its own days, settings and saved records where another device's won
+  const withResumeCopy = (c: NonNullable<typeof resumeCopy>): PersistedState => {
+    const swap = <T extends { id?: string }>(list: T[] | undefined, mine: Record<string, T> | undefined): T[] => (list || []).map((x) => (x.id && mine?.[x.id]) || x)
+    return {
+      ...data,
+      days: { ...data.days, ...(c.days || {}) },
+      ...(c.settings ? (c.settings as Pick<PersistedState, 'target' | 'schedule' | 'profile'>) : {}),
+      customFoods: swap(data.customFoods, c.customFoods),
+      recipes: swap(data.recipes, c.recipes),
+      routines: swap(data.routines, c.routines),
+      trainingPlans: swap(data.trainingPlans, c.trainingPlans),
+    }
+  }
   const email = useStore((s) => s.email)
   const authed = useStore((s) => s.authed)
   const syncPaused = useStore((s) => s.syncPaused)
@@ -322,9 +338,9 @@ export function ProfileScreen() {
           {resumeCopy && (
             <div style={{ marginTop: 12 }}>
               <div className="sub" style={{ marginBottom: 8 }}>
-                When sync started again, {resumeDays === 1 ? '1 day' : resumeDays + ' days'}{resumeCopy.settings ? (resumeDays ? ' and your settings' : 'your settings') : ''} had changed on another device, so Tali kept those. This phone’s earlier version is saved here: download it as a backup you can import.
+                When sync started again, {resumeList} had changed on another device, so Tali kept those. This phone’s earlier version is saved here: download it as a backup you can import.
               </div>
-              <button className="btn gray" onClick={() => exportBackup({ ...data, days: { ...data.days, ...(resumeCopy.days || {}) }, ...(resumeCopy.settings ? (resumeCopy.settings as Pick<PersistedState, 'target' | 'schedule' | 'profile'>) : {}) })}>Download this phone’s earlier version</button>
+              <button className="btn gray" onClick={() => exportBackup(withResumeCopy(resumeCopy))}>Download this phone’s earlier version</button>
             </div>
           )}
           <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={async (e) => {

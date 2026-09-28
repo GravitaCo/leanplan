@@ -40,7 +40,7 @@ import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
 import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
-import { supabase, setSession, uuid, nowIso, getUid, getToken } from '@/data/supabase'
+import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, unsubscribePush } from '@/data/push'
 import { canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
@@ -1088,8 +1088,24 @@ export const useStore = create<StoreState>()(
           // a yes after a withdrawal: the account's copy was deleted, so the whole log goes up
           const re = needsReupload(d)
           if (re) markReupload(d, m, re)
-          const failed = await pushDirty(d, m)
+          let failed: string[]
+          try {
+            failed = await pushDirty(d, m)
+          } catch (e) {
+            // the server says there's no current yes (a no from another phone arrived meanwhile):
+            // drop this copy without pulling (the account's copy may be being cleared, and a pull
+            // would take this phone's own foods, recipes and workouts away with it); live records
+            // stay dirty, and the consent-only path takes over
+            if (!(e instanceof ConsentRequiredError)) throw e
+            set((st) => { st.sync = 'idle' })
+            rerun = true
+            return
+          }
           await pullAll(d, m)
+          // the same check after the pull: a clear only follows a no the server has, so if the
+          // answer is still a yes here, the pull read the account before any clear
+          await pullConsents(d)
+          if (!consentLetsSync(d)) { set((st) => { st.sync = 'idle' }); rerun = true; return }
           // a health withdrawal made on another device clears this one's health data too (once)
           if (applyHealthWithdrawal(d, m)) rerun = true
           // an answer given on another device ends a "Not now" pause here (a yes uploads what was held)
