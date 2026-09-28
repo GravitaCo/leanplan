@@ -22,11 +22,11 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
 | Withdrawal (Art. 7(3)) | Profile → Privacy → Withdraw consent for health data (offers a backup first; clears on every device what `HEALTH_FIELDS` in `src/data/consent.ts` lists: weigh-ins, check-ins, weight, body fat, height, `sexAnswer`, daily movement and `activityMult`, the onboarding outcomes, pregnancy flag, motivations, `deficitChosen`, all of `profile.training`, and health-derived reasons (`healthWhy`) in `routines` and `training_plans`). Kept: name, age, legacy `sex`, units, goal, `gentle`, `onboardedAt`. "Give consent again" there afterwards |
-| Onboarding wizard (built, off: `ONBOARDING_ENABLED` false in `screens/onboarding/Consent.tsx`; reviewed 2026-09-28) | Health steps (`HEALTH_STEPS` in `core/domain/wizard.ts`) only show, and answers only save, with a local health yes (`canSaveHealthAnswers`); `finishOnboarding` strips health fields without it. Stores outcomes only for readiness, medical and lately (`profile.outcomes`: readiness clear/flagged, medical clear/flagged, baseline ok/low); the raw items live in component state and are never saved or synced (`scripts/e2e-onboarding.cjs` asserts no raw screener answer in any upload). Kept as answered: wellbeing (flagged/clear/undisclosed, plus `gentle` on when flagged) and the pregnancy flag (`profile.pregnancy`, pregnant and breastfeeding not told apart, with `askedAt`). Also `motivations`, `height`, `sexAnswer`, `movement`, `activityMult`, `deficitChosen`, `training.*`, per-field `answeredAt`. Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC` on; column live, checked 2026-09-28). The draft (`tali.onboarding`, device only) holds outcomes, never raw items, and is only written with a local yes when it holds health answers. Texts updated 2026-09-28 to cover all of this; see items 32 to 38 before switching on |
-| Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnder16` wipes the device and calls `delete-account` with `reason: 'under-age'`; offline, `tali.pendingDelete` holds the uid, blocks that account's sync and retries on the next connection. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). Deployed: `delete-account` v2 (Supabase MCP, 2026-09-28) contains the under-age path, same logic as the repo; the repo comments still say "PENDING security-data review, not deployed" (item 36) |
+| Onboarding wizard (built, off: `ONBOARDING_ENABLED` false in `screens/onboarding/Consent.tsx`; reviewed 2026-09-28) | Health steps (`HEALTH_STEPS` in `core/domain/wizard.ts`) only show, and answers only save, with a local health yes (`canSaveHealthAnswers`); `finishOnboarding` strips health fields without it. Stores outcomes only for readiness, medical and lately (`profile.outcomes`: readiness clear/flagged, medical clear/flagged, baseline ok/low); the raw items live in component state and are never saved or synced (`scripts/e2e-onboarding.cjs` asserts no raw screener answer in any upload). Kept as answered: wellbeing (flagged/clear/undisclosed, plus `gentle` on when flagged) and the pregnancy flag (`profile.pregnancy`, pregnant and breastfeeding not told apart, with `askedAt`). Also `motivations`, `height`, `sexAnswer`, `movement`, `activityMult`, `deficitChosen`, `training.*`, per-field `answeredAt`. Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC` on; column live, checked 2026-09-28). Profile › Health data › Health check answers (`screens/profile/HealthAnswers.tsx`, rows from `healthAnswerRows.ts`, behind the flag) shows what's stored and lets people change or clear pregnancy and conditions, clear the gentler start and change food and weight; the lately baseline has no row (a GAP on the boards; the privacy policy points to export and email for it). A change re-runs targets at once and the plan when the engine loads (`_meta.rerunAnswers`, device-only marker inside `leanplan.v1`). The 12-week re-ask opens once on Today when due (`pregnancyReaskDue`; closing or "Ask me later" sets `snoozedAt`, back in 14 days). The draft (`tali.onboarding`, device only) holds outcomes, never raw items, and is only written with a local yes when it holds health answers. Texts updated 2026-09-28 to cover all of this; items 32 to 38 re-checked 2026-09-28 |
+| Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnderAge` records `tali.pendingDelete`, wipes the device only when it's that account's or nobody's (`underAgeWipesDevice`; uid from the live session, else the owner, else the saved session: `underAgeUid`; no uid, nothing recorded or wiped), and calls `delete-account` with `reason: 'under-age'`. That account's sync stays blocked; failures back off (1, 2, 4 min … at most an hour) and stop after 6 tries, and a 403 re-auth stops at once (`underAgeNext`): the device is then signed out and wiped, keeping `tali.pendingDelete`, and the sign-in screen says "Please sign in again to finish removing your account."; the next sign-in of that account finishes it. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). `delete-account` v2 deployed 2026-09-28 with this path; security-data reviewed it SAFE (repo comments record both) |
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
 | Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
-| Rectification (Art. 16) | Every field is editable in the app |
+| Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). Not editable in the app: the lately baseline, motivations, daily movement, and going back to "prefer not to say" for sex: by email (the privacy policy says so) |
 | Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
 | Storage and PECR | Only strictly necessary local storage (see `cookies.ts`). No cookies, analytics, ads or trackers in the app |
 | Release gate | `npm run check:legal` (in the deploy workflow) fails on any placeholder the texts print; a missing ICO number only warns |
@@ -36,14 +36,14 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | Data | Purpose | Lawful basis | Where | Kept |
 |---|---|---|---|---|
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
-| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans, `answeredAt` stamps | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) |
-| Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged/clear/undisclosed), pregnancy flag and date, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode, signposting (`routeSafety`) | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until health consent is withdrawn (cleared on phones and account) or the account is deleted | Until health consent is withdrawn (account copy cleared) or the account is deleted |
+| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans, `answeredAt` stamps | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
+| Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged/clear/undisclosed), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode, signposting (`routeSafety`); the 12-week re-ask | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object), or the account is deleted |
 | Day logs: foods, weight, workout, supplements taken, mood/hunger check-in and note | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Custom foods, recipes, workouts you create (`routines`, with slot reasons in `blocks`), weekly plans (`training_plans`, with plan reasons in `why`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes`, `routines`, `training_plans` | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off, health consent is withdrawn, or account deletion; dead endpoints (404/410) are removed by the function |
 | Consent records (type, version, yes or no, time) | Show what was agreed and when (Art. 7(1), 5(2)) | 6(1)(c); 9(2)(f) if treated as special category | `consents` (append-only) and the device | Until account deletion |
 | Pre-consent log already in the account, with no answer yet ("Not now", or not opened since) | None active: kept unused, not read or updated | No Art. 9(2) condition identified. Held unread and unchanged for a fixed 30-day transition so the person can agree or have it deleted (Art. 5(1)(e)); a time-limited risk Benn accepted on 2026-09-28; solicitor's view pending (item 26) | Account tables | Until 30 days after PURGE_FROM (28 Oct 2026) or account creation, whichever is later; then deleted by `purge_unconsented_logs()` (daily pg_cron job `tali-purge-unconsented`, 03:17 UTC). Backups expire on Supabase's cycle (window unknown, item 30) |
-| Onboarding draft (`tali.onboarding`), setup card hidden (`tali.setupCardHidden`), pending under-age deletion (`tali.pendingDelete`: uid and time) | Resume the wizard; remember a choice; finish an under-age deletion offline | 6(1)(b) (+ 9(2)(a) for the draft's health answers); PECR strictly necessary | Device only (`cookies.ts` lists them) | Draft: until setup finishes, remove-this-device, or account deletion (not yet on withdrawal: item 35). Pending: until the deletion succeeds |
+| Onboarding draft (`tali.onboarding`), setup card hidden (`tali.setupCardHidden`), pending under-age deletion (`tali.pendingDelete`: uid, time, tries, next try, stage) | Resume the wizard; remember a choice; finish an under-age deletion offline or after a fresh sign-in | 6(1)(b) (+ 9(2)(a) for the draft's health answers); PECR strictly necessary | Device only (`cookies.ts` lists them) | Draft: until setup finishes, a health withdrawal (here or pulled from another device), remove-this-device, or account deletion. Pending: until the deletion succeeds (or the device's data is cleared) |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
 | Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
@@ -196,37 +196,48 @@ Added 2026-09-28 (server-side enforcement):
 
 Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on):
 
-32. BLOCKING: in-app copy promises Profile controls that don't exist. `NOTES.pregnancy` ("You can
-    clear this in Profile any time"), `NOTES.medical` ("You can update this in Profile any time")
-    and the intro note ("change them any time in Profile") in `screens/onboarding/copy.ts`; no
-    Profile screen reads or edits `outcomes` or `pregnancy`. Build the controls or change the copy
-    (Art. 5(1)(a), 16). The privacy policy now says "edit most of it in the app".
-33. BLOCKING: the 12-week pregnancy re-ask isn't built (`PREGNANCY_REASK` and
-    `pregnancyReaskDue` are unused) though `NOTES.pregnancy` promises it. A stale flag keeps
-    targets at maintenance with no number (Art. 5(1)(d)). Build it or drop the promise. The
-    privacy policy deliberately doesn't claim it.
-34. BLOCKING: two wizard notes understate what is kept. `COPY.ready.note` says "never your
-    answers", but the pregnancy answer is kept; `COPY.wellbeing.why` and `NOTES.wellbeing.note`
-    say only whether Gentle mode is on is kept, but `outcomes.wellbeing` keeps the answer
-    (flagged/clear/undisclosed). The privacy policy now states both; the screens must agree
-    (Art. 5(1)(a), 13). Wording is Benn's call (Design canvas).
-35. Should fix: withdrawing health consent doesn't remove the `tali.onboarding` draft
-    (`withdraw()` / `withdrawConsent` never call `clearDraft`), so an unfinished draft's health
-    answers outlive the withdrawal on that phone. Clear it on a health no.
-36. Should fix: the repo's `supabase/functions/_shared/account.ts` and `delete-account/index.ts`
-    say the under-age path is "PENDING security-data review, not deployed"; v2 is deployed with
-    it and its comment says "reviewed by security-data". Record the review (date, verdict) and
-    fix the repo comments.
-37. Should fix: an under-age deletion for an account over 24 hours old is refused (re-auth), and
-    `tali.pendingDelete` then retries for ever with sync blocked. Also, `deleteUnder16` wipes the
-    device only when `_meta.owner` equals the uid. Decide what happens then (a message with the
-    contact email, at least), and have `security-data` check it.
-38. Note: `CONSENT_VERSIONS.health` not bumped (2026-09-28). The consent is to "storing and using
-    my health information to run the app for me, as the privacy policy explains"; the wizard's
-    purpose is the same and each question gives its reason at the point it's asked and can be
-    skipped. The new categories (pregnancy, a medical flag, the wellbeing answer) are more
-    sensitive, so a solicitor may prefer a bump: revisit with item 6. Publish the updated texts
-    with the release that turns the wizard on, not before (they describe it as live).
+32. Mostly done (re-checked 2026-09-28): Profile › Health data › Health check answers
+    (`screens/profile/HealthAnswers.tsx`, `healthAnswerRows.ts`) shows what's stored and changes
+    or clears pregnancy and conditions, clears the gentler start and changes food and weight;
+    a clear or change re-runs routing and targets (and the plan). `NOTES.pregnancy` and
+    `NOTES.medical` are now true. Privacy policy updated to name the screen and the exception.
+    Still open, should fix before the flag goes on (copy only, Benn's wording): `COPY.intro.note`
+    ("you can change them any time in Profile") and `COPY.lately.why` ("You can change this
+    later") overstate: the lately baseline, "what would make Tali worth it" (`motivations`) and
+    daily movement can't be changed in the app, and the answers screen's lead ("What Tali kept
+    from your health questions") leaves out the lately result. Add a lately row or soften the
+    two lines (Art. 5(1)(a), 12(1)).
+33. Done (re-checked 2026-09-28): the 12-week re-ask opens once on Today when due
+    (`TodayScreen.tsx`, `pregnancyReaskDue`, only for a yes); "Still pregnant" or "Breastfeeding
+    now" re-dates `askedAt`, "No longer" clears the flag and re-runs the plan, and "Ask me later"
+    or closing sets `profile.pregnancy.snoozedAt` (back after 14 days). `snoozedAt` syncs with
+    the profile and goes with the pregnancy object on withdrawal (`PROFILE_HEALTH`). The privacy
+    policy now describes the re-ask and the date. Tests in `scripts/test-wizard.ts`.
+34. Done (re-checked 2026-09-28): `COPY.ready.note` ("We keep a short note of what applies
+    (like pregnancy), never a medical record.") matches `outcomes.readiness` plus
+    `profile.pregnancy`; `COPY.wellbeing.why` and `NOTES.wellbeing.note` ("We keep your answer
+    (yes, no or rather not say) ...") match `outcomes.wellbeing` (Yes and Sometimes stored as one).
+35. Done (re-checked 2026-09-28): `withdraw()` and `applyHealthWithdrawal()` (a withdrawal
+    pulled from another device) both call `clearDraft()`. Privacy and cookie texts say so.
+36. Done (re-checked 2026-09-28): the comments in `supabase/functions/_shared/account.ts` and
+    `delete-account/index.ts` record the security-data SAFE review and the v2 deploy (28 Sept).
+37. Done, with residual risks (re-checked 2026-09-28): `underAgeNext` stops at once on a 403
+    re-auth and after 6 backed-off tries; the device is then signed out and wiped (only its own
+    or nobody's data: `underAgeWipesDevice`), `tali.pendingDelete` is kept, the sign-in screen
+    shows "Please sign in again to finish removing your account." and that account's next
+    sign-in finishes it (`runSync` checks the pending record before the consent gate). No uid:
+    nothing is recorded or wiped. Texts updated (privacy "Age", cookie `tali.pendingDelete`).
+    Residual, should fix: (a) if the person never signs in again, the account (email, consent
+    records, anything synced) stays on the server with nothing there knowing it's under-age:
+    consider having `delete-account` record a refused under-age request so a job or Benn can
+    delete it (Art. 5(1)(c), (e)); (b) with no uid, the draft is kept too, though `NOTES.under16`
+    says "We haven't kept any of your answers" (near-unreachable: the wizard runs after sign-in);
+    (c) "remove this device's log" or clearing site data drops the pending record. The client
+    stop path (sign-out and wipe) has no recorded `security-data` review.
+38. Note, re-checked 2026-09-28: still no `CONSENT_VERSIONS.health` bump. The Profile controls,
+    the re-ask and `snoozedAt` serve the same purpose, add no new category and no recipient, and
+    the consent wording is unchanged. The solicitor question (item 6) stands. Publish the texts
+    to Webflow with the release that turns the wizard on, not before.
 
 39. Done (2026-09-28): Supabase leaked password protection is on (HaveIBeenPwned check on new
     passwords). The organisation moved to the Pro plan for it; Supabase stays the same processor,
