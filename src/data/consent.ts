@@ -530,7 +530,11 @@ function setResumeFrom(s: PersistedState, fallback: string | undefined): void {
   const server = s._meta?.lastPullServer, pulled = s._meta?.lastPull
   if (server) { log.resumeFrom = server; log.resumeExact = true }
   // a pull from before the server's time was kept (an older version): this phone's clock, with
-  // room for it running slow, so its own uploads never look like another device's
+  // room for it running slow, so its own uploads never look like another device's. Accepted
+  // limits (ship-critic, 28 Sept), fading once everyone has pulled on this version: a clock over
+  // 5 minutes slow can still count its own uploads as another device's (this phone's version is
+  // kept to download), and another device's edit in the 5 minutes after this pull loses to this
+  // phone's
   else if (pulled && !isNaN(Date.parse(pulled))) { log.resumeFrom = new Date(Date.parse(pulled) + OWN_CLOCK_MS).toISOString(); log.resumeExact = true }
   else if (fallback) { log.resumeFrom = fallback; delete log.resumeExact }
 }

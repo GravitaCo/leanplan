@@ -181,6 +181,11 @@ Added 2026-09-28 (server-side enforcement):
         inactivity period, with notice.
     (d) The DPIA should record the purge and the accepted 30-day gap.
 
+31. Benn approved (2026-09-28, in the build session) two changes shipped with the consent release:
+    the AI features row in Profile is hidden until an AI feature ships (`AI_FEATURES_LIVE`), and
+    "Start fresh" on the sign-in owner choice needs a second tap, with "Export a copy" beside it.
+    Also approved: the wording for Not now, the 28 October deletion date and the withdrawal prompt.
+
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR
 opt-in), paid plans (consumer and subscription law), native app store release (Apple and
