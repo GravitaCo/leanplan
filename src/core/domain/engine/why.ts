@@ -59,7 +59,7 @@ const DEFAULT_TEXT: Record<string, string> = {
   enjoy: "You haven't told us what you enjoy, so the mix follows your goal.",
   bodyAreas: "You haven't told us about any areas to go easy on, so we've kept things low-impact.",
   readiness: "You haven't told us about your health, so we've started gently.",
-  lately: "You skipped how things are lately, so we've started gently. You can change this.",
+  lately: "You skipped how things are lately, so we've started gently. You can update this by redoing setup.",
   ageBand: "You haven't told us your age, so there are no AI features for now and sets stay steady.",
 }
 
@@ -144,9 +144,9 @@ export function whyText(code: WhyCode, data: WhyData & { field?: string; about?:
       if (!exId) return `No ${PATTERN_WORDS[alt as MovementPattern] ?? 'extra'} move here, to go easy on ${areas(value)}.`
       return alt ? `${name} instead of ${lower(exName(alt, exId))}: a gentler choice for ${areas(value)}.` : `${name}: a gentler choice for ${areas(value)}.`
     case 'baseline':
-      if (value === 'skipped') return "You skipped how things are lately, so we've started gently. You can change this."
+      if (value === 'skipped') return "You skipped how things are lately, so we've started gently. You can update this by redoing setup."
       if (about === 'ease-in') return "A gentle start for the first two weeks, as things have been a lot lately. You can switch it off."
-      if (about === 'dose') return "Things have been a lot lately, so we've started gently: fewer sets to begin with. You can change this."
+      if (about === 'dose') return "Things have been a lot lately, so we've started gently: fewer sets to begin with. You can update this by redoing setup."
       if (about === 'days') return "Up to 3 days to start, as things have been a lot lately. You can add more later."
       if (about === 'exercise') return `${name}: easier on your energy while you settle in.`
       if (value === 'pre-selected') return 'A gentle start is switched on for you. You can switch it off any time.'

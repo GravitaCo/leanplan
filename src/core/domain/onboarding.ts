@@ -91,6 +91,9 @@ export function wellbeingOutcome(a: WellbeingAnswer | undefined): OnboardingOutc
   return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : 'flagged'
 }
 
+/** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
+export const medicalOutcome = (ticked: number, none: boolean): OnboardingOutcomes['medical'] => (ticked > 0 ? 'flagged' : none ? 'clear' : undefined)
+
 /** The medical-conditions question is only asked when the goal means eating less (§3). */
 export const asksMedical = (goal: Goal | undefined): boolean => goal === 'lose-fat'
 
@@ -105,9 +108,132 @@ export function sexOf(p: Pick<Profile, 'sex' | 'sexAnswer'>): SexAnswer {
  */
 export const legacySex = (a: SexAnswer): Sex => (a === 'male' ? 'M' : 'F')
 
-/** Whether it's time to ask the pregnancy question again (12 weeks after it was last answered). */
+/** "Ask me later" on the re-ask brings it back this many days later (2 weeks, design brief) */
+export const PREGNANCY_SNOOZE_DAYS = 14
+
+/**
+ * Whether it's time to ask "Does this still apply?" (12 weeks after the pregnancy answer, and 2
+ * weeks after an "Ask me later"). Only a yes is re-asked: there's nothing to re-check otherwise.
+ */
 export function pregnancyReaskDue(flag: PregnancyFlag | undefined, today: string): boolean {
-  return !!flag && flag.askedAt <= shiftDay(today, -PREGNANCY_REASK_DAYS)
+  if (!flag?.flagged || flag.askedAt > shiftDay(today, -PREGNANCY_REASK_DAYS)) return false
+  return !flag.snoozedAt || flag.snoozedAt <= shiftDay(today, -PREGNANCY_SNOOZE_DAYS)
+}
+
+/* ─── Health check answers (Profile control and the 12-week re-ask; UI not built yet) ─── */
+
+/** The onboarding health answers a person can see and clear: the stored outcomes and the pregnancy flag. */
+export type HealthAnswerKind = 'readiness' | 'pregnancy' | 'baseline' | 'wellbeing' | 'medical'
+/** Wizard order. */
+export const HEALTH_ANSWER_KINDS: readonly HealthAnswerKind[] = ['readiness', 'pregnancy', 'baseline', 'wellbeing', 'medical']
+
+export interface HealthAnswerRow {
+  kind: HealthAnswerKind
+  /** exactly what is stored: the outcome, or for pregnancy 'flagged' / 'clear' */
+  value: string
+  /** the answer changes the plan (a gentler start, maintenance, gentle mode, a lighter start) */
+  flagged: boolean
+  /** when it was last answered or confirmed (ISO), when known */
+  answeredAt?: string
+}
+
+export interface HealthAnswersView {
+  /** only the answers that are stored, in wizard order; empty when there are none */
+  rows: HealthAnswerRow[]
+  /** "Does this still apply?" is due (needs `today`) */
+  pregnancyReask: boolean
+}
+
+/** The merge key (profile.answeredAt / MERGED_FIELDS) for each answer. */
+export const healthAnswerField = (k: HealthAnswerKind): 'pregnancy' | `outcomes.${Exclude<HealthAnswerKind, 'pregnancy'>}` =>
+  k === 'pregnancy' ? 'pregnancy' : `outcomes.${k}`
+
+/** What Tali keeps from the health check, for the Profile "Health check answers" control. Pure. */
+export function healthAnswersView(p: Pick<Profile, 'outcomes' | 'pregnancy' | 'answeredAt'>, today?: string): HealthAnswersView {
+  const rows: HealthAnswerRow[] = []
+  for (const kind of HEALTH_ANSWER_KINDS) {
+    let value: string | undefined, flagged = false
+    if (kind === 'pregnancy') {
+      if (p.pregnancy) { value = p.pregnancy.flagged ? 'flagged' : 'clear'; flagged = p.pregnancy.flagged }
+    } else {
+      value = p.outcomes?.[kind]
+      flagged = value === 'flagged' || value === 'low'
+    }
+    if (value === undefined) continue
+    const answeredAt = p.answeredAt?.[healthAnswerField(kind)] ?? (kind === 'pregnancy' ? p.pregnancy?.askedAt : undefined)
+    rows.push({ kind, value, flagged, ...(answeredAt ? { answeredAt } : {}) })
+  }
+  return { rows, pregnancyReask: !!today && pregnancyReaskDue(p.pregnancy, today) }
+}
+
+/**
+ * Remove one stored answer (as if skipped) and stamp the clear, so an older copy on another
+ * device can't bring it back through the per-field merge. Gentle mode stays as the person has
+ * it (their own setting, also kept on a withdrawal). Returns whether anything was removed.
+ */
+export function clearHealthAnswerIn(p: Profile, kind: HealthAnswerKind, at: string): boolean {
+  if (kind === 'pregnancy') {
+    if (!p.pregnancy) return false
+    delete p.pregnancy
+  } else {
+    if (p.outcomes?.[kind] === undefined) return false
+    const o = { ...p.outcomes }
+    delete o[kind]
+    if (Object.keys(o).length) p.outcomes = o; else delete p.outcomes
+  }
+  p.answeredAt = { ...p.answeredAt, [healthAnswerField(kind)]: at }
+  return true
+}
+
+/** The re-ask's answer: it still applies (re-dated, asked again in 12 weeks), or it doesn't (the flag goes). */
+export type PregnancyStatus = 'still-applies' | 'no-longer'
+
+/** Apply the answer to "Does this still apply?". `today` is a local date, `at` the ISO time. */
+export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: string, at: string): void {
+  if (status === 'no-longer') { clearHealthAnswerIn(p, 'pregnancy', at); return }
+  p.pregnancy = { flagged: true, askedAt: today }
+  p.answeredAt = { ...p.answeredAt, pregnancy: at }
+}
+
+/** Answers Profile's "Change" can set (board ob7-1): the conditions outcome and the wellbeing answer. */
+export type ChangeableAnswer =
+  | { kind: 'medical'; value: 'flagged' | 'clear' }
+  | { kind: 'wellbeing'; value: 'flagged' | 'clear' | 'undisclosed' }
+
+/**
+ * Set one answer from Profile, as the wizard would: outcomes only, stamped for the per-field
+ * merge. Wellbeing Yes or Sometimes turns gentle mode on (as in the wizard, §3); moving off it
+ * turns gentle mode off again, since that answer is what turned it on. Returns whether it changed.
+ */
+export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): boolean {
+  const before = p.outcomes?.[a.kind]
+  if (before === a.value) return false
+  p.outcomes = { ...p.outcomes, [a.kind]: a.value }
+  const stamps: Record<string, string> = { [healthAnswerField(a.kind)]: at }
+  if (a.kind === 'wellbeing') {
+    if (a.value === 'flagged' && !p.gentle) { p.gentle = true; stamps.gentle = at }
+    else if (before === 'flagged' && a.value !== 'flagged' && p.gentle) { p.gentle = false; stamps.gentle = at }
+  }
+  p.answeredAt = { ...p.answeredAt, ...stamps }
+  return true
+}
+
+/**
+ * After clearing `kind`, calorie numbers would still be hidden by something else: gentle mode or
+ * a wellbeing Yes/Sometimes, 16–17, or the other answer that hides them (pregnancy). The clear
+ * confirm then says so instead of promising numbers (s-ob7, the undrawn variant).
+ */
+export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy' | 'age'>, kind: HealthAnswerKind): boolean {
+  const teen = p.age != null && p.age >= MIN_AGE && p.age < ADULT_AGE
+  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || teen || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
+}
+
+/** "Ask me later" on the re-ask: the flag and its date stay; it comes back in 2 weeks. */
+export function snoozePregnancyIn(p: Profile, today: string, at: string): boolean {
+  if (!p.pregnancy?.flagged) return false
+  p.pregnancy = { ...p.pregnancy, snoozedAt: today }
+  p.answeredAt = { ...p.answeredAt, pregnancy: at }
+  return true
 }
 
 /** Routing input from a saved profile and the current weight. */

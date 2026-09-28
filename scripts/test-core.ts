@@ -722,7 +722,8 @@ function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
       if (cur && cur.user_id !== uid) return res(403)
       if ((t === 'custom_foods' || t === 'recipes') && next.some((r) => r.user_id === uid && r.id !== row.id && r.name.toLowerCase() === row.name.toLowerCase())) return res(409)
       const i = next.findIndex((r) => same(t, r, row))
-      if (i >= 0) next[i] = { ...row, updated_at: 'y' }; else next.push({ ...row, updated_at: 'y' })
+      // merge-duplicates updates only the columns sent
+      if (i >= 0) next[i] = { ...next[i], ...row, updated_at: 'y' }; else next.push({ ...row, updated_at: 'y' })
     }
     rows[t] = next
     return res(201)

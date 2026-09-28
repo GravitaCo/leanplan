@@ -28,6 +28,9 @@ import { AddFoodSheet } from './food/AddFoodSheet'
 import { MarginSheet } from './food/MarginSheet'
 import { CheckinSheet } from './today/CheckinSheet'
 import { PlanReviewSheet } from './plan/PlanSheets'
+import { LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
+import { ONBOARDING_ENABLED } from './onboarding/Consent'
+import { pregnancyReaskDue } from '@/core/domain/onboarding'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
@@ -55,6 +58,10 @@ export function TodayScreen() {
   const openProfile = useStore((s) => s.openProfile)
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [dismissedMissed, setDismissedMissed] = useState(false)
+  // ob7-3: the 12-week "Does this still apply?", once when it's due, never blocking (closing = Ask me later)
+  const reaskDue = useStore((s) => ONBOARDING_ENABLED && pregnancyReaskDue(s.data.profile.pregnancy, todayStr()))
+  const [reask, setReask] = useState(false)
+  useEffect(() => { if (reaskDue && !sheet) setReask(true) }, [reaskDue]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const p = data.profile
   const gentle = quietNumbers(data)
@@ -333,6 +340,7 @@ export function TodayScreen() {
       </div>
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
+      {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'plans' && <PlanReviewSheet onClose={() => setSheet(null)} />}

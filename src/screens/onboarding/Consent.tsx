@@ -10,7 +10,8 @@
  */
 import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import { hasExistingData, unconsentedCopyLine } from '@/data/consent'
+import { unconsentedCopyLine } from '@/data/consent'
+import { wizardDueFor } from '@/data/firstRun'
 import { LegalLink } from '../legal/LegalDoc'
 import { loadDraft, setupCardHidden, hideSetupCard } from '@/data/onboardingDraft'
 import type { PersistedState } from '@/data/persistence'
@@ -37,26 +38,17 @@ export function existingDue(_s: PersistedState, _online: boolean): boolean {
   return false
 }
 
-/**
- * Someone who used Tali before onboarding (plan §12): anything logged or saved, a plan, or a goal
- * or age set in Profile. They keep their current week and targets, and get the Build my plan card.
- */
-export function usedBefore(s: PersistedState): boolean {
-  return hasExistingData(s) || (s.trainingPlans || []).length > 0 || !!s.profile?.goal || s.profile?.age != null
-}
+export { usedBefore } from '@/data/firstRun'
 
 /**
- * The first-run wizard is due (behind ONBOARDING_ENABLED): not finished here or on another device
- * (`profile.onboardedAt`), and either under way on this device or someone new. Online with a live
- * session, it waits for the first full pull (`_meta.lastPull`) so a second device of someone who
- * already onboarded doesn't ask again (plan §12); offline it runs, and the answers merge on sync.
+ * The first-run wizard is due (behind ONBOARDING_ENABLED): data/firstRun.ts wizardDueFor. Online
+ * and signed in it waits for the first full pull (`_meta.lastPull`), so a second device, or
+ * someone who used Tali before, never sees the wizard flash up; once it's on screen and the person
+ * has started, it stays.
  */
-export function wizardDue(s: PersistedState, x: { online: boolean; authed: boolean }): boolean | 'wait' {
-  if (!ONBOARDING_ENABLED || s.profile?.onboardedAt) return false
-  if (loadDraft()?.mode === 'first') return true
-  if (usedBefore(s)) return false
-  if (x.online && x.authed && !s._meta?.lastPull) return 'wait'
-  return true
+export function wizardDue(s: PersistedState, x: { online: boolean; signedIn: boolean; showing: boolean }): boolean | 'wait' {
+  if (!ONBOARDING_ENABLED) return false
+  return wizardDueFor(s, { ...x, draft: loadDraft() })
 }
 
 /** Today's "Finish your setup" card (ob2-0b): onboarded, on the Starter week, not waved off here. */

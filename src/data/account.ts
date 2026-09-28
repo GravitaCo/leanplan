@@ -19,8 +19,9 @@ export type DeleteResult =
   | { status: 'ok' }
   /** no connection: nothing was sent */
   | { status: 'offline' }
-  /** no live session on this device (e.g. opened offline): sign in again first */
-  | { status: 'no-session' }
+  /** no live session on this device (e.g. opened offline): sign in again first. `rejected`: the
+   *  server refused the token (401), e.g. because the account was already deleted */
+  | { status: 'no-session'; rejected?: true }
   /** the session's sign-in is older than 5 minutes: confirm who you are (reauthenticate), then retry */
   | { status: 'reauth' }
   /** the session isn't the account this device's data belongs to, or that's still being asked */
@@ -53,12 +54,19 @@ export function isPersonalKey(k: string): boolean {
   return k === 'leanplan.v1' || k.startsWith('tali.') || k.startsWith('sb-')
 }
 
-/** Remove every personal key from a Storage. Returns the keys removed. */
+/**
+ * Kept through a wipe: a pending under-age deletion (onboardingDraft.ts PENDING_KEY) is how that
+ * account still gets deleted after the device is cleared (register 37c). It holds the account id
+ * and the tries only; the under-age flow clears it once the server confirms.
+ */
+export const WIPE_KEEPS = ['tali.pendingDelete']
+
+/** Remove every personal key from a Storage but WIPE_KEEPS. Returns the keys removed. */
 export function wipeStorage(storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null): string[] {
   if (!storage) return []
   const keys: string[] = []
   try {
-    for (let i = 0; i < storage.length; i++) { const k = storage.key(i); if (k && isPersonalKey(k)) keys.push(k) }
+    for (let i = 0; i < storage.length; i++) { const k = storage.key(i); if (k && isPersonalKey(k) && !WIPE_KEEPS.includes(k)) keys.push(k) }
     keys.forEach((k) => storage.removeItem(k))
   } catch { /* storage blocked: nothing we can reach */ }
   return keys
@@ -131,7 +139,7 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   }
   const ok = res.status === 200 && !!res.body && typeof res.body === 'object' && (res.body as { ok?: unknown }).ok === true
   if (!ok) {
-    if (res.status === 401) return { status: 'no-session' }
+    if (res.status === 401) return { status: 'no-session', rejected: true }
     if (res.status === 403 && (res.body as { error?: unknown } | null)?.error === 'reauth') return { status: 'reauth' }
     if (res.status === 404) return { status: 'unavailable' } // not deployed (the gateway's 404)
     return { status: 'error' }
@@ -141,6 +149,31 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   // a sign-out can re-save a session that was mid-refresh: wipe once more after it
   deps.wipe()
   return { status: 'ok' }
+}
+
+/**
+ * After a 401 on an under-age retry, what a failed token refresh proves. Only "user not found"
+ * (e.g. "User from sub claim in JWT does not exist") shows the account is gone. A dead refresh
+ * token ("Invalid Refresh Token", "Already Used", refresh_token_not_found, session_not_found)
+ * doesn't: delete-account signs out globally before deleting, so a failed deletion leaves dead
+ * tokens behind; that's 'dead' (ask for a fresh sign-in). Anything else (offline …): 'failed'. Pure.
+ */
+export function refreshFailure(err: { code?: string; message?: string } | null | undefined): 'gone' | 'dead' | 'failed' {
+  if (!err) return 'failed'
+  const m = err.message || ''
+  if (err.code === 'user_not_found' || /user from sub claim in jwt does not exist|user not found/i.test(m)) return 'gone'
+  if (err.code === 'refresh_token_not_found' || err.code === 'refresh_token_already_used' || err.code === 'session_not_found' || /invalid refresh token|refresh token not found|already used|session not found/i.test(m)) return 'dead'
+  return 'failed'
+}
+
+/** Try one token refresh: 'ok' (retry with it), 'gone' (the account no longer exists), 'dead'
+ *  (this device's session can't be renewed: sign in again) or 'failed'. */
+export async function refreshForRetry(): Promise<'ok' | 'gone' | 'dead' | 'failed'> {
+  try {
+    const { data, error } = await withTimeout(supabase.auth.refreshSession(), 8000, { data: { session: null }, error: null } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>)
+    if (error) return refreshFailure(error)
+    return data?.session ? 'ok' : 'failed'
+  } catch { return 'failed' }
 }
 
 /** Whether a session token's sign-in is within the deletion window (read, not verified: the
@@ -220,4 +253,22 @@ export function tokenMatchesOwner(token: string, owner: string | undefined, owne
   if (ownerAsk || !owner) return false
   const sub = (jwtPayload(token) as { sub?: unknown } | null)?.sub
   return typeof sub === 'string' && sub === owner
+}
+
+/**
+ * The user id in Supabase's saved session on this device (sb-<project>-auth-token), read without
+ * checking it: only for the under-age stop on a device that has no owner yet and no live session
+ * (offline), so its pending deletion can still be recorded. The server verifies the real session.
+ */
+export function savedSessionUid(storage: Pick<Storage, 'length' | 'key' | 'getItem'> | null = typeof localStorage === 'undefined' ? null : localStorage): string | null {
+  try {
+    if (!storage) return null
+    for (let i = 0; i < storage.length; i++) {
+      const k = storage.key(i)
+      if (!k || !k.startsWith('sb-') || !k.endsWith('-auth-token')) continue
+      const id = (JSON.parse(storage.getItem(k) || 'null') as { user?: { id?: unknown } } | null)?.user?.id
+      if (typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return id
+    }
+  } catch { /* blocked or malformed */ }
+  return null
 }

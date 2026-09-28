@@ -19,3 +19,11 @@ export const FIRST_SESSION = {
   feels: [['spare', 'Easy, lots left'], ['right', 'About right, 2 or 3 left'], ['struggle', 'Hard, the last rep was a struggle'], ['stopped', 'Stopped early']] as const,
 }
 
+
+/** Onboarding 7: Profile › Health data's row to the answers (ob7-1). */
+export const HEALTH_ANSWERS_ROW = 'Health check answers'
+
+/** Profile › Health data's row to redo the first-run setup, prefilled (compliance item 32). */
+export const REDO_ROW = 'Redo setup'
+/** The same place, for someone who used Tali before onboarding and never ran it (Benn approved). */
+export const SETUP_ROW = 'Set up my plan'

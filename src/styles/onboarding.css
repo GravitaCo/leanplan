@@ -190,3 +190,23 @@
 .wz-sp .ln { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0 0; font-size: 15px; color: var(--label); text-decoration: none; }
 .wz-sp .ln + .ln { border-top: 1px solid var(--sep); margin-top: 8px; }
 .wz-sp .ln.web .n { font-weight: 600; }
+
+/* Onboarding 7: Health check answers (ob7-1, ob7-1b) and the check-in's thanks (ob7-4) */
+.ha { display: flex; flex-direction: column; gap: 16px; padding-top: calc(env(safe-area-inset-top) + 18px); }
+.ha .navbtn { align-self: flex-start; margin-left: -6px; font-size: 16px; font-weight: 500; }
+.ha-t { margin: 0; font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
+.ha-lead { font-size: 16px; line-height: 1.45; color: var(--label2); margin-top: -8px; }
+.ha-list { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+.ha-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px 10px 12px 16px; border-bottom: 1px solid var(--sep); }
+.ha-row:last-child { border-bottom: 0; }
+.ha-row .m { flex: 1; min-width: 0; padding-top: 2px; }
+.ha-row .l { display: block; font-size: 13px; color: var(--label2); }
+.ha-row .v { display: block; font-size: 17px; margin-top: 1px; color: var(--label); }
+.ha-row .d { display: block; font-size: 13px; line-height: 1.4; color: var(--label2); margin-top: 3px; }
+.ha-row .acts { display: flex; gap: 2px; flex-shrink: 0; }
+.ha-act { border: 0; background: none; padding: 8px 6px; font-size: 15px; font-weight: 600; color: var(--tint); }
+.ha-empty { background: var(--card); border-radius: var(--radius); padding: 28px 16px; text-align: center; font-size: 16px; color: var(--label2); }
+.ha-foot { font-size: 12px; line-height: 1.4; color: var(--label2); padding: 0 4px; }
+.ha-tick { width: 56px; height: 56px; border-radius: 18px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; }
+.ha-tick svg.i { width: 26px; height: 26px; }
+.linkbtn.ha-link { align-self: flex-start; font-size: 16px; font-weight: 500; padding: 0; }

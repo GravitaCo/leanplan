@@ -112,7 +112,10 @@ export function toServerPlan(p: TrainingPlan, uid: string, withWhy = PLAN_WHY_SY
     phases: Array.isArray(p.phases) ? p.phases : [], started_at: p.startedAt ?? null, completed_at: p.completedAt ?? null,
     reflection: p.reflection ?? null, base_template_id: p.baseTemplateId ?? null, cloned_from_id: p.clonedFromId ?? null,
   }
-  return withWhy ? { ...row, why: Array.isArray(p.why) && p.why.length ? p.why : null } : row
+  // no reasons on this device (never had them): leave the server's copy alone. An array is sent
+  // as it is, and an empty one (a withdrawal) as null, so the server's copy is cleared
+  if (!withWhy || p.why === undefined) return row
+  return { ...row, why: Array.isArray(p.why) && p.why.length ? p.why : null }
 }
 function fromServerPlan(r: any): TrainingPlan {
   return {
@@ -366,7 +369,12 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   // workouts have no name index (two may share a name), so only the 403 repair can apply
   const dirtyRoutines = (s.routines || []).filter((r) => r._dirty)
   const dirtyPlans = (s.trainingPlans || []).filter((p) => p._dirty)
-  await step('plans', () => upsertEach('training_plans', dirtyPlans, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', () => '', uid, [], s.trainingPlans)))
+  // one request per shape: PostgREST takes a batch's columns from its first row, so a row without
+  // `why` next to one with it would null that plan's server reasons (or drop the other's)
+  const plansWith = dirtyPlans.filter((p) => 'why' in toServerPlan(p, uid)), plansWithout = dirtyPlans.filter((p) => !plansWith.includes(p))
+  for (const batch of [plansWith, plansWithout]) {
+    await step('plans', () => upsertEach('training_plans', batch, (p) => toServerPlan(p, uid), 'id', (p) => (p._dirty = false), repairs('training_plans', () => '', uid, [], s.trainingPlans)))
+  }
   await step('workouts', () => upsertEach('routines', dirtyRoutines, (r) => toServerRoutine(r, uid), 'id', (r) => (r._dirty = false), repairs('routines', () => '', uid, [], s.routines)))
   return failed
 }

@@ -29,7 +29,7 @@ const KEY = 'sb-exvblofwiwbvycomxvmj-auth-token'
 const ROOT = path.resolve(__dirname, '..')
 const EXPECT = path.join(ROOT, 'node_modules/.cache/e2e-onboarding-expect.cjs')
 execFileSync(path.join(ROOT, 'node_modules/.bin/esbuild'), ['scripts/e2e-onboarding-expect.ts', '--bundle', '--platform=node', '--alias:@=./src', '--define:import.meta.env={}', '--log-level=error', '--format=cjs', '--outfile=' + EXPECT], { cwd: ROOT })
-const { expected } = require(EXPECT)
+const { expected, finished } = require(EXPECT)
 
 function fakeJwt(uid, authAgoS = 10) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
@@ -65,7 +65,9 @@ async function scenario(browser, name, fn, opts = {}) {
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     if (url.includes('/functions/v1/delete-account')) {
       net.fnCalls.push({ body: JSON.parse(req.postData() || '{}') })
-      return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true }) })
+      // opts.fnReply: what the function answers instead of { ok: true } (e.g. the re-auth refusal)
+      const r = opts.fnReply || { status: 200, body: { ok: true } }
+      return route.fulfill({ status: r.status, contentType: 'application/json', headers: cors, body: JSON.stringify(r.body) })
     }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(USER) })
     if (url.includes('/auth/v1/logout')) return route.fulfill({ status: 204 })
@@ -82,6 +84,8 @@ async function scenario(browser, name, fn, opts = {}) {
     const m = url.match(/\/rest\/v1\/([a-z_]+)/)
     if (!m) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     const t = m[1]
+    // opts.pullDelay: a slow first pull (ms)
+    if (req.method() === 'GET' && opts.pullDelay && t === 'settings') await new Promise((r) => setTimeout(r, opts.pullDelay))
     if (req.method() === 'GET') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows[t] || []) })
     const body = JSON.parse(req.postData() || '[]')
     const list = Array.isArray(body) ? body : [body]
@@ -93,6 +97,8 @@ async function scenario(browser, name, fn, opts = {}) {
     return route.fulfill({ status: 201, body: '' })
   })
   await ctx.route(/openfoodfacts\.org|b-cdn\.net/, (r) => r.abort())
+  // opts.block: assets that fail to load (a cold cache offline)
+  if (opts.block) await ctx.route(opts.block, (r) => r.abort())
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -417,6 +423,20 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding') && (!st || !Object.keys(st.days || {}).length), 'device wiped: ' + left.join())
   })
 
+  await run('safety: under 18, account over 24 h (re-auth refused) → stops, wipes, asks to sign in again', async ({ page, net }) => {
+    await wizard(page, { age: 15 })
+    await h1(page, 'Tali is for 18+')
+    await btn(page, 'Close').click()
+    await page.getByText('Please sign in again to finish removing your account.').waitFor({ timeout: 8000 })
+    await shot(page, 'route-under18/reauth-sign-in')
+    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => k === 'leanplan.v1' || k.startsWith('sb-') || k.startsWith('tali.')))
+    const pend = await page.evaluate(() => JSON.parse(localStorage.getItem('tali.pendingDelete') || 'null'))
+    expect(!left.some((k) => k.startsWith('sb-') || k === 'tali.onboarding' || k === 'leanplan.v1'), 'device wiped and signed out: ' + left.join())
+    expect(pend && pend.uid === UID && pend.stage === 'sign-in', 'kept to finish at the next sign-in: ' + JSON.stringify(pend))
+    await page.waitForTimeout(2500)
+    expect(net.fnCalls.length === 1, 'no automatic retries: ' + net.fnCalls.length)
+  }, { fnReply: { status: 403, body: { ok: false, error: 'reauth' } } })
+
   await run('safety: under 18 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
     await wizard(page, { age: 14 })
     await h1(page, 'Tali is for 18+')
@@ -518,6 +538,292 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     expect((await page.getByText('A few questions, so Tali fits you').count()) === 0, 'no wizard')
   }, { state: { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }, rows: { settings: [{ user_id: UID, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', sex: 'F', age: 34, height: 172, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }] } })
+
+  // ─── Onboarding 7: Health check answers and the 12-week check-in (boards ob7-1 to ob7-4) ───
+  const weeksAgo = (w) => { const d = new Date(); d.setDate(d.getDate() - w * 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  const answered = ({ dark, ...x } = {}) => ({ state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } },
+    profile: { name: 'Sam', sex: 'F', sexAnswer: 'female', age: 34, height: 168, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, goal: 'feel-better', onboardedAt: '2026-09-20T08:00:00.000Z', ...x } }, ...(dark ? { dark: true } : {}) })
+  const BOARD = { outcomes: { readiness: 'flagged', medical: 'flagged', wellbeing: 'flagged', baseline: 'ok' }, pregnancy: { flagged: true, askedAt: today }, gentle: true }
+  const toAnswers = async (page) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await btn(page, 'Health check answers').click()
+    await h1(page, 'Health check answers')
+  }
+  const rowTexts = (page) => page.locator('.ha-row').allInnerTexts()
+
+  for (const dark of [false, true]) {
+    await run(`ob7-1 health check answers${dark ? ' (dark)' : ''}: every answer kept, with what it changes`, async ({ page }) => {
+      await toAnswers(page)
+      await shot(page, 'ob7/ob7-1-answers' + (dark ? '-dark' : ''))
+      const rows = await rowTexts(page)
+      expect(rows.length === 4 && /^Pregnant or breastfeeding\nYes\nFood stays at maintenance/.test(rows[0]) && /^Conditions or medicines\nYes/.test(rows[1]) && /^Health check\nGentler start/.test(rows[2]) && /^Food and weight\nYes or sometimes/.test(rows[3]), rows.join(' ¶ '))
+      expect((await page.getByRole('button', { name: /^Change/ }).count()) === 3 && (await page.getByRole('button', { name: /^Clear/ }).count()) === 3, 'Change ×3, Clear ×3 (health check Clear only, food and weight Change only)')
+      await page.getByText('Clearing these changes your plan and targets straight away.').waitFor()
+    }, answered({ ...BOARD, dark }))
+  }
+
+  await run('ob7-2 clear pregnancy: asks first, then the row goes and targets show again', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await h1(page, 'Clear pregnant or breastfeeding?')
+    await page.getByText('Your food targets will show calorie numbers again, and training goes back to your usual pace.').waitFor()
+    await shot(page, 'ob7/ob7-2-confirm')
+    await btn(page, 'Keep it').click()
+    expect(!!(await stored(page)).profile.pregnancy, 'Keep it keeps it')
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.locator('.sheet .btn', { hasText: 'Clear' }).click()
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy)
+    const st = await stored(page)
+    expect(!st.profile.pregnancy && !!st.profile.answeredAt.pregnancy, 'cleared and stamped')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+    { const t = (await stored(page)).target.kcal; expect(t !== 2000 && t > 1200, 'targets re-run: ' + t) }
+    expect((await rowTexts(page)).length === 1, 'one row left')
+  }, answered({ outcomes: { readiness: 'clear' }, pregnancy: { flagged: true, askedAt: today } }))
+
+  await run('ob7-2 variant: numbers stay hidden while gentle mode is on', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.getByText('Your plan goes back to your usual pace. Calorie numbers stay hidden while gentle mode is on.').waitFor()
+    await shot(page, 'ob7/ob7-2b-confirm-hidden')
+  }, answered(BOARD))
+
+  await run('ob7-2 a gentler start remains: says it stays', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear pregnant or breastfeeding' }).click()
+    await page.getByText('Your food targets will show calorie numbers again. Your gentler start stays until you clear it too.').waitFor()
+    await shot(page, 'ob7/ob7-2c-confirm-gentler')
+  }, answered({ outcomes: { readiness: 'flagged' }, pregnancy: { flagged: true, askedAt: today } }))
+
+  await run('ob7-1b clear everything: nothing kept', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear health check' }).click()
+    await page.getByRole('button', { name: 'Clear conditions or medicines' }).click()
+    await page.locator('.sheet .btn', { hasText: 'Clear' }).click()
+    await page.getByText('Nothing kept from your health check.').waitFor()
+    await shot(page, 'ob7/ob7-1b-empty')
+    const p = (await stored(page)).profile
+    expect(!p.outcomes, 'no outcomes left: ' + JSON.stringify(p.outcomes))
+  }, answered({ outcomes: { readiness: 'flagged', medical: 'flagged' } }))
+
+  await run('change conditions and food and weight: outcomes only, gentle mode follows', async ({ page }) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Change conditions or medicines' }).click()
+    await check(page, 'None of these')
+    await shot(page, 'ob7/change-conditions')
+    await btn(page, 'Done').click()
+    await page.getByRole('button', { name: 'Change food and weight' }).click()
+    await shot(page, 'ob7/change-wellbeing')
+    await radio(page, 'No')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.outcomes.wellbeing === 'clear')
+    const p = (await stored(page)).profile
+    expect(p.outcomes.medical === 'clear' && p.outcomes.wellbeing === 'clear' && p.gentle === false, JSON.stringify(p.outcomes) + ' gentle ' + p.gentle)
+    const rows = await rowTexts(page)
+    expect(/^Conditions or medicines\nNone of these/.test(rows[0]) && /^Food and weight\nNo\n/.test(rows[1]), rows.join(' ¶ '))
+    expect(!JSON.stringify(p).match(/insulin|kidney|semaglutide/i), 'no condition kept')
+  }, answered({ outcomes: { medical: 'flagged', wellbeing: 'flagged' }, gentle: true }))
+
+  for (const dark of [false, true]) {
+    await run(`ob7-3 12-week check-in on Today${dark ? ' (dark)' : ''}: once; Ask me later snoozes 2 weeks`, async ({ page }) => {
+      await h1(page, 'Does this still apply?')
+      await shot(page, 'ob7/ob7-3-checkin' + (dark ? '-dark' : ''))
+      await page.getByRole('button', { name: 'Ask me later' }).click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.snoozedAt)
+      const p = (await stored(page)).profile.pregnancy
+      expect(p.flagged && p.snoozedAt === today && p.askedAt === weeksAgo(13), JSON.stringify(p))
+      await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(600)
+      expect((await page.getByText('Does this still apply?').count()) === 0, 'not again until the snooze ends')
+    }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) }, dark }))
+  }
+
+  await run('ob7-3 closing the sheet counts as Ask me later', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.snoozedAt)
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  await run('ob7-3 Breastfeeding now: closes quietly and restarts the 12 weeks', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await radio(page, 'Breastfeeding now')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.pregnancy.askedAt !== undefined && document.querySelectorAll('.sheet').length === 0)
+    const p = (await stored(page)).profile.pregnancy
+    expect(p.flagged && p.askedAt === today && !p.snoozedAt, JSON.stringify(p))
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  await run('ob7-4 No longer: thanks, then the answers', async ({ page }) => {
+    await h1(page, 'Does this still apply?')
+    await radio(page, 'No longer')
+    await page.getByRole('heading', { name: 'Thanks. Your plan and targets will update.' }).waitFor()
+    await shot(page, 'ob7/ob7-4-nolonger')
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+    const st = await stored(page)
+    expect(!st.profile.pregnancy && st.target.kcal !== 2000, 'flag gone, targets re-run: ' + st.target.kcal)
+    await btn(page, 'See your health check answers').click()
+    await h1(page, 'Health check answers')
+    await page.getByText('Nothing kept from your health check.').waitFor()
+  }, answered({ pregnancy: { flagged: true, askedAt: weeksAgo(13) } }))
+
+  // offline-first: a changed answer re-runs routing and targets at once; the plan rebuild needs the
+  // engine chunk, prefetched while online (warm), or pending until it can load (cold)
+  const planState = () => {
+    const f = finished({ v: 1, mode: 'first', step: 'summary', seed: 'e2e-ob7', name: 'Sam', age: 34, goal: 'feel-better', motivations: [],
+      outcomes: { readiness: 'flagged', wellbeing: 'clear', baseline: 'ok', medical: 'clear' }, height: 168, heightUnit: 'cm', sexAnswer: 'female', weight: 70, weightUnit: 'kg',
+      movement: { kind: 'steps', band: '5k-7.5k' }, moving: 'now-and-then', experience: 'beginner', daysPerWeek: 3, minutes: 30, where: 'home', kit: ['dumbbell', 'mat'], enjoy: ['walking'] }, today, '2026-09-20T08:00:00.000Z')
+    return { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } }, profile: f.profile, trainingPlans: f.trainingPlans.map((p) => ({ ...p, _dirty: true })), routines: f.routines.map((r) => ({ ...r, _dirty: true })) } }
+  }
+  const readinessGuard = (st) => /"code":"guardrail","about":"[a-z-]+","field":"readiness"/.test(JSON.stringify([st.trainingPlans.find((p) => p.state === 'active').why, st.routines.filter((r) => !r.archived)]))
+  const clearHealthCheck = async (page) => {
+    await toAnswers(page)
+    await page.getByRole('button', { name: 'Clear health check' }).click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).target.kcal !== 2000)
+  }
+
+  await run('offline, warm cache: clearing an answer re-runs targets and the plan with no connection', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    expect(readinessGuard(await stored(page)), 'the plan starts with the readiness guardrail')
+    await page.waitForTimeout(1500) // the prefetch (App) while online
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers)
+    const st = await stored(page)
+    expect(!st.profile.outcomes.readiness && !readinessGuard(st), 'plan rebuilt offline without the guardrail')
+  }, planState())
+
+  await run('offline, cold cache: targets at once, the plan rebuild pending until the engine loads', async ({ page, ctx }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await ctx.setOffline(true)
+    await clearHealthCheck(page)
+    await page.waitForTimeout(800)
+    const st = await stored(page)
+    expect(st.target.kcal !== 2000 && st._meta.rerunAnswers === true && readinessGuard(st), 'targets re-run, plan pending: ' + st.target.kcal + ' ' + st._meta.rerunAnswers)
+    await ctx.unroute(/\/assets\/(wizard|Wizard)-/)
+    await ctx.setOffline(false)
+    await page.reload()
+    await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1'))._meta.rerunAnswers, null, { timeout: 15000 })
+    expect(!readinessGuard(await stored(page)), 'plan rebuilt at the next launch')
+  }, { ...planState(), block: /\/assets\/(wizard|Wizard)-/ })
+
+  // ─── Redo setup (compliance item 32): prefilled, replaces the answers, the rebuild is offered ───
+  const toRedo = async (page) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await btn(page, 'Redo setup').click()
+    await h1(page, 'What do you like to be called?')
+  }
+  /** Continue through every (prefilled) screen to the summary */
+  const toSummary = async (page) => {
+    for (let i = 0; i < 40; i++) {
+      if (await page.getByRole('heading', { name: 'Here’s a starting point, not a test', exact: true }).count()) return
+      for (const n of ['Continue', 'Done', 'Finish setup', 'Build my week']) {
+        const b = btn(page, n).first()
+        if (await b.count() && await b.isVisible() && await b.isEnabled()) { await b.click(); break }
+      }
+      await page.waitForTimeout(120)
+    }
+    throw new Error('never reached the summary')
+  }
+  const redoState = () => answered({ outcomes: { readiness: 'clear', baseline: 'low' }, motivations: ['energy'], movement: { kind: 'steps', band: '5k-7.5k' }, units: { weight: 'kg', height: 'cm' },
+    training: { daysPerWeek: 3, minutesPerSession: 30, place: ['home'], equipment: ['dumbbell'], limitations: ['knees', 'hips'], exPrefs: { liked: ['goblet-squat'] } } })
+  await run('redo setup: prefilled from the current answers; back from the first question closes it', async ({ page }) => {
+    await toRedo(page)
+    expect((await page.getByLabel('First name').inputValue()) === 'Sam', 'name prefilled')
+    await shot(page, 'redo/redo-1-name')
+    await page.getByRole('button', { name: 'Back' }).click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    expect(!(await draft(page)), 'draft gone')
+  }, redoState())
+  for (const rebuild of [false, true]) {
+    await run(`redo setup: a changed answer replaces the old one; ${rebuild ? '"Rebuild my week" rebuilds' : '"Keep my current week" keeps the plan'}`, async ({ page }) => {
+      const before = await stored(page)
+      await toRedo(page)
+      await cont(page) // name
+      expect((await page.getByLabel('Age in years').inputValue()) === '34', 'age prefilled')
+      await cont(page) // age
+      await h1(page, 'A quick health check')
+      await cont(page)
+      await h1(page, 'What would make this worth it for you?')
+      expect((await page.getByRole('checkbox', { name: 'More energy', exact: true }).getAttribute('aria-checked')) === 'true', 'why prefilled')
+      await cont(page)
+      await h1(page, 'What’s your main goal?')
+      await radio(page, 'Build muscle')
+      await cont(page)
+      await toSummary(page)
+      await shot(page, 'redo/redo-2-summary', true)
+      await btn(page, 'Start').click()
+      await h1(page, 'Rebuild your week too?')
+      await shot(page, 'redo/redo-3-offer')
+      await btn(page, rebuild ? 'Rebuild my week' : 'Keep my current week').click()
+      await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+      const st = await stored(page)
+      expect(st.profile.goal === 'build-muscle' && st.profile.onboardedAt === before.profile.onboardedAt, 'goal replaced, onboardedAt kept')
+      expect(st.profile.outcomes.baseline === 'low' && st.profile.motivations.join() === 'energy' && st.profile.movement.band === '5k-7.5k', 'unchanged answers kept: ' + JSON.stringify({ o: st.profile.outcomes, m: st.profile.motivations, mv: st.profile.movement }))
+      expect(st.profile.training.limitations.slice().sort().join() === 'hips,knees' && st.profile.training.exPrefs.liked.join() === 'goblet-squat', 'hips kept, likes kept: ' + JSON.stringify(st.profile.training))
+      expect(Object.keys(st.days).length === Object.keys(before.days).length && st.days[today].weight === 70, 'no new weigh-in')
+      const n0 = (before.trainingPlans || []).length, n1 = (st.trainingPlans || []).length
+      expect(rebuild ? n1 === n0 + 1 : n1 === n0, `plans ${n0} → ${n1}`)
+      expect(!(await draft(page)), 'draft gone')
+    }, redoState())
+  }
+
+  // ─── the first-run wait (Benn's device test): no flash of the wizard before the first pull ───
+  const usedBeforeRows = { settings: [{ user_id: UID, target: { kcal: 1800, p: 140, c: 180, f: 60 }, schedule: {}, profile: { name: 'Pat', sex: 'F', age: 44, height: 168, activityLevel: 'light', supplements: [], notificationsEnabled: false, goal: 'lose-fat' } }] }
+  const unpulled = { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }
+  const wizardUp = (page) => page.getByRole('heading', { name: 'A few questions, so Tali fits you', exact: true }).count()
+  await run('slow pull (4 s), used before: loading, then the app; the wizard never shows', async ({ page }) => {
+    for (let i = 0; i < 60; i++) {
+      expect((await wizardUp(page)) === 0, 'the wizard flashed up at ' + i * 100 + ' ms')
+      if (await page.locator('.hdr .ltitle', { hasText: 'Summary' }).count()) break
+      await page.waitForTimeout(100)
+    }
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    expect((await wizardUp(page)) === 0, 'no wizard after the pull')
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 4000 })
+  await run('pull slower than the wait (13 s): the wizard shows; untouched, the pull switches to the app', async ({ page }) => {
+    await h1(page, 'A few questions, so Tali fits you')
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor({ timeout: 20000 })
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
+  await run('pull slower than the wait (13 s): once started, the wizard stays', async ({ page }) => {
+    await h1(page, 'A few questions, so Tali fits you')
+    await btn(page, 'Let’s go').click()
+    await h1(page, 'What do you like to be called?')
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1'))._meta.lastPull, null, { timeout: 20000 })
+    await page.waitForTimeout(800)
+    expect((await page.getByRole('heading', { name: 'What do you like to be called?', exact: true }).count()) === 1, 'still in the wizard after the pull')
+    expect((await stored(page)).profile.goal === 'lose-fat', 'the pulled profile is in')
+  }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
+
+  // ─── Set up my plan: someone who used Tali before and never onboarded ───
+  await run('set up my plan: prefilled from Profile; Start offers the rebuild; setup is then done', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    const before = await stored(page)
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    expect((await btn(page, 'Redo setup').count()) === 0, 'not Redo setup before a first run')
+    await btn(page, 'Set up my plan').click()
+    await h1(page, 'What do you like to be called?')
+    expect((await page.getByLabel('First name').inputValue()) === 'Pat', 'name prefilled')
+    await cont(page)
+    expect((await page.getByLabel('Age in years').inputValue()) === '44', 'age prefilled')
+    await toSummary(page)
+    await btn(page, 'Start').click()
+    await h1(page, 'Rebuild your week too?')
+    await btn(page, 'Keep my current week').click()
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    const st = await stored(page)
+    expect(!!st.profile.onboardedAt && st.profile.goal === 'lose-fat' && st.profile.sexAnswer === 'female' && st.profile.height === 168 && st.profile.age === 44, 'answers kept, setup done: ' + JSON.stringify(st.profile))
+    expect((st.trainingPlans || []).length === (before.trainingPlans || []).length && st.days[today].weight === 70, 'week and weigh-ins as they were')
+  }, { state: { ...newAccount(), target: { kcal: 1800, p: 140, c: 180, f: 60 }, days: { [today]: { foods: [{ n: 'Toast', k: 100, p: 4, c: 18, f: 1, grams: 40 }], supps: {}, weight: 70, workout: null } }, profile: { name: 'Pat', sex: 'F', age: 44, height: 168, activityLevel: 'light', supplements: [], notificationsEnabled: false, goal: 'lose-fat' } } })
+
+  await run('flag off: no Health check answers row, no check-in', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await page.waitForTimeout(600)
+    expect((await page.getByText('Does this still apply?').count()) === 0, 'no check-in')
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await page.waitForTimeout(300)
+    expect((await btn(page, 'Health check answers').count()) === 0, 'no row')
+    expect((await btn(page, 'Redo setup').count()) === 0 && (await btn(page, 'Set up my plan').count()) === 0, 'no Redo setup or Set up my plan row')
+  }, { ...answered({ ...BOARD, pregnancy: { flagged: true, askedAt: weeksAgo(13) } }), url: OFF })
 
   await run('flag off: nothing new shows', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()

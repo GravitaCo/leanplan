@@ -16,10 +16,13 @@
  *   which is also the fresh sign-in the check above needs.
  * - The body must be { confirm: "delete my account" } (src/data/account.ts), so a stray POST
  *   can't delete anything.
- * - Under-age (onboarding §14, PENDING security-data review): with { reason: "under-age" } the
+ * - Under-age (onboarding §14; reviewed by security-data: SAFE; deployed as delete-account v2,
+ *   28 Sept 2026): with { reason: "under-age" } the
  *   re-auth check is waived only for an account created under 24 hours ago, read from Auth's own
  *   answer (user.created_at), so the app's automatic deletion after the age stop still works when
- *   it retries later offline. Any other account, or no reason, needs the recent sign-in as before.
+ *   it retries later offline. Any other account, or no reason, needs the recent sign-in as before
+ *   (for an under-age request the app then stops retrying, wipes the device and asks for a fresh
+ *   sign-in, which passes this check: underAgeNext in src/data/onboardingDraft.ts).
  * - Deletes the account's rows from every table the app writes (USER_TABLES in ../_shared/account.ts), then the login. Rows go
  *   first: if any delete fails the login stays, the function answers 500, and a retry picks up
  *   where it stopped. A table that doesn't exist yet (a migration not applied) is skipped.

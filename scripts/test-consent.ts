@@ -199,9 +199,10 @@ async function deletion(): Promise<void> {
   ])
   checks.push(['failure: nothing wiped (500, 401, 404, lost reply, odd body)', fails.every((x) => x.log === 'call') && fails.map((x) => x.res).join() === 'error,no-session,unavailable,unavailable,error'])
 
-  const st = fakeStorage({ 'leanplan.v1': '{}', 'tali.mode': 'account', 'tali.kitchen': '[]', 'tali.labelConsent': '1', 'tali.sound': '1', 'sb-exvblofwiwbvycomxvmj-auth-token': 'x', 'other-site': 'keep' })
+  const st = fakeStorage({ 'leanplan.v1': '{}', 'tali.mode': 'account', 'tali.kitchen': '[]', 'tali.labelConsent': '1', 'tali.sound': '1', 'tali.onboarding': '{}', 'tali.setupCardHidden': '1', 'tali.pendingDelete': '{"uid":"u"}', 'sb-exvblofwiwbvycomxvmj-auth-token': 'x', 'other-site': 'keep' })
   wipeStorage(st)
-  checks.push(['device wipe: leanplan.v1, every tali.* key and the saved session go', st.keys().join() === 'other-site'])
+  checks.push(['device wipe: leanplan.v1, every other tali.* key and the saved session go', st.keys().filter((k) => k !== 'tali.pendingDelete').join() === 'other-site'])
+  checks.push(['device wipe keeps a pending under-age deletion (register 37c)', st.keys().includes('tali.pendingDelete')])
 
   // the function covers every table that holds user rows
   const sql = [readFileSync('docs/security-rls.sql', 'utf8'), ...readdirSync('docs/migrations').map((x) => readFileSync('docs/migrations/' + x, 'utf8'))].join('\n')

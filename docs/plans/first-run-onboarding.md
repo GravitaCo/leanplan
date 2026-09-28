@@ -348,3 +348,58 @@ rows "Onboarding 1" to "Onboarding 6". The notes s-ob1 … s-ob6 are the approve
     0808 801 0434. Open 3pm–8pm Monday to Friday; webchat and email too.
   - **Others:** Samaritans 116 123 (free, 24/7), Childline 0800 1111 (free, 24/7), NHS 111
     (England, Wales, Scotland; in Northern Ireland, your GP), 999.
+
+## 15. Redo setup, and the under-age residuals (28 Sept 2026, compliance items 32 and 37)
+
+**Redo setup (built, behind `ONBOARDING_ENABLED`).** Profile › Health data › "Redo setup" (shown
+once `onboardedAt` is set) reopens the first run from the name question, prefilled with the
+current answers (`draftFromProfile`; health answers only with a local health yes). Finishing
+replaces the answers, as a first run does (a skipped question clears its answer), and keeps
+`onboardedAt`. An answer left as it was keeps its stored value exactly (training prefs the
+options can't show, the pregnancy date and "ask me later"), areas the screen doesn't offer
+(hips, ankles) are never dropped unseen, and an unchanged weight isn't logged as a new weigh-in.
+The summary's Start then asks "Rebuild your week too?": the plan changes only on "Rebuild my
+week" (§12: never automatic); the person model, `training.exPrefs` and "find your weight"
+calibration stay either way, as they're derived from the log. The wizard's edit promises now
+point here ("You can redo setup any time from Profile.", "You can update this by redoing setup.").
+
+**Residuals fixed.** (b) With no uid, the under-age stop clears the `tali.onboarding` draft too
+(nothing else is recorded or wiped), so "We haven't kept any of your answers" holds. (c) A device
+wipe keeps `tali.pendingDelete` (`WIPE_KEEPS` in `data/account.ts`), and "Sign out and remove
+this device's log" clears the draft and the setup-card choice but keeps the pending record.
+Clearing site data in the browser still drops it; (a) covers that case too.
+
+**Proposal, not built: a server-side record of refused under-age requests (residual a).** Today
+the only record that an account must go is `tali.pendingDelete` on one device. If the person
+never signs in again (or clears the browser), the account, its email, consent records and
+anything synced stay on the server with nothing there knowing it's under-age.
+- When `delete-account` is called with `reason: 'under-age'` and refuses (re-auth outside the
+  24-hour window) or fails part-way, it writes one row to a new service-role-only table
+  `under_age_requests` (`user_id`, `requested_at`, `last_error`, `attempts`), with RLS on and no
+  client policies (the client can't read or write it, so no new client data flow).
+- Every under-age call first upserts the row, and a success deletes it with the account (it
+  joins `USER_TABLES` so the delete-account function covers it, and cascades on the auth user).
+- A daily pg_cron job (next to `tali-purge-unconsented`) deletes, through the same code path as
+  `delete-account`, any account whose row is older than 7 days, and alerts Benn if it can't.
+  The client stays as it is: the device path still finishes it sooner when it can.
+- The account's own request is the basis: the person said they're under 18, so keeping the
+  account has no lawful basis (Art. 5(1)(c), (e)). The row holds no health data.
+- Needs: a migration, the function change and redeploy, a `security-data` review (service-role
+  deletion without a fresh sign-in), the privacy policy's "Age" section and the register
+  updated, and `compliance` sign-off. Open question for Benn: 7 days, or sooner.
+
+**Follow-ups from Benn's device test (28 Sept 2026).**
+- *No flash of the wizard.* The first run waits for the first pull for up to 10 s counted from
+  when the wait starts (`FIRST_PULL_WAIT_MS`, `data/firstRun.ts wizardDueFor`); it used to be 6 s
+  from launch, which the sign-in and consent screens could use up. Offline it runs at once. If the
+  wait runs out and the pull then shows someone who used Tali before (or onboarded elsewhere),
+  the wizard gives way to the app only while nothing has been tapped; once the person has
+  started, it stays and the answers merge per field.
+- *Set up my plan.* Someone who used Tali before onboarding and never ran it gets a Profile ›
+  Health data row "Set up my plan" (Benn approved), in Redo setup's place: the same prefilled
+  first run (age, height, weight, sex from the older M/F field, goal), and the same "Rebuild your
+  week too?" offer. Finishing sets `onboardedAt`, after which the row reads "Redo setup".
+- *Plan reasons sync.* A plan with no reasons on this device leaves the server's copy alone (no
+  `why` sent); an empty list still clears it. Plans with and without `why` go in separate requests.
+- *Pending under-age record.* A normal account deletion that succeeds clears it when it's that
+  account's; another account's stays through the wipe.
