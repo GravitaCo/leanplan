@@ -92,14 +92,15 @@ core/ (pure TS, shared by web + native)
 
 | Model | ID | Input | Output | Typical fit |
 |---|---|---|---|---|
-| Claude Opus 5 | `claude-opus-5` | $5 | $25 | Quality benchmark; coaching and recipe conversation |
+| Claude Opus 5.5 | `claude-opus-5-5` | $4 | $20 | Quality benchmark (the current Opus); label reading, coaching and recipe conversation |
+| Claude Opus 5 | `claude-opus-5` | $5 | $25 | Previous Opus, now legacy; the cost estimates below were worked out on it |
 | Claude Sonnet 5 | `claude-sonnet-5` | $2 | $10 | Candidate for parsing, summaries and photos if evals show it holds quality |
 | Claude Haiku 4.5 | `claude-haiku-4-5` | $1 | $5 | Candidate for high-volume meal parsing if evals show it holds quality |
 
-Batch API: 50% off. Cache reads: about 0.1× input; cache writes about 1.25× input.
+Batch API: 50% off. Cache reads: about 0.1× input (0.05× on Opus 5.5); cache writes about 1.25× input.
 **Model choice per task is a decision for Benn after evals** (§6). The plan starts every task on
-Opus 5 as the quality baseline and measures whether a cheaper model matches it. `ai-read-label`
-starts on Opus 5 too (Benn, 28 Sept 2026); `LABEL_MODEL` switches it to Sonnet 5 once an eval shows
+the current Opus (Opus 5.5) as the quality baseline and measures whether a cheaper model matches it. `ai-read-label`
+starts on Opus 5.5, the current Opus (Benn, 28 Sept 2026); `LABEL_MODEL` switches it to Sonnet 5 once an eval shows
 it reads labels as well (§6).
 
 ### 3.2 Per-call estimates (approximate)
@@ -181,8 +182,8 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
    talk, and output is checked for digits followed by "kcal".
 6. **Confirmation before writes** (§0.3): prompt injection in user text can at worst change a
    proposal the user then sees, never the database.
-7. **Age:** AI features are 18+ at launch (confirm policy for 16–17). Anthropic's policy has extra
-   requirements for minors.
+7. **Age:** Tali, and so every AI feature, is 18+ (Benn, 28 Sept 2026). Anthropic's policy has extra
+   requirements for minors, which don't arise while under-18s are turned away.
 8. **Tone:** the same copy rules as the app (`CLAUDE.md`, §0.5), and no moralising about food.
 
 ### 4.3 AI video and audio (later phases)
@@ -231,7 +232,7 @@ and personalised with text, not rendered per user. That keeps costs flat and mak
 
 1. **Eval set per task**, built from real, consented examples: parsing accuracy against weighed
    meals, recipe completeness, photo identification rate, and tone and safety checks for coaching.
-2. **Model selection by eval:** start on Opus 5, test Sonnet 5 and Haiku 4.5, and pick the cheapest
+2. **Model selection by eval:** start on Opus 5.5, test Sonnet 5 and Haiku 4.5, and pick the cheapest
    model that meets the bar. Benn signs off.
 3. **Red-team pass:** eating-disorder prompts, self-harm, medical questions, prompt injection,
    gentle-mode leaks, and minors.

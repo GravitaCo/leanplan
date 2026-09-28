@@ -11,8 +11,8 @@
  *   typed error, never raw model text.
  * - Nothing about the photo or its values is logged or stored: counts, sizes and timings only.
  *
- * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-opus-5, the quality baseline per
- * ai-platform-plan.md §6; move to claude-sonnet-5 only once an eval shows it reads labels as well),
+ * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-opus-5-5, the quality baseline per
+ * ai-platform-plan.md §6 (Benn, 28 Sept 2026); move to claude-sonnet-5 only once an eval shows it reads labels as well),
  * LABEL_EFFORT (default low). SUPABASE_URL and the RPC's apikey come from the platform: the
  * `default` entry of SUPABASE_PUBLISHABLE_KEYS, else the legacy SUPABASE_ANON_KEY (retired end of
  * 2026). The RPC also refuses a caller whose latest label-photo consent isn't a yes (403 consent).
@@ -20,7 +20,7 @@
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0'
 import { LABEL_SCHEMA, validateLabelRead } from '../_shared/label-read.ts'
 
-const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-opus-5'
+const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-opus-5-5'
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
 type Effort = (typeof EFFORT_LEVELS)[number]
 const envEffort = Deno.env.get('LABEL_EFFORT') as Effort | undefined
@@ -183,10 +183,11 @@ Deno.serve(async (req) => {
   }
   content.push({ type: 'text', text: 'Transcribe the label.' })
 
-  // Opus 5: adaptive thinking at low effort (transcription is perception, not reasoning), and
-  // server-side fallbacks so a classifier decline is retried on the recommended model. Haiku takes
-  // neither effort nor adaptive thinking; other models skip the fallback beta.
-  const opus5 = MODEL === 'claude-opus-5'
+  // Opus 5 and 5.5: adaptive thinking at low effort (transcription is perception, not reasoning;
+  // set explicitly, since 5.5 defaults to medium), and server-side fallbacks so a classifier decline
+  // is retried on the recommended model. Haiku takes neither effort nor adaptive thinking; other
+  // models skip the fallback beta.
+  const opus5 = MODEL === 'claude-opus-5' || MODEL === 'claude-opus-5-5'
   const haiku = MODEL.startsWith('claude-haiku')
   const client = new Anthropic({ apiKey: key, timeout: MODEL_TIMEOUT_MS, maxRetries: 0 })
   let msg: Anthropic.Beta.BetaMessage

@@ -182,7 +182,7 @@ The confirm view says where the figures came from:
   unless the caller's latest `label-photo` consent is a yes (compliance register #28); the app
   sends unsynced consents (`flushConsents`) just before a read.
 - Deploy steps (reviews, migration and function done 28 Sept; still to do before launch: confirm the spend limit, smoke-test, flip the flag): reviews; run the migration in the SQL editor; `supabase secrets set
-  ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-opus-5 as the quality baseline, and `LABEL_EFFORT`); the
+  ANTHROPIC_API_KEY=…` (optional `LABEL_MODEL`, default claude-opus-5-5 as the quality baseline, and `LABEL_EFFORT`); the
   RPC's apikey comes from the platform (`SUPABASE_PUBLISHABLE_KEYS` default, else the legacy
   `SUPABASE_ANON_KEY`); `supabase functions deploy ai-read-label`; set a monthly
   spend limit on the Anthropic account; smoke-test; then flip `LABEL_SCAN_ENABLED` and merge.
