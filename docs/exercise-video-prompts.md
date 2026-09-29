@@ -68,11 +68,34 @@ no counter; they are there to show posture and set-up.
 
 ## Character and scene block (use in every prompt)
 
+The studio, light, camera and tone stay the same in every clip. The demonstrator varies in age,
+heritage, build, hair and clothing so people see bodies like their own (Benn, 29 Sept 2026).
+**Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
+defined muscles.
+
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
-> Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal leggings,
-> sage-green sports bra, open cropped tank, flat training shoes. Calm, focused expression.
+> A {gender} in {their} {age}, {heritage} heritage, {build}, realistic skin with natural
+> texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
+> defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
+> in muted tones with no logos or text, and flat training shoes. Calm, focused expression.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
 > colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
+
+- **gender / their:** woman / her, man / his. The exercise prompts are written with "she"; for
+  a man, use the "he" version of the prompt.
+- **age:** 20s, 30s, 40s, 50s, 60s, 70s
+- **heritage:** Black African, Black Caribbean, East Asian, South Asian, Southeast Asian,
+  Middle Eastern, North African, Latin American, White European, mixed
+- **build:** slim build, medium natural build, soft average build, curvy build, larger build,
+  soft stocky build (no athletic or muscular builds)
+- **hair:** low ponytail, short cropped hair, braids tied back, natural afro tied back, short
+  grey hair, shaved head, hair in a low bun, a fitted sports hijab
+- **outfit (workout-appropriate, fitted enough to show the joints):** charcoal leggings, a
+  sage-green sports bra and an open cropped tank; dark joggers and a fitted plain T-shirt; navy
+  training shorts and a loose vest; full-length leggings and a fitted long-sleeve top; relaxed
+  stone-coloured trousers and a zip-up training top
+
+Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
 **For machine and cable exercises, add:**
 
