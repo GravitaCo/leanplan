@@ -103,11 +103,13 @@ export function Under16({ onWrong, onClose, deleting, source }: { onWrong?: () =
 
 /**
  * The app-level stop while the store's `underAge` is set: nothing else of the app shows, nothing
- * syncs. Close and delete opens the existing deletion confirm (typed DELETE, a fresh sign-in when
+ * syncs, reminders are held. Redo setup (an existing account) shows it in place of the wizard's own. Close and delete opens the existing deletion confirm (typed DELETE, a fresh sign-in when
  * the session's is old; the server keeps its own re-auth rule). Its Cancel returns here.
  */
-export function UnderAgeStop({ source }: { source: UnderAgeSource }) {
-  const mistake = useStore((s) => s.underAgeMistake)
+export function UnderAgeStop({ source, onWrong }: { source: UnderAgeSource; onWrong?: () => void }) {
+  const underAgeMistake = useStore((s) => s.underAgeMistake)
+  // the redo wizard's stop also goes back to its age question
+  const mistake = () => { underAgeMistake(); onWrong?.() }
   const profileOpen = useStore((s) => s.profileOpen)
   const clearProfileOpen = useStore((s) => s.clearProfileOpen)
   // back from a Google re-sign-in for the deletion (App asks for 'delete-confirm'): reopen the confirm

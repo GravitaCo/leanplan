@@ -158,6 +158,19 @@ Added 2026-09-27 (consent release):
     a backstop (no AI, words only). The ICO Children's Code is treated as out of scope on the basis
     of a "likely to be accessed by children" assessment that is still to be written into the DPIA
     (OPEN).
+    - Supplement reminders stop while the stop shows: this device's push subscription ends through
+      the existing unsubscribe path (best-effort, in the background; retried on a later launch or
+      connection; device-only marker `_meta.pushHeld` inside `leanplan.v1`). "I typed my age wrong"
+      re-registers them without asking, or turns the setting off when it can't. Redo setup (an
+      existing account) uses the app's stop, not the first run's automatic deletion.
+    - The app stop's Close needs a connection and doesn't retry by itself (only setup's under-age
+      deletion retries).
+    - OPEN, walk-away: someone who closes the app without choosing keeps their account on the
+      server. Benn approved automatic deletion after 30 days unresolved as the next change (not
+      built). For the Profile and backup paths the under-18 age isn't saved, so a relaunch returns
+      to the normal app; the 30-day design therefore needs a marker, which is new processing
+      needing its own privacy text, register line and, if it's a phone key, a `cookies.ts` entry.
+    - OPEN: the likely-to-be-accessed assessment in the DPIA.
 22. Resolved 2026-09-27 (as built: the Withdrawal row above). Withdrawal used to clear
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.

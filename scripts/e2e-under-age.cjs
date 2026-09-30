@@ -55,6 +55,23 @@ async function scenario(browser, name, fn, opts = {}) {
     localStorage.setItem('tali.mode', 'account')
     if (st) localStorage.setItem('leanplan.v1', st)
   }, [JSON.stringify(sessionOf(opts.authAgoS ?? 10)), JSON.stringify(opts.state ?? deviceState())])
+  // Web Push stubbed on the page (headless has no push service): one subscription, counted.
+  // sessionStorage 'e2e.push' = { unsub: 'ok' | 'fail', sub: 'ok' | 'fail', active } survives reloads
+  if (opts.push) await ctx.addInitScript((mode) => {
+    const load = () => JSON.parse(sessionStorage.getItem('e2e.push') || 'null') || { ...mode, active: true, unsubs: 0, subs: 0 }
+    const save = (x) => sessionStorage.setItem('e2e.push', JSON.stringify(x))
+    save(load())
+    const sub = { endpoint: 'https://push.example/e2e-endpoint', toJSON() { return { endpoint: this.endpoint, keys: { p256dh: 'p', auth: 'a' } } },
+      async unsubscribe() { const x = load(); x.unsubs++; if (x.unsub === 'fail') { save(x); throw new Error('push service unreachable') } x.active = false; save(x); return true } }
+    const pm = { async getSubscription() { return load().active ? sub : null },
+      async subscribe() { const x = load(); x.subs++; if (x.sub === 'fail') { save(x); throw new Error('no gesture') } x.active = true; save(x); return sub } }
+    const reg = { pushManager: pm }
+    navigator.serviceWorker.getRegistration = async () => reg
+    Object.defineProperty(navigator.serviceWorker, 'ready', { get: () => Promise.resolve(reg) })
+    Object.defineProperty(Notification, 'permission', { get: () => 'granted' })
+    Notification.requestPermission = async () => 'granted'
+    window.__setPush = (m) => save({ ...load(), ...m })
+  }, { unsub: 'ok', sub: 'ok', ...opts.push })
   const rows = { settings: [], day_logs: [], custom_foods: [], recipes: [], consents: [{ id: GRANTED.records[0].id, user_id: UID, type: 'health', version: '2026-09-v1', granted: true, recorded_at: GRANTED.records[0].at }], routines: [], training_plans: [], ...(opts.rows || {}) }
   // every request to the backend, by kind: `writes` are uploads, `reads` pulls, `fnCalls` functions
   const net = { writes: [], reads: [], fnCalls: [] }
@@ -80,7 +97,7 @@ async function scenario(browser, name, fn, opts = {}) {
     const t = m[1]
     if (req.method() === 'GET') { net.reads.push(t); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows[t] || []) }) }
     const list = JSON.parse(req.postData() || '[]')
-    net.writes.push({ t, list })
+    net.writes.push({ t, list, method: req.method(), url })
     for (const row of [].concat(list)) {
       const i = (rows[t] ||= []).findIndex((r) => keyOf(t).every((k) => r[k] === row[k]))
       if (i >= 0) rows[t][i] = { ...rows[t][i], ...row }; else rows[t].push(row)
@@ -141,6 +158,8 @@ async function typeAge(page, age) {
 }
 /** uploads of the settings row (the profile): the one a saved age would go in */
 const settingsWrites = (net) => net.writes.filter((w) => w.t === 'settings')
+const pushState = (page) => page.evaluate(() => JSON.parse(sessionStorage.getItem('e2e.push') || 'null'))
+const REMINDERS = { ...PROFILE, notificationsEnabled: true }
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -294,6 +313,86 @@ const settingsWrites = (net) => net.writes.filter((w) => w.t === 'settings')
     await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
     expect((await stored(page)).profile.age === 34, 'the stored age untouched')
   })
+
+  await run('reminders: the stop ends this device’s push subscription; "typed wrong" brings it back', async ({ page, net }) => {
+    await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
+    await page.waitForTimeout(800)
+    await typeAge(page, 15)
+    await page.locator(STOP).waitFor() // the stop first, whatever the push service does
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('e2e.push')).active === false)
+    const del = net.writes.filter((w) => w.t === 'push_subscriptions' && w.method === 'DELETE')
+    expect(del.length === 1 && del[0].url.includes('endpoint=eq.'), 'the subscription row deleted through the existing path: ' + del.length)
+    const st = await stored(page)
+    expect(st._meta.pushHeld === true && st.profile.notificationsEnabled === true && st.profile.age === 34, 'held on this device; the setting and the profile unchanged')
+    await btn(page, 'I typed my age wrong').click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('e2e.push')).active === true)
+    const up = net.writes.filter((w) => w.t === 'push_subscriptions' && w.method === 'POST')
+    expect(up.length === 1, 'registered again: ' + up.length)
+    const after = await stored(page)
+    expect(!after._meta.pushHeld && after.profile.notificationsEnabled === true, 'restored as it was')
+    expect(await page.getByRole('switch', { name: 'Supplement reminders' }).getAttribute('aria-checked') === 'true', 'Profile says on')
+  }, { push: {}, state: deviceState({ profile: REMINDERS }) })
+
+  await run('reminders: a failed unsubscribe retries on the next launch; a restore that can’t happen turns them off', async ({ page, net }) => {
+    await stopCopy(page, { saved: false }) // stored age 16: the stop at launch
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('e2e.push')).unsubs >= 1)
+    expect((await pushState(page)).active === true && (await stored(page))._meta.pushHeld === true, 'the push service failed: still held, still to do')
+    await page.evaluate(() => window.__setPush({ unsub: 'ok', sub: 'fail' }))
+    await page.reload()
+    await page.locator(STOP).waitFor()
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('e2e.push')).active === false)
+    expect(net.writes.filter((w) => w.t === 'settings').length === 0, 'still no sync')
+    await btn(page, 'I typed my age wrong').click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    await page.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('leanplan.v1')); return s.profile.notificationsEnabled === false && !s._meta.pushHeld })
+    expect(await page.getByRole('switch', { name: 'Supplement reminders' }).getAttribute('aria-checked') === 'false', 'Profile says off')
+  }, { push: { unsub: 'fail' }, state: deviceState({ profile: { ...REMINDERS, age: 16 } }) })
+
+  await run('redo setup (flag on, existing account): the app stop, Close and delete, typed wrong back to the age question', async ({ page, net }) => {
+    await page.locator('.hdr .cpill').waitFor()
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).click()
+    await page.getByRole('button', { name: 'Redo setup' }).click()
+    await h1(page, 'What do you like to be called?')
+    await btn(page, 'Continue').click()
+    await h1(page, 'How old are you?')
+    await page.getByLabel('Age in years').fill('15'); await btn(page, 'Continue').click()
+    await stopCopy(page, { saved: true })
+    await shot(page, 'age-stop-redo')
+    expect(!(await page.locator(STOP).innerText()).includes('Closing deletes your new account'), 'not the first-run note')
+    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('tali.onboarding') || 'null'))
+    expect(!draft || draft.age == null, 'no under-18 age kept in the draft: ' + draft?.age)
+    const w0 = net.writes.length
+    await page.waitForTimeout(1500)
+    expect(net.writes.length === w0 && net.fnCalls.length === 0, 'nothing synced, nothing deleted by itself')
+    await btn(page, 'Close and delete').click()
+    await page.getByRole('dialog', { name: 'Delete everything?' }).waitFor()
+    await btn(page, 'Cancel').click()
+    await page.locator(STOP).waitFor()
+    await btn(page, 'I typed my age wrong').click()
+    await h1(page, 'How old are you?')
+    expect((await stored(page)).profile.age === 34 && (await stored(page)).profile.name === 'Sam', 'nothing saved')
+    await page.getByLabel('Age in years').fill('34'); await btn(page, 'Continue').click()
+    await h1(page, 'A quick health check')
+  }, { url: ON })
+
+  await run('redo setup: Close and delete runs the usual deletion, not the under-age one', async ({ page, net }) => {
+    await page.locator('.hdr .cpill').waitFor()
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).click()
+    await page.getByRole('button', { name: 'Redo setup' }).click()
+    await h1(page, 'What do you like to be called?'); await btn(page, 'Continue').click()
+    await h1(page, 'How old are you?')
+    await page.getByLabel('Age in years').fill('16'); await btn(page, 'Continue').click()
+    await page.locator(STOP).waitFor()
+    await btn(page, 'Close and delete').click()
+    await page.getByLabel('Type DELETE to confirm').fill('DELETE')
+    await btn(page, 'Delete everything').click()
+    await page.getByRole('button', { name: /Sign in|Log in/ }).first().waitFor({ timeout: 8000 })
+    const del = net.fnCalls.filter((c) => c.url.includes('delete-account'))
+    expect(del.length === 1 && del[0].body.reason !== 'under-age', 'one ordinary deletion: ' + JSON.stringify(del))
+  }, { url: ON })
 
   await run('wizard stop (flag on): Childline, Beat and 999, the new copy', async ({ page }) => {
     await h1(page, 'A few questions, so Tali fits you')

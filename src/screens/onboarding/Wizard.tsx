@@ -28,7 +28,7 @@ import { Opts } from './Opts'
 import { useScrollLock } from '@/ui/primitives'
 import { COPY, INTRO_POINTS, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
-import { SPS, Signposts, Under16 } from './AgeStop'
+import { SPS, Signposts, Under16, UnderAgeStop } from './AgeStop'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
 
@@ -46,6 +46,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   const data = useStore((s) => s.data)
   const health = canSaveHealthAnswers(data)
   const deleteUnderAge = useStore((s) => s.deleteUnderAge)
+  const raiseUnderAge = useStore((s) => s.raiseUnderAge)
   const [d, setD] = useState<WizardDraft>(() => {
     const saved = loadDraft()
     if (saved && saved.mode === mode && !!saved.redo === !!redo) return saved
@@ -57,7 +58,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   const put = (next: WizardDraft) => {
     setD(next)
     // never keep health answers on the device without the local consent record (plan §8)
-    if (health || !hasHealth(next)) saveDraft(next)
+    // Redo setup's age stop keeps no under-18 age on the device: a reload asks the age again
+    const keep = next.redo && next.step === 'under16' ? { ...next, age: undefined, step: 'age' as const } : next
+    if (health || !hasHealth(keep)) saveDraft(keep)
   }
   const patch = (x: Partial<WizardDraft>) => put({ ...d, ...x })
   const go = (x: Partial<WizardDraft> = {}) => { const n = { ...d, ...x }; put(n.ret ? { ...n, ret: undefined, step: 'summary' } : { ...n, step: nextStep(n, health) }) }
@@ -71,8 +74,14 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   }, [d.step, health])
 
   // the kind stop keeps nothing but the age it was given ("We haven't kept any of your answers")
+  // Redo setup is an existing account: its stop is the app's (nothing syncs, reminders held,
+  // Close and delete through the usual deletion), and its answers stay for "I typed my age wrong"
   useEffect(() => {
-    if (d.step === 'under16' && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
+    if (d.step === 'under16' && d.redo) raiseUnderAge('profile', { inWizard: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.step])
+  useEffect(() => {
+    if (d.step === 'under16' && !d.redo && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
   const common = { d, go, back, patch, closable }
@@ -85,7 +94,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
-    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
+    case 'under16': return d.redo
+      ? <UnderAgeStop source="profile" onWrong={() => put({ ...d, age: undefined, step: 'age' })} />
+      : <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
     case 'ready': return <Ready {...common} />
     case 'ready-note': return <Note kind="readiness" onGo={() => go()} />
     case 'pregnancy-note': return <Note kind="pregnancy" onGo={() => go()} />

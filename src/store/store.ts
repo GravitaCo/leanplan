@@ -53,7 +53,7 @@ import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion,
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { isUnderAge } from '@/core/domain/age'
+import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { stampFields } from '@/core/domain/profileMerge'
 
 enableMapSet()
@@ -262,9 +262,13 @@ export interface StoreState {
    * An under-18 age came in (see UnderAgeSource): the app shows only the stop screen, nothing
    * syncs and AI label reading can't be reached. Never persisted: a launch finds a stored age again.
    */
-  underAge: { source: UnderAgeSource } | null
-  /** "I typed my age wrong" on the stop screen: back to Profile (a stored under-18 age is cleared, a synced edit) */
+  underAge: { source: UnderAgeSource; inWizard?: boolean } | null
+  /** "I typed my age wrong" on the stop screen: back to Profile (a stored under-18 age is cleared, a
+   *  synced edit); from the redo wizard's stop (`inWizard`), back to its age question */
   underAgeMistake: () => void
+  /** Redo setup's age stop (an existing account): the app stop's rules (no sync, reminders held),
+   *  shown by the wizard itself so "I typed my age wrong" returns to its age question */
+  raiseUnderAge: (source: UnderAgeSource, opts?: { inWizard?: boolean }) => void
   /** deletion needs a sign-in from the last 5 minutes: true when this session's is older */
   deleteNeedsReauth: () => boolean
   /** re-confirm identity: the password (email accounts) or a fresh Google sign-in (leaves the page) */
@@ -458,7 +462,37 @@ export const useStore = create<StoreState>()(
     const refuseUnderAge = (age: unknown, source: UnderAgeSource): boolean => {
       if (!isUnderAge(age as number | string | null | undefined)) return false
       set((st) => { st.underAge ??= { source } })
+      void settleReminders()
       return true
+    }
+    /**
+     * Reminders follow the stop (reminderAction): while it shows, this device's push subscription
+     * ends (best-effort, in the background: the stop never waits on it; retried on a later launch
+     * or connection); once it's gone without a deletion, they're registered again without asking,
+     * or, if that can't be done, the setting turns off so Profile says what's true.
+     */
+    let restoring = false
+    const settleReminders = async (): Promise<void> => {
+      const s = get()
+      const a = reminderAction({ stopped: !!s.underAge, enabled: !!s.data.profile?.notificationsEnabled, held: !!s.data._meta?.pushHeld })
+      if (!a) return
+      if (a === 'hold') { set((st) => { ensureMeta(st.data, false).pushHeld = true }); persist() }
+      if (a !== 'restore') { await withTimeout(unsubscribePush(), 5000, undefined); return }
+      if (restoring) return
+      restoring = true
+      try {
+        set((st) => { delete ensureMeta(st.data, false).pushHeld })
+        persist()
+        if (!get().data.profile.notificationsEnabled) return
+        const can = get().authed && navigator.onLine && consentLetsSync(get().data)
+        const ok = can ? await withTimeout(resubscribePush(), 8000, false) : false
+        if (!ok && !get().underAge) {
+          set((st) => { st.data.profile.notificationsEnabled = false; markSettingsDirty(st.data) })
+          saved()
+        }
+      } finally {
+        restoring = false
+      }
     }
     /**
      * After the saved data was replaced (a pull, an owner choice, a wipe): a stored under-18 age
@@ -469,6 +503,7 @@ export const useStore = create<StoreState>()(
       const cur = get().underAge
       if (stored && !cur) set((st) => { st.underAge = { source } })
       else if (!stored && cur && (cur.source === 'sync' || cur.source === 'launch')) set((st) => { st.underAge = null })
+      void settleReminders()
     }
 
     const markSettingsDirty = (s: PersistedState) => {
@@ -1152,6 +1187,9 @@ export const useStore = create<StoreState>()(
           }
         }
         set((st) => { st.authReady = true })
+        // reminders and the 18+ stop: held while it shows (a launch with a stored under-18 age), or
+        // restored after one that went; never waited on
+        void settleReminders()
 
         if (session) get().runSync()
         window.addEventListener('offline', () => set((st) => { st.online = false }))
@@ -1161,6 +1199,7 @@ export const useStore = create<StoreState>()(
           set((st) => { st.online = true })
           // back online: an under-18 deletion still to do retries straight away (runSync)
           underAgeTried = 0
+          void settleReminders()
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1628,9 +1667,18 @@ export const useStore = create<StoreState>()(
           // stamped, so the per-field merge (profileMerge) keeps this clear over the account's older age
           if (stored) { st.data.profile.age = null; stampFields(st.data.profile, ['age'], nowIso()); markSettingsDirty(st.data) }
           st.underAge = null
-          st.tab = 'profile'; st.profileOpen = 'metrics'
+          // the redo wizard's stop goes back to its own age question
+          if (!u.inWizard) { st.tab = 'profile'; st.profileOpen = 'metrics' }
         })
         if (stored) saved()
+        // reminders come back as they were (or off, if they can't without asking)
+        void settleReminders()
+      },
+
+      raiseUnderAge: (source, opts) => {
+        if (get().underAge) return
+        set((st) => { st.underAge = { source, ...(opts?.inWizard ? { inWizard: true } : {}) } })
+        void settleReminders()
       },
 
       deleteNeedsReauth: () => !sessionSignedInRecently(getToken()),
@@ -1681,7 +1729,7 @@ export const useStore = create<StoreState>()(
           if (goneUid && pendingDeletion()?.uid === goneUid) clearPendingDeletion()
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
-            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null
+            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null; st.redoOpen = false; st.setupOpen = false
             st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = null; st.sync = 'idle'
           })
           return res

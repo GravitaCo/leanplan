@@ -4,7 +4,7 @@
 import type { OnboardingOutcomes, Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
-import { isUnderAge } from '@/core/domain/age'
+import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { MIN_AGE, asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
@@ -81,6 +81,10 @@ function routing(): void {
     ['18+ (Benn): one minimum age, the legal one', MIN_AGE === 18 && MIN_AGE === LEGAL_MIN_AGE],
     ['isUnderAge: under 18 only; a missing or non-numeric age is not under age', isUnderAge(0) && isUnderAge(15) && isUnderAge(17) && isUnderAge(17.9)
       && !isUnderAge(18) && !isUnderAge(120) && !isUnderAge(null) && !isUnderAge(undefined) && !isUnderAge(NaN)],
+    ['reminders and the stop: held when it shows with reminders on, retried while held, restored once it goes', (() => {
+      const A = (stopped: boolean, enabled: boolean, held: boolean) => reminderAction({ stopped, enabled, held })
+      return A(true, true, false) === 'hold' && A(true, false, false) === null && A(true, true, true) === 'retry' && A(true, false, true) === 'retry'
+        && A(false, true, true) === 'restore' && A(false, false, true) === 'restore' && A(false, true, false) === null && A(false, false, false) === null })()],
     ['under 18 (15, 16, 17): kind stop, nothing shown', [u16, t16, t17, t17b].every((x) => x.stop === 'under16' && x.hideCalories && x.hiddenReason === 'under16' && x.noAI && x.hideWeight && x.reasons.join() === 'under16')],
     ['no 16–17 tier left: nothing under 18 gets past the stop', [t16, t17].every((x) => !x.signpost.length && x.maintenanceOnly)],
     ['18: adult rules', !a18.stop && !a18.noDeficit && !a18.hideWeight && !a18.noAI && !a18.reasons.length],

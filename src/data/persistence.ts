@@ -29,6 +29,9 @@ export interface SyncMeta {
   /** a health answer changed and its plan and targets still have to be re-run (store
    *  rerunHealthAnswers: the engine loads on demand, so offline it waits for a connection) */
   rerunAnswers?: boolean
+  /** reminders were paused on this device while the 18+ stop showed (store settleReminders,
+   *  core/domain/age.ts reminderAction): restored, or turned off, once it's gone. Device only */
+  pushHeld?: boolean
 }
 
 export interface PersistedState extends AppState {

@@ -116,7 +116,9 @@ function TaliApp() {
   if (pend && pend.uid === (authed ? getUid() : data._meta?.owner)) return <Under16 deleting onClose={() => {}} />
   // 18+ (Benn, Sept 2026): an under-18 age from Profile, a backup, sync or this phone's saved data.
   // Only the stop shows, before consent or anything else; sync stays off (store runSync)
-  if (underAge) return <UnderAgeStop source={underAge.source} />
+  // (the redo wizard shows its own, over its age question, while it's open)
+  if (underAge && !(underAge.inWizard && ONBOARDING_ENABLED && redoOpen)) return <UnderAgeStop source={underAge.source} />
+  if (underAge && ONBOARDING_ENABLED && redoOpen) return <Lazy><Onboarding mode="first" redo onClose={() => openRedo(false)} /></Lazy>
   // One consent screen: the live one (screens/legal/ConsentScreen.tsx) until the health answer is
   // in; sync waits for it too (store scheduleSync, consentLetsSync). Benn: it stays the one consent
   // screen with the onboarding flag on as well (the Onboarding 6 consent boards aren't shown).
