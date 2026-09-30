@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { IfThenPlan } from '@/core/types'
 import { plansDue } from '@/core/domain/insights'
-import { Sheet } from '@/ui/primitives'
+import { BareSheet, Sheet } from '@/ui/primitives'
+import { IF_THEN } from '../onboarding/copyApp'
+
+/** "When I get home from work", or a plan made from a cue (ob5-4) as it was written: "After lunch". */
+export const whenLine = (when: string) => (/^after\b/i.test(when) ? when.charAt(0).toUpperCase() + when.slice(1) : `When ${when}`)
 
 export const PLAN_OUTCOME: Record<IfThenPlan['reviews'][number]['r'], string> = { worked: 'Worked', mixed: 'Mixed', no: "Didn't work" }
 
@@ -49,7 +53,7 @@ export function PlanReviewSheet({ onClose }: { onClose: () => void }) {
       </div>
       {due.map((pl) => (
         <div className="card" key={pl.id}>
-          <div style={{ fontWeight: 600 }}>When {pl.when}</div>
+          <div style={{ fontWeight: 600 }}>{whenLine(pl.when)}</div>
           <div className="sub" style={{ margin: '2px 0 10px' }}>I'll {pl.then}{pl.cope ? `. If something gets in the way: ${pl.cope}` : ''}</div>
           <div className="chips">
             {(Object.keys(PLAN_OUTCOME) as (keyof typeof PLAN_OUTCOME)[]).map((k) => (
@@ -59,5 +63,38 @@ export function PlanReviewSheet({ onClose }: { onClose: () => void }) {
         </div>
       ))}
     </Sheet>
+  )
+}
+
+/**
+ * ob5-4: once on Today after the first workout, "Plan when you'll do it". Saved as an ordinary
+ * if-then plan ("after my morning coffee" → "do my workout"), so the weekly check-in and the Plan
+ * tab carry it as they do any other. Save or Not now: never offered again (onDone).
+ */
+export function FirstPlanSheet({ onDone }: { onDone: () => void }) {
+  const savePlan = useStore((s) => s.savePlan)
+  const [after, setAfter] = useState('')
+  const [then, setThen] = useState<string>(IF_THEN.thenValue)
+  const ok = !!after.trim() && !!then.trim()
+  const save = () => { if (!ok) return; savePlan({ when: `after ${after.trim()}`, then: then.trim() }); onDone() }
+  return (
+    <BareSheet label={IF_THEN.title} onClose={onDone}>
+      <div className="ift">
+        <div className="ift-k">{IF_THEN.k}</div>
+        <h2 className="ift-h">{IF_THEN.title}</h2>
+        <div className="ift-lead">{IF_THEN.lead}</div>
+        <div className="ift-card">
+          <label htmlFor="ift_after">{IF_THEN.after}</label>
+          <input id="ift_after" value={after} placeholder={IF_THEN.placeholder} maxLength={80} onChange={(e) => setAfter(e.target.value)} />
+          <label htmlFor="ift_then" className="l2">{IF_THEN.then}</label>
+          <input id="ift_then" value={then} maxLength={80} onChange={(e) => setThen(e.target.value)} />
+        </div>
+        <div className="ift-cues" role="group" aria-label="Cues">
+          {IF_THEN.cues.map((c) => <button key={c} className={after === c ? 'on' : ''} aria-pressed={after === c} onClick={() => setAfter(c)}>After {c}</button>)}
+        </div>
+        <button className="btn ob-btn" disabled={!ok} onClick={save}>{IF_THEN.save}</button>
+        <button className="linkbtn ob-alt" onClick={onDone}>{IF_THEN.later}</button>
+      </div>
+    </BareSheet>
   )
 }
