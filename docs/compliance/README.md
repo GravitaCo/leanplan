@@ -74,9 +74,13 @@ terms `6ab56fd7d03958d70ceaf978`, cookie-policy `6ab56fd7d03958d70ceaf97a`.
 
 ## DPIA
 
+**Draft written 2026-09-30: [`dpia.md`](./dpia.md), awaiting Benn's review and sign-off** (and a
+solicitor's, if he wants one). It opens with the decisions for Benn. Until it is signed this item
+stays open. Scope it had to cover, kept for reference:
+
 A DPIA is very likely required (UK GDPR Art. 35; ICO lists large-scale special-category
 data and health apps among the triggers). The consent, minimisation, RLS and deletion work
-above feeds it, but the DPIA itself has not been written. **Open.** The onboarding wizard adds
+above feeds it. The onboarding wizard adds
 to it and should be covered before `ONBOARDING_ENABLED` goes on: pregnancy status, a medical
 flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating proxy (wellbeing),
 automated safety routing from them (Art. 22 not triggered, but record why), the outcomes-only
@@ -113,7 +117,8 @@ Owed now (processing is happening whether or not the texts are live):
 
 Should fix:
 
-7. Write the DPIA (scope: the DPIA section above).
+7. Write the DPIA (scope: the DPIA section above). Draft done 2026-09-30 (`dpia.md`); Benn to
+   review, decide D1 to D12 and sign.
 8. If EU users are targeted, appoint an EU representative (Art. 27) and name them in the policy.
 9. Confirm the Beat helpline number in the terms (0808 801 0677) against beateatingdisorders.org.uk.
 10. Done, see item 29: `send-supplement-reminders` returned supplement names in its response
