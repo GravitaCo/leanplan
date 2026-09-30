@@ -191,7 +191,7 @@ async function wizard(page, a = {}, snap) {
   await radio(page, '5,000 to 7,500 steps'); await s('ob1-8-move')
   await btn(page, 'Not sure? Describe your day instead').click(); await h1(page, 'What’s a normal day like?'); await s('ob1-8b-job')
   await btn(page, 'Use steps instead').click(); await radio(page, '5,000 to 7,500 steps'); await btn(page, 'Done').click()
-  await h1(page, 'Thanks. Now, how you like to train.'); await s('ob2-0-handoff')
+  await h1(page, 'How you like to train'); await page.getByText('Part 2 of 3 · How you like to train').waitFor(); await s('ob2-0-handoff')
 }
 
 /** The setup card, from "Finish setup" (or Continue setup) to Build my week. */
@@ -199,9 +199,9 @@ async function setup(page, a = {}, snap) {
   const s = async (n) => { if (snap != null) await shot(page, snap + n) }
   await h1(page, 'Are you moving much at the moment?'); await radio(page, 'A little, now and then'); await s('ob2-1-moving'); await cont(page)
   await h1(page, 'How confident do you feel with workouts?'); await radio(page, 'Just starting'); await s('ob2-2-confidence'); await cont(page)
-  await h1(page, 'How many days a week?')
+  await h1(page, 'How many days a week would you like to train?')
   if (a.oneDay) {
-    await radio(page, '1'); await page.getByText('One day is a good start. A second day adds more when you’re ready, if you’d like.').waitFor()
+    await radio(page, '1'); await page.getByText('One day is a great start. Two gets you the full benefit when you’re ready.').waitFor()
     await page.getByRole('checkbox', { name: 'Wednesday' }).click(); await s('ob2-3b-oneday')
   } else {
     await radio(page, '3'); await page.getByText('Not sure? Leave these and we’ll spread them out: Monday, Wednesday, Friday.').waitFor()
@@ -209,12 +209,27 @@ async function setup(page, a = {}, snap) {
     await s('ob2-3-days')
   }
   await cont(page)
-  await h1(page, 'How long can a session be?'); await radio(page, '30'); await s('ob2-4-minutes'); await cont(page)
+  await h1(page, 'How long can a session be?'); await radio(page, '20–30')
+  await page.getByText('Includes a 5-minute warm-up at the start.').waitFor()
+  await radio(page, '60+'); await page.getByText('Includes a 10-minute warm-up at the start.').waitFor()
+  await radio(page, '20–30'); await s('ob2-4-minutes'); await cont(page)
   await h1(page, 'Where will you train?'); await radio(page, 'At home'); await s('ob2-5-where'); await cont(page)
   await h1(page, 'What do you have at home?'); await check(page, 'Dumbbells'); await check(page, 'Mat'); await s('ob2-6-kit'); await cont(page)
   await h1(page, 'What do you enjoy?'); await check(page, 'Lifting weights'); await check(page, 'Walking'); await s('ob2-7-enjoy'); await cont(page)
   await h1(page, 'Any areas to go easy on?'); await check(page, 'Knees'); await s('ob2-8-areas')
+  await buildWeek(page, snap)
+}
+/** Build my week, then Part 3's intro (ob3-0) on the first run; the setup card goes straight to the summary. */
+async function buildWeek(page, snap) {
   await btn(page, 'Build my week').click()
+  const intro = page.getByRole('heading', { name: 'Your plan is ready', exact: true })
+  const sum = page.getByRole('heading', { name: 'Here’s a starting point, not a test', exact: true })
+  await intro.or(sum).first().waitFor()
+  if (await intro.count()) {
+    await page.getByText('Part 3 of 3 · Your plan').waitFor()
+    if (snap != null) await shot(page, snap + 'ob3-0-intro')
+    await btn(page, 'See my week').click()
+  }
 }
 const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
@@ -228,7 +243,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     // three days, today among them, so the first session is here to check (below)
     const pick = [todayWd, (todayWd + 2) % 7, (todayWd + 4) % 7]
     await wizard(page, {}, '')
-    await btn(page, 'Finish setup').click()
+    await btn(page, 'Continue').click()
     await setup(page, { weekdays: pick }, '')
     await summaryUp(page)
     await page.getByText('Built from your answers').waitFor()
@@ -249,6 +264,27 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await btn(page, 'Done').click()
     await btn(page, 'How we worked this out').click(); await page.getByRole('dialog', { name: 'How we worked this out' }).waitFor(); await shot(page, 'ob3-2c-how')
     await btn(page, 'Done').click()
+    // s-ob8: the warm-up in the week rows and as the first why row; no if-then row on the summary
+    const nSess = await page.locator('.sm-day').filter({ hasText: 'min' }).count()
+    expect(nSess >= 3 && (await page.locator('.sm-day').filter({ hasText: /Warm-up, then .+ · about \d+ min/ }).count()) === nSess && (await page.locator('.sm-day').filter({ hasText: /Warm-up, then \d+ exercises/ }).count()) >= 2, 'week rows: Warm-up, then N exercises')
+    expect((await page.locator('.sm-row:not(.lg)').first().textContent()).startsWith('A 5-minute warm-up first, every time'), 'the warm-up row comes first')
+    expect((await page.getByText('Want a small plan for week 1?').count()) === 0, 'no if-then row on the summary')
+    // ob3-6: other plans; choosing one replaces the suggested week, and switching back restores it
+    await btn(page, 'See other plans This week is our suggestion. You can choose a ready-made plan instead.').click()
+    await page.getByRole('dialog', { name: 'Other plans' }).waitFor()
+    await page.getByText('Suggested for you · in use').waitFor()
+    await page.getByText('Fits your 3 days · needs a gym').waitFor()
+    await page.getByText('More to come, including a 2-day plan for beginners.').waitFor()
+    await shot(page, 'ob3-6-others')
+    await page.locator('.sm-plan').filter({ hasText: 'Full body system' }).click()
+    await page.locator('.sm-day').filter({ hasText: 'Full body A' }).first().waitFor()
+    expect((await draft(page)).planChoice === 'full-body-system' && (await page.getByText('Why this week · tap any to see more').count()) === 0, 'the chosen plan is the week')
+    await shot(page, 'ob3-6b-chosen', true)
+    await btn(page, 'See other plans This week is our suggestion. You can choose a ready-made plan instead.').click()
+    await page.getByText('In use · Fits your 3 days · needs a gym').waitFor()
+    await page.locator('.sm-mine').click()
+    await page.getByText('Why this week · tap any to see more').waitFor()
+    expect(!(await draft(page)).planChoice, 'switched back to the suggested week')
     const before = net.posts.filter((p) => p.t === 'training_plans' || p.t === 'settings').length
     expect(before === 0, 'nothing saved or synced before Start')
     await btn(page, 'Start').click()
@@ -315,16 +351,19 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await cont(page); await cont(page); await radio(page, 'Build muscle'); await cont(page); await cont(page); await radio(page, 'No'); await cont(page)
     await page.getByLabel('Height in centimetres').fill('180'); await radio(page, 'Male'); await shot(page, 'dark-ob1-7-body'); await cont(page)
     await page.getByLabel('Weight in kilograms').fill('80'); await shot(page, 'dark-ob1-7b-weight'); await cont(page)
-    await btn(page, 'Done').click(); await btn(page, 'Finish setup').click()
+    await btn(page, 'Done').click(); await h1(page, 'How you like to train'); await shot(page, 'dark-ob2-0-handoff'); await btn(page, 'Continue').click()
     await cont(page); await cont(page); await radio(page, '4'); await shot(page, 'dark-ob2-3-days'); await cont(page)
-    await btn(page, 'Skip').click(); await btn(page, 'Skip').click(); await btn(page, 'Skip').click(); await btn(page, 'Skip').click()
-    await btn(page, 'Build my week').click()
+    await radio(page, '45–60'); await page.getByText('Includes an 8-minute warm-up at the start.').waitFor(); await shot(page, 'dark-ob2-4-minutes'); await cont(page)
+    await btn(page, 'Skip').click(); await btn(page, 'Skip').click(); await btn(page, 'Skip').click()
+    await buildWeek(page, 'dark-')
     await summaryUp(page); await shot(page, 'dark-ob3-1-summary', true)
+    await btn(page, 'See other plans This week is our suggestion. You can choose a ready-made plan instead.').click()
+    await page.getByRole('dialog', { name: 'Other plans' }).waitFor(); await shot(page, 'dark-ob3-6-others')
   }, { dark: true })
 
   await run('skip on the intro → age → Starter week, no calorie numbers', async ({ page }) => {
     await h1(page, 'A few questions, so Tali fits you')
-    await btn(page, 'Skip, I’ll figure it out myself').click()
+    await btn(page, 'Skip, I’ll set things up myself').click()
     await h1(page, 'No problem. Just your age, then you’re in.')
     await page.getByLabel('Age in years').fill('30'); await shot(page, 'ob1-0b-skip')
     await btn(page, 'Start using Tali').click()
@@ -352,7 +391,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
   await run('Later on the handoff → Starter week summary', async ({ page }) => {
     await wizard(page)
-    await btn(page, 'Later').click()
+    await btn(page, 'Skip for now, start with a simple week').click()
     await summaryUp(page); await page.getByText('Starter week: tell us more to personalise it').waitFor()
     await shot(page, 'ob3-4-starter', true)
     expect(await page.locator('[data-kcal]').count() === 1, 'numbers shown: weight, height and age are known')
@@ -360,7 +399,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
   await run('no weight → summary without numbers → Add weight', async ({ page }) => {
     await wizard(page, { noWeight: true })
-    await btn(page, 'Finish setup').click(); await setup(page)
+    await btn(page, 'Continue').click(); await setup(page)
     await summaryUp(page)
     await page.getByText('Add your weight any time for a starting estimate.').waitFor()
     expect((await page.locator('[data-kcal]').count()) === 0 && (await page.getByText(/\d[\d,]* kcal/).count()) === 0, 'no calorie or protein number')
@@ -372,7 +411,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
   await run('safety: wellbeing yes → gentle, maintenance, no number', async ({ page }) => {
     await wizard(page, { wellbeing: 'Yes' }, 'route-wellbeing/')
-    await btn(page, 'Later').click(); await summaryUp(page)
+    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
     await page.getByText('Eating at maintenance').waitFor(); await shot(page, 'ob4-7-maint', true)
     expect(fs.existsSync(path.join(OUT, 'route-wellbeing/ob4-2-wellbeing.png')), 'signposting shown')
     await btn(page, 'Start').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
@@ -382,15 +421,24 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
   await run('safety: readiness yes → gentler start and signposting', async ({ page }) => {
     await wizard(page, { ready: [true, false, false] }, 'route-readiness/')
-    await btn(page, 'Finish setup').click(); await setup(page); await summaryUp(page)
+    await btn(page, 'Continue').click(); await setup(page); await summaryUp(page)
     await page.locator('.sm-row').filter({ hasText: /gentle first/i }).waitFor()
     expect((await stored(page)) && (await draft(page)).outcomes.readiness === 'flagged', 'flagged')
   })
 
   await run('safety: pregnant → maintenance, no number, midwife', async ({ page }) => {
     await wizard(page, { ready: [false, false, true], pregnant: true }, 'route-pregnancy/')
-    await btn(page, 'Later').click(); await summaryUp(page)
+    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
     await page.getByText('Eating at maintenance').waitFor()
+    await page.getByText(/^while you’re pregnant or breastfeeding, when some weight change is normal/).waitFor().catch(() => page.getByText('For how long:').waitFor())
+    await page.locator('.sm-food').screenshot({ path: path.join(OUT, 'ob4-7-maint.png') })
+    await btn(page, 'What this means').click()
+    await page.getByRole('dialog', { name: 'Eating at maintenance' }).waitFor()
+    await page.getByText('Based on something you told us, Tali isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.').waitFor()
+    expect((await page.getByRole('dialog').getByText(/weigh-in/i).count()) === 0, 'the sheet shows no weigh-ins')
+    await shot(page, 'ob4-8-maint')
+    await btn(page, 'See your health check answers').click()
+    await h1(page, 'A quick health check'); await cont(page); await summaryUp(page)
     await btn(page, 'Start').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     const st = await stored(page)
     expect(st.profile.pregnancy?.flagged === true && st.profile.pregnancy.askedAt === today, 'pregnancy flag and its date')
@@ -400,7 +448,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
 
   await run('safety: medical (goal lose fat) → held at maintenance', async ({ page }) => {
     await wizard(page, { medical: true }, 'route-medical/')
-    await btn(page, 'Later').click(); await summaryUp(page)
+    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
     await page.getByText('Tali keeps this at maintenance for now, to keep things safe.').waitFor()
     const dr = await draft(page)
     expect(dr.outcomes.medical === 'flagged' && !JSON.stringify(dr).match(/kidney/i), 'outcome only')
@@ -479,9 +527,45 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
   }, { state: { ...newAccount(), consents: { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' },
     profile: { name: 'Sam', sex: 'F', age: 34, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } } })
 
+  await run('no health data consent: the Food card asks for the OK (ob4-9)', async ({ page }) => {
+    await h1(page, 'A few questions, so Tali fits you'); await btn(page, 'Let’s go').click(); await cont(page)
+    await page.getByLabel('Age in years').fill('34'); await cont(page)
+    await h1(page, 'What would make this worth it for you?'); await cont(page)
+    await radio(page, 'Lose fat'); await cont(page)
+    await h1(page, 'How you like to train')
+    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
+    await page.getByText('Targets need your OK').waitFor()
+    await page.getByText('Logging works in full. To set targets from your height, weight and age, Tali needs your OK to keep health data.').waitFor()
+    await page.locator('.sm-food').screenshot({ path: path.join(OUT, 'ob4-9-noconsent.png') })
+    await btn(page, 'Turn on health data').click()
+    await btn(page, 'Yes, keep it').waitFor()
+    await shot(page, 'ob4-9-noconsent-profile')
+    expect((await stored(page)).profile.onboardedAt, 'setup saved on the way')
+  }, { state: { ...newAccount(), consents: { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' } } })
+
+  for (const dark of [false, true]) {
+    await run(`if-then: once on Today after the first workout (ob5-4)${dark ? ', dark' : ''}`, async ({ page }) => {
+      await h1(page, 'Plan when you’ll do it')
+      await page.getByPlaceholder('my morning coffee').waitFor()
+      await shot(page, (dark ? 'dark-' : '') + 'ob5-4-ifthen')
+      await btn(page, 'After lunch').click()
+      await btn(page, 'Save').click()
+      await page.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('leanplan.v1')); return s.profile.ifThenOffered && s.profile.plans?.[0]?.when === 'after lunch' && s.profile.plans[0].then === 'do my workout' })
+      await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(600)
+      expect((await page.getByRole('heading', { name: 'Plan when you’ll do it' }).count()) === 0, 'never shown again')
+    }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
+      profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }, dark })
+  }
+  await run('if-then: Not now waves it off for good', async ({ page }) => {
+    await h1(page, 'Plan when you’ll do it'); await btn(page, 'Not now').click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.ifThenOffered === true)
+    expect(!(await stored(page)).profile.plans?.length, 'no plan saved')
+  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } } })
+
   await run('a 1-day week', async ({ page }) => {
     await wizard(page, { goal: 'Feel better and move more' })
-    await btn(page, 'Finish setup').click(); await setup(page, { oneDay: true }, 'oneday/')
+    await btn(page, 'Continue').click(); await setup(page, { oneDay: true }, 'oneday/')
     await summaryUp(page)
     expect((await page.locator('.sm-day').filter({ hasText: 'min' }).count()) === 1, 'one session')
     await page.locator('.sm-day').filter({ hasText: 'Wed' }).filter({ hasText: 'min' }).waitFor()
@@ -506,7 +590,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
     await cont(page); await radio(page, 'No'); await cont(page)
     await page.getByLabel('Height in centimetres').fill('165'); await radio(page, 'Prefer not to say'); await cont(page)
     await page.getByLabel('Weight in kilograms').fill('70'); await cont(page)
-    await btn(page, 'Done').click(); await btn(page, 'Later').click()
+    await btn(page, 'Done').click(); await btn(page, 'Skip for now, start with a simple week').click()
     await summaryUp(page)
     await btn(page, 'Start').click()
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
@@ -714,7 +798,7 @@ const summaryUp = (page) => h1(page, 'Here’s a starting point, not a test')
   const toSummary = async (page) => {
     for (let i = 0; i < 40; i++) {
       if (await page.getByRole('heading', { name: 'Here’s a starting point, not a test', exact: true }).count()) return
-      for (const n of ['Continue', 'Done', 'Finish setup', 'Build my week']) {
+      for (const n of ['Continue', 'Done', 'See my week', 'Build my week']) {
         const b = btn(page, n).first()
         if (await b.count() && await b.isVisible() && await b.isEnabled()) { await b.click(); break }
       }

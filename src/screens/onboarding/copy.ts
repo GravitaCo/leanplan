@@ -4,13 +4,15 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
-export { FIRST_SESSION, SETUP_CARD }
+import { FIRST_SESSION, HEALTH_ANSWERS_ROW, IF_THEN, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
+export { FIRST_SESSION, IF_THEN, SETUP_CARD }
 
 export interface ScreenCopy { title: string; lead?: string; why?: string; note?: string }
 
 export const COPY: Partial<Record<StepId, ScreenCopy>> = {
-  intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. Here’s what your answers do:', note: 'Skip any question you like. Your answers are private to your account. You can redo setup any time from Profile.' },
+  intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. First, a little about you.',
+    /** not on ob1-0, kept: compliance item 32 (Benn's wording) needs the Redo setup line */
+    note: 'Skip any question you like. Your answers are private to your account. You can redo setup any time from Profile.' },
   'skip-age': { title: 'No problem. Just your age, then you’re in.', lead: 'It’s the one thing we need to keep Tali safe for you.', note: 'You’ll start on a simple starter week with no calorie numbers. Build your own plan whenever you like from Today or Plan.' },
   name: { title: 'What do you like to be called?', why: 'so Tali can greet you. Your first name is plenty.' },
   age: { title: 'How old are you?', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tali is for people aged 18 and over. We keep your age, never your date of birth.' },
@@ -23,22 +25,32 @@ export const COPY: Partial<Record<StepId, ScreenCopy>> = {
   medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how eating less affects you. We keep what it means for your plan, not the condition.' },
   weight: { title: 'What do you weigh?', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tali never shows it back.' },
   move: { title: 'How much do you move on a normal day?', lead: 'Not counting workouts.', why: 'it sets your everyday energy use. Workouts are counted separately.' },
-  handoff: { title: 'Thanks. Now, how you like to train.', lead: 'A few quick taps about your time, kit and what you enjoy, and Tali builds your week from your answers. About a minute.', note: 'Rather do it later? You’ll get a starter week now, and a card on Today to finish whenever suits you.' },
+  handoff: { title: 'How you like to train', lead: 'So your week fits your life. You can change any of it later.' },
+  'plan-intro': { title: 'Your plan is ready', lead: 'We’ve built a week from your answers, and a starting point for food.' },
   moving: { title: 'Are you moving much at the moment?', why: 'it sets how gently your first weeks start.' },
   confidence: { title: 'How confident do you feel with workouts?', why: 'it sets how many exercises and sets you start with.' },
-  days: { title: 'How many days a week?', why: 'your workouts land on the days you pick. Other days are rest or a walk if you fancy it.' },
-  minutes: { title: 'How long can a session be?', why: 'it sets how many exercises fit. Short sessions count.', note: 'minutes, including a warm-up' },
+  days: { title: 'How many days a week would you like to train?', lead: 'Fewer is fine to start. You can add days later.', why: 'your workouts land on the days you pick. Other days are rest, or a walk if you fancy it.' },
+  minutes: { title: 'How long can a session be?', lead: 'Roughly is fine.', why: 'it sets how many exercises fit. Short sessions count.', note: 'minutes' },
   where: { title: 'Where will you train?', why: 'so every exercise is one you can do there.' },
   kit: { title: 'What do you have at home?', lead: 'Pick all that apply.', why: 'every exercise uses kit you have.' },
   enjoy: { title: 'What do you enjoy?', lead: 'Pick any. "Not sure yet" is fine.', why: 'more of what you enjoy makes it easier to keep going.' },
   areas: { title: 'Any areas to go easy on?', why: 'we leave out moves that load them and pick gentler ones.', note: 'Pain that’s new, sharp or getting worse is worth checking with a GP or physio first.' },
 }
 
-export const INTRO_POINTS: [string, string][] = [
-  ['A week built around you', 'Your goal, time and kit decide what goes in it, and every choice says why.'],
-  ['Honest food targets', 'Your age, height, weight and daily movement set a starting range, checked against your weigh-ins later.'],
-  ['Kept safe', 'A few health questions make sure we start at the right pace for you.'],
-]
+/** The three part intros (ob1-0, ob2-0, ob3-0; s-ob8 point 1): one pattern, "Part n of 3". */
+export const PARTS = {
+  intro: { n: 1, k: 'About you', time: 'About 2 minutes', go: 'Let’s go', alt: 'Skip, I’ll set things up myself',
+    points: ['Your name and age', 'A few health questions', 'Your goal, and how things are lately', 'Your height, weight and a normal day'] },
+  handoff: { n: 2, k: 'How you like to train', time: 'About a minute', go: 'Continue', alt: 'Skip for now, start with a simple week',
+    points: ['How many days, and which ones', 'How long a session can be', 'Where you train and what kit you have', 'What you enjoy, and anything to go easy on'] },
+  'plan-intro': { n: 3, k: 'Your plan', time: '', go: 'See my week', alt: '',
+    points: ['Your week, with a warm-up in every session', 'Why each part is there', 'Your food starting point'] },
+} as const
+export const partLabel = (n: number, k: string) => `Part ${n} of 3 · ${k}`
+
+/** ob2-4: the warm-up the chosen length includes (N from core/domain/warmup), in full-size text. */
+export const MINUTES_WARMUP = (n: number) => `Includes ${n === 8 || n === 11 || n === 18 ? 'an' : 'a'} ${n}-minute warm-up at the start.`
+export const MINUTES_WARMUP_S = 'Longer sessions get a longer warm-up, from 4 to 10 minutes.'
 
 export const READINESS_ITEMS = [
   'Chest pain, or a heart condition a doctor has told you about',
@@ -60,7 +72,7 @@ export const MEDICAL_ITEMS = [
   'A weight-loss injection, like semaglutide or tirzepatide',
 ]
 
-export const ONE_DAY_NOTE = 'One day is a good start. A second day adds more when you’re ready, if you’d like.'
+export const ONE_DAY_NOTE = 'One day is a great start. Two gets you the full benefit when you’re ready.'
 
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
@@ -85,9 +97,26 @@ export const SUMMARY = {
   noHeight: 'Add your height any time for a starting estimate.',
   maint: 'Eating at maintenance',
   maintS: 'No calorie number for now. Log food if you find it useful; there’s no target to hit.',
-  ifThen: 'Want a small plan for week 1?',
-  ifThenS: '"After ___, I’ll ___." Optional.',
+  /** ob4-7: pregnancy or breastfeeding */
+  maintP: 'That means eating to meet what your body needs each day, with no weight goal. There’s no calorie number to aim for, and logging works in full.',
+  maintLongK: 'For how long:',
+  maintLong: 'while you’re pregnant or breastfeeding, when some weight change is normal. We’ll check in every 12 weeks, and you can change it any time in Profile.',
+  maintMore: 'What this means',
+  /** ob4-9: no health data consent */
+  noConsentT: 'Targets need your OK',
+  noConsentS: 'Logging works in full. To set targets from your height, weight and age, Tali needs your OK to keep health data.',
+  noConsentGo: 'Turn on health data',
+  /** ob4-9: no age saved */
+  noAgeT: 'Add your age for a starting estimate',
+  noAgeS: 'Logging works in full. Your age sets your energy needs and keeps things safe, so we show no numbers without it.',
+  noAgeGo: 'Add age',
+  /** ob3-1: under the suggested week */
+  others: 'See other plans',
+  othersS: 'This week is our suggestion. You can choose a ready-made plan instead.',
   daySub: 'Why each part is here',
+  /** ob3-2's first row. The board's moves are placeholders (s-ob8 point 4), so the line names none. */
+  warmRow: (n: number) => `Warm-up · ${n} min`,
+  warmRowS: 'A minute or two to raise your pulse, then moving stretches for today’s joints',
   /** GAP: the "How we worked this out" sheet has no board; this is the §5 chain in plain words */
   howT: 'How we worked this out',
   how: [
@@ -96,6 +125,31 @@ export const SUMMARY = {
     'That gives your likely maintenance, as a range, since any estimate like this can be out by about a sixth. Your goal then sets the starting number, never below a safe minimum.',
     'After 3–4 weeks of weigh-ins, Tali checks it against what actually happened.',
   ],
+}
+
+/** ob4-8: "What this means", the person's own reason only (drawn: pregnancy). */
+export const MAINT_SHEET = {
+  title: 'Eating at maintenance',
+  rows: [
+    ['What it means', 'Eating to meet what your body needs each day, with no weight goal. You don’t need to count anything. Log food if it helps you, or not at all.'],
+    ['Why Tali does this', 'Based on something you told us, Tali isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.'],
+    ['How long it lasts', 'While you’re pregnant or breastfeeding. We’ll check in every 12 weeks, and you can change it any time in Profile.'],
+    ['What happens next', 'Tali asks before changing anything, and nothing changes on its own.'],
+  ] as [string, string][],
+  answers: 'See your health check answers',
+}
+
+/** ob3-6: "See other plans". GAP: "Suggested for you" and "In use" once a Tali plan is chosen. */
+export const OTHERS = {
+  title: 'Other plans',
+  close: 'Close',
+  lead: 'Ready-made plans by Tali. Pick one to use instead of your suggested week. Your answers stay saved, so you can switch back.',
+  mineK: 'Suggested for you · in use',
+  mineOff: 'Suggested for you',
+  mine: 'Your week, built from your answers',
+  inUse: 'In use',
+  h: 'Ready-made',
+  more: 'More to come, including a 2-day plan for beginners.',
 }
 
 /**
@@ -173,6 +227,6 @@ export function allCopy(): string[] {
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, INTRO_POINTS, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, REDO, CHECKIN])
+  walk([COPY, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, REDO, CHECKIN])
   return out
 }

@@ -13,7 +13,7 @@ import { canSaveHealthAnswers } from '@/data/consent'
 import { clearDraft, loadDraft, saveDraft } from '@/data/onboardingDraft'
 import { uuid } from '@/data/supabase'
 import {
-  AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, JOB_OPTIONS, KIT_OPTIONS, MINUTES_OPTIONS, MOVING_OPTIONS,
+  AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, JOB_OPTIONS, KIT_OPTIONS, MOVING_OPTIONS,
   STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, nextStep, prevStep,
   progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
@@ -27,7 +27,9 @@ import type { OnboardingOutcomes } from '@/core/types'
 import { Icon } from '@/ui/icons'
 import { Opts } from './Opts'
 import { useScrollLock } from '@/ui/primitives'
-import { COPY, INTRO_POINTS, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
+import { warmupMinutes, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
+import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
+import { COPY, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
@@ -81,7 +83,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   return <Fragment key={d.step}>{screen()}</Fragment>
   function screen() {
   switch (d.step) {
-    case 'intro': return <Intro onGo={() => go()} onSkip={() => put({ ...d, skipped: true, step: 'skip-age' })} />
+    case 'intro': return <PartIntro step="intro" onGo={() => go()} onAlt={() => put({ ...d, skipped: true, step: 'skip-age' })} />
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
@@ -99,7 +101,8 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'medical-note': return <Note kind="medical" onGo={() => go()} />
     case 'weight': return <Weight {...common} />
     case 'move': return <Move {...common} />
-    case 'handoff': return <Handoff onGo={() => go()} onLater={() => go({ later: true })} />
+    case 'handoff': return <PartIntro step="handoff" photo={partTwoPhoto} onGo={() => go()} onAlt={() => go({ later: true })} />
+    case 'plan-intro': return <PartIntro step="plan-intro" onGo={() => go()} />
     case 'moving': return <Radio {...common} step="moving" opts={MOVING_OPTIONS.map(([k, t]) => [k, t])} value={d.moving} set={(v) => go({ moving: v })} clear={{ moving: undefined }} />
     case 'confidence': return <Radio {...common} step="confidence" opts={CONFIDENCE_OPTIONS} value={d.experience} set={(v) => go({ experience: v })} clear={{ experience: undefined }} />
     case 'days': return <Days {...common} />
@@ -109,7 +112,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'enjoy': return <Chips {...common} step="enjoy" opts={ENJOY_OPTIONS} value={d.enjoy} none="not-sure" clear={{ enjoy: undefined }} />
     case 'areas': return <Areas {...common} />
     case 'summary': return <Summary d={d} onEdit={() => jump(mode === 'setup' ? 'moving' : 'name')} onPersonalise={() => put({ ...d, later: false, step: 'moving' })}
-      onAddWeight={() => put({ ...d, step: 'weight', ret: 'summary' })} onAddHeight={() => put({ ...d, step: 'body', ret: 'summary' })} onClose={onClose} />
+      onAddWeight={() => put({ ...d, step: 'weight', ret: 'summary' })} onAddHeight={() => put({ ...d, step: 'body', ret: 'summary' })}
+      onAddAge={() => put({ ...d, step: 'age', ret: 'summary' })} onAnswers={() => put({ ...d, step: 'ready', ret: 'summary' })}
+      onChoosePlan={(id) => put({ ...d, planChoice: id })} onClose={onClose} />
   }
   }
 }
@@ -147,20 +152,30 @@ const Cta = ({ label = 'Continue', onClick, disabled }: { label?: string; onClic
 
 /* ---------------- Onboarding 1 ---------------- */
 
-function Intro({ onGo, onSkip }: { onGo: () => void; onSkip: () => void }) {
-  const c = COPY.intro!
+/**
+ * The part intros (ob1-0, ob2-0, ob3-0): a photo, "Part n of 3" with a 3-step bar, the title, one
+ * line and what's coming. Parts 1 and 3 have no photo in the app yet: a token-coloured block
+ * stands in (flagged for Benn).
+ */
+function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | 'plan-intro'; photo?: string; onGo: () => void; onAlt?: () => void }) {
+  const c = COPY[step]!
+  const p = PARTS[step]
   return (
-    <div className="wz hero">
-      <div className="wz-eyebrow">About 2 minutes</div>
-      <h1 className="wz-h xl">{c.title}</h1>
-      <div className="wz-lead body">{c.lead}</div>
-      <ul className="wz-list-n">
-        {INTRO_POINTS.map(([t, s], i) => <li key={t}><span className="n num">{i + 1}</span><span><span className="t">{t}</span><span className="s">{s}</span></span></li>)}
-      </ul>
-      <div className="wz-note">{c.note}</div>
+    <div className="wz part">
+      {photo ? <img className="wz-photo" src={photo} alt="" /> : <div className="wz-photo ph" aria-hidden="true" />}
+      <section className="wz-part">
+        <div className="wz-bars" role="img" aria-label={`Part ${p.n} of 3`} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 0 }}>
+          {[1, 2, 3].map((i) => <span key={i} className={i <= p.n ? 'on' : ''} />)}
+        </div>
+        <div className="wz-part-k"><span className="k">{partLabel(p.n, p.k)}</span>{p.time && <span className="r">{p.time}</span>}</div>
+        <h1 className="wz-h">{c.title}</h1>
+        <div className="wz-lead">{c.lead}</div>
+        <ul className="wz-dots">{p.points.map((t) => <li key={t}>{t}</li>)}</ul>
+        {c.note && <div className="wz-note">{c.note}</div>}
+      </section>
       <div className="ob-cta">
-        <button className="btn ob-btn" onClick={onGo}>Let’s go</button>
-        <button className="linkbtn ob-alt" onClick={onSkip}>Skip, I’ll figure it out myself</button>
+        <button className="btn ob-btn" onClick={onGo}>{p.go}</button>
+        {onAlt && p.alt && <button className="linkbtn ob-alt" onClick={onAlt}>{p.alt}</button>}
       </div>
     </div>
   )
@@ -469,23 +484,6 @@ function Move({ d, go, back }: Common) {
 }
 /* ---------------- Onboarding 2: the setup card ---------------- */
 
-function Handoff({ onGo, onLater }: { onGo: () => void; onLater: () => void }) {
-  const c = COPY.handoff!
-  return (
-    <div className="wz">
-      <div className="wz-top" />
-      <div className="wz-tick"><Icon name="check" size={26} stroke={2.6} /></div>
-      <h1 className="wz-h lg">{c.title}</h1>
-      <div className="wz-lead body">{c.lead}</div>
-      <div className="wz-card quiet">{c.note}</div>
-      <div className="ob-cta">
-        <button className="btn ob-btn" onClick={onGo}>Finish setup</button>
-        <button className="linkbtn ob-alt" onClick={onLater}>Later</button>
-      </div>
-    </div>
-  )
-}
-
 function Radio<T extends string>({ go, back, step, opts, value, set, clear }: Common & { step: StepId; opts: readonly (readonly [T, string, string?])[]; value: T | undefined; set: (v: T) => void; clear: Partial<WizardDraft> }) {
   const [v, setV] = useState<T | undefined>(value)
   return (
@@ -533,14 +531,22 @@ function Days({ d, go, back }: Common) {
   )
 }
 
+/** ob2-4: the length as a range; the engine gets its nearest length (core/domain/warmup). */
 function Minutes({ d, go, back }: Common) {
-  const [m, setM] = useState(d.minutes)
+  const [r, setR] = useState<SessionRange | undefined>(d.sessionRange)
+  const pick = (x: SessionRange | undefined) => (x ? { sessionRange: x, minutes: rangeEngineMinutes(x) } : { sessionRange: undefined, minutes: undefined })
   return (
-    <Frame step="minutes" back={back} onSkip={() => go({ minutes: undefined })} cta={<Cta onClick={() => go({ minutes: m })} />}>
-      <div className="wz-nums" role="radiogroup" aria-label="Minutes a session" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
-        {MINUTES_OPTIONS.map((x) => <button key={x} role="radio" aria-checked={m === x} className={m === x ? 'on' : ''} onClick={() => setM(x)}>{x === 60 ? '60+' : x}</button>)}
+    <Frame step="minutes" back={back} onSkip={() => go(pick(undefined))} cta={<Cta onClick={() => go(r ? pick(r) : { sessionRange: d.sessionRange, minutes: d.minutes })} />}>
+      <div className="wz-nums rng" role="radiogroup" aria-label="Minutes a session">
+        {SESSION_RANGES.map((x) => <button key={x} role="radio" aria-checked={r === x} aria-label={`${rangeLabel(x)} minutes`} className={r === x ? 'on' : ''} onClick={() => setR(x)}>{rangeLabel(x)}</button>)}
       </div>
-      <div className="wz-note" style={{ textAlign: 'center' }}>{COPY.minutes!.note}</div>
+      <div className="wz-note" style={{ textAlign: 'center', fontSize: 13, marginTop: -6 }}>{COPY.minutes!.note}</div>
+      {r && (
+        <div className="wz-card wz-warm">
+          <span className="t">{MINUTES_WARMUP(warmupMinutes(r))}</span>
+          <span className="s">{MINUTES_WARMUP_S}</span>
+        </div>
+      )}
     </Frame>
   )
 }
