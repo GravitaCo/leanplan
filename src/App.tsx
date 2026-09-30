@@ -8,8 +8,9 @@ import { FIRST_PULL_WAIT_MS } from './data/firstRun'
 import { preloadHealthAnswers } from './screens/profile/lazyHealthAnswers'
 // the wizard, its summary and the training engine load on demand (most launches never need them)
 const Onboarding = lazy(() => import('./screens/onboarding/Wizard').then((m) => ({ default: m.Onboarding })))
-const Under16 = lazy(() => import('./screens/onboarding/Wizard').then((m) => ({ default: m.Under16 })))
 import { pendingDeletion } from './data/onboardingDraft'
+// the 18+ stop loads with the app (not the wizard's chunk): it must show offline
+import { Under16, UnderAgeStop } from './screens/onboarding/AgeStop'
 import { BottomNav } from './ui/BottomNav'
 import { warmPlanArt } from './screens/plan/PlanParts'
 import { AuthScreen, OwnerChoiceScreen } from './screens/AuthScreen'
@@ -44,6 +45,7 @@ function TaliApp() {
   const authed = useStore((s) => s.authed)
   const openProfile = useStore((s) => s.openProfile)
   const consentOpen = useStore((s) => s.consentOpen)
+  const underAge = useStore((s) => s.underAge)
   const answered = healthConsentAnswered(data)
 
   useEffect(() => {
@@ -111,7 +113,10 @@ function TaliApp() {
   // next connection (store runSync), and until then only the kind stop shows
   // only for the account it belongs to (the live session's, or offline this device's owner)
   const pend = ONBOARDING_ENABLED ? pendingDeletion() : null
-  if (pend && pend.uid === (authed ? getUid() : data._meta?.owner)) return <Lazy><Under16 deleting onClose={() => {}} /></Lazy>
+  if (pend && pend.uid === (authed ? getUid() : data._meta?.owner)) return <Under16 deleting onClose={() => {}} />
+  // 18+ (Benn, Sept 2026): an under-18 age from Profile, a backup, sync or this phone's saved data.
+  // Only the stop shows, before consent or anything else; sync stays off (store runSync)
+  if (underAge) return <UnderAgeStop source={underAge.source} />
   // One consent screen: the live one (screens/legal/ConsentScreen.tsx) until the health answer is
   // in; sync waits for it too (store scheduleSync, consentLetsSync). Benn: it stays the one consent
   // screen with the onboarding flag on as well (the Onboarding 6 consent boards aren't shown).

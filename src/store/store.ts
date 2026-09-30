@@ -53,10 +53,19 @@ import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion,
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
+import { isUnderAge } from '@/core/domain/age'
+import { stampFields } from '@/core/domain/profileMerge'
 
 enableMapSet()
 
 export type Tab = 'today' | 'food' | 'train' | 'plan' | 'profile'
+
+/**
+ * Where an under-18 age came from (Tali is strictly 18+). 'profile': typed on Profile and not
+ * saved; 'import': in a backup that wasn't loaded; 'sync': pulled from the account; 'launch': in
+ * this device's saved data. Only 'sync' and 'launch' mean an under-18 age is stored.
+ */
+export type UnderAgeSource = 'profile' | 'import' | 'sync' | 'launch'
 
 export interface StoreState {
   data: PersistedState
@@ -162,7 +171,8 @@ export interface StoreState {
   /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
   syncPlanMirror: () => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
-  saveProfileMetrics: (patch: Partial<Profile>) => void
+  /** false when nothing was saved: an under-18 age (the stop screen then shows; nothing changes or syncs) */
+  saveProfileMetrics: (patch: Partial<Profile>) => boolean
   /** quiet profile update for preferences (accuracy, display, hands…) */
   setPrefs: (patch: Partial<Profile>) => void
   addSupplement: (name: string, time: string) => void
@@ -171,7 +181,8 @@ export interface StoreState {
   updateEmail: (email: string) => Promise<string | null>
   /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
   setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
-  importBackup: (state: PersistedState) => void
+  /** false when refused: a backup with an under-18 age is never loaded (the stop screen shows) */
+  importBackup: (state: PersistedState) => boolean
 
   // sync / auth
   initAuth: () => Promise<void>
@@ -245,6 +256,15 @@ export interface StoreState {
   deleteAccount: (reason?: 'under-age') => Promise<DeleteResult>
   /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
   authProvider: string | null
+
+  // 18+ (Benn, Sept 2026)
+  /**
+   * An under-18 age came in (see UnderAgeSource): the app shows only the stop screen, nothing
+   * syncs and AI label reading can't be reached. Never persisted: a launch finds a stored age again.
+   */
+  underAge: { source: UnderAgeSource } | null
+  /** "I typed my age wrong" on the stop screen: back to Profile (a stored under-18 age is cleared, a synced edit) */
+  underAgeMistake: () => void
   /** deletion needs a sign-in from the last 5 minutes: true when this session's is older */
   deleteNeedsReauth: () => boolean
   /** re-confirm identity: the password (email accounts) or a fresh Google sign-in (leaves the page) */
@@ -434,6 +454,23 @@ export const useStore = create<StoreState>()(
       if (toast !== undefined) get().showToast(toast)
     }
 
+    /** An age that must not be saved: raise the stop instead. True when refused. */
+    const refuseUnderAge = (age: unknown, source: UnderAgeSource): boolean => {
+      if (!isUnderAge(age as number | string | null | undefined)) return false
+      set((st) => { st.underAge ??= { source } })
+      return true
+    }
+    /**
+     * After the saved data was replaced (a pull, an owner choice, a wipe): a stored under-18 age
+     * raises the stop; a stop that came from stored data ends once that age is gone.
+     */
+    const recheckStoredAge = (source: 'sync' | 'launch') => {
+      const stored = isUnderAge(get().data.profile?.age)
+      const cur = get().underAge
+      if (stored && !cur) set((st) => { st.underAge = { source } })
+      else if (!stored && cur && (cur.source === 'sync' || cur.source === 'launch')) set((st) => { st.underAge = null })
+    }
+
     const markSettingsDirty = (s: PersistedState) => {
       meta(s).settings = { u: nowIso(), dirty: true }
     }
@@ -441,8 +478,11 @@ export const useStore = create<StoreState>()(
       meta(s).days[d] = { u: nowIso(), dirty: true }
     }
 
+    // the launch check reads this device's data only: it never waits on the network
+    const initial = loadState()
     return {
-      data: loadState(),
+      data: initial,
+      underAge: isUnderAge(initial.profile?.age) ? { source: 'launch' } : null,
       cur: todayStr(),
       tab: 'today',
       profileOpen: null,
@@ -903,6 +943,8 @@ export const useStore = create<StoreState>()(
       },
 
       saveProfileMetrics: (patch) => {
+        // Tali is 18+: an under-18 age saves nothing (no change, no dirty flag, no sync), it stops
+        if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return false
         // health consent withdrawn: the health fields (weight, body fat, height …) aren't saved, the
         // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)
         const dropped = !healthLoggingAllowed(get().data) && patch.height != null
@@ -918,9 +960,11 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         saved(dropped ? HEIGHT_OFF_MSG : 'Saved')
+        return true
       },
 
       setPrefs: (patch) => {
+        if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return
         set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
         saved()
       },
@@ -975,7 +1019,10 @@ export const useStore = create<StoreState>()(
       },
 
       importBackup: (incoming) => {
+        // a backup with an under-18 age is never loaded: nothing on this device changes
+        if (refuseUnderAge(incoming?.profile?.age, 'import')) return false
         const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
+        if (refuseUnderAge(fresh.profile?.age, 'import')) return false
         // health consent withdrawn: a restored backup must not bring the health fields back (or sync them)
         if (!healthLoggingAllowed(get().data)) clearHealthData(fresh, ensureMeta(fresh, false))
         set((st) => { st.data = fresh })
@@ -984,6 +1031,7 @@ export const useStore = create<StoreState>()(
         // one message at a time: say here if the device couldn't keep it (it still syncs)
         get().showToast(stored ? 'Backup loaded' : 'Backup loaded, but this device couldn’t save it. Storage may be full.')
         get().scheduleSync()
+        return true
       },
 
       initAuth: async () => {
@@ -1142,6 +1190,8 @@ export const useStore = create<StoreState>()(
           if (navigator.onLine && Date.now() - underAgeTried > 60_000 && underAgeRetryDue(pend, Date.now())) { underAgeTried = Date.now(); void get().deleteUnderAge() }
           return
         }
+        // an under-18 age is on screen (the stop): nothing goes to or comes from the account
+        if (get().underAge) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
         // Nothing of the log reaches the cloud without a yes to health data (UK GDPR Art. 9(2)(a)):
         // not before an answer, not during a "Not now", not after a withdrawal. Until then only the
@@ -1272,6 +1322,8 @@ export const useStore = create<StoreState>()(
           if (failed.length) console.warn('sync: some records were rejected:', failed)
           // Replace data wholesale so selectors see fresh references and re-render.
           set((st) => { st.data = d; st.sync = failed.length ? 'error' : 'synced' })
+          // a profile pulled with an under-18 age (set on another device): the stop, and no more sync
+          recheckStoredAge('sync')
         } catch (e) {
           console.warn('sync failed:', e)
           set((st) => { st.sync = 'error' })
@@ -1302,6 +1354,7 @@ export const useStore = create<StoreState>()(
         await withTimeout(unsubscribePush(), 2000, undefined)
         saveState(next)
         set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
+        recheckStoredAge('launch')
         // the session was held back while asking; it comes from local storage, so this works offline
         // raced like at launch: getSession can stall offline while it retries a token refresh
         const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
@@ -1326,7 +1379,7 @@ export const useStore = create<StoreState>()(
         const d = structuredClone(get().data) as PersistedState
         const waiting = (d.consents?.records || []).filter((r) => r._dirty).map((r) => r.id)
         if (!waiting.length) return true
-        if (!get().authed || !navigator.onLine) return false
+        if (!get().authed || !navigator.onLine || get().underAge) return false
         try { await pushConsents(d) } catch { /* left for the next sync */ }
         const sent = new Set(waiting.filter((id) => !d.consents?.records.find((r) => r.id === id)?._dirty))
         if (sent.size) {
@@ -1368,6 +1421,8 @@ export const useStore = create<StoreState>()(
       openRedo: (open) => set((st) => { st.redoOpen = open }),
 
       finishOnboarding: ({ profile, plan, target, weightKg }) => {
+        // a backstop: the wizard stops under-18s before the summary
+        if (refuseUnderAge(profile.age, 'profile')) return false
         const consent = canSaveHealthAnswers(get().data)
         set((st) => {
           // no health consent: nothing health-related is kept (the wizard didn't ask it either)
@@ -1404,7 +1459,7 @@ export const useStore = create<StoreState>()(
           clearDraft()
           const next = freshForAccount(uid)
           saveState(next)
-          set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = [] })
+          set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = []; st.underAge = null })
           get().setKitchen([])
         }
         let res = await get().deleteAccount('under-age')
@@ -1432,7 +1487,7 @@ export const useStore = create<StoreState>()(
           const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
           if (wipe) wipeDevice()
           set((st) => {
-            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = [] }
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
             st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
           })
         }
@@ -1455,7 +1510,7 @@ export const useStore = create<StoreState>()(
           markPendingDeletion(step.pending)
           underAgeTried = 0
           set((st) => {
-            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = [] }
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
             st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
             st.authNotice = UNDER_AGE_SIGN_IN_MSG
           })
@@ -1563,6 +1618,21 @@ export const useStore = create<StoreState>()(
 
       downloadBeforeWithdrawal: () => exportBackup(get().data),
 
+      underAgeMistake: () => {
+        const u = get().underAge
+        if (!u) return
+        // an under-18 age that was stored (a launch or a pull) is cleared: a normal edit, synced
+        // once the stop is gone; from Profile or a refused backup nothing was stored
+        const stored = isUnderAge(get().data.profile.age)
+        set((st) => {
+          // stamped, so the per-field merge (profileMerge) keeps this clear over the account's older age
+          if (stored) { st.data.profile.age = null; stampFields(st.data.profile, ['age'], nowIso()); markSettingsDirty(st.data) }
+          st.underAge = null
+          st.tab = 'profile'; st.profileOpen = 'metrics'
+        })
+        if (stored) saved()
+      },
+
       deleteNeedsReauth: () => !sessionSignedInRecently(getToken()),
 
       reauthForDeletion: async (how) => {
@@ -1611,7 +1681,7 @@ export const useStore = create<StoreState>()(
           if (goneUid && pendingDeletion()?.uid === goneUid) clearPendingDeletion()
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
-            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []
+            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null
             st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = null; st.sync = 'idle'
           })
           return res
@@ -1645,7 +1715,7 @@ export const useStore = create<StoreState>()(
           showSetupCard()
           const next = freshForDevice()
           saveState(next)
-          set((st) => { st.data = next; st.cur = todayStr() })
+          set((st) => { st.data = next; st.cur = todayStr(); st.underAge = null })
         }
         set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
       },

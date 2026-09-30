@@ -64,7 +64,19 @@ export const ONE_DAY_NOTE = 'One day is a good start. A second day adds more whe
 
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
-  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, moving more or how you’re feeling, a parent or carer, a school or college nurse, or your GP is a good place to start.', note: 'We haven’t kept any of your answers.' },
+  // board "Age 18+ · 2": the wizard's stop (first run)
+  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.', note: 'We haven’t kept any of your answers. Closing deletes your new account.' },
+  // board "Age 18+ · 1": the app's stop, when an under-18 age comes in from Profile, a backup,
+  // sync or this phone's saved data. `notSaved` only when the age wasn't stored (Profile, a backup)
+  underAge: {
+    title: 'Tali is for 18+',
+    lead: 'Thanks for using Tali. It’s made for people aged 18 and over, so we need to close your account. That’s about how Tali is built, not about you or anything you’ve logged.',
+    more: 'Tali’s food and activity targets are made for adults, not for bodies that are still growing. If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.',
+    note: 'Closing deletes your account and everything logged in it, on this phone and on our servers.',
+    notSaved: 'Your age hasn’t been saved.',
+    close: 'Close and delete',
+    wrong: 'I typed my age wrong',
+  },
   wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no calorie target to hit. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },

@@ -13,7 +13,7 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-09-28',
+    updated: '2026-09-30',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -164,7 +164,7 @@ export function privacyPolicy(): LegalDoc {
       },
       {
         h: 'Age',
-        p: [`Tali is for people aged ${MIN_AGE} and over. We don't knowingly collect data from anyone younger. If you tell Tali during setup that you're under ${MIN_AGE}, it stops there, deletes your data on that phone and deletes your new account, straight away or the next time your phone connects. If it can't finish by itself, it signs you out and asks you to sign in again to finish removing your account. If you think a child has used Tali, contact us and we will delete their data.`],
+        p: [`Tali is for people aged ${MIN_AGE} and over. We don't knowingly collect data from anyone younger. Whenever Tali learns that you're under ${MIN_AGE}, whether you tell it during setup, enter it in your profile or restore a backup that says so, it stops there and nothing more syncs to your account. When you choose to close, it deletes your account and your data on that phone (during setup, if your phone is offline, it finishes the next time it connects). If you entered your age by mistake, you can go back and correct it. If deleting your account needs you to sign in again, Tali asks you to. If you think a child has used Tali, contact us and we will delete their data.`],
       },
       {
         h: 'Changes',

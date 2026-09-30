@@ -132,7 +132,7 @@ function summary(): void {
     ['wellbeing yes: gentle, no number (ob4-7)', noNumbers(gentle) && gentle.targets.hidden === 'gentle' && gentle.routing.gentle],
     ['pregnant: maintenance only, no number, gentler start', noNumbers(preg) && preg.targets.hidden === 'pregnancy' && preg.routing.maintenanceOnly && preg.routing.gentlerStart],
     ['medical: held at maintenance, no high-protein anchor', med.targets.heldAtMaintenance && med.targets.protein?.anchor === false && (med.targets.adjustPct ?? -1) >= 0],
-    ['16–17: no deficit, weight hidden, no AI', teen.routing.noDeficit && teen.routing.hideWeight && teen.routing.noAI && (teen.targets.adjustPct ?? -1) >= 0],
+    ['17 (no 16–17 tier): the stop, no numbers', teen.routing.stop === 'under16' && noNumbers(teen) && teen.targets.hidden === 'under16'],
   ])
   const thin = summaryFor(DEFAULT_PROFILE, full({ weight: 50, height: 172 }), ctx)
   report('summary: BMI under 18.5', [
@@ -488,8 +488,8 @@ function healthAnswersUi(): void {
       && cl({ outcomes: { medical: 'flagged', readiness: 'flagged' } }, 'medical') === HEALTH_ANSWERS.confirmGentler],
     ['numbers stay hidden: the approved variant', cl({ gentle: true, outcomes: { readiness: 'flagged' } }, 'pregnancy') === HEALTH_ANSWERS.confirmHidden],
     ['the board\'s title and line', HEALTH_ANSWERS.confirmT('Pregnant or breastfeeding') === 'Clear pregnant or breastfeeding?' && HEALTH_ANSWERS.confirm === 'Your food targets will show calorie numbers again, and training goes back to your usual pace.'],
-    ['numbers stay hidden: wellbeing yes/sometimes, gentle mode, 16–17, or the pregnancy flag when clearing conditions', numbersStayHidden(prof({ age: 30, outcomes: { wellbeing: 'flagged' } }), 'pregnancy')
-      && numbersStayHidden(prof({ age: 30, gentle: true }), 'medical') && numbersStayHidden(prof({ age: 17 }), 'pregnancy')
+    ['numbers stay hidden: wellbeing yes/sometimes, gentle mode, or the pregnancy flag when clearing conditions (age plays no part: under 18 is stopped)', numbersStayHidden(prof({ age: 30, outcomes: { wellbeing: 'flagged' } }), 'pregnancy')
+      && numbersStayHidden(prof({ age: 30, gentle: true }), 'medical') && !numbersStayHidden(prof({ age: 30 }), 'pregnancy')
       && numbersStayHidden(prof({ age: 30, pregnancy: { flagged: true, askedAt: TODAY } }), 'medical') && !numbersStayHidden(prof({ age: 30, pregnancy: { flagged: true, askedAt: TODAY } }), 'pregnancy')],
   ])
   const w = prof({ outcomes: { wellbeing: 'clear' } })

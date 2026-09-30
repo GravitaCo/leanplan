@@ -7,6 +7,7 @@ import { suggestedTargets } from './nutrition'
 import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
+import { isUnderAge } from './age'
 import { activityLevelFor, startingTargets, type StartingTargets, type TrainingLoad } from './targets'
 import { allWhys, buildPlan, inputsFromProfile, type BuildResult, type PersonModel, type PlanInputs } from './engine'
 import { DEFAULT_WEEKDAYS, WEEK_ORDER, type Lately } from './engine/inputs'
@@ -141,7 +142,8 @@ export function draftFromProfile(p: Profile, seed: string, ctx: { healthConsent:
 /**
  * The wizard's age stop (Benn, Sept 2026): 18+ for now, matching the legal texts and the live
  * consent screen. Under it, the kind stop and the automatic deletion (the step keeps its id,
- * 'under16', from the boards). routeSafety's 16–17 rules stay in place but can't be reached from here.
+ * 'under16', from the boards). The same rule (isUnderAge, core/domain/age.ts) guards Profile,
+ * backup import, sync and launch.
  */
 export const WIZARD_MIN_AGE = LEGAL_MIN_AGE
 
@@ -164,7 +166,7 @@ function setupSteps(d: WizardDraft): StepId[] {
 export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   const health = (s: StepId[]) => (healthConsent ? s : s.filter((x) => !HEALTH_STEPS.includes(x)))
   if (d.mode === 'setup') return [...health(setupSteps(d)), 'summary']
-  const young = d.age != null && d.age < WIZARD_MIN_AGE
+  const young = isUnderAge(d.age)
   if (d.skipped) return ['intro', 'skip-age', ...(young ? ['under16' as const] : [])]
   const s: StepId[] = ['intro', 'name', 'age']
   if (young) return [...s, 'under16']

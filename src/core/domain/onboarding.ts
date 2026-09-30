@@ -1,10 +1,11 @@
 import type { Goal, OnboardingOutcomes, PregnancyFlag, Profile, Sex, SexAnswer } from '@/core/types'
 import type { SignpostKind } from '@/core/data/signposts'
 import { shiftDay } from './date'
+import { isUnderAge, MIN_AGE } from './age'
 
 /**
  * First-run onboarding: safety routing (first-run-onboarding.md §3) and the skipped-answer
- * defaults (§2.1). Nobody is blocked except under-16s; every other signal makes the plan safer.
+ * defaults (§2.1). Nobody is blocked except under-18s (Tali is strictly 18+); every other signal makes the plan safer.
  * Pure: the store decides what to save, and only outcomes are ever saved (§8).
  */
 
@@ -28,14 +29,14 @@ export type HiddenReason = 'under16' | 'no-consent' | 'pregnancy' | 'no-age' | '
 
 /** Which §3 rows fired, for tests and the rules-based "why". */
 export type RoutingReason =
-  | 'under16' | 'age-16-17' | 'age-missing' | 'no-consent' | 'pregnancy' | 'low-bmi'
+  | 'under16' | 'age-missing' | 'no-consent' | 'pregnancy' | 'low-bmi'
   | 'wellbeing' | 'readiness' | 'medical'
 
 /** Skipped fields that fell back to a default (§2.1), each with its "You haven't told us…" line. */
 export type DefaultField = 'age' | 'readiness' | 'baseline' | 'wellbeing' | 'weight' | 'height' | 'sex' | 'movement'
 
 export interface SafetyRouting {
-  /** kind stop: "Tali is for 16+" (§14: the new account and the device's data are then deleted) */
+  /** kind stop: "Tali is for 18+" (§14: the account and the device's data are then deleted). The id is internal and predates 18+. */
   stop?: 'under16'
   /** never below maintenance, whatever the goal */
   noDeficit: boolean
@@ -72,8 +73,8 @@ const SIGNPOST_ORDER: SignpostKind[] = ['emergency', 'beat', 'samaritans', 'chil
 
 /** BMI under this is a safety gate only (no deficit): never shown, never used for targets (§9). */
 export const LOW_BMI = 18.5
-export const MIN_AGE = 16
-export const ADULT_AGE = 18
+/** the legal minimum age (18), re-exported so routing and the legal texts can't drift apart */
+export { MIN_AGE }
 /** the pregnancy question is re-asked this often (§13.5, confirmed in §14) */
 export const PREGNANCY_REASK_DAYS = 12 * 7
 
@@ -220,12 +221,11 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
 
 /**
  * After clearing `kind`, calorie numbers would still be hidden by something else: gentle mode or
- * a wellbeing Yes/Sometimes, 16–17, or the other answer that hides them (pregnancy). The clear
+ * a wellbeing Yes/Sometimes, or the other answer that hides them (pregnancy). The clear
  * confirm then says so instead of promising numbers (s-ob7, the undrawn variant).
  */
-export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy' | 'age'>, kind: HealthAnswerKind): boolean {
-  const teen = p.age != null && p.age >= MIN_AGE && p.age < ADULT_AGE
-  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || teen || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
+export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy'>, kind: HealthAnswerKind): boolean {
+  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
 }
 
 /** "Ask me later" on the re-ask: the flag and its date stay; it comes back in 2 weeks. */
@@ -254,7 +254,7 @@ export function safetyAnswersFrom(p: Profile, weightKg: number | null, healthCon
  * that hasn't onboarded has no screener answers, and §12 keeps existing users' numbers as they
  * are, so its missing outcomes count as clear and consent as given (the one-time consent sheet
  * handles that separately). The rules that don't depend on screener answers always apply:
- * age (under 16, 16–17), the pregnancy flag and the BMI gate. Onboarded profiles route exactly
+ * age (under 18: the stop; missing: the safe defaults), the pregnancy flag and the BMI gate. Onboarded profiles route exactly
  * as the summary did.
  */
 export function profileRouting(p: Profile, weightKg: number | null, healthConsent: boolean): SafetyRouting {
@@ -271,8 +271,8 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
 
 /**
  * Safety routing, first-run-onboarding §3 with the §2.1 skipped-answer defaults:
- * - under 16: kind stop
- * - 16–17 (or age missing): no deficit, weight hidden, no AI (and, age missing, no calorie number)
+ * - under 18: kind stop (Tali is strictly 18+)
+ * - age missing: no deficit, weight hidden, no AI, no calorie number
  * - pregnant or breastfeeding: maintenance only, no calorie number, gentle training, midwife/GP
  * - BMI under 18.5: no deficit (a gate only)
  * - wellbeing Yes/Sometimes: no deficit, gentle mode on, weight hidden, calm signposting;
@@ -294,17 +294,17 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
   const sp = new Set<SignpostKind>()
   const hide = (why: HiddenReason) => { r.hideCalories = true; r.hiddenReason ??= why }
 
-  if (a.age != null && a.age < MIN_AGE) {
+  if (isUnderAge(a.age)) {
     return { ...r, stop: 'under16', noDeficit: true, hideWeight: true, noAI: true, maintenanceOnly: true,
       hideCalories: true, hiddenReason: 'under16', reasons: ['under16'] }
   }
 
   if (!a.healthConsent) { r.reasons.push('no-consent'); hide('no-consent'); r.hideWeight = true }
 
-  const minor = a.age != null && a.age < ADULT_AGE
-  if (a.age == null) { r.reasons.push('age-missing'); r.defaults.push('age'); hide('no-age') }
-  else if (minor) r.reasons.push('age-16-17')
-  if (a.age == null || minor) { r.noDeficit = true; r.hideWeight = true; r.noAI = true }
+  if (a.age == null) {
+    r.reasons.push('age-missing'); r.defaults.push('age'); hide('no-age')
+    r.noDeficit = true; r.hideWeight = true; r.noAI = true
+  }
 
   if (a.pregnant) {
     r.reasons.push('pregnancy')
@@ -344,7 +344,6 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
   // skipped readiness: its GP and NHS 111 line is shown quietly, unless another row already
   // signposts with more weight
   if (quiet && !sp.size) { sp.add('gp'); sp.add('nhs111'); r.quietSignpost = true }
-  if (minor && sp.size) sp.add('childline')
   r.signpost = SIGNPOST_ORDER.filter((k) => sp.has(k))
   return r
 }
