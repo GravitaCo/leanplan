@@ -130,6 +130,13 @@ const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('le
 const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
 const h1 = (page, text) => page.getByRole('heading', { name: text, exact: true }).waitFor()
 const btn = (page, name) => page.getByRole('button', { name, exact: true })
+/** the wizard's age wheel (role=slider), set by keyboard: one nudge so it counts as picked, then the arrow keys */
+async function slide(page, name, target) {
+  const sl = page.getByRole('slider', { name, exact: true }).first()
+  await sl.focus(); await sl.press('ArrowUp'); await sl.press('ArrowDown')
+  let now = +(await sl.getAttribute('aria-valuenow'))
+  for (let i = 0; i < 200 && now !== target; i++) { await sl.press(now < target ? 'ArrowUp' : 'ArrowDown'); now = +(await sl.getAttribute('aria-valuenow')) }
+}
 const shot = async (page, name) => { await page.waitForTimeout(400); await page.screenshot({ path: path.join(OUT, name + '.png') }) }
 const STOP = '[data-testid="age-stop"]'
 /** the stop's copy (board "Age 18+ · 1"), and its signposts with the checked numbers */
@@ -357,7 +364,7 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await h1(page, 'What do you like to be called?')
     await btn(page, 'Continue').click()
     await h1(page, 'How old are you?')
-    await page.getByLabel('Age in years').fill('15'); await btn(page, 'Continue').click()
+    await slide(page, 'Age in years', 15); await btn(page, 'Continue').click()
     await stopCopy(page, { saved: true })
     await shot(page, 'age-stop-redo')
     expect(!(await page.locator(STOP).innerText()).includes('Closing deletes your new account'), 'not the first-run note')
@@ -373,8 +380,8 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await btn(page, 'I typed my age wrong').click()
     await h1(page, 'How old are you?')
     expect((await stored(page)).profile.age === 34 && (await stored(page)).profile.name === 'Sam', 'nothing saved')
-    await page.getByLabel('Age in years').fill('34'); await btn(page, 'Continue').click()
-    await h1(page, 'A quick health check')
+    await slide(page, 'Age in years', 34); await btn(page, 'Continue').click()
+    await h1(page, 'A few health questions')
   }, { url: ON })
 
   await run('redo setup: Close and delete runs the usual deletion, not the under-age one', async ({ page, net }) => {
@@ -384,7 +391,7 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await page.getByRole('button', { name: 'Redo setup' }).click()
     await h1(page, 'What do you like to be called?'); await btn(page, 'Continue').click()
     await h1(page, 'How old are you?')
-    await page.getByLabel('Age in years').fill('16'); await btn(page, 'Continue').click()
+    await slide(page, 'Age in years', 16); await btn(page, 'Continue').click()
     await page.locator(STOP).waitFor()
     await btn(page, 'Close and delete').click()
     await page.getByLabel('Type DELETE to confirm').fill('DELETE')
@@ -400,7 +407,7 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await h1(page, 'What do you like to be called?')
     await page.getByPlaceholder('Sam').fill('Sam'); await btn(page, 'Continue').click()
     await h1(page, 'How old are you?')
-    await page.getByLabel('Age in years').fill('15'); await btn(page, 'Continue').click()
+    await slide(page, 'Age in years', 15); await btn(page, 'Continue').click()
     await h1(page, 'Tali is for 18+')
     const text = await page.locator('[data-testid="age-stop-wizard"]').innerText()
     for (const t of [
