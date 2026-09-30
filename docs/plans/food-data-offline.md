@@ -41,7 +41,7 @@ Values are per 100 g, per 100 ml when `ml` is set, or **per item** when `each` i
 1. If the source is new, add it to `src/core/data/sources.ts` (label, URL, licence, `err` if loose).
 2. Add or edit rows in `src/core/data/foods.ts` with `src` set.
 3. Run `npm run check:foods` (must pass) and `npm test`.
-4. Have `nutrition-accuracy` review anything over ~20 rows; record audits in `docs/data/`.
+4. Have `nutrition-accuracy` sign off every food data change (CLAUDE.md, guardrail 6 below); record audits in `docs/data/`.
 5. Bump the SW `CACHE` in `public/sw.js` so installed apps pick up the new bundle.
 
 ### Chain menus (e.g. Greggs)
@@ -83,8 +83,10 @@ Beyond that (e.g. UK branded products):
 - **Download when online, keep forever:** stored in **IndexedDB** (hundreds of MB available, unlike
   localStorage's ~5 MB), validated with `validateFoods` before use, and replaced atomically on a new version.
 - **Search is local:** core + packs + custom foods, one in-memory index built at launch or on first search.
-- **Barcode lookups** (future): a miss while online queries the source, then validates and caches the result
+- **Barcode lookups:** a miss while online queries the source, then validates and caches the result
   in IndexedDB so the next scan works offline. A miss offline offers Quick estimate or Create a food.
+  (Scanning shipped in Sept 2026 without packs: a confirmed product is saved as a custom food, see
+  `label-scan-and-shared-products.md`.)
 - **Native:** the same JSON packs and `validateFoods` ship as-is; storage becomes SQLite. `core/` doesn't change.
 
 ## 4. Device storage budget (measured)
@@ -107,8 +109,7 @@ Beyond that (e.g. UK branded products):
   - fetches the page network-first with a 3-second timeout, so a weak signal never stalls launch.
 - **Launch never waits on the network:**
   - the device remembers a signed-in account (`tali.mode`);
-  - there is no guest mode (retired Sept 2026), so a first sign-in needs a connection; a device
-    from the old guest mode opens the sign-in screen and its log moves into the account;
+  - a first sign-in needs a connection (no guest mode: see `CLAUDE.md`, "Backend & data");
   - an account opened offline uses its local data and resumes sync when the connection and session return;
   - session restore is capped at 4 seconds.
 - **If a session has truly expired online**, the user signs in again, and local changes upload afterwards
@@ -121,13 +122,18 @@ Beyond that (e.g. UK branded products):
 - Source shown on every food; menu-label foods carry ±20%.
 - `validateFoods` + `npm run check:foods`, `npm test`.
 - Service worker, launch and save changes from §4–5.
+- Later in Sept 2026: raw meat and fish and uncooked rice and pasta for recipes
+  (`src/core/data/ingredients.ts`, generated from CoFID by `scripts/import/cofid-ingredients.py`),
+  ranked before made foods in the recipe builder (`ingredientsFirst`, `MealsSheet.tsx`).
 
 ## 7. Still to do (ranked by impact)
-1. **Raw versions** of meat, fish, rice and pasta for recipes (currently cooked only). Show them first in the recipe builder.
+1. *(Done: raw versions for recipes, see §6.)*
 2. **The 48 unchecked foods**, including:
    - McDonald's items (their site blocks us: needs an official PDF);
    - Greggs, Domino's and Pot Noodle (made-up vs dry);
    - takeaway curries (CoFID has homemade only).
 3. **Split one-row-many-products foods:** spread, soya milk, porridge (which milk), back vs streaky bacon, chapati.
 4. **Vegetables flagged `cook` that hold raw values:** name the state or add cooked rows.
-5. **Per-item custom foods:** needs an `each` column on `custom_foods` (additive migration, `security-data` review), so users can save "1 bar" from a label.
+5. **Per-item custom foods:** so users can save "1 bar" from a label. `each` now syncs in the additive
+   `custom_foods.meta` column (`docs/migrations/2026-09-custom-foods-meta.sql`); the create form
+   (`CreateFoodView.tsx`) still offers only grams or millilitres.

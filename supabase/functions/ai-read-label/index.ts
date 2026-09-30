@@ -11,15 +11,16 @@
  *   typed error, never raw model text.
  * - Nothing about the photo or its values is logged or stored: counts, sizes and timings only.
  *
- * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-sonnet-5: transcription needs accurate vision, not deep reasoning; about a third of Opus 5's cost. Set claude-opus-5 if real labels read worse),
- * LABEL_EFFORT (default low). SUPABASE_URL is provided by the platform. The RPC's apikey is
- * SUPABASE_ANON_KEY when the platform provides it, else set SUPABASE_PUBLISHABLE_KEY (the
- * project's sb_publishable_… key) as a secret.
+ * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-opus-5-5, the quality baseline per
+ * ai-platform-plan.md §6 (Benn, 28 Sept 2026); move to claude-sonnet-5 only once an eval shows it reads labels as well),
+ * LABEL_EFFORT (default low). SUPABASE_URL and the RPC's apikey come from the platform: the
+ * `default` entry of SUPABASE_PUBLISHABLE_KEYS, else the legacy SUPABASE_ANON_KEY (retired end of
+ * 2026). The RPC also refuses a caller whose latest label-photo consent isn't a yes (403 consent).
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0'
 import { LABEL_SCHEMA, validateLabelRead } from '../_shared/label-read.ts'
 
-const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-sonnet-5'
+const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-opus-5-5'
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
 type Effort = (typeof EFFORT_LEVELS)[number]
 const envEffort = Deno.env.get('LABEL_EFFORT') as Effort | undefined
@@ -42,7 +43,7 @@ const ORIGINS = [
   /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/,
 ]
 
-type ErrorCode = 'bad_request' | 'forbidden' | 'too_large' | 'unauthorized' | 'limit' | 'unreadable' | 'refused' | 'busy' | 'upstream' | 'config'
+type ErrorCode = 'bad_request' | 'forbidden' | 'too_large' | 'unauthorized' | 'consent' | 'limit' | 'unreadable' | 'refused' | 'busy' | 'upstream' | 'config'
 
 /** The body as text, or null once it passes `max` bytes (stops reading there). */
 async function readLimited(req: Request, max: number): Promise<string | null> {
@@ -88,7 +89,7 @@ const corsFor = (origin: string | null): Record<string, string> | null =>
     : null
 
 const STATUS: Record<ErrorCode, number> = {
-  bad_request: 400, forbidden: 403, too_large: 413, unauthorized: 401, limit: 429, unreadable: 422, refused: 422, busy: 503, upstream: 502, config: 500,
+  bad_request: 400, forbidden: 403, too_large: 413, unauthorized: 401, consent: 403, limit: 429, unreadable: 422, refused: 422, busy: 503, upstream: 502, config: 500,
 }
 
 const json = (body: unknown, status: number, cors: Record<string, string> | null) =>
@@ -104,8 +105,8 @@ const B64 = /^[A-Za-z0-9+/]+={0,2}$/
 const jpeg = (x: unknown): x is string => typeof x === 'string' && x.length <= MAX_IMAGE_B64 && x.length > 100 && x.startsWith('/9j/') && B64.test(x)
 
 /** Takes one of today's scans for the caller, as the caller (RLS and auth.uid() apply). */
-async function takeScan(auth: string): Promise<'ok' | 'limit' | 'unauthorized' | 'config'> {
-  const url = Deno.env.get('SUPABASE_URL'), anon = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+async function takeScan(auth: string): Promise<'ok' | 'limit' | 'consent' | 'unauthorized' | 'config'> {
+  const url = Deno.env.get('SUPABASE_URL'), anon = publishableKey()
   if (!url || !anon) return 'config'
   let res: Response
   try {
@@ -121,7 +122,17 @@ async function takeScan(auth: string): Promise<'ok' | 'limit' | 'unauthorized' |
   if (res.status === 401 || res.status === 403) return 'unauthorized'
   if (!res.ok) return 'config' // fail closed: no cap, no model call
   const left = await res.json().catch(() => null)
+  if (left === -2) return 'consent'
   return typeof left === 'number' && left >= 0 ? 'ok' : 'limit'
+}
+
+/** The project's publishable key: the new-style `default` entry, else the legacy anon key. */
+function publishableKey(): string | undefined {
+  try {
+    const keys = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}')
+    if (typeof keys?.default === 'string' && keys.default) return keys.default
+  } catch { /* not JSON: fall back */ }
+  return Deno.env.get('SUPABASE_ANON_KEY') || undefined
 }
 
 Deno.serve(async (req) => {
@@ -172,10 +183,11 @@ Deno.serve(async (req) => {
   }
   content.push({ type: 'text', text: 'Transcribe the label.' })
 
-  // Opus 5: adaptive thinking at low effort (transcription is perception, not reasoning), and
-  // server-side fallbacks so a classifier decline is retried on the recommended model. Haiku takes
-  // neither effort nor adaptive thinking; other models skip the fallback beta.
-  const opus5 = MODEL === 'claude-opus-5'
+  // Opus 5 and 5.5: adaptive thinking at low effort (transcription is perception, not reasoning;
+  // set explicitly, since 5.5 defaults to medium), and server-side fallbacks so a classifier decline
+  // is retried on the recommended model. Haiku takes neither effort nor adaptive thinking; other
+  // models skip the fallback beta.
+  const opus5 = MODEL === 'claude-opus-5' || MODEL === 'claude-opus-5-5'
   const haiku = MODEL.startsWith('claude-haiku')
   const client = new Anthropic({ apiKey: key, timeout: MODEL_TIMEOUT_MS, maxRetries: 0 })
   let msg: Anthropic.Beta.BetaMessage

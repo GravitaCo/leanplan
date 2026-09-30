@@ -1,10 +1,13 @@
 # Onboarding & data flow — the shared contract
 
-**Status:** DRAFT — assembled from the nutrition and fitness domain specs. This is the
-authoritative source for the onboarding questionnaire and how each captured field flows
-down into the two engines. The domain docs own the engine internals:
+**Status:** DRAFT, assembled from the nutrition and fitness domain specs (July 2026). The
+questionnaire below is **superseded** by [`first-run-onboarding.md`](./first-run-onboarding.md)
+(§2 the flow, §2.1 skipped answers, §9 and §13 Benn's decisions). This file stays canonical for
+the principle, the field placement rulings, the shared `profile.goal` contract and the July 2026
+decisions. The domain docs own the engine internals:
 - Nutrition engine → [`personalized-nutrition-targets.md`](./personalized-nutrition-targets.md)
 - Fitness recommender → [`workouts-customization-and-library.md`](./workouts-customization-and-library.md) (§4.0)
+- Training engine (replaces pick-and-adapt) → [`personalised-training-engine.md`](./personalised-training-engine.md)
 
 ## Principle: onboarding is the driver
 
@@ -29,9 +32,12 @@ first; the engines are consumers.
                    └───────────────────┘
 ```
 
-## Canonical questionnaire (de-duplicated)
+## Original questionnaire (superseded as a question list)
 
-Ordered as a single onboarding flow. **Owner** = which domain owns the field's canonical
+Kept for the field ownership it records. For the questions themselves, `first-run-onboarding.md`
+§2 and `src/core/types.ts` win: they add "Prefer not to say", 1 day a week and the `feel-better`
+goal, and leave body-fat %, pace, cardio preferences, focus areas and injury free text out of
+onboarding. Ordered as a single onboarding flow. **Owner** = which domain owns the field's canonical
 definition; **Drives** = every downstream consumer. Shared fields appear ONCE.
 
 | # | Question | Answer type | Field | Owner | Drives |
@@ -65,28 +71,10 @@ definition; **Drives** = every downstream consumer. Shared fields appear ONCE.
 
 ## Unified data model (all additive — no `leanplan.v1` or Supabase renames)
 
-```ts
-interface Profile {
-  // ...existing: name, sex, age, height, weight?, activityLevel, supplements, notificationsEnabled
-  goal?: Goal              // #6 — shared, top-level (de-dupe ruling 1)
-  bodyFat?: number         // #7 — nutrition
-  targetRate?: TargetRate  // #8 — nutrition
-  training?: TrainingPrefs // #9–14 — fitness
-}
-
-type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance'
-type TargetRate = 'steady' | 'standard' | 'aggressive'
-
-interface TrainingPrefs {           // all optional/additive
-  experience?: 'beginner' | 'intermediate' | 'advanced'
-  daysPerWeek?: 2 | 3 | 4 | 5 | 6
-  equipment?: Equipment[]
-  cardioPrefs?: CardioVariation[]
-  limitations?: BodyArea[]
-  limitationsNote?: string
-  emphasis?: MuscleGroup[]
-}
-```
+The types are in `src/core/types.ts` (`Profile`, `Goal`, `TargetRate`, `TrainingPrefs`), which is
+canonical and has moved on from this July sketch (`feel-better`, 1 day a week, `weekdays`,
+`minutesPerSession`, `place`, `exPrefs`, and onboarding fields such as `onboardedAt` and
+`motivations`).
 
 Both `Profile` additions and `TrainingPrefs` ride the existing `settings.profile` JSON,
 synced like today. No migration, no data backfill. Existing users see the new suggested
@@ -101,6 +89,7 @@ retro-changed, consistent with meals).
 | `build-muscle` | 6–15 reps, full MEV→MAV, 1–3 min rest | **Lean surplus** +5…+10% |
 | `increase-strength` | Main lifts 3–6 reps heavy + accessories 6–12 | **~Maintenance** −5…+5% |
 | `increase-endurance` | Cardio-led split, 12–20+/circuits | **Maintenance** −10…0% (never a default surplus) |
+| `feel-better` | See workouts plan D6 ("Feel better and move more") | **Maintenance** 0%, whatever the pace |
 
 This table is the single point where the two engines meet: they key off the *same* enum
 values, so the training goal and the calorie direction can never silently disagree (the
@@ -118,19 +107,15 @@ original cross-domain bug).
    excludes/substitutes, never programs a risky move). Types shipped; UI in Phase 3.
 5. **`targetRate` default** — `'standard'`.
 
-**Still open:**
+**Decided since (Benn, 27 Sept 2026):**
 
-- **Onboarding UX placement** — a first-run wizard, or a dismissible "complete your setup"
-  card that unlocks recommendations progressively? (Affects both domains — decide when the
-  Phase-3 questionnaire is designed, so it can be judged against real screens.)
+- **Onboarding UX placement:** both. A short wizard, then a "finish your setup" card for the
+  training details (`first-run-onboarding.md` §9).
 
 ## Build sequencing
 
-The **data model + questionnaire (this doc)** is the foundation both engines' onboarding
-phases depend on. Suggested order, each phase ship-critic-reviewed:
-
-1. **Data model** — add `Profile.goal/bodyFat/targetRate` + `TrainingPrefs` (types only, additive).
-2. **Nutrition engine core** — goal-aware `suggestedTargets` (ships standalone as a better default even before onboarding).
-3. **Onboarding questionnaire** — the shared flow that populates the model; unlocks both engines.
-4. **Fitness recommender** — consumes the model → active `TrainingPlan`.
-5. **Dynamic-adjustment loop** — rate-of-loss feedback (needs ≥2 weeks of weigh-ins).
+Superseded by `first-run-onboarding.md` §10 (build phases). Of the July order, steps 1 (data
+model) and 2 (goal-aware `suggestedTargets`) shipped in Phases 1+2; the questionnaire, the engine
+and the rate-of-loss loop are phased there. The loop's minimum changed: this plan said at least
+2 weeks of weigh-ins; `first-run-onboarding.md` §5 says 3 weeks and at least 6 weigh-ins (not
+built yet).

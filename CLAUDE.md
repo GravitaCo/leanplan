@@ -27,10 +27,10 @@ npm run check:foods  # validates every built-in food; must pass before shipping 
 npm run check:exercises  # validates the exercise library; ids are never removed or renamed
 ```
 
-- **Preview before live = local** (Benn's choice for now; no staging host). Check a working
-  branch with `bash scripts/preview.sh <branch>` as described in `docs/local-preview.md`.
-- **Deploy = push to `main`.** A GitHub Actions workflow (`.github/workflows/deploy.yml`)
-  builds and publishes to GitHub Pages. Pages source is **GitHub Actions** (build_type
+- **Preview before live = local** (Benn's choice for now; no staging host): `scripts/preview.sh` above.
+- **Deploy = push to `main`.** `.github/workflows/deploy.yml` runs `npm test`, `check:foods` and
+  `check:legal`, then builds and publishes to GitHub Pages (`checks.yml` runs typecheck, tests,
+  `check:foods` and build on every branch push). Pages source is **GitHub Actions** (build_type
   `workflow`) — do NOT switch it back to "deploy from a branch" or it serves raw source
   and the page goes blank.
 - Vite `base` is `/` (see `vite.config.ts`) since the app serves from the `app.tali.fit` root.
@@ -45,34 +45,38 @@ npm run check:exercises  # validates the exercise library; ids are never removed
 The core is deliberately **UI-framework-agnostic** so a future React Native / Capacitor
 build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
-- `src/core/` — pure TS, no React: `types.ts`; `domain/` (nutrition, workout, date math,
+- `src/core/`: `types.ts`; `domain/` (nutrition, workout, date math,
   TDEE, `library.ts` for swaps and "last time", `guided.ts` for guided-session targets, rest
-  and "last time" by rep range, `week.ts` for week warnings, `routines.ts` for the user's own workouts); `data/` (the food DB with its
-  chain menus, the exercise library `exercises.ts` with its committed id list
-  `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, demo media, constants).
+  and "last time" by rep range, `week.ts` for week warnings, `routines.ts` for the user's own workouts, `plans.ts` for training plans,
+  `engine/` the personalised training engine, `wizard.ts`/`onboarding.ts` for first run); `data/`
+  (the food DB with its chain menus, the exercise library `exercises.ts` with its committed id
+  list `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, Tali's plan workouts
+  `taliWorkouts.ts`, demo media, constants); `legal/` (see Legal & compliance).
 - `src/data/` — `supabase.ts` (client + REST + session), `persistence.ts` (localStorage +
   migrations), `sync.ts` (offline-first, per-record dirty flags, last-write-wins),
-  `push.ts` (Web Push), `backup.ts` (JSON export/import).
+  `push.ts` (Web Push), `backup.ts` (JSON export/import), `consent.ts`, `account.ts` (delete
+  account), `products.ts` (Open Food Facts barcode lookup) and `labelReader.ts` (AI label read),
+  both network-only and never on a launch or save path.
 - `src/store/store.ts` — Zustand + Immer store; wires core/data to React; owns the
   debounced sync loop.
 - `src/ui/` — design-system primitives: `primitives.tsx` (`Sheet`, `BareSheet`, `Seg`,
   `Toggle`, `Disclosure`, `SettingRow`, `CatHead`, `PageHeader`, `BackButton`, `pressable`,
   `useScrollLock`), `charts.tsx` (`Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`,
   `WeekBars`), `WeekStrip` + `DayNav` + `MoveStrip`, `BottomNav`, `brand.tsx` (`TaliMark`), `icons`.
-- `src/screens/` — Today (Summary), Food (+ `food/AddFoodSheet` → Portion / RecipeLog /
-  QuickEstimate / CreateFood / Scan views, `food/EditEntrySheet`, `food/MealsSheet`,
-  `food/MarginSheet`), Train (today only: `train/Preview` → `train/GuidedPlayer` with
-  `AdjustSheet`, `FinishSheet`, `ManualLog`, `AddSomethingSheet`), Plan (the week: `plan/PlanViews`
-  for day, category and workout, `plan/PlanSheets` for if-then plans), Profile (grouped settings),
-  AuthScreen, `body/WeightSheet`, `today/CheckinSheet`.
+- `src/screens/`: Today (Summary, `today/CheckinSheet`), Food (`food/AddFoodSheet` and its
+  views, `EditEntrySheet`, `MealsSheet`, `MarginSheet`), Train (today only: `train/Preview` →
+  `train/GuidedPlayer` with `AdjustSheet`, `FinishSheet`, `ManualLog`, `AddSomethingSheet`), Plan
+  (the week in `plan/PlanViews`, training plans in `PlanLibrary`/`PlanBuilder`/`PlanDetails`,
+  if-then plans in `PlanSheets`), Profile (grouped settings, `profile/`), `legal/` (consent, legal
+  docs), `onboarding/` (first-run wizard, off behind `ONBOARDING_ENABLED`), AuthScreen,
+  `body/WeightSheet`.
 - Logging model: `core/domain/estimate.ts` gives every entry a capture method + typical
   error (days show a ± margin; the cooking-fat question only for foods flagged `cook`);
   `core/domain/insights.ts` holds ranges, neutral status copy, usuals and weekly trends.
 
 ## Design system
 
-"Studio" (Sept 2026, at Benn's request; replaced the Apple Health look). Designs are reviewed on
-the claude.ai Design canvas before they're built. Tokens live in `src/styles/theme.css` (`:root`
+"Studio" (Sept 2026, at Benn's request; replaced the Apple Health look). Tokens live in `src/styles/theme.css` (`:root`
 CSS variables): use them, don't hardcode. Light or dark always follows the device's appearance
 setting (`prefers-color-scheme`); there is no in-app override.
 
@@ -118,7 +122,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 - Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`.
 - Clips live in `public/videos/` (vertical 540×960 H.264, no audio, `+faststart`, ~0.6 MB each)
-  with a poster JPG, and are attached to an exercise via `video` in `core/data/workouts.ts`
+  with a poster JPG, and are attached to an exercise via `video` in `core/data/exercises.ts`
   (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
   Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
 - Each clip carries a **tempo timeline measured from the footage**. The guided player
@@ -159,7 +163,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   table, SDK, analytics, AI API, font CDN) updates the privacy policy and register in the same
   change, and goes past the `compliance` agent. A new user-data table also joins `USER_TABLES` in
   `supabase/functions/_shared/account.ts` (the delete-account function).
-- `npm run check:legal` must pass before the legal texts go live (it fails on any placeholder the
+- `npm run check:legal` must pass before anything merges to `main` (deploy runs it; it fails on any placeholder the
   texts print; a missing ICO number only warns, though the fee is owed).
 - The server enforces health consent too (`docs/migrations/2026-09-28-health-consent-server.sql`):
   log uploads need a current yes, and a withdrawal clears the account's copy through
@@ -169,8 +173,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Working agreement: design → code
 
-Benn is the creative director and approves designs; Claude implements, and code goes through
-review (`ship-critic`, see Conventions). Designs come from **Figma** or from the claude.ai
+Benn is the creative director and approves designs; Claude implements. Designs come from **Figma** or from the claude.ai
 **Design canvas**, where Claude drafts boards for Benn to review. For Figma, run the **local**
 Figma Dev Mode MCP (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`);
 it's only reachable from a Claude Code running on the user's machine, not from a cloud session.
@@ -182,13 +185,13 @@ branch → `ship-critic` → merge to `main` (see Conventions).
 Where a design has gaps, implement the obvious case and call out the decisions made.
 **No design change ships without Benn's approval.** Build to the approved boards; any change to
 what the user sees that isn't on an approved design goes back to the Design canvas for Benn to
-approve first. Once approved, the build ships through `ship-critic` as usual.
+approve first.
 
 ## Conventions
 
 - TypeScript strict; no unused locals. Match surrounding style.
 - Commit/push only when asked. Keep commits focused.
 - **Nothing goes live without `ship-critic` approval.** Even when Benn says "push live" or
-  "merge", run `ship-critic` on the change first and merge to `main` only on SHIP (or SHIP WITH
-  FIXES once those fixes are in and re-checked). If it hasn't approved, push to the working
-  branch and report its verdict instead. This keeps accountability for what reaches users.
+  "merge", run `ship-critic` on the change first and merge to `main` only on SHIP. Nothing ships
+  with fixes outstanding: fix, re-run `ship-critic`, merge on SHIP. If it hasn't approved, push
+  to the working branch and report its verdict instead. This keeps accountability for what reaches users.

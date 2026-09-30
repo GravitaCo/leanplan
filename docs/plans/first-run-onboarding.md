@@ -7,11 +7,13 @@
 - `security-data`
 
 It updates [`onboarding-and-data-flow.md`](./onboarding-and-data-flow.md), whose 14-question list
-is now superseded here. The engine internals stay in:
+is now superseded here (that file stays canonical for the shared `profile.goal` contract and its
+July 2026 decisions). The engine internals stay in:
+- [`personalised-training-engine.md`](./personalised-training-engine.md) (the training engine)
 - [`personalized-nutrition-targets.md`](./personalized-nutrition-targets.md)
 - [`workouts-customization-and-library.md`](./workouts-customization-and-library.md) §3–4
 
-Decisions Benn has made are in §9. Open ones are marked **PENDING BENN** and listed in §13.
+Benn's decisions are in §9, §11 (engine), §13 (the points once pending) and §14 (after design sign-off). The open question left is in §15 (how soon the server deletes a refused under-age account).
 
 ---
 
@@ -45,8 +47,8 @@ plan" in plain words, it can make sense of a coach conversation, and it spots pa
 
 ## 2. The flow
 
-About 10 screens, one question each, with every screen skippable except the goal (age: required
-or skippable is **PENDING BENN**, §13). Each screen has a one-line "Why we ask" and a progress
+About 10 screens, one question each, with every screen skippable except age and the goal
+(§13.1). Each screen has a one-line "Why we ask" and a progress
 line ("About 2 minutes left"). What happens when a screen is skipped is in §2.1.
 
 | # | Screen | Field | Drives |
@@ -57,8 +59,8 @@ line ("About 2 minutes left"). What happens when a screen is skipped is in §2.1
 | 3 | What would make this worth it for you? (your why) | `profile.motivations` | Copy, weekly review |
 | 4 | Main goal | `profile.goal` | Both engines |
 | 5 | How are things lately? (sleep, stress, room for change) | baseline | Gentler start when poor sleep, high stress or little room (pre-selected, changeable) |
-| 6 | Food and weight wellbeing: "Food or weight sometimes feels stressful or all-consuming for me: Yes / Sometimes / Rather not say" **[Q]** | outcome only (gentle mode on/off) | No deficit, weight hidden, signposting |
-| 7 | Body: height, current weight (optional **[Q]**), sex (Female / Male / Prefer not to say) | `profile.*` | BMR |
+| 6 | Food and weight wellbeing: "Food or weight sometimes feels stressful or all-consuming for me: Yes / Sometimes / Rather not say" | outcome only (gentle mode on/off) | No deficit, weight hidden, signposting |
+| 7 | Body: height, current weight (optional), sex (Female / Male / Prefer not to say) | `profile.*` | BMR |
 | 8 | Daily movement (steps bands or job type) | `profile.activityLevel` (re-mapped) | TDEE multiplier (training counted separately, no double count) |
 | 9 | Setup card: moving now, experience, days, which weekdays, minutes, place, equipment, enjoyment, body areas | `training.*` (weekdays: `training.weekdays`) | Engine inputs (`personalised-training-engine.md` §3.2) |
 | 10 | Summary: "Here's a starting point, not a test" (the plan, a target range, why) | – | Confirm → active plan and targets. Only describes a plan the engine actually generated (§10) |
@@ -76,7 +78,7 @@ weekdays aren't, the spread is fixed and deterministic:
 | 5 | Mon, Tue, Wed, Fri, Sat |
 | 6 | Mon–Sat |
 
-A 1-day week vs the WHO 2+ strength days is **PENDING BENN** (§13). Engine test: §3.7 test 8.
+A 1-day week is allowed as one full-body session (§13.3). Engine test: §3.7 test 8.
 
 ### 2.1 Skipped answers
 
@@ -86,7 +88,7 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 
 | Field | Default when skipped | Safe-side routing | "Why" text |
 |---|---|---|---|
-| Age **PENDING BENN** (required vs skippable) | none | If skippable: the 16–17 rules (no deficit, weight hidden, no AI) and no calorie number, until age is added | "You haven't told us your age, so we're keeping things gentle and not showing a calorie number." |
+| Age (required in the wizard, §13.1) | none | If missing (e.g. a profile from before onboarding): the 16–17 rules (no deficit, weight hidden, no AI) and no calorie number, until age is added | "You haven't told us your age, so we're keeping things gentle and not showing a calorie number." |
 | Readiness | treated as a "yes" for dose only | Gentler start and low-impact; signposting shown quietly, not as an alert | "You haven't told us about your health, so we've started gently." |
 | Your why | none | Generic, neutral copy | – (nothing claims it) |
 | Goal | required | – | – |
@@ -112,13 +114,12 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 
 | Signal | Result |
 |---|---|
-| Under 16 **[Q]** | Kind stop: "Tali is for 16+" |
-| 16–17 | No deficit, weight hidden, no AI features |
+| Under 18 | Kind stop: "Tali is for 18+" (minimum age 18, Benn, 28 Sept 2026) |
 | Pregnant or breastfeeding | Maintenance only with no calorie number shown, gentle training, signpost midwife/GP |
-| BMI under 18.5 (safety gate only, never used for targets) **[Q]** | No deficit |
-| Wellbeing question Yes or Sometimes | No deficit, gentle mode on, weight hidden, calm signposting (Beat, NHS 111, Samaritans 116 123, 999; verify numbers) |
+| BMI under 18.5 (safety gate only, never used for targets) | No deficit |
+| Wellbeing question Yes or Sometimes | No deficit, gentle mode on, weight hidden, calm signposting (Beat, NHS 111, Samaritans 116 123, 999; numbers checked in §14) |
 | Readiness yes | Gentler start plus signposting |
-| Diabetes on insulin or sulfonylureas, kidney disease, GLP-1 **[Q]** | Maintenance allowed, no high-protein anchor, GP note |
+| Diabetes on insulin or sulfonylureas, kidney disease, GLP-1 | Maintenance allowed, no high-protein anchor, GP note |
 
 ## 4. Mind first
 
@@ -136,9 +137,9 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 - The starting estimate is about ±15%: Mifflin is within ±10% for about 70–80% of adults, and the
   activity multiplier adds the most error.
 - **Show a range:** "About 1,650 kcal a day to start (likely maintenance 1,630–2,200). Tali checks
-  this against your weigh-ins after 3–4 weeks." Never show 1-kcal precision. **[Q]**
+  this against your weigh-ins after 3–4 weeks." Never show 1-kcal precision.
 - **Units:** kg, stone/lb and lb; cm and ft/in.
-- **Floors:** max(BMR, 1,500 men / 1,200 women) **[Q]**, and never below 800. "Prefer not to say"
+- **Floors:** max(BMR, 1,500 men / 1,200 women), and never below 800. "Prefer not to say"
   uses the midpoint constant with a wider margin.
 - **Endurance:** warn if energy availability is under about 30 kcal per kg of fat-free mass.
 - **Weight loss:** at most 1% of body weight a week.
@@ -183,7 +184,7 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
   timestamp, and synced to the `consents` table when back online. Health answers are never
   saved, locally or remotely, until that local consent record exists. If consent is withdrawn
   before sync, the withdrawal syncs too (latest timestamp per type wins).
-- **A DPIA and a privacy notice** naming Anthropic.
+- **A DPIA and a privacy notice** naming Anthropic (status: "DPIA" in `docs/compliance/README.md`; the notice is live, the DPIA is still to write).
 - **Minimise:**
   - age, not date of birth
   - no diagnoses or medication stored beyond the routing outcome
@@ -195,10 +196,10 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
   data (field, exercise id, date, value); the sentence is rendered at display time (engine §3.6).
   This keeps generated plans well inside the 64 KB settings cap and lets copy change without a
   data migration.
-- **New:** a `consents` table (owner-only RLS: type, version, time), with label consent moving
-  there from `tali.labelConsent` on the device.
-- **New:** account deletion (a server function that deletes all tables and the login and clears
-  the device). This blocks shipping onboarding.
+- **Built:** a `consents` table (owner-only RLS: type, version, time), with label consent moved
+  there from `tali.labelConsent` on the device (`src/data/consent.ts`).
+- **Built:** account deletion (a server function that deletes all tables and the login and clears
+  the device: `supabase/functions/delete-account`, `USER_TABLES`). Part of the §9 launch gate.
 - **Export:** the existing JSON backup.
 
 ## 9. Decisions (Benn, 27 Sept 2026)
@@ -206,8 +207,8 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 **Flow and safety**
 - **Flow:** a short wizard (age, readiness, why, goal, body), then a "finish your setup" card for
   the training details.
-- **Age:** 16+. Under-16s get a kind stop; 16–17s get no deficit, no AI and weight hidden. Needs a
-  quick legal check.
+- **Age:** 18+ (Benn, 28 Sept 2026). Under-18s get a kind stop. The old 16–17 rules (no deficit, no
+  AI, weight hidden) remain in `routeSafety` as a fallback but can't be reached from the wizard.
 - **Wellbeing:** the one non-diagnostic food and weight question, with routing. Only the outcome is
   stored, and it gets clinical review before wider launch.
 - **BMI under 18.5:** used as a safety gate only (no deficit). Never shown, never used for targets.
@@ -217,7 +218,8 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 - **Weight:** optional, with a fallback range. (Refined by review, §2.1: without weight there's
   no honest range, so no calorie or protein numbers are shown until weight is added.)
 - **Target:** a rounded number plus the likely maintenance range, and a weigh-in check after
-  3–4 weeks.
+  3–4 weeks. The check itself is coming soon (not built yet; Benn, 28 Sept 2026): the copy that
+  promises it stays.
 - **Activity:** steps bands, with job type as the alternative. Training is counted separately.
 - **Floors:** split by sex, 1,500 men / 1,200 women, plus the BMR floor and never below 800.
 
@@ -227,13 +229,16 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 - **Plan engine:** **not** pick-and-adapt. Benn: "workouts tailored to that specific person are
   the goal; in our early research the pain point was faked personalisation. I do not want us
   falling into that trap. Let's do the work to figure the best plan for this." The engine design
-  is being researched: see §11.
+  is in §11 and `personalised-training-engine.md`.
 
 **Launch gate:** all four of these block launch:
 - consents table
 - account deletion
 - privacy notice and DPIA
 - connection indicator
+
+Status (28 Sept 2026): all built except the DPIA (`docs/compliance/README.md`); the connection
+indicator is `src/ui/ConnectionPill.tsx`.
 
 ## 10. Build phases
 
@@ -283,7 +288,7 @@ pick-and-adapt.
 
 ## 12. Lifecycle: existing users, re-runs, more than one device
 
-**Existing users who never onboarded: PENDING BENN.** *Recommended default:* a one-time consent
+**Existing users who never onboarded** (decided, §13.2; "Not now" in §14; Profile's "Set up my plan" in §15): a one-time consent
 prompt (health data, then AI separately) on next open; their current plan and targets stay
 exactly as they are; a quiet "Build my plan" offer on Plan runs the setup card and engine only
 if they tap it. Nothing is regenerated for them automatically.
@@ -323,24 +328,22 @@ if they tap it. Nothing is regenerated for them automatically.
    question and routing) are brought in. That happens once the app works, because it costs money.
    "Wider launch" means opening beyond the invited beta, and it needs both sign-offs.
 5. **Pregnancy flag:** re-asked gently every 12 weeks, and the user can clear it any time in
-   Profile. (Default, not yet confirmed by Benn.)
-6. **16–17 no-AI rule:** enforced from self-declared age during the beta. This is flagged for the
-   legal review. (Default.)
+   Profile. Confirmed by Benn after design sign-off, 27 Sept 2026.
+6. **Minimum age:** 18, self-declared (Benn, 28 Sept 2026). This replaces the 16–17 no-AI rule.
 
 ## 14. Build decisions after design sign-off (Benn, 27 Sept 2026)
 
 The designs are on the Design canvas (https://claude.ai/artifact/EYDHM6mLouqwPsWxcDsWEb),
 rows "Onboarding 1" to "Onboarding 6". The notes s-ob1 … s-ob6 are the approved defaults.
 
-- **Under-16s:** after the kind stop, the new account and everything on the device are deleted
-  automatically. They're welcome back at 16.
+- **Under-18s:** after the kind stop, the new account and everything on the device are deleted
+  automatically. They're welcome back at 18.
 - **Declining health consent** ("Not now"): the person can still use Tali (food, workouts) with a
   Starter week. There are no health questions, weight, check-ins or calorie numbers until they
   agree, and they can agree later from Profile.
 - **Existing users who tap "Not now"** on the one-time sheet: their health data stays on the phone,
   its sync is paused, and they're asked again once after 2 weeks. This needs a `security-data`
   review.
-- **Pregnancy flag:** re-asked every 12 weeks and can be cleared any time in Profile. Confirmed.
 - **Draft option lists** (your-why chips, step bands, job types, minutes, enjoy options): approved
   for the beta.
 - **Helplines** (checked 27 Sept 2026):

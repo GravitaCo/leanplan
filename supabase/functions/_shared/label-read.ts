@@ -92,7 +92,7 @@ const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 
 /** Printable text only, trimmed; null when it isn't a string or is too long. */
 const text = (x: unknown, max: number): string | null => {
   if (typeof x !== 'string') return null
-  const t = x.replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  const t = x.replace(/[\x00-\x1f\x7f\p{Zl}\p{Zp}]/gu, ' ').replace(/\s{2,}/g, ' ').trim()
   return t.length <= max ? t : null
 }
 const oneOf = <T extends string>(x: unknown, opts: readonly T[]): T | null => (typeof x === 'string' && (opts as readonly string[]).includes(x) ? (x as T) : null)

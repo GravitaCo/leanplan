@@ -189,6 +189,8 @@ export interface StoreState {
   online: boolean
   /** record a yes for a consent type at its current version (see CONSENT_VERSIONS) */
   grantConsent: (type: ConsentType) => void
+  /** send unsynced consent records now (before a call the server gates on consent); true when none are left */
+  flushConsents: () => Promise<boolean>
   /** record a no; for 'health' this also clears the health data (consent.ts HEALTH_FIELDS) here
    *  and, through sync, on the server */
   withdrawConsent: (type: ConsentType) => void
@@ -1316,6 +1318,22 @@ export const useStore = create<StoreState>()(
         // a yes to health also uploads what a "Not now" held back on this device
         set((st) => { if (type === 'health') grantHealth(st.data, meta(st.data)); else recordConsent(st.data, type, true) })
         saved()
+      },
+
+      flushConsents: async () => {
+        // only the consent records, independent of the debounced sync (which skips a run while one
+        // is in flight); re-sending one is harmless, the server ignores duplicates by id
+        const d = structuredClone(get().data) as PersistedState
+        const waiting = (d.consents?.records || []).filter((r) => r._dirty).map((r) => r.id)
+        if (!waiting.length) return true
+        if (!get().authed || !navigator.onLine) return false
+        try { await pushConsents(d) } catch { /* left for the next sync */ }
+        const sent = new Set(waiting.filter((id) => !d.consents?.records.find((r) => r.id === id)?._dirty))
+        if (sent.size) {
+          set((st) => { for (const r of st.data.consents?.records || []) if (sent.has(r.id)) delete r._dirty })
+          persist()
+        }
+        return sent.size === waiting.length
       },
 
       notNowHealth: () => {

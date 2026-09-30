@@ -49,7 +49,7 @@ and open the `https://….trycloudflare.com` address it prints on the phone. `Ct
 - **Offline mode isn't testable over Wi-Fi.** The service worker only runs on https or
   localhost, so on the phone's Wi-Fi address the app works but won't install or cache for
   offline use. Offline behaviour can be tested on the Mac at localhost:4173.
-- **Google sign-in and password-reset links may land on app.tali.fit instead of localhost.**
+- **Google sign-in, sign-up confirmation and password-reset links may land on app.tali.fit instead of localhost.**
   Supabase only returns to addresses on its allowed redirect list and otherwise falls back to
   the live site. Add `http://localhost:4173` and `http://localhost:5173` to the list under
-  Supabase > Authentication > URL Configuration if you need them. Email sign-in isn't affected.
+  Supabase > Authentication > URL Configuration if you need them. Signing in with email and password isn't affected.

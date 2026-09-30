@@ -23,7 +23,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 The three domain agents **build/propose but never push** — pushing is Benn's call
 (`commit/push only when asked`). Before anything goes live, run **`ship-critic`**: it
 reviews the diff against intent, verifies it runs, checks Tali's hard constraints, and
-returns **SHIP / SHIP WITH FIXES / DON'T SHIP**. Nothing merges to `main` (which
+returns **SHIP / DON'T SHIP** (no "ship with fixes": fixes are resolved and re-checked first). Nothing merges to `main` (which
 auto-deploys to app.tali.fit) until it passes — **even when Benn asks to push live or merge**
 (his standing instruction, Sept 2026): wait for the verdict, fix, re-check, then merge. **Food data changes also need
 `nutrition-accuracy` sign-off.** `ship-critic` is read-only on purpose — it

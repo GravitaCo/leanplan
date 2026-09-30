@@ -1,6 +1,6 @@
 # Personalised training engine: real tailoring, not a quiz in front of a template
 
-**Author:** fitness-workouts · **Status:** DRAFT design, 27 Sept 2026 (no code yet) ·
+**Author:** fitness-workouts · **Status:** DRAFT design, 27 Sept 2026 (E1 is built in `core/domain/engine/`; see §4.3) ·
 **Answers:** `first-run-onboarding.md` §9 ("not pick-and-adapt") and §11 (the "not fake" test) ·
 **Reviewers:** Benn, ship-critic, mental-performance (guardrails, copy), security-data (new fields)
 
@@ -267,8 +267,7 @@ because there's no data yet.
 - **Compulsive-pattern check:** if sets are mostly "a real struggle" or "stopped", sessions run
   over the plan (more sessions or minutes than planned), and there's a deficit, show the load note
   and the supportive script, and never suggest more (no load, volume or day increases).
-- **No volume increases** in the first 4 weeks, in gentle mode, when wellbeing-routed or for
-  16–17s (B).
+- **No volume increases** in the windows B lists.
 - Each rule here has a unit test (§3.7 test 10).
 
 ### 3.6 The why trace
@@ -412,7 +411,6 @@ Tali plans stay in the library for anyone who wants to choose one.
     from how it felt."
   - "How was that set?" always has a Skip. A skipped rating holds the load (no change either
     way) and is never nagged.
-  - Thumbs down: "Got it. We'll pick something else." No reason asked.
 - **Unvalidated thresholds stay unvalidated.** Every threshold marked judgement call is shown
   that way in code comments. The §3.4 RIR mapping and the ±2-set step are the first ones to
   validate against real logs (aggregate only, with consent).

@@ -16,7 +16,8 @@
  * Scenarios: capture from a fake camera frame of a nutrition table → a good read → confirm;
  * a 1/7 misread → the suggestion is accepted; a function error → typing fallback; offline →
  * typing fallback; the function missing (a 404 preflight) → "isn't available", typing fallback;
- * with the flag off, no entry point shows.
+ * the first read sends the label-photo consent to the server before the photo; the server
+ * refusing for consent (403) → typing fallback; with the flag off, no entry point shows.
  */
 const { chromium } = require('playwright')
 const fs = require('node:fs')
@@ -105,7 +106,7 @@ async function scenario(browser, name, fn, opts = {}) {
     localStorage.setItem('tali.mode', 'account')
     if (!localStorage.getItem('leanplan.v1')) localStorage.setItem('leanplan.v1', st)
   }, [JSON.stringify(session), JSON.stringify(device)])
-  const calls = { fn: 0, bodies: [] }
+  const calls = { fn: 0, bodies: [], order: [] }
   let reply = { status: 200, body: { ok: true, read: readOf(GRANOLA) } }
   let missing = false
   await ctx.route(/supabase\.co\//, async (route) => {
@@ -118,11 +119,13 @@ async function scenario(browser, name, fn, opts = {}) {
       if (missing) return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ code: 'NOT_FOUND', message: 'Requested function was not found' }) })
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } })
       calls.fn++
+      calls.order.push('fn')
       const body = JSON.parse(route.request().postData() || '{}')
       calls.bodies.push({ panel: (body.panel || '').length, front: (body.front || '').length, jpeg: String(body.panel || '').startsWith('/9j/'), auth: route.request().headers().authorization || '' })
       return route.fulfill({ status: reply.status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(reply.body) })
     }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(user) })
+    if (url.includes('/rest/v1/consents') && route.request().method() === 'POST') calls.order.push('consents:' + (JSON.parse(route.request().postData() || '[]').map((r) => r.type).join(',')))
     if (url.includes('/rest/v1/')) return route.fulfill({ status: route.request().method() === 'GET' ? 200 : 201, contentType: 'application/json', body: route.request().method() === 'GET' ? '[]' : '' })
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
@@ -281,6 +284,23 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
       expect((await page.getByText('Photo of the label').count()) === 0, 'Photo of the label hidden')
     }, { url: process.env.E2E_URL_OFF }))
   }
+
+  results.push(await scenario(browser, 'first read: the label-photo consent reaches the server before the photo', async ({ page, calls }) => {
+    await captureLabel(page)
+    await page.getByRole('button', { name: 'Read the label' }).click()
+    await page.getByRole('button', { name: 'Save food' }).waitFor()
+    const first = calls.order.findIndex((x) => x.startsWith('consents:') && x.includes('label-photo'))
+    expect(first >= 0 && first < calls.order.indexOf('fn'), 'consent sent before the read: ' + calls.order.join(' '))
+  }))
+
+  results.push(await scenario(browser, 'server refuses for consent (403) → typing fallback', async ({ page, set, calls }) => {
+    set({ status: 403, body: { ok: false, error: 'consent' } })
+    await captureLabel(page)
+    await page.getByRole('button', { name: 'Read the label' }).click()
+    await page.getByText('Couldn’t confirm your OK to read photos yet. Try again in a moment. Type the numbers from the pack below.').waitFor()
+    expect(calls.fn === 1, 'function called once')
+    expect((await page.locator('#sc_k').inputValue()) === '', 'empty fields to type into')
+  }))
 
   results.push(await scenario(browser, 'consent is remembered on the device', async ({ page }) => {
     await captureLabel(page)

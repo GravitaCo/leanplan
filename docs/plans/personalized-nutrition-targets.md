@@ -1,6 +1,9 @@
 # Personalized nutrition targets — onboarding-driven design
 
-**Status:** Spec / design doc. No code, no commits.
+**Status:** Spec / design doc. Phases 1 and 2 are built (§6); the dynamic loop (§3) is not. The
+engine has since moved on in places (floors, a `feel-better` goal, the shared `energyTarget`
+pipeline): where this doc and `src/core/domain/nutrition.ts` differ, the code and
+`first-run-onboarding.md` §5 and §9 are current.
 **Owner:** Nutrition specialist. Co-owned inputs flagged for de-dupe with the fitness specialist and Benn's canonical questionnaire.
 **Supersedes:** the hardcoded `maint - 500` deficit in `suggestedTargets()` (`src/core/domain/nutrition.ts`).
 
@@ -43,7 +46,7 @@ Notes:
 - Body metrics already exist on `Profile` (name/sex/age/height/weight/activityLevel). Onboarding is a **new capture surface** for fields that are mostly already modelled — the additive fields are only `goal`, `bodyFat`, `targetRate` (see §4).
 
 ### Assumption A1 — body-fat fallback (Benn to confirm)
-When BF% is not provided, the engine assumes **15%** for the aggressiveness calculation. Rationale: 15% is a moderate, non-lean value that keeps the deficit in the **middle** of the goal band — conservative enough not to over-cut a lean user who skipped the question, aggressive enough to be useful for an average user. It is deliberately *not* sex-split to keep the fallback predictable; if Benn prefers, we can fall back to **15% (M) / 24% (F)** to reflect typical essential+storage fat differences. **Flagged for confirmation.**
+When BF% is not provided, the engine assumes **15%** for the aggressiveness calculation. Rationale: 15% is a moderate, non-lean value that keeps the deficit in the **middle** of the goal band — conservative enough not to over-cut a lean user who skipped the question, aggressive enough to be useful for an average user. It is deliberately *not* sex-split to keep the fallback predictable; if Benn prefers, we can fall back to **15% (M) / 24% (F)** to reflect typical essential+storage fat differences. *Resolved: single 15% for v1, sex-split deferred (§6).*
 
 ---
 
@@ -107,6 +110,8 @@ target = max( target, floor )
 
 - Never below **BMR** — a target under resting expenditure is unsafe and unsustainable.
 - Absolute hard floor **1200 kcal** (retains today's behaviour) as a backstop for very small users where BMR itself is low.
+- *As built, the floor is max(BMR, 1,500 men / 1,200 women and unspecified), never below 800
+  (`calorieFloor` in `nutrition.ts`, from `first-run-onboarding.md` §9).*
 - If the floor bites, flag it in the UI ("we've capped your target at a safe minimum") so the number isn't silently wrong.
 
 ### 2.5 Step 5 — macro split
@@ -200,22 +205,22 @@ export interface Profile {
   targetRate?: TargetRate // NUTRITION — default 'standard'
 }
 ```
-- **All new fields optional** → no migration needed for existing localStorage `leanplan.v1` or Supabase rows. Absent `goal` → **no fallback direction** (Benn's locked decision #2): the engine returns a distinguishable "goal needed" result and the UI prompts for a goal before showing any suggested target — it never defaults into a deficit.
+- **All new fields optional** → no migration needed for existing localStorage `leanplan.v1` or Supabase rows. Absent `goal` → no fallback direction (§4.2).
 - **No renames** of `leanplan.v1` or any Supabase table/column. If `goal`/`bodyFat`/`targetRate` need to sync, they ride on the existing profile record — additive columns only, defined jointly with fitness (`goal` especially must be a single shared column, not two).
 
 ### 4.2 The live `maint − 500` is superseded *(updated to match what shipped)*
 - `suggestedTargets(profile, weight)` keeps its parameter signature, and the success shape still carries `{ maint, kcal, p, c, f }` plus new metadata (`goal`, `adjustPct`, `floored`, `bodyFatAssumed`). The return type is now a **union**: `SuggestedTargets | GoalNeeded | null` — `null` when body metrics are missing (as before), `GoalNeeded` (`{ goalNeeded: true, maint }`) when metrics are complete but no goal is chosen. The Profile screen consumer was updated alongside.
-- Its body is replaced by the §2 engine. **Unset `goal` does NOT fall back to `lose-fat`** — Benn's locked decision #2 overrides this doc's earlier recommendation: the engine never produces a deficit-by-assumption; it returns `GoalNeeded` and the UI shows an inline goal picker in place of the suggestion. `bodyFat` absent → 15% fallback (A1, confirmed as single non-sex-split value); `targetRate` absent → `'standard'` (confirmed). Existing users therefore see their maintenance number plus a goal prompt — not a silently changed deficit.
+- Its body is replaced by the §2 engine. **Unset `goal` does NOT fall back to `lose-fat`** — Benn's locked decision #2 overrides this doc's earlier recommendation: the engine never produces a deficit-by-assumption; it returns `GoalNeeded` and the UI shows an inline goal picker in place of the suggestion. `bodyFat` absent → 15% fallback and `targetRate` absent → `'standard'` (both confirmed, §6). Existing users therefore see their maintenance number plus a goal prompt — not a silently changed deficit.
 - Rollout implication: this changes the *suggested* number only. Users' **saved** `target` is not retro-changed (targets are stored snapshots, like meals). The new suggestion appears next time they open the target editor / finish onboarding. Call this out in release notes.
 
 ---
 
 ## 5. Phasing (each ship-critic-reviewable)
 
-**Phase 1 — Engine core (nutrition-only, no UI dependency).**
+**Phase 1 — Engine core (nutrition-only, no UI dependency).** *(Built.)*
 Replace `suggestedTargets` internals with the goal-aware TDEE × (1 − deficitPct) engine (§2), including floors and the new macro split. Add `Goal`/`TargetRate` types and optional `Profile` fields. Graceful fallback when new fields absent. Pure functions, unit-testable. `npm run typecheck` green. *Ships without any onboarding UI — behaves like a better default immediately.*
 
-**Phase 2 — Onboarding capture (needs shared questionnaire merged).**
+**Phase 2 — Onboarding capture (needs shared questionnaire merged).** *(Built.)*
 Wire questions #6–#8 (goal / bodyFat / targetRate) into the onboarding flow and Profile editor. Persist to profile + sync. Goal question is the shared one — land after Benn de-dupes the canonical block with fitness. Surface the "add body-fat % for a better target" nudge.
 
 **Phase 3 — Dynamic-adjustment loop.**

@@ -2,8 +2,8 @@
 -- Tali — per-user daily cap for AI features (first user: label photo reading)
 -- Plan: docs/plans/label-scan-and-shared-products.md §1.2, ai-platform-plan.md §5.
 --
--- NOT APPLIED. Review with `security-data`, then run once in the Supabase dashboard
--- (SQL Editor) before deploying the ai-read-label Edge Function. Safe to re-run.
+-- Applied 2026-09-28 after `security-data` review (owner postgres; verified). Run before
+-- deploying the ai-read-label Edge Function. Safe to re-run.
 --
 -- Design (the smallest safe mechanism):
 -- - ai_usage holds one counter per user, task and UTC day. No content, no values: counts only.
@@ -11,7 +11,8 @@
 --   no client can change a count directly.
 -- - The only write path is ai_usage_take(task), SECURITY DEFINER, which takes one unit for
 --   auth.uid() atomically (a single upsert guarded by the limit) and returns how many are left,
---   or -1 when today's cap is reached. The limit lives here, not in the caller, so calling the
+--   -1 when today's cap is reached, or -2 when the caller's latest label-photo consent isn't a yes
+--   (needs public.consents, docs/migrations/2026-09-consents.sql, which is live). The limit lives here, not in the caller, so calling the
 --   function directly can only use up the caller's own allowance.
 -- - A global cap per task and day (500 label reads across all users) bounds total spend. It's a
 --   read-then-write, so concurrent calls can overshoot it by a few; that's accepted (spend is
@@ -62,6 +63,17 @@ begin
   global_cap := case p_task when 'read-label' then 500 else null end;
   if cap is null then
     raise exception 'unknown task' using errcode = '22023';
+  end if;
+
+  -- the caller's latest label-photo choice must be a yes, checked here so a direct call to the
+  -- function can't skip the app's consent step (compliance register #28). Same ordering as
+  -- health_consent_current. A refusal takes no scan.
+  if not coalesce((
+    select c.granted from public.consents c
+    where c.user_id = uid and c.type = 'label-photo'
+    order by least(c.recorded_at, c.created_at) desc, c.created_at desc
+    limit 1), false) then
+    return -2;
   end if;
 
   -- everyone's reads today (a small overshoot under concurrency is fine; see above)

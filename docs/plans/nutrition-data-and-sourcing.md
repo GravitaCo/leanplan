@@ -1,7 +1,8 @@
 # Nutrition data, sourcing, barcode/OCR & unit-typing — plan
 
-Status: PLAN (no code changes in this doc). Owner: nutrition-db specialist. For: Benn.
-Repo: `leanplan` (app: Tali). Date: 2026-06-29.
+Status: PLAN, written 2026-06-29. Owner: nutrition-db specialist. For: Benn.
+Much of it has since shipped, sometimes in a different form: see the "As built" notes in §4, §5
+and §7. §1 is the June 2026 snapshot the plan started from.
 
 This plan covers: expanding the food library, a build-vs-buy decision on 3rd-party
 food data (with costs), barcode + back-of-packet OCR scanning, and cleaning up the
@@ -48,12 +49,8 @@ Two concrete problems:
    This is a latent data-fidelity bug we should fix as part of the unit work.
 
 ### How sync works today
-- Offline-first (`src/data/sync.ts`): localStorage (`leanplan.v1`) is the working store; dirty
-  records upsert to Supabase; pull merges last-write-wins per record. There is no guest mode
-  (retired Sept 2026); the `authed` flag gates all cloud calls.
-- Tables: `settings`, `custom_foods`, `recipes`, `day_logs`, `push_subscriptions`. RLS locks
-  every row to `auth.uid()` (`docs/security-rls.sql`). The built-in `FOODS` array is **shipped in
-  the bundle**, not in the DB.
+Offline-first sync, tables and RLS are described in `CLAUDE.md` ("Architecture", "Backend & data").
+The point that matters here: the built-in `FOODS` array is **shipped in the bundle**, not in the DB.
 
 ### Gaps this plan addresses
 - Library is small (336) and UK-staple-skewed; no branded/long-tail coverage.
@@ -119,16 +116,16 @@ Concretely:
 
 ## 3. Own-library strategy (curate at scale)
 
-### Sourcing standards (extends the existing quality bar)
-- **Every macro sourced** from CoFID / USDA FDC / manufacturer; record the source per entry
-  (kept out-of-bundle in a sourcing sheet, not necessarily in the shipped object — see below).
-- **Sanity gate**: `k ≈ 4·p + 4·c + 9·f` within ~10–15% (fibre/alcohol/rounding). Build a
-  one-off **lint script** (`scripts/check-foods.ts`, dev-only, framework-agnostic) that flags
-  any `Food` failing the macro identity, duplicate names, or missing fields. Run before each batch.
+### Sourcing standards
+The source priority, the `src` citation on every food and the build gate now live in
+`food-data-offline.md` §1–2 (and `CLAUDE.md`, "Food data & offline"). This plan's first idea, a
+sourcing sheet kept outside the bundle, was superseded by `src` on each food. What this plan adds:
+- **Sanity gate**: `k ≈ 4·p + 4·c + 9·f` within ~10–15% (fibre/alcohol/rounding), plus duplicate
+  names and missing fields, checked by `scripts/check-foods.ts` (`npm run check:foods`).
 - **No duplicates**: normalise-and-compare names before adding; keep category grouping/order.
 - **en-GB names**: "aubergine", "courgette", "rocket", "coriander", etc.; gender-neutral, no
   gym-bro tone.
-- **Realistic default servings** (`g`) — a portion someone would actually log.
+- **Realistic default servings** (`g`): a portion someone would actually log.
 
 ### Dedupe & identity
 - Treat lowercased, punctuation-stripped `n` as the dedupe key for built-ins.
@@ -136,8 +133,7 @@ Concretely:
   section 5/6) so the same product isn't added twice.
 
 ### Country/locale tagging
-- Add an **optional** `loc?: string` (ISO region tag, e.g. `'GB'`, `'US'`) to `Food` (section 6).
-  Untagged built-ins are treated as locale-neutral generic. This is additive and migration-safe.
+See §6 (optional `loc` on `Food`; untagged means locale-neutral).
 
 ### Proposed first expansion batch (PLAN ONLY — do not bulk-insert yet)
 Settle build-vs-buy first; then add roughly **+250–350 curated UK-relevant items** across:
@@ -165,6 +161,13 @@ Flag for a later phase, not now.
 ---
 
 ## 4. Barcode + label-scanning design
+
+> **As built (Sept 2026):** both shipped. Barcode decoding uses `BarcodeDetector` with the ZXing
+> WASM polyfill (`screens/food/barcodeDecoder.ts`) and a live Open Food Facts lookup
+> (`data/products.ts`). Label reading went a different way from §4b: an AI read through the
+> `ai-read-label` Edge Function, with on-device checks in `core/domain/label.ts`. That design and
+> Benn's decisions on it are in `label-scan-and-shared-products.md`, which is canonical for
+> scanning. The rest of this section is the original plan.
 
 Two distinct features, both camera-based, both PWA-constrained.
 
@@ -196,7 +199,7 @@ Two distinct features, both camera-based, both PWA-constrained.
 - **OCR engine**:
   - On-device: **Tesseract.js** (WASM, MIT, £0, offline). Heavier bundle/CPU; acceptable as the
     parse target is a small numeric table.
-  - Optional cloud fallback for poor captures: a cloud Vision OCR (~£1–1.50 / 1,000 images),
+  - Optional cloud fallback for poor captures: a cloud Vision OCR (cost in §2),
     capped and behind a setting. Only if Tesseract accuracy proves insufficient.
 - **Parsing** (framework-agnostic, `src/core/domain/labelParse.ts`): extract per-100g/ml columns
   for Energy (kcal — convert from kJ if only kJ present, 1 kcal = 4.184 kJ), Protein, Carbohydrate,
@@ -214,10 +217,14 @@ for products OFF doesn't have. Both feed the same "confirm custom food" sheet.
 
 ## 5. ml-vs-g data model
 
+> **As built:** `unitOf` is in `nutrition.ts` (it also returns `'item'` for per-item `each`
+> foods), the create form has a Grams / Millilitres toggle (`CreateFoodView.tsx`), and `ml`
+> round-trips through `toServerFood` / `fromServerFood`. The other custom-food fields (`each`,
+> `src`, `ref`, `cat`, `cook`, `barcode`, `eat`) travel in one additive `custom_foods.meta` jsonb
+> column (`docs/migrations/2026-09-custom-foods-meta.sql`) rather than one column each.
+
 ### Problem recap
-Unit type is represented three ways (`Food.ml?`, `RecipeItem.ml?`, `LoggedFood.unit?`) and is
-**dropped by the custom-food sync mapping** (no DB column), and the custom-food **create UI has no
-ml option**.
+See §1: three representations, dropped on sync, no ml option when creating a food.
 
 ### Recommendation: keep `ml?: boolean` as the stored truth; add a derived `unit` helper. Do NOT
 rename or drop `ml`.
@@ -287,24 +294,21 @@ Liquids and solids now consistent end-to-end, and custom liquids survive sync.
 
 ## 7. Phased roadmap (each phase ship-critic reviewable before go-live)
 
-**Phase 0 — Foundations & unit clean-up (no new data)**
-- Add `unitOf` helper; refactor `AddFoodSheet`/`MealsSheet`/store to use it.
-- Add g/ml toggle to custom-food create.
-- Add additive Supabase `ml` column + fix `toServerFood`/`fromServerFood` (fix the silent-drop bug).
-- Add `scripts/check-foods.ts` lint (macro identity, dupes, missing fields).
-- Ship-critic review. Smallest, highest-value, de-risks everything after.
+**Phase 0 — Foundations & unit clean-up (no new data)** *(shipped, see §5 "As built" and
+`npm run check:foods`)*. Smallest, highest-value, de-risked everything after.
 
 **Phase 1 — Curated library expansion (decision-gated)**
 - After Benn confirms build-vs-buy. Add first sub-batches (~40–60 at a time) per section 3, each
   lint-passed with a sourcing note. Optionally add `loc` tagging.
 - Ship-critic review per batch.
 
-**Phase 2 — Barcode scanning (MVP scan feature)**
+**Phase 2 — Barcode scanning (MVP scan feature)** *(shipped as `ScanView` / `ScanConfirmView`;
+`barcode` travels in `custom_foods.meta`, not its own column)*
 - `ScanSheet` + on-device decode (BarcodeDetector → ZXing fallback) → OFF lookup → confirm &
   save custom food (with `barcode`, `loc`). Add `barcode` column (additive). Cache + rate-limit OFF.
 - Ship-critic review.
 
-**Phase 3 — Label OCR fallback**
+**Phase 3 — Label OCR fallback** *(shipped as an AI read instead of Tesseract, see §4 "As built")*
 - Tesseract.js capture → `labelParse` → confirm flow. kJ→kcal, per-100g/ml detection, sanity gate.
 - Optional capped cloud-OCR fallback behind a setting (only if accuracy needs it).
 - Ship-critic review.
@@ -319,16 +323,20 @@ Liquids and solids now consistent end-to-end, and custom liquids survive sync.
 ## 8. Open questions / decisions for Benn
 
 1. **Build-vs-buy sign-off**: confirm the recommended path — own curated DB + free Open Food Facts,
-   no paid API now. (This gates Phase 1's manual-entry scope.)
+   no paid API now. (This gates Phase 1's manual-entry scope.) *What shipped follows it: own DB +
+   Open Food Facts, no paid food-data API.*
 2. **OFF usage**: hit the public OFF API live (simplest) vs self-host a periodic OFF dump (more
-   reliable/offline, small storage cost)? Recommend live API + caching to start.
-3. **Scan MVP order**: barcode-first then OCR fallback (recommended) — agreed?
+   reliable/offline, small storage cost)? Recommend live API + caching to start. *Shipped: live
+   API (`data/products.ts`); a confirmed product is kept as a custom food.*
+3. **Scan MVP order**: barcode-first then OCR fallback (recommended) — agreed? *Shipped in that
+   order.*
 4. **Cloud-OCR fallback**: acceptable to add a capped paid Vision fallback if on-device Tesseract
-   accuracy is poor, or strictly on-device only?
+   accuracy is poor, or strictly on-device only? *Overtaken: the shipped label read is a cloud AI
+   call, free for now with a spend limit (Benn, 26 Sept 2026, `label-scan-and-shared-products.md`).*
 5. **Locale scope**: UK-only for now (default `loc: 'GB'`), or design the region preference UI in
    this round? Recommend UK-only data, region field plumbed but UI deferred.
 6. **Library target size**: comfortable with ~+250–350 curated items as the first expansion goal,
    delivered in reviewable sub-batches?
 7. **Sanity-failed OFF data**: when OFF macros fail the kcal identity, block the save or allow with
-   a warning? Recommend warn-and-confirm (user owns their custom foods).
-```
+   a warning? Recommend warn-and-confirm (user owns their custom foods). *Shipped as
+   warn-and-confirm: `ScanConfirmView` only blocks Save on missing fields.*
