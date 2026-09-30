@@ -1,18 +1,18 @@
 /**
- * The summary (Design canvas row Onboarding 3, note s-ob3; ob4-7 for maintenance only): "Here's a
- * starting point, not a test". It shows only what the engine generated for these answers: "Built
- * from your answers" for a generated week, "Starter week: tell us more to personalise it" for the
- * Starter week (engine §5). Every "why" row opens the engine's own reasons, rendered here from
- * their codes. Start is the only thing that changes the person's plan and targets (§10, §12).
+ * The summary (Design canvas row Onboarding 3, note s-ob3; ob4-7 for maintenance only), in the
+ * refined look (r6-summary, note s-r): a photo hero with the week's name and shape, the week as a
+ * day strip, four reason chips with all of them a tap away, the Food card, "See other plans" and
+ * "Start my week". It shows only what the engine generated for these answers: "Built from your
+ * answers" for a generated week, "Starter week" for the Starter week (engine §5). Every reason
+ * opens the engine's own, rendered here from their codes. Start is the only thing that changes
+ * the person's plan and targets (§10, §12).
  */
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { canSaveHealthAnswers } from '@/data/consent'
-import { finishedProfile, planFitLine, restLine, sessionLine, summaryFor, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
+import { finishedProfile, planFitLine, restLine, summaryFor, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
 import { PLAN_TEMPLATES, phasesOf, phaseWeek, templateById, type PlanTemplate } from '@/core/domain/plans'
-import { isBuiltinKey, keyTitle, keyVideo, templateFor } from '@/core/domain/routines'
-import { LIFTS } from '@/core/data/workouts'
-import type { WorkoutType } from '@/core/types'
+import { keyTitle } from '@/core/domain/routines'
 import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
 import { renderWhy, type PlannedSession } from '@/core/domain/engine'
@@ -24,10 +24,9 @@ import { WEEK_ORDER } from '@/core/domain/engine/inputs'
 import type { Why } from '@/core/types'
 import { BareSheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
-import { Thumb } from '../train/Thumb'
 import { MAINT_SHEET, OTHERS, REDO, SUMMARY } from './copy'
 
-const SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const k = (n: number) => n.toLocaleString('en-GB')
 const uniq = (xs: string[]) => [...new Set(xs)]
 /** "Goblet squat: a gentler choice for the knees." → "A gentler choice for the knees." */
@@ -55,6 +54,8 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   const [how, setHow] = useState(false)
   const [maint, setMaint] = useState(false)
   const [others, setOthers] = useState(false)
+  const [all, setAll] = useState(false)
+  const routines = useStore((s) => s.data.routines)
   // Redo setup: Start saves the answers, then asks before touching the week (never automatic)
   const [offer, setOffer] = useState(false)
   const r = m.result
@@ -81,68 +82,83 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
 
   const byDay = new Map<number, PlannedSession[]>()
   for (const s of plan.sessions) byDay.set(s.weekday, [...(byDay.get(s.weekday) ?? []), s])
-  const thumbOf = (s: PlannedSession) => s.slots.map((x) => EXERCISE_BY_ID[x.exId]?.video).find((v) => v?.poster)
+  const tWeek = chosen ? phaseWeek({ phases: phasesOf(chosen) }, 0) : null
+  // four reasons from the person's own answers first (r6-summary: days, sore spots, kit, a gentle start)
+  const chips = rows.filter((x) => x.key !== 'warmup').sort((x, y) => chipRank(x.key) - chipRank(y.key)).slice(0, 4)
+  const art = chosen ? planArt(chosen.id) : undefined
 
   return (
-    <div className="wz" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 50px)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 40px)' }}>
-      <div className="wz-eyebrow">{r.starter ? SUMMARY.starter : SUMMARY.built}</div>
-      <h1 className="wz-h xl">{SUMMARY.title}</h1>
-      <div className="wz-lead body" style={{ marginTop: -8 }}>{SUMMARY.lead}</div>
-
-      {r.starter && (
-        <section className="sm-starter">
-          <div className="t">{SUMMARY.starterCardT}</div>
-          <div className="s">{SUMMARY.starterCardS}</div>
-          <button className="btn gray bp-btn" onClick={onPersonalise}>Personalise it</button>
-        </section>
-      )}
-
-      <h2 className="sm-h2">Your week</h2>
-      {chosen ? <TemplateWeek t={chosen} /> : <div className="sm-week">
-        {WEEK_ORDER.map((wd) => {
-          const ss = byDay.get(wd) ?? []
-          if (!ss.length) return <div className="sm-day" key={wd}><span className="d">{SHORT[wd]}</span><span className="m"><span className="t">{restLine(d)}</span></span></div>
-          return ss.map((s) => (
-            <button className="sm-day" key={wd + s.routineId} onClick={() => setDay(s)} aria-label={`${DAY_NAME[wd]}: ${s.name}. Why each part is here`}>
-              <span className="d">{SHORT[wd]}</span>
-              <span className="m"><span className="t">{s.name}</span>
-                <span className="s num">{sessionLine(s, r.starter)}</span></span>
-              <Thumb video={thumbOf(s)} />
-            </button>
-          ))
-        })}
-      </div>}
-
-      <div className="sm-rows">
-        <button className="sm-row lg" onClick={() => setOthers(true)}>
-          <span className="m"><span className="t">{SUMMARY.others}</span><span className="s">{SUMMARY.othersS}</span></span>
-          <Chevron />
-        </button>
-      </div>
-
-      {/* the reasons are the generated week's: a chosen Tali plan has its own (Plan tab) */}
-      {!chosen && <>
-        <h2 className="sm-h2 sm">{SUMMARY.whyH}</h2>
-        <div className="sm-rows">
-          {rows.map((x) => (
-            <button className="sm-row" key={x.key} onClick={() => setRow(x)}>
-              <span className="m"><span className="t">{x.title}</span><span className="s">{x.sub}</span></span>
-              <Chevron />
-            </button>
-          ))}
+    <div className="smry">
+      {/* r6-summary: a result, not a report. GAP: the suggested week has no photo of its own in the app yet */}
+      <header className="sm-hero">
+        {art ? <img src={art} alt="" style={{ objectPosition: chosen?.artAt }} /> : <div className="ph" aria-hidden="true" />}
+        <div className="shade" aria-hidden="true" />
+        <div className="tx">
+          <div className="k">{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</div>
+          <h1>{r.starter && !chosen ? SUMMARY.starterHeroT : SUMMARY.heroT}</h1>
+          <div className="s num">{chosen ? chosen.tagline : shapeLine(d, m)}</div>
         </div>
-      </>}
+      </header>
+      <div className="sm-body">
+        {r.starter && !chosen && (
+          <section className="sm-starter">
+            <div className="t">{SUMMARY.starterCardT}</div>
+            <div className="s">{SUMMARY.starterCardS}</div>
+            <button className="btn gray bp-btn" onClick={onPersonalise}>Personalise it</button>
+          </section>
+        )}
 
-      {first && <FoodCard m={m} onHow={() => setHow(true)} onAddWeight={onAddWeight} onAddHeight={onAddHeight} onAddAge={onAddAge}
-        onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} />}
+        <section className="sm-strip" aria-label="Your week">
+          <div className="days">
+            {WEEK_ORDER.map((wd) => {
+              const ss = tWeek ? [] : byDay.get(wd) ?? []
+              const keys = tWeek?.[wd] ?? []
+              const on = ss.length > 0 || keys.length > 0
+              const name = ss.map((x) => x.name).join(', ') || keys.map((k) => keyTitle(k, routines)).join(', ')
+              return (
+                <span className="dy" key={wd}>
+                  <span className="l" aria-hidden="true">{DAY_LETTER[wd]}</span>
+                  {ss.length
+                    ? <button className="c on" onClick={() => setDay(ss[0])} aria-label={`${DAY_NAME[wd]}: ${name}. Why each part is here`}><Icon name="dumbbell" size={17} stroke={2} /></button>
+                    : <span className={'c' + (on ? ' on' : '')} role="img" aria-label={on ? `${DAY_NAME[wd]}: ${name}` : `${DAY_NAME[wd]}: ${restLine(d)}`}>{on && <Icon name="dumbbell" size={17} stroke={2} />}</span>}
+                </span>
+              )
+            })}
+          </div>
+          <div className="w">{SUMMARY.warmLine(chosen ? 6 : warmupFor(d))}</div>
+        </section>
 
-      <div className="stack" style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button className="btn ob-btn" onClick={() => (d.redo ? setOffer(true) : start())}>Start</button>
-        <button className="linkbtn ob-alt" onClick={onEdit}>Change my answers</button>
+        {/* the reasons are the generated week's: a chosen Tali plan has its own (Plan tab) */}
+        {!chosen && chips.length > 0 && (
+          <section className="sm-reasons">
+            <div className="hd"><span className="t">{SUMMARY.whyH}</span><button className="linkbtn" onClick={() => setAll(true)}>{SUMMARY.allReasons}</button></div>
+            <div className="chips">{chips.map((x) => <button key={x.key} onClick={() => setRow(x)}>{x.title}</button>)}</div>
+          </section>
+        )}
+
+        {first && <FoodCard m={m} onHow={() => setHow(true)} onAddWeight={onAddWeight} onAddHeight={onAddHeight} onAddAge={onAddAge}
+          onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} />}
+
+        <button className="btn sm-others" onClick={() => setOthers(true)}>{SUMMARY.others}</button>
+        <button className="linkbtn ob-alt" onClick={onEdit}>{SUMMARY.edit}</button>
       </div>
+      <div className="ob-cta"><button className="btn ob-btn" onClick={() => (d.redo ? setOffer(true) : start())}>{SUMMARY.start}</button></div>
 
       {day && <DaySheet s={day} whys={r.why} warm={warmupFor(d)} onClose={() => setDay(null)} />}
       {row && <WhySheet row={row} onClose={() => setRow(null)} />}
+      {all && (
+        <BareSheet label={SUMMARY.whyH} onClose={() => setAll(false)}>
+          <div className="feel-hd"><h2>{SUMMARY.whyH}</h2><button className="navbtn b" onClick={() => setAll(false)}>Done</button></div>
+          <div className="sm-rows" style={{ marginTop: 12 }}>
+            {rows.map((x) => (
+              <button className="sm-row" key={x.key} onClick={() => { setAll(false); setRow(x) }}>
+                <span className="m"><span className="t">{x.title}</span><span className="s">{x.sub}</span></span>
+                <Chevron />
+              </button>
+            ))}
+          </div>
+        </BareSheet>
+      )}
       {how && (
         <BareSheet label={SUMMARY.howT} onClose={() => setHow(false)}>
           <div className="feel-hd"><h2>{SUMMARY.howT}</h2><button className="navbtn b" onClick={() => setHow(false)}>Done</button></div>
@@ -161,6 +177,18 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       )}
     </div>
   )
+}
+
+const CHIP_ORDER = ['days', 'areas', 'kit', 'ease', 'weekdays', 'minutes', 'enjoy', 'walks', 'time', 'impact']
+const chipRank = (k: string) => { const i = CHIP_ORDER.indexOf(k); return i < 0 ? CHIP_ORDER.length : i }
+
+/** The week's shape under the hero's title (r6-summary): "3 days · about 30 min · at home". */
+function shapeLine(d: WizardDraft, m: SummaryModel): string {
+  const sessions = m.result.plan.sessions
+  const n = sessions.filter((s) => !s.optional).length
+  const mins = sessions.length ? Math.round(sessions.reduce((a, s) => a + s.mins, 0) / sessions.length / 5) * 5 : 30
+  const where = d.where === 'mix' ? 'a mix' : d.where === 'outdoors' ? 'outdoors' : d.where === 'gym' ? 'at a gym' : m.result.starter && !d.where ? 'no equipment' : 'at home'
+  return `${n} ${n === 1 ? 'day' : 'days'} · about ${mins} min · ${where}`
 }
 
 function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth }: {
@@ -237,32 +265,6 @@ function WhySheet({ row, onClose }: { row: WhyRow; onClose: () => void }) {
       <div className="sm-sheet-sub" style={{ marginTop: 2 }}>{row.sub}</div>
       <div className="sm-why">{[...(row.lines ?? []), ...lines].map((l) => <p key={l}>{l}</p>)}</div>
     </BareSheet>
-  )
-}
-
-/** A chosen Tali plan's first week, in the summary's rows (its warm-up is the plans' 6 minutes). */
-function TemplateWeek({ t }: { t: PlanTemplate }) {
-  const routines = useStore((s) => s.data.routines)
-  const week = phaseWeek({ phases: phasesOf(t) }, 0)
-  return (
-    <div className="sm-week">
-      {WEEK_ORDER.map((wd) => {
-        const keys = week[wd] ?? []
-        if (!keys.length) return <div className="sm-day" key={wd}><span className="d">{SHORT[wd]}</span><span className="m"><span className="t">Rest</span></span></div>
-        return keys.map((k) => {
-          const n = templateFor(k, routines)?.ex.length ?? 0
-          const lift = !isBuiltinKey(k) || LIFTS.includes(k as WorkoutType)
-          return (
-            <div className="sm-day" key={wd + k}>
-              <span className="d">{SHORT[wd]}</span>
-              <span className="m"><span className="t">{keyTitle(k, routines)}</span>
-                {lift && n > 0 && <span className="s num">Warm-up, then {n} {n === 1 ? 'exercise' : 'exercises'}</span>}</span>
-              <Thumb video={keyVideo(k, routines)} />
-            </div>
-          )
-        })
-      })}
-    </div>
   )
 }
 
