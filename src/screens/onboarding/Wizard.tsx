@@ -13,8 +13,8 @@ import { canSaveHealthAnswers } from '@/data/consent'
 import { clearDraft, loadDraft, saveDraft } from '@/data/onboardingDraft'
 import { uuid } from '@/data/supabase'
 import {
-  AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, JOB_OPTIONS, KIT_OPTIONS, MOVING_OPTIONS,
-  STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, nextStep, prevStep,
+  AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, afterAnswer, JOB_OPTIONS, KIT_OPTIONS, MOVING_OPTIONS,
+  STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, prevStep,
   progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
 import { latestWeight } from '@/core/domain/insights'
@@ -67,7 +67,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     if (health || !hasHealth(keep)) saveDraft(keep)
   }
   const patch = (x: Partial<WizardDraft>) => put({ ...d, ...x })
-  const go = (x: Partial<WizardDraft> = {}) => { const n = { ...d, ...x }; put(n.ret ? { ...n, ret: undefined, step: 'summary' } : { ...n, step: nextStep(n, health) }) }
+  // `ret` (from the summary's "Add weight", "Add age", "See your health check answers") goes back to
+  // the summary, but never past a note or stop the answer leads to: those show first, then return
+  const go = (x: Partial<WizardDraft> = {}) => { const n = { ...d, ...x }; put({ ...n, ...afterAnswer(n, health) }) }
   const back = () => { const p = prevStep(d, health); if (p) put({ ...d, step: p }); else if (closable) { clearDraft(); onClose?.() } }
   const jump = (step: StepId) => put({ ...d, step })
   // a step that isn't in this run (a health step without consent, a skipped branch): move on
@@ -187,8 +189,10 @@ const TapFoot = ({ text = TAP }: { text?: string }) => <div className="wz-tap">{
 function useAdvance() {
   const t = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(t.current), [])
+  // a second tap inside the beat changes the answer: the screen moves on with the latest pick,
+  // after a fresh beat, so what's saved is always what's shown
   return (then: () => void) => {
-    if (t.current !== undefined) return
+    window.clearTimeout(t.current)
     t.current = window.setTimeout(() => { t.current = undefined; then() }, ADVANCE_MS)
   }
 }

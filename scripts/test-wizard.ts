@@ -5,7 +5,7 @@ import type { Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import {
   HEALTH_STEPS, applyDraft, draftFromProfile, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
-  outcomeInputs, readinessOutcome, replacementFor, rerunForAnswers, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
+  afterAnswer, outcomeInputs, readinessOutcome, replacementFor, rerunForAnswers, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
 import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, numbersStayHidden, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, profileRouting, routeSafety, safetyAnswersFrom, setHealthAnswerIn, snoozePregnancyIn } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
@@ -182,6 +182,15 @@ function summary(): void {
     ['never again once used or waved off', !ifThenOfferDue({ profile: { ...onb, ifThenOffered: true }, ...ses })],
     ['not with a plan already', !ifThenOfferDue({ profile: { ...onb, plans: [{ id: 'p', when: 'x', then: 'y', created: TODAY, reviews: [] }] } as Profile, ...ses })],
     ['not without setup', !ifThenOfferDue({ profile: DEFAULT_PROFILE, ...ses })],
+    ['a workout from before setup does not count', !ifThenOfferDue({ profile: onb, days: { '2025-03-01': ses.days[TODAY] } } as any)],
+  ])
+  // the summary's shortcuts back into the questions never skip a safety screen (ship-critic B1)
+  const ret = (x: Partial<WizardDraft>) => afterAnswer(full({ ...x, ret: 'summary' }), true)
+  report('summary shortcuts', [
+    ['plain answer: straight back to the summary', ret({ step: 'weight' }).step === 'summary'],
+    ['health answers, now a yes: the gentle-start screen first', ret({ step: 'ready', outcomes: { readiness: 'flagged' } }).step === 'ready-note'],
+    ['and its Continue returns to the summary', afterAnswer({ ...full({ outcomes: { readiness: 'flagged' } }), step: 'ready-note', ret: 'summary' }, true).step === 'summary'],
+    ['an under-18 age: the stop, not the summary', ret({ step: 'age', age: 17 }).step === 'under16'],
   ])
   report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !copyIssues(t).length), allCopy().filter((t) => copyIssues(t).length).join(' | ')]])
 }

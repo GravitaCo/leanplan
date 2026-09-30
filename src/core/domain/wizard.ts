@@ -207,6 +207,15 @@ export function prevStep(d: WizardDraft, healthConsent: boolean): StepId | null 
   for (let k = i - 1; k >= 0; k--) if (!NOTE_STEPS.includes(s[k])) return s[k]
   return null
 }
+/** Notes and stops an answer can lead to: a summary shortcut (`ret`) never skips these. */
+export const SAFETY_STEPS: StepId[] = ['under16', 'ready-note', 'pregnancy-note', 'wellbeing-note', 'medical-note']
+/** Where an answer goes next. A summary shortcut (`ret`) goes back to the summary, but never past
+ *  a note or stop the answer leads to: that shows first, then its Continue returns. */
+export function afterAnswer(d: WizardDraft, health: boolean): { step: StepId; ret: WizardDraft['ret'] } {
+  const next = nextStep(d, health)
+  return d.ret && !SAFETY_STEPS.includes(next) ? { step: 'summary', ret: undefined } : { step: next, ret: d.ret }
+}
+
 export const NOTE_STEPS: StepId[] = ['under16', 'ready-note', 'pregnancy-note', 'wellbeing-note', 'medical-note', 'handoff', 'intro', 'skip-age', 'plan-intro']
 
 /** Progress on the wizard's 10 bars and the setup card's 8 (boards ob1, ob2), and the time line above them. */

@@ -345,7 +345,9 @@ export function weightWeekDelta(s: AppState, cur: string): number | null {
 export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
   const p = s.profile
   if (!p?.onboardedAt || p.ifThenOffered || (p.plans ?? []).length) return false
-  return Object.entries(s.days || {}).some(([d, day]) => sessionsOf(day, d).length > 0)
+  // the first workout after setup: an older logged session (or a redo of setup) doesn't count
+  const from = p.onboardedAt.slice(0, 10)
+  return Object.entries(s.days || {}).some(([d, day]) => d >= from && sessionsOf(day, d).length > 0)
 }
 
 /** Plans not reviewed (or created) within the last week. */

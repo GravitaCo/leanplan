@@ -170,7 +170,10 @@ async function wizard(page, a = {}, snap) {
   await h1(page, 'What would make this worth it for you?')
   await check(page, 'More energy'); await check(page, 'Feel stronger'); await s('ob1-3-why'); await cont(page)
   await h1(page, 'What’s your main goal?')
-  await s('ob1-4-goal'); await tap(page, a.goal ?? 'Lose fat')
+  await s('ob1-4-goal')
+  // a quick change of mind inside the beat: the latest pick is the one saved (ship-critic B2)
+  if (a.quickChange) { await radio(page, a.quickChange); await radio(page, a.goal) ; await h1(page, 'How are things lately?'); expect((await draft(page)).goal === 'build-muscle', 'the second tap is saved: ' + (await draft(page)).goal) }
+  else await tap(page, a.goal ?? 'Lose fat')
   await h1(page, 'How are things lately?')
   await page.getByRole('radiogroup', { name: 'Sleep' }).getByRole('radio', { name: a.sleep ?? 'Mixed' }).click()
   await page.getByRole('radiogroup', { name: 'Stress' }).getByRole('radio', { name: 'Some' }).click()
@@ -506,7 +509,11 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect((await page.getByRole('dialog').getByText(/weigh-in/i).count()) === 0, 'the sheet shows no weigh-ins')
     await shot(page, 'ob4-8-maint')
     await btn(page, 'See your health check answers').click()
-    await h1(page, 'A few health questions'); await cont(page); await summaryUp(page)
+    // a new yes on the way back shows its screen before the summary (ship-critic B1)
+    await h1(page, 'A few health questions')
+    await page.getByRole('radiogroup').first().getByRole('radio', { name: 'Yes', exact: true }).click(); await cont(page)
+    await h1(page, 'We’ll keep things gentle'); await cont(page); await summaryUp(page)
+    expect((await draft(page)).outcomes.readiness === 'flagged', 'the new yes is kept')
     await btn(page, 'Start my week').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     const st = await stored(page)
     expect(st.profile.pregnancy?.flagged === true && st.profile.pregnancy.askedAt === today, 'pregnancy flag and its date')
@@ -522,8 +529,8 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect(dr.outcomes.medical === 'flagged' && !JSON.stringify(dr).match(/kidney/i), 'outcome only')
   })
 
-  await run('safety: build muscle → no medical question', async ({ page }) => {
-    await wizard(page, { goal: 'Build muscle' })
+  await run('safety: build muscle → no medical question (after a quick change from lose fat)', async ({ page }) => {
+    await wizard(page, { goal: 'Build muscle', quickChange: 'Lose fat' })
   })
 
   await run('safety: under 18 → kind stop → Close deletes the account and this device’s data', async ({ page, net }) => {
