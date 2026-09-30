@@ -13,6 +13,10 @@ import { DEFAULT_WEEKDAYS, WEEK_ORDER, type Lately } from './engine/inputs'
 import { sessionsOf } from './sessions'
 import { stampFields, type MergedField } from './profileMerge'
 import { DAY_NAME } from './date'
+import { EXERCISE_BY_ID } from '@/core/data/exercises'
+import { rangeFromMinutes, warmupMinutes, type SessionRange } from './warmup'
+import { liftingDays, phasesOf, phaseWeek, type PlanTemplate } from './plans'
+import type { PlannedSession } from './engine/generate'
 
 /**
  * The first-run wizard and the "Finish your setup" card (first-run-onboarding §2, §2.1, §9, §14;
@@ -26,7 +30,7 @@ import { DAY_NAME } from './date'
 export type StepId =
   | 'intro' | 'skip-age' | 'name' | 'age' | 'under16' | 'ready' | 'ready-note' | 'pregnancy-note' | 'why' | 'goal'
   | 'lately' | 'wellbeing' | 'wellbeing-note' | 'body' | 'medical' | 'medical-note' | 'weight' | 'move' | 'handoff'
-  | 'moving' | 'confidence' | 'days' | 'minutes' | 'where' | 'kit' | 'enjoy' | 'areas' | 'summary'
+  | 'moving' | 'confidence' | 'days' | 'minutes' | 'where' | 'kit' | 'enjoy' | 'areas' | 'plan-intro' | 'summary'
 
 /** 'first': the whole first run; 'setup': the setup card on its own (Build my plan, Finish your setup) */
 export type WizardMode = 'first' | 'setup'
@@ -66,7 +70,10 @@ export interface WizardDraft {
   experience?: Experience
   daysPerWeek?: 1 | 2 | 3 | 4 | 5 | 6
   weekdays?: number[]
+  /** the engine's length for the session range picked (rangeEngineMinutes), or an older answer */
   minutes?: MinutesAnswer
+  /** the session length as picked on ob2-4 */
+  sessionRange?: SessionRange
   where?: WhereAnswer
   kit?: KitAnswer[]
   enjoy?: EnjoyAnswer[]
@@ -75,6 +82,8 @@ export interface WizardDraft {
   deficitChosen?: boolean
   /** a screen opened from the summary ("Add weight"): back to the summary after it */
   ret?: 'summary'
+  /** "See other plans" (ob3-6): a Tali plan chosen instead of the suggested week (its template id) */
+  planChoice?: string
   /**
    * Profile's "Redo setup": the first run again, prefilled from the profile (draftFromProfile).
    * What was prefilled, so an answer left as it was keeps its stored value exactly (applyDraft)
@@ -122,6 +131,8 @@ export function draftFromProfile(p: Profile, seed: string, ctx: { healthConsent:
   if (t.weekdays?.length) d.weekdays = [...t.weekdays]
   else if (t.daysPerWeek) d.daysPerWeek = t.daysPerWeek
   if (t.minutesPerSession) d.minutes = t.minutesPerSession === 10 ? 15 : t.minutesPerSession
+  if (t.sessionRange) d.sessionRange = t.sessionRange
+  else if (t.minutesPerSession) d.sessionRange = rangeFromMinutes(t.minutesPerSession)
   if (t.place?.length) d.where = t.place.length > 1 ? 'mix' : t.place[0]
   if (t.equipment) { const kit = new Set<string>(KIT_OPTIONS.map(([k]) => k)); const k = t.equipment.filter((x): x is Exclude<KitAnswer, 'nothing'> => kit.has(x)); d.kit = k.length ? k : ['nothing'] }
   if (t.modalities || t.cardioPrefs) {
@@ -176,7 +187,8 @@ export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   s.push('body')
   if (asksMedical(d.goal)) { s.push('medical'); if (d.outcomes.medical === 'flagged') s.push('medical-note') }
   s.push('weight', 'move', 'handoff')
-  if (!d.later) s.push(...setupSteps(d))
+  // Part 3's intro (ob3-0) follows the setup card; "Skip for now" goes straight to the summary
+  if (!d.later) s.push(...setupSteps(d), 'plan-intro')
   s.push('summary')
   return health(s)
 }
@@ -193,7 +205,7 @@ export function prevStep(d: WizardDraft, healthConsent: boolean): StepId | null 
   for (let k = i - 1; k >= 0; k--) if (!NOTE_STEPS.includes(s[k])) return s[k]
   return null
 }
-export const NOTE_STEPS: StepId[] = ['under16', 'ready-note', 'pregnancy-note', 'wellbeing-note', 'medical-note', 'handoff', 'intro', 'skip-age']
+export const NOTE_STEPS: StepId[] = ['under16', 'ready-note', 'pregnancy-note', 'wellbeing-note', 'medical-note', 'handoff', 'intro', 'skip-age', 'plan-intro']
 
 /** Progress on the wizard's 10 bars and the setup card's 8 (boards ob1, ob2), and the time line above them. */
 const WIZ_BAR: Partial<Record<StepId, [number, string]>> = {
@@ -305,6 +317,7 @@ export function trainingFrom(d: WizardDraft): TrainingPrefs {
   if (d.weekdays?.length) { t.weekdays = [...d.weekdays].sort((a, b) => WEEK_ORDER.indexOf(a) - WEEK_ORDER.indexOf(b)); t.daysPerWeek = Math.min(6, d.weekdays.length) as TrainingPrefs['daysPerWeek'] }
   else if (d.daysPerWeek) t.daysPerWeek = d.daysPerWeek
   if (d.minutes) t.minutesPerSession = MINUTES_MAP[d.minutes]
+  if (d.sessionRange) t.sessionRange = d.sessionRange
   if (d.where) t.place = [...WHERE_MAP[d.where]]
   if (d.kit) t.equipment = d.kit.filter((k): k is Exclude<KitAnswer, 'nothing'> => k !== 'nothing')
   if (d.enjoy) {
@@ -317,7 +330,7 @@ export function trainingFrom(d: WizardDraft): TrainingPrefs {
   return t
 }
 
-const TRAINING_KEYS: (keyof TrainingPrefs & string)[] = ['movingNow', 'experience', 'daysPerWeek', 'weekdays', 'minutesPerSession', 'place', 'equipment', 'modalities', 'cardioPrefs', 'limitations']
+const TRAINING_KEYS: (keyof TrainingPrefs & string)[] = ['movingNow', 'experience', 'daysPerWeek', 'weekdays', 'minutesPerSession', 'sessionRange', 'place', 'equipment', 'modalities', 'cardioPrefs', 'limitations']
 
 /**
  * The profile the answers make: `base` with every answered field set and, for the first run,
@@ -362,7 +375,7 @@ export function applyDraft(base: Profile, d: WizardDraft, today: string, at?: st
   for (const k of TRAINING_KEYS) {
     const v = t[k]
     // a redo's answer left as it was: the stored value stays exactly (the options can't show every value)
-    if (d.redo && keep[k] !== undefined && JSON.stringify(v) === JSON.stringify(d.redo.training[k])) continue
+    if (d.redo && JSON.stringify(v) === JSON.stringify(d.redo.training[k])) continue
     if (v !== undefined) { (next as Record<string, unknown>)[k] = v; stamped.push(`training.${k}` as MergedField) }
     else delete (next as Record<string, unknown>)[k]
   }
@@ -486,7 +499,18 @@ export function finishedProfile(m: SummaryModel, d: WizardDraft, at: string, tod
 
 // ─── "Why this week" rows (board ob3-1: every row names the answer behind it) ────────────────
 
-export interface WhyRow { key: string; title: string; sub: string; whys: Why[] }
+export interface WhyRow { key: string; title: string; sub: string; whys: Why[]; lines?: string[] }
+
+/** The warm-up's length for these answers; the engine's 30 minutes when the length was skipped. */
+export const warmupFor = (d: Pick<WizardDraft, 'sessionRange' | 'minutes'>) => warmupMinutes(d.sessionRange ?? rangeFromMinutes(d.minutes ?? 30))
+
+/** A week row's line (ob3-1, ob3-4): "Warm-up, then 5 exercises · about 30 min". */
+export function sessionLine(s: Pick<PlannedSession, 'slots' | 'mins' | 'optional'>, starter: boolean): string {
+  const n = s.slots.length
+  // a one-move session (cardio) names the move: "Warm-up, then brisk walking"
+  const one = n === 1 ? EXERCISE_BY_ID[s.slots[0]?.exId]?.n.replace(/\s*\([^)]*\)\s*$/, '') : undefined
+  return `Warm-up, then ${one ? (/^[A-Z][a-z]/.test(one) ? one.charAt(0).toLowerCase() + one.slice(1) : one) : `${n} ${n === 1 ? 'exercise' : 'exercises'}`}${starter ? ' · no equipment' : ` · about ${s.mins} min`}${s.optional ? ' · if you like' : ''}`
+}
 
 const lower1 = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
 const listWords = (w: string[]) => (w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : w.join(''))
@@ -516,7 +540,10 @@ export function whyRows(m: SummaryModel, d: WizardDraft): WhyRow[] {
       { key: 'impact', title: 'No jumping', sub: 'You haven’t told us about any sore spots, so we’ve kept it low-impact', whys: starter },
     ]
   }
-  const rows: WhyRow[] = []
+  // every session starts with a warm-up (s-ob8 point 4); the engine gives no reason for it, so the row says it in words
+  const w = warmupFor(d)
+  const rows: WhyRow[] = [{ key: 'warmup', title: `${w === 8 ? 'An' : 'A'} ${w}-minute warm-up first, every time`, sub: 'It gets your joints and muscles moving before the first set', whys: [],
+    lines: ['A minute or two to raise your pulse, then moving stretches for the joints the session uses.', 'Longer sessions get a longer warm-up, from 4 to 10 minutes.'] }]
   const t = trainingFrom(d)
   const asked = t.weekdays?.length ?? t.daysPerWeek
   const dayWhys = pick((w) => (w.code === 'days' || (w.code === 'default' && w.field === 'daysPerWeek') || ((w.code === 'guardrail' || w.code === 'baseline') && w.about === 'days')) && w.field !== 'weekdays')
@@ -566,3 +593,31 @@ export const defaultSpread = (n: WizardDraft['daysPerWeek']) => dayList(DEFAULT_
 
 // the first-session helpers live in firstSession.ts (no engine import: the player and the store use them)
 export { exposureOf, kitOf, replacementFor } from './firstSession'
+
+// ─── "See other plans" (ob3-6) ───────────────────────────────────────────────────────────────
+
+const PLAN_KIT: Record<string, string> = { 'stronger-with-age': 'dumbbells, chair, wall' }
+
+/**
+ * How a Tali plan fits the answers (ob3-6): "Fits your 3 days · needs a gym". Rules only, from
+ * the days asked for (else the suggested week's) against the plan's lifting days, and where the
+ * person trains against where the plan is built for. No board gives the rules; the lines match
+ * the three drawn.
+ */
+export function planFitLine(t: Pick<PlanTemplate, 'id' | 'phases' | 'where' | 'kit'>, d: WizardDraft, weekDays: number): string {
+  const asked = d.weekdays?.length || d.daysPerWeek || weekDays
+  const ph = { phases: phasesOf(t) }
+  const perPhase = ph.phases.filter((p) => !p.after).map((p, i) => ({ weeks: p.weeks, days: liftingDays(phaseWeek(ph, i), undefined) }))
+  const first = perPhase[0]?.days ?? 0
+  const most = Math.max(0, ...perPhase.map((p) => p.days))
+  let days: string
+  if (most <= asked) days = `Fits your ${asked} ${asked === 1 ? 'day' : 'days'}`
+  else if (first <= asked) {
+    let week = 1
+    for (const p of perPhase) { if (p.days > asked) break; week += p.weeks }
+    days = `Needs ${most} days from week ${week}`
+  } else days = `Needs ${first} days a week`
+  const gymUser = d.where === 'gym' || d.where === 'mix'
+  const kit = t.where.includes('gym') ? (gymUser ? 'at your gym' : days.startsWith('Needs') ? 'gym' : 'needs a gym') : PLAN_KIT[t.id] ?? t.kit.toLowerCase()
+  return `${days} · ${kit}`
+}

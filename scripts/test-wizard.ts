@@ -25,6 +25,10 @@ import { deleteAccount, refreshFailure, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
 import { wizardDueFor, FIRST_PULL_WAIT_MS } from '@/data/firstRun'
 import { readFileSync } from 'node:fs'
+import { rangeEngineMinutes, rangeFromMinutes, SESSION_RANGES, warmupMinutes } from '@/core/domain/warmup'
+import { planFitLine, sessionLine, warmupFor } from '@/core/domain/wizard'
+import { PLAN_TEMPLATES } from '@/core/domain/plans'
+import { ifThenOfferDue } from '@/core/domain/insights'
 const FN = readFileSync('supabase/functions/delete-account/index.ts', 'utf8')
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
@@ -50,7 +54,7 @@ function steps(): void {
   const d = full()
   const s = stepsFor(d, true)
   report('steps', [
-    ['s-ob1 order, then the setup card, then the summary', s.join() === 'intro,name,age,ready,why,goal,lately,wellbeing,body,medical,weight,move,handoff,moving,confidence,days,minutes,where,kit,enjoy,areas,summary', s.join()],
+    ['s-ob1 order, then the setup card, then the summary', s.join() === 'intro,name,age,ready,why,goal,lately,wellbeing,body,medical,weight,move,handoff,moving,confidence,days,minutes,where,kit,enjoy,areas,plan-intro,summary', s.join()],
     ['the medical question only when the goal means eating less', !stepsFor(full({ goal: 'build-muscle' }), true).includes('medical')],
     ['18+ for now (Benn): 17 gets the kind stop too; 18 goes on', stepsFor(full({ age: 17 }), true).slice(-1)[0] === 'under16' && WIZARD_MIN_AGE === 18 && stepsFor(full({ age: 18 }), true).includes('ready')],
     ['under 16: the kind stop, and nothing after it', stepsFor(full({ age: 15 }), true).slice(-1)[0] === 'under16' && !stepsFor(full({ age: 15 }), true).includes('ready')],
@@ -107,9 +111,9 @@ function summary(): void {
     ['the plan lands on the default spread for 3 days', dayList(m.result.plan.weekdays) === 'Monday, Wednesday, Friday'],
   ])
   const rows = whyRows(m, d)
-  const texts = rows.flatMap((r) => [r.title, r.sub, ...r.whys.map(renderWhy)])
+  const texts = rows.flatMap((r) => [r.title, r.sub, ...(r.lines ?? []), ...r.whys.map(renderWhy)])
   report('summary why rows', [
-    ['every row carries the engine\'s own reasons', rows.length >= 4 && rows.every((r) => r.whys.length > 0), rows.map((r) => r.key + ':' + r.whys.length).join()],
+    ['every row but the warm-up (s-ob8 point 4) carries the engine\'s own reasons', rows.length >= 4 && rows[0].key === 'warmup' && rows.slice(1).every((r) => r.whys.length > 0), rows.map((r) => r.key + ':' + r.whys.length).join()],
     ['every reason shown is one the plan has', rows.every((r) => r.whys.every((w) => allWhys(m.result).some((x) => JSON.stringify(x) === JSON.stringify(w))))],
     ['knees: the row names them', rows.some((r) => r.key === 'areas' && /knees/.test(r.title))],
     ['copy lint on every row and reason', texts.every((t) => !copyIssues(t).length), texts.filter((t) => copyIssues(t).length).join(' | ')],
@@ -145,6 +149,39 @@ function summary(): void {
     ['one session, on the day picked', one.result.plan.sessions.filter((s) => !s.optional).length === 1 && one.result.plan.weekdays[0] === 3],
     ['1 day, no weekday picked: Wednesday (§2)', oneDefault.result.plan.weekdays.join() === '3' && defaultSpread(1) === 'Wednesday'],
     ['its row says so in Benn\'s words', whyRows(one, full({ weekdays: [3] })).some((r) => r.key === 'days' && r.whys.map(renderWhy).includes("One day is a good start. A second day adds more when you're ready, if you'd like."))],
+  ])
+  // ob2-4 and s-ob8 point 4: session length as a range, and the warm-up it includes
+  report('session range and warm-up', [
+    ['warm-up minutes by range: 4, 5, 6, 8, 10', SESSION_RANGES.map(warmupMinutes).join() === '4,5,6,8,10', SESSION_RANGES.map(warmupMinutes).join()],
+    ['each range gives the engine one of its lengths', SESSION_RANGES.map(rangeEngineMinutes).join() === '20,30,45,60,60'],
+    ['an older stored length reads back as a range', [10, 20, 30, 45, 60].map(rangeFromMinutes).join() === '15-20,15-20,20-30,30-45,60+'],
+    ['the range is saved beside the engine length', (() => { const t = trainingFrom(full({ sessionRange: '30-45', minutes: 45 })); return t.sessionRange === '30-45' && t.minutesPerSession === 45 })()],
+    ['a skipped length: the engine’s 30 minutes, a 5-minute warm-up', warmupFor({}) === 5 && warmupFor({ sessionRange: '60+' }) === 10],
+    ['a redo with an older length keeps the profile as it was', (() => {
+      const base: Profile = { ...DEFAULT_PROFILE, age: 34, goal: 'lose-fat', training: { minutesPerSession: 45 } }
+      const dr = draftFromProfile(base, 'seed', { healthConsent: true, weight: 80 })
+      return dr.sessionRange === '30-45' && applyDraft(base, dr, TODAY).training?.sessionRange === undefined && applyDraft(base, { ...dr, sessionRange: '45-60', minutes: 60 }, TODAY).training?.sessionRange === '45-60'
+    })()],
+    ['week row line', sessionLine({ slots: new Array(5), mins: 30 }, false) === 'Warm-up, then 5 exercises · about 30 min' && sessionLine({ slots: new Array(5), mins: 30 }, true) === 'Warm-up, then 5 exercises · no equipment'],
+  ])
+  // ob3-6: how each Tali plan fits 3 days at home (the lines drawn)
+  const fit = Object.fromEntries(PLAN_TEMPLATES.map((t) => [t.id, planFitLine(t, full(), 3)]))
+  report('other plans', [
+    ['Full body system', fit['full-body-system'] === 'Fits your 3 days · needs a gym', fit['full-body-system']],
+    ['Pure muscle growth', fit['pure-muscle-growth'] === 'Needs 6 days from week 3 · gym', fit['pure-muscle-growth']],
+    ['Stronger with age', fit['stronger-with-age'] === 'Fits your 3 days · dumbbells, chair, wall', fit['stronger-with-age']],
+    ['at a gym', planFitLine(PLAN_TEMPLATES.find((t) => t.id === 'full-body-system')!, full({ where: 'gym' }), 3) === 'Fits your 3 days · at your gym'],
+    ['a chosen plan is kept in the draft only', trainingFrom(full({ planChoice: 'full-body-system' })).place?.join() === 'home'],
+  ])
+  // ob5-4: once, after the first workout
+  const ses = { days: { [TODAY]: { foods: [], supps: {}, sessions: [{ id: 's1', modality: 'strength', at: AT }] } } } as any
+  const onb = { ...DEFAULT_PROFILE, onboardedAt: AT }
+  report('if-then offer', [
+    ['after the first workout', ifThenOfferDue({ profile: onb, ...ses })],
+    ['not before one', !ifThenOfferDue({ profile: onb, days: {} })],
+    ['never again once used or waved off', !ifThenOfferDue({ profile: { ...onb, ifThenOffered: true }, ...ses })],
+    ['not with a plan already', !ifThenOfferDue({ profile: { ...onb, plans: [{ id: 'p', when: 'x', then: 'y', created: TODAY, reviews: [] }] } as Profile, ...ses })],
+    ['not without setup', !ifThenOfferDue({ profile: DEFAULT_PROFILE, ...ses })],
   ])
   report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !copyIssues(t).length), allCopy().filter((t) => copyIssues(t).length).join(' | ')]])
 }

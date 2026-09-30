@@ -338,6 +338,16 @@ export function weightWeekDelta(s: AppState, cur: string): number | null {
   return a.length && b.length ? Math.round((avg(a) - avg(b)) * 10) / 10 : null
 }
 
+/**
+ * Today's once-only "Plan when you'll do it" (ob5-4): after the first workout someone who went
+ * through setup logs, while they have no if-then plan and haven't used or waved it off.
+ */
+export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
+  const p = s.profile
+  if (!p?.onboardedAt || p.ifThenOffered || (p.plans ?? []).length) return false
+  return Object.entries(s.days || {}).some(([d, day]) => sessionsOf(day, d).length > 0)
+}
+
 /** Plans not reviewed (or created) within the last week. */
 export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
   const days = (a: string) => Math.round((parseYmd(today).getTime() - parseYmd(a).getTime()) / 864e5)

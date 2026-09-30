@@ -331,6 +331,9 @@ export type MuscleGroup =
   | 'chest' | 'back' | 'quads' | 'hamstrings' | 'glutes' | 'shoulders'
   | 'biceps' | 'triceps' | 'calves' | 'core' | 'forearms'
 
+/** Session length as a range of minutes (board ob2-4; core/domain/warmup.ts). */
+export type SessionRange = '15-20' | '20-30' | '30-45' | '45-60' | '60+'
+
 /**
  * Fitness-only onboarding preferences (questions #9–14). All optional/additive —
  * rides the existing settings.profile JSON, no migration needed.
@@ -342,6 +345,8 @@ export interface TrainingPrefs {
   /** the weekdays picked (0 = Sun … 6 = Sat); picking days sets the count. Never a rotation. */
   weekdays?: number[]
   minutesPerSession?: 10 | 20 | 30 | 45 | 60
+  /** the session length as picked (board ob2-4): a range; minutesPerSession is the engine's length for it */
+  sessionRange?: SessionRange
   place?: TrainingPlace[]
   movingNow?: MovingNow
   /** what they enjoy or want to try (F1); absent = "not sure yet" */
@@ -439,6 +444,8 @@ export interface Profile {
   activityShown?: string
   /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
   loadNoteSeen?: string
+  /** Today's once-only "Plan when you'll do it" (ob5-4) was used or waved off: never shown again */
+  ifThenOffered?: boolean
   // First-run onboarding (first-run-onboarding.md). All optional and additive: `name` above is
   // the optional first name and `age` the required age; weight stays optional.
   /** the onboarding sex answer; absent on older profiles, read through `sexOf` */
