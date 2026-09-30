@@ -20,7 +20,7 @@ import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
-import type { LegalDocId } from '@/core/legal'
+import { MIN_AGE, type LegalDocId } from '@/core/legal'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -192,12 +192,13 @@ export function ProfileScreen() {
           <div className="grid2">
             {field('Sex', <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
               <option value="M">Male</option><option value="F">Female</option></select>)}
-            {field('Age', <input type="number" value={metrics.age} placeholder="35" onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
+            {field('Age', <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder="35" onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
             {field('Height (cm)', <input type="number" value={metrics.height} placeholder="178" onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
             {field('Weight (kg)', <input type="number" step="0.1" value={metrics.weight} placeholder="82.5" onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
           </div>
           {field('Activity level', <select value={metrics.activityLevel} onChange={(e) => setMetrics({ ...metrics, activityLevel: e.target.value as ActivityLevel })}>
             {Object.entries(ACTIVITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>)}
+          {/* 18+: checked on Save, never while typing; an under-18 age saves nothing and the app's stop shows (store) */}
           <button className="btn gray" onClick={() => saveProfileMetrics({
             sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
             weight: parseFloat(metrics.weight) || null, activityLevel: metrics.activityLevel,

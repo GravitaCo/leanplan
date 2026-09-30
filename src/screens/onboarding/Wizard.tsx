@@ -21,7 +21,6 @@ import { latestWeight } from '@/core/domain/insights'
 import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { cmFromFtIn, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
-import { SIGNPOSTS, beatFor } from '@/core/data/signposts'
 import type { Lately } from '@/core/domain/engine'
 import type { OnboardingOutcomes } from '@/core/types'
 import { Icon } from '@/ui/icons'
@@ -31,6 +30,7 @@ import { warmupMinutes, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type Ses
 import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
 import { COPY, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
+import { SPS, Signposts, Under16, UnderAgeStop } from './AgeStop'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
 
@@ -48,6 +48,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   const data = useStore((s) => s.data)
   const health = canSaveHealthAnswers(data)
   const deleteUnderAge = useStore((s) => s.deleteUnderAge)
+  const raiseUnderAge = useStore((s) => s.raiseUnderAge)
   const [d, setD] = useState<WizardDraft>(() => {
     const saved = loadDraft()
     if (saved && saved.mode === mode && !!saved.redo === !!redo) return saved
@@ -59,7 +60,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   const put = (next: WizardDraft) => {
     setD(next)
     // never keep health answers on the device without the local consent record (plan §8)
-    if (health || !hasHealth(next)) saveDraft(next)
+    // Redo setup's age stop keeps no under-18 age on the device: a reload asks the age again
+    const keep = next.redo && next.step === 'under16' ? { ...next, age: undefined, step: 'age' as const } : next
+    if (health || !hasHealth(keep)) saveDraft(keep)
   }
   const patch = (x: Partial<WizardDraft>) => put({ ...d, ...x })
   const go = (x: Partial<WizardDraft> = {}) => { const n = { ...d, ...x }; put(n.ret ? { ...n, ret: undefined, step: 'summary' } : { ...n, step: nextStep(n, health) }) }
@@ -73,8 +76,14 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   }, [d.step, health])
 
   // the kind stop keeps nothing but the age it was given ("We haven't kept any of your answers")
+  // Redo setup is an existing account: its stop is the app's (nothing syncs, reminders held,
+  // Close and delete through the usual deletion), and its answers stay for "I typed my age wrong"
   useEffect(() => {
-    if (d.step === 'under16' && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
+    if (d.step === 'under16' && d.redo) raiseUnderAge('profile', { inWizard: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.step])
+  useEffect(() => {
+    if (d.step === 'under16' && !d.redo && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
   const common = { d, go, back, patch, closable }
@@ -87,7 +96,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
-    case 'under16': return <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
+    case 'under16': return d.redo
+      ? <UnderAgeStop source="profile" onWrong={() => put({ ...d, age: undefined, step: 'age' })} />
+      : <Under16 onWrong={() => put({ ...d, age: undefined, step: d.skipped ? 'skip-age' : 'age' })} onClose={() => { void deleteUnderAge() }} />
     case 'ready': return <Ready {...common} />
     case 'ready-note': return <Note kind="readiness" onGo={() => go()} />
     case 'pregnancy-note': return <Note kind="pregnancy" onGo={() => go()} />
@@ -565,55 +576,7 @@ function Areas({ d, go, back }: Common) {
 
 /* ---------------- Onboarding 4: signposting ---------------- */
 
-type SP = { name: string; desc: string; num?: string; tel?: string; lines?: [string, string][]; web?: string }
-const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'under16', SP[]> = {
-  wellbeing: [
-    // every nation's number, labelled (Benn: no nation question), and the webchat
-    { name: 'Beat', desc: `For anyone worried about food, eating or their body. ${SIGNPOSTS.beat.hours}. Webchat too.`, web: SIGNPOSTS.beat.web,
-      lines: ([['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']] as const).map(([k, l]) => [l, beatFor(k)]) },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
-    { name: 'Samaritans', desc: 'Talk about anything, any time, free', num: '116 123', tel: SIGNPOSTS.samaritans.phone },
-    { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
-  ],
-  readiness: [
-    { name: 'Your GP', desc: 'Before you build up, or if anything changes', num: 'Book' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
-    { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
-  ],
-  pregnancy: [
-    { name: 'Your midwife or GP', desc: 'For anything about you or your baby', num: 'Contact' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
-    { name: 'Emergency', desc: 'If you or someone else is in danger now', num: '999', tel: SIGNPOSTS.emergency.phone },
-  ],
-  medical: [
-    { name: 'Your GP or care team', desc: 'Before changing how much you eat', num: 'Contact' },
-    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
-  ],
-  under16: [{ name: 'Childline', desc: 'Free and confidential, for anyone under 19', num: '0800 1111', tel: SIGNPOSTS.childline.phone }],
-}
-
-function Signposts({ list }: { list: SP[] }) {
-  return (
-    <div className="wz-group">
-      {list.map((s) => {
-        if (s.lines) {
-          return (
-            <div key={s.name} className="wz-sp multi">
-              <span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span>
-                {s.lines.map(([l, n]) => <a key={l} className="ln" href={'tel:' + n.replace(/\s/g, '')} aria-label={`${s.name}, ${l}: call ${n}`}><span>{l}</span><span className="n num">{n}</span></a>)}
-                {s.web && <a className="ln web" href={s.web} target="_blank" rel="noopener noreferrer"><span>Webchat and email</span><span className="n">Open</span></a>}
-              </span>
-            </div>
-          )
-        }
-        const inner = <><span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span></span><span className="n num">{s.num}</span></>
-        return s.tel
-          ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{inner}</a>
-          : <div key={s.name} className="wz-sp">{inner}</div>
-      })}
-    </div>
-  )
-}
+// the signpost lists and the 18+ stop live in ./AgeStop (loaded with the app, so the stop works offline)
 
 function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 'medical'; onGo: () => void }) {
   useScrollLock()
@@ -631,21 +594,3 @@ function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 
   )
 }
 
-/** The kind stop (ob4-1). Close deletes the new account and this device's data (Benn, §14). */
-export function Under16({ onWrong, onClose, deleting }: { onWrong?: () => void; onClose: () => void; deleting?: boolean }) {
-  const busy = useStore((s) => s.deletingAccount)
-  const c = NOTES.under16
-  return (
-    <div className="wz" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 110px)' }}>
-      <h1 className="wz-h xl" style={{ margin: 0 }}>{c.title}</h1>
-      <div className="wz-lead body ink">{c.lead}</div>
-      <div className="wz-lead body">{c.more}</div>
-      <Signposts list={SPS.under16} />
-      <div className="wz-note">{c.note}</div>
-      <div className="ob-cta">
-        {!deleting && <Cta label="Close" disabled={busy} onClick={onClose} />}
-        {!deleting && onWrong && <button className="linkbtn ob-alt" onClick={onWrong}>I typed my age wrong</button>}
-      </div>
-    </div>
-  )
-}

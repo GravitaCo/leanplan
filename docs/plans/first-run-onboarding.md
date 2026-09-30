@@ -88,7 +88,7 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 
 | Field | Default when skipped | Safe-side routing | "Why" text |
 |---|---|---|---|
-| Age (required in the wizard, §13.1) | none | If missing (e.g. a profile from before onboarding): the 16–17 rules (no deficit, weight hidden, no AI) and no calorie number, until age is added | "You haven't told us your age, so we're keeping things gentle and not showing a calorie number." |
+| Age (required in the wizard, §13.1) | none | If missing (e.g. a profile from before onboarding): no deficit, weight hidden, no AI and no calorie number, until age is added | "You haven't told us your age, so we're keeping things gentle and not showing a calorie number." |
 | Readiness | treated as a "yes" for dose only | Gentler start and low-impact; signposting shown quietly, not as an alert | "You haven't told us about your health, so we've started gently." |
 | Your why | none | Generic, neutral copy | – (nothing claims it) |
 | Goal | required | – | – |
@@ -114,7 +114,7 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 
 | Signal | Result |
 |---|---|
-| Under 18 | Kind stop: "Tali is for 18+" (minimum age 18, Benn, 28 Sept 2026) |
+| Under 18 | Kind stop: "Tali is for 18+" (minimum age 18, Benn, 28 Sept 2026). Wherever an age comes in: the wizard, Profile, a backup, sync or this phone's saved data (§14) |
 | Pregnant or breastfeeding | Maintenance only with no calorie number shown, gentle training, signpost midwife/GP |
 | BMI under 18.5 (safety gate only, never used for targets) | No deficit |
 | Wellbeing question Yes or Sometimes | No deficit, gentle mode on, weight hidden, calm signposting (Beat, NHS 111, Samaritans 116 123, 999; numbers checked in §14) |
@@ -207,8 +207,9 @@ side, and the screen that uses it says so in plain words. Defaults carry the `de
 **Flow and safety**
 - **Flow:** a short wizard (age, readiness, why, goal, body), then a "finish your setup" card for
   the training details.
-- **Age:** 18+ (Benn, 28 Sept 2026). Under-18s get a kind stop. The old 16–17 rules (no deficit, no
-  AI, weight hidden) remain in `routeSafety` as a fallback but can't be reached from the wizard.
+- **Age:** 18+ (Benn, 28 Sept 2026). Under-18s get a kind stop. The old 16–17 tier is gone
+  (30 Sept 2026): `routeSafety` stops everyone under 18, and the engine's `under-18` band (no AI,
+  words only) is only a backstop.
 - **Wellbeing:** the one non-diagnostic food and weight question, with routing. Only the outcome is
   stored, and it gets clinical review before wider launch.
 - **BMI under 18.5:** used as a safety gate only (no deficit). Never shown, never used for targets.
@@ -338,6 +339,15 @@ rows "Onboarding 1" to "Onboarding 6". The notes s-ob1 … s-ob6 are the approve
 
 - **Under-18s:** after the kind stop, the new account and everything on the device are deleted
   automatically. They're welcome back at 18.
+- **Under-18s outside setup** (Benn, 30 Sept 2026, "as much about compliance as wellbeing"): one
+  rule, `isUnderAge` (`core/domain/age.ts`, the legal `MIN_AGE`). An under-18 age typed on Profile
+  saves nothing; a backup with one isn't loaded; a profile pulled or found on the phone at launch
+  with one raises the same stop. The app then shows only the stop screen (board "Age 18+ · 1",
+  `screens/onboarding/AgeStop.tsx`) and nothing syncs. "Close and delete" opens the usual account
+  deletion (typed DELETE, re-sign-in when the session is old: the server's rule is unchanged);
+  Cancel comes back to the stop. "I typed my age wrong" goes back to Profile (an age that was
+  stored is cleared, as a normal synced edit). The wizard's stop (board "Age 18+ · 2") lists
+  Childline, Beat and 999 too.
 - **Declining health consent** ("Not now"): the person can still use Tali (food, workouts) with a
   Starter week. There are no health questions, weight, check-ins or calorie numbers until they
   agree, and they can agree later from Profile.

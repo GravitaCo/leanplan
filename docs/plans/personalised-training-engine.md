@@ -112,7 +112,7 @@ Taken from `first-run-onboarding.md` §2. Each one has a job below; any without 
 | Enjoyment | `modalities` | the mix within the goal's floor, selection score |
 | Body areas | `limitations` | gentler-first selection, `care` filter |
 | Readiness outcome, sleep/stress baseline | outcome only | starting dose cap (days, volume at the band's low end), impact filter |
-| Age | `profile.age` | edges only: from 55, balance and position rules; 16–17 routing |
+| Age | `profile.age` | edges only: from 55, balance and position rules; under 18 is stopped before the engine (an `under-18` band is a backstop) |
 
 Skipped inputs take the defaults in `first-run-onboarding.md` §2.1 and are traced with the
 `default` WhyCode. With no training details at all, the engine returns the **Starter week**
@@ -198,7 +198,7 @@ interface PersonModel {
 - **Equation limits:** e1RM equations drift past about 10 reps and far from failure [23]. So Tali
   shows trends only, never an absolute "1RM" number.
 - **Where trends show:** only on the exercise detail screen, never mid-session. Hidden in gentle
-  mode, for anyone wellbeing-routed and for 16–17s (words only there, e.g. "Going well").
+  mode, for anyone wellbeing-routed and for an under-18 age, a backstop (words only there, e.g. "Going well").
 
 ### 3.5 Adaptation rules (all suggest-only; thresholds are judgement calls unless cited)
 
@@ -216,7 +216,7 @@ interface PersonModel {
   and in gentle mode (where it's shown in words).
 
 **B. Volume per muscle (`reviewWeek`):** at most every 2 weeks, ±2 sets, inside the experience band.
-No increases in the first 4 weeks, in gentle mode, for anyone wellbeing-routed, or for 16–17s.
+No increases in the first 4 weeks, in gentle mode, for anyone wellbeing-routed, or for an under-18 age (a backstop: under-18s are stopped first).
 - **Offer less:** 2 or more of the muscle's exercises trend down, or it's often very sore, or
   recovery is often low. Offer −2 sets or a lighter week. This is where Tali acts first: it
   lightens.
@@ -300,7 +300,7 @@ renderWhy(why: Why, lib: Exercise[]): string   // text built at display time, ne
      or more; different rest or rep bands; different weekdays.
    - `targets`: the nutrition target or range changes.
    - `copy`: the rendered copy changes (e.g. "your why").
-   - `safety`: the routing outcome changes for the inputs that trigger it (e.g. age 16–17,
+   - `safety`: the routing outcome changes for the inputs that trigger it (e.g. age under 18,
      readiness "yes").
 
    A field that fails its scope is either used or removed from the questionnaire. Scope is
@@ -332,7 +332,7 @@ renderWhy(why: Why, lib: Exercise[]): string   // text built at display time, ne
 9. **Re-run safety.** Changing an answer or the goal produces a rebuild `Suggestion`, never a
    changed plan; accepting it keeps `exPrefs`, calibrated loads and accepted suggestions.
 10. **Wellbeing guardrails (§3.5 G).** No stall suggestion in a deficit; no volume increase in
-    weeks 1–4, gentle mode, wellbeing routing or 16–17; at most one suggestion per screen,
+    weeks 1–4, gentle mode, wellbeing routing or under 18; at most one suggestion per screen,
     lightening first; reshaping offers at most once per 4 weeks and suppressed by "Not now" and
     on a "Welcome back" day; the compulsive-pattern inputs never yield an increase.
 

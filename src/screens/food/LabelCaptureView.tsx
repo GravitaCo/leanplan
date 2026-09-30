@@ -176,6 +176,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     try {
       // a photo goes to the server: not before the health answer (its consent record can't sync yet)
       if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
+      // an under-18 age is on screen (Tali is 18+): no photo leaves the phone
+      if (useStore.getState().underAge) throw new Error('under age')
       // the server checks the label-photo consent itself: send a yes given moments ago first
       await useStore.getState().flushConsents()
       res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }, { signal: ctl.signal })
