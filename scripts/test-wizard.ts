@@ -61,6 +61,7 @@ function steps(): void {
     ['readiness yes: the gentle-start screen straight after', stepsFor(full({ outcomes: { readiness: 'flagged' } }), true).join().includes('ready,ready-note,why')],
     ['pregnant: the pregnancy screen instead', stepsFor(full({ outcomes: { readiness: 'flagged' }, pregnant: true }), true).join().includes('ready,pregnancy-note,why')],
     ['wellbeing yes or sometimes: its signposting screen', stepsFor(full({ outcomes: { wellbeing: 'flagged' } }), true).join().includes('wellbeing,wellbeing-note,body')],
+    ['Onboarding 9: Sometimes, stored apart, keeps the signposting screen', stepsFor(full({ outcomes: { wellbeing: 'sometimes' } }), true).join().includes('wellbeing,wellbeing-note,body')],
     ['medical flagged: its screen after the question', stepsFor(full({ outcomes: { medical: 'flagged' } }), true).join().includes('medical,medical-note,weight')],
     ['Later: the setup card is left out', !stepsFor(full({ later: true }), true).includes('moving')],
     ['a gym: no kit screen', !stepsFor(full({ where: 'gym' }), true).includes('kit')],
@@ -191,8 +192,12 @@ function summary(): void {
     ['health answers, now a yes: the gentle-start screen first', ret({ step: 'ready', outcomes: { readiness: 'flagged' } }).step === 'ready-note'],
     ['and its Continue returns to the summary', afterAnswer({ ...full({ outcomes: { readiness: 'flagged' } }), step: 'ready-note', ret: 'summary' }, true).step === 'summary'],
     ['an under-18 age: the stop, not the summary', ret({ step: 'age', age: 17 }).step === 'under16'],
+    ['wellbeing Yes or Sometimes from the summary: its note first, never skipped', ret({ step: 'wellbeing', outcomes: { wellbeing: 'flagged' } }).step === 'wellbeing-note' && ret({ step: 'wellbeing', outcomes: { wellbeing: 'sometimes' } }).step === 'wellbeing-note'],
+    ['the engine reads Sometimes as Sometimes (gentle training, as before)', outcomeInputs({ wellbeing: 'sometimes' }).wellbeing === 'sometimes' && outcomeInputs({ wellbeing: 'flagged' }).wellbeing === 'yes'],
   ])
-  report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !copyIssues(t).length), allCopy().filter((t) => copyIssues(t).length).join(' | ')]])
+  // the estimate's ±15% is an uncertainty, not a score: Benn approved it in these words (ob9-1, ob9-5)
+  const linted = (t: string) => copyIssues(t.replace(/15% out either way/g, 'a sixth out either way'))
+  report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !linted(t).length), allCopy().filter((t) => linted(t).length).join(' | ')]])
 }
 
 async function sync(fakeServer: FakeServer): Promise<void> {
@@ -521,7 +526,10 @@ function healthAnswersUi(): void {
     ['what each changes, in the board\'s words', rows.map((r) => r.does).join('|') === [
       'Food stays at maintenance with no calorie number, and training stays gentle.', 'Food stays at maintenance, with no high-protein target.',
       'Your plan starts with lighter, low-impact sessions.', 'Weight is hidden and there’s no calorie target to hit.'].join('|')],
-    ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes or sometimes'],
+    ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes'],
+    ['Onboarding 9: Sometimes is its own value, with its own line', (() => {
+      const r = answerRows(prof({ outcomes: { wellbeing: 'sometimes' } })).find((x) => x.kind === 'wellbeing')
+      return r?.value === 'Sometimes' && r.does === HEALTH_ANSWERS.does.wellbeingSometimes && r.change && !r.clear })()],
     ['Clear asks first only for pregnancy and conditions', rows.map((r) => r.confirm).join() === 'true,true,false,false'],
     ['nothing kept: no rows (the empty board)', answerRows(prof()).length === 0 && HEALTH_ANSWERS.empty === 'Nothing kept from your health check.'],
     ['a kept "no" still shows, changing nothing', (() => { const x = answerRows(prof({ outcomes: { medical: 'clear' } })); return x.length === 1 && x[0].value === 'None of these' && x[0].does === 'Nothing changes in your plan.' && !x[0].confirm })()],
