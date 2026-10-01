@@ -137,9 +137,10 @@ Added 2026-09-27 (consent release):
     who submit it. Moving the form to its own page (or loading Turnstile only when someone
     starts typing) keeps it strictly necessary under PECR.
     DECIDED (Benn, 2026-10-01): Turnstile is built into Webflow forms and can't be deferred or
-    loaded on demand. It will be classed as "functional" in the website cookie banner when one is
-    added. OPEN for that banner: whether a declined "functional" choice stops Turnstile loading,
-    and what then happens to the form; the cookie policy and privacy texts change with it.
+    loaded on demand, and a banner choice can't stop it loading. So it is classed as strictly
+    necessary (as `cookies.ts` already lists it), not as an optional category, in any cookie
+    banner. Residual: it loads for every visitor to a page with the form, which weakens the
+    strictly-necessary case; keeping the form on its own page (above) is the mitigation.
 18. Merged into item 2 (early-access invites).
 19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
     (Supabase MCP): title, supplement name, tag, icon. The function's source is now in the repo
