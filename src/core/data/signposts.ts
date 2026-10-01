@@ -7,6 +7,9 @@
 
 export type UkNation = 'england' | 'scotland' | 'wales' | 'northern-ireland'
 
+/** The four nations with their names, in the order the signpost lists show them. */
+export const NATIONS: [UkNation, string][] = [['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']]
+
 export type SignpostKind = 'beat' | 'samaritans' | 'childline' | 'nhs111' | 'nhs111-mental-health' | 'gp' | 'midwife' | 'emergency'
 
 export interface Signpost {

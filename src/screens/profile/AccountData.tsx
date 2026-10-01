@@ -13,7 +13,11 @@ import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { AI_TICKS, HEALTH_TICKS, ONBOARDING_ENABLED, PrivacySheet, Ticks } from '../onboarding/Consent'
-import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW } from '../onboarding/copyApp'
+import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW, SUPPORT } from '../onboarding/copyApp'
+import { Signposts } from '../onboarding/Signposts'
+import { Opts } from '../onboarding/Opts'
+import { NATIONS, type UkNation } from '@/core/data/signposts'
+import { supportList } from './supportRows'
 import { healthAnswersView } from '@/core/domain/onboarding'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
@@ -43,6 +47,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   const [step, setStep] = useState<null | ReturnType<typeof prepare>>(() => (start === 'withdraw' ? prepare() : null))
   const [saved, setSaved] = useState(false)
   const [privacy, setPrivacy] = useState(false)
+  const [support, setSupport] = useState(false)
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
   const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
   // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
@@ -86,6 +91,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
           {redoRow && <button className="li" onClick={onRedo}><div className="m"><div className="t">{onboarded ? REDO_ROW : SETUP_ROW}</div></div><Chevron /></button>}
         </div>
       )}
+      {/* Onboarding 10 (ob9-6): for everyone, whatever their consent or answers */}
+      <div className="list" style={{ marginTop: 12 }}>
+        <button className="li" onClick={() => setSupport(true)}><div className="m"><div className="t">{SUPPORT.row}</div><div className="s">{SUPPORT.rowSub}</div></div><Chevron /></button>
+      </div>
       <div className="stack">
         {status !== 'on' && <button className="btn" onClick={onAgree}>Yes, keep it</button>}
         {/* withdraw (download first) whenever there's health data to remove: on, or paused / not
@@ -93,6 +102,32 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
         {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>Stop keeping my health data</button>}
       </div>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
+      {support && <SupportSheet onClose={() => setSupport(false)} />}
+    </Sheet>
+  )
+}
+
+/* ---------------- support and helplines ---------------- */
+
+/**
+ * Onboarding 10 (board ob9-7, note s-ob10). Its foot says opening it is private, so it must stay
+ * pure UI: no store action, no persisted field, no network. The nation is this sheet's own state
+ * (England until changed, forgotten on close), and the list is signposts.ts's, bundled with the app.
+ */
+export function SupportSheet({ onClose }: { onClose: () => void }) {
+  const [nation, setNation] = useState<UkNation>('england')
+  const [picking, setPicking] = useState(false)
+  const name = NATIONS.find(([k]) => k === nation)![1]
+  return (
+    <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+      <div className="sp-sheet">
+        <div className="sp-lead">{SUPPORT.lead}</div>
+        {picking
+          ? <Opts label="Nation" opts={NATIONS} value={nation} onPick={(k) => { setNation(k); setPicking(false) }} />
+          : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{SUPPORT.change}</button></div>}
+        <Signposts list={supportList(nation)} />
+        <div className="sp-foot">{SUPPORT.foot}</div>
+      </div>
     </Sheet>
   )
 }

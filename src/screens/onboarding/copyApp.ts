@@ -75,3 +75,26 @@ export const FOOD9 = {
     off: 'Turn off',
   },
 }
+
+/**
+ * Onboarding 10 (boards ob9-6, ob9-7, note s-ob10; wording by mental-performance): Profile ›
+ * Health data › Support and helplines, for everyone. The services are signposts.ts's.
+ */
+export const SUPPORT = {
+  row: 'Support and helplines',
+  rowSub: 'Free, confidential services across the UK',
+  title: 'Support and helplines',
+  lead: 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.',
+  showing: (nation: string) => `Showing services for ${nation}`,
+  change: 'Change',
+  /** only true while opening the sheet is never logged, synced or sent (s-ob10) */
+  foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.',
+  beat: 'Eating disorder support',
+  beatWeb: 'Webchat and email too',
+  mentalHealth: 'Mental health crisis line',
+  urgent: 'Medical help when it isn’t an emergency',
+  samaritans: 'Talk about anything',
+  emergency: 'If you or someone else is in danger now',
+  /** Northern Ireland's GP has no one number (the onboarding lists' word) */
+  contact: 'Contact',
+}

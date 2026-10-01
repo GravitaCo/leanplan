@@ -289,7 +289,7 @@
 .ha-tick svg.i { width: 26px; height: 26px; }
 .linkbtn.ha-link { align-self: flex-start; font-size: 16px; font-weight: 500; padding: 0; }
 /* cards inside a sheet sit on --elev (theme.css: .sheet .card), so they stand out in dark mode */
-.sheet .ift-card, .sheet .ift-cues button:not(.on), .sheet .sm-mine, .sheet .sm-maint, .sheet .sm-plans { background: var(--elev); }
+.sheet .wz-group, .sheet .ift-card, .sheet .ift-cues button:not(.on), .sheet .sm-mine, .sheet .sm-maint, .sheet .sm-plans { background: var(--elev); }
 
 /* the summary in the refined look (r6-summary): a photo hero, then a sheet over its bottom edge */
 .smry { max-width: 520px; margin: 0 auto; min-height: 100dvh; }
@@ -318,3 +318,11 @@
 .sm-body .sm-food, .sm-body .sm-starter { border-radius: 22px; }
 .btn.sm-others { height: 48px; border-radius: 24px; background: var(--card); color: var(--label); font-size: 16px; }
 .sm-body .ob-alt { margin-top: -4px; }
+/* Onboarding 10: a one-number row with its own web link (Profile's support sheet) */
+.wz-sp .wz-sp-web { display: block; font-size: 13px; font-weight: 500; color: var(--tint); text-decoration: none; margin-top: 2px; }
+.wz-sp a.n { text-decoration: none; }
+.sp-nation { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px; font-size: 13px; color: var(--label2); }
+.sp-nation .linkbtn { font-size: 13px; font-weight: 600; padding: 0; }
+.sp-sheet { display: flex; flex-direction: column; gap: 14px; }
+.sp-lead { font-size: 16px; line-height: 1.5; padding: 0 4px; color: var(--label); }
+.sp-foot { font-size: 12px; line-height: 1.4; color: var(--label2); padding: 0 4px; }

@@ -11,16 +11,17 @@
  */
 import { useEffect, useState } from 'react'
 import { useStore, type UnderAgeSource } from '@/store/store'
-import { SIGNPOSTS, beatFor } from '@/core/data/signposts'
+import { NATIONS, SIGNPOSTS, beatFor } from '@/core/data/signposts'
 import { DeleteConfirmSheet } from '../profile/AccountData'
 import { NOTES } from './copy'
+import { Signposts, type SP } from './Signposts'
 
-export type SP = { name: string; desc: string; num?: string; tel?: string; lines?: [string, string][]; web?: string }
+export { Signposts, type SP }
 
 /** Beat: every nation's number, labelled (Benn: no nation question), and the webchat. */
 const beat = (desc: string): SP => ({
   name: 'Beat', desc: `${desc} ${SIGNPOSTS.beat.hours}. Webchat too.`, web: SIGNPOSTS.beat.web,
-  lines: ([['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']] as const).map(([k, l]) => [l, beatFor(k)]),
+  lines: NATIONS.map(([k, l]) => [l, beatFor(k)]),
 })
 const emergency: SP = { name: 'Emergency', desc: 'If you or someone else is in danger now', num: SIGNPOSTS.emergency.phone, tel: SIGNPOSTS.emergency.phone }
 
@@ -53,28 +54,6 @@ export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | '
   ],
 }
 
-export function Signposts({ list }: { list: SP[] }) {
-  return (
-    <div className="wz-group">
-      {list.map((s) => {
-        if (s.lines) {
-          return (
-            <div key={s.name} className="wz-sp multi">
-              <span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span>
-                {s.lines.map(([l, n]) => <a key={l} className="ln" href={'tel:' + n.replace(/\s/g, '')} aria-label={`${s.name}, ${l}: call ${n}`}><span>{l}</span><span className="n num">{n}</span></a>)}
-                {s.web && <a className="ln web" href={s.web} target="_blank" rel="noopener noreferrer"><span>Webchat and email</span><span className="n">Open</span></a>}
-              </span>
-            </div>
-          )
-        }
-        const inner = <><span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span></span><span className="n num">{s.num}</span></>
-        return s.tel
-          ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{inner}</a>
-          : <div key={s.name} className="wz-sp">{inner}</div>
-      })}
-    </div>
-  )
-}
 
 /**
  * The kind stop (ob4-1). In the wizard, Close deletes the new account and this device's data

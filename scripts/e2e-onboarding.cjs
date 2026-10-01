@@ -599,6 +599,74 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       expect((await page.getByRole('dialog', { name: 'Would a calorie range help?' }).count()) === 0, 'not asked again for 12 weeks')
     }, { ...withMeals({ ...ob9('flagged', { ago: 28 }), dark }) })
   }
+  // Onboarding 10 (ob9-6, ob9-7): Support and helplines from Profile, for everyone, offline too,
+  // and opening it sends nothing anywhere
+  const SUPPORT_LEAD = 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.'
+  const SUPPORT_FOOT = 'Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.'
+  const openSupport = async (page, snap) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    const row = page.getByRole('button', { name: /^Support and helplines/ })
+    await row.getByText('Free, confidential services across the UK').waitFor()
+    if (snap) await shot(page, snap + '-row')
+    await row.click()
+    const sheet = page.getByRole('dialog', { name: 'Support and helplines' })
+    await sheet.getByText(SUPPORT_LEAD).waitFor()
+    return sheet
+  }
+  const checkSupport = async (page, sheet, snap) => {
+    await sheet.getByText('Showing services for England').waitFor()
+    await sheet.getByText(SUPPORT_FOOT).waitFor()
+    const names = await sheet.locator('.wz-sp .t').allInnerTexts()
+    expect(names.join('|') === 'Beat|NHS 111, option 2|NHS 111|Samaritans|Emergency services', 'England list: ' + names.join('|'))
+    expect(await sheet.getByRole('link', { name: 'Beat: call 0808 801 0677' }).getAttribute('href') === 'tel:08088010677', 'Beat England')
+    expect(await sheet.getByRole('link', { name: 'Webchat and email too' }).getAttribute('href') === 'https://www.beateatingdisorders.org.uk/', 'Beat web')
+    expect(await sheet.getByRole('link', { name: 'Samaritans: call 116 123' }).getAttribute('href') === 'tel:116123', 'Samaritans')
+    expect(await sheet.getByRole('link', { name: 'Emergency services: call 999' }).getAttribute('href') === 'tel:999', '999')
+    if (snap) await shot(page, snap)
+    await sheet.getByRole('button', { name: 'Change', exact: true }).click()
+    await sheet.getByRole('radio', { name: 'Northern Ireland' }).click()
+    await sheet.getByText('Showing services for Northern Ireland').waitFor()
+    const ni = await sheet.locator('.wz-sp .t').allInnerTexts()
+    expect(ni.join('|') === 'Beat|Your GP|Samaritans|Emergency services', 'NI list: ' + ni.join('|'))
+    await sheet.getByRole('link', { name: 'Beat: call 0808 801 0434' }).waitFor()
+    await sheet.getByRole('button', { name: 'Change', exact: true }).click()
+    await sheet.getByRole('radio', { name: 'Scotland' }).click()
+    await sheet.locator('.wz-sp .t', { hasText: 'NHS 24 (111)' }).waitFor()
+    await sheet.getByRole('link', { name: 'Beat: call 0808 801 0432' }).waitFor()
+  }
+  for (const dark of [false, true]) {
+    await run(`ob10 support and helplines from Profile${dark ? ' (dark)' : ''}: the list, nothing sent or stored, offline too`, async ({ page, ctx, net }) => {
+      await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(1200)
+      const before = await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.entries(localStorage))))
+      const reqs = []
+      const onReq = (r) => { if (!r.url().startsWith('data:')) reqs.push(r.method() + ' ' + r.url()) }
+      page.on('request', onReq)
+      const sheet = await openSupport(page, dark ? null : 'ob10/ob10-healthdata')
+      await checkSupport(page, sheet, `ob10/ob10-support${dark ? '-dark' : ''}`)
+      await sheet.getByRole('button', { name: 'Done' }).click()
+      await page.getByRole('dialog', { name: 'Support and helplines' }).waitFor({ state: 'detached' })
+      await page.waitForTimeout(2500)
+      page.off('request', onReq)
+      expect(!reqs.length, 'opening it sent nothing: ' + reqs.join(', '))
+      const after = await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.entries(localStorage))))
+      expect(before === after, 'opening it stored nothing')
+      // offline: no connection to Tali's server, then none at all
+      net.block = true
+      await page.reload()
+      await ctx.setOffline(true)
+      await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+      const off = await openSupport(page)
+      await checkSupport(page, off, dark ? null : 'ob10/ob10-support-offline')
+      await ctx.setOffline(false)
+    }, { ...seeded({ dark }) })
+  }
+  await run('ob10 support and helplines on the flag-off build too', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    const sheet = await openSupport(page)
+    await checkSupport(page, sheet)
+  }, { ...seeded(), url: OFF })
+
   await run('ob9-4 Show a range: a range on Food, never on Today', async ({ page }) => {
     await page.getByRole('dialog', { name: 'Would a calorie range help?' }).waitFor()
     await btn(page, 'Show a range').click()

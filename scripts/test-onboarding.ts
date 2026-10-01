@@ -16,6 +16,8 @@ import { shiftDay } from '@/core/domain/date'
 import { withoutHealth } from '@/data/consent'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { optInRows } from '../src/screens/profile/healthAnswerRows'
+import { supportList } from '../src/screens/profile/supportRows'
+import { SUPPORT } from '../src/screens/onboarding/copyApp'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
 let bad = 0
@@ -134,6 +136,16 @@ function signposts(): void {
       const ni = signpostsFor(kinds, 'northern-ireland').map((x) => x.kind), en = signpostsFor(kinds, 'england').map((x) => x.kind)
       return !ni.includes('nhs111') && !ni.includes('nhs111-mental-health') && ni.includes('gp') && en.includes('nhs111-mental-health') && en.includes('nhs111') })()],
     ['steps and job questions say "not counting workouts"', STEPS_QUESTION.includes('not counting workouts') && JOB_QUESTION.includes('not counting workouts')],
+    ['Profile support sheet: Beat by nation with its web link, option 2 where it runs, NHS 111 / NHS 24 / the GP, Samaritans, 999 (ob9-7)', (() => {
+      const en = supportList('england'), sc = supportList('scotland'), wa = supportList('wales'), ni = supportList('northern-ireland')
+      const names = (l: typeof en) => l.map((x) => x.name).join('|')
+      return names(en) === 'Beat|NHS 111, option 2|NHS 111|Samaritans|Emergency services' && names(wa) === names(en)
+        && names(sc) === 'Beat|NHS 24 (111)|Samaritans|Emergency services' && names(ni) === 'Beat|Your GP|Samaritans|Emergency services'
+        && en[0].num === '0808 801 0677' && sc[0].num === '0808 801 0432' && wa[0].num === '0808 801 0433' && ni[0].num === '0808 801 0434'
+        && [en, sc, wa, ni].every((l) => l[0].web === SIGNPOSTS.beat.web && l[0].webLabel === SUPPORT.beatWeb && l.at(-1)!.tel === '999' && l.at(-2)!.tel === '116 123')
+        && !ni[1].tel && en[0].desc === 'Eating disorder support · 3pm–8pm, Monday to Friday' && en[1].desc === 'Mental health crisis line · 24 hours, every day'
+        && en[2].desc === 'Medical help when it isn’t an emergency · 24 hours' && en[3].desc === 'Talk about anything · 24 hours, every day'
+    })()],
     ['NHS 111 in England, Wales, Scotland; GP in Northern Ireland', urgentAdviceFor('wales').kind === 'nhs111' && urgentAdviceFor('northern-ireland').kind === 'gp' && !SIGNPOSTS.nhs111.nations!.includes('northern-ireland')],
   ])
 }
