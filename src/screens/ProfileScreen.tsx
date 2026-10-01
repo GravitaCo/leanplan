@@ -6,6 +6,7 @@ import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
 import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
 import { profileRouting } from '@/core/domain/onboarding'
+import { foodView } from '@/core/domain/foodMode'
 import { useConsent } from '@/store/hooks'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { latestWeight, rangeWidth } from '@/core/domain/insights'
@@ -187,7 +188,7 @@ export function ProfileScreen() {
 
       <div className="lbl">You and your goal</div>
       <div className="list icons">
-        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
+        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight && foodView(pr).weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
           open={open === 'metrics'} onToggle={() => toggle('metrics')}>
           <div className="grid2">
             {field('Sex', <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
