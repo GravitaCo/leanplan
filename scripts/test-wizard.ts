@@ -353,7 +353,7 @@ function withFakeStorage(run: (ls: Storage) => void): void {
 async function compliance(): Promise<void> {
   // register item 34: the notes say what is kept (Benn approved the wording, 28 Sept 2026)
   const lines = allCopy().join('\n')
-  const KEPT = 'We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.'
+  const KEPT = 'We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.'
   report('what the notes say is kept (register 34)', [
     ['the health check: a short note of what applies, never a medical record', COPY.ready?.note === 'We keep a short note of what applies (like pregnancy), never a medical record.'],
     ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.endsWith(KEPT) && NOTES.wellbeing.note.endsWith(KEPT)],
