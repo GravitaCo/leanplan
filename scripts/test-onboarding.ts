@@ -6,14 +6,17 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
 import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
-import { MIN_AGE, asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
+import { MIN_AGE, asksMedical, clearHealthAnswerIn, setHealthAnswerIn, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
 import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
 import { RANGE_ASK_DAYS, RANGE_SNOOZE_DAYS, SOMETIMES_NO_DEFICIT_DAYS, TODAY_ASK_DAYS, answerFoodOptInIn, applyRestrictionSignalIn, foodModeOf, foodView, maintenanceRange, mealWords, proteinRangeFor, rangeAskDue, restrictionSignal, todayAskDue } from '@/core/domain/foodMode'
 import { SAME_GAP, explainStart } from '@/core/domain/targets'
 import { FLOOR_LINE, SUMMARY } from '../src/screens/onboarding/copy'
 import { shiftDay } from '@/core/domain/date'
-import { withoutHealth } from '@/data/consent'
+import { kcalHidden, withoutHealth, withoutMissingWeight } from '@/data/consent'
+import { profileKcal, suggestionWeight, weightPatch } from '../src/screens/profile/profileTargets'
+import { rangeFor, rangeWidth } from '@/core/domain/insights'
+import type { PersistedState } from '@/data/persistence'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { foodShows, optInRows } from '../src/screens/profile/healthAnswerRows'
 import { supportList } from '../src/screens/profile/supportRows'
@@ -423,8 +426,40 @@ function foodMode(): void {
   ])
 }
 
+/** ship-critic's Onboarding 9/10 blockers: Profile's calories by mode, the kept weight, the flagged suggestion, Yes kcal, pregnancy, opt-ins */
+function profileFixes(): void {
+  const ON = '2026-06-01', AT = '2026-07-01T10:00:00.000Z', D = '2026-07-01'
+  const some = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'sometimes' }, onboardedAt: ON + 'T09:00:00.000Z', activityMult: 1.5, ...x })
+  const yes = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'flagged' }, onboardedAt: ON + 'T09:00:00.000Z', gentle: true, activityMult: 1.5, ...x })
+  const preg = { pregnancy: { flagged: true, askedAt: ON } } as Partial<Profile>
+  const state = (profile: Profile) => ({ profile, target: { kcal: 1700, p: 120, c: 180, f: 60 }, days: {}, schedule: {}, customFoods: [], recipes: [] }) as unknown as PersistedState
+  const shown = { foodOptIn: { range: 'shown', rangeAt: D } } as Partial<Profile>
+  const sk = profileKcal(state(some()), D), fr = rangeFor(state(some()), D)
+  const opted = (p: Profile) => { const q = structuredClone(p); q.foodOptIn = { today: 'today' }; return q }
+  const toYes = opted(some()); setHealthAnswerIn(toYes, { kind: 'wellbeing', value: 'flagged' }, AT)
+  const toClear = structuredClone(yes(shown)); setHealthAnswerIn(toClear, { kind: 'wellbeing', value: 'sometimes' }, AT)
+  const cleared = opted(some()); clearHealthAnswerIn(cleared, 'wellbeing', AT)
+  const kept = structuredClone(some({ medical: undefined } as never)); kept.foodOptIn = { today: 'today' }; setHealthAnswerIn(kept, { kind: 'medical', value: 'flagged' }, AT)
+  report('profile by food mode', [
+    ['Yes: no kcal on Profile, gentle on or off, with or without "Show a range"', [yes(), yes({ gentle: false }), yes({ gentle: false, ...shown }), yes(shown)].every((p) => profileKcal(state(p), D).kind === 'none')],
+    ['Sometimes: Profile’s range is Food’s, not target ± width', sk.kind === 'range' && sk.lo === fr.lo && sk.hi === fr.hi && sk.lo !== 1700 - rangeWidth(some())],
+    ['pregnant Sometimes: no range on Profile', profileKcal(state(some(preg)), D).kind === 'none'],
+    ['standard: target ± width, as main', (() => { const k = profileKcal(state(adult()), D), w = rangeWidth(adult()); return k.kind === 'target' && k.lo === 1700 - w && k.hi === 1700 + w })()],
+    ['an empty weight field puts no weight in the patch, and the store drops a null one', !('weight' in weightPatch('')) && weightPatch('70.5').weight === 70.5
+      && !('weight' in withoutMissingWeight({ weight: null, activityLevel: 'active' })) && withoutMissingWeight({ weight: 71 }).weight === 71],
+    ['Sometimes changing only the activity level keeps weight 70', (() => { const p = some({ weight: 70 }); Object.assign(p, withoutMissingWeight({ ...weightPatch(''), activityLevel: 'active' as const })); return p.weight === 70 && p.activityLevel === 'active' })()],
+    ['a hidden weight field still reads the stored weight; a shown one reads only the field', suggestionWeight('', 70, false) === 70 && suggestionWeight('', 70, true) === null && suggestionWeight('72', 70, false) === 72],
+    ['flagged with a stored weight: "suggestions are off", not "add a weight"', (() => { const p = yes(), w = suggestionWeight('', 70, false), t = suggestedTargets(p, w, profileRouting(p, w, true)); return !!t && 'hidden' in t })()],
+    ['Yes hides kcal on food rows and sheets with gentle mode off; standard shows it', kcalHidden(state(yes({ gentle: false }))) && !kcalHidden(state(adult({ onboardedAt: ON + 'T09:00:00.000Z' })))],
+    ['pregnant Sometimes: no "where your food range shows" row', foodShows(some(preg)) === null && foodShows(some()) !== null],
+    ['a changed wellbeing answer clears foodOptIn, stamped, in any direction', toYes.foodOptIn === undefined && toYes.answeredAt?.foodOptIn === AT
+      && toClear.foodOptIn === undefined && toClear.answeredAt?.foodOptIn === AT && cleared.foodOptIn === undefined && cleared.answeredAt?.foodOptIn === AT],
+    ['another answer leaves foodOptIn alone', kept.foodOptIn?.today === 'today' && kept.answeredAt?.foodOptIn === undefined],
+  ])
+}
+
 export function onboardingSuite(): number {
   bad = 0
-  units(); routing(); signposts(); profileBits(); targets(); profileMatchesSummary(); foodMode()
+  units(); routing(); signposts(); profileBits(); targets(); profileMatchesSummary(); foodMode(); profileFixes()
   return bad
 }

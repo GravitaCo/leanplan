@@ -639,6 +639,59 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect((await page.getByTestId('food-shows').count()) === 0, 'no Sometimes control for Yes')
   }, withMeals(ob9('flagged', { p: { foodOptIn: { range: 'shown', rangeAt: today } } })))
 
+  // ship-critic's Onboarding 9/10 blockers: Profile's calories by mode, the kept weight, the
+  // flagged suggestion, Yes kcal whatever the Display setting, and pregnancy
+  const rangeOf = (t) => { const m = /([\d,]+)–([\d,]+)/.exec(t || ''); return m ? m[1] + '–' + m[2] : null }
+  for (const [label, p] of [['gentle on', {}], ['gentle off', { gentle: false }], ['gentle off, Show a range', { gentle: false, foodOptIn: { range: 'shown', rangeAt: today } }]]) {
+    await run(`fix Yes, ${label}: no kcal on Profile, food rows, meal headings or the edit sheet`, async ({ page }) => {
+      await tab(page, 'Profile'); await page.locator('.idcard').waitFor()
+      await page.getByRole('button', { name: /Body and goal/ }).click()
+      await page.getByText(/^Calorie suggestions are off for now/).waitFor()
+      expect((await page.getByText(/Add age, height and weight|Add age and height/).count()) === 0, 'not told to add a stored weight')
+      expect((await page.getByRole('button', { name: /Daily targets/ }).count()) === 0, 'no Daily targets row')
+      expect(!/kcal/.test(await page.locator('.screen').innerText()), 'no kcal anywhere on Profile')
+      await shot(page, `fix/yes-profile-${label.replace(/\W+/g, '-')}`)
+      await tab(page, 'Food'); await page.locator('.hdr .ltitle', { hasText: 'Food' }).waitFor()
+      await page.locator('section.meal').first().waitFor()
+      expect((await page.locator('.kc').count()) === 0, 'no kcal on food rows')
+      expect(!/kcal/.test((await page.locator('section.meal .grp-h').allInnerTexts()).join(' ')), 'no kcal on meal headings')
+      expect(/300 g/.test((await page.locator('section.meal').allInnerTexts()).join(' ')), 'portions still show')
+      await page.getByRole('button', { name: /Porridge with milk/ }).click()
+      const sheet = page.getByRole('dialog', { name: 'Porridge with milk' })
+      await sheet.waitFor()
+      expect(!/kcal/.test(await sheet.innerText()), 'no kcal on the edit sheet')
+      await shot(page, `fix/yes-edit-${label.replace(/\W+/g, '-')}`)
+    }, (() => { const a = withMeals(ob9('flagged', { p })); a.state.days[today].foods = MEALS_TODAY.map((f) => ({ ...f, grams: f.g })); return a })())
+  }
+  await run('fix Sometimes: Profile shows Food’s range, nothing to edit, and Save metrics keeps the weight', async ({ page }) => {
+    await tab(page, 'Food'); await page.locator('.hdr .ltitle', { hasText: 'Food' }).waitFor()
+    const food = rangeOf(await page.getByText(/^Roughly /).first().innerText())
+    await tab(page, 'Profile'); await page.locator('.idcard').waitFor()
+    const prof = rangeOf(await page.locator('.idcard .s.num').innerText())
+    expect(!!food && food === prof, `Profile's range is Food's: ${prof} vs ${food}`)
+    await page.getByRole('button', { name: /Daily targets/ }).click()
+    expect((await page.locator('.field', { hasText: 'Calories' }).count()) === 0 && (await btn(page, 'Save targets').count()) === 0, 'no editable calorie target')
+    await page.getByRole('button', { name: /Daily targets/ }).click()
+    await page.getByRole('button', { name: /Body and goal/ }).click()
+    expect((await btn(page, 'Use these targets').count()) === 0, 'no single target to use')
+    expect((await page.getByText(/Add age, height and weight|Add age and height/).count()) === 0, 'not asked for a stored weight')
+    await shot(page, 'fix/sometimes-profile')
+    await page.locator('.field', { hasText: 'Activity level' }).locator('select').selectOption('active')
+    await btn(page, 'Save metrics').click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.activityLevel === 'active')
+    const st = await stored(page)
+    expect(st.profile.weight === 70 && st.days[Object.keys(st.days)[0]].weight === 70, 'weight 70 kept: ' + st.profile.weight)
+  }, withMeals(ob9('sometimes')))
+  await run('fix pregnant Sometimes: no range link on Today, no range on Profile, no range row in answers', async ({ page }) => {
+    const card = page.locator('section[aria-labelledby="sum-food"]')
+    await card.waitFor(); await page.waitForTimeout(300)
+    expect((await card.getByText('See your range on Food').count()) === 0, 'no See your range on Food')
+    await tab(page, 'Profile'); await page.locator('.idcard').waitFor()
+    expect(!/kcal/.test(await page.locator('.screen').innerText()), 'no kcal on Profile')
+    await toAnswers9(page)
+    expect((await page.getByTestId('food-shows').count()) === 0, 'no Where your food range shows row')
+  }, withMeals(ob9('sometimes', { p: { pregnancy: { flagged: true, askedAt: today } } })))
+
   // Onboarding 10 (ob9-6, ob9-7): Support and helplines from Profile, for everyone, offline too,
   // and opening it sends nothing anywhere
   const SUPPORT_LEAD = 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.'
