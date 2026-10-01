@@ -235,7 +235,7 @@ export function TodayScreen() {
           ) : some && gentle ? (
             // ob9-2, Sometimes for its first 14 days (and after "Keep it on Food"): words, the range on Food
             <div className="f9">
-              <div {...pressable(() => setTab('food'))} aria-label="Open Food">
+              <div {...pressable(() => setTab('food'))} aria-label="Open Food" className="f9">
                 <div className="kbig w">{st.gentle}</div>
                 <div className="f9-s">{FOOD9.slots(mw.slots, mw.withProtein)}</div>
               </div>

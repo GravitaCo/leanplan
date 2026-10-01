@@ -272,9 +272,14 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect(dr && !JSON.stringify(dr).match(/"sleep"|"stress"|"room"|chest|dizz/i), 'the draft keeps outcomes only: ' + JSON.stringify(dr?.outcomes))
     const e = expected(dr, today)
     const kcal = +(await page.locator('[data-kcal]').getAttribute('data-kcal'))
-    const low = +(await page.locator('[data-low]').getAttribute('data-low')), high = +(await page.locator('[data-high]').getAttribute('data-high'))
-    expect(kcal === e.kcal && low === e.low && high === e.high && e.kcal === e.summaryKcal, `summary ${kcal} ${low}–${high} vs startingTargets ${e.kcal} ${e.low}–${e.high}`)
+    const est = +(await page.locator('[data-estimate]').getAttribute('data-estimate')), diff = +(await page.locator('[data-diff]').getAttribute('data-diff'))
+    expect(kcal === e.kcal && est === e.estimate && diff === e.estimate - e.kcal && e.kcal === e.summaryKcal, `summary ${kcal} (estimate ${est}, ${diff}) vs startingTargets ${e.kcal} (${e.estimate})`)
     await page.getByText(`About ${e.kcal.toLocaleString('en-GB')} kcal a day to start`).waitFor()
+    // ob9-1: the start against the best estimate; the ±15% band only in "How we worked this out"
+    await page.locator('.sm-food').getByText(`around ${e.estimate.toLocaleString('en-GB')} a day`, { exact: false }).waitFor()
+    expect((await page.locator('.sm-food').getByText(`${e.low.toLocaleString('en-GB')}–`).count()) === 0, 'no 15% band on the card')
+    await page.locator('.sm-food').evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await page.locator('.sm-food').screenshot({ path: path.join(OUT, 'ob9/ob9-1-standard.png') })
     // tap a day in the strip: why each part is here
     await page.locator('.sm-strip button.c').first().click()
     await page.getByText('Why each part is here').waitFor(); await shot(page, 'ob3-2-why')
@@ -283,7 +288,11 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await page.locator('.sm-reasons .chips button').filter({ hasText: 'Easy on your knees' }).click()
     await page.getByRole('dialog', { name: 'Easy on your knees' }).waitFor(); await shot(page, 'ob3-2b-why-row')
     await btn(page, 'Done').click()
-    await btn(page, 'How we worked this out').click(); await page.getByRole('dialog', { name: 'How we worked this out' }).waitFor(); await shot(page, 'ob3-2c-how')
+    await btn(page, 'How we worked this out').click(); await page.getByRole('dialog', { name: 'How we worked this out' }).waitFor(); await shot(page, 'ob9/ob9-5-worked')
+    // ob9-5: the estimate, its 15% band, the start and its pace, and the 3–4 week check
+    for (const t of ['What you burn, roughly', 'How sure we are', 'Your starting point', 'What happens next']) await page.getByRole('dialog').getByText(t, { exact: true }).waitFor()
+    await page.getByRole('dialog').getByText(`somewhere between ${e.low.toLocaleString('en-GB')} and ${e.high.toLocaleString('en-GB')}`, { exact: false }).waitFor()
+    await page.getByRole('dialog').getByText('Nothing changes without your OK.', { exact: false }).waitFor()
     await btn(page, 'Done').click()
     // s-ob8: the warm-up in the week rows and as the first why row; no if-then row on the summary
     const nSess = await page.locator('.sm-strip .c.on').count()
@@ -480,15 +489,130 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await summaryUp(page); await page.locator('[data-kcal]').waitFor()
   })
 
-  await run('safety: wellbeing yes → gentle, maintenance, no number', async ({ page }) => {
-    await wizard(page, { wellbeing: 'Yes' }, 'route-wellbeing/')
-    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
-    await page.getByText('Eating at maintenance').waitFor(); await shot(page, 'ob4-7-maint', true)
-    expect(fs.existsSync(path.join(OUT, 'route-wellbeing/ob4-2-wellbeing.png')), 'signposting shown')
-    await btn(page, 'Start my week').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
-    const st = await stored(page)
-    expect(st.profile.gentle === true && st.profile.outcomes.wellbeing === 'flagged', 'gentle on, outcome only')
-  })
+  // ─── Onboarding 9: Yes and Sometimes (boards ob9-1 to ob9-5, note s-ob9) ───
+  for (const dark of [false, true]) {
+    const sfx = dark ? '-dark' : ''
+    await run(`ob9 Yes route${dark ? ' (dark)' : ''}: signposting, no number, Today in words`, async ({ page }) => {
+      await wizard(page, { wellbeing: 'Yes' }, dark ? null : 'route-wellbeing/')
+      await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
+      await page.locator('.sm-food').getByText('Log what you eat, if it helps').waitFor()
+      await page.locator('.sm-food').getByText('There’s no calorie number and no weight, and protein is shown in words. You can change this in Profile any time.').waitFor()
+      expect((await page.locator('.sm-food').getByText(/kcal|\d,\d{3}/).count()) === 0, 'no number on the card')
+      await page.locator('.sm-food').scrollIntoViewIfNeeded(); await page.locator('.sm-food').screenshot({ path: path.join(OUT, `ob9/ob9-1-yes${sfx}.png`) })
+      if (!dark) expect(fs.existsSync(path.join(OUT, 'route-wellbeing/ob4-2-wellbeing.png')), 'signposting shown')
+      await btn(page, 'Start my week').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+      const st = await stored(page)
+      expect(st.profile.gentle === true && st.profile.outcomes.wellbeing === 'flagged', 'gentle on, Yes stored as flagged')
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText('Nothing logged yet', { exact: true }).waitFor(); await card.getByText('Log a meal whenever it suits you.').waitFor()
+      expect((await card.getByText(/room left|kcal/).count()) === 0, 'no "room left", no kcal')
+      await card.screenshot({ path: path.join(OUT, `ob9/ob9-2-yes-empty${sfx}.png`) })
+    }, dark ? { dark: true } : {})
+
+    await run(`ob9 Sometimes route${dark ? ' (dark)' : ''}: signposting, a range on Food, Today in words`, async ({ page }) => {
+      await wizard(page, { wellbeing: 'Sometimes' }, dark ? null : 'route-sometimes/')
+      await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
+      await page.locator('.sm-food').getByText('A steady range to eat around').waitFor()
+      await page.locator('.sm-food').getByText('With no deficit and no weight. For your first two weeks it’s one tap away on Food, then we’ll ask if you’d like it on Today.').waitFor()
+      await page.locator('.sm-food').scrollIntoViewIfNeeded(); await page.locator('.sm-food').screenshot({ path: path.join(OUT, `ob9/ob9-1-sometimes${sfx}.png`) })
+      if (!dark) expect(fs.existsSync(path.join(OUT, 'route-sometimes/ob4-2-wellbeing.png')), 'the signposting note shows for Sometimes too')
+      await btn(page, 'Start my week').click(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+      const st = await stored(page)
+      expect(st.profile.outcomes.wellbeing === 'sometimes' && !st.profile.gentle, 'Sometimes stored apart, gentle mode not on: ' + JSON.stringify(st.profile.outcomes))
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText('See your range on Food').waitFor()
+      expect((await card.getByText(/kcal|\d,\d{3}/).count()) === 0, 'Today in words for the first 14 days')
+      await card.getByText('See your range on Food').click()
+      await page.locator('.hdr .ltitle', { hasText: 'Food' }).waitFor()
+      const range = await page.getByText(/^Roughly \d,\d{3}–\d,\d{3} kcal a day$/).first().textContent()
+      const [lo, hi] = range.match(/\d,\d{3}/g).map((x) => +x.replace(',', ''))
+      expect(lo % 50 === 0 && hi % 50 === 0 && Math.abs((hi + lo) / 2 - st.target.kcal) <= 50, `a ±15% range around maintenance ${st.target.kcal}: ${range}`)
+      expect((await page.getByText(/kcal to go/).count()) === 0, 'never a single number to aim at')
+      await page.locator('section[aria-label="Day so far"]').screenshot({ path: path.join(OUT, `ob9/food-sometimes${sfx}.png`) })
+    }, dark ? { dark: true } : {})
+  }
+
+  // seeded: Today's cards with meals logged, and the two asks (ob9-2 to ob9-4)
+  const daysAgoIso = (n) => new Date(Date.now() - n * 86400000).toISOString()
+  const MEALS_TODAY = [
+    { n: 'Porridge with milk', k: 420, p: 16, c: 60, f: 10, meal: 'breakfast', g: 300 }, { n: 'Chicken sandwich', k: 650, p: 32, c: 60, f: 26, meal: 'lunch', g: 260 },
+    { n: 'Flapjack', k: 570, p: 4, c: 70, f: 28, meal: 'snack', g: 120 }, { n: 'Apple', k: 80, p: 0, c: 20, f: 0, meal: 'snack', g: 150 },
+  ]
+  const ob9 = (wb, x = {}) => ({ outcomes: { readiness: 'clear', wellbeing: wb, baseline: 'ok' }, onboardedAt: daysAgoIso(x.ago ?? 3), answeredAt: { 'outcomes.wellbeing': daysAgoIso(x.ago ?? 3) }, ...(wb === 'flagged' ? { gentle: true } : {}), ...(x.p || {}) })
+  // as ob7's `answered` (defined further down): an onboarded person on Today
+  const seeded = ({ dark, ...x } = {}) => ({ state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } },
+    profile: { name: 'Sam', sex: 'F', sexAnswer: 'female', age: 34, height: 168, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, goal: 'feel-better', onboardedAt: '2026-09-20T08:00:00.000Z', ...x } }, ...(dark ? { dark: true } : {}) })
+  const withMeals = (o) => { const a = seeded(o); a.state.days[today].foods = MEALS_TODAY; return a }
+  const toAnswers9 = async (page) => {
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).first().click()
+    await btn(page, 'Health check answers').click()
+    await h1(page, 'Health check answers')
+  }
+  for (const dark of [false, true]) {
+    const sfx = dark ? '-dark' : ''
+    await run(`ob9-2 Today cards with meals${dark ? ' (dark)' : ''}: Yes and Sometimes in words`, async ({ page }) => {
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText('3 meals logged', { exact: true }).waitFor()
+      await card.getByText('With protein at 2 of them.').waitFor()
+      expect((await card.getByText(/kcal|room left/).count()) === 0, 'no kcal, no room left')
+      await card.screenshot({ path: path.join(OUT, `ob9/ob9-2-yes${sfx}.png`) })
+      await tab(page, 'Food'); await page.locator('.hdr .ltitle', { hasText: 'Food' }).waitFor()
+      expect((await page.getByText(/^Roughly /).count()) === 0, 'no range on Food before the yes')
+    }, { ...withMeals({ ...ob9('flagged'), dark }) })
+    await run(`ob9-2 Sometimes card with meals${dark ? ' (dark)' : ''}`, async ({ page }) => {
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText('In your range', { exact: true }).waitFor()
+      await card.getByText('Breakfast, lunch and a snack logged. Protein at 2 meals.').waitFor()
+      await card.getByText('See your range on Food').waitFor()
+      await card.screenshot({ path: path.join(OUT, `ob9/ob9-2-sometimes${sfx}.png`) })
+      // weigh-ins work, no weight or trend shown back
+      await page.locator('.tile').filter({ hasText: 'Weight' }).getByText('Logged').waitFor()
+      expect((await page.locator('.tile').filter({ hasText: 'Weight' }).getByText(/kg/).count()) === 0, 'no weight number or trend')
+    }, { ...withMeals({ ...ob9('sometimes'), dark }) })
+
+    await run(`ob9-3 day-14 ask${dark ? ' (dark)' : ''}: once, in the app; Show it puts the range on Today`, async ({ page }) => {
+      await page.getByRole('dialog', { name: 'Would you like your food range on Today?' }).waitFor()
+      await shot(page, `ob9/ob9-3-ask-day14${sfx}`)
+      await btn(page, 'Show it').click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today === 'today')
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText(/kcal/).first().waitFor()
+      await card.screenshot({ path: path.join(OUT, `ob9/ob9-3-after-show${sfx}.png`) })
+      await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(800)
+      expect((await page.getByRole('dialog', { name: 'Would you like your food range on Today?' }).count()) === 0, 'never asked again')
+      if (!dark) {
+        // one tap in Profile undoes it
+        await toAnswers9(page)
+        await shot(page, 'ob9/profile-optin-row')
+        await page.getByRole('button', { name: 'Turn off: food range on today' }).click()
+        await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today === 'food')
+      }
+    }, { ...withMeals({ ...ob9('sometimes', { ago: 14 }), dark }) })
+
+    await run(`ob9-4 week-4 ask${dark ? ' (dark)' : ''}: Not now rests it; no ask without a health yes`, async ({ page }) => {
+      await page.getByRole('dialog', { name: 'Would a calorie range help?' }).waitFor()
+      await shot(page, `ob9/ob9-4-ask-week4${sfx}`)
+      await btn(page, 'Not now').click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.range === 'not-now')
+      await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(800)
+      expect((await page.getByRole('dialog', { name: 'Would a calorie range help?' }).count()) === 0, 'not asked again for 12 weeks')
+    }, { ...withMeals({ ...ob9('flagged', { ago: 28 }), dark }) })
+  }
+  await run('ob9-4 Show a range: a range on Food, never on Today', async ({ page }) => {
+    await page.getByRole('dialog', { name: 'Would a calorie range help?' }).waitFor()
+    await btn(page, 'Show a range').click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.range === 'shown')
+    const card = page.locator('section[aria-labelledby="sum-food"]')
+    expect((await card.getByText(/kcal|\d,\d{3}/).count()) === 0, 'still words on Today')
+    await tab(page, 'Food'); await page.locator('.hdr .ltitle', { hasText: 'Food' }).waitFor()
+    await page.getByText(/^Roughly \d,\d{3}–\d,\d{3} kcal a day$/).first().waitFor()
+    await page.locator('section[aria-label="Day so far"]').screenshot({ path: path.join(OUT, 'ob9/food-yes-range.png') })
+  }, withMeals(ob9('flagged', { ago: 28 })))
+  await run('ob9 asks never show without a health yes', async ({ page }) => {
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(1200)
+    expect((await page.getByRole('dialog', { name: /Would (you like your food range on Today|a calorie range help)\?/ }).count()) === 0, 'no ask')
+  }, (() => { const a = withMeals(ob9('sometimes', { ago: 20 })); a.state.consents = { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' }; return a })())
 
   await run('safety: readiness yes → gentler start and signposting', async ({ page }) => {
     await wizard(page, { ready: [true, false, false] }, 'route-readiness/')
@@ -717,7 +841,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       await toAnswers(page)
       await shot(page, 'ob7/ob7-1-answers' + (dark ? '-dark' : ''))
       const rows = await rowTexts(page)
-      expect(rows.length === 4 && /^Pregnant or breastfeeding\nYes\nFood stays at maintenance/.test(rows[0]) && /^Conditions or medicines\nYes/.test(rows[1]) && /^Health check\nGentler start/.test(rows[2]) && /^Food and weight\nYes or sometimes/.test(rows[3]), rows.join(' ¶ '))
+      expect(rows.length === 4 && /^Pregnant or breastfeeding\nYes\nFood stays at maintenance/.test(rows[0]) && /^Conditions or medicines\nYes/.test(rows[1]) && /^Health check\nGentler start/.test(rows[2]) && /^Food and weight\nYes\n/.test(rows[3]), rows.join(' ¶ '))
       expect((await page.getByRole('button', { name: /^Change/ }).count()) === 3 && (await page.getByRole('button', { name: /^Clear/ }).count()) === 3, 'Change ×3, Clear ×3 (health check Clear only, food and weight Change only)')
       await page.getByText('Clearing these changes your plan and targets straight away.').waitFor()
     }, answered({ ...BOARD, dark }))
