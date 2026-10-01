@@ -67,7 +67,7 @@ export const FOOD9 = {
   /** ob9-3 */
   todayAsk: { k: 'Once, in the app', t: 'Would you like your food range on Today?', s: 'Right now it’s one tap away on Food. Either way works, and you can change it in Profile.', yes: 'Show it', no: 'Keep it on Food' },
   /** ob9-4 */
-  rangeAsk: { k: 'Once, at your week-4 look-back', t: 'Would a calorie range help?', s: 'It’s there to help you eat enough, never less. It would sit on Food, not Today, and you can turn it off any time.', yes: 'Show a range', no: 'Not now' },
+  rangeAsk: { k: 'Your week-4 look-back', t: 'Would a calorie range help?', s: 'It’s there to help you eat enough, never less. It would sit on Food, not Today, and you can turn it off any time.', yes: 'Show a range', no: 'Not now' },
   /** GAP: no board for the undo rows; they sit under the answers on ob7-1's screen */
   optIn: {
     today: { label: 'Food range on Today', value: 'Shown', does: 'Your range shows on Today as well as Food.' },

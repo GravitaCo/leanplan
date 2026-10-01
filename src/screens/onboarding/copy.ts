@@ -102,7 +102,7 @@ export const NOTES = {
     close: 'Close and delete',
     wrong: 'I typed my age wrong',
   },
-  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no eating less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
+  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and nothing asking you to eat less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
   medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
@@ -256,7 +256,7 @@ export const HEALTH_ANSWERS = {
     medical: 'Food stays at maintenance, with no high-protein target.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
     /** Yes: the ob9-1 card */
-    wellbeing: 'There’s no calorie number and no weight, and protein is shown in words.',
+    wellbeing: 'No calorie target and no weight, and protein is shown in words.',
     /** GAP: Sometimes has no ob7 line; the ob9-1 card in a sentence */
     wellbeingSometimes: 'Food shows a steady range with no deficit, and weight is hidden.',
     /** "Rather not say" without the deficit chosen */
