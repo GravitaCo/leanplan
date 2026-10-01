@@ -196,8 +196,21 @@ export function clearHealthAnswerIn(p: Profile, kind: HealthAnswerKind, at: stri
     delete o[kind]
     if (Object.keys(o).length) p.outcomes = o; else delete p.outcomes
   }
-  p.answeredAt = { ...p.answeredAt, [healthAnswerField(kind)]: at }
+  const stamps: Record<string, string> = { [healthAnswerField(kind)]: at }
+  if (kind === 'wellbeing') clearFoodOptIn(p, stamps, at)
+  p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
+}
+
+/**
+ * A changed wellbeing answer (any direction, or cleared) drops the food steps up it led to
+ * (Onboarding 9's foodOptIn), stamped like a withdrawal's clear so the per-field merge never
+ * brings an old yes back from another copy: each step up is asked again under the new answer.
+ */
+function clearFoodOptIn(p: Profile, stamps: Record<string, string>, at: string): void {
+  if (p.foodOptIn === undefined) return
+  delete p.foodOptIn
+  stamps.foodOptIn = at
 }
 
 /** The re-ask's answer: it still applies (re-dated, asked again in 12 weeks), or it doesn't (the flag goes). */
@@ -229,6 +242,7 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
   if (a.kind === 'wellbeing') {
     if (a.value === 'flagged' && !p.gentle) { p.gentle = true; stamps.gentle = at }
     else if (before === 'flagged' && a.value !== 'flagged' && p.gentle) { p.gentle = false; stamps.gentle = at }
+    clearFoodOptIn(p, stamps, at)
   }
   p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
