@@ -9,7 +9,9 @@ import type { LoggedFood, MealSlot, RecipeItem } from '@/core/types'
 import { fmt, shiftDay } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { dayMargin, frac, isEstimate, portionText } from '@/core/domain/estimate'
-import { MEALS, MEAL_LABEL, dayOf, energyStatus, mealEntries, mealNow, rangeFor, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
+import { foodView, mealWords, proteinRangeFor } from '@/core/domain/foodMode'
+import { FOOD9 } from './onboarding/copyApp'
+import { MEALS, MEAL_LABEL, dayOf, energyStatus, latestWeight, mealEntries, mealNow, rangeFor, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { KcalBar, MacroTrio } from '@/ui/charts'
@@ -35,12 +37,18 @@ export function FoodScreen() {
   const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
   const gentle = quietNumbers(data)
+  // Onboarding 9: Sometimes has its range here from day one; Yes only after its own yes, and no target
+  const fv = foodView(data.profile)
+  const yes = fv.mode === 'yes'
+  const some = fv.mode === 'sometimes' && !gentle
   const day = dayOf(data, cur)
   const t = dayTotals(day)
   const tg = data.target
   const r = rangeFor(data, cur)
   const st = energyStatus(t.k, r)
   const margin = dayMargin(day.foods)
+  const mw = mealWords(day.foods)
+  const pRange = some ? proteinRangeFor(data.profile, latestWeight(data, cur)) : null
 
   const groups: Record<MealSlot | 'other', (LoggedFood & { _i: number })[]> = { breakfast: [], lunch: [], dinner: [], snack: [], other: [] }
   day.foods.forEach((x, i) => { (x.meal ? groups[x.meal] : groups.other).push({ ...x, _i: i }) })
@@ -66,6 +74,29 @@ export function FoodScreen() {
         right={<button className="roundbtn" aria-label="Add food" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={22} stroke={2.4} /></button>} />
 
       <section className="card pcard" aria-label="Day so far">
+        {yes ? (
+          // Yes: totals in words; a range only after "Show a range" (ob9-4), never a target
+          <div className="f9">
+            <div className="kbig w">{FOOD9.meals(mw.slots.length)}</div>
+            <div className="f9-s">{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</div>
+            {fv.rangeOnFood && <>
+              <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+              <div className="pline num split"><span>{FOOD9.range(r.lo, r.hi)}</span></div>
+              <div className="pline">{FOOD9.yesRangeS}</div>
+            </>}
+          </div>
+        ) : some ? (
+          // Sometimes: the range, never a single number; protein as a range
+          <>
+            <div className="ph">
+              <div className="kbig"><span className="num">{fmt(t.k)}</span><small>kcal eaten</small></div>
+              {t.k > 0 && <button className="linkbtn num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
+            </div>
+            <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+            <div className="pline num split"><span>{FOOD9.range(r.lo, r.hi)}</span><span>{st.gentle}</span></div>
+            {pRange && <div className="pline num">{FOOD9.proteinRange(Math.round(t.p), pRange.low, pRange.high)}</div>}
+          </>
+        ) : <>
         {gentle ? (
           <div className="kbig w">{st.gentle}</div>
         ) : (
@@ -79,6 +110,7 @@ export function FoodScreen() {
           <div className="pline num split"><span>Range {fmt(r.lo)}–{fmt(r.hi)}</span><span>{st.word}</span></div>
         )}
         <MacroTrio p={t.p} c={t.c} f={t.f} tp={tg.p} tc={tg.c} tf={tg.f} />
+        </>}
       </section>
 
       {data.recipes.length > 0 && (

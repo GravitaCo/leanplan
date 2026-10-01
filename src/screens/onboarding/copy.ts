@@ -4,7 +4,7 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, HEALTH_ANSWERS_ROW, IF_THEN, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
+import { FIRST_SESSION, FOOD9, HEALTH_ANSWERS_ROW, IF_THEN, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
 export { FIRST_SESSION, IF_THEN, SETUP_CARD }
 
 /**
@@ -108,6 +108,8 @@ export const NOTES = {
   medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
 }
 
+const kc = (n: number) => n.toLocaleString('en-GB')
+
 /** Onboarding 3: the summary. */
 export const SUMMARY = {
   built: 'Built from your answers',
@@ -148,14 +150,45 @@ export const SUMMARY = {
   /** ob3-2's first row. The board's moves are placeholders (s-ob8 point 4), so the line names none. */
   warmRow: (n: number) => `Warm-up · ${n} min`,
   warmRowS: 'A minute or two to raise your pulse, then moving stretches for today’s joints',
-  /** GAP: the "How we worked this out" sheet has no board; this is the §5 chain in plain words */
+  /** ob9-1: the standard card */
+  startT: (kcal: number) => `About ${kc(kcal)} kcal a day to start`,
+  /** ob9-1. GAP: a surplus says "more than", a start at the estimate says "around" (s-ob9 draws a deficit) */
+  startS: (e: { diff: number; estimate: number; direction: 'less' | 'more' | 'same' }, review: string) =>
+    (e.direction === 'same'
+      ? `That’s around our best estimate of what you burn (about ${kc(e.estimate)} a day).`
+      : `That’s about ${kc(Math.abs(e.diff))} ${e.direction} than our best estimate of what you burn (around ${kc(e.estimate)} a day).`) +
+    ` Estimates like this can be 15% out either way, so Tali checks it against your weigh-ins after ${review} and adjusts.`,
+  /** ob9-1 and ob4-9: Sometimes */
+  sometimesT: 'A steady range to eat around',
+  sometimesS: 'With no deficit and no weight. For your first two weeks it’s one tap away on Food, then we’ll ask if you’d like it on Today.',
+  /** ob9-1 and ob4-9: Yes */
+  yesT: 'Log what you eat, if it helps',
+  yesS: 'There’s no calorie number and no weight, and protein is shown in words. You can change this in Profile any time.',
+  changeLink: 'Change in Profile › Health check answers',
+  /** ob9-5 */
   howT: 'How we worked this out',
-  how: [
-    'We start from your resting energy: an estimate from your age, height, weight and sex (the Mifflin–St Jeor equation).',
-    'Then we add your everyday movement, not counting workouts, and the sessions in your week.',
-    'That gives your likely maintenance, as a range, since any estimate like this can be out by about a sixth. Your goal then sets the starting number, never below a safe minimum.',
-    'After 3–4 weeks of weigh-ins, Tali checks it against what actually happened.',
-  ],
+  how: {
+    burnT: 'What you burn, roughly',
+    /** departs from ob9-5's "Workouts are counted separately": the estimate already counts the week's planned sessions (targets.ts) */
+    burn: (est: number) => `Around ${kc(est)} kcal a day, from your age, height, weight, how much you move and the workouts in your week.`,
+    sureT: 'How sure we are',
+    sure: (lo: number, hi: number) => `Estimates like this can be about 15% out either way, so the real figure is likely somewhere between ${kc(lo)} and ${kc(hi)}.`,
+    startT: 'Your starting point',
+    start: (e: { start: number; diff: number; paceKg: number; direction: 'less' | 'more' | 'same' }) =>
+      e.direction === 'same'
+        ? `About ${kc(e.start)} a day: around the estimate, so your weight is likely to stay about the same.`
+        : `About ${kc(e.start)} a day: about ${kc(Math.abs(e.diff))} ${e.direction} than the estimate, for ${e.paceKg <= 0.25 ? 'a gentle pace' : 'a pace'} of around ${paceWords(e.paceKg)} a week.`,
+    nextT: 'What happens next',
+    next: (review: string) => `After ${review} of weigh-ins, Tali compares what happened with what we expected and suggests an adjustment. Nothing changes without your OK.`,
+  },
+}
+
+/** 0.25 → "a quarter of a kilo", 0.5 → "half a kilo", otherwise "0.4 kg" */
+function paceWords(kg: number): string {
+  if (Math.abs(kg - 0.25) < 0.001) return 'a quarter of a kilo'
+  if (Math.abs(kg - 0.5) < 0.001) return 'half a kilo'
+  if (Math.abs(kg - 1) < 0.001) return 'a kilo'
+  return `${kg < 0.1 ? 'under 0.1' : kg.toLocaleString('en-GB', { maximumFractionDigits: 2 })} kg`
 }
 
 /** ob4-8: "What this means", the person's own reason only (drawn: pregnancy). */
@@ -204,14 +237,17 @@ export const HEALTH_ANSWERS = {
   no: 'No',
   none: 'None of these',
   gentler: 'Gentler start',
-  /** Yes and Sometimes are stored as one */
-  wellbeingFlagged: 'Yes or sometimes',
+  /** Onboarding 9 stores Yes and Sometimes apart */
+  wellbeingFlagged: 'Yes',
+  wellbeingSometimes: 'Sometimes',
   rather: 'Rather not say',
   does: {
     pregnancy: 'Food stays at maintenance with no calorie number, and training stays gentle.',
     medical: 'Food stays at maintenance, with no high-protein target.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
     wellbeing: 'Weight is hidden and there’s no calorie target to hit.',
+    /** GAP: Sometimes has no ob7 line; the ob9-1 card in a sentence */
+    wellbeingSometimes: 'Food shows a steady range with no deficit, and weight is hidden.',
     /** "Rather not say" without the deficit chosen */
     rather: 'Food stays at maintenance for now.',
     /** a stored answer that changes nothing */
@@ -249,15 +285,31 @@ export const CHECKIN = {
   done: 'Done',
 }
 
+const EXPLAINED = { start: 1650, estimate: 1900, diff: 250, paceKg: 0.25, direction: 'less' as const }
+const EXPLAINED_ALL = [EXPLAINED, { ...EXPLAINED, start: 2150, diff: -250, direction: 'more' as const }, { ...EXPLAINED, start: 1900, diff: 0, paceKg: 0, direction: 'same' as const }]
+/** Onboarding 9's lines that take more than numbers */
+const FN_SAMPLES = new Map<unknown, unknown[][]>([
+  [SUMMARY.startS, EXPLAINED_ALL.map((e) => [e, '3–4 weeks'])],
+  [SUMMARY.how.start, EXPLAINED_ALL.map((e) => [e])],
+  [SUMMARY.how.next, [['3–4 weeks']]],
+  [FOOD9.slots, [[['breakfast', 'lunch', 'snack'], 2], [['dinner'], 1], [[], 0]]],
+  [FOOD9.withProtein, [[2, 3], [1, 1], [0, 2]]],
+  [FOOD9.meals, [[0], [1], [3]]],
+])
+
 /** Every line above, for the copy lint. */
 export function allCopy(): string[] {
   const out: string[] = []
   const walk = (x: unknown) => {
     if (typeof x === 'string') out.push(x)
-    else if (typeof x === 'function') out.push(String((x as (n: number) => string)(1)), String((x as (n: number) => string)(2)))
+    else if (typeof x === 'function') {
+      const f = x as (...a: unknown[]) => string
+      const tries = FN_SAMPLES.get(f) ?? (f.length >= 3 ? [[62, 95, 130], [62, 60, null]] : f.length === 2 ? [[1, 2], [2, 3]] : [[1], [2]])
+      for (const a of tries) out.push(String(f(...a)))
+    }
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, REDO, CHECKIN])
+  walk([COPY, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, FOOD9, HEALTH_ANSWERS, REDO, CHECKIN])
   return out
 }

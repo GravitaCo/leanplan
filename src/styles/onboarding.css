@@ -185,9 +185,11 @@
 .sm-food { background: var(--card); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .sm-food .k { font-size: 13px; font-weight: 600; color: var(--food-ink); }
 .sm-food .big { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
-.sm-food .s { font-size: 14px; line-height: 1.45; color: var(--label2); }
+.sm-food .s { font-size: 15px; line-height: 1.5; color: var(--label2); }
 .sm-food .btn { margin-top: 6px; }
 .sm-food .big.h18 { font-size: 18px; line-height: 1.3; letter-spacing: 0; }
+/* ob9-1: the summary's Food card in each mode */
+.sm-food .big.h20 { font-size: 20px; line-height: 1.3; }
 .sm-food .s.ink { font-size: 15px; line-height: 1.5; color: var(--label); }
 .sm-food .s b { font-weight: 600; color: var(--label); }
 .sm-row.lg { padding: 14px 16px; }

@@ -533,6 +533,13 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .kbar .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--food); transition: width 0.3s; }
 .pline { font-size: 13px; color: var(--label2); line-height: 1.4; }
 .pline.split { display: flex; justify-content: space-between; gap: 12px; }
+/* Onboarding 9 (ob9-2): the Food card in words for a wellbeing Yes or Sometimes */
+.f9 { display: flex; flex-direction: column; gap: 8px; }
+.f9 .kbig.w { font-size: 22px; }
+.f9-s { font-size: 15px; line-height: 1.5; color: var(--label2); margin-top: 8px; }
+.pcard .linkbtn.f9-link { align-self: flex-start; font-size: 14px; padding: 0; }
+.cs-t.f9-ask { margin-top: -6px; }
+.btn.f9-no { height: 48px; border-radius: 24px; font-size: 16px; }
 .linkbtn.inl { padding: 0; font-size: inherit; color: var(--tint); }
 .pcard .linkbtn { font-weight: 500; }
 .meter { display: block; position: relative; background: var(--fill); overflow: hidden; }

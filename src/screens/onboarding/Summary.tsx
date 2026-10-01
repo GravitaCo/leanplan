@@ -17,6 +17,7 @@ import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
 import { renderWhy, type PlannedSession } from '@/core/domain/engine'
 import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
+import { explainStart } from '@/core/domain/targets'
 import { latestWeight } from '@/core/domain/insights'
 import { todayStr, DAY_NAME } from '@/core/domain/date'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -27,7 +28,6 @@ import { Chevron } from '@/ui/icons'
 import { MAINT_SHEET, OTHERS, REDO, SUMMARY } from './copy'
 
 const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const k = (n: number) => n.toLocaleString('en-GB')
 const uniq = (xs: string[]) => [...new Set(xs)]
 /** "Goblet squat: a gentler choice for the knees." → "A gentler choice for the knees." */
 const afterName = (t: string) => { const i = t.indexOf(': '); const r = i > 0 && i < 48 ? t.slice(i + 2) : t; return r.charAt(0).toUpperCase() + r.slice(1) }
@@ -137,7 +137,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
         )}
 
         {first && <FoodCard m={m} onHow={() => setHow(true)} onAddWeight={onAddWeight} onAddHeight={onAddHeight} onAddAge={onAddAge}
-          onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} />}
+          onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} onAnswers={onAnswers} />}
 
         <button className="btn sm-others" onClick={() => setOthers(true)}>{SUMMARY.others}</button>
         <button className="linkbtn ob-alt" onClick={onEdit}>{SUMMARY.edit}</button>
@@ -162,7 +162,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       {how && (
         <BareSheet label={SUMMARY.howT} onClose={() => setHow(false)}>
           <div className="feel-hd"><h2>{SUMMARY.howT}</h2><button className="navbtn b" onClick={() => setHow(false)}>Done</button></div>
-          <div className="sm-why" style={{ marginTop: 12 }}>{SUMMARY.how.map((p) => <p key={p}>{p}</p>)}</div>
+          <HowRows m={m} />
         </BareSheet>
       )}
       {maint && <MaintSheet onClose={() => setMaint(false)} onAnswers={() => { setMaint(false); onAnswers() }} />}
@@ -191,10 +191,13 @@ function shapeLine(d: WizardDraft, m: SummaryModel): string {
   return `${n} ${n === 1 ? 'day' : 'days'} · about ${mins} min · ${where}`
 }
 
-function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth }: {
+function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth, onAnswers }: {
   m: SummaryModel; onHow: () => void; onAddWeight: () => void; onAddHeight: () => void; onAddAge: () => void; onMaint: () => void; onHealth: () => void
+  /** ob9-1's "Change in Profile › Health check answers": before Start that's the wizard's own question (as ob4-8) */
+  onAnswers: () => void
 }) {
   const t = m.targets
+  const mode = m.routing.foodMode
   // ob4-7 and ob4-9: no number, and the card says logging works in full, why, and how to change it
   if (t.hidden === 'pregnancy') {
     return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.maint}</div><div className="s ink">{SUMMARY.maintP}</div>
@@ -217,16 +220,45 @@ function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHea
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noHeight}</div><div className="s">{SUMMARY.noWeightS}</div>
       <button className="btn gray bp-btn" onClick={onAddHeight}>Add height</button></section>
   }
-  if (t.hidden || t.kcal == null || !t.maintenance) {
+  // ob9-1 (and ob4-9): Yes has no number; Sometimes a range on Food, no number on the summary
+  if (mode === 'yes' && t.hidden === 'gentle') {
+    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.yesT}</div><div className="s">{SUMMARY.yesS}</div>
+      <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
+  }
+  if (mode === 'sometimes' && !t.hidden) {
+    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.sometimesT}</div><div className="s">{SUMMARY.sometimesS}</div>
+      <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
+  }
+  const e = explainStart(t)
+  if (t.hidden || t.kcal == null || !t.maintenance || !e) {
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.maint}</div><div className="s">{SUMMARY.maintS}</div></section>
   }
   return (
     <section className="sm-food" aria-label="Food">
       <div className="k">Food</div>
-      <div className="big num" data-kcal={t.kcal}>About {k(t.kcal)} kcal a day to start</div>
-      <div className="s num" data-low={t.maintenance.low} data-high={t.maintenance.high}>Likely maintenance {k(t.maintenance.low)}–{k(t.maintenance.high)}. Tali checks this against your weigh-ins after {t.reviewAfter}.</div>
+      <div className="big h20 num" data-kcal={t.kcal}>{SUMMARY.startT(t.kcal)}</div>
+      <div className="s num" data-estimate={e.estimate} data-diff={e.diff}>{SUMMARY.startS(e, t.reviewAfter)}</div>
       {t.heldAtMaintenance && <div className="s">{HELD_AT_MAINTENANCE_NOTE}</div>}
       <button className="linkbtn wz-link start sm" onClick={onHow}>How we worked this out</button>
+    </section>
+  )
+}
+
+/** ob9-5: the estimate, how sure it is, the start and its pace, and the 3–4 week check. */
+function HowRows({ m }: { m: SummaryModel }) {
+  const t = m.targets
+  const e = explainStart(t)
+  if (!e || !t.maintenance) return null
+  const H = SUMMARY.how
+  const rows: [string, string][] = [
+    [H.burnT, H.burn(e.estimate)],
+    [H.sureT, H.sure(t.maintenance.low, t.maintenance.high)],
+    [H.startT, H.start(e) + (t.heldAtMaintenance ? ` ${HELD_AT_MAINTENANCE_NOTE}` : '')],
+    [H.nextT, H.next(t.reviewAfter)],
+  ]
+  return (
+    <section className="sm-maint sm-how" style={{ marginTop: 12 }}>
+      {rows.map(([h, x]) => <div key={h}><div className="t">{h}</div><div className="s num">{x}</div></div>)}
     </section>
   )
 }

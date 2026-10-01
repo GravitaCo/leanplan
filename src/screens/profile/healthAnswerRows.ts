@@ -6,6 +6,8 @@
 import type { Profile } from '@/core/types'
 import { healthAnswersView, numbersStayHidden, type HealthAnswerKind } from '@/core/domain/onboarding'
 import { HEALTH_ANSWERS as H } from '../onboarding/copy'
+import { FOOD9 } from '../onboarding/copyApp'
+import { foodView, type FoodOptInAnswer } from '@/core/domain/foodMode'
 
 export type RowKind = Exclude<HealthAnswerKind, 'baseline'>
 export interface AnswerRow {
@@ -40,8 +42,9 @@ export function answerRows(p: Profile): AnswerRow[] {
     // food and weight is an answer, not a flag: Change only (s-ob7)
     else out.push({
       kind, label, change: true, clear: false, confirm: false,
-      value: r.value === 'flagged' ? H.wellbeingFlagged : r.value === 'clear' ? H.no : H.rather,
-      does: r.value === 'flagged' ? H.does.wellbeing : r.value === 'undisclosed' && !p.deficitChosen ? H.does.rather : H.does.nothing,
+      value: r.value === 'flagged' ? H.wellbeingFlagged : r.value === 'sometimes' ? H.wellbeingSometimes : r.value === 'clear' ? H.no : H.rather,
+      does: r.value === 'flagged' ? H.does.wellbeing : r.value === 'sometimes' ? H.does.wellbeingSometimes
+        : r.value === 'undisclosed' && !p.deficitChosen ? H.does.rather : H.does.nothing,
     })
   }
   return out
@@ -55,4 +58,18 @@ export function clearConfirmLine(p: Profile, kind: RowKind): string {
   if (numbersStayHidden(p, kind)) return H.confirmHidden
   if (kind !== 'readiness' && p.outcomes?.readiness === 'flagged') return H.confirmGentler
   return H.confirm
+}
+
+export interface OptInRow { key: 'today' | 'range'; label: string; value: string; does: string; off: FoodOptInAnswer }
+
+/**
+ * Onboarding 9: each food step up the person said yes to, with its one-tap undo. Only what's on
+ * now is listed (an undo, never a nudge to turn something on).
+ */
+export function optInRows(p: Profile): OptInRow[] {
+  const v = foodView(p)
+  const out: OptInRow[] = []
+  if (v.mode === 'sometimes' && v.todayNumbers) out.push({ key: 'today', ...FOOD9.optIn.today, off: { ask: 'today', value: 'food' } })
+  if (v.mode === 'yes' && v.rangeOnFood) out.push({ key: 'range', ...FOOD9.optIn.range, off: { ask: 'range', value: 'not-now' } })
+  return out
 }

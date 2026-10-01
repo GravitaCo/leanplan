@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import { healthDeclined, quietNumbers } from '@/data/consent'
+import { canSaveHealthAnswers, healthDeclined, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
@@ -15,7 +15,7 @@ import { builtinType, sessionsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
-  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
+  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, latestWeight, rangeExtra, rangeFor, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
@@ -31,6 +31,9 @@ import { FirstPlanSheet, PlanReviewSheet } from './plan/PlanSheets'
 import { LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { pregnancyReaskDue } from '@/core/domain/onboarding'
+import { foodAskDue, foodView, mealWords, proteinRangeFor } from '@/core/domain/foodMode'
+import { FOOD9 } from './onboarding/copyApp'
+import { FoodAskSheet } from './today/FoodAskSheet'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
@@ -66,9 +69,18 @@ export function TodayScreen() {
   const ifThenDue = useStore((s) => ONBOARDING_ENABLED && s.cur === todayStr() && ifThenOfferDue(s.data))
   const [ifThen, setIfThen] = useState(false)
   useEffect(() => { if (ifThenDue && !reask && !sheet) setIfThen(true) }, [ifThenDue, reask]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Onboarding 9: the one in-app ask (never a push): day 14 for Sometimes (ob9-3), week 4 for Yes (ob9-4)
+  const foodAsk0 = useStore((s) => (!ONBOARDING_ENABLED || s.cur !== todayStr() ? null : foodAskDue(s.data.profile, todayStr(), canSaveHealthAnswers(s.data))))
+  const [foodAsk, setFoodAsk] = useState<'today' | 'range' | null>(null)
+  useEffect(() => { if (foodAsk0 && !reask && !ifThen && !sheet) setFoodAsk(foodAsk0) }, [foodAsk0, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const p = data.profile
-  const gentle = quietNumbers(data)
+  // Onboarding 9: a wellbeing Yes or Sometimes shows Today in words (Sometimes until its own yes at day 14)
+  const fv = foodView(p)
+  const quiet = quietNumbers(data)
+  const gentle = quiet || !fv.todayNumbers
+  const yes = fv.mode === 'yes'
+  const some = fv.mode === 'sometimes'
   const day = dayOf(data, cur)
   const t = dayTotals(day)
   const tg = data.target
@@ -108,7 +120,12 @@ export function TodayScreen() {
   const weights = weightSeries(data, cur, 14)
   const wDelta = weightWeekDelta(data, cur)
   const supps = p.supplements || []
-  const baseLo = tg.kcal - rangeWidth(p), baseHi = tg.kcal + rangeWidth(p)
+  // the range on a day without workouts (rangeFor's own maths: the ±15% range for Sometimes)
+  const ex = rangeExtra(data, cur)
+  const baseLo = r.lo - ex, baseHi = r.hi - ex
+  const mw = mealWords(day.foods)
+  const kgNow = latestWeight(data, cur)
+  const pRange = fv.protein === 'range' ? proteinRangeFor(p, kgNow) : null
 
   // Move card: what today holds (a logged session wins over the plan)
   const plan = first ? templateFor(first, data.routines) : null
@@ -124,7 +141,7 @@ export function TodayScreen() {
   const dl = ws.prevAvgP != null ? Math.round(ws.avgP - ws.prevAvgP) : null
   const energyLine: ReactNode = ws.logged >= 2
     ? gentle
-      ? <>You logged on {ws.logged} days this week.{ws.inRange ? ` ${ws.inRange} of them landed in your range.` : ''}</>
+      ? <>You logged on {ws.logged} days this week.{ws.inRange && !yes ? ` ${ws.inRange} of them landed in your range.` : ''}</>
       : <>You averaged <b className="num">{fmt(ws.avgK)} kcal</b> on the {ws.logged} days you logged, and {ws.inRange} {ws.inRange === 1 ? 'was' : 'were'} in your range.</>
     : <>Log a couple of days and your weekly picture fills in here. Averages say far more than any single day.</>
   const suppsTaken = supps.filter((s) => day.supps[s.id]).length
@@ -209,24 +226,46 @@ export function TodayScreen() {
             <h2 id="sum-food" className="pk" style={{ color: 'var(--food-ink)' }}>Food</h2>
             <button className="linkbtn" onClick={() => setTab('food')}>Open</button>
           </div>
-          <div {...pressable(() => setTab('food'))} aria-label="Open Food">
-            {gentle ? (
-              <div className="kbig w">{st.gentle}</div>
-            ) : (
-              <div className="kbig"><span className="num">{fmt(t.k)}</span><small className="num">of {fmt(r.lo)}–{fmt(r.hi)} kcal</small></div>
-            )}
-            <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
-          </div>
-          {!gentle && (
-            <div className="pline num">
-              <span>{st.word}</span>
-              {t.k > 0 && (
-                <>{' · '}<button className="linkbtn inl num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>give or take {margin}</button></>
-              )}
+          {yes ? (
+            // ob9-2, Yes: totals in words, no target, no "room left"
+            <div {...pressable(() => setTab('food'))} aria-label="Open Food" className="f9">
+              <div className="kbig w">{FOOD9.meals(mw.slots.length)}</div>
+              <div className="f9-s">{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</div>
             </div>
+          ) : some && gentle ? (
+            // ob9-2, Sometimes for its first 14 days (and after "Keep it on Food"): words, the range on Food
+            <div className="f9">
+              <div {...pressable(() => setTab('food'))} aria-label="Open Food">
+                <div className="kbig w">{st.gentle}</div>
+                <div className="f9-s">{FOOD9.slots(mw.slots, mw.withProtein)}</div>
+              </div>
+              <button className="linkbtn f9-link" onClick={() => setTab('food')}>{FOOD9.seeRange}</button>
+            </div>
+          ) : (
+            <>
+              <div {...pressable(() => setTab('food'))} aria-label="Open Food">
+                {gentle ? (
+                  <div className="kbig w">{st.gentle}</div>
+                ) : (
+                  <div className="kbig"><span className="num">{fmt(t.k)}</span><small className="num">of {fmt(r.lo)}–{fmt(r.hi)} kcal</small></div>
+                )}
+                <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+              </div>
+              {!gentle && (
+                <div className="pline num">
+                  {/* Sometimes: the range only, never a number to aim at */}
+                  <span>{some ? st.gentle : st.word}</span>
+                  {t.k > 0 && (
+                    <>{' · '}<button className="linkbtn inl num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>give or take {margin}</button></>
+                  )}
+                </div>
+              )}
+              {some
+                ? pRange && <div className="pline num">{FOOD9.proteinRange(Math.round(t.p), pRange.low, pRange.high)}</div>
+                : <MacroTrio p={t.p} c={t.c} f={t.f} tp={tg.p} tc={tg.c} tf={tg.f} />}
+            </>
           )}
-          <MacroTrio p={t.p} c={t.c} f={t.f} tp={tg.p} tc={tg.c} tf={tg.f} />
-          <button className="btn gray" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={18} stroke={2.6} />Add food</button>
+          <button className="btn gray" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={18} stroke={2.6} />{yes ? FOOD9.logMeal : 'Add food'}</button>
         </section>
 
         {flags.length > 0 && (
@@ -277,9 +316,17 @@ export function TodayScreen() {
         </section>
 
         {/* ---------- Weight + supplements ---------- */}
-        {(!gentle || supps.length > 0) && (
+        {(!quiet || supps.length > 0) && (
           <div className="tiles">
-            {!gentle && (
+            {!quiet && !fv.weightBack && (
+              // Onboarding 9: weigh-ins still work, but no weight or trend is shown back
+              <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
+                <span className="tk">Weight</span>
+                <span className="v"><span className="w">{day.weight ? 'Logged' : 'Add'}</span></span>
+                <span className="s">{day.weight ? 'Today' : 'Whenever it suits you'}</span>
+              </div>
+            )}
+            {!quiet && fv.weightBack && (
               <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
                 <span className="tk">Weight</span>
                 <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
@@ -315,10 +362,10 @@ export function TodayScreen() {
             <div className="wline">{energyLine}</div>
           </div>
           <div>
-            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} />
+            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} band={!yes} />
             <div className="wkey">
               <span><i className="bar" />Eaten{gentle ? '' : ', kcal'}</span>
-              <span><i className="band" /><span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span></span>
+              {!yes && <span><i className="band" /><span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span></span>}
             </div>
           </div>
           <div className="stat3">
@@ -345,6 +392,7 @@ export function TodayScreen() {
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
       {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
+      {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
       {ifThen && ifThenDue && <FirstPlanSheet onDone={() => { setIfThen(false); setPrefs({ ifThenOffered: true }) }} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
