@@ -451,7 +451,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           }}>Done</button>
         </BareSheet>
       )}
-      {sheet === 'finish' && (
+      {/* the last exercise's "How was that set?" comes first; the finish sheet follows it */}
+      {sheet === 'finish' && !askFeel && (
         <FinishSheet title={title} gentle={gentle} mins={stintMins(prevMins, now - started, isToday)}
           rows={slots.map((s) => { const line = setsLine(logged[s.i], s.shape); return { name: bareName(s.swapped && s.x ? s.x.n : s.planned.n), line, none: line === 'Not today' } })}
           effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} />
