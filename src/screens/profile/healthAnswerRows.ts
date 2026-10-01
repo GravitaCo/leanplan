@@ -83,7 +83,8 @@ export interface FoodShows {
  * time. The same answer the day-14 ask stores (answerFoodOptIn), so nothing else changes.
  */
 export function foodShows(p: Profile): FoodShows | null {
-  if (foodModeOf(p) !== 'sometimes') return null
+  // pregnant or breastfeeding: no range shows anywhere (Food and Today), so the row is hidden
+  if (foodModeOf(p) !== 'sometimes' || p.pregnancy?.flagged) return null
   const value = p.foodOptIn?.today
   return { value, line: value === 'today' ? FOOD9.shows.today : FOOD9.shows.food }
 }

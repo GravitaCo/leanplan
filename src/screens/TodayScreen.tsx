@@ -239,7 +239,8 @@ export function TodayScreen() {
                 <div className="kbig w">{st.gentle}</div>
                 <div className="f9-s">{FOOD9.slots(mw.slots, mw.withProtein)}</div>
               </div>
-              <button className="linkbtn f9-link" onClick={() => setTab('food')}>{FOOD9.seeRange}</button>
+              {/* pregnant or breastfeeding: Food shows no range, so there's none to point to */}
+              {!p.pregnancy?.flagged && <button className="linkbtn f9-link" onClick={() => setTab('food')}>{FOOD9.seeRange}</button>}
             </div>
           ) : (
             <>
