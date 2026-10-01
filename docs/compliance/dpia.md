@@ -4,6 +4,8 @@
 (an AI assistant) for Benn, director of Gravita Creative Ltd, from the code on branch
 `claude/pensive-ramanujan-j4k1ie` at commit `86eddbc` (current `main` plus the unmerged onboarding
 legal texts) and the compliance register (`docs/compliance/README.md`).
+Updated 1 October 2026 for Onboarding 9 (section 4.2, the wellbeing answer, and R3) from the
+code at `6430472` (`claude/onboarding-release`).
 
 **This is not legal advice.** It was drafted with AI help and has not been reviewed by a lawyer.
 It records how Tali works and the judgement calls still open, so that Benn, and his solicitor if
@@ -206,10 +208,14 @@ and checked where noted):
 - **Pregnancy** (`PregnancyFlag`, `src/core/types.ts:286`): `flagged` (pregnant and breastfeeding
   not told apart), `askedAt`, and `snoozedAt` after "Ask me later" on the 12-week re-ask.
 - **The wellbeing answer** ("how food and weight feel"): `flagged` (yes), `sometimes` (from
-  Onboarding 9, 2026-10-01), `clear` or `undisclosed`, whether it turned Gentle mode on, and,
-  after a yes or sometimes, the later food or calorie range ask (asked, answered, when) and
-  whether the range is on. This is a proxy for disordered eating and is
-  the most sensitive single item.
+  Onboarding 9, 2026-10-01), `clear` or `undisclosed`, and whether it turned Gentle mode on (a yes
+  only). After it, `profile.foodOptIn` (`src/core/types.ts:292`): for a sometimes, the answer to
+  the day-14 "Would you like your food range on Today?" (`today`, no date); for a yes, the answer
+  to the week-4 "Would a calorie range help?" (`range`) with `rangeAt`, the date, for the 12-week
+  rest after "Not now". Closing either ask saves the second answer, so no separate "asked" flag is
+  kept; the merge stamp `answeredAt.foodOptIn` records when it last changed. Health data by
+  inference (only a yes or sometimes is asked). This is a proxy for disordered eating and is the
+  most sensitive single item.
 - **Other onboarding answers:** motivations (chips or up to 60 characters of own words), daily
   movement and the multiplier from it, `deficitChosen`, per-field `answeredAt` stamps.
 - **Plan reasons:** `why` entries on `training_plans` and on workout slots in `routines`, some of
@@ -514,8 +520,12 @@ items are not done.
   (`routeSafety`); skipped answers give cautious defaults (a gentler start, maintenance pre-selected,
   quiet signposting: `onboarding.ts:322` to `346`); pregnancy holds food at maintenance with no
   calorie number; the medical flag removes the deficit and the high-protein anchor and adds a GP
-  note; the wellbeing flag turns on Gentle mode, hides weight and calories and signposts Beat, NHS
-  111, Samaritans and emergency help; BMI under 18.5 blocks a deficit; targets are ranges with
+  note; a wellbeing yes turns on Gentle mode (no calorie target, totals in words, a maintenance range
+  on Food only if the person asks for one at week 4) and a sometimes gives a maintenance range
+  only (never a deficit, Today in words until the person opts in at day 14); both take the weight
+  number off Today, stop automatic training increases and signpost Beat, NHS 111, Samaritans and
+  emergency help (gaps as built, register item 34: a pregnant yes who opts into the range sees
+  calorie numbers on Food, and the weight sheet and Profile still show weight); BMI under 18.5 blocks a deficit; targets are ranges with
   neutral copy (CLAUDE.md design system); `mental-performance` and `nutrition-accuracy` reviews
   (section 3); the pregnancy flag is re-asked every 12 weeks.
 - **Recommended:** clinical review before the wizard goes on (D1); confirm the Beat number (0808 801
