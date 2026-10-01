@@ -175,7 +175,9 @@ Added 2026-09-27 (consent release):
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
 23. Open Food Facts: barcode lookups go from the phone, so OFF sees users' IP addresses
-    (disclosed). Proxying them through an Edge Function would stop that.
+    (disclosed). Proxying them through an Edge Function would stop that, but Tali's server would
+    then see every barcode a signed-in user scans (a new flow needing privacy text). Deferred
+    (Benn, 2026-10-01): revisit before public launch.
 24. Label photo scanning (Anthropic) is off. Before turning it on: Anthropic DPA, transfer
     mechanism and TIA, retention/zero retention, consent copy fix, withdrawal toggle, privacy
     policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
@@ -209,7 +211,8 @@ Added 2026-09-28 (server-side enforcement):
 30. Open from the 30-day deletion (compliance, 2026-09-28):
     (a) DECIDED (Benn, 2026-09-28): no notice emails for now. Accepted risk: someone who doesn't
         open the app before 28 Oct, and no longer has the phone that holds their log, loses it.
-        Revisit before 28 Oct. If emails are sent later: each account with cloud data and no
+        Revisited 2026-10-01 (Benn): the date stays 28 Oct; 2 of the 6 accounts with cloud data
+        had no health yes on that day. If emails are sent later: each account with cloud data and no
         consent (6 on 2026-09-28), before the first purge, one by one from Google Workspace, no health details: "We've changed how Tali
         handles health data: we now ask before keeping it in your account. Open Tali and choose
         whether it's OK. If you haven't agreed by 28 October 2026, we'll delete the copy in your
@@ -217,8 +220,10 @@ Added 2026-09-28 (server-side enforcement):
         this email." If they go out after release day, move PURGE_FROM (and
         `UNCONSENTED_DELETION`) to the email date.
     (b) Find Supabase's backup retention window for this plan and record it.
-    (c) Dormant accounts: after a purge the account and email stay with no end date. Set an
-        inactivity period, with notice.
+    (c) Dormant accounts: after a purge the account and email stay with no end date. DECIDED
+        (Benn, 2026-10-01): 12 months of inactivity, then deletion with notice. Not built: needs
+        the way notices are sent (an email service is a new processor, item 2), a scheduled job,
+        privacy text and a register row.
     (d) The DPIA should record the purge and the accepted 30-day gap.
 
 31. Benn approved (2026-09-28, in the build session) two changes shipped with the consent release:
