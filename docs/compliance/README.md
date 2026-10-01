@@ -179,8 +179,9 @@ Added 2026-09-27 (consent release):
 24. Label photo scanning (Anthropic) is off. Before turning it on: Anthropic DPA, transfer
     mechanism and TIA, retention/zero retention, consent copy fix, withdrawal toggle, privacy
     policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
-25. Repo markers: `docs/migrations/2026-09-consents.sql` and `2026-09-owner-fks.sql` still say
-    NOT APPLIED but are live (checked 2026-09-27). The `delete-account` function's comments are
+25. Done 2026-10-01: the headers of `docs/migrations/2026-09-consents.sql` and
+    `2026-09-owner-fks.sql` now say applied (re-checked on the live DB: the table and all four
+    validated constraints exist). The `delete-account` function's comments are
     now right (v2 deployed, item 36). `docs/migrations/2026-09-ai-usage.sql` was applied
     on 2026-09-28 (owner postgres, verified) and its header now says so.
 
