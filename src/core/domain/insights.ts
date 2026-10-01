@@ -10,6 +10,8 @@ import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlo
 import { parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
+import { foodView, maintenanceRange } from './foodMode'
+import { maintenanceEstimate } from './targets'
 import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
@@ -91,7 +93,15 @@ export function showBurnNote(s: AppState): boolean {
 
 /** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const mid = s.target.kcal + rangeExtra(s, d)
+  const extra = rangeExtra(s, d)
+  // Onboarding 9 (Sometimes, and Yes after its yes): ±15% around the maintenance estimate, to the nearest 50
+  if (foodView(s.profile).wideRange) {
+    const est = maintenanceEstimate(s.profile, null, latestWeight(s, d))
+    const base = est ? Math.round(est.maint / 50) * 50 : s.target.kcal
+    const m = maintenanceRange(base)
+    return { mid: base + extra, lo: m.lo + extra, hi: m.hi + extra }
+  }
+  const mid = s.target.kcal + extra
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }

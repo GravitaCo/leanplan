@@ -50,6 +50,7 @@ import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
 import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, showSetupCard, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { answerFoodOptInIn, type FoodOptInAnswer } from '@/core/domain/foodMode'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
@@ -240,6 +241,8 @@ export interface StoreState {
   clearHealthAnswer: (kind: HealthAnswerKind) => boolean
   /** Profile's "Change" for conditions and food and weight; false without a local health yes */
   setHealthAnswer: (a: ChangeableAnswer) => boolean
+  /** Onboarding 9: an answer to the day-14 or week-4 food ask, or its one-tap undo in Profile */
+  answerFoodOptIn: (a: FoodOptInAnswer) => boolean
   /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
   confirmPregnancy: (status: PregnancyStatus) => boolean
   /** re-run the plan and targets after a health answer changed (the engine loads on demand) */
@@ -1572,6 +1575,15 @@ export const useStore = create<StoreState>()(
         let changed = false
         set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
         if (changed) { saved(); void get().rerunHealthAnswers() }
+        return true
+      },
+
+      answerFoodOptIn: (a) => {
+        // the answer is health data (register item 34b): saved only with the local health yes
+        if (!canSaveHealthAnswers(get().data)) return false
+        let changed = false
+        set((st) => { changed = answerFoodOptInIn(st.data.profile, a, todayStr(), nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
         return true
       },
 

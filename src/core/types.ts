@@ -276,10 +276,26 @@ export interface OnboardingOutcomes {
   readiness?: 'clear' | 'flagged'
   /** diabetes on insulin or sulfonylureas, kidney disease or a GLP-1 medicine: 'flagged' */
   medical?: 'clear' | 'flagged'
-  /** Yes/Sometimes → 'flagged'; No → 'clear'; "Rather not say" → 'undisclosed' */
-  wellbeing?: 'flagged' | 'clear' | 'undisclosed'
+  /**
+   * Yes → 'flagged' (the name predates the split: stored data keeps its meaning, never rename it);
+   * Sometimes → 'sometimes' (Onboarding 9, from Oct 2026); No → 'clear'; "Rather not say" → 'undisclosed'
+   */
+  wellbeing?: 'flagged' | 'sometimes' | 'clear' | 'undisclosed'
   /** poor sleep, high stress or little room for change → 'low' */
   baseline?: 'ok' | 'low'
+}
+
+/**
+ * Onboarding 9: each is the person's own answer, never set by time passing, and undone in one
+ * tap from Profile › Health check answers.
+ */
+export interface FoodOptIn {
+  /** Sometimes, the day-14 ask (ob9-3): 'today' = the range on Today too, 'food' = kept on Food. Asked once. */
+  today?: 'today' | 'food'
+  /** Yes, the week-4 ask (ob9-4): 'shown' = a maintenance range on Food; 'not-now' = asked again 12 weeks after `rangeAt` */
+  range?: 'shown' | 'not-now'
+  /** local date (YYYY-MM-DD) of the last `range` answer */
+  rangeAt?: string
 }
 
 /** Pregnant or breastfeeding, re-asked gently every 12 weeks and clearable in Profile (§13, §14). */
@@ -468,6 +484,8 @@ export interface Profile {
   activityMult?: number
   /** after "Rather not say" on wellbeing, the person chose their goal's deficit over maintenance */
   deficitChosen?: boolean
+  /** the food steps up a wellbeing Yes or Sometimes person said yes to (Onboarding 9, core/domain/foodMode) */
+  foodOptIn?: FoodOptIn
   /** "What would make this worth it for you?" (onboarding screen 3): chip keys, or their own words (≤ 60 chars) */
   motivations?: string[]
   /**

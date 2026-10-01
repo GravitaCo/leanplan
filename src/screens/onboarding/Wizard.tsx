@@ -18,7 +18,7 @@ import {
   progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
 import { latestWeight } from '@/core/domain/insights'
-import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
+import { wellbeingAnswerOf, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { CM_PER_IN, cmFromIn, ftInFromCm, kgFromLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 import type { Lately } from '@/core/domain/engine'
@@ -384,7 +384,8 @@ function LatelyQ({ d, go, back }: Common) {
 }
 
 function Wellbeing({ d, go, back }: Common) {
-  const init: WellbeingAnswer | undefined = d.outcomes.wellbeing === 'clear' ? 'no' : d.outcomes.wellbeing === 'undisclosed' ? 'rather-not-say' : undefined
+  // Yes and Sometimes are stored apart now (Onboarding 9), so every answer can be shown again
+  const init: WellbeingAnswer | undefined = wellbeingAnswerOf(d.outcomes.wellbeing)
   const [a, setA] = useState<WellbeingAnswer | undefined>(init)
   const advance = useAdvance()
   const pick = (v: WellbeingAnswer) => {

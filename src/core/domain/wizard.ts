@@ -2,7 +2,7 @@ import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
   MacroTarget, OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPlan, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
+import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
 import { suggestedTargets } from './nutrition'
 import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
@@ -185,7 +185,8 @@ export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   if (d.pregnant) s.push('pregnancy-note')
   else if (d.outcomes.readiness === 'flagged') s.push('ready-note')
   s.push('why', 'goal', 'lately', 'wellbeing')
-  if (d.outcomes.wellbeing === 'flagged') s.push('wellbeing-note')
+  // Yes and Sometimes both get the signposting note (Onboarding 9 keeps it for both)
+  if (wellbeingRouted(d.outcomes.wellbeing)) s.push('wellbeing-note')
   s.push('body')
   if (asksMedical(d.goal)) { s.push('medical'); if (d.outcomes.medical === 'flagged') s.push('medical-note') }
   s.push('weight', 'move', 'handoff')
@@ -262,7 +263,7 @@ export function outcomeInputs(o: OnboardingOutcomes | undefined): Pick<PlanInput
   return {
     readiness: x.readiness,
     lately: x.baseline === 'ok' ? { sleep: 'good', stress: 'low', room: 'plenty' } : x.baseline === 'low' ? { sleep: 'poor' } : undefined,
-    wellbeing: x.wellbeing === 'flagged' ? 'yes' : x.wellbeing === 'clear' ? 'no' : x.wellbeing === 'undisclosed' ? 'rather-not-say' : undefined,
+    wellbeing: wellbeingAnswerOf(x.wellbeing),
   }
 }
 
@@ -376,8 +377,11 @@ export function applyDraft(base: Profile, d: WizardDraft, today: string, at?: st
     // a redo that leaves it as it was keeps the stored one (its date and any "ask me later")
     if (d.redo && base.pregnancy && d.pregnant === d.redo.pregnant) { /* kept */ }
     else if (d.pregnant !== undefined) { p.pregnancy = { flagged: d.pregnant, askedAt: today }; stamped.push('pregnancy') } else delete p.pregnancy
-    // wellbeing Yes or Sometimes: gentle mode on (§3). Otherwise the person's own setting stays.
+    // wellbeing Yes: gentle mode on (§3). Sometimes keeps a range (Onboarding 9), so it doesn't
+    // turn gentle mode on. Otherwise the person's own setting stays.
     if (d.outcomes.wellbeing === 'flagged') { p.gentle = true; stamped.push('gentle') }
+    // a redo moving off Yes turns off the gentle mode that Yes turned on (as Profile's Change does)
+    else if (base.outcomes?.wellbeing === 'flagged' && p.gentle) { p.gentle = false; stamped.push('gentle') }
     if (d.deficitChosen !== undefined) { p.deficitChosen = d.deficitChosen; stamped.push('deficitChosen') } else delete p.deficitChosen
   }
   const t = trainingFrom(d)
