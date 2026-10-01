@@ -125,7 +125,8 @@ export function ProfileScreen() {
   const [emailField, setEmailField] = useState(email || '')
   const [metrics, setMetrics] = useState({
     sex: pr.sex, age: pr.age?.toString() || '', height: pr.height?.toString() || '',
-    weight: weight?.toString() || '', activityLevel: pr.activityLevel,
+    // weight hidden (Sometimes, gentle mode): the field starts empty, and an empty field logs nothing
+    weight: foodView(pr).weightBack ? weight?.toString() || '' : '', activityLevel: pr.activityLevel,
   })
   const [targets, setTargets] = useState({
     kcal: data.target.kcal.toString(), p: data.target.p.toString(), c: data.target.c.toString(), f: data.target.f.toString(),
