@@ -136,6 +136,10 @@ Added 2026-09-27 (consent release):
 17. Turnstile loads for every visitor to a page with the early-access form, not only people
     who submit it. Moving the form to its own page (or loading Turnstile only when someone
     starts typing) keeps it strictly necessary under PECR.
+    DECIDED (Benn, 2026-10-01): Turnstile is built into Webflow forms and can't be deferred or
+    loaded on demand. It will be classed as "functional" in the website cookie banner when one is
+    added. OPEN for that banner: whether a declined "functional" choice stops Turnstile loading,
+    and what then happens to the form; the cookie policy and privacy texts change with it.
 18. Merged into item 2 (early-access invites).
 19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
     (Supabase MCP): title, supplement name, tag, icon. The function's source is now in the repo
