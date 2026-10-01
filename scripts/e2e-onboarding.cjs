@@ -582,10 +582,13 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(800)
       expect((await page.getByRole('dialog', { name: 'Would you like your food range on Today?' }).count()) === 0, 'never asked again')
       if (!dark) {
-        // one tap in Profile undoes it
+        // one tap in Profile undoes it: ob10's On Food, never a separate Turn off row (ob9-8)
         await toAnswers9(page)
         await shot(page, 'ob9/profile-optin-row')
-        await page.getByRole('button', { name: 'Turn off: food range on today' }).click()
+        const shows = page.getByTestId('food-shows')
+        expect(await shows.getByRole('radio', { name: 'On Today' }).getAttribute('aria-checked') === 'true', 'shows their yes')
+        expect((await page.getByRole('button', { name: /^Turn off/ }).count()) === 0, 'no Turn off row beside it')
+        await shows.getByRole('radio', { name: 'On Food' }).click()
         await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today === 'food')
       }
     }, { ...withMeals({ ...ob9('sometimes', { ago: 14 }), dark }) })
@@ -599,6 +602,43 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       expect((await page.getByRole('dialog', { name: 'Would a calorie range help?' }).count()) === 0, 'not asked again for 12 weeks')
     }, { ...withMeals({ ...ob9('flagged', { ago: 28 }), dark }) })
   }
+  // Onboarding 10 (ob9-8): every Sometimes user chooses where the range shows, either way
+  for (const dark of [false, true]) {
+    await run(`ob10 where your food range shows${dark ? ' (dark)' : ''}: unmarked, On Today, back to On Food`, async ({ page }) => {
+      await toAnswers9(page)
+      const shows = page.getByTestId('food-shows')
+      await shows.getByText('Where your food range shows', { exact: true }).waitFor()
+      const radios = shows.getByRole('radio')
+      expect((await radios.allInnerTexts()).join('|') === 'On Food|On Today', 'On Food first')
+      expect((await shows.locator('[aria-checked="true"]').count()) === 0, 'neither marked before they choose')
+      await shows.getByText('Your range shows on Food, not on Today.').waitFor()
+      expect((await page.getByRole('button', { name: /^Turn off/ }).count()) === 0, 'no Turn off row for Sometimes')
+      await shot(page, `ob10/ob10-foodrange-unset${dark ? '-dark' : ''}`)
+      const opt = () => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today ?? null)
+      expect(await opt() === null, 'nothing stored yet')
+      await shows.getByRole('radio', { name: 'On Today' }).click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today === 'today')
+      await shows.getByText('Your range shows on Today as well as Food.').waitFor()
+      await shot(page, `ob10/ob10-foodrange-today${dark ? '-dark' : ''}`)
+      await shows.getByRole('radio', { name: 'On Food' }).click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.foodOptIn?.today === 'food')
+      await shows.getByText('Your range shows on Food, not on Today.').waitFor()
+      expect(await shows.getByRole('radio', { name: 'On Food' }).getAttribute('aria-checked') === 'true', 'On Food marked')
+      await shot(page, `ob10/ob10-foodrange-food${dark ? '-dark' : ''}`)
+      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')))
+      expect(!!st.profile.answeredAt?.foodOptIn && st._meta.settings.dirty !== undefined, 'stamped like the day-14 answer')
+      // Today stays in words after going back to On Food
+      await tab(page, 'Summary')
+      const card = page.locator('section[aria-labelledby="sum-food"]')
+      await card.getByText('See your range on Food').waitFor()
+    }, { ...withMeals({ ...ob9('sometimes'), dark }) })
+  }
+  await run('ob10 Yes keeps its week-4 range row, and no food-range control', async ({ page }) => {
+    await toAnswers9(page)
+    await page.getByRole('button', { name: 'Turn off: calorie range on food' }).waitFor()
+    expect((await page.getByTestId('food-shows').count()) === 0, 'no Sometimes control for Yes')
+  }, withMeals(ob9('flagged', { p: { foodOptIn: { range: 'shown', rangeAt: today } } })))
+
   // Onboarding 10 (ob9-6, ob9-7): Support and helplines from Profile, for everyone, offline too,
   // and opening it sends nothing anywhere
   const SUPPORT_LEAD = 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.'

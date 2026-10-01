@@ -7,7 +7,7 @@ import type { Profile } from '@/core/types'
 import { healthAnswersView, numbersStayHidden, type HealthAnswerKind } from '@/core/domain/onboarding'
 import { HEALTH_ANSWERS as H } from '../onboarding/copy'
 import { FOOD9 } from '../onboarding/copyApp'
-import { foodView, type FoodOptInAnswer } from '@/core/domain/foodMode'
+import { foodModeOf, foodView, type FoodOptInAnswer } from '@/core/domain/foodMode'
 
 export type RowKind = Exclude<HealthAnswerKind, 'baseline'>
 export interface AnswerRow {
@@ -60,16 +60,30 @@ export function clearConfirmLine(p: Profile, kind: RowKind): string {
   return H.confirm
 }
 
-export interface OptInRow { key: 'today' | 'range'; label: string; value: string; does: string; off: FoodOptInAnswer }
+export interface OptInRow { key: 'range'; label: string; value: string; does: string; off: FoodOptInAnswer }
 
 /**
- * Onboarding 9: each food step up the person said yes to, with its one-tap undo. Only what's on
- * now is listed (an undo, never a nudge to turn something on).
+ * Onboarding 9: Yes's week-4 range, when they said yes, with its one-tap undo (an undo, never a
+ * nudge to turn it on). Sometimes has foodShows instead.
  */
 export function optInRows(p: Profile): OptInRow[] {
   const v = foodView(p)
-  const out: OptInRow[] = []
-  if (v.mode === 'sometimes' && v.todayNumbers) out.push({ key: 'today', ...FOOD9.optIn.today, off: { ask: 'today', value: 'food' } })
-  if (v.mode === 'yes' && v.rangeOnFood) out.push({ key: 'range', ...FOOD9.optIn.range, off: { ask: 'range', value: 'not-now' } })
-  return out
+  return v.mode === 'yes' && v.rangeOnFood ? [{ key: 'range', ...FOOD9.optIn.range, off: { ask: 'range', value: 'not-now' } }] : []
+}
+
+export interface FoodShows {
+  /** what they chose (the day-14 ask or this control); undefined until then, so neither is marked */
+  value: 'food' | 'today' | undefined
+  /** where the range shows now: on Food only until they choose Today */
+  line: string
+}
+
+/**
+ * Onboarding 10 (board ob9-8): every Sometimes user chooses where the range shows, either way, any
+ * time. The same answer the day-14 ask stores (answerFoodOptIn), so nothing else changes.
+ */
+export function foodShows(p: Profile): FoodShows | null {
+  if (foodModeOf(p) !== 'sometimes') return null
+  const value = p.foodOptIn?.today
+  return { value, line: value === 'today' ? FOOD9.shows.today : FOOD9.shows.food }
 }

@@ -15,9 +15,9 @@ import { FLOOR_LINE, SUMMARY } from '../src/screens/onboarding/copy'
 import { shiftDay } from '@/core/domain/date'
 import { withoutHealth } from '@/data/consent'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
-import { optInRows } from '../src/screens/profile/healthAnswerRows'
+import { foodShows, optInRows } from '../src/screens/profile/healthAnswerRows'
 import { supportList } from '../src/screens/profile/supportRows'
-import { SUPPORT } from '../src/screens/onboarding/copyApp'
+import { FOOD9, SUPPORT } from '../src/screens/onboarding/copyApp'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
 let bad = 0
@@ -362,7 +362,7 @@ function foodMode(): void {
   const shownToday = answered(some(), { ask: 'today', value: 'today' }, day(14))
   const notNow = answered(yes(), { ask: 'range', value: 'not-now' }, day(28))
   const shownRange = answered(yes(), { ask: 'range', value: 'shown' }, day(28))
-  const undoneToday = answered(shownToday, optInRows(shownToday)[0].off, day(40))
+  const undoneToday = answered(shownToday, { ask: 'today', value: 'food' }, day(40))
   const undoneRange = answered(shownRange, optInRows(shownRange)[0].off, day(40))
   const restricted = some()
   const moved = applyRestrictionSignalIn(restricted, day(30) + 'T10:00:00.000Z')
@@ -396,8 +396,14 @@ function foodMode(): void {
     ['nothing unlocks by time alone: Sometimes stays in words on Today, Yes has no range', sweep.every(() => !foodView(some()).todayNumbers && !foodView(keptOnFood).todayNumbers && !foodView(yes()).rangeOnFood && !foodView(notNow).rangeOnFood)],
     ['each step up is the person’s yes: Today shows the range, Food gets one for Yes (never Today)', foodView(shownToday).todayNumbers && foodView(shownRange).rangeOnFood && !foodView(shownRange).todayNumbers && foodView(shownRange).wideRange],
     ['Sometimes has its range on Food from day one; no weight trend in either mode', foodView(some()).rangeOnFood && !foodView(some()).weightBack && !foodView(yes()).weightBack && foodView(adult()).weightBack],
-    ['one tap in Profile undoes each yes (and Today’s ask stays answered)', optInRows(shownToday).length === 1 && !foodView(undoneToday).todayNumbers && !todayAskDue(undoneToday, day(400)) && !optInRows(undoneToday).length
+    ['one tap in Profile undoes each yes (and Today’s ask stays answered)', !foodView(undoneToday).todayNumbers && !todayAskDue(undoneToday, day(400)) && !optInRows(undoneToday).length
       && !foodView(undoneRange).rangeOnFood && !rangeAskDue(undoneRange, day(40 + RANGE_SNOOZE_DAYS - 1)) && !optInRows(some()).length && !optInRows(yes()).length],
+    ['Sometimes: where the range shows, for every Sometimes user, unmarked until chosen, either way (ob9-8)', (() => {
+      const un = foodShows(some()), food = foodShows(keptOnFood), today = foodShows(shownToday), back = foodShows(undoneToday)
+      return un?.value === undefined && un.line === FOOD9.shows.food && food?.value === 'food' && food.line === FOOD9.shows.food
+        && today?.value === 'today' && today.line === FOOD9.shows.today && back?.value === 'food' && foodShows(yes()) === null && foodShows(adult()) === null
+        && FOOD9.shows.options.map(([k]) => k).join() === 'food,today' })()],
+    ['Sometimes has no separate "Turn off" row beside it; Yes keeps its week-4 range row', !optInRows(shownToday).length && optInRows(shownRange).length === 1 && optInRows(shownRange)[0].key === 'range'],
     ['an answer is stamped for the merge, and a repeat changes nothing', !!shownToday.answeredAt?.foodOptIn && !answerFoodOptInIn(structuredClone(shownToday), { ask: 'today', value: 'today' }, day(15), 'x') && (MERGED_FIELDS as readonly string[]).includes('foodOptIn')],
     ['a withdrawal clears the food steps up with the answers', !('foodOptIn' in withoutHealth(shownRange)) && !('outcomes' in withoutHealth(shownRange))],
     ['start explained: 250 less than 1,900, about a quarter of a kilo a week', !!est && est.diff === 250 && est.direction === 'less' && est.paceKg === 0.25 && !est.floored],

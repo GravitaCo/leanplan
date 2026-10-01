@@ -69,8 +69,14 @@ export const FOOD9 = {
   /** ob9-4 */
   rangeAsk: { k: 'Your week-4 look-back', t: 'Would a calorie range help?', s: 'It’s there to help you eat enough, never less. It would sit on Food, not Today, and you can turn it off any time.', yes: 'Show a range', no: 'Not now' },
   /** GAP: no board for the undo rows; they sit under the answers on ob7-1's screen */
+  /** Onboarding 10 (board ob9-8): Sometimes chooses where the range shows, either way, any time */
+  shows: {
+    label: 'Where your food range shows',
+    options: [['food', 'On Food'], ['today', 'On Today']] as [('food' | 'today'), string][],
+    food: 'Your range shows on Food, not on Today.',
+    today: 'Your range shows on Today as well as Food.',
+  },
   optIn: {
-    today: { label: 'Food range on Today', value: 'Shown', does: 'Your range shows on Today as well as Food.' },
     range: { label: 'Calorie range on Food', value: 'Shown', does: 'A range on Food to help you eat enough. Never on Today.' },
     off: 'Turn off',
   },

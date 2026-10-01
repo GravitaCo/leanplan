@@ -7,11 +7,11 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { medicalOutcome, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
-import { BackButton, BareSheet } from '@/ui/primitives'
+import { BackButton, BareSheet, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '../onboarding/copy'
 import { Opts } from '../onboarding/Opts'
-import { answerRows, clearConfirmLine, optInRows, type AnswerRow } from './healthAnswerRows'
+import { answerRows, clearConfirmLine, foodShows, optInRows, type AnswerRow } from './healthAnswerRows'
 import { FOOD9 } from '../onboarding/copyApp'
 
 type Open = { sheet: 'confirm'; row: AnswerRow } | { sheet: 'pregnancy' | 'medical' | 'wellbeing' } | null
@@ -23,6 +23,7 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
   const [open, setOpen] = useState<Open>(null)
   const rows = answerRows(profile)
   const opts = optInRows(profile)
+  const shows = foodShows(profile)
   const answerOptIn = useStore((s) => s.answerFoodOptIn)
   const onClear = (r: AnswerRow) => { if (r.confirm) setOpen({ sheet: 'confirm', row: r }); else clear(r.kind) }
   return (
@@ -45,6 +46,13 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
               </span>
             </div>
           ))}
+          {shows && (
+            <div className="ha-shows" data-testid="food-shows">
+              <span className="l">{FOOD9.shows.label}</span>
+              <Seg options={FOOD9.shows.options} value={shows.value} onChange={(v) => answerOptIn({ ask: 'today', value: v })} />
+              <span className="d">{shows.line}</span>
+            </div>
+          )}
           {opts.map((r) => (
             <div className="ha-row" key={r.key}>
               <span className="m"><span className="l">{r.label}</span><span className="v">{r.value}</span><span className="d">{r.does}</span></span>

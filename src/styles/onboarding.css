@@ -326,3 +326,7 @@
 .sp-sheet { display: flex; flex-direction: column; gap: 14px; }
 .sp-lead { font-size: 16px; line-height: 1.5; padding: 0 4px; color: var(--label); }
 .sp-foot { font-size: 12px; line-height: 1.4; color: var(--label2); padding: 0 4px; }
+/* Onboarding 10 (ob9-8): where a Sometimes range shows, in Health check answers */
+.ha-shows { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--sep); }
+.ha-shows:last-child { border-bottom: 0; }
+.ha-shows .l, .ha-shows .d { font-size: 13px; line-height: 1.4; color: var(--label2); }
