@@ -205,8 +205,10 @@ and checked where noted):
   (`scripts/e2e-onboarding.cjs:268`).
 - **Pregnancy** (`PregnancyFlag`, `src/core/types.ts:286`): `flagged` (pregnant and breastfeeding
   not told apart), `askedAt`, and `snoozedAt` after "Ask me later" on the 12-week re-ask.
-- **The wellbeing answer** ("how food and weight feel"): `flagged` (yes or sometimes), `clear` or
-  `undisclosed`, and whether it turned Gentle mode on. This is a proxy for disordered eating and is
+- **The wellbeing answer** ("how food and weight feel"): `flagged` (yes), `sometimes` (from
+  Onboarding 9, 2026-10-01), `clear` or `undisclosed`, whether it turned Gentle mode on, and,
+  after a yes or sometimes, the later food or calorie range ask (asked, answered, when) and
+  whether the range is on. This is a proxy for disordered eating and is
   the most sensitive single item.
 - **Other onboarding answers:** motivations (chips or up to 60 characters of own words), daily
   movement and the multiplier from it, `deficitChosen`, per-field `answeredAt` stamps.
@@ -369,7 +371,7 @@ release that turns it on (register item 38). The open question is conditionality
   it stays only on the person's own phones.
 - Things Tali could keep but doesn't: no location, no contacts, no device identifiers, no
   analytics.
-- Could go further: the wellbeing answer is stored as given (flagged, clear or undisclosed) because
+- Could go further: the wellbeing answer is stored as given (flagged, sometimes, clear or undisclosed) because
   the Profile screen shows and edits it and routing depends on it. That is justified, but it
   should be named in the clinician review (D1).
 
