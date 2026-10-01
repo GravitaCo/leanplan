@@ -197,7 +197,7 @@ function summary(): void {
     ['the engine reads Sometimes as Sometimes (gentle training, as before)', outcomeInputs({ wellbeing: 'sometimes' }).wellbeing === 'sometimes' && outcomeInputs({ wellbeing: 'flagged' }).wellbeing === 'yes'],
   ])
   // the estimate's ±15% is an uncertainty, not a score: Benn approved it in these words (ob9-1, ob9-5)
-  const linted = (t: string) => copyIssues(t.replace(/15% out either way/g, 'a sixth out either way'))
+  const linted = (t: string) => copyIssues(t.replace(/\d+% out either way/g, 'a sixth out either way'))
   report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !linted(t).length), allCopy().filter((t) => linted(t).length).join(' | ')]])
 }
 

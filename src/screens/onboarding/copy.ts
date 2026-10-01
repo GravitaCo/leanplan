@@ -153,11 +153,12 @@ export const SUMMARY = {
   /** ob9-1: the standard card */
   startT: (kcal: number) => `About ${kc(kcal)} kcal a day to start`,
   /** ob9-1. GAP: a surplus says "more than", a start at the estimate says "around" (s-ob9 draws a deficit) */
-  startS: (e: { diff: number; estimate: number; direction: 'less' | 'more' | 'same' }, review: string) =>
+  startS: (e: { diff: number; estimate: number; direction: 'less' | 'more' | 'same'; floored: boolean }, review: string, pct: number) =>
     (e.direction === 'same'
       ? `That’s around our best estimate of what you burn (about ${kc(e.estimate)} a day).`
       : `That’s about ${kc(Math.abs(e.diff))} ${e.direction} than our best estimate of what you burn (around ${kc(e.estimate)} a day).`) +
-    ` Estimates like this can be 15% out either way, so Tali checks it against your weigh-ins after ${review} and adjusts.`,
+    (e.floored ? ` ${FLOOR_LINE}` : '') +
+    ` Estimates like this can be ${pct}% out either way, so Tali checks it against your weigh-ins after ${review} and adjusts.`,
   /** ob9-1 and ob4-9: Sometimes */
   sometimesT: 'A steady range to eat around',
   sometimesS: 'With no deficit and no weight. For your first two weeks it’s one tap away on Food, then we’ll ask if you’d like it on Today.',
@@ -172,16 +173,25 @@ export const SUMMARY = {
     /** departs from ob9-5's "Workouts are counted separately": the estimate already counts the week's planned sessions (targets.ts) */
     burn: (est: number) => `Around ${kc(est)} kcal a day, from your age, height, weight, how much you move and the workouts in your week.`,
     sureT: 'How sure we are',
-    sure: (lo: number, hi: number) => `Estimates like this can be about 15% out either way, so the real figure is likely somewhere between ${kc(lo)} and ${kc(hi)}.`,
+    sure: (lo: number, hi: number, pct: number) => `Estimates like this can be about ${pct}% out either way, so the real figure is likely somewhere between ${kc(lo)} and ${kc(hi)}.`,
     startT: 'Your starting point',
-    start: (e: { start: number; diff: number; paceKg: number; direction: 'less' | 'more' | 'same' }) =>
-      e.direction === 'same'
-        ? `About ${kc(e.start)} a day: around the estimate, so your weight is likely to stay about the same.`
-        : `About ${kc(e.start)} a day: about ${kc(Math.abs(e.diff))} ${e.direction} than the estimate, for ${e.paceKg <= 0.25 ? 'a gentle pace' : 'a pace'} of around ${paceWords(e.paceKg)} a week.`,
+    /** a pace only for a loss with no floor; a gain says "slowly" (7,700 kcal/kg is a fat-loss figure) */
+    start: (e: { start: number; diff: number; paceKg: number | null; direction: 'less' | 'more' | 'same'; floored: boolean }) => {
+      const gap = `About ${kc(e.start)} a day: about ${kc(Math.abs(e.diff))} ${e.direction} than the estimate`
+      const line = e.floored
+        ? (e.direction === 'same' ? `About ${kc(e.start)} a day: around the estimate.` : `${gap}.`) + ` ${FLOOR_LINE}`
+        : e.direction === 'same' ? `About ${kc(e.start)} a day: around the estimate, so your weight is likely to stay about the same.`
+        : e.direction === 'more' || e.paceKg == null ? `${gap}, so your weight is likely to go up slowly.`
+        : `${gap}, for ${e.paceKg <= 0.25 ? 'a gentle pace' : 'a pace'} of around ${paceWords(e.paceKg)} a week.`
+      return line
+    },
     nextT: 'What happens next',
     next: (review: string) => `After ${review} of weigh-ins, Tali compares what happened with what we expected and suggests an adjustment. Nothing changes without your OK.`,
   },
 }
+
+/** when a calorie floor set the start (ob9-1, ob9-5) */
+export const FLOOR_LINE = 'Tali doesn’t go below a safe minimum.'
 
 /** 0.25 → "a quarter of a kilo", 0.5 → "half a kilo", otherwise "0.4 kg" */
 function paceWords(kg: number): string {
@@ -286,11 +296,13 @@ export const CHECKIN = {
   done: 'Done',
 }
 
-const EXPLAINED = { start: 1650, estimate: 1900, diff: 250, paceKg: 0.25, direction: 'less' as const }
-const EXPLAINED_ALL = [EXPLAINED, { ...EXPLAINED, start: 2150, diff: -250, direction: 'more' as const }, { ...EXPLAINED, start: 1900, diff: 0, paceKg: 0, direction: 'same' as const }]
+const EXPLAINED = { start: 1650, estimate: 1900, diff: 250, paceKg: 0.25 as number | null, direction: 'less' as 'less' | 'more' | 'same', floored: false }
+const EXPLAINED_ALL = [EXPLAINED, { ...EXPLAINED, start: 2150, diff: -250, paceKg: null, direction: 'more' as const }, { ...EXPLAINED, start: 1900, diff: 0, paceKg: null, direction: 'same' as const },
+  { ...EXPLAINED, start: 1200, estimate: 1150, diff: -50, paceKg: null, direction: 'same' as const, floored: true }, { ...EXPLAINED, start: 1500, diff: 400, paceKg: null, floored: true }]
 /** Onboarding 9's lines that take more than numbers */
 const FN_SAMPLES = new Map<unknown, unknown[][]>([
-  [SUMMARY.startS, EXPLAINED_ALL.map((e) => [e, '3–4 weeks'])],
+  [SUMMARY.startS, EXPLAINED_ALL.map((e, i) => [e, '3–4 weeks', i ? 15 : 20])],
+  [SUMMARY.how.sure, [[1650, 2200, 15], [1550, 2300, 20]]],
   [SUMMARY.how.start, EXPLAINED_ALL.map((e) => [e])],
   [SUMMARY.how.next, [['3–4 weeks']]],
   [FOOD9.slots, [[['breakfast', 'lunch', 'snack'], 2], [['dinner'], 1], [[], 0]]],

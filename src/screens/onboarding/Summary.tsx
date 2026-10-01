@@ -237,7 +237,7 @@ function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHea
     <section className="sm-food" aria-label="Food">
       <div className="k">Food</div>
       <div className="big h20 num" data-kcal={t.kcal}>{SUMMARY.startT(t.kcal)}</div>
-      <div className="s num" data-estimate={e.estimate} data-diff={e.diff}>{SUMMARY.startS(e, t.reviewAfter)}</div>
+      <div className="s num" data-estimate={e.estimate} data-diff={e.diff}>{SUMMARY.startS(e, t.reviewAfter, t.marginPct ?? 15)}</div>
       {t.heldAtMaintenance && <div className="s">{HELD_AT_MAINTENANCE_NOTE}</div>}
       <button className="linkbtn wz-link start sm" onClick={onHow}>How we worked this out</button>
     </section>
@@ -252,7 +252,7 @@ function HowRows({ m }: { m: SummaryModel }) {
   const H = SUMMARY.how
   const rows: [string, string][] = [
     [H.burnT, H.burn(e.estimate)],
-    [H.sureT, H.sure(t.maintenance.low, t.maintenance.high)],
+    [H.sureT, H.sure(t.maintenance.low, t.maintenance.high, t.marginPct ?? 15)],
     [H.startT, H.start(e) + (t.heldAtMaintenance ? ` ${HELD_AT_MAINTENANCE_NOTE}` : '')],
     [H.nextT, H.next(t.reviewAfter)],
   ]

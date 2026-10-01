@@ -9,8 +9,9 @@ import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { MIN_AGE, asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
 import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
-import { RANGE_ASK_DAYS, RANGE_SNOOZE_DAYS, SOMETIMES_NO_DEFICIT_DAYS, TODAY_ASK_DAYS, answerFoodOptInIn, applyRestrictionSignalIn, deficitAllowed, foodModeOf, foodView, maintenanceRange, mealWords, proteinRangeFor, rangeAskDue, restrictionSignal, todayAskDue } from '@/core/domain/foodMode'
-import { explainStart } from '@/core/domain/targets'
+import { RANGE_ASK_DAYS, RANGE_SNOOZE_DAYS, SOMETIMES_NO_DEFICIT_DAYS, TODAY_ASK_DAYS, answerFoodOptInIn, applyRestrictionSignalIn, foodModeOf, foodView, maintenanceRange, mealWords, proteinRangeFor, rangeAskDue, restrictionSignal, todayAskDue } from '@/core/domain/foodMode'
+import { SAME_GAP, explainStart } from '@/core/domain/targets'
+import { FLOOR_LINE, SUMMARY } from '../src/screens/onboarding/copy'
 import { shiftDay } from '@/core/domain/date'
 import { withoutHealth } from '@/data/consent'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
@@ -337,6 +338,11 @@ function foodMode(): void {
   const goals = ['lose-fat', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better'] as const
   const tS = targetsFor(some())
   const est = explainStart({ kcal: 1650, estimate: 1900 })
+  // a small, older person losing fat: the sex minimum sets the start
+  const small = targetsFor(adult({ age: 70, height: 150, weight: 45, movement: { kind: 'steps', band: 'under-5k' } }), null)
+  const smallE = explainStart(small)
+  const floorNear = explainStart({ kcal: 1200, estimate: 1150, floorsApplied: ['sex-minimum'] })
+  const gain = explainStart({ kcal: 2150, estimate: 1900 })
   const sweep = [0, 13, 14, 27, 28, 89, 90, 91, 120, 365, 1000]
   // the asks are answered or not; the view never changes by date alone
   const answered = (p: Profile, a: Parameters<typeof answerFoodOptInIn>[1], d: string) => { const q = structuredClone(p); answerFoodOptInIn(q, a, d, d + 'T10:00:00.000Z'); return q }
@@ -362,8 +368,9 @@ function foodMode(): void {
     ['Profile targets for Sometimes: maintenance, as the summary', (() => { const s = suggestedTargets(some(), 70, profileRouting(some(), 70, true)); return !!s && 'kcal' in s && s.kcal === tS.kcal })()],
     ['the range is ±15% to the nearest 50: 1,930 → 1,650–2,200', maintenanceRange(1930).lo === 1650 && maintenanceRange(1930).hi === 2200],
     ['Sometimes: protein as a range; with the medical flag a minimum only', (() => { const a = proteinRangeFor(some(), 70), b = proteinRangeFor(some({ outcomes: { ...CLEAR, wellbeing: 'sometimes', medical: 'flagged' } }), 70); return a?.low === 110 && a.high === 155 && b?.high === null })()],
-    [`Sometimes: no deficit in the first ${SOMETIMES_NO_DEFICIT_DAYS} days, nor after them while the answer stands`, sweep.every((n) => !deficitAllowed(some(), day(n))) && !deficitAllowed(yes(), day(1000)) && deficitAllowed(adult(), ON)],
-    ['only clearing the answer brings the goal back to food', deficitAllowed(adult({ outcomes: { ...CLEAR, wellbeing: 'clear' } }), day(91)) && targetsFor(adult({ outcomes: { ...CLEAR, wellbeing: 'clear' } })).adjustPct! < 0],
+    [`Sometimes: no deficit in the first ${SOMETIMES_NO_DEFICIT_DAYS} days, nor after them while the answer stands (the maintenanceOnly clamp, even with the deficit chosen)`,
+      rs.maintenanceOnly && targetsFor(some({ deficitChosen: true })).adjustPct === 0 && (() => { const q = some({ deficitChosen: true }), t = suggestedTargets(q, 70, profileRouting(q, 70, true)); return !!t && 'kcal' in t && t.kcal === tS.kcal })()],
+    ['only clearing the answer brings the goal back to food', targetsFor(adult({ outcomes: { ...CLEAR, wellbeing: 'clear' } })).adjustPct! < 0],
     [`day-${TODAY_ASK_DAYS} ask: not before, due on the day, for Sometimes only`, !todayAskDue(some(), day(13)) && todayAskDue(some(), day(14)) && !todayAskDue(yes(), day(14)) && !todayAskDue(adult({ onboardedAt: ON }), day(14))],
     ['day-14 ask: asked once, whatever the answer', sweep.every((n) => !todayAskDue(keptOnFood, day(14 + n)) && !todayAskDue(shownToday, day(14 + n)))],
     ['day-14 ask counts from a later Profile change of answer', !todayAskDue(some({ answeredAt: { 'outcomes.wellbeing': day(10) + 'T10:00:00.000Z' } }), day(20)) && todayAskDue(some({ answeredAt: { 'outcomes.wellbeing': day(10) + 'T10:00:00.000Z' } }), day(24))],
@@ -377,7 +384,16 @@ function foodMode(): void {
       && !foodView(undoneRange).rangeOnFood && !rangeAskDue(undoneRange, day(40 + RANGE_SNOOZE_DAYS - 1)) && !optInRows(some()).length && !optInRows(yes()).length],
     ['an answer is stamped for the merge, and a repeat changes nothing', !!shownToday.answeredAt?.foodOptIn && !answerFoodOptInIn(structuredClone(shownToday), { ask: 'today', value: 'today' }, day(15), 'x') && (MERGED_FIELDS as readonly string[]).includes('foodOptIn')],
     ['a withdrawal clears the food steps up with the answers', !('foodOptIn' in withoutHealth(shownRange)) && !('outcomes' in withoutHealth(shownRange))],
-    ['start explained: 250 less than 1,900, about a quarter of a kilo a week', !!est && est.diff === 250 && est.direction === 'less' && est.paceKg === 0.25],
+    ['start explained: 250 less than 1,900, about a quarter of a kilo a week', !!est && est.diff === 250 && est.direction === 'less' && est.paceKg === 0.25 && !est.floored],
+    [`start explained: a gap of ${SAME_GAP} kcal or less reads as "around"`, explainStart({ kcal: 1850, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: 1950, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: 1840, estimate: 1900 })?.direction === 'less'],
+    ['a floor set the start: no pace, and the safe-minimum line on the card and in How', small.floorsApplied.includes('sex-minimum') && !!smallE?.floored && smallE.paceKg === null
+      && SUMMARY.startS(smallE, '3–4 weeks', 15).includes(FLOOR_LINE) && SUMMARY.how.start(smallE).includes(FLOOR_LINE) && !/kg a week|kilo/.test(SUMMARY.how.start(smallE))],
+    ['a floor just above the estimate reads as "around", never as gaining', floorNear?.direction === 'same' && floorNear.floored && !/\bmore\b|\bgain|\bup\b/.test(SUMMARY.startS(floorNear, '3–4 weeks', 15) + SUMMARY.how.start(floorNear))],
+    ['a gain has no kg-a-week pace: it says "slowly"', gain?.direction === 'more' && gain.paceKg === null && /slowly/.test(SUMMARY.how.start(gain)) && !/kg|kilo/.test(SUMMARY.how.start(gain))],
+    ['the range never drops below the calorie floor', (() => { const m = maintenanceRange(1150, { bmr: 1000, sex: 'female' }); return m.lo === 1200 && m.hi >= m.lo && maintenanceRange(1930, { bmr: 1400, sex: 'female' }).lo === 1650 })()
+      && (() => { const m = maintenanceRange(1300, { bmr: 1420, sex: 'male' }); return m.lo === Math.ceil(calorieFloor(1420, 'male') / 50) * 50 && m.hi >= m.lo })()],
+    ['the "how sure" figure is the real margin: 15%, about 20% for "Prefer not to say"', targetsFor(adult()).marginPct === 15 && targetsFor(adult({ sexAnswer: 'unspecified' })).marginPct === 20
+      && SUMMARY.how.sure(1, 2, 20).includes('20%') && SUMMARY.startS(est!, '3–4 weeks', 20).includes('20%')],
     ['start explained: a surplus is "more", the estimate itself "same"', explainStart({ kcal: 2150, estimate: 1900 })?.direction === 'more' && explainStart({ kcal: 1900, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: null, estimate: null }) === null],
     ['totals in words: 3 meals, protein at 2 (15 g or more a meal)', mw.slots.join() === 'breakfast,lunch,snack' && mw.withProtein === 2],
     ['restriction signal: none exists in a check-in today, so the hook never fires', !restrictionSignal({ foods: [], supps: {}, weight: null, checkin: { mood: 1, hunger: 1 } } as never) && !restrictionSignal(undefined)],

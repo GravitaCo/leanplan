@@ -1,6 +1,6 @@
-import type { DayLog, FoodOptIn, LoggedFood, MealSlot, Profile } from '@/core/types'
+import type { DayLog, FoodOptIn, LoggedFood, MealSlot, Profile, SexAnswer } from '@/core/types'
 import { shiftDay } from './date'
-import { proteinMinimumG } from './nutrition'
+import { calorieFloor, proteinMinimumG } from './nutrition'
 import { PROTEIN_RANGE_PER_KG, RANGE_MARGIN } from './targets'
 import { setHealthAnswerIn } from './onboarding'
 
@@ -11,7 +11,8 @@ import { setHealthAnswerIn } from './onboarding'
  *
  * - Sometimes: a maintenance range only, never a single number (±15% around the best estimate,
  *   to the nearest 50). Never a deficit, whatever the goal (the goal applies to training): not in
- *   the first 90 days, and not after them either unless the person clears the answer in Profile.
+ *   the first 90 days, and not after them either unless the person clears the answer in Profile
+ *   (routeSafety's maintenanceOnly and noDeficit clamps, applied in energyTarget).
  *   No weight trend (weigh-ins still work). Protein as a range. For 14 days Today shows words and
  *   the range is on Food; then one in-app ask (never a push) whether to show it on Today too.
  * - Yes: no calorie or protein target, no weight trend and no deficit, ever. Totals in words. At
@@ -41,15 +42,6 @@ export const RANGE_SNOOZE_DAYS = 12 * 7
 /** a meal "with protein" has at least this much (judgement, for nutrition-accuracy review) */
 export const PROTEIN_MEAL_G = 15
 
-/**
- * Whether a calorie deficit may be suggested at all, by the food rules. Sometimes and Yes: never,
- * on any day; time alone never changes it (only clearing or changing the answer in Profile does,
- * which changes the mode). Safety routing applies its other clamps on top.
- */
-export function deficitAllowed(p: Pick<Profile, 'outcomes'>, _today: string): boolean {
-  return foodModeOf(p) === 'standard'
-}
-
 export interface FoodView {
   mode: FoodMode
   /** Today's Food card may show calorie numbers (else words) */
@@ -78,10 +70,17 @@ export function foodView(p: Pick<Profile, 'outcomes' | 'foodOptIn'>): FoodView {
 }
 
 const r50 = (x: number) => Math.round(x / 50) * 50
+const ceil50 = (x: number) => Math.ceil(x / 50) * 50
 
-/** ±15% (RANGE_MARGIN) around the best estimate, each end to the nearest 50: "roughly 1,650–2,200 a day". */
-export function maintenanceRange(estimate: number): { lo: number; hi: number } {
-  return { lo: r50(estimate * (1 - RANGE_MARGIN)), hi: r50(estimate * (1 + RANGE_MARGIN)) }
+/**
+ * ±15% (RANGE_MARGIN) around the best estimate, each end to the nearest 50: "roughly 1,650–2,200
+ * a day". With `floor` (the person's BMR and sex answer) the low end is never below the calorie
+ * floor, rounded up to 50, and the high end never below the low.
+ */
+export function maintenanceRange(estimate: number, floor?: { bmr: number; sex: SexAnswer }): { lo: number; hi: number } {
+  let lo = r50(estimate * (1 - RANGE_MARGIN)), hi = r50(estimate * (1 + RANGE_MARGIN))
+  if (floor) { lo = Math.max(lo, ceil50(calorieFloor(floor.bmr, floor.sex))); hi = Math.max(hi, lo) }
+  return { lo, hi }
 }
 
 /** Protein as a range (Sometimes), grams a day to the nearest 5; with the medical flag a minimum only (high null). */
