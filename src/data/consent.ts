@@ -12,6 +12,7 @@
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan, Why, WhyCode } from '@/core/types'
 import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
@@ -241,6 +242,15 @@ export function quietNumbers(s: PersistedState): boolean {
   if (!!p?.gentle || healthDeclined(s) || !!p?.pregnancy?.flagged) return true
   const weighed = p?.weight != null || Object.values(s.days || {}).some((d) => d?.weight != null)
   return !!p?.onboardedAt && (!p.height || !weighed)
+}
+
+/**
+ * No kcal figure shows on food rows, meal headings and the food sheets: quiet numbers, or a
+ * wellbeing Yes whatever the Display setting ("There's no calorie number", ob9-2). Portions and
+ * grams still show.
+ */
+export function kcalHidden(s: PersistedState): boolean {
+  return quietNumbers(s) || foodModeOf(s.profile ?? {}) === 'yes'
 }
 
 /**

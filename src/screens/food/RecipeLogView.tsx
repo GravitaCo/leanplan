@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { quietNumbers } from '@/data/consent'
+import { kcalHidden } from '@/data/consent'
 import type { MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
@@ -15,7 +15,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
 }) {
   const recipe = useStore((s) => s.data.recipes[index])
   const logRecipe = useStore((s) => s.logRecipe)
-  const gentle = useStore((s) => quietNumbers(s.data))
+  const gentle = useStore((s) => kcalHidden(s.data))
   // start from the servings the user had last time
   const [q, setQ] = useState(() => (recipe ? recipeServing(useStore.getState().data, recipe.name) : 1))
   if (!recipe) return null

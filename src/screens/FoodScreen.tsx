@@ -41,6 +41,8 @@ export function FoodScreen() {
   const fv = foodView(data.profile)
   const yes = fv.mode === 'yes'
   const some = fv.mode === 'sometimes' && !gentle
+  // Yes: no kcal on rows or meal headings whatever the Display setting (ob9-2); portions still show
+  const noKcal = gentle || yes
   const day = dayOf(data, cur)
   const t = dayTotals(day)
   const tg = data.target
@@ -64,7 +66,7 @@ export function FoodScreen() {
   const row = (x: LoggedFood & { _i: number }) => (
     <button className="li" key={x._i} onClick={() => setSheet({ k: 'edit', i: x._i })}>
       <div className="m"><div className="t">{x.n}</div><div className="s num">{portionText(x)}</div></div>
-      {!gentle && <div className="tr num kc">{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</div>}
+      {!noKcal && <div className="tr num kc">{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</div>}
     </button>
   )
 
@@ -145,7 +147,7 @@ export function FoodScreen() {
         }
         return (
           <section className="meal" key={m} aria-label={MEAL_LABEL[m]}>
-            <div className="grp-h"><span>{MEAL_LABEL[m]}</span><small className="num">{gentle ? '' : fmt(kcal) + ' kcal'}</small></div>
+            <div className="grp-h"><span>{MEAL_LABEL[m]}</span><small className="num">{noKcal ? '' : fmt(kcal) + ' kcal'}</small></div>
             <div className="list">
               {items.map(row)}
               <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} stroke={2.4} /><span>Add to {MEAL_LABEL[m].toLowerCase()}</span></button>
