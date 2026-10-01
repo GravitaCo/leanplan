@@ -85,13 +85,16 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   const tWeek = chosen ? phaseWeek({ phases: phasesOf(chosen) }, 0) : null
   // four reasons from the person's own answers first (r6-summary: days, sore spots, kit, a gentle start)
   const chips = rows.filter((x) => x.key !== 'warmup').sort((x, y) => chipRank(x.key) - chipRank(y.key)).slice(0, 4)
-  const art = chosen ? planArt(chosen.id) : undefined
+  // the boards' hero: a chosen plan's own photo; otherwise Full body system for the suggested week
+  // and Pure muscle growth for the starter week (ob3-1, ob3-4)
+  const heroPlan = chosen ?? templateById(r.starter ? 'pure-muscle-growth' : 'full-body-system')
+  const art = planArt(heroPlan?.id)
 
   return (
     <div className="smry">
-      {/* r6-summary: a result, not a report. GAP: the suggested week has no photo of its own in the app yet */}
+      {/* r6-summary: a result, not a report */}
       <header className="sm-hero">
-        {art ? <img src={art} alt="" style={{ objectPosition: chosen?.artAt }} /> : <div className="ph" aria-hidden="true" />}
+        {art ? <img src={art} alt="" style={{ objectPosition: heroPlan?.artAt }} /> : <div className="ph" aria-hidden="true" />}
         <div className="shade" aria-hidden="true" />
         <div className="tx">
           <div className="k">{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</div>
