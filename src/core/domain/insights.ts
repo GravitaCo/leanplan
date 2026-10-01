@@ -94,15 +94,20 @@ export function showBurnNote(s: AppState): boolean {
 
 /** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const extra = rangeExtra(s, d)
+  const b = baseRange(s, d), extra = rangeExtra(s, d)
+  return { mid: b.mid + extra, lo: b.lo + extra, hi: b.hi + extra }
+}
+
+/** rangeFor without the workout allowance: the everyday range (Profile shows this one). */
+export function baseRange(s: AppState, d: string): Range {
   // Onboarding 9 (Sometimes, and Yes after its yes): ±15% around the maintenance estimate, to the nearest 50, never below the calorie floor
   if (foodView(s.profile).wideRange) {
     const est = maintenanceEstimate(s.profile, null, latestWeight(s, d))
     const base = est ? Math.round(est.maint / 50) * 50 : s.target.kcal
     const m = maintenanceRange(base, est ? { bmr: est.bmr, sex: sexOf(s.profile) } : undefined)
-    return { mid: Math.max(base, m.lo) + extra, lo: m.lo + extra, hi: m.hi + extra }
+    return { mid: Math.max(base, m.lo), lo: m.lo, hi: m.hi }
   }
-  const mid = s.target.kcal + extra
+  const mid = s.target.kcal
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }

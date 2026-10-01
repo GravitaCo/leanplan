@@ -330,6 +330,14 @@ export function withoutHealth<P extends Partial<Profile>>(patch: P): P {
   return out
 }
 
+/** A profile patch whose weight is missing (null or undefined) leaves the stored weight alone: no weight key. */
+export function withoutMissingWeight<P extends Partial<Profile>>(patch: P): P {
+  if (!('weight' in patch) || patch.weight != null) return patch
+  const out = { ...patch }
+  delete out.weight
+  return out
+}
+
 /** How much a withdrawal would clear, for the confirm step. */
 export function healthDataSummary(s: PersistedState): HealthDataSummary {
   const days = Object.values(s.days || {}) as DayLog[]

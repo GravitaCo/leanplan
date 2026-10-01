@@ -43,7 +43,7 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
-import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -987,6 +987,8 @@ export const useStore = create<StoreState>()(
         // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)
         const dropped = !healthLoggingAllowed(get().data) && patch.height != null
         if (!healthLoggingAllowed(get().data)) patch = withoutHealth(patch)
+        // a missing weight (an empty field) never clears the stored one
+        patch = withoutMissingWeight(patch)
         set((st) => {
           // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
           const today = todayStr()
