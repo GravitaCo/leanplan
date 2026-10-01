@@ -15,7 +15,7 @@ import { builtinType, sessionsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
-  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
+  HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, rangeFor, rangeWidth, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
@@ -27,7 +27,7 @@ import { EditEntrySheet } from './food/EditEntrySheet'
 import { AddFoodSheet } from './food/AddFoodSheet'
 import { MarginSheet } from './food/MarginSheet'
 import { CheckinSheet } from './today/CheckinSheet'
-import { PlanReviewSheet } from './plan/PlanSheets'
+import { FirstPlanSheet, PlanReviewSheet } from './plan/PlanSheets'
 import { LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { pregnancyReaskDue } from '@/core/domain/onboarding'
@@ -62,6 +62,10 @@ export function TodayScreen() {
   const reaskDue = useStore((s) => ONBOARDING_ENABLED && pregnancyReaskDue(s.data.profile.pregnancy, todayStr()))
   const [reask, setReask] = useState(false)
   useEffect(() => { if (reaskDue && !sheet) setReask(true) }, [reaskDue]) // eslint-disable-line react-hooks/exhaustive-deps
+  // ob5-4: "Plan when you'll do it", once, after the first workout (the 12-week question goes first)
+  const ifThenDue = useStore((s) => ONBOARDING_ENABLED && s.cur === todayStr() && ifThenOfferDue(s.data))
+  const [ifThen, setIfThen] = useState(false)
+  useEffect(() => { if (ifThenDue && !reask && !sheet) setIfThen(true) }, [ifThenDue, reask]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const p = data.profile
   const gentle = quietNumbers(data)
@@ -341,6 +345,7 @@ export function TodayScreen() {
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
       {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
+      {ifThen && ifThenDue && <FirstPlanSheet onDone={() => { setIfThen(false); setPrefs({ ifThenOffered: true }) }} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'plans' && <PlanReviewSheet onClose={() => setSheet(null)} />}

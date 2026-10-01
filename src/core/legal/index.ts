@@ -23,7 +23,6 @@ export const LEGAL = {
   jurisdiction: 'England and Wales' as string | null,
 }
 
-/** Minimum age to use Tali. */
 /**
  * The day an existing account's pre-consent log is deleted if there's still no yes: 30 days after
  * PURGE_FROM in docs/migrations/2026-09-28-unconsented-purge.sql (npm test checks they agree). The
@@ -31,6 +30,7 @@ export const LEGAL = {
  */
 export const UNCONSENTED_DELETION = { iso: '2026-10-28', long: '28 October 2026', short: '28 October' } as const
 
+/** Minimum age to use Tali (Benn, 28 Sept 2026: strictly 18+). The one source for every age check: see isUnderAge in core/domain/age.ts. */
 export const MIN_AGE = 18
 
 /** Consent wording versions live with the consent records: CONSENT_VERSIONS in src/data/consent.ts. */

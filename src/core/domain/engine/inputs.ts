@@ -1,3 +1,4 @@
+import { isUnderAge } from '@/core/domain/age'
 import type { BodyArea, Equipment, Experience, Goal, Modality, MovingNow, Profile, TrainingPlace, Why } from '@/core/types'
 
 /**
@@ -5,7 +6,11 @@ import type { BodyArea, Equipment, Experience, Goal, Modality, MovingNow, Profil
  * Every field is optional; a skipped one falls to the safe side (§2.1) and is traced with the
  * `default` WhyCode. With no training details at all the engine returns the Starter week.
  */
-export type AgeBand = '16-17' | '18-54' | '55-64' | '65+'
+/**
+ * 'under-18' is a backstop only: Tali is strictly 18+ and the stop happens before the engine
+ * (core/domain/age.ts), but if an under-18 age ever reached it, it gets no AI and words only.
+ */
+export type AgeBand = 'under-18' | '18-54' | '55-64' | '65+'
 export type Minutes = 10 | 20 | 30 | 45 | 60
 export type DaysPerWeek = 1 | 2 | 3 | 4 | 5 | 6
 /** The readiness check's outcome only (PAR-Q+ style, 3 items); the answers themselves are never stored. */
@@ -64,7 +69,7 @@ export const FIELDS: { [K in InputField]-?: { scope: Scope[]; options: PlanInput
   wellbeing: { scope: ['safety'], options: [undefined, 'no', 'sometimes', 'yes', 'rather-not-say'] },
   gentle: { scope: ['safety'], options: [undefined, false, true] },
   gentleStart: { scope: ['plan'], options: [undefined, false, true] },
-  ageBand: { scope: ['plan', 'safety'], options: [undefined, '16-17', '18-54', '55-64', '65+'] },
+  ageBand: { scope: ['plan', 'safety'], options: [undefined, 'under-18', '18-54', '55-64', '65+'] },
   deficit: { scope: ['plan', 'safety'], options: [undefined, 'none', 'moderate', 'big'] },
 }
 
@@ -79,10 +84,11 @@ export const DEFAULT_WEEKDAYS: Record<DaysPerWeek, number[]> = {
 /** Mon → Sun, the order the week is read in. */
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
-export function ageBandOf(age: number | null | undefined): AgeBand | null | undefined {
+export function ageBandOf(age: number | null | undefined): AgeBand | undefined {
   if (age == null || !Number.isFinite(age)) return undefined
-  if (age < 16) return null // the kind stop happens before the engine: "Tali is for 16+"
-  return age < 18 ? '16-17' : age < 55 ? '18-54' : age < 65 ? '55-64' : '65+'
+  // the kind stop happens before the engine ("Tali is for 18+"); this is the backstop
+  if (isUnderAge(age)) return 'under-18'
+  return age < 55 ? '18-54' : age < 65 ? '55-64' : '65+'
 }
 
 /**
@@ -95,7 +101,7 @@ export function inputsFromProfile(p: Pick<Profile, 'goal' | 'age' | 'gentle' | '
   return {
     goal: p.goal, experience: t.experience, movingNow: t.movingNow, daysPerWeek: t.daysPerWeek, weekdays: t.weekdays,
     minutes: t.minutesPerSession, place: t.place, equipment: t.equipment, enjoy: t.modalities, bodyAreas: t.limitations,
-    gentle: p.gentle, ageBand: band ?? undefined, ...extra,
+    gentle: p.gentle, ageBand: band, ...extra,
   }
 }
 

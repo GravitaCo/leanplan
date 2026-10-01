@@ -72,7 +72,7 @@ export interface Routing {
   gentleStart: boolean
   /** nothing high-impact (readiness, knees, 55+, gentle start, or the answer skipped) */
   lowImpact: boolean
-  /** volume is never raised in the first 4 weeks; never at all in gentle mode, when wellbeing-routed or at 16–17 */
+  /** volume is never raised in the first 4 weeks; never at all in gentle mode, when wellbeing-routed or under 18 (a backstop) */
   volumeIncreases: 'after-week-4' | 'never'
   /** a big deficit: loads hold steady */
   holdProgression: boolean
@@ -80,7 +80,7 @@ export interface Routing {
   stallChecks: boolean
   /** trends as numbers on the exercise screen, or in words only */
   trends: 'numbers' | 'words'
-  /** 16–17 (and age not given): no AI features */
+  /** under 18 (a backstop) or age not given: no AI features */
   ai: boolean
   /** gentle mode (profile.gentle or wellbeing-routed): weekly volume shown in words, never numbers */
   gentleMode: boolean
@@ -960,7 +960,8 @@ const PLAN_WEEKS = 8
 function routingOf(inp: PlanInputs, c: Ctx): Routing {
   const why: Why[] = []
   const wellbeingRouted = inp.wellbeing === 'yes' || inp.wellbeing === 'sometimes'
-  const teen = inp.ageBand === '16-17' || inp.ageBand === undefined
+  // under 18 (a backstop: the stop comes first) or age unknown: no AI, sets steady, words only
+  const teen = inp.ageBand === 'under-18' || inp.ageBand === undefined
   const never = !!inp.gentle || wellbeingRouted || teen
   if (inp.gentle) why.push({ code: 'guardrail', about: 'safety', field: 'gentle', data: { value: 'no-volume-increase' } })
   if (wellbeingRouted) why.push({ code: 'guardrail', about: 'safety', field: 'wellbeing', data: { value: 'no-volume-increase' } })

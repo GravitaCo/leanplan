@@ -20,6 +20,16 @@ export const FIRST_SESSION = {
 }
 
 
+/** ob5-4: once on Today after the first workout (s-ob8 point 5). The placeholder and the cues assume nothing about children. */
+export const IF_THEN = {
+  k: 'Optional · after your first workout',
+  title: 'Plan when you’ll do it',
+  lead: 'Linking a workout to something you already do makes it easier to remember. Pick a cue that fits your day.',
+  after: 'After…', then: 'I’ll…', placeholder: 'my morning coffee', thenValue: 'do my workout',
+  cues: ['my morning coffee', 'I get home from work', 'lunch'],
+  save: 'Save', later: 'Not now',
+}
+
 /** Onboarding 7: Profile › Health data's row to the answers (ob7-1). */
 export const HEALTH_ANSWERS_ROW = 'Health check answers'
 

@@ -18,7 +18,7 @@ import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
-import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
+import { PlanEditSheet, PLAN_OUTCOME, whenLine } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
 import { aboutMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
@@ -282,7 +282,7 @@ export function PlanScreen() {
           const lr = pl.reviews.length ? pl.reviews[pl.reviews.length - 1] : null
           return (
             <button className="li" key={pl.id} onClick={() => setEditing({ id: pl.id })}>
-              <div className="m"><div className="t">When {pl.when}</div>
+              <div className="m"><div className="t">{whenLine(pl.when)}</div>
                 <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div>
                 {pl.cope && <div className="s">Backup: {pl.cope}</div>}</div>
               <Chevron />

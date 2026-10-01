@@ -73,8 +73,8 @@ const GUARDRAIL_TEXT: Record<string, string> = {
   'no-stall-checks': "Holding steady while you're eating less is a good result.",
   'lose-fat-six': 'Six days is a lot while losing fat, so the sixth is a light, optional session.',
   'words-only': 'Progress shows in words, not numbers.',
-  'no-ai': 'At 16 or 17 there are no AI features, and sets stay steady.',
-  // age missing (legacy and starter paths only: onboarding requires it); never the 16–17 line
+  'no-ai': 'Under 18 there are no AI features, and sets stay steady.',
+  // age missing (legacy and starter paths only: onboarding requires it); never the under-18 line
   'no-ai-age': "You haven't told us your age, so there are no AI features for now and sets stay steady.",
   'no-impact': 'No jumping to start.',
 }

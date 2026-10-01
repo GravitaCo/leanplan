@@ -12,7 +12,7 @@ export const MERGED_FIELDS = [
   'name', 'age', 'height', 'weight', 'sex', 'sexAnswer', 'units', 'goal', 'motivations', 'movement',
   'outcomes.readiness', 'outcomes.medical', 'outcomes.wellbeing', 'outcomes.baseline', 'pregnancy',
   'gentle', 'deficitChosen', 'onboardedAt', 'activityMult', 'activityLevel',
-  'training.experience', 'training.movingNow', 'training.daysPerWeek', 'training.weekdays', 'training.minutesPerSession',
+  'training.experience', 'training.movingNow', 'training.daysPerWeek', 'training.weekdays', 'training.minutesPerSession', 'training.sessionRange',
   'training.place', 'training.equipment', 'training.modalities', 'training.cardioPrefs', 'training.limitations',
 ] as const
 export type MergedField = (typeof MERGED_FIELDS)[number]

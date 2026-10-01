@@ -151,9 +151,31 @@ Added 2026-09-27 (consent release):
     screen on their next launch and nothing more syncs until they answer; if anyone declines,
     delete their account on request. Now see item 29 (6 accounts with cloud data, 0 consent
     records, 2026-09-28) and item 30(a) (no notice emails for now, Benn's decision).
-21. DECIDED (Benn, 28 Sept 2026): the minimum age is 18. The texts, sign-up line, consent screen
-    and wizard say 18+ (`MIN_AGE`), and the onboarding plan now says so too. The ICO Children's
-    Code stays out of scope while under-18s are turned away.
+21. DECIDED (Benn, 28 Sept 2026): Tali is strictly 18+ (`MIN_AGE` in `src/core/legal/index.ts`,
+    one rule: `isUnderAge` in `src/core/domain/age.ts`). Enforced by self-declaration at the consent
+    screen ("I'm 18 or over"), the wizard (its age stop), Profile save (an under-18 age saves
+    nothing), backup import (a backup with an under-18 age isn't loaded), cloud sync (a pulled
+    profile under 18) and launch (a stored age under 18, checked on local data only). Any of the
+    last four shows the app's stop screen (`screens/onboarding/AgeStop.tsx`, board "Age 18+ · 1";
+    store `underAge`, never persisted): nothing syncs and label reading can't be reached while it
+    shows; "Close and delete" opens the usual account deletion (with its re-sign-in); "I typed my
+    age wrong" goes back (a stored under-18 age is cleared). The engine keeps an under-18 band as
+    a backstop (no AI, words only). The ICO Children's Code is treated as out of scope on the basis
+    of a "likely to be accessed by children" assessment that is still to be written into the DPIA
+    (OPEN).
+    - Supplement reminders stop while the stop shows: this device's push subscription ends through
+      the existing unsubscribe path (best-effort, in the background; retried on a later launch or
+      connection; device-only marker `_meta.pushHeld` inside `leanplan.v1`). "I typed my age wrong"
+      re-registers them without asking, or turns the setting off when it can't. Redo setup (an
+      existing account) uses the app's stop, not the first run's automatic deletion.
+    - The app stop's Close needs a connection and doesn't retry by itself (only setup's under-age
+      deletion retries).
+    - OPEN, walk-away: someone who closes the app without choosing keeps their account on the
+      server. Benn approved automatic deletion after 30 days unresolved as the next change (not
+      built). For the Profile and backup paths the under-18 age isn't saved, so a relaunch returns
+      to the normal app; the 30-day design therefore needs a marker, which is new processing
+      needing its own privacy text, register line and, if it's a phone key, a `cookies.ts` entry.
+    - OPEN: the likely-to-be-accessed assessment in the DPIA.
 22. Resolved 2026-09-27 (as built: the Withdrawal row above). Withdrawal used to clear
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
