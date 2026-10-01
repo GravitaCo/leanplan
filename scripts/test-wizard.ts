@@ -525,7 +525,7 @@ function healthAnswersUi(): void {
     ['actions: Change and Clear; Change and Clear; Clear only; Change only', rows.map(acts).join() === 'Change+Clear,Change+Clear,Clear,Change', rows.map(acts).join()],
     ['what each changes, in the board\'s words', rows.map((r) => r.does).join('|') === [
       'Food stays at maintenance with no calorie number, and training stays gentle.', 'Food stays at maintenance, with no high-protein target.',
-      'Your plan starts with lighter, low-impact sessions.', 'Weight is hidden and there’s no calorie target to hit.'].join('|')],
+      'Your plan starts with lighter, low-impact sessions.', 'There’s no calorie number and no weight, and protein is shown in words.'].join('|')],
     ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes'],
     ['Onboarding 9: Sometimes is its own value, with its own line', (() => {
       const r = answerRows(prof({ outcomes: { wellbeing: 'sometimes' } })).find((x) => x.kind === 'wellbeing')

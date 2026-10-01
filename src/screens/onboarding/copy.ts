@@ -25,7 +25,7 @@ export const COPY: Partial<Record<StepId, ScreenCopy>> = {
   why: { title: 'What would make this worth it for you?', lead: 'Pick any that feel true.', why: 'we’ll remind you of it in your weekly look-back.' },
   goal: { title: 'What’s your main goal?', line: 'It shapes your training and your food.', why: 'it shapes both your training and your food targets. You can change it any time.' },
   lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can update this by redoing setup.' },
-  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides weight and calorie targets and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
+  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides your weight, never suggests eating less and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   body: { title: 'About your body', why: 'your height and sex set your energy needs.', note: 'Sex changes the energy estimate a little. "Prefer not to say" uses a middle estimate with a wider range.' },
   medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how eating less affects you. We keep what it means for your plan, not the condition.' },
   weight: { title: 'What do you weigh?', line: 'Roughly is fine. It stays private.', hint: 'Drag to set. Skip it and we won’t show calorie numbers yet.', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tali never shows it back.' },
@@ -102,7 +102,7 @@ export const NOTES = {
     close: 'Close and delete',
     wrong: 'I typed my age wrong',
   },
-  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no calorie target to hit. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
+  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no eating less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
   medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
@@ -245,7 +245,8 @@ export const HEALTH_ANSWERS = {
     pregnancy: 'Food stays at maintenance with no calorie number, and training stays gentle.',
     medical: 'Food stays at maintenance, with no high-protein target.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
-    wellbeing: 'Weight is hidden and there’s no calorie target to hit.',
+    /** Yes: the ob9-1 card */
+    wellbeing: 'There’s no calorie number and no weight, and protein is shown in words.',
     /** GAP: Sometimes has no ob7 line; the ob9-1 card in a sentence */
     wellbeingSometimes: 'Food shows a steady range with no deficit, and weight is hidden.',
     /** "Rather not say" without the deficit chosen */
