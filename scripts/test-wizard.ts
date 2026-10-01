@@ -13,7 +13,8 @@ import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
+import { foodAskDue } from '@/core/domain/foodMode'
+import { applyHealthWithdrawal, canSaveHealthAnswers, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
 import { loadDraft, markPendingDeletion, pendingDeletion, pendingExpired, PENDING_MAX_DAYS, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
@@ -304,6 +305,27 @@ function withdrawal(): void {
     ['the clear is stamped, so an older copy elsewhere can\'t bring an answer back', p.answeredAt?.['outcomes.readiness'] !== AT && !!p.answeredAt?.['training.limitations'] && meta.settings.dirty],
     ['age stays (the one required answer), as does the goal', p.age === 34 && p.goal === 'lose-fat'],
     ['a patch saved without consent drops the health fields', (() => { const x = withoutHealth({ name: 'A', height: 180, outcomes: { readiness: 'clear' }, training: { daysPerWeek: 3 } }); return x.name === 'A' && x.height === undefined && !x.outcomes && !x.training })()],
+  ])
+  // Onboarding 9 (register item 34): the Sometimes answer and the food asks are health data too
+  const s3 = stateFromBackup({ days: {} } as never)
+  s3.profile = { ...DEFAULT_PROFILE, age: 34, outcomes: { wellbeing: 'sometimes' }, onboardedAt: '2026-06-01T09:00:00.000Z',
+    foodOptIn: { today: 'today', range: 'not-now', rangeAt: '2026-06-29' }, answeredAt: { 'outcomes.wellbeing': AT, foodOptIn: AT } }
+  const exported = stateFromBackup(JSON.parse(JSON.stringify(s3)))
+  const meta3 = ensureMeta(s3, false)
+  clearHealthData(s3, meta3)
+  const p3 = s3.profile
+  report('withdrawal clears Onboarding 9’s answers (register item 34)', [
+    ['HEALTH_FIELDS names the food asks', (HEALTH_FIELDS as readonly string[]).includes('profile.foodOptIn')],
+    ['the JSON export carries them, and an import keeps them', JSON.stringify(exported.profile.foodOptIn) === JSON.stringify({ today: 'today', range: 'not-now', rangeAt: '2026-06-29' }) && exported.profile.outcomes?.wellbeing === 'sometimes'],
+    ['the Sometimes answer, both asks and the range opt-in are gone', !p3.outcomes && !p3.foodOptIn],
+    ['their clear is stamped, so another phone can’t bring them back', !!p3.answeredAt?.foodOptIn && p3.answeredAt.foodOptIn !== AT && p3.answeredAt['outcomes.wellbeing'] !== AT && meta3.settings.dirty],
+    ['a patch saved without consent drops them', (() => { const x = withoutHealth({ name: 'A', outcomes: { wellbeing: 'sometimes' }, foodOptIn: { range: 'shown' } }); return x.name === 'A' && !x.outcomes && !x.foodOptIn })()],
+    ['without a current health yes neither ask is shown', (() => {
+      const due = { ...DEFAULT_PROFILE, outcomes: { wellbeing: 'sometimes' as const }, onboardedAt: '2026-06-01T09:00:00.000Z' }
+      const yes = { ...due, outcomes: { wellbeing: 'flagged' as const } }
+      return foodAskDue(due, '2026-06-20', true) === 'today' && foodAskDue(due, '2026-06-20', false) === null
+        && foodAskDue(yes, '2026-07-01', true) === 'range' && foodAskDue(yes, '2026-07-01', false) === null })()],
+    ['and nothing is saved from one: the store saves only with the local health yes', !canSaveHealthAnswers(stateFromBackup({ days: {} } as never))],
   ])
 }
 
