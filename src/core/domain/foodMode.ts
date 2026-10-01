@@ -57,13 +57,14 @@ export interface FoodView {
 }
 
 /** What the person's food mode shows. Other quiet-number reasons (gentle mode, pregnancy, no consent) still apply on top. */
-export function foodView(p: Pick<Profile, 'outcomes' | 'foodOptIn'>): FoodView {
+export function foodView(p: Pick<Profile, 'outcomes' | 'foodOptIn'> & Partial<Pick<Profile, 'pregnancy'>>): FoodView {
   const mode = foodModeOf(p)
   if (mode === 'sometimes') {
     return { mode, todayNumbers: p.foodOptIn?.today === 'today', rangeOnFood: true, wideRange: true, weightBack: false, protein: 'range' }
   }
   if (mode === 'yes') {
-    const shown = p.foodOptIn?.range === 'shown'
+    // pregnant or breastfeeding: no calorie number at all, so a range chosen at week 4 waits
+    const shown = p.foodOptIn?.range === 'shown' && !p.pregnancy?.flagged
     return { mode, todayNumbers: false, rangeOnFood: shown, wideRange: shown, weightBack: false, protein: 'words' }
   }
   return { mode, todayNumbers: true, rangeOnFood: true, wideRange: false, weightBack: true, protein: 'target' }
@@ -98,16 +99,19 @@ function answerStart(p: Pick<Profile, 'onboardedAt' | 'answeredAt'>): string | n
   return at ? at.slice(0, 10) : null
 }
 
+/** What the asks read. Neither is asked while pregnant or breastfeeding: no calorie number shows then. */
+type AskProfile = Pick<Profile, 'outcomes' | 'foodOptIn' | 'onboardedAt' | 'answeredAt'> & Partial<Pick<Profile, 'pregnancy'>>
+
 /** Sometimes: "Would you like your food range on Today?" is due (14 days in, never answered). Asked once. */
-export function todayAskDue(p: Pick<Profile, 'outcomes' | 'foodOptIn' | 'onboardedAt' | 'answeredAt'>, today: string): boolean {
-  if (foodModeOf(p) !== 'sometimes' || p.foodOptIn?.today) return false
+export function todayAskDue(p: AskProfile, today: string): boolean {
+  if (foodModeOf(p) !== 'sometimes' || p.foodOptIn?.today || p.pregnancy?.flagged) return false
   const start = answerStart(p)
   return !!start && start <= shiftDay(today, -TODAY_ASK_DAYS)
 }
 
 /** Yes: "Would a calorie range help?" is due (week 4, never answered or 12 weeks after "Not now"). */
-export function rangeAskDue(p: Pick<Profile, 'outcomes' | 'foodOptIn' | 'onboardedAt' | 'answeredAt'>, today: string): boolean {
-  if (foodModeOf(p) !== 'yes') return false
+export function rangeAskDue(p: AskProfile, today: string): boolean {
+  if (foodModeOf(p) !== 'yes' || p.pregnancy?.flagged) return false
   const o = p.foodOptIn
   if (o?.range === 'shown') return false
   if (o?.range === 'not-now') return !!o.rangeAt && o.rangeAt <= shiftDay(today, -RANGE_SNOOZE_DAYS)
@@ -119,7 +123,7 @@ export function rangeAskDue(p: Pick<Profile, 'outcomes' | 'foodOptIn' | 'onboard
  * The one ask due today, if any. Never without a current health yes (register item 34c): the
  * answers behind it are health data, and so is the answer to the ask.
  */
-export function foodAskDue(p: Pick<Profile, 'outcomes' | 'foodOptIn' | 'onboardedAt' | 'answeredAt'>, today: string, healthYes: boolean): 'today' | 'range' | null {
+export function foodAskDue(p: AskProfile, today: string, healthYes: boolean): 'today' | 'range' | null {
   if (!healthYes) return null
   return todayAskDue(p, today) ? 'today' : rangeAskDue(p, today) ? 'range' : null
 }

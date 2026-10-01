@@ -378,7 +378,7 @@ async function compliance(): Promise<void> {
   const KEPT = 'We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.'
   report('what the notes say is kept (register 34)', [
     ['the health check: a short note of what applies, never a medical record', COPY.ready?.note === 'We keep a short note of what applies (like pregnancy), never a medical record.'],
-    ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.endsWith(KEPT) && NOTES.wellbeing.note.endsWith(KEPT)],
+    ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.includes(KEPT) && COPY.wellbeing.why.endsWith('You can change it in Profile any time.') && NOTES.wellbeing.note.endsWith(KEPT)],
     ['no line still claims only the result or only gentle mode is kept', !/never your answers|whether gentle mode is on|whether that’s on/i.test(lines)],
   ])
 

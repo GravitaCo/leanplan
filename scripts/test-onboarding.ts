@@ -377,6 +377,10 @@ function foodMode(): void {
     [`week-4 ask: not before day ${RANGE_ASK_DAYS}, due on it, for Yes only`, !rangeAskDue(yes(), day(27)) && rangeAskDue(yes(), day(28)) && !rangeAskDue(some(), day(28))],
     [`"Not now": not asked again for ${RANGE_SNOOZE_DAYS / 7} weeks, then once more`, !rangeAskDue(notNow, day(28 + RANGE_SNOOZE_DAYS - 1)) && rangeAskDue(notNow, day(28 + RANGE_SNOOZE_DAYS))],
     ['"Show a range": never asked again', sweep.every((n) => !rangeAskDue(shownRange, day(28 + n)))],
+    ['pregnant or breastfeeding: neither ask, and a chosen range waits (Compliance, register 34)', (() => {
+      const preg = { pregnancy: { flagged: true, askedAt: ON } } as Partial<Profile>
+      return !rangeAskDue(yes(preg), day(28)) && !todayAskDue(some(preg), day(14)) && !foodView({ ...shownRange, ...preg }).rangeOnFood && foodView(shownRange).rangeOnFood
+    })()],
     ['nothing unlocks by time alone: Sometimes stays in words on Today, Yes has no range', sweep.every(() => !foodView(some()).todayNumbers && !foodView(keptOnFood).todayNumbers && !foodView(yes()).rangeOnFood && !foodView(notNow).rangeOnFood)],
     ['each step up is the person’s yes: Today shows the range, Food gets one for Yes (never Today)', foodView(shownToday).todayNumbers && foodView(shownRange).rangeOnFood && !foodView(shownRange).todayNumbers && foodView(shownRange).wideRange],
     ['Sometimes has its range on Food from day one; no weight trend in either mode', foodView(some()).rangeOnFood && !foodView(some()).weightBack && !foodView(yes()).weightBack && foodView(adult()).weightBack],
