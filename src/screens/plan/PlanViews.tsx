@@ -9,7 +9,7 @@ import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
-import { aboutMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
+import { aboutLine, routineEstMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -58,6 +58,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
 }) {
   const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const change = useWeekChange()
   type Cat = { id: string; label: string; items: WorkoutKey[]; color: string; sub?: string }
   const mine = (routines || []).filter((r) => !r.archived && !have.includes(r.id))
@@ -86,7 +87,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
     const r = routineFor(k, routines)
     if (!r) return workoutSub(k as WorkoutType)
     const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')
   }
 
   if (see) {
@@ -259,6 +260,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   onEdit?: () => void
 }) {
   const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
   const r = routineFor(type, routines)
@@ -272,7 +274,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
   const sub = r
-    ? [`warm-up and ${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+    ? [`warm-up and ${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
   return (
     <div className="wv">

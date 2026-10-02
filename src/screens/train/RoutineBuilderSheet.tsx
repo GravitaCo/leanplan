@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Routine, RoutineSlot } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf } from '@/core/domain/routines'
+import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKey } from '@/core/domain/routines'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LibrarySheet } from './LibrarySheet'
@@ -24,6 +24,8 @@ export interface BuilderStart {
 export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: BuilderStart; onSaved: (id: string) => void; onClose: () => void }) {
   const saveRoutine = useStore((s) => s.saveRoutine)
   const archiveRoutine = useStore((s) => s.archiveRoutine)
+  const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const r = start.routine
   const [name, setName] = useState(r?.name ?? start.name ?? '')
   const [slots, setSlots] = useState<RoutineSlot[]>(() => (r ? slotsOf(r) : start.slots ?? []).map((x) => ({ ...x })))
@@ -53,7 +55,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
           <input id="rb_name" value={name} placeholder="My workout" maxLength={120} onChange={(e) => setName(e.target.value)} /></div>
       </div>
 
-      <div className="grp-h">Exercises{slots.length ? ` · about ${aboutMins(estMins(normalised))} min` : ''}</div>
+      <div className="grp-h">Exercises{slots.length ? ` · about ${aboutMins(estMins(normalised, r ? warmupMinsForKey(r.id, routines, training) : undefined))} min` : ''}</div>
       {slots.length > 0 && (
         <div className="list">
           {slots.map((s, i) => {

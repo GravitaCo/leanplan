@@ -3,7 +3,7 @@ import type { WorkoutType } from '@/core/types'
 import { SESSIONS, WORKOUTS } from '@/core/data/workouts'
 import { setCount } from '@/core/domain/guided'
 import { shortTitle } from '@/core/domain/week'
-import { aboutMins, slotsOf as routineSlots } from '@/core/domain/routines'
+import { aboutLine, routineEstMins, slotsOf as routineSlots } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
@@ -23,6 +23,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
 }) {
   const others = SESSIONS.filter((s): s is WorkoutType => s !== 'Rest' && !planned?.includes(s))
   const all = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const mine = (all || []).filter((r) => !r.archived && !planned?.includes(r.id))
   return (
     <Sheet title="Add something" onClose={onClose}>
@@ -48,7 +49,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
             {mine.map((r) => (
               <button className="li" key={r.id} onClick={() => onWorkout(r.id)}>
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')}</div></div>
+                  <div className="s">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training))].filter(Boolean).join(' · ')}</div></div>
               </button>
             ))}
           </div>
