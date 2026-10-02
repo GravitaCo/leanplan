@@ -145,7 +145,8 @@ export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string
       { "id": "lying-knee-rolls", "n": "Lying knee rolls", "t": "8 each side",
         "cue": "Lie on your back with knees bent, feet flat and arms out wide. Let both knees lower slowly to one side, then bring them back through the middle to the other. Keep both shoulders on the mat and only go as far as feels easy. Move slowly, don't let the knees drop." },
       { "id": "glute-bridge", "n": "Glute bridge", "t": "2 × 10",
-        "cue": "Lie on your back with knees bent and feet hip-width, close to your bottom. Press through your heels and lift your hips until they're in line with your knees and shoulders, squeeze your glutes, then lower slowly. Keep your weight on your upper back, not your neck, and don't over-arch at the top." }
+        "cue": "Lie on your back with knees bent and feet hip-width, close to your bottom. Press through your heels and lift your hips until they're in line with your knees and shoulders, squeeze your glutes, then lower slowly. Keep your weight on your upper back, not your neck, and don't over-arch at the top.",
+        "video": DEMOS.gluteBridge }
     ]
   },
   "walk": {

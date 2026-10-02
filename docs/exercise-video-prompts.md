@@ -93,10 +93,15 @@ defined muscles.
   soft stocky build (no athletic or muscular builds)
 - **hair:** low ponytail, short cropped hair, braids tied back, natural afro tied back, short
   grey hair, shaved head, hair in a low bun, a fitted sports hijab
-- **outfit (workout-appropriate, fitted enough to show the joints):** charcoal leggings, a
-  sage-green sports bra and an open cropped tank; dark joggers and a fitted plain T-shirt; navy
-  training shorts and a loose vest; full-length leggings and a fitted long-sleeve top; relaxed
-  stone-coloured trousers and a zip-up training top
+- **outfit (workout-appropriate, fitted enough to show the joints).** Pick one that suits the
+  gender chosen:
+  - women: charcoal leggings, a sage-green sports bra and an open cropped tank; full-length
+    leggings and a fitted long-sleeve top; dark joggers and a fitted plain T-shirt; relaxed
+    stone-coloured trousers and a zip-up training top
+  - men: dark joggers and a fitted plain T-shirt; navy training shorts and a loose vest;
+    full-length leggings under training shorts with a fitted long-sleeve top; relaxed
+    stone-coloured trousers and a zip-up training top
+  - the sports hijab goes with the full-length leggings and fitted long-sleeve top
 
 Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
