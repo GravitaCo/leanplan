@@ -8,9 +8,10 @@ import { coverageGate, type KitProfile } from '@/core/domain/libraryCoverage'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { suggestedTargets } from '@/core/domain/nutrition'
 import { estMins } from '@/core/domain/routines'
+import { warmupMinutesFor } from '@/core/domain/warmup'
 import { cleanPhases, planWeekNotes, scheduleMirror } from '@/core/domain/plans'
 import {
-  buildPlan, allWhys, calibrationTarget, copyIssues, renderWhy, whyText, FIELDS, DEFAULT_WEEKDAYS, TRAINING_FIELDS,
+  ageBandOf, buildPlan, allWhys, calibrationTarget, copyIssues, renderWhy, whyText, FIELDS, DEFAULT_WEEKDAYS, TRAINING_FIELDS,
   type BuildResult, type InputField, type PlanInputs, type PersonModel,
 } from '@/core/domain/engine'
 import { stableKey } from '@/core/domain/engine/hash'
@@ -299,7 +300,7 @@ function soundness() {
     if (new Set(days).size !== days.length) issues.days.push('two sessions on one day')
     if (days.length > 6) issues.days.push('no rest day')
     for (const s of r.plan.sessions) {
-      if (s.mins > (i.minutes ?? 30) || estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx }))) > (i.minutes ?? 30)) issues.mins.push(`${s.name} ${s.mins} min for ${i.minutes}`)
+      if (s.mins > (i.minutes ?? 30) || estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: warmupMinutesFor(undefined, i.minutes) }) > (i.minutes ?? 30)) issues.mins.push(`${s.name} ${s.mins} min for ${i.minutes}`)
       if (!s.why.length) issues.why.push(`${s.name}: no reason`)
       for (const x of s.slots) {
         const e = EXERCISE_BY_ID[x.exId]
@@ -357,9 +358,10 @@ function guardrails() {
   const gentlePre = R({ ...b, lately: { sleep: 'poor' } }).gentleStart && R({ ...b, lately: { stress: 'high' } }).gentleStart && R({ ...b, lately: { room: 'little' } }).gentleStart && R({ ...b, lately: undefined }).gentleStart && !R(b).gentleStart
   const changeable = !R({ ...b, lately: { sleep: 'poor' }, gentleStart: false }).gentleStart && plan({ ...b, lately: { sleep: 'poor' }, gentleStart: false }).plan.sessions.length === plan(b).plan.sessions.length
   const cap3 = plan({ ...b, daysPerWeek: 6, lately: { sleep: 'poor' } }).plan.sessions.length <= 3 && plan({ ...b, daysPerWeek: 6, readiness: 'flagged' }).plan.sessions.length <= 3
-  const never = (['gentle', 'wellbeing-yes', 'wellbeing-sometimes', '16-17'] as const).every((k) => R({ ...b, ...(k === 'gentle' ? { gentle: true } : k === '16-17' ? { ageBand: '16-17' } : { wellbeing: k === 'wellbeing-yes' ? 'yes' : 'sometimes' }) }).volumeIncreases === 'never')
+  const never = (['gentle', 'wellbeing-yes', 'wellbeing-sometimes', 'under-18'] as const).every((k) => R({ ...b, ...(k === 'gentle' ? { gentle: true } : k === 'under-18' ? { ageBand: 'under-18' } : { wellbeing: k === 'wellbeing-yes' ? 'yes' : 'sometimes' }) }).volumeIncreases === 'never')
   const first4 = R(b).volumeIncreases === 'after-week-4' && R({ ...b, wellbeing: 'rather-not-say' }).volumeIncreases === 'after-week-4'
-  const teen = !R({ ...b, ageBand: '16-17' }).ai && R({ ...b, ageBand: '16-17' }).trends === 'words' && R(b).ai
+  const teen = !R({ ...b, ageBand: 'under-18' }).ai && R({ ...b, ageBand: 'under-18' }).trends === 'words' && R(b).ai && !R({ ...b, ageBand: undefined }).ai
+    && ageBandOf(15) === 'under-18' && ageBandOf(17) === 'under-18' && ageBandOf(17.9) === 'under-18' && ageBandOf(18) === '18-54' && ageBandOf(null) === undefined && ageBandOf(NaN) === undefined
   const deficit = R({ ...b, deficit: 'big' }).holdProgression && !R({ ...b, deficit: 'moderate' }).stallChecks && R(b).stallChecks
   const readiness = R({ ...b, readiness: 'flagged' }).signpostHealth && R({ ...b, readiness: 'flagged' }).lowImpact && plan({ ...b, readiness: 'flagged' }).plan.easeInWeeks === 2
   const noImpact55 = plan({ ...BASES[8], ageBand: '65+' }).plan.sessions.every((s) => s.slots.every((x) => EXERCISE_BY_ID[x.exId].impact !== 'high'))
@@ -367,18 +369,18 @@ function guardrails() {
   const texts = (r: BuildResult) => allWhys(r).map(renderWhy)
   const gentleWords = [plan({ ...b, gentle: true }), plan({ ...b, wellbeing: 'yes' })].every((r) => r.plan.routing.gentleMode && texts(r).every((t) => !/\d+ hard sets a week/.test(t)) && texts(r).some((t) => /amount this week/.test(t))) && texts(plan(b)).some((t) => /\d+ hard sets a week/.test(t))
   const skippedLately = texts(plan({ ...b, lately: undefined })).includes("You skipped how things are lately, so we've started gently. You can update this by redoing setup.") && texts(plan({ ...b, lately: undefined })).every((t) => !/a lot lately/.test(t))
-  const noAge = texts(plan({ ...b, ageBand: undefined })).includes("You haven't told us your age, so there are no AI features for now and sets stay steady.") && !texts(plan({ ...b, ageBand: undefined })).some((t) => /16 or 17/.test(t))
+  const noAge = texts(plan({ ...b, ageBand: undefined })).includes("You haven't told us your age, so there are no AI features for now and sets stay steady.") && !texts(plan({ ...b, ageBand: undefined })).some((t) => /Under 18/.test(t))
   report('guardrails (§0, §3.5 G, mental-performance)', [
     ['gentle mode: weekly sets per muscle in words, never numbers', gentleWords],
     ['a skipped "lately" says it was skipped, never "a lot lately"', skippedLately],
-    ['a missing age has its own line, not the 16–17 one', noAge],
+    ['a missing age has its own line, not the under-18 one', noAge],
     ['guardrails only ever lighten: fewer or equal sets, sessions and dose, never a shorter ease-in', only.length === 0, only.join('; ')],
     ['a gentle start is pre-selected for poor sleep, high stress, little room or a skipped answer', gentlePre],
     ['the person can switch the gentle start off', changeable],
     ['poor baseline or a readiness "yes" caps the start at 3 days', cap3],
-    ['no volume increases ever in gentle mode, when wellbeing-routed or at 16–17', never],
+    ['no volume increases ever in gentle mode, when wellbeing-routed or under 18 (a backstop)', never],
     ['and none in the first 4 weeks for anyone', first4],
-    ['16–17: no AI, trends in words', teen],
+    ['under 18 (a backstop behind the stop) or no age: no AI, trends in words', teen],
     ['a big deficit holds progression; any deficit pauses stall offers', deficit],
     ['readiness "yes": signposting, low-impact, two-week ease-in', readiness],
     ['from 55 nothing high-impact; from 65 balance work in every strength session', noImpact55 && balance65],

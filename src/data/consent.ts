@@ -12,6 +12,7 @@
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan, Why, WhyCode } from '@/core/types'
 import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
@@ -244,6 +245,15 @@ export function quietNumbers(s: PersistedState): boolean {
 }
 
 /**
+ * No kcal figure shows on food rows, meal headings and the food sheets: quiet numbers, or a
+ * wellbeing Yes whatever the Display setting ("There's no calorie number", ob9-2). Portions and
+ * grams still show.
+ */
+export function kcalHidden(s: PersistedState): boolean {
+  return quietNumbers(s) || foodModeOf(s.profile ?? {}) === 'yes'
+}
+
+/**
  * Whether sync may send more than consent records: only once the health consent screen is
  * answered (CLAUDE.md: nothing syncs to the cloud without it). An existing user's "Not now" pause
  * (behind ONBOARDING_ENABLED: screens/onboarding/Consent) doesn't count: until they answer,
@@ -293,7 +303,8 @@ export function unsyncedConsents(s: PersistedState): number {
  *   wellbeing, the sleep/stress baseline), the pregnancy flag and when it was asked, "your why"
  *   (`profile.motivations`), body details (`profile.height`, `profile.sexAnswer`), daily movement
  *   and the multiplier it set (`profile.movement`, `profile.activityMult`, with `activityLevel` back
- *   to the default), the deficit choice
+ *   to the default), the deficit choice, and the food steps up a wellbeing answer led to
+ *   (`profile.foodOptIn`, Onboarding 9: they'd say which answer was given)
  * - the health-derived reasons in generated workouts and plans (healthWhy: body areas, the lately
  *   baseline, set feel, recovery, readiness, wellbeing …), in `routines` and `training_plans`
  * - every training preference (`profile.training.*`: body areas, limitations note, experience,
@@ -303,7 +314,7 @@ export function unsyncedConsents(s: PersistedState): number {
  */
 export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
-  'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.training',
+  'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
 ] as const
 
 export interface HealthDataSummary {
@@ -316,7 +327,7 @@ export interface HealthDataSummary {
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
-const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen']
+const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
 const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
@@ -326,6 +337,14 @@ export function withoutHealth<P extends Partial<Profile>>(patch: P): P {
   const out = { ...patch }
   for (const k of PROFILE_HEALTH) delete out[k]
   delete out.training
+  return out
+}
+
+/** A profile patch whose weight is missing (null or undefined) leaves the stored weight alone: no weight key. */
+export function withoutMissingWeight<P extends Partial<Profile>>(patch: P): P {
+  if (!('weight' in patch) || patch.weight != null) return patch
+  const out = { ...patch }
+  delete out.weight
   return out
 }
 

@@ -7,11 +7,12 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { medicalOutcome, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
-import { BackButton, BareSheet } from '@/ui/primitives'
+import { BackButton, BareSheet, Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '../onboarding/copy'
 import { Opts } from '../onboarding/Opts'
-import { answerRows, clearConfirmLine, type AnswerRow } from './healthAnswerRows'
+import { answerRows, clearConfirmLine, foodShows, optInRows, type AnswerRow } from './healthAnswerRows'
+import { FOOD9 } from '../onboarding/copyApp'
 
 type Open = { sheet: 'confirm'; row: AnswerRow } | { sheet: 'pregnancy' | 'medical' | 'wellbeing' } | null
 
@@ -21,6 +22,9 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
   const clear = useStore((s) => s.clearHealthAnswer)
   const [open, setOpen] = useState<Open>(null)
   const rows = answerRows(profile)
+  const opts = optInRows(profile)
+  const shows = foodShows(profile)
+  const answerOptIn = useStore((s) => s.answerFoodOptIn)
   const onClear = (r: AnswerRow) => { if (r.confirm) setOpen({ sheet: 'confirm', row: r }); else clear(r.kind) }
   return (
     <div className="screen ha">
@@ -40,6 +44,19 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
                 {r.change && <button className="ha-act" aria-label={`${H.change} ${r.label.toLowerCase()}`} onClick={() => setOpen({ sheet: r.kind === 'pregnancy' ? 'pregnancy' : r.kind === 'medical' ? 'medical' : 'wellbeing' })}>{H.change}</button>}
                 {r.clear && <button className="ha-act" aria-label={`${H.clear} ${r.label.toLowerCase()}`} onClick={() => onClear(r)}>{H.clear}</button>}
               </span>
+            </div>
+          ))}
+          {shows && (
+            <div className="ha-shows" data-testid="food-shows">
+              <span className="l">{FOOD9.shows.label}</span>
+              <Seg options={FOOD9.shows.options} value={shows.value} onChange={(v) => answerOptIn({ ask: 'today', value: v })} />
+              <span className="d">{shows.line}</span>
+            </div>
+          )}
+          {opts.map((r) => (
+            <div className="ha-row" key={r.key}>
+              <span className="m"><span className="l">{r.label}</span><span className="v">{r.value}</span><span className="d">{r.does}</span></span>
+              <span className="acts"><button className="ha-act" aria-label={`${FOOD9.optIn.off}: ${r.label.toLowerCase()}`} onClick={() => answerOptIn(r.off)}>{FOOD9.optIn.off}</button></span>
             </div>
           ))}
         </div>

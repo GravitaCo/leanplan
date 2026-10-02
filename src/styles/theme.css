@@ -533,6 +533,13 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .kbar .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--food); transition: width 0.3s; }
 .pline { font-size: 13px; color: var(--label2); line-height: 1.4; }
 .pline.split { display: flex; justify-content: space-between; gap: 12px; }
+/* Onboarding 9 (ob9-2): the Food card in words for a wellbeing Yes or Sometimes */
+.f9 { display: flex; flex-direction: column; gap: 8px; }
+.f9 .kbig.w { font-size: 22px; }
+.f9-s { font-size: 15px; line-height: 1.5; color: var(--label2); }
+.pcard .linkbtn.f9-link { align-self: flex-start; font-size: 14px; padding: 0; }
+.cs-t.f9-ask { margin-top: -6px; }
+.btn.f9-no { height: 48px; border-radius: 24px; font-size: 16px; }
 .linkbtn.inl { padding: 0; font-size: inherit; color: var(--tint); }
 .pcard .linkbtn { font-weight: 500; }
 .meter { display: block; position: relative; background: var(--fill); overflow: hidden; }
@@ -706,6 +713,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .vchips::-webkit-scrollbar { display: none; }
 .vchip { flex: none; height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--card); color: var(--label); font-size: 15px; white-space: nowrap; }
 .vchip.on { background: var(--btn); color: var(--btn-ink); font-weight: 500; }
+/* "Warm up first" in the preview, while the warm-up block waits behind the onboarding switch */
 .warm { display: flex; gap: 12px; align-items: flex-start; background: var(--tint-soft); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
 .warm .wi { font-size: 20px; line-height: 1.1; color: var(--label); }
 .warm .t { font-size: 16px; font-weight: 500; }
@@ -825,6 +833,25 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .gp-prog .segs i.opt.on { background: var(--brand); box-shadow: none; }
 .li .s.wrap { white-space: normal; line-height: 1.35; }
 .gp .demo-play { z-index: 1; }
+
+/* the warm-up block (ob5-0 in the player; ob3-5 in day views) */
+.wu { position: absolute; inset: 0; }
+.wu.plain { background: #121214; }
+.wu-ph { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: 46%; }
+.wu-ph span { width: 58vmin; height: 58vmin; max-width: 300px; max-height: 300px; border-radius: 50%; background: var(--brand); opacity: 0.14; }
+.wu-bot { gap: 10px; }
+.wu-k { font-size: 13px; font-weight: 600; color: var(--brand); }
+.wu-bot .gp-name { margin-top: -4px; }
+.wu-cue { margin: 0; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, 0.88); }
+.wu-bot .gp-clock > span { font-size: 56px; font-weight: 200; }
+.wu-bot .gp-next { font-size: 14px; color: rgba(255, 255, 255, 0.85); }
+.wu-day-h { margin: 0 0 6px; padding: 0 4px; font-size: 13px; font-weight: 500; color: var(--label2); }
+.wu-day { background: var(--card); border-radius: 22px; overflow: hidden; margin-bottom: 16px; }
+.wu-day .r { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--sep); }
+.wu-day .mn { width: 44px; height: 52px; border-radius: 10px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.wu-day .t { font-size: 16px; font-weight: 600; }
+.wu-day .s { font-size: 13px; line-height: 1.35; color: var(--label2); }
+.wu-day .n { padding: 10px 14px 12px; font-size: 13px; line-height: 1.4; color: var(--label2); }
 
 /* plans (design canvas, Plans 1 to 4) */
 .tl { display: flex; flex-direction: column; gap: 8px; }
@@ -989,7 +1016,7 @@ label a, .prose a { color: var(--tint); text-decoration: none; }
 .ob-title { margin: -8px 0 0; font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
 .ob-lead { font-size: 17px; line-height: 1.5; }
 .ob-link { align-self: flex-start; padding: 0 4px; font-weight: 500; }
-.ob-cta { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 34px); max-width: 520px; margin: 0 auto; padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.ob-cta { position: fixed; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto; padding: 12px 16px calc(env(safe-area-inset-bottom) + 34px); background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
 .btn.ob-btn { height: 54px; border-radius: 27px; }
 .ob-alt { font-size: 16px; font-weight: 500; text-align: center; padding: 4px; }
 .ticks { background: var(--card); border-radius: var(--radius); padding: 16px; }
@@ -1031,3 +1058,57 @@ label a, .prose a { color: var(--tint); text-decoration: none; }
 .cs-msg { font-size: 15px; line-height: 1.45; color: var(--label2); padding: 0 4px; }
 /* the light red in dark mode needs dark text to stay readable (4.5:1) */
 @media (prefers-color-scheme: dark) { .btn.delall { color: #000; } }
+
+/* ============================================================
+   Tiles, wheel and ruler (Design canvas "Refined direction", note s-r): the only new patterns.
+   A chosen tile fills with ink (--btn / --btn-ink) and carries a check badge.
+   ============================================================ */
+.tiles { display: flex; flex-direction: column; gap: 10px; }
+.ctile { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 14px 16px; border: 0; border-radius: 20px; background: var(--card); color: var(--label); text-align: left; width: 100%; font: inherit; transition: background-color .15s, color .15s; }
+.ctile .m { flex: 1; min-width: 0; }
+.ctile .t { display: block; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+.ctile .s { display: block; font-size: 14px; line-height: 1.35; margin-top: 2px; color: var(--label2); }
+.ctile.on { background: var(--btn); color: var(--btn-ink); }
+.ctile.on .s { color: inherit; opacity: 0.75; }
+.ctile.ic { gap: 14px; border-radius: 22px; }
+.ctile.ic .t { font-size: 18px; }
+.ctile-ic { width: 46px; height: 46px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--tint-soft); color: var(--tint); }
+.ctile.on .ctile-ic { background: rgba(127, 127, 127, 0.25); color: inherit; }
+.ctile-badge { width: 26px; height: 26px; border-radius: 13px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--btn-ink); color: var(--btn); }
+.ctile-badge.ring { background: none; box-shadow: inset 0 0 0 1.5px var(--dash); }
+.tiles.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tiles.grid .ctile { position: relative; height: 84px; min-height: 0; padding: 14px; align-items: flex-end; }
+.tiles.grid.tall .ctile { height: 92px; border-radius: 22px; }
+.tiles.grid .ctile .t { font-size: 16px; line-height: 1.25; padding-right: 28px; }
+.tiles.grid.tall .ctile .t { font-size: 17px; }
+.tiles.grid .ctile-badge { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 12px; }
+.ctile:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+/* the pickers show keyboard focus on their own marker, not a box round the whole control */
+.wheel-col:focus-visible, .ruler:focus-visible { outline: none; }
+.wheel:has(.wheel-col:focus-visible) .wheel-hi { box-shadow: inset 0 0 0 2px var(--tint); }
+.ruler:focus-visible .ruler-m { box-shadow: 0 0 0 3px var(--tint-soft); }
+
+/* the number wheel (r2-age) */
+.wheel { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+.wheel-hi { position: absolute; left: 0; right: 0; border-radius: 14px; background: var(--card); }
+.wheel-col { position: absolute; inset: 0; overflow: hidden; border-radius: 14px; cursor: grab; }
+.wheel-n { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: center; color: var(--label); transition: transform .18s ease-out, font-size .18s, opacity .18s; }
+.wheel.drag .wheel-n { transition: none; }
+.wheel.unset .wheel-n { color: var(--label3); }
+.wheel-u { position: absolute; left: 50%; margin-left: 38px; display: flex; align-items: center; font-size: 17px; color: var(--label2); pointer-events: none; }
+
+/* the ruler (r3-weight, ob1-7-body) */
+.ruler { position: relative; height: 90px; margin: 10px -20px 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.ruler-t { position: absolute; left: 50%; top: 0; height: 80px; transition: transform .18s ease-out; }
+.ruler.drag .ruler-t { transition: none; }
+.ruler .tk { position: absolute; top: 0; width: 2px; height: 16px; margin-left: -1px; border-radius: 1px; background: var(--dash); }
+.ruler .tk.md { height: 26px; }
+.ruler .tk.mj { height: 40px; background: var(--label); }
+.ruler .tkl { position: absolute; top: 50px; left: 1px; transform: translateX(-50%); font-size: 13px; color: var(--label2); white-space: nowrap; }
+.ruler-m { position: absolute; left: 50%; top: -4px; width: 4px; height: 50px; margin-left: -2px; border-radius: 2px; background: var(--tint); }
+.pick-fig { text-align: center; }
+.pick-fig .v { font-size: 88px; line-height: 1; font-weight: 300; letter-spacing: -0.04em; }
+.pick-fig .v.h76 { font-size: 76px; }
+.pick-fig .u { font-size: 26px; font-weight: 500; color: var(--label2); }
+.pick-fig .v.h76 ~ .u { font-size: 24px; }
+.pick-fig.unset .v { color: var(--label3); }

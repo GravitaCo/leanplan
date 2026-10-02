@@ -4,7 +4,7 @@
  */
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import { quietNumbers } from '@/data/consent'
+import { kcalHidden } from '@/data/consent'
 import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
@@ -111,7 +111,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   const removeCustomFood = useStore((s) => s.removeCustomFood)
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const query = q.trim().toLowerCase()
-  const gentle = quietNumbers(data)
+  const gentle = kcalHidden(data)
   const online = useStore((s) => s.online)
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (

@@ -4,9 +4,23 @@
 import type { OnboardingOutcomes, Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
-import { asksMedical, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
+import { isUnderAge, reminderAction } from '@/core/domain/age'
+import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
+import { MIN_AGE, asksMedical, clearHealthAnswerIn, setHealthAnswerIn, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
 import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
+import { RANGE_ASK_DAYS, RANGE_SNOOZE_DAYS, SOMETIMES_NO_DEFICIT_DAYS, TODAY_ASK_DAYS, answerFoodOptInIn, applyRestrictionSignalIn, foodModeOf, foodView, maintenanceRange, mealWords, proteinRangeFor, rangeAskDue, restrictionSignal, todayAskDue } from '@/core/domain/foodMode'
+import { SAME_GAP, explainStart } from '@/core/domain/targets'
+import { FLOOR_LINE, SUMMARY } from '../src/screens/onboarding/copy'
+import { shiftDay } from '@/core/domain/date'
+import { kcalHidden, withoutHealth, withoutMissingWeight } from '@/data/consent'
+import { profileKcal, suggestionWeight, weightPatch } from '../src/screens/profile/profileTargets'
+import { rangeFor, rangeWidth } from '@/core/domain/insights'
+import type { PersistedState } from '@/data/persistence'
+import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { foodShows, optInRows } from '../src/screens/profile/healthAnswerRows'
+import { supportList } from '../src/screens/profile/supportRows'
+import { FOOD9, SUPPORT } from '../src/screens/onboarding/copyApp'
 import { cmFromFtIn, formatHeight, formatWeight, ftInFromCm, kgFromLb, kgFromStLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 
 let bad = 0
@@ -62,7 +76,7 @@ function routing(): void {
   const r = (x: Partial<SafetyAnswers>) => routeSafety(answers(x))
   const clear = r({})
   const u16 = r({ age: 15 })
-  const t16 = r({ age: 16 }), t17 = r({ age: 17 }), a18 = r({ age: 18 })
+  const t16 = r({ age: 16 }), t17 = r({ age: 17 }), t17b = r({ age: 17.9 }), a18 = r({ age: 18 })
   const preg = r({ pregnant: true })
   const thin = r({ weightKg: 50, heightCm: 170 }) // BMI 17.3
   const okBmi = r({ weightKg: 54, heightCm: 170 }) // BMI 18.7
@@ -76,14 +90,21 @@ function routing(): void {
   report('routing', [
     ['clear adult: nothing fires', !clear.stop && !clear.noDeficit && !clear.hideWeight && !clear.noAI && !clear.gentle && !clear.maintenanceOnly
       && !clear.hideCalories && !clear.signpost.length && !clear.gentlerStart && !clear.reasons.length && !clear.defaults.length],
-    ['under 16: kind stop, nothing shown', u16.stop === 'under16' && u16.hideCalories && u16.hiddenReason === 'under16' && u16.noAI && u16.hideWeight],
-    ['16 and 17: no deficit, weight hidden, no AI, calories still shown', [t16, t17].every((x) => !x.stop && x.noDeficit && x.hideWeight && x.noAI && !x.hideCalories && x.reasons.includes('age-16-17'))],
-    ['18: adult rules', !a18.noDeficit && !a18.hideWeight && !a18.noAI],
+    ['18+ (Benn): one minimum age, the legal one', MIN_AGE === 18 && MIN_AGE === LEGAL_MIN_AGE],
+    ['isUnderAge: under 18 only; a missing or non-numeric age is not under age', isUnderAge(0) && isUnderAge(15) && isUnderAge(17) && isUnderAge(17.9)
+      && !isUnderAge(18) && !isUnderAge(120) && !isUnderAge(null) && !isUnderAge(undefined) && !isUnderAge(NaN)],
+    ['reminders and the stop: held when it shows with reminders on, retried while held, restored once it goes', (() => {
+      const A = (stopped: boolean, enabled: boolean, held: boolean) => reminderAction({ stopped, enabled, held })
+      return A(true, true, false) === 'hold' && A(true, false, false) === null && A(true, true, true) === 'retry' && A(true, false, true) === 'retry'
+        && A(false, true, true) === 'restore' && A(false, false, true) === 'restore' && A(false, true, false) === null && A(false, false, false) === null })()],
+    ['under 18 (15, 16, 17): kind stop, nothing shown', [u16, t16, t17, t17b].every((x) => x.stop === 'under16' && x.hideCalories && x.hiddenReason === 'under16' && x.noAI && x.hideWeight && x.reasons.join() === 'under16')],
+    ['no 16–17 tier left: nothing under 18 gets past the stop', [t16, t17].every((x) => !x.signpost.length && x.maintenanceOnly)],
+    ['18: adult rules', !a18.stop && !a18.noDeficit && !a18.hideWeight && !a18.noAI && !a18.reasons.length],
     ['pregnant or breastfeeding: maintenance only, no calorie number, gentle training, midwife/GP', preg.maintenanceOnly && preg.hideCalories && preg.hiddenReason === 'pregnancy' && preg.gentlerStart && preg.signpost.includes('midwife')],
     ['BMI under 18.5: no deficit, nothing else, nothing shown', thin.noDeficit && thin.reasons.join() === 'low-bmi' && !thin.hideCalories && !thin.hideWeight && !Object.keys(thin).some((k) => /bmi/i.test(k)) && !okBmi.noDeficit],
-    ['wellbeing Yes/Sometimes: no deficit, gentle on, weight hidden, calm signposting', wb.noDeficit && wb.gentle && wb.hideWeight && wb.hiddenReason === 'gentle' && !wb.quietSignpost
+    ['wellbeing Yes: no deficit, gentle on, weight hidden, calm signposting', wb.noDeficit && wb.gentle && wb.hideWeight && wb.hiddenReason === 'gentle' && !wb.quietSignpost
       && ['beat', 'samaritans', 'nhs111', 'emergency'].every((k) => wb.signpost.includes(k as never)) && !wb.signpost.includes('childline')],
-    ['wellbeing at 17 adds Childline', wbTeen.signpost.includes('childline')],
+    ['wellbeing at 17: the stop comes first, routing adds no Childline', wbTeen.stop === 'under16' && !wbTeen.signpost.includes('childline') && !wb.signpost.includes('childline')],
     ['wellbeing "Rather not say": maintenance pre-selected, gentle offered not on', wbUnsaid.startAtMaintenance && wbUnsaid.offerGentle && !wbUnsaid.gentle && !wbUnsaid.noDeficit && !wbUnsaid.defaults.includes('wellbeing')],
     ['readiness yes: gentler start plus signposting (not quiet)', ready.gentlerStart && ready.signpost.join() === 'nhs111,gp' && !ready.quietSignpost && !ready.noDeficit],
     ['medical flag: maintenance allowed, no high-protein anchor, GP note', med.noDeficit && !med.maintenanceOnly && !med.hideCalories && med.noProteinAnchor && med.gpNote && med.signpost.includes('gp')],
@@ -91,13 +112,13 @@ function routing(): void {
     ['consent declined: no calorie numbers, no weight', noConsent.hideCalories && noConsent.hiddenReason === 'no-consent' && noConsent.hideWeight],
     ['signposts come in a fixed order, no repeats', new Set(wb.signpost).size === wb.signpost.length && wb.signpost[0] === 'emergency'],
     // §2.1 skipped answers
-    ['age skipped: 16–17 rules and no calorie number', noAge.noDeficit && noAge.hideWeight && noAge.noAI && noAge.hiddenReason === 'no-age' && noAge.defaults.includes('age')],
+    ['age skipped: no deficit, weight hidden, no AI, no calorie number (the safe defaults)', !noAge.stop && noAge.noDeficit && noAge.hideWeight && noAge.noAI && noAge.hiddenReason === 'no-age' && noAge.defaults.includes('age')],
     ['readiness skipped: gentler start, signposting quietly', (() => { const x = r({ outcomes: { ...CLEAR, readiness: undefined } }); return x.gentlerStart && x.quietSignpost && x.signpost.join() === 'nhs111,gp' && x.defaults.includes('readiness') && !x.reasons.includes('readiness') })()],
     ['readiness skipped beside a louder row: not quiet', (() => { const x = r({ outcomes: { ...CLEAR, readiness: undefined, wellbeing: 'flagged' } }); return !x.quietSignpost && !x.signpost.includes('gp') })()],
     ['sleep/stress skipped: treated as poor (near maintenance, gentler)', (() => { const x = r({ outcomes: { ...CLEAR, baseline: undefined } }); return x.nearMaintenance && x.gentlerStart && x.defaults.includes('baseline') })()],
     ['wellbeing skipped: maintenance pre-selected, gentle offered, not on', (() => { const x = r({ outcomes: { ...CLEAR, wellbeing: undefined } }); return x.startAtMaintenance && x.offerGentle && !x.gentle && x.defaults.includes('wellbeing') })()],
-    ['wellbeing board options: No → clear, Yes/Sometimes → flagged, Rather not say → undisclosed, skipped → absent',
-      wellbeingOutcome('no') === 'clear' && wellbeingOutcome('yes') === 'flagged' && wellbeingOutcome('sometimes') === 'flagged' && wellbeingOutcome('rather-not-say') === 'undisclosed' && wellbeingOutcome(undefined) === undefined],
+    ['wellbeing board options: No → clear, Yes → flagged (its stored name), Sometimes → sometimes, Rather not say → undisclosed, skipped → absent',
+      wellbeingOutcome('no') === 'clear' && wellbeingOutcome('yes') === 'flagged' && wellbeingOutcome('sometimes') === 'sometimes' && wellbeingOutcome('rather-not-say') === 'undisclosed' && wellbeingOutcome(undefined) === undefined],
     ['wellbeing No: normal targets, nothing routed', (() => { const x = r({ outcomes: { ...CLEAR, wellbeing: wellbeingOutcome('no') } }); return !x.noDeficit && !x.startAtMaintenance && !x.offerGentle && !x.gentle && !x.hideWeight && !x.signpost.length })()],
     ['wellbeing Rather not say and skipped: weight shown, deficit offered not pre-selected', [wellbeingOutcome('rather-not-say'), undefined].every((w) => { const x = r({ outcomes: { ...CLEAR, wellbeing: w } }); return !x.hideWeight && !x.noDeficit && x.startAtMaintenance && !x.hideCalories })],
     ['everything skipped never blocks', (() => { const x = r({ outcomes: {} }); return !x.stop && !x.hideCalories })()],
@@ -118,6 +139,16 @@ function signposts(): void {
       const ni = signpostsFor(kinds, 'northern-ireland').map((x) => x.kind), en = signpostsFor(kinds, 'england').map((x) => x.kind)
       return !ni.includes('nhs111') && !ni.includes('nhs111-mental-health') && ni.includes('gp') && en.includes('nhs111-mental-health') && en.includes('nhs111') })()],
     ['steps and job questions say "not counting workouts"', STEPS_QUESTION.includes('not counting workouts') && JOB_QUESTION.includes('not counting workouts')],
+    ['Profile support sheet: Beat by nation with its web link, option 2 where it runs, NHS 111 / NHS 24 / the GP, Samaritans, 999 (ob9-7)', (() => {
+      const en = supportList('england'), sc = supportList('scotland'), wa = supportList('wales'), ni = supportList('northern-ireland')
+      const names = (l: typeof en) => l.map((x) => x.name).join('|')
+      return names(en) === 'Beat|NHS 111, option 2|NHS 111|Samaritans|Emergency services' && names(wa) === names(en)
+        && names(sc) === 'Beat|NHS 24 (111)|Samaritans|Emergency services' && names(ni) === 'Beat|Your GP|Samaritans|Emergency services'
+        && en[0].num === '0808 801 0677' && sc[0].num === '0808 801 0432' && wa[0].num === '0808 801 0433' && ni[0].num === '0808 801 0434'
+        && [en, sc, wa, ni].every((l) => l[0].web === SIGNPOSTS.beat.web && l[0].webLabel === SUPPORT.beatWeb && l.at(-1)!.tel === '999' && l.at(-2)!.tel === '116 123')
+        && !ni[1].tel && en[0].desc === 'Eating disorder support · 3pm–8pm, Monday to Friday' && en[1].desc === 'Mental health crisis line · 24 hours, every day'
+        && en[2].desc === 'Medical help when it isn’t an emergency · 24 hours' && en[3].desc === 'Talk about anything · 24 hours, every day'
+    })()],
     ['NHS 111 in England, Wales, Scotland; GP in Northern Ireland', urgentAdviceFor('wales').kind === 'nhs111' && urgentAdviceFor('northern-ireland').kind === 'gp' && !SIGNPOSTS.nhs111.nations!.includes('northern-ireland')],
   ])
 }
@@ -168,6 +199,8 @@ function targets(): void {
       }
   // routing into targets
   const teen = targetsFor(adult({ age: 17 }))
+  const teen16 = targetsFor(adult({ age: 16 }))
+  const adult18 = targetsFor(adult({ age: 18 }))
   const flaggedWb = targetsFor(adult({ outcomes: { ...CLEAR, wellbeing: 'flagged' } }))
   const unsaidWb = adult({ outcomes: { ...CLEAR, wellbeing: 'undisclosed' } })
   const unsaidT = targetsFor(unsaidWb)
@@ -175,7 +208,7 @@ function targets(): void {
   const thinT = targetsFor(adult({ weight: 50, height: 170 }))
   const med = targetsFor(adult({ outcomes: { ...CLEAR, medical: 'flagged' } }))
   const poorSleep = targetsFor(adult({ bodyFat: 35, outcomes: { ...CLEAR, baseline: 'low' } }))
-  const muscle = targetsFor(adult({ goal: 'build-muscle', age: 17 }))
+  const muscle = targetsFor(adult({ goal: 'build-muscle', age: 18 }))
   // hidden
   const hiddenCases = {
     'no-weight': targetsFor(adult({ weight: null })),
@@ -205,8 +238,8 @@ function targets(): void {
     ['floor: never below BMR', big.floorsApplied.join() === 'bmr' && big.kcal! >= 2039 && big.kcal === 2050],
     ['at most 1% of body weight a week', capped.floorsApplied.join() === 'weekly-loss-cap' && capped.kcal === 2400],
     [`sweep of ${sweepN} profiles: multiples of 50, every floor, ≤1%/week, never below 800`, sweepOk && sweepN > 1000],
-    ['16–17: no deficit (maintenance), numbers still shown', teen.kcal !== null && teen.adjustPct === 0],
-    ['16–17 building muscle may still eat a little more, never less', muscle.hidden === null && muscle.adjustPct! > 0],
+    ['16 and 17: the stop, no numbers at all', [teen, teen16].every((t) => t.hidden === 'under16' && noNumbers(t))],
+    ['18 losing fat: the adult deficit; 18 building muscle eats a little more', adult18.hidden === null && adult18.adjustPct! < 0 && muscle.hidden === null && muscle.adjustPct! > 0],
     ['BMI under 18.5: maintenance, no BMI in the output', thinT.adjustPct === 0 && !('bmi' in thinT)],
     ['wellbeing "Rather not say": maintenance until they choose otherwise', unsaidT.adjustPct === 0 && unsaidChosen.adjustPct! < 0],
     ['medical: maintenance allowed, protein a minimum of 0.75 g/kg (no anchor)', med.adjustPct === 0 && med.kcal !== null && JSON.stringify(med.protein) === JSON.stringify({ low: 55, high: null, anchor: false })],
@@ -279,7 +312,7 @@ function profileMatchesSummary(): void {
             n++; if (!same(done({ movement, goal, outcomes, sexAnswer, sex: legacySex(sexAnswer), bodyFat: 30 }), t)) sweep = false
           }
   report('profile routing', [
-    ['17-year-old losing fat: no deficit on Profile', teen.adjustPct === 0 && teen.kcal % 50 === 0],
+    ['17-year-old on Profile: the stop, no numbers', teen.hidden === 'under16' && !('kcal' in teen)],
     ['older profiles keep their deficit (§12)', adultLegacy.adjustPct < 0],
     ['medical flag: no deficit on Profile, protein at least 0.75 g/kg', med.adjustPct === 0 && med.proteinMinimum && med.p === 55],
     ['medical flag at 70: at least 1.0 g/kg', med70.proteinMinimum && med70.p === 70],
@@ -287,17 +320,17 @@ function profileMatchesSummary(): void {
     ['wellbeing undisclosed: maintenance until the deficit is chosen', onProfile(unsaid).adjustPct === 0 && onProfile({ ...unsaid, deficitChosen: true }).adjustPct < 0],
     ['poor sleep: no deeper than −10% on Profile', sleepy.adjustPct === -10],
     ['no health consent after onboarding: nothing shown', onProfile(done({}), false).hidden === 'no-consent'],
-    ['held at maintenance: the note shows for 16–17, BMI under 18.5 and medical', teen.heldAtMaintenance && med.heldAtMaintenance
+    ['held at maintenance: the note shows for BMI under 18.5, medical and "Rather not say"', med.heldAtMaintenance
       && onProfile({ ...legacy, height: 200 }).heldAtMaintenance && onProfile(unsaid).heldAtMaintenance],
     ['no note without a clamp, without a deficit goal, or once the deficit is chosen', !adultLegacy.heldAtMaintenance
-      && !onProfile({ ...legacy, age: 17, goal: 'build-muscle' }).heldAtMaintenance && !onProfile({ ...legacy, age: 17, goal: 'feel-better' }).heldAtMaintenance
+      && !onProfile({ ...legacy, height: 200, goal: 'build-muscle' }).heldAtMaintenance && !onProfile({ ...legacy, height: 200, goal: 'feel-better' }).heldAtMaintenance
       && !onProfile({ ...unsaid, deficitChosen: true }).heldAtMaintenance && !sleepy.heldAtMaintenance],
     ['no note when the floor note shows', (() => {
-      const x = suggestedTargets({ ...legacy, age: 17, height: 140, activityLevel: 'sedentary' }, 35, profileRouting({ ...legacy, age: 17, height: 140 }, 35, true)) as any
+      const x = suggestedTargets({ ...legacy, height: 150, activityLevel: 'sedentary' }, 35, profileRouting({ ...legacy, height: 150 }, 35, true)) as any
       return x.floored && !x.heldAtMaintenance })()],
     ['the note never says why', HELD_AT_MAINTENANCE_NOTE === 'Tali keeps this at maintenance for now, to keep things safe.' && !/age|bmi|weight|16|17|18/i.test(HELD_AT_MAINTENANCE_NOTE)],
     ['summary and Profile agree on the note', (() => {
-      const p = done({ age: 17 }); const t = startingTargets(p, lift3, routeSafety(safetyAnswersFrom(p, kg, true)), kg)
+      const p = done({ height: 200 }); const t = startingTargets(p, lift3, routeSafety(safetyAnswersFrom(p, kg, true)), kg)
       const p1 = { ...p, activityMult: t.effectiveMultiplier! }
       return t.heldAtMaintenance && onProfile(p1).heldAtMaintenance })()],
     ['desk job: Profile shows the summary numbers exactly', same(desk, null)],
@@ -309,8 +342,124 @@ function profileMatchesSummary(): void {
   ])
 }
 
+/** Onboarding 9 (s-ob9): Sometimes split from Yes, the food rules, the asks and their timing. */
+function foodMode(): void {
+  const ON = '2026-06-01'
+  const day = (n: number) => shiftDay(ON, n)
+  const some = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'sometimes' }, onboardedAt: ON + 'T09:00:00.000Z', activityMult: 1.5, ...x })
+  const yes = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'flagged' }, onboardedAt: ON + 'T09:00:00.000Z', gentle: true, activityMult: 1.5, ...x })
+  const rs = routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'sometimes' } }))
+  const ry = routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } }))
+  const goals = ['lose-fat', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better'] as const
+  const tS = targetsFor(some())
+  const est = explainStart({ kcal: 1650, estimate: 1900 })
+  // a small, older person losing fat: the sex minimum sets the start
+  const small = targetsFor(adult({ age: 70, height: 150, weight: 45, movement: { kind: 'steps', band: 'under-5k' } }), null)
+  const smallE = explainStart(small)
+  const floorNear = explainStart({ kcal: 1200, estimate: 1150, floorsApplied: ['sex-minimum'] })
+  const gain = explainStart({ kcal: 2150, estimate: 1900 })
+  const sweep = [0, 13, 14, 27, 28, 89, 90, 91, 120, 365, 1000]
+  // the asks are answered or not; the view never changes by date alone
+  const answered = (p: Profile, a: Parameters<typeof answerFoodOptInIn>[1], d: string) => { const q = structuredClone(p); answerFoodOptInIn(q, a, d, d + 'T10:00:00.000Z'); return q }
+  const keptOnFood = answered(some(), { ask: 'today', value: 'food' }, day(14))
+  const shownToday = answered(some(), { ask: 'today', value: 'today' }, day(14))
+  const notNow = answered(yes(), { ask: 'range', value: 'not-now' }, day(28))
+  const shownRange = answered(yes(), { ask: 'range', value: 'shown' }, day(28))
+  const undoneToday = answered(shownToday, { ask: 'today', value: 'food' }, day(40))
+  const undoneRange = answered(shownRange, optInRows(shownRange)[0].off, day(40))
+  const restricted = some()
+  const moved = applyRestrictionSignalIn(restricted, day(30) + 'T10:00:00.000Z')
+  const mw = mealWords([
+    { n: 'Porridge', k: 300, p: 12, c: 50, f: 6, meal: 'breakfast' } as never, { n: 'Yoghurt', k: 100, p: 8, c: 6, f: 2, meal: 'breakfast' } as never,
+    { n: 'Sandwich', k: 450, p: 18, c: 50, f: 14, meal: 'lunch' } as never, { n: 'Apple', k: 80, p: 0, c: 20, f: 0, meal: 'snack' } as never,
+  ])
+  report('onboarding 9', [
+    ['Yes stays flagged (stored data keeps its meaning); Sometimes is its own outcome', wellbeingOutcome('yes') === 'flagged' && wellbeingOutcome('sometimes') === 'sometimes' && foodModeOf(yes()) === 'yes' && foodModeOf(some()) === 'sometimes' && foodModeOf(adult()) === 'standard'],
+    ['Sometimes: maintenance only, no deficit, weight hidden, numbers kept, gentle off, the same signposting as Yes', rs.foodMode === 'sometimes' && rs.maintenanceOnly && rs.noDeficit && rs.hideWeight && !rs.hideCalories && !rs.gentle && rs.signpost.join() === ry.signpost.join()],
+    ['Yes: gentle, no calorie number, no deficit, weight hidden', ry.foodMode === 'yes' && ry.gentle && ry.hideCalories && ry.hiddenReason === 'gentle' && ry.noDeficit && ry.hideWeight],
+    ['Sometimes: no deficit and no surplus, whatever the goal (the goal applies to training)', goals.every((g) => targetsFor(some({ goal: g })).adjustPct === 0)],
+    ['Sometimes: the start is the best estimate itself', tS.kcal === tS.estimate],
+    ['Yes: no calorie, protein or maintenance number at all', noNumbers(targetsFor(yes()))],
+    ['Profile targets for Sometimes: maintenance, as the summary', (() => { const s = suggestedTargets(some(), 70, profileRouting(some(), 70, true)); return !!s && 'kcal' in s && s.kcal === tS.kcal })()],
+    ['the range is ±15% to the nearest 50: 1,930 → 1,650–2,200', maintenanceRange(1930).lo === 1650 && maintenanceRange(1930).hi === 2200],
+    ['Sometimes: protein as a range; with the medical flag a minimum only', (() => { const a = proteinRangeFor(some(), 70), b = proteinRangeFor(some({ outcomes: { ...CLEAR, wellbeing: 'sometimes', medical: 'flagged' } }), 70); return a?.low === 110 && a.high === 155 && b?.high === null })()],
+    [`Sometimes: no deficit in the first ${SOMETIMES_NO_DEFICIT_DAYS} days, nor after them while the answer stands (the maintenanceOnly clamp, even with the deficit chosen)`,
+      rs.maintenanceOnly && targetsFor(some({ deficitChosen: true })).adjustPct === 0 && (() => { const q = some({ deficitChosen: true }), t = suggestedTargets(q, 70, profileRouting(q, 70, true)); return !!t && 'kcal' in t && t.kcal === tS.kcal })()],
+    ['only clearing the answer brings the goal back to food', targetsFor(adult({ outcomes: { ...CLEAR, wellbeing: 'clear' } })).adjustPct! < 0],
+    [`day-${TODAY_ASK_DAYS} ask: not before, due on the day, for Sometimes only`, !todayAskDue(some(), day(13)) && todayAskDue(some(), day(14)) && !todayAskDue(yes(), day(14)) && !todayAskDue(adult({ onboardedAt: ON }), day(14))],
+    ['day-14 ask: asked once, whatever the answer', sweep.every((n) => !todayAskDue(keptOnFood, day(14 + n)) && !todayAskDue(shownToday, day(14 + n)))],
+    ['day-14 ask counts from a later Profile change of answer', !todayAskDue(some({ answeredAt: { 'outcomes.wellbeing': day(10) + 'T10:00:00.000Z' } }), day(20)) && todayAskDue(some({ answeredAt: { 'outcomes.wellbeing': day(10) + 'T10:00:00.000Z' } }), day(24))],
+    [`week-4 ask: not before day ${RANGE_ASK_DAYS}, due on it, for Yes only`, !rangeAskDue(yes(), day(27)) && rangeAskDue(yes(), day(28)) && !rangeAskDue(some(), day(28))],
+    [`"Not now": not asked again for ${RANGE_SNOOZE_DAYS / 7} weeks, then once more`, !rangeAskDue(notNow, day(28 + RANGE_SNOOZE_DAYS - 1)) && rangeAskDue(notNow, day(28 + RANGE_SNOOZE_DAYS))],
+    ['"Show a range": never asked again', sweep.every((n) => !rangeAskDue(shownRange, day(28 + n)))],
+    ['pregnant or breastfeeding: neither ask, and a chosen range waits (Compliance, register 34)', (() => {
+      const preg = { pregnancy: { flagged: true, askedAt: ON } } as Partial<Profile>
+      return !rangeAskDue(yes(preg), day(28)) && !todayAskDue(some(preg), day(14)) && !foodView({ ...shownRange, ...preg }).rangeOnFood && foodView(shownRange).rangeOnFood
+    })()],
+    ['nothing unlocks by time alone: Sometimes stays in words on Today, Yes has no range', sweep.every(() => !foodView(some()).todayNumbers && !foodView(keptOnFood).todayNumbers && !foodView(yes()).rangeOnFood && !foodView(notNow).rangeOnFood)],
+    ['each step up is the person’s yes: Today shows the range, Food gets one for Yes (never Today)', foodView(shownToday).todayNumbers && foodView(shownRange).rangeOnFood && !foodView(shownRange).todayNumbers && foodView(shownRange).wideRange],
+    ['Sometimes has its range on Food from day one; no weight trend in either mode', foodView(some()).rangeOnFood && !foodView(some()).weightBack && !foodView(yes()).weightBack && foodView(adult()).weightBack],
+    ['one tap in Profile undoes each yes (and Today’s ask stays answered)', !foodView(undoneToday).todayNumbers && !todayAskDue(undoneToday, day(400)) && !optInRows(undoneToday).length
+      && !foodView(undoneRange).rangeOnFood && !rangeAskDue(undoneRange, day(40 + RANGE_SNOOZE_DAYS - 1)) && !optInRows(some()).length && !optInRows(yes()).length],
+    ['Sometimes: where the range shows, for every Sometimes user, unmarked until chosen, either way (ob9-8)', (() => {
+      const un = foodShows(some()), food = foodShows(keptOnFood), today = foodShows(shownToday), back = foodShows(undoneToday)
+      return un?.value === undefined && un.line === FOOD9.shows.food && food?.value === 'food' && food.line === FOOD9.shows.food
+        && today?.value === 'today' && today.line === FOOD9.shows.today && back?.value === 'food' && foodShows(yes()) === null && foodShows(adult()) === null
+        && FOOD9.shows.options.map(([k]) => k).join() === 'food,today' })()],
+    ['Sometimes has no separate "Turn off" row beside it; Yes keeps its week-4 range row', !optInRows(shownToday).length && optInRows(shownRange).length === 1 && optInRows(shownRange)[0].key === 'range'],
+    ['an answer is stamped for the merge, and a repeat changes nothing', !!shownToday.answeredAt?.foodOptIn && !answerFoodOptInIn(structuredClone(shownToday), { ask: 'today', value: 'today' }, day(15), 'x') && (MERGED_FIELDS as readonly string[]).includes('foodOptIn')],
+    ['a withdrawal clears the food steps up with the answers', !('foodOptIn' in withoutHealth(shownRange)) && !('outcomes' in withoutHealth(shownRange))],
+    ['start explained: 250 less than 1,900, about a quarter of a kilo a week', !!est && est.diff === 250 && est.direction === 'less' && est.paceKg === 0.25 && !est.floored],
+    [`start explained: a gap of ${SAME_GAP} kcal or less reads as "around"`, explainStart({ kcal: 1850, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: 1950, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: 1840, estimate: 1900 })?.direction === 'less'],
+    ['a floor set the start: no pace, and the safe-minimum line on the card and in How', small.floorsApplied.includes('sex-minimum') && !!smallE?.floored && smallE.paceKg === null
+      && SUMMARY.startS(smallE, '3–4 weeks', 15).includes(FLOOR_LINE) && SUMMARY.how.start(smallE).includes(FLOOR_LINE) && !/kg a week|kilo/.test(SUMMARY.how.start(smallE))],
+    ['a floor just above the estimate reads as "around", never as gaining', floorNear?.direction === 'same' && floorNear.floored && !/\bmore\b|\bgain|\bup\b/.test(SUMMARY.startS(floorNear, '3–4 weeks', 15) + SUMMARY.how.start(floorNear))],
+    ['a gain has no kg-a-week pace: it says "slowly"', gain?.direction === 'more' && gain.paceKg === null && /slowly/.test(SUMMARY.how.start(gain)) && !/kg|kilo/.test(SUMMARY.how.start(gain))],
+    ['the range never drops below the calorie floor', (() => { const m = maintenanceRange(1150, { bmr: 1000, sex: 'female' }); return m.lo === 1200 && m.hi >= m.lo && maintenanceRange(1930, { bmr: 1400, sex: 'female' }).lo === 1650 })()
+      && (() => { const m = maintenanceRange(1300, { bmr: 1420, sex: 'male' }); return m.lo === Math.ceil(calorieFloor(1420, 'male') / 50) * 50 && m.hi >= m.lo })()],
+    ['the "how sure" figure is the real margin: 15%, about 20% for "Prefer not to say"', targetsFor(adult()).marginPct === 15 && targetsFor(adult({ sexAnswer: 'unspecified' })).marginPct === 20
+      && SUMMARY.how.sure(1, 2, 20).includes('20%') && SUMMARY.startS(est!, '3–4 weeks', 20).includes('20%')],
+    ['start explained: a surplus is "more", the estimate itself "same"', explainStart({ kcal: 2150, estimate: 1900 })?.direction === 'more' && explainStart({ kcal: 1900, estimate: 1900 })?.direction === 'same' && explainStart({ kcal: null, estimate: null }) === null],
+    ['totals in words: 3 meals, protein at 2 (15 g or more a meal)', mw.slots.join() === 'breakfast,lunch,snack' && mw.withProtein === 2],
+    ['restriction signal: none exists in a check-in today, so the hook never fires', !restrictionSignal({ foods: [], supps: {}, weight: null, checkin: { mood: 1, hunger: 1 } } as never) && !restrictionSignal(undefined)],
+    ['restriction hook: moves Sometimes to the Yes rules', moved && foodModeOf(restricted) === 'yes' && !!restricted.gentle],
+  ])
+}
+
+/** ship-critic's Onboarding 9/10 blockers: Profile's calories by mode, the kept weight, the flagged suggestion, Yes kcal, pregnancy, opt-ins */
+function profileFixes(): void {
+  const ON = '2026-06-01', AT = '2026-07-01T10:00:00.000Z', D = '2026-07-01'
+  const some = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'sometimes' }, onboardedAt: ON + 'T09:00:00.000Z', activityMult: 1.5, ...x })
+  const yes = (x: Partial<Profile> = {}) => adult({ outcomes: { ...CLEAR, wellbeing: 'flagged' }, onboardedAt: ON + 'T09:00:00.000Z', gentle: true, activityMult: 1.5, ...x })
+  const preg = { pregnancy: { flagged: true, askedAt: ON } } as Partial<Profile>
+  const state = (profile: Profile) => ({ profile, target: { kcal: 1700, p: 120, c: 180, f: 60 }, days: {}, schedule: {}, customFoods: [], recipes: [] }) as unknown as PersistedState
+  const shown = { foodOptIn: { range: 'shown', rangeAt: D } } as Partial<Profile>
+  const sk = profileKcal(state(some()), D), fr = rangeFor(state(some()), D)
+  const opted = (p: Profile) => { const q = structuredClone(p); q.foodOptIn = { today: 'today' }; return q }
+  const toYes = opted(some()); setHealthAnswerIn(toYes, { kind: 'wellbeing', value: 'flagged' }, AT)
+  const toClear = structuredClone(yes(shown)); setHealthAnswerIn(toClear, { kind: 'wellbeing', value: 'sometimes' }, AT)
+  const cleared = opted(some()); clearHealthAnswerIn(cleared, 'wellbeing', AT)
+  const kept = structuredClone(some({ medical: undefined } as never)); kept.foodOptIn = { today: 'today' }; setHealthAnswerIn(kept, { kind: 'medical', value: 'flagged' }, AT)
+  report('profile by food mode', [
+    ['Yes: no kcal on Profile, gentle on or off, with or without "Show a range"', [yes(), yes({ gentle: false }), yes({ gentle: false, ...shown }), yes(shown)].every((p) => profileKcal(state(p), D).kind === 'none')],
+    ['Sometimes: Profile’s range is Food’s, not target ± width', sk.kind === 'range' && sk.lo === fr.lo && sk.hi === fr.hi && sk.lo !== 1700 - rangeWidth(some())],
+    ['pregnant Sometimes: no range on Profile', profileKcal(state(some(preg)), D).kind === 'none'],
+    ['standard: target ± width, as main', (() => { const k = profileKcal(state(adult()), D), w = rangeWidth(adult()); return k.kind === 'target' && k.lo === 1700 - w && k.hi === 1700 + w })()],
+    ['an empty weight field puts no weight in the patch, and the store drops a null one', !('weight' in weightPatch('')) && weightPatch('70.5').weight === 70.5
+      && !('weight' in withoutMissingWeight({ weight: null, activityLevel: 'active' })) && withoutMissingWeight({ weight: 71 }).weight === 71],
+    ['Sometimes changing only the activity level keeps weight 70', (() => { const p = some({ weight: 70 }); Object.assign(p, withoutMissingWeight({ ...weightPatch(''), activityLevel: 'active' as const })); return p.weight === 70 && p.activityLevel === 'active' })()],
+    ['a hidden weight field still reads the stored weight; a shown one reads only the field', suggestionWeight('', 70, false) === 70 && suggestionWeight('', 70, true) === null && suggestionWeight('72', 70, false) === 72],
+    ['flagged with a stored weight: "suggestions are off", not "add a weight"', (() => { const p = yes(), w = suggestionWeight('', 70, false), t = suggestedTargets(p, w, profileRouting(p, w, true)); return !!t && 'hidden' in t })()],
+    ['Yes hides kcal on food rows and sheets with gentle mode off; standard shows it', kcalHidden(state(yes({ gentle: false }))) && !kcalHidden(state(adult({ onboardedAt: ON + 'T09:00:00.000Z' })))],
+    ['pregnant Sometimes: no "where your food range shows" row', foodShows(some(preg)) === null && foodShows(some()) !== null],
+    ['a changed wellbeing answer clears foodOptIn, stamped, in any direction', toYes.foodOptIn === undefined && toYes.answeredAt?.foodOptIn === AT
+      && toClear.foodOptIn === undefined && toClear.answeredAt?.foodOptIn === AT && cleared.foodOptIn === undefined && cleared.answeredAt?.foodOptIn === AT],
+    ['another answer leaves foodOptIn alone', kept.foodOptIn?.today === 'today' && kept.answeredAt?.foodOptIn === undefined],
+  ])
+}
+
 export function onboardingSuite(): number {
   bad = 0
-  units(); routing(); signposts(); profileBits(); targets(); profileMatchesSummary()
+  units(); routing(); signposts(); profileBits(); targets(); profileMatchesSummary(); foodMode(); profileFixes()
   return bad
 }

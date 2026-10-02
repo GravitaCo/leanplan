@@ -81,7 +81,8 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
  *  thin line at its middle (higher on a workout day; the exact range is in the key under the
  *  chart), and a day with nothing logged is a small stub, not a gap to feel bad about. `numbers` is
  *  off in gentle mode. */
-export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
+/** `band` false: no range line at all (a wellbeing Yes has no calorie target, Onboarding 9) */
+export function WeekBars({ rows, lo, hi, cur, numbers = true, band = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean; band?: boolean }) {
   const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
   const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
   const y = (v: number) => base - (v / max) * (base - top0)
@@ -92,9 +93,9 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       {/* each day's own range as a thin line at its middle (the numbers are in the key): it rises on a day
           with a logged workout, so it always agrees with "in your range" */}
-      <g className="band">{rows.map((x, i) => (
+      {band && <g className="band">{rows.map((x, i) => (
         <rect key={'r' + x.d} x={step * i} y={y(x.r.mid) - 2} width={step + (i < 6 ? 0.5 : 0)} height={4} rx={i === 0 || i === 6 ? 2 : 0} fill="var(--band)" />
-      ))}</g>
+      ))}</g>}
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)

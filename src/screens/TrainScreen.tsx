@@ -6,7 +6,7 @@ import { WORKOUTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
 import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
-import { sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf, warmupOnly, workoutsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, working } from '@/core/domain/guided'
@@ -69,11 +69,12 @@ export function TrainScreen() {
   const gentle = quietNumbers(data)
 
   const day = data.days[cur]
-  const sessions = sessionsOf(day, cur)
+  // the workouts done: a warm-up on its own is movement, not a workout done (workoutsOf)
+  const sessions = workoutsOf(day, cur)
   const logged = sessions.length > 0
   const routines = data.routines
-  /** the session a workout saved on this day, if any */
-  const builtin = (t: WorkoutKey) => sessions.find((x) => x.routineId === keyRoutineId(t))
+  /** the session a workout saved on this day, if any: a warm-up on its own only while it's open (Resume) */
+  const builtin = (t: WorkoutKey) => sessionsOf(day, cur).find((x) => x.routineId === keyRoutineId(t) && (!warmupOnly(x) || x.open === true))
   const fd = fmtDate(cur)
   // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
   // what's planned: the active plan's day (several workouts, own ones too) or the schedule's one

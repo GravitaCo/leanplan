@@ -1,7 +1,7 @@
 /** "What can I make?": tap what you have, see which of your recipes fit, with diet swaps. */
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import { quietNumbers } from '@/data/consent'
+import { kcalHidden } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import { r0 } from '@/core/domain/date'
 import { recipesByUse, recentFoods, queryWords } from '@/core/domain/insights'
@@ -18,7 +18,7 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   const [q, setQ] = useState('')
   const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
   const diet = data.profile.diet
-  const gentle = quietNumbers(data)
+  const gentle = kcalHidden(data)
   const dietLabel = DIETS.find(([d]) => d === diet)?.[1]
 
   const candidates = useMemo(

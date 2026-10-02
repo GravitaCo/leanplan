@@ -183,7 +183,7 @@ export interface EnergyTarget {
   /** signed % applied, from the unrounded target */
   adjustPct: number
   floorsApplied: FloorApplied[]
-  /** the goal asked for a deficit and a routing clamp (16–17, BMI gate, medical, wellbeing…) held it at maintenance */
+  /** the goal asked for a deficit and a routing clamp (BMI gate, medical, wellbeing…) held it at maintenance */
   heldAtMaintenance: boolean
 }
 
