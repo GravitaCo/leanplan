@@ -121,17 +121,18 @@ setting (`prefers-color-scheme`); there is no in-app override.
 ## Exercise demo videos
 
 - Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`.
-- Clips live in `public/videos/` (vertical 540×960 H.264, no audio, `+faststart`, ~0.6 MB each)
-  with a poster JPG, and are attached to an exercise via `video` in `core/data/exercises.ts`
-  (data in `core/data/media.ts`). `VIDEO_BASE` there is the one switch for moving them to
-  Bunny CDN (the plan in `docs/plans/workouts-customization-and-library.md`).
+- Clips live in the **Bunny Stream** library (the MP4 fallback `play_720p.mp4`, 720×1280, with
+  Bunny's `thumbnail.jpg` as the poster; the library refuses requests with no referrer, so a
+  clip plays in the app but not as a bare link). `BUNNY_STREAM_API_KEY` and
+  `BUNNY_STREAM_LIBRARY_ID` list and upload them. A clip is attached to an exercise via `video`
+  in `core/data/exercises.ts` (data in `core/data/media.ts`); `public/videos/` is empty now.
 - Each clip carries a **tempo timeline measured from the footage**. The guided player
   (`train/GuidedPlayer.tsx`) shows the phase and a 1-2-3 count from it. The demo player
   (`train/DemoPlayer.tsx`, opened from the library, the session preview and "Log sets by hand")
   also shows the clip's own rep ("Rep 2 of 3") and a pace row. Neither counts the user's reps.
   Re-time it whenever a clip changes; `npm test` checks the files exist and the timeline is ordered.
-- The service worker leaves `/videos/` to the network (Safari streams video with Range
-  requests), so clips need a connection; logging never does.
+- The service worker leaves clips to the network (Bunny is cross-origin, and `/videos/` is skipped
+  too, since Safari streams video with Range requests), so clips need a connection; logging never does.
 
 ## Backend & data (important)
 

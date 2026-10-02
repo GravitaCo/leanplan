@@ -1,9 +1,8 @@
 import type { ExerciseMedia } from '@/core/types'
 
 /**
- * Where demo clips are served from. They ship in `public/videos/` for now (same origin, so they
- * work locally and on any preview build). The plan is to move them to Bunny CDN: upload the
- * files there and point this at the pull-zone URL, e.g. 'https://tali.b-cdn.net/exercises/'.
+ * Where a clip given as a bare file name is served from (`public/videos/`). Every clip in DEMOS
+ * now comes from the Bunny Stream library as a full URL, which `mediaUrl` passes through.
  */
 export const VIDEO_BASE = 'videos/'
 
@@ -17,10 +16,13 @@ export function mediaUrl(path: string): string {
  * does, so re-time these whenever a clip is replaced.
  */
 export const DEMOS = {
-  // 17.8 s, trimmed to end with arms straight so the loop is seamless
+  // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
+  // which a page always sends, so these play in the app but not as bare links.
+  // 17.8 s, trimmed to end with arms straight so the loop is seamless (the untrimmed upload,
+  // e3bb9bad, runs on into a third rep and is not used)
   barbellCurl: {
-    src: 'barbell-curl.mp4',
-    poster: 'barbell-curl.jpg',
+    src: 'https://vz-36841ffb-54c.b-cdn.net/ea9ee735-a0c7-4fd9-8fbc-12cb82680bf1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/ea9ee735-a0c7-4fd9-8fbc-12cb82680bf1/thumbnail.jpg',
     durationSec: 17.8,
     tempo: [
       { at: 0, kind: 'ready' },
@@ -35,9 +37,9 @@ export const DEMOS = {
     ],
   },
   romanianDeadlift: {
-    src: 'romanian-deadlift.mp4',
-    poster: 'romanian-deadlift.jpg',
-    durationSec: 20.0,
+    src: 'https://vz-36841ffb-54c.b-cdn.net/9375b37c-96cd-49de-8421-7494c11e9788/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/9375b37c-96cd-49de-8421-7494c11e9788/thumbnail.jpg',
+    durationSec: 20.07,
     tempo: [
       { at: 0, kind: 'ready' },
       { at: 2.6, kind: 'lower', rep: 1 },
@@ -50,8 +52,6 @@ export const DEMOS = {
       { at: 17.3, kind: 'squeeze', rep: 2 },
     ],
   },
-  // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
-  // which a page always sends, so these play in the app but not as bare links.
   // One rep: standing, a very slow descent (about 7.5 s), a 1 s pause at about parallel, 3 s up.
   barbellSquat: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/736acf7f-bdde-4175-844a-a01e36e706fb/play_720p.mp4',
