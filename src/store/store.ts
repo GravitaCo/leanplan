@@ -43,13 +43,14 @@ import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
-import { withoutHealth, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
 import type { GeneratedPlan } from '@/core/domain/engine/generate'
 import { replacementFor } from '@/core/domain/firstSession'
 import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, showSetupCard, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { answerFoodOptInIn, type FoodOptInAnswer } from '@/core/domain/foodMode'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
@@ -142,7 +143,7 @@ export interface StoreState {
   /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
    *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
   /** save a workout's session for the day: a built-in lift or one of the user's own (by id) */
-  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
+  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean; warmup?: TrainingSession['warmup'] }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
   /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
   saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
@@ -240,6 +241,8 @@ export interface StoreState {
   clearHealthAnswer: (kind: HealthAnswerKind) => boolean
   /** Profile's "Change" for conditions and food and weight; false without a local health yes */
   setHealthAnswer: (a: ChangeableAnswer) => boolean
+  /** Onboarding 9: an answer to the day-14 or week-4 food ask, or its one-tap undo in Profile */
+  answerFoodOptIn: (a: FoodOptInAnswer) => boolean
   /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
   confirmPregnancy: (status: PregnancyStatus) => boolean
   /** re-run the plan and targets after a health answer changed (the engine loads on demand) */
@@ -329,6 +332,8 @@ function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | '
   // fields the caller didn't set carry over from the earlier save (a later edit keeps the effort)
   const kept: Partial<TrainingSession> = {}
   for (const k of keep) if (prev?.[k] !== undefined && (x as Partial<TrainingSession>)[k] === undefined) (kept as Record<string, unknown>)[k] = prev[k]
+  // the warm-up, once done, stays with the session through later saves of its sets
+  if (prev?.warmup && !x.warmup) kept.warmup = prev.warmup
   const next: TrainingSession = { ...kept, ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
@@ -747,6 +752,7 @@ export const useStore = create<StoreState>()(
           if (extra?.note) more.note = extra.note
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
+          if (extra?.warmup) more.warmup = extra.warmup
           // one of the user's own workouts: its kind and name, and its time estimate standing in for
           // minutes that weren't logged (plan §2.9; a shorter day's from the shorter prescriptions)
           const own = WORKOUTS[type] ? undefined : (st.data.routines || []).find((r) => r.id === type)
@@ -984,6 +990,8 @@ export const useStore = create<StoreState>()(
         // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)
         const dropped = !healthLoggingAllowed(get().data) && patch.height != null
         if (!healthLoggingAllowed(get().data)) patch = withoutHealth(patch)
+        // a missing weight (an empty field) never clears the stored one
+        patch = withoutMissingWeight(patch)
         set((st) => {
           // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
           const today = todayStr()
@@ -1572,6 +1580,15 @@ export const useStore = create<StoreState>()(
         let changed = false
         set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
         if (changed) { saved(); void get().rerunHealthAnswers() }
+        return true
+      },
+
+      answerFoodOptIn: (a) => {
+        // the answer is health data (register item 34b): saved only with the local health yes
+        if (!canSaveHealthAnswers(get().data)) return false
+        let changed = false
+        set((st) => { changed = answerFoodOptInIn(st.data.profile, a, todayStr(), nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
         return true
       },
 

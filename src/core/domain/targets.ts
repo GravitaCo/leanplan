@@ -1,5 +1,5 @@
 import type { DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
-import { MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinMinimumG, type FloorApplied } from './nutrition'
+import { KCAL_PER_KG_LOST as KCAL_PER_KG, MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinMinimumG, type FloorApplied } from './nutrition'
 export { HELD_AT_MAINTENANCE_NOTE, ABSOLUTE_FLOOR, SEX_FLOOR, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT, PROTEIN_RNI_PER_KG, type FloorApplied } from './nutrition'
 import { sexOf, type DefaultField, type HiddenReason, type SafetyRouting } from './onboarding'
 
@@ -112,8 +112,12 @@ export interface StartingTargets {
   hidden: HiddenReason | null
   /** the starting target, nearest 50 kcal */
   kcal: number | null
-  /** likely maintenance, nearest 10 kcal */
+  /** likely maintenance, nearest 10 kcal: the ±15% uncertainty around `estimate`, never a zone to eat in */
   maintenance: { low: number; high: number } | null
+  /** the width of `maintenance` as a % of maintenance, to the nearest 5 (15, or about 20 for "Prefer not to say") */
+  marginPct: number | null
+  /** the best estimate of what the person burns a day, nearest 50 kcal (ob9-1, ob9-5) */
+  estimate: number | null
   /**
    * grams a day, nearest 5 g. `anchor` false (medical flag): `high` is null and `low` is a
    * minimum, shown as "at least {low} g"
@@ -174,7 +178,7 @@ export function startingTargets(
   if (!kg) defaults.push('weight')
   if (!p.height) defaults.push('height')
   const none = (hidden: HiddenReason): StartingTargets => ({
-    hidden, kcal: null, maintenance: null, protein: null, adjustPct: null, floorsApplied: [], heldAtMaintenance: false,
+    hidden, kcal: null, maintenance: null, marginPct: null, estimate: null, protein: null, adjustPct: null, floorsApplied: [], heldAtMaintenance: false,
     lowEnergyAvailability: false, effectiveMultiplier: null, defaults, reviewAfter: REVIEW_AFTER,
   })
   if (routing.stop) return none('under16')
@@ -208,6 +212,8 @@ export function startingTargets(
     hidden: null,
     kcal: shown,
     maintenance: { low: r10(maint - margin), high: r10(maint + margin) },
+    marginPct: r5((margin / maint) * 100),
+    estimate: Math.round(maint / 50) * 50,
     protein,
     adjustPct: e.adjustPct,
     floorsApplied: e.floorsApplied,
@@ -217,4 +223,24 @@ export function startingTargets(
     defaults,
     reviewAfter: REVIEW_AFTER,
   }
+}
+
+/**
+ * The start against the best estimate, for the summary's Food card (ob9-1) and "How we worked
+ * this out" (ob9-5): the difference is the rounded estimate minus the start (positive = less
+ * than the estimate). A gap of SAME_GAP or less reads as "around" the estimate. The pace is a
+ * loss's gap over a week at KCAL_PER_KG_LOST, kg a week to the nearest 0.05; null for a gain
+ * (that figure is for fat loss, so a gain says "slowly"), for "around" and when a floor set the
+ * start (`floored`: the copy says Tali doesn't go below a safe minimum instead).
+ */
+export interface StartExplained { start: number; estimate: number; diff: number; paceKg: number | null; direction: 'less' | 'more' | 'same'; floored: boolean }
+export const SAME_GAP = 50
+export function explainStart(t: Pick<StartingTargets, 'kcal' | 'estimate'> & Partial<Pick<StartingTargets, 'floorsApplied'>>): StartExplained | null {
+  if (t.kcal == null || t.estimate == null) return null
+  const diff = t.estimate - t.kcal
+  const floored = (t.floorsApplied ?? []).some((f) => f !== 'weekly-loss-cap')
+  const direction = Math.abs(diff) <= SAME_GAP ? 'same' : diff > 0 ? 'less' : 'more'
+  const pace = Math.round((diff * 7) / KCAL_PER_KG / 0.05) * 0.05
+  const paceKg = direction === 'less' && !floored ? Math.round(pace * 100) / 100 : null
+  return { start: t.kcal, estimate: t.estimate, diff, paceKg, direction, floored }
 }

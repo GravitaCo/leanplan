@@ -10,13 +10,15 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { canSaveHealthAnswers } from '@/data/consent'
-import { finishedProfile, planFitLine, restLine, summaryFor, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
+import { finishedProfile, planFitLine, restLine, summaryFor, trainingFrom, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
 import { PLAN_TEMPLATES, phasesOf, phaseWeek, templateById, type PlanTemplate } from '@/core/domain/plans'
-import { keyTitle } from '@/core/domain/routines'
+import { keyTitle, warmupForSlots } from '@/core/domain/routines'
+import { PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
 import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
 import { renderWhy, type PlannedSession } from '@/core/domain/engine'
 import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
+import { explainStart } from '@/core/domain/targets'
 import { latestWeight } from '@/core/domain/insights'
 import { todayStr, DAY_NAME } from '@/core/domain/date'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -27,7 +29,6 @@ import { Chevron } from '@/ui/icons'
 import { MAINT_SHEET, OTHERS, REDO, SUMMARY } from './copy'
 
 const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const k = (n: number) => n.toLocaleString('en-GB')
 const uniq = (xs: string[]) => [...new Set(xs)]
 /** "Goblet squat: a gentler choice for the knees." → "A gentler choice for the knees." */
 const afterName = (t: string) => { const i = t.indexOf(': '); const r = i > 0 && i < 48 ? t.slice(i + 2) : t; return r.charAt(0).toUpperCase() + r.slice(1) }
@@ -85,13 +86,16 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   const tWeek = chosen ? phaseWeek({ phases: phasesOf(chosen) }, 0) : null
   // four reasons from the person's own answers first (r6-summary: days, sore spots, kit, a gentle start)
   const chips = rows.filter((x) => x.key !== 'warmup').sort((x, y) => chipRank(x.key) - chipRank(y.key)).slice(0, 4)
-  const art = chosen ? planArt(chosen.id) : undefined
+  // the boards' hero: a chosen plan's own photo; otherwise Full body system for the suggested week
+  // and Pure muscle growth for the starter week (ob3-1, ob3-4)
+  const heroPlan = chosen ?? templateById(r.starter ? 'pure-muscle-growth' : 'full-body-system')
+  const art = planArt(heroPlan?.id)
 
   return (
     <div className="smry">
-      {/* r6-summary: a result, not a report. GAP: the suggested week has no photo of its own in the app yet */}
+      {/* r6-summary: a result, not a report */}
       <header className="sm-hero">
-        {art ? <img src={art} alt="" style={{ objectPosition: chosen?.artAt }} /> : <div className="ph" aria-hidden="true" />}
+        {art ? <img src={art} alt="" style={{ objectPosition: heroPlan?.artAt }} /> : <div className="ph" aria-hidden="true" />}
         <div className="shade" aria-hidden="true" />
         <div className="tx">
           <div className="k">{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</div>
@@ -125,7 +129,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
               )
             })}
           </div>
-          <div className="w">{SUMMARY.warmLine(chosen ? 6 : warmupFor(d))}</div>
+          <div className="w">{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</div>
         </section>
 
         {/* the reasons are the generated week's: a chosen Tali plan has its own (Plan tab) */}
@@ -137,14 +141,14 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
         )}
 
         {first && <FoodCard m={m} onHow={() => setHow(true)} onAddWeight={onAddWeight} onAddHeight={onAddHeight} onAddAge={onAddAge}
-          onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} />}
+          onMaint={() => setMaint(true)} onHealth={() => start(true, () => openProfile('health'))} onAnswers={onAnswers} />}
 
         <button className="btn sm-others" onClick={() => setOthers(true)}>{SUMMARY.others}</button>
         <button className="linkbtn ob-alt" onClick={onEdit}>{SUMMARY.edit}</button>
       </div>
       <div className="ob-cta"><button className="btn ob-btn" onClick={() => (d.redo ? setOffer(true) : start())}>{SUMMARY.start}</button></div>
 
-      {day && <DaySheet s={day} whys={r.why} warm={warmupFor(d)} onClose={() => setDay(null)} />}
+      {day && <DaySheet s={day} whys={r.why} warm={warmupForSlots(day.slots.map((x) => x.exId), warmupFor(d), trainingFrom(d))} onClose={() => setDay(null)} />}
       {row && <WhySheet row={row} onClose={() => setRow(null)} />}
       {all && (
         <BareSheet label={SUMMARY.whyH} onClose={() => setAll(false)}>
@@ -162,7 +166,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       {how && (
         <BareSheet label={SUMMARY.howT} onClose={() => setHow(false)}>
           <div className="feel-hd"><h2>{SUMMARY.howT}</h2><button className="navbtn b" onClick={() => setHow(false)}>Done</button></div>
-          <div className="sm-why" style={{ marginTop: 12 }}>{SUMMARY.how.map((p) => <p key={p}>{p}</p>)}</div>
+          <HowRows m={m} />
         </BareSheet>
       )}
       {maint && <MaintSheet onClose={() => setMaint(false)} onAnswers={() => { setMaint(false); onAnswers() }} />}
@@ -191,10 +195,13 @@ function shapeLine(d: WizardDraft, m: SummaryModel): string {
   return `${n} ${n === 1 ? 'day' : 'days'} · about ${mins} min · ${where}`
 }
 
-function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth }: {
+function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth, onAnswers }: {
   m: SummaryModel; onHow: () => void; onAddWeight: () => void; onAddHeight: () => void; onAddAge: () => void; onMaint: () => void; onHealth: () => void
+  /** ob9-1's "Change in Profile › Health check answers": before Start that's the wizard's own question (as ob4-8) */
+  onAnswers: () => void
 }) {
   const t = m.targets
+  const mode = m.routing.foodMode
   // ob4-7 and ob4-9: no number, and the card says logging works in full, why, and how to change it
   if (t.hidden === 'pregnancy') {
     return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.maint}</div><div className="s ink">{SUMMARY.maintP}</div>
@@ -217,21 +224,50 @@ function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHea
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noHeight}</div><div className="s">{SUMMARY.noWeightS}</div>
       <button className="btn gray bp-btn" onClick={onAddHeight}>Add height</button></section>
   }
-  if (t.hidden || t.kcal == null || !t.maintenance) {
+  // ob9-1 (and ob4-9): Yes has no number; Sometimes a range on Food, no number on the summary
+  if (mode === 'yes' && t.hidden === 'gentle') {
+    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.yesT}</div><div className="s">{SUMMARY.yesS}</div>
+      <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
+  }
+  if (mode === 'sometimes' && !t.hidden) {
+    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.sometimesT}</div><div className="s">{SUMMARY.sometimesS}</div>
+      <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
+  }
+  const e = explainStart(t)
+  if (t.hidden || t.kcal == null || !t.maintenance || !e) {
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.maint}</div><div className="s">{SUMMARY.maintS}</div></section>
   }
   return (
     <section className="sm-food" aria-label="Food">
       <div className="k">Food</div>
-      <div className="big num" data-kcal={t.kcal}>About {k(t.kcal)} kcal a day to start</div>
-      <div className="s num" data-low={t.maintenance.low} data-high={t.maintenance.high}>Likely maintenance {k(t.maintenance.low)}–{k(t.maintenance.high)}. Tali checks this against your weigh-ins after {t.reviewAfter}.</div>
+      <div className="big h20 num" data-kcal={t.kcal}>{SUMMARY.startT(t.kcal)}</div>
+      <div className="s num" data-estimate={e.estimate} data-diff={e.diff}>{SUMMARY.startS(e, t.reviewAfter, t.marginPct ?? 15)}</div>
       {t.heldAtMaintenance && <div className="s">{HELD_AT_MAINTENANCE_NOTE}</div>}
       <button className="linkbtn wz-link start sm" onClick={onHow}>How we worked this out</button>
     </section>
   )
 }
 
-function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; warm: number; onClose: () => void }) {
+/** ob9-5: the estimate, how sure it is, the start and its pace, and the 3–4 week check. */
+function HowRows({ m }: { m: SummaryModel }) {
+  const t = m.targets
+  const e = explainStart(t)
+  if (!e || !t.maintenance) return null
+  const H = SUMMARY.how
+  const rows: [string, string][] = [
+    [H.burnT, H.burn(e.estimate)],
+    [H.sureT, H.sure(t.maintenance.low, t.maintenance.high, t.marginPct ?? 15)],
+    [H.startT, H.start(e) + (t.heldAtMaintenance ? ` ${HELD_AT_MAINTENANCE_NOTE}` : '')],
+    [H.nextT, H.next(t.reviewAfter)],
+  ]
+  return (
+    <section className="sm-maint sm-how" style={{ marginTop: 12 }}>
+      {rows.map(([h, x]) => <div key={h}><div className="t">{h}</div><div className="s num">{x}</div></div>)}
+    </section>
+  )
+}
+
+function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; warm: WarmupBlock; onClose: () => void }) {
   const title = `${DAY_NAME[s.weekday]} · ${s.name}`
   const note = uniq([...s.why, ...whys.filter((w) => w.about === 'ease-in' || w.about === 'dose')].map(renderWhy)).slice(0, 3)
   return (
@@ -239,7 +275,7 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
       <div className="feel-hd"><h2>{title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
       <div className="sm-sheet-sub">{SUMMARY.daySub}</div>
       <div className="sm-rows">
-        <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm)}</span><span className="s">{SUMMARY.warmRowS}</span></span></div>
+        <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm.mins)}</span><span className="s">{SUMMARY.warmRowS(warm.moves.map((x) => x.n))}</span></span></div>
         {s.slots.map((x, i) => {
           // the reason for the exercise itself first; sets and reps are in the note below
           const main = [...x.why.filter((w) => w.about === 'exercise' && w.code !== 'calibration' && w.code !== 'starter'), ...x.why.filter((w) => w.about !== 'exercise' && w.code !== 'calibration')]

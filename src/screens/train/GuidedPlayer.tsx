@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useStore } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
-import { keyRoutineId, keyTitle, type WorkoutKey } from '@/core/domain/routines'
-import type { Effort, ExerciseMedia, LoggedExercise, Routine, SetEntry, SetFeel, Workout } from '@/core/types'
+import { keyRoutineId, keyTitle, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
+import type { Effort, ExerciseMedia, LoggedExercise, Routine, Session, SetEntry, SetFeel, Workout } from '@/core/types'
 import { calibrationTarget } from '@/core/domain/engine/calibrate'
 import { exposureOf } from '@/core/domain/firstSession'
 import { BareSheet } from '@/ui/primitives'
@@ -11,7 +11,7 @@ import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
-import { sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf, warmupOnly } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
 import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
@@ -20,6 +20,8 @@ import { AdjustSheet } from './AdjustSheet'
 import { FinishSheet } from './FinishSheet'
 import { HoldTimer } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
+import { WarmupPlayer } from './WarmupPlayer'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -30,9 +32,12 @@ export const bareName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '')
 /** The first sentence of a cue, for the line under the name. */
 const firstLine = (cue: string) => (cue.match(/^.*?[.!?](\s|$)/)?.[0] ?? cue).trim()
 
-/** The warm-up line (fitness-workouts), shared with the preview card. */
-export const warmupCopy = (name: string) =>
-  `5 minutes of easy movement, then one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
+/**
+ * The warm-up line (fitness-workouts), shared with the preview card: with the warm-up block
+ * (`mins`), the lighter sets that follow it; without it, as before the block.
+ */
+export const warmupCopy = (name: string, mins?: number) =>
+  `${mins ? `After the ${mins}-minute warm-up, do` : '5 minutes of easy movement, then'} one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
 
 /** A short chime at the end of rest, only when sound is on. */
 function chime() {
@@ -131,6 +136,18 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const [sound, setSound] = useState(soundPref)
   const [discard, setDiscard] = useState(false)
 
+  // the warm-up block opens the session (ob5-0), unless it's done already or sets are logged; a
+  // resume with part of it left and no sets picks it up from the minutes done
+  const training = useStore((s) => s.data.profile.training)
+  const [block] = useState(() => (ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null))
+  const [warm, setWarm] = useState<Session['warmup'] | undefined>(session?.warmup)
+  const [warmFrom] = useState(() => (session?.warmup && block ? Math.min(session.warmup.mins, block.mins) * 60 : 0))
+  const [inWarm, setInWarm] = useState(() => !!block && (!session?.warmup || session.warmup.mins < session.warmup.of) && !Object.values(init.bySlot).some((l) => working(l).length))
+  const warmSec = useRef(warmFrom)
+  const onWarmProgress = useCallback((sec: number) => { warmSec.current = sec }, [])
+  /** the warm-up as it stands: whole minutes done of the block (never sets) */
+  const warmNow = (): Session['warmup'] | undefined => (inWarm && block ? { mins: Math.min(block.mins, Math.round(warmSec.current / 60)), of: block.mins } : warm)
+
   const slot = slots.find((s) => s.i === order[pos]) ?? slots[0]
   const sets = logged[slot.i] || []
   const done = working(sets)
@@ -196,9 +213,9 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
     return () => window.removeEventListener('keydown', onKey)
   }, [sheet])
 
-  const write = useCallback((next: Record<number, SetEntry[]>, ex: LoggedExercise[], extra: Parameters<typeof saveWorkout>[3]) => {
-    saveWorkout(type, buildLogged(slots, next, ex), option, extra)
-  }, [slots, type, option, saveWorkout])
+  const write = useCallback((next: Record<number, SetEntry[]>, ex: LoggedExercise[], extra: Parameters<typeof saveWorkout>[3], w: Session['warmup'] | undefined = warm) => {
+    saveWorkout(type, buildLogged(slots, next, ex), option, { ...extra, ...(w ? { warmup: w } : {}) })
+  }, [slots, type, option, saveWorkout, warm])
   // every set saves at once, marked open until Finish
   const save = (next: Record<number, SetEntry[]>, ex = extras) => write(next, ex, { quiet: true, open: true })
 
@@ -262,19 +279,34 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
     onSwap(slot.i, id)
   }
 
-  const anything = Object.values(logged).some((l) => l.length) || extras.length > 0
+  // sets logged (working or warm-up sets, extras): only these make the session a workout done
+  const anySets = Object.values(logged).some((l) => l.length) || extras.length > 0
+  // a warm-up of a minute or more is movement too, so leaving keeps it like a logged set (Resume)
+  const anything = anySets || (warmNow()?.mins ?? 0) >= 1
   const finish = (effort: Effort | null, note: string, mins: number | undefined) => {
-    // nothing logged: nothing to save (an empty session would count as a day moved)
-    if (!anything && !session) { showToast('Nothing logged this time'); onClose(); return }
-    write(logged, extras, { effort, note, ...(mins != null ? { mins } : {}), toast: `${title} saved` })
+    // nothing logged: nothing to save (an empty session would count as a day moved). Only the
+    // warm-up done: its minutes are kept as movement, closed, never a workout done (warmupOnly)
+    if (!anySets && (!session || warmupOnly(session))) {
+      const w = warmNow()
+      if (w && (w.mins >= 1 || session)) write(logged, extras, { quiet: true }, w)
+      showToast('Nothing logged this time'); onClose(); return
+    }
+    write(logged, extras, { effort, note, ...(mins != null ? { mins } : {}), toast: `${title} saved` }, warmNow())
     onClose(); onFinished?.()
   }
   const leave = () => {
     if (anything) {
       const m = stintMins(prevMins, Date.now() - started, isToday)
-      write(logged, extras, { quiet: true, open: true, ...(m != null ? { mins: m } : {}) })
+      write(logged, extras, { quiet: true, open: true, ...(m != null ? { mins: m } : {}) }, warmNow())
     }
     onClose()
+  }
+  /** the block ended (done or skipped): it's recorded with the session's next save, or now if it ran a minute or more */
+  const endWarm = (sec: number, complete: boolean) => {
+    const w = block ? { mins: complete ? block.mins : Math.min(block.mins, Math.round(sec / 60)), of: block.mins } : undefined
+    setWarm(w); setInWarm(false)
+    setRestMsg(`Warm-up ${complete ? 'done' : 'over'}. ${name}.`)
+    if (w && (w.mins >= 1 || session)) write(logged, extras, { quiet: true, open: true }, w)
   }
 
   // video: plays muted on a loop unless reduced motion is on; a clip that fails shows its poster, then the cue
@@ -293,7 +325,10 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const wSlot = warmupSlot(slots.map((s) => s.shape))
 
   return (
-    <div ref={root} className={'gp' + (plain ? ' plain' : '')} role="dialog" aria-modal="true" aria-label={`${title}: ${name}`}>
+    <div ref={root} className={'gp' + (plain ? ' plain' : '')} role="dialog" aria-modal="true" aria-label={inWarm ? `${title}: warm-up` : `${title}: ${name}`}>
+      {inWarm && block ? (
+        <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
+      ) : <>
       {clip === 'ok' && video && (
         <video key={video.src} ref={vid} src={mediaUrl(video.src)} poster={video.poster ? mediaUrl(video.poster) : undefined}
           autoPlay={!reduced} muted loop playsInline preload="metadata" aria-label={`Demo: ${name}, on a loop`}
@@ -375,6 +410,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           )}
         </section>
       )}
+      </>}
 
       {(sheet === 'adjust' || sheet === 'warmup') && (
         <AdjustSheet key={slot.i + '-' + setNo + sheet} name={name} x={slot.x} shape={slot.shape} rx={slot.rx} setNo={setNo}
@@ -406,7 +442,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             {slot.x && <button className="li" onClick={() => setSheet('swap')}><div className="m"><div className="t">Swap exercise</div><div className="s">Today only</div></div></button>}
             {!isLastSlot && <button className="li" onClick={() => { setOrder(later(order, pos)); setRest(null); setSheet(null) }}><div className="m"><div className="t">Do this later</div><div className="s">Moves it to the end of today's workout</div></div></button>}
             <button className="li" onClick={() => { setSheet(null); go(1) }}><div className="m"><div className="t">Skip this exercise</div><div className="s">It shows as "Not today"</div></div></button>
-            {slot.shape === 'weight-reps' && <button className="li" onClick={() => setSheet('warmup')}><div className="m"><div className="t">Log a warm-up set</div><div className="s wrap">{slot.i === wSlot ? warmupCopy(name) : "Doesn't count towards your targets"}</div></div></button>}
+            {slot.shape === 'weight-reps' && <button className="li" onClick={() => setSheet('warmup')}><div className="m"><div className="t">Log a warm-up set</div><div className="s wrap">{slot.i === wSlot ? warmupCopy(name, block?.mins) : "Doesn't count towards your targets"}</div></div></button>}
             {!video && <a className="li" href={howToLink(slot.shown.n)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}><div className="m"><div className="t">Watch how to do it</div><div className="s">Opens a video search</div></div></a>}
             <div className="li"><div className="m"><div className="t">Sound</div><div className="s">A chime when rest ends</div></div>
               <Toggle on={sound} label="Sound" onChange={() => { const v = !sound; setSound(v); try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch { /* blocked */ } }} /></div>
@@ -451,7 +487,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           }}>Done</button>
         </BareSheet>
       )}
-      {sheet === 'finish' && (
+      {/* the last exercise's "How was that set?" comes first; the finish sheet follows it */}
+      {sheet === 'finish' && !askFeel && (
         <FinishSheet title={title} gentle={gentle} mins={stintMins(prevMins, now - started, isToday)}
           rows={slots.map((s) => { const line = setsLine(logged[s.i], s.shape); return { name: bareName(s.swapped && s.x ? s.x.n : s.planned.n), line, none: line === 'Not today' } })}
           effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} />

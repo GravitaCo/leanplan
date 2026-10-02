@@ -1275,6 +1275,40 @@ export const EXERCISES: Exercise[] = [
     increment: ['reps'], props: ['wall'],
     cue: "Stand side-on to a wall with one hand on it. Swing the outside leg forward and back in a relaxed arc, letting it get a little bigger each time. Stay tall and don't force the height or twist your lower back to swing further.",
   },
+  {
+    id: 'arm-circles', n: 'Arm circles', modality: 'mobility', log: 'reps',
+    equipment: [], difficulty: 'beginner', defaultRx: '10 each way', targets: ['shoulders'],
+    pattern: 'mobility',
+    timeCost: { setupSec: 5, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
+    increment: ['reps'],
+    cue: "Stand tall with your arms straight out to the sides. Draw small circles forwards, letting them grow a little each time, then go backwards. Keep the circles within a comfortable range, and don't let your shoulders creep up towards your ears.",
+  },
+  {
+    id: 'hip-circles', n: 'Hip circles', modality: 'mobility', log: 'reps',
+    equipment: [], difficulty: 'beginner', defaultRx: '8 each way', targets: ['hips', 'spine'],
+    pattern: 'mobility',
+    timeCost: { setupSec: 5, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
+    increment: ['reps'],
+    cue: "Stand with feet hip-width apart, knees soft and hands on your hips. Draw slow circles with your hips, one way and then the other, keeping your upper body tall. Keep the circles smooth and comfortable rather than pushing to the edge of the range.",
+  },
+  {
+    id: 'inchworm', n: 'Inchworm', modality: 'mobility', log: 'reps',
+    equipment: [], difficulty: 'beginner', defaultRx: '1 × 5–6', targets: ['hamstrings', 'shoulders'],
+    care: ['wrists'],
+    pattern: 'mobility',
+    timeCost: { setupSec: 5, setSec: 50 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
+    increment: ['reps'],
+    cue: "Stand tall, bend your knees and place your hands on the floor in front of your feet. Walk your hands out only as far as is comfortable, then walk them back towards your feet and roll up to standing. Bend your knees as much as you need, and don't let your hips sag when your hands are out.",
+  },
+  {
+    id: 'scapular-wall-slide', n: 'Wall slide', modality: 'mobility', log: 'reps',
+    equipment: [], difficulty: 'beginner', defaultRx: '2 × 8–10', targets: ['shoulders'],
+    care: ['shoulders'],
+    pattern: 'mobility',
+    timeCost: { setupSec: 5, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
+    increment: ['reps'], props: ['wall'],
+    cue: "Stand with your back against a wall, feet a small step forward, and your arms bent in a goalpost shape against the wall. Slide your arms up as far as is comfortable, then back down, gently drawing your shoulder blades down. Keep your ribs down and don't arch your back away from the wall to reach higher.",
+  },
 
   // ─── Cardio ─────────────────────────────────────────────────────────────────────────────────
   {

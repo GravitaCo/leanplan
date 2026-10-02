@@ -4,7 +4,7 @@ import { DEFAULT_SCHEDULE, LIFTS } from '@/core/data/workouts'
 import { DAY_NAME, parseYmd, shiftDay, todayStr } from './date'
 import { isBuiltinKey, keyTitle, routineFor, slotsOf, type WorkoutKey } from './routines'
 import { mainMuscles, plannedOn, weekWarnings, WEEK_ORDER } from './week'
-import { sessionsOf } from './sessions'
+import { workoutsOf } from './sessions'
 import { PROTEIN_PER_KG } from './nutrition'
 
 /**
@@ -583,7 +583,7 @@ export function startOn(today: string, pick: string | undefined): string {
 export function workoutsDone(s: Pick<AppState, 'days'>, p: Pick<TrainingPlan, 'startedAt'>, upTo: string): number {
   if (!p.startedAt) return 0
   let n = 0
-  for (const [d, day] of Object.entries(s.days || {})) if (d >= p.startedAt && d <= upTo) n += sessionsOf(day, d).length
+  for (const [d, day] of Object.entries(s.days || {})) if (d >= p.startedAt && d <= upTo) n += workoutsOf(day, d).length
   return n
 }
 

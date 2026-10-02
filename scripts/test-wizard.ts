@@ -13,7 +13,8 @@ import { suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
+import { foodAskDue } from '@/core/domain/foodMode'
+import { applyHealthWithdrawal, canSaveHealthAnswers, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
 import { loadDraft, markPendingDeletion, pendingDeletion, pendingExpired, PENDING_MAX_DAYS, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
@@ -61,6 +62,7 @@ function steps(): void {
     ['readiness yes: the gentle-start screen straight after', stepsFor(full({ outcomes: { readiness: 'flagged' } }), true).join().includes('ready,ready-note,why')],
     ['pregnant: the pregnancy screen instead', stepsFor(full({ outcomes: { readiness: 'flagged' }, pregnant: true }), true).join().includes('ready,pregnancy-note,why')],
     ['wellbeing yes or sometimes: its signposting screen', stepsFor(full({ outcomes: { wellbeing: 'flagged' } }), true).join().includes('wellbeing,wellbeing-note,body')],
+    ['Onboarding 9: Sometimes, stored apart, keeps the signposting screen', stepsFor(full({ outcomes: { wellbeing: 'sometimes' } }), true).join().includes('wellbeing,wellbeing-note,body')],
     ['medical flagged: its screen after the question', stepsFor(full({ outcomes: { medical: 'flagged' } }), true).join().includes('medical,medical-note,weight')],
     ['Later: the setup card is left out', !stepsFor(full({ later: true }), true).includes('moving')],
     ['a gym: no kit screen', !stepsFor(full({ where: 'gym' }), true).includes('kit')],
@@ -191,8 +193,12 @@ function summary(): void {
     ['health answers, now a yes: the gentle-start screen first', ret({ step: 'ready', outcomes: { readiness: 'flagged' } }).step === 'ready-note'],
     ['and its Continue returns to the summary', afterAnswer({ ...full({ outcomes: { readiness: 'flagged' } }), step: 'ready-note', ret: 'summary' }, true).step === 'summary'],
     ['an under-18 age: the stop, not the summary', ret({ step: 'age', age: 17 }).step === 'under16'],
+    ['wellbeing Yes or Sometimes from the summary: its note first, never skipped', ret({ step: 'wellbeing', outcomes: { wellbeing: 'flagged' } }).step === 'wellbeing-note' && ret({ step: 'wellbeing', outcomes: { wellbeing: 'sometimes' } }).step === 'wellbeing-note'],
+    ['the engine reads Sometimes as Sometimes (gentle training, as before)', outcomeInputs({ wellbeing: 'sometimes' }).wellbeing === 'sometimes' && outcomeInputs({ wellbeing: 'flagged' }).wellbeing === 'yes'],
   ])
-  report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !copyIssues(t).length), allCopy().filter((t) => copyIssues(t).length).join(' | ')]])
+  // the estimate's ±15% is an uncertainty, not a score: Benn approved it in these words (ob9-1, ob9-5)
+  const linted = (t: string) => copyIssues(t.replace(/\d+% out either way/g, 'a sixth out either way'))
+  report('copy lint', [['every wizard, summary and signposting line', allCopy().every((t) => !linted(t).length), allCopy().filter((t) => linted(t).length).join(' | ')]])
 }
 
 async function sync(fakeServer: FakeServer): Promise<void> {
@@ -300,6 +306,27 @@ function withdrawal(): void {
     ['age stays (the one required answer), as does the goal', p.age === 34 && p.goal === 'lose-fat'],
     ['a patch saved without consent drops the health fields', (() => { const x = withoutHealth({ name: 'A', height: 180, outcomes: { readiness: 'clear' }, training: { daysPerWeek: 3 } }); return x.name === 'A' && x.height === undefined && !x.outcomes && !x.training })()],
   ])
+  // Onboarding 9 (register item 34): the Sometimes answer and the food asks are health data too
+  const s3 = stateFromBackup({ days: {} } as never)
+  s3.profile = { ...DEFAULT_PROFILE, age: 34, outcomes: { wellbeing: 'sometimes' }, onboardedAt: '2026-06-01T09:00:00.000Z',
+    foodOptIn: { today: 'today', range: 'not-now', rangeAt: '2026-06-29' }, answeredAt: { 'outcomes.wellbeing': AT, foodOptIn: AT } }
+  const exported = stateFromBackup(JSON.parse(JSON.stringify(s3)))
+  const meta3 = ensureMeta(s3, false)
+  clearHealthData(s3, meta3)
+  const p3 = s3.profile
+  report('withdrawal clears Onboarding 9’s answers (register item 34)', [
+    ['HEALTH_FIELDS names the food asks', (HEALTH_FIELDS as readonly string[]).includes('profile.foodOptIn')],
+    ['the JSON export carries them, and an import keeps them', JSON.stringify(exported.profile.foodOptIn) === JSON.stringify({ today: 'today', range: 'not-now', rangeAt: '2026-06-29' }) && exported.profile.outcomes?.wellbeing === 'sometimes'],
+    ['the Sometimes answer, both asks and the range opt-in are gone', !p3.outcomes && !p3.foodOptIn],
+    ['their clear is stamped, so another phone can’t bring them back', !!p3.answeredAt?.foodOptIn && p3.answeredAt.foodOptIn !== AT && p3.answeredAt['outcomes.wellbeing'] !== AT && meta3.settings.dirty],
+    ['a patch saved without consent drops them', (() => { const x = withoutHealth({ name: 'A', outcomes: { wellbeing: 'sometimes' }, foodOptIn: { range: 'shown' } }); return x.name === 'A' && !x.outcomes && !x.foodOptIn })()],
+    ['without a current health yes neither ask is shown', (() => {
+      const due = { ...DEFAULT_PROFILE, outcomes: { wellbeing: 'sometimes' as const }, onboardedAt: '2026-06-01T09:00:00.000Z' }
+      const yes = { ...due, outcomes: { wellbeing: 'flagged' as const } }
+      return foodAskDue(due, '2026-06-20', true) === 'today' && foodAskDue(due, '2026-06-20', false) === null
+        && foodAskDue(yes, '2026-07-01', true) === 'range' && foodAskDue(yes, '2026-07-01', false) === null })()],
+    ['and nothing is saved from one: the store saves only with the local health yes', !canSaveHealthAnswers(stateFromBackup({ days: {} } as never))],
+  ])
 }
 
 function firstSession(): void {
@@ -348,10 +375,10 @@ function withFakeStorage(run: (ls: Storage) => void): void {
 async function compliance(): Promise<void> {
   // register item 34: the notes say what is kept (Benn approved the wording, 28 Sept 2026)
   const lines = allCopy().join('\n')
-  const KEPT = 'We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.'
+  const KEPT = 'We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.'
   report('what the notes say is kept (register 34)', [
     ['the health check: a short note of what applies, never a medical record', COPY.ready?.note === 'We keep a short note of what applies (like pregnancy), never a medical record.'],
-    ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.endsWith(KEPT) && NOTES.wellbeing.note.endsWith(KEPT)],
+    ['wellbeing: the answer is kept, on the question and on its note', !!COPY.wellbeing?.why?.includes(KEPT) && COPY.wellbeing.why.endsWith('You can change it in Profile any time.') && NOTES.wellbeing.note.endsWith(KEPT)],
     ['no line still claims only the result or only gentle mode is kept', !/never your answers|whether gentle mode is on|whether that’s on/i.test(lines)],
   ])
 
@@ -520,8 +547,11 @@ function healthAnswersUi(): void {
     ['actions: Change and Clear; Change and Clear; Clear only; Change only', rows.map(acts).join() === 'Change+Clear,Change+Clear,Clear,Change', rows.map(acts).join()],
     ['what each changes, in the board\'s words', rows.map((r) => r.does).join('|') === [
       'Food stays at maintenance with no calorie number, and training stays gentle.', 'Food stays at maintenance, with no high-protein target.',
-      'Your plan starts with lighter, low-impact sessions.', 'Weight is hidden and there’s no calorie target to hit.'].join('|')],
-    ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes or sometimes'],
+      'Your plan starts with lighter, low-impact sessions.', 'No calorie target and no weight, and protein is shown in words.'].join('|')],
+    ['values say only what is stored (no condition, no pregnant vs breastfeeding)', rows[0].value === 'Yes' && rows[1].value === 'Yes' && rows[2].value === 'Gentler start' && rows[3].value === 'Yes'],
+    ['Onboarding 9: Sometimes is its own value, with its own line', (() => {
+      const r = answerRows(prof({ outcomes: { wellbeing: 'sometimes' } })).find((x) => x.kind === 'wellbeing')
+      return r?.value === 'Sometimes' && r.does === HEALTH_ANSWERS.does.wellbeingSometimes && r.change && !r.clear })()],
     ['Clear asks first only for pregnancy and conditions', rows.map((r) => r.confirm).join() === 'true,true,false,false'],
     ['nothing kept: no rows (the empty board)', answerRows(prof()).length === 0 && HEALTH_ANSWERS.empty === 'Nothing kept from your health check.'],
     ['a kept "no" still shows, changing nothing', (() => { const x = answerRows(prof({ outcomes: { medical: 'clear' } })); return x.length === 1 && x[0].value === 'None of these' && x[0].does === 'Nothing changes in your plan.' && !x[0].confirm })()],

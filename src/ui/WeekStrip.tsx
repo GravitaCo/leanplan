@@ -3,7 +3,7 @@ import { DOW, fmtDate, parseYmd, shiftDay, todayStr } from '@/core/domain/date'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Rings } from './charts'
 import { Icon } from './icons'
-import { sessionsOf } from '@/core/domain/sessions'
+import { workoutsOf } from '@/core/domain/sessions'
 import { plannedKeys } from '@/core/domain/plans'
 import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 import { TALI_SHORT } from '@/core/data/taliWorkouts'
@@ -67,7 +67,7 @@ export function MoveStrip() {
     <div className="mstrip" role="list" aria-label="This week">
       {weekOf(cur).map((d, i) => {
         const f = fmtDate(d)
-        const moved = sessionsOf(days[d], d).length > 0
+        const moved = workoutsOf(days[d], d).length > 0
         return (
           <button key={d} role="listitem" className={'md' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '')}
             onClick={() => setDate(d)} aria-label={`${f.dow} ${f.full}${moved ? ', moved' : ''}`} aria-current={d === today ? 'date' : undefined} aria-pressed={d === cur}>

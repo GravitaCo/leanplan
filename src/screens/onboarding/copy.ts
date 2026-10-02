@@ -4,7 +4,7 @@
  * §4). Where a board has no words for something the build needs, the line is marked GAP.
  */
 import type { StepId } from '@/core/domain/wizard'
-import { FIRST_SESSION, HEALTH_ANSWERS_ROW, IF_THEN, REDO_ROW, SETUP_CARD, SETUP_ROW } from './copyApp'
+import { FIRST_SESSION, FOOD9, HEALTH_ANSWERS_ROW, IF_THEN, REDO_ROW, SETUP_CARD, SETUP_ROW, SUPPORT } from './copyApp'
 export { FIRST_SESSION, IF_THEN, SETUP_CARD }
 
 /**
@@ -25,7 +25,7 @@ export const COPY: Partial<Record<StepId, ScreenCopy>> = {
   why: { title: 'What would make this worth it for you?', lead: 'Pick any that feel true.', why: 'we’ll remind you of it in your weekly look-back.' },
   goal: { title: 'What’s your main goal?', line: 'It shapes your training and your food.', why: 'it shapes both your training and your food targets. You can change it any time.' },
   lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can update this by redoing setup.' },
-  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides weight and calorie targets and keeps things gentle. We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.' },
+  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides your weight, never suggests eating less and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more. You can change it in Profile any time.' },
   body: { title: 'About your body', why: 'your height and sex set your energy needs.', note: 'Sex changes the energy estimate a little. "Prefer not to say" uses a middle estimate with a wider range.' },
   medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how eating less affects you. We keep what it means for your plan, not the condition.' },
   weight: { title: 'What do you weigh?', line: 'Roughly is fine. It stays private.', hint: 'Drag to set. Skip it and we won’t show calorie numbers yet.', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tali never shows it back.' },
@@ -102,11 +102,13 @@ export const NOTES = {
     close: 'Close and delete',
     wrong: 'I typed my age wrong',
   },
-  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and no calorie target to hit. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, no or rather not say) to keep things gentle. Nothing more.' },
+  wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and nothing asking you to eat less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
   medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
 }
+
+const kc = (n: number) => n.toLocaleString('en-GB')
 
 /** Onboarding 3: the summary. */
 export const SUMMARY = {
@@ -145,17 +147,62 @@ export const SUMMARY = {
   others: 'See other plans',
   othersS: 'This week is our suggestion. You can choose a ready-made plan instead.',
   daySub: 'Why each part is here',
-  /** ob3-2's first row. The board's moves are placeholders (s-ob8 point 4), so the line names none. */
+  /** ob3-2's first row: the session's own moves (core/domain/warmup), as the player runs them */
   warmRow: (n: number) => `Warm-up · ${n} min`,
-  warmRowS: 'A minute or two to raise your pulse, then moving stretches for today’s joints',
-  /** GAP: the "How we worked this out" sheet has no board; this is the §5 chain in plain words */
+  warmRowS: (names: string[]) => {
+    const [first, ...rest] = names
+    const low = rest.map((x) => x.charAt(0).toLowerCase() + x.slice(1))
+    return low.length ? `${first}, then ${low.length > 1 ? `${low.slice(0, -1).join(', ')} and ${low[low.length - 1]}` : low[0]}: moving stretches for today’s joints` : `${first}, to let your heart rate rise gently`
+  },
+  /** ob9-1: the standard card */
+  startT: (kcal: number) => `About ${kc(kcal)} kcal a day to start`,
+  /** ob9-1. GAP: a surplus says "more than", a start at the estimate says "around" (s-ob9 draws a deficit) */
+  startS: (e: { diff: number; estimate: number; direction: 'less' | 'more' | 'same'; floored: boolean }, review: string, pct: number) =>
+    (e.direction === 'same'
+      ? `That’s around our best estimate of what you burn (about ${kc(e.estimate)} a day).`
+      : `That’s about ${kc(Math.abs(e.diff))} ${e.direction} than our best estimate of what you burn (around ${kc(e.estimate)} a day).`) +
+    (e.floored ? ` ${FLOOR_LINE}` : '') +
+    ` Estimates like this can be ${pct}% out either way, so Tali checks it against your weigh-ins after ${review} and adjusts.`,
+  /** ob9-1 and ob4-9: Sometimes */
+  sometimesT: 'A steady range to eat around',
+  sometimesS: 'With no deficit and no weight. For your first two weeks it’s one tap away on Food, then we’ll ask if you’d like it on Today.',
+  /** ob9-1 and ob4-9: Yes */
+  yesT: 'Log what you eat, if it helps',
+  yesS: 'There’s no calorie number and no weight, and protein is shown in words. You can change this in Profile any time.',
+  changeLink: 'Change in Profile › Health check answers',
+  /** ob9-5 */
   howT: 'How we worked this out',
-  how: [
-    'We start from your resting energy: an estimate from your age, height, weight and sex (the Mifflin–St Jeor equation).',
-    'Then we add your everyday movement, not counting workouts, and the sessions in your week.',
-    'That gives your likely maintenance, as a range, since any estimate like this can be out by about a sixth. Your goal then sets the starting number, never below a safe minimum.',
-    'After 3–4 weeks of weigh-ins, Tali checks it against what actually happened.',
-  ],
+  how: {
+    burnT: 'What you burn, roughly',
+    /** departs from ob9-5's "Workouts are counted separately": the estimate already counts the week's planned sessions (targets.ts) */
+    burn: (est: number) => `Around ${kc(est)} kcal a day, from your age, height, weight, how much you move and the workouts in your week.`,
+    sureT: 'How sure we are',
+    sure: (lo: number, hi: number, pct: number) => `Estimates like this can be about ${pct}% out either way, so the real figure is likely somewhere between ${kc(lo)} and ${kc(hi)}.`,
+    startT: 'Your starting point',
+    /** a pace only for a loss with no floor; a gain says "slowly" (7,700 kcal/kg is a fat-loss figure) */
+    start: (e: { start: number; diff: number; paceKg: number | null; direction: 'less' | 'more' | 'same'; floored: boolean }) => {
+      const gap = `About ${kc(e.start)} a day: about ${kc(Math.abs(e.diff))} ${e.direction} than the estimate`
+      const line = e.floored
+        ? (e.direction === 'same' ? `About ${kc(e.start)} a day: around the estimate.` : `${gap}.`) + ` ${FLOOR_LINE}`
+        : e.direction === 'same' ? `About ${kc(e.start)} a day: around the estimate, so your weight is likely to stay about the same.`
+        : e.direction === 'more' || e.paceKg == null ? `${gap}, so your weight is likely to go up slowly.`
+        : `${gap}, for ${e.paceKg <= 0.25 ? 'a gentle pace' : 'a pace'} of around ${paceWords(e.paceKg)} a week.`
+      return line
+    },
+    nextT: 'What happens next',
+    next: (review: string) => `After ${review} of weigh-ins, Tali compares what happened with what we expected and suggests an adjustment. Nothing changes without your OK.`,
+  },
+}
+
+/** when a calorie floor set the start (ob9-1, ob9-5) */
+export const FLOOR_LINE = 'Tali doesn’t go below a safe minimum.'
+
+/** 0.25 → "a quarter of a kilo", 0.5 → "half a kilo", otherwise "0.4 kg" */
+function paceWords(kg: number): string {
+  if (Math.abs(kg - 0.25) < 0.001) return 'a quarter of a kilo'
+  if (Math.abs(kg - 0.5) < 0.001) return 'half a kilo'
+  if (Math.abs(kg - 1) < 0.001) return 'a kilo'
+  return `${kg < 0.1 ? 'under 0.1' : kg.toLocaleString('en-GB', { maximumFractionDigits: 2 })} kg`
 }
 
 /** ob4-8: "What this means", the person's own reason only (drawn: pregnancy). */
@@ -204,14 +251,18 @@ export const HEALTH_ANSWERS = {
   no: 'No',
   none: 'None of these',
   gentler: 'Gentler start',
-  /** Yes and Sometimes are stored as one */
-  wellbeingFlagged: 'Yes or sometimes',
+  /** Onboarding 9 stores Yes and Sometimes apart */
+  wellbeingFlagged: 'Yes',
+  wellbeingSometimes: 'Sometimes',
   rather: 'Rather not say',
   does: {
     pregnancy: 'Food stays at maintenance with no calorie number, and training stays gentle.',
     medical: 'Food stays at maintenance, with no high-protein target.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
-    wellbeing: 'Weight is hidden and there’s no calorie target to hit.',
+    /** Yes: the ob9-1 card */
+    wellbeing: 'No calorie target and no weight, and protein is shown in words.',
+    /** GAP: Sometimes has no ob7 line; the ob9-1 card in a sentence */
+    wellbeingSometimes: 'Food shows a steady range with no deficit, and weight is hidden.',
     /** "Rather not say" without the deficit chosen */
     rather: 'Food stays at maintenance for now.',
     /** a stored answer that changes nothing */
@@ -249,15 +300,34 @@ export const CHECKIN = {
   done: 'Done',
 }
 
+const EXPLAINED = { start: 1650, estimate: 1900, diff: 250, paceKg: 0.25 as number | null, direction: 'less' as 'less' | 'more' | 'same', floored: false }
+const EXPLAINED_ALL = [EXPLAINED, { ...EXPLAINED, start: 2150, diff: -250, paceKg: null, direction: 'more' as const }, { ...EXPLAINED, start: 1900, diff: 0, paceKg: null, direction: 'same' as const },
+  { ...EXPLAINED, start: 1200, estimate: 1150, diff: -50, paceKg: null, direction: 'same' as const, floored: true }, { ...EXPLAINED, start: 1500, diff: 400, paceKg: null, floored: true }]
+/** Onboarding 9's lines that take more than numbers */
+const FN_SAMPLES = new Map<unknown, unknown[][]>([
+  [SUMMARY.startS, EXPLAINED_ALL.map((e, i) => [e, '3–4 weeks', i ? 15 : 20])],
+  [SUMMARY.how.sure, [[1650, 2200, 15], [1550, 2300, 20]]],
+  [SUMMARY.how.start, EXPLAINED_ALL.map((e) => [e])],
+  [SUMMARY.how.next, [['3–4 weeks']]],
+  [FOOD9.slots, [[['breakfast', 'lunch', 'snack'], 2], [['dinner'], 1], [[], 0]]],
+  [FOOD9.withProtein, [[2, 3], [1, 1], [0, 2]]],
+  [FOOD9.meals, [[0], [1], [3]]],
+  [SUMMARY.warmRowS, [[['March on the spot', 'Leg swings', 'Bodyweight squat']], [['March on the spot']]]],
+])
+
 /** Every line above, for the copy lint. */
 export function allCopy(): string[] {
   const out: string[] = []
   const walk = (x: unknown) => {
     if (typeof x === 'string') out.push(x)
-    else if (typeof x === 'function') out.push(String((x as (n: number) => string)(1)), String((x as (n: number) => string)(2)))
+    else if (typeof x === 'function') {
+      const f = x as (...a: unknown[]) => string
+      const tries = FN_SAMPLES.get(f) ?? (f.length >= 3 ? [[62, 95, 130], [62, 60, null]] : f.length === 2 ? [[1, 2], [2, 3]] : [[1], [2]])
+      for (const a of tries) out.push(String(f(...a)))
+    }
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, HEALTH_ANSWERS, REDO, CHECKIN])
+  walk([COPY, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, FOOD9, SUPPORT, HEALTH_ANSWERS, REDO, CHECKIN])
   return out
 }

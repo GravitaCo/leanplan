@@ -1,12 +1,13 @@
 import type { AppState } from '@/core/types'
 import { shiftDay } from './date'
 import { weekOf } from './insights'
-import { sessionsOf } from './sessions'
+import { workoutsOf } from './sessions'
 import { keyRoutineId, type WorkoutKey } from './routines'
 import { activePlan, plannedKeys } from './plans'
 
-const did = (s: AppState, d: string) => sessionsOf(s.days[d], d).length > 0
-const didRoutine = (s: AppState, d: string, k: WorkoutKey) => sessionsOf(s.days[d], d).some((x) => x.routineId === keyRoutineId(k))
+// a warm-up on its own isn't a workout done (workoutsOf)
+const did = (s: AppState, d: string) => workoutsOf(s.days[d], d).length > 0
+const didRoutine = (s: AppState, d: string, k: WorkoutKey) => workoutsOf(s.days[d], d).some((x) => x.routineId === keyRoutineId(k))
 
 /**
  * Plans that slide (workout plan §0.3, §0.4, §4.1b). Nothing is ever "missed" and the calendar

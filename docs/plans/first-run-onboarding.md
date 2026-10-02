@@ -416,3 +416,30 @@ anything synced stay on the server with nothing there knowing it's under-age.
   `why` sent); an empty list still clears it. Plans with and without `why` go in separate requests.
 - *Pending under-age record.* A normal account deletion that succeeds clears it when it's that
   account's; another account's stays through the wipe.
+
+## 16. Food: less emphasis to start, never hidden (Onboarding 9 and 10, Benn, 1 Oct 2026)
+
+- **Built and live with the flag off** (main 927e8a5):
+  - Sometimes is split from Yes on the food-and-weight question.
+  - Sometimes gets a maintenance range only (±15%, rounded to 50, never below the floor), no deficit, no weight shown back, protein as a range, Today in words, then one ask at day 14.
+  - Yes gets no calorie target or number, no trend and no deficit, ever; totals in words, and one ask at the week-4 look-back with a 12-week rest.
+  - Neither ask, and no range, while pregnant.
+  - Profile has "Support and helplines", for everyone, and "Where your food range shows".
+- **Copy Benn approved, 1 Oct 2026 (not on a board):**
+  - "Tali hides your weight, never suggests eating less"
+  - "no weight on screen and nothing asking you to eat less"
+  - "Yes" and "Sometimes" as separate answers
+  - "No calorie target and no weight, and protein is shown in words."
+  - "Your week-4 look-back"
+  - "Tali doesn't go below a safe minimum."
+  - the gain wording "likely to go up slowly"
+  - "Estimates like this can be 15% (or 20%) out either way"
+  - the Food tab cards ("Roughly … kcal a day", "There to help you eat enough, never less.")
+  - "Logged" on the Sometimes weight tile
+  - the Profile undo rows
+  - Sometimes' Daily targets line: "A range around maintenance, worked out from your body and activity level, so there's no calorie target to set."
+  - the Sometimes suggestion: "Your food range is about X–Y kcal a day, around maintenance."
+- **Kept as approved:** the Sometimes range is the full ±15%. mental-performance suggested about −5% to +15%; it's left for review with the first group of users.
+- **Open:**
+  - No check-in collects a restriction signal yet. `restrictionSignal()` is the hook.
+  - The 14-day, week-4 and 90-day timings are judgement calls, to review with the first users.

@@ -18,7 +18,7 @@ import {
   progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
 import { latestWeight } from '@/core/domain/insights'
-import { wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
+import { wellbeingAnswerOf, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { CM_PER_IN, cmFromIn, ftInFromCm, kgFromLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 import type { Lately } from '@/core/domain/engine'
@@ -28,8 +28,10 @@ import { BareSheet, useScrollLock } from '@/ui/primitives'
 import { ChoiceTiles, CheckTiles, type TileOpt } from '@/ui/Tiles'
 import { Wheel } from '@/ui/Wheel'
 import { Ruler } from '@/ui/Ruler'
-import { warmupMinutes, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
+import { warmupMinutesFor, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
+import partOnePhoto from '@/assets/onboarding/part-1-about-you.jpg'
 import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
+import partThreePhoto from '@/assets/onboarding/part-3-your-plan.jpg'
 import { COPY, DAYS_SPREAD, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, TAP, TAP_GOAL, WHY_LINK, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
 import { SPS, Signposts, Under16, UnderAgeStop } from './AgeStop'
@@ -96,7 +98,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   return <Fragment key={d.step}>{screen()}</Fragment>
   function screen() {
   switch (d.step) {
-    case 'intro': return <PartIntro step="intro" onGo={() => go()} onAlt={() => put({ ...d, skipped: true, step: 'skip-age' })} />
+    case 'intro': return <PartIntro step="intro" photo={partOnePhoto} onGo={() => go()} onAlt={() => put({ ...d, skipped: true, step: 'skip-age' })} />
     case 'skip-age': return <SkipAge {...common} />
     case 'name': return <Name {...common} />
     case 'age': return <Age {...common} />
@@ -117,7 +119,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'weight': return <Weight {...common} />
     case 'move': return <Move {...common} />
     case 'handoff': return <PartIntro step="handoff" photo={partTwoPhoto} onGo={() => go()} onAlt={() => go({ later: true })} />
-    case 'plan-intro': return <PartIntro step="plan-intro" onGo={() => go()} />
+    case 'plan-intro': return <PartIntro step="plan-intro" photo={partThreePhoto} onGo={() => go()} />
     case 'moving': return <Radio {...common} step="moving" opts={MOVING_OPTIONS.map(([k, t]) => [k, t])} value={d.moving} set={(v) => go({ moving: v })} clear={{ moving: undefined }} />
     case 'confidence': return <Radio {...common} step="confidence" opts={CONFIDENCE_OPTIONS} value={d.experience} set={(v) => go({ experience: v })} clear={{ experience: undefined }} />
     case 'days': return <Days {...common} />
@@ -202,8 +204,8 @@ const ADVANCE_MS = 280
 
 /**
  * The part intros (ob1-0, ob2-0, ob3-0): a photo, "Part n of 3" with a 3-step bar, the title, one
- * line and what's coming. Parts 1 and 3 have no photo in the app yet: a token-coloured block
- * stands in (flagged for Benn).
+ * line and what's coming. Photos: Part 1 and Part 3 from the boards (Benn cleared them, 1 Oct 2026),
+ * Part 2 the Pure muscle growth plan photo. Without one, a token-coloured block stands in.
  */
 function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | 'plan-intro'; photo?: string; onGo: () => void; onAlt?: () => void }) {
   const c = COPY[step]!
@@ -384,7 +386,8 @@ function LatelyQ({ d, go, back }: Common) {
 }
 
 function Wellbeing({ d, go, back }: Common) {
-  const init: WellbeingAnswer | undefined = d.outcomes.wellbeing === 'clear' ? 'no' : d.outcomes.wellbeing === 'undisclosed' ? 'rather-not-say' : undefined
+  // Yes and Sometimes are stored apart now (Onboarding 9), so every answer can be shown again
+  const init: WellbeingAnswer | undefined = wellbeingAnswerOf(d.outcomes.wellbeing)
   const [a, setA] = useState<WellbeingAnswer | undefined>(init)
   const advance = useAdvance()
   const pick = (v: WellbeingAnswer) => {
@@ -582,7 +585,7 @@ function Minutes({ d, go, back }: Common) {
       <div className="wz-unit">{COPY.minutes!.unit}</div>
       {r && (
         <div className="wz-card wz-warm">
-          <span className="t">{MINUTES_WARMUP(warmupMinutes(r))}</span>
+          <span className="t">{MINUTES_WARMUP(warmupMinutesFor(r))}</span>
           <span className="s">{MINUTES_WARMUP_S}</span>
         </div>
       )}

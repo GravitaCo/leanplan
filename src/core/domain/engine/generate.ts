@@ -6,6 +6,7 @@ import { EXERCISES } from '@/core/data/exercises'
 import { KIT_PROFILES } from '../libraryCoverage'
 import { deriveEffort, estMins, headlineModality } from '../routines'
 import { parseRx } from '../guided'
+import { RAMP_MINUTES, warmupMinutesFor, type SessionRange } from '../warmup'
 import { seededUuid, stableKey, unit } from './hash'
 import { DEFAULT_WEEKDAYS, WEEK_ORDER, defaultWhy, hasTrainingAnswers, poorLately, type AgeBand, type Deficit, type InputField, type PlanInputs } from './inputs'
 
@@ -246,6 +247,8 @@ interface Ctx {
   exp: Experience
   moving: MovingNow
   minutes: number
+  /** the warm-up block's minutes (core/domain/warmup): taken from the session first, never trimmed */
+  warm: number
   kit: Set<Equipment>
   kitField?: InputField
   homeOnly: boolean
@@ -268,7 +271,7 @@ interface Ctx {
   starter: boolean
 }
 
-function resolve(inp: PlanInputs, pm: PersonModel | undefined, seed: string, starter: boolean): { ctx: Ctx; days: number[]; defaults: Why[]; dayWhy: Why[] } {
+function resolve(inp: PlanInputs, pm: PersonModel | undefined, seed: string, starter: boolean, range?: SessionRange): { ctx: Ctx; days: number[]; defaults: Why[]; dayWhy: Why[] } {
   const defaults: Why[] = []
   const dayWhy: Why[] = []
   const skip = (f: InputField, about: Why['about'] = 'plan', value?: string) => { if (!starter) defaults.push(defaultWhy(f, about, value)) }
@@ -365,7 +368,7 @@ function resolve(inp: PlanInputs, pm: PersonModel | undefined, seed: string, sta
   }
 
   const ctx: Ctx = {
-    seed, goal, exp, moving, minutes, kit, kitField, homeOnly, outdoors, gym,
+    seed, goal, exp, moving, minutes, warm: starter ? warmupMinutesFor(undefined, minutes) : warmupMinutesFor(range, minutes), kit, kitField, homeOnly, outdoors, gym,
     enjoy, areas, noImpact, impactField: impactCauses[0] ?? 'readiness', gentleStart, gentleField, readinessFlag, age, deficit,
     V, vTrims, liked: new Set(pm?.liked ?? []), disliked: new Set(pm?.disliked ?? []),
     exposures: Object.fromEntries(Object.entries(pm?.ex ?? {}).map(([k, v]) => [k, v?.exposures ?? 0])), starter,
@@ -579,15 +582,18 @@ function slotSec(e: Exercise, sl: Pick<PlannedSlot, 'sets' | 'restSec' | 'unit' 
   const tc = e.timeCost ?? { setupSec: 30, setSec: 40 }
   return tc.setupSec + sl.sets * tc.setSec + Math.max(0, sl.sets - 1) * sl.restSec + 15
 }
-const warmMins = (minutes: number) => (minutes >= 30 ? 5 : minutes >= 20 ? 3 : 1)
 
 interface Draft { e: Exercise; spec: Spec; role: SlotRole; slot: PlannedSlot; was?: number }
 const asRoutineSlots = (ds: { slot: PlannedSlot }[]): RoutineSlot[] => ds.map((d) => ({ exId: d.slot.exId, rx: d.slot.rx }))
-/** Engine minutes for a session, and the app's own estimate (routines.estMins), whichever is longer. */
-function sessionMins(ds: Draft[], minutes: number, kind: SessionKind): number {
-  const warm = kind === 'resistance' ? warmMins(minutes) : 0
-  const own = warm + ds.reduce((a, d) => a + slotSec(d.e, d.slot), 0) / 60
-  return Math.max(own, ds.length ? estMins(asRoutineSlots(ds)) : 0)
+/**
+ * Engine minutes for a session, and the app's own estimate (routines.estMins), whichever is
+ * longer. Both start with the warm-up block (every kind of session has one) and about 90 s of
+ * lighter sets when there's a weighted lift; the main work fills what's left.
+ */
+function sessionMins(ds: Draft[], c: Ctx): number {
+  const ramp = ds.some((d) => d.e.log === 'weight-reps') ? RAMP_MINUTES : 0
+  const own = c.warm + ramp + ds.reduce((a, d) => a + slotSec(d.e, d.slot), 0) / 60
+  return Math.max(own, ds.length ? estMins(asRoutineSlots(ds), { warmup: true, mins: c.warm }) : 0)
 }
 
 // ─── Sessions ────────────────────────────────────────────────────────────────────────────────
@@ -685,10 +691,10 @@ function buildResistance(tpl: string, day: number, c: Ctx, week: Week, targets: 
  * first (cool-down, isolation), then sets come down to two, then extras drop. Priority-1 slots are
  * never dropped while two remain. When time cuts the weekly dose, the trace says so.
  */
-function fitToMinutes(input: Draft[], c: Ctx, kind: SessionKind, explain: boolean): Omit<Built, 'why' | 'left'> {
+function fitToMinutes(input: Draft[], c: Ctx, _kind: SessionKind, explain: boolean): Omit<Built, 'why' | 'left'> {
   let ds = [...input]
   let trimmed = false, droppedMain = 0
-  const fits = () => sessionMins(ds, c.minutes, kind) <= c.minutes
+  const fits = () => sessionMins(ds, c) <= c.minutes
   const lowerSets = (d: Draft, to: number) => {
     const p = prescribe(d.e, d.role, to, c)
     if (d.was == null) d.was = d.slot.sets
@@ -713,7 +719,8 @@ function fitToMinutes(input: Draft[], c: Ctx, kind: SessionKind, explain: boolea
   cutTo(2)
   drop(2)
   cutTo(1)
-  while (!fits() && ds.length > 2) { ds = ds.slice(0, -1); droppedMain++; trimmed = true }
+  // a 10-minute session can come down to one move: the warm-up is never what gives
+  while (!fits() && ds.length > (c.minutes <= 10 ? 1 : 2)) { ds = ds.slice(0, -1); droppedMain++; trimmed = true }
   if (explain) {
     for (const d of ds) {
       if (d.was != null && d.was !== d.slot.sets) {
@@ -722,20 +729,21 @@ function fitToMinutes(input: Draft[], c: Ctx, kind: SessionKind, explain: boolea
       }
     }
   }
-  return { drafts: ds, mins: Math.round(sessionMins(ds, c.minutes, kind)), trimmed, droppedMain }
+  return { drafts: ds, mins: Math.round(sessionMins(ds, c)), trimmed, droppedMain }
 }
 
 function buildCardio(day: number, c: Ctx, week: Week, explain: boolean, beforeLegs: boolean): Built {
   const st: PickState = { mode: 'cardio', key: `cardio|${day}`, role: 'cardio', session: new Set(), week: usedFor(week, 'cardio'), mains: week.mains, beforeLegs }
   const got = choose(CARDIO, c, st, explain)
   const e = got.e ?? CARDIO.find((x) => x.id === 'cardio-walk')!
-  // never more than twice the piece's own upper range (a 20–30 min run tops out at 60), within the minutes
+  // never more than twice the piece's own upper range (a 20–30 min run tops out at 60), within the
+  // minutes the warm-up leaves
   const own = parseRx(e.defaultRx).reps?.hi ?? 30
-  const hi = Math.min(c.minutes, own * 2), lo = hi <= 10 ? hi : hi - 10
+  const hi = Math.min(c.minutes - c.warm, own * 2), lo = hi <= 10 ? hi : hi - 10
   const rx = lo === hi ? `${hi} min` : `${lo}–${hi} min`
   usedFor(week, 'cardio').add(e.id)
   const slot: PlannedSlot = { exId: e.id, pattern: 'cardio', role: 'cardio', sets: 1, reps: { lo, hi }, unit: 'min', rx, restSec: 0, calibrate: false, why: [...got.why, { code: 'minutes', about: 'plan', field: 'minutes', data: { exId: e.id, value: String(c.minutes) } }] }
-  return { drafts: [{ e, spec: S('cardio', 1), role: 'cardio', slot }], mins: hi, why: [], trimmed: false, droppedMain: 0, left: [] }
+  return { drafts: [{ e, spec: S('cardio', 1), role: 'cardio', slot }], mins: hi + c.warm, why: [], trimmed: false, droppedMain: 0, left: [] }
 }
 
 function mindModality(c: Ctx): Modality | null {
@@ -758,7 +766,7 @@ function buildMindBody(day: number, c: Ctx, week: Week, explain: boolean): Built
     const p = prescribe(got.e, 'flow', parseRx(got.e.defaultRx).sets?.hi ?? 1, c)
     const { whyReps, ...rest } = p
     const next: Draft = { e: got.e, spec: S(got.e.pattern ?? 'mobility', 3), role: 'flow', slot: { exId: got.e.id, pattern: got.e.pattern ?? 'mobility', role: 'flow', ...rest, why: [...got.why, ...whyReps] } }
-    if (sessionMins([...ds, next], c.minutes, 'mind-body') > c.minutes) continue
+    if (sessionMins([...ds, next], c) > c.minutes) continue
     ds.push(next)
   }
   // standing first, then down to the floor, and any resting pose last
@@ -766,7 +774,7 @@ function buildMindBody(day: number, c: Ctx, week: Week, explain: boolean): Built
   ds = ds.map((d, i) => ({ d, i })).sort((a, b) => rank(a.d) - rank(b.d) || a.i - b.i).map((x) => x.d)
   for (const d of ds) usedFor(week, 'mind').add(d.e.id)
   const why: Why[] = mindModality(c) ? [{ code: 'enjoy', about: 'mix', field: 'enjoy', data: { value: m } }] : [{ code: 'evidence', about: 'mix', data: { value: 'recovery' } }]
-  return { drafts: ds, mins: Math.round(sessionMins(ds, c.minutes, 'mind-body')), why, trimmed: false, droppedMain: 0, left: [], modality: m }
+  return { drafts: ds, mins: Math.round(sessionMins(ds, c)), why, trimmed: false, droppedMain: 0, left: [], modality: m }
 }
 
 // ─── Assembly ────────────────────────────────────────────────────────────────────────────────
@@ -786,7 +794,9 @@ type Kind = 'R' | 'C' | 'M'
 function mixFor(c: Ctx, count: number): { R: number; C: number; M: number; why: Why[]; offers: Offer[]; optionalM: boolean } {
   // the Starter week is three full-body days for everyone (onboarding §2.1)
   let [R, C, M] = c.starter ? [count, 0, 0] : MIX[c.goal][count - 1]
-  const why: Why[] = [{ code: 'goal', about: 'mix', field: 'goal', data: { value: c.goal } }]
+  // the goal is claimed for the mix only where it sets one: one day is one session for every goal
+  const goalSets = (Object.keys(MIX) as Goal[]).some((g) => MIX[g][count - 1].join() !== MIX[c.goal][count - 1].join())
+  const why: Why[] = goalSets || c.starter ? [{ code: 'goal', about: 'mix', field: 'goal', data: { value: c.goal } }] : []
   const offers: Offer[] = []
   const optionalM = c.goal === 'lose-fat' && count === 6
   if (optionalM) why.push({ code: 'guardrail', about: 'mix', field: 'goal', data: { value: 'lose-fat-six' } })
@@ -1005,10 +1015,15 @@ export function planSignature(p: Pick<GeneratedPlan, 'sessions' | 'easeInWeeks'>
  * inputs, model and seed: the same plan. Nothing here is saved; the UI stores `trainingPlan`
  * and `routines` when the person confirms.
  */
-export function buildPlan(inputs: PlanInputs, personModel?: PersonModel, seed?: string): BuildResult {
+/**
+ * `opts.sessionRange`: the length as picked (a range). It only sets the warm-up's minutes, the
+ * same ones onboarding shows (45–60 and 60+ both run as 60 engine minutes, with 8 and 10 minutes
+ * of warm-up); without it the warm-up follows `minutes`.
+ */
+export function buildPlan(inputs: PlanInputs, personModel?: PersonModel, seed?: string, opts: { sessionRange?: SessionRange } = {}): BuildResult {
   const starter = !hasTrainingAnswers(inputs)
   const sd = seed ?? 'plan:' + stableKey({ i: inputs, p: personModel ?? null })
-  const r = resolve(inputs, personModel, sd, starter)
+  const r = resolve(inputs, personModel, sd, starter, opts.sessionRange)
   const c = r.ctx
   const core = assemble(c, r.days, true)
 

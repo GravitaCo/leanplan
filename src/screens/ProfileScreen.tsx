@@ -6,6 +6,7 @@ import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
 import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
 import { profileRouting } from '@/core/domain/onboarding'
+import { foodView } from '@/core/domain/foodMode'
 import { useConsent } from '@/store/hooks'
 import { ACCURACY, HANDS, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { latestWeight, rangeWidth } from '@/core/domain/insights'
@@ -19,6 +20,7 @@ import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
+import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 
@@ -124,7 +126,9 @@ export function ProfileScreen() {
   const [emailField, setEmailField] = useState(email || '')
   const [metrics, setMetrics] = useState({
     sex: pr.sex, age: pr.age?.toString() || '', height: pr.height?.toString() || '',
-    weight: weight?.toString() || '', activityLevel: pr.activityLevel,
+    // weight not shown back (Sometimes and Yes): the field starts empty, and an empty field leaves
+    // the stored weight as it is (weightPatch); the suggestion still reads it (suggestionWeight)
+    weight: foodView(pr).weightBack ? weight?.toString() || '' : '', activityLevel: pr.activityLevel,
   })
   const [targets, setTargets] = useState({
     kcal: data.target.kcal.toString(), p: data.target.p.toString(), c: data.target.c.toString(), f: data.target.f.toString(),
@@ -135,7 +139,8 @@ export function ProfileScreen() {
 
   const healthConsent = useConsent('health').granted
   const sugProfile = { ...pr, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null }
-  const sugWeight = parseFloat(metrics.weight) || null
+  const weightBack = foodView(pr).weightBack
+  const sugWeight = suggestionWeight(metrics.weight, weight, weightBack)
   // the same safety routing as the onboarding summary, so the two never disagree
   const sug = suggestedTargets(sugProfile, sugWeight, profileRouting(sugProfile, sugWeight, healthConsent))
   const notifReady = pushSupported()
@@ -146,8 +151,10 @@ export function ProfileScreen() {
 
   const field = (label: string, input: ReactNode) => <div className="field"><label>{label}</label>{input}</div>
 
-  // the everyday range (workout days can add to it; Summary and Food show the day's own)
-  const range = { lo: data.target.kcal - rangeWidth(pr), hi: data.target.kcal + rangeWidth(pr) }
+  // the everyday range (workout days can add to it; Summary and Food show the day's own). Sometimes:
+  // Food's maintenance range, nothing to edit; Yes (and pregnant Sometimes): no kcal at all
+  const pk = profileKcal(data, todayStr())
+  const kcalText = pk.kind === 'none' ? '' : `${fmt(pk.lo)}–${fmt(pk.hi)} kcal`
   const goalLabel = GOALS.find((g) => g.value === pr.goal)?.label
   const trainDays = Object.values(data.schedule).filter((x) => x && x !== 'Rest').length
   const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
@@ -167,7 +174,7 @@ export function ProfileScreen() {
           <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
           <div className="m">
             <div className="idn">{pr.name || 'Add your name'}</div>
-            <div className="s num">{goalLabel ? goalLabel + ' · ' : ''}{fmt(range.lo)}–{fmt(range.hi)} kcal a day</div>
+            {(goalLabel || kcalText) && <div className="s num">{[goalLabel, kcalText && kcalText + ' a day'].filter(Boolean).join(' · ')}</div>}
             <div className="s">{syncPaused ? 'Account · not syncing right now' : email}</div>
           </div>
           <Chevron rotate={open === 'profile' ? 90 : 0} />
@@ -187,7 +194,7 @@ export function ProfileScreen() {
 
       <div className="lbl">You and your goal</div>
       <div className="list icons">
-        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
+        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
           open={open === 'metrics'} onToggle={() => toggle('metrics')}>
           <div className="grid2">
             {field('Sex', <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
@@ -201,7 +208,7 @@ export function ProfileScreen() {
           {/* 18+: checked on Save, never while typing; an under-18 age saves nothing and the app's stop shows (store) */}
           <button className="btn gray" onClick={() => saveProfileMetrics({
             sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
-            weight: parseFloat(metrics.weight) || null, activityLevel: metrics.activityLevel,
+            ...weightPatch(metrics.weight), activityLevel: metrics.activityLevel,
             // choosing a level yourself starts the suggestion's cool-down, so the app never
             // offers a different level based on logs from before the decision; it also replaces
             // the onboarding multiplier, which would otherwise keep overriding it
@@ -216,10 +223,13 @@ export function ProfileScreen() {
               <button key={g.value} className={'chip' + (pr.goal === g.value ? ' on' : '')} onClick={() => saveProfileMetrics({ goal: g.value })}>{g.label}</button>
             ))}
           </div>
-          {sug ? (
+          {sug || pk.kind === 'none' ? (
             <div className="card" id="sug-targets" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
-              {'hidden' in sug ? (
+              {!sug || 'hidden' in sug || pk.kind === 'none' ? (
                 <span className="muted">Calorie suggestions are off for now, so there's no number here.</span>
+              ) : pk.kind === 'range' ? (
+                // Sometimes: Food's range, never a single number or a target to use
+                <>Your food range is about <b className="num">{kcalText}</b> a day, around maintenance.</>
               ) : 'goalNeeded' in sug ? (
                 <>Maintenance about <b className="num">{fmt(sug.maint)} kcal</b>.<br /><span className="muted">Choose your main goal to see a suggested daily target.</span></>
               ) : (
@@ -236,9 +246,15 @@ export function ProfileScreen() {
                 </>
               )}
             </div>
-          ) : <div className="foot" style={{ padding: '10px 0 0' }}>Add age, height and weight to see suggested targets.</div>}
+          ) : <div className="foot" style={{ padding: '10px 0 0' }}>{sugWeight && !weightBack ? 'Add age and height to see suggested targets.' : 'Add age, height and weight to see suggested targets.'}</div>}
         </Disclosure>
-        <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={`${fmt(range.lo)}–${fmt(range.hi)} kcal`}
+        {pk.kind === 'range' && (
+          <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={kcalText}
+            open={open === 'targets'} onToggle={() => toggle('targets')}>
+            <div className="foot" style={{ padding: 0 }}>A range around maintenance, worked out from your body and activity level, so there's no calorie target to set.</div>
+          </Disclosure>
+        )}
+        {pk.kind === 'target' && <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={kcalText}
           open={open === 'targets'} onToggle={() => toggle('targets')}>
           <div className="grid2">
             {field('Calories', <input type="number" value={targets.kcal} onChange={(e) => setTargets({ ...targets, kcal: e.target.value })} />)}
@@ -259,7 +275,7 @@ export function ProfileScreen() {
           <div className="foot" style={{ padding: '10px 0 0' }}>
             Your day is judged against a range (up to ± 400), not a single number. Calories won't go below 1,200 here. Going lower is something to do with medical support.
           </div>
-        </Disclosure>
+        </Disclosure>}
         <SettingRow icon="dumbbell" color={MOVEF} soft label="Training" value={trainDays === 1 ? '1 day a week' : `${trainDays} days a week`} onPress={() => setTab('plan')} />
       </div>
       <div className="foot">Your weekly training schedule lives on Plan.</div>

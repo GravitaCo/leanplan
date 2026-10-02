@@ -42,8 +42,13 @@ export interface SafetyRouting {
   noDeficit: boolean
   hideWeight: boolean
   noAI: boolean
-  /** gentle mode on (Profile.gentle: calories and weight hidden, the day in words) */
+  /** gentle mode on (Profile.gentle: calories and weight hidden, the day in words): wellbeing Yes */
   gentle: boolean
+  /**
+   * Onboarding 9's food rules from the wellbeing answer: 'yes' (no calorie or protein target),
+   * 'sometimes' (a maintenance range only, no deficit) or 'standard'. core/domain/foodMode has the rest.
+   */
+  foodMode: 'standard' | 'sometimes' | 'yes'
   /** exactly maintenance: no deficit and no surplus */
   maintenanceOnly: boolean
   hideCalories: boolean
@@ -82,14 +87,23 @@ export const PREGNANCY_REASK_DAYS = 12 * 7
 export type WellbeingAnswer = 'yes' | 'sometimes' | 'no' | 'rather-not-say'
 
 /**
- * The only thing stored from the wellbeing screen. No → 'clear' (normal targets); Yes or
- * Sometimes → 'flagged'; "Rather not say" → 'undisclosed'; skipped → absent. Undisclosed and
+ * The only thing stored from the wellbeing screen. No → 'clear' (normal targets); Yes →
+ * 'flagged' (its stored name from before Sometimes was split off: never rename it); Sometimes →
+ * 'sometimes' (Onboarding 9); "Rather not say" → 'undisclosed'; skipped → absent. Undisclosed and
  * skipped take the §2.1 safe side: maintenance pre-selected (the goal's deficit offered, one tap
  * to choose), gentle mode offered, not on, and weight still shown.
  */
 export function wellbeingOutcome(a: WellbeingAnswer | undefined): OnboardingOutcomes['wellbeing'] {
   if (!a) return undefined
-  return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : 'flagged'
+  return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : a === 'sometimes' ? 'sometimes' : 'flagged'
+}
+
+/** The wellbeing outcome answers Yes or Sometimes: both get the signposting note (ob4-2). */
+export const wellbeingRouted = (w: OnboardingOutcomes['wellbeing']): boolean => w === 'flagged' || w === 'sometimes'
+
+/** The board answer a stored outcome came from, to pre-select it (the wizard, Profile's Change). */
+export function wellbeingAnswerOf(w: OnboardingOutcomes['wellbeing']): WellbeingAnswer | undefined {
+  return w === 'flagged' ? 'yes' : w === 'sometimes' ? 'sometimes' : w === 'clear' ? 'no' : w === 'undisclosed' ? 'rather-not-say' : undefined
 }
 
 /** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
@@ -158,7 +172,7 @@ export function healthAnswersView(p: Pick<Profile, 'outcomes' | 'pregnancy' | 'a
       if (p.pregnancy) { value = p.pregnancy.flagged ? 'flagged' : 'clear'; flagged = p.pregnancy.flagged }
     } else {
       value = p.outcomes?.[kind]
-      flagged = value === 'flagged' || value === 'low'
+      flagged = value === 'flagged' || value === 'low' || value === 'sometimes'
     }
     if (value === undefined) continue
     const answeredAt = p.answeredAt?.[healthAnswerField(kind)] ?? (kind === 'pregnancy' ? p.pregnancy?.askedAt : undefined)
@@ -182,8 +196,21 @@ export function clearHealthAnswerIn(p: Profile, kind: HealthAnswerKind, at: stri
     delete o[kind]
     if (Object.keys(o).length) p.outcomes = o; else delete p.outcomes
   }
-  p.answeredAt = { ...p.answeredAt, [healthAnswerField(kind)]: at }
+  const stamps: Record<string, string> = { [healthAnswerField(kind)]: at }
+  if (kind === 'wellbeing') clearFoodOptIn(p, stamps, at)
+  p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
+}
+
+/**
+ * A changed wellbeing answer (any direction, or cleared) drops the food steps up it led to
+ * (Onboarding 9's foodOptIn), stamped like a withdrawal's clear so the per-field merge never
+ * brings an old yes back from another copy: each step up is asked again under the new answer.
+ */
+function clearFoodOptIn(p: Profile, stamps: Record<string, string>, at: string): void {
+  if (p.foodOptIn === undefined) return
+  delete p.foodOptIn
+  stamps.foodOptIn = at
 }
 
 /** The re-ask's answer: it still applies (re-dated, asked again in 12 weeks), or it doesn't (the flag goes). */
@@ -199,12 +226,13 @@ export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: s
 /** Answers Profile's "Change" can set (board ob7-1): the conditions outcome and the wellbeing answer. */
 export type ChangeableAnswer =
   | { kind: 'medical'; value: 'flagged' | 'clear' }
-  | { kind: 'wellbeing'; value: 'flagged' | 'clear' | 'undisclosed' }
+  | { kind: 'wellbeing'; value: 'flagged' | 'sometimes' | 'clear' | 'undisclosed' }
 
 /**
  * Set one answer from Profile, as the wizard would: outcomes only, stamped for the per-field
- * merge. Wellbeing Yes or Sometimes turns gentle mode on (as in the wizard, §3); moving off it
- * turns gentle mode off again, since that answer is what turned it on. Returns whether it changed.
+ * merge. Wellbeing Yes turns gentle mode on (as in the wizard, §3); moving off it turns gentle
+ * mode off again, since that answer is what turned it on. Sometimes keeps calorie numbers (a
+ * range, Onboarding 9), so it doesn't turn gentle mode on. Returns whether it changed.
  */
 export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): boolean {
   const before = p.outcomes?.[a.kind]
@@ -214,6 +242,7 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
   if (a.kind === 'wellbeing') {
     if (a.value === 'flagged' && !p.gentle) { p.gentle = true; stamps.gentle = at }
     else if (before === 'flagged' && a.value !== 'flagged' && p.gentle) { p.gentle = false; stamps.gentle = at }
+    clearFoodOptIn(p, stamps, at)
   }
   p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
@@ -221,7 +250,7 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
 
 /**
  * After clearing `kind`, calorie numbers would still be hidden by something else: gentle mode or
- * a wellbeing Yes/Sometimes, or the other answer that hides them (pregnancy). The clear
+ * a wellbeing Yes (Sometimes shows a range), or the other answer that hides them (pregnancy). The clear
  * confirm then says so instead of promising numbers (s-ob7, the undrawn variant).
  */
 export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy'>, kind: HealthAnswerKind): boolean {
@@ -275,7 +304,9 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
  * - age missing: no deficit, weight hidden, no AI, no calorie number
  * - pregnant or breastfeeding: maintenance only, no calorie number, gentle training, midwife/GP
  * - BMI under 18.5: no deficit (a gate only)
- * - wellbeing Yes/Sometimes: no deficit, gentle mode on, weight hidden, calm signposting;
+ * - wellbeing Yes: no deficit, gentle mode on (no calorie or protein number), weight hidden, calm
+ *   signposting. Sometimes (Onboarding 9): maintenance only (a range, never a deficit, whatever the
+ *   goal: the goal applies to training), weight hidden, the same signposting, gentle mode not on.
  *   "Rather not say" or skipped: maintenance pre-selected, gentle mode offered
  * - readiness yes: gentler start plus signposting; skipped: the same dose, signposting quietly
  * - medical flag: maintenance allowed (no deficit), no high-protein anchor, GP note. The flag
@@ -286,7 +317,7 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
 export function routeSafety(a: SafetyAnswers): SafetyRouting {
   const o = a.outcomes ?? {}
   const r: SafetyRouting = {
-    noDeficit: false, hideWeight: false, noAI: false, gentle: false, maintenanceOnly: false,
+    noDeficit: false, hideWeight: false, noAI: false, gentle: false, foodMode: 'standard', maintenanceOnly: false,
     hideCalories: false, signpost: [], hiddenReason: null, gentlerStart: false, nearMaintenance: false,
     startAtMaintenance: false, offerGentle: false, noProteinAnchor: false, gpNote: false,
     quietSignpost: false, reasons: [], defaults: [],
@@ -314,10 +345,11 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
 
   if (lowBmi(a.weightKg, a.heightCm)) { r.reasons.push('low-bmi'); r.noDeficit = true }
 
-  if (o.wellbeing === 'flagged') {
+  if (wellbeingRouted(o.wellbeing)) {
     r.reasons.push('wellbeing')
-    r.noDeficit = true; r.gentle = true; r.hideWeight = true
-    hide('gentle')
+    r.noDeficit = true; r.hideWeight = true
+    if (o.wellbeing === 'flagged') { r.gentle = true; r.foodMode = 'yes'; hide('gentle') }
+    else { r.foodMode = 'sometimes'; r.maintenanceOnly = true }
     for (const k of ['beat', 'nhs111-mental-health', 'nhs111', 'samaritans', 'emergency'] as const) sp.add(k)
   } else if (o.wellbeing !== 'clear') {
     if (o.wellbeing == null) r.defaults.push('wellbeing')

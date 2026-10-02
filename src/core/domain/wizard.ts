@@ -2,7 +2,7 @@ import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
   MacroTarget, OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPlan, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, type SafetyRouting } from './onboarding'
+import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
 import { suggestedTargets } from './nutrition'
 import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
@@ -15,7 +15,7 @@ import { sessionsOf } from './sessions'
 import { stampFields, type MergedField } from './profileMerge'
 import { DAY_NAME } from './date'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { rangeFromMinutes, warmupMinutes, type SessionRange } from './warmup'
+import { rangeFromMinutes, warmupMinutesFor, type SessionRange } from './warmup'
 import { liftingDays, phasesOf, phaseWeek, type PlanTemplate } from './plans'
 import type { PlannedSession } from './engine/generate'
 
@@ -185,7 +185,8 @@ export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   if (d.pregnant) s.push('pregnancy-note')
   else if (d.outcomes.readiness === 'flagged') s.push('ready-note')
   s.push('why', 'goal', 'lately', 'wellbeing')
-  if (d.outcomes.wellbeing === 'flagged') s.push('wellbeing-note')
+  // Yes and Sometimes both get the signposting note (Onboarding 9 keeps it for both)
+  if (wellbeingRouted(d.outcomes.wellbeing)) s.push('wellbeing-note')
   s.push('body')
   if (asksMedical(d.goal)) { s.push('medical'); if (d.outcomes.medical === 'flagged') s.push('medical-note') }
   s.push('weight', 'move', 'handoff')
@@ -262,7 +263,7 @@ export function outcomeInputs(o: OnboardingOutcomes | undefined): Pick<PlanInput
   return {
     readiness: x.readiness,
     lately: x.baseline === 'ok' ? { sleep: 'good', stress: 'low', room: 'plenty' } : x.baseline === 'low' ? { sleep: 'poor' } : undefined,
-    wellbeing: x.wellbeing === 'flagged' ? 'yes' : x.wellbeing === 'clear' ? 'no' : x.wellbeing === 'undisclosed' ? 'rather-not-say' : undefined,
+    wellbeing: wellbeingAnswerOf(x.wellbeing),
   }
 }
 
@@ -376,8 +377,11 @@ export function applyDraft(base: Profile, d: WizardDraft, today: string, at?: st
     // a redo that leaves it as it was keeps the stored one (its date and any "ask me later")
     if (d.redo && base.pregnancy && d.pregnant === d.redo.pregnant) { /* kept */ }
     else if (d.pregnant !== undefined) { p.pregnancy = { flagged: d.pregnant, askedAt: today }; stamped.push('pregnancy') } else delete p.pregnancy
-    // wellbeing Yes or Sometimes: gentle mode on (§3). Otherwise the person's own setting stays.
+    // wellbeing Yes: gentle mode on (§3). Sometimes keeps a range (Onboarding 9), so it doesn't
+    // turn gentle mode on. Otherwise the person's own setting stays.
     if (d.outcomes.wellbeing === 'flagged') { p.gentle = true; stamped.push('gentle') }
+    // a redo moving off Yes turns off the gentle mode that Yes turned on (as Profile's Change does)
+    else if (base.outcomes?.wellbeing === 'flagged' && p.gentle) { p.gentle = false; stamped.push('gentle') }
     if (d.deficitChosen !== undefined) { p.deficitChosen = d.deficitChosen; stamped.push('deficitChosen') } else delete p.deficitChosen
   }
   const t = trainingFrom(d)
@@ -454,14 +458,15 @@ export function summaryFor(base: Profile, d: WizardDraft, ctx: { healthConsent: 
   const routing = routeSafety(safetyAnswersFrom(profile, kg, ctx.healthConsent))
   const pm = personModelFrom(ctx.days, profile.training?.exPrefs)
   const inputs0: PlanInputs = inputsFromProfile(profile, outcomeInputs(profile.outcomes))
-  let result = buildPlan(inputs0, pm, d.seed)
+  const range = { sessionRange: profile.training?.sessionRange }
+  let result = buildPlan(inputs0, pm, d.seed, range)
   let load = loadOf(result, profile.goal)
   let targets = startingTargets(forTargets, load, routing, kg)
   let inputs = inputs0
   const deficit = deficitOf(targets.adjustPct)
   if (deficit !== 'none') {
     inputs = { ...inputs0, deficit }
-    result = buildPlan(inputs, pm, d.seed)
+    result = buildPlan(inputs, pm, d.seed, range)
     load = loadOf(result, profile.goal)
     targets = startingTargets(forTargets, load, routing, kg)
   }
@@ -489,9 +494,10 @@ export function rerunForAnswers(profile: Profile, active: TrainingPlan | undefin
   if (!planFromAnswers(active)) return { target, plan: null }
   const pm = personModelFrom(ctx.days, profile.training?.exPrefs)
   const inputs0 = inputsFromProfile(profile, outcomeInputs(profile.outcomes))
-  let result = buildPlan(inputs0, pm, active.id)
+  const range = { sessionRange: profile.training?.sessionRange }
+  let result = buildPlan(inputs0, pm, active.id, range)
   const deficit = deficitOf(sug && 'kcal' in sug ? sug.adjustPct : null)
-  if (deficit !== 'none') result = buildPlan({ ...inputs0, deficit }, pm, active.id)
+  if (deficit !== 'none') result = buildPlan({ ...inputs0, deficit }, pm, active.id, range)
   return { target, plan: result.plan }
 }
 
@@ -513,7 +519,7 @@ export function finishedProfile(m: SummaryModel, d: WizardDraft, at: string, tod
 export interface WhyRow { key: string; title: string; sub: string; whys: Why[]; lines?: string[] }
 
 /** The warm-up's length for these answers; the engine's 30 minutes when the length was skipped. */
-export const warmupFor = (d: Pick<WizardDraft, 'sessionRange' | 'minutes'>) => warmupMinutes(d.sessionRange ?? rangeFromMinutes(d.minutes ?? 30))
+export const warmupFor = (d: Pick<WizardDraft, 'sessionRange' | 'minutes'>) => warmupMinutesFor(d.sessionRange, d.minutes)
 
 /** A week row's line (ob3-1, ob3-4): "Warm-up, then 5 exercises · about 30 min". */
 export function sessionLine(s: Pick<PlannedSession, 'slots' | 'mins' | 'optional'>, starter: boolean): string {

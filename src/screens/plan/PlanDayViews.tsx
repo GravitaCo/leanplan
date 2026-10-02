@@ -3,7 +3,7 @@ import { useStore } from '@/store/store'
 import type { PlanPhase, PlanWeek } from '@/core/types'
 import { DAY_NAME } from '@/core/domain/date'
 import { WEEK_ORDER } from '@/core/domain/week'
-import { keyTitle, keyVideo, routineFor, isBuiltinKey, slotsOf as routineSlots, aboutMins, type WorkoutKey } from '@/core/domain/routines'
+import { keyTitle, keyVideo, routineFor, isBuiltinKey, slotsOf as routineSlots, aboutLine, routineEstMins, type WorkoutKey } from '@/core/domain/routines'
 import { copyWeek, planWeekNotes } from '@/core/domain/plans'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -11,6 +11,7 @@ import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { AddWorkoutSheet, workoutSub } from './PlanViews'
 import type { WorkoutType } from '@/core/types'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /** Most workouts a day in a plan (the same cap cleanPhases applies). */
 const MAX_A_DAY = 4
@@ -89,6 +90,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
   onOpenWorkout: (k: WorkoutKey) => void
 }) {
   const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const [sheet, setSheet] = useState<null | 'add' | 'copy' | 'swap'>(null)
   const day = DAY_NAME[idx]
   const keys = known(week[idx], routines)
@@ -102,7 +104,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
     const r = routineFor(k, routines)
     if (!r) return `${k === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength} · ${workoutSub(k as WorkoutType)}`
     const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
   }
 
   return (
