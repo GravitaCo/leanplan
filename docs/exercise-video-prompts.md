@@ -73,10 +73,13 @@ heritage, build, hair and clothing so people see bodies like their own (Benn, 29
 **Framing follows the move:** show the whole body, head to feet, when the legs, hips, knees or
 floor position matter (a glute bridge, an incline push-up, a hinge); arm and shoulder moves keep
 a medium shot, because a vertical frame zoomed out that far makes the person too small (Benn).
-**Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
+**Same background in every clip:** a low black bench and a small dumbbell rack, soft-focus
+against the wall, as in the clips already live (Benn, option 1). **Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
 defined muscles.
 
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
+> In the soft-focus background against the wall: a low black bench and a small rack of black
+> dumbbells, nothing else.
 > A {gender} in {their} {age}, {heritage} heritage, {build}, realistic skin with natural
 > texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
 > defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
@@ -108,7 +111,7 @@ Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
 **For machine and cable exercises, add:**
 
-> The only equipment in the studio is a single matte black [machine name], clean and modern,
+> The equipment she uses is a single matte black [machine name], clean and modern,
 > with no branding or logos.
 
 **End every rep prompt with:**
