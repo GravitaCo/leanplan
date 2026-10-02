@@ -682,6 +682,17 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .thumb-play { position: absolute; right: 3px; bottom: 3px; width: 16px; height: 16px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; display: grid; place-items: center; }
 .thumb-play svg.i { fill: currentColor; margin-left: 1px; }
 .thumb-btn { background: none; border: 0; padding: 0; flex: none; border-radius: 12px; }
+/* exercise library: a thumbnail on every row, and the clip's poster at the top of an entry.
+   Like the video screens, the still looks the same in both modes: footage, a light shade, white controls. */
+.lib-row { min-height: 64px; padding-top: 10px; padding-bottom: 10px; }
+.list .lib-row + .lib-row::before { left: 72px; }
+.ex-media { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 380px; margin: 0 0 10px; padding: 0; border: 0; border-radius: var(--radius); overflow: hidden; background: var(--fill); color: #fff; }
+.ex-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.ex-media::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4)); pointer-events: none; }
+.ex-media-play { position: absolute; inset: 0; margin: auto; width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; z-index: 1; }
+.ex-media-play svg.i { width: 26px; height: 26px; fill: currentColor; margin-left: 3px; }
+.ex-media-cap { position: absolute; left: 16px; bottom: 14px; z-index: 1; font-size: 15px; font-weight: 600; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
+.ex-media:active { opacity: 0.9; }
 
 /* Today list */
 .tsec { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
