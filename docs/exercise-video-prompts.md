@@ -70,7 +70,8 @@ no counter; they are there to show posture and set-up.
 
 The studio, light, camera and tone stay the same in every clip. The demonstrator varies in age,
 heritage, build, hair and clothing so people see bodies like their own (Benn, 29 Sept 2026).
-**Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
+**Always the whole body:** never a medium or waist-up shot, so viewers can see whether the
+knees are down or the feet are set (Benn, after the incline push-up clip). **Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
 defined muscles.
 
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
@@ -78,6 +79,9 @@ defined muscles.
 > texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
 > defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
 > in muted tones with no logos or text, and flat training shoes. Calm, focused expression.
+> Full-body framing: the whole person is in frame from head to feet for the entire clip, with
+> space above the head and below the feet, so hands, knees and feet are always visible. Never
+> cropped at the waist, knees or ankles.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
 > colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
 
