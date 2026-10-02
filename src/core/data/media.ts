@@ -11,6 +11,23 @@ export function mediaUrl(path: string): string {
   return /^https?:\/\//.test(path) ? path : VIDEO_BASE + path
 }
 
+/** A Bunny Stream clip (`…/{video id}/play_720p.mp4`): the library also serves stills and previews beside it. */
+const BUNNY_STREAM = /^(https:\/\/vz-[^/]+\.b-cdn\.net\/[^/]+\/)play_\d+p\.mp4$/
+
+/**
+ * The images to show for a clip before it plays, best first. `motion` puts Bunny Stream's animated
+ * WebP preview ahead of the still: a few seconds of the move, but only 320×180 with the vertical
+ * clip pillarboxed in the middle, so it suits a small thumbnail (cropped, see `.thumb img.lb`), not
+ * a large poster. The still poster follows, as the fallback.
+ */
+export function previewUrls(m: ExerciseMedia, motion: boolean): { url: string; letterboxed: boolean }[] {
+  const bunny = m.src.match(BUNNY_STREAM)
+  const out: { url: string; letterboxed: boolean }[] = []
+  if (bunny && motion) out.push({ url: bunny[1] + 'preview.webp', letterboxed: true })
+  if (m.poster) out.push({ url: mediaUrl(m.poster), letterboxed: false })
+  return out
+}
+
 /**
  * Demo clips with their tempo, timed from the footage (bar/head position tracked frame by frame
  * at 8 fps, so phase edges are accurate to about ⅛ s). The counter shows what the clip really

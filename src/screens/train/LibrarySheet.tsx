@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Equipment, Exercise, Modality } from '@/core/types'
 import { EXERCISES } from '@/core/data/exercises'
 import { MODALITIES, MODALITY_LABEL } from '@/core/data/modalities'
 import { careList, EQUIPMENT_LABEL, LEVEL_LABEL, TARGET_LABEL } from '@/core/data/libraryLabels'
 import { exById, stepOf } from '@/core/domain/library'
-import { mediaUrl } from '@/core/data/media'
 import { rankByName } from '@/core/domain/search'
 import { howToLink } from '@/core/domain/workout'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -12,7 +11,7 @@ import { Icon } from '@/ui/icons'
 import { CARE_DISCLAIMER } from './SwapSheet'
 import { RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
-import { Thumb } from './Thumb'
+import { Thumb, useClipPreview } from './Thumb'
 
 /** Kit filters: the few that decide most of what someone can do. */
 const KIT: [Equipment | 'none', string][] = [['none', 'No equipment'], ['dumbbell', 'Dumbbells'], ['band', 'Band'], ['mat', 'Mat'], ['machine', 'Gym machines']]
@@ -28,20 +27,24 @@ const inModality = (x: Exercise, m: Modality) => x.modality === m || !!x.also?.i
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const [demo, setDemo] = useState(false)
+  const still = useClipPreview(x.video, false)
+  // the list and the entries share one sheet: an entry opens at its top, not where the list was scrolled
+  const top = useRef<HTMLDivElement>(null)
+  useEffect(() => { top.current?.closest('.sheet-bd')?.scrollTo(0, 0) }, [x.id])
   const easier = stepOf(x, -1)
   const harder = stepOf(x, 1)
   const gentler = exById(x.gentler)
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
   return (
     <>
-      {x.video?.poster && (
+      {x.video && (
         <button className="ex-media" onClick={() => setDemo(true)} aria-label={`Play the demo: ${x.n}`}>
-          <img src={mediaUrl(x.video.poster)} alt="" decoding="async" />
+          {still.src && <img src={still.src} alt="" decoding="async" onError={still.onError} />}
           <span className="ex-media-play" aria-hidden="true"><Icon name="play" size={26} /></span>
           <span className="ex-media-cap" aria-hidden="true">Watch the demo{x.video.durationSec ? ` · ${Math.round(x.video.durationSec)} s` : ''}</span>
         </button>
       )}
-      <div className="card ex">
+      <div className="card ex" ref={top}>
         <div className="h"><div className="n">{x.n}</div>{x.defaultRx && <span className="tg">{x.defaultRx}</span>}</div>
         <div className="foot" style={{ padding: '0 0 8px' }}>
           {[MODALITY_LABEL[x.modality], LEVEL_LABEL[x.difficulty], kit, x.perSide ? 'Each side' : ''].filter(Boolean).join(' · ')}
