@@ -411,6 +411,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 35 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], props: ['chair'], ladders: [{ chain: 'squat-home', step: 1 }],
     cue: "Sit near the front of a sturdy chair with feet flat and hip-width apart. Lean forward slightly and stand up, using your hands only if you need to, then sit back down slowly. Lower with control rather than dropping into the seat.",
+    video: DEMOS.sitToStand,
   },
   {
     id: 'bodyweight-squat', n: 'Bodyweight squat', modality: 'calisthenics', log: 'reps',

@@ -152,4 +152,24 @@ export const DEMOS = {
       { at: 13.6, kind: 'squeeze', rep: 2 },
     ],
   },
+  // Two reps from a chair, arms crossed: about 2 s to stand (the lean forward counts), a 2 s pause
+  // standing tall, about 1.7 s to sit, a seated pause before the next rep. Starts and ends seated, so
+  // the loop is seamless. The top of the head leaves the frame when she stands, so it was tracked by
+  // the centre of the body's mass at 8 fps.
+  sitToStand: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/5b34fdf0-cf42-44fa-a28f-6e5dd1c225c1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/5b34fdf0-cf42-44fa-a28f-6e5dd1c225c1/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 2.1, kind: 'lift', rep: 1 },
+      { at: 4.4, kind: 'squeeze', rep: 1 },
+      { at: 6.2, kind: 'lower', rep: 1 },
+      { at: 7.9, kind: 'ready', rep: 2 },
+      { at: 10.0, kind: 'lift', rep: 2 },
+      { at: 11.3, kind: 'squeeze', rep: 2 },
+      { at: 12.5, kind: 'lower', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>
