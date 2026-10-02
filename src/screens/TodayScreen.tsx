@@ -11,7 +11,7 @@ import { keyTitle, templateFor } from '@/core/domain/routines'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
-import { builtinType, sessionsOf } from '@/core/domain/sessions'
+import { builtinType, workoutsOf } from '@/core/domain/sessions'
 import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
@@ -91,7 +91,7 @@ export function TodayScreen() {
   const isToday = cur === todayStr()
   const f = fmtDate(cur)
 
-  const sess = sessionsOf(day, cur)
+  const sess = workoutsOf(day, cur)
   // the plan's workouts for the day, or the schedule's one (unknown keys are left out)
   const planned = plannedKeys(data, cur)
   const first = planned[0]

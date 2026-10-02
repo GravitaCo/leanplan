@@ -60,6 +60,20 @@ export function sessionsOf(day: DayLog | undefined, date: string): Session[] {
   return [...list, { ...incoming, id: 'legacy-extra-' + date }]
 }
 
+/**
+ * Only the warm-up block was done: a guided session with warm-up minutes and no set logged (no
+ * working set, warm-up set or extra). It's kept so the minutes count as movement (the day's
+ * activity minutes, sessionMetMins), but it isn't a workout done: nothing that says a workout was
+ * done, or a day moved, counts it (workoutsOf).
+ */
+export const warmupOnly = (x: Pick<Session, 'warmup' | 'ex' | 'cardio'>): boolean =>
+  !!x.warmup && !x.cardio && !(x.ex || []).some((e) => (e.sets || []).length > 0)
+
+/** The day's sessions that count as workouts done: every session but a warm-up on its own. */
+export function workoutsOf(day: DayLog | undefined, date: string): Session[] {
+  return sessionsOf(day, date).filter((x) => !warmupOnly(x))
+}
+
 /** Which session the mirror is written from: the first built-in lift, else the first (-1 when none). */
 export function mirroredIndex(sessions: Session[]): number {
   const i = sessions.findIndex(isBuiltinLift)
@@ -85,6 +99,9 @@ const level = (e?: Effort) => (e === 'easy' ? 'light' : e === 'hard' || e === 'v
 export function sessionMetMins(x: Session): { met: number; mins: number } {
   // capped at 4 hours so a typo ("300" for 30) can't add a day's worth (a judgement call)
   // logged minutes, else a workout's own estimate (plan §2.9), else the modality default
+  // a warm-up on its own: its own minutes (never the workout's estimate or default), as easy
+  // moving stretches (the conservative stretching code, not the workout's)
+  if (warmupOnly(x)) return { met: MODALITY_MET.mobility.light, mins: Math.min(60, Math.max(0, x.warmup!.mins)) }
   const given = x.mins != null && Number.isFinite(x.mins) ? x.mins : x.estMins != null && Number.isFinite(x.estMins) ? x.estMins : null
   const mins = given != null ? Math.min(240, Math.max(0, given)) : DEFAULT_MINS[x.modality] ?? 30
   if (x.modality === 'cardio') return { met: CARDIO_MET[x.cardio?.key || ''] ?? CARDIO_MET.Other, mins }

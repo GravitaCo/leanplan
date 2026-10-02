@@ -22,10 +22,10 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
+import { sessionsOf, workoutsOf, warmupOnly, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
-import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
+import { rangeFor, showBurnNote, ensureBurnSwitch, dayStat } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
@@ -1079,6 +1079,22 @@ function legacyAndGuest(): void {
   // stored: "warm-up done" with its minutes, malformed dropped
   const st = loadStateFrom({ days: { '2026-10-01': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'x', warmup: { mins: 9, of: 6 } }, { id: 'b', modality: 'strength', title: 'y', warmup: { mins: 'x', of: 6 } }] } } } as never)
   const ss = st.days['2026-10-01'].sessions!
+  // a warm-up on its own is movement, not a workout done
+  {
+    const wu = { id: 'w', modality: 'strength', title: 'Push', routineId: 'builtin-Push', warmup: { mins: 6, of: 6 }, ex: [{ name: 'Bench press', sets: [] }] }
+    const real = { ...wu, id: 'r', ex: [{ name: 'Bench press', sets: [{ w: 40, reps: 10 }] }] }
+    const wset = { ...wu, id: 'x', ex: [{ name: 'Bench press', sets: [{ w: 20, reps: 10, warmup: true }] }] }
+    const dayW = (sessions: unknown[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions })
+    const sw = loadStateFrom({ days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([real]), '2026-09-30': dayW([wset]) } } as never)
+    checks.push(['warm-up only: warm-up minutes and no set; a working or warm-up set, or no warm-up at all, isn’t', warmupOnly(wu as never) && !warmupOnly(real as never) && !warmupOnly(wset as never) && !warmupOnly({ modality: 'strength' } as never) && !warmupOnly({ ...wu, cardio: { key: 'Walk' } } as never)])
+    checks.push(['warm-up only: kept on the day, but not a workout done, a day moved or a plan workout', sessionsOf(sw.days['2026-09-28'], '2026-09-28').length === 1 && workoutsOf(sw.days['2026-09-28'], '2026-09-28').length === 0 && daysMovedThisWeek(sw, '2026-10-01') === 2 && !dayStat(sw, '2026-09-28').done && dayStat(sw, '2026-09-29').done && workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30') === 2, `${daysMovedThisWeek(sw, '2026-10-01')} ${workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30')}`])
+    const mm = sessionMetMins(wu as never)
+    checks.push(['warm-up only: its own minutes count as movement (easy stretching MET), never the 45-minute default', mm.mins === 6 && mm.met === 2.3 && sessionBurn(wu as never, 70) === Math.round(2.3 * 70 * 0.1) && sessionMetMins({ ...wu, warmup: { mins: 3, of: 6 }, mins: 20 } as never).mins === 3 && !isTrainingSess(wu as never), JSON.stringify(mm)])
+    // the planned Push on Monday, only warmed up for, is still offered to pick up on Tuesday
+    const sc = loadStateFrom({ schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([]) } } as never)
+    const cu = catchUp(sc, '2026-09-29')
+    checks.push(['warm-up only: the planned workout is still there to pick up, and it isn’t a hard session for the load note', cu?.type === 'Push' && cu.d === '2026-09-28' && loadSignals(sw, '2026-09-30').hard7 === 2, JSON.stringify(cu) + ' ' + loadSignals(sw, '2026-09-30').hard7])
+  }
   checks.push(['a stored warm-up is kept (capped at its block) and a malformed one dropped', ss[0].warmup?.mins === 6 && ss[0].warmup?.of === 6 && ss[1].warmup === undefined, JSON.stringify(ss.map((x) => x.warmup))])
   for (const [t, ok, d] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'warm-up: ' + t, ok ? '' : d ?? '') }
 }

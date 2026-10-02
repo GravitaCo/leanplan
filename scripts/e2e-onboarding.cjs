@@ -1382,6 +1382,27 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await page.locator('.wu-day .mn', { hasText: '6 min' }).waitFor()
     await shot(page, 'warmup/ob3-5-plan-workout', true)
   }, { ...seeded(), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' } }, url: ON })
+  // a warm-up on its own isn't the workout done: Finish says nothing was logged, the minutes are kept
+  // (closed, as movement), and Train still offers the workout, with no day moved
+  await run('warm-up, flag on: only the warm-up done, Finish says nothing was logged and the workout isn’t done', async ({ page }) => {
+    await tab(page, 'Train')
+    await btn(page, 'Resume').first().click()
+    await btn(page, 'Start').click()
+    await page.locator('.gp-main', { hasText: 'Log set' }).waitFor()
+    expect((await page.locator('.gp-pill', { hasText: 'Warm-up' }).count()) === 0, 'the warm-up done already: the session opens on the first exercise')
+    await page.getByRole('button', { name: /More: swap/ }).click(); await btn(page, 'Finish now').click()
+    await page.getByRole('dialog').locator('button.btn', { hasText: 'Finish' }).click()
+    await page.getByText('Nothing logged this time').waitFor()
+    await page.waitForFunction(() => { const d = JSON.parse(localStorage.getItem('leanplan.v1')).days; const s = d[Object.keys(d).sort().pop()].sessions?.[0]; return s && s.warmup?.mins === 6 && !s.open })
+    const ses = (await stored(page)).days[today].sessions
+    expect(ses.length === 1 && !ses[0].ex.some((e) => e.sets.length) && !ses[0].open, 'the warm-up minutes are kept, closed, with no sets: ' + JSON.stringify(ses))
+    await btn(page, 'Today').click()
+    await page.getByRole('heading', { name: 'Done today' }).waitFor()
+    expect((await page.getByText(/You moved on/).count()) === 0, 'no "moved on" day for a warm-up on its own')
+    expect((await page.getByText('All done for today').count()) === 0 && (await btn(page, 'Resume').count()) === 0, 'the workout isn’t done (or in progress)')
+    expect((await page.getByText('Nothing yet. Anything you do today shows here.').count()) === 1, 'nothing in Done today')
+  }, { ...seeded(), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' },
+    days: { [today]: { foods: [], supps: {}, weight: 70, workout: null, sessions: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', modality: 'strength', title: 'Push', routineId: 'builtin-Push', at: new Date().toISOString(), ex: [], open: true, warmup: { mins: 6, of: 6 } }] } } }, url: ON })
 
   await browser.close()
   const bad = results.filter((r) => !r).length

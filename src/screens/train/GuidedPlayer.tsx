@@ -11,7 +11,7 @@ import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
-import { sessionsOf } from '@/core/domain/sessions'
+import { sessionsOf, warmupOnly } from '@/core/domain/sessions'
 import { exById } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
 import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
@@ -279,11 +279,18 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
     onSwap(slot.i, id)
   }
 
-  // a warm-up of a minute or more is movement too, so it's kept like a logged set
-  const anything = Object.values(logged).some((l) => l.length) || extras.length > 0 || (warmNow()?.mins ?? 0) >= 1
+  // sets logged (working or warm-up sets, extras): only these make the session a workout done
+  const anySets = Object.values(logged).some((l) => l.length) || extras.length > 0
+  // a warm-up of a minute or more is movement too, so leaving keeps it like a logged set (Resume)
+  const anything = anySets || (warmNow()?.mins ?? 0) >= 1
   const finish = (effort: Effort | null, note: string, mins: number | undefined) => {
-    // nothing logged: nothing to save (an empty session would count as a day moved)
-    if (!anything && !session) { showToast('Nothing logged this time'); onClose(); return }
+    // nothing logged: nothing to save (an empty session would count as a day moved). Only the
+    // warm-up done: its minutes are kept as movement, closed, never a workout done (warmupOnly)
+    if (!anySets && (!session || warmupOnly(session))) {
+      const w = warmNow()
+      if (w && (w.mins >= 1 || session)) write(logged, extras, { quiet: true }, w)
+      showToast('Nothing logged this time'); onClose(); return
+    }
     write(logged, extras, { effort, note, ...(mins != null ? { mins } : {}), toast: `${title} saved` }, warmNow())
     onClose(); onFinished?.()
   }
