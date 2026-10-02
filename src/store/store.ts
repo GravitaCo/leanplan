@@ -143,7 +143,7 @@ export interface StoreState {
   /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
    *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
   /** save a workout's session for the day: a built-in lift or one of the user's own (by id) */
-  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean }) => void
+  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean; warmup?: TrainingSession['warmup'] }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
   /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
   saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
@@ -332,6 +332,8 @@ function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | '
   // fields the caller didn't set carry over from the earlier save (a later edit keeps the effort)
   const kept: Partial<TrainingSession> = {}
   for (const k of keep) if (prev?.[k] !== undefined && (x as Partial<TrainingSession>)[k] === undefined) (kept as Record<string, unknown>)[k] = prev[k]
+  // the warm-up, once done, stays with the session through later saves of its sets
+  if (prev?.warmup && !x.warmup) kept.warmup = prev.warmup
   const next: TrainingSession = { ...kept, ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
 }
@@ -750,6 +752,7 @@ export const useStore = create<StoreState>()(
           if (extra?.note) more.note = extra.note
           if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
           if (extra?.open) more.open = true
+          if (extra?.warmup) more.warmup = extra.warmup
           // one of the user's own workouts: its kind and name, and its time estimate standing in for
           // minutes that weren't logged (plan §2.9; a shorter day's from the shorter prescriptions)
           const own = WORKOUTS[type] ? undefined : (st.data.routines || []).find((r) => r.id === type)

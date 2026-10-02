@@ -116,7 +116,7 @@ const FEELS = ['spare', 'right', 'struggle', 'stopped']
 
 /**
  * Guided-session fields (Train redesign, stage 4) are all optional and additive: `note` and the
- * set flags `warmup` / `feel`, and `rx` on a logged exercise. Old logs have none of them and
+ * set flags `warmup` / `feel`, `rx` on a logged exercise, and the session's `warmup` block. Old logs have none of them and
  * render as before. Anything malformed (from a hand-edited backup, say) is dropped, never
  * guessed, so it can't skew targets or "last time".
  */
@@ -125,6 +125,12 @@ function cleanGuided(list: unknown[]): void {
     if (!x || typeof x !== 'object') continue
     if (x.note !== undefined && typeof x.note !== 'string') delete x.note
     if (x.open !== undefined && x.open !== true) delete x.open
+    if (x.warmup !== undefined) {
+      const w = x.warmup as Record<string, unknown> | null
+      const ok = !!w && typeof w === 'object' && Number.isFinite(w.mins) && Number.isFinite(w.of) && (w.mins as number) >= 0 && (w.of as number) > 0 && (w.of as number) <= 60
+      if (ok) x.warmup = { mins: Math.min(Math.round(w!.mins as number), w!.of as number), of: Math.round(w!.of as number) }
+      else delete x.warmup
+    }
     if (!Array.isArray(x.ex)) continue
     for (const e of x.ex as Record<string, unknown>[]) {
       if (!e || typeof e !== 'object') continue

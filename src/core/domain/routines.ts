@@ -1,4 +1,4 @@
-import type { Exercise, ExerciseTemplate, Modality, Profile, Routine, RoutineEffort, RoutineSlot, WorkoutTemplate, WorkoutType } from '@/core/types'
+import type { Equipment, Exercise, ExerciseTemplate, Modality, Profile, Routine, RoutineEffort, RoutineSlot, TrainingPrefs, WorkoutTemplate, WorkoutType } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { WORKOUTS } from '@/core/data/workouts'
 import { TALI_WORKOUTS } from '@/core/data/taliWorkouts'
@@ -6,6 +6,8 @@ import { builtinId, isBuiltin } from './sessions'
 import { shortTitle } from './week'
 import { CARDIO_MET } from '@/core/data/constants'
 import { holdTarget } from './library'
+import { buildWarmup, PLAN_WARMUP_MINUTES, RAMP_MINUTES, warmupKindOf, warmupMinutesFor, type WarmupBlock } from './warmup'
+import { KIT_PROFILES } from './libraryCoverage'
 
 /**
  * The user's own workouts (plan §2.3, P4): what a saved workout shows on the Train screen, how
@@ -98,9 +100,15 @@ export function slotMins(s: RoutineSlot): number {
   }
 }
 
-/** About how long the whole workout takes, rounded to a whole minute (at least one). */
-export function estMins(slots: RoutineSlot[]): number {
-  return Math.max(1, Math.round(slots.reduce((a, s) => a + slotMins(s), 0)))
+/**
+ * About how long the whole workout takes, rounded to a whole minute (at least one): the warm-up
+ * block every session opens with (the ready-made 6 minutes unless given), about 90 s of lighter
+ * sets when there's a weighted lift, then the slots.
+ */
+export function estMins(slots: RoutineSlot[], warmMins: number = PLAN_WARMUP_MINUTES): number {
+  if (!slots.length) return 1
+  const ramp = slots.some((s) => exOf(s)?.log === 'weight-reps') ? RAMP_MINUTES : 0
+  return Math.max(1, Math.round(warmMins + ramp + slots.reduce((a, s) => a + slotMins(s), 0)))
 }
 
 /** The headline kind: the one with the most minutes (the first listed wins a tie). */
@@ -154,8 +162,8 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
     if (seen.has(s.exId)) { out.push(`${exOf(s)?.n ?? 'An exercise'} is in here twice. Keep it if you meant to.`); break }
     seen.add(s.exId)
   }
-  // a hard session estimated at 75+ minutes has no warm-up in the estimate and runs longer in
-  // practice; a 90-minute yoga class is ordinary (both judgement calls, unvalidated)
+  // a hard session estimated at 75+ minutes (warm-up included) runs longer in practice; a
+  // 90-minute yoga class is ordinary (both judgement calls, unvalidated)
   const m = estMins(slots)
   if (slots.length && m > (deriveEffort(slots) === 'hard' ? 75 : 90)) {
     out.push(`This one runs about ${aboutMins(m)} minutes. That's fine if it suits you, or you could split it into two shorter workouts.`)
@@ -210,4 +218,30 @@ export function keyOfSession(x: { routineId?: string; option?: string }, routine
 /** The first demo clip in a workout, for its thumbnail. */
 export function keyVideo(key: WorkoutKey, routines: Routine[] | undefined) {
   return templateFor(key, routines)?.ex.find((e) => e.video)?.video
+}
+
+/** The kit a person has, for the warm-up's swaps: what they ticked, plus a gym's own. */
+export function kitOf(t: TrainingPrefs | undefined): Equipment[] {
+  return [...(t?.equipment ?? []), ...(t?.place?.includes('gym') ? KIT_PROFILES.gym : [])]
+}
+
+/**
+ * The warm-up block a workout opens with (s-ob8 point 4): a generated workout's follows the
+ * person's session length, the same minutes onboarding promised (warmupMinutesFor); the
+ * Push/Pull/Legs cards, Tali's plan workouts and the person's own get the ready-made 6. Kit from
+ * the person's answers, plus anything the workout itself uses.
+ */
+export function warmupForKey(key: WorkoutKey, routines: Routine[] | undefined, training: TrainingPrefs | undefined): WarmupBlock | null {
+  const ids = isBuiltinKey(key) ? WORKOUTS[key].ex.map((e) => e.id).filter((x): x is string => !!x) : (() => { const r = routineFor(key, routines); return r ? slotsOf(r).map((x) => x.exId) : null })()
+  if (!ids) return null
+  const r = isBuiltinKey(key) ? undefined : routineFor(key, routines)
+  const mins = r?.source === 'recommended' ? warmupMinutesFor(training?.sessionRange, training?.minutesPerSession) : PLAN_WARMUP_MINUTES
+  return warmupForSlots(ids, mins, training)
+}
+
+/** The block for a session's exercises at these minutes (the summary's day sheet uses it too). */
+export function warmupForSlots(ids: readonly string[], mins: number, training: TrainingPrefs | undefined): WarmupBlock {
+  const kit = new Set<Equipment>(kitOf(training))
+  for (const id of ids) for (const q of EXERCISE_BY_ID[id]?.equipment ?? []) kit.add(q)
+  return buildWarmup({ ...warmupKindOf(ids), mins, kit: [...kit], avoid: ids })
 }
