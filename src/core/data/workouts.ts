@@ -133,7 +133,8 @@ export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string
     "note": "Move within what feels comfortable, and skip anything that hurts.",
     "ex": [
       { "id": "march-on-the-spot", "n": "March on the spot with arm swings", "t": "1 × 60 sec",
-        "cue": "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast." },
+        "cue": "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast.",
+        "video": DEMOS.marchOnTheSpot },
       { "id": "shoulder-rolls", "n": "Shoulder rolls", "t": "10 each way",
         "cue": "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush." },
       { "id": "cat-cow", "n": "Cat–cow", "t": "1 × 10 slow reps",

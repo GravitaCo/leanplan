@@ -1147,6 +1147,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
     cue: "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast.",
+    video: DEMOS.marchOnTheSpot,
   },
   {
     id: 'shoulder-rolls', n: 'Shoulder rolls', modality: 'mobility', log: 'reps',

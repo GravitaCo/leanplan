@@ -531,8 +531,8 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   // the hold timer's words, shared by the sheet and the timer over a hold clip
   const T = { lo: 30, hi: 45 }
   const words = [holdLabel(holdAt(5, T, true), T, true), holdLabel(holdAt(31, T, true), T, true), holdLabel(holdAt(40, T, true), T, true),
-    holdLabel(holdAt(10, T), T), holdLabel(holdAt(35, T), T), holdLabel(holdAt(50, T), T), holdLabel(holdAt(8, null), null)].join(', ')
-  const wantWords = 'First side, Switch sides, Second side, Holding, In your range, Good place to stop, Holding'
+    holdLabel(holdAt(10, T), T), holdLabel(holdAt(35, T), T), holdLabel(holdAt(50, T), T), holdLabel(holdAt(8, null), null), holdLabel(holdAt(8, null), null, false, true)].join(', ')
+  const wantWords = 'First side, Switch sides, Second side, Holding, In your range, Good place to stop, Holding, Keep going'
   if (words !== wantWords) bad++
   console.log(words === wantWords ? 'PASS' : 'FAIL', 'library: hold timer words', JSON.stringify(words))
 }

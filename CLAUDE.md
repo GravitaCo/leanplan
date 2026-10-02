@@ -131,7 +131,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   (`train/DemoPlayer.tsx`, opened from the library, the session preview and "Log sets by hand")
   also shows the clip's own rep ("Rep 2 of 3") and a pace row. Neither counts the user's reps.
   Re-time it whenever a clip changes; `npm test` checks the files exist and the timeline is ordered.
-- A clip of a **held position** (a stretch, a plank, a yoga pose) sets `hold` ('stretch' or 'position')
+- A clip of a **held position** (a stretch, a plank, a yoga pose) sets `hold` ('stretch', 'position', or 'move' for a move done for time such as a march)
   and has one rep-less phase: the demo player says what to hold and for how long (from the exercise's
   target), and the guided player runs the hold timer over the clip instead of in a sheet (Design
   canvas row "Holds"). Holds with no clip keep the `HoldTimer` sheet.

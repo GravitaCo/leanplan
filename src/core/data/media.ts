@@ -225,4 +225,12 @@ export const DEMOS = {
       { at: 14.5, kind: 'ready' },
     ],
   },
+  // An easy march facing the camera, arms swinging, all the way through: a move done for time.
+  marchOnTheSpot: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/013b8f18-10da-4462-b0ed-4d8b2d6b86c1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/013b8f18-10da-4462-b0ed-4d8b2d6b86c1/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'move',
+    tempo: [{ at: 0, kind: 'ready' }],
+  },
 } satisfies Record<string, ExerciseMedia>

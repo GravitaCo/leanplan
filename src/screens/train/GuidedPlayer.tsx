@@ -179,7 +179,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const video = slot.shown.video
   // a hold with its clip on screen (boards h2–h4): the timer runs over the clip, not in a sheet
   const [holdStart, setHoldStart] = useState<number | null>(null)
-  useEffect(() => { setHoldStart(null) }, [slot.i])
+  useEffect(() => { setHoldStart(null) }, [slot.i, slot.shown.id, slot.shown.n])
 
   // one clock for the elapsed time and the rest countdown (device clock: works offline)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [])
@@ -275,6 +275,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   /** a swap keeps what was logged for the move swapped out (as an extra), and the new move starts fresh */
   function swapTo(id: string) {
     // the move going out keeps its sets (as an extra); the move coming in takes back its own
+    setHoldStart(null)
     const r = swapInto(slot, id, sets, extras, shorter, exById)
     const next = { ...logged, [slot.i]: r.sets }
     setExtras(r.extras)
@@ -334,7 +335,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const hTarget = holdTarget(slot.rx)
   const perSide = !!slot.x?.perSide
   const h = holdStart == null ? null : holdAt((now - holdStart) / 1000, hTarget, perSide)
-  const stopHold = () => { const sec = h?.logSec ?? 0; setHoldStart(null); if (sec > 0) logSet({ w: '', reps: String(sec), sec: String(sec) }) }
+  const stopHold = () => { const sec = h?.logSec ?? 0; setHoldStart(null); if (sec > 0 && slot.shape === 'hold') logSet({ w: '', reps: String(sec), sec: String(sec) }) }
   const wSlot = warmupSlot(slots.map((s) => s.shape))
 
   return (
@@ -384,7 +385,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         </section>
       ) : h ? (
         <section className="gp-bot" aria-label="Hold timer">
-          <div className="gp-rh"><span className="k" aria-live="polite">{holdLabel(h, hTarget, perSide)}</span><span className="h">{name} · set {setNo + 1} of {slot.sets}</span></div>
+          <div className="gp-rh"><span className="k" aria-live="polite">{holdLabel(h, hTarget, perSide, video?.hold === 'move')}</span><span className="h">{name} · set {setNo + 1} of {slot.sets}</span></div>
           <div className="gp-clock" role="timer" aria-label={`${h.sec} seconds${perSide && hTarget ? (h.side === 1 ? ', first side' : ', second side') : ''}`}>
             <span className="num" aria-hidden="true">{fmtClock(h.sec)}</span>
             {hTarget && <small className="num" aria-hidden="true">of {hTarget.lo === hTarget.hi ? fmtClock(hTarget.hi) : `${fmtClock(hTarget.lo)}–${fmtClock(hTarget.hi)}`}{perSide && h.side === 2 ? ' · second side' : ''}</small>}
@@ -416,7 +417,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
       ) : (
         <section className="gp-bot" aria-label={name}>
           <div>
-            {holdClip && <div className="gp-kick">{perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
+            {holdClip && <div className="gp-kick">{video?.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
             <h1 className="gp-name">{name}</h1>
             {!plain && <p className="gp-line">{firstLine(slot.shown.cue)}</p>}
             {slot.swapped && <p className="gp-line sm">In place of {bareName(slot.planned.n)}, today only.</p>}
@@ -430,7 +431,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           <div className="gp-ctl">
             <button className="gp-arrow" aria-label="Previous exercise" disabled={pos === 0} onClick={() => go(-1)}><Icon name="chevL" size={18} stroke={2.4} /></button>
             <button className="gp-main" onClick={primary}>
-              {complete ? (nextOpen(pos) < 0 ? 'Finish' : 'Next exercise') : slot.shape === 'hold' ? 'Start hold' : target ? 'Done as planned' : 'Log set'}
+              {complete ? (nextOpen(pos) < 0 ? 'Finish' : 'Next exercise') : slot.shape === 'hold' ? (holdClip && video?.hold === 'move' ? 'Start timer' : 'Start hold') : target ? 'Done as planned' : 'Log set'}
             </button>
             <button className="gp-arrow" aria-label={isLastSlot ? 'Finish' : 'Next exercise'} onClick={() => go(1)}><Icon name="chevR" size={18} stroke={2.4} /></button>
           </div>

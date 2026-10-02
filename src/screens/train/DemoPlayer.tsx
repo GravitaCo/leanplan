@@ -98,8 +98,8 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
 
       {!failed && m.hold && (
         <div className="demo-bot">
-          <div className="demo-sub">{perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>
-          <div className="demo-ph"><span className="l">{m.hold === 'position' ? 'Hold the position' : PHASE_LABEL.stretch}</span></div>
+          <div className="demo-sub">{m.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>
+          <div className="demo-ph"><span className="l">{m.hold === 'move' ? 'Keep moving' : m.hold === 'position' ? 'Hold the position' : PHASE_LABEL.stretch}</span></div>
           <div className="demo-rule" aria-hidden="true" />
           <div className="demo-pace hold">
             {aim && (
