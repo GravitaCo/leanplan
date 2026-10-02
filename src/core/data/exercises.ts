@@ -111,6 +111,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 40, setSec: 40 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'v-push-gym', step: 2 }],
     cue: "Start at ear height. Press up without arching the lower back, keep ribs down. Stop a couple of reps before you couldn't do another.",
+    video: DEMOS.shoulderPress,
   },
   {
     id: 'lateral-raise', n: 'Lateral raise', modality: 'strength', log: 'weight-reps',
@@ -319,6 +320,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 35 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], props: ['step'], ladders: [{ chain: 'h-push-home', step: 2 }],
     cue: "Hands on a sturdy bench, worktop or step, a little wider than your shoulders; holding dumbbell handles keeps your wrists straight. Lower your chest to the edge with elbows angled back, then push away. Keep your hips in line with your shoulders, not sagging or piked up.",
+    video: DEMOS.inclinePushUp,
   },
   {
     id: 'push-up', n: 'Push-up', modality: 'calisthenics', log: 'reps',
@@ -427,6 +429,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 65 }, skill: 1, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], ladders: [{ chain: 'lunge-home', step: 1 }],
     cue: "Take a long stride and rest a hand on a wall or chair for balance if you like, back heel lifted. Lower straight down until the back knee nears the floor, then push up through the front foot. Keep the front knee in line with your toes and don't let the stance get short.",
+    video: DEMOS.splitSquat,
   },
   {
     id: 'bulgarian-split-squat', n: 'Bulgarian split squat', modality: 'calisthenics', log: 'reps', perSide: true,
@@ -455,6 +458,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 15, setSec: 35 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], ladders: [{ chain: 'bridge-home', step: 1 }, { chain: 'hinge-loaded', step: 1 }],
     cue: "Lie on your back with knees bent and feet hip-width, close to your bottom. Press through your heels and lift your hips until they're in line with your knees and shoulders, squeeze your glutes, then lower slowly. Keep your weight on your upper back, not your neck, and don't over-arch at the top.",
+    video: DEMOS.gluteBridge,
   },
   {
     id: 'single-leg-glute-bridge', n: 'Single-leg glute bridge', modality: 'calisthenics', log: 'reps', perSide: true,

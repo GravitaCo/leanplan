@@ -219,7 +219,9 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
 // demo clips: every attached clip exists, its tempo is ordered and fits the clip, and the counter
 // reads the phase on screen
 {
-  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [[e.n, e.video] as const] : [])))
+  const inWorkouts = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [e.video] : [])))
+  const known = Object.values(DEMOS) as unknown[]
+  const clips = Object.entries(DEMOS) as [string, (typeof DEMOS)[keyof typeof DEMOS]][]
   const off = clips.flatMap(([n, m]) => {
     const why: string[] = []
     if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
@@ -228,7 +230,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
-  const ok = clips.length === 4 && off.length === 0; if (!ok) bad++
+  const ok = clips.length >= 8 && inWorkouts.length === 5 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
   const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
