@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { WarmupBlock } from '@/core/domain/warmup'
+import { warmupStartAt, type WarmupBlock } from '@/core/domain/warmup'
 import { fmtClock } from '@/core/domain/guided'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { mediaUrl } from '@/core/data/media'
@@ -13,10 +13,15 @@ const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-m
  * and Pause, Skip this move and Skip warm-up. The move's clip or still shows full bleed when there
  * is one (the video-screen rules: no blur, a light shade top and bottom), otherwise a calm
  * placeholder. Nothing is logged as sets: the parent records "warm-up done" with its minutes.
- * The clock is the device's, so it works offline.
+ * The clock is the device's, so it works offline. A resumed session picks up `from` seconds in, and
+ * the clock holds while `hold` is set (a sheet over it), carrying on when it clears.
  */
-export function WarmupPlayer({ block, after, onEnd, onLeave, onProgress }: {
+export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLeave, onProgress }: {
   block: WarmupBlock
+  /** seconds of moves already done (a resume) */
+  from?: number
+  /** a sheet is over the player: the clock waits */
+  hold?: boolean
   /** the first exercise after the warm-up, for the last "Next: …" */
   after?: string
   /** seconds of moves done, and whether the whole block was */
@@ -25,14 +30,15 @@ export function WarmupPlayer({ block, after, onEnd, onLeave, onProgress }: {
   onProgress: (sec: number) => void
 }) {
   const moves = block.moves
-  const [i, setI] = useState(0)
+  const [at] = useState(() => warmupStartAt(block, from))
+  const [i, setI] = useState(at.i)
   const [gap, setGap] = useState(false)
-  const [left, setLeft] = useState(moves[0].sec * 1000)
+  const [left, setLeft] = useState(at.left)
   const [paused, setPaused] = useState(false)
   const [say, setSay] = useState('')
-  const spent = useRef(0)
-  const st = useRef({ paused, gap })
-  st.current = { paused, gap }
+  const spent = useRef(at.spent)
+  const st = useRef({ paused: paused || hold, gap })
+  st.current = { paused: paused || hold, gap }
   const ended = useRef(false)
   const skipped = useRef(false)
 
@@ -90,7 +96,7 @@ export function WarmupPlayer({ block, after, onEnd, onLeave, onProgress }: {
       <div className="gp-shade" aria-hidden="true" />
 
       <header className="gp-top">
-        <button className="gp-rb" aria-label="Leave the workout" onClick={() => { setPaused(true); onLeave() }}><Icon name="x" size={16} stroke={2.6} /></button>
+        <button className="gp-rb" aria-label="Leave the workout" onClick={onLeave}><Icon name="x" size={16} stroke={2.6} /></button>
         <span className="gp-pill num">Warm-up · {i + 1} of {moves.length} · {block.mins} min</span>
         <span style={{ width: 40 }} />
       </header>

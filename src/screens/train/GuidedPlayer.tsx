@@ -132,12 +132,14 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const [sound, setSound] = useState(soundPref)
   const [discard, setDiscard] = useState(false)
 
-  // the warm-up block opens the session (ob5-0), unless it's done already or sets are logged (a resume)
+  // the warm-up block opens the session (ob5-0), unless it's done already or sets are logged; a
+  // resume with part of it left and no sets picks it up from the minutes done
   const training = useStore((s) => s.data.profile.training)
   const [block] = useState(() => warmupForKey(type, routines, training))
   const [warm, setWarm] = useState<Session['warmup'] | undefined>(session?.warmup)
-  const [inWarm, setInWarm] = useState(() => !!block && !session?.warmup && !Object.values(init.bySlot).some((l) => l.length))
-  const warmSec = useRef(0)
+  const [warmFrom] = useState(() => (session?.warmup && block ? Math.min(session.warmup.mins, block.mins) * 60 : 0))
+  const [inWarm, setInWarm] = useState(() => !!block && (!session?.warmup || session.warmup.mins < session.warmup.of) && !Object.values(init.bySlot).some((l) => working(l).length))
+  const warmSec = useRef(warmFrom)
   const onWarmProgress = useCallback((sec: number) => { warmSec.current = sec }, [])
   /** the warm-up as it stands: whole minutes done of the block (never sets) */
   const warmNow = (): Session['warmup'] | undefined => (inWarm && block ? { mins: Math.min(block.mins, Math.round(warmSec.current / 60)), of: block.mins } : warm)
@@ -314,7 +316,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   return (
     <div ref={root} className={'gp' + (plain ? ' plain' : '')} role="dialog" aria-modal="true" aria-label={inWarm ? `${title}: warm-up` : `${title}: ${name}`}>
       {inWarm && block ? (
-        <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
+        <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
       ) : <>
       {clip === 'ok' && video && (
         <video key={video.src} ref={vid} src={mediaUrl(video.src)} poster={video.poster ? mediaUrl(video.poster) : undefined}

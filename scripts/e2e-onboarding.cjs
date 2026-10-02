@@ -1339,6 +1339,28 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       }
     }, { ...seeded({ dark }), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' } }, url: OFF })
   }
+  // ship-critic 3: a resume with part of the warm-up left (and no sets) reopens it from the time done;
+  // "Keep going" after the leave sheet carries the clock on
+  await run('warm-up, flag off: a resume picks the warm-up up where it was left, and Keep going carries on', async ({ page }) => {
+    await tab(page, 'Train')
+    await btn(page, 'Resume').first().click()
+    const pill = page.locator('.gp-pill', { hasText: 'Warm-up' })
+    // Resume opens the session's preview (its sets so far), then Start picks it up
+    await btn(page, 'Start').click()
+    await pill.waitFor()
+    const n = Number((/(\d) of 5/.exec(await pill.textContent()) || [])[1])
+    expect(n >= 2, 'the resumed warm-up opens past the 2 minutes done, not on move 1: ' + await pill.textContent())
+    const clock = page.locator('.wu .gp-clock')
+    await page.getByRole('button', { name: 'Leave the workout' }).click()
+    await btn(page, 'Keep going').click()
+    await page.getByRole('dialog', { name: 'Leave the workout?' }).waitFor({ state: 'detached' }).catch(() => {})
+    const a = await clock.getAttribute('aria-label'); await page.waitForTimeout(1600); const b = await clock.getAttribute('aria-label')
+    expect(a !== b && (await btn(page, 'Pause').count()) === 1, `Keep going resumes the warm-up clock: ${a} → ${b}`)
+    await page.getByRole('button', { name: 'Leave the workout' }).click()
+    await btn(page, 'Leave for now').click()
+    await page.waitForFunction(() => { const d = JSON.parse(localStorage.getItem('leanplan.v1')).days; const s = d[Object.keys(d).sort().pop()].sessions?.[0]; return s && s.warmup?.of === 6 && s.warmup.mins >= 2 && s.open })
+  }, { ...seeded(), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' },
+    days: { [today]: { foods: [], supps: {}, weight: 70, workout: null, sessions: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', modality: 'strength', title: 'Push', routineId: 'builtin-Push', at: new Date().toISOString(), ex: [], open: true, warmup: { mins: 2, of: 6 } }] } } }, url: OFF })
   await run('warm-up, flag off: the Plan workout view shows the block', async ({ page }) => {
     await tab(page, 'Plan'); await page.locator('.hdr .ltitle', { hasText: 'Plan' }).waitFor()
     await page.getByRole('button', { name: /^Monday/ }).first().click()
