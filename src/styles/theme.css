@@ -713,10 +713,6 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .vchips::-webkit-scrollbar { display: none; }
 .vchip { flex: none; height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--card); color: var(--label); font-size: 15px; white-space: nowrap; }
 .vchip.on { background: var(--btn); color: var(--btn-ink); font-weight: 500; }
-.warm { display: flex; gap: 12px; align-items: flex-start; background: var(--tint-soft); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
-.warm .wi { font-size: 20px; line-height: 1.1; color: var(--label); }
-.warm .t { font-size: 16px; font-weight: 500; }
-.warm .s { font-size: 13px; color: var(--label2); margin-top: 2px; line-height: 1.35; }
 .pv-row { padding: 10px 14px; min-height: 72px; }
 .pv-row .s { white-space: normal; }
 .pv-row .s2 { font-size: 13px; color: var(--label2); margin-top: 3px; line-height: 1.35; }
