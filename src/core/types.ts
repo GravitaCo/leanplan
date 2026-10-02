@@ -205,6 +205,9 @@ export interface Session {
   note?: string
   /** a guided session left part-way ("Leave for now"): Train offers Resume; cleared by Finish or any other save */
   open?: boolean
+  /** the warm-up block (guided player): whole minutes done of the block's `of`; never sets, so it
+   *  stays out of the exercise rows, targets and "last time" */
+  warmup?: { mins: number; of: number }
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */

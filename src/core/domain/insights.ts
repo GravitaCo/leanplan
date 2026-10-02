@@ -13,7 +13,7 @@ import { workoutBurn } from './workout'
 import { foodView, maintenanceRange } from './foodMode'
 import { maintenanceEstimate } from './targets'
 import { sexOf } from './onboarding'
-import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf, workoutsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -313,7 +313,7 @@ export function dayStat(s: AppState, d: string): DayStat {
     d, t, r,
     logged: x.foods.length > 0,
     future: d > todayStr(),
-    done: sessionsOf(x, d).length > 0,
+    done: workoutsOf(x, d).length > 0,
     planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
     inRange: t.k >= r.lo && t.k <= r.hi,
   }
@@ -363,7 +363,7 @@ export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
   if (!p?.onboardedAt || p.ifThenOffered || (p.plans ?? []).length) return false
   // the first workout after setup: an older logged session (or a redo of setup) doesn't count
   const from = p.onboardedAt.slice(0, 10)
-  return Object.entries(s.days || {}).some(([d, day]) => d >= from && sessionsOf(day, d).length > 0)
+  return Object.entries(s.days || {}).some(([d, day]) => d >= from && workoutsOf(day, d).length > 0)
 }
 
 /** Plans not reviewed (or created) within the last week. */

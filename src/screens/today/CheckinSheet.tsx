@@ -3,7 +3,7 @@ import { useStore } from '@/store/store'
 import { nowIso } from '@/data/supabase'
 import { ENERGY, HUNGER, MOODS, SLEEP, SORE, STRESS } from '@/core/domain/insights'
 import { isHardKey, plannedKeys } from '@/core/domain/plans'
-import { isBuiltinLift, sessionsOf } from '@/core/domain/sessions'
+import { isBuiltinLift, workoutsOf } from '@/core/domain/sessions'
 import { Sheet } from '@/ui/primitives'
 
 /**
@@ -15,7 +15,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const existing = useStore((s) => s.data.days[s.cur]?.checkin)
   const liftDay = useStore((s) => {
     // a lift logged today (any session) or planned today
-    const logged = sessionsOf(s.data.days[s.cur], s.cur).some(isBuiltinLift)
+    const logged = workoutsOf(s.data.days[s.cur], s.cur).some(isBuiltinLift)
     return logged || plannedKeys(s.data, s.cur).some((k) => isHardKey(k, s.data.routines))
   })
   const setCheckin = useStore((s) => s.setCheckin)

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
-import { keyTitle, type WorkoutKey } from '@/core/domain/routines'
+import { keyTitle, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import type { Routine, Session } from '@/core/types'
 import { Icon } from '@/ui/icons'
 import { FIRST_SESSION } from '../onboarding/copyApp'
@@ -16,6 +16,8 @@ import { RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './Thumb'
 import { bareName, warmupCopy } from './GuidedPlayer'
+import { WarmupCard } from './WarmupCard'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /** Day-of choices (plan §0.2): equal options, the planned session always one tap away. */
 export type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
@@ -59,6 +61,9 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const title = swap ? swap.title.split(' · ')[0] : keyTitle(type, routines)
   const logged = session?.ex?.some((e) => working(e.sets).length > 0)
   const wSlot = warmupSlot(slots.map((s) => s.shape))
+  const training = useStore((s) => s.data.profile.training)
+  // every session opens with the warm-up block (ob3-5), the same one the player runs
+  const warm = useMemo(() => (ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null), [type, routines, training])
 
   // cardio card state (a retired type from an older log still shows as saved)
   const cardioS = type === 'Cardio' ? session : undefined
@@ -84,7 +89,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const sub = swap
     ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`
     : type === 'Cardio' ? `${dayName} · ${shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}`
-    : `${dayName} · ${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
+    : `${dayName} · ${warm ? 'warm-up and ' : ''}${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
 
   return (
     <div className="screen pv">
@@ -121,6 +126,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         </>
       ) : type === 'Cardio' ? (
         <>
+          {warm && <WarmupCard block={warm} />}
           <div className="card ex">
             <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}</span></div>
             <div className="cue">{WORKOUTS.Cardio.ex[0].cue}</div>
@@ -138,13 +144,14 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         </>
       ) : (
         <>
-          {wSlot >= 0 && (
+          {!warm && wSlot >= 0 && (
             <div className="warm">
               <span className="wi" aria-hidden="true">↻</span>
               <div><div className="t">Warm up first</div>
                 <div className="s">{warmupCopy(bareName(slots[wSlot].shown.n))}</div></div>
             </div>
           )}
+          {warm && <WarmupCard block={warm} extra={wSlot >= 0 ? `Then one or two lighter ${bareName(slots[wSlot].shown.n).toLowerCase()} sets, building up to your working weight.` : undefined} />}
           <div className="list">
             {rows.map(({ s, detail }) => {
               const gentler = !s.swapped && s.x?.gentler && (s.x.equipment[0] === 'barbell' || s.x.equipment[0] === 'trap-bar') && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
