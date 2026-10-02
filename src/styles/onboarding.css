@@ -18,6 +18,8 @@
 .wz-bars span { height: 4px; border-radius: 2px; background: var(--sep); }
 .wz-bars span.on { background: var(--label); }
 .wz-h { margin: 28px 0 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.03em; }
+/* focused on each new screen for VoiceOver and the keyboard; a heading isn't a control, so no ring */
+.wz-h:focus { outline: none; }
 .wz-h.xl { margin: -8px 0 0; }
 .wz.skipage .wz-h { margin-top: 12px; }
 .wz-h.lg { margin: 0; font-size: 32px; line-height: 38px; }

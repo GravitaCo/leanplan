@@ -61,6 +61,17 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   const closable = mode === 'setup' || !!d.redo
   // the page opens at the top of each screen
   useEffect(() => { window.scrollTo(0, 0) }, [d.step])
+  // and, after the first, VoiceOver and the keyboard start from its heading, not the old screen's
+  // place (a tap-to-advance screen moves on with nothing focused). The first screen keeps the
+  // browser's own start.
+  const opened = useRef(false)
+  useEffect(() => {
+    if (!opened.current) { opened.current = true; return }
+    const h = document.querySelector<HTMLElement>('.wz .wz-h')
+    if (!h) return
+    h.tabIndex = -1
+    h.focus({ preventScroll: true })
+  }, [d.step])
   const put = (next: WizardDraft) => {
     setD(next)
     // never keep health answers on the device without the local consent record (plan §8)
