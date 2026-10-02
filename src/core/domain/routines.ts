@@ -59,6 +59,9 @@ export function aboutMins(n: number): number {
   return n <= 10 ? Math.max(1, Math.round(n)) : Math.round(n / 5) * 5
 }
 
+/** "about 45 min" for a row, or nothing without an estimate. */
+export const aboutLine = (m: number | null | undefined): string => (m ? `about ${aboutMins(m)} min` : '')
+
 const avg = (a: string, b?: string) => (b ? (parseInt(a) + parseInt(b)) / 2 : parseInt(a))
 
 /** Sets in a prescription: "3 × 10–12" → 3, "2–3 × 12" → 2.5; anything else is one. */
@@ -226,6 +229,21 @@ export function kitOf(t: TrainingPrefs | undefined): Equipment[] {
 }
 
 /**
+ * A workout the engine generated for the person: one of their own stored routines marked
+ * 'recommended' (the engine's are the only ones it writes that way; their ids are seeded uuids, so
+ * the stored row is the mark). Tali's plan workouts are 'recommended' too but are built-ins, never
+ * stored, and Push/Pull/Legs aren't routines at all.
+ */
+export function isEngineKey(key: WorkoutKey, routines: Routine[] | undefined): boolean {
+  if (isBuiltinKey(key) || isTaliKey(key)) return false
+  return (routines || []).some((r) => r.id === key && r.source === 'recommended')
+}
+
+/** A workout's warm-up minutes: the engine's follow the session length, everything else gets 6. */
+export const warmupMinsForKey = (key: WorkoutKey, routines: Routine[] | undefined, training: TrainingPrefs | undefined): number =>
+  isEngineKey(key, routines) ? warmupMinutesFor(training?.sessionRange, training?.minutesPerSession) : PLAN_WARMUP_MINUTES
+
+/**
  * The warm-up block a workout opens with (s-ob8 point 4): a generated workout's follows the
  * person's session length, the same minutes onboarding promised (warmupMinutesFor); the
  * Push/Pull/Legs cards, Tali's plan workouts and the person's own get the ready-made 6. Kit from
@@ -234,9 +252,18 @@ export function kitOf(t: TrainingPrefs | undefined): Equipment[] {
 export function warmupForKey(key: WorkoutKey, routines: Routine[] | undefined, training: TrainingPrefs | undefined): WarmupBlock | null {
   const ids = isBuiltinKey(key) ? WORKOUTS[key].ex.map((e) => e.id).filter((x): x is string => !!x) : (() => { const r = routineFor(key, routines); return r ? slotsOf(r).map((x) => x.exId) : null })()
   if (!ids) return null
-  const r = isBuiltinKey(key) ? undefined : routineFor(key, routines)
-  const mins = r?.source === 'recommended' ? warmupMinutesFor(training?.sessionRange, training?.minutesPerSession) : PLAN_WARMUP_MINUTES
-  return warmupForSlots(ids, mins, training)
+  return warmupForSlots(ids, warmupMinsForKey(key, routines, training), training)
+}
+
+/**
+ * A routine's minutes for a list row, from its slots and its own warm-up (null with no slots).
+ * Worked out when shown, never read from the stored estMins, which older saves wrote without the
+ * warm-up.
+ */
+export function routineEstMins(r: Routine, routines: Routine[] | undefined, training: TrainingPrefs | undefined): number | null {
+  const slots = slotsOf(r)
+  if (!slots.length) return null
+  return estMins(slots, warmupMinsForKey(r.id, routines, training))
 }
 
 /** The block for a session's exercises at these minutes (the summary's day sheet uses it too). */

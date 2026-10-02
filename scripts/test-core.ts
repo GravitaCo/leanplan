@@ -30,8 +30,10 @@ import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
 import { keptAfterEdit, weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
-import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate, warmupForKey } from '@/core/domain/routines'
-import { buildWarmup, warmupKindOf, warmupMinutesFor, SESSION_RANGES, PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
+import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate, warmupForKey, isEngineKey, routineEstMins, slotsOf as routineSlotsOf } from '@/core/domain/routines'
+import { buildWarmup, warmupKindOf, warmupMinutesFor, warmupStartAt, SESSION_RANGES, PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
+import { SUMMARY } from '@/screens/onboarding/copy'
+import { warmupNote } from '@/screens/train/WarmupCard'
 import { WARMUP_CUES } from '@/core/data/warmups'
 import { buildPlan as buildPlanW } from '@/core/domain/engine'
 import { rangeEngineMinutes as rangeEngineMinutesW } from '@/core/domain/warmup'
@@ -996,7 +998,48 @@ function legacyAndGuest(): void {
   const yoga = buildWarmup({ kind: 'mind-body', mins: 6, avoid: ['half-sun-salutation', 'cat-cow'] })
   checks.push(['a move the session already has isn’t repeated in its warm-up', !ids(yoga).includes('half-sun-salutation') && !ids(yoga).includes('cat-cow'), ids(yoga).join(',')])
   const walk = buildWarmup({ kind: 'cardio', mins: 5, activity: 'cardio-walk' }), run = buildWarmup({ kind: 'cardio', mins: 6, activity: 'cardio-run' })
-  checks.push(['cardio: the activity at an easy pace, plus leg swings before a run', walk.moves.length === 1 && walk.moves[0].id === 'cardio-walk' && ids(run)[0] === 'cardio-run' && ids(run).includes('leg-swings')])
+  checks.push(['cardio: the activity at an easy pace, then leg swings and hip circles (a walk isn’t only more walking)', ids(walk).join() === 'cardio-walk,leg-swings,hip-circles' && ids(run)[0] === 'cardio-run' && ids(run).includes('leg-swings') && ids(run).includes('hip-circles'), ids(walk).join()])
+  // ship-critic 1: Tali's plan workouts and Push/Pull/Legs get exactly 6, whatever the person's session length
+  {
+    const t = { sessionRange: '20-30', minutesPerSession: 30 } as never
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const off = keys.filter((k) => {
+      const b = warmupForKey(k, [], t)
+      const slots = isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)
+      const fromEst = estMins(slots) - estMins(slots, 0)
+      const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t)! - estMins(slots, 0)
+      return !(b?.mins === 6 && fromEst === 6 && row === 6 && SUMMARY.warmLine(PLAN_WARMUP_MINUTES).includes(`${b.mins}-minute`) && !isEngineKey(k, []))
+    })
+    checks.push(['Tali plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
+    const gen = { id: 'b4d5f1e2-0000-4000-8000-000000000001', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const own = { id: 'b4d5f1e2-0000-4000-8000-000000000002', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const sl = [{ exId: 'goblet-squat', rx: '3 × 10' }]
+    checks.push(['only the engine’s own stored workouts follow the session length', isEngineKey((gen as { id: string }).id, [gen]) && !isEngineKey((own as { id: string }).id, [own]) && !isEngineKey('tali-full-body-a', [gen]) && warmupForKey((gen as { id: string }).id, [gen], t)?.mins === 5 && warmupForKey((own as { id: string }).id, [own], t)?.mins === 6])
+    // ship-critic 5: list rows work the minutes out from the slots, never the stale stored estMins
+    checks.push(['row estimates come from the slots and the warm-up, not the stored estMins', routineEstMins(own, [own], t) === estMins(sl) && routineEstMins(gen, [gen], t) === estMins(sl, 5) && routineEstMins(own, [own], t) !== 10 && routineEstMins({ ...(own as object), blocks: [] } as never, [], t) === null])
+  }
+  // ship-critic 2: no move in both the block and the session, for every Tali and Push/Pull/Legs workout
+  {
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const both: string[] = []
+    for (const k of keys) for (const t of [undefined, { sessionRange: '60+', minutesPerSession: 60, equipment: ['band'] }] as never[]) {
+      const b = warmupForKey(k, [], t)!
+      const sess = new Set((isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)).map((x) => x.exId))
+      for (const m of b.moves) if (sess.has(m.id) && !(b.kind === 'cardio' && m === b.moves[0])) both.push(`${k}: ${m.id}`)
+    }
+    const bm = warmupForKey('tali-balance-mobility', [], undefined)!
+    checks.push(['no move is in both the warm-up and the session (Balance & Mobility’s march stays in the session)', !both.length && bm.moves[0].id !== 'march-on-the-spot', both.join(', ') + ' / ' + bm.moves[0].id])
+    const pulse = (avoid: string[], kind: 'legs' | 'mind-body' = 'legs', mins = 6) => buildWarmup({ kind, mins, avoid }).moves[0].id
+    checks.push(['the pulse raiser respects avoid: march → step jacks, and back', pulse(['march-on-the-spot']) === 'step-jacks' && pulse(['step-jacks'], 'legs', 8) === 'march-on-the-spot' && pulse(['half-sun-salutation', 'march-on-the-spot'], 'mind-body') === 'step-jacks' && pulse([]) === 'march-on-the-spot'])
+  }
+  // ship-critic 3: a resume picks the block up where it was left
+  {
+    const b = buildWarmup({ kind: 'push', mins: 6 })
+    const a0 = warmupStartAt(b, 0), a1 = warmupStartAt(b, b.moves[0].sec + 10), aEnd = warmupStartAt(b, 6 * 60)
+    checks.push(['resume: from 0 is the first move whole; part-way lands inside the right move with the time kept', a0.i === 0 && a0.left === b.moves[0].sec * 1000 && a0.spent === 0 && a1.i === 1 && a1.left === (b.moves[1].sec - 10) * 1000 && a1.spent === (b.moves[0].sec + 10) * 1000 && aEnd.i === b.moves.length - 1, JSON.stringify([a0, a1, aEnd])])
+  }
+  // ship-critic 4: the note promises a how-to, never a demo there isn't
+  checks.push(['the warm-up note says each move has a short how-to, not that it shows how', [buildWarmup({ kind: 'legs' }), walk].every((x) => warmupNote(x).includes('Each move has a short how-to.') && !/shows how/.test(warmupNote(x))) && Object.keys(WARMUP_CUES).every((id) => !!WARMUP_CUES[id])])
   const k = (ids: string[]) => warmupKindOf(ids).kind
   checks.push(['kind from the exercises: Legs, Push, Pull, full body, yoga, cardio', [k(builtinSlots('Legs').map((x) => x.exId)), k(builtinSlots('Push').map((x) => x.exId)), k(builtinSlots('Pull').map((x) => x.exId)), k(['goblet-squat', 'push-up', 'db-bent-over-row']), k(['half-sun-salutation', 'cat-cow']), k(['cardio-walk'])].join() === 'legs,push,pull,full,mind-body,cardio'])
   const ppl = warmupForKey('Push', [], undefined)

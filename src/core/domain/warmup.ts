@@ -90,7 +90,8 @@ const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
  * - `mins` wins; else the session `range`; else the ready-made plans' 6. Never zero, never trimmed.
  * - `kit`: kit the person has. A move needing kit they don't have (a band) becomes a no-kit one.
  * - `avoid`: library ids already in the session's main work (a yoga flow's own sun salutations).
- * - `activity`: a cardio session's library id; its easy start is the pulse raiser.
+ * - `activity`: a cardio session's library id; its easy start is the pulse raiser, then leg swings
+ *   and hip circles, so a walk's warm-up isn't only more walking.
  * Seconds: the pulse raiser gets 1–2 minutes, the moving stretches share the rest (one-sided moves
  * count twice, so each side gets as long as a two-sided move), in 5 s steps, with a 5 s gap between
  * moves. The total is exactly `mins`.
@@ -109,14 +110,16 @@ export function buildWarmup(o: { kind: WarmupKind; mins?: number; range?: Sessio
     const e = CARDIO_EASY[running ? 'running' : act.cardioVariation === 'walking' ? 'walking' : 'other']
     pulse = { id: act.id, n: e.n(act.n.replace(/\s*\(.*\)\s*$/, '')), cue: e.cue, perSide: false }
   } else {
-    const id = o.kind === 'mind-body' && !avoid.has('half-sun-salutation') ? 'half-sun-salutation'
-      : mins >= 8 && o.kind !== 'mind-body' && o.kind !== 'cardio' ? 'step-jacks' : 'march-on-the-spot'
+    // the first raiser the session doesn't already have (Balance & Mobility opens with a march)
+    const order = o.kind === 'mind-body' ? ['half-sun-salutation', 'march-on-the-spot', 'step-jacks']
+      : mins >= 8 && o.kind !== 'cardio' ? ['step-jacks', 'march-on-the-spot'] : ['march-on-the-spot', 'step-jacks']
+    const id = order.find((x) => !avoid.has(x)) ?? order[0]
     pulse = { id, n: id === 'march-on-the-spot' ? 'March on the spot' : name(id), cue: WARMUP_CUES[id], perSide: false }
   }
   avoid.add(pulse.id)
 
-  // the moving stretches: a cardio session other than running is its easy start alone
-  const list = o.kind === 'cardio' ? (running ? WARMUP_LISTS.running : null) : WARMUP_LISTS[o.kind]
+  // the moving stretches: a cardio session's easy start, then leg swings and hip circles (a run adds a calf move)
+  const list = o.kind === 'cardio' ? (running ? WARMUP_LISTS.running : WARMUP_LISTS.cardio) : WARMUP_LISTS[o.kind]
   const want = list ? Math.min(movesFor(mins) - 1, list.moves.length) : 0
   const picked: string[] = []
   const usable = (id: string) => {
@@ -149,6 +152,19 @@ export function buildWarmup(o: { kind: WarmupKind; mins?: number; range?: Sessio
   }
   const moves: WarmupMove[] = [{ ...pulse, sec: p }, ...order.map((id, k) => ({ id, n: name(id), cue: WARMUP_CUES[id], sec: secs[k], perSide: sided(id) }))]
   return { kind: o.kind, mins, gapSec: WARMUP_GAP_SEC, moves }
+}
+
+/** Where a block resumes `from` seconds of moves in: the move, its time left, and the seconds kept. */
+export function warmupStartAt(block: WarmupBlock, from: number): { i: number; left: number; spent: number } {
+  let acc = 0
+  const f = Math.max(0, from)
+  for (let i = 0; i < block.moves.length; i++) {
+    const sec = block.moves[i].sec
+    if (f < acc + sec) return { i, left: (acc + sec - f) * 1000, spent: f * 1000 }
+    acc += sec
+  }
+  const last = block.moves.length - 1
+  return { i: last, left: block.moves[last].sec * 1000, spent: (acc - block.moves[last].sec) * 1000 }
 }
 
 /** "March on the spot, leg swings, arm circles and bodyweight squats" for a row under "Warm-up". */

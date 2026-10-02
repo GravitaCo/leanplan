@@ -35,13 +35,14 @@ export const WARMUP_CUES: Record<string, string> = {
  * Moving stretches per session kind, most useful first: a block takes as many as its length
  * allows. `reserve` stands in for a move the person's kit rules out or the session already has.
  */
-export const WARMUP_LISTS: Record<'legs' | 'push' | 'pull' | 'full' | 'mind-body' | 'running', { moves: string[]; reserve: string[] }> = {
+export const WARMUP_LISTS: Record<'legs' | 'push' | 'pull' | 'full' | 'mind-body' | 'running' | 'cardio', { moves: string[]; reserve: string[] }> = {
   legs: { moves: ['leg-swings', 'bodyweight-squat', 'worlds-greatest-stretch', 'glute-bridge', 'hip-circles', 'knee-to-wall'], reserve: ['hip-90-90', 'cat-cow'] },
   push: { moves: ['arm-circles', 'band-pull-apart', 'open-book', 'incline-push-up', 'scapular-wall-slide', 'thread-the-needle'], reserve: ['cat-cow', 'shoulder-rolls'] },
   pull: { moves: ['arm-circles', 'cat-cow', 'thread-the-needle', 'band-pull-apart', 'open-book', 'scapular-wall-slide'], reserve: ['shoulder-rolls', 'hip-circles'] },
   full: { moves: ['leg-swings', 'arm-circles', 'bodyweight-squat', 'worlds-greatest-stretch', 'band-pull-apart', 'inchworm'], reserve: ['scapular-wall-slide', 'open-book', 'glute-bridge'] },
   'mind-body': { moves: ['cat-cow', 'hip-circles', 'shoulder-rolls', 'thread-the-needle', 'open-book', 'arm-circles'], reserve: ['leg-swings', 'march-on-the-spot'] },
   running: { moves: ['leg-swings', 'hip-circles', 'knee-to-wall'], reserve: [] },
+  cardio: { moves: ['leg-swings', 'hip-circles'], reserve: [] },
 }
 
 /** Kit a move needs, and the no-kit move it becomes without it. */
