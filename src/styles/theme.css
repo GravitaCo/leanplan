@@ -833,6 +833,25 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .li .s.wrap { white-space: normal; line-height: 1.35; }
 .gp .demo-play { z-index: 1; }
 
+/* the warm-up block (ob5-0 in the player; ob3-5 in day views) */
+.wu { position: absolute; inset: 0; }
+.wu.plain { background: #121214; }
+.wu-ph { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: 46%; }
+.wu-ph span { width: 58vmin; height: 58vmin; max-width: 300px; max-height: 300px; border-radius: 50%; background: var(--brand); opacity: 0.14; }
+.wu-bot { gap: 10px; }
+.wu-k { font-size: 13px; font-weight: 600; color: var(--brand); }
+.wu-bot .gp-name { margin-top: -4px; }
+.wu-cue { margin: 0; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, 0.88); }
+.wu-bot .gp-clock > span { font-size: 56px; font-weight: 200; }
+.wu-bot .gp-next { font-size: 14px; color: rgba(255, 255, 255, 0.85); }
+.wu-day-h { margin: 0 0 6px; padding: 0 4px; font-size: 13px; font-weight: 500; color: var(--label2); }
+.wu-day { background: var(--card); border-radius: 22px; overflow: hidden; margin-bottom: 16px; }
+.wu-day .r { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--sep); }
+.wu-day .mn { width: 44px; height: 52px; border-radius: 10px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.wu-day .t { font-size: 16px; font-weight: 600; }
+.wu-day .s { font-size: 13px; line-height: 1.35; color: var(--label2); }
+.wu-day .n { padding: 10px 14px 12px; font-size: 13px; line-height: 1.4; color: var(--label2); }
+
 /* plans (design canvas, Plans 1 to 4) */
 .tl { display: flex; flex-direction: column; gap: 8px; }
 .tl-cells { display: grid; gap: 3px; }

@@ -10,9 +10,10 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { canSaveHealthAnswers } from '@/data/consent'
-import { finishedProfile, planFitLine, restLine, summaryFor, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
+import { finishedProfile, planFitLine, restLine, summaryFor, trainingFrom, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
 import { PLAN_TEMPLATES, phasesOf, phaseWeek, templateById, type PlanTemplate } from '@/core/domain/plans'
-import { keyTitle } from '@/core/domain/routines'
+import { keyTitle, warmupForSlots } from '@/core/domain/routines'
+import { PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
 import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
 import { renderWhy, type PlannedSession } from '@/core/domain/engine'
@@ -128,7 +129,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
               )
             })}
           </div>
-          <div className="w">{SUMMARY.warmLine(chosen ? 6 : warmupFor(d))}</div>
+          <div className="w">{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</div>
         </section>
 
         {/* the reasons are the generated week's: a chosen Tali plan has its own (Plan tab) */}
@@ -147,7 +148,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       </div>
       <div className="ob-cta"><button className="btn ob-btn" onClick={() => (d.redo ? setOffer(true) : start())}>{SUMMARY.start}</button></div>
 
-      {day && <DaySheet s={day} whys={r.why} warm={warmupFor(d)} onClose={() => setDay(null)} />}
+      {day && <DaySheet s={day} whys={r.why} warm={warmupForSlots(day.slots.map((x) => x.exId), warmupFor(d), trainingFrom(d))} onClose={() => setDay(null)} />}
       {row && <WhySheet row={row} onClose={() => setRow(null)} />}
       {all && (
         <BareSheet label={SUMMARY.whyH} onClose={() => setAll(false)}>
@@ -266,7 +267,7 @@ function HowRows({ m }: { m: SummaryModel }) {
   )
 }
 
-function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; warm: number; onClose: () => void }) {
+function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; warm: WarmupBlock; onClose: () => void }) {
   const title = `${DAY_NAME[s.weekday]} · ${s.name}`
   const note = uniq([...s.why, ...whys.filter((w) => w.about === 'ease-in' || w.about === 'dose')].map(renderWhy)).slice(0, 3)
   return (
@@ -274,7 +275,7 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
       <div className="feel-hd"><h2>{title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
       <div className="sm-sheet-sub">{SUMMARY.daySub}</div>
       <div className="sm-rows">
-        <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm)}</span><span className="s">{SUMMARY.warmRowS}</span></span></div>
+        <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm.mins)}</span><span className="s">{SUMMARY.warmRowS(warm.moves.map((x) => x.n))}</span></span></div>
         {s.slots.map((x, i) => {
           // the reason for the exercise itself first; sets and reps are in the note below
           const main = [...x.why.filter((w) => w.about === 'exercise' && w.code !== 'calibration' && w.code !== 'starter'), ...x.why.filter((w) => w.about !== 'exercise' && w.code !== 'calibration')]

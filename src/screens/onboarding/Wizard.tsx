@@ -28,7 +28,7 @@ import { BareSheet, useScrollLock } from '@/ui/primitives'
 import { ChoiceTiles, CheckTiles, type TileOpt } from '@/ui/Tiles'
 import { Wheel } from '@/ui/Wheel'
 import { Ruler } from '@/ui/Ruler'
-import { warmupMinutes, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
+import { warmupMinutesFor, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
 import partOnePhoto from '@/assets/onboarding/part-1-about-you.jpg'
 import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
 import partThreePhoto from '@/assets/onboarding/part-3-your-plan.jpg'
@@ -585,7 +585,7 @@ function Minutes({ d, go, back }: Common) {
       <div className="wz-unit">{COPY.minutes!.unit}</div>
       {r && (
         <div className="wz-card wz-warm">
-          <span className="t">{MINUTES_WARMUP(warmupMinutes(r))}</span>
+          <span className="t">{MINUTES_WARMUP(warmupMinutesFor(r))}</span>
           <span className="s">{MINUTES_WARMUP_S}</span>
         </div>
       )}

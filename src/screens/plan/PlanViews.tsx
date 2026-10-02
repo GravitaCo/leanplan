@@ -9,7 +9,7 @@ import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
 import { setCount, shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
-import { aboutMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, type WorkoutKey } from '@/core/domain/routines'
+import { aboutMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet } from '@/ui/primitives'
@@ -17,6 +17,7 @@ import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
+import { WarmupCard } from '../train/WarmupCard'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -220,8 +221,11 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
 function ExerciseList({ type }: { type: WorkoutKey }) {
   const [lib, setLib] = useState<string | null>(null)
   const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
+  const warm = warmupForKey(type, routines, training)
   return (
     <>
+      {warm && <WarmupCard block={warm} />}
       <div className="list">
         {(templateFor(type, routines)?.ex ?? []).map((e, i) => {
           const x = exById(e.id)
@@ -268,7 +272,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
   const sub = r
-    ? [`${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
+    ? [`warm-up and ${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
   return (
     <div className="wv">

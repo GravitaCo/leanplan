@@ -147,9 +147,13 @@ export const SUMMARY = {
   others: 'See other plans',
   othersS: 'This week is our suggestion. You can choose a ready-made plan instead.',
   daySub: 'Why each part is here',
-  /** ob3-2's first row. The board's moves are placeholders (s-ob8 point 4), so the line names none. */
+  /** ob3-2's first row: the session's own moves (core/domain/warmup), as the player runs them */
   warmRow: (n: number) => `Warm-up · ${n} min`,
-  warmRowS: 'A minute or two to raise your pulse, then moving stretches for today’s joints',
+  warmRowS: (names: string[]) => {
+    const [first, ...rest] = names
+    const low = rest.map((x) => x.charAt(0).toLowerCase() + x.slice(1))
+    return low.length ? `${first}, then ${low.length > 1 ? `${low.slice(0, -1).join(', ')} and ${low[low.length - 1]}` : low[0]}: moving stretches for today’s joints` : `${first}, to let your heart rate rise gently`
+  },
   /** ob9-1: the standard card */
   startT: (kcal: number) => `About ${kc(kcal)} kcal a day to start`,
   /** ob9-1. GAP: a surplus says "more than", a start at the estimate says "around" (s-ob9 draws a deficit) */
@@ -308,6 +312,7 @@ const FN_SAMPLES = new Map<unknown, unknown[][]>([
   [FOOD9.slots, [[['breakfast', 'lunch', 'snack'], 2], [['dinner'], 1], [[], 0]]],
   [FOOD9.withProtein, [[2, 3], [1, 1], [0, 2]]],
   [FOOD9.meals, [[0], [1], [3]]],
+  [SUMMARY.warmRowS, [[['March on the spot', 'Leg swings', 'Bodyweight squat']], [['March on the spot']]]],
 ])
 
 /** Every line above, for the copy lint. */

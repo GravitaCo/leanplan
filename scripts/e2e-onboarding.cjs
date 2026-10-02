@@ -351,7 +351,23 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect(st2.profile.training.exPrefs.disliked.length === 1, 'the dislike is kept')
     await page.getByRole('button', { name: 'Undo' }).click()
     await page.waitForFunction(() => (JSON.parse(localStorage.getItem('leanplan.v1')).profile.training.exPrefs?.disliked || []).length === 0)
+    // ob3-5: the warm-up block above the exercises, as long as setup promised
+    await page.locator('.wu-day').getByText('Warm-up', { exact: true }).waitFor()
+    expect((await page.locator('.wu-day .mn').textContent()) === '5 min', 'the preview’s warm-up is the 5 minutes setup promised')
     await btn(page, 'Start').click()
+    // ob5-0: the session opens on the warm-up block; skip a move, then skip the warm-up
+    const pill = page.locator('.gp-pill', { hasText: 'Warm-up' })
+    await pill.waitFor()
+    expect(/^Warm-up · 1 of 4 · 5 min$/.test(await pill.textContent()), 'the block: 4 moves, 5 minutes: ' + await pill.textContent())
+    await shot(page, 'ob5-0-warmup')
+    await btn(page, 'Pause').click(); await btn(page, 'Resume').waitFor(); await btn(page, 'Resume').click()
+    await btn(page, 'Skip this move').click()
+    await page.getByText('Get ready', { exact: true }).waitFor()
+    expect(/2 of 4/.test(await pill.textContent()), 'skipped to move 2')
+    await btn(page, 'Start now').click()
+    await page.getByText(/^Next: /).waitFor()
+    await btn(page, 'Skip warm-up').click()
+    await pill.waitFor({ state: 'detached' })
     let found = false
     for (let i = 0; i < 8 && !found; i++) {
       found = (await page.locator('.gp-find').count()) > 0
@@ -373,6 +389,10 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await shot(page, 'ob5-2-howset')
     await btn(page, 'Done').click()
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).days[Object.keys(JSON.parse(localStorage.getItem('leanplan.v1')).days).sort().pop()].sessions?.some((s) => s.ex?.some((e) => e.sets.some((x) => x.feel === 'right'))))
+    // the session records the warm-up (skipped early: 0 of 5 minutes), never as sets
+    const ses = (await stored(page)).days[today].sessions.find((x) => x.ex?.length)
+    expect(ses.warmup && ses.warmup.of === 5 && ses.warmup.mins === 0, 'the session records the warm-up: ' + JSON.stringify(ses.warmup))
+    expect(!ses.ex.some((e) => /warm-up|march|swing|circles/i.test(e.name)), 'no warm-up move logged as an exercise')
   })
 
   await run('pickers: the age wheel and the weight ruler work by drag and by keyboard', async ({ page }) => {
@@ -1284,6 +1304,48 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await tab(page, 'Plan'); await page.locator('.hdr .ltitle', { hasText: 'Plan' }).waitFor()
     expect((await page.locator('.buildplan').count()) === 0, 'no Build my plan card')
   }, { url: OFF })
+
+  // the warm-up on the flag-off build: Push/Pull/Legs get the 6-minute block (live users see this)
+  for (const dark of [false, true]) {
+    await run(`warm-up, flag off${dark ? ' (dark)' : ''}: the day block, the player, a one-sided move, and the session records it`, async ({ page }) => {
+      const sfx = dark ? '-dark' : ''
+      await tab(page, 'Train')
+      await page.getByText(/^Push/).first().click()
+      await page.locator('.wu-day .mn', { hasText: '6 min' }).waitFor()
+      await page.locator('.wu-day').scrollIntoViewIfNeeded()
+      await shot(page, `warmup/ob3-5-train-preview${sfx}`)
+      await btn(page, 'Start').click()
+      const pill = page.locator('.gp-pill', { hasText: 'Warm-up' })
+      await pill.waitFor()
+      expect(/1 of 5 · 6 min/.test(await pill.textContent()), 'Push: 5 moves in 6 minutes: ' + await pill.textContent())
+      await shot(page, `warmup/ob5-0-warmup${sfx}`)
+      // a one-sided move says when to switch
+      for (let i = 0; i < 5 && !(await page.getByText(/switch sides at/).count()); i++) { await btn(page, 'Skip this move').click(); await btn(page, 'Start now').click() }
+      expect(await page.getByText(/switch sides at/).count() > 0, 'a one-sided move says when to switch sides')
+      await shot(page, `warmup/ob5-0-warmup-sides${sfx}`)
+      await btn(page, 'Skip warm-up').click()
+      await pill.waitFor({ state: 'detached' })
+      // the first set, by hand (no last time yet)
+      await page.locator('.gp-main', { hasText: 'Log set' }).click()
+      await page.locator('#adj_w').fill('40'); await page.locator('#adj_r').fill('10')
+      await page.locator('button.btn', { hasText: 'Log set' }).click()
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).days[Object.keys(JSON.parse(localStorage.getItem('leanplan.v1')).days).sort().pop()].sessions?.some((s) => s.warmup?.of === 6 && s.warmup.mins === 0))
+      // the finish sheet lists exercises only
+      await page.getByRole('button', { name: /More: swap/ }).click(); await btn(page, 'Finish now').click()
+      await page.getByRole('dialog').getByText('Barbell bench press').first().waitFor()
+      expect((await page.getByRole('dialog').getByText(/March|Arm circles|Warm-up ·/).count()) === 0, 'no warm-up rows in the finish sheet')
+      if (!dark) {
+        await page.keyboard.press('Escape').catch(() => {})
+      }
+    }, { ...seeded({ dark }), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' } }, url: OFF })
+  }
+  await run('warm-up, flag off: the Plan workout view shows the block', async ({ page }) => {
+    await tab(page, 'Plan'); await page.locator('.hdr .ltitle', { hasText: 'Plan' }).waitFor()
+    await page.getByRole('button', { name: /^Monday/ }).first().click()
+    await page.getByRole('button', { name: /Push/ }).first().click()
+    await page.locator('.wu-day .mn', { hasText: '6 min' }).waitFor()
+    await shot(page, 'warmup/ob3-5-plan-workout', true)
+  }, { ...seeded(), state: { ...seeded().state, schedule: { 0: 'Push', 1: 'Push', 2: 'Push', 3: 'Push', 4: 'Push', 5: 'Push', 6: 'Push' } }, url: OFF })
 
   await browser.close()
   const bad = results.filter((r) => !r).length
