@@ -796,7 +796,7 @@ export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch'
 export interface TempoPhase {
   at: number
   kind: TempoPhaseKind
-  /** 1-based rep number; absent for the set-up before the first rep */
+  /** 1-based rep number; absent for the set-up before the first rep and for a closing pause (a "ready" between reps carries the next rep) */
   rep?: number
 }
 
