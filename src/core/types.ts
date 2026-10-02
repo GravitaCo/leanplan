@@ -808,6 +808,12 @@ export interface ExerciseMedia {
   durationSec: number
   /** phases in time order; each runs until the next one starts, the last until durationSec */
   tempo: TempoPhase[]
+  /**
+   * The clip shows a held position (a stretch, a plank, a yoga pose): no reps and no count over
+   * it, since the person's own time comes from the hold timer. Its tempo is one rep-less phase.
+   * The value names what is held: "Hold the stretch" or "Hold the position".
+   */
+  hold?: 'stretch' | 'position'
 }
 
 export interface WorkoutTemplate {

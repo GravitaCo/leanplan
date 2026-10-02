@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import type { ExerciseTemplate } from '@/core/types'
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
+import { exById, holdTarget } from '@/core/domain/library'
 import { Icon } from '@/ui/icons'
 import { useScrollLock } from '@/ui/primitives'
 
 /**
  * Full-screen demo clip with the tempo counter laid over it (phase, rep and a 1-2-3 count), so
  * the lifter can match the pace. The counter reads the video's own clock, so it stays in step
- * when the clip is paused, buffers or loops.
+ * when the clip is paused, buffers or loops. A hold clip (board h1) has no count: it says what to
+ * hold and for how long, from the exercise's own target.
  */
 export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () => void }) {
   const m = ex.video!
@@ -55,6 +57,8 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
   // "Romanian deadlift (dumbbell or barbell)" → title + a quieter equipment line
   const [, title, kit] = ex.n.match(/^(.*?)\s*(?:\((.*)\))?$/) || [, ex.n, '']
   const pace = m.tempo.filter((p) => p.rep === 1).map((p) => ({ kind: p.kind, sec: tempoAt(m, p.at).lengthSec }))
+  const perSide = exById(ex.id)?.perSide ?? /each side/.test(ex.t)
+  const aim = holdTarget(ex.t)
 
   return (
     <div ref={root} className="demo-full" role="dialog" aria-modal="true" aria-label={`Example: ${ex.n}`}>
@@ -92,7 +96,27 @@ export function DemoPlayer({ ex, onClose }: { ex: ExerciseTemplate; onClose: () 
         <button className="demo-play" onClick={toggle} aria-label="Play example"><Icon name="play" size={32} /></button>
       )}
 
-      {!failed && (
+      {!failed && m.hold && (
+        <div className="demo-bot">
+          <div className="demo-sub">{perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>
+          <div className="demo-ph"><span className="l">{m.hold === 'position' ? 'Hold the position' : PHASE_LABEL.stretch}</span></div>
+          <div className="demo-rule" aria-hidden="true" />
+          <div className="demo-pace hold">
+            {aim && (
+              <div className="on">
+                <div className="k">Aim for</div>
+                <div className="v num">{aim.lo === aim.hi ? aim.lo : `${aim.lo}–${aim.hi}`} sec{perSide ? ' each side' : ''}</div>
+              </div>
+            )}
+            <div className="on">
+              <div className="k">Breathe</div>
+              <div className="v">Slow and steady</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!failed && !m.hold && (
         <div className="demo-bot">
           <div className="demo-sub" aria-hidden="true">{s.rep ? `Rep ${s.rep} of ${s.reps}` : `${s.reps} reps`}</div>
           <div className="demo-ph" aria-hidden="true">

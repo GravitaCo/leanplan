@@ -509,6 +509,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 15, setSec: 50 }, skill: 1, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time', 'chain'], ladders: [{ chain: 'core-side', step: 1 }],
     cue: "Lie on your side with your elbow under your shoulder and knees bent behind you. Lift your hips so your body makes a straight line from head to knees, and hold. Stop when your hips start to drop.",
+    video: DEMOS.sidePlankKnees,
   },
   {
     id: 'side-plank', n: 'Side plank', modality: 'calisthenics', also: ['pilates'], log: 'hold', perSide: true,
@@ -528,6 +529,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 15, setSec: 60 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
     cue: "On hands and knees, hands under shoulders and knees under hips. Slowly reach one arm forward and the opposite leg back until both are level with your body, pause, then return and switch. Keep your back flat and hips level; don't lift the leg so high that your back arches.",
+    video: DEMOS.birdDog,
   },
   {
     id: 'hollow-hold', n: 'Hollow hold', modality: 'calisthenics', log: 'hold',
@@ -1196,6 +1198,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 95 }, skill: 1, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
     cue: "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride.",
+    video: DEMOS.halfKneelingHipFlexor,
   },
   {
     id: 'supine-hamstring-stretch', n: 'Lying hamstring stretch', modality: 'mobility', also: ['yoga'], log: 'hold', perSide: true,

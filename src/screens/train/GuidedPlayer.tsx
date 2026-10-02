@@ -12,13 +12,13 @@ import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { sessionsOf, warmupOnly } from '@/core/domain/sessions'
-import { exById } from '@/core/domain/library'
+import { exById, holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
 import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { AdjustSheet } from './AdjustSheet'
 import { FinishSheet } from './FinishSheet'
-import { HoldTimer } from './HoldTimer'
+import { HoldTimer, RED_FLAG } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
@@ -177,6 +177,9 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const isLastSlot = pos >= order.length - 1
   const name = bareName(slot.shown.n)
   const video = slot.shown.video
+  // a hold with its clip on screen (boards h2–h4): the timer runs over the clip, not in a sheet
+  const [holdStart, setHoldStart] = useState<number | null>(null)
+  useEffect(() => { setHoldStart(null) }, [slot.i])
 
   // one clock for the elapsed time and the rest countdown (device clock: works offline)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [])
@@ -254,10 +257,14 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
 
   function primary() {
     if (complete) { moveOn(); return }
-    if (slot.shape === 'hold') { setSheet('hold'); return }
+    if (slot.shape === 'hold') { startHold(); return }
     if (!target) { setSheet('adjust'); return }
     // "Done as planned": the target, ticked (SetEntry.done marks the one-tap log)
     logSet({ w: target.w, reps: target.reps, ...(target.mins ? { mins: target.mins } : {}), ...(target.assist ? { assist: true } : {}), done: true })
+  }
+  function startHold() {
+    if (!overClip) { setSheet('hold'); return }
+    setSheet(null); setRest(null); setHoldStart(Date.now()); setNow(Date.now())
   }
   const go = (d: -1 | 1) => {
     setRest(null)
@@ -320,12 +327,18 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const elapsed = Math.floor((now - started) / 1000)
   const mm = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
   const optional = !complete && setNo >= slot.setsLo
-  const upNext = complete ? '' : `Set ${setNo + 1} of ${slot.sets}${optional ? ' (optional)' : ''}${target ? ' · ' + fmtTarget(target, slot.shape) : ''}`
+  const upNext = complete ? '' : `Set ${setNo + 1} of ${slot.sets}${optional ? ' (optional)' : ''}${target ? ' · ' + fmtTarget(target, slot.shape) + (slot.shape === 'hold' && slot.x?.perSide ? ' each side' : '') : ''}`
   const plain = clip === 'none'
+  const holdClip = !!video?.hold && !plain
+  const overClip = holdClip && slot.shape === 'hold'
+  const hTarget = holdTarget(slot.rx)
+  const perSide = !!slot.x?.perSide
+  const h = holdStart == null ? null : holdAt((now - holdStart) / 1000, hTarget, perSide)
+  const stopHold = () => { const sec = h?.logSec ?? 0; setHoldStart(null); if (sec > 0) logSet({ w: '', reps: String(sec), sec: String(sec) }) }
   const wSlot = warmupSlot(slots.map((s) => s.shape))
 
   return (
-    <div ref={root} className={'gp' + (plain ? ' plain' : '')} role="dialog" aria-modal="true" aria-label={inWarm ? `${title}: warm-up` : `${title}: ${name}`}>
+    <div ref={root} className={'gp' + (plain ? ' plain' : '') + (h ? ' holding' : '')} role="dialog" aria-modal="true" aria-label={inWarm ? `${title}: warm-up` : `${title}: ${name}`}>
       {inWarm && block ? (
         <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
       ) : <>
@@ -352,7 +365,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
       </header>
 
       {plain && !rest && <div className="gp-cue">{slot.shown.cue}</div>}
-      {clip === 'ok' && video && !rest && <TempoCount vid={vid} media={video} />}
+      {clip === 'ok' && video && !video.hold && !rest && <TempoCount vid={vid} media={video} />}
       {clip === 'ok' && reduced && !playing && !rest && (
         <button className="demo-play" onClick={toggle} aria-label="Play the demo"><Icon name="play" size={32} /></button>
       )}
@@ -368,6 +381,21 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             <button className="gp-sec" onClick={() => setRest({ end: rest.end + 15000, total: rest.total + 15 })}>+15 s</button>
             <button className="gp-main" onClick={() => setRest(null)}>Skip rest</button>
           </div>
+        </section>
+      ) : h ? (
+        <section className="gp-bot" aria-label="Hold timer">
+          <div className="gp-rh"><span className="k" aria-live="polite">{holdLabel(h, hTarget, perSide)}</span><span className="h">{name} · set {setNo + 1} of {slot.sets}</span></div>
+          <div className="gp-clock" role="timer" aria-label={`${h.sec} seconds${perSide && hTarget ? (h.side === 1 ? ', first side' : ', second side') : ''}`}>
+            <span className="num" aria-hidden="true">{fmtClock(h.sec)}</span>
+            {hTarget && <small className="num" aria-hidden="true">of {hTarget.lo === hTarget.hi ? fmtClock(hTarget.hi) : `${fmtClock(hTarget.lo)}–${fmtClock(hTarget.hi)}`}{perSide && h.side === 2 ? ' · second side' : ''}</small>}
+          </div>
+          {hTarget && <div className="gp-bar"><i style={{ transform: `scaleX(${Math.min(1, h.sec / (perSide ? hTarget.lo : hTarget.hi))})` }} /></div>}
+          <div className="gp-next">{h.switchNow ? 'Swap to the other side. The timer has started again.' : 'Breathe steadily. Stop sooner if your form slips or anything hurts.'}</div>
+          <div className="gp-row2">
+            <button className="gp-sec" onClick={() => setHoldStart(null)}>Cancel</button>
+            <button className="gp-main" onClick={stopHold}>Stop and save</button>
+          </div>
+          <p className="gp-foot">{RED_FLAG}</p>
         </section>
       ) : finding && calib ? (
         <section className="gp-bot gp-find" aria-label={`Find your weight: ${name}`}>
@@ -388,6 +416,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
       ) : (
         <section className="gp-bot" aria-label={name}>
           <div>
+            {holdClip && <div className="gp-kick">{perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
             <h1 className="gp-name">{name}</h1>
             {!plain && <p className="gp-line">{firstLine(slot.shown.cue)}</p>}
             {slot.swapped && <p className="gp-line sm">In place of {bareName(slot.planned.n)}, today only.</p>}
@@ -416,7 +445,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         <AdjustSheet key={slot.i + '-' + setNo + sheet} name={name} x={slot.x} shape={slot.shape} rx={slot.rx} setNo={setNo}
           target={sheet === 'warmup' ? null : target} first={!target && sheet !== 'warmup'} warmup={sheet === 'warmup'}
           allowWarmup={slot.shape === 'weight-reps'} stepUp={!shorter && setNo === 0 && readyToStepUp(last, slot.fullRx)}
-          onLog={logSet} onGentler={slot.x ? () => setSheet('swap') : undefined} onTimer={() => setSheet('hold')} onClose={() => setSheet(null)} />
+          onLog={logSet} onGentler={slot.x ? () => setSheet('swap') : undefined} onTimer={startHold} onClose={() => setSheet(null)} />
       )}
       {sheet === 'hold' && (
         <HoldTimer name={slot.shown.n} rx={slot.rx} perSide={slot.x?.perSide}

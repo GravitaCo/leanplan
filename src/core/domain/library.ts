@@ -121,3 +121,11 @@ export function holdAt(elapsedSec: number, target: { lo: number; hi: number } | 
     logSec: side === 2 ? sec : t,
   }
 }
+
+/** What a running hold timer says ("First side", "Switch sides", "In your range"…). */
+export function holdLabel(h: ReturnType<typeof holdAt>, target: { lo: number; hi: number } | null, perSide = false): string {
+  if (h.switchNow) return 'Switch sides'
+  if (perSide && target) return h.side === 1 ? 'First side' : 'Second side'
+  if (target && h.sec >= target.hi) return 'Good place to stop'
+  return h.reached ? 'In your range' : 'Holding'
+}

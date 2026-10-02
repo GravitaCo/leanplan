@@ -172,4 +172,38 @@ export const DEMOS = {
       { at: 14.0, kind: 'ready' },
     ],
   },
+  // A hold, right knee down, still throughout: no reps to time, so one phase for the whole clip.
+  halfKneelingHipFlexor: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/13668949-cd93-4b58-a352-ef0628225da3/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/13668949-cd93-4b58-a352-ef0628225da3/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'stretch',
+    tempo: [{ at: 0, kind: 'stretch' }],
+  },
+  // A hold on the forearm, bottom knee down, still until the hips ease down in the last second.
+  sidePlankKnees: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8dde7844-9e5f-4143-9b05-51b70a6839aa/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8dde7844-9e5f-4143-9b05-51b70a6839aa/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Two reps on one side: about 1 s to reach the arm and opposite leg out, a 4 s hold (3 s on rep
+  // 2), about 2 s back, then a pause on all fours. Tracked by how far each frame differs from the
+  // start, at 8 fps.
+  birdDog: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/28383feb-9988-436c-8ee2-579450e898c5/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/28383feb-9988-436c-8ee2-579450e898c5/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'lift', rep: 1 },
+      { at: 1.1, kind: 'squeeze', rep: 1 },
+      { at: 5.25, kind: 'lower', rep: 1 },
+      { at: 7.2, kind: 'ready', rep: 2 },
+      { at: 9.1, kind: 'lift', rep: 2 },
+      { at: 10.0, kind: 'squeeze', rep: 2 },
+      { at: 13.0, kind: 'lower', rep: 2 },
+      { at: 14.2, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

@@ -131,6 +131,10 @@ setting (`prefers-color-scheme`); there is no in-app override.
   (`train/DemoPlayer.tsx`, opened from the library, the session preview and "Log sets by hand")
   also shows the clip's own rep ("Rep 2 of 3") and a pace row. Neither counts the user's reps.
   Re-time it whenever a clip changes; `npm test` checks the files exist and the timeline is ordered.
+- A clip of a **held position** (a stretch, a plank, a yoga pose) sets `hold` ('stretch' or 'position')
+  and has one rep-less phase: the demo player says what to hold and for how long (from the exercise's
+  target), and the guided player runs the hold timer over the clip instead of in a sheet (Design
+  canvas row "Holds"). Holds with no clip keep the `HoldTimer` sheet.
 - The service worker leaves clips to the network (Bunny is cross-origin, and `/videos/` is skipped
   too, since Safari streams video with Range requests), so clips need a connection; logging never does.
 

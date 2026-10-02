@@ -628,6 +628,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .demo-pace div.on { opacity: 1; }
 .demo-pace .k { font-size: 13px; font-weight: 500; }
 .demo-pace .v { font-size: 17px; font-weight: 600; margin-top: 1px; }
+.demo-pace.hold { grid-template-columns: repeat(2, 1fr); text-align: left; }
+.demo-rule { height: 1px; background: rgba(255, 255, 255, 0.25); margin: 16px 0; }
 .demo-play { position: absolute; inset: 0; margin: auto; width: 72px; height: 72px; border: 0; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; }
 .demo-play svg.i { width: 32px; height: 32px; fill: currentColor; margin-left: 4px; }
 .demo-msg { position: absolute; inset: 0; margin: auto; height: fit-content; padding: 0 32px; text-align: center; font-size: 17px; line-height: 1.4; }
@@ -763,6 +765,10 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .gp-bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.3); overflow: hidden; }
 .gp-bar i { display: block; height: 100%; background: var(--brand); transform-origin: left; transition: transform 0.25s linear; }
 .gp-next { font-size: 15px; }
+.gp.holding .gp-shade { background: linear-gradient(180deg, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 15%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.82) 66%); }
+.gp.holding .gp-rh .k { font-weight: 600; }
+.gp-kick { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.85); margin-bottom: 4px; }
+.gp-foot { margin: 0; font-size: 13px; line-height: 1.4; color: rgba(255, 255, 255, 0.8); }
 .gp-row2 { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; }
 .gp-sec { height: 56px; border: 0; border-radius: 28px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 17px; font-weight: 500; }
 
