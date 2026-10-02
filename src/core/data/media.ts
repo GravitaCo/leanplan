@@ -206,4 +206,23 @@ export const DEMOS = {
       { at: 14.2, kind: 'ready' },
     ],
   },
+  // Two reps on one side, hands on the wall: about 2 s to bring the knee forward to the wall, a
+  // pause there (about 2 s, then 3 s), about 1.3 s back, a pause. Ends where it starts. Tracked by
+  // the front knee's position at 8 fps.
+  kneeToWall: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/e7138db7-2d22-431a-920d-cd9cc1ccb7b9/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/e7138db7-2d22-431a-920d-cd9cc1ccb7b9/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.2, kind: 'lower', rep: 1 },
+      { at: 3.3, kind: 'stretch', rep: 1 },
+      { at: 5.45, kind: 'lift', rep: 1 },
+      { at: 6.7, kind: 'ready', rep: 2 },
+      { at: 8.4, kind: 'lower', rep: 2 },
+      { at: 10.0, kind: 'stretch', rep: 2 },
+      { at: 12.8, kind: 'lift', rep: 2 },
+      { at: 14.5, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

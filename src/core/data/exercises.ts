@@ -1223,6 +1223,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['reps'], props: ['wall'],
     cue: "Face a wall with one foot a few centimetres away from it, holding the wall lightly. Bend the knee towards the wall over your toes while the heel stays down, then back. Move the foot back as it gets easier, and don't let the heel lift or the knee cave inwards.",
+    video: DEMOS.kneeToWall,
   },
   {
     id: 'doorway-chest-stretch', n: 'Doorway chest stretch', modality: 'mobility', log: 'hold',
