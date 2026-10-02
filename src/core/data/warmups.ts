@@ -23,7 +23,7 @@ export const WARMUP_CUES: Record<string, string> = {
   'open-book': 'Lie on your side, knees bent and stacked, arms out in front. Open the top arm up and over, following it with your eyes, then close. Open only as far as is comfortable.',
   'band-pull-apart': 'Hold a light band at shoulder height, arms straight. Pull it apart by drawing your shoulder blades together, then return slowly. Keep it light and within a comfortable range.',
   'scapular-wall-slide': 'Back against a wall, arms bent in a goalpost shape. Slide your arms up as far as is comfortable, ribs down, then back. Don’t arch away from the wall to reach higher.',
-  'incline-push-up': 'Hands on a wall, worktop or sturdy table, body in a straight line. Lower your chest towards your hands, then press away. Keep it easy and within a comfortable range.',
+  'incline-push-up': 'Hands on a wall, worktop, sturdy table or low bench (the higher, the easier), body in a straight line. Lower your chest towards your hands, then press away. Keep it easy and within a comfortable range.',
   'cat-cow': 'On hands and knees, round your back as you breathe out, then let your belly drop gently as you breathe in. Move slowly, within a comfortable range rather than to your limit.',
   'thread-the-needle': 'On hands and knees, slide one arm under your body, then reach it up towards the ceiling, following your hand with your eyes. Keep it flowing and within a comfortable range.',
   'inchworm': 'Stand tall, bend your knees and put your hands on the floor. Walk your hands out only as far as is comfortable, then walk them back and stand up. Bend your knees as much as you need.',
