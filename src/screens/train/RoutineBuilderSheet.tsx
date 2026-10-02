@@ -6,6 +6,7 @@ import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKe
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LibrarySheet } from './LibrarySheet'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -37,7 +38,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
   const move = (i: number, d: -1 | 1) => setSlots((p) => { const n = [...p]; const j = i + d; if (j < 0 || j >= n.length) return p; [n[i], n[j]] = [n[j], n[i]]; return n })
   // read what's typed the way a save will store it ("3x10" is 3 × 10)
   const normalised = slots.map((s) => ({ ...s, rx: normaliseRx(s.rx) }))
-  const notes = builderNotes(normalised)
+  const notes = builderNotes(normalised, { warmup: ONBOARDING_ENABLED })
 
   const save = () => {
     const id = saveRoutine({ id: r?.id, name, slots, ...(start.baseId ? { baseId: start.baseId } : {}) })
@@ -55,7 +56,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
           <input id="rb_name" value={name} placeholder="My workout" maxLength={120} onChange={(e) => setName(e.target.value)} /></div>
       </div>
 
-      <div className="grp-h">Exercises{slots.length ? ` · about ${aboutMins(estMins(normalised, r ? warmupMinsForKey(r.id, routines, training) : undefined))} min` : ''}</div>
+      <div className="grp-h">Exercises{slots.length ? ` · about ${aboutMins(estMins(normalised, { warmup: ONBOARDING_ENABLED, mins: r ? warmupMinsForKey(r.id, routines, training) : undefined }))} min` : ''}</div>
       {slots.length > 0 && (
         <div className="list">
           {slots.map((s, i) => {

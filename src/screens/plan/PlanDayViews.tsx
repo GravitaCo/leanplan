@@ -11,6 +11,7 @@ import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { AddWorkoutSheet, workoutSub } from './PlanViews'
 import type { WorkoutType } from '@/core/types'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /** Most workouts a day in a plan (the same cap cleanPhases applies). */
 const MAX_A_DAY = 4
@@ -103,7 +104,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
     const r = routineFor(k, routines)
     if (!r) return `${k === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength} · ${workoutSub(k as WorkoutType)}`
     const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
   }
 
   return (

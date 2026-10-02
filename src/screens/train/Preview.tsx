@@ -15,8 +15,9 @@ import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
 import { RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './Thumb'
-import { bareName } from './GuidedPlayer'
+import { bareName, warmupCopy } from './GuidedPlayer'
 import { WarmupCard } from './WarmupCard'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /** Day-of choices (plan §0.2): equal options, the planned session always one tap away. */
 export type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
@@ -62,7 +63,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const wSlot = warmupSlot(slots.map((s) => s.shape))
   const training = useStore((s) => s.data.profile.training)
   // every session opens with the warm-up block (ob3-5), the same one the player runs
-  const warm = useMemo(() => warmupForKey(type, routines, training), [type, routines, training])
+  const warm = useMemo(() => (ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null), [type, routines, training])
 
   // cardio card state (a retired type from an older log still shows as saved)
   const cardioS = type === 'Cardio' ? session : undefined
@@ -143,6 +144,13 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         </>
       ) : (
         <>
+          {!warm && wSlot >= 0 && (
+            <div className="warm">
+              <span className="wi" aria-hidden="true">↻</span>
+              <div><div className="t">Warm up first</div>
+                <div className="s">{warmupCopy(bareName(slots[wSlot].shown.n))}</div></div>
+            </div>
+          )}
           {warm && <WarmupCard block={warm} extra={wSlot >= 0 ? `Then one or two lighter ${bareName(slots[wSlot].shown.n).toLowerCase()} sets, building up to your working weight.` : undefined} />}
           <div className="list">
             {rows.map(({ s, detail }) => {

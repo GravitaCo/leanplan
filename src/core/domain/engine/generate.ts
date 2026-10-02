@@ -593,7 +593,7 @@ const asRoutineSlots = (ds: { slot: PlannedSlot }[]): RoutineSlot[] => ds.map((d
 function sessionMins(ds: Draft[], c: Ctx): number {
   const ramp = ds.some((d) => d.e.log === 'weight-reps') ? RAMP_MINUTES : 0
   const own = c.warm + ramp + ds.reduce((a, d) => a + slotSec(d.e, d.slot), 0) / 60
-  return Math.max(own, ds.length ? estMins(asRoutineSlots(ds), c.warm) : 0)
+  return Math.max(own, ds.length ? estMins(asRoutineSlots(ds), { warmup: true, mins: c.warm }) : 0)
 }
 
 // ─── Sessions ────────────────────────────────────────────────────────────────────────────────

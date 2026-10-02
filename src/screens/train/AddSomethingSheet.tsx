@@ -7,6 +7,7 @@ import { aboutLine, routineEstMins, slotsOf as routineSlots } from '@/core/domai
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /**
  * "Add something" on Train: a quick log of any movement, a different workout for today only,
@@ -49,7 +50,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
             {mine.map((r) => (
               <button className="li" key={r.id} onClick={() => onWorkout(r.id)}>
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training))].filter(Boolean).join(' · ')}</div></div>
+                  <div className="s">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')}</div></div>
               </button>
             ))}
           </div>

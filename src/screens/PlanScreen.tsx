@@ -22,6 +22,7 @@ import { PlanEditSheet, PLAN_OUTCOME, whenLine } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
 import { aboutLine, routineEstMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
+import { ONBOARDING_ENABLED } from './onboarding/Consent'
 
 type Guide = 'split' | 'basics'
 const GUIDES: { id: Guide; title: string; icon: IconName; color: string }[] = [
@@ -334,7 +335,7 @@ export function PlanScreen() {
               <button className="li pv-row" key={r.id} onClick={() => { setSheet(null); setWorkout(r.id) }}>
                 <Thumb video={keyVideo(r.id, routines)} shape={r.modality === 'cardio' ? 'duration' : 'weight-reps'} />
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')}</div></div>
+                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')}</div></div>
                 <Chevron />
               </button>
             ))}

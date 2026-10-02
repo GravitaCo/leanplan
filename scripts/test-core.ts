@@ -991,6 +991,8 @@ function legacyAndGuest(): void {
   checks.push(['deterministic: the same inputs give the same block', det])
   const noBand = buildWarmup({ kind: 'push', mins: 10 }), band = buildWarmup({ kind: 'push', mins: 10, kit: ['band'] })
   const ids = (b: WarmupBlock) => b.moves.map((m) => m.id)
+  /** the warm-up block on (it ships behind the onboarding switch; the screens pass it in) */
+  const ON = { warmup: true } as const
   checks.push(['kit swap: no band, no band pull-apart (a wall slide instead), and no repeats', !ids(noBand).includes('band-pull-apart') && ids(noBand).includes('scapular-wall-slide') && new Set(ids(noBand)).size === ids(noBand).length && ids(band).includes('band-pull-apart'), ids(noBand).join(',')])
   const legs = buildWarmup({ kind: 'legs', mins: 5 })
   const ls = legs.moves.find((m) => m.id === 'leg-swings')
@@ -1006,8 +1008,8 @@ function legacyAndGuest(): void {
     const off = keys.filter((k) => {
       const b = warmupForKey(k, [], t)
       const slots = isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)
-      const fromEst = estMins(slots) - estMins(slots, 0)
-      const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t)! - estMins(slots, 0)
+      const fromEst = estMins(slots, ON) - estMins(slots, { warmup: true, mins: 0 })
+      const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t, true)! - estMins(slots, { warmup: true, mins: 0 })
       return !(b?.mins === 6 && fromEst === 6 && row === 6 && SUMMARY.warmLine(PLAN_WARMUP_MINUTES).includes(`${b.mins}-minute`) && !isEngineKey(k, []))
     })
     checks.push(['Tali plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
@@ -1016,7 +1018,9 @@ function legacyAndGuest(): void {
     const sl = [{ exId: 'goblet-squat', rx: '3 × 10' }]
     checks.push(['only the engine’s own stored workouts follow the session length', isEngineKey((gen as { id: string }).id, [gen]) && !isEngineKey((own as { id: string }).id, [own]) && !isEngineKey('tali-full-body-a', [gen]) && warmupForKey((gen as { id: string }).id, [gen], t)?.mins === 5 && warmupForKey((own as { id: string }).id, [own], t)?.mins === 6])
     // ship-critic 5: list rows work the minutes out from the slots, never the stale stored estMins
-    checks.push(['row estimates come from the slots and the warm-up, not the stored estMins', routineEstMins(own, [own], t) === estMins(sl) && routineEstMins(gen, [gen], t) === estMins(sl, 5) && routineEstMins(own, [own], t) !== 10 && routineEstMins({ ...(own as object), blocks: [] } as never, [], t) === null])
+    checks.push(['row estimates come from the slots and the warm-up, not the stored estMins', routineEstMins(own, [own], t, true) === estMins(sl, ON) && routineEstMins(gen, [gen], t, true) === estMins(sl, { warmup: true, mins: 5 }) && routineEstMins(own, [own], t, true) !== 10 && routineEstMins({ ...(own as object), blocks: [] } as never, [], t, true) === null])
+    // the warm-up waits behind the onboarding switch: off, rows read the stored estMins as before
+    checks.push(['switch off: row estimates are the stored estMins, as before the warm-up', routineEstMins(own, [own], t) === 10 && routineEstMins(gen, [gen], t, false) === 10 && routineEstMins({ ...(own as object), estMins: undefined } as never, [], t) === null])
   }
   // ship-critic 2: no move in both the block and the session, for every Tali and Push/Pull/Legs workout
   {
@@ -1046,12 +1050,21 @@ function legacyAndGuest(): void {
   checks.push(['Push/Pull/Legs get the 6-minute block', ppl?.mins === 6 && warmupForKey('Legs', [], undefined)?.kind === 'legs'])
   // estMins: the block and the lighter sets are in every estimate
   checks.push(['estMins: 6-minute warm-up, +1.5 with a weighted lift, given minutes win, nothing for no slots',
-    estMins([{ exId: 'push-up', rx: '3 × 10' }]) === 14 && estMins([{ exId: 'back-squat', rx: '3 × 10' }]) === 15 && estMins([{ exId: 'push-up', rx: '3 × 10' }], 10) === 18 && estMins([]) === 1])
+    estMins([{ exId: 'push-up', rx: '3 × 10' }], ON) === 14 && estMins([{ exId: 'back-squat', rx: '3 × 10' }], ON) === 15 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: true, mins: 10 }) === 18 && estMins([], ON) === 1])
+  checks.push(['estMins, switch off: the slots alone, as before the warm-up (no block, no lighter sets, minutes ignored)',
+    estMins([{ exId: 'push-up', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'back-squat', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { mins: 10 }) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: false }) === 8 && estMins([]) === 1])
+  {
+    // builderNotes' long-workout note: off, the slots alone decide it (as before); on, the warm-up counts
+    const long = Array.from({ length: 10 }, () => ({ exId: 'push-up', rx: '3 × 10' }))
+    const offM = estMins(long), onM = estMins(long, ON)
+    const note = (n: string[]) => n.some((x) => x.startsWith('This one runs about'))
+    checks.push(['builderNotes: the long-workout note follows the switch', offM <= 75 && onM > 75 && !note(builderNotes(long)) && note(builderNotes(long, ON)), `${offM} ${onM}`])
+  }
   // the engine: warm-up minutes first, main work in what's left, cardio and mind-body too
   const base = { goal: 'build-muscle', experience: 'intermediate', daysPerWeek: 3, minutes: 60, place: ['gym'], readiness: 'clear', lately: { sleep: 'good', stress: 'low', room: 'plenty' }, ageBand: '18-54' } as never
   const p8 = buildPlanW(base, undefined, 'w', { sessionRange: '45-60' }).plan, p10 = buildPlanW(base, undefined, 'w', { sessionRange: '60+' }).plan
-  const work = (p: typeof p8) => p.sessions.reduce((a, s) => a + estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), 0), 0)
-  checks.push(['engine: every session fits its minutes with the warm-up in', [...p8.sessions, ...p10.sessions].every((s) => s.mins <= 60) && p10.sessions.every((s) => estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), 10) <= 60)])
+  const work = (p: typeof p8) => p.sessions.reduce((a, s) => a + estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 0 }), 0)
+  checks.push(['engine: every session fits its minutes with the warm-up in', [...p8.sessions, ...p10.sessions].every((s) => s.mins <= 60) && p10.sessions.every((s) => estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 10 }) <= 60)])
   checks.push(['engine: a longer warm-up leaves no more main work (60+ vs 45–60)', work(p10) <= work(p8), `${work(p10)} vs ${work(p8)}`])
   const fl = buildPlanW({ ...(base as object), goal: 'lose-fat', daysPerWeek: 4, minutes: 30, enjoy: ['cardio', 'strength'] } as never, undefined, 'w', { sessionRange: '20-30' }).plan
   const c = fl.sessions.find((s) => s.kind === 'cardio')
@@ -1072,12 +1085,12 @@ function legacyAndGuest(): void {
 // the local data handling (malformed rows dropped, ownership evidence, backup merge, unsynced count)
 {
   const push = builtinSlots('Push'), legs = builtinSlots('Legs')
-  // Push: 3 + 3 + 3 + 2.5 + 2.5 = 14 sets × 2.5 min = 35 (plan P4: 13–15 sets, about 33–38 min),
-  // plus the 6-minute warm-up and 1.5 of lighter sets on the first lift → 42.5 → 43
-  // Legs: 3 + 3 + 2.5 + 3 = 11.5 sets × 2.5 = 28.75, plus plank 3 × (30 + 20) s = 2.5, + 7.5 → 39
+  // Push: 3 + 3 + 3 + 2.5 + 2.5 = 14 sets × 2.5 min = 35 (plan P4: 13–15 sets, about 33–38 min)
+  // Legs: 3 + 3 + 2.5 + 3 = 11.5 sets × 2.5 = 28.75, plus plank 3 × (30 + 20) s = 2.5 → 31
+  // (with the warm-up block on, + 6 and 1.5 of lighter sets: 42.5 → 43 and 39)
   const S = (...ids: string[]) => ids.map((exId) => ({ exId }))
   const got = [
-    estMins(push), estMins(legs),
+    estMins(push), estMins(legs), estMins(push, { warmup: true }), estMins(legs, { warmup: true }),
     deriveEffort(push), deriveEffort(S('downward-dog', 'childs-pose')), deriveEffort(S('cardio-walk')), deriveEffort(S('cardio-intervals')), deriveEffort(S('push-up')),
     headlineModality([...push, ...S('supine-hamstring-stretch')]), headlineModality(S('downward-dog', 'cat-cow', 'push-up')),
     builderNotes(S('lateral-raise', 'barbell-bench-press')).length, builderNotes(S('barbell-bench-press', 'lateral-raise')).length,
@@ -1085,7 +1098,7 @@ function legacyAndGuest(): void {
   ].join(' ')
   const tpl = routineTemplate({ id: 'r', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'leg-press', rx: '4 × 8' }, { exId: 'gone-from-library' }, { exId: 'plank' }] }] })
   const tplOk = tpl.title === 'Mine' && tpl.ex.map((e) => e.id + ':' + e.t).join(',') === 'leg-press:4 × 8,plank:' + EXERCISE_BY_ID.plank.defaultRx
-  const want = '43 39 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
+  const want = '35 31 43 39 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
   const ok = got === want && tplOk; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: estimates, effort, notes', JSON.stringify(got), tplOk, ok ? '' : 'want ' + JSON.stringify(want))
 }
@@ -1122,7 +1135,7 @@ function legacyAndGuest(): void {
   // an own workout's estimate stands in for unlogged minutes (plan §2.9); logged minutes win
   const mm = [sessionMetMins({ modality: 'yoga', estMins: 15 } as any).mins, sessionMetMins({ modality: 'yoga', estMins: 15, mins: 40 } as any).mins, sessionMetMins({ modality: 'yoga' } as any).mins].join(',')
   const got = [typed, est, short, rounded, headlineModality(mixed), deriveEffort(mixed), loadSignals(st('hard'), T).hard7, loadSignals(st('light'), T).hard7, mm].join(' ')
-  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 15 2 × 10 7,35,35 pilates hard 7 0 15,40,30'
+  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 8 2 × 10 7,35,35 pilates hard 7 0 15,40,30'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: typed sets and reps, rounding, hard ones count for the load note', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }

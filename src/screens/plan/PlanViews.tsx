@@ -18,6 +18,7 @@ import { Thumb } from '../train/Thumb'
 import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
 import { WarmupCard } from '../train/WarmupCard'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -87,7 +88,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
     const r = routineFor(k, routines)
     if (!r) return workoutSub(k as WorkoutType)
     const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')
+    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
   }
 
   if (see) {
@@ -223,7 +224,7 @@ function ExerciseList({ type }: { type: WorkoutKey }) {
   const [lib, setLib] = useState<string | null>(null)
   const routines = useStore((s) => s.data.routines)
   const training = useStore((s) => s.data.profile.training)
-  const warm = warmupForKey(type, routines, training)
+  const warm = ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null
   return (
     <>
       {warm && <WarmupCard block={warm} />}
@@ -274,7 +275,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
   const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
   const sub = r
-    ? [`warm-up and ${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training))].filter(Boolean).join(' · ')
+    ? [`${ONBOARDING_ENABLED ? 'warm-up and ' : ''}${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
   return (
     <div className="wv">

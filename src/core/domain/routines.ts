@@ -104,14 +104,23 @@ export function slotMins(s: RoutineSlot): number {
 }
 
 /**
- * About how long the whole workout takes, rounded to a whole minute (at least one): the warm-up
- * block every session opens with (the ready-made 6 minutes unless given), about 90 s of lighter
- * sets when there's a weighted lift, then the slots.
+ * Whether the warm-up block is part of a session (`warmup`) and, if so, its minutes (`mins`, the
+ * ready-made 6 unless given). The block ships behind the onboarding switch, so the screens pass it
+ * in; off (the default) everything reads as before the block existed.
  */
-export function estMins(slots: RoutineSlot[], warmMins: number = PLAN_WARMUP_MINUTES): number {
+export interface WarmupOpt { warmup?: boolean; mins?: number }
+
+/**
+ * About how long the whole workout takes, rounded to a whole minute (at least one): the slots,
+ * and with `warmup` on, the warm-up block first and about 90 s of lighter sets when there's a
+ * weighted lift.
+ */
+export function estMins(slots: RoutineSlot[], { warmup = false, mins = PLAN_WARMUP_MINUTES }: WarmupOpt = {}): number {
+  const work = slots.reduce((a, s) => a + slotMins(s), 0)
+  if (!warmup) return Math.max(1, Math.round(work))
   if (!slots.length) return 1
   const ramp = slots.some((s) => exOf(s)?.log === 'weight-reps') ? RAMP_MINUTES : 0
-  return Math.max(1, Math.round(warmMins + ramp + slots.reduce((a, s) => a + slotMins(s), 0)))
+  return Math.max(1, Math.round(mins + ramp + work))
 }
 
 /** The headline kind: the one with the most minutes (the first listed wins a tie). */
@@ -148,7 +157,7 @@ export function deriveEffort(slots: RoutineSlot[]): RoutineEffort {
 }
 
 /** Gentle notes for the builder. They never stop a save (plan §2.3). */
-export function builderNotes(slots: RoutineSlot[]): string[] {
+export function builderNotes(slots: RoutineSlot[], opt: WarmupOpt = {}): string[] {
   const out: string[] = []
   const xs = slots.map(exOf)
   const resist = (x?: Exercise) => !!x && (x.modality === 'strength' || x.modality === 'calisthenics')
@@ -165,9 +174,10 @@ export function builderNotes(slots: RoutineSlot[]): string[] {
     if (seen.has(s.exId)) { out.push(`${exOf(s)?.n ?? 'An exercise'} is in here twice. Keep it if you meant to.`); break }
     seen.add(s.exId)
   }
-  // a hard session estimated at 75+ minutes (warm-up included) runs longer in practice; a
-  // 90-minute yoga class is ordinary (both judgement calls, unvalidated)
-  const m = estMins(slots)
+  // a hard session estimated at 75+ minutes runs longer in practice (without the warm-up block,
+  // the estimate has no warm-up in it); a 90-minute yoga class is ordinary (both judgement calls,
+  // unvalidated)
+  const m = estMins(slots, opt)
   if (slots.length && m > (deriveEffort(slots) === 'hard' ? 75 : 90)) {
     out.push(`This one runs about ${aboutMins(m)} minutes. That's fine if it suits you, or you could split it into two shorter workouts.`)
   }
@@ -256,14 +266,15 @@ export function warmupForKey(key: WorkoutKey, routines: Routine[] | undefined, t
 }
 
 /**
- * A routine's minutes for a list row, from its slots and its own warm-up (null with no slots).
- * Worked out when shown, never read from the stored estMins, which older saves wrote without the
- * warm-up.
+ * A routine's minutes for a list row (null for none). With the warm-up block on, from its slots
+ * and its own warm-up, worked out when shown, never read from the stored estMins (saved without
+ * the block); off, the stored estMins as before.
  */
-export function routineEstMins(r: Routine, routines: Routine[] | undefined, training: TrainingPrefs | undefined): number | null {
+export function routineEstMins(r: Routine, routines: Routine[] | undefined, training: TrainingPrefs | undefined, withWarmup = false): number | null {
+  if (!withWarmup) return r.estMins || null
   const slots = slotsOf(r)
   if (!slots.length) return null
-  return estMins(slots, warmupMinsForKey(r.id, routines, training))
+  return estMins(slots, { warmup: true, mins: warmupMinsForKey(r.id, routines, training) })
 }
 
 /** The block for a session's exercises at these minutes (the summary's day sheet uses it too). */

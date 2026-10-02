@@ -21,6 +21,7 @@ import { FinishSheet } from './FinishSheet'
 import { HoldTimer } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -31,9 +32,12 @@ export const bareName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '')
 /** The first sentence of a cue, for the line under the name. */
 const firstLine = (cue: string) => (cue.match(/^.*?[.!?](\s|$)/)?.[0] ?? cue).trim()
 
-/** The lighter sets on the first weighted lift (fitness-workouts): they follow the warm-up block. */
+/**
+ * The warm-up line (fitness-workouts), shared with the preview card: with the warm-up block
+ * (`mins`), the lighter sets that follow it; without it, as before the block.
+ */
 export const warmupCopy = (name: string, mins?: number) =>
-  `${mins ? `After the ${mins}-minute warm-up, do` : 'Do'} one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
+  `${mins ? `After the ${mins}-minute warm-up, do` : '5 minutes of easy movement, then'} one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
 
 /** A short chime at the end of rest, only when sound is on. */
 function chime() {
@@ -135,7 +139,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   // the warm-up block opens the session (ob5-0), unless it's done already or sets are logged; a
   // resume with part of it left and no sets picks it up from the minutes done
   const training = useStore((s) => s.data.profile.training)
-  const [block] = useState(() => warmupForKey(type, routines, training))
+  const [block] = useState(() => (ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null))
   const [warm, setWarm] = useState<Session['warmup'] | undefined>(session?.warmup)
   const [warmFrom] = useState(() => (session?.warmup && block ? Math.min(session.warmup.mins, block.mins) * 60 : 0))
   const [inWarm, setInWarm] = useState(() => !!block && (!session?.warmup || session.warmup.mins < session.warmup.of) && !Object.values(init.bySlot).some((l) => working(l).length))

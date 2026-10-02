@@ -300,7 +300,7 @@ function soundness() {
     if (new Set(days).size !== days.length) issues.days.push('two sessions on one day')
     if (days.length > 6) issues.days.push('no rest day')
     for (const s of r.plan.sessions) {
-      if (s.mins > (i.minutes ?? 30) || estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), warmupMinutesFor(undefined, i.minutes)) > (i.minutes ?? 30)) issues.mins.push(`${s.name} ${s.mins} min for ${i.minutes}`)
+      if (s.mins > (i.minutes ?? 30) || estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: warmupMinutesFor(undefined, i.minutes) }) > (i.minutes ?? 30)) issues.mins.push(`${s.name} ${s.mins} min for ${i.minutes}`)
       if (!s.why.length) issues.why.push(`${s.name}: no reason`)
       for (const x of s.slots) {
         const e = EXERCISE_BY_ID[x.exId]
