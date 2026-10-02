@@ -247,9 +247,13 @@ async function buildWeek(page, snap) {
   if (await intro.count()) {
     await page.getByText('Part 3 of 3 · Your plan').waitFor()
     if (snap != null) await shot(page, snap + 'ob3-0-intro')
+    expect(await focusedH1(page) === 'Your plan is ready', 'Build my week focuses the Part 3 heading: ' + await focusedH1(page))
     await btn(page, 'See my week').click()
   }
+  await sum.waitFor()
+  expect(/^(Your first week|A simple first week)$/.test(await focusedH1(page) ?? ''), 'the summary starts at its heading: ' + await focusedH1(page))
 }
+const focusedH1 = (page) => page.evaluate(() => { const a = document.activeElement; return a && a.tagName === 'H1' ? a.textContent : null })
 const summaryUp = (page) => page.getByRole('heading', { name: /^(Your first week|A simple first week)$/ }).waitFor()
 const otherPlans = (page) => btn(page, 'See other plans').click()
 

@@ -34,6 +34,7 @@ import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
 import partThreePhoto from '@/assets/onboarding/part-3-your-plan.jpg'
 import { COPY, DAYS_SPREAD, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, TAP, TAP_GOAL, WHY_LINK, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
 import { Summary } from './Summary'
+import { SCREEN_H } from './screenHeading'
 import { SPS, Signposts, Under16, UnderAgeStop } from './AgeStop'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
@@ -64,13 +65,13 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   // and, after the first, VoiceOver and the keyboard start from its heading, not the old screen's
   // place (a tap-to-advance screen moves on with nothing focused). The first screen keeps the
   // browser's own start.
-  const opened = useRef(false)
+  // (compared with the last step, not a first-run flag, so StrictMode's double effect in dev
+  // behaves as the build does)
+  const shown = useRef(d.step)
   useEffect(() => {
-    if (!opened.current) { opened.current = true; return }
-    const h = document.querySelector<HTMLElement>('.wz .wz-h')
-    if (!h) return
-    h.tabIndex = -1
-    h.focus({ preventScroll: true })
+    if (shown.current === d.step) return
+    shown.current = d.step
+    document.querySelector<HTMLElement>('[data-screen-h]')?.focus({ preventScroll: true })
   }, [d.step])
   const put = (next: WizardDraft) => {
     setD(next)
@@ -173,7 +174,7 @@ function Frame({ step, back, onSkip, cta, children, title, lead }: { step: StepI
         {p ? <div className="wz-bar" role="img" aria-label={`Question ${p.at} of ${p.of}`}><span style={{ width: `${(p.at / p.of) * 100}%` }} /></div> : <span className="wz-bar none" />}
         {skip ? <button className="wz-skip" onClick={onSkip}>Skip</button> : <span className="wz-skip none" aria-hidden="true" />}
       </div>
-      {c && <h1 className="wz-h">{c.title}</h1>}
+      {c && <h1 className="wz-h" {...SCREEN_H}>{c.title}</h1>}
       {(line || whyText.length > 0) && (
         <div className="wz-lead">{line}{line && whyText.length > 0 ? ' ' : ''}
           {whyText.length > 0 && <button className="wz-whylink" onClick={() => setWhy(true)}>{WHY_LINK}</button>}
@@ -229,7 +230,7 @@ function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | '
           {[1, 2, 3].map((i) => <span key={i} className={i <= p.n ? 'on' : ''} />)}
         </div>
         <div className="wz-part-k"><span className="k">{partLabel(p.n, p.k)}</span>{p.time && <span className="r">{p.time}</span>}</div>
-        <h1 className="wz-h">{c.title}</h1>
+        <h1 className="wz-h" {...SCREEN_H}>{c.title}</h1>
         <div className="wz-lead">{c.lead}</div>
         <ul className="wz-dots">{p.points.map((t) => <li key={t}>{t}</li>)}</ul>
         {c.note && <div className="wz-note">{c.note}</div>}
@@ -267,7 +268,7 @@ function SkipAge({ d, patch }: Common) {
   return (
     <div className="wz skipage">
       <div className="wz-top" />
-      <h1 className="wz-h">{c.title}</h1>
+      <h1 className="wz-h" {...SCREEN_H}>{c.title}</h1>
       <div className="wz-lead">{c.lead}</div>
       <AgeWheel value={v} onChange={setV} />
       <div className="wz-card quiet">{c.note}</div>
@@ -625,7 +626,7 @@ function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 
   return (
     <div className="wz" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 64px)' }}>
       <div className="wz-eyebrow">{c.eyebrow}</div>
-      <h1 className="wz-h xl">{c.title}</h1>
+      <h1 className="wz-h xl" {...SCREEN_H}>{c.title}</h1>
       <div className="wz-lead body ink">{c.lead}</div>
       <div className="wz-sp-h">{c.h}</div>
       <Signposts list={SPS[kind]} />
