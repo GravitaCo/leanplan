@@ -13,9 +13,11 @@ const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-m
  */
 export function useClipPreview(m: ExerciseMedia | undefined, motion: boolean): { src?: string; letterboxed: boolean; onError: () => void } {
   const [reduced] = useState(reducedMotion)
-  const [step, setStep] = useState(0)
+  // which fallback is showing, for this clip: a new clip starts again from its best image
+  const [failed, setFailed] = useState<{ src?: string; step: number }>({ step: 0 })
+  const step = failed.src === m?.src ? failed.step : 0
   const cur = m ? previewUrls(m, motion && !reduced)[step] : undefined
-  return { src: cur?.url, letterboxed: !!cur?.letterboxed, onError: () => setStep((s) => s + 1) }
+  return { src: cur?.url, letterboxed: !!cur?.letterboxed, onError: () => setFailed({ src: m?.src, step: step + 1 }) }
 }
 
 /**
