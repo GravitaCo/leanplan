@@ -89,14 +89,20 @@ defined muscles.
 - **age:** 20s, 30s, 40s, 50s, 60s, 70s
 - **heritage:** Black African, Black Caribbean, East Asian, South Asian, Southeast Asian,
   Middle Eastern, North African, Latin American, White European, mixed
-- **build:** slim build, medium natural build, soft average build, curvy build, larger build,
+- **build:** slim build, medium natural build, soft average build, curvy build, pear-shaped build
+  (fuller hips and thighs), apple-shaped build (weight carried around the middle), larger build,
   soft stocky build (no athletic or muscular builds)
 - **hair:** low ponytail, short cropped hair, braids tied back, natural afro tied back, short
   grey hair, shaved head, hair in a low bun, a fitted sports hijab
-- **outfit (workout-appropriate, fitted enough to show the joints):** charcoal leggings, a
-  sage-green sports bra and an open cropped tank; dark joggers and a fitted plain T-shirt; navy
-  training shorts and a loose vest; full-length leggings and a fitted long-sleeve top; relaxed
-  stone-coloured trousers and a zip-up training top
+- **outfit (workout-appropriate, fitted enough to show the joints).** Pick one that suits the
+  gender chosen:
+  - women: charcoal leggings, a sage-green sports bra and an open cropped tank; full-length
+    leggings and a fitted long-sleeve top; dark joggers and a fitted plain T-shirt; relaxed
+    stone-coloured trousers and a zip-up training top
+  - men: dark joggers and a fitted plain T-shirt; navy training shorts and a loose vest;
+    full-length leggings under training shorts with a fitted long-sleeve top; relaxed
+    stone-coloured trousers and a zip-up training top
+  - with the sports hijab (women): full-length leggings and a fitted long-sleeve top
 
 Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
