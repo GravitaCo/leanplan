@@ -30,6 +30,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const still = useClipPreview(x.video, false)
   // the list and the entries share one sheet: an entry opens at its top, not where the list was scrolled
   const top = useRef<HTMLDivElement>(null)
+  const media = useRef<HTMLButtonElement>(null)
   useEffect(() => { top.current?.closest('.sheet-bd')?.scrollTo(0, 0) }, [x.id])
   const easier = stepOf(x, -1)
   const harder = stepOf(x, 1)
@@ -38,7 +39,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   return (
     <>
       {x.video && (
-        <button className="ex-media" onClick={() => setDemo(true)} aria-label={`Play the demo: ${x.n}`}>
+        <button ref={media} className="ex-media" onClick={() => setDemo(true)} aria-label={`Play the demo: ${x.n}`}>
           {still.src && <img src={still.src} alt="" decoding="async" onError={still.onError} />}
           <span className="ex-media-play" aria-hidden="true"><Icon name="play" size={26} /></span>
           <span className="ex-media-cap" aria-hidden="true">Watch the demo{x.video.durationSec ? ` · ${Math.round(x.video.durationSec)} s` : ''}</span>
@@ -70,7 +71,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         <div className="foot" style={{ padding: '12px 4px 0' }}>This move asks quite a lot of {careList(x.care)}.{gentler ? " If you'd like to go easier on them, the gentler option above works the same area." : ''} {CARE_DISCLAIMER}</div>
       ) : null}
       <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
-      {demo && x.video && <DemoPlayer ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(false)} />}
+      {demo && x.video && <DemoPlayer ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(false)} origin={() => media.current?.getBoundingClientRect()} />}
     </>
   )
 }
