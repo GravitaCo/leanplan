@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Equipment, Exercise, Modality } from '@/core/types'
 import { EXERCISES } from '@/core/data/exercises'
 import { MODALITIES, MODALITY_LABEL } from '@/core/data/modalities'
@@ -11,6 +11,7 @@ import { Icon } from '@/ui/icons'
 import { CARE_DISCLAIMER } from './SwapSheet'
 import { RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
+import { Thumb, useClipPreview } from './Thumb'
 
 /** Kit filters: the few that decide most of what someone can do. */
 const KIT: [Equipment | 'none', string][] = [['none', 'No equipment'], ['dumbbell', 'Dumbbells'], ['band', 'Band'], ['mat', 'Mat'], ['machine', 'Gym machines']]
@@ -26,23 +27,38 @@ const inModality = (x: Exercise, m: Modality) => x.modality === m || !!x.also?.i
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const [demo, setDemo] = useState(false)
+  const still = useClipPreview(x.video, false)
+  // the list and the entries share one sheet: an entry opens at its top, not where the list was scrolled
+  const top = useRef<HTMLDivElement>(null)
+  useEffect(() => { top.current?.closest('.sheet-bd')?.scrollTo(0, 0) }, [x.id])
   const easier = stepOf(x, -1)
   const harder = stepOf(x, 1)
   const gentler = exById(x.gentler)
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
   return (
     <>
-      <div className="card ex">
+      {x.video && (
+        <button className="ex-media" onClick={() => setDemo(true)} aria-label={`Play the demo: ${x.n}`}>
+          {still.src && <img src={still.src} alt="" decoding="async" onError={still.onError} />}
+          <span className="ex-media-play" aria-hidden="true"><Icon name="play" size={26} /></span>
+          <span className="ex-media-cap" aria-hidden="true">Watch the demo{x.video.durationSec ? ` · ${Math.round(x.video.durationSec)} s` : ''}</span>
+        </button>
+      )}
+      <div className="card ex" ref={top}>
         <div className="h"><div className="n">{x.n}</div>{x.defaultRx && <span className="tg">{x.defaultRx}</span>}</div>
         <div className="foot" style={{ padding: '0 0 8px' }}>
           {[MODALITY_LABEL[x.modality], LEVEL_LABEL[x.difficulty], kit, x.perSide ? 'Each side' : ''].filter(Boolean).join(' · ')}
         </div>
         <div className="cue">{x.cue}</div>
-        {x.video
-          ? <button className="howto" onClick={() => setDemo(true)}><Icon name="play" size={15} /> Watch example</button>
-          : <a className="howto" href={howToLink(x.n)} target="_blank" rel="noopener noreferrer">Watch how to do it ›</a>}
         {x.targets?.length ? <div className="foot" style={{ padding: 0 }}>Works on: {x.targets.map((t) => TARGET_LABEL[t]).join(', ')}</div> : null}
       </div>
+      {!x.video && (
+        <div className="list">
+          <a className="li" href={howToLink(x.n)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div className="m"><div className="t">Watch how to do it</div><div className="s">Opens a video search</div></div>
+          </a>
+        </div>
+      )}
       {(easier || harder || gentler) && (
         <div className="list">
           {easier && <button className="li" onClick={() => onOpen(easier.id)}><div className="m"><div className="t">{easier.n}</div><div className="s">Easier</div></div></button>}
@@ -107,7 +123,8 @@ export function LibrarySheet({ onClose, initial, onPick }: {
       {list.length ? (
         <div className="list">
           {list.map((x) => (
-            <button className="li" key={x.id} onClick={() => (onPick ? onPick(x.id) : setOpen([x.id]))}>
+            <button className="li lib-row" key={x.id} onClick={() => (onPick ? onPick(x.id) : setOpen([x.id]))}>
+              <Thumb video={x.video} play={!!x.video} />
               <div className="m"><div className="t">{x.n}</div><div className="s">{MODALITY_LABEL[x.modality]} · {LEVEL_LABEL[x.difficulty]}</div></div>
             </button>
           ))}
