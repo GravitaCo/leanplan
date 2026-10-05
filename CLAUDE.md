@@ -47,7 +47,7 @@ build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/`: `types.ts`; `domain/` (nutrition, workout, date math,
   TDEE, `library.ts` for swaps and "last time", `guided.ts` for guided-session targets, rest
-  and "last time" by rep range, `week.ts` for week warnings, `routines.ts` for the user's own workouts, `plans.ts` for training plans,
+  and "last time" by rep range, `week.ts` for week warnings, `weekPicture.ts` for the one shared weekly picture across mind, food, movement and body (with `maintenanceLoop.ts` on top: weekly review, weigh-in check, adaptive maintenance, band check; thresholds in `loopThresholds.ts` are placeholders until `nutrition-accuracy` and `mental-performance` set them), `routines.ts` for the user's own workouts, `plans.ts` for training plans,
   `engine/` the personalised training engine, `wizard.ts`/`onboarding.ts` for first run); `data/`
   (the food DB with its chain menus, the exercise library `exercises.ts` with its committed id
   list `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, Tali's plan workouts
