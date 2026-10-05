@@ -45,7 +45,7 @@ done) and **body** (the weight trend). In practice:
    mode), one neutral mind-to-food-or-move pattern line when there's enough data, the person's own
    "why" shown back, if-then plans due, and one choice for next week: keep, ease off, or adjust.
    A missed week gets "welcome back", nothing to catch up.
-2. **Weigh-in check.** `suggestRateAdjustment` as specified (3 weeks and 6 weigh-ins minimum,
+2. **Weigh-in check.** `suggestRateAdjustment` rebuilt to the `nutrition-accuracy` rules below (28-day trend, 4+ weeks of data,
    averages not spot readings, at most weekly, suggest never apply), plus an adaptive maintenance
    estimate from logged intake and the weight trend, only with enough logged days, shown as a
    range with its ± margin. Before suggesting a change it checks the mind context (sleep, stress,
@@ -109,6 +109,25 @@ pattern lines are a fixed v1 set, minimum data, never ending in weight or kcal; 
 with "keep as is" and mind options after hard weeks; two safety tiers (care version, support
 sheet) pending clinical review.
 
-### Numbers (`nutrition-accuracy`)
+### Numbers (`nutrition-accuracy`, 5 Oct 2026)
 
-Pending.
+Full findings: `docs/research/maintenance-numbers-2026-10.md` (simulations in
+`docs/research/maintenance-sims/`). Binding rules: no week-over-week weight number; a 28-day
+least-squares trend in words against a range (level after 3 weigh-ins, trend words after 6 over
+21+ days); steady range = ±3% of the first-14-day mean for 6 weeks, then ±2%, drift = outside at 2
+weekly checks in a row; adaptive maintenance only after 28 days, 20 logged days and 6 weigh-ins,
+shown as a range, using 7,000 kcal/kg; maintain protein 1.2 to 1.6 g/kg with strength 2+ days a
+week; any eat-less suggestion at most about 150 kcal/day and only after a drift; ask the medical
+question for maintain too and split it so a current GLP-1 keeps the protein range while kidney
+disease keeps the minimum.
+
+**This replaces the old weigh-in check spec.** The `suggestRateAdjustment` rules in
+`personalized-nutrition-targets.md` §3.3 to §3.4 misfire in 60% to 75% of weeks; use the 28-day
+regression, ±0.35%/week tolerance, 4+ weeks of data and skip the first 2 weeks of a new deficit.
+
+### Where the two agree and how conflicts resolve
+
+Both say steady is success and a single week means little. Pattern lines take the stricter of the
+two bars: a fixed v1 pair list, 6+ days in each group within 28 to 42 days, a difference beyond 2
+standard errors, repeated in two windows before first showing, at most one a week, no pairs ending
+in weight or kcal, no mood lines.
