@@ -94,3 +94,21 @@ the person's choice, never nagged; no streaks.
 
 Still open: whether weight shows in the review by default for maintain users or is opt-in
 (`mental-performance` recommends, Benn decides).
+
+## Specialist rules
+
+### Psychology and safety (`mental-performance`, 5 Oct 2026)
+
+Full findings: `docs/research/maintenance-psychology-2026-10.md`. Binding rules for design and
+engineering: steady is success (band over 2 to 4 week averages, never a 0.1 kg weekly delta as the
+maintain headline); review order is actions, then mind context, then body; weight in the review is
+an explicit opt-in asked once when Maintain is picked (never in gentle mode or wellbeing flagged);
+a missed week is "welcome back" with no catch-up; the push reminder is offered after the first
+review, generic lock-screen text, backs off after unopened reminders and pauses in safety weeks;
+pattern lines are a fixed v1 set, minimum data, never ending in weight or kcal; suggestions lead
+with "keep as is" and mind options after hard weeks; two safety tiers (care version, support
+sheet) pending clinical review.
+
+### Numbers (`nutrition-accuracy`)
+
+Pending.
