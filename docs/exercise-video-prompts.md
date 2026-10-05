@@ -8,7 +8,7 @@ demo videos".
 
 ## Status: every exercise in the app (September 2026)
 
-From `src/core/data/workouts.ts`. File names are the ones the clip will get in `public/videos/`.
+From `src/core/data/workouts.ts`. File names are working names: clips now live in the Bunny Stream library (see `src/core/data/media.ts`).
 
 | # | Workout | Exercise (as named in the app) | Clip file | Status |
 |---|---|---|---|---|
@@ -68,11 +68,43 @@ no counter; they are there to show posture and set-up.
 
 ## Character and scene block (use in every prompt)
 
+The studio, light, camera and tone stay the same in every clip. The demonstrator varies in age,
+heritage, build, hair and clothing so people see bodies like their own (Benn, 29 Sept 2026).
+**Framing follows the move:** show the whole body, head to feet, when the legs, hips, knees or
+floor position matter (a glute bridge, an incline push-up, a hinge); arm and shoulder moves keep
+a medium shot, because a vertical frame zoomed out that far makes the person too small (Benn).
+**Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
+defined muscles.
+
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
-> Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal leggings,
-> sage-green sports bra, open cropped tank, flat training shoes. Calm, focused expression.
+> A {gender} in {their} {age}, {heritage} heritage, {build}, realistic skin with natural
+> texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
+> defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
+> in muted tones with no logos or text, and flat training shoes. Calm, focused expression.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
 > colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
+
+- **gender / their:** woman / her, man / his. The exercise prompts are written with "she"; for
+  a man, use the "he" version of the prompt.
+- **age:** 20s, 30s, 40s, 50s, 60s, 70s
+- **heritage:** Black African, Black Caribbean, East Asian, South Asian, Southeast Asian,
+  Middle Eastern, North African, Latin American, White European, mixed
+- **build:** slim build, medium natural build, soft average build, curvy build, pear-shaped build
+  (fuller hips and thighs), apple-shaped build (weight carried around the middle), larger build,
+  soft stocky build (no athletic or muscular builds)
+- **hair:** low ponytail, short cropped hair, braids tied back, natural afro tied back, short
+  grey hair, shaved head, hair in a low bun, a fitted sports hijab
+- **outfit (workout-appropriate, fitted enough to show the joints).** Pick one that suits the
+  gender chosen:
+  - women: charcoal leggings, a sage-green sports bra and an open cropped tank; full-length
+    leggings and a fitted long-sleeve top; dark joggers and a fitted plain T-shirt; relaxed
+    stone-coloured trousers and a zip-up training top
+  - men: dark joggers and a fitted plain T-shirt; navy training shorts and a loose vest;
+    full-length leggings under training shorts with a fitted long-sleeve top; relaxed
+    stone-coloured trousers and a zip-up training top
+  - with the sports hijab (women): full-length leggings and a fitted long-sleeve top
+
+Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
 **For machine and cable exercises, add:**
 
@@ -107,7 +139,7 @@ Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 3-second low
 at 90 degrees, a 1-second pause, a 1.5-second press, and a 1-second pause at the top with the
 knees soft."
 
-### 2. Romanian deadlift (done: `public/videos/romanian-deadlift.mp4`)
+### 2. Romanian deadlift (done: on Bunny)
 
 > Side-on medium-wide shot. She stands tall holding the barbell at hip height with an overhand
 > grip, knees softly bent. She hinges at the hips over three seconds, pushing her hips back and
@@ -280,7 +312,7 @@ Timing text: "Starting with her arms straight, 2 slow repetitions in about 13 se
 is a 1.5-second pull, a 1-second squeeze, a 3-second return, and a 1-second pause with arms
 straight."
 
-### 15. Biceps curl (done: `public/videos/barbell-curl.mp4`)
+### 15. Biceps curl (done: on Bunny)
 
 > Medium shot from the side. She stands tall holding the barbell with an underhand,
 > shoulder-width grip, elbows pinned to her sides. She curls the bar up without leaning back,

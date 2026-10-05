@@ -158,7 +158,7 @@ and checked where noted):
 | Supabase Inc. | Processor: database, Auth, account emails, Edge Functions, pg_cron | Project region eu-west-1, Ireland (checked with the Supabase API, 30 Sept). Supabase Inc. is a US company. | Everything synced, account email and password hash, request logs |
 | GitHub Inc. (Pages) | Processor: app hosting | US | IP address, user agent, request times |
 | Webflow Inc., with Cloudflare and Amazon CloudFront | Processor: website, early-access form; delivery and Turnstile | US / global | Early-access emails, website request data, Turnstile signals |
-| Bunny.net (BunnyWay d.o.o.) | Processor: some exercise demo videos (`src/core/data/media.ts:57`; others are served from the app itself, `VIDEO_BASE` line 8) | Slovenia per Bunny's published details (register: confirm) | IP address and request data when a video plays |
+| Bunny.net (BunnyWay d.o.o.) | Processor: some exercise demo videos (`src/core/data/media.ts:57`; others are served from the app itself, `VIDEO_BASE` line 8) | Slovenia per Bunny's published details (register: confirm) | IP address and request data when the app shows a demo's preview image or plays the video |
 | Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts:46`) |
 | Google (sign-in) | Independent controller | Global | Only for people who choose Google |
 | Apple, Google, Mozilla push services | Deliver reminders | Global | An encrypted payload; they cannot read the supplement name |
