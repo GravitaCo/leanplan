@@ -71,10 +71,26 @@ the person's choice, never nagged; no streaks.
 4. Reviews: `nutrition-accuracy` (thresholds), `mental-performance` (wording, pattern lines,
    safety), `compliance` (any new stored field), then `ship-critic` before `main`.
 
-## Open decisions (Benn)
+## Decisions (Benn, 5 Oct 2026)
 
-1. A new `maintain` goal, or fold into "feel better"? Recommended: add `maintain` (additive).
-2. Weekly review in-app only, or an optional reminder? Recommended: in-app only at first.
-3. Weight in the review by default for this group, or opt-in? Ask `mental-performance`.
-4. Store "I'm coming off medication", or only the goal it leads to? Recommended: goal only (avoids
-   new special category data).
+1. **Maintain is a first-class goal**, not a tack-on: a new `maintain` value in `Goal` and an
+   option in `GOAL_OPTIONS` (`src/core/domain/wizard.ts`), designed into onboarding alongside the
+   others. People coming off Ozempic or Mounjaro will pick it, so onboarding must understand that
+   moment (wording, starting at maintenance, protein and strength, the weekly rhythm) without
+   asking for or storing medication status. Note the conflict to resolve: the medical question is
+   only asked when the goal means eating less, and a ticked GLP-1 medicine today removes the
+   high-protein anchor (`OnboardingOutcomes.medical`). `nutrition-accuracy` advises.
+2. **Push notification reminder** for the weekly review that opens the app at the review. Opt-in,
+   on the day the person picks. Extends the existing Web Push (`src/data/push.ts`,
+   `supabase/functions/send-supplement-reminders`); a new reminder type is a privacy policy and
+   register change and goes past `compliance` (PECR, consent wording).
+3. **The science of "no improvement" weeks is owned by `nutrition-accuracy` (the numbers) and
+   `mental-performance` (the psychology and abandonment risk).** Weeks will often look flat or
+   worse because of water, sleep, stress, cycle and many other factors. Their findings set how the
+   loop smooths data, when it says anything, what it shows instead of a scale number, and how a
+   flat or worse week is framed so it doesn't drive people away. Their rules are added below as
+   they land; nothing is built against guessed thresholds.
+4. **Store only the goal**, never medication status.
+
+Still open: whether weight shows in the review by default for maintain users or is opt-in
+(`mental-performance` recommends, Benn decides).
