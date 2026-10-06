@@ -98,6 +98,10 @@ Hard lines, check with the named agent before recommending anything near them:
 - **Advertising rules:** health, weight-loss and menopause claims fall under the ASA/CAP
   codes and, if they imply treatment, MHRA medical-device rules. Tali gives general wellness
   guidance, never medical advice (`compliance`).
+- **Research that collects data:** landing-page forms, surveys, interviews, pilots and
+  user-research recruitment that collect personal or health data (weight, menopause,
+  medication, mood) are a privacy policy and register change, including when the people are
+  not Tali users. Check them with `compliance` before recommending them for launch.
 - **Tone:** simple, approachable, gender-neutral, no gym-bro language, no moralising about
   food or bodies, even when targeting a gendered segment.
 
