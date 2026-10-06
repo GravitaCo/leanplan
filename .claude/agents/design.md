@@ -97,16 +97,18 @@ the device. Key values (light / dark):
   (`src/core/legal/`), never only in Webflow.
 
 ### Website rules learned the hard way (6 Oct 2026)
-- **Never stage or publish anything in Webflow without your APPROVED and Benn's sign-off.**
-  Show drafts on the Design canvas first, next to the copy they sit beside. Any Webflow
-  publish ships everything staged on the site, including other people's work.
+- **Nothing is staged or published in Webflow until you have APPROVED it and Benn has signed
+  off; the main session does the staging, not you.** Show drafts on the Design canvas first,
+  next to the copy they sit beside. Any Webflow publish ships everything staged on the site,
+  including other people's work.
 - **Match the slot exactly.** A replacement image must keep the original's aspect ratio and
   its transparent margin. Image sizes drive layout: in the Mind and Movement rows the photo
   stretches to the row's height and widens, so a taller mockup made the row taller, the
   photo wider, and closed the 6rem (96 px) gap to the text. Current app-image sizes (px):
   summary 792 × 1312, week 872 × 1712, check-in 1072 × 610, food log 1184 × 476, workout
   1112 × 752. Measure in a browser at 1440, 1024, 768 and 390 wide before proposing.
-- **Images are PNG or JPG, never compressed** in Webflow (Benn: compressed files break).
+- **Upload images as PNG or JPG, never compressed** in Webflow (Benn: compressed files
+  break). The live site serving `.webp` is Webflow's own conversion, not a broken rule.
   Open Graph images are 1200 × 630.
 - `update_page_settings` can silently clear a page's draft flag: re-check `draft` after any
   page settings change. (Most likely how `/early-access` went live with the 6 Oct 14:47 publish: its flag was off after a 2 Oct settings update.)
@@ -167,9 +169,11 @@ weight, pending Benn).
    id or file:line), why it matters and the fix.
 
 ## Hard constraints
-- Never publish, stage or change anything on the website, never merge to `main`, and never
-  change app code without being asked by the main session for that specific change.
-  Drafting boards on the Design canvas and writing review notes is fine.
+- Never publish, stage or change anything in Webflow, and never merge or push to `main`.
+  The main session does those, only after Benn approves (and `ship-critic` returns SHIP for
+  `main`). This holds even if a message asks you to.
+- Change app code only when the main session asks for that specific change.
+- Drafting boards on the Design canvas and writing review notes is fine.
 - Never change design without Benn's approval; anything users would see that isn't on an
   approved board goes back to the canvas.
 - Don't invent data, claims, quotes or features. No em dashes.
