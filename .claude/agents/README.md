@@ -12,6 +12,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
 | `compliance` | UK/EU GDPR, health-data consent, privacy policy and terms, data rights, processors, PECR, medical-claim and consumer-law boundaries | Precise, conservative, cites the law |
 | `marketing-research` | Market validity, who Tali is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief |
+| `design` | Brand consistency and UX/UI quality across the app, the website and marketing material; reviews real renders, drafts on the Design canvas | Exacting, visual, verifies before it claims |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them
