@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-03. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -21,7 +21,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | Withdrawal (Art. 7(3); decided 2026-09-27) | Profile → Privacy → Withdraw consent for health data (offers a backup first). A health "no" stops all log sync (`consentLetsSync` needs a current yes) and deletes the account's copy of the log through `clear_log_after_withdrawal()` (day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions, settings), once per withdrawal record on every device (`pendingCloudClear`); consent records stay. On every phone it clears what `HEALTH_FIELDS` in `src/data/consent.ts` lists: weigh-ins, check-ins, weight, body fat, height, `sexAnswer`, daily movement and `activityMult`, the onboarding outcomes, pregnancy flag, motivations, `deficitChosen`, all of `profile.training`, and health-derived reasons (`healthWhy`) in `routines` and `training_plans`. Kept: name, age, legacy `sex`, units, goal, `gentle`, `onboardedAt`. "Give consent again" there afterwards; a later yes re-uploads the phone's log. |
 | Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
-| Onboarding wizard (built, off: `ONBOARDING_ENABLED` false in `screens/onboarding/Consent.tsx`; reviewed 2026-09-28) | Health steps (`HEALTH_STEPS` in `core/domain/wizard.ts`) only show, and answers only save, with a local health yes (`canSaveHealthAnswers`); `finishOnboarding` strips health fields without it. Stores outcomes only for readiness, medical and lately (`profile.outcomes`: readiness clear/flagged, medical clear/flagged, baseline ok/low); the raw items live in component state and are never saved or synced (`scripts/e2e-onboarding.cjs` asserts no raw screener answer in any upload). Kept as answered: wellbeing (flagged/clear/undisclosed, plus `gentle` on when flagged) and the pregnancy flag (`profile.pregnancy`, pregnant and breastfeeding not told apart, with `askedAt`). Also `motivations`, `height`, `sexAnswer`, `movement`, `activityMult`, `deficitChosen`, `training.*`, per-field `answeredAt`. Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC` on; column live, checked 2026-09-28). Profile › Health data › Health check answers (`screens/profile/HealthAnswers.tsx`, rows from `healthAnswerRows.ts`, behind the flag) shows what's stored and lets people change or clear pregnancy and conditions, clear the gentler start and change food and weight; the lately baseline has no row (a GAP on the boards; the privacy policy points to export and email for it). A clear or change re-runs routing and targets at once and the plan when the engine loads (`_meta.rerunAnswers`, device-only marker inside `leanplan.v1`). The 12-week re-ask opens once on Today when due (`pregnancyReaskDue`; closing or "Ask me later" sets `snoozedAt`, back in 14 days). The draft (`tali.onboarding`, device only) holds outcomes, never raw items, and is only written with a local yes when it holds health answers. Texts updated 2026-09-28 to cover all of this; items 32 to 38 re-checked 2026-09-28 |
+| Onboarding wizard (built, off: `ONBOARDING_ENABLED` false in `screens/onboarding/Consent.tsx`; reviewed 2026-09-28) | Health steps (`HEALTH_STEPS` in `core/domain/wizard.ts`) only show, and answers only save, with a local health yes (`canSaveHealthAnswers`); `finishOnboarding` strips health fields without it. Stores outcomes only for readiness, medical and lately (`profile.outcomes`: readiness clear/flagged, medical clear/flagged, baseline ok/low); the raw items live in component state and are never saved or synced (`scripts/e2e-onboarding.cjs` asserts no raw screener answer in any upload). Kept as answered: wellbeing (flagged for Yes, sometimes, clear or undisclosed, plus `gentle` on when flagged; `sometimes` added by Onboarding 9, see item 34) and, from Onboarding 9, the food-range answers tied to it (`profile.foodOptIn`, own merge stamp `answeredAt.foodOptIn`: `today` 'today' | 'food' for the day-14 "Would you like your food range on Today?" after Sometimes, no date kept; `range` 'shown' | 'not-now' with `rangeAt`, a local date, for the week-4 "Would a calorie range help?" after Yes, so "Not now" rests 12 weeks; no separate "asked" flag, closing the sheet saves the second answer; checked in code 2026-10-01, item 34) and the pregnancy flag (`profile.pregnancy`, pregnant and breastfeeding not told apart, with `askedAt`). Also `motivations`, `height`, `sexAnswer`, `movement`, `activityMult`, `deficitChosen`, `training.*`, per-field `answeredAt`. Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC` on; column live, checked 2026-09-28). Profile › Health data › Health check answers (`screens/profile/HealthAnswers.tsx`, rows from `healthAnswerRows.ts`, behind the flag) shows what's stored and lets people change or clear pregnancy and conditions, clear the gentler start and change food and weight; the lately baseline has no row (a GAP on the boards; the privacy policy points to export and email for it). A clear or change re-runs routing and targets at once and the plan when the engine loads (`_meta.rerunAnswers`, device-only marker inside `leanplan.v1`). The 12-week re-ask opens once on Today when due (`pregnancyReaskDue`; closing or "Ask me later" sets `snoozedAt`, back in 14 days). The draft (`tali.onboarding`, device only) holds outcomes, never raw items, and is only written with a local yes when it holds health answers. Texts updated 2026-09-28 to cover all of this; items 32 to 38 re-checked 2026-09-28 |
 | Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnderAge` records `tali.pendingDelete`, wipes the device only when it's that account's or nobody's (`underAgeWipesDevice`; uid from the live session, else the owner, else the saved session: `underAgeUid`; no uid, nothing recorded or wiped), and calls `delete-account` with `reason: 'under-age'`. That account's sync stays blocked; failures back off (1, 2, 4 min … at most an hour) and stop after 6 tries, and a 403 re-auth stops at once (`underAgeNext`): the device is then signed out and wiped, keeping `tali.pendingDelete`, and the sign-in screen says "Please sign in again to finish removing your account."; the next sign-in of that account finishes it. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). `delete-account` v2 deployed 2026-09-28 with this path; security-data reviewed it SAFE (repo comments record both) |
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
 | Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
@@ -36,7 +36,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 |---|---|---|---|---|
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
 | Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans, `answeredAt` stamps | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
-| Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged/clear/undisclosed), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode, signposting (`routeSafety`); the 12-week re-ask | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object), or the account is deleted |
+| Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged for Yes, sometimes, clear, undisclosed), the food-range answers that follow a Yes or Sometimes (`profile.foodOptIn`: `today`, `range`, `rangeAt` for the week-4 answer only; Onboarding 9; health data by inference, since only people who answered Yes or Sometimes are asked), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode (wellbeing Yes only; Sometimes gets a maintenance range instead), signposting (`routeSafety`); the 12-week re-ask; the day-14 and week-4 range asks, a range shown only if the person opts in | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object, `foodOptIn` and its stamp with the profile health fields: checked 2026-10-01, item 34), or the account is deleted |
 | Day logs: foods, weight, workout, supplements taken, mood/hunger check-in and note | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Custom foods, recipes, workouts you create (`routines`, with slot reasons in `blocks`), weekly plans (`training_plans`, with plan reasons in `why`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes`, `routines`, `training_plans` | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off, health consent is withdrawn, or account deletion; dead endpoints (404/410) are removed by the function |
@@ -55,7 +55,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | GitHub Inc. (Pages) | Processor for hosting and request logs | US | Confirm GitHub's DPA covers Pages for your account type; record the transfer mechanism |
 | Webflow Inc. | Processor: website hosting, form submissions | US | Accept Webflow's DPA; record transfer mechanism |
 | Cloudflare Inc. | Processor: delivers the website (as Webflow's CDN), Turnstile | US / global | Covered through Webflow for delivery; Turnstile has its own terms: confirm and record |
-| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`), sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
+| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`): the videos and their preview images, which load when the app shows an exercise row or entry, not only when a video plays; sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | BunnyWay d.o.o., Slovenia (EU); global edge network, storage may be outside the EU: confirm in Bunny's DPA and sub-processor list | Accept Bunny's DPA |
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
@@ -74,11 +74,16 @@ terms `6ab56fd7d03958d70ceaf978`, cookie-policy `6ab56fd7d03958d70ceaf97a`.
 
 ## DPIA
 
+**Draft written 2026-09-30: [`dpia.md`](./dpia.md), awaiting Benn's review and sign-off** (and a
+solicitor's, if he wants one). It opens with the decisions for Benn. Until it is signed this item
+stays open. Scope it had to cover, kept for reference:
+
 A DPIA is very likely required (UK GDPR Art. 35; ICO lists large-scale special-category
 data and health apps among the triggers). The consent, minimisation, RLS and deletion work
-above feeds it, but the DPIA itself has not been written. **Open.** The onboarding wizard adds
+above feeds it. The onboarding wizard adds
 to it and should be covered before `ONBOARDING_ENABLED` goes on: pregnancy status, a medical
-flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating proxy (wellbeing),
+flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating proxy (wellbeing; from Onboarding 9 `flagged` for Yes and
+`sometimes` stored apart, with the food-range answers after them: `dpia.md` §4.2 updated 2026-10-01, item 34),
 automated safety routing from them (Art. 22 not triggered, but record why), the outcomes-only
 design, the under-age stop and automatic deletion, and plan reasons now syncing. Also record
 on-phone processing (item 27), the purge and the accepted 30-day gap (item 30(d)), and, before
@@ -113,7 +118,8 @@ Owed now (processing is happening whether or not the texts are live):
 
 Should fix:
 
-7. Write the DPIA (scope: the DPIA section above).
+7. Write the DPIA (scope: the DPIA section above). Draft done 2026-09-30 (`dpia.md`); Benn to
+   review, decide D1 to D12 and sign.
 8. If EU users are targeted, appoint an EU representative (Art. 27) and name them in the policy.
 9. Confirm the Beat helpline number in the terms (0808 801 0677) against beateatingdisorders.org.uk.
 10. Done, see item 29: `send-supplement-reminders` returned supplement names in its response
@@ -146,9 +152,31 @@ Added 2026-09-27 (consent release):
     screen on their next launch and nothing more syncs until they answer; if anyone declines,
     delete their account on request. Now see item 29 (6 accounts with cloud data, 0 consent
     records, 2026-09-28) and item 30(a) (no notice emails for now, Benn's decision).
-21. DECIDED (Benn, 28 Sept 2026): the minimum age is 18. The texts, sign-up line, consent screen
-    and wizard say 18+ (`MIN_AGE`), and the onboarding plan now says so too. The ICO Children's
-    Code stays out of scope while under-18s are turned away.
+21. DECIDED (Benn, 28 Sept 2026): Tali is strictly 18+ (`MIN_AGE` in `src/core/legal/index.ts`,
+    one rule: `isUnderAge` in `src/core/domain/age.ts`). Enforced by self-declaration at the consent
+    screen ("I'm 18 or over"), the wizard (its age stop), Profile save (an under-18 age saves
+    nothing), backup import (a backup with an under-18 age isn't loaded), cloud sync (a pulled
+    profile under 18) and launch (a stored age under 18, checked on local data only). Any of the
+    last four shows the app's stop screen (`screens/onboarding/AgeStop.tsx`, board "Age 18+ · 1";
+    store `underAge`, never persisted): nothing syncs and label reading can't be reached while it
+    shows; "Close and delete" opens the usual account deletion (with its re-sign-in); "I typed my
+    age wrong" goes back (a stored under-18 age is cleared). The engine keeps an under-18 band as
+    a backstop (no AI, words only). The ICO Children's Code is treated as out of scope on the basis
+    of a "likely to be accessed by children" assessment that is still to be written into the DPIA
+    (OPEN).
+    - Supplement reminders stop while the stop shows: this device's push subscription ends through
+      the existing unsubscribe path (best-effort, in the background; retried on a later launch or
+      connection; device-only marker `_meta.pushHeld` inside `leanplan.v1`). "I typed my age wrong"
+      re-registers them without asking, or turns the setting off when it can't. Redo setup (an
+      existing account) uses the app's stop, not the first run's automatic deletion.
+    - The app stop's Close needs a connection and doesn't retry by itself (only setup's under-age
+      deletion retries).
+    - OPEN, walk-away: someone who closes the app without choosing keeps their account on the
+      server. Benn approved automatic deletion after 30 days unresolved as the next change (not
+      built). For the Profile and backup paths the under-18 age isn't saved, so a relaunch returns
+      to the normal app; the 30-day design therefore needs a marker, which is new processing
+      needing its own privacy text, register line and, if it's a phone key, a `cookies.ts` entry.
+    - OPEN: the likely-to-be-accessed assessment in the DPIA.
 22. Resolved 2026-09-27 (as built: the Withdrawal row above). Withdrawal used to clear
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
@@ -217,10 +245,78 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     `askedAt`, "No longer" clears the flag and re-runs the plan. `snoozedAt` syncs with the profile
     and goes with the pregnancy object on withdrawal (`PROFILE_HEALTH`). The privacy policy
     describes the re-ask and the date. Tests in `scripts/test-wizard.ts`.
-34. Done (re-checked 2026-09-28): `COPY.ready.note` ("We keep a short note of what applies
-    (like pregnancy), never a medical record.") matches `outcomes.readiness` plus
-    `profile.pregnancy`; `COPY.wellbeing.why` and `NOTES.wellbeing.note` ("We keep your answer
-    (yes, no or rather not say) ...") match `outcomes.wellbeing` (Yes and Sometimes stored as one).
+34. Re-opened 2026-10-01 for Onboarding 9 ("Food: less emphasis to start, never hidden"). Code
+    checked 2026-10-01 on `claude/onboarding-release` at 6430472 (behind `ONBOARDING_ENABLED`, off).
+    `COPY.ready.note` still matches `outcomes.readiness` plus `profile.pregnancy`.
+    - Stored values (as built): `outcomes.wellbeing` is 'flagged' (Yes, name kept) | 'sometimes' |
+      'clear' | 'undisclosed' (`core/types.ts:283`, `wellbeingOutcome`). New `profile.foodOptIn`
+      (`core/types.ts:292`): `today?: 'today' | 'food'` (Sometimes, day-14 ask, no date of its own),
+      `range?: 'shown' | 'not-now'` with `rangeAt` (Yes, week-4 ask; a local date, for the 12-week
+      rest after "Not now" or a Profile "Turn off"). There is no separate "asked" flag: closing the
+      sheet saves the second answer (`FoodAskSheet.tsx`). Its merge stamp is `answeredAt.foodOptIn`
+      (an ISO time, set on every answer: `answerFoodOptInIn`, `foodMode.ts:137`; in `MERGED_FIELDS`,
+      `profileMerge.ts:14`), covered by the policy's "when each answer was last changed". These are
+      **health data by inference** (Art. 9; only Yes or Sometimes are asked), under the same 6(1)(b)
+      + 9(2)(a) basis and purpose. Privacy policy reworded 2026-10-01 to match (no "when" for the
+      day-14 answer; closing counts as the second answer).
+    - Routing as built (`routeSafety`, `onboarding.ts:334` to `339`; `foodView`, `foodMode.ts:68`):
+      Yes: `gentle` on, no calorie or protein target, no deficit ever, Today and Food in words, a
+      maintenance range on Food only after "Show a range" (never on Today). Sometimes: `gentle` NOT
+      turned on, a ±15% maintenance range on Food from day one, no deficit whatever the goal, protein
+      as a range, Today in words until the person says "Show it" at day 14. Both: the weight tile on
+      Today shows "Logged"/"Add", not the number (`TodayScreen.tsx:321`); the same signposts; the
+      training engine treats both as gentle (no automatic volume increase, trends in words:
+      `engine/generate.ts:962` to `970`). Privacy and DPIA now say Gentle mode is for Yes only.
+    - Requirements (a) to (f), checked 2026-10-01: (a) met: `foodOptIn` is in `HEALTH_FIELDS` and
+      `PROFILE_HEALTH` (`consent.ts:305`, `320`), not in `KEPT_ON_WITHDRAWAL` (`:322`), so its stamp
+      and `outcomes.wellbeing`'s are re-stamped on clear; the server copy goes with the `settings`
+      row (`clear_log_after_withdrawal()` deletes the row). (b) met: `withoutHealth()` drops it
+      (`consent.ts:326`); `answerFoodOptIn` saves only with `canSaveHealthAnswers` (`store.ts:1581`).
+      (c) met: `foodAskDue(..., healthYes)` returns null without it (`foodMode.ts:123`; Today passes
+      `canSaveHealthAnswers`). (d) met: Health check answers shows Yes and Sometimes as separate
+      values with Change, and a "Turn off" row for each range yes (`healthAnswerRows.ts:45`, `:69`).
+      (e) met: `scripts/test-wizard.ts:312` to `327` (withdrawal, stamps, `withoutHealth`, export,
+      asks only with a yes) and `scripts/test-onboarding.ts` "onboarding 9". (f) met: export carries
+      `foodOptIn` (test above).
+    - Still open on the build (before the flag goes on):
+      - Should fix (policy and safety): a Yes who is also pregnant or breastfeeding and says "Show a
+        range" sees calorie numbers on Food: the Yes branch of `FoodScreen.tsx:77` to `85` ignores
+        `quietNumbers` and `rangeAskDue` doesn't check pregnancy. The policy, the pregnancy note and
+        `HEALTH_ANSWERS.does.pregnancy` all say "no calorie number". Fix in code (don't ask, or keep
+        it in words, while `pregnancy.flagged`), not in the texts.
+      - Should fix (copy untrue, Art. 5(1)(a), 13): weight is only off Today. Tapping the Today tile
+        opens `WeightSheet` with a 30-entry trend, "kg vs last week" and a list of weights
+        (`WeightSheet.tsx:35`, `50` to `76`), and Profile › Body and goal shows "NN kg"
+        (`ProfileScreen.tsx:190`). So "Tali hides your weight" (`COPY.wellbeing.why`), "no weight on
+        screen" (`NOTES.wellbeing.lead`), "no weight" (`FOOD9`/`ob9-1` `yesS`, `sometimesS`,
+        `HEALTH_ANSWERS.does.wellbeing`) and "weight is hidden" (`does.wellbeingSometimes`) are
+        untrue as built. Either hide weight in those places for Yes and Sometimes (with
+        `mental-performance`) or reword to "your weight is off Today"; Benn approves the wording.
+      - Note: "protein is shown in words" holds for the day's totals only; food rows and sheets still
+        show grams of protein in Gentle mode. "No calorie number" for Yes holds only while Gentle mode
+        stays on: Profile › Display lets a Yes turn it off (`ProfileScreen.tsx:305`), and then food
+        rows show kcal (there's still no target). Consider "no calorie target" in the copy.
+    - "Why we ask" link (judgement 2026-10-01, not legal advice): moving the "what we keep" lines
+      one tap behind a "Why we ask" link is acceptable as a layered, just-in-time notice (UK GDPR
+      Art. 12(1) and 13; ICO guidance on the right to be informed, layered and just-in-time
+      approaches; EDPB transparency guidelines WP260 rev.01 on layering), because the consent
+      itself was already given on `ConsentScreen` with the full policy, and each question stays
+      optional. Conditions: the link is on the same screen as the question, visible without
+      scrolling or a gesture, labelled plainly ("Why we ask" is fine), styled as a link or button
+      with an accessible name; it opens the full lines (what we keep, what it changes, that it is
+      optional, where to change or clear it) in one tap, without leaving the flow or needing a
+      connection; the screen itself still says the question is optional (a skip is visible); the
+      wellbeing result note (`NOTES.wellbeing.note`) stays on screen, not behind a link; and the
+      same pattern does not move the consent wording or the age line. If testers miss the link,
+      put the one-line "what we keep" back on screen.
+      Checked 2026-10-01 (`Wizard.tsx:148` to `176`): a `<button>` named "Why we ask" in the lead
+      line under the title, Skip in the top bar, a local sheet (no network); `Note` keeps
+      `NOTES.wellbeing.note` on screen (`Wizard.tsx:619`); the age line stays on screen (`line`).
+      One gap: the wellbeing sheet says what we keep and what it changes but not where to change it
+      (only the Yes/Sometimes note screen says "change this in Profile"); a No or Rather not say
+      never sees it. Should fix: add "You can change it in Profile any time." to
+      `COPY.wellbeing.why` (Benn's wording). Whether the link is visible without scrolling on a
+      small phone was not tested here.
 35. Done (re-checked 2026-09-28): `withdraw()` and `applyHealthWithdrawal()` (a withdrawal
     pulled from another device) both call `clearDraft()`. Privacy and cookie texts say so.
 36. Done (re-checked 2026-09-28): the comments in `supabase/functions/_shared/account.ts` and
@@ -238,11 +334,11 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     Update 2026-09-28: `tali.pendingDelete` now survives the in-app wipes (Delete account, and
     sign out and remove this device's log) so an under-age deletion can finish; it goes once that
     under-age deletion finishes (`clearPendingDeletion` when `underAgeNext` is done) or when
-    browser data is cleared; the cookie policy says only that. Open (compliance, 2026-09-28): an
-    ordinary Delete account of the same account, a deletion whose reply was lost (later tries get
-    401 and ask to sign in to an account that's gone), or one done outside the app, leaves the
-    record with no end. Fix in the store's deleteAccount (clear it when the pending uid is the
-    account deleted) and treat 401 or user-not-found for the pending uid as done, with a test.
+    browser data is cleared; the cookie policy says only that. Fixed on main a9fc1bd (checked
+    2026-09-28): the record is also cleared when an ordinary Delete account removes that account,
+    when the function answers already:true, when a token refresh answers user_not_found (the
+    account is gone), and after 30 days (`PENDING_MAX_DAYS`, removed the next time it's read). Any other refresh failure keeps it,
+    signs the device out, and the next sign-in finishes the deletion. The cookie policy says so.
 38. Note, re-checked 2026-09-28: still no `CONSENT_VERSIONS.health` bump. The Profile controls,
     the re-ask and `snoozedAt` serve the same purpose, add no new category and no recipient, and
     the consent wording is unchanged. The solicitor question (item 6) stands. Publish the texts

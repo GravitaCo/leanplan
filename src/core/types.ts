@@ -205,6 +205,9 @@ export interface Session {
   note?: string
   /** a guided session left part-way ("Leave for now"): Train offers Resume; cleared by Finish or any other save */
   open?: boolean
+  /** the warm-up block (guided player): whole minutes done of the block's `of`; never sets, so it
+   *  stays out of the exercise rows, targets and "last time" */
+  warmup?: { mins: number; of: number }
 }
 
 /** Optional daily mood + hunger check-in (1–5 scales; 0 = not answered). */
@@ -276,10 +279,26 @@ export interface OnboardingOutcomes {
   readiness?: 'clear' | 'flagged'
   /** diabetes on insulin or sulfonylureas, kidney disease or a GLP-1 medicine: 'flagged' */
   medical?: 'clear' | 'flagged'
-  /** Yes/Sometimes → 'flagged'; No → 'clear'; "Rather not say" → 'undisclosed' */
-  wellbeing?: 'flagged' | 'clear' | 'undisclosed'
+  /**
+   * Yes → 'flagged' (the name predates the split: stored data keeps its meaning, never rename it);
+   * Sometimes → 'sometimes' (Onboarding 9, from Oct 2026); No → 'clear'; "Rather not say" → 'undisclosed'
+   */
+  wellbeing?: 'flagged' | 'sometimes' | 'clear' | 'undisclosed'
   /** poor sleep, high stress or little room for change → 'low' */
   baseline?: 'ok' | 'low'
+}
+
+/**
+ * Onboarding 9: each is the person's own answer, never set by time passing, and undone in one
+ * tap from Profile › Health check answers.
+ */
+export interface FoodOptIn {
+  /** Sometimes, the day-14 ask (ob9-3): 'today' = the range on Today too, 'food' = kept on Food. Asked once. */
+  today?: 'today' | 'food'
+  /** Yes, the week-4 ask (ob9-4): 'shown' = a maintenance range on Food; 'not-now' = asked again 12 weeks after `rangeAt` */
+  range?: 'shown' | 'not-now'
+  /** local date (YYYY-MM-DD) of the last `range` answer */
+  rangeAt?: string
 }
 
 /** Pregnant or breastfeeding, re-asked gently every 12 weeks and clearable in Profile (§13, §14). */
@@ -331,6 +350,9 @@ export type MuscleGroup =
   | 'chest' | 'back' | 'quads' | 'hamstrings' | 'glutes' | 'shoulders'
   | 'biceps' | 'triceps' | 'calves' | 'core' | 'forearms'
 
+/** Session length as a range of minutes (board ob2-4; core/domain/warmup.ts). */
+export type SessionRange = '15-20' | '20-30' | '30-45' | '45-60' | '60+'
+
 /**
  * Fitness-only onboarding preferences (questions #9–14). All optional/additive —
  * rides the existing settings.profile JSON, no migration needed.
@@ -342,6 +364,8 @@ export interface TrainingPrefs {
   /** the weekdays picked (0 = Sun … 6 = Sat); picking days sets the count. Never a rotation. */
   weekdays?: number[]
   minutesPerSession?: 10 | 20 | 30 | 45 | 60
+  /** the session length as picked (board ob2-4): a range; minutesPerSession is the engine's length for it */
+  sessionRange?: SessionRange
   place?: TrainingPlace[]
   movingNow?: MovingNow
   /** what they enjoy or want to try (F1); absent = "not sure yet" */
@@ -439,6 +463,8 @@ export interface Profile {
   activityShown?: string
   /** date the "you've been training a lot lately" note was last dismissed (once a week at most) */
   loadNoteSeen?: string
+  /** Today's once-only "Plan when you'll do it" (ob5-4) was used or waved off: never shown again */
+  ifThenOffered?: boolean
   // First-run onboarding (first-run-onboarding.md). All optional and additive: `name` above is
   // the optional first name and `age` the required age; weight stays optional.
   /** the onboarding sex answer; absent on older profiles, read through `sexOf` */
@@ -461,6 +487,8 @@ export interface Profile {
   activityMult?: number
   /** after "Rather not say" on wellbeing, the person chose their goal's deficit over maintenance */
   deficitChosen?: boolean
+  /** the food steps up a wellbeing Yes or Sometimes person said yes to (Onboarding 9, core/domain/foodMode) */
+  foodOptIn?: FoodOptIn
   /** "What would make this worth it for you?" (onboarding screen 3): chip keys, or their own words (≤ 60 chars) */
   motivations?: string[]
   /**
@@ -768,7 +796,7 @@ export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch'
 export interface TempoPhase {
   at: number
   kind: TempoPhaseKind
-  /** 1-based rep number; absent for the set-up before the first rep */
+  /** 1-based rep number; absent for the set-up before the first rep and for a closing pause (a "ready" between reps carries the next rep) */
   rep?: number
 }
 
@@ -780,6 +808,13 @@ export interface ExerciseMedia {
   durationSec: number
   /** phases in time order; each runs until the next one starts, the last until durationSec */
   tempo: TempoPhase[]
+  /**
+   * The clip shows a held position (a stretch, a plank, a yoga pose) or a move done for time (a
+   * march): no reps and no count over it, since the person's own time comes from the hold timer.
+   * Its tempo is one rep-less phase. The value sets the words: "Hold the stretch", "Hold the
+   * position", or "Keep moving" (and "Keep going" on the timer).
+   */
+  hold?: 'stretch' | 'position' | 'move'
 }
 
 export interface WorkoutTemplate {

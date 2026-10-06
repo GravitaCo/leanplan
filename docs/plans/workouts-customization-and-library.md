@@ -1489,7 +1489,7 @@ workouts, and a week you arrange. P6 makes it tailored; P7 and the media track a
 3. **Four goals, fully supported**, each with distinct programming; app focus stays
    hypertrophy. *Addition:* a fifth "feel better / move more" goal, added in P1 (D6, §7.3a).
 4. **Video hosting → Bunny CDN.** Owned clips off the bundle and out of Supabase. *Refined:*
-   clips currently ship in `public/videos/` behind `VIDEO_BASE`; the move is one switch.
+   done Oct 2026: every demo clip is served from the Bunny Stream library.
 5. **Cardio is first-class.** Typed variations, first-class cardio days, cardio-led endurance
    plans. *Refined:* new sessions log cardio as `Session.cardio` + numeric minutes; the legacy
    `cardioType`/`mins` shape stays readable and mirrored.

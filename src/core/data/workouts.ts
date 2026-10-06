@@ -55,7 +55,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "db-shoulder-press", "n": "Dumbbell shoulder press (seated)",
         "t": "3 × 10–12",
-        "cue": "Start at ear height. Press up without arching the lower back, keep ribs down. Stop a couple of reps before you couldn't do another."
+        "cue": "Start at ear height. Press up without arching the lower back, keep ribs down. Stop a couple of reps before you couldn't do another.",
+        "video": DEMOS.shoulderPress
       },
       {
         "id": "lateral-raise", "n": "Lateral raise",

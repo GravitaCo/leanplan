@@ -18,10 +18,11 @@ import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
-import { PlanEditSheet, PLAN_OUTCOME } from './plan/PlanSheets'
+import { PlanEditSheet, PLAN_OUTCOME, whenLine } from './plan/PlanSheets'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
-import { aboutMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
+import { aboutLine, routineEstMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
+import { ONBOARDING_ENABLED } from './onboarding/Consent'
 
 type Guide = 'split' | 'basics'
 const GUIDES: { id: Guide; title: string; icon: IconName; color: string }[] = [
@@ -41,6 +42,7 @@ export function PlanScreen() {
   const [workout, setWorkout] = useState<WorkoutKey | null>(null)
   const [builder, setBuilder] = useState<BuilderStart | null>(null)
   const routines = useStore((s) => s.data.routines)
+  const training = useStore((s) => s.data.profile.training)
   const profile = useStore((s) => s.data.profile)
   const mine = (routines || []).filter((r) => !r.archived)
   const build = canBuild(profile)
@@ -282,7 +284,7 @@ export function PlanScreen() {
           const lr = pl.reviews.length ? pl.reviews[pl.reviews.length - 1] : null
           return (
             <button className="li" key={pl.id} onClick={() => setEditing({ id: pl.id })}>
-              <div className="m"><div className="t">When {pl.when}</div>
+              <div className="m"><div className="t">{whenLine(pl.when)}</div>
                 <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div>
                 {pl.cope && <div className="s">Backup: {pl.cope}</div>}</div>
               <Chevron />
@@ -333,7 +335,7 @@ export function PlanScreen() {
               <button className="li pv-row" key={r.id} onClick={() => { setSheet(null); setWorkout(r.id) }}>
                 <Thumb video={keyVideo(r.id, routines)} shape={r.modality === 'cardio' ? 'duration' : 'weight-reps'} />
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, r.estMins ? `about ${aboutMins(r.estMins)} min` : ''].filter(Boolean).join(' · ')}</div></div>
+                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')}</div></div>
                 <Chevron />
               </button>
             ))}

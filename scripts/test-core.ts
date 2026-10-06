@@ -22,20 +22,27 @@ import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domai
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
+import { sessionsOf, workoutsOf, warmupOnly, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
-import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
+import { rangeFor, showBurnNote, ensureBurnSwitch, dayStat } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
 import { keptAfterEdit, weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
-import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate } from '@/core/domain/routines'
+import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate, warmupForKey, isEngineKey, routineEstMins, slotsOf as routineSlotsOf } from '@/core/domain/routines'
+import { buildWarmup, warmupKindOf, warmupMinutesFor, warmupStartAt, SESSION_RANGES, PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
+import { SUMMARY } from '@/screens/onboarding/copy'
+import { warmupNote } from '@/screens/train/WarmupCard'
+import { WARMUP_CUES } from '@/core/data/warmups'
+import { buildPlan as buildPlanW } from '@/core/domain/engine'
+import { rangeEngineMinutes as rangeEngineMinutesW } from '@/core/domain/warmup'
+import { warmupFor as warmupForW } from '@/core/domain/wizard'
 import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
-import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
+import { alternativesFor, fmtSet, holdAt, holdLabel, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
@@ -212,16 +219,19 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
 // demo clips: every attached clip exists, its tempo is ordered and fits the clip, and the counter
 // reads the phase on screen
 {
-  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [[e.n, e.video] as const] : [])))
+  const inWorkouts = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [e.video] : [])))
+  const known = Object.values(DEMOS) as unknown[]
+  const clips = Object.entries(DEMOS) as [string, (typeof DEMOS)[keyof typeof DEMOS]][]
   const off = clips.flatMap(([n, m]) => {
     const why: string[] = []
     if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
     m.tempo.forEach((p, i) => { if (i && p.at <= m.tempo[i - 1].at) why.push('phase ' + i + ' out of order') })
     if (m.tempo[m.tempo.length - 1].at >= m.durationSec) why.push('last phase starts after the clip ends')
+    if ('hold' in m && m.hold && m.tempo.some((p) => 'rep' in p)) why.push('a hold clip counts no reps')
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
-  const ok = clips.length === 4 && off.length === 0; if (!ok) bad++
+  const ok = clips.length >= 8 && inWorkouts.length === 5 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
   const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
@@ -518,6 +528,13 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '{"lo":20,"hi":40} {"lo":45,"hi":45} {"lo":60,"hi":60} null {"side":1,"sec":12,"reached":false,"switchNow":false,"logSec":12} {"side":2,"sec":2,"reached":false,"switchNow":true,"logSec":2} true 40 kg × 8 6 reps (assisted 20 kg) 8 reps (+10 kg) 30 sec 25 sec false,true,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'library: holds and set words', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  // the hold timer's words, shared by the sheet and the timer over a hold clip
+  const T = { lo: 30, hi: 45 }
+  const words = [holdLabel(holdAt(5, T, true), T, true), holdLabel(holdAt(31, T, true), T, true), holdLabel(holdAt(40, T, true), T, true),
+    holdLabel(holdAt(10, T), T), holdLabel(holdAt(35, T), T), holdLabel(holdAt(50, T), T), holdLabel(holdAt(8, null), null), holdLabel(holdAt(8, null), null, false, true)].join(', ')
+  const wantWords = 'First side, Switch sides, Second side, Holding, In your range, Good place to stop, Holding, Keep going'
+  if (words !== wantWords) bad++
+  console.log(words === wantWords ? 'PASS' : 'FAIL', 'library: hold timer words', JSON.stringify(words))
 }
 {
   const S = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', routineId: 'builtin-Legs', ex }] }) as any
@@ -952,14 +969,154 @@ function legacyAndGuest(): void {
 }
 
 // own workouts (P4): estimates pinned to hand-worked examples, effort, headline kind, notes, and
+
+// the warm-up block (s-ob8 point 4; core/domain/warmup): length by range, never zero, kit swaps, one-sided moves
+{
+  const total = (b: WarmupBlock) => b.moves.reduce((a, m) => a + m.sec, 0) + b.gapSec * (b.moves.length - 1)
+  const KINDS = ['legs', 'push', 'pull', 'full', 'mind-body', 'cardio'] as const
+  const MOVES_BY_MINS: Record<number, number> = { 4: 3, 5: 4, 6: 5, 8: 6, 10: 7 }
+  const checks: [string, boolean, string?][] = []
+  const lens = SESSION_RANGES.map((r) => warmupMinutesFor(r)).join(',')
+  checks.push(['length by range: 4, 5, 6, 8, 10', lens === '4,5,6,8,10', lens])
+  checks.push(['never zero: skipped length and 10 engine minutes still warm up', warmupMinutesFor() === 5 && warmupMinutesFor(undefined, 10) === 4 && warmupMinutesFor(undefined, 60) === 10 && PLAN_WARMUP_MINUTES === 6])
+  let exact = true, counts = true, pulse = true, cues = true, sided = true, det = true
+  const why: string[] = []
+  for (const kind of KINDS) for (const r of SESSION_RANGES) for (const kit of [[], ['band']] as const) {
+    const b = buildWarmup({ kind, range: r, kit, activity: kind === 'cardio' ? 'cardio-run' : undefined })
+    if (b.mins !== warmupMinutesFor(r) || total(b) !== b.mins * 60) { exact = false; why.push(`${kind} ${r} ${total(b)}`) }
+    if (kind !== 'cardio' && b.moves.length !== MOVES_BY_MINS[b.mins]) { counts = false; why.push(`${kind} ${r} ${b.moves.length} moves`) }
+    if (kind !== 'cardio' && (b.moves[0].sec < 60 || b.moves[0].sec > 120)) { pulse = false; why.push(`${kind} ${r} pulse ${b.moves[0].sec}`) }
+    for (const m of b.moves.slice(1)) {
+      if (!/comfortabl/.test(m.cue)) { cues = false; why.push(`${m.id} cue`) }
+      if (m.perSide && m.sec % 10) { sided = false; why.push(`${m.id} ${m.sec}`) }
+      if (m.sec < 30) { exact = false; why.push(`${m.id} too short`) }
+    }
+    if (JSON.stringify(b) !== JSON.stringify(buildWarmup({ kind, range: r, kit, activity: kind === 'cardio' ? 'cardio-run' : undefined }))) det = false
+  }
+  checks.push(['moves and gaps add up to exactly the minutes, every move 30 s or more', exact, why.join('; ')])
+  checks.push(['3 to 7 moves by length (4 → 3 … 10 → 7)', counts, why.join('; ')])
+  checks.push(['the pulse raiser runs 1 to 2 minutes', pulse, why.join('; ')])
+  checks.push(['every warm-up cue says to stay within a comfortable range', cues && Object.values(WARMUP_CUES).every((c) => /comfortabl/.test(c) && !/—/.test(c)), why.join('; ')])
+  checks.push(['one-sided moves split into whole 5 s halves', sided, why.join('; ')])
+  checks.push(['deterministic: the same inputs give the same block', det])
+  const noBand = buildWarmup({ kind: 'push', mins: 10 }), band = buildWarmup({ kind: 'push', mins: 10, kit: ['band'] })
+  const ids = (b: WarmupBlock) => b.moves.map((m) => m.id)
+  /** the warm-up block on (it ships behind the onboarding switch; the screens pass it in) */
+  const ON = { warmup: true } as const
+  checks.push(['kit swap: no band, no band pull-apart (a wall slide instead), and no repeats', !ids(noBand).includes('band-pull-apart') && ids(noBand).includes('scapular-wall-slide') && new Set(ids(noBand)).size === ids(noBand).length && ids(band).includes('band-pull-apart'), ids(noBand).join(',')])
+  const legs = buildWarmup({ kind: 'legs', mins: 5 })
+  const ls = legs.moves.find((m) => m.id === 'leg-swings')
+  checks.push(['one-sided: leg swings switch sides, a squat doesn’t', !!ls?.perSide && legs.moves.find((m) => m.id === 'bodyweight-squat')?.perSide === false])
+  const yoga = buildWarmup({ kind: 'mind-body', mins: 6, avoid: ['half-sun-salutation', 'cat-cow'] })
+  checks.push(['a move the session already has isn’t repeated in its warm-up', !ids(yoga).includes('half-sun-salutation') && !ids(yoga).includes('cat-cow'), ids(yoga).join(',')])
+  const walk = buildWarmup({ kind: 'cardio', mins: 5, activity: 'cardio-walk' }), run = buildWarmup({ kind: 'cardio', mins: 6, activity: 'cardio-run' })
+  checks.push(['cardio: the activity at an easy pace, then leg swings and hip circles (a walk isn’t only more walking)', ids(walk).join() === 'cardio-walk,leg-swings,hip-circles' && ids(run)[0] === 'cardio-run' && ids(run).includes('leg-swings') && ids(run).includes('hip-circles'), ids(walk).join()])
+  // ship-critic 1: Tali's plan workouts and Push/Pull/Legs get exactly 6, whatever the person's session length
+  {
+    const t = { sessionRange: '20-30', minutesPerSession: 30 } as never
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const off = keys.filter((k) => {
+      const b = warmupForKey(k, [], t)
+      const slots = isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)
+      const fromEst = estMins(slots, ON) - estMins(slots, { warmup: true, mins: 0 })
+      const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t, true)! - estMins(slots, { warmup: true, mins: 0 })
+      return !(b?.mins === 6 && fromEst === 6 && row === 6 && SUMMARY.warmLine(PLAN_WARMUP_MINUTES).includes(`${b.mins}-minute`) && !isEngineKey(k, []))
+    })
+    checks.push(['Tali plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
+    const gen = { id: 'b4d5f1e2-0000-4000-8000-000000000001', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const own = { id: 'b4d5f1e2-0000-4000-8000-000000000002', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const sl = [{ exId: 'goblet-squat', rx: '3 × 10' }]
+    checks.push(['only the engine’s own stored workouts follow the session length', isEngineKey((gen as { id: string }).id, [gen]) && !isEngineKey((own as { id: string }).id, [own]) && !isEngineKey('tali-full-body-a', [gen]) && warmupForKey((gen as { id: string }).id, [gen], t)?.mins === 5 && warmupForKey((own as { id: string }).id, [own], t)?.mins === 6])
+    // ship-critic 5: list rows work the minutes out from the slots, never the stale stored estMins
+    checks.push(['row estimates come from the slots and the warm-up, not the stored estMins', routineEstMins(own, [own], t, true) === estMins(sl, ON) && routineEstMins(gen, [gen], t, true) === estMins(sl, { warmup: true, mins: 5 }) && routineEstMins(own, [own], t, true) !== 10 && routineEstMins({ ...(own as object), blocks: [] } as never, [], t, true) === null])
+    // the warm-up waits behind the onboarding switch: off, rows read the stored estMins as before
+    checks.push(['switch off: row estimates are the stored estMins, as before the warm-up', routineEstMins(own, [own], t) === 10 && routineEstMins(gen, [gen], t, false) === 10 && routineEstMins({ ...(own as object), estMins: undefined } as never, [], t) === null])
+  }
+  // ship-critic 2: no move in both the block and the session, for every Tali and Push/Pull/Legs workout
+  {
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const both: string[] = []
+    for (const k of keys) for (const t of [undefined, { sessionRange: '60+', minutesPerSession: 60, equipment: ['band'] }] as never[]) {
+      const b = warmupForKey(k, [], t)!
+      const sess = new Set((isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)).map((x) => x.exId))
+      for (const m of b.moves) if (sess.has(m.id) && !(b.kind === 'cardio' && m === b.moves[0])) both.push(`${k}: ${m.id}`)
+    }
+    const bm = warmupForKey('tali-balance-mobility', [], undefined)!
+    checks.push(['no move is in both the warm-up and the session (Balance & Mobility’s march stays in the session)', !both.length && bm.moves[0].id !== 'march-on-the-spot', both.join(', ') + ' / ' + bm.moves[0].id])
+    const pulse = (avoid: string[], kind: 'legs' | 'mind-body' = 'legs', mins = 6) => buildWarmup({ kind, mins, avoid }).moves[0].id
+    checks.push(['the pulse raiser respects avoid: march → step jacks, and back', pulse(['march-on-the-spot']) === 'step-jacks' && pulse(['step-jacks'], 'legs', 8) === 'march-on-the-spot' && pulse(['half-sun-salutation', 'march-on-the-spot'], 'mind-body') === 'step-jacks' && pulse([]) === 'march-on-the-spot'])
+  }
+  // ship-critic 3: a resume picks the block up where it was left
+  {
+    const b = buildWarmup({ kind: 'push', mins: 6 })
+    const a0 = warmupStartAt(b, 0), a1 = warmupStartAt(b, b.moves[0].sec + 10), aEnd = warmupStartAt(b, 6 * 60)
+    checks.push(['resume: from 0 is the first move whole; part-way lands inside the right move with the time kept', a0.i === 0 && a0.left === b.moves[0].sec * 1000 && a0.spent === 0 && a1.i === 1 && a1.left === (b.moves[1].sec - 10) * 1000 && a1.spent === (b.moves[0].sec + 10) * 1000 && aEnd.i === b.moves.length - 1, JSON.stringify([a0, a1, aEnd])])
+  }
+  // ship-critic 4: the note promises a how-to, never a demo there isn't
+  checks.push(['the warm-up note says each move has a short how-to, not that it shows how', [buildWarmup({ kind: 'legs' }), walk].every((x) => warmupNote(x).includes('Each move has a short how-to.') && !/shows how/.test(warmupNote(x))) && Object.keys(WARMUP_CUES).every((id) => !!WARMUP_CUES[id])])
+  const k = (ids: string[]) => warmupKindOf(ids).kind
+  checks.push(['kind from the exercises: Legs, Push, Pull, full body, yoga, cardio', [k(builtinSlots('Legs').map((x) => x.exId)), k(builtinSlots('Push').map((x) => x.exId)), k(builtinSlots('Pull').map((x) => x.exId)), k(['goblet-squat', 'push-up', 'db-bent-over-row']), k(['half-sun-salutation', 'cat-cow']), k(['cardio-walk'])].join() === 'legs,push,pull,full,mind-body,cardio'])
+  const ppl = warmupForKey('Push', [], undefined)
+  checks.push(['Push/Pull/Legs get the 6-minute block', ppl?.mins === 6 && warmupForKey('Legs', [], undefined)?.kind === 'legs'])
+  // estMins: the block and the lighter sets are in every estimate
+  checks.push(['estMins: 6-minute warm-up, +1.5 with a weighted lift, given minutes win, nothing for no slots',
+    estMins([{ exId: 'push-up', rx: '3 × 10' }], ON) === 14 && estMins([{ exId: 'back-squat', rx: '3 × 10' }], ON) === 15 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: true, mins: 10 }) === 18 && estMins([], ON) === 1])
+  checks.push(['estMins, switch off: the slots alone, as before the warm-up (no block, no lighter sets, minutes ignored)',
+    estMins([{ exId: 'push-up', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'back-squat', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { mins: 10 }) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: false }) === 8 && estMins([]) === 1])
+  {
+    // builderNotes' long-workout note: off, the slots alone decide it (as before); on, the warm-up counts
+    const long = Array.from({ length: 10 }, () => ({ exId: 'push-up', rx: '3 × 10' }))
+    const offM = estMins(long), onM = estMins(long, ON)
+    const note = (n: string[]) => n.some((x) => x.startsWith('This one runs about'))
+    checks.push(['builderNotes: the long-workout note follows the switch', offM <= 75 && onM > 75 && !note(builderNotes(long)) && note(builderNotes(long, ON)), `${offM} ${onM}`])
+  }
+  // the engine: warm-up minutes first, main work in what's left, cardio and mind-body too
+  const base = { goal: 'build-muscle', experience: 'intermediate', daysPerWeek: 3, minutes: 60, place: ['gym'], readiness: 'clear', lately: { sleep: 'good', stress: 'low', room: 'plenty' }, ageBand: '18-54' } as never
+  const p8 = buildPlanW(base, undefined, 'w', { sessionRange: '45-60' }).plan, p10 = buildPlanW(base, undefined, 'w', { sessionRange: '60+' }).plan
+  const work = (p: typeof p8) => p.sessions.reduce((a, s) => a + estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 0 }), 0)
+  checks.push(['engine: every session fits its minutes with the warm-up in', [...p8.sessions, ...p10.sessions].every((s) => s.mins <= 60) && p10.sessions.every((s) => estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 10 }) <= 60)])
+  checks.push(['engine: a longer warm-up leaves no more main work (60+ vs 45–60)', work(p10) <= work(p8), `${work(p10)} vs ${work(p8)}`])
+  const fl = buildPlanW({ ...(base as object), goal: 'lose-fat', daysPerWeek: 4, minutes: 30, enjoy: ['cardio', 'strength'] } as never, undefined, 'w', { sessionRange: '20-30' }).plan
+  const c = fl.sessions.find((s) => s.kind === 'cardio')
+  checks.push(['engine: a cardio session keeps its warm-up (its minutes leave room for it)', !!c && c.mins <= 30 && (c.slots[0].reps?.hi ?? 99) <= 25, c ? `${c.mins} ${c.slots[0].rx}` : 'no cardio'])
+  // setup's promise: the minutes onboarding shows (warmupFor) are the minutes a generated session runs
+  const promise = SESSION_RANGES.every((r) => {
+    const t = { sessionRange: r, minutesPerSession: rangeEngineMinutesW(r) }
+    const gen = { id: 'g', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat' }] }] } as never
+    return warmupForKey('g', [gen], t as never)?.mins === warmupForW({ sessionRange: r, minutes: rangeEngineMinutesW(r) })
+  }) && warmupForKey('g', [{ id: 'g', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat' }] }] } as never], {})?.mins === warmupForW({})
+  checks.push(['the minutes setup promises are the minutes the session delivers, for every range and when skipped', promise])
+  // stored: "warm-up done" with its minutes, malformed dropped
+  const st = loadStateFrom({ days: { '2026-10-01': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'x', warmup: { mins: 9, of: 6 } }, { id: 'b', modality: 'strength', title: 'y', warmup: { mins: 'x', of: 6 } }] } } } as never)
+  const ss = st.days['2026-10-01'].sessions!
+  // a warm-up on its own is movement, not a workout done
+  {
+    const wu = { id: 'w', modality: 'strength', title: 'Push', routineId: 'builtin-Push', warmup: { mins: 6, of: 6 }, ex: [{ name: 'Bench press', sets: [] }] }
+    const real = { ...wu, id: 'r', ex: [{ name: 'Bench press', sets: [{ w: 40, reps: 10 }] }] }
+    const wset = { ...wu, id: 'x', ex: [{ name: 'Bench press', sets: [{ w: 20, reps: 10, warmup: true }] }] }
+    const dayW = (sessions: unknown[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions })
+    const sw = loadStateFrom({ days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([real]), '2026-09-30': dayW([wset]) } } as never)
+    checks.push(['warm-up only: warm-up minutes and no set; a working or warm-up set, or no warm-up at all, isn’t', warmupOnly(wu as never) && !warmupOnly(real as never) && !warmupOnly(wset as never) && !warmupOnly({ modality: 'strength' } as never) && !warmupOnly({ ...wu, cardio: { key: 'Walk' } } as never)])
+    checks.push(['warm-up only: kept on the day, but not a workout done, a day moved or a plan workout', sessionsOf(sw.days['2026-09-28'], '2026-09-28').length === 1 && workoutsOf(sw.days['2026-09-28'], '2026-09-28').length === 0 && daysMovedThisWeek(sw, '2026-10-01') === 2 && !dayStat(sw, '2026-09-28').done && dayStat(sw, '2026-09-29').done && workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30') === 2, `${daysMovedThisWeek(sw, '2026-10-01')} ${workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30')}`])
+    const mm = sessionMetMins(wu as never)
+    checks.push(['warm-up only: its own minutes count as movement (easy stretching MET), never the 45-minute default', mm.mins === 6 && mm.met === 2.3 && sessionBurn(wu as never, 70) === Math.round(2.3 * 70 * 0.1) && sessionMetMins({ ...wu, warmup: { mins: 3, of: 6 }, mins: 20 } as never).mins === 3 && !isTrainingSess(wu as never), JSON.stringify(mm)])
+    // the planned Push on Monday, only warmed up for, is still offered to pick up on Tuesday
+    const sc = loadStateFrom({ schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([]) } } as never)
+    const cu = catchUp(sc, '2026-09-29')
+    checks.push(['warm-up only: the planned workout is still there to pick up, and it isn’t a hard session for the load note', cu?.type === 'Push' && cu.d === '2026-09-28' && loadSignals(sw, '2026-09-30').hard7 === 2, JSON.stringify(cu) + ' ' + loadSignals(sw, '2026-09-30').hard7])
+  }
+  checks.push(['a stored warm-up is kept (capped at its block) and a malformed one dropped', ss[0].warmup?.mins === 6 && ss[0].warmup?.of === 6 && ss[1].warmup === undefined, JSON.stringify(ss.map((x) => x.warmup))])
+  for (const [t, ok, d] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'warm-up: ' + t, ok ? '' : d ?? '') }
+}
 // the local data handling (malformed rows dropped, ownership evidence, backup merge, unsynced count)
 {
   const push = builtinSlots('Push'), legs = builtinSlots('Legs')
   // Push: 3 + 3 + 3 + 2.5 + 2.5 = 14 sets × 2.5 min = 35 (plan P4: 13–15 sets, about 33–38 min)
   // Legs: 3 + 3 + 2.5 + 3 = 11.5 sets × 2.5 = 28.75, plus plank 3 × (30 + 20) s = 2.5 → 31
+  // (with the warm-up block on, + 6 and 1.5 of lighter sets: 42.5 → 43 and 39)
   const S = (...ids: string[]) => ids.map((exId) => ({ exId }))
   const got = [
-    estMins(push), estMins(legs),
+    estMins(push), estMins(legs), estMins(push, { warmup: true }), estMins(legs, { warmup: true }),
     deriveEffort(push), deriveEffort(S('downward-dog', 'childs-pose')), deriveEffort(S('cardio-walk')), deriveEffort(S('cardio-intervals')), deriveEffort(S('push-up')),
     headlineModality([...push, ...S('supine-hamstring-stretch')]), headlineModality(S('downward-dog', 'cat-cow', 'push-up')),
     builderNotes(S('lateral-raise', 'barbell-bench-press')).length, builderNotes(S('barbell-bench-press', 'lateral-raise')).length,
@@ -967,7 +1124,7 @@ function legacyAndGuest(): void {
   ].join(' ')
   const tpl = routineTemplate({ id: 'r', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'leg-press', rx: '4 × 8' }, { exId: 'gone-from-library' }, { exId: 'plank' }] }] })
   const tplOk = tpl.title === 'Mine' && tpl.ex.map((e) => e.id + ':' + e.t).join(',') === 'leg-press:4 × 8,plank:' + EXERCISE_BY_ID.plank.defaultRx
-  const want = '35 31 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
+  const want = '35 31 43 39 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
   const ok = got === want && tplOk; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'own workouts: estimates, effort, notes', JSON.stringify(got), tplOk, ok ? '' : 'want ' + JSON.stringify(want))
 }

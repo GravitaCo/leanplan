@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { holdAt, holdTarget } from '@/core/domain/library'
+import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { Sheet } from '@/ui/primitives'
 
 /** Red flags (plan §4.0.4): on the hold timer and the exercise cards. */
@@ -38,7 +38,7 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
   return (
     <Sheet title={name} onClose={onClose}>
       <div className="hold">
-        <div className="hold-k" aria-live="polite">{start == null ? 'Ready when you are' : h.switchNow ? 'Switch sides' : perSide && target ? (h.side === 1 ? 'First side' : 'Second side') : target && h.sec >= target.hi ? 'Good place to stop' : h.reached ? 'In your range' : 'Holding'}</div>
+        <div className="hold-k" aria-live="polite">{start == null ? 'Ready when you are' : holdLabel(h, target, perSide)}</div>
         <div className="hold-n num" role="timer" aria-label={`${h.sec} seconds`}>{h.sec}<span> sec</span></div>
         {goal && <div className="hold-g">Aim for {goal}{perSide ? ' each side' : ''}. Stop sooner if your form slips or anything hurts.</div>}
       </div>

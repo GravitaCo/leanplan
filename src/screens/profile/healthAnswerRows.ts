@@ -6,6 +6,8 @@
 import type { Profile } from '@/core/types'
 import { healthAnswersView, numbersStayHidden, type HealthAnswerKind } from '@/core/domain/onboarding'
 import { HEALTH_ANSWERS as H } from '../onboarding/copy'
+import { FOOD9 } from '../onboarding/copyApp'
+import { foodModeOf, foodView, type FoodOptInAnswer } from '@/core/domain/foodMode'
 
 export type RowKind = Exclude<HealthAnswerKind, 'baseline'>
 export interface AnswerRow {
@@ -40,8 +42,9 @@ export function answerRows(p: Profile): AnswerRow[] {
     // food and weight is an answer, not a flag: Change only (s-ob7)
     else out.push({
       kind, label, change: true, clear: false, confirm: false,
-      value: r.value === 'flagged' ? H.wellbeingFlagged : r.value === 'clear' ? H.no : H.rather,
-      does: r.value === 'flagged' ? H.does.wellbeing : r.value === 'undisclosed' && !p.deficitChosen ? H.does.rather : H.does.nothing,
+      value: r.value === 'flagged' ? H.wellbeingFlagged : r.value === 'sometimes' ? H.wellbeingSometimes : r.value === 'clear' ? H.no : H.rather,
+      does: r.value === 'flagged' ? H.does.wellbeing : r.value === 'sometimes' ? H.does.wellbeingSometimes
+        : r.value === 'undisclosed' && !p.deficitChosen ? H.does.rather : H.does.nothing,
     })
   }
   return out
@@ -55,4 +58,33 @@ export function clearConfirmLine(p: Profile, kind: RowKind): string {
   if (numbersStayHidden(p, kind)) return H.confirmHidden
   if (kind !== 'readiness' && p.outcomes?.readiness === 'flagged') return H.confirmGentler
   return H.confirm
+}
+
+export interface OptInRow { key: 'range'; label: string; value: string; does: string; off: FoodOptInAnswer }
+
+/**
+ * Onboarding 9: Yes's week-4 range, when they said yes, with its one-tap undo (an undo, never a
+ * nudge to turn it on). Sometimes has foodShows instead.
+ */
+export function optInRows(p: Profile): OptInRow[] {
+  const v = foodView(p)
+  return v.mode === 'yes' && v.rangeOnFood ? [{ key: 'range', ...FOOD9.optIn.range, off: { ask: 'range', value: 'not-now' } }] : []
+}
+
+export interface FoodShows {
+  /** what they chose (the day-14 ask or this control); undefined until then, so neither is marked */
+  value: 'food' | 'today' | undefined
+  /** where the range shows now: on Food only until they choose Today */
+  line: string
+}
+
+/**
+ * Onboarding 10 (board ob9-8): every Sometimes user chooses where the range shows, either way, any
+ * time. The same answer the day-14 ask stores (answerFoodOptIn), so nothing else changes.
+ */
+export function foodShows(p: Profile): FoodShows | null {
+  // pregnant or breastfeeding: no range shows anywhere (Food and Today), so the row is hidden
+  if (foodModeOf(p) !== 'sometimes' || p.pregnancy?.flagged) return null
+  const value = p.foodOptIn?.today
+  return { value, line: value === 'today' ? FOOD9.shows.today : FOOD9.shows.food }
 }

@@ -10,7 +10,10 @@ import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlo
 import { parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
-import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { foodView, maintenanceRange } from './foodMode'
+import { maintenanceEstimate } from './targets'
+import { sexOf } from './onboarding'
+import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf, workoutsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
@@ -91,7 +94,20 @@ export function showBurnNote(s: AppState): boolean {
 
 /** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const mid = s.target.kcal + rangeExtra(s, d)
+  const b = baseRange(s, d), extra = rangeExtra(s, d)
+  return { mid: b.mid + extra, lo: b.lo + extra, hi: b.hi + extra }
+}
+
+/** rangeFor without the workout allowance: the everyday range (Profile shows this one). */
+export function baseRange(s: AppState, d: string): Range {
+  // Onboarding 9 (Sometimes, and Yes after its yes): ±15% around the maintenance estimate, to the nearest 50, never below the calorie floor
+  if (foodView(s.profile).wideRange) {
+    const est = maintenanceEstimate(s.profile, null, latestWeight(s, d))
+    const base = est ? Math.round(est.maint / 50) * 50 : s.target.kcal
+    const m = maintenanceRange(base, est ? { bmr: est.bmr, sex: sexOf(s.profile) } : undefined)
+    return { mid: Math.max(base, m.lo), lo: m.lo, hi: m.hi }
+  }
+  const mid = s.target.kcal
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }
@@ -297,7 +313,7 @@ export function dayStat(s: AppState, d: string): DayStat {
     d, t, r,
     logged: x.foods.length > 0,
     future: d > todayStr(),
-    done: sessionsOf(x, d).length > 0,
+    done: workoutsOf(x, d).length > 0,
     planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
     inRange: t.k >= r.lo && t.k <= r.hi,
   }
@@ -336,6 +352,18 @@ export function weightWeekDelta(s: AppState, cur: string): number | null {
   }
   const a = pick(0, 7), b = pick(7, 14)
   return a.length && b.length ? Math.round((avg(a) - avg(b)) * 10) / 10 : null
+}
+
+/**
+ * Today's once-only "Plan when you'll do it" (ob5-4): after the first workout someone who went
+ * through setup logs, while they have no if-then plan and haven't used or waved it off.
+ */
+export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
+  const p = s.profile
+  if (!p?.onboardedAt || p.ifThenOffered || (p.plans ?? []).length) return false
+  // the first workout after setup: an older logged session (or a redo of setup) doesn't count
+  const from = p.onboardedAt.slice(0, 10)
+  return Object.entries(s.days || {}).some(([d, day]) => d >= from && workoutsOf(day, d).length > 0)
 }
 
 /** Plans not reviewed (or created) within the last week. */

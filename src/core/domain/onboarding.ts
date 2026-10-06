@@ -1,10 +1,11 @@
 import type { Goal, OnboardingOutcomes, PregnancyFlag, Profile, Sex, SexAnswer } from '@/core/types'
 import type { SignpostKind } from '@/core/data/signposts'
 import { shiftDay } from './date'
+import { isUnderAge, MIN_AGE } from './age'
 
 /**
  * First-run onboarding: safety routing (first-run-onboarding.md §3) and the skipped-answer
- * defaults (§2.1). Nobody is blocked except under-16s; every other signal makes the plan safer.
+ * defaults (§2.1). Nobody is blocked except under-18s (Tali is strictly 18+); every other signal makes the plan safer.
  * Pure: the store decides what to save, and only outcomes are ever saved (§8).
  */
 
@@ -28,21 +29,26 @@ export type HiddenReason = 'under16' | 'no-consent' | 'pregnancy' | 'no-age' | '
 
 /** Which §3 rows fired, for tests and the rules-based "why". */
 export type RoutingReason =
-  | 'under16' | 'age-16-17' | 'age-missing' | 'no-consent' | 'pregnancy' | 'low-bmi'
+  | 'under16' | 'age-missing' | 'no-consent' | 'pregnancy' | 'low-bmi'
   | 'wellbeing' | 'readiness' | 'medical'
 
 /** Skipped fields that fell back to a default (§2.1), each with its "You haven't told us…" line. */
 export type DefaultField = 'age' | 'readiness' | 'baseline' | 'wellbeing' | 'weight' | 'height' | 'sex' | 'movement'
 
 export interface SafetyRouting {
-  /** kind stop: "Tali is for 16+" (§14: the new account and the device's data are then deleted) */
+  /** kind stop: "Tali is for 18+" (§14: the account and the device's data are then deleted). The id is internal and predates 18+. */
   stop?: 'under16'
   /** never below maintenance, whatever the goal */
   noDeficit: boolean
   hideWeight: boolean
   noAI: boolean
-  /** gentle mode on (Profile.gentle: calories and weight hidden, the day in words) */
+  /** gentle mode on (Profile.gentle: calories and weight hidden, the day in words): wellbeing Yes */
   gentle: boolean
+  /**
+   * Onboarding 9's food rules from the wellbeing answer: 'yes' (no calorie or protein target),
+   * 'sometimes' (a maintenance range only, no deficit) or 'standard'. core/domain/foodMode has the rest.
+   */
+  foodMode: 'standard' | 'sometimes' | 'yes'
   /** exactly maintenance: no deficit and no surplus */
   maintenanceOnly: boolean
   hideCalories: boolean
@@ -72,8 +78,8 @@ const SIGNPOST_ORDER: SignpostKind[] = ['emergency', 'beat', 'samaritans', 'chil
 
 /** BMI under this is a safety gate only (no deficit): never shown, never used for targets (§9). */
 export const LOW_BMI = 18.5
-export const MIN_AGE = 16
-export const ADULT_AGE = 18
+/** the legal minimum age (18), re-exported so routing and the legal texts can't drift apart */
+export { MIN_AGE }
 /** the pregnancy question is re-asked this often (§13.5, confirmed in §14) */
 export const PREGNANCY_REASK_DAYS = 12 * 7
 
@@ -81,14 +87,23 @@ export const PREGNANCY_REASK_DAYS = 12 * 7
 export type WellbeingAnswer = 'yes' | 'sometimes' | 'no' | 'rather-not-say'
 
 /**
- * The only thing stored from the wellbeing screen. No → 'clear' (normal targets); Yes or
- * Sometimes → 'flagged'; "Rather not say" → 'undisclosed'; skipped → absent. Undisclosed and
+ * The only thing stored from the wellbeing screen. No → 'clear' (normal targets); Yes →
+ * 'flagged' (its stored name from before Sometimes was split off: never rename it); Sometimes →
+ * 'sometimes' (Onboarding 9); "Rather not say" → 'undisclosed'; skipped → absent. Undisclosed and
  * skipped take the §2.1 safe side: maintenance pre-selected (the goal's deficit offered, one tap
  * to choose), gentle mode offered, not on, and weight still shown.
  */
 export function wellbeingOutcome(a: WellbeingAnswer | undefined): OnboardingOutcomes['wellbeing'] {
   if (!a) return undefined
-  return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : 'flagged'
+  return a === 'no' ? 'clear' : a === 'rather-not-say' ? 'undisclosed' : a === 'sometimes' ? 'sometimes' : 'flagged'
+}
+
+/** The wellbeing outcome answers Yes or Sometimes: both get the signposting note (ob4-2). */
+export const wellbeingRouted = (w: OnboardingOutcomes['wellbeing']): boolean => w === 'flagged' || w === 'sometimes'
+
+/** The board answer a stored outcome came from, to pre-select it (the wizard, Profile's Change). */
+export function wellbeingAnswerOf(w: OnboardingOutcomes['wellbeing']): WellbeingAnswer | undefined {
+  return w === 'flagged' ? 'yes' : w === 'sometimes' ? 'sometimes' : w === 'clear' ? 'no' : w === 'undisclosed' ? 'rather-not-say' : undefined
 }
 
 /** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
@@ -157,7 +172,7 @@ export function healthAnswersView(p: Pick<Profile, 'outcomes' | 'pregnancy' | 'a
       if (p.pregnancy) { value = p.pregnancy.flagged ? 'flagged' : 'clear'; flagged = p.pregnancy.flagged }
     } else {
       value = p.outcomes?.[kind]
-      flagged = value === 'flagged' || value === 'low'
+      flagged = value === 'flagged' || value === 'low' || value === 'sometimes'
     }
     if (value === undefined) continue
     const answeredAt = p.answeredAt?.[healthAnswerField(kind)] ?? (kind === 'pregnancy' ? p.pregnancy?.askedAt : undefined)
@@ -181,8 +196,21 @@ export function clearHealthAnswerIn(p: Profile, kind: HealthAnswerKind, at: stri
     delete o[kind]
     if (Object.keys(o).length) p.outcomes = o; else delete p.outcomes
   }
-  p.answeredAt = { ...p.answeredAt, [healthAnswerField(kind)]: at }
+  const stamps: Record<string, string> = { [healthAnswerField(kind)]: at }
+  if (kind === 'wellbeing') clearFoodOptIn(p, stamps, at)
+  p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
+}
+
+/**
+ * A changed wellbeing answer (any direction, or cleared) drops the food steps up it led to
+ * (Onboarding 9's foodOptIn), stamped like a withdrawal's clear so the per-field merge never
+ * brings an old yes back from another copy: each step up is asked again under the new answer.
+ */
+function clearFoodOptIn(p: Profile, stamps: Record<string, string>, at: string): void {
+  if (p.foodOptIn === undefined) return
+  delete p.foodOptIn
+  stamps.foodOptIn = at
 }
 
 /** The re-ask's answer: it still applies (re-dated, asked again in 12 weeks), or it doesn't (the flag goes). */
@@ -198,12 +226,13 @@ export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: s
 /** Answers Profile's "Change" can set (board ob7-1): the conditions outcome and the wellbeing answer. */
 export type ChangeableAnswer =
   | { kind: 'medical'; value: 'flagged' | 'clear' }
-  | { kind: 'wellbeing'; value: 'flagged' | 'clear' | 'undisclosed' }
+  | { kind: 'wellbeing'; value: 'flagged' | 'sometimes' | 'clear' | 'undisclosed' }
 
 /**
  * Set one answer from Profile, as the wizard would: outcomes only, stamped for the per-field
- * merge. Wellbeing Yes or Sometimes turns gentle mode on (as in the wizard, §3); moving off it
- * turns gentle mode off again, since that answer is what turned it on. Returns whether it changed.
+ * merge. Wellbeing Yes turns gentle mode on (as in the wizard, §3); moving off it turns gentle
+ * mode off again, since that answer is what turned it on. Sometimes keeps calorie numbers (a
+ * range, Onboarding 9), so it doesn't turn gentle mode on. Returns whether it changed.
  */
 export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): boolean {
   const before = p.outcomes?.[a.kind]
@@ -213,6 +242,7 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
   if (a.kind === 'wellbeing') {
     if (a.value === 'flagged' && !p.gentle) { p.gentle = true; stamps.gentle = at }
     else if (before === 'flagged' && a.value !== 'flagged' && p.gentle) { p.gentle = false; stamps.gentle = at }
+    clearFoodOptIn(p, stamps, at)
   }
   p.answeredAt = { ...p.answeredAt, ...stamps }
   return true
@@ -220,12 +250,11 @@ export function setHealthAnswerIn(p: Profile, a: ChangeableAnswer, at: string): 
 
 /**
  * After clearing `kind`, calorie numbers would still be hidden by something else: gentle mode or
- * a wellbeing Yes/Sometimes, 16–17, or the other answer that hides them (pregnancy). The clear
+ * a wellbeing Yes (Sometimes shows a range), or the other answer that hides them (pregnancy). The clear
  * confirm then says so instead of promising numbers (s-ob7, the undrawn variant).
  */
-export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy' | 'age'>, kind: HealthAnswerKind): boolean {
-  const teen = p.age != null && p.age >= MIN_AGE && p.age < ADULT_AGE
-  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || teen || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
+export function numbersStayHidden(p: Pick<Profile, 'gentle' | 'outcomes' | 'pregnancy'>, kind: HealthAnswerKind): boolean {
+  return !!p.gentle || p.outcomes?.wellbeing === 'flagged' || (kind !== 'pregnancy' && !!p.pregnancy?.flagged)
 }
 
 /** "Ask me later" on the re-ask: the flag and its date stay; it comes back in 2 weeks. */
@@ -254,7 +283,7 @@ export function safetyAnswersFrom(p: Profile, weightKg: number | null, healthCon
  * that hasn't onboarded has no screener answers, and §12 keeps existing users' numbers as they
  * are, so its missing outcomes count as clear and consent as given (the one-time consent sheet
  * handles that separately). The rules that don't depend on screener answers always apply:
- * age (under 16, 16–17), the pregnancy flag and the BMI gate. Onboarded profiles route exactly
+ * age (under 18: the stop; missing: the safe defaults), the pregnancy flag and the BMI gate. Onboarded profiles route exactly
  * as the summary did.
  */
 export function profileRouting(p: Profile, weightKg: number | null, healthConsent: boolean): SafetyRouting {
@@ -271,11 +300,13 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
 
 /**
  * Safety routing, first-run-onboarding §3 with the §2.1 skipped-answer defaults:
- * - under 16: kind stop
- * - 16–17 (or age missing): no deficit, weight hidden, no AI (and, age missing, no calorie number)
+ * - under 18: kind stop (Tali is strictly 18+)
+ * - age missing: no deficit, weight hidden, no AI, no calorie number
  * - pregnant or breastfeeding: maintenance only, no calorie number, gentle training, midwife/GP
  * - BMI under 18.5: no deficit (a gate only)
- * - wellbeing Yes/Sometimes: no deficit, gentle mode on, weight hidden, calm signposting;
+ * - wellbeing Yes: no deficit, gentle mode on (no calorie or protein number), weight hidden, calm
+ *   signposting. Sometimes (Onboarding 9): maintenance only (a range, never a deficit, whatever the
+ *   goal: the goal applies to training), weight hidden, the same signposting, gentle mode not on.
  *   "Rather not say" or skipped: maintenance pre-selected, gentle mode offered
  * - readiness yes: gentler start plus signposting; skipped: the same dose, signposting quietly
  * - medical flag: maintenance allowed (no deficit), no high-protein anchor, GP note. The flag
@@ -286,7 +317,7 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
 export function routeSafety(a: SafetyAnswers): SafetyRouting {
   const o = a.outcomes ?? {}
   const r: SafetyRouting = {
-    noDeficit: false, hideWeight: false, noAI: false, gentle: false, maintenanceOnly: false,
+    noDeficit: false, hideWeight: false, noAI: false, gentle: false, foodMode: 'standard', maintenanceOnly: false,
     hideCalories: false, signpost: [], hiddenReason: null, gentlerStart: false, nearMaintenance: false,
     startAtMaintenance: false, offerGentle: false, noProteinAnchor: false, gpNote: false,
     quietSignpost: false, reasons: [], defaults: [],
@@ -294,17 +325,17 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
   const sp = new Set<SignpostKind>()
   const hide = (why: HiddenReason) => { r.hideCalories = true; r.hiddenReason ??= why }
 
-  if (a.age != null && a.age < MIN_AGE) {
+  if (isUnderAge(a.age)) {
     return { ...r, stop: 'under16', noDeficit: true, hideWeight: true, noAI: true, maintenanceOnly: true,
       hideCalories: true, hiddenReason: 'under16', reasons: ['under16'] }
   }
 
   if (!a.healthConsent) { r.reasons.push('no-consent'); hide('no-consent'); r.hideWeight = true }
 
-  const minor = a.age != null && a.age < ADULT_AGE
-  if (a.age == null) { r.reasons.push('age-missing'); r.defaults.push('age'); hide('no-age') }
-  else if (minor) r.reasons.push('age-16-17')
-  if (a.age == null || minor) { r.noDeficit = true; r.hideWeight = true; r.noAI = true }
+  if (a.age == null) {
+    r.reasons.push('age-missing'); r.defaults.push('age'); hide('no-age')
+    r.noDeficit = true; r.hideWeight = true; r.noAI = true
+  }
 
   if (a.pregnant) {
     r.reasons.push('pregnancy')
@@ -314,10 +345,11 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
 
   if (lowBmi(a.weightKg, a.heightCm)) { r.reasons.push('low-bmi'); r.noDeficit = true }
 
-  if (o.wellbeing === 'flagged') {
+  if (wellbeingRouted(o.wellbeing)) {
     r.reasons.push('wellbeing')
-    r.noDeficit = true; r.gentle = true; r.hideWeight = true
-    hide('gentle')
+    r.noDeficit = true; r.hideWeight = true
+    if (o.wellbeing === 'flagged') { r.gentle = true; r.foodMode = 'yes'; hide('gentle') }
+    else { r.foodMode = 'sometimes'; r.maintenanceOnly = true }
     for (const k of ['beat', 'nhs111-mental-health', 'nhs111', 'samaritans', 'emergency'] as const) sp.add(k)
   } else if (o.wellbeing !== 'clear') {
     if (o.wellbeing == null) r.defaults.push('wellbeing')
@@ -344,7 +376,6 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
   // skipped readiness: its GP and NHS 111 line is shown quietly, unless another row already
   // signposts with more weight
   if (quiet && !sp.size) { sp.add('gp'); sp.add('nhs111'); r.quietSignpost = true }
-  if (minor && sp.size) sp.add('childline')
   r.signpost = SIGNPOST_ORDER.filter((k) => sp.has(k))
   return r
 }

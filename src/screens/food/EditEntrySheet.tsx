@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { quietNumbers } from '@/data/consent'
+import { kcalHidden } from '@/data/consent'
 import type { MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { CAPTURE_LABEL, entryErr, isFlagged } from '@/core/domain/estimate'
@@ -21,7 +21,7 @@ export function EditEntrySheet({ index, onClose }: { index: number; onClose: () 
   // entries logged without a meal stay in "Other" unless the user picks one
   const [meal, setMeal] = useState<MealSlot | undefined>(x?.meal)
   if (!x) return null
-  const gentle = useStore((s) => quietNumbers(s.data))
+  const gentle = useStore((s) => kcalHidden(s.data))
   const u = x.unit ?? 'g'
   // items snap to quarters, and the multiplier follows the snapped count so kcal and count agree
   const amount = roundAmount((x.grams || 0) * mult, u)

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
 import { weightWeekDelta } from '@/core/domain/insights'
+import { foodView } from '@/core/domain/foodMode'
 import { Sheet, focusOnMount } from '@/ui/primitives'
 
 interface Point { d: string; w: number }
@@ -20,12 +21,17 @@ function buildPath(points: Point[], w: number, h: number, pad: number) {
   return { line, area, dots: coords }
 }
 
-/** Log today's weight and see the trend. Framed as a weekly average, not the daily bounce. */
+/**
+ * Log today's weight and see the trend. Framed as a weekly average, not the daily bounce.
+ * With the weight hidden (Onboarding 9, Sometimes and Yes) only the input shows: no pre-fill,
+ * chart, change, list or "number to watch".
+ */
 export function WeightSheet({ onClose }: { onClose: () => void }) {
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
   const setWeight = useStore((s) => s.setWeight)
-  const today = data.days[cur]?.weight
+  const back = foodView(data.profile).weightBack
+  const today = back ? data.days[cur]?.weight : null
   const [bw, setBw] = useState(today ? String(today) : '')
 
   const points: Point[] = Object.keys(data.days).filter((d) => data.days[d].weight != null).sort().slice(-30)
@@ -44,6 +50,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
           <span>kg</span>
         </div>
       </div>
+      {back && <>
       <div className="foot" style={{ paddingBottom: 8 }}>
         Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.
       </div>
@@ -73,6 +80,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       )}
+      </>}
     </Sheet>
   )
 }
