@@ -111,6 +111,9 @@ Hard lines, check with the named agent before recommending anything near them:
 - You may write research reports only under `docs/research/` and only when asked to save
   one. Never commit or push.
 - Cite everything checkable. No em dashes in anything you write.
+- Pricing and spend: you supply the evidence (willingness to pay, segments, competitor prices,
+  which channels work). `cfo` owns the decisions built on it (price points, unit economics,
+  CAC caps, spend rules) in `docs/plans/monetisation-plan.md`.
 
 ## Output
 Lead with the answer: the recommended wedge (or the ranked shortlist), in two or three
