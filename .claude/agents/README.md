@@ -11,7 +11,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
 | `compliance` | UK/EU GDPR, health-data consent, privacy policy and terms, data rights, processors, PECR, medical-claim and consumer-law boundaries | Precise, conservative, cites the law |
-| `marketing-research` | Market validity, who Tali is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief |
+| `marketing-research` | Market validity, who Tali is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief; writes reports to `docs/research/` only |
 | `design` | Brand consistency and UX/UI quality across the app, the website and marketing material; reviews real renders, drafts on the Design canvas | Exacting, visual, verifies before it claims |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
@@ -22,7 +22,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 - **Parallel**: independent tasks can run several agents at once.
 
 ## The ship workflow (convention)
-The three domain agents **build/propose but never push** — pushing is Benn's call
+The specialist agents **build, research or propose but never push**: pushing is Benn's call
 (`commit/push only when asked`). Before anything goes live, run **`ship-critic`**: it
 reviews the diff against intent, verifies it runs, checks Tali's hard constraints, and
 returns **SHIP / DON'T SHIP** (no "ship with fixes": fixes are resolved and re-checked first). Nothing merges to `main` (which
