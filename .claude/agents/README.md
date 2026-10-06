@@ -11,6 +11,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
 | `compliance` | UK/EU GDPR, health-data consent, privacy policy and terms, data rights, processors, PECR, medical-claim and consumer-law boundaries | Precise, conservative, cites the law |
+| `marketing-research` | Market validity, who Tali is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
 
 ## How to use them
