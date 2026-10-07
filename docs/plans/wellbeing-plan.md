@@ -569,6 +569,90 @@ The check-in stays one sheet, about 10 seconds long, and optional.
 
 ---
 
+## 10b. Phase 1 boards drafted (7 Oct 2026, all Pending Benn)
+
+The 11 boards are on the Design canvas, section "8 · Wellbeing Phase 1"
+(https://claude.ai/artifact/EYDHM6mLouqwPsWxcDsWEb). Each board has a light, a dark and an
+"options and states" artboard, and a dashed Pending tag. The copy went past `mental-performance`
+and `compliance` before it was drawn; both returned CHANGES NEEDED and every required change is in
+the boards. The `design` agent's verdict is CHANGES NEEDED, only because Benn's decisions and the
+reviews below are still open. Nothing here changes app code.
+
+### Copy and decisions changed from the sections above
+
+- **Skills (§3, §5):** no mechanism lines on screen in Phase 1 ("long exhales slow your heart rate"
+  is an objective claim, CAP 12.1). Skill rows describe the activity only. Safety line: "If you feel
+  dizzy or uncomfortable, breathe normally." Pacer timings come from `skills.ts` with a source; the
+  boards show placeholders. If someone stops early: "Come back to this whenever you like.", never a
+  partial time.
+- **One thing (§6):** on a hard day it is Mind-led under either option, with no food chip. The food
+  option reads "Lunch somewhere you like": never about amount, timing or eating rules, and never
+  shown in gentle mode or wellbeing routing. A plan made from it is saved under "Mind plans".
+- **§7.1:** "Rough night: your range has room today" is dropped (it pairs poor sleep with the
+  calorie range). The "room" lines in the positioning need the same look.
+- **Pillars (§7.2):** the Food-off line reads "Finding food tracking hard? Gentle display hides the
+  numbers, and support is here." (each one tap). With Mind off, Support stays in Profile and the
+  low-mood signpost can't show (an accepted limit). Switching Food off never resets gentle mode.
+- **Hard day (§7.3):** the one thing is the single ask. A due plan review waits a day on a Low or
+  Rough mood day (judgement call). The weight tile shows "Last weigh-in", not the weekly change.
+  Usuals start with "Same as yesterday".
+- **Notifications (§7.4):** new types are opt-in, off by default, and need a current health yes.
+  Back-off notice: "The last 2 check-in reminders went unopened, so Tali now sends them half as
+  often. Nothing you need to do." The open count stays on the device.
+- **Train (§7.5):** three equal options (as planned, shorter, the day-matched swap); rest is a plain
+  line, "Resting today is fine too." Shorter note: "fewer sets, 3 or 4 reps to spare on each, and no
+  adding weight." Poor-sleep note says "rough night"; app copy "Short night?" becomes "Rough night?".
+- **Support (§8.2):** Shout (text SHOUT to 85258, 24 hours) checked by compliance on 7 Oct 2026
+  against Shout's FAQ; not yet in `signposts.ts`. Footer: "Opening this page is private. Tali doesn't
+  record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK
+  networks." Opening Support is never counted, logged or synced. In the Mind context Samaritans come
+  first. On the Mind page the "Need support now?" row sits under the Today card (the foot is below
+  the fold). The low-mood signpost needs a minimum number of answered check-ins (e.g. 5) and is the
+  only ask that day.
+- **Unload (§9):** "Your notes stay on this device only. They aren't synced or sent anywhere, so if
+  you remove Tali or clear this device's data, they're gone." Toast: "Saved on this device". No
+  "worry time" in Phase 1. Earlier notes: a quiet row with delete and no count.
+- **Reflection (§10):** "Mostly 6 to 7 hours"; "Over the last two weeks, on nights over 7 hours you
+  more often rated energy OK or Good."; "Just a pattern in your own answers, not a rule." Empty
+  lines are left out. An observation needs paired answers, at least 8 in 14 days and at least 3 on
+  each side (judgement calls), and pairs sleep with energy or stress only: never food, weight or a
+  skill's effect.
+- **Sleep (§4.2):** "A rough idea is plenty. Leave it blank if you like." The wake time pre-fills
+  only once "More about sleep" is opened. No 7+ target zone is marked. Check-in footer: "Answer what
+  you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger
+  and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter
+  options."
+
+### Open for Benn (on the boards)
+
+- (a) Mind, Rest or Recharge; and the skill names.
+- (b) Mind page (recommended) or the other two placements.
+- (c) C1 or C2 when a pillar is switched off, against the weight-and-food rule.
+- (d) one thing from every pillar or Mind-led on ordinary days (mental-performance recommends
+  Mind-led).
+- Food and weight lines on the reflection (recommended off).
+- Support row under the Today card, or at the foot with the plan's "always visible" reworded.
+- New `.chip.mind` / `.chip.move` selected colours; sleep bands selected in `--band` while the
+  sheet's other scales select in `--tint`.
+- Plus §12.3 (Unload on the device only: the B8 line is only true if approved), §12.5 (clinician
+  review), supplement reminders outside the one-a-day cap.
+
+### Still to do before build
+
+- Sign-offs: `fitness-workouts` (B3 effort note, which swap on a high-stress day),
+  `nutrition-accuracy` (usuals first, the optional "Rough night? Your usuals are first today."),
+  `security-data` (Unload storage, server reminder cap, supplement name on the lock screen).
+- Compliance's pre-build list: `privacy.ts` (log, settings, automatic calculations, reminders),
+  `cookies.ts` (Unload and "More about sleep" keys), `terms.ts` (not a crisis service, doesn't
+  monitor what you write), `signposts.ts` (Shout), register rows 42 and 63, DPIA addendum,
+  `lowMoodShown` in `HEALTH_FIELDS` and withdrawal clearing. No health consent version bump.
+- The maintenance-loop boards still say "4 of 7 nights" and "3 of 7 check-ins"; they need the same
+  plain-count fix.
+- App issues seen while drawing: Toggle (31 px) and Seg (32 px) are under the 44 px target;
+  placeholder text colour in the app not yet checked for contrast.
+
+---
+
 ## 11. How we'll know it works
 
 All of these are aggregated and need consent. Adding new analytics is itself a privacy-policy
