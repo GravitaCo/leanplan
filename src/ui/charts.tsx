@@ -82,20 +82,35 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
  *  chart), and a day with nothing logged is a small stub, not a gap to feel bad about. `numbers` is
  *  off in gentle mode. */
 /** `band` false: no range line at all (a wellbeing Yes has no calorie target, Onboarding 9) */
-export function WeekBars({ rows, lo, hi, cur, numbers = true, band = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean; band?: boolean }) {
+export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
   const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
+  // a small right gutter carries the row values; gentle mode shows no kcal, so no gutter
+  const PW = numbers ? W - 34 : W
   const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
   const y = (v: number) => base - (v / max) * (base - top0)
-  const step = W / 7
+  const step = PW / 7
+  // 1 px rows at round values, at most three above zero
+  const gstep = Math.max(1, Math.ceil(max / 3000)) * 1000
+  const grid = Array.from({ length: Math.floor(max / gstep) + 1 }, (_, i) => i * gstep)
+  const gy = (v: number) => (v ? Math.round(y(v)) : base) + 0.5
   const label = `Energy this week${numbers ? `, range ${Math.round(lo)} to ${Math.round(hi)} kcal${rows.some((x) => x.r.hi !== hi) ? ', higher on workout days' : ''}` : ''}: ` +
     (rows.filter((x) => x.logged).map((x) => `${new Date(x.d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })} ${numbers ? Math.round(x.t.k) + ' kcal' : 'logged'}`).join(', ') || 'nothing logged yet')
+  // a value's glyphs span about 9 px above its baseline; one that would touch a row lifts to sit 3 px above it
+  const lift = (ly: number) => {
+    for (const v of grid) {
+      const g = gy(v)
+      if (v && ly - 9 < g + 2.5 && ly + 1 > g - 2.5) return g - 3.5
+    }
+    return ly
+  }
   return (
     <svg className="bars" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
-      {/* each day's own range as a thin line at its middle (the numbers are in the key): it rises on a day
-          with a logged workout, so it always agrees with "in your range" */}
-      {band && <g className="band">{rows.map((x, i) => (
-        <rect key={'r' + x.d} x={step * i} y={y(x.r.mid) - 2} width={step + (i < 6 ? 0.5 : 0)} height={4} rx={i === 0 || i === 6 ? 2 : 0} fill="var(--band)" />
-      ))}</g>}
+      <g className="grid">{grid.map((v) => (
+        <g key={'g' + v}>
+          <line x1={0} x2={PW} y1={gy(v)} y2={gy(v)} />
+          {numbers && <text x={W} y={gy(v) + 3.5} textAnchor="end" className="ax num">{v.toLocaleString('en-GB')}</text>}
+        </g>
+      ))}</g>
       {rows.map((x, i) => {
         const cx = step * i + step / 2
         const top = y(x.t.k)
@@ -105,7 +120,7 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true, band = true }: { r
             {x.logged ? (
               <>
                 <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={on ? 'var(--energy-ink)' : 'var(--energy)'} />
-                {numbers && <text x={cx} y={top - 5} textAnchor="middle" className={'v num' + (on ? ' on' : '')}>{Math.round(x.t.k).toLocaleString('en-GB')}</text>}
+                {numbers && <text x={cx} y={lift(top - 5)} textAnchor="middle" className={'v num' + (on ? ' on' : '')}>{Math.round(x.t.k).toLocaleString('en-GB')}</text>}
               </>
             ) : !x.future ? (
               <rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill="var(--fill3)" />

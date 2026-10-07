@@ -363,10 +363,10 @@ export function TodayScreen() {
             <div className="wline">{energyLine}</div>
           </div>
           <div>
-            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} band={!yes} />
+            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} />
             <div className="wkey">
               <span><i className="bar" />Eaten{gentle ? '' : ', kcal'}</span>
-              {!yes && <span><i className="band" /><span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span></span>}
+              {!yes && <span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span>}
             </div>
           </div>
           <div className="stat3">
