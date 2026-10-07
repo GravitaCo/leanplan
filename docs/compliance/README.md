@@ -349,6 +349,14 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     so no policy change. The security advisor no longer flags it. Open, low: `pg_net` sits in the
     public schema (advisor 0014); move it when convenient.
 
+40. Noted (2026-10-07): the website home page has an HTML embed that plays a muted looping MP4 of
+    the app (hosted on Webflow's asset CDN, `cdn.prod.website-files.com`) under a phone frame. Its
+    inline script only plays or pauses the video when it scrolls into view and skips playback
+    under `prefers-reduced-motion`. No cookies, storage, third-party requests or data collection,
+    so no policy change: `src/core/legal/website.ts` and `privacy.ts` already cover Webflow
+    delivery and request data. The footer says the app screens show a sample account; any future
+    image with a falling weight trend needs that caption directly under it (CAP 13).
+
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR
 opt-in), paid plans (consumer and subscription law), native app store release (Apple and
