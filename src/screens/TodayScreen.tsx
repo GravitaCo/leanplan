@@ -329,13 +329,16 @@ export function TodayScreen() {
             <>
               {showWeight ? (
                 <div className="tiles duo">
-                  <section className="tile st mvt" aria-labelledby="sum-move" {...pressable(() => setTab('train'))}>
-                    <span className="tk">
+                  <section className="tile st mvt" aria-labelledby="sum-move">
+                    <div className="tk">
                       <h2 id="sum-move" className="pk" style={{ color: 'var(--move-ink)' }}>Move</h2>
-                      <span className="psq" style={{ background: 'var(--move-fill)' }}>{moveIcon}</span>
-                    </span>
-                    <span className="mvt-t">{moveTitle}</span>
-                    <span className="s">{moveSub}</span>
+                      <span className="psq" aria-hidden="true" style={{ background: 'var(--move-fill)' }}>{moveIcon}</span>
+                    </div>
+                    {/* the pressable fills the rest of the tile and is named by its title and sub, like the card's .mv */}
+                    <div className="mvt-b" {...pressable(() => setTab('train'))}>
+                      <span className="mvt-t">{moveTitle}</span>
+                      <span className="s">{moveSub}</span>
+                    </div>
                     {startBtn}
                   </section>
                   {weightTile}

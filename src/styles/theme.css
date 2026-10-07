@@ -566,9 +566,10 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .tiles.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
 .tile.mvt .tk { align-items: flex-start; }
 .tile.mvt .psq { width: 32px; height: 32px; border-radius: 10px; margin: -4px -2px 0 0; }
-.mvt-t { margin-top: auto; padding-top: 12px; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.mvt-b { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding-top: 12px; }
+.mvt-t { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
 .tile.mvt .btn.sm { align-self: flex-start; height: 32px; padding: 0 14px; font-size: 14px; }
-.tile.mvt .s + .btn.sm { margin-top: 10px; }
+.tile.mvt .mvt-b + .btn.sm { margin-top: 10px; }
 .supps { display: flex; flex-direction: column; margin-top: 4px; }
 .supps button { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 5px 0; text-align: left; font-size: 14px; color: var(--label); min-height: 32px; }
 .supps .n { flex: 1; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
