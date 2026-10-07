@@ -77,11 +77,10 @@ export function Sparkline({ values, w, h, color }: { values: number[]; w: number
   )
 }
 
-/** Week bars against the target range. Each logged day carries its number; each day's range is a
- *  thin line at its middle (higher on a workout day; the exact range is in the key under the
- *  chart), and a day with nothing logged is a small stub, not a gap to feel bad about. `numbers` is
- *  off in gentle mode. */
-/** `band` false: no range line at all (a wellbeing Yes has no calorie target, Onboarding 9) */
+/** Week bars on 1 px rows at round kcal values (at most three above zero). Each logged day carries
+ *  its number, lifted clear of any row it would touch; the range is in the key under the chart. A day
+ *  with nothing logged is a small stub, not a gap to feel bad about. `numbers` is off in gentle mode,
+ *  which also drops the row values. */
 export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
   const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
   // a small right gutter carries the row values; gentle mode shows no kcal, so no gutter
