@@ -315,6 +315,8 @@ export function unsyncedConsents(s: PersistedState): number {
 export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
+  // the maintenance loop (compliance, 8 Oct 2026): a reference body weight, and lines derived from the log
+  'profile.steadyRef', 'profile.patternShown', 'profile.loopChoice', 'profile.reviewPushSkip',
 ] as const
 
 export interface HealthDataSummary {
@@ -327,7 +329,7 @@ export interface HealthDataSummary {
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
-const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn']
+const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn', 'steadyRef', 'patternShown', 'loopChoice', 'reviewPushSkip']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
 const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))

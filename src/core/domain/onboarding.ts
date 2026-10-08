@@ -109,8 +109,12 @@ export function wellbeingAnswerOf(w: OnboardingOutcomes['wellbeing']): Wellbeing
 /** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
 export const medicalOutcome = (ticked: number, none: boolean): OnboardingOutcomes['medical'] => (ticked > 0 ? 'flagged' : none ? 'clear' : undefined)
 
-/** The medical-conditions question is only asked when the goal means eating less (§3). */
-export const asksMedical = (goal: Goal | undefined): boolean => goal === 'lose-fat'
+/**
+ * The medical-conditions question: when the goal means eating less (§3), and for keeping it steady
+ * too (maintenance-numbers rule 6: the loop can suggest a small cut after a drift). Splitting the
+ * answer, and asking for every goal, wait for compliance and an approved board.
+ */
+export const asksMedical = (goal: Goal | undefined): boolean => goal === 'lose-fat' || goal === 'maintain'
 
 /** The onboarding sex answer, read from older profiles too ('M' → male, 'F' → female). */
 export function sexOf(p: Pick<Profile, 'sex' | 'sexAnswer'>): SexAnswer {

@@ -1,9 +1,9 @@
 -- ============================================================================
 -- Tali: consent history (onboarding plan docs/plans/first-run-onboarding.md §8; launch blocker)
 --
--- NOT APPLIED. Review with `security-data`, then run once in the Supabase dashboard (SQL Editor)
--- BEFORE deploying the app version that syncs consents (src/data/consent.ts) and before the
--- delete-account Edge Function. Safe to re-run: every step is guarded.
+-- Applied after `security-data` review (live since 27 Sept 2026; re-checked 1 Oct 2026: the table
+-- exists). Run before deploying the app version that syncs consents (src/data/consent.ts) and
+-- before the delete-account Edge Function. Safe to re-run: every step is guarded.
 --
 -- Design:
 -- - Append-only history. One row per act (grant or withdrawal); a withdrawal is a new row with

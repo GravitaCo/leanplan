@@ -189,3 +189,71 @@ browser against the boards in light and dark; (4) the reminder (a new push type 
 and register change: `compliance` first). Reviews: `nutrition-accuracy`, `mental-performance`,
 `compliance` for any new stored field or reminder, `design` for every screen, then `ship-critic`
 before anything reaches `main`.
+
+## Engineering II: how the rules were read (8 Oct 2026)
+
+Asked of `nutrition-accuracy` and `mental-performance` on 8 Oct; their answers are what step 1
+builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
+`loopThresholds.ts`; tests in `scripts/test-loop.ts`).
+
+- **Trend:** the level is the fitted value at yesterday, not the window mean. Outliers are dropped
+  once against the median of the window in use. Standard errors are multiplied by 1.5 for
+  correlated day-to-day noise (untested in the simulations). Trend words need 6 weigh-ins spanning
+  21+ days with the first 28+ days back. Goals with no pace or range read "about level" within
+  0.25% a week or 2 SE.
+- **Weigh-in check:** lose-fat only; build-muscle waits (gain rates unsourced and the size of the
+  tolerance). Off pace = beyond ±0.35% a week and beyond 2 SE. 28 days of data starting 14 days
+  after the last target change (a new `targetSetAt` field). One step is 100 kcal at both ends of the
+  range; floors at 7,000 kcal/kg.
+- **Adaptive maintenance:** SE = sqrt(SE intake² + (7,000 × SE slope)²); qualifying day = 2+ meal
+  slots; the same window for intake and trend.
+- **Steady range:** fewer than 4 weigh-ins in the first 14 days takes the first 4 within 28 days;
+  "Make this my new starting point" sets the reference to the trend level and restarts the 6-week
+  ±3% period. Drift is computed statelessly at yesterday and 8 days ago.
+- **Maintain:** energy at maintenance, protein anchor 1.4 g/kg inside 1.2 to 1.6, the medical
+  question asked (nutrition-accuracy recommends asking it for every goal: kidney disease on
+  build-muscle or strength gets 1.6 to 2.2 g/kg today; that changes the question's copy, so it waits
+  for a board).
+- **Mind:** one "hard week" predicate (3+ check-ins and 3+ poor-sleep, 3+ high-stress or 2+ low
+  days) drives the hard encouragement line, mind options first, and no eat-less option. Row words,
+  protein and strength lines follow mental-performance's rule set in `loopCopy.ts`.
+- **Pattern lines:** v1 pairs sleep→hunger, stress→hunger, sleep→energy, energy→sessions,
+  calm→sessions; "plan used → hungry days" dropped (no per-day data); the full 42 days must pass
+  and each 21-day half must agree; one line a review, a pair at most once in 4 weeks; gentle mode
+  gets mind and movement lines only (board ml-a2), none with wellbeing flagged or in a hard week.
+- **Ease off:** the shorter sessions pre-selected for 7 days (`easyFrom`/`easyUntil`); the food
+  range is not widened.
+
+## Benn's answers to Engineering II (8 Oct 2026)
+
+1. **No lower range after a hard week.** "Adjust my range" down is hidden after a hard week (the
+   one hard-week predicate above) and comes back the next calm week. Boards ml-b2 and ml-a5 showed
+   it; the build follows the safety rule.
+2. **Weight opt-in applies to everyone**, asked once at the first review. Until someone says yes,
+   the Summary Weight tile still logs a weigh-in but shows no number or trend.
+3. **Weight-based checks need the opt-in**: the weigh-in check, drift and "your range from your
+   logs" only run for people who chose to include weight.
+4. **"Your 4-week check"** replaces "Your 3-week check" (ml-b1 to ml-b3), with "The last 4 weeks".
+5. **Ease off** pre-selects the shorter sessions for 7 days and leaves food alone; its line becomes
+   "A lighter week: shorter sessions, more room."
+6. **Reminder back-off as on ml-d2**: weekly until 3 in a row go unopened, then it pauses and Tali
+   asks once in the app, "Keep the weekly reminder?"
+7. **The medical question for every goal**: reworded on a new board for Benn's approval (it mentions
+   eating less today); the flag keeps protein at the minimum.
+8. **Boards ml-e1 to ml-e4 approved** (drafted 8 Oct for the screens the first boards didn't cover):
+   This week card with counts only and no logged-day dots (ml-e1); the Weight tile with the latest
+   weigh-in and the 4-week trend in words, words only for people who left weight out (ml-e2); the
+   review card on Summary under Mind on review day, gone once opened, a cross hides it until next
+   week (ml-e3); Profile's "Weekly review" group, with the reminder under Notifications (ml-e4).
+   ml-e5 and ml-e5b (the medical question for every goal) await Benn.
+9. **Copy approved as built (8 Oct):** the "Keep the weekly reminder?" banner ("It's paused for now.
+   Some weeks you won't need it, and that's fine.", Keep it / Turn it off; asked once, then off
+   quietly); the ml-d1 footnote ("Once a week on {day} at {time} UK time. It only says 'Your week is
+   ready', nothing from your log. Turn it off any time in Profile."); ml-a5's "Wind down a little
+   earlier on the nights that suit you."; "lately" in the calmer-days pattern line; the "Noted for
+   next week." toast. A hard week hides the pattern line. ml-e5 and ml-e5b approved for build.
+   Deploying the reminders function after ship-critic's SHIP is approved.
+10. **Lighter week (ship-critic, then mental-performance; Benn approved 8 Oct):** a week with 1 to 3
+    active days reads "A quieter week. What you did still counts.", "Keep it as it is" reads "Same
+    plan for next week.", and no range change is offered. A new person waits for their first full
+    week before a review. "Keep it steady" is in Profile's goal list too.

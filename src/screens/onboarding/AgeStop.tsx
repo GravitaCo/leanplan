@@ -14,6 +14,7 @@ import { useStore, type UnderAgeSource } from '@/store/store'
 import { NATIONS, SIGNPOSTS, beatFor } from '@/core/data/signposts'
 import { DeleteConfirmSheet } from '../profile/AccountData'
 import { NOTES } from './copy'
+import { SCREEN_H } from './screenHeading'
 import { Signposts, type SP } from './Signposts'
 
 export { Signposts, type SP }
@@ -67,7 +68,7 @@ export function Under16({ onWrong, onClose, deleting, source }: { onWrong?: () =
   const note = app ? (source === 'profile' ? `${NOTES.underAge.note} ${NOTES.underAge.notSaved}` : NOTES.underAge.note) : NOTES.under16.note
   return (
     <div className="wz" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 110px)' }} data-testid={app ? 'age-stop' : 'age-stop-wizard'}>
-      <h1 className="wz-h xl" style={{ margin: 0 }}>{c.title}</h1>
+      <h1 className="wz-h xl" style={{ margin: 0 }} {...SCREEN_H}>{c.title}</h1>
       <div className="wz-lead body ink">{c.lead}</div>
       <div className="wz-lead body">{c.more}</div>
       <Signposts list={SPS.under16} />

@@ -275,6 +275,8 @@ export const WHY_CHIPS: [string, string][] = [
 ]
 export const GOAL_OPTIONS: [Goal, string, string][] = [
   ['lose-fat', 'Lose fat', 'Eat a little less and keep your strength'],
+  // board ml-c1 (Benn, 8 Oct 2026): maintain is a first-class goal
+  ['maintain', 'Keep it steady', 'Hold where you are, with habits that last'],
   ['build-muscle', 'Build muscle', 'Train to grow, and eat a little more'],
   ['increase-strength', 'Increase strength', 'Lift heavier over time'],
   ['increase-endurance', 'Improve endurance', 'Go for longer: walking, running, cycling'],

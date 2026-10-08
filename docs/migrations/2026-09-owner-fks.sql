@@ -1,7 +1,8 @@
 -- ============================================================================
 -- Tali: owner foreign keys on the four original synced tables (security review, 27 Sept 2026)
 --
--- NOT APPLIED. Apply BEFORE deploying the delete-account Edge Function. Safe to re-run: each
+-- Applied (live since 27 Sept 2026; re-checked 1 Oct 2026: all four constraints exist and are
+-- validated). Apply before deploying the delete-account Edge Function. Safe to re-run: each
 -- constraint is added only when missing, and VALIDATE is a no-op once it's valid.
 --
 -- Why: settings, day_logs, custom_foods and recipes had no FK to auth.users (routines,

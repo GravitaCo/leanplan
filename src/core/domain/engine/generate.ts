@@ -149,6 +149,9 @@ const MIX: Record<Goal, [number, number, number][]> = {
   'build-muscle': [[1, 0, 0], [2, 0, 0], [3, 0, 0], [3, 0, 1], [4, 0, 1], [5, 0, 1]],
   'increase-strength': [[1, 0, 0], [2, 0, 0], [3, 0, 0], [3, 0, 1], [4, 0, 1], [4, 1, 1]],
   'lose-fat': [[1, 0, 0], [1, 1, 0], [2, 1, 0], [2, 2, 0], [2, 2, 1], [2, 2, 2]],
+  // keeping it steady: strength 2+ days a week from 2 days on, to hold muscle (maintenance-numbers
+  // rule 5, Mozaffarian et al. 2025), with cardio and mind-body added after that (judgement call)
+  maintain: [[1, 0, 0], [2, 0, 0], [2, 1, 0], [2, 1, 1], [3, 1, 1], [3, 2, 1]],
   'increase-endurance': [[1, 0, 0], [1, 1, 0], [1, 2, 0], [2, 2, 0], [2, 3, 0], [2, 3, 1]],
   'feel-better': [[1, 0, 0], [1, 0, 1], [2, 0, 1], [2, 1, 1], [2, 2, 1], [3, 2, 1]],
 }
@@ -178,6 +181,7 @@ function scheme(goal: Goal, exp: Experience, role: SlotRole, plates = true): Sch
     case 'build-muscle':
       return acc ? { reps: { lo: 10, hi: 15 }, rest: 90, rir: { lo: 2, hi: 3 } } : { reps: exp === 'beginner' ? { lo: 10, hi: 12 } : { lo: 8, hi: 12 }, rest: 120, rir: { lo: 2, hi: 3 } }
     case 'lose-fat':
+    case 'maintain':
       return acc ? { reps: { lo: 12, hi: 15 }, rest: 60, rir: { lo: 2, hi: 3 } } : { reps: exp === 'beginner' ? { lo: 10, hi: 12 } : { lo: 8, hi: 12 }, rest: 90, rir: { lo: 2, hi: 3 } }
     case 'increase-endurance':
       return acc ? { reps: { lo: 15, hi: 20 }, rest: 45, rir: { lo: 3, hi: 4 } } : { reps: { lo: 12, hi: 15 }, rest: 60, rir: { lo: 3, hi: 4 } }
