@@ -18,7 +18,8 @@ import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, latestWeight, rangeExtra, rangeFor, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary,
 } from '@/core/domain/insights'
-import { loopSafety, reviewDayOn, reviewWaiting, weightRow } from '@/core/domain/maintenanceLoop'
+import { careWeek, loopSafety, nextReviewDay, reminderAskDue, reviewDayOn, reviewWaiting, weightRow } from '@/core/domain/maintenanceLoop'
+import { dayPictures, mindContext } from '@/core/domain/weekPicture'
 import { weightTileWords } from '@/core/domain/loopCopy'
 import { WeeklyReviewScreen } from './review/WeeklyReview'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
@@ -133,6 +134,13 @@ export function TodayScreen() {
   const wRow = isToday ? weightRow(data, cur, 0, wSafety) : null
   // ml-e3: the review waits under Mind from the review day until it's opened or hidden
   const reviewDue = isToday && reviewWaiting(data, cur, consent)
+  // ml-d2: after 3 unopened the reminder pauses itself and Tali asks once, here
+  const keepAsk = isToday && reminderAskDue(p, cur)
+  const keepReviewPush = useStore((s) => s.keepReviewPush)
+  // a week a safety signal fired (care tier): the coming reminder is skipped. Only the date goes to
+  // the server, never why (compliance, 8 Oct)
+  const skipDay = isToday && p.reviewPush && careWeek(mindContext(data, dayPictures(data, shiftDay(cur, -7), shiftDay(cur, -1), cur))) ? nextReviewDay(cur, p.reviewDay ?? 0) : null
+  useEffect(() => { if (skipDay && p.reviewPushSkip !== skipDay) setPrefs({ reviewPushSkip: skipDay }) }, [skipDay]) // eslint-disable-line react-hooks/exhaustive-deps
   const supps = p.supplements || []
   // the range on a day without workouts (rangeFor's own maths: the ±15% range for Sometimes)
   const ex = rangeExtra(data, cur)
@@ -205,6 +213,18 @@ export function TodayScreen() {
               </span>
             </button>
             <button className="rv-due-x" aria-label="Hide until next week" onClick={() => setPrefs({ reviewHidden: reviewDayOn(cur, p.reviewDay ?? 0) })}><Icon name="x" size={16} stroke={2.2} /></button>
+          </div>
+        )}
+
+        {keepAsk && (
+          <div className="banner">
+            <span style={{ color: 'var(--mind-ink)' }}><Icon name="bell" /></span>
+            <div><b>Keep the weekly reminder?</b><br /><span className="muted">It’s paused for now, since the last few weren’t needed.</span>
+              <div className="chips" style={{ marginTop: 8 }}>
+                <button className="chip" onClick={() => keepReviewPush(true)}>Keep it</button>
+                <button className="chip" onClick={() => keepReviewPush(false)}>Turn it off</button>
+              </div>
+            </div>
           </div>
         )}
 

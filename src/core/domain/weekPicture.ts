@@ -59,6 +59,8 @@ export interface DayPicture {
     meals: number
     /** main meals (breakfast, lunch, dinner, no slot) with food, and those reaching PROTEIN_MEAL_G */
     mainMeals: number; proteinMeals: number
+    /** lunch or dinner logged: with 2+ slots, a day that counts for adaptive maintenance */
+    mainMeal: boolean
   }
   move: { sessions: Session[]; kinds: MoveKind[]; planned: number }
   weight: number | null
@@ -104,6 +106,7 @@ export function dayPicture(s: AppState, d: string, today: string): DayPicture {
     food: {
       logged: foods.length > 0, kcal: t.k, protein: t.p, inRange: t.k >= r.lo && t.k <= r.hi,
       meals: bySlot.size, mainMeals: main.length, proteinMeals: main.filter((k) => (bySlot.get(k) ?? 0) >= PROTEIN_MEAL_G).length,
+      mainMeal: bySlot.has('lunch') || bySlot.has('dinner'),
     },
     move: { sessions: done, kinds: done.map(moveKind), planned: plannedKeys(s, d).length },
     weight: day?.weight || null,

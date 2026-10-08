@@ -40,7 +40,7 @@ export function stressWords(m: MindContext, minAnswers = 3): string | null {
   if (m.stressAnswers < minAnswers) return null
   if (m.highStressDays >= 3) return `High on ${m.highStressDays} days`
   if (most(m.lowStressDays, m.stressAnswers)) return 'Mostly low'
-  return 'Some, on a couple of days a week'
+  return 'Some, on a few days'
 }
 
 const PART = { early: 'early in the week', mid: 'mid-week', weekend: 'at the weekend' } as const
@@ -70,8 +70,13 @@ export function checkinSub(m: MindContext, minAnswers = 3): string | null {
     : m.highStressDays >= 3 ? { t: 'a busy few days', good: false }
     : most(m.lowStressDays, m.stressAnswers) ? { t: 'stress stayed low', good: true }
     : { t: 'some stress on a few days', good: false }
-  let out = sleep && stress ? `${sleep.t}${sleep.good && stress.good ? ', and ' : ' and '}${stress.t}.` : sleep ? `${sleep.t}.` : stress ? `${stress.t[0].toUpperCase()}${stress.t.slice(1)}.` : null
-  if (out && m.calmerWeekend) out += ' The weekend was calmer.'
+  // both good or both not: one sentence; mixed: two, sleep first (mental-performance 8 Oct)
+  const cap = (x: string) => x[0].toUpperCase() + x.slice(1)
+  let out = sleep && stress
+    ? sleep.good === stress.good ? `${sleep.t}${sleep.good ? ', and ' : ' and '}${stress.t}.` : `${sleep.t}. ${cap(stress.t)}.`
+    : sleep ? `${sleep.t}.` : stress ? `${cap(stress.t)}.` : null
+  // only after a stress part that wasn't good: "Stress stayed low. The weekend was calmer." contradicts itself
+  if (out && m.calmerWeekend && stress && !stress.good) out += ' The weekend was calmer.'
   return out
 }
 
@@ -144,14 +149,15 @@ export function weightTitle(w: WeightRow): string {
 /** `hard`: a harder week adds "One week doesn't move that." to a level trend. */
 export function weightSub(w: WeightRow, hard: boolean): string {
   const x = w.words
-  const level = hard ? 'About level over the last 4 weeks. One week doesn’t move that.' : 'About level over the last 4 weeks.'
+  const over = `${w.weeks} weeks`
+  const level = hard ? `About level over the last ${over}. One week doesn’t move that.` : `About level over the last ${over}.`
   switch (x.kind) {
-    case 'too-soon': return 'Your trend shows after 4 weeks.'
-    case 'steady': return hard ? level : 'Steady over the last 4 weeks.'
-    case 'above': return 'A little above your steady range over the last 4 weeks.'
-    case 'below': return 'A little below your steady range over the last 4 weeks.'
-    case 'pace': return x.pace === 'in-line' ? 'Over 4 weeks, in line with the pace you chose.' : x.pace === 'slower' ? 'Over 4 weeks, a little slower than the pace you chose.' : 'Over 4 weeks, faster than the pace you chose.'
-    case 'level': return x.word === 'level' ? level : `${x.word === 'down' ? 'Going down' : 'Going up'}${x.aLittle ? ' a little' : ''} over the last 4 weeks.`
+    case 'too-soon': return 'Your trend shows after 4 weeks of weigh-ins.'
+    case 'steady': return hard ? level : `Steady over the last ${over}.`
+    case 'above': return 'A little above your steady range.'
+    case 'below': return 'A little below your steady range.'
+    case 'pace': return x.pace === 'in-line' ? `Over ${over}, in line with the pace you chose.` : x.pace === 'slower' ? `Over ${over}, a little slower than the pace you chose.` : `Over ${over}, faster than the pace you chose.`
+    case 'level': return x.word === 'level' ? level : `${x.word === 'down' ? 'Going down' : 'Going up'}${x.aLittle ? ' a little' : ''} over the last ${over}.`
   }
 }
 
@@ -181,7 +187,7 @@ export function rangeSub(r: RangeChange): string {
 export function optionText(o: LoopOption, r: RangeChange | null, ctx: { drift?: boolean; long?: boolean } = {}): OptionText {
   const L = ctx.long
   switch (o) {
-    case 'earlier-night': return { tag: 'Mind', title: 'Aim for an earlier night', ...(L ? { sub: 'Pick a wind-down time. Tali can nudge you on the nights you choose.' } : {}) }
+    case 'earlier-night': return { tag: 'Mind', title: 'Aim for an earlier night', ...(L ? { sub: 'Wind down a little earlier on the nights that suit you.' } : {}) }
     case 'hungry-days-plan': return { tag: 'Mind and food', title: 'Plan for hungry days', ...(L ? { sub: 'An if-then plan for the days you get home hungry.' } : {}) }
     case 'hungry-evenings-plan': return { tag: 'Mind and food', title: 'Plan for hungry evenings', ...(L ? { sub: 'An if-then plan for the evenings you get hungry.' } : {}) }
     case 'strength-session': return { tag: 'Move', title: 'Add a strength session', ...(L ? { sub: 'A short one, about 25 minutes, on a day that suits you.' } : {}) }
@@ -237,7 +243,7 @@ export const CHOICE_TEXT = {
   'ease-off': { title: 'Ease off', sub: 'A lighter week: shorter sessions, more room.' },
   'ease-off-gentle': { title: 'Ease off', sub: 'A lighter week, with more room.' },
   'change-one': { title: 'Change one thing', sub: 'Pick one small thing to try.' },
-  'change-one-hard': { title: 'Change one thing', sub: 'Pick one small thing to try. Sleep and hunger first, after a week like this one.' },
+  'change-one-hard': { title: 'Change one thing', sub: 'Pick one small thing to try. Mind options first, after a week like this one.' },
   'pick-up': { title: 'Pick up from here', sub: 'Same plan, starting this week.' },
   'ease-back': { title: 'Ease back in', sub: 'A lighter first week back.' },
 } as const
@@ -245,12 +251,14 @@ export const CHOICE_TEXT = {
 /** The Summary Weight tile's short line (board ml-e2): the same words as the review, shortened for a tile. */
 export function weightTileWords(w: WeightRow): string {
   const x = w.words
+  // nutrition-accuracy, 8 Oct: the range check isn't a 4-week claim, and the window can be 6 or 8 weeks
+  const over = `${w.weeks} weeks`
   switch (x.kind) {
-    case 'too-soon': return 'Your trend shows after 4 weeks'
-    case 'steady': return 'Steady over 4 weeks'
+    case 'too-soon': return 'Your trend shows after 4 weeks of weigh-ins'
+    case 'steady': return 'Within your steady range'
     case 'above': return 'A little above your steady range'
     case 'below': return 'A little below your steady range'
-    case 'pace': return x.pace === 'in-line' ? 'Over 4 weeks, in line with your pace' : x.pace === 'slower' ? 'Over 4 weeks, a little slower than your pace' : 'Over 4 weeks, faster than your pace'
-    case 'level': return x.word === 'level' ? 'About level over 4 weeks' : `${x.word === 'down' ? 'Going down' : 'Going up'}${x.aLittle ? ' a little' : ''} over 4 weeks`
+    case 'pace': return x.pace === 'in-line' ? `Over ${over}, in line with your pace` : x.pace === 'slower' ? `Over ${over}, a little slower than your pace` : `Over ${over}, faster than your pace`
+    case 'level': return x.word === 'level' ? `About level over ${over}` : `${x.word === 'down' ? 'Going down' : 'Going up'}${x.aLittle ? ' a little' : ''} over ${over}`
   }
 }

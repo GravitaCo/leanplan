@@ -79,6 +79,7 @@ export function ProfileScreen() {
   const removeSupplement = useStore((s) => s.removeSupplement)
   const updateEmail = useStore((s) => s.updateEmail)
   const setNotifications = useStore((s) => s.setNotifications)
+  const setReviewPush = useStore((s) => s.setReviewPush)
   const [reviewDayOpen, setReviewDayOpen] = useState(false)
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
@@ -347,6 +348,13 @@ export function ProfileScreen() {
               const done = pr.notificationsEnabled ? 'Reminders off' : 'Reminders on'
               showToast(ok === 'unsaved' ? done + ', but this device couldn’t save the setting. Storage may be full.'
                 : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
+            }} />} />
+        {/* ml-e4: the weekly review reminder, switched on separately (off unless someone turns it on) */}
+        <SettingRow icon="bell" color={MINDF} soft label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
+          right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
+              const on = !pr.reviewPush
+              const ok = await setReviewPush(on)
+              showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
             }} />} />
       </div>
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>

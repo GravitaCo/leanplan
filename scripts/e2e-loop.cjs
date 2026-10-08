@@ -112,7 +112,7 @@ async function run() {
     check(`${scheme}: Logged is a count`, /Logged\s*\n?\s*\d+ days?/.test(week), week)
     const tile = await page.locator('.tile', { hasText: 'Weight' }).innerText()
     check(`${scheme}: weight tile has no "vs last week"`, !/vs last week/.test(tile), tile)
-    check(`${scheme}: weight tile shows the trend in words`, /over 4 weeks/i.test(tile), tile)
+    check(`${scheme}: weight tile shows the trend in words`, /steady range|over \d weeks|trend shows/i.test(tile), tile)
     await shot(page, `summary-${scheme}`)
     // the review
     await page.click('.rv-due-b')

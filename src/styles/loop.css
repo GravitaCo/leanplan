@@ -86,7 +86,7 @@
 .lp-learn .bar .tk { position: absolute; top: 20px; font-size: 11px; color: var(--label2); transform: translateX(-50%); }
 .lp-learn .d { font-size: 14px; line-height: 1.45; color: var(--label2); }
 .lp-days { display: flex; justify-content: space-between; gap: 6px; }
-.lp-day { width: 40px; height: 40px; border-radius: 20px; border: 0; background: var(--card); color: var(--label); font: inherit; font-size: 15px; font-weight: 600; }
+.lp-day { width: 44px; height: 44px; border-radius: 22px; border: 0; background: var(--card); color: var(--label); font: inherit; font-size: 15px; font-weight: 600; }
 .lp-day[aria-checked="true"] { background: var(--tint); color: var(--on-tint); }
 .lp-sec { background: var(--card); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .lp-sec h3 { margin: 0; font-size: 17px; font-weight: 600; }
@@ -98,5 +98,17 @@
 .rv-due-b .m { display: flex; flex-direction: column; }
 .rv-due-x { width: 44px; height: 44px; margin-right: 6px; border: 0; border-radius: 22px; background: none; color: var(--label2); display: flex; align-items: center; justify-content: center; }
 .wt-trend { display: block; font-size: 13px; line-height: 1.3; font-weight: 500; color: var(--label); margin-top: 6px; }
-/* the loop's sheets sit on the page colour so their cards read as cards (boards ml-a5 to ml-d1) */
-.sheet.lp-sheet { background: var(--bg); }
+/* the loop's sheets: in light, on the page colour so their cards read as cards (boards ml-a5 to
+   ml-d1); in dark the sheet keeps --sheet and its cards go up to --elev, as other sheets do */
+@media (prefers-color-scheme: light) { .sheet.lp-sheet { background: var(--bg); } }
+@media (prefers-color-scheme: dark) {
+  .lp-sheet .lp-card, .lp-sheet .rv-radios, .lp-sheet .lp-sec, .lp-sheet .lp-chipsrow span, .lp-sheet .rv-card, .lp-sheet .lp-say, .lp-sheet .lp-ok { background: var(--elev); }
+  .lp-sheet .lp-day { background: var(--fill2); }
+  .lp-sheet .lp-day[aria-checked="true"] { background: var(--tint); }
+}
+.lp-learn .bar .tk.first { transform: none; }
+.lp-learn .bar .tk.last { transform: translateX(-100%); }
+.rv-done.sm, .rv-keep.sm { height: 48px; border-radius: 24px; }
+/* 36 px pills as drawn, with a 44 px touch area */
+.rv-pill, .rv-chip { position: relative; }
+.rv-pill::after, .rv-chip::after { content: ''; position: absolute; inset: -4px 0; }

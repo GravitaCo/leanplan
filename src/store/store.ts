@@ -197,6 +197,10 @@ export interface StoreState {
   updateEmail: (email: string) => Promise<string | null>
   /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
   setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
+  /** the weekly review reminder (ml-d1, ml-e4): switched on separately, on the same push subscription */
+  setReviewPush: (enabled: boolean) => Promise<boolean>
+  /** "Keep the weekly reminder?" after 3 unopened (ml-d2): yes counts afresh from today, no turns it off */
+  keepReviewPush: (keep: boolean) => Promise<void>
   /** false when refused: a backup with an under-18 age is never loaded (the stop screen shows) */
   importBackup: (state: PersistedState) => boolean
 
@@ -1112,7 +1116,8 @@ export const useStore = create<StoreState>()(
         if (enabled) {
           const ok = await subscribePush()
           if (!ok) return false
-        } else {
+        } else if (!get().data.profile.reviewPush) {
+          // the subscription is shared with the weekly review reminder: kept while that's on
           await unsubscribePush()
         }
         set((st) => {
@@ -1122,6 +1127,29 @@ export const useStore = create<StoreState>()(
         const stored = persist()
         get().scheduleSync()
         return stored || 'unsaved'
+      },
+
+      setReviewPush: async (enabled) => {
+        if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
+        if (enabled) {
+          if (!(await subscribePush())) return false
+        } else if (!get().data.profile.notificationsEnabled) {
+          await unsubscribePush()
+        }
+        set((st) => {
+          const p = st.data.profile
+          p.reviewPush = enabled
+          if (enabled) { p.reviewPushFrom = todayStr(); p.reviewPushTime ??= '09:00' }
+          markSettingsDirty(st.data)
+        })
+        persist()
+        get().scheduleSync()
+        return true
+      },
+      keepReviewPush: async (keep) => {
+        if (!keep) { await get().setReviewPush(false); return }
+        set((st) => { st.data.profile.reviewPushFrom = todayStr(); markSettingsDirty(st.data) })
+        saved('The weekly reminder stays on.')
       },
 
       importBackup: (incoming) => {

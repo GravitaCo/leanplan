@@ -24,6 +24,7 @@ import { LOOP_THRESHOLDS, type LoopThresholds } from './loopThresholds'
 
 const r50 = (x: number) => Math.round(x / 50) * 50
 const ceil50 = (x: number) => Math.ceil(x / 50) * 50
+const floor50 = (x: number) => Math.floor(x / 50) * 50
 
 /* ---------------- safety ---------------- */
 
@@ -57,7 +58,14 @@ export function loopSafety(s: AppState, kg: number | null, healthConsent: boolea
 }
 
 /** Eating less may be offered this week: never after a hard week (mental-performance 8 Oct, rule 7). */
-export const allowLess = (safety: LoopSafety, mind: MindContext) => !safety.noLess && !mind.hard
+export const allowLess = (safety: LoopSafety, mind: MindContext) => !safety.noLess && !mind.hard && !careWeek(mind)
+
+/**
+ * A care week (mental-performance 8 Oct): mood Rough or Low on 4+ days, or Starving on 3+ days (a
+ * restriction signal). It reads like a hard week, with no weight, no lower range, no pattern line
+ * and none of the follow-up sheets. Thresholds pending clinical review; no support pointer yet.
+ */
+export const careWeek = (m: Pick<MindContext, 'careMood' | 'starvingDays'>) => m.careMood || m.starvingDays >= 3
 
 /* ---------------- options from every pillar ---------------- */
 
@@ -97,18 +105,21 @@ export interface RangeChange { from: { lo: number; hi: number }; to: { lo: numbe
  * 1%-a-week cap (at 7,000 kcal/kg, the safe side), the shallowest band after low sleep or stress at
  * setup, or (maintain) 150 kcal under maintenance. Null when there's no room.
  */
-export function rangeStep(s: AppState, dir: 'less' | 'more', kg: number, safety: LoopSafety, today: string, t: LoopThresholds = LOOP_THRESHOLDS): RangeChange | null {
+export function rangeStep(s: AppState, dir: 'less' | 'more', kg: number, safety: LoopSafety, today: string, t: LoopThresholds = LOOP_THRESHOLDS, anchor?: number): RangeChange | null {
   const p = s.profile
   const kcal = s.target?.kcal
   if (!kcal || kcal <= 0) return null
   const est = maintenanceEstimate(p, null, kg)
   if (!est) return null // no floor without age and height: never guess one
   const maint = est.maint
+  // maintain: steps never stack past ±150 of the best estimate (the learned one when there is one)
+  const centre = anchor ?? maint
   let suggested: number
   if (dir === 'more') {
     suggested = kcal + t.stepKcal
     // a loss goal stops at maintenance
     if (p.goal === 'lose-fat') suggested = Math.min(suggested, Math.max(kcal, r50(maint)))
+    if (p.goal === 'maintain') suggested = Math.min(suggested, floor50(centre + t.maintainMaxCutKcal))
     if (suggested <= kcal) return null
   } else {
     const lowest = Math.max(
@@ -116,7 +127,7 @@ export function rangeStep(s: AppState, dir: 'less' | 'more', kg: number, safety:
       ceil50(maint * (1 - t.maxDeficitPct / 100)),
       ceil50(maint - (kg * (MAX_LOSS_PCT_PER_WEEK / 100) * t.kcalPerKg) / 7),
       safety.nearMaintenance ? ceil50(maint * (1 + NEAR_MAINTENANCE_PCT / 100)) : 0,
-      p.goal === 'maintain' ? ceil50(maint - t.maintainMaxCutKcal) : 0,
+      p.goal === 'maintain' ? ceil50(centre - t.maintainMaxCutKcal) : 0,
     )
     suggested = Math.max(kcal - t.stepKcal, lowest)
     if (suggested >= kcal) return null
@@ -188,7 +199,7 @@ export function driftCheck(s: AppState, today: string, t: LoopThresholds = LOOP_
   if (!start) return null
   const side = (on: string): { word: SteadyWord; range: SteadyRange; trend: WeightTrend } | null => {
     const range = steadyRange(s, on, t)
-    const trend = range ? weightTrend(s, on, { notBefore: s.profile.steadyRef?.from, t }) : null
+    const trend = range ? weightTrend(s, on, { notBefore: s.profile.steadyRef?.from ?? s.profile.maintainFrom, t }) : null
     if (!range || !trend || trend.n < k.minWeighIns) return null
     return { word: trend.level > range.hi ? 'above' : trend.level < range.lo ? 'below' : 'steady', range, trend }
   }
@@ -211,7 +222,7 @@ export type WeightWords =
   | { kind: 'pace'; pace: 'in-line' | 'slower' | 'faster' }
   | { kind: 'level'; word: LevelWord; aLittle: boolean }
 
-export interface WeightRow { weighIns: number; words: WeightWords }
+export interface WeightRow { weighIns: number; words: WeightWords; /** the trend's window in weeks (4, 6 or 8) */ weeks: number }
 
 /** The rate check's pace: in line unless beyond the tolerance and beyond 2 SE. */
 export function paceOf(tr: WeightTrend, goal: Goal, rate: AppState['profile']['targetRate'], t: LoopThresholds = LOOP_THRESHOLDS): 'in-line' | 'slower' | 'faster' | null {
@@ -234,15 +245,22 @@ export function weightRow(s: AppState, today: string, weighInsThisWeek: number, 
   if (!safety.weight) return null
   const goal = s.profile.goal
   const to = shiftDay(today, -1)
-  const tr = weightTrend(s, to, { t })
-  const row = (words: WeightWords): WeightRow => ({ weighIns: weighInsThisWeek, words })
+  const paced = goal === 'lose-fat' || (goal === 'build-muscle' && !!t.rate.gainPct)
+  // a pace is judged like the check: from 14 days after the last target change, with 28 days of data
+  const notBefore = paced && s.profile.targetSetAt ? shiftDay(s.profile.targetSetAt, t.rate.skipAfterChangeDays) : undefined
+  const tr = weightTrend(s, to, { notBefore, t })
+  const row = (words: WeightWords): WeightRow => ({ weighIns: weighInsThisWeek, words, weeks: tr ? Math.round(tr.windowDays / 7) : 4 })
   if (!tr?.wordsReady) return row({ kind: 'too-soon' })
   if (goal === 'maintain') {
+    // no reference yet, or too few weigh-ins since a reset: no check ran, so nothing is claimed
     const d = driftCheck(s, today, t)
-    return row({ kind: d?.word ?? 'steady' })
+    return row(d ? { kind: d.word } : { kind: 'too-soon' })
   }
-  const pace = goal ? paceOf(tr, goal, s.profile.targetRate, t) : null
-  if (pace) return row({ kind: 'pace', pace })
+  if (paced) {
+    if (daysBetween(tr.from, to) < t.rate.minDataDays - 1) return row({ kind: 'too-soon' })
+    const pace = paceOf(tr, goal!, s.profile.targetRate, t)
+    if (pace) return row({ kind: 'pace', pace })
+  }
   return row({ kind: 'level', word: levelWord(tr, t), aLittle: Math.abs(tr.weeklyPct) <= t.trend.aLittlePctWeek })
 }
 
@@ -251,9 +269,10 @@ export function weightRow(s: AppState, today: string, weighInsThisWeek: number, 
 export type RateNone = 'goal' | 'weight-off' | 'quiet' | 'too-soon' | 'not-enough-data' | 'no-target'
 export type RateSuggestion =
   | { kind: 'none'; reason: RateNone }
-  | { kind: 'on-pace'; trend: WeightTrend; week: WeekPicture }
+  /** `week`: the last 7 days (the mind rows read "last week"); `span`: the trend's window, for move and food */
+  | { kind: 'on-pace'; trend: WeightTrend; week: WeekPicture; span: WeekPicture }
   /** off pace: options from every pillar, "keep as is" always; a range change only where allowed */
-  | { kind: 'options'; pace: 'slower' | 'faster'; ctx: 'calm' | 'hard'; options: LoopOption[]; range: RangeChange | null; trend: WeightTrend; week: WeekPicture }
+  | { kind: 'options'; pace: 'slower' | 'faster'; ctx: 'calm' | 'hard'; options: LoopOption[]; range: RangeChange | null; trend: WeightTrend; week: WeekPicture; span: WeekPicture }
 
 export interface RateOptions {
   healthConsent: boolean
@@ -288,12 +307,13 @@ export function suggestRateAdjustment(s: AppState, today: string, o: RateOptions
   if (!tr || !tr.wordsReady || daysBetween(tr.from, to) < t.rate.minDataDays - 1) return { kind: 'none', reason: 'not-enough-data' }
 
   const week = weekPicture(s, shiftDay(today, -7), to, today, t)
+  const span = weekPicture(s, tr.from, to, today, t)
   const pace = paceOf(tr, goal, p.targetRate, t)
-  if (!pace || pace === 'in-line') return { kind: 'on-pace', trend: tr, week }
+  if (!pace || pace === 'in-line') return { kind: 'on-pace', trend: tr, week, span }
   const ctx = week.mind.hard ? 'hard' : 'calm'
   const dir = pace === 'slower' ? (goal === 'lose-fat' ? 'less' : 'more') : (goal === 'lose-fat' ? 'more' : 'less')
   const range = dir === 'less' && !allowLess(safety, week.mind) ? null : rangeStep(s, dir, tr.level, safety, today, t)
-  return { kind: 'options', pace, ctx, options: optionsFor(ctx, range ? dir : null, week.mind), range, trend: tr, week }
+  return { kind: 'options', pace, ctx, options: optionsFor(ctx, range ? dir : null, week.mind), range, trend: tr, week, span }
 }
 
 /* ---------------- adaptive maintenance ---------------- */
@@ -308,8 +328,8 @@ export type AdaptiveMaintenance =
       start: { maint: number; lo: number; hi: number }
       /** qualifying days, their mean intake, and weigh-ins */
       loggedDays: number; avgKcal: number; weighIns: number
-      /** the window, in days */
-      days: number
+      /** the window, in days, and its first day */
+      days: number; from: string
     }
 
 /**
@@ -331,34 +351,43 @@ export function adaptiveMaintenance(s: AppState, today: string, o: { healthConse
   const to = shiftDay(today, -1)
   const changes = [p.maintainFrom, p.targetSetAt].filter((x): x is string => !!x).sort()
   const notBefore = changes.length ? shiftDay(changes[changes.length - 1], k.skipAfterChangeDays) : undefined
+  // the longest window (28, 42 or 56 days, never before `notBefore`) that qualifies and is
+  // narrower than the start (nutrition-accuracy 8 Oct: the range narrows as data grows)
+  let best: Extract<AdaptiveMaintenance, { kind: 'estimate' }> | null = null
+  let why: 'not-enough-data' | 'not-narrower' = 'not-enough-data'
+  let lastFrom = ''
   for (const w of k.windowDays) {
     let from = shiftDay(to, -(w - 1))
     if (notBefore && from < notBefore) from = notBefore
-    if (daysBetween(from, to) < k.minDays - 1) return { kind: 'none', reason: 'not-enough-data' }
-    const days = dayPictures(s, from, to, today).filter((x) => x.food.meals >= k.minMeals)
+    if (from === lastFrom) break // clipped: a longer window adds nothing
+    lastFrom = from
+    if (daysBetween(from, to) < k.minDays - 1) break
+    // a qualifying day: 2+ meal slots, at least one of them lunch or dinner (a breakfast and a snack isn't a day's eating)
+    const days = dayPictures(s, from, to, today).filter((x) => x.food.meals >= k.minMeals && x.food.mainMeal)
     const tr = weightTrend(s, to, { notBefore: from, t: { ...t, trend: { ...t.trend, windowDays: [w] } } })
     if (days.length < k.minLoggedDays || !tr || tr.n < k.minWeighIns) continue
     const intake = days.map((x) => x.food.kcal)
     const mean = avg(intake)
-    const half = Math.floor(days.length / 2)
-    const a = avg(intake.slice(0, half)), b = avg(intake.slice(half))
-    if (Math.abs(a - b) / Math.min(a, b) > k.taperPct / 100) return { kind: 'none', reason: 'tapering' }
+    // tapering: the two halves of the window by date, not by count of days
+    const mid = shiftDay(from, Math.floor((daysBetween(from, to) + 1) / 2))
+    const h1 = days.filter((x) => x.d < mid).map((x) => x.food.kcal), h2 = days.filter((x) => x.d >= mid).map((x) => x.food.kcal)
+    if (h1.length && h2.length && Math.abs(avg(h1) - avg(h2)) / Math.min(avg(h1), avg(h2)) > k.taperPct / 100) return { kind: 'none', reason: 'tapering' } // a recent taper withholds it, whatever a longer window says
     const sd = Math.sqrt(intake.reduce((x, v) => x + (v - mean) ** 2, 0) / (intake.length - 1))
     const se = Math.sqrt((sd / Math.sqrt(intake.length)) ** 2 + (t.kcalPerKg * tr.se) ** 2)
     const maint = mean - t.kcalPerKg * tr.slope
     const halfW = Math.max(k.minHalfKcal, r50(k.z * se))
     const est = maintenanceEstimate(p, null, tr.level)
-    if (!est) return { kind: 'none', reason: 'not-enough-data' }
-    if (halfW >= (est.maint * k.startMarginPct) / 100) return { kind: 'none', reason: 'not-narrower' }
+    if (!est) break
+    if (halfW >= (est.maint * k.startMarginPct) / 100) { why = 'not-narrower'; continue }
     const m = r50(maint)
-    const sm = r50(est.maint), sw = (est.maint * k.startMarginPct) / 100
-    return {
+    const sw = (est.maint * k.startMarginPct) / 100
+    best = {
       kind: 'estimate', maint: m, lo: m - halfW, hi: m + halfW,
-      start: { maint: sm, lo: r50(est.maint - sw), hi: r50(est.maint + sw) },
-      loggedDays: days.length, avgKcal: r50(mean), weighIns: tr.n, days: daysBetween(from, to) + 1,
+      start: { maint: r50(est.maint), lo: r50(est.maint - sw), hi: r50(est.maint + sw) },
+      loggedDays: days.length, avgKcal: r50(mean), weighIns: tr.n, days: daysBetween(from, to) + 1, from,
     }
   }
-  return { kind: 'none', reason: 'not-enough-data' }
+  return best ?? { kind: 'none', reason: why }
 }
 
 /* ---------------- maintain: the drift sheet ---------------- */
@@ -383,7 +412,11 @@ export function maintenanceDrift(s: AppState, today: string, o: { healthConsent:
   const to = shiftDay(today, -1), from = shiftDay(today, -14)
   const week = weekPicture(s, from, to, today, t)
   const dir = check.word === 'above' ? 'less' : 'more'
-  const range = dir === 'less' && !allowLess(safety, week.mind) ? null : rangeStep(s, dir, check.trend.level, safety, today, t)
+  // the 28-day trend lags a change: no second step until it has had 28 days to show
+  const settling = !!s.profile.targetSetAt && s.profile.targetSetAt > shiftDay(today, -28)
+  const learned = adaptiveMaintenance(s, today, o)
+  const anchor = learned.kind === 'estimate' ? learned.maint : undefined
+  const range = settling || (dir === 'less' && !allowLess(safety, week.mind)) ? null : rangeStep(s, dir, check.trend.level, safety, today, t, anchor)
   return { kind: 'drift', side: check.word, options: optionsFor('drift', range ? dir : null, week.mind), range, check, week, weighIns: weighIns(s, from, to).length }
 }
 
@@ -471,8 +504,9 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
   const safety = loopSafety(s, kg, o.healthConsent)
   const quiet = safety.quiet
   const wellbeingRouted = week.mind.wellbeing === 'flagged' || week.mind.wellbeing === 'sometimes'
-  const care = week.mind.careMood
-  const encouragement: Encouragement = welcomeBack ? 'welcome' : safety.gentle ? 'gentle' : week.mind.hard ? 'hard' : 'steady'
+  const care = careWeek(week.mind)
+  const hardish = week.mind.hard || care
+  const encouragement: Encouragement = welcomeBack ? 'welcome' : safety.gentle ? 'gentle' : hardish ? 'hard' : 'steady'
 
   // protein (mental-performance 8 Oct): most main meals with 15 g, else the daily average when it reaches the range's low end
   const fv = foodView(s.profile)
@@ -487,11 +521,11 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
     ? null
     : patternLine(s, to, today, { allowed: safety.gentle ? GENTLE_PATTERNS : undefined, recent: o.patternShown, t })
 
-  const ctx: OptionContext = safety.gentle || quiet ? 'gentle' : week.mind.hard ? 'hard' : 'calm'
+  const ctx: OptionContext = safety.gentle || quiet ? 'gentle' : hardish ? 'hard' : 'calm'
   // a range change in "Change one thing" (ml-a5) only where the weigh-in check or the drift check
   // points one way (eat-less only after a drift or a slower pace, never after a hard week)
   let range: RangeChange | null = null, dir: 'less' | 'more' | null = null
-  if (ctx !== 'gentle' && !welcomeBack) {
+  if (ctx !== 'gentle' && !welcomeBack && !care) {
     const rate = suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, t })
     const drift = rate.kind === 'none' ? maintenanceDrift(s, today, { healthConsent: o.healthConsent, t }) : null
     const r = rate.kind === 'options' ? rate.range : drift?.kind === 'drift' ? drift.range : null
@@ -507,7 +541,7 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
     move: week.move,
     mind: week.mind,
     // never compared across a gap on welcome back
-    weight: welcomeBack || wellbeingRouted ? null : weightRow(s, today, week.body.weighIns, safety, t),
+    weight: welcomeBack || wellbeingRouted || care ? null : weightRow(s, today, week.body.weighIns, safety, t),
     pattern,
     why: week.mind.motivations,
     choices: welcomeBack ? ['pick-up', 'ease-back'] : ['keep', 'ease-off', 'change-one'],
@@ -551,4 +585,52 @@ export function reviewWaiting(s: AppState, today: string, healthConsent: boolean
     if (d && (d.foods?.length || d.checkin || d.weight || d.sessions?.length || d.workout)) return true
   }
   return false
+}
+
+/* ---------------- the review reminder (ml-d1, ml-d2) ---------------- */
+
+/** Reminders stop after this many review days in a row pass unopened, and Tali asks once in the app (ml-d2, Benn 8 Oct). */
+export const REMINDER_UNOPENED_STOP = 3
+export const REMINDER_TEXT = { title: 'Your week is ready', body: 'Take a look whenever suits you.' } as const
+
+/** Review days since the reminder went on (or was kept) that passed without the review being opened, before `today`. */
+export function unopenedReviews(p: Pick<AppState['profile'], 'reviewDay' | 'reviewPushFrom' | 'lastReviewAt'>, today: string): number {
+  const from = [p.reviewPushFrom, p.lastReviewAt].filter((x): x is string => !!x).sort().pop()
+  if (!from) return 0
+  let n = 0
+  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) n++
+  return n
+}
+
+/**
+ * Whether the weekly reminder goes on `today` (the server runs the same rule on the synced
+ * profile): only if switched on, on the review day, not once the review is open, not in a week
+ * the phone marked to skip, and not after 3 unopened (then the app asks instead).
+ */
+export function reminderDue(p: AppState['profile'], today: string): boolean {
+  if (!p.reviewPush) return false
+  if (reviewDayOn(today, p.reviewDay ?? 0) !== today) return false
+  if (p.lastReviewAt && p.lastReviewAt >= today) return false
+  if (p.reviewPushSkip === today) return false
+  return unopenedReviews(p, today) < REMINDER_UNOPENED_STOP
+}
+
+/** "Keep the weekly reminder?" is due in the app: the reminder paused itself after 3 unopened. */
+export const reminderAskDue = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) >= REMINDER_UNOPENED_STOP
+
+/** The next review day on or after `today`: a hard or care week before it skips that reminder. */
+export const nextReviewDay = (today: string, weekday: number) => { const d = reviewDayOn(today, weekday); return d === today ? d : shiftDay(d, 7) }
+
+/**
+ * "Use this range" (ml-b4), for maintain only: the learned estimate becomes the target, never below
+ * the calorie floor or 25% under the formula's maintenance; the person's own range width stays.
+ */
+export function learnedTarget(s: AppState, r: Extract<AdaptiveMaintenance, { kind: 'estimate' }>, kg: number, t: LoopThresholds = LOOP_THRESHOLDS): { target: AppState['target']; floored: boolean } | null {
+  if (s.profile.goal !== 'maintain') return null
+  const est = maintenanceEstimate(s.profile, null, kg)
+  if (!est) return null
+  const lowest = Math.max(ceil50(calorieFloor(est.bmr, sexOf(s.profile))), ceil50(est.maint * (1 - t.maxDeficitPct / 100)))
+  const kcal = Math.max(r.maint, lowest)
+  const d = kcal - s.target.kcal
+  return { target: { ...s.target, kcal, c: Math.max(0, Math.round(s.target.c + d / 4)) }, floored: kcal > r.maint }
 }

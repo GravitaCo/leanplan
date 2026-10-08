@@ -518,6 +518,10 @@ export interface Profile {
   /** the weekly review reminder (ml-d1), switched on separately from supplement reminders, and its time (HH:MM) */
   reviewPush?: boolean
   reviewPushTime?: string
+  /** the date the reminder was turned on (or kept after "Keep the weekly reminder?"): unopened reviews count from here */
+  reviewPushFrom?: string
+  /** a review day the reminder skips: a week a safety signal fired (set on the phone; no reason is stored) */
+  reviewPushSkip?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

@@ -1,4 +1,6 @@
-// Supplement reminders (Web Push), called by a cron job with the cron secret.
+// Supplement reminders and the weekly review reminder (Web Push), called by a cron job with the
+// cron secret. The review reminder (boards ml-d1, ml-d2; maintenance-loop.md) mirrors
+// `reminderDue` in src/core/domain/maintenanceLoop.ts: keep the two in step.
 // Copy of the deployed function, kept in the repo (docs/compliance/README.md). Deploy with
 // verify_jwt off: it authenticates with the cron secret, not a user's JWT.
 //
@@ -38,6 +40,27 @@ const json = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
+const shiftDay = (d: string, n: number) => { const t = new Date(d + "T12:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+const reviewDayOn = (d: string, weekday: number) => shiftDay(d, -((new Date(d + "T12:00:00Z").getUTCDay() - weekday + 7) % 7));
+
+/** Review days since the reminder went on (or was kept) that passed without the review being opened. */
+function unopened(p: any, today: string): number {
+  const from = [p.reviewPushFrom, p.lastReviewAt].filter((x: unknown) => typeof x === "string").sort().pop();
+  if (!from) return 0;
+  let n = 0;
+  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) n++;
+  return n;
+}
+
+/** Same rule as the app: switched on, the review day at the chosen time, not opened yet, not a skipped week, fewer than 3 unopened. */
+function reviewDue(p: any, today: string, dow: number, time: string): boolean {
+  if (!p?.reviewPush) return false;
+  if ((p.reviewDay ?? 0) !== dow || (p.reviewPushTime ?? "09:00") !== time) return false;
+  if (p.lastReviewAt && p.lastReviewAt >= today) return false;
+  if (p.reviewPushSkip === today) return false;
+  return unopened(p, today) < 3;
+}
+
 Deno.serve(async (req: Request) => {
   // Fail closed. The secret comes from the CRON_SECRET env var if set,
   // otherwise from Vault via verify_cron_secret (service role only).
@@ -56,6 +79,9 @@ Deno.serve(async (req: Request) => {
   }
 
   const now = new Date();
+  // the review day and the review reminder's date, in London time like the supplement times
+  const londonDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const londonDow = new Date(londonDate + "T12:00:00Z").getUTCDay();
   const londonTime = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
     hour: "2-digit",
@@ -95,6 +121,26 @@ Deno.serve(async (req: Request) => {
       .single();
 
     const profile = settings?.profile as any;
+
+    // the weekly review reminder: generic text only, nothing from the log (a lock screen is visible
+    // to anyone nearby); switched on separately from supplement reminders
+    if (reviewDue(profile, londonDate, londonDow, londonTime)) {
+      try {
+        await (webpush as any).sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+          JSON.stringify({ title: "Your week is ready", body: "Take a look whenever suits you.", tag: "tali-review", url: "./?review=1", icon: "/icon-192.png" }),
+        );
+        sent++;
+      } catch (err: any) {
+        failed++;
+        console.error(`push failed: status ${err?.statusCode ?? "unknown"}`);
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          continue;
+        }
+      }
+    }
+
     if (!profile?.notificationsEnabled) continue;
 
     const supplements: Array<{ id: string; name: string; time: string }> =

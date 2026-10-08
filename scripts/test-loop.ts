@@ -9,7 +9,7 @@ import { LOOP_THRESHOLDS } from '@/core/domain/loopThresholds'
 import { mindContext, dayPictures, patternLine, strengthProgress, weekPicture, GENTLE_PATTERNS } from '@/core/domain/weekPicture'
 import { levelWord, weightTrend } from '@/core/domain/weightTrend'
 import {
-  adaptiveMaintenance, driftCheck, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
+  adaptiveMaintenance, allowLess, driftCheck, learnedTarget, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
   suggestRateAdjustment, weeklyReview, weightRow,
 } from '@/core/domain/maintenanceLoop'
 import {
@@ -131,7 +131,9 @@ function safetyAndWeight(): void {
     ['lose-fat on pace: in line', (() => { const w = weightRow(lose, TODAY, 3, loopSafety(lose, 88, true)); return w?.words.kind === 'pace' && w.words.pace === 'in-line' })()],
     ['lose-fat not losing: slower', (() => { const w = weightRow(slow, TODAY, 3, loopSafety(slow, 90, true)); return w?.words.kind === 'pace' && w.words.pace === 'slower' })()],
     ['before 4 weeks: "your trend shows after 4 weeks"', weightRow(young, TODAY, 3, loopSafety(young, 80, true))?.words.kind === 'too-soon'],
-    ['the rows say how often, never a kilo figure', weightSub({ weighIns: 4, words: { kind: 'steady' } }, false) === 'Steady over the last 4 weeks.' && !/kg/.test(weightSub({ weighIns: 4, words: { kind: 'above' } }, false))],
+    ['maintain with no reference yet: too soon, never "steady"', (() => { const x = state({ goal: 'maintain', maintainFrom: ago(3) }); series(x, 80, 0, 40); return weightRow(x, TODAY, 3, loopSafety(x, 80, true))?.words.kind === 'too-soon' })()],
+    ['lose-fat just after a target change: too soon, no pace words', (() => { const x = state({ targetSetAt: ago(10) }); series(x, 90, 0, 40); return weightRow(x, TODAY, 3, loopSafety(x, 90, true))?.words.kind === 'too-soon' })()],
+    ['the rows say how often, never a kilo figure', weightSub({ weighIns: 4, words: { kind: 'steady' }, weeks: 4 }, false) === 'Steady over the last 4 weeks.' && !/kg/.test(weightSub({ weighIns: 4, words: { kind: 'above' }, weeks: 4 }, false))],
   ])
 }
 
@@ -181,6 +183,8 @@ function adaptive(): void {
     ['waits 14 days after maintain starts, then 28 days of data', adaptiveMaintenance(fresh, TODAY, { healthConsent: true }).kind === 'none'],
     ['weight left out: none', adaptiveMaintenance({ ...s, profile: { ...s.profile, reviewWeight: false } }, TODAY, { healthConsent: true }).kind === 'none'],
     ['no health consent: none', adaptiveMaintenance(s, TODAY, { healthConsent: false }).kind === 'none'],
+    ['the window grows to the longest that qualifies', (() => { const x = state({ goal: 'maintain', maintainFrom: ago(120) }); series(x, 80, 0, 60, 2, 0.2); for (let i = 56; i >= 1; i--) if (i % 4) food(x, ago(i), 2400 + (i % 5) * 60 - 120); const r = adaptiveMaintenance(x, TODAY, { healthConsent: true }); return r.kind === 'estimate' && r.days === 56 })()],
+    ['"Use this range" only for maintain, and never below the floors', (() => { if (a.kind !== 'estimate') return false; const lose = { ...s, profile: { ...s.profile, goal: 'lose-fat' as const } }; const low = learnedTarget(s, { ...a, maint: 900 }, 80); return learnedTarget(lose, a, 80) === null && !!low && low.floored && low.target.kcal >= 1200 })()],
   ])
 }
 
@@ -199,7 +203,11 @@ function mind(): void {
     ['mood words', moodWords(calm) === 'Good most days'],
     ['hunger words', hungerWords(calm, false) === 'Mostly satisfied' && hungerWords(hard, true) === 'Higher on the short-sleep days'],
     ['check-in sub, calm', checkinSub(calm) === 'Good nights most of the week, and stress stayed low.', checkinSub(calm)],
-    ['check-in sub, hard', checkinSub(hard) === 'Short nights and stress stayed low.' || checkinSub(hard)!.startsWith('Short nights'), checkinSub(hard)],
+    ['check-in sub, mixed: two sentences', checkinSub(hard) === 'Short nights. Stress stayed low.', checkinSub(hard)],
+    ['check-in sub, both not good: one sentence', checkinSub({ ...hard, highStressDays: 3, lowStressDays: 0, calmerWeekend: false }) === 'Short nights and a busy few days.' && checkinSub({ ...hard, highStressDays: 3, lowStressDays: 0, calmerWeekend: true }) === 'Short nights and a busy few days. The weekend was calmer.'],
+    ['check-in sub, a mix of nights and low stress', checkinSub({ ...hard, poorSleepDays: 1, goodSleepDays: 2 }) === 'A mix of nights. Stress stayed low.'],
+    ['check-in sub, good nights and a busy few days', checkinSub({ ...calm, highStressDays: 3, lowStressDays: 1 }) === 'Good nights most of the week. A busy few days.'],
+    ['a care week allows no cut', !allowLess(loopSafety(state(), 80, true), { ...calm, careMood: true }) && !allowLess(loopSafety(state(), 80, true), { ...calm, starvingDays: 3 }) && allowLess(loopSafety(state(), 80, true), calm)],
     ['no row with fewer than 3 answers', sleepWords({ ...calm, sleepAnswers: 2 }) === null],
     ['starving on 3+ days is never a row', hungerWords({ ...calm, starvingDays: 3 }, false) === null],
   ])
@@ -283,6 +291,8 @@ function review(): void {
     ['a hard week: no pattern line, mind options first, no cut', hard.pattern === null && hard.changeOne.options[0] === 'earlier-night' && !hard.changeOne.options.includes('range-less')],
     ['an empty week is "welcome back" with nothing to catch up', empty.welcomeBack && JSON.stringify(empty.choices) === JSON.stringify(['pick-up', 'ease-back']) && reviewRows(empty).length === 0],
     ['a missed review is "welcome back", no weight across the gap', missed.welcomeBack && missed.weight === null],
+    ['a care week reads as a hard one: no weight, no pattern line, mind first', (() => { const c = steadyWeek(); for (let i = 7; i >= 1; i--) check(c, ago(i), { mood: 2, hunger: 3, sleep: 3, stress: 1 }); const r = weeklyReview(c, TODAY, { healthConsent: true }); return r.encouragement === 'hard' && r.weight === null && r.pattern === null && r.changeOne.ctx === 'hard' })()],
+    ['starving on 3+ days: no weight, no cut', (() => { const c = steadyWeek(); for (let i = 3; i >= 1; i--) check(c, ago(i), { mood: 4, hunger: 1, sleep: 3, stress: 1 }); const r = weeklyReview(c, TODAY, { healthConsent: true }); return r.weight === null && !r.changeOne.options.includes('range-less') })()],
     ['no "x of y", banned words, exclamation marks or em dashes anywhere', all.every(clean), all.filter((t) => !clean(t))],
   ])
 }
@@ -314,6 +324,7 @@ function goal(): void {
     ['protein 1.4 g/kg inside 1.2 to 1.6', ok && (t as any).p === 112 && PROTEIN_RANGE_PER_KG.maintain.low === 1.2 && PROTEIN_RANGE_PER_KG.maintain.high === 1.6],
     ['the medical question is asked for maintain', asksMedical('maintain') && asksMedical('lose-fat') && !asksMedical('build-muscle')],
     ['rangeStep for maintain never cuts more than 150', (() => { const s = state({ goal: 'maintain' }, 2900); const x = rangeStep(s, 'less', 80, loopSafety(s, 80, true), TODAY); return !x || x.kcal - x.suggested <= 150 })()],
+    ['maintain steps never stack past ±150 of the anchor, either way', (() => { const s = state({ goal: 'maintain' }, 2500); const sf = loopSafety(s, 80, true); const up = rangeStep(s, 'more', 80, sf, TODAY, undefined, 2400); const dn = rangeStep({ ...s, target: { ...s.target, kcal: 2300 } }, 'less', 80, sf, TODAY, undefined, 2400); return up?.suggested === 2550 && dn?.suggested === 2250 && rangeStep({ ...s, target: { ...s.target, kcal: 2550 } }, 'more', 80, sf, TODAY, undefined, 2400) === null })()],
   ])
 }
 
