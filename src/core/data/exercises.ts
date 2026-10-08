@@ -43,6 +43,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
     increment: ['next-stack'], ladders: [{ chain: 'squat-gym', step: 1 }],
     cue: "Feet shoulder-width on the platform. Lower until knees ~90°, keep your lower back on the pad. Push through mid-foot. Don't slam the knees straight at the top.",
+    video: DEMOS.legPress,
   },
   {
     id: 'romanian-deadlift', n: 'Romanian deadlift (dumbbell or barbell)', modality: 'strength', log: 'weight-reps',
@@ -102,6 +103,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'h-push-gym', step: 2 }],
     cue: "Bench at ~30°. Lower to the upper chest, press up and slightly together. Control the way down.",
+    video: DEMOS.inclineDbPress,
   },
   {
     id: 'db-shoulder-press', n: 'Dumbbell shoulder press (seated)', modality: 'strength', log: 'weight-reps',
@@ -137,6 +139,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
     increment: ['next-stack'], ladders: [{ chain: 'v-pull', step: 1 }],
     cue: "Lean back slightly, pull the bar to your upper chest, lead with the elbows. No yanking or swinging.",
+    video: DEMOS.latPulldown,
   },
   {
     id: 'seated-cable-row', n: 'Seated cable row', modality: 'strength', log: 'weight-reps',

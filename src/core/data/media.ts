@@ -387,4 +387,57 @@ export const DEMOS = {
       { at: 13.75, kind: 'ready' },
     ],
   },
+  // Seedance 2.5 (demonstrator W5, Benn's upload). Two reps: about 1.6 s pulling down to the
+  // upper chest, a squeeze, about 3 s back up to straight arms, a stretch at the top. Tracked by the hands.
+  latPulldown: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/9d104b30-692a-4ae7-bffd-37daea2b9047/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/9d104b30-692a-4ae7-bffd-37daea2b9047/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.9, kind: 'pull', rep: 1 },
+      { at: 3.5, kind: 'squeeze', rep: 1 },
+      { at: 5.4, kind: 'return', rep: 1 },
+      { at: 8.8, kind: 'stretch', rep: 1 },
+      { at: 9.9, kind: 'pull', rep: 2 },
+      { at: 11.5, kind: 'squeeze', rep: 2 },
+      { at: 12.7, kind: 'return', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W10, Benn's upload). Two reps, front three-quarter: starts pressed up,
+  // about 2.5 s down to the chest, a pause, about 1.4 s up, a hold at the top. Tracked by a dumbbell.
+  inclineDbPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/01693135-76ab-4831-89d7-f59d8f8bf8a1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/01693135-76ab-4831-89d7-f59d8f8bf8a1/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'lower', rep: 1 },
+      { at: 2.5, kind: 'stretch', rep: 1 },
+      { at: 4.2, kind: 'lift', rep: 1 },
+      { at: 5.6, kind: 'squeeze', rep: 1 },
+      { at: 8.5, kind: 'lower', rep: 2 },
+      { at: 11.2, kind: 'stretch', rep: 2 },
+      { at: 13.2, kind: 'lift', rep: 2 },
+      { at: 14.2, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 with Benn's photo of a compact plate-loaded leg press as the machine reference
+  // (demonstrator W11). The footplate is fixed and the seat slides on the rails. Two reps: about 3 s down to
+  // knees at about 90 degrees, a pause, about 1.8 s up, a pause. Tracked by the seat's plate.
+  legPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/7d511341-162a-42ab-a97e-d1922cdb25ef/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/7d511341-162a-42ab-a97e-d1922cdb25ef/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'lower', rep: 1 },
+      { at: 3.5, kind: 'stretch', rep: 1 },
+      { at: 5.5, kind: 'lift', rep: 1 },
+      { at: 7.4, kind: 'ready', rep: 2 },
+      { at: 9.0, kind: 'lower', rep: 2 },
+      { at: 11.6, kind: 'stretch', rep: 2 },
+      { at: 12.8, kind: 'lift', rep: 2 },
+      { at: 14.4, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>
