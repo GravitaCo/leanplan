@@ -60,7 +60,7 @@ Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), 
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
-| Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name, or the fixed text "Your week is ready" for the review reminder) |
+| Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name, or the fixed text "Your week is ready" / "Take a look whenever suits you." for the review reminder) |
 
 ## Publishing the legal pages
 
