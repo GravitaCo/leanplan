@@ -657,6 +657,16 @@ weekly reflection; the **support row sits under the Today card** on the Mind pag
 disappears from Today and the reflection (their switch wins over the weight-and-food rule); the
 log is kept and comes back when the pillar is switched on. Still open: the items below that the boards do not settle.
 
+### Build decisions (Benn, 8 Oct 2026)
+
+- **Unload stays on the device only** (§12.3: yes). Included in JSON export, cleared on consent
+  withdrawal and on delete-device-log.
+- **Build all of Phase 1 behind a feature flag** that stays off for users; nothing merges to `main`
+  until Benn and `ship-critic` say so. The low-mood signpost and the skill copy stay off until the
+  clinician review (§12.5).
+- **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
+  share one a day.
+
 ### Open for Benn (on the boards)
 
 - (a) Mind, Rest or Recharge; and the skill names.
