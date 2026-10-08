@@ -90,7 +90,8 @@ setting (`prefers-color-scheme`); there is no in-app override.
   dark; use `--on-food` for icons on a solid food square. Data-type names map onto them:
   `--energy` and `--body` → food, `--activity` → move, `--mind`. Protein, carbs, fat and
   supplements share the food colour and are told apart by their labels.
-- **Target ranges** use the neutral grey `--band`, never a pillar colour. No status red/amber for
+- **Target ranges** use the neutral grey `--band`, never a pillar colour. Chart rows (the week bars' 1 px
+  gridlines) use `--grid` (#E5E5E9 light, #38383A dark). No status red/amber for
   eating: targets are ranges and copy stays neutral.
 - **Type:** Geist (variable, bundled in `public/fonts/` under the OFL, preloaded so it works
   offline). Numbers use `.num` (tabular). Scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.
@@ -188,6 +189,7 @@ silently diverge) → build with existing primitives (extract a new shared compo
 pattern repeats) → wire to the store → verify in a headless browser → push to the working
 branch → `ship-critic` → merge to `main` (see Conventions).
 Where a design has gaps, implement the obvious case and call out the decisions made.
+Anything visual (app screens, the website, marketing images) goes past the `design` agent before it reaches Benn.
 **No design change ships without Benn's approval.** Build to the approved boards; any change to
 what the user sees that isn't on an approved design goes back to the Design canvas for Benn to
 approve first.
