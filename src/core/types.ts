@@ -222,6 +222,58 @@ export interface CheckIn {
   sore?: number
   note?: string
   t?: string
+  /** last night (wellbeing plan §4.3): the self-reported band now, a device's record later */
+  night?: SleepNight
+  /** Mind skills used this day, by key and time (never text) */
+  skills?: { id: SkillId; at: string }[]
+  /** the day's one thing: a key from core/data/skills.ts THINGS (never text), and when it was done */
+  thing?: { key: ThingKey; done?: string }
+}
+
+export type SleepSource = 'self' | 'healthkit' | 'health-connect'
+export type SleepBand = 'lt5' | '5-6' | '6-7' | '7-8' | '8+'
+/** One night, keyed to the day the person woke up on. Self-report and device records sit side by side. */
+export interface SleepNight {
+  source: SleepSource
+  /** self-report only */
+  band?: SleepBand
+  /** device only; shown rounded, never staged */
+  asleepMin?: number
+  /** local "HH:MM" */
+  bedAt?: string
+  wakeAt?: string
+  /** device record id, so a re-import is a no-op */
+  ext?: string
+  t: string
+}
+export type SkillId = 'reset' | 'wind-down' | 'unload' | 'outside'
+/** a key from core/data/skills.ts THINGS; never text */
+export type ThingKey = string
+export type Pillar = 'mind' | 'food' | 'move'
+export type NotifyKind = 'checkin' | 'wind-down' | 'plan'
+
+/**
+ * Mind settings (wellbeing plan §9), on `profile.mind`, merged field by field with `answeredAt`
+ * stamps ('mind.off', 'mind.asks' …). `wakeAt` and `windDownAt` are health data (cleared on
+ * withdrawal); the rest are preferences, kept.
+ */
+export interface MindPrefs {
+  /** pillars switched off; absent = all on; never all three */
+  off?: Pillar[]
+  /** how often Tali asks */
+  asks?: 'usual' | 'fewer'
+  /** usual wake time, "HH:MM" */
+  wakeAt?: string
+  /** wind-down time, "HH:MM" */
+  windDownAt?: string
+  /** reminder types turned on */
+  notify?: Partial<Record<NotifyKind, boolean>>
+  /** ISO time a reminder type's back-off started (after two ignored in a row) */
+  halved?: Partial<Record<NotifyKind, string>>
+  /** IANA time zone, from the device, so reminders follow the person's own clock */
+  tz?: string
+  /** "Show names on the lock screen"; default false */
+  lockNames?: boolean
 }
 
 export interface DayLog {
@@ -400,6 +452,8 @@ export interface IfThenPlan {
   created: string
   lastReview?: string
   reviews: { d: string; r: 'worked' | 'mixed' | 'no' }[]
+  /** a Mind plan (group "Mind plans"); health data by inference, cleared on withdrawal. Absent on other plans. */
+  kind?: 'mind'
 }
 
 export interface Supplement {
@@ -435,6 +489,8 @@ export interface Profile {
   /** personal hand-portion calibration in grams */
   hands?: Partial<Record<HandPortion, number>>
   plans?: IfThenPlan[]
+  /** Mind settings (wellbeing Phase 1) */
+  mind?: MindPrefs
   /** diet pattern for suggestions: meals are never hidden, conflicting ingredients get swaps */
   diet?: DietPattern
   /**

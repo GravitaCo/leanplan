@@ -4,6 +4,7 @@ import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
+import { validCheckin, validMindPrefs, validPlanKind } from '@/core/domain/checkin'
 import { nowIso, uuid, UUID_RE } from './supabase'
 import { cleanConsents, unsyncedConsents, type ConsentLog } from './consent'
 
@@ -101,6 +102,13 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
+  // Mind settings (wellbeing Phase 1): unknown keys and bad values dropped, never guessed
+  if (s.profile.mind !== undefined) {
+    const mind = validMindPrefs(s.profile.mind)
+    if (mind) s.profile.mind = mind; else delete s.profile.mind
+  }
+  // a Mind plan keeps a usable `kind`, so withdrawal always finds it
+  if (Array.isArray(s.profile.plans)) for (const pl of s.profile.plans) if (pl && typeof pl === 'object') validPlanKind(pl)
   s.consents = cleanConsents(s.consents)
   // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
   // read through sessionsOf without being rewritten
@@ -108,6 +116,8 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
     const day = s.days[d]
     if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
     if (day && Array.isArray(day.sessions)) cleanGuided(day.sessions)
+    // the check-in's Mind fields (night, skills, thing): malformed ones dropped; answers untouched
+    if (day && day.checkin != null) day.checkin = validCheckin(day.checkin)
   }
   return s
 }

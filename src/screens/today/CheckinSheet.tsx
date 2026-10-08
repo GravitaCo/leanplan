@@ -26,9 +26,10 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const [energy, setEnergy] = useState(existing?.energy ?? 0)
   const [sore, setSore] = useState(existing?.sore ?? 0)
   const [note, setNote] = useState(existing?.note ?? '')
+  // the answers go in as a patch (a 0 or empty answer removes it); the store merges them, so a
+  // skill or night logged elsewhere today stays, and an empty check-in becomes null
   const save = () => {
-    const any = mood || hunger || sleep || stress || energy || sore || note.trim()
-    setCheckin(any ? { mood, hunger, sleep, stress, energy, sore: liftDay ? sore : existing?.sore ?? 0, note: note.trim(), t: nowIso() } : null)
+    setCheckin({ mood, hunger, sleep, stress, energy, sore: liftDay ? sore : existing?.sore ?? 0, note: note.trim(), t: nowIso() })
     onClose()
   }
   const scale = (labels: string[], value: number, set: (v: number) => void) => (

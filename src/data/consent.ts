@@ -12,6 +12,7 @@
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan, Why, WhyCode } from '@/core/types'
 import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { isKindPlan, MIND_HEALTH_KEYS } from '@/core/domain/checkin'
 import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
@@ -309,12 +310,18 @@ export function unsyncedConsents(s: PersistedState): number {
  *   baseline, set feel, recovery, readiness, wellbeing …), in `routines` and `training_plans`
  * - every training preference (`profile.training.*`: body areas, limitations note, experience,
  *   days, weekdays, minutes, place, kit, what they enjoy, likes and dislikes)
+ * - Mind (wellbeing Phase 1; security-data M5): the check-in's nested `night`, `skills` and `thing`
+ *   go with `day.checkin`; the usual wake and wind-down times (`profile.mind.wakeAt`,
+ *   `profile.mind.windDownAt`); and Mind plans (`profile.plans` with a `kind`), health data by
+ *   inference. The other Mind settings (pillars, asks, reminder types and back-off, time zone,
+ *   lock-screen names) are preferences and stay.
  * Age is a plan input and the one answer onboarding requires; it's kept (PENDING Benn / legal
  * review), as is the legacy `sex` field the older screens read ('M' | 'F').
  */
 export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
+  'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.plans(kind)',
 ] as const
 
 export interface HealthDataSummary {
@@ -324,12 +331,16 @@ export interface HealthDataSummary {
   profileFields: number
   /** training preferences answered (body areas, days, kit, likes …) */
   trainingPrefs: number
+  /** Mind plans (`profile.plans` with a `kind`) */
+  mindPlans: number
+  /** the usual wake and wind-down times set */
+  mindTimes: number
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
 const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
-const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt']
+const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
 
 /** A profile patch without its health fields (saved while health consent is withdrawn). */
@@ -337,6 +348,15 @@ export function withoutHealth<P extends Partial<Profile>>(patch: P): P {
   const out = { ...patch }
   for (const k of PROFILE_HEALTH) delete out[k]
   delete out.training
+  if (out.mind) out.mind = withoutMindHealth(out.mind)
+  if (Array.isArray(out.plans)) out.plans = out.plans.filter((p) => !isKindPlan(p))
+  return out
+}
+
+/** Mind settings without the health ones (the usual wake and wind-down times). */
+function withoutMindHealth(m: NonNullable<Profile['mind']>): NonNullable<Profile['mind']> {
+  const out = { ...m }
+  for (const k of MIND_HEALTH_KEYS) delete out[k]
   return out
 }
 
@@ -357,6 +377,8 @@ export function healthDataSummary(s: PersistedState): HealthDataSummary {
     checkins: days.filter((d) => d && d.checkin).length,
     profileFields: PROFILE_HEALTH.filter((k) => s.profile?.[k] != null).length,
     trainingPrefs: Object.values(t ?? {}).filter((v) => v != null && !(Array.isArray(v) && !v.length) && v !== '').length,
+    mindPlans: (s.profile?.plans || []).filter(isKindPlan).length,
+    mindTimes: MIND_HEALTH_KEYS.filter((k) => s.profile?.mind?.[k] != null).length,
   }
 }
 
@@ -386,6 +408,8 @@ export function clearHealthData(s: PersistedState, meta: SyncMeta): boolean {
       settings = true
     }
     if (p.training && Object.keys(p.training).length) { p.training = {}; settings = true }
+    if (p.mind && MIND_HEALTH_KEYS.some((k) => p.mind![k] != null)) { p.mind = withoutMindHealth(p.mind); settings = true }
+    if (p.plans?.some(isKindPlan)) { p.plans = p.plans.filter((x) => !isKindPlan(x)); settings = true }
     // the per-field merge (sync) must not bring an older answer back from another copy
     if (settings) {
       const st = { ...p.answeredAt }
@@ -443,7 +467,13 @@ function stripResumeCopy(log: ConsentLog): void {
   const c = log.resumeCopy
   if (!c) return
   for (const d of Object.values(c.days || {})) { if (d) { d.weight = null; d.checkin = null } }
-  if (c.settings?.profile && typeof c.settings.profile === 'object') c.settings.profile = withProfileHealth(c.settings.profile as Partial<Profile>, profileHealth(null))
+  if (c.settings?.profile && typeof c.settings.profile === 'object') {
+    const p = withProfileHealth(c.settings.profile as Partial<Profile>, profileHealth(null))
+    // Mind times and Mind plans go too (the check-in's Mind fields went with the check-in above)
+    if (p.mind && typeof p.mind === 'object') p.mind = withoutMindHealth(p.mind)
+    if (Array.isArray(p.plans)) p.plans = p.plans.filter((x) => !isKindPlan(x))
+    c.settings.profile = p
+  }
 }
 
 /**

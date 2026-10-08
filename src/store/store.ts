@@ -32,6 +32,7 @@ import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessi
 import { activePlan, cleanPhases, keptAfterEdit, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
+import { checkinOrNull, mergeCheckin } from '@/core/domain/checkin'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { todayStr, shiftDay, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
@@ -132,7 +133,9 @@ export interface StoreState {
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
 
   // wellbeing & plans
-  setCheckin: (c: CheckIn | null) => void
+  /** merge a patch into the day's check-in (a 0, '' or undefined answer removes it; core/domain/checkin
+   *  mergeCheckin), so logging a skill never wipes mood; null clears the whole check-in */
+  setCheckin: (patch: Partial<CheckIn> | null) => void
   savePlan: (p: { id?: string; when: string; then: string; cope?: string }) => void
   deletePlan: (id: string) => void
   reviewPlans: (outcomes: Record<string, IfThenPlan['reviews'][number]['r']>) => void
@@ -683,8 +686,10 @@ export const useStore = create<StoreState>()(
         }], recipe.name + ' added')
       },
 
-      setCheckin: (c) => {
-        if (c && !healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
+      setCheckin: (patch) => {
+        const s0 = get()
+        const c = patch ? checkinOrNull(mergeCheckin(s0.data.days[s0.cur]?.checkin, patch)) : null
+        if (c && !healthLoggingAllowed(s0.data)) { s0.showToast(HEALTH_OFF_MSG); return }
         set((st) => {
           ensureDay(st.data, st.cur).checkin = c
           markDayDirty(st.data, st.cur)
