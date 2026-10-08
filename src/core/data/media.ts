@@ -339,4 +339,22 @@ export const DEMOS = {
       { at: 14.0, kind: 'ready' },
     ],
   },
+  // Seedance 2.5 (demonstrator W8). Two reps, side-on: a quick lift of about 0.8 s, a squeeze at
+  // the top of about 2.5 to 3 s, about 1 s down, a rest at the bottom. Timed by optical flow on the hips.
+  hipThrust: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/b3c11705-361f-4b61-a11d-1157939cba2c/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/b3c11705-361f-4b61-a11d-1157939cba2c/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 2.4, kind: 'lift', rep: 1 },
+      { at: 3.2, kind: 'squeeze', rep: 1 },
+      { at: 6.1, kind: 'lower', rep: 1 },
+      { at: 7.3, kind: 'ready', rep: 2 },
+      { at: 10.0, kind: 'lift', rep: 2 },
+      { at: 10.6, kind: 'squeeze', rep: 2 },
+      { at: 13.1, kind: 'lower', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

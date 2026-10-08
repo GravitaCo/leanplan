@@ -214,6 +214,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 75, setSec: 40 }, skill: 2, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['plate-2.5', 'next-weight'], ladders: [{ chain: 'hinge-loaded', step: 2 }],
     cue: "Sit with your upper back against a bench, the weight padded across your hips and feet flat. Drive through your heels to lift your hips until your body is level from shoulders to knees, squeeze your glutes, then lower slowly. Keep your chin tucked and ribs down, and don't arch your lower back at the top.",
+    video: DEMOS.hipThrust,
   },
   {
     id: 'leg-curl', n: 'Leg curl (machine)', modality: 'strength', log: 'weight-reps',
