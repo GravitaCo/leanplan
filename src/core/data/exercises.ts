@@ -229,6 +229,14 @@ export const EXERCISES: Exercise[] = [
     cue: "Line your knees up with the machine's pivot and set the pad just above your heels. Curl smoothly, pause, then lower slowly. Keep your hips down on the seat or bench rather than lifting them to help.",
   },
   {
+    id: 'hip-abduction-machine', n: 'Hip abduction (machine)', modality: 'strength', log: 'weight-reps',
+    equipment: ['machine'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
+    pattern: 'isolation', primary: 'glutes',
+    timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'low', homeFriendly: false,
+    increment: ['next-stack'],
+    cue: "Sit back with the pads on the outsides of your knees and your feet on the foot bars. Push your knees out to the sides as far as is comfortable, pause, then bring them back in slowly without letting the weights touch down. Keep your back on the pad and don't rock forward to push wider.",
+  },
+  {
     id: 'step-up', n: 'Step-up', modality: 'strength', log: 'weight-reps', perSide: true,
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
