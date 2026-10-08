@@ -272,7 +272,7 @@ export const DEMOS = {
   },
   // One full rep with a single handle (the move is the same with a rope): the clip opens as the
   // handle comes back up, a slow 5 s push down, a squeeze with arms straight, about 3.8 s back
-  // up, then a second push cut off partway, so the loop jumps. Tracked by the handle, every frame (24 fps).
+  // up, then a second push cut off partway (counted as a pause, not a rep). Tracked by the handle, every frame (24 fps).
   tricepsPushdown: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/play_720p.mp4',
     poster: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/thumbnail.jpg',
@@ -282,8 +282,7 @@ export const DEMOS = {
       { at: 2.3, kind: 'lower', rep: 1 },
       { at: 7.6, kind: 'squeeze', rep: 1 },
       { at: 8.9, kind: 'lift', rep: 1 },
-      { at: 12.7, kind: 'ready', rep: 2 },
-      { at: 13.4, kind: 'lower', rep: 2 },
+      { at: 12.7, kind: 'ready' },
     ],
   },
   // Generated with Seedance 2.5 (demonstrator W9). Two reps, side-on: a quick press of about
@@ -438,6 +437,24 @@ export const DEMOS = {
       { at: 11.6, kind: 'stretch', rep: 2 },
       { at: 12.8, kind: 'lift', rep: 2 },
       { at: 14.4, kind: 'ready' },
+    ],
+  },
+  // Benn's Seedance clip of a seated hip abduction machine (weight stack), filmed side-on. Two reps: knees push out
+  // over about 2 s, a hold, about 2 s back in, a pause. Timed by optical flow on the near foot.
+  hipAbduction: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/1a7e5fdb-55e1-4859-9aee-6174df1294f6/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/1a7e5fdb-55e1-4859-9aee-6174df1294f6/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.4, kind: 'push', rep: 1 },
+      { at: 2.4, kind: 'squeeze', rep: 1 },
+      { at: 4.0, kind: 'return', rep: 1 },
+      { at: 6.0, kind: 'ready', rep: 2 },
+      { at: 8.0, kind: 'push', rep: 2 },
+      { at: 10.0, kind: 'squeeze', rep: 2 },
+      { at: 11.55, kind: 'return', rep: 2 },
+      { at: 14.0, kind: 'ready' },
     ],
   },
 } satisfies Record<string, ExerciseMedia>

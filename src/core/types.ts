@@ -815,8 +815,9 @@ export interface ExerciseTemplate {
 }
 
 /** What the lifter is doing during one stretch of a demo clip. */
-/** `pull` and `return` are for pulling and cable moves (face pull, pulldown, row), where "Lift" and "Lower" mislead. */
-export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch' | 'pull' | 'return'
+/** `pull` and `return` are for pulling and cable moves (face pull, pulldown, row), where "Lift" and "Lower" mislead;
+ *  `push` is for pushing out to the side (hip abduction), with `return` on the way back. */
+export type TempoPhaseKind = 'ready' | 'lift' | 'squeeze' | 'lower' | 'stretch' | 'pull' | 'push' | 'return'
 
 /** One phase of a demo clip, measured from the footage. `at` is seconds from the clip start. */
 export interface TempoPhase {

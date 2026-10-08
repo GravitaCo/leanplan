@@ -175,7 +175,7 @@ These are typical coaching tempos (judgement calls), not measurements.
 
 ## Legs
 
-### Leg press (needed: Tali Full body B)
+### Leg press (done: on Bunny, compact plate-loaded machine)
 
 Add the machine line with "45-degree leg press machine".
 
@@ -263,7 +263,7 @@ Each rep is a 3-second lowering to mid-chest, a 1-second pause, a 1.5-second pre
 seconds", but the prompt asks for 3 to match the other exercises. Either change the prompt to
 2 seconds or update the cue so the video and text agree.
 
-### 7. Incline dumbbell press (needed)
+### 7. Incline dumbbell press (done: on Bunny)
 
 > Low front three-quarter angle. She sits back on a bench set to about 30 degrees, feet flat,
 > holding a dumbbell in each hand above her upper chest. She lowers the dumbbells under control
@@ -311,7 +311,7 @@ Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 1.5-second p
 
 ## Pull
 
-### 11. Lat pulldown (needed)
+### 11. Lat pulldown (done: on Bunny)
 
 Add the machine line with "lat pulldown machine with a straight bar".
 
@@ -349,7 +349,7 @@ Timing text: "Starting with the dumbbells hanging, 2 slow repetitions in about 1
 rep is a 1.5-second row, a 1-second squeeze, a 3-second lowering, and a 1-second hang at the
 bottom."
 
-### 14. Face pull (needed)
+### 14. Face pull (done: on Bunny)
 
 Add the machine line with "cable station with a rope attachment at head height".
 

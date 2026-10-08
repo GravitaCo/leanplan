@@ -7,6 +7,7 @@ export const PHASE_LABEL: Record<TempoPhaseKind, string> = {
   lower: 'Lower slowly',
   stretch: 'Hold the stretch',
   pull: 'Pull',
+  push: 'Push out',
   return: 'Return slowly',
 }
 
@@ -18,6 +19,7 @@ export const PHASE_SHORT: Record<TempoPhaseKind, string> = {
   lower: 'Lower',
   stretch: 'Stretch',
   pull: 'Pull',
+  push: 'Push',
   return: 'Return',
 }
 
