@@ -46,7 +46,7 @@ def to_he(t):
     t = re.sub(r"\b[Hh]erself\b", lambda m: "Himself" if m.group(0)[0]=="H" else "himself", t)
     t = re.sub(r"\b[Hh]er\b", her, t)
     t = re.sub(r"\bShe\b", "He", t); t = re.sub(r"\bshe\b", "he", t)
-    t = re.sub(r"\b(has|shows|puts|keeps|leaves) his\b", r"\1 him", t)
+    t = re.sub(r"\bhas his on\b", r"has him on", t)
     return t
 def entries(path):
     txt = open(path).read()
