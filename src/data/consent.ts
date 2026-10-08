@@ -453,6 +453,14 @@ function stripResumeCopy(log: ConsentLog): void {
     const p = withoutHealth(orig)
     // the activity level derived from daily movement goes back to the default with it, as on the phone
     if (orig.activityMult != null) p.activityLevel = 'light'
+    // the required height stays as a key, cleared to null, as on the phone
+    if ('height' in orig) p.height = null
+    // and the merge stamps of the cleared fields carry the clear time, as clearHealthData does, so
+    // the copy doesn't show when (or whether) a health question was answered
+    const u = nowIso()
+    const st = { ...(orig.answeredAt || {}) } as Record<string, string>
+    for (const f of CLEARED_STAMPS) st[f] = u
+    p.answeredAt = st as Profile['answeredAt']
     c.settings = { ...c.settings, profile: p }
   }
   const strip = (list: Why[] | undefined): Why[] | undefined => list?.filter((w) => !healthWhy(w))

@@ -635,7 +635,8 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   recordConsent(rc, 'health', true, undefined, '2026-09-20T08:00:00.000Z')
   const keptProfile = { name: 'A', age: 40, goal: 'lose', weight: 80, bodyFat: 25, height: 175, sexAnswer: 'female', movement: 'on-feet', activityMult: 1.5, activityLevel: 'active',
     outcomes: { readiness: 'clear', wellbeing: 'sometimes' }, pregnancy: { answer: 'no', at: '2026-09-01' }, motivations: ['energy'], deficitChosen: 'gentle', foodOptIn: { range: 'shown' },
-    training: { daysPerWeek: 3, bodyAreas: ['knees'], limitationsNote: 'knees' }, steadyRef: 80, patternShown: '2026-09-01', loopChoice: 'hold', reviewPushSkip: '2026-09-01' }
+    training: { daysPerWeek: 3, bodyAreas: ['knees'], limitationsNote: 'knees' }, steadyRef: 80, patternShown: '2026-09-01', loopChoice: 'hold', reviewPushSkip: '2026-09-01',
+    answeredAt: { foodOptIn: '2026-09-01T08:00:00.000Z', pregnancy: '2026-09-01T08:00:00.000Z', name: '2026-09-01T08:00:00.000Z' } }
   const healthy = [{ code: 'body-area', field: 'bodyAreas' }, { code: 'goal', field: 'lately' }, { code: 'feel' }]
   const plain = { code: 'days', field: 'daysPerWeek' }
   rc.consents!.resumeCopy = { at: '2026-09-21T08:00:00.000Z', settings: { target: null, schedule: null, profile: JSON.parse(JSON.stringify(keptProfile)) },
@@ -651,6 +652,8 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   const rcWhys = [...(rcCopy?.routines?.R1?.why ?? []), ...(rcCopy?.routines?.R1?.blocks ?? []).flatMap((b) => b.slots.flatMap((x) => x.why ?? [])), ...(rcCopy?.trainingPlans?.P1?.why ?? [])]
   checks.push(['a pulled withdrawal leaves no HEALTH_FIELDS key in the kept copy\'s profile' + (survivors.length ? ' (kept: ' + survivors.join(', ') + ')' : ''), rcApplied && survivors.length === 0])
   checks.push(['the kept copy keeps what a withdrawal keeps', rcProfile.name === 'A' && rcProfile.age === 40 && rcProfile.goal === 'lose'])
+  const rcStamps = (rcProfile.answeredAt ?? {}) as Record<string, string>
+  checks.push(['the kept copy\'s health stamps carry the clear time, other stamps stay, height is null', rcStamps.foodOptIn !== '2026-09-01T08:00:00.000Z' && rcStamps.pregnancy !== '2026-09-01T08:00:00.000Z' && !!rcStamps.foodOptIn && rcStamps.name === '2026-09-01T08:00:00.000Z' && rcProfile.height === null])
   checks.push(['no health-derived reason stays in the kept copy\'s workouts, slots or plans', rcWhys.length === 3 && !rcWhys.some(healthWhy) && rcWhys.every((w) => w.code === 'days')])
 
   // a phone clock running fast can't put a yes after a later withdrawal: a synced record counts
