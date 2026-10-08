@@ -25,6 +25,7 @@ export const ENCOURAGE = {
   gentle: 'Small, steady things. That’s the whole idea.',
   hard: 'A full-on week, and you still showed up.',
   welcome: 'Good to have you back.',
+  lighter: 'A quieter week. What you did still counts.',
 } as const
 
 /* ---------------- mind ---------------- */
@@ -239,6 +240,7 @@ export const GENTLE_FOOT = 'Gentle mode: no numbers here, and weight isn’t par
 /** Choices for next week (ml-a1, ml-a4). */
 export const CHOICE_TEXT = {
   keep: { title: 'Keep it as it is', sub: 'What you’re doing is working for you.' },
+  'keep-lighter': { title: 'Keep it as it is', sub: 'Same plan for next week.' },
   // Benn, 8 Oct: Ease off pre-selects shorter sessions and leaves food as it is, so the copy says so
   'ease-off': { title: 'Ease off', sub: 'A lighter week: shorter sessions, more room.' },
   'ease-off-gentle': { title: 'Ease off', sub: 'A lighter week, with more room.' },

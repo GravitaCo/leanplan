@@ -8,7 +8,7 @@ import { useStore } from '@/store/store'
 import { canSaveHealthAnswers, healthDeclined, healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
-import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
+import { dayMonthOf, fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
 import { dayTotals } from '@/core/domain/nutrition'
 import { activitySuggestion, markActivityShown } from '@/core/domain/activity'
 import { builtinType, workoutsOf } from '@/core/domain/sessions'
@@ -380,7 +380,8 @@ export function TodayScreen() {
             <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
               <span className="tk">Weight</span>
               <span className="v num">{lastW ? <>{r1(data.days[lastW].weight!)}<small>kg</small></> : <span className="w">Add</span>}</span>
-              <span className="s">{lastW ? (lastW === cur ? 'Today' : fmtDate(lastW).dow) : 'Whenever it suits you'}</span>
+              {/* within the week its weekday, older its date, so an old weigh-in never reads as recent */}
+              <span className="s">{lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you'}</span>
               {wRow && <span className="wt-trend">{weightTileWords(wRow)}</span>}
             </div>
           )

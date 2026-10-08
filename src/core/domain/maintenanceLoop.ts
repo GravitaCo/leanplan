@@ -423,7 +423,7 @@ export function maintenanceDrift(s: AppState, today: string, o: { healthConsent:
 /* ---------------- the weekly review ---------------- */
 
 export type ReviewChoice = 'keep' | 'ease-off' | 'change-one' | 'pick-up' | 'ease-back'
-export type Encouragement = 'steady' | 'gentle' | 'hard' | 'welcome'
+export type Encouragement = 'steady' | 'gentle' | 'hard' | 'welcome' | 'lighter'
 export type ProteinWords = { kind: 'meals' } | { kind: 'grams'; g: number }
 
 export interface WeeklyReview {
@@ -506,7 +506,11 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
   const wellbeingRouted = week.mind.wellbeing === 'flagged' || week.mind.wellbeing === 'sometimes'
   const care = careWeek(week.mind)
   const hardish = week.mind.hard || care
-  const encouragement: Encouragement = welcomeBack ? 'welcome' : safety.gentle ? 'gentle' : hardish ? 'hard' : 'steady'
+  // a lighter week (1 to 3 active days): no praise for a habit on that little, and no range change
+  // from a few logged days (mental-performance, 8 Oct; 4 days a judgement call)
+  const activeDays = week.days.filter((x) => x.finished && (x.food.logged || x.mind || x.move.sessions.length || x.weight !== null)).length
+  const lighter = !welcomeBack && activeDays < 4
+  const encouragement: Encouragement = welcomeBack ? 'welcome' : safety.gentle ? 'gentle' : hardish ? 'hard' : lighter ? 'lighter' : 'steady'
 
   // protein (mental-performance 8 Oct): most main meals with 15 g, else the daily average when it reaches the range's low end
   const fv = foodView(s.profile)
@@ -525,7 +529,7 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
   // a range change in "Change one thing" (ml-a5) only where the weigh-in check or the drift check
   // points one way (eat-less only after a drift or a slower pace, never after a hard week)
   let range: RangeChange | null = null, dir: 'less' | 'more' | null = null
-  if (ctx !== 'gentle' && !welcomeBack && !care) {
+  if (ctx !== 'gentle' && !welcomeBack && !care && !lighter) {
     const rate = suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, t })
     const drift = rate.kind === 'none' ? maintenanceDrift(s, today, { healthConsent: o.healthConsent, t }) : null
     const r = rate.kind === 'options' ? rate.range : drift?.kind === 'drift' ? drift.range : null
@@ -579,11 +583,11 @@ export function reviewWaiting(s: AppState, today: string, healthConsent: boolean
   const p = s.profile
   const day = reviewDayOn(today, p.reviewDay ?? 0)
   if ((p.lastReviewAt && p.lastReviewAt >= day) || p.reviewHidden === day) return false
-  // something to look back on in the 7 days before the review day
-  for (let i = 1; i <= 7; i++) {
-    const d = s.days[shiftDay(day, -i)]
-    if (d && (d.foods?.length || d.checkin || d.weight || d.sessions?.length || d.workout)) return true
-  }
+  // a week to look back on: something logged at least 7 days before the review day (a new person
+  // waits for their first full week: ship-critic, 8 Oct), and something in the 7 days before it
+  const used = (d: string) => { const x = s.days[d]; return !!x && !!(x.foods?.length || x.checkin || x.weight || x.sessions?.length || x.workout) }
+  if (!Object.keys(s.days).some((d) => d <= shiftDay(day, -7) && used(d))) return false
+  for (let i = 1; i <= 7; i++) if (used(shiftDay(day, -i))) return true
   return false
 }
 

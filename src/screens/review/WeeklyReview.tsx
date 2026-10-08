@@ -60,7 +60,9 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
   const [after, setAfter] = useState<After>(null)
   // the reminder is offered at the end of the first review, never switched on for anyone (ml-d1)
   const [offer, setOffer] = useState(false)
-  const [pattern] = useState(() => (rv.pattern?.line ? rv.pattern.line.code : null))
+  // the pattern line is read once per opening: noting it as shown must not hide it mid-review (ship-critic, 8 Oct)
+  const [patternLine] = useState(() => rv.pattern?.line ?? null)
+  const pattern = patternLine?.code ?? null
 
   useEffect(() => { markOpened() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (pattern) notePattern(pattern) }, [pattern]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -97,7 +99,7 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
   const plans = rv.welcomeBack ? [] : rv.mind.plansDue
   const hard = rv.encouragement === 'hard'
   const choices: { k: ReviewChoice; title: string; sub: string }[] = rv.choices.map((k) => {
-    const c = k === 'ease-off' && rv.gentle ? CHOICE_TEXT['ease-off-gentle'] : k === 'change-one' && hard ? CHOICE_TEXT['change-one-hard'] : CHOICE_TEXT[k]
+    const c = k === 'ease-off' && rv.gentle ? CHOICE_TEXT['ease-off-gentle'] : k === 'change-one' && hard ? CHOICE_TEXT['change-one-hard'] : k === 'keep' && rv.encouragement === 'lighter' ? CHOICE_TEXT['keep-lighter'] : CHOICE_TEXT[k]
     return { k, title: c.title, sub: c.sub }
   })
 
@@ -128,12 +130,12 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
           </section>
         )}
 
-        {rv.pattern?.line && (
+        {patternLine && (
           <section className="rv-card rv-pat" aria-labelledby="rv-pat-h">
             <span className="rv-sq mind" aria-hidden="true"><Icon name="trend" size={18} /></span>
             <div style={{ flex: 1 }}>
               <h2 id="rv-pat-h">Something in your data</h2>
-              <div className="p">{patternText(rv.pattern.line.code, rv.gentle)}</div>
+              <div className="p">{patternText(patternLine.code, rv.gentle)}</div>
               <div className="f">{PATTERN_FOOT}</div>
             </div>
           </section>

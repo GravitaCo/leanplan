@@ -38,14 +38,17 @@ const strength = (d) => ({ id: 's' + d, modality: 'strength', title: 'Full body'
 const walk = (d) => ({ id: 'w' + d, modality: 'cardio', title: 'Brisk walk', cardio: { key: 'Brisk walk' }, at: d + 'T12:00:00.000Z', mins: 30 })
 
 /** A maintain person in week 7: 6 check-ins, 3 strength and 3 walks, food on 6 days, weigh-ins every other day for 7 weeks. */
-function steadyState({ gentle = false, reviewWeight = true, hard = false, missed = false } = {}) {
+function steadyState({ gentle = false, reviewWeight = true, hard = false, missed = false, pattern = false } = {}) {
   const days = {}
   const day = (d) => (days[d] ??= { foods: [], supps: {}, weight: null, workout: null, checkin: null })
+  // a clear sleep-to-hunger pattern over 6 weeks (every third day short sleep and hungry)
+  if (pattern) for (let i = 42; i >= 8; i--) day(ago(i)).checkin = i % 3 === 0 ? { mood: 3, hunger: 2, sleep: 1, stress: 2, energy: 2 } : { mood: 4, hunger: 3, sleep: 3, stress: 2, energy: 2 }
   for (let i = 50; i >= 1; i -= 2) day(ago(i)).weight = 80 + (i % 3 ? 0.2 : -0.2)
   day(ago(7)).weight = 80.1
   for (let i = 7; i >= 1; i--) {
     if (missed && i > 3) continue
-    if (i !== 3) day(ago(i)).checkin = hard
+    if (pattern) day(ago(i)).checkin = i % 3 === 0 ? { mood: 3, hunger: 2, sleep: 1, stress: 2, energy: 2 } : { mood: 4, hunger: 3, sleep: 3, stress: 2, energy: 2 }
+    else if (i !== 3) day(ago(i)).checkin = hard
       ? { mood: 3, hunger: 2, sleep: i <= 4 ? 1 : 3, stress: i <= 5 && i >= 3 ? 3 : 1, energy: 2, t: ago(i) + 'T08:00:00.000Z' }
       : { mood: 4, hunger: 3, sleep: 3, stress: 1, energy: 3, t: ago(i) + 'T08:00:00.000Z' }
     if (i !== 5) day(ago(i)).foods.push(meal(700, 40, 'breakfast'), meal(800, 45, 'lunch'), meal(i === 2 ? 1200 : 750, 40, 'dinner'))
@@ -155,6 +158,16 @@ async function run() {
     await shot(page, 'change-one-hard-light')
     await page.keyboard.press('Escape')
     await shot(page, 'review-hard-light')
+    await ctx.close()
+  }
+  {
+    // the pattern line stays on screen after the review notes it as shown (ship-critic, 8 Oct)
+    const { ctx, page } = await open(browser, steadyState({ pattern: true }), 'light')
+    await page.click('.rv-due-b')
+    await page.waitForTimeout(1500)
+    const rv = await page.locator('[data-testid=weekly-review]').innerText()
+    check('pattern line visible after effects run', rv.includes('Something in your data') && rv.includes('On your short-sleep days, hunger tended to be higher.'), rv)
+    await shot(page, 'review-pattern-light')
     await ctx.close()
   }
   {

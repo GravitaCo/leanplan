@@ -9,7 +9,7 @@ import { LOOP_THRESHOLDS } from '@/core/domain/loopThresholds'
 import { mindContext, dayPictures, patternLine, strengthProgress, weekPicture, GENTLE_PATTERNS } from '@/core/domain/weekPicture'
 import { levelWord, weightTrend } from '@/core/domain/weightTrend'
 import {
-  adaptiveMaintenance, allowLess, driftCheck, learnedTarget, reminderAskDue, reminderDue, reminderLapsed, unopenedReviews, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
+  adaptiveMaintenance, allowLess, driftCheck, learnedTarget, reminderAskDue, reminderDue, reminderLapsed, reviewWaiting, unopenedReviews, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
   suggestRateAdjustment, weeklyReview, weightRow,
 } from '@/core/domain/maintenanceLoop'
 import {
@@ -290,6 +290,7 @@ function review(): void {
     ['a hard week: "A full-on week, and you still showed up."', hard.encouragement === 'hard' && ENCOURAGE.hard === 'A full-on week, and you still showed up.'],
     ['a hard week: no pattern line, mind options first, no cut', hard.pattern === null && hard.changeOne.options[0] === 'earlier-night' && !hard.changeOne.options.includes('range-less')],
     ['an empty week is "welcome back" with nothing to catch up', empty.welcomeBack && JSON.stringify(empty.choices) === JSON.stringify(['pick-up', 'ease-back']) && reviewRows(empty).length === 0],
+    ['a lighter week: "A quieter week." and no range change', (() => { const x = steadyWeek(); for (let i = 7; i >= 3; i--) delete x.days[ago(i)]; const r = weeklyReview(x, TODAY, { healthConsent: true }); return r.encouragement === 'lighter' && ENCOURAGE.lighter === 'A quieter week. What you did still counts.' && r.changeOne.range === null })()],
     ['a missed review is "welcome back", no weight across the gap', missed.welcomeBack && missed.weight === null],
     ['a care week reads as a hard one: no weight, no pattern line, mind first', (() => { const c = steadyWeek(); for (let i = 7; i >= 1; i--) check(c, ago(i), { mood: 2, hunger: 3, sleep: 3, stress: 1 }); const r = weeklyReview(c, TODAY, { healthConsent: true }); return r.encouragement === 'hard' && r.weight === null && r.pattern === null && r.changeOne.ctx === 'hard' })()],
     ['starving on 3+ days: no weight, no cut', (() => { const c = steadyWeek(); for (let i = 3; i >= 1; i--) check(c, ago(i), { mood: 4, hunger: 1, sleep: 3, stress: 1 }); const r = weeklyReview(c, TODAY, { healthConsent: true }); return r.weight === null && !r.changeOne.options.includes('range-less') })()],
@@ -310,6 +311,7 @@ function words(): void {
     ['change one, calm', changeOneLead('calm', m) === 'Pick one small thing to try.'],
     ['options in gentle mode: rest, sleep, a plan, a walk', JSON.stringify(optionsFor('gentle', 'less', { eveningHunger: false })) === JSON.stringify(['earlier-night', 'rest-day', 'hungry-days-plan', 'walk'])],
     ['ease off: shorter sessions for the next 7 days', JSON.stringify(easeOffFields(TODAY)) === JSON.stringify({ easyFrom: TODAY, easyUntil: shiftDay(TODAY, 6) })],
+    ['a new person waits for a full week before the first review', (() => { const x = state(); food(x, ago(1), 500); const y = steadyWeek(); return !reviewWaiting(x, TODAY, true) && reviewWaiting(y, TODAY, true) && !reviewWaiting(y, TODAY, false) })()],
     ['review day: the Sunday on or before today', reviewDayOn('2026-10-14', 0) === '2026-10-11' && reviewDayOn(TODAY, 0) === TODAY],
     ['reminder: on the review day only, off by default', (() => { const p = state().profile; return !reminderDue(p, TODAY) && reminderDue({ ...p, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(7) }, TODAY) && !reminderDue({ ...p, reviewPush: true, reviewDay: 1, reviewPushFrom: ago(7) }, TODAY) })()],
     ['reminder: not once the review is open, not in a skipped week', (() => { const p = { ...state().profile, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(7) }; return !reminderDue({ ...p, lastReviewAt: TODAY }, TODAY) && !reminderDue({ ...p, reviewPushSkip: TODAY }, TODAY) })()],

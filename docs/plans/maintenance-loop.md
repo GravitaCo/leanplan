@@ -246,3 +246,14 @@ builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
    review card on Summary under Mind on review day, gone once opened, a cross hides it until next
    week (ml-e3); Profile's "Weekly review" group, with the reminder under Notifications (ml-e4).
    ml-e5 and ml-e5b (the medical question for every goal) await Benn.
+9. **Copy approved as built (8 Oct):** the "Keep the weekly reminder?" banner ("It's paused for now.
+   Some weeks you won't need it, and that's fine.", Keep it / Turn it off; asked once, then off
+   quietly); the ml-d1 footnote ("Once a week on {day} at {time} UK time. It only says 'Your week is
+   ready', nothing from your log. Turn it off any time in Profile."); ml-a5's "Wind down a little
+   earlier on the nights that suit you."; "lately" in the calmer-days pattern line; the "Noted for
+   next week." toast. A hard week hides the pattern line. ml-e5 and ml-e5b approved for build.
+   Deploying the reminders function after ship-critic's SHIP is approved.
+10. **Lighter week (ship-critic, then mental-performance; Benn approved 8 Oct):** a week with 1 to 3
+    active days reads "A quieter week. What you did still counts.", "Keep it as it is" reads "Same
+    plan for next week.", and no range change is offered. A new person waits for their first full
+    week before a review. "Keep it steady" is in Profile's goal list too.
