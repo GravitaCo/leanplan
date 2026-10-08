@@ -506,6 +506,16 @@ export interface Profile {
   maintainFrom?: string
   /** "Make this my new starting point" (board ml-c3): the steady range's reference weight and the date it was set */
   steadyRef?: { kg: number; from: string }
+  /** the weekday the weekly review is waiting on Summary from (0 = Sunday), and the last date it was opened */
+  reviewDay?: number
+  lastReviewAt?: string
+  /** when each pattern line last showed (weekPicture PatternCode → YYYY-MM-DD): health data by inference */
+  patternShown?: Record<string, string>
+  /** the last "For next week" choice and its date: health data by inference (it follows from the log) */
+  loopChoice?: { d: string; choice: 'keep' | 'ease-off' | 'change-one' | 'pick-up' | 'ease-back'; option?: string }
+  /** the weekly review reminder (ml-d1), switched on separately from supplement reminders, and its time (HH:MM) */
+  reviewPush?: boolean
+  reviewPushTime?: string
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

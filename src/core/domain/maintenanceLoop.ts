@@ -525,3 +525,12 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
 export function easeOffFields(today: string): { easyFrom: string; easyUntil: string } {
   return { easyFrom: today, easyUntil: shiftDay(today, 6) }
 }
+
+/** The target after a chosen range change: kcal moves by the step, carbs take the difference (protein and fat stay). */
+export function targetAfter(t: AppState['target'], rc: RangeChange): AppState['target'] {
+  const d = rc.suggested - t.kcal
+  return { ...t, kcal: rc.suggested, c: Math.max(0, Math.round(t.c + d / 4)) }
+}
+
+/** A profile patch picks "Keep it steady" when it wasn't the goal before: the steady range's clock starts. */
+export const startsMaintain = (prev: Goal | undefined, patch: { goal?: Goal }): boolean => 'goal' in patch && patch.goal === 'maintain' && prev !== 'maintain'

@@ -240,3 +240,9 @@ builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
    asks once in the app, "Keep the weekly reminder?"
 7. **The medical question for every goal**: reworded on a new board for Benn's approval (it mentions
    eating less today); the flag keeps protein at the minimum.
+8. **Boards ml-e1 to ml-e4 approved** (drafted 8 Oct for the screens the first boards didn't cover):
+   This week card with counts only and no logged-day dots (ml-e1); the Weight tile with the latest
+   weigh-in and the 4-week trend in words, words only for people who left weight out (ml-e2); the
+   review card on Summary under Mind on review day, gone once opened, a cross hides it until next
+   week (ml-e3); Profile's "Weekly review" group, with the reminder under Notifications (ml-e4).
+   ml-e5 and ml-e5b (the medical question for every goal) await Benn.
