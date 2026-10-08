@@ -11,7 +11,7 @@ demo videos".
 
 ## Status: every exercise in the app
 
-54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **25 have a clip, 29 still need one.** Generated from the app's data on 8 Oct 2026.
+54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **22 have a clip, 32 still need one.** Generated from the app's data on 8 Oct 2026.
 
 ### Still needed
 
@@ -20,14 +20,17 @@ demo videos".
 | Calf raise | reps | Legs |
 | Leg extension (machine) | reps | Legs |
 | Plank | hold | Legs |
+| Incline dumbbell press | reps | Push, Tali: Full body C |
 | Lateral raise | reps | Push |
 | Cable crunch | reps | Pull |
 | Chest-supported dumbbell row | reps | Pull |
+| Lat pulldown | reps | Pull, Tali: Full body B |
 | Seated cable row | reps | Pull, Tali: Full body A |
 | Brisk walk | timed (steady pace) | Cardio |
 | Chair pose | hold | Tali: Balance & Mobility |
 | Dead bug | reps | Tali: Full body A |
 | Leg curl (machine) | reps | Tali: Full body A |
+| Leg press | reps | Tali: Full body B |
 | One-arm dumbbell row | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Tali: Full body C |
 | Step-up | reps | Tali: Strength & Balance A |
 | Tree pose | hold | Tali: Strength & Balance A, Tali: Balance & Mobility |
@@ -55,11 +58,9 @@ demo videos".
 | Romanian deadlift (dumbbell or barbell) | reps | Legs, Tali: Full body B | `9375b37c…` |
 | Barbell bench press | reps | Push | `df890da8…` |
 | Dumbbell shoulder press (seated) | reps | Push, Tali: Full body B | `29092357…` |
-| Incline dumbbell press | reps | Push, Tali: Full body C | `01693135…` |
 | Triceps rope pushdown (cable) | reps | Push | `db9a8075…` |
 | Biceps curl (barbell or dumbbell) | reps | Pull | `ea9ee735…` |
 | Face pull (cable) | reps | Pull, Tali: Full body C | `6d5a1fa4…` |
-| Lat pulldown | reps | Pull, Tali: Full body B | `9d104b30…` |
 | Bird-dog | reps | Tali: Strength & Balance B | `28383feb…` |
 | Dumbbell bench press | reps | Tali: Full body A | `c3115e41…` |
 | Dumbbell split squat | reps | Tali: Full body C | `cf04a486…` |
@@ -68,7 +69,6 @@ demo videos".
 | Hip thrust | reps | Tali: Full body C | `b3c11705…` |
 | Incline push-up | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Warm-up | `0f94c2e0…` |
 | Knee to wall | reps | Tali: Balance & Mobility, Warm-up | `e7138db7…` |
-| Leg press | reps | Tali: Full body B | `220320c4…` |
 | Side plank (knees) | hold | Tali: Strength & Balance B, Tali: Full body B | `8dde7844…` |
 | Sit to stand | reps | Tali: Strength & Balance A | `5b34fdf0…` |
 | Split squat | reps | Tali: Strength & Balance B, Tali: Balance & Mobility | `31719b54…` |

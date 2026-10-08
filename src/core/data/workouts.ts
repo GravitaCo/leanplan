@@ -50,8 +50,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "incline-db-press", "n": "Incline dumbbell press",
         "t": "3 × 10–12",
-        "cue": "Bench at ~30°. Lower to the upper chest, press up and slightly together. Control the way down.",
-        "video": DEMOS.inclineDbPress
+        "cue": "Bench at ~30°. Lower to the upper chest, press up and slightly together. Control the way down."
       },
       {
         "id": "db-shoulder-press", "n": "Dumbbell shoulder press (seated)",
@@ -78,8 +77,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "lat-pulldown", "n": "Lat pulldown",
         "t": "3 × 10–12",
-        "cue": "Lean back slightly, pull the bar to your upper chest, lead with the elbows. No yanking or swinging.",
-        "video": DEMOS.latPulldown
+        "cue": "Lean back slightly, pull the bar to your upper chest, lead with the elbows. No yanking or swinging."
       },
       {
         "id": "seated-cable-row", "n": "Seated cable row",
