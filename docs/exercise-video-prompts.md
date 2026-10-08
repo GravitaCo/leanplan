@@ -679,7 +679,7 @@ stretch at the end."
 ### Lying knee rolls (needed)
 
 The app's cue moves through the middle to the other side, so this clip shows one roll each way
-(like the dead bug), not one side only. See the note in the summary.
+(like the dead bug), not one side only.
 
 > Overhead three-quarter shot from the foot end, whole body in frame on a thin grey mat. She
 > lies on her back with her knees bent together, feet flat, and her arms out wide on the mat.
@@ -700,7 +700,7 @@ ending.
 > Side-on medium-wide shot, whole body in frame. She walks at a relaxed, easy pace on a level
 > treadmill, upright and loose, arms swinging naturally, without holding the handrails. Her
 > face is calm, as if she could chat in full sentences. She moves at a steady, easy pace the
-> whole time, relaxed and breathing comfortably, as if she could hold a conversation. The clip
+> whole time, relaxed and breathing comfortably. The clip
 > loops, so her pace and position look the same at the start and end.
 
 Timing text: "A steady, relaxed walk for 10 to 12 seconds, noticeably slower and looser than the
