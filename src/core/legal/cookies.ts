@@ -5,11 +5,15 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
  * the user's device (cookies, localStorage, caches), not just cookies, so every key the
  * app writes is listed. Adding a key, an embed or any analytics means this changes too,
  * and anything not strictly necessary needs opt-in consent before it is set.
+ * The leanplan.v1 line names wellbeing Phase 1's device-only parts (src/data/deviceOnly.ts), which
+ * are built but off (WELLBEING_ENABLED): don't publish this text to Webflow until that flag goes on
+ * (build plan C19). The reminder log's IndexedDB (`tali-notify`) joins the list with the service
+ * worker change that creates it (WP17).
  */
 export function cookiePolicy(): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: '2026-09-28',
+    updated: '2026-10-08',
     intro:
       `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
@@ -28,7 +32,7 @@ export function cookiePolicy(): LegalDoc {
           `The app sets no cookies. It uses your browser's local storage, which stays on your device, so that it works offline and keeps you signed in:`,
         ],
         ul: [
-          `leanplan.v1: your log, profile, settings and consent choices. Kept until you remove this device's log when signing out, delete your account, or clear your browser data.`,
+          `leanplan.v1: your log, profile, settings and consent choices. Kept until you remove this device's log when signing out, delete your account, or clear your browser data. It also holds things that never leave your device: your Unload notes (deleted too if you withdraw consent for health data), the day Tali last showed you where to find support after a run of low moods (deleted too if you withdraw consent for health data), a record of when reminders arrived and whether you opened them, and whether you left "More about sleep" open in the check-in.`,
           `tali.mode: which kind of account this device's log belongs to. Kept until you sign out.`,
           `tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.`,
           `tali.sound: whether the workout player plays sounds. Kept until you change it or clear your data.`,

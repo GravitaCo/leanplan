@@ -6,7 +6,8 @@ import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
 import { validCheckin, validMindPrefs, validPlanKind } from '@/core/domain/checkin'
 import { nowIso, uuid, UUID_RE } from './supabase'
-import { cleanConsents, unsyncedConsents, type ConsentLog } from './consent'
+import { cleanConsents, healthLoggingAllowed, unsyncedConsents, type ConsentLog } from './consent'
+import { cleanDeviceOnly, deviceOnlyForKeep, mergeUnloadForImport, unloadCount, type DeviceOnly } from './deviceOnly'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
@@ -39,6 +40,9 @@ export interface PersistedState extends AppState {
   _meta?: SyncMeta
   /** consent acts recorded on this device (src/data/consent.ts); dirty ones upload to `consents` */
   consents?: ConsentLog
+  /** kept on this device only, never synced (src/data/deviceOnly.ts, security-data H1): Unload
+   *  notes stamped with the owner, the low-mood marker, the reminder delivery log, UI state */
+  deviceOnly?: DeviceOnly
 }
 
 function emptyState(): AppState {
@@ -110,6 +114,9 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // a Mind plan keeps a usable `kind`, so withdrawal always finds it
   if (Array.isArray(s.profile.plans)) for (const pl of s.profile.plans) if (pl && typeof pl === 'object') validPlanKind(pl)
   s.consents = cleanConsents(s.consents)
+  // device-only (wellbeing): another account's Unload notes, or any with no owner recorded, go
+  const device = cleanDeviceOnly(s.deviceOnly, s._meta?.owner)
+  if (device) s.deviceOnly = device; else delete s.deviceOnly
   // sessions (workout plan P2): anything that isn't an array is treated as absent; old days are
   // read through sessionsOf without being rewritten
   for (const d of Object.keys(s.days)) {
@@ -208,7 +215,7 @@ export function saveMode(m: SessionMode | null): void {
 }
 
 /** What a backup holds, for the confirm step before importing it. */
-export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number; plans: number } {
+export function backupSummary(b: PersistedState): { days: number; first: string | null; last: string | null; foods: number; recipes: number; workouts: number; plans: number; unloadNotes: number } {
   const days = Object.keys(b.days || {}).sort()
   return {
     days: days.length,
@@ -218,6 +225,7 @@ export function backupSummary(b: PersistedState): { days: number; first: string 
     recipes: Array.isArray(b.recipes) ? b.recipes.length : 0,
     workouts: Array.isArray(b.routines) ? b.routines.filter((r) => r && !r.archived).length : 0,
     plans: Array.isArray(b.trainingPlans) ? b.trainingPlans.filter((p) => p && p.state !== 'archived').length : 0,
+    unloadNotes: unloadCount(b),
   }
 }
 
@@ -234,10 +242,17 @@ export function backupSummary(b: PersistedState): { days: number; first: string 
  * exist after the import and ids that aren't UUIDs (the server rejects those, which would stall
  * sync). This device keeps its reminders setting (it follows its own push subscription) and the
  * earliest D5 switch date either side has.
+ *
+ * Device-only data (deviceOnly.ts): the backup's Unload notes join this device's, merged by id and
+ * re-stamped with this device's owner, unless there's no owner or health logging isn't allowed
+ * here (then none of them load); unloadImportSkipped says how many didn't fit under the cap. The
+ * low-mood marker, the reminder log and UI state are this device's own and never restored.
  */
 export function stateFromBackup(incoming: PersistedState, current?: PersistedState): PersistedState {
   const old = incoming._meta
   delete incoming._meta
+  const theirDevice = incoming.deviceOnly
+  delete incoming.deviceOnly
   const switches = [incoming.profile?.burnSwitch, current?.profile?.burnSwitch].filter((x): x is string => !!x)
   const s = loadStateFrom(incoming)
   if (switches.length) s.profile.burnSwitch = switches.sort()[0]
@@ -252,6 +267,11 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   // and never makes data this device synced look never-synced (ownerCheck reads lastPull)
   meta.lastPull = pending?.lastPull ?? null
   if (pending?.lastPullServer) meta.lastPullServer = pending.lastPullServer
+  const device: DeviceOnly = { ...cleanDeviceOnly(current?.deviceOnly, pending?.owner) }
+  delete device.unload
+  const { unload } = mergeUnloadForImport(theirDevice, current, meta.owner, healthLoggingAllowed(s))
+  if (unload) device.unload = unload
+  if (Object.keys(device).length) s.deviceOnly = device
   if (current) {
     for (const d of Object.keys(current.days || {})) {
       if (s.days[d]) continue
@@ -279,6 +299,13 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   meta.foodDeletes = keep([old?.foodDeletes, pending?.foodDeletes], new Set(s.customFoods.map((f) => f.id)))
   meta.recipeDeletes = keep([old?.recipeDeletes, pending?.recipeDeletes], new Set(s.recipes.map((r) => r.id)))
   return s
+}
+
+/** How many of a backup's Unload notes wouldn't fit under the cap on this device (for the import
+ *  to say so; stateFromBackup never drops notes silently otherwise). */
+export function unloadImportSkipped(incoming: PersistedState, current: PersistedState): number {
+  const allowed = healthLoggingAllowed({ ...current, consents: cleanConsents(current.consents) })
+  return mergeUnloadForImport(incoming.deviceOnly, current, current._meta?.owner, allowed).skipped
 }
 
 /**
@@ -355,6 +382,9 @@ export function keepForAccount(s: PersistedState, uid: string): PersistedState {
   // consent is a person's own act: the new account answers the consent screen for itself, and
   // nothing of this log syncs until it does (never carry another account's grant or withdrawal)
   s.consents = { records: [] }
+  // nor its Unload notes, low-mood marker or reminder log (security-data H1): UI state only
+  const device = deviceOnlyForKeep(s.deviceOnly)
+  if (device) s.deviceOnly = device; else delete s.deviceOnly
   return s
 }
 

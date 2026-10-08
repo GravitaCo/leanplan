@@ -8,6 +8,7 @@
  */
 import { SB_URL, SB_KEY, getToken, hasSession, supabase } from './supabase'
 import { withTimeout } from './timeout'
+import { clearNotifyStore } from './deviceOnly'
 import { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON, jwtPayload, signedInRecently } from '../../supabase/functions/_shared/account'
 
 export { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON }
@@ -73,13 +74,16 @@ export function wipeStorage(storage: Pick<Storage, 'length' | 'key' | 'removeIte
 }
 
 /**
- * Wipe this device: localStorage and sessionStorage personal keys. The service worker's cache
- * holds only the app shell (no user data: public/sw.js), so it stays and the sign-in screen
- * still opens offline.
+ * Wipe this device: localStorage and sessionStorage personal keys (the device-only store, with
+ * any Unload notes, is inside `leanplan.v1`), and the service worker's reminder delivery log
+ * (IndexedDB `tali-notify`, security-data H3; a no-op until reminders write one). The service
+ * worker's cache holds only the app shell (no user data: public/sw.js), so it stays and the
+ * sign-in screen still opens offline.
  */
 export function wipeDevice(): void {
   try { wipeStorage(typeof localStorage === 'undefined' ? null : localStorage) } catch { /* blocked */ }
   try { wipeStorage(typeof sessionStorage === 'undefined' ? null : sessionStorage) } catch { /* blocked */ }
+  clearNotifyStore()
 }
 
 export interface DeleteDeps {

@@ -17,6 +17,7 @@ import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
+import { clearDeviceHealth, unloadCount } from './deviceOnly'
 
 export const CONSENT_TYPES = ['health', 'ai', 'label-photo'] as const
 export type ConsentType = (typeof CONSENT_TYPES)[number]
@@ -315,6 +316,9 @@ export function unsyncedConsents(s: PersistedState): number {
  *   `profile.mind.windDownAt`); and Mind plans (`profile.plans` with a `kind`), health data by
  *   inference. The other Mind settings (pillars, asks, reminder types and back-off, time zone,
  *   lock-screen names) are preferences and stay.
+ * - device only, never synced (src/data/deviceOnly.ts, security-data H1 and M5): the Unload notes
+ *   (`unload`) and the day the low-mood signpost last showed (`lowMoodShown`).
+ *   A "Not now" keeps them.
  * Age is a plan input and the one answer onboarding requires; it's kept (PENDING Benn / legal
  * review), as is the legacy `sex` field the older screens read ('M' | 'F').
  */
@@ -322,6 +326,7 @@ export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
   'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.plans(kind)',
+  'device.unload', 'device.lowMoodShown',
 ] as const
 
 export interface HealthDataSummary {
@@ -335,6 +340,8 @@ export interface HealthDataSummary {
   mindPlans: number
   /** the usual wake and wind-down times set */
   mindTimes: number
+  /** Unload notes on this device (device only, never synced: deviceOnly.ts) */
+  unloadNotes: number
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
@@ -379,6 +386,7 @@ export function healthDataSummary(s: PersistedState): HealthDataSummary {
     trainingPrefs: Object.values(t ?? {}).filter((v) => v != null && !(Array.isArray(v) && !v.length) && v !== '').length,
     mindPlans: (s.profile?.plans || []).filter(isKindPlan).length,
     mindTimes: MIND_HEALTH_KEYS.filter((k) => s.profile?.mind?.[k] != null).length,
+    unloadNotes: unloadCount(s),
   }
 }
 
@@ -436,6 +444,8 @@ export function clearHealthData(s: PersistedState, meta: SyncMeta): boolean {
     const w = strip(pl.why)
     if (pl.why && w!.length !== pl.why.length) { pl.why = w; pl._dirty = true; pl._u = u; changed = true }
   }
+  // device only (never synced, so nothing to mark): the Unload notes and the low-mood marker
+  if (clearDeviceHealth(s)) changed = true
   return changed
 }
 
