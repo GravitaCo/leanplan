@@ -6,6 +6,8 @@ export const PHASE_LABEL: Record<TempoPhaseKind, string> = {
   squeeze: 'Squeeze',
   lower: 'Lower slowly',
   stretch: 'Hold the stretch',
+  pull: 'Pull',
+  return: 'Return slowly',
 }
 
 /** One-word names for the pace row, where four phases share the width. */
@@ -15,6 +17,8 @@ export const PHASE_SHORT: Record<TempoPhaseKind, string> = {
   squeeze: 'Squeeze',
   lower: 'Lower',
   stretch: 'Stretch',
+  pull: 'Pull',
+  return: 'Return',
 }
 
 export interface TempoState {
