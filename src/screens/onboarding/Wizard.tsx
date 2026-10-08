@@ -358,7 +358,7 @@ function Why({ d, go, back }: Common) {
 }
 
 /** r1-goal: each goal with its pictogram from Tali's icon set. */
-const GOAL_ICON: Record<Goal, IconName> = { 'lose-fat': 'leaf', 'build-muscle': 'dumbbell', 'increase-strength': 'bolt', 'increase-endurance': 'heart', 'feel-better': 'smile' }
+const GOAL_ICON: Record<Goal, IconName> = { 'lose-fat': 'leaf', maintain: 'steady', 'build-muscle': 'dumbbell', 'increase-strength': 'bolt', 'increase-endurance': 'heart', 'feel-better': 'smile' }
 
 function GoalQ({ d, go, back }: Common) {
   const [g, setG] = useState(d.goal)

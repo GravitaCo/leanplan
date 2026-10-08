@@ -100,6 +100,9 @@ export const REVIEW_AFTER = '3–4 weeks' as const
  */
 export const PROTEIN_RANGE_PER_KG: Record<Goal, { low: number; high: number }> = {
   'lose-fat': { low: 1.6, high: 2.2 },
+  // keeping it steady: 1.2 to 1.6 g/kg with strength training 2+ days a week (maintenance-numbers
+  // rule 5; Mozaffarian et al., AJCN 2025, doi:10.1016/j.ajcnut.2025.04.023)
+  maintain: { low: 1.2, high: 1.6 },
   'build-muscle': { low: 1.6, high: 2.2 },
   'increase-strength': { low: 1.6, high: 2.2 },
   'increase-endurance': { low: 1.2, high: 1.6 },

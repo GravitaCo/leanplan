@@ -189,3 +189,37 @@ browser against the boards in light and dark; (4) the reminder (a new push type 
 and register change: `compliance` first). Reviews: `nutrition-accuracy`, `mental-performance`,
 `compliance` for any new stored field or reminder, `design` for every screen, then `ship-critic`
 before anything reaches `main`.
+
+## Engineering II: how the rules were read (8 Oct 2026)
+
+Asked of `nutrition-accuracy` and `mental-performance` on 8 Oct; their answers are what step 1
+builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
+`loopThresholds.ts`; tests in `scripts/test-loop.ts`).
+
+- **Trend:** the level is the fitted value at yesterday, not the window mean. Outliers are dropped
+  once against the median of the window in use. Standard errors are multiplied by 1.5 for
+  correlated day-to-day noise (untested in the simulations). Trend words need 6 weigh-ins spanning
+  21+ days with the first 28+ days back. Goals with no pace or range read "about level" within
+  0.25% a week or 2 SE.
+- **Weigh-in check:** lose-fat only; build-muscle waits (gain rates unsourced and the size of the
+  tolerance). Off pace = beyond ±0.35% a week and beyond 2 SE. 28 days of data starting 14 days
+  after the last target change (a new `targetSetAt` field). One step is 100 kcal at both ends of the
+  range; floors at 7,000 kcal/kg.
+- **Adaptive maintenance:** SE = sqrt(SE intake² + (7,000 × SE slope)²); qualifying day = 2+ meal
+  slots; the same window for intake and trend.
+- **Steady range:** fewer than 4 weigh-ins in the first 14 days takes the first 4 within 28 days;
+  "Make this my new starting point" sets the reference to the trend level and restarts the 6-week
+  ±3% period. Drift is computed statelessly at yesterday and 8 days ago.
+- **Maintain:** energy at maintenance, protein anchor 1.4 g/kg inside 1.2 to 1.6, the medical
+  question asked (nutrition-accuracy recommends asking it for every goal: kidney disease on
+  build-muscle or strength gets 1.6 to 2.2 g/kg today; that changes the question's copy, so it waits
+  for a board).
+- **Mind:** one "hard week" predicate (3+ check-ins and 3+ poor-sleep, 3+ high-stress or 2+ low
+  days) drives the hard encouragement line, mind options first, and no eat-less option. Row words,
+  protein and strength lines follow mental-performance's rule set in `loopCopy.ts`.
+- **Pattern lines:** v1 pairs sleep→hunger, stress→hunger, sleep→energy, energy→sessions,
+  calm→sessions; "plan used → hungry days" dropped (no per-day data); the full 42 days must pass
+  and each 21-day half must agree; one line a review, a pair at most once in 4 weeks; gentle mode
+  gets mind and movement lines only (board ml-a2), none with wellbeing flagged or in a hard week.
+- **Ease off:** the shorter sessions pre-selected for 7 days (`easyFrom`/`easyUntil`); the food
+  range is not widened.

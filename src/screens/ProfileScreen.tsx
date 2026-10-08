@@ -26,13 +26,14 @@ import { MIN_AGE, type LegalDocId } from '@/core/legal'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
+  { value: 'maintain', label: 'Keep it steady' },
   { value: 'build-muscle', label: 'Build muscle' },
   { value: 'increase-strength', label: 'Increase strength' },
   { value: 'increase-endurance', label: 'Improve endurance' },
   { value: 'feel-better', label: 'Feel better and move more' },
 ]
 const GOAL_TARGET_LABEL: Record<Goal, string> = {
-  'lose-fat': 'Fat loss', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
+  'lose-fat': 'Fat loss', maintain: 'Steady', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
 }
 function directionLabel(pct: number): string {
   if (pct < 0) return `${-pct}% below maintenance`

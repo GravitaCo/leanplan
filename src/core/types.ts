@@ -316,7 +316,7 @@ export interface PregnancyFlag {
  * level of Profile (not TrainingPrefs) because both domains read it — one field, one
  * write path, so training plan and calorie direction can never silently disagree.
  */
-export type Goal = 'lose-fat' | 'build-muscle' | 'increase-strength' | 'increase-endurance' | 'feel-better'
+export type Goal = 'lose-fat' | 'maintain' | 'build-muscle' | 'increase-strength' | 'increase-endurance' | 'feel-better'
 
 /** How fast the user wants to progress (onboarding #8). Default: 'standard'. */
 export type TargetRate = 'steady' | 'standard' | 'aggressive'
@@ -497,6 +497,15 @@ export interface Profile {
    * with these (latest wins) so answers given on two devices don't overwrite each other (plan §12).
    */
   answeredAt?: Record<string, string>
+  // The maintenance loop (docs/plans/maintenance-loop.md). All optional and additive.
+  /** include weight in the weekly review and on Summary (board ml-c4): asked once, absent = never asked = left out */
+  reviewWeight?: boolean
+  /** local date (YYYY-MM-DD) the calorie target last changed: the weigh-in check skips the 14 days after it */
+  targetSetAt?: string
+  /** local date the goal became maintain ("Keep it steady"): the steady range is read from the 14 days after it */
+  maintainFrom?: string
+  /** "Make this my new starting point" (board ml-c3): the steady range's reference weight and the date it was set */
+  steadyRef?: { kg: number; from: string }
 }
 
 /** Weekly schedule keyed by weekday index (0 = Sun … 6 = Sat). */

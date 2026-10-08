@@ -1,44 +1,40 @@
 import type { AppState, Goal } from '@/core/types'
-import { shiftDay } from './date'
-import { avg } from './insights'
-import { calorieFloor, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT } from './nutrition'
+import { parseYmd, shiftDay } from './date'
+import { avg, baseRange, latestWeight, rangeWidth } from './insights'
+import { calorieFloor, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT } from './nutrition'
 import { maintenanceEstimate } from './targets'
-import { foodView } from './foodMode'
+import { foodView, proteinRangeFor } from './foodMode'
 import { profileRouting, sexOf } from './onboarding'
-import { dayPictures, patternLine, weekPicture, type MindContext, type PatternResult, type WeekPicture } from './weekPicture'
+import { dayPictures, GENTLE_PATTERNS, patternLine, weekPicture, type MindContext, type PatternCode, type PatternResult, type WeekPicture } from './weekPicture'
+import { daysBetween, levelWord, pctWeek, weighIns, weightTrend, type LevelWord, type WeightTrend } from './weightTrend'
 import { LOOP_THRESHOLDS, type LoopThresholds } from './loopThresholds'
 
 /**
- * The maintenance loop's logic (docs/plans/maintenance-loop.md, step 1): the weekly review model,
- * the weigh-in check (`suggestRateAdjustment`), an adaptive maintenance estimate and the
- * maintenance band check. All read the shared weekly picture (weekPicture.ts), all are pure (the
- * clock is passed in), none stores anything, and none changes a target: they suggest, the person
- * decides. No UI yet: the boards come first (Design II, Benn's approval).
+ * The maintenance loop (docs/plans/maintenance-loop.md; boards ml-a1 to ml-d2, approved by Benn on
+ * 8 Oct 2026): the weekly review model, the weigh-in check (`suggestRateAdjustment`), adaptive
+ * maintenance, the steady range and its drift check. All read the shared weekly picture
+ * (weekPicture.ts) and the 28-day trend (weightTrend.ts); all are pure (the clock is passed in);
+ * none stores anything or changes a target: they suggest, the person decides.
  *
- * Safety, always: gentle mode and the quiet food modes hide every number; nothing goes below the
- * calorie floors; no "eat less" with wellbeing flagged, pregnancy, under 18, or any routing clamp;
- * weigh-ins are never asked for; no streaks.
+ * Safety, always: gentle mode hides every number; nothing goes below the calorie floors; no
+ * "eat less" with wellbeing flagged, in pregnancy, under 18, after a hard week or behind any
+ * routing clamp; weight only for people who chose to include it, never in gentle mode or with
+ * wellbeing flagged; no "x of y", no streaks, no week-to-week weight number.
  */
 
-/** Decided rules (first-run-onboarding §5, maintenance-loop.md), not placeholders. */
-export const RATE_MIN_HISTORY_DAYS = 21
-export const RATE_MIN_WEIGH_INS = 6
-export const RATE_EVERY_DAYS = 7
-export const DRIFT_WEEKS = 2
-/** maintenance mode reads this many recent weeks for a drift */
-const BAND_WEEKS = 4
-
-const r10 = (x: number) => Math.round(x / 10) * 10
 const r50 = (x: number) => Math.round(x / 50) * 50
 const ceil50 = (x: number) => Math.ceil(x / 50) * 50
-const r1 = (x: number) => Math.round(x * 10) / 10
 
 /* ---------------- safety ---------------- */
 
 export interface LoopSafety {
   /** no numbers at all: gentle mode, a quiet food mode, pregnancy, under 18, no health consent */
   quiet: boolean
-  /** never suggest eating less */
+  /** gentle mode (the person's own setting or wellbeing Yes): the review is in words */
+  gentle: boolean
+  /** weight may appear: the person chose it (ml-c4), numbers aren't quiet and wellbeing isn't flagged */
+  weight: boolean
+  /** never suggest eating less (before the week's mind context, which `allowLess` adds) */
   noLess: boolean
   /** at most the shallowest deficit (poor sleep or stress at setup) */
   nearMaintenance: boolean
@@ -47,344 +43,485 @@ export interface LoopSafety {
 export function loopSafety(s: AppState, kg: number | null, healthConsent: boolean): LoopSafety {
   const p = s.profile
   const r = profileRouting(p, kg, healthConsent)
+  const fv = foodView(p)
   // the loop reads weight, intake and mood together: without the health-data yes it says nothing
   // (profileRouting treats a profile from before onboarding as consented, so this is checked here too)
-  const quiet = !healthConsent || !!p.gentle || r.hideCalories || r.gentle || foodView(p).mode !== 'standard' || !!p.pregnancy?.flagged || !!r.stop
-  return { quiet, noLess: quiet || r.noDeficit || r.maintenanceOnly, nearMaintenance: r.nearMaintenance }
+  const gentle = !!p.gentle || r.gentle
+  const quiet = !healthConsent || gentle || r.hideCalories || fv.mode !== 'standard' || !!p.pregnancy?.flagged || !!r.stop
+  return {
+    quiet, gentle,
+    weight: p.reviewWeight === true && !quiet && fv.weightBack && !r.hideWeight,
+    noLess: quiet || r.noDeficit || r.maintenanceOnly,
+    nearMaintenance: r.nearMaintenance,
+  }
 }
 
-/* ---------------- the weight trend ---------------- */
-
-export interface WeighIn { d: string; kg: number }
-
-export function weighIns(s: AppState, from: string, to: string): WeighIn[] {
-  return Object.keys(s.days).filter((d) => d >= from && d <= to && s.days[d]?.weight).sort().map((d) => ({ d, kg: s.days[d].weight as number }))
-}
-
-const dayIndex = (d: string) => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 864e5
-
-/**
- * The trend through every weigh-in (least squares), so no single morning decides anything: kg a
- * day, its standard error, and the average weight. Needs 3 readings on 2 different days.
- * PLACEHOLDER method: how the loop smooths weight is nutrition-accuracy's call (Benn, 5 Oct,
- * decision 3). A plain fit gives the newest and oldest readings the most pull, so a big swing on
- * the last morning moves it more than one mid-window.
- */
-export function weightTrend(points: WeighIn[]): { slope: number; se: number; mean: number } | null {
-  const n = points.length
-  if (n < 3) return null
-  const xs = points.map((p) => dayIndex(p.d)), ys = points.map((p) => p.kg)
-  const mx = avg(xs), my = avg(ys)
-  const sxx = xs.reduce((a, x) => a + (x - mx) ** 2, 0)
-  if (!sxx) return null
-  const slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / sxx
-  const rss = ys.reduce((a, y, i) => a + (y - (my + slope * (xs[i] - mx))) ** 2, 0)
-  return { slope, se: Math.sqrt(rss / (n - 2) / sxx), mean: my }
-}
+/** Eating less may be offered this week: never after a hard week (mental-performance 8 Oct, rule 7). */
+export const allowLess = (safety: LoopSafety, mind: MindContext) => !safety.noLess && !mind.hard
 
 /* ---------------- options from every pillar ---------------- */
 
 /**
- * What a suggestion can offer, as codes (the wording is mental-performance's). Mind first when
- * the week shows it, then food, then movement; a calorie change is one option among several,
- * never the only one, and "eat less" only where it's allowed.
+ * What a suggestion can offer, as codes (loopCopy.ts words them; boards ml-a2, ml-a5, ml-b1,
+ * ml-b2, ml-c3). "Keep as is" is always there and comes first (or as its own button); a range
+ * change is one option among several, never the only one.
  */
-export type LoopOption = 'earlier-night' | 'stress-plan' | 'hungry-days-plan' | 'protein-range' | 'strength-session' | 'walk' | 'kcal-less' | 'kcal-more' | 'keep'
+export type LoopOption =
+  | 'earlier-night' | 'hungry-days-plan' | 'hungry-evenings-plan' | 'strength-session' | 'protein-meals'
+  | 'range-less' | 'range-more' | 'rest-day' | 'walk' | 'new-start'
+export type OptionContext = 'calm' | 'hard' | 'gentle' | 'drift'
 
-export function optionsFor(direction: 'less' | 'more' | 'hold', mind: MindContext, week: Pick<WeekPicture, 'move'>, allowLess: boolean): LoopOption[] {
-  const o: LoopOption[] = []
-  if (mind.poorSleepDays > 0) o.push('earlier-night')
-  if (mind.highStressDays > 0) o.push('stress-plan')
-  if (mind.hungryDays > 0) o.push('hungry-days-plan')
-  o.push('protein-range')
-  if (week.move.hard === 0) o.push('strength-session')
-  o.push('walk')
-  if (direction === 'less' && allowLess) o.push('kcal-less')
-  if (direction === 'more') o.push('kcal-more')
-  o.push('keep')
-  return o
+/**
+ * The order (boards and mental-performance 8 Oct): a calm week leads with protein, strength,
+ * range, then sleep; a hard week with sleep and hunger; gentle mode only rest, sleep, a plan or a
+ * walk, never a range; a drift (ml-c3) adds "make this my new starting point" last.
+ */
+export function optionsFor(ctx: OptionContext, range: 'less' | 'more' | null, mind: Pick<MindContext, 'eveningHunger'>): LoopOption[] {
+  const plan: LoopOption = mind.eveningHunger ? 'hungry-evenings-plan' : 'hungry-days-plan'
+  const r: LoopOption[] = range === 'less' ? ['range-less'] : range === 'more' ? ['range-more'] : []
+  switch (ctx) {
+    case 'gentle': return ['earlier-night', 'rest-day', plan, 'walk']
+    case 'hard': return ['earlier-night', plan, 'strength-session', 'protein-meals', ...r]
+    case 'drift': return ['protein-meals', 'strength-session', plan, ...r, 'earlier-night', 'new-start']
+    case 'calm': return ['protein-meals', 'strength-session', ...r, 'earlier-night']
+  }
+}
+
+/* ---------------- the target and its steps ---------------- */
+
+export interface RangeChange { from: { lo: number; hi: number }; to: { lo: number; hi: number }; kcal: number; suggested: number }
+
+/**
+ * One step on the calorie target, moved at both ends of the range (boards: "From 2,050–2,450 to
+ * 1,950–2,350 kcal"). Eating less never goes below the calorie floor, 25% under maintenance, the
+ * 1%-a-week cap (at 7,000 kcal/kg, the safe side), the shallowest band after low sleep or stress at
+ * setup, or (maintain) 150 kcal under maintenance. Null when there's no room.
+ */
+export function rangeStep(s: AppState, dir: 'less' | 'more', kg: number, safety: LoopSafety, today: string, t: LoopThresholds = LOOP_THRESHOLDS): RangeChange | null {
+  const p = s.profile
+  const kcal = s.target?.kcal
+  if (!kcal || kcal <= 0) return null
+  const est = maintenanceEstimate(p, null, kg)
+  if (!est) return null // no floor without age and height: never guess one
+  const maint = est.maint
+  let suggested: number
+  if (dir === 'more') {
+    suggested = kcal + t.stepKcal
+    // a loss goal stops at maintenance
+    if (p.goal === 'lose-fat') suggested = Math.min(suggested, Math.max(kcal, r50(maint)))
+    if (suggested <= kcal) return null
+  } else {
+    const lowest = Math.max(
+      ceil50(calorieFloor(est.bmr, sexOf(p))),
+      ceil50(maint * (1 - t.maxDeficitPct / 100)),
+      ceil50(maint - (kg * (MAX_LOSS_PCT_PER_WEEK / 100) * t.kcalPerKg) / 7),
+      safety.nearMaintenance ? ceil50(maint * (1 + NEAR_MAINTENANCE_PCT / 100)) : 0,
+      p.goal === 'maintain' ? ceil50(maint - t.maintainMaxCutKcal) : 0,
+    )
+    suggested = Math.max(kcal - t.stepKcal, lowest)
+    if (suggested >= kcal) return null
+  }
+  const w = rangeWidth(p)
+  const cur = baseRange(s, today)
+  return { from: { lo: cur.lo, hi: cur.hi }, to: { lo: suggested - w, hi: suggested + w }, kcal, suggested }
+}
+
+/* ---------------- the steady range (maintain) ---------------- */
+
+export interface SteadyRange {
+  /** the reference weight and the range around it, kg (never shown as numbers in the loop's words) */
+  ref: number
+  lo: number
+  hi: number
+  pct: number
+  /** the date the range's clock started: maintain's start, or the last "new starting point" */
+  from: string
+}
+
+/** When the steady range's clock started: a reset wins over maintain's start. */
+export function steadyStart(s: AppState): string | null {
+  const p = s.profile
+  if (p.goal !== 'maintain') return null
+  return p.steadyRef?.from ?? p.maintainFrom ?? null
+}
+
+/**
+ * The steady range on `on` (nutrition-accuracy rule 2 and its 8 Oct answers): the mean of the
+ * weigh-ins in the first 14 days after maintain starts (4 or more), else the first 4 within 28
+ * days; ±3% for the first 6 weeks after the start, then ±2%. A "new starting point" sets the
+ * reference to the trend level and restarts the 6 weeks. Null until there's a reference.
+ */
+export function steadyRange(s: AppState, on: string, t: LoopThresholds = LOOP_THRESHOLDS): SteadyRange | null {
+  const from = steadyStart(s)
+  if (!from || on < from) return null
+  const k = t.steady
+  let ref: number | null = s.profile.steadyRef?.kg ?? null
+  if (ref === null) {
+    const first = weighIns(s, from, shiftDay(from, k.refDays - 1))
+    const fallback = weighIns(s, from, shiftDay(from, k.refFallbackDays - 1)).slice(0, k.refMin)
+    const pts = first.length >= k.refMin ? first : fallback.length >= k.refMin ? fallback : null
+    // the reference only counts once its readings are in the past
+    if (!pts || pts[pts.length - 1].d > on) return null
+    ref = avg(pts.map((x) => x.kg))
+  }
+  const pct = daysBetween(from, on) < k.earlyDays ? k.earlyPct : k.latePct
+  return { ref, lo: ref * (1 - pct / 100), hi: ref * (1 + pct / 100), pct, from }
+}
+
+export type SteadyWord = 'steady' | 'above' | 'below'
+export interface DriftCheck {
+  word: SteadyWord
+  /** outside on the same side at 2 weekly checks in a row: the drift sheet (ml-c3) may show */
+  drift: boolean
+  range: SteadyRange
+  trend: WeightTrend
+}
+
+/**
+ * The weekly drift check, statelessly: the trend level with data to yesterday and to 8 days ago,
+ * each with 6+ weigh-ins and its own range width, both outside on the same side (after the
+ * reference exists). Until then the words say "steady" ("about level"; one week doesn't move it).
+ */
+export function driftCheck(s: AppState, today: string, t: LoopThresholds = LOOP_THRESHOLDS): DriftCheck | null {
+  const k = t.steady
+  const start = steadyStart(s)
+  if (!start) return null
+  const side = (on: string): { word: SteadyWord; range: SteadyRange; trend: WeightTrend } | null => {
+    const range = steadyRange(s, on, t)
+    const trend = range ? weightTrend(s, on, { notBefore: s.profile.steadyRef?.from, t }) : null
+    if (!range || !trend || trend.n < k.minWeighIns) return null
+    return { word: trend.level > range.hi ? 'above' : trend.level < range.lo ? 'below' : 'steady', range, trend }
+  }
+  const now = side(shiftDay(today, -1))
+  if (!now) return null
+  let drift = now.word !== 'steady'
+  for (let i = 1; drift && i < k.driftChecks; i++) {
+    const prev = side(shiftDay(today, -1 - 7 * i))
+    drift = !!prev && prev.word === now.word
+  }
+  return { word: drift ? now.word : 'steady', drift, range: now.range, trend: now.trend }
+}
+
+/* ---------------- the weight row ---------------- */
+
+/** The weight in words for the review and the checks (mental-performance 8 Oct). */
+export type WeightWords =
+  | { kind: 'too-soon' }
+  | { kind: 'steady' | 'above' | 'below' }
+  | { kind: 'pace'; pace: 'in-line' | 'slower' | 'faster' }
+  | { kind: 'level'; word: LevelWord; aLittle: boolean }
+
+export interface WeightRow { weighIns: number; words: WeightWords }
+
+/** The rate check's pace: in line unless beyond the tolerance and beyond 2 SE. */
+export function paceOf(tr: WeightTrend, goal: Goal, rate: AppState['profile']['targetRate'], t: LoopThresholds = LOOP_THRESHOLDS): 'in-line' | 'slower' | 'faster' | null {
+  const intended = goal === 'lose-fat' ? -t.rate.lossPct[rate ?? 'standard'] : goal === 'build-muscle' && t.rate.gainPct ? t.rate.gainPct[rate ?? 'standard'] : null
+  if (intended === null) return null
+  const diff = tr.weeklyPct - intended
+  const se = Math.abs(pctWeek(tr.se, tr.level))
+  if (Math.abs(diff) <= t.rate.tolerancePct || Math.abs(diff) <= 2 * se) return 'in-line'
+  // for a loss, a more negative change is faster; for a gain, a more positive one
+  const faster = intended < 0 ? diff < 0 : diff > 0
+  return faster ? 'faster' : 'slower'
+}
+
+/**
+ * How often the person weighed in, and after 4 weeks the trend in words: maintain against the
+ * steady range (a side only once a drift is confirmed), lose-fat against the chosen pace, other
+ * goals level, up or down ("a little" within 0.5% a week). Null when weight is left out.
+ */
+export function weightRow(s: AppState, today: string, weighInsThisWeek: number, safety: LoopSafety, t: LoopThresholds = LOOP_THRESHOLDS): WeightRow | null {
+  if (!safety.weight) return null
+  const goal = s.profile.goal
+  const to = shiftDay(today, -1)
+  const tr = weightTrend(s, to, { t })
+  const row = (words: WeightWords): WeightRow => ({ weighIns: weighInsThisWeek, words })
+  if (!tr?.wordsReady) return row({ kind: 'too-soon' })
+  if (goal === 'maintain') {
+    const d = driftCheck(s, today, t)
+    return row({ kind: d?.word ?? 'steady' })
+  }
+  const pace = goal ? paceOf(tr, goal, s.profile.targetRate, t) : null
+  if (pace) return row({ kind: 'pace', pace })
+  return row({ kind: 'level', word: levelWord(tr, t), aLittle: Math.abs(tr.weeklyPct) <= t.trend.aLittlePctWeek })
 }
 
 /* ---------------- the weigh-in check ---------------- */
 
-export type RateNone = 'goal' | 'quiet' | 'too-soon' | 'not-enough-data' | 'awaiting-threshold' | 'no-target'
+export type RateNone = 'goal' | 'weight-off' | 'quiet' | 'too-soon' | 'not-enough-data' | 'no-target'
 export type RateSuggestion =
   | { kind: 'none'; reason: RateNone }
-  | { kind: 'on-track'; weeklyPct: number; intendedPct: number }
-  /** the trend says eat less, but it isn't offered: the mind context or safety comes first */
-  | { kind: 'held'; reason: 'mind' | 'awaiting-mind-threshold' | 'safety' | 'at-floor'; weeklyPct: number; intendedPct: number; mind: MindContext; options: LoopOption[] }
-  | { kind: 'suggest'; direction: 'less' | 'more'; current: number; suggested: number; weeklyPct: number; intendedPct: number; mind: MindContext; options: LoopOption[] }
+  | { kind: 'on-pace'; trend: WeightTrend; week: WeekPicture }
+  /** off pace: options from every pillar, "keep as is" always; a range change only where allowed */
+  | { kind: 'options'; pace: 'slower' | 'faster'; ctx: 'calm' | 'hard'; options: LoopOption[]; range: RangeChange | null; trend: WeightTrend; week: WeekPicture }
 
 export interface RateOptions {
   healthConsent: boolean
-  /** when a suggestion was last shown (YYYY-MM-DD); a new one waits a week. Not stored yet. */
+  /** when a check last showed (YYYY-MM-DD); a new one waits a week. Not stored yet. */
   lastAt?: string
   t?: LoopThresholds
 }
 
-const RATE_GOALS: Goal[] = ['lose-fat', 'build-muscle']
-
 /**
- * `suggestRateAdjustment` (personalized-nutrition-targets §3, first-run-onboarding §5): after 3
- * weeks and 6 weigh-ins, at most weekly, compare the weight trend with the pace the person chose
- * and suggest one small change, never apply it. Loss runs for lose-fat; the gain check for
- * build-muscle waits for its numbers. `weeklyPct` is signed (% body weight a week, minus = loss).
- * A change towards eating less is checked against the week's mind context first.
+ * `suggestRateAdjustment` (boards ml-b1 to ml-b3; nutrition-accuracy rules, replacing
+ * personalized-nutrition-targets §3.3 to §3.4): lose-fat only for now (build-muscle waits for its
+ * gain rates). At most weekly; 28 days of data starting 14 days after the last target change (so
+ * 42 days after it); the 28-day trend against the chosen pace, off pace only beyond ±0.35% a
+ * week and 2 SE. It suggests, never applies. A hard week leads with mind options and offers no
+ * range cut. People who left weight out never get it: it is a weight check.
  */
 export function suggestRateAdjustment(s: AppState, today: string, o: RateOptions): RateSuggestion {
   const t = o.t ?? LOOP_THRESHOLDS
   const p = s.profile
   const goal = p.goal
-  if (!goal || !RATE_GOALS.includes(goal)) return { kind: 'none', reason: 'goal' }
-  if (o.lastAt && o.lastAt > shiftDay(today, -RATE_EVERY_DAYS)) return { kind: 'none', reason: 'too-soon' }
-
-  const window = t.trendWindowDays.value
-  const band = (goal === 'lose-fat' ? t.lossRatePct : t.gainRatePct).value
-  const tol = t.rateTolerancePct.value, step = t.stepPctOfMaint.value, maxDef = t.maxDeficitPct.value
-  if (window === null || band === null || tol === null || step === null || maxDef === null) return { kind: 'none', reason: 'awaiting-threshold' }
-
-  const all = weighIns(s, '0000-00-00', today)
-  if (!all.length || all[0].d > shiftDay(today, -RATE_MIN_HISTORY_DAYS)) return { kind: 'none', reason: 'not-enough-data' }
-  const pts = weighIns(s, shiftDay(today, -(Math.max(window, RATE_MIN_HISTORY_DAYS) - 1)), today)
-  const trend = pts.length >= RATE_MIN_WEIGH_INS ? weightTrend(pts) : null
-  if (!trend) return { kind: 'none', reason: 'not-enough-data' }
-
-  const safety = loopSafety(s, trend.mean, o.healthConsent)
+  if (goal !== 'lose-fat' && !(goal === 'build-muscle' && t.rate.gainPct)) return { kind: 'none', reason: 'goal' }
+  if (o.lastAt && o.lastAt > shiftDay(today, -t.rate.everyDays)) return { kind: 'none', reason: 'too-soon' }
+  const kg = latestWeight(s, today)
+  const safety = loopSafety(s, kg, o.healthConsent)
   if (safety.quiet) return { kind: 'none', reason: 'quiet' }
-  const current = s.target?.kcal
-  if (!current || current <= 0) return { kind: 'none', reason: 'no-target' }
+  if (!safety.weight) return { kind: 'none', reason: 'weight-off' }
+  if (!s.target?.kcal) return { kind: 'none', reason: 'no-target' }
 
-  const weeklyPct = Math.round(((trend.slope * 7) / trend.mean) * 100 * 100) / 100
-  const intendedPct = band[p.targetRate ?? 'standard']
-  // the change towards the chosen pace, in the goal's own direction
-  const pace = goal === 'lose-fat' ? -weeklyPct : weeklyPct
-  let direction: 'less' | 'more' | null = null
-  if (goal === 'lose-fat') {
-    if (pace > intendedPct + tol || pace > MAX_LOSS_PCT_PER_WEEK) direction = 'more'
-    else if (pace < intendedPct - tol) direction = 'less'
-  } else {
-    if (pace > intendedPct + tol) direction = 'less'
-    else if (pace < intendedPct - tol) direction = 'more'
-  }
-  if (!direction) return { kind: 'on-track', weeklyPct, intendedPct }
+  const to = shiftDay(today, -1)
+  const notBefore = p.targetSetAt ? shiftDay(p.targetSetAt, t.rate.skipAfterChangeDays) : undefined
+  const tr = weightTrend(s, to, { notBefore, t })
+  if (!tr || !tr.wordsReady || daysBetween(tr.from, to) < t.rate.minDataDays - 1) return { kind: 'none', reason: 'not-enough-data' }
 
-  const est = maintenanceEstimate(p, null, trend.mean)
-  const maint = est?.maint ?? current
-  const delta = Math.max(50, r50((maint * step) / 100))
-  const week = weekPicture(s, shiftDay(today, -1), today, t)
-  const mind = week.mind
-
-  if (direction === 'more') {
-    // eating more is always allowed; a loss goal stops at maintenance
-    const suggested = goal === 'lose-fat' ? Math.min(current + delta, Math.max(current, r50(maint))) : current + delta
-    if (suggested <= current) return { kind: 'on-track', weeklyPct, intendedPct }
-    return { kind: 'suggest', direction, current, suggested, weeklyPct, intendedPct, mind, options: optionsFor('more', mind, week, false) }
-  }
-
-  const held = (reason: 'mind' | 'awaiting-mind-threshold' | 'safety' | 'at-floor'): RateSuggestion =>
-    ({ kind: 'held', reason, weeklyPct, intendedPct, mind, options: optionsFor('hold', mind, week, false) })
-  if (safety.noLess) return held('safety')
-  if (!est) return held('safety') // no floor without age and height: never guess one
-  if (mind.strained === null) return held('awaiting-mind-threshold')
-  if (mind.strained) return held('mind')
-
-  // never below the floor, the deepest deficit, the 1%-a-week cap or (after poor sleep or stress at setup) the shallowest band
-  const kpk = t.kcalPerKg.value ?? KCAL_PER_KG_LOST
-  const lowest = Math.max(
-    ceil50(calorieFloor(est.bmr, sexOf(p))),
-    ceil50(maint * (1 - maxDef / 100)),
-    ceil50(maint - (trend.mean * (MAX_LOSS_PCT_PER_WEEK / 100) * kpk) / 7),
-    safety.nearMaintenance ? ceil50(maint * (1 + NEAR_MAINTENANCE_PCT / 100)) : 0,
-  )
-  const suggested = Math.max(current - delta, lowest)
-  if (suggested >= current) return held('at-floor')
-  return { kind: 'suggest', direction, current, suggested, weeklyPct, intendedPct, mind, options: optionsFor('less', mind, week, true) }
+  const week = weekPicture(s, shiftDay(today, -7), to, today, t)
+  const pace = paceOf(tr, goal, p.targetRate, t)
+  if (!pace || pace === 'in-line') return { kind: 'on-pace', trend: tr, week }
+  const ctx = week.mind.hard ? 'hard' : 'calm'
+  const dir = pace === 'slower' ? (goal === 'lose-fat' ? 'less' : 'more') : (goal === 'lose-fat' ? 'more' : 'less')
+  const range = dir === 'less' && !allowLess(safety, week.mind) ? null : rangeStep(s, dir, tr.level, safety, today, t)
+  return { kind: 'options', pace, ctx, options: optionsFor(ctx, range ? dir : null, week.mind), range, trend: tr, week }
 }
 
 /* ---------------- adaptive maintenance ---------------- */
 
 export type AdaptiveMaintenance =
-  | { kind: 'none'; reason: 'quiet' | 'awaiting-threshold' | 'not-enough-data' }
+  | { kind: 'none'; reason: 'quiet' | 'weight-off' | 'not-enough-data' | 'tapering' | 'not-narrower' }
   | {
       kind: 'estimate'
       /** best estimate and its range, nearest 50 kcal */
       maint: number; lo: number; hi: number
-      /** the ± from logging and from the weight trend, nearest 10 */
-      marginKcal: number
-      /** the starting estimate from the person's answers (nearest 50), to compare */
-      start: number | null
-      loggedDays: number; weighIns: number
+      /** the starting estimate from the person's answers and its ±15% range, nearest 50 */
+      start: { maint: number; lo: number; hi: number }
+      /** qualifying days, their mean intake, and weigh-ins */
+      loggedDays: number; avgKcal: number; weighIns: number
+      /** the window, in days */
+      days: number
     }
 
 /**
- * What the person seems to burn, from what they logged and how their weight moved over the
- * window: average intake minus the trend's energy (losing means they burn more than they log).
- * Only with enough logged days and weigh-ins; always a range. The ± combines each day's logging
- * margin (estimate.ts) and the trend's uncertainty; under-logging widens the top end, since logs
- * miss food far more often than they add it.
+ * What keeps the person steady going by what they log (board ml-b4; nutrition-accuracy rule 3):
+ * mean intake on qualifying days (2+ meals logged) minus 7,000 × the trend's kg a day. Needs 28
+ * days (growing to 42 or 56), 20 qualifying days and 6 weigh-ins, all from 14 days after maintain
+ * started or the target last changed. The range is ±1.645 SE (intake and trend), nearest 50,
+ * never narrower than ±150, shown only once narrower than the starting ±15%; withheld when intake
+ * in the two halves differs by more than 15%. Unlogged days are never filled in.
  */
 export function adaptiveMaintenance(s: AppState, today: string, o: { healthConsent: boolean; t?: LoopThresholds }): AdaptiveMaintenance {
   const t = o.t ?? LOOP_THRESHOLDS
-  const window = t.trendWindowDays.value, minLogged = t.minLoggedDays.value, under = t.underLoggingPct.value, kpk = t.kcalPerKg.value
-  if (window === null || minLogged === null || under === null || kpk === null) return { kind: 'none', reason: 'awaiting-threshold' }
-  const from = shiftDay(today, -window)
+  const k = t.adaptive
+  const p = s.profile
+  const kg = latestWeight(s, today)
+  const safety = loopSafety(s, kg, o.healthConsent)
+  if (safety.quiet) return { kind: 'none', reason: 'quiet' }
+  if (!safety.weight) return { kind: 'none', reason: 'weight-off' }
   const to = shiftDay(today, -1)
-  const days = dayPictures(s, from, to, today).filter((x) => x.food.logged)
-  const pts = weighIns(s, from, to)
-  const trend = pts.length >= RATE_MIN_WEIGH_INS ? weightTrend(pts) : null
-  if (days.length < minLogged || !trend) return { kind: 'none', reason: 'not-enough-data' }
-  if (loopSafety(s, trend.mean, o.healthConsent).quiet) return { kind: 'none', reason: 'quiet' }
-
-  const intake = avg(days.map((x) => x.food.kcal))
-  const maint = intake - trend.slope * kpk
-  const logErr = Math.sqrt(days.reduce((a, x) => a + x.food.margin ** 2, 0)) / days.length
-  const trendErr = trend.se * kpk
-  const m = Math.sqrt(logErr ** 2 + trendErr ** 2)
-  const est = maintenanceEstimate(s.profile, null, trend.mean)
-  return {
-    kind: 'estimate',
-    maint: r50(maint), lo: r50(maint - m), hi: r50(maint + m + (intake * under) / 100),
-    marginKcal: r10(m), start: est ? r50(est.maint) : null,
-    loggedDays: days.length, weighIns: pts.length,
+  const changes = [p.maintainFrom, p.targetSetAt].filter((x): x is string => !!x).sort()
+  const notBefore = changes.length ? shiftDay(changes[changes.length - 1], k.skipAfterChangeDays) : undefined
+  for (const w of k.windowDays) {
+    let from = shiftDay(to, -(w - 1))
+    if (notBefore && from < notBefore) from = notBefore
+    if (daysBetween(from, to) < k.minDays - 1) return { kind: 'none', reason: 'not-enough-data' }
+    const days = dayPictures(s, from, to, today).filter((x) => x.food.meals >= k.minMeals)
+    const tr = weightTrend(s, to, { notBefore: from, t: { ...t, trend: { ...t.trend, windowDays: [w] } } })
+    if (days.length < k.minLoggedDays || !tr || tr.n < k.minWeighIns) continue
+    const intake = days.map((x) => x.food.kcal)
+    const mean = avg(intake)
+    const half = Math.floor(days.length / 2)
+    const a = avg(intake.slice(0, half)), b = avg(intake.slice(half))
+    if (Math.abs(a - b) / Math.min(a, b) > k.taperPct / 100) return { kind: 'none', reason: 'tapering' }
+    const sd = Math.sqrt(intake.reduce((x, v) => x + (v - mean) ** 2, 0) / (intake.length - 1))
+    const se = Math.sqrt((sd / Math.sqrt(intake.length)) ** 2 + (t.kcalPerKg * tr.se) ** 2)
+    const maint = mean - t.kcalPerKg * tr.slope
+    const halfW = Math.max(k.minHalfKcal, r50(k.z * se))
+    const est = maintenanceEstimate(p, null, tr.level)
+    if (!est) return { kind: 'none', reason: 'not-enough-data' }
+    if (halfW >= (est.maint * k.startMarginPct) / 100) return { kind: 'none', reason: 'not-narrower' }
+    const m = r50(maint)
+    const sm = r50(est.maint), sw = (est.maint * k.startMarginPct) / 100
+    return {
+      kind: 'estimate', maint: m, lo: m - halfW, hi: m + halfW,
+      start: { maint: sm, lo: r50(est.maint - sw), hi: r50(est.maint + sw) },
+      loggedDays: days.length, avgKcal: r50(mean), weighIns: tr.n, days: daysBetween(from, to) + 1,
+    }
   }
+  return { kind: 'none', reason: 'not-enough-data' }
 }
 
-/* ---------------- maintenance mode: the band check ---------------- */
+/* ---------------- maintain: the drift sheet ---------------- */
 
-export type BandCheck =
-  | { kind: 'none'; reason: 'awaiting-threshold' | 'not-enough-data' }
-  | {
-      kind: 'steady' | 'drift'
-      /** which side of the band the recent weeks are on (drift only) */
-      side: 'above' | 'below' | null
-      /** recent weeks in a row outside the band, on the same side */
-      weeks: number
-      /** the band and weekly averages in kg; null when numbers are quiet */
-      band: { lo: number; hi: number } | null
-      weekly: (number | null)[] | null
-      mind: MindContext
-      options: LoopOption[]
-    }
+export type DriftSuggestion =
+  | { kind: 'none'; reason: 'goal' | 'quiet' | 'weight-off' | 'steady' }
+  | { kind: 'drift'; side: 'above' | 'below'; options: LoopOption[]; range: RangeChange | null; check: DriftCheck; week: WeekPicture; weighIns: number }
 
 /**
- * Maintenance mode's hold-steady check: each recent week's average weight against a band around
- * the starting point (`anchorKg`, the person's maintenance start: not stored yet, so the caller
- * passes it). Two weeks in a row past the band on one side is a drift, which offers options from
- * every pillar; above the band, a calorie option only where eating less is allowed.
+ * The drift sheet (ml-c3): options from every pillar once the trend has sat outside the steady
+ * range at 2 weekly checks. Above it, "adjust my range a little" only where eating less is allowed
+ * (never after a hard week); below it, a range up. The mind rows read the last 2 weeks.
  */
-export function maintenanceBandCheck(s: AppState, today: string, anchorKg: number, o: { healthConsent: boolean; t?: LoopThresholds }): BandCheck {
+export function maintenanceDrift(s: AppState, today: string, o: { healthConsent: boolean; t?: LoopThresholds }): DriftSuggestion {
   const t = o.t ?? LOOP_THRESHOLDS
-  const pct = t.maintenanceBandPct.value, minPerWeek = t.minWeighInsPerWeek.value
-  if (pct === null || minPerWeek === null) return { kind: 'none', reason: 'awaiting-threshold' }
-  const band = { lo: anchorKg * (1 - pct / 100), hi: anchorKg * (1 + pct / 100) }
-  // newest week first: the 7 days ending yesterday, then the 7 before …
-  const weekly: (number | null)[] = []
-  for (let i = 0; i < BAND_WEEKS; i++) {
-    const to = shiftDay(today, -1 - 7 * i)
-    const w = weighIns(s, shiftDay(to, -6), to)
-    weekly.push(w.length >= minPerWeek ? avg(w.map((x) => x.kg)) : null)
-  }
-  if (weekly[0] === null) return { kind: 'none', reason: 'not-enough-data' }
-  const sideOf = (x: number | null) => (x === null ? null : x > band.hi ? 'above' : x < band.lo ? 'below' : 'in')
-  const first = sideOf(weekly[0])
-  let weeks = 0
-  if (first === 'above' || first === 'below') while (weeks < weekly.length && sideOf(weekly[weeks]) === first) weeks++
-  const week = weekPicture(s, shiftDay(today, -1), today, t)
-  const safety = loopSafety(s, weekly[0], o.healthConsent)
-  const drift = weeks >= DRIFT_WEEKS
-  const side = drift ? (first as 'above' | 'below') : null
-  return {
-    kind: drift ? 'drift' : 'steady',
-    side, weeks: drift ? weeks : 0,
-    band: safety.quiet ? null : { lo: r1(band.lo), hi: r1(band.hi) },
-    weekly: safety.quiet ? null : weekly.map((x) => (x === null ? null : r1(x))),
-    mind: week.mind,
-    options: drift ? optionsFor(side === 'above' ? 'less' : 'more', week.mind, week, !safety.noLess && week.mind.strained === false) : ['keep'],
-  }
+  if (s.profile.goal !== 'maintain') return { kind: 'none', reason: 'goal' }
+  const safety = loopSafety(s, latestWeight(s, today), o.healthConsent)
+  if (safety.quiet) return { kind: 'none', reason: 'quiet' }
+  if (!safety.weight) return { kind: 'none', reason: 'weight-off' }
+  const check = driftCheck(s, today, t)
+  if (!check?.drift || check.word === 'steady') return { kind: 'none', reason: 'steady' }
+  const to = shiftDay(today, -1), from = shiftDay(today, -14)
+  const week = weekPicture(s, from, to, today, t)
+  const dir = check.word === 'above' ? 'less' : 'more'
+  const range = dir === 'less' && !allowLess(safety, week.mind) ? null : rangeStep(s, dir, check.trend.level, safety, today, t)
+  return { kind: 'drift', side: check.word, options: optionsFor('drift', range ? dir : null, week.mind), range, check, week, weighIns: weighIns(s, from, to).length }
 }
 
 /* ---------------- the weekly review ---------------- */
 
-export type ReviewChoice = 'keep' | 'ease-off' | 'adjust'
-export const REVIEW_CHOICES: ReviewChoice[] = ['keep', 'ease-off', 'adjust']
+export type ReviewChoice = 'keep' | 'ease-off' | 'change-one' | 'pick-up' | 'ease-back'
+export type Encouragement = 'steady' | 'gentle' | 'hard' | 'welcome'
+export type ProteinWords = { kind: 'meals' } | { kind: 'grams'; g: number }
 
 export interface WeeklyReview {
   week: WeekPicture
-  /** nothing logged all week: "welcome back", nothing to catch up, nothing else shown */
+  /** a missed review (or a week with nothing in it): "Welcome back", only the days since, nothing to catch up */
   welcomeBack: boolean
-  /** numbers are hidden (gentle mode, a quiet food mode, pregnancy…): the review is in words */
+  /** welcome back: the first day counted ("What you did since Friday"), when there's anything */
+  since: string | null
+  encouragement: Encouragement
+  gentle: boolean
+  /** numbers are hidden (gentle mode, a quiet food mode, pregnancy…) */
   quiet: boolean
-  food: { loggedDays: number; inRangeDays: number | null; avgKcal: number | null; avgProtein: number | null }
+  food: { loggedDays: number; inRangeDays: number | null; protein: ProteinWords | null }
   move: WeekPicture['move']
   mind: WeekPicture['mind']
-  /** the weight as a band of this week's weigh-ins, never a single reading; none when quiet */
-  weight: { band: { lo: number; hi: number } | null; direction: 'down' | 'steady' | 'up' | null; reason?: 'quiet' | 'not-enough-data' | 'awaiting-threshold' }
+  /** opt-in only: how often they weighed in and, after 4 weeks, the trend in words */
+  weight: WeightRow | null
   pattern: PatternResult | null
   /** the person's own "why", shown back */
   why: string[]
   choices: ReviewChoice[]
-  rate: RateSuggestion | null
-  maintenance: BandCheck | null
+  /** "Change one thing" (ml-a5): what it offers this week */
+  changeOne: { ctx: OptionContext; options: LoopOption[]; range: RangeChange | null }
 }
 
 export interface ReviewOptions {
   healthConsent: boolean
-  /** when the weigh-in check last showed a suggestion */
-  lastRateAt?: string
-  /** maintenance mode's starting weight, while there's no stored field for it */
-  maintenanceAnchorKg?: number
+  /** the last review the person opened (YYYY-MM-DD), and the weekday they picked (0 = Sunday); not stored yet */
+  lastReviewAt?: string
+  reviewDay?: number
+  /** when each pattern line last showed */
+  patternShown?: Partial<Record<PatternCode, string>>
   t?: LoopThresholds
 }
 
+/** The review day before `today` (or today itself) on the person's weekday. */
+export function reviewDayOn(today: string, weekday: number): string {
+  const back = (parseYmd(today).getDay() - weekday + 7) % 7
+  return shiftDay(today, -back)
+}
+
 /**
- * The weekly review on the day the person picks: the 7 finished days before `today` across all
- * four pillars, the weight as a band (none when quiet), at most one pattern line, their own why,
- * if-then plans due, and one choice for next week. A week with nothing logged is "welcome back".
+ * Welcome back (ml-a4): the review before this one was missed. After a missed review only the
+ * current stretch shows: from the first active day after the last 3+ quiet days, never more than
+ * 7 days back, so nothing is compared across the gap.
+ */
+function missedReview(today: string, o: ReviewOptions): boolean {
+  if (o.reviewDay === undefined || !o.lastReviewAt) return false
+  const thisOne = reviewDayOn(today, o.reviewDay)
+  return o.lastReviewAt < shiftDay(thisOne, -7)
+}
+
+function sinceGap(s: AppState, today: string): string | null {
+  const days = dayPictures(s, shiftDay(today, -7), shiftDay(today, -1), today)
+  const active = (i: number) => { const x = days[i]; return x.food.logged || !!x.mind || x.move.sessions.length > 0 || x.weight !== null }
+  let first: number | null = null
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (active(i)) first = i
+    else if (first !== null && i >= 2 && !active(i - 1) && !active(i - 2)) break
+  }
+  return first === null ? null : days[first].d
+}
+
+/**
+ * The weekly review (boards ml-a1 to ml-a5), on the day the person picks: the 7 finished days
+ * before `today`. "What you did" first, with one line of encouragement, then the pattern line,
+ * their why, their if-then plans and one choice for next week. Weight only for people who chose
+ * it, in words. Counts, never "x of y".
  */
 export function weeklyReview(s: AppState, today: string, o: ReviewOptions): WeeklyReview {
   const t = o.t ?? LOOP_THRESHOLDS
-  const week = weekPicture(s, shiftDay(today, -1), today, t)
-  const prev = weekPicture(s, shiftDay(today, -8), today, t)
-  const safety = loopSafety(s, week.body.avg, o.healthConsent)
+  const to = shiftDay(today, -1)
+  const full = weekPicture(s, shiftDay(today, -7), to, today, t)
+  const welcomeBack = full.empty || missedReview(today, o)
+  const since = welcomeBack ? sinceGap(s, today) : null
+  const week = welcomeBack && since ? weekPicture(s, since, to, today, t) : full
+  const kg = latestWeight(s, today)
+  const safety = loopSafety(s, kg, o.healthConsent)
   const quiet = safety.quiet
-  const why = week.mind.motivations
-  const base = { week, quiet, move: week.move, mind: week.mind, why, choices: REVIEW_CHOICES }
-  if (week.empty) {
-    return { ...base, welcomeBack: true, food: { loggedDays: 0, inRangeDays: null, avgKcal: null, avgProtein: null }, weight: { band: null, direction: null }, pattern: null, rate: null, maintenance: null }
-  }
+  const wellbeingRouted = week.mind.wellbeing === 'flagged' || week.mind.wellbeing === 'sometimes'
+  const care = week.mind.careMood
+  const encouragement: Encouragement = welcomeBack ? 'welcome' : safety.gentle ? 'gentle' : week.mind.hard ? 'hard' : 'steady'
 
-  // weight: hidden in every quiet mode and where the food mode doesn't show it back
-  let weight: WeeklyReview['weight']
-  const minW = t.minWeighInsPerWeek.value, steady = t.steadyWeeklyKg.value
-  if (quiet || !foodView(s.profile).weightBack) weight = { band: null, direction: null, reason: 'quiet' }
-  else if (minW === null) weight = { band: null, direction: null, reason: 'awaiting-threshold' }
-  else if (week.body.weighIns < minW) weight = { band: null, direction: null, reason: 'not-enough-data' }
-  else {
-    const bandKg = { lo: r1(week.body.lo!), hi: r1(week.body.hi!) }
-    if (steady === null) weight = { band: bandKg, direction: null, reason: 'awaiting-threshold' }
-    else if (prev.body.weighIns < minW) weight = { band: bandKg, direction: null, reason: 'not-enough-data' }
-    else {
-      const delta = week.body.avg! - prev.body.avg!
-      weight = { band: bandKg, direction: Math.abs(delta) <= steady ? 'steady' : delta < 0 ? 'down' : 'up' }
-    }
-  }
+  // protein (mental-performance 8 Oct): most main meals with 15 g, else the daily average when it reaches the range's low end
+  const fv = foodView(s.profile)
+  const mealsRule = week.food.mainMeals > 0 && week.food.proteinMeals * 2 > week.food.mainMeals
+  let protein: ProteinWords | null = null
+  const pr = proteinRangeFor(s.profile, kg)
+  if (mealsRule) protein = { kind: 'meals' }
+  else if (!quiet && week.food.avgProtein !== null && pr && week.food.avgProtein >= pr.low) protein = { kind: 'grams', g: Math.round(week.food.avgProtein / 5) * 5 }
 
-  const pw = t.patternWindowDays.value
-  const pattern: PatternResult = pw === null ? { line: null, reason: 'awaiting-threshold' } : patternLine(dayPictures(s, shiftDay(today, -pw), shiftDay(today, -1), today), t)
-  const noTarget = foodView(s.profile).mode === 'yes'
+  // pattern lines: none on welcome back, with wellbeing flagged, or in a hard or care week; gentle mode only mind and movement
+  const pattern = welcomeBack || wellbeingRouted || week.mind.hard || care
+    ? null
+    : patternLine(s, to, today, { allowed: safety.gentle ? GENTLE_PATTERNS : undefined, recent: o.patternShown, t })
+
+  const ctx: OptionContext = safety.gentle || quiet ? 'gentle' : week.mind.hard ? 'hard' : 'calm'
+  // a range change in "Change one thing" (ml-a5) only where the weigh-in check or the drift check
+  // points one way (eat-less only after a drift or a slower pace, never after a hard week)
+  let range: RangeChange | null = null, dir: 'less' | 'more' | null = null
+  if (ctx !== 'gentle' && !welcomeBack) {
+    const rate = suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, t })
+    const drift = rate.kind === 'none' ? maintenanceDrift(s, today, { healthConsent: o.healthConsent, t }) : null
+    const r = rate.kind === 'options' ? rate.range : drift?.kind === 'drift' ? drift.range : null
+    if (r) { range = r; dir = r.suggested < r.kcal ? 'less' : 'more' }
+  }
   return {
-    ...base,
-    welcomeBack: false,
+    week, welcomeBack, since, encouragement, gentle: safety.gentle, quiet,
     food: {
       loggedDays: week.food.loggedDays,
-      inRangeDays: quiet || noTarget ? null : week.food.inRangeDays,
-      avgKcal: quiet ? null : week.food.avgKcal === null ? null : r10(week.food.avgKcal),
-      avgProtein: quiet ? null : week.food.avgProtein === null ? null : Math.round(week.food.avgProtein),
+      inRangeDays: quiet || !fv.rangeOnFood || fv.mode === 'yes' ? null : week.food.inRangeDays,
+      protein: safety.gentle && protein?.kind === 'grams' ? null : protein,
     },
-    weight,
+    move: week.move,
+    mind: week.mind,
+    // never compared across a gap on welcome back
+    weight: welcomeBack || wellbeingRouted ? null : weightRow(s, today, week.body.weighIns, safety, t),
     pattern,
-    rate: suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, lastAt: o.lastRateAt, t }),
-    maintenance: o.maintenanceAnchorKg ? maintenanceBandCheck(s, today, o.maintenanceAnchorKg, { healthConsent: o.healthConsent, t }) : null,
+    why: week.mind.motivations,
+    choices: welcomeBack ? ['pick-up', 'ease-back'] : ['keep', 'ease-off', 'change-one'],
+    changeOne: { ctx, options: optionsFor(ctx, dir, week.mind), range },
   }
 }
 
+/* ---------------- choices ---------------- */
+
+/**
+ * "Ease off" and "Ease back in" (mental-performance 8 Oct): the shorter sessions pre-selected for
+ * the coming 7 days, starting today (the review looks back on the 7 days before it). Food stays as
+ * it is: nothing widens the range today. Returns the profile fields to set.
+ */
+export function easeOffFields(today: string): { easyFrom: string; easyUntil: string } {
+  return { easyFrom: today, easyUntil: shiftDay(today, 6) }
+}
