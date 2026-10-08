@@ -183,7 +183,7 @@ export function DemoPlayer({ ex, onClose, origin }: {
 
       {!failed && !m.hold && (
         <div className="demo-bot">
-          <div className="demo-sub" aria-hidden="true">{s.rep ? `Rep ${s.rep} of ${s.reps}` : `${s.reps} reps`}</div>
+          <div className="demo-sub" aria-hidden="true">{s.rep ? `Rep ${s.rep} of ${s.reps}` : s.reps === 1 ? '1 rep' : `${s.reps} reps`}</div>
           <div className="demo-ph" aria-hidden="true">
             <span className="l">{PHASE_LABEL[s.kind]}</span>
             {s.kind !== 'ready' && <span className="c num">{s.count}</span>}

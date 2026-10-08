@@ -272,7 +272,8 @@ export const DEMOS = {
   },
   // One full rep with a single handle (the move is the same with a rope): the clip opens as the
   // handle comes back up, a slow 5 s push down, a squeeze with arms straight, about 3.8 s back
-  // up, then a second push cut off partway (counted as a pause, not a rep). Tracked by the handle, every frame (24 fps).
+  // up, then a second push the clip cuts off (from 12.7 s it shows as "Get set", not counted as a rep). Tracked by
+  // the handle, every frame (24 fps).
   tricepsPushdown: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/play_720p.mp4',
     poster: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/thumbnail.jpg',
