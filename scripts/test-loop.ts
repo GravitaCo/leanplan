@@ -9,7 +9,7 @@ import { LOOP_THRESHOLDS } from '@/core/domain/loopThresholds'
 import { mindContext, dayPictures, patternLine, strengthProgress, weekPicture, GENTLE_PATTERNS } from '@/core/domain/weekPicture'
 import { levelWord, weightTrend } from '@/core/domain/weightTrend'
 import {
-  adaptiveMaintenance, allowLess, driftCheck, learnedTarget, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
+  adaptiveMaintenance, allowLess, driftCheck, learnedTarget, reminderAskDue, reminderDue, reminderLapsed, unopenedReviews, easeOffFields, loopSafety, maintenanceDrift, optionsFor, rangeStep, reviewDayOn, steadyRange,
   suggestRateAdjustment, weeklyReview, weightRow,
 } from '@/core/domain/maintenanceLoop'
 import {
@@ -311,6 +311,10 @@ function words(): void {
     ['options in gentle mode: rest, sleep, a plan, a walk', JSON.stringify(optionsFor('gentle', 'less', { eveningHunger: false })) === JSON.stringify(['earlier-night', 'rest-day', 'hungry-days-plan', 'walk'])],
     ['ease off: shorter sessions for the next 7 days', JSON.stringify(easeOffFields(TODAY)) === JSON.stringify({ easyFrom: TODAY, easyUntil: shiftDay(TODAY, 6) })],
     ['review day: the Sunday on or before today', reviewDayOn('2026-10-14', 0) === '2026-10-11' && reviewDayOn(TODAY, 0) === TODAY],
+    ['reminder: on the review day only, off by default', (() => { const p = state().profile; return !reminderDue(p, TODAY) && reminderDue({ ...p, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(7) }, TODAY) && !reminderDue({ ...p, reviewPush: true, reviewDay: 1, reviewPushFrom: ago(7) }, TODAY) })()],
+    ['reminder: not once the review is open, not in a skipped week', (() => { const p = { ...state().profile, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(7) }; return !reminderDue({ ...p, lastReviewAt: TODAY }, TODAY) && !reminderDue({ ...p, reviewPushSkip: TODAY }, TODAY) })()],
+    ['reminder: pauses after 3 unopened, asks once, then lapses', (() => { const p = { ...state().profile, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(15) }; const three = shiftDay(TODAY, 1), four = shiftDay(TODAY, 8); return unopenedReviews(p, three) === 3 && !reminderDue(p, shiftDay(TODAY, 7)) && reminderAskDue(p, three) && !reminderAskDue(p, four) && reminderLapsed(p, four) })()],
+    ['reminder: a skipped week never counts towards the pause', unopenedReviews({ ...state().profile, reviewPush: true, reviewDay: 0, reviewPushFrom: ago(15), reviewPushSkip: ago(7) }, shiftDay(TODAY, 1)) === 2],
   ])
 }
 

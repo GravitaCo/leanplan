@@ -112,3 +112,5 @@
 /* 36 px pills as drawn, with a 44 px touch area */
 .rv-pill, .rv-chip { position: relative; }
 .rv-pill::after, .rv-chip::after { content: ''; position: absolute; inset: -4px 0; }
+/* the learned range: the narrower part must stand apart from the starting range in dark too */
+@media (prefers-color-scheme: dark) { .lp-learn .bar .wide { background: var(--fill); } .lp-learn .bar .narrow { background: var(--label2); } }

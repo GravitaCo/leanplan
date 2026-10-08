@@ -594,11 +594,12 @@ export const REMINDER_UNOPENED_STOP = 3
 export const REMINDER_TEXT = { title: 'Your week is ready', body: 'Take a look whenever suits you.' } as const
 
 /** Review days since the reminder went on (or was kept) that passed without the review being opened, before `today`. */
-export function unopenedReviews(p: Pick<AppState['profile'], 'reviewDay' | 'reviewPushFrom' | 'lastReviewAt'>, today: string): number {
+export function unopenedReviews(p: Pick<AppState['profile'], 'reviewDay' | 'reviewPushFrom' | 'lastReviewAt' | 'reviewPushSkip'>, today: string): number {
   const from = [p.reviewPushFrom, p.lastReviewAt].filter((x): x is string => !!x).sort().pop()
   if (!from) return 0
   let n = 0
-  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) n++
+  // a skipped week (no reminder went) never counts towards the pause (mental-performance, 8 Oct)
+  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) if (d !== p.reviewPushSkip) n++
   return n
 }
 
@@ -615,8 +616,12 @@ export function reminderDue(p: AppState['profile'], today: string): boolean {
   return unopenedReviews(p, today) < REMINDER_UNOPENED_STOP
 }
 
-/** "Keep the weekly reminder?" is due in the app: the reminder paused itself after 3 unopened. */
-export const reminderAskDue = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) >= REMINDER_UNOPENED_STOP
+/**
+ * "Keep the weekly reminder?", asked once (ml-d2): from the pause until the next review day passes.
+ * Unanswered by then, the reminder goes off quietly and Tali never asks again (`reminderLapsed`).
+ */
+export const reminderAskDue = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) === REMINDER_UNOPENED_STOP
+export const reminderLapsed = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) > REMINDER_UNOPENED_STOP
 
 /** The next review day on or after `today`: a hard or care week before it skips that reminder. */
 export const nextReviewDay = (today: string, weekday: number) => { const d = reviewDayOn(today, weekday); return d === today ? d : shiftDay(d, 7) }

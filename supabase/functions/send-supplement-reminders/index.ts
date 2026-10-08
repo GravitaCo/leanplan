@@ -48,7 +48,7 @@ function unopened(p: any, today: string): number {
   const from = [p.reviewPushFrom, p.lastReviewAt].filter((x: unknown) => typeof x === "string").sort().pop();
   if (!from) return 0;
   let n = 0;
-  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) n++;
+  for (let d = reviewDayOn(shiftDay(today, -1), p.reviewDay ?? 0); d > from; d = shiftDay(d, -7)) if (d !== p.reviewPushSkip) n++;
   return n;
 }
 

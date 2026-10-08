@@ -254,7 +254,7 @@ function ChangeOneSheet({ mind, ctx, options, range, value, onClose, onPick }: {
 
 /** The mind, move and food rows for the check sheets (ml-b1 to ml-b4, ml-c3). */
 /** `span`: move and food over a longer window (the 4-week check, the learned range); the mind rows then read the last week, and a count says so (ml-b2). */
-function SideBySide({ week, span, cap, weight, sleepHunger }: { week: WeekPicture; span?: WeekPicture; cap: string; weight?: ReactNode; sleepHunger?: boolean }) {
+function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: WeekPicture; span?: WeekPicture; cap: string; weight?: ReactNode; food?: ReactNode; sleepHunger?: boolean }) {
   const m = week.mind
   const quietOk = useStore((s) => !loopSafety(s.data, null, healthLoggingAllowed(s.data)).quiet)
   const rows: [string, 'mind' | 'move' | 'food', ReactNode][] = []
@@ -268,7 +268,8 @@ function SideBySide({ week, span, cap, weight, sleepHunger }: { week: WeekPictur
   const sess = mv.sessions - mv.walks
   add('Move', 'move', sess ? <><b>{sess} {sess === 1 ? 'session' : 'sessions'}</b> done{mv.walks ? ', plus walks' : ''}</> : mv.walks ? <><b>{mv.walks} {mv.walks === 1 ? 'walk' : 'walks'}</b></> : null)
  // the check sheets only open with numbers allowed; the guard keeps it that way
-  add('Food', 'food', fd.loggedDays && quietOk ? <>Averaged <b>{fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10)} kcal</b>, with {fd.inRangeDays} {fd.inRangeDays === 1 ? 'day' : 'days'} in your range</> : null)
+  // never "0 days in your range": the clause only when there were some (design, 8 Oct)
+  add('Food', 'food', food ?? (fd.loggedDays && quietOk ? <>Averaged <b>{fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10)} kcal</b>{fd.inRangeDays ? <>, with {fd.inRangeDays} {fd.inRangeDays === 1 ? 'day' : 'days'} in your range</> : null}</> : null))
   return (
     <section className="lp-card" aria-label={`${cap}, all together`}>
       <div className="cap">{cap}</div>
@@ -377,8 +378,8 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
         {next?.floored && <div className="d">Tali keeps your target at a safe minimum, so it starts a little higher than this.</div>}
       </section>
       <SideBySide week={week} span={span} cap={`Based on the last ${Math.round(r.days / 7)} weeks`}
+        food={<><b>{r.loggedDays} complete days</b> logged, averaging {fmt(r.avgKcal)} kcal</>}
         weight={<><b>{r.weighIns} weigh-ins</b></>} />
-      <div className="lp-card"><div className="lp-r num"><span className="l food">Logged</span><span><b>{r.loggedDays} complete days</b>, averaging {fmt(r.avgKcal)} kcal</span></div></div>
       {next ? (
         <>
           <button type="button" className="rv-done" onClick={use}>Use this range</button>
@@ -431,7 +432,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
       </section>
       <section className="lp-sec" aria-labelledby="lp-rem-h">
         <h3 id="lp-rem-h">Want a reminder for your weekly review?</h3>
-        <div className="d">One note on {dayName(day)}, nothing else. Turn it off any time.</div>
+        <div className="d">One note on {dayName(day)}, nothing else.</div>
         {push
           ? <div className="rv-pills"><span className="rv-pill on" aria-live="polite">Reminder on</span><button type="button" className="rv-pill" onClick={() => setReviewPush(false)}>Turn it off</button></div>
           : <>
@@ -439,7 +440,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
               <button type="button" className="rv-keep sm" onClick={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }}>No thanks</button>
             </>}
         {/* compliance, 8 Oct: what the note says and when, in the place it's switched on */}
-        <div className="d">Once a week on {dayName(day)} at {time}. It only says “Your week is ready”, nothing from your log. Turn it off any time in Profile.</div>
+        <div className="d">Once a week on {dayName(day)} at {time} UK time. It only says “Your week is ready”, nothing from your log. Turn it off any time in Profile.</div>
       </section>
     </LoopSheet>
   )

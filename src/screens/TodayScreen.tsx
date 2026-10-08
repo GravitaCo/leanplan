@@ -18,7 +18,7 @@ import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, latestWeight, rangeExtra, rangeFor, showBurnNote,
   usualEntries, usuals, weekOf, weekSummary,
 } from '@/core/domain/insights'
-import { careWeek, loopSafety, nextReviewDay, reminderAskDue, reviewDayOn, reviewWaiting, weightRow } from '@/core/domain/maintenanceLoop'
+import { careWeek, loopSafety, nextReviewDay, reminderAskDue, reminderLapsed, reviewDayOn, reviewWaiting, weightRow } from '@/core/domain/maintenanceLoop'
 import { dayPictures, mindContext } from '@/core/domain/weekPicture'
 import { weightTileWords } from '@/core/domain/loopCopy'
 import { WeeklyReviewScreen } from './review/WeeklyReview'
@@ -135,12 +135,19 @@ export function TodayScreen() {
   // ml-e3: the review waits under Mind from the review day until it's opened or hidden
   const reviewDue = isToday && reviewWaiting(data, cur, consent)
   // ml-d2: after 3 unopened the reminder pauses itself and Tali asks once, here
-  const keepAsk = isToday && reminderAskDue(p, cur)
   const keepReviewPush = useStore((s) => s.keepReviewPush)
+  const setReviewPush = useStore((s) => s.setReviewPush)
   // a week a safety signal fired (care tier): the coming reminder is skipped. Only the date goes to
-  // the server, never why (compliance, 8 Oct)
-  const skipDay = isToday && p.reviewPush && careWeek(mindContext(data, dayPictures(data, shiftDay(cur, -7), shiftDay(cur, -1), cur))) ? nextReviewDay(cur, p.reviewDay ?? 0) : null
+  // the server, never why (compliance, 8 Oct). Written when Summary opens, so a week the app isn't
+  // opened still gets the (generic, neutral) note: accepted by mental-performance.
+  const care = isToday && careWeek(mindContext(data, dayPictures(data, shiftDay(cur, -7), shiftDay(cur, -1), cur)))
+  // marks a low week, so health data: only with the health yes (compliance, 8 Oct)
+  const skipDay = consent && care && p.reviewPush ? nextReviewDay(cur, p.reviewDay ?? 0) : null
   useEffect(() => { if (skipDay && p.reviewPushSkip !== skipDay) setPrefs({ reviewPushSkip: skipDay }) }, [skipDay]) // eslint-disable-line react-hooks/exhaustive-deps
+  // never during a care week; asked once, then off quietly
+  const keepAsk = isToday && !care && reminderAskDue(p, cur)
+  const lapsed = isToday && reminderLapsed(p, cur)
+  useEffect(() => { if (lapsed) setReviewPush(false) }, [lapsed]) // eslint-disable-line react-hooks/exhaustive-deps
   const supps = p.supplements || []
   // the range on a day without workouts (rangeFor's own maths: the ±15% range for Sometimes)
   const ex = rangeExtra(data, cur)
@@ -219,7 +226,7 @@ export function TodayScreen() {
         {keepAsk && (
           <div className="banner">
             <span style={{ color: 'var(--mind-ink)' }}><Icon name="bell" /></span>
-            <div><b>Keep the weekly reminder?</b><br /><span className="muted">It’s paused for now, since the last few weren’t needed.</span>
+            <div><b>Keep the weekly reminder?</b><br /><span className="muted">It’s paused for now. Some weeks you won’t need it, and that’s fine.</span>
               <div className="chips" style={{ marginTop: 8 }}>
                 <button className="chip" onClick={() => keepReviewPush(true)}>Keep it</button>
                 <button className="chip" onClick={() => keepReviewPush(false)}>Turn it off</button>
