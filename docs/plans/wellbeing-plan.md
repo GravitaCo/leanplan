@@ -679,6 +679,12 @@ section 9, and the items below that the boards do not settle.
   `cookies.ts` (Unload and "More about sleep" keys), `terms.ts` (not a crisis service, doesn't
   monitor what you write), `signposts.ts` (Shout), register rows 42 and 63, DPIA addendum,
   `lowMoodShown` in `HEALTH_FIELDS` and withdrawal clearing. No health consent version bump.
+- Follow-ups moved off the boards' old Pending tags (for reviewers and the build, not Benn):
+  B1 the new Profile group, and "3 and 1 a day" are judgement calls; B3 `mobility-lower` isn't
+  built and the shorter effort target needs fitness-workouts; B4 observation thresholds and the
+  empty-state wording; B6 the exact NHS wording and the minimum check-ins before the signpost;
+  B9 the plan `kind`, its group name and the Mind plan placeholder; B11 the halving rule is a
+  judgement call.
 - The maintenance-loop boards still say "4 of 7 nights" and "3 of 7 check-ins"; they need the same
   plain-count fix.
 - App issues seen while drawing: Toggle (31 px) and Seg (32 px) are under the 44 px target;
