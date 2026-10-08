@@ -280,6 +280,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 20, setSec: 30 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'],
     cue: "Bend at the hips and knees to pick up a weight in each hand, then stand tall. Walk with short, steady steps, shoulders down and away from your ears. Don't lean to one side or let the weights swing; put them down with a flat back.",
+    video: DEMOS.farmerCarry,
   },
   {
     id: 'pallof-press', n: 'Pallof press', modality: 'strength', log: 'weight-reps', perSide: true,

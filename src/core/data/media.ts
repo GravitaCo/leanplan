@@ -357,4 +357,14 @@ export const DEMOS = {
       { at: 14.0, kind: 'ready' },
     ],
   },
+  // Seedance 2.5 (demonstrator W1). Front view: she walks from the back of the room towards the
+  // camera with a dumbbell in each hand, stops, and puts them down with a flat back. A carry has no
+  // reps to time, so it plays as a move with no counter; the loop jumps back to the far end.
+  farmerCarry: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8fd6dda5-e216-482a-8e80-da9511889564/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8fd6dda5-e216-482a-8e80-da9511889564/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'move',
+    tempo: [{ at: 0, kind: 'ready' }],
+  },
 } satisfies Record<string, ExerciseMedia>

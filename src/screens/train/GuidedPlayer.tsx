@@ -417,7 +417,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
       ) : (
         <section className="gp-bot" aria-label={name}>
           <div>
-            {holdClip && <div className="gp-kick">{video?.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
+            {holdClip && slot.shape === 'hold' && <div className="gp-kick">{video?.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
             <h1 className="gp-name">{name}</h1>
             {!plain && <p className="gp-line">{firstLine(slot.shown.cue)}</p>}
             {slot.swapped && <p className="gp-line sm">In place of {bareName(slot.planned.n)}, today only.</p>}
