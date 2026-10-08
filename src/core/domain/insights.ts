@@ -7,7 +7,7 @@
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
-import { parseYmd, r1, shiftDay, todayStr, ymd } from './date'
+import { fmt, parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
 import { foodView, maintenanceRange } from './foodMode'
@@ -370,4 +370,50 @@ export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
 export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
   const days = (a: string) => Math.round((parseYmd(today).getTime() - parseYmd(a).getTime()) / 864e5)
   return (p.plans ?? []).filter((pl) => days(pl.lastReview || pl.created || today) >= 7)
+}
+
+/* ---- "Same as yesterday" (nutrition-accuracy R1 to R3) ---- */
+
+/**
+ * What "Same as yesterday" copies into `meal` on `day`: yesterday's entries for that meal,
+ * re-logged at today's data (relog), leaving out foods no longer in Tali and their cooking fat.
+ * The store's repeatYesterday and the Summary row both use this, so the row's kcal is exactly
+ * what the tap adds. `gone` counts the foods left out.
+ */
+export function entriesToRepeat(s: Pick<AppState, 'days'>, day: string, meal: MealSlot): { entries: LoggedFood[]; gone: number } {
+  const all = (s.days[shiftDay(day, -1)]?.foods || []).filter((x) => x.meal === meal)
+  const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+  const keep = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+  return { entries: keep.map((x) => ({ ...relog(x, meal), how: x.how })), gone: gone.size }
+}
+
+export interface SameAsYesterdayRow {
+  meal: MealSlot
+  entries: LoggedFood[]
+  /** the sum of the re-logged entries (cooking fat included), unrounded */
+  kcal: number
+  /** "{names} · {kcal} kcal", or "{first} and {n} more · {kcal} kcal"; names only in gentle mode */
+  sub: string
+}
+
+/** Past this many characters of names, the sub-line names the first food and counts the rest. */
+export const SAME_NAMES_MAX = 60
+
+const listNames = (ns: string[]): string => (ns.length <= 1 ? ns.join('') : `${ns.slice(0, -1).join(', ')} and ${ns[ns.length - 1]}`)
+
+/**
+ * The Summary's "Same as yesterday" row for `meal` (the caller passes mealNow(), R1): only when
+ * that meal is empty on `day` and yesterday's has something to copy; never another meal. Its kcal
+ * is the sum of what entriesToRepeat would add (R2), formatted once, never yesterday's stored
+ * total. No kcal in gentle mode (R3).
+ */
+export function sameAsYesterdayRow(s: Pick<AppState, 'days'>, day: string, meal: MealSlot, opts: { gentle?: boolean; max?: number } = {}): SameAsYesterdayRow | null {
+  if ((s.days[day]?.foods || []).some((x) => x.meal === meal)) return null
+  const { entries } = entriesToRepeat(s, day, meal)
+  if (!entries.length) return null
+  const kcal = entries.reduce((a, x) => a + x.k, 0)
+  const names = [...new Set(entries.filter((x) => x.src !== 'fat').map((x) => x.n))]
+  const full = listNames(names)
+  const shown = names.length > 1 && full.length > (opts.max ?? SAME_NAMES_MAX) ? `${names[0]} and ${names.length - 1} more` : full
+  return { meal, entries, kcal, sub: opts.gentle ? shown : `${shown} · ${fmt(kcal)} kcal` }
 }

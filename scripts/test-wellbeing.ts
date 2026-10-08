@@ -4,7 +4,7 @@
    MIND_REVIEWED read false here: suites call core with explicit arguments instead. */
 import { WELLBEING_ENABLED, MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { dataSyncedSuite } from './wellbeing/data-synced'
-import { dataDeviceSuite } from './wellbeing/data-device'
+import { coreSuite } from './wellbeing/core'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -14,6 +14,6 @@ export async function wellbeingSuite(fakeServer: FakeServer): Promise<number> {
   if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'wellbeing: both flags off in unit tests')
   bad += await dataSyncedSuite(fakeServer)
-  bad += await dataDeviceSuite(fakeServer)
+  bad += coreSuite()
   return bad
 }

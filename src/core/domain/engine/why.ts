@@ -209,3 +209,37 @@ export const BANNED_COPY: RegExp[] = [
   /\bideal\b/i, /\bproblem areas?\b/i, /\bburn(ing)? off\b/i, /\bcheat\b/i, /\bclean eating\b/i, /—/,
 ]
 export const copyIssues = (text: string): string[] => BANNED_COPY.filter((r) => r.test(text)).map((r) => r.source)
+
+/**
+ * Wellbeing Phase 1's additions (build plan WP3): no skipping days, no readiness or recovery
+ * scores. Kept apart from BANNED_COPY because approved engine and setup copy uses "skip" for
+ * skipping a question ("Skip any question you like") and the engine's field name "readiness";
+ * these apply to every Mind string and to Train's hard-day strings (mindCopyIssues).
+ */
+export const WELLBEING_BANNED: RegExp[] = [/\bskip(s|ped|ping)?\b/i, /\breadiness\b/i, /\brecovery debt\b/i, /\byou should rest\b/i]
+
+/**
+ * Exact strings that may use a banned word in an approved sense. Whole strings only, so the word
+ * stays banned everywhere else. B3.17 (accepted, fitness-workouts): "skipping" is the rope
+ * exercise, not skipping a day. The final 8 Oct wording says "jump rope", which passes anyway.
+ */
+export const COPY_ALLOWED: ReadonlySet<string> = new Set([
+  'After a rough night, the shorter version swaps running, skipping and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.',
+])
+
+/**
+ * Words kept off every Mind screen (copy deck §0, plan §3 and §8.1: no clinical, therapy or
+ * scoring language), on top of BANNED_COPY and WELLBEING_BANNED. "treat" doesn't match "treatment", so the approved
+ * S.2 line ("Not a treatment for any condition.") passes; "screen" is banned as screening only,
+ * so "lock screen" passes.
+ */
+export const MIND_BANNED: RegExp[] = [
+  /\bmeditat(e|es|ed|ing|ion|ions)\b/i, /\bmindful(ness)?\b/i, /\bjourney\b/i, /\bzen\b/i, /\btherap(y|ies|ist|eutic)\b/i,
+  /\btreat(s|ed|ing)?\b/i, /\bcure(s|d)?\b/i, /\bclinical(ly)?\b/i, /\bdiagnos(e|es|ed|is|ing)\b/i,
+  /\bscreening\b/i, /\bscreen(s|ed)? (for|you)\b/i, /\bdetect(s|ed|ing|ion)?\b/i, /\bsymptoms?\b/i,
+  /\b(depression|depressed|anxiety disorder|insomnia|burnout|PTSD|ADHD)\b/i,
+  /\bscores?\b/i, /\bstreaks?\b/i, /\breadiness\b/i, /\brecovery score\b/i, /\byou missed\b/i, /\byou haven'?t logged\b/i,
+]
+/** Copy lint for Mind and Train hard-day strings: BANNED_COPY, WELLBEING_BANNED and MIND_BANNED, less COPY_ALLOWED. */
+export const mindCopyIssues = (text: string): string[] =>
+  COPY_ALLOWED.has(text) ? [] : [...BANNED_COPY, ...WELLBEING_BANNED, ...MIND_BANNED].filter((r) => r.test(text)).map((r) => r.source)
