@@ -8,7 +8,7 @@ demo videos".
 
 ## Status: every exercise in the app
 
-54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **17 have a clip, 37 still need one.** Generated from the app's data on 8 Oct 2026.
+54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **19 have a clip, 35 still need one.** Generated from the app's data on 8 Oct 2026.
 
 ### Still needed
 
@@ -27,9 +27,7 @@ demo videos".
 | Brisk walk | timed (steady pace) | Cardio |
 | Chair pose | hold | Tali: Balance & Mobility |
 | Dead bug | reps | Tali: Full body A |
-| Dumbbell split squat | reps | Tali: Full body C |
 | Farmer carry | reps | Tali: Strength & Balance A, Tali: Full body C |
-| Goblet squat | reps | Tali: Strength & Balance B, Tali: Full body A |
 | Hip thrust | reps | Tali: Full body C |
 | Leg curl (machine) | reps | Tali: Full body A |
 | Leg press | reps | Tali: Full body B |
@@ -64,6 +62,8 @@ demo videos".
 | Biceps curl (barbell or dumbbell) | reps | Pull | `ea9ee735…` |
 | Bird-dog | reps | Tali: Strength & Balance B | `28383feb…` |
 | Dumbbell bench press | reps | Tali: Full body A | `c3115e41…` |
+| Dumbbell split squat | reps | Tali: Full body C | `cf04a486…` |
+| Goblet squat | reps | Tali: Strength & Balance B, Tali: Full body A | `97700dd2…` |
 | Incline push-up | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Warm-up | `0f94c2e0…` |
 | Knee to wall | reps | Tali: Balance & Mobility, Warm-up | `e7138db7…` |
 | Side plank (knees) | hold | Tali: Strength & Balance B, Tali: Full body B | `8dde7844…` |

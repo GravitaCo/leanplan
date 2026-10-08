@@ -303,4 +303,40 @@ export const DEMOS = {
       { at: 14.4, kind: 'stretch', rep: 2 },
     ],
   },
+  // Seedance 2.5 (demonstrator W9). Two reps, left foot forward, whole body in frame: about 3.7 s
+  // down, a pause just above the floor, about 1.7 s up, a pause at the top. Tracked by the head.
+  dbSplitSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/cf04a486-a45e-4970-bee4-22e4daf14fd5/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/cf04a486-a45e-4970-bee4-22e4daf14fd5/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lower', rep: 1 },
+      { at: 4.0, kind: 'stretch', rep: 1 },
+      { at: 4.9, kind: 'lift', rep: 1 },
+      { at: 6.6, kind: 'squeeze', rep: 1 },
+      { at: 8.5, kind: 'lower', rep: 2 },
+      { at: 11.4, kind: 'stretch', rep: 2 },
+      { at: 11.9, kind: 'lift', rep: 2 },
+      { at: 13.5, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2). Two reps from the front, to about halfway down: about 3 s
+  // down, a short pause, about 1.7 s up, a pause standing. Ends where it starts. Tracked by the head.
+  gobletSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/97700dd2-efbb-40a9-95a4-1db7ce863027/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/97700dd2-efbb-40a9-95a4-1db7ce863027/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.6, kind: 'lower', rep: 1 },
+      { at: 3.6, kind: 'stretch', rep: 1 },
+      { at: 4.35, kind: 'lift', rep: 1 },
+      { at: 6.1, kind: 'ready', rep: 2 },
+      { at: 8.45, kind: 'lower', rep: 2 },
+      { at: 11.4, kind: 'stretch', rep: 2 },
+      { at: 12.15, kind: 'lift', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

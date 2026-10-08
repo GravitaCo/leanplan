@@ -196,6 +196,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'squat-gym', step: 2 }],
     cue: "Hold a dumbbell or kettlebell close to your chest, feet a little wider than your hips. Sit down between your heels, keeping your chest up and knees following your toes, then stand by pushing through your whole foot. Don't let your heels lift or your chest drop towards your knees.",
+    video: DEMOS.gobletSquat,
   },
   {
     id: 'db-split-squat', n: 'Dumbbell split squat', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -204,6 +205,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 60 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'lunge-loaded', step: 2 }],
     cue: "Hold the dumbbells by your sides and take a long stride, back heel lifted. Lower straight down until the back knee is just above the floor, then push up through the front foot. Keep the front knee in line with your toes rather than letting it fall inwards.",
+    video: DEMOS.dbSplitSquat,
   },
   {
     id: 'hip-thrust', n: 'Hip thrust', modality: 'strength', log: 'weight-reps',
