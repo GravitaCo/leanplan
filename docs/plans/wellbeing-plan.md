@@ -623,6 +623,16 @@ reviews below are still open. Nothing here changes app code.
   and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter
   options."
 
+### Navigation (Benn, 8 Oct 2026)
+
+Benn wants to explore Mind as its own tab, but rejected the ways drawn to make room for it:
+moving Profile to a top-right avatar (Profile would no longer be global) and merging Train and
+Plan into a Move tab (Plan gets buried). His rule: no new UX pattern just to reach an outcome; a
+change must objectively improve the experience and make navigation clearer. The canvas now keeps
+navigation in its own section, "9 · Navigation", showing the current five tabs with Mind reached
+from the Summary Mind card. Open: with Profile and Plan both kept global, a Mind tab needs a sixth
+tab or something else to give way.
+
 ### Open for Benn (on the boards)
 
 - (a) Mind, Rest or Recharge; and the skill names.

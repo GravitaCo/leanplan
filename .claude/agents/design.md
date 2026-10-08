@@ -62,6 +62,10 @@ the device. Key values (light / dark):
 
 ## Standards you hold every piece to
 1. **Consistency:** tokens and primitives, not one-offs. Same thing, same look, same words.
+1a. **No pattern for its own sake** (Benn, 8 Oct 2026): never create a UX pattern just to get an
+   outcome. A new pattern or navigation change must objectively improve the user's experience and
+   make navigation clearer; otherwise reuse what the app already has. Options for Benn are real
+   alternatives, each kept separate and clearly labelled, never piled into one board.
 2. **Hierarchy and clarity:** one primary action per screen; the most important number is
    the biggest thing; nothing competes with it.
 3. **Accessibility:** text 4.5:1 (3:1 at 24 px+), touch targets 44 px+, colours that must be

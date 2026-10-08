@@ -188,6 +188,9 @@ silently diverge) → build with existing primitives (extract a new shared compo
 pattern repeats) → wire to the store → verify in a headless browser → push to the working
 branch → `ship-critic` → merge to `main` (see Conventions).
 Where a design has gaps, implement the obvious case and call out the decisions made.
+**No new UX pattern just to reach an outcome** (Benn, 8 Oct 2026): a new pattern or navigation change must
+objectively improve the user's experience and make navigation clearer. Prefer the patterns the app
+already has; keep Profile and Plan reachable from everywhere.
 Anything visual (app screens, the website, marketing images) goes past the `design` agent before it reaches Benn.
 **No design change ships without Benn's approval.** Build to the approved boards; any change to
 what the user sees that isn't on an approved design goes back to the Design canvas for Benn to
