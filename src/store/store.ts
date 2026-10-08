@@ -5,9 +5,14 @@
  */
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { enableMapSet } from 'immer'
+import { current, enableMapSet, isDraft } from 'immer'
 import type {
   CheckIn,
+  MindPrefs,
+  NotifyKind,
+  Pillar,
+  SkillId,
+  ThingKey,
   DayLog,
   Food,
   IfThenPlan,
@@ -32,19 +37,23 @@ import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessi
 import { activePlan, cleanPhases, keptAfterEdit, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
 import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
 import { shorterPrescription } from '@/core/domain/dayOptions'
-import { checkinOrNull, mergeCheckin } from '@/core/domain/checkin'
+import { checkinOrNull, mergeCheckin, withSkill, validMindPrefs, NOTIFY_KINDS, PILLARS, MIND_HEALTH_KEYS, SKILL_IDS } from '@/core/domain/checkin'
+import { thingByKey } from '@/core/data/skills'
+import { hardDay, isLowMood, lowMoodDue, recentCheckins } from '@/core/domain/mind'
+import { daysUsing, mayMarkSeen, type AskCtx, type AskPick } from '@/core/domain/asks'
+import { markActivityShown } from '@/core/domain/activity'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { todayStr, shiftDay, r1 } from '@/core/domain/date'
+import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { isRemovedFood, latestWeight, relog } from '@/core/domain/insights'
-import { loadState, stateFromBackup, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
+import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
-import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -56,11 +65,15 @@ import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregn
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { isUnderAge, reminderAction } from '@/core/domain/age'
-import { stampFields } from '@/core/domain/profileMerge'
+import { stampFields, type MergedField } from '@/core/domain/profileMerge'
+import { clearNotifyStore, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
+import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 
 enableMapSet()
 
-export type Tab = 'today' | 'food' | 'train' | 'plan' | 'profile'
+export type Tab = 'today' | 'mind' | 'food' | 'train' | 'plan' | 'profile'
+/** a pushed view inside the Mind tab (wellbeing Phase 1), opened from elsewhere (a one-thing chip) */
+export type MindView = 'reset' | 'unload'
 
 /**
  * Where an under-18 age came from (Tali is strictly 18+). 'profile': typed on Profile and not
@@ -102,8 +115,12 @@ export interface StoreState {
   /** a workout to open: a built-in's type or the id of one of the user's own (WorkoutKey) */
   trainOpen: string | null
   planOpen: string | null
+  /** a Mind view to open on arrival (a one-thing chip with a skill: Reset), UI only */
+  mindOpen: MindView | null
   openTrain: (w: string) => void
   openPlan: (w: string) => void
+  /** switch to the Mind tab, optionally opening one of its views (cleared by clearOpen) */
+  openMind: (view?: MindView) => void
   clearOpen: () => void
 
   // navigation
@@ -136,7 +153,58 @@ export interface StoreState {
   /** merge a patch into the day's check-in (a 0, '' or undefined answer removes it; core/domain/checkin
    *  mergeCheckin), so logging a skill never wipes mood; null clears the whole check-in */
   setCheckin: (patch: Partial<CheckIn> | null) => void
-  savePlan: (p: { id?: string; when: string; then: string; cope?: string }) => void
+  /** `kind: 'mind'` files it under "Mind plans" (health data by inference: refused, false, while
+   *  health logging is off). Editing keeps a plan's kind unless one is given. `toast` replaces
+   *  "Plan saved" (B9.17). */
+  savePlan: (p: { id?: string; when: string; then: string; cope?: string; kind?: 'mind' }, opts?: { toast?: string }) => boolean
+
+  // wellbeing Phase 1 (build plan WP4). Data actions are not flag-gated (ground rule 3); the
+  // screens that call them are. None of them opens or counts Support: it has no action at all.
+  /**
+   * Mind settings (profile.mind; B1, B11). A key set to undefined or null removes it; `notify` and
+   * `halved` merge into what's there (a kind set to undefined is removed). Stamps each touched
+   * `mind.*` path for the per-field merge. Refused (false, nothing saved) when it would switch off
+   * all three pillars or a value is malformed; the wake and wind-down times (health data) are left
+   * out while health logging is off. Turning a reminder on records the device's time zone. Never
+   * touches `gentle` or food mode (mental-performance rule 5).
+   */
+  setMindPrefs: (patch: { [K in keyof MindPrefs]?: MindPrefs[K] | null }) => boolean
+  /** a skill used now (id and time only) into today's check-in; mood and the rest are kept.
+   *  False (with the health-off toast) while health logging is off. */
+  logSkill: (id: SkillId) => boolean
+  /** today's one thing (a THINGS key, never text); picking again replaces it and its done mark */
+  pickThing: (key: ThingKey) => boolean
+  /** mark today's one thing done (B9.5); false when none is picked */
+  doneThing: () => boolean
+  /** remove today's one thing (B9.6 "Change" before a new pick) */
+  clearThing: () => void
+  /**
+   * Unload notes (device only, never synced). Only screens/mind/UnloadSheet imports the notes
+   * accessors (deviceOnly.ts NOTE_ACCESSORS), so it passes one in:
+   * `writeNotes((s, ctx) => addUnloadNote(s, input, ctx))` or `deleteUnloadNote(s, id, ctx)`.
+   * Runs it on the store's data with the session facts (selectNotesContext: signedIn, never
+   * authed, so it works offline), then saves on this device only: no dirty flag, no sync.
+   * `stored` is false when the device refused the save (storage full).
+   */
+  writeNotes: <R>(write: (s: PersistedState, ctx: NotesContext) => R) => { result: R; stored: boolean }
+  /** the low-mood signpost showed today (device only, once per 30 days); false when not stored */
+  markLowMoodShown: () => boolean
+  /** "More about sleep" left open or closed (device only) */
+  setSleepMore: (open: boolean) => boolean
+  /**
+   * Reminder delivery events read from the service worker's IndexedDB (WP17 reads and empties it):
+   * kept in the device log; a reminder type ignored twice in a row starts its back-off
+   * (profile.mind.halved, synced). Returns the types that newly backed off.
+   */
+  ingestNotifyLog: (events: unknown[]) => NotifyKind[]
+  /** "Back to usual" (B11.16): that type's back-off ends and its run of ignored reminders restarts */
+  backToUsual: (kind: NotifyKind) => void
+  /**
+   * The activity-level suggestion showed: record the day, as TodayScreen did with setPrefs. With
+   * the asks budget (`pick`), only when it actually showed (mayMarkSeen; nutrition-accuracy: a
+   * held suggestion is never marked). Returns whether it recorded.
+   */
+  noteActivityShown: (pick: AskPick | null) => boolean
   deletePlan: (id: string) => void
   reviewPlans: (outcomes: Record<string, IfThenPlan['reviews'][number]['r']>) => void
 
@@ -409,6 +477,45 @@ function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void 
   mirrorPlan(s, true)
 }
 
+/** The keys profile.mind may hold (MindPrefs); anything else in a patch is ignored. */
+const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true, lockNames: true }
+const isEmptyPref = (v: unknown): boolean =>
+  v === undefined || (Array.isArray(v) ? !v.length : !!v && typeof v === 'object' && !Object.keys(v).length)
+
+/** This device's IANA time zone, if the browser says. */
+function deviceTimeZone(): string | undefined {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined } catch { return undefined }
+}
+
+/** What a notes write returns, made safe to keep after the Immer draft it came from is finished. */
+function plainResult<R>(r: R): R {
+  if (isDraft(r)) return current(r as object) as R
+  if (r && typeof r === 'object' && !Array.isArray(r)) {
+    const o = r as Record<string, unknown>
+    for (const k of Object.keys(o)) if (isDraft(o[k])) o[k] = current(o[k])
+  }
+  return r
+}
+
+/**
+ * Reminder back-off (security-data H3; judgement call, plan §7.3 and C16): a reminder counts as
+ * ignored when it was swiped away, or when the next one of its type arrived, without an open in
+ * between; an open ends the run. Two ignored in a row halve that type. Each device keeps its own
+ * log (accepted). Supplement reminders aren't a NotifyKind, so they never back off.
+ */
+export const IGNORED_TO_HALVE = 2
+
+/** How many reminders of `kind` were ignored in a row, up to the latest event of that kind. */
+export function ignoredInARow(log: readonly NotifyEvent[], kind: string): number {
+  let run = 0, open = false
+  for (const e of [...log].filter((x) => x.kind === kind).sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
+    if (e.ev === 'opened') { run = 0; open = false }
+    else if (e.ev === 'closed') { if (open) run++; open = false }
+    else { if (open) run++; open = true }
+  }
+  return run
+}
+
 /** Lowest calorie target the app will set without medical support. */
 const KCAL_FLOOR = 1200
 
@@ -521,6 +628,35 @@ export const useStore = create<StoreState>()(
       meta(s).days[d] = { u: nowIso(), dirty: true }
     }
 
+    /**
+     * Merge a patch into a day's check-in (core/domain/checkin mergeCheckin, then the "empty
+     * becomes null" rule): the one path for the check-in sheet, skills and the one thing, so none
+     * of them wipes another's answers. Refused (false, with the health-off toast) while health
+     * logging is off; null always clears.
+     */
+    const writeCheckin = (day: string, patch: Partial<CheckIn> | null, toast?: string): boolean => {
+      const s0 = get()
+      const c = patch ? checkinOrNull(mergeCheckin(s0.data.days[day]?.checkin, patch)) : null
+      if (c && !healthLoggingAllowed(s0.data)) { s0.showToast(HEALTH_OFF_MSG); return false }
+      set((st) => {
+        ensureDay(st.data, day).checkin = c
+        markDayDirty(st.data, day)
+      })
+      saved(toast)
+      return true
+    }
+
+    /**
+     * A change to the device-only store (deviceOnly.ts): made through the Immer set on `st.data`,
+     * so a sync that started earlier sees the data changed and drops its copy rather than writing
+     * over it (runSync's `get().data !== src` checks); saved on this device only, with no dirty
+     * flag and no sync (security-data). Returns whether the device stored it.
+     */
+    const deviceWrite = (write: (s: PersistedState) => void): boolean => {
+      set((st) => { write(st.data) })
+      return persist()
+    }
+
     // the launch check reads this device's data only: it never waits on the network
     const initial = loadState()
     return {
@@ -548,9 +684,11 @@ export const useStore = create<StoreState>()(
       toastAction: null,
       trainOpen: null,
       planOpen: null,
+      mindOpen: null,
       openTrain: (w) => set((st) => { st.tab = 'train'; st.trainOpen = w }),
       openPlan: (w) => set((st) => { st.tab = 'plan'; st.planOpen = w }),
-      clearOpen: () => set((st) => { st.trainOpen = null; st.planOpen = null }),
+      openMind: (view) => set((st) => { st.tab = 'mind'; st.mindOpen = view ?? null }),
+      clearOpen: () => set((st) => { st.trainOpen = null; st.planOpen = null; st.mindOpen = null }),
 
       setTab: (t) => set((st) => { st.tab = t }),
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
@@ -605,14 +743,14 @@ export const useStore = create<StoreState>()(
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const all = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!all.length) return
-        // foods no longer in Tali (removed as unverified) aren't copied, nor their cooking fat
-        const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
-        const prev = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
-        const note = gone.size ? ` · ${gone.size} food${gone.size > 1 ? 's' : ''} no longer in Tali, not copied` : ''
-        if (!prev.length) { get().showToast(`Not copied: ${gone.size > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday' + note)
+        // the same entries the Summary's "Same as yesterday" row adds up (insights.entriesToRepeat;
+        // nutrition-accuracy R2), so its kcal is exactly what this adds. Foods no longer in Tali
+        // (removed as unverified) aren't copied, nor their cooking fat
+        const { entries, gone } = entriesToRepeat(data, cur, meal)
+        if (!entries.length && !gone) return
+        const note = gone ? ` · ${gone} food${gone > 1 ? 's' : ''} no longer in Tali, not copied` : ''
+        if (!entries.length) { get().showToast(`Not copied: ${gone > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        get().logEntries(entries, 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {
@@ -686,26 +824,22 @@ export const useStore = create<StoreState>()(
         }], recipe.name + ' added')
       },
 
-      setCheckin: (patch) => {
-        const s0 = get()
-        const c = patch ? checkinOrNull(mergeCheckin(s0.data.days[s0.cur]?.checkin, patch)) : null
-        if (c && !healthLoggingAllowed(s0.data)) { s0.showToast(HEALTH_OFF_MSG); return }
-        set((st) => {
-          ensureDay(st.data, st.cur).checkin = c
-          markDayDirty(st.data, st.cur)
-        })
-        saved('Check-in saved')
-      },
+      setCheckin: (patch) => { writeCheckin(get().cur, patch, 'Check-in saved') },
 
-      savePlan: ({ id, when, then, cope }) => {
+      savePlan: ({ id, when, then, cope, kind }, opts) => {
+        const plans0 = get().data.profile.plans ?? []
+        const was = id ? plans0.find((p) => p.id === id) : undefined
+        // a Mind plan is health data by inference (security-data M5): not kept while health is off
+        if ((kind ?? was?.kind) && !healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return false }
         set((st) => {
           const plans = (st.data.profile.plans ??= [])
           const existing = id ? plans.find((p) => p.id === id) : undefined
-          if (existing) Object.assign(existing, { when, then, cope })
-          else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [] })
+          if (existing) Object.assign(existing, { when, then, cope }, kind ? { kind } : {})
+          else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [], ...(kind ? { kind } : {}) })
           markSettingsDirty(st.data)
         })
-        saved('Plan saved')
+        saved(opts?.toast ?? 'Plan saved')
+        return true
       },
 
       deletePlan: (id) => {
@@ -728,6 +862,132 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         saved('Thanks for checking in')
+      },
+
+      setMindPrefs: (patch) => {
+        const data = get().data
+        const before = data.profile.mind ?? {}
+        const next = structuredClone(before) as Record<string, unknown>
+        const touched: (keyof MindPrefs)[] = []
+        for (const [k, v] of Object.entries(patch) as [keyof MindPrefs, unknown][]) {
+          if (!(k in MIND_KEYS)) continue
+          // the wake and wind-down times are health data: not kept while health logging is off
+          if (v != null && (MIND_HEALTH_KEYS as readonly string[]).includes(k) && !healthLoggingAllowed(data)) continue
+          touched.push(k)
+          if (v == null) { delete next[k]; continue }
+          if (k === 'notify' || k === 'halved') {
+            // merged into what's there; a kind set to undefined is removed
+            const obj: Record<string, unknown> = { ...(next[k] as Record<string, unknown> | undefined) }
+            for (const [kk, vv] of Object.entries(v as Record<string, unknown>)) { if (vv == null) delete obj[kk]; else obj[kk] = vv }
+            next[k] = obj
+          } else next[k] = structuredClone(v)
+        }
+        if (!touched.length) return false
+        // all three pillars off is never allowed (B1.9): refused, nothing saved
+        if (Array.isArray(next.off) && PILLARS.every((x) => (next.off as Pillar[]).includes(x))) return false
+        // turning a reminder on records this device's time zone, so reminders follow its clock (B11)
+        const turnedOn = touched.includes('notify') && NOTIFY_KINDS.some((x) => (next.notify as MindPrefs['notify'])?.[x] && !before.notify?.[x])
+        const tz = turnedOn ? deviceTimeZone() : undefined
+        if (tz && !('tz' in patch) && next.tz !== tz) { next.tz = tz; touched.push('tz') }
+        const clean = validMindPrefs(next) ?? {}
+        // a malformed value is refused, never saved as a removal
+        // (an emptied list or object is a removal, not a malformed value)
+        for (const k of touched) if (!isEmptyPref(next[k]) && clean[k] === undefined) return false
+        const changed = touched.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(clean[k]))
+        if (!changed.length) return true
+        set((st) => {
+          if (Object.keys(clean).length) st.data.profile.mind = clean; else delete st.data.profile.mind
+          stampFields(st.data.profile, changed.map((k) => ('mind.' + k) as MergedField), nowIso())
+          markSettingsDirty(st.data)
+        })
+        saved()
+        return true
+      },
+
+      logSkill: (id) => {
+        if (!SKILL_IDS.includes(id)) return false
+        const day = todayStr()
+        return writeCheckin(day, withSkill(get().data.days[day]?.checkin, id, nowIso()))
+      },
+
+      pickThing: (key) => {
+        if (!thingByKey(key)) return false
+        return writeCheckin(todayStr(), { thing: { key } })
+      },
+
+      doneThing: () => {
+        const day = todayStr()
+        const t = get().data.days[day]?.checkin?.thing
+        if (!t) return false
+        return writeCheckin(day, { thing: { key: t.key, done: nowIso() } })
+      },
+
+      clearThing: () => {
+        const day = todayStr()
+        if (!get().data.days[day]?.checkin?.thing) return
+        writeCheckin(day, { thing: undefined })
+      },
+
+      writeNotes: (write) => {
+        let result!: ReturnType<typeof write>
+        const stored = deviceWrite((d) => {
+          const r = write(d, selectNotesContext(get()))
+          result = plainResult(r)
+        })
+        return { result, stored }
+      },
+
+      markLowMoodShown: () => {
+        const day = todayStr()
+        if (lowMoodShownOn(get().data) === day) return true
+        return deviceWrite((d) => markLowMoodShownIn(d, day))
+      },
+
+      setSleepMore: (open) => deviceWrite((d) => setSleepMoreOpen(d, open)),
+
+      ingestNotifyLog: (events) => {
+        if (!Array.isArray(events) || !events.length) return []
+        deviceWrite((d) => recordNotifyEvents(d, events))
+        const log = notifyLog(get().data)
+        const mind = get().data.profile.mind
+        const halve = NOTIFY_KINDS.filter((k) => !mind?.halved?.[k] && ignoredInARow(log, k) >= IGNORED_TO_HALVE)
+        if (halve.length) {
+          const at = nowIso()
+          set((st) => {
+            const m = (st.data.profile.mind ??= {})
+            m.halved = { ...m.halved, ...Object.fromEntries(halve.map((k) => [k, at])) }
+            stampFields(st.data.profile, ['mind.halved'], at)
+            markSettingsDirty(st.data)
+          })
+          saved()
+        }
+        return halve
+      },
+
+      backToUsual: (kind) => {
+        const had = !!get().data.profile.mind?.halved?.[kind]
+        set((st) => {
+          // the run of ignored reminders restarts (device log), so the next ingest doesn't halve again at once
+          const d = st.data.deviceOnly
+          if (d?.notify) { d.notify = d.notify.filter((e) => e.kind !== kind); if (!d.notify.length) delete d.notify; if (!Object.keys(d).length) delete st.data.deviceOnly }
+          if (!had) return
+          const m = st.data.profile.mind!
+          const h = { ...m.halved }
+          delete h[kind]
+          if (Object.keys(h).length) m.halved = h; else delete m.halved
+          if (!Object.keys(m).length) delete st.data.profile.mind
+          stampFields(st.data.profile, ['mind.halved'], nowIso())
+          markSettingsDirty(st.data)
+        })
+        if (had) saved(); else persist()
+      },
+
+      noteActivityShown: (pick) => {
+        const { data, cur } = get()
+        if (pick && !mayMarkSeen(pick, 'activity')) return false
+        if (!markActivityShown(data, cur)) return false
+        get().setPrefs({ activityShown: cur })
+        return true
       },
 
       toggleSupp: (id) => {
@@ -1069,6 +1329,9 @@ export const useStore = create<StoreState>()(
       importBackup: (incoming) => {
         // a backup with an under-18 age is never loaded: nothing on this device changes
         if (refuseUnderAge(incoming?.profile?.age, 'import')) return false
+        // Unload notes past the cap that this restore can't keep: said, never dropped silently
+        let skipped = 0
+        try { skipped = unloadImportSkipped(incoming, get().data) } catch { /* a malformed file: none */ }
         const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
         if (refuseUnderAge(fresh.profile?.age, 'import')) return false
         // health consent withdrawn: a restored backup must not bring the health fields back (or sync them)
@@ -1077,7 +1340,8 @@ export const useStore = create<StoreState>()(
         const stored = persist()
         set((st) => { st.cur = todayStr() })
         // one message at a time: say here if the device couldn't keep it (it still syncs)
-        get().showToast(stored ? 'Backup loaded' : 'Backup loaded, but this device couldn’t save it. Storage may be full.')
+        get().showToast(!stored ? 'Backup loaded, but this device couldn’t save it. Storage may be full.'
+          : skipped ? `Backup loaded. ${skipped} older note${skipped > 1 ? 's' : ''} didn’t fit: this phone keeps up to ${UNLOAD_MAX_NOTES}.` : 'Backup loaded')
         get().scheduleSync()
         return true
       },
@@ -1402,6 +1666,8 @@ export const useStore = create<StoreState>()(
         if (choice === 'cancel') { await get().signOut(); return }
         const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
         if (choice === 'fresh') get().setKitchen([])
+        // either way the service worker's reminder log was the previous account's (security-data H3)
+        clearNotifyStore()
         // the browser's push subscription still belongs to the previous account: end it
         await withTimeout(unsubscribePush(), 2000, undefined)
         saveState(next)
@@ -1509,6 +1775,7 @@ export const useStore = create<StoreState>()(
         // Its own data or nobody's yet (a new device), never another account's (underAgeWipesDevice)
         if (underAgeWipesDevice(owner, uid)) {
           clearDraft()
+          clearNotifyStore()
           const next = freshForAccount(uid)
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = []; st.underAge = null })
@@ -1783,6 +2050,8 @@ export const useStore = create<StoreState>()(
           // and the setup-card choice go with it; a pending under-age deletion stays (register 37c)
           clearDraft()
           showSetupCard()
+          // and the service worker's reminder log (security-data H3)
+          clearNotifyStore()
           const next = freshForDevice()
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr(); st.underAge = null })
@@ -1792,6 +2061,34 @@ export const useStore = create<StoreState>()(
     }
   }),
 )
+
+/**
+ * Who may read and write Unload notes (deviceOnly.ts NotesContext; security-data): a signed-in
+ * device (signedIn, never authed, so notes work offline with sync paused), no "whose data is
+ * this?" question pending, and a current answer to health consent that is a yes.
+ */
+export function selectNotesContext(st: Pick<StoreState, 'signedIn' | 'ownerAsk' | 'data'>): NotesContext {
+  return { signedIn: st.signedIn, ownerAsk: !!st.ownerAsk, healthAllowed: healthLoggingAllowed(st.data) && healthConsentAnswered(st.data) }
+}
+
+/**
+ * The facts the asks budget needs for today (core/domain/asks pickAsks), from the store alone:
+ * Fewer prompts, a hard day, a Rough or Low mood, the low-mood signpost (only with MIND_REVIEWED;
+ * still "today" once marked shown), and days since the person started. The screen adds what is due.
+ */
+export function selectAskCtx(st: Pick<StoreState, 'data'>, today = todayStr()): AskCtx {
+  const days = st.data.days
+  const c = days[today]?.checkin
+  const shown = lowMoodShownOn(st.data)
+  const signpostToday = MIND_REVIEWED && (shown === today || lowMoodDue(days, today, shown))
+  return {
+    asks: st.data.profile.mind?.asks,
+    hard: hardDay(c, recentCheckins(days, today)),
+    lowMood: isLowMood(c),
+    signpostToday,
+    daysUsing: daysUsing(Object.keys(days), today),
+  }
+}
 
 /** The header indicator's state (onboarding plan §7), derived from the store alone. */
 export function selectConnection(st: Pick<StoreState, 'signedIn' | 'authed' | 'syncPaused' | 'ownerAsk' | 'online' | 'sync' | 'data'>): ConnectionState {
