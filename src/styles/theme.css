@@ -157,7 +157,7 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .ltitle { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 2px 0 0; }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; border: 0; flex: none; margin-bottom: 0;
-  background: var(--tint-soft); color: var(--tint); font-size: 16px; font-weight: 600;
+  background: var(--tint); color: var(--on-tint); font-size: 16px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
 .avatar.lg { width: 60px; height: 60px; font-size: 24px; margin: 0; }
