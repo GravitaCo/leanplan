@@ -284,4 +284,23 @@ export const DEMOS = {
       { at: 13.4, kind: 'lower', rep: 2 },
     ],
   },
+  // Generated with Seedance 2.5 (demonstrator W9). Two reps, side-on: a quick press of about
+  // 1 s, a pause at the top (2.7 s, then 1.9 s), about 3 s down to the chest, a short pause.
+  // Starts and ends at the chest, so the loop is seamless. Tracked by the dumbbell, every frame.
+  dbBenchPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/c3115e41-e7ce-4578-b3ce-b390003d1b5f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/c3115e41-e7ce-4578-b3ce-b390003d1b5f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.2, kind: 'lift', rep: 1 },
+      { at: 2.2, kind: 'squeeze', rep: 1 },
+      { at: 4.9, kind: 'lower', rep: 1 },
+      { at: 8.2, kind: 'stretch', rep: 1 },
+      { at: 8.9, kind: 'lift', rep: 2 },
+      { at: 9.75, kind: 'squeeze', rep: 2 },
+      { at: 11.6, kind: 'lower', rep: 2 },
+      { at: 14.4, kind: 'stretch', rep: 2 },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

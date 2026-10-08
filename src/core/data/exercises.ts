@@ -236,6 +236,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 40, setSec: 40 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'h-push-gym', step: 2 }],
     cue: "Lie on a flat bench with feet flat and the dumbbells at chest level. Press up until your arms are straight over your shoulders, then lower under control, elbows angled slightly in from your sides. Don't flare the elbows out wide or bang the dumbbells together.",
+    video: DEMOS.dbBenchPress,
   },
   {
     id: 'one-arm-db-row', n: 'One-arm dumbbell row', modality: 'strength', log: 'weight-reps', perSide: true,
