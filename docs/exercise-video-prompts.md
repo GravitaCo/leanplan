@@ -6,6 +6,9 @@ same **character and scene block** in every prompt so the same person, outfit an
 in every clip. Once a clip is made, it goes into the app as described in CLAUDE.md, "Exercise
 demo videos".
 
+**Ready-to-paste lists** (every exercise and warm-up, with the demonstrator blocks) are in
+`docs/video-prompts/`.
+
 ## Status: every exercise in the app (September 2026)
 
 From `src/core/data/workouts.ts`. File names are working names: clips now live in the Bunny Stream library (see `src/core/data/media.ts`).
