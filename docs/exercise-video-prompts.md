@@ -114,7 +114,7 @@ Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
 **For machine and cable exercises, add:**
 
-> The equipment she uses is a single matte black [machine name], clean and modern,
+> The equipment the person uses is a single matte black [machine name], clean and modern,
 > with no branding or logos.
 
 **End every rep prompt with:**

@@ -18,7 +18,8 @@ WOMEN = [
   ("W5", "40s, Middle Eastern, curvy build, hijab", "A woman in her 40s of Middle Eastern heritage, curvy build", "a fitted sports hijab", "full-length loose-fit dark leggings and a fitted long-sleeve top that covers her hips"),
   ("W6", "30s, Black African, curvy build", "A woman in her 30s of Black African heritage, curvy build", "braids tied back", "charcoal leggings and a fitted plain T-shirt"),
   ("W7", "70s, mixed heritage, slim build", "A woman in her 70s of mixed heritage, slim build", "short white hair", "full-length dark leggings and a fitted long-sleeve top"),
-  ("W8", "40s, Latin American, larger build", "A woman in her 40s of Latin American heritage, larger build", "hair in a low ponytail", "dark joggers and a loose plain T-shirt tucked in at the front"),  ("W9", "20s, White European, pear-shaped build", "A woman in her early 20s of White European heritage, pear-shaped build, fuller hips and thighs with a narrower waist and shoulders", "hair in a low ponytail", "full-length dark leggings and a fitted plain T-shirt"),
+  ("W8", "40s, Latin American, larger build", "A woman in her 40s of Latin American heritage, larger build", "hair in a low ponytail", "dark joggers and a loose plain T-shirt tucked in at the front"),
+  ("W9", "20s, White European, pear-shaped build", "A woman in her early 20s of White European heritage, pear-shaped build, fuller hips and thighs with a narrower waist and shoulders", "hair in a low ponytail", "full-length dark leggings and a fitted plain T-shirt"),
   ("W10", "late 30s, White European, apple-shaped build", "A woman in her late 30s of White European heritage, apple-shaped build, carrying weight around her middle with slimmer legs", "shoulder-length hair tied back", "full-length dark leggings and a loose-fitting long-sleeve top")
 ]
 MEN = [
@@ -45,6 +46,7 @@ def to_he(t):
     t = re.sub(r"\b[Hh]erself\b", lambda m: "Himself" if m.group(0)[0]=="H" else "himself", t)
     t = re.sub(r"\b[Hh]er\b", her, t)
     t = re.sub(r"\bShe\b", "He", t); t = re.sub(r"\bshe\b", "he", t)
+    t = re.sub(r"\b(has|shows|puts|keeps|leaves) his\b", r"\1 him", t)
     return t
 def entries(path):
     txt = open(path).read()

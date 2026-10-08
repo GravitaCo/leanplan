@@ -87,7 +87,7 @@ Side-on wide shot. The whole body is in frame from head to feet, because the leg
 - Equipment in scene: thin grey mat
 
 ```text
-Front-on low shot at floor level, facing him. This clip shows his left side only. He lies on his left side on a thin grey mat, left elbow directly under his shoulder, forearm flat, knees bent behind him, right hand resting on his hip. He lifts his hips until his body makes a straight line from head to knees, and holds the position steadily, breathing slowly and calmly, then lowers his hips back to the mat. He starts lying on his side. Over about 2 seconds he lifts into the side plank, holds it steadily for about 8 to 10 seconds with his hips level, breathing slowly, then lowers back to the mat over about 2 seconds. He starts and ends in the same position.
+Front-on low shot at floor level, facing him. This clip shows him left side only. He lies on his left side on a thin grey mat, left elbow directly under his shoulder, forearm flat, knees bent behind him, right hand resting on his hip. He lifts his hips until his body makes a straight line from head to knees, and holds the position steadily, breathing slowly and calmly, then lowers his hips back to the mat. He starts lying on his side. Over about 2 seconds he lifts into the side plank, holds it steadily for about 8 to 10 seconds with his hips level, breathing slowly, then lowers back to the mat over about 2 seconds. He starts and ends in the same position.
 ```
 
 - Form check: hips sagging towards the mat during the hold; elbow drifting away from under the shoulder; hips rolling forwards or backwards out of the straight line.
@@ -123,7 +123,7 @@ Front three-quarter medium-wide shot from his left. The equipment he uses is a s
 - Equipment in scene: thin grey mat, folded under the knee
 
 ```text
-Side-on wide shot from his left. The whole body is in frame from head to feet, because the legs and hips matter in this move. This clip shows his left side only. He kneels on his left knee on a thin grey mat folded for padding, right foot flat on the floor in front, upper body upright, hands resting on his hips. He tucks his tailbone under, then shifts his hips gently forward until he feels a stretch at the front of his left hip, keeping his body upright and his lower back not arching. He holds the stretch calmly, then eases his hips back. He starts upright in the half-kneeling position. Over about 3 seconds he tucks his tailbone and shifts his hips forward, holds the stretch steadily for about 8 to 10 seconds, breathing slowly, then eases back over about 2 seconds. He starts and ends in the same position.
+Side-on wide shot from his left. The whole body is in frame from head to feet, because the legs and hips matter in this move. This clip shows him left side only. He kneels on his left knee on a thin grey mat folded for padding, right foot flat on the floor in front, upper body upright, hands resting on his hips. He tucks his tailbone under, then shifts his hips gently forward until he feels a stretch at the front of his left hip, keeping his body upright and his lower back not arching. He holds the stretch calmly, then eases his hips back. He starts upright in the half-kneeling position. Over about 3 seconds he tucks his tailbone and shifts his hips forward, holds the stretch steadily for about 8 to 10 seconds, breathing slowly, then eases back over about 2 seconds. He starts and ends in the same position.
 ```
 
 - Form check: lower back arching or leaning back to go further; upper body leaning forward instead of upright; front knee drifting inwards.
@@ -1311,7 +1311,7 @@ Low shot at floor level from beyond his feet, angled slightly to the side. He li
 - Equipment in scene: a thin grey mat
 
 ```text
-Side-on low shot at floor level. He lies on his back on a thin grey mat with his head down, hugging both knees in. He reaches his right leg out at a height where his lower back stays settled on the mat while he keeps his left knee hugged in, then switches smoothly so the left leg reaches out and the right knee comes in. He then brings the left leg back to hug both knees. His pelvis stays still and doesn't rock side to side. Two slow, controlled repetitions, perfect form, no bouncing or swinging. He starts and ends in the same position. 2 slow repetitions, one each side, in about 10 seconds: a 2-second reach of the right leg, a 1-second hold, a 2-second smooth switch, a 1-second hold, a 2-second return to both knees in, and a 1-second pause.
+Side-on low shot at floor level. He lies on his back on a thin grey mat with his head down, hugging both knees in. He reaches his right leg out at a height where his lower back stays settled on the mat while he keeps him left knee hugged in, then switches smoothly so the left leg reaches out and the right knee comes in. He then brings the left leg back to hug both knees. His pelvis stays still and doesn't rock side to side. Two slow, controlled repetitions, perfect form, no bouncing or swinging. He starts and ends in the same position. 2 slow repetitions, one each side, in about 10 seconds: a 2-second reach of the right leg, a 1-second hold, a 2-second smooth switch, a 1-second hold, a 2-second return to both knees in, and a 1-second pause.
 ```
 
 - Form check: his pelvis rocks from side to side; the reaching leg drops so low his back arches; the switch is jerky.

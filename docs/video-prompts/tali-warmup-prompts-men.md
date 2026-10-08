@@ -172,7 +172,7 @@ Overhead-angled three-quarter shot from in front of him. He lies on his right si
 ```
 
 - Form check: his knees separate or the top knee slides back; his head doesn't follow his hand; he flings the arm open or forces it to the floor.
-- Notes: lying on his right side, left arm opening, shown one side only (mirror for the right side). The library prompt has his on the bare floor; a mat is added here because he lies on it, which the brief allows. "Palms together" and "knees stay together" are reused from the library prompt; the warm-up cue says "knees bent and stacked" and "arms out in front".
+- Notes: lying on his right side, left arm opening, shown one side only (mirror for the right side). The library prompt has him on the bare floor; a mat is added here because he lies on it, which the brief allows. "Palms together" and "knees stay together" are reused from the library prompt; the warm-up cue says "knees bent and stacked" and "arms out in front".
 
 ### 12. Band pull-apart (`band-pull-apart`)
 
