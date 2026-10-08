@@ -664,6 +664,11 @@ log is kept and comes back when the pillar is switched on. Still open: the items
 - **Build all of Phase 1 behind a feature flag** that stays off for users; nothing merges to `main`
   until Benn and `ship-critic` say so. The low-mood signpost and the skill copy stay off until the
   clinician review (§12.5).
+- **Reminders never show supplement names on the lock screen by default** ("Time for your
+  supplements"); a Profile setting "Show names on the lock screen", off by default, brings them
+  back. This fixes a live issue security-data found; the setting goes to the canvas for approval.
+- **Reminders follow each person's own time zone**: an IANA time zone (from the device) is stored
+  with the reminder settings. A new data item, so the privacy policy and register change with it.
 - **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
   share one a day.
 
