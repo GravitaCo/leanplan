@@ -628,7 +628,8 @@ reviews below are still open. Nothing here changes app code.
 **Decided:** Mind is its own tab. The tab bar is Summary, Mind, Food, Train, Plan; Profile leaves
 the tab bar. The Profile icon (today's Summary avatar button) always sits next to the screen title
 on every screen that has a title, tab roots and pushed screens alike, and it is the only way into
-Profile. Screens with no title (sheets, the guided player) don't carry it. The Mind tab root is the
+Profile. It aligns to the top of the title, so on a title that wraps it sits level with the first
+line. Benn approved the drawing (canvas section 9) on 8 Oct 2026. Screens with no title (sheets, the guided player) don't carry it. The Mind tab root is the
 Mind page; the Summary Mind card switches to it. This supersedes §10a's "no sixth tab, Mind page
 from the Summary card". Earlier options (an avatar on root screens only; Train and Plan merged into
 Move) were rejected: Profile must be reachable from everywhere and Plan must not be buried.
