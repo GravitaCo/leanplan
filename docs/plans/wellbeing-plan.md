@@ -636,7 +636,7 @@ tab or something else to give way.
 ### Reset pacer direction (Benn, 8 Oct 2026)
 
 Benn rejected the plain circle and chose a soft glowing sphere from a reference: canvas 8c,
-"P6 · Glow". A radial gradient from `--card` at the centre to `--mind-fill` and `--mind` at the
+"P6 · Glow", **approved by Benn on 8 Oct 2026** (the visual; the timings are not yet sourced). A radial gradient from `--card` at the centre to `--mind-fill` and `--mind` at the
 rim, four fine `--mind` rings fading outwards, in light and dark. The 1-2-3 phase count sits in the
 centre in the guided player's count style (`.gp-count`), in `--label` with the phase word in
 `--mind-ink`; it counts up within each phase, never down the session. The sphere grows on the
