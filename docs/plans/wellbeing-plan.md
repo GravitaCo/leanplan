@@ -646,6 +646,16 @@ real timings come from `skills.ts` with a source. In the build, the count and ph
 driven from JS, because the app's reduced-motion rule cuts CSS animations short. The P1 to P5
 explorations have been taken off the canvas.
 
+### Boards approved for now (Benn, 8 Oct 2026)
+
+Benn approved B1 to B11 "for now", with the recommended picks: the pillar is called **Mind**; the
+Mind card on Summary opens the **Mind page**; the one thing is **Mind-led on hard days** and offers
+**one option from every pillar on ordinary days** (the food option stays context-only, "Lunch
+somewhere you like", never in gentle mode or wellbeing routing); **no food or weight lines** on the
+weekly reflection; the **support row sits under the Today card** on the Mind page. Still open:
+(c) whether a switched-off pillar overrides the weight-and-food rule, the Mind-tab question in
+section 9, and the items below that the boards do not settle.
+
 ### Open for Benn (on the boards)
 
 - (a) Mind, Rest or Recharge; and the skill names.
