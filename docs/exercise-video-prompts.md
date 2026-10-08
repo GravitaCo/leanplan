@@ -8,7 +8,7 @@ demo videos".
 
 ## Status: every exercise in the app (September 2026)
 
-From `src/core/data/workouts.ts`. File names are the ones the clip will get in `public/videos/`.
+From `src/core/data/workouts.ts`. File names are working names: clips now live in the Bunny Stream library (see `src/core/data/media.ts`).
 
 | # | Workout | Exercise (as named in the app) | Clip file | Status |
 |---|---|---|---|---|
@@ -142,7 +142,7 @@ Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 3-second low
 at 90 degrees, a 1-second pause, a 1.5-second press, and a 1-second pause at the top with the
 knees soft."
 
-### 2. Romanian deadlift (done: `public/videos/romanian-deadlift.mp4`)
+### 2. Romanian deadlift (done: on Bunny)
 
 > Side-on medium-wide shot. She stands tall holding the barbell at hip height with an overhand
 > grip, knees softly bent. She hinges at the hips over three seconds, pushing her hips back and
@@ -315,7 +315,7 @@ Timing text: "Starting with her arms straight, 2 slow repetitions in about 13 se
 is a 1.5-second pull, a 1-second squeeze, a 3-second return, and a 1-second pause with arms
 straight."
 
-### 15. Biceps curl (done: `public/videos/barbell-curl.mp4`)
+### 15. Biceps curl (done: on Bunny)
 
 > Medium shot from the side. She stands tall holding the barbell with an underhand,
 > shoulder-width grip, elbows pinned to her sides. She curls the bar up without leaning back,

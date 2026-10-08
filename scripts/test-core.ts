@@ -42,7 +42,7 @@ import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAcco
 import { pushDirty, pullAll, accountRows } from '@/data/sync'
 import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
 import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
-import { alternativesFor, fmtSet, holdAt, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
+import { alternativesFor, fmtSet, holdAt, holdLabel, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
@@ -227,6 +227,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
     m.tempo.forEach((p, i) => { if (i && p.at <= m.tempo[i - 1].at) why.push('phase ' + i + ' out of order') })
     if (m.tempo[m.tempo.length - 1].at >= m.durationSec) why.push('last phase starts after the clip ends')
+    if ('hold' in m && m.hold && m.tempo.some((p) => 'rep' in p)) why.push('a hold clip counts no reps')
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
@@ -527,6 +528,13 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const want = '{"lo":20,"hi":40} {"lo":45,"hi":45} {"lo":60,"hi":60} null {"side":1,"sec":12,"reached":false,"switchNow":false,"logSec":12} {"side":2,"sec":2,"reached":false,"switchNow":true,"logSec":2} true 40 kg × 8 6 reps (assisted 20 kg) 8 reps (+10 kg) 30 sec 25 sec false,true,true'
   const ok = got === want; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'library: holds and set words', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  // the hold timer's words, shared by the sheet and the timer over a hold clip
+  const T = { lo: 30, hi: 45 }
+  const words = [holdLabel(holdAt(5, T, true), T, true), holdLabel(holdAt(31, T, true), T, true), holdLabel(holdAt(40, T, true), T, true),
+    holdLabel(holdAt(10, T), T), holdLabel(holdAt(35, T), T), holdLabel(holdAt(50, T), T), holdLabel(holdAt(8, null), null), holdLabel(holdAt(8, null), null, false, true)].join(', ')
+  const wantWords = 'First side, Switch sides, Second side, Holding, In your range, Good place to stop, Holding, Keep going'
+  if (words !== wantWords) bad++
+  console.log(words === wantWords ? 'PASS' : 'FAIL', 'library: hold timer words', JSON.stringify(words))
 }
 {
   const S = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', routineId: 'builtin-Legs', ex }] }) as any

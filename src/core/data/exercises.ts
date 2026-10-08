@@ -411,6 +411,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 35 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], props: ['chair'], ladders: [{ chain: 'squat-home', step: 1 }],
     cue: "Sit near the front of a sturdy chair with feet flat and hip-width apart. Lean forward slightly and stand up, using your hands only if you need to, then sit back down slowly. Lower with control rather than dropping into the seat.",
+    video: DEMOS.sitToStand,
   },
   {
     id: 'bodyweight-squat', n: 'Bodyweight squat', modality: 'calisthenics', log: 'reps',
@@ -508,6 +509,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 15, setSec: 50 }, skill: 1, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time', 'chain'], ladders: [{ chain: 'core-side', step: 1 }],
     cue: "Lie on your side with your elbow under your shoulder and knees bent behind you. Lift your hips so your body makes a straight line from head to knees, and hold. Stop when your hips start to drop.",
+    video: DEMOS.sidePlankKnees,
   },
   {
     id: 'side-plank', n: 'Side plank', modality: 'calisthenics', also: ['pilates'], log: 'hold', perSide: true,
@@ -527,6 +529,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 15, setSec: 60 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
     cue: "On hands and knees, hands under shoulders and knees under hips. Slowly reach one arm forward and the opposite leg back until both are level with your body, pause, then return and switch. Keep your back flat and hips level; don't lift the leg so high that your back arches.",
+    video: DEMOS.birdDog,
   },
   {
     id: 'hollow-hold', n: 'Hollow hold', modality: 'calisthenics', log: 'hold',
@@ -1144,6 +1147,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
     cue: "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast.",
+    video: DEMOS.marchOnTheSpot,
   },
   {
     id: 'shoulder-rolls', n: 'Shoulder rolls', modality: 'mobility', log: 'reps',
@@ -1195,6 +1199,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 10, setSec: 95 }, skill: 1, impact: 'none', position: 'floor', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
     cue: "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride.",
+    video: DEMOS.halfKneelingHipFlexor,
   },
   {
     id: 'supine-hamstring-stretch', n: 'Lying hamstring stretch', modality: 'mobility', also: ['yoga'], log: 'hold', perSide: true,
@@ -1219,6 +1224,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['reps'], props: ['wall'],
     cue: "Face a wall with one foot a few centimetres away from it, holding the wall lightly. Bend the knee towards the wall over your toes while the heel stays down, then back. Move the foot back as it gets easier, and don't let the heel lift or the knee cave inwards.",
+    video: DEMOS.kneeToWall,
   },
   {
     id: 'doorway-chest-stretch', n: 'Doorway chest stretch', modality: 'mobility', log: 'hold',

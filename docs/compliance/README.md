@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-03. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -55,7 +55,7 @@ Last reviewed: 2026-09-28. Controller: Gravita Creative Ltd (company 08348225), 
 | GitHub Inc. (Pages) | Processor for hosting and request logs | US | Confirm GitHub's DPA covers Pages for your account type; record the transfer mechanism |
 | Webflow Inc. | Processor: website hosting, form submissions | US | Accept Webflow's DPA; record transfer mechanism |
 | Cloudflare Inc. | Processor: delivers the website (as Webflow's CDN), Turnstile | US / global | Covered through Webflow for delivery; Turnstile has its own terms: confirm and record |
-| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`), sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | Slovenia (EU) per Bunny's published details: confirm | Accept Bunny's DPA |
+| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`): the videos and their preview images, which load when the app shows an exercise row or entry, not only when a video plays; sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | BunnyWay d.o.o., Slovenia (EU); global edge network, storage may be outside the EU: confirm in Bunny's DPA and sub-processor list | Accept Bunny's DPA |
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
@@ -348,6 +348,14 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     passwords). The organisation moved to the Pro plan for it; Supabase stays the same processor,
     so no policy change. The security advisor no longer flags it. Open, low: `pg_net` sits in the
     public schema (advisor 0014); move it when convenient.
+
+40. Noted (2026-10-07): the website home page has an HTML embed that plays a muted looping MP4 of
+    the app (hosted on Webflow's asset CDN, `cdn.prod.website-files.com`) under a phone frame. Its
+    inline script only plays or pauses the video when it scrolls into view and skips playback
+    under `prefers-reduced-motion`. No cookies, storage, third-party requests or data collection,
+    so no policy change: `src/core/legal/website.ts` and `privacy.ts` already cover Webflow
+    delivery and request data. The footer says the app screens show a sample account; any future
+    image with a falling weight trend needs that caption directly under it (CAP 13).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

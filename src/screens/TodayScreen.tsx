@@ -301,56 +301,80 @@ export function TodayScreen() {
           </div>
         )}
 
-        {/* ---------- Move ---------- */}
-        <section className="card pcard" aria-labelledby="sum-move">
-          <h2 id="sum-move" className="pk" style={{ color: 'var(--move-ink)' }}>Move</h2>
-          <div className="mv" {...pressable(() => setTab('train'))}>
-            <span className="psq lg" style={{ background: 'var(--move-fill)' }}><Icon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={24} /></span>
-            <span className="m">
-              <span className="pt b">{moveTitle}</span>
-              <span className="ps">{moveSub}</span>
-            </span>
-            {!logged && !isRest
-              ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(first!) }}>Start</button>
-              : <Chevron />}
-          </div>
-        </section>
-
-        {/* ---------- Weight + supplements ---------- */}
-        {(!quiet || supps.length > 0) && (
-          <div className="tiles">
-            {!quiet && !fv.weightBack && (
-              // Onboarding 9: weigh-ins still work, but no weight or trend is shown back
-              <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
-                <span className="tk">Weight</span>
-                <span className="v"><span className="w">{day.weight ? 'Logged' : 'Add'}</span></span>
-                <span className="s">{day.weight ? 'Today' : 'Whenever it suits you'}</span>
-              </div>
-            )}
-            {!quiet && fv.weightBack && (
-              <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
-                <span className="tk">Weight</span>
-                <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
-                {weights.length > 1 && <div style={{ marginTop: 6 }}><Sparkline values={weights} w={120} h={26} color="var(--body-ink)" /></div>}
-                <span className="s">{wDelta == null ? (day.weight ? 'Today' : 'Weekly trend appears here') : `${wDelta > 0 ? '+' : wDelta < 0 ? '−' : ''}${Math.abs(wDelta)} kg vs last week`}</span>
-              </div>
-            )}
-            {supps.length > 0 && (
-              <div className="tile st">
-                <span className="tk">Supplements<span className="num">{suppsTaken} of {supps.length}</span></span>
-                <div className="supps">
-                  {supps.map((s) => (
-                    <button key={s.id} aria-pressed={!!day.supps[s.id]} onClick={() => toggleSupp(s.id)}>
-                      <span className={'chk sm' + (day.supps[s.id] ? ' on' : '')}>{day.supps[s.id] && <Icon name="check" size={11} stroke={3.6} />}</span>
-                      <span className="n">{s.name}</span>
-                      <span className="tm num">{s.time}</span>
-                    </button>
-                  ))}
+        {/* ---------- Move, Weight + supplements ----------
+            Move sits beside Weight as a tile when Weight shows (Design canvas "Web 2", Benn 7 Oct);
+            otherwise it keeps the full-width card. Supplements stay full width below. */}
+        {(() => {
+          const showWeight = !quiet
+          const moveIcon = <Icon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={showWeight ? 18 : 24} />
+          const startBtn = !logged && !isRest
+            ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(first!) }}>Start</button>
+            : null
+          const weightTile = !fv.weightBack ? (
+            // Onboarding 9: weigh-ins still work, but no weight or trend is shown back
+            <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
+              <span className="tk">Weight</span>
+              <span className="v"><span className="w">{day.weight ? 'Logged' : 'Add'}</span></span>
+              <span className="s">{day.weight ? 'Today' : 'Whenever it suits you'}</span>
+            </div>
+          ) : (
+            <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
+              <span className="tk">Weight</span>
+              <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
+              {weights.length > 1 && <div style={{ marginTop: 6 }}><Sparkline values={weights} w={120} h={26} color="var(--body-ink)" /></div>}
+              <span className="s">{wDelta == null ? (day.weight ? 'Today' : 'Weekly trend appears here') : `${wDelta > 0 ? '+' : wDelta < 0 ? '−' : ''}${Math.abs(wDelta)} kg vs last week`}</span>
+            </div>
+          )
+          return (
+            <>
+              {showWeight ? (
+                <div className="tiles duo">
+                  <section className="tile st mvt" aria-labelledby="sum-move">
+                    <div className="tk">
+                      <h2 id="sum-move" className="pk" style={{ color: 'var(--move-ink)' }}>Move</h2>
+                      <span className="psq" aria-hidden="true" style={{ background: 'var(--move-fill)' }}>{moveIcon}</span>
+                    </div>
+                    {/* the pressable fills the rest of the tile and is named by its title and sub, like the card's .mv */}
+                    <div className="mvt-b" {...pressable(() => setTab('train'))}>
+                      <span className="mvt-t">{moveTitle}</span>
+                      <span className="s">{moveSub}</span>
+                    </div>
+                    {startBtn}
+                  </section>
+                  {weightTile}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <section className="card pcard" aria-labelledby="sum-move">
+                  <h2 id="sum-move" className="pk" style={{ color: 'var(--move-ink)' }}>Move</h2>
+                  <div className="mv" {...pressable(() => setTab('train'))}>
+                    <span className="psq lg" style={{ background: 'var(--move-fill)' }}>{moveIcon}</span>
+                    <span className="m">
+                      <span className="pt b">{moveTitle}</span>
+                      <span className="ps">{moveSub}</span>
+                    </span>
+                    {startBtn ?? <Chevron />}
+                  </div>
+                </section>
+              )}
+              {supps.length > 0 && (
+                <div className="tiles">
+                  <div className="tile st">
+                    <span className="tk">Supplements<span className="num">{suppsTaken} of {supps.length}</span></span>
+                    <div className="supps">
+                      {supps.map((s) => (
+                        <button key={s.id} aria-pressed={!!day.supps[s.id]} onClick={() => toggleSupp(s.id)}>
+                          <span className={'chk sm' + (day.supps[s.id] ? ' on' : '')}>{day.supps[s.id] && <Icon name="check" size={11} stroke={3.6} />}</span>
+                          <span className="n">{s.name}</span>
+                          <span className="tm num">{s.time}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* ---------- This week ---------- */}
         <section className="card pcard" aria-labelledby="sum-week">
@@ -363,10 +387,10 @@ export function TodayScreen() {
             <div className="wline">{energyLine}</div>
           </div>
           <div>
-            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} band={!yes} />
+            <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} />
             <div className="wkey">
               <span><i className="bar" />Eaten{gentle ? '' : ', kcal'}</span>
-              {!yes && <span><i className="band" /><span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span></span>}
+              {!yes && <span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span>}
             </div>
           </div>
           <div className="stat3">

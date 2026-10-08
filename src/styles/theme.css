@@ -55,6 +55,7 @@
   --mind: #2e7479;  --mind-ink: #2e7479;  --mind-fill: #9cc9c9;
   --food: #87cf59;  --food-ink: #437722;  --food-fill: #c9eca0;
   --band: #c7c7cc;     /* target-range band on bars and charts: neutral grey, never a pillar colour */
+  --grid: #e5e5e9;     /* 1 px chart rows */
   --on-food: #1d1d1f;  /* icons on a solid food square: the green is too light for white */
   --move: #a8502b;  --move-ink: #a8502b;  --move-fill: #e6ad8f;
 
@@ -87,6 +88,7 @@
     --mind: #7fc0c2;  --mind-ink: #7fc0c2;  --mind-fill: #2f5557;
     --food: #9fec85;  --food-ink: #9fec85;  --food-fill: #344c24;
     --band: #48484a;
+    --grid: #38383a;
     --on-food: #000000;
     --move: #e39a76;  --move-ink: #e39a76;  --move-fill: #6e3b25;
     --on-cat: #000000;
@@ -269,13 +271,15 @@ svg.bars { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
 svg.bars text { font-size: 11px; fill: var(--label2); font-weight: 600; }
 svg.bars text.on { fill: var(--label); }
 svg.bars text.v { font-size: 11px; font-weight: 500; }
-svg.bars .band, .wkey i.band { opacity: 0.8; }
-@media (prefers-color-scheme: dark) { svg.bars .band, .wkey i.band { opacity: 1; } }
+svg.bars .grid line { stroke: var(--grid); stroke-width: 1; }
+svg.bars text.ax { font-size: 10px; font-weight: 500; }
+/* a food's source link in the portion sheet */
+a.srcln { color: var(--tint); text-decoration: none; }
+a.srcln:hover, a.srcln:focus-visible { text-decoration: underline; }
 .wkey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--label2); margin-top: 8px; }
 .wkey > span { display: inline-flex; align-items: center; gap: 6px; }
 .wkey i { display: inline-block; flex-shrink: 0; }
 .wkey i.bar { width: 8px; height: 12px; border-radius: 3px; background: var(--energy); }
-.wkey i.band { width: 16px; height: 4px; border-radius: 2px; background: var(--band); }
 
 /* ===================== CONTROLS ===================== */
 .btn {
@@ -558,6 +562,14 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .tile.st .tk .num { font-weight: 500; }
 .tile.st .v { margin-top: 2px; font-size: 26px; letter-spacing: -0.02em; }
 .tile.st .s { font-size: 12px; margin-top: 0; }
+/* Summary: Move and Weight side by side */
+.tiles.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+.tile.mvt .tk { align-items: flex-start; }
+.tile.mvt .psq { width: 32px; height: 32px; border-radius: 10px; margin: -4px -2px 0 0; }
+.mvt-b { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding-top: 12px; }
+.mvt-t { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.tile.mvt .btn.sm { align-self: flex-start; height: 32px; padding: 0 14px; font-size: 14px; }
+.tile.mvt .mvt-b + .btn.sm { margin-top: 10px; }
 .supps { display: flex; flex-direction: column; margin-top: 4px; }
 .supps button { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 5px 0; text-align: left; font-size: 14px; color: var(--label); min-height: 32px; }
 .supps .n { flex: 1; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
@@ -604,8 +616,9 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .ex button.howto { background: none; border: 0; padding: 0; font: inherit; font-size: 15px; display: inline-flex; align-items: center; gap: 5px; }
 .ex button.howto svg.i { width: 15px; height: 15px; fill: currentColor; }
 .demo-full { position: fixed; inset: 0; z-index: 70; background: #000; color: #fff; animation: sheet-fade 0.2s ease; }
-.demo-full video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-@media (min-aspect-ratio: 3/4) { .demo-full video { object-fit: contain; } }
+.demo-full video, .demo-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.demo-full .demo-msg { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.7); }
+@media (min-aspect-ratio: 3/4) { .demo-full video, .demo-still { object-fit: contain; } }
 .demo-top, .demo-bot { position: absolute; left: 0; right: 0; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); pointer-events: none; }
 .demo-top { top: 0; padding-top: calc(env(safe-area-inset-top) + 14px); padding-bottom: 48px;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
@@ -616,6 +629,9 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .demo-top, .demo-bot { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
 .demo-t { font-size: 17px; font-weight: 600; line-height: 1.3; }
 .demo-sub { font-size: 13px; font-weight: 500; opacity: 0.75; margin-top: 2px; }
+.demo-top.has-back { justify-content: flex-start; gap: 4px; flex-direction: column; align-items: flex-start; }
+.demo-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -10px 0 0 -8px; padding: 0 12px 0 2px; border: 0; background: none; color: #fff; font: inherit; font-size: 17px; font-weight: 500; }
+.demo-back svg.i { width: 22px; height: 22px; }
 .demo-x { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; color: #fff; background: rgba(255, 255, 255, 0.2); display: grid; place-items: center; }
 .demo-bot .demo-sub { margin: 0 0 2px; }
 .demo-ph { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -628,6 +644,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .demo-pace div.on { opacity: 1; }
 .demo-pace .k { font-size: 13px; font-weight: 500; }
 .demo-pace .v { font-size: 17px; font-weight: 600; margin-top: 1px; }
+.demo-pace.hold { grid-template-columns: repeat(2, 1fr); text-align: left; }
+.demo-rule { height: 1px; background: rgba(255, 255, 255, 0.25); margin: 16px 0; }
 .demo-play { position: absolute; inset: 0; margin: auto; width: 72px; height: 72px; border: 0; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; }
 .demo-play svg.i { width: 32px; height: 32px; fill: currentColor; margin-left: 4px; }
 .demo-msg { position: absolute; inset: 0; margin: auto; height: fit-content; padding: 0 32px; text-align: center; font-size: 17px; line-height: 1.4; }
@@ -677,11 +695,24 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .thumb { width: 44px; height: 44px; border-radius: 12px; flex: none; overflow: hidden; position: relative; background: var(--fill); display: block; }
 .thumb.big { width: 52px; height: 64px; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; display: block; }
+/* Bunny's animated preview: 16:9 with the 9:16 clip pillarboxed in the middle; scale it so the clip fills the tile */
+.thumb img.lb { position: absolute; left: 50%; top: 25%; width: 316.05%; height: auto; max-width: none; object-fit: fill; transform: translate(-50%, -25%); }
 .thumb.ph { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--label2); background: var(--bg); }
 .sheet .thumb.ph, .sheet .thumb { background: var(--fill); }
 .thumb-play { position: absolute; right: 3px; bottom: 3px; width: 16px; height: 16px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #fff; display: grid; place-items: center; }
 .thumb-play svg.i { fill: currentColor; margin-left: 1px; }
 .thumb-btn { background: none; border: 0; padding: 0; flex: none; border-radius: 12px; }
+/* exercise library: a thumbnail on every row, and the clip's poster at the top of an entry.
+   Like the video screens, the still looks the same in both modes: footage, a light shade, white controls. */
+.lib-row { min-height: 64px; padding-top: 10px; padding-bottom: 10px; }
+.list .lib-row + .lib-row::before { left: 72px; }
+.ex-media { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 380px; margin: 0 0 10px; padding: 0; border: 0; border-radius: var(--radius); overflow: hidden; background: var(--fill); color: #fff; }
+.ex-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+.ex-media::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4)); pointer-events: none; }
+.ex-media-play { position: absolute; inset: 0; margin: auto; width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; z-index: 1; }
+.ex-media-play svg.i { width: 26px; height: 26px; fill: currentColor; margin-left: 3px; }
+.ex-media-cap { position: absolute; left: 16px; bottom: 14px; z-index: 1; font-size: 15px; font-weight: 600; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
+.ex-media:active { opacity: 0.9; }
 
 /* Today list */
 .tsec { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
@@ -763,6 +794,10 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .gp-bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.3); overflow: hidden; }
 .gp-bar i { display: block; height: 100%; background: var(--brand); transform-origin: left; transition: transform 0.25s linear; }
 .gp-next { font-size: 15px; }
+.gp.holding .gp-shade { background: linear-gradient(180deg, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 15%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.82) 66%); }
+.gp.holding .gp-rh .k { font-weight: 600; }
+.gp-kick { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.85); margin-bottom: 4px; }
+.gp-foot { margin: 0; font-size: 13px; line-height: 1.4; color: rgba(255, 255, 255, 0.8); }
 .gp-row2 { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; }
 .gp-sec { height: 56px; border: 0; border-radius: 28px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 17px; font-weight: 500; }
 
