@@ -625,13 +625,13 @@ reviews below are still open. Nothing here changes app code.
 
 ### Navigation (Benn, 8 Oct 2026)
 
-Benn wants to explore Mind as its own tab, but rejected the ways drawn to make room for it:
-moving Profile to a top-right avatar (Profile would no longer be global) and merging Train and
-Plan into a Move tab (Plan gets buried). His rule: no new UX pattern just to reach an outcome; a
-change must objectively improve the experience and make navigation clearer. The canvas now keeps
-navigation in its own section, "9 · Navigation", showing the current five tabs with Mind reached
-from the Summary Mind card. Open: with Profile and Plan both kept global, a Mind tab needs a sixth
-tab or something else to give way.
+**Decided:** Mind is its own tab. The tab bar is Summary, Mind, Food, Train, Plan; Profile leaves
+the tab bar. The Profile icon (today's Summary avatar button) always sits next to the screen title
+on every screen that has a title, tab roots and pushed screens alike, and it is the only way into
+Profile. Screens with no title (sheets, the guided player) don't carry it. The Mind tab root is the
+Mind page; the Summary Mind card switches to it. This supersedes §10a's "no sixth tab, Mind page
+from the Summary card". Earlier options (an avatar on root screens only; Train and Plan merged into
+Move) were rejected: Profile must be reachable from everywhere and Plan must not be buried.
 
 ### Reset pacer direction (Benn, 8 Oct 2026)
 
@@ -653,8 +653,7 @@ Mind card on Summary opens the **Mind page**; the one thing is **Mind-led on har
 **one option from every pillar on ordinary days** (the food option stays context-only, "Lunch
 somewhere you like", never in gentle mode or wellbeing routing); **no food or weight lines** on the
 weekly reflection; the **support row sits under the Today card** on the Mind page. Still open:
-(c) whether a switched-off pillar overrides the weight-and-food rule, the Mind-tab question in
-section 9, and the items below that the boards do not settle.
+(c) whether a switched-off pillar overrides the weight-and-food rule, and the items below that the boards do not settle.
 
 ### Open for Benn (on the boards)
 
