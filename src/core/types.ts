@@ -509,6 +509,8 @@ export interface Profile {
   /** the weekday the weekly review is waiting on Summary from (0 = Sunday), and the last date it was opened */
   reviewDay?: number
   lastReviewAt?: string
+  /** the review day whose Summary card was hidden with its cross (ml-e3): it comes back the next review day */
+  reviewHidden?: string
   /** when each pattern line last showed (weekPicture PatternCode → YYYY-MM-DD): health data by inference */
   patternShown?: Record<string, string>
   /** the last "For next week" choice and its date: health data by inference (it follows from the log) */

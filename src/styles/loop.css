@@ -46,7 +46,7 @@
 .rv-radio[aria-checked="true"] { background: var(--tint-soft); }
 .rv-radio .r { display: flex; align-items: center; gap: 12px; width: 100%; }
 .rv-radio .tx { flex: 1; }
-.rv-radio .tag { display: block; font-size: 12px; font-weight: 600; }
+.rv-radio .ptag { display: block; font-size: 12px; font-weight: 600; }
 .rv-radio .tl { display: block; font-size: 17px; font-weight: 600; }
 .rv-radio .sb { display: block; font-size: 13px; line-height: 1.4; color: var(--label2); margin-top: 2px; }
 .rv-dot { width: 24px; height: 24px; border-radius: 12px; border: 1.5px solid var(--dash); box-sizing: border-box; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
@@ -91,3 +91,12 @@
 .lp-sec { background: var(--card); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .lp-sec h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .lp-sec .d { font-size: 13px; line-height: 1.45; color: var(--label2); }
+
+/* Summary (ml-e1 to ml-e3) */
+.rv-due { position: relative; display: flex; align-items: center; padding: 0; }
+.rv-due-b { flex: 1; display: flex; align-items: center; gap: 14px; padding: 14px 4px 14px 16px; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.rv-due-b .m { display: flex; flex-direction: column; }
+.rv-due-x { width: 44px; height: 44px; margin-right: 6px; border: 0; border-radius: 22px; background: none; color: var(--label2); display: flex; align-items: center; justify-content: center; }
+.wt-trend { display: block; font-size: 13px; line-height: 1.3; font-weight: 500; color: var(--label); margin-top: 6px; }
+/* the loop's sheets sit on the page colour so their cards read as cards (boards ml-a5 to ml-d1) */
+.sheet.lp-sheet { background: var(--bg); }

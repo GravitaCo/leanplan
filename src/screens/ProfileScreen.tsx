@@ -20,6 +20,7 @@ import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
+import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
@@ -78,6 +79,7 @@ export function ProfileScreen() {
   const removeSupplement = useStore((s) => s.removeSupplement)
   const updateEmail = useStore((s) => s.updateEmail)
   const setNotifications = useStore((s) => s.setNotifications)
+  const [reviewDayOpen, setReviewDayOpen] = useState(false)
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
 
@@ -326,6 +328,16 @@ export function ProfileScreen() {
           </div>
         </Disclosure>
       </div>
+
+      {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
+      <div className="lbl">Weekly review</div>
+      <div className="list icons">
+        <SettingRow icon="review" color={MINDF} soft label="Review day" value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
+        <SettingRow icon="weight" color={FOODF} soft label="Include weight in reviews"
+          right={<Toggle label="Include weight in reviews" on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
+      </div>
+      <div className="foot">Your review shows how often you weighed in and, after 4 weeks, the trend in words. Summary shows your latest weigh-in. Never with gentle display. Change it any time.</div>
+      {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
 
       <div className="lbl">Notifications</div>
       <div className="list icons">

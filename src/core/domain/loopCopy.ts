@@ -241,3 +241,16 @@ export const CHOICE_TEXT = {
   'pick-up': { title: 'Pick up from here', sub: 'Same plan, starting this week.' },
   'ease-back': { title: 'Ease back in', sub: 'A lighter first week back.' },
 } as const
+
+/** The Summary Weight tile's short line (board ml-e2): the same words as the review, shortened for a tile. */
+export function weightTileWords(w: WeightRow): string {
+  const x = w.words
+  switch (x.kind) {
+    case 'too-soon': return 'Your trend shows after 4 weeks'
+    case 'steady': return 'Steady over 4 weeks'
+    case 'above': return 'A little above your steady range'
+    case 'below': return 'A little below your steady range'
+    case 'pace': return x.pace === 'in-line' ? 'Over 4 weeks, in line with your pace' : x.pace === 'slower' ? 'Over 4 weeks, a little slower than your pace' : 'Over 4 weeks, faster than your pace'
+    case 'level': return x.word === 'level' ? 'About level over 4 weeks' : `${x.word === 'down' ? 'Going down' : 'Going up'}${x.aLittle ? ' a little' : ''} over 4 weeks`
+  }
+}

@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import { canSaveHealthAnswers, healthDeclined, quietNumbers } from '@/data/consent'
+import { canSaveHealthAnswers, healthDeclined, healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
 import { fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
@@ -16,11 +16,14 @@ import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, latestWeight, rangeExtra, rangeFor, showBurnNote,
-  usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
+  usualEntries, usuals, weekOf, weekSummary,
 } from '@/core/domain/insights'
+import { loopSafety, reviewDayOn, reviewWaiting, weightRow } from '@/core/domain/maintenanceLoop'
+import { weightTileWords } from '@/core/domain/loopCopy'
+import { WeeklyReviewScreen } from './review/WeeklyReview'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
-import { KcalBar, MacroTrio, Sparkline, WeekBars } from '@/ui/charts'
+import { KcalBar, MacroTrio, WeekBars } from '@/ui/charts'
 import { WeekStrip } from '@/ui/WeekStrip'
 import { WeightSheet } from './body/WeightSheet'
 import { EditEntrySheet } from './food/EditEntrySheet'
@@ -37,6 +40,8 @@ import { FoodAskSheet } from './today/FoodAskSheet'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
+
+const kgOf = (s: { days: Record<string, { weight: number | null }> }, d: string | undefined) => (d ? s.days[d]?.weight ?? null : null)
 
 function initials(name: string) {
   return name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
@@ -60,6 +65,9 @@ export function TodayScreen() {
   const showToast = useStore((s) => s.showToast)
   const openProfile = useStore((s) => s.openProfile)
   const [sheet, setSheet] = useState<SheetKind>(null)
+  const reviewOpen = useStore((s) => s.reviewOpen)
+  const openReview = useStore((s) => s.openReview)
+  const closeReview = useStore((s) => s.closeReview)
   const [dismissedMissed, setDismissedMissed] = useState(false)
   // ob7-3: the 12-week "Does this still apply?", once when it's due, never blocking (closing = Ask me later)
   const reaskDue = useStore((s) => ONBOARDING_ENABLED && pregnancyReaskDue(s.data.profile.pregnancy, todayStr()))
@@ -117,8 +125,14 @@ export function TodayScreen() {
   const rows = weekOf(cur).map((d) => dayStat(data, d))
   const past = rows.filter((x) => !x.future)
   const ws = weekSummary(data, rows)
-  const weights = weightSeries(data, cur, 14)
-  const wDelta = weightWeekDelta(data, cur)
+  // the weight tile (ml-e2): the latest weigh-in and, after 4 weeks, the trend in words; only for
+  // people who chose to include weight (ml-c4), never a sparkline or a week-to-week number
+  const consent = healthLoggingAllowed(data)
+  const lastW = Object.keys(data.days).filter((d) => d <= cur && data.days[d]?.weight).sort().pop()
+  const wSafety = loopSafety(data, kgOf(data, lastW), consent)
+  const wRow = isToday ? weightRow(data, cur, 0, wSafety) : null
+  // ml-e3: the review waits under Mind from the review day until it's opened or hidden
+  const reviewDue = isToday && reviewWaiting(data, cur, consent)
   const supps = p.supplements || []
   // the range on a day without workouts (rangeFor's own maths: the ±15% range for Sometimes)
   const ex = rangeExtra(data, cur)
@@ -137,11 +151,12 @@ export function TodayScreen() {
     : isRest ? 'Recovery counts too'
     : planned.length > 1 ? `${planned.length} workouts planned` : first === 'Cardio' ? (plan?.ex[0]?.t || 'Cardio') : plan ? `${plan.ex.length} ${plan.ex.length === 1 ? 'exercise' : 'exercises'}` : 'Planned'
 
-  const loggedDays = past.filter((x) => x.logged).length
+  // workouts done this week (every session, never against a number planned: Benn, 8 Oct)
+  const workoutsDone = past.reduce((a, x) => a + workoutsOf(dayOf(data, x.d), x.d).length, 0)
   const dl = ws.prevAvgP != null ? Math.round(ws.avgP - ws.prevAvgP) : null
   const energyLine: ReactNode = ws.logged >= 2
     ? gentle
-      ? <>You logged on {ws.logged} days this week.{ws.inRange && !yes ? ` ${ws.inRange} of them landed in your range.` : ''}</>
+      ? <>You logged on {ws.logged} days this week.{ws.inRange && !yes ? ` ${ws.inRange} landed in your range.` : ''}</>
       : <>You averaged <b className="num">{fmt(ws.avgK)} kcal</b> on the {ws.logged} days you logged, and {ws.inRange} {ws.inRange === 1 ? 'was' : 'were'} in your range.</>
     : <>Log a couple of days and your weekly picture fills in here. Averages say far more than any single day.</>
   const suppsTaken = supps.filter((s) => day.supps[s.id]).length
@@ -151,6 +166,8 @@ export function TodayScreen() {
   const burnNote = showBurnNote(data) && !gentle
   const prompt: 'missed' | 'suggest' | 'burn' | null =
     missed ? 'missed' : suggest ? 'suggest' : burnNote ? 'burn' : null
+
+  if (reviewOpen) return <WeeklyReviewScreen onBack={closeReview} />
 
   return (
     <div className="screen">
@@ -176,6 +193,20 @@ export function TodayScreen() {
           </span>
           <Chevron />
         </button>
+
+        {reviewDue && (
+          <div className="card rv-due">
+            <button className="rv-due-b" onClick={openReview}>
+              <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="review" size={20} /></span>
+              <span className="m">
+                <span className="pk" style={{ color: 'var(--mind-ink)' }}>Weekly review</span>
+                <span className="pt">Your week</span>
+                <span className="ps">A two-minute look back</span>
+              </span>
+            </button>
+            <button className="rv-due-x" aria-label="Hide until next week" onClick={() => setPrefs({ reviewHidden: reviewDayOn(cur, p.reviewDay ?? 0) })}><Icon name="x" size={16} stroke={2.2} /></button>
+          </div>
+        )}
 
         {prompt === 'missed' && (
           <div className="banner">
@@ -212,7 +243,8 @@ export function TodayScreen() {
           </div>
         )}
 
-        {due.length > 0 && (
+        {/* on review day the review carries the plan check-in (ml-a1), so the banner waits */}
+        {due.length > 0 && !reviewDue && (
           <button className="banner" onClick={() => setSheet({ k: 'plans' })}>
             <span style={{ color: 'var(--mind-ink)' }}><Icon name="bulb" /></span>
             <div><b>How are your plans going?</b><br />
@@ -310,7 +342,7 @@ export function TodayScreen() {
           const startBtn = !logged && !isRest
             ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(first!) }}>Start</button>
             : null
-          const weightTile = !fv.weightBack ? (
+          const weightTile = !fv.weightBack || p.reviewWeight !== true ? (
             // Onboarding 9: weigh-ins still work, but no weight or trend is shown back
             <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
               <span className="tk">Weight</span>
@@ -320,9 +352,9 @@ export function TodayScreen() {
           ) : (
             <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
               <span className="tk">Weight</span>
-              <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
-              {weights.length > 1 && <div style={{ marginTop: 6 }}><Sparkline values={weights} w={120} h={26} color="var(--body-ink)" /></div>}
-              <span className="s">{wDelta == null ? (day.weight ? 'Today' : 'Weekly trend appears here') : `${wDelta > 0 ? '+' : wDelta < 0 ? '−' : ''}${Math.abs(wDelta)} kg vs last week`}</span>
+              <span className="v num">{lastW ? <>{r1(data.days[lastW].weight!)}<small>kg</small></> : <span className="w">Add</span>}</span>
+              <span className="s">{lastW ? (lastW === cur ? 'Today' : fmtDate(lastW).dow) : 'Whenever it suits you'}</span>
+              {wRow && <span className="wt-trend">{weightTileWords(wRow)}</span>}
             </div>
           )
           return (
@@ -402,14 +434,14 @@ export function TodayScreen() {
             </div>
             <div>
               <div className="sk">Workouts</div>
-              {ws.planned
-                ? <><div className="sv num">{ws.done} of {ws.planned}</div><div className="ss">{ws.done >= ws.planned ? 'planned. Nice work' : 'planned so far'}</div></>
-                : <><div className="sv num">{ws.done}</div><div className="ss">none planned</div></>}
+              {workoutsDone
+                ? <><div className="sv num">{workoutsDone}</div><div className="ss">done this week</div></>
+                : <><div className="sv">None yet</div><div className="ss">this week</div></>}
             </div>
-            <div {...pressable(() => setTab('food'))} aria-label={`${loggedDays} of ${past.length} days logged this week`}>
+            {/* ml-e1: a count, no denominator and no dots (they pointed at gaps); the same days as the energy line */}
+            <div {...pressable(() => setTab('food'))} aria-label={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`}>
               <div className="sk">Logged</div>
-              <div className="sv num">{loggedDays} of {past.length}</div>
-              <div className="dots">{rows.map((x) => <i key={x.d} className={x.logged ? 'on' : x.future ? 'fu' : ''} />)}</div>
+              <div className="sv num">{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</div>
             </div>
           </div>
         </section>

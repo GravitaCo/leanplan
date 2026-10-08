@@ -210,7 +210,7 @@ function OptionRow({ o, range, on, onPick, long, drift }: { o: LoopOption; range
   const tone = t.tag === 'Move' ? 'var(--move-ink)' : t.tag === 'Food' ? 'var(--food-ink)' : t.tag === 'Your range' ? 'var(--label2)' : 'var(--mind-ink)'
   return (
     <div role="radio" aria-checked={on} tabIndex={0} className="rv-radio" onClick={onPick} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick() } }}>
-      <span className="tx"><span className="tag" style={{ color: tone }}>{t.tag}</span><span className="tl">{t.title}</span>{t.sub && <span className="sb num">{t.sub}</span>}</span>
+      <span className="tx"><span className="ptag" style={{ color: tone }}>{t.tag}</span><span className="tl">{t.title}</span>{t.sub && <span className="sb num">{t.sub}</span>}</span>
       <Dot on={on} />
     </div>
   )
@@ -370,6 +370,29 @@ function WeightAskSheet({ onAnswer }: { onAnswer: (on: boolean) => void }) {
       <div className="lp-chipsrow" aria-hidden="true">{['Sleep', 'Stress', 'Mood', 'Hunger', 'Movement', 'Food', 'Weight'].map((c) => <span key={c}>{c}</span>)}</div>
       <button type="button" className="rv-done" onClick={() => onAnswer(true)}>Include it</button>
       <button type="button" className="rv-keep" onClick={() => onAnswer(false)}>Leave it out</button>
+    </LoopSheet>
+  )
+}
+
+const DAYS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
+export const dayName = (d: number) => DAYS.find((x) => x[0] === d)![2]
+
+/** ml-d1: the review day. The reminder half joins with the weekly reminder (step 4, compliance first). */
+export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
+  const day = useStore((s) => s.data.profile.reviewDay ?? 0)
+  const setPrefs = useStore((s) => s.setPrefs)
+  return (
+    <LoopSheet label="Your weekly review" onClose={onClose}>
+      <SheetHead title="Your weekly review" close="Done" onClose={onClose} />
+      <div className="lp-lead">A two-minute look back at your week, with everything side by side.</div>
+      <div className="lp-chipsrow" aria-hidden="true">{['Sleep', 'Stress', 'Mood', 'Hunger', 'Movement', 'Food', 'Weight'].map((c) => <span key={c}>{c}</span>)}</div>
+      <section className="lp-sec" aria-labelledby="lp-day-h">
+        <h3 id="lp-day-h">Which day suits you?</h3>
+        <div role="radiogroup" aria-labelledby="lp-day-h" className="lp-days">
+          {DAYS.map(([n, s, full]) => <button key={n} type="button" role="radio" aria-checked={day === n} aria-label={full} className="lp-day" onClick={() => setPrefs({ reviewDay: n })}>{s}</button>)}
+        </div>
+        <div className="d">It’ll be waiting on Summary from {dayName(day)} morning. No pressure to open it that day.</div>
+      </section>
     </LoopSheet>
   )
 }

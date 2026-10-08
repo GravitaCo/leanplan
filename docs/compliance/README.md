@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-10-03. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -35,7 +35,7 @@ Last reviewed: 2026-10-03. Controller: Gravita Creative Ltd (company 08348225), 
 | Data | Purpose | Lawful basis | Where | Kept |
 |---|---|---|---|---|
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
-| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans, `answeredAt` stamps | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
+| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans, `answeredAt` stamps, weekly review settings (`reviewDay`, `reviewWeight`, `lastReviewAt`, `reviewHidden`, `targetSetAt`, `maintainFrom`, `loopChoice`), `steadyRef` and `patternShown` (health data by inference, with `loopChoice`: cleared on withdrawal through `HEALTH_FIELDS`; compliance 2026-10-08) | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged for Yes, sometimes, clear, undisclosed), the food-range answers that follow a Yes or Sometimes (`profile.foodOptIn`: `today`, `range`, `rangeAt` for the week-4 answer only; Onboarding 9; health data by inference, since only people who answered Yes or Sometimes are asked), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode (wellbeing Yes only; Sometimes gets a maintenance range instead), signposting (`routeSafety`); the 12-week re-ask; the day-14 and week-4 range asks, a range shown only if the person opts in | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object, `foodOptIn` and its stamp with the profile health fields: checked 2026-10-01, item 34), or the account is deleted |
 | Day logs: foods, weight, workout, supplements taken, mood/hunger check-in and note | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Custom foods, recipes, workouts you create (`routines`, with slot reasons in `blocks`), weekly plans (`training_plans`, with plan reasons in `why`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes`, `routines`, `training_plans` | Until health consent is withdrawn (account copy cleared) or the account is deleted |
@@ -87,7 +87,7 @@ flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating prox
 automated safety routing from them (Art. 22 not triggered, but record why), the outcomes-only
 design, the under-age stop and automatic deletion, and plan reasons now syncing. Also record
 on-phone processing (item 27), the purge and the accepted 30-day gap (item 30(d)), and, before
-label scanning goes on, the Anthropic processing (item 24).
+label scanning goes on, the Anthropic processing (item 24). From 2026-10-08 the maintenance loop adds pattern lines from the person's own check-ins and the hard-week predicate that withholds eat-less suggestions (profiling of health data, Art. 4(4); no legal or similarly significant effect, Art. 22 not triggered): `docs/plans/maintenance-loop.md`. The weekly review reminder (a new push type) is added with it when built.
 
 ## Status
 

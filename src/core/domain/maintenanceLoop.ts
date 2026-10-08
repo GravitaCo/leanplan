@@ -534,3 +534,21 @@ export function targetAfter(t: AppState['target'], rc: RangeChange): AppState['t
 
 /** A profile patch picks "Keep it steady" when it wasn't the goal before: the steady range's clock starts. */
 export const startsMaintain = (prev: Goal | undefined, patch: { goal?: Goal }): boolean => 'goal' in patch && patch.goal === 'maintain' && prev !== 'maintain'
+
+/**
+ * The review is waiting on Summary (ml-e3): from the review day (Sunday unless the person picked
+ * another) until it's opened, hidden with the cross, or the next review day. Not before there's a
+ * week to look back on, and never without health consent (it reads the log).
+ */
+export function reviewWaiting(s: AppState, today: string, healthConsent: boolean): boolean {
+  if (!healthConsent) return false
+  const p = s.profile
+  const day = reviewDayOn(today, p.reviewDay ?? 0)
+  if ((p.lastReviewAt && p.lastReviewAt >= day) || p.reviewHidden === day) return false
+  // something to look back on in the 7 days before the review day
+  for (let i = 1; i <= 7; i++) {
+    const d = s.days[shiftDay(day, -i)]
+    if (d && (d.foods?.length || d.checkin || d.weight || d.sessions?.length || d.workout)) return true
+  }
+  return false
+}
