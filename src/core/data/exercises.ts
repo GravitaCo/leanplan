@@ -128,6 +128,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: false,
     increment: ['next-stack'],
     cue: "Elbows tucked at your sides and still. Push the rope down until the arms are straight, spread it slightly at the bottom. Only the forearms move.",
+    video: DEMOS.tricepsPushdown,
   },
   {
     id: 'lat-pulldown', n: 'Lat pulldown', modality: 'strength', log: 'weight-reps',
@@ -1156,6 +1157,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
     cue: "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush.",
+    video: DEMOS.shoulderRolls,
   },
   {
     id: 'lying-knee-rolls', n: 'Lying knee rolls', modality: 'mobility', log: 'reps', perSide: true,

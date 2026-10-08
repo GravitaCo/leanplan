@@ -66,7 +66,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "triceps-pushdown", "n": "Triceps rope pushdown (cable)",
         "t": "2–3 × 12–15",
-        "cue": "Elbows tucked at your sides and still. Push the rope down until the arms are straight, spread it slightly at the bottom. Only the forearms move."
+        "cue": "Elbows tucked at your sides and still. Push the rope down until the arms are straight, spread it slightly at the bottom. Only the forearms move.",
+        "video": DEMOS.tricepsPushdown
       }
     ]
   },
