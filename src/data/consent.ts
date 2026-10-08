@@ -440,12 +440,28 @@ export function applyHealthWithdrawal(s: PersistedState, meta: SyncMeta): boolea
   return true
 }
 
-/** The kept copy from a resume holds full days and a profile: after a withdrawal, not their health fields. */
+/**
+ * The kept copy from a resume holds full days, a profile, workouts and plans: after a withdrawal,
+ * none of what clearHealthData clears (HEALTH_FIELDS and the health-derived reasons) stays in it.
+ */
 function stripResumeCopy(log: ConsentLog): void {
   const c = log.resumeCopy
   if (!c) return
   for (const d of Object.values(c.days || {})) { if (d) { d.weight = null; d.checkin = null } }
-  if (c.settings?.profile && typeof c.settings.profile === 'object') c.settings.profile = withProfileHealth(c.settings.profile as Partial<Profile>, profileHealth(null))
+  if (c.settings?.profile && typeof c.settings.profile === 'object') {
+    const orig = c.settings.profile as Partial<Profile>
+    const p = withoutHealth(orig)
+    // the activity level derived from daily movement goes back to the default with it, as on the phone
+    if (orig.activityMult != null) p.activityLevel = 'light'
+    c.settings = { ...c.settings, profile: p }
+  }
+  const strip = (list: Why[] | undefined): Why[] | undefined => list?.filter((w) => !healthWhy(w))
+  for (const r of Object.values(c.routines || {})) {
+    if (!r) continue
+    if (r.why) r.why = strip(r.why)
+    for (const b of r.blocks || []) for (const sl of b.slots || []) if (sl.why) sl.why = strip(sl.why)
+  }
+  for (const pl of Object.values(c.trainingPlans || {})) if (pl?.why) pl.why = strip(pl.why)
 }
 
 /**
