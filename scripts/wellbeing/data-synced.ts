@@ -6,7 +6,9 @@ import { checkinOrNull, hasCheckinContent, mergeCheckin, validCheckin, validMind
 import { mergeProfiles, stampFields, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { clearHealthData, HEALTH_FIELDS, healthDataSummary, recordConsent, withoutHealth, withdraw } from '@/data/consent'
 import { ensureMeta, loadStateFrom, stateFromBackup, type PersistedState } from '@/data/persistence'
-import { pushDirty, toServerDay } from '@/data/sync'
+import { pullAll, pushDirty, toServerDay } from '@/data/sync'
+import { nightFor } from '@/core/domain/sleep'
+import { weekReflection } from '@/core/domain/mind'
 import { LOCAL_USER } from '@/data/supabase'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
@@ -66,12 +68,12 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   checks.push(['a bad band is dropped (the night keeps its wake time)', !!badBand && badBand.night?.band === undefined && badBand.night?.wakeAt === '06:45'])
   const badWake = validCheckin({ ...full(), night: { ...NIGHT, wakeAt: '6:45am' } })
   checks.push(['a wake time that is not HH:MM is dropped', !!badWake && badWake.night?.wakeAt === undefined && badWake.night?.band === '5-6'])
-  const badBoth = validCheckin({ ...full(), night: { source: 'self', band: 'lots', wakeAt: '25:00', t: T } })
+  const badBoth = validCheckin({ ...full(), night: { source: 'self', band: 'Lots!', wakeAt: '25:00', t: T } })
   checks.push(['a night left empty goes', !!badBoth && !('night' in badBoth) && badBoth.mood === 2])
-  const badSource = validCheckin({ ...full(), night: { ...NIGHT, source: 'fitbit' } })
-  checks.push(['an unknown sleep source drops the night', !!badSource && !('night' in badSource)])
-  const badSkills = validCheckin({ ...full(), skills: [{ id: 'reset', at: T }, { id: 'meditate', at: T }, { id: 'unload', at: 'soon' }, 'x'] })
-  checks.push(['unknown skill ids and bad times are dropped', badSkills?.skills?.length === 1 && badSkills.skills[0].id === 'reset'])
+  const badSource = validCheckin({ ...full(), night: { ...NIGHT, source: 'Fit Bit!' } })
+  checks.push(['a sleep source that is not key-shaped drops the night', !!badSource && !('night' in badSource)])
+  const badSkills = validCheckin({ ...full(), skills: [{ id: 'reset', at: T }, { id: 'Meditate now', at: T }, { id: 'unload', at: 'soon' }, 'x'] })
+  checks.push(['skill ids that are not key-shaped and bad times are dropped', badSkills?.skills?.length === 1 && badSkills.skills[0].id === 'reset'])
   const badThing = validCheckin({ ...full(), thing: { key: 'Go for a walk with Sam', done: T } })
   checks.push(['a thing whose key is text is dropped', !!badThing && !('thing' in badThing)])
   const badDone = validCheckin({ ...full(), thing: { key: 'get-outside', done: 'yes', text: 'x' } })
@@ -80,13 +82,13 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   checks.push(['older check-ins read exactly as before', JSON.stringify(validCheckin({ mood: 3, hunger: 2, sleep: 0, sore: 0, note: '', t: T })) === JSON.stringify({ mood: 3, hunger: 2, sleep: 0, sore: 0, note: '', t: T })])
 
   /* ---------- validMindPrefs and loadStateFrom ---------- */
-  const prefs = { off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false, other: true }, halved: { checkin: T, plan: 'x' }, tz: 'Europe/London', lockNames: false, lowMoodShown: true, extra: 1 }
-  checks.push(['Mind prefs: unknown keys and bad values dropped', JSON.stringify(validMindPrefs(prefs)) === JSON.stringify({ off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false }, halved: { checkin: T }, tz: 'Europe/London', lockNames: false })])
+  const prefs = { off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false, 'Not A Key': true, odd: 'yes' }, halved: { checkin: T, plan: 'x' }, tz: 'Europe/London', lockNames: false }
+  checks.push(['Mind prefs: bad values dropped', JSON.stringify(validMindPrefs(prefs)) === JSON.stringify({ off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false }, halved: { checkin: T }, tz: 'Europe/London', lockNames: false })])
   checks.push(['Mind prefs: all three pillars off means all on', validMindPrefs({ off: ['mind', 'food', 'move'] }) === undefined && validMindPrefs({ off: ['mind', 'sleep'] })?.off?.join() === 'mind'])
   checks.push(['Mind prefs: bad times, asks and time zone dropped', validMindPrefs({ wakeAt: '7', windDownAt: '24:00', asks: 'never', tz: 'Europe/London; drop', lockNames: 'yes' }) === undefined])
   const loaded = loadStateFrom(JSON.parse(JSON.stringify({
     days: {
-      '2026-10-07': { foods: [], supps: {}, weight: null, workout: null, checkin: { ...full(), night: { ...NIGHT, band: 'x' }, skills: [{ id: 'nap', at: T }] } },
+      '2026-10-07': { foods: [], supps: {}, weight: null, workout: null, checkin: { ...full(), night: { ...NIGHT, band: 'X!' }, skills: [{ id: 'Nap time', at: T }] } },
       '2026-10-08': { foods: [], supps: {}, weight: null, workout: null, checkin: 'odd' },
       '2026-10-09': { foods: [], supps: {}, weight: null, workout: null, checkin: null },
     },
@@ -97,8 +99,27 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   checks.push(['loadStateFrom validates profile.mind', JSON.stringify(loaded.profile.mind) === JSON.stringify(validMindPrefs(prefs))])
   const kinds = (loaded.profile.plans || []).map((p) => p.kind ?? '-').join()
   checks.push(['loadStateFrom keeps a plan kind usable (a bad one reads as a Mind plan, null as none)', kinds === '-,mind,mind,-'])
-  const noMind = loadStateFrom({ days: {}, profile: { name: '', sex: 'F', age: null, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, mind: { extra: 1 } } } as unknown as PersistedState)
-  checks.push(['an empty or unknown profile.mind is removed', !('mind' in noMind.profile)])
+  const noMind = loadStateFrom({ days: {}, profile: { name: '', sex: 'F', age: null, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, mind: { wakeAt: '7' } } } as unknown as PersistedState)
+  const oddMind = loadStateFrom({ days: {}, profile: { name: '', sex: 'F', age: null, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, mind: 'on' } } as unknown as PersistedState)
+  checks.push(['an empty or malformed profile.mind is removed', !('mind' in noMind.profile) && !('mind' in oddMind.profile)])
+
+  /* ---------- forward compatibility (security-data R1): shape, not known lists ---------- */
+  // a later version's sleep source and band, skill, reminder type and setting load unchanged on
+  // this install, so syncing back never deletes them; screens filter against the lists they know
+  const FUTURE_NIGHT = { source: 'oura', band: '9-10', asleepMin: 545, bedAt: '22:40', wakeAt: '07:45', ext: 'abc', t: T }
+  const futureC = { ...full(), night: FUTURE_NIGHT, skills: [{ id: 'reset', at: T }, { id: 'body-scan', at: T }], thing: { key: 'walk-at-lunch' } }
+  const futureMind = { off: ['food'], asks: 'fewer', notify: { checkin: true, 'weekly-review': false }, halved: { 'weekly-review': T }, tz: 'Europe/London', quietHours: { from: '22:00', to: '07:00' }, sleepGoal: '7-8' }
+  const future = loadStateFrom(JSON.parse(JSON.stringify({
+    days: { '2026-10-08': { foods: [], supps: {}, weight: null, workout: null, checkin: futureC } },
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, activityLevel: 'light', supplements: [], notificationsEnabled: false, mind: futureMind, plans: [{ ...plan('f'), kind: 'sleep' }] },
+  })) as PersistedState)
+  checks.push(['a check-in with a later version\'s source, band and skill comes back unchanged from loadStateFrom', JSON.stringify(future.days['2026-10-08'].checkin) === JSON.stringify(futureC)])
+  checks.push(['profile.mind with a later version\'s reminder type and settings comes back unchanged', JSON.stringify(future.profile.mind) === JSON.stringify(futureMind)])
+  checks.push(['a later version\'s plan kind stays (still a Mind plan, so withdrawal clears it)', future.profile.plans?.[0]?.kind === ('sleep' as never) && isKindPlan(future.profile.plans?.[0])])
+  checks.push(['what shows filters against the known lists: no night view for a later source, no count for a later skill', nightFor(future.days['2026-10-08'].checkin) === null && JSON.stringify(weekReflection(future.days, '2026-10-05', { today: '2026-10-08' })?.skills) === '{"reset":1}'])
+  checks.push(['the known bands still load ("8+" is not key-shaped)', validCheckin({ ...full(), night: { ...NIGHT, band: '8+' } })?.night?.band === '8+'])
+  const emptied = loadStateFrom(JSON.parse(JSON.stringify({ days: { '2026-10-08': { foods: [], supps: {}, weight: null, workout: null, checkin: { mood: 0, hunger: 0, skills: [{ id: 'Bad Id', at: T }] } } }, profile: { name: '', sex: 'F', age: null, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false } })) as PersistedState)
+  checks.push(['a check-in left with nothing after validation loads as null (N1)', emptied.days['2026-10-08'].checkin === null])
 
   /* ---------- merge: newer mind.* wins from either side ---------- */
   checks.push(['MERGED_FIELDS lists every Mind setting', ['mind.off', 'mind.asks', 'mind.wakeAt', 'mind.windDownAt', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames'].every((f) => (MERGED_FIELDS as readonly string[]).includes(f))])
@@ -159,6 +180,39 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   recordConsent(s3, 'health', true)
   withdraw(s3, m3, 'health')
   checks.push(['withdraw() clears the Mind health data on this phone', s3.days['2026-10-08'].checkin === null && s3.profile.mind?.wakeAt === undefined && s3.profile.mind?.asks === 'fewer' && !(s3.profile.plans || []).length])
+
+  /* ---------- sync: what the server sends is validated on the way in ---------- */
+  {
+    const rows: Record<string, any[]> = {
+      settings: [{ user_id: LOCAL_USER, target: null, schedule: null, updated_at: 'y', profile: { name: 'Sam', sex: 'F', age: 34, height: 170, activityLevel: 'light', supplements: [], notificationsEnabled: false, mind: { ...futureMind, wakeAt: 'soon', notify: { checkin: 'yes', 'weekly-review': false } }, plans: [{ ...plan('k'), kind: 42 }] } }],
+      day_logs: [
+        { user_id: LOCAL_USER, log_date: '2026-10-08', foods: [], supps: { _checkin: { ...full(), night: { ...NIGHT, band: 'X!', wakeAt: '6am' }, skills: [{ id: 'reset', at: T }, { id: 'Bad Id', at: T }, { id: 'body-scan', at: T }], thing: { key: 'Walk with Sam' } } }, weight: null, workout: null, updated_at: 'y' },
+        { user_id: LOCAL_USER, log_date: '2026-10-09', foods: [], supps: { _checkin: 'odd' }, weight: null, workout: null, updated_at: 'y' },
+      ],
+      custom_foods: [], recipes: [], routines: [], training_plans: [], consents: [],
+    }
+    const s = loadStateFrom(null)
+    const m = ensureMeta(s, false)
+    m.owner = LOCAL_USER
+    let pulled = true
+    try { await withFetch(fakeServer(rows).fetchFn, () => pullAll(s, m)) } catch { pulled = false }
+    const c8 = s.days['2026-10-08']?.checkin
+    checks.push(['pull: a malformed night, skill and thing from the server are dropped; a later version\'s skill is kept', pulled && !!c8 && c8.night?.band === undefined && c8.night?.wakeAt === undefined && !('night' in c8) && c8.skills?.map((x) => x.id).join() === 'reset,body-scan' && !('thing' in c8) && c8.mood === 2])
+    checks.push(['pull: a check-in that is not an object becomes null', s.days['2026-10-09']?.checkin === null])
+    checks.push(['pull: the server\'s profile.mind and plan kinds are validated', JSON.stringify(s.profile.mind) === JSON.stringify({ ...futureMind, notify: { 'weekly-review': false } }) && s.profile.plans?.[0]?.kind === 'mind'])
+  }
+
+  /* ---------- withdrawn: the settings upload carries no health field (security-data N2) ---------- */
+  {
+    const s = stateFromBackup({ days: {}, profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 80, activityLevel: 'active', activityMult: 1.5, supplements: [], notificationsEnabled: false, training: { limitations: ['knee'] }, mind: { wakeAt: '06:45', windDownAt: '22:30', asks: 'fewer' }, plans: [plan('m', 'mind'), plan('o')] } } as never)
+    recordConsent(s, 'health', false)
+    const m = ensureMeta(s, false)
+    m.settings.dirty = true
+    const rows: Record<string, any[]> = { settings: [], day_logs: [], custom_foods: [], recipes: [], consents: [] }
+    await withFetch(fakeServer(rows).fetchFn, () => pushDirty(s, m))
+    const p = rows.settings[0]?.profile as Profile | undefined
+    checks.push(['withdrawn, not cleared yet: the settings upload has no Mind times, Mind plans, body details or training answers', !!p && JSON.stringify(p.mind) === '{"asks":"fewer"}' && p.plans?.map((x) => x.id).join() === 'o' && p.weight === undefined && p.height === null && p.training === undefined && p.activityMult === undefined && p.activityLevel === 'light' && p.name === 'Sam'])
+  }
 
   report(checks)
   return bad

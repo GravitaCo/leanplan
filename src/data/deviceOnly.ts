@@ -48,6 +48,8 @@ export const NOTIFY_DB = 'tali-notify'
 
 /** The functions that read or write note text: only the files in NOTES_IMPORTERS may import them. */
 export const NOTE_ACCESSORS = ['unloadNotes', 'addUnloadNote', 'deleteUnloadNote'] as const
+/** load and restore helpers that see every note: only persistence.ts may import them (same check) */
+export const PERSISTENCE_ONLY = ['mergeUnloadForImport', 'cleanDeviceOnly'] as const
 
 /** Who's asking: the store's session facts. Notes show and save only on a signed-in device
  *  (online, or offline with sync paused: `authed` is false offline, and Unload must work offline)
@@ -183,22 +185,28 @@ export function deleteUnloadNote(s: PersistedState, id: string, ctx: Pick<NotesC
   return u.notes.length !== before
 }
 
+/** How many of a backup's Unload notes a restore leaves out, and why: 'not-now' (no owner
+ *  recorded, or health logging isn't allowed here, so none load) or 'full' (past the cap). */
+export interface UnloadImport { skipped: number; reason?: 'not-now' | 'full' }
+
 /**
  * The notes a backup restore leaves on this device (persistence.stateFromBackup): this device's
  * own notes, plus the backup's merged by id (this device's copy wins), re-stamped with `owner`.
- * None without an owner or while health logging isn't allowed. Over UNLOAD_MAX_NOTES, this
- * device's notes stay and the backup's newest fill the rest: `skipped` says how many didn't fit,
- * so the import can say so (never silent).
+ * None without an owner or while health logging isn't allowed: then every one of the backup's
+ * notes is `skipped`, with reason 'not-now'. Over UNLOAD_MAX_NOTES, this device's notes stay and
+ * the backup's newest fill the rest: `skipped` says how many didn't fit ('full'). Either way the
+ * import can say so (never silent).
  */
-export function mergeUnloadForImport(incoming: unknown, current: PersistedState | undefined, owner: string | undefined, healthAllowed: boolean): { unload?: DeviceOnly['unload']; skipped: number } {
+export function mergeUnloadForImport(incoming: unknown, current: PersistedState | undefined, owner: string | undefined, healthAllowed: boolean): UnloadImport & { unload?: DeviceOnly['unload'] } {
   const theirs = cleanNotes((incoming as DeviceOnly | undefined)?.unload?.notes)
-  if (!owner || !healthAllowed) return { skipped: 0 }
+  if (!owner || !healthAllowed) return theirs.length ? { skipped: theirs.length, reason: 'not-now' } : { skipped: 0 }
   const mine = current ? cleanDeviceOnly(current.deviceOnly, current._meta?.owner)?.unload?.notes ?? [] : []
   const ids = new Set(mine.map((n) => n.id))
   const extra = theirs.filter((n) => !ids.has(n.id)).sort(newestFirst)
   const room = Math.max(0, UNLOAD_MAX_NOTES - mine.length)
   const notes = [...mine, ...extra.slice(0, room)]
-  return { ...(notes.length ? { unload: { owner, notes } } : {}), skipped: Math.max(0, extra.length - room) }
+  const skipped = Math.max(0, extra.length - room)
+  return { ...(notes.length ? { unload: { owner, notes } } : {}), skipped, ...(skipped ? { reason: 'full' as const } : {}) }
 }
 
 /* ---------------- counts and clearing (any file) ---------------- */

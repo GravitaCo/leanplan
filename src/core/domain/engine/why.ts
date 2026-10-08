@@ -220,11 +220,12 @@ export const WELLBEING_BANNED: RegExp[] = [/\bskip(s|ped|ping)?\b/i, /\breadines
 
 /**
  * Exact strings that may use a banned word in an approved sense. Whole strings only, so the word
- * stays banned everywhere else. B3.17 (accepted, fitness-workouts): "skipping" is the rope
- * exercise, not skipping a day. The final 8 Oct wording says "jump rope", which passes anyway.
+ * stays banned everywhere else. B3.17 (accepted, fitness-workouts, 8 Oct): the rope exercise is
+ * "jump rope", so the earlier "skipping" wording is no longer allowed. The accepted string passes
+ * the lint on its own; it stays listed as the approved wording.
  */
 export const COPY_ALLOWED: ReadonlySet<string> = new Set([
-  'After a rough night, the shorter version swaps running, skipping and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.',
+  'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.',
 ])
 
 /**

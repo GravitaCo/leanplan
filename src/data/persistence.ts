@@ -4,10 +4,10 @@ import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
-import { validCheckin, validMindPrefs, validPlanKind } from '@/core/domain/checkin'
+import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
 import { nowIso, uuid, UUID_RE } from './supabase'
 import { cleanConsents, healthLoggingAllowed, unsyncedConsents, type ConsentLog } from './consent'
-import { cleanDeviceOnly, deviceOnlyForKeep, mergeUnloadForImport, unloadCount, type DeviceOnly } from './deviceOnly'
+import { cleanDeviceOnly, deviceOnlyForKeep, mergeUnloadForImport, unloadCount, type DeviceOnly, type UnloadImport } from './deviceOnly'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
@@ -106,13 +106,9 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   // workout plan D5: logged workouts stop widening the food range from today; earlier days
   // keep the old maths (see insights.rangeExtra)
   ensureBurnSwitch(s.profile, todayStr())
-  // Mind settings (wellbeing Phase 1): unknown keys and bad values dropped, never guessed
-  if (s.profile.mind !== undefined) {
-    const mind = validMindPrefs(s.profile.mind)
-    if (mind) s.profile.mind = mind; else delete s.profile.mind
-  }
+  // Mind settings (wellbeing Phase 1): bad values dropped, never guessed, a later version's kept;
   // a Mind plan keeps a usable `kind`, so withdrawal always finds it
-  if (Array.isArray(s.profile.plans)) for (const pl of s.profile.plans) if (pl && typeof pl === 'object') validPlanKind(pl)
+  cleanProfileMind(s.profile)
   s.consents = cleanConsents(s.consents)
   // device-only (wellbeing): another account's Unload notes, or any with no owner recorded, go
   const device = cleanDeviceOnly(s.deviceOnly, s._meta?.owner)
@@ -124,7 +120,7 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
     if (day && day.sessions !== undefined && !Array.isArray(day.sessions)) delete day.sessions
     if (day && Array.isArray(day.sessions)) cleanGuided(day.sessions)
     // the check-in's Mind fields (night, skills, thing): malformed ones dropped; answers untouched
-    if (day && day.checkin != null) day.checkin = validCheckin(day.checkin)
+    if (day && day.checkin != null) day.checkin = checkinOrNull(validCheckin(day.checkin))
   }
   return s
 }
@@ -245,7 +241,7 @@ export function backupSummary(b: PersistedState): { days: number; first: string 
  *
  * Device-only data (deviceOnly.ts): the backup's Unload notes join this device's, merged by id and
  * re-stamped with this device's owner, unless there's no owner or health logging isn't allowed
- * here (then none of them load); unloadImportSkipped says how many didn't fit under the cap. The
+ * here (then none of them load); unloadImportSkipped says how many were left out and why. The
  * low-mood marker, the reminder log and UI state are this device's own and never restored.
  */
 export function stateFromBackup(incoming: PersistedState, current?: PersistedState): PersistedState {
@@ -301,11 +297,20 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   return s
 }
 
-/** How many of a backup's Unload notes wouldn't fit under the cap on this device (for the import
- *  to say so; stateFromBackup never drops notes silently otherwise). */
-export function unloadImportSkipped(incoming: PersistedState, current: PersistedState): number {
+/** How many of a backup's Unload notes a restore on this device leaves out, and why ('not-now':
+ *  no owner recorded or health logging not allowed, so none load; 'full': past the cap), for the
+ *  import to say so: stateFromBackup never drops notes silently. Warn when `skipped` > 0. */
+export function unloadImportResult(incoming: PersistedState, current: PersistedState): UnloadImport {
   const allowed = healthLoggingAllowed({ ...current, consents: cleanConsents(current.consents) })
-  return mergeUnloadForImport(incoming.deviceOnly, current, current._meta?.owner, allowed).skipped
+  const { skipped, reason } = mergeUnloadForImport(incoming.deviceOnly, current, current._meta?.owner, allowed)
+  return reason ? { skipped, reason } : { skipped }
+}
+
+/** How many of a backup's Unload notes didn't fit under the cap (reason 'full' only). The import
+ *  should move to unloadImportResult, which also reports the 'not-now' case. */
+export function unloadImportSkipped(incoming: PersistedState, current: PersistedState): number {
+  const r = unloadImportResult(incoming, current)
+  return r.reason === 'full' ? r.skipped : 0
 }
 
 /**

@@ -20,7 +20,12 @@ for (const [k, v] of Object.entries(LEGAL)) {
   if (k === 'icoNumber') console.log('WARN LEGAL.icoNumber is not set: pay the ICO data protection fee (ico.org.uk/fee) and add the number')
   else fail(`LEGAL.${k} is not set`)
 }
-for (const doc of [privacyPolicy(), termsOfUse(), cookiePolicy(), sitePrivacy(), siteTerms(), siteCookies()]) {
+// both versions of the gated texts: Mind (wellbeing) off, as now, and on, as published once
+// WELLBEING_ENABLED goes on (scripts/legal-html.ts publishes with mind = WELLBEING_ENABLED)
+const gated = [false, true].flatMap((mind) => [privacyPolicy({ mind }), cookiePolicy({ mind })])
+if (JSON.stringify(gated[0]) === JSON.stringify(gated[2])) fail('Privacy policy: the Mind gate changes nothing')
+if (JSON.stringify(gated[1]) === JSON.stringify(gated[3])) fail('Cookie policy: the Mind gate changes nothing')
+for (const doc of [...gated, termsOfUse(), sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)
   if (!doc.sections.length) fail(`${doc.title}: no sections`)

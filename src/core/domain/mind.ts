@@ -3,7 +3,7 @@ import type { UkNation } from '@/core/data/signposts'
 import { SKILLS, THINGS, type Thing } from '@/core/data/skills'
 import { lowSignals } from './dayOptions'
 import { shiftDay } from './date'
-import { SLEEP_BANDS } from './checkin'
+import { SKILL_IDS, SLEEP_BANDS } from './checkin'
 import { bandWords, isLongBand, nightFor } from './sleep'
 
 /**
@@ -121,7 +121,8 @@ export function weekReflection(days: Days, weekStart: string, opts: { today: str
     sleep = [...tally.entries()].sort((a, b) => b[1].n - a[1].n || b[1].last - a[1].last)[0][0]
   }
   const skills: WeekReflection['skills'] = {}
-  for (const c of cs) for (const s of c?.skills || []) skills[s.id] = (skills[s.id] || 0) + 1
+  // a later version's skill (kept by shape on load) isn't one this version can name: not counted
+  for (const c of cs) for (const s of c?.skills || []) if (SKILL_IDS.includes(s.id)) skills[s.id] = (skills[s.id] || 0) + 1
   const inWeek = new Set(upTo)
   const plansReviewed = (opts.plans || []).reduce((a, p) => a + (p.reviews || []).filter((r) => inWeek.has(r.d)).length, 0)
   const end = upTo[upTo.length - 1]

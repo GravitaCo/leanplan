@@ -9,7 +9,8 @@ import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, Co
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
 import { mergeProfiles } from '@/core/domain/profileMerge'
-import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, type DaySnap, type ResumeCopy } from './consent'
+import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
+import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, withoutHealth as profileWithoutHealth, type DaySnap, type ResumeCopy } from './consent'
 
 /* ---- client <-> server row mapping ---- */
 
@@ -69,6 +70,19 @@ function withoutHealth<R extends { supps: Record<string, unknown> }>(row: R): R 
   return { ...row, weight: null, supps }
 }
 
+/**
+ * The profile as uploaded while health consent is withdrawn: none of its health fields (body
+ * details, setup answers, training preferences, the usual wake and wind-down times, Mind plans).
+ * The withdrawal's clear normally ran first; this is defence in depth (security-data N2). Height
+ * is required, so it goes up as null, and the activity level that came from daily movement as 'light'.
+ */
+function settingsWithoutHealth(p: Profile): Profile {
+  const out = profileWithoutHealth(p)
+  out.height = null
+  if (p.activityMult != null) out.activityLevel = 'light'
+  return out
+}
+
 export function toServerDay(s: PersistedState, d: string, uid: string, held?: { serverCheckin: unknown }) {
   const x = s.days[d] || { foods: [], supps: {}, weight: null, workout: null }
   const checkin = held ? held.serverCheckin : x.checkin
@@ -84,7 +98,8 @@ export function toServerDay(s: PersistedState, d: string, uid: string, held?: { 
 }
 function fromServerDay(row: any): DayLog {
   const { [CHECKIN_KEY]: checkin, ...supps } = row.supps || {}
-  const day: DayLog = { foods: row.foods || [], supps, weight: row.weight ?? null, workout: row.workout || null, checkin: checkin || null }
+  // the check-in's Mind fields are checked on the way in, as on load (a malformed one never reaches a screen)
+  const day: DayLog = { foods: row.foods || [], supps, weight: row.weight ?? null, workout: row.workout || null, checkin: checkinOrNull(validCheckin(checkin ?? null)) }
   if (Array.isArray(row.sessions)) day.sessions = row.sessions
   return day
 }
@@ -299,7 +314,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
     await step('days', () => upsertEach('day_logs', dirtyDays, (d) => withoutHealth(toServerDay(s, d, uid)), 'user_id,log_date', (d) => (meta.days[d].dirty = false)))
     if (meta.settings.dirty) {
       await step('settings', async () => {
-        await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: withProfileHealth(s.profile, profileHealth(null)) }], 'user_id')
+        await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile: settingsWithoutHealth(s.profile) }], 'user_id')
         meta.settings.dirty = false
       })
     }
@@ -320,7 +335,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
       if (!sameHealth(now.weight, then.weight) || !sameHealth(now.checkin, then.checkin)) {
         if (!s.days[d]) continue
         s.days[d].weight = now.weight
-        s.days[d].checkin = (now.checkin as DayLog['checkin']) ?? null
+        s.days[d].checkin = checkinOrNull(validCheckin(now.checkin ?? null))
       }
     }
     await upsertEach('day_logs', dirtyDays, (d) => toServerDay(s, d, uid), 'user_id,log_date', (d) => { meta.days[d].dirty = false; if (resume?.days) delete resume.days[d] })
@@ -342,7 +357,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
       // onboarding answers merge field by field (plan §12): read the server's first, latest answer wins
       if (profile.answeredAt) {
         const have = await sbGet<{ profile: Profile | null }[]>('/settings?user_id=eq.' + uid + '&select=profile')
-        if (have[0]?.profile) profile = s.profile = mergeProfiles(s.profile, have[0].profile)
+        if (have[0]?.profile) profile = s.profile = mergeProfiles(s.profile, cleanProfileMind(have[0].profile))
       }
       await sbUpsert('settings', [{ user_id: uid, target: s.target, schedule: s.schedule, profile }], 'user_id')
       meta.settings.dirty = false
@@ -478,7 +493,7 @@ async function settleResume(s: PersistedState, meta: SyncMeta, uid: string): Pro
   if (stHow) {
     s.target = st[0].target
     s.schedule = st[0].schedule
-    if (st[0].profile) s.profile = st[0].profile
+    if (st[0].profile) s.profile = cleanProfileMind(st[0].profile)
     meta.settings = { u: st[0].updated_at, dirty: false }
   }
   // what's left marked uploads as this phone's
@@ -502,7 +517,7 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
       // keep the earliest D5 switch date across devices (and one from an older app version's
       // copy that lacks it), so days between two dates never flip back and forth
       const sw = s.profile.burnSwitch
-      s.profile = settings[0].profile
+      s.profile = cleanProfileMind(settings[0].profile)
       if (sw && (!s.profile.burnSwitch || sw < s.profile.burnSwitch)) { s.profile.burnSwitch = sw; meta.settings.dirty = true }
       if (mine) s.profile = withProfileHealth(s.profile, mine)
     }

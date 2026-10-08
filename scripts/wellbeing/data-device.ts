@@ -6,11 +6,11 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import type { PersistedState } from '@/data/persistence'
-import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, loadStateFrom, stateFromBackup, unloadImportSkipped } from '@/data/persistence'
+import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, loadStateFrom, stateFromBackup, unloadImportResult, unloadImportSkipped } from '@/data/persistence'
 import { applyHealthWithdrawal, clearHealthData, HEALTH_FIELDS, healthDataSummary, pauseHealthSync, recordConsent, withdraw } from '@/data/consent'
 import {
   addUnloadNote, clearNotifyStore, deleteUnloadNote, lowMoodShownOn, markLowMoodShown, notifyLog, recordNotifyEvents, setSleepMoreOpen, sleepMoreOpen, unloadCount, unloadNotes,
-  NOTE_ACCESSORS, NOTIFY_DB, NOTIFY_LOG_MAX, UNLOAD_MAX_NOTES, UNLOAD_MAX_PAIRS, UNLOAD_NOTE_MAX_CHARS, type NotesContext,
+  NOTE_ACCESSORS, PERSISTENCE_ONLY, NOTIFY_DB, NOTIFY_LOG_MAX, UNLOAD_MAX_NOTES, UNLOAD_MAX_PAIRS, UNLOAD_NOTE_MAX_CHARS, type NotesContext,
 } from '@/data/deviceOnly'
 import { pushDirty, toServerDay, toServerFood, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
@@ -34,6 +34,38 @@ async function withFetch<T>(f: typeof fetch, run: () => Promise<T>): Promise<T> 
   const real = globalThis.fetch
   globalThis.fetch = f
   try { return await run() } finally { globalThis.fetch = real }
+}
+
+const NOTES_ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/UnloadSheet.tsx']
+const isDeviceOnly = (spec: string) => /(^|\/)deviceOnly(\.tsx?|\.js)?$/.test(spec)
+const namesIn = (clause: string): string[] =>
+  clause.trim().startsWith('*') ? ['*'] : clause.replace(/[{}]/g, '').split(',').map((x) => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean)
+
+/**
+ * The import-boundary problems in one source file (security-data, WP2): a notes accessor imported
+ * outside NOTES_ALLOWED, a load or restore helper (PERSISTENCE_ONLY) imported outside
+ * persistence.ts, any re-export (`export … from`) or dynamic `import()` of deviceOnly, and any
+ * direct reach into the notes (`deviceOnly.unload`, `deviceOnly['unload']`, `{ unload } = …deviceOnly`).
+ */
+export function boundaryIssues(rel: string, code: string): string[] {
+  if (rel === 'src/data/deviceOnly.ts') return []
+  const out: string[] = []
+  for (const m of code.matchAll(/import\s+(?:type\s+)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
+    if (!isDeviceOnly(m[2])) continue
+    const names = namesIn(m[1])
+    if (names.some((n) => n === '*' || (NOTE_ACCESSORS as readonly string[]).includes(n)) && !NOTES_ALLOWED.includes(rel)) out.push(rel)
+    if (names.some((n) => n === '*' || (PERSISTENCE_ONLY as readonly string[]).includes(n)) && rel !== 'src/data/persistence.ts') out.push(rel + ' (load or restore helper)')
+  }
+  for (const m of code.matchAll(/export\s+(?:type\s+)?(\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
+    if (isDeviceOnly(m[2])) out.push(rel + ' (re-exports deviceOnly)')
+  }
+  for (const m of code.matchAll(/import\(\s*['"`]([^'"`]+)['"`]\s*\)/g)) {
+    if (isDeviceOnly(m[1])) out.push(rel + ' (dynamic import of deviceOnly)')
+  }
+  if (/deviceOnly\??\.unload\b/.test(code)) out.push(rel + ' (deviceOnly.unload)')
+  if (/deviceOnly\s*(\?\.)?\s*\[\s*['"`]unload['"`]\s*\]/.test(code)) out.push(rel + " (deviceOnly['unload'])")
+  if (/\{[^{}=]*\bunload\b[^{}=]*\}\s*=\s*[^;\n]*\bdeviceOnly\b/.test(code)) out.push(rel + ' ({ unload } = deviceOnly)')
+  return out
 }
 
 /** Every .ts/.tsx/.js file under a directory. */
@@ -90,21 +122,23 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
   {
     const root = process.cwd()
     const src = files(join(root, 'src'))
-    const ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/UnloadSheet.tsx']
-    const offenders: string[] = []
-    const re = /import\s+(?:type\s+)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g
-    for (const f of src) {
-      const rel = relative(root, f).split('\\').join('/')
-      const code = readFileSync(f, 'utf8')
-      for (const m of code.matchAll(re)) {
-        if (!/(^|\/)deviceOnly$/.test(m[2])) continue
-        const names = m[1].startsWith('*') ? ['*'] : m[1].replace(/[{}]/g, '').split(',').map((x) => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean)
-        if (names.some((n) => n === '*' || (NOTE_ACCESSORS as readonly string[]).includes(n)) && !ALLOWED.includes(rel)) offenders.push(rel)
-      }
-      // no file outside deviceOnly.ts reaches into the notes directly
-      if (rel !== 'src/data/deviceOnly.ts' && /deviceOnly\??\.unload/.test(code)) offenders.push(rel + ' (deviceOnly.unload)')
-    }
-    checks.push(['import graph: only persistence, backup, deviceOnly and UnloadSheet use the notes accessors' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
+    const ALLOWED = NOTES_ALLOWED
+    const offenders = src.flatMap((f) => boundaryIssues(relative(root, f).split('\\').join('/'), readFileSync(f, 'utf8')))
+    checks.push(['import graph: only persistence, backup, deviceOnly and UnloadSheet use the notes accessors, only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
+    // the checker itself catches each way round it
+    const caught = (code: string, rel = 'src/screens/X.tsx') => boundaryIssues(rel, code).length > 0
+    checks.push(['boundary check catches a re-export, a dynamic import, bracket access and destructuring', [
+      "export { unloadNotes } from '@/data/deviceOnly'",
+      "export * from '../data/deviceOnly'",
+      "const m = await import('@/data/deviceOnly')",
+      "const n = s.deviceOnly['unload']",
+      "const n = s.deviceOnly?.['unload']",
+      'const { unload } = s.deviceOnly',
+      'const { unload: u } = state.deviceOnly ?? {}',
+      "import { unloadNotes } from '@/data/deviceOnly'",
+    ].every((c) => caught(c))])
+    checks.push(['boundary check: the load and restore helpers are persistence.ts only', caught("import { mergeUnloadForImport } from './deviceOnly'", 'src/data/backup.ts') && caught("import { cleanDeviceOnly } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx') && !caught("import { cleanDeviceOnly, mergeUnloadForImport } from './deviceOnly'", 'src/data/persistence.ts')])
+    checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
     const quiet = ALLOWED.filter((f) => existsSync(join(root, f))).filter((f) => /console\.\w+\([^)]*(note|pairs|unload|mind|next)/i.test(readFileSync(join(root, f), 'utf8')))
     checks.push(['no console call in those files takes a note', !quiet.length])
     const elsewhere = ['src/data/sync.ts', 'src/data/push.ts', 'src/data/labelReader.ts', 'public/sw.js', 'supabase/functions/send-supplement-reminders/index.ts']
@@ -231,7 +265,15 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
     for (let i = 0; i < UNLOAD_MAX_NOTES - 1; i++) addUnloadNote(nearly, note('n' + i), ON)
     const three = owned()
     for (let i = 0; i < 3; i++) addUnloadNote(three, note('b' + i), ON, new Date(Date.parse(T) + i * 1000).toISOString())
-    checks.push(['unloadImportSkipped says how many don\'t fit', unloadImportSkipped(JSON.parse(JSON.stringify(three)), nearly) === 2])
+    const over = unloadImportResult(JSON.parse(JSON.stringify(three)), nearly)
+    checks.push(['unloadImportResult says how many don\'t fit, and why', over.skipped === 2 && over.reason === 'full' && unloadImportSkipped(JSON.parse(JSON.stringify(three)), nearly) === 2])
+    checks.push(['nothing skipped: no reason', JSON.stringify(unloadImportResult(JSON.parse(JSON.stringify(three)), owned())) === '{"skipped":0}'])
+    const notNowW = unloadImportResult(JSON.parse(JSON.stringify(three)), withdrawn)
+    const unowned = loadStateFrom(null)
+    const notNowO = unloadImportResult(JSON.parse(JSON.stringify(three)), unowned)
+    checks.push(['import under withdrawal or with no owner says every note was skipped, and why (never silent)', notNowW.skipped === 3 && notNowW.reason === 'not-now' && notNowO.skipped === 3 && notNowO.reason === 'not-now'])
+    checks.push(['unloadImportSkipped (the cap count) stays 0 for the not-now case', unloadImportSkipped(JSON.parse(JSON.stringify(three)), withdrawn) === 0])
+    checks.push(['a backup with no notes skips nothing, whatever the consent', JSON.stringify(unloadImportResult(owned(), withdrawn)) === '{"skipped":0}'])
     const full = stateFromBackup(JSON.parse(JSON.stringify(three)), JSON.parse(JSON.stringify(nearly)))
     checks.push(['and the restore keeps this phone\'s notes, adding the newest that fit', unloadCount(full) === UNLOAD_MAX_NOTES && unloadNotes(full, ON).some((n) => n.pairs[0].mind === 'b2') && unloadNotes(full, ON).some((n) => n.pairs[0].mind === 'n0')])
   }

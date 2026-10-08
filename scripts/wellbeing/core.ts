@@ -158,8 +158,9 @@ export function coreSuite(): number {
   ok('and every mind.ts string', !mindHits.length, mindHits.join(' | '))
   ok('new bans: skip, readiness, recovery debt, you should rest', ['Skip today', 'You skipped a day', 'Your readiness', 'Recovery debt', 'You should rest'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved setup copy keeps "skip" (engine and wizard lint unchanged)', !copyIssues('Skip any question you like.').length && BANNED_COPY.every((r) => !WELLBEING_BANNED.includes(r)))
-  ok('the B3.17 rope string is allowed, and only as the whole string', COPY_ALLOWED.size === 1 && mindCopyIssues('After a rough night, the shorter version swaps running, skipping and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.').length === 0 && mindCopyIssues('Try skipping today').length > 0)
-  ok('the final B3.17 ("jump rope") passes', mindCopyIssues('After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.').length === 0)
+  const b317 = 'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.'
+  ok('the accepted B3.17 ("jump rope") is the one allowed string, and passes', COPY_ALLOWED.size === 1 && COPY_ALLOWED.has(b317) && mindCopyIssues(b317).length === 0)
+  ok('the old "skipping" B3.17 wording is no longer allowed', mindCopyIssues(b317.replace('jump rope', 'skipping')).length > 0 && mindCopyIssues('Try skipping today').length > 0)
   ok('deck §0 words caught', ['Try this meditation', 'Your sleep score', 'A clinical tool', 'You missed yesterday', "You haven't logged today", 'Screening for low mood'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved lines with near words pass', ['For everyday wellbeing. Not a treatment for any condition.', 'Show supplement names in reminders', 'Lock screen'].every((t) => !mindCopyIssues(t).length))
   ok('BANNED_COPY is still a list of patterns', BANNED_COPY.every((x) => x instanceof RegExp))

@@ -1,5 +1,5 @@
 import type { CheckIn, SleepBand, SleepSource } from '@/core/types'
-import { SLEEP_BANDS } from './checkin'
+import { SLEEP_BANDS, SLEEP_SOURCES } from './checkin'
 
 /**
  * Last night, read for display and for the weekly patterns (wellbeing plan §4.2, §4.3). Tier 1 is
@@ -49,7 +49,8 @@ export interface NightView {
  */
 export function nightFor(c: CheckIn | null | undefined): NightView | null {
   const n = c?.night
-  if (!n) return null
+  // a later version's source (kept by shape on load) isn't one this version knows how to show
+  if (!n || !SLEEP_SOURCES.includes(n.source)) return null
   const rating = c?.sleep || undefined
   if (typeof n.asleepMin === 'number' && n.asleepMin >= 0) {
     return { source: n.source, band: bandOfMinutes(n.asleepMin), asleepMin: n.asleepMin, ...(n.wakeAt ? { wakeAt: n.wakeAt } : {}), ...(rating ? { rating } : {}) }
