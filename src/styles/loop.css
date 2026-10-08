@@ -5,7 +5,7 @@
 @media (prefers-color-scheme: dark) { :root { --raised: var(--elev); } }
 
 .rv { padding: 0 16px 40px; }
-.rv-top { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-top: 10px; }
+.rv-top { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-top: calc(env(safe-area-inset-top) + 10px); }
 .rv-back { width: 36px; height: 36px; border-radius: 18px; background: var(--card); color: var(--label); display: flex; align-items: center; justify-content: center; border: 0; padding: 0; }
 .rv-span { font-size: 13px; color: var(--label2); }
 .rv-h1 { margin: 14px 4px 0; font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; }
