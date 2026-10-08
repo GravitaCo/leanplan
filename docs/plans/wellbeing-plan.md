@@ -669,6 +669,14 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   back. This fixes a live issue security-data found; the setting goes to the canvas for approval.
 - **Reminders follow each person's own time zone**: an IANA time zone (from the device) is stored
   with the reminder settings. A new data item, so the privacy policy and register change with it.
+- **Mind pillar off:** the Mind tab stays in the tab bar, faded and disabled. Food, Train and Plan
+  tabs always stay; a switched-off Food or Move only disappears from Today and the reflection.
+- **Train copy:** fitness-workouts' corrected B3 strings are accepted (three or four reps to spare,
+  day-matched swap names, the rough-night note); the B3 board is updated to match.
+- **Not drawn yet, so not in this build:** the Wind down and Get outside screens and the "Show
+  names on the lock screen" setting. Boards are being drafted for approval.
+- **The supplement lock-screen fix ships ahead of Phase 1** once `ship-critic` passes; Benn is asked
+  before anything is applied to the live database.
 - **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
   share one a day.
 
