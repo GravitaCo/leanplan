@@ -698,6 +698,10 @@ export interface Exercise {
   care?: BodyArea[]
   /** a gentler library entry for the same slot */
   gentler?: string
+  /** a steadier library entry for the same slot after a rough night (high-impact or loaded single-leg
+   *  moves, and machine intervals): used only by the shorter version, never by "As planned"
+   *  (wellbeing plan §7.5; dayOptions.roughNightPlan) */
+  steadier?: string
   cardioVariation?: CardioVariation
   /** CARDIO_MET key for burn */
   cardioKey?: string

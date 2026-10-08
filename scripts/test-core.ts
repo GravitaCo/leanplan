@@ -16,7 +16,7 @@ import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
 import { DEMOS } from '@/core/data/media'
 import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
-import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
+import { dayTypeOf, lowSignals, offerLighter, roughNight, roughNightPlan, shorterPrescription, shorterSets, showRoughNightNote, swapFor } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
 import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
@@ -45,7 +45,7 @@ import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdLabel, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
-import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, sameRange, setCount, setsLine, slotsOf, splitLogged, stintMins, swapInto, targetFor, warmupSlot } from '@/core/domain/guided'
+import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
 import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
@@ -310,6 +310,46 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok3 = SWAPS.mobility.ex.length === 7 && SWAPS.mobility.cardioType === 'Mobility' && CARDIO_MET[SWAPS.walk.cardioType] === 3.0
   if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'swap routines use sourced cardio keys')
+}
+// hard-day Train choices (wellbeing plan §7.5, B3): the day-matched swap, the rough-night shorter
+// version and the easier effort target
+{
+  const X = (id: string) => EXERCISE_BY_ID[id]
+  const of = (ids: string[]) => ids.map(X)
+  const builtinDays = (['Legs', 'Push', 'Pull', 'Cardio'] as const).map((k) => k + ':' + swapFor(dayTypeOf(WORKOUTS[k].ex.map((e) => X(e.id!))))).join(' ')
+  const days = [
+    dayTypeOf(of(['goblet-squat', 'push-up', 'one-arm-db-row', 'romanian-deadlift'])), // 2 lower, 2 upper
+    dayTypeOf(of(['back-squat', 'leg-curl', 'calf-raise', 'push-up'])),                // 3 lower, 1 upper: mostly lower
+    dayTypeOf(of(['back-squat', 'push-up', 'one-arm-db-row'])),                         // 1 lower, 2 upper: full
+    dayTypeOf(of(['childs-pose', 'cat-cow', 'hundred'])),                               // mind-body
+    dayTypeOf(of(['cardio-run', 'childs-pose'])),                                       // cardio with a cool-down
+    dayTypeOf([undefined]),                                                             // nothing known
+  ].join(' ')
+  const lower = SWAPS['mobility-lower'], upper = SWAPS['mobility-upper']
+  const matOnly = (w: typeof lower) => w.ex.every((e) => !!X(e.id!) && X(e.id!).cue === e.cue && X(e.id!).impact !== 'high' && !X(e.id!).equipment.some((q) => q !== 'mat' && q !== 'bodyweight'))
+  const plan = roughNightPlan(of(['cardio-run', 'goblet-squat', 'db-sl-rdl', 'mountain-climber', 'cardio-intervals', 'tree-pose']))
+  const nothing = roughNightPlan(WORKOUTS.Legs.ex.map((e) => X(e.id!)))
+  const steadyAll = EXERCISES.filter((e) => e.steadier).map((e) => e.id + '>' + e.steadier).sort().join(' ')
+  const L = { name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '10' }, { w: '40', reps: '9', feel: 'struggle' }] } as any
+  const easy = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i, [], { shorter: 'easier' })?.reps).join(',')
+  const keep = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i, [], { shorter: 'maintain' })?.reps).join(',')
+  const usual = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i)?.reps).join(',')
+  const checks: [string, boolean][] = [
+    ['swap: built-ins Legs, Push, Pull, Cardio', builtinDays === 'Legs:mobility-lower Push:mobility-upper Pull:mobility-upper Cardio:mobility'],
+    ['swap: day type from the exercises', days === 'full lower upper mind-body cardio full' && swapFor('full') === 'mobility' && swapFor('mind-body') === 'walk'],
+    ['swap: lower and upper are ~10 min, 7 library moves each, mat or nothing, cues word for word', lower.ex.length === 7 && upper.ex.length === 7 && matOnly(lower) && matOnly(upper) && lower.mins === '10' && upper.mins === '10' && lower.cardioType === 'Mobility' && upper.cardioType === 'Mobility'],
+    ['swap: notes never say "skip"', Object.values(SWAPS).every((w) => !/skip/i.test(w.note ?? ''))],
+    ['rough night: sleep among the low signals', roughNight(['sleep', 'energy']) && !roughNight(['stress', 'energy'])],
+    ['rough night: steadier swaps, intervals with none left out, balance poses kept', JSON.stringify(plan) === JSON.stringify({ swaps: { 0: 'cardio-walk', 2: 'romanian-deadlift', 4: 'cardio-bike' }, leaveOut: [3] })],
+    ['rough night: Legs & Core is unchanged', Object.keys(nothing.swaps).length === 0 && nothing.leaveOut.length === 0],
+    ['rough night: the 8 steadier mappings', steadyAll === 'bulgarian-split-squat>split-squat cardio-intervals>cardio-bike cardio-jump-rope>cardio-walk cardio-run>cardio-walk db-bulgarian-split-squat>db-split-squat db-sl-rdl>romanian-deadlift step-up>goblet-squat walking-lunge>split-squat'],
+    ['rough night: the note shows only with something to change', showRoughNightNote(['sleep', 'energy'], of(['cardio-run'])) && !showRoughNightNote(['sleep', 'energy'], WORKOUTS.Legs.ex.map((e) => X(e.id!))) && !showRoughNightNote(['stress', 'energy'], of(['cardio-run']))],
+    ['effort: 3–4 to spare on an easier day, 2–3 otherwise and in maintenance', JSON.stringify(rirFor('easier')) === JSON.stringify(SHORTER_RIR) && SHORTER_RIR.lo === 3 && SHORTER_RIR.hi === 4 && rirFor('maintain') === USUAL_RIR && rirFor() === USUAL_RIR && USUAL_RIR.lo === 2],
+    ['effort: an easier day aims for last time\'s reps, no +1', easy === '12,10,9'],
+    ['effort: maintenance and no kind keep the usual +1', keep === '12,11,9' && usual === keep],
+    ['effort: an easier day never raises the weight', [0, 1, 2].every((i) => targetFor('weight-reps', '2 × 10–12', L, i, [], { shorter: 'easier' })?.w === '40')],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'hard day:', n) }
 }
 // plans slide (plan §0.3, §0.4): catch-up picks at most one session, never edits the schedule,
 // ignores days before the person started, and "welcome back" is asked once per 10+ day break

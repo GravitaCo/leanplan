@@ -1,5 +1,6 @@
-import type { WorkoutTemplate, WorkoutType } from '@/core/types'
+import type { ExerciseTemplate, WorkoutTemplate, WorkoutType } from '@/core/types'
 import { DEMOS } from './media'
+import { EXERCISE_BY_ID } from './exercises'
 
 /**
  * Push/Pull/Legs split. Ordered across the week as Legs → Push → Pull so back-to-back
@@ -120,17 +121,32 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
 
 export const LIFTS: WorkoutType[] = ["Legs","Push","Pull"]
 
+/** A swap move straight from the library: its name, default prescription, cue and clip, word for word. */
+function lib(id: string): ExerciseTemplate {
+  const x = EXERCISE_BY_ID[id]
+  return { id, n: x.n, t: x.defaultRx ?? '', cue: x.cue, ...(x.video ? { video: x.video } : {}) }
+}
+
+export type SwapId = 'mobility' | 'walk' | 'mobility-lower' | 'mobility-upper'
+
 /**
- * Gentle swaps offered on a tough day instead of the planned session (workout plan §0.2). Mat
- * only, nothing face-down, nothing from the plan's "left out on purpose" list. The mobility
- * routine is about 10 minutes including changeovers (an estimate: ~520 s of moves + ~90 s).
+ * Gentle swaps offered on a tough day instead of the planned session (workout plan §0.2, wellbeing
+ * plan §7.5). Mat only, nothing face-down, nothing loaded, nothing from the plan's "left out on
+ * purpose" list. Which one a day offers is `dayOptions.swapFor`. Each routine is about 10 minutes
+ * including changeovers (estimates: mobility ~520 s of moves + ~90 s; mobility-lower ~540 s + ~90 s;
+ * mobility-upper ~400 s + ~90 s).
+ * - `mobility-lower` (legs days): hips, hamstrings and calves, ordered lying, then kneeling, then
+ *   standing so there's little getting up and down. Finishes upright at the wall.
+ * - `mobility-upper` (Push and Pull days): upper back, chest and shoulders, on hands and knees
+ *   first, then standing.
+ * Both are slow floor holds, so they double as the slow-breathing option on a high-stress day.
  */
-export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string; cardioType: string; note?: string }> = {
+export const SWAPS: Record<SwapId, WorkoutTemplate & { mins: string; cardioType: string; note?: string }> = {
   "mobility": {
     "title": "10-minute mobility · hips, back and shoulders",
     "mins": "10",
     "cardioType": "Mobility",
-    "note": "Move within what feels comfortable, and skip anything that hurts.",
+    "note": "Move within what feels comfortable, and leave out anything that hurts.",
     "ex": [
       { "id": "march-on-the-spot", "n": "March on the spot with arm swings", "t": "1 × 60 sec",
         "cue": "Stand tall and march at an easy pace, swinging your arms loosely. Let your breathing settle. This is a warm-up, not cardio, so keep it relaxed rather than fast." },
@@ -156,6 +172,20 @@ export const SWAPS: Record<'mobility' | 'walk', WorkoutTemplate & { mins: string
       { "id": "cardio-easy-walk", "n": "Easy walk", "t": "10–20 min",
         "cue": "Walk at a relaxed, conversational pace, one where you could chat in full sentences. Outside, indoors or on a flat treadmill all count. No need to speed up to make it 'worth it'. Easy is the point. Stop whenever you've had enough." }
     ]
+  },
+  "mobility-lower": {
+    "title": "Hips, hamstrings and calves",
+    "mins": "10",
+    "cardioType": "Mobility",
+    "note": "Move within what feels comfortable, breathe slowly, and leave out anything that hurts.",
+    "ex": ['lying-knee-rolls', 'glute-bridge', 'reclined-figure-four', 'supine-hamstring-stretch', 'half-kneeling-hip-flexor', 'childs-pose', 'wall-calf-stretch'].map(lib)
+  },
+  "mobility-upper": {
+    "title": "Upper back, chest and shoulders",
+    "mins": "10",
+    "cardioType": "Mobility",
+    "note": "Move within what feels comfortable, breathe slowly, and leave out anything that hurts.",
+    "ex": ['cat-cow', 'open-book', 'thread-the-needle', 'childs-pose', 'doorway-chest-stretch', 'cross-body-shoulder', 'shoulder-rolls'].map(lib)
   }
 }
 

@@ -1,6 +1,6 @@
 import type { DayLog, Exercise, ExerciseTemplate, LoggedExercise, LogShape, SetEntry } from '@/core/types'
 import { sessionsOf } from './sessions'
-import { shorterPrescription, shorterSets } from './dayOptions'
+import { shorterPrescription, shorterSets, type ShorterKind } from './dayOptions'
 import { fmtSet, sameExercise } from './library'
 
 /**
@@ -11,7 +11,10 @@ import { fmtSet, sameExercise } from './library'
  * - "last time" = the most recent session of this exercise with the same rep range, warm-ups
  *   excluded; with none, the first set opens Adjust instead;
  * - the weight is never raised or lowered on its own; reaching the top of the range on every
- *   set only shows a passive hint (readyToStepUp), never on a shorter day.
+ *   set only shows a passive hint (readyToStepUp), never on a shorter day;
+ * - on an easier shorter day (ShorterKind 'easier') the effort target is 3–4 reps to spare and
+ *   there is no +1: last time's reps at last time's weight, capped at the top of the range. A
+ *   maintenance week ('maintain') keeps the usual 2–3 and the usual rule (wellbeing plan §7.5).
  */
 
 export interface Range { lo: number; hi: number }
@@ -115,24 +118,44 @@ export function lastTime(days: Record<string, DayLog>, before: string, exId: str
 
 export interface SetTarget { w: string; reps: string; sec?: string; mins?: string; assist?: boolean }
 
+/** Reps to spare on a normal day, as the app's copy says ("two or three reps to spare"). */
+export const USUAL_RIR: Range = { lo: 2, hi: 3 }
+/**
+ * Reps to spare on an easier shorter day: a hard day's Shorter, an easier or lighter week, easing
+ * in. Flat, not "usual + 1", so the copy ("three or four") holds for every goal (fitness-workouts).
+ */
+export const SHORTER_RIR: Range = { lo: 3, hi: 4 }
+
+/**
+ * The effort target for a day's version. Maintenance keeps the usual effort: cutting volume holds
+ * strength only when effort is kept (Bickel 2011; Spiering 2021). With no kind it's today's
+ * behaviour (the usual target).
+ */
+export function rirFor(kind?: ShorterKind | null): Range {
+  return kind === 'easier' ? SHORTER_RIR : USUAL_RIR
+}
+
 const int = (v: string | undefined) => { const n = parseInt(v || ''); return Number.isFinite(n) ? n : null }
 
 /**
  * What "Done as planned" logs for working set `i` (0-based). `done` is this session's working sets
  * so far for the slot. Null means there's nothing to aim for yet (a first weighted set): the
- * player opens Adjust instead.
+ * player opens Adjust instead. `opts.shorter` is the kind of shorter version today ('easier': no
+ * +1; 'maintain' or none: the usual rule).
  */
-export function targetFor(shape: LogShape, rx: string, last: LoggedExercise | null, i: number, done: SetEntry[] = []): SetTarget | null {
+export function targetFor(shape: LogShape, rx: string, last: LoggedExercise | null, i: number, done: SetEntry[] = [], opts: { shorter?: ShorterKind | null } = {}): SetTarget | null {
   const p = parseRx(rx)
   const top = p.reps?.hi ?? null
   const prev = i > 0 ? done[i - 1] : undefined
+  // an easier shorter day: no +1, so the same weight leaves a rep or so more to spare
+  const easier = opts.shorter === 'easier'
 
   if (shape === 'weight-reps' || shape === 'reps') {
     const L = last?.sets.length ? last.sets[Math.min(i, last.sets.length - 1)] : undefined
     const lr = int(L?.reps)
     let base: SetTarget | null = null
     if (L && lr != null) {
-      const reps = L.feel === 'struggle' || L.feel === 'stopped' || top == null ? lr : Math.min(lr + 1, top)
+      const reps = top == null ? lr : easier ? Math.min(lr, top) : L.feel === 'struggle' || L.feel === 'stopped' ? lr : Math.min(lr + 1, top)
       base = { w: L.w || '', reps: String(reps), ...(L.assist ? { assist: true } : {}) }
     }
     if (prev && int(prev.reps) != null) {

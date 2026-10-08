@@ -91,6 +91,15 @@ for (const e of EXERCISES) {
 }
 const byId = new Map(EXERCISES.map((e) => [e.id, e]))
 for (const e of EXERCISES) if (e.gentler && (!byId.has(e.gentler) || e.gentler === e.id)) errors.push(`${e.id}: gentler "${e.gentler}" is not another library id`)
+// rough-night swaps (wellbeing plan §7.5): the steadier entry exists and is itself steady (no
+// high impact, no intervals, no further swap), and every high-impact entry has one
+for (const e of EXERCISES) {
+  if (e.impact === 'high' && !e.steadier) errors.push(`${e.id}: high-impact entries need a steadier entry for a rough night`)
+  if (!e.steadier) continue
+  const s = byId.get(e.steadier)
+  if (!s || s.id === e.id) errors.push(`${e.id}: steadier "${e.steadier}" is not another library id`)
+  else if (s.impact === 'high' || s.cardioVariation === 'hiit' || s.steadier) errors.push(`${e.id}: steadier "${s.id}" must be steady itself (no high impact, no intervals, no swap of its own)`)
+}
 
 // progression chains: steps 1..n with no gaps (two entries may share a step, like band-assisted
 // and negative pull-ups)

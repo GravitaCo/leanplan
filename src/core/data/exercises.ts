@@ -10,6 +10,9 @@ import { DEMOS } from './media'
  * gender-neutral en-GB. Nothing from the §5.4 "left out on purpose" list. `care` marks body areas
  * an exercise loads a lot, and `gentler` names a library entry for the same slot (§4.0.4); that is
  * preference filtering, never a claim that something is safe for a condition.
+ * `steadier` names the entry the shorter version uses after a rough night (wellbeing plan §7.5):
+ * high-impact moves, machine intervals and loaded single-leg moves. Interval moves with none are
+ * left out that day.
  *
  * Entries used by the built-in workouts (`workouts.ts`) carry the built-in cue word for word, so
  * the card and the library say the same thing. Their display names follow the built-ins, because
@@ -222,6 +225,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'step-up', n: 'Step-up', modality: 'strength', log: 'weight-reps', perSide: true,
+    steadier: 'goblet-squat',
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
     timeCost: { setupSec: 20, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
@@ -434,6 +438,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'bulgarian-split-squat', n: 'Bulgarian split squat', modality: 'calisthenics', log: 'reps', perSide: true,
+    steadier: 'split-squat',
     equipment: ['bench'], difficulty: 'intermediate', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'],
     progression: { chain: 'squat', step: 4 }, care: ['knees'], gentler: 'split-squat',
@@ -704,6 +709,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'walking-lunge', n: 'Walking lunge', modality: 'calisthenics', log: 'reps', perSide: true,
+    steadier: 'split-squat',
     equipment: [], difficulty: 'intermediate', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'reverse-lunge',
     timeCost: { setupSec: 10, setSec: 60 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: false,
@@ -712,6 +718,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'db-bulgarian-split-squat', n: 'Dumbbell Bulgarian split squat', modality: 'strength', log: 'weight-reps', perSide: true,
+    steadier: 'db-split-squat',
     equipment: ['dumbbell'], difficulty: 'intermediate', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'db-split-squat',
     timeCost: { setupSec: 30, setSec: 60 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
@@ -736,6 +743,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'db-sl-rdl', n: 'Single-leg Romanian deadlift (dumbbell)', modality: 'strength', log: 'weight-reps', perSide: true,
+    steadier: 'romanian-deadlift',
     equipment: ['dumbbell'], difficulty: 'intermediate', defaultRx: '3 × 8–10 each side',
     pattern: 'hinge', primary: 'hamstrings', secondary: ['glutes', 'core'], care: ['lower-back'], gentler: 'sl-rdl-bw',
     timeCost: { setupSec: 20, setSec: 60 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
@@ -1347,6 +1355,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'cardio-run', n: 'Run', modality: 'cardio', log: 'duration',
+    steadier: 'cardio-walk',
     equipment: [], difficulty: 'beginner', defaultRx: '20–30 min', cardioVariation: 'running',
     care: ['knees', 'ankles'], gentler: 'cardio-walk',
     pattern: 'cardio',
@@ -1405,6 +1414,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'cardio-jump-rope', n: 'Jump rope', modality: 'cardio', log: 'duration',
+    steadier: 'cardio-walk',
     equipment: [], difficulty: 'intermediate', defaultRx: '5–10 min', cardioVariation: 'jump-rope',
     care: ['knees', 'ankles'], gentler: 'cardio-walk',
     pattern: 'cardio',
@@ -1414,6 +1424,7 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'cardio-intervals', n: 'Intervals', modality: 'cardio', log: 'duration',
+    steadier: 'cardio-bike',
     equipment: ['cardio-machine'], difficulty: 'intermediate', defaultRx: '15–20 min', cardioVariation: 'hiit',
     pattern: 'cardio',
     timeCost: { setupSec: 30, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', systemicCost: 'high', homeFriendly: false,
