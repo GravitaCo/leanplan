@@ -35,13 +35,12 @@ export function previewUrls(m: ExerciseMedia, motion: boolean): { url: string; l
 export const DEMOS = {
   // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
   // which a page always sends, so these play in the app but not as bare links.
-  // The untrimmed upload (e3bb9bad, 20.07 s): the trimmed copy (ea9ee735) was removed from Bunny on
-  // 8 Oct. Past 17.8 s the clip starts a third curl that the loop cuts off, so that tail is "Get set"
-  // rather than a rep. Re-trim and re-upload to make the loop seamless again.
+  // 17.8 s, trimmed to end with arms straight so the loop is seamless (re-uploaded on 8 Oct as
+  // 67eda569 after the first trimmed copy was removed; the untrimmed e3bb9bad runs on into a third rep)
   barbellCurl: {
-    src: 'https://vz-36841ffb-54c.b-cdn.net/e3bb9bad-4dcb-4510-8e33-17d89451e90e/play_720p.mp4',
-    poster: 'https://vz-36841ffb-54c.b-cdn.net/e3bb9bad-4dcb-4510-8e33-17d89451e90e/thumbnail.jpg',
-    durationSec: 20.07,
+    src: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/thumbnail.jpg',
+    durationSec: 17.8,
     tempo: [
       { at: 0, kind: 'ready' },
       { at: 1.1, kind: 'lift', rep: 1 },
@@ -52,7 +51,6 @@ export const DEMOS = {
       { at: 10.7, kind: 'squeeze', rep: 2 },
       { at: 12.7, kind: 'lower', rep: 2 },
       { at: 15.1, kind: 'stretch', rep: 2 },
-      { at: 17.8, kind: 'ready' },
     ],
   },
   romanianDeadlift: {

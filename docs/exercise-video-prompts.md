@@ -57,7 +57,7 @@ demo videos".
 | Dumbbell shoulder press (seated) | reps | Push, Tali: Full body B | `29092357…` |
 | Incline dumbbell press | reps | Push, Tali: Full body C | `01693135…` |
 | Triceps rope pushdown (cable) | reps | Push | `db9a8075…` |
-| Biceps curl (barbell or dumbbell) | reps | Pull | `e3bb9bad…` |
+| Biceps curl (barbell or dumbbell) | reps | Pull | `67eda569…` |
 | Face pull (cable) | reps | Pull, Tali: Full body C | `6d5a1fa4…` |
 | Lat pulldown | reps | Pull, Tali: Full body B | `9d104b30…` |
 | Bird-dog | reps | Tali: Strength & Balance B | `28383feb…` |
