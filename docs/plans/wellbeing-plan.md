@@ -643,8 +643,8 @@ centre in the guided player's count style (`.gp-count`), in `--label` with the p
 in-breath, a little more on the second, and settles slowly on the out-breath; reduced motion holds
 it still while the word and count step. The demo timing on the board (2 s, 1 s, 6 s) is not final:
 real timings come from `skills.ts` with a source. In the build, the count and phase word must be
-driven from JS, because the app's reduced-motion rule cuts CSS animations short. P1 to P5 stay on
-the canvas for reference until Benn retires them.
+driven from JS, because the app's reduced-motion rule cuts CSS animations short. The P1 to P5
+explorations have been taken off the canvas.
 
 ### Open for Benn (on the boards)
 
