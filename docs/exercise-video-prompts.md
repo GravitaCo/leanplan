@@ -6,9 +6,12 @@ same **character and scene block** in every prompt so the same person, outfit an
 in every clip. Once a clip is made, it goes into the app as described in CLAUDE.md, "Exercise
 demo videos".
 
+**Ready-to-paste lists** (every exercise and warm-up, with the demonstrator blocks) are in
+`docs/video-prompts/`.
+
 ## Status: every exercise in the app
 
-54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **21 have a clip, 33 still need one.** Generated from the app's data on 8 Oct 2026.
+54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **25 have a clip, 29 still need one.** Generated from the app's data on 8 Oct 2026.
 
 ### Still needed
 
@@ -17,18 +20,14 @@ demo videos".
 | Calf raise | reps | Legs |
 | Leg extension (machine) | reps | Legs |
 | Plank | hold | Legs |
-| Incline dumbbell press | reps | Push, Tali: Full body C |
 | Lateral raise | reps | Push |
 | Cable crunch | reps | Pull |
 | Chest-supported dumbbell row | reps | Pull |
-| Face pull (cable) | reps | Pull, Tali: Full body C |
-| Lat pulldown | reps | Pull, Tali: Full body B |
 | Seated cable row | reps | Pull, Tali: Full body A |
 | Brisk walk | timed (steady pace) | Cardio |
 | Chair pose | hold | Tali: Balance & Mobility |
 | Dead bug | reps | Tali: Full body A |
 | Leg curl (machine) | reps | Tali: Full body A |
-| Leg press | reps | Tali: Full body B |
 | One-arm dumbbell row | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Tali: Full body C |
 | Step-up | reps | Tali: Strength & Balance A |
 | Tree pose | hold | Tali: Strength & Balance A, Tali: Balance & Mobility |
@@ -56,8 +55,11 @@ demo videos".
 | Romanian deadlift (dumbbell or barbell) | reps | Legs, Tali: Full body B | `9375b37c…` |
 | Barbell bench press | reps | Push | `df890da8…` |
 | Dumbbell shoulder press (seated) | reps | Push, Tali: Full body B | `29092357…` |
+| Incline dumbbell press | reps | Push, Tali: Full body C | `01693135…` |
 | Triceps rope pushdown (cable) | reps | Push | `db9a8075…` |
 | Biceps curl (barbell or dumbbell) | reps | Pull | `ea9ee735…` |
+| Face pull (cable) | reps | Pull, Tali: Full body C | `6d5a1fa4…` |
+| Lat pulldown | reps | Pull, Tali: Full body B | `9d104b30…` |
 | Bird-dog | reps | Tali: Strength & Balance B | `28383feb…` |
 | Dumbbell bench press | reps | Tali: Full body A | `c3115e41…` |
 | Dumbbell split squat | reps | Tali: Full body C | `cf04a486…` |
@@ -66,6 +68,7 @@ demo videos".
 | Hip thrust | reps | Tali: Full body C | `b3c11705…` |
 | Incline push-up | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Warm-up | `0f94c2e0…` |
 | Knee to wall | reps | Tali: Balance & Mobility, Warm-up | `e7138db7…` |
+| Leg press | reps | Tali: Full body B | `220320c4…` |
 | Side plank (knees) | hold | Tali: Strength & Balance B, Tali: Full body B | `8dde7844…` |
 | Sit to stand | reps | Tali: Strength & Balance A | `5b34fdf0…` |
 | Split squat | reps | Tali: Strength & Balance B, Tali: Balance & Mobility | `31719b54…` |
@@ -117,10 +120,13 @@ heritage, build, hair and clothing so people see bodies like their own (Benn, 29
 **Framing follows the move:** show the whole body, head to feet, when the legs, hips, knees or
 floor position matter (a glute bridge, an incline push-up, a hinge); arm and shoulder moves keep
 a medium shot, because a vertical frame zoomed out that far makes the person too small (Benn).
-**Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
+**Same background in every clip:** a low black bench and a small dumbbell rack, soft-focus
+against the wall, as in the clips already live (Benn, option 1). **Nobody looks muscular:** ordinary, everyday bodies only, never fitness-model or visibly
 defined muscles.
 
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
+> In the soft-focus background against the wall: a low black bench and a small rack of black
+> dumbbells, nothing else.
 > A {gender} in {their} {age}, {heritage} heritage, {build}, realistic skin with natural
 > texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
 > defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
@@ -152,7 +158,7 @@ Keep one demonstrator for the whole clip, and vary demonstrators across clips.
 
 **For machine and cable exercises, add:**
 
-> The only equipment in the studio is a single matte black [machine name], clean and modern,
+> The equipment the person uses is a single matte black [machine name], clean and modern,
 > with no branding or logos.
 
 **End every rep prompt with:**

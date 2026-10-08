@@ -310,6 +310,9 @@ export function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, r
       const shift: Record<TargetRate, number> = { steady: 2, standard: 0, aggressive: -3 }
       return clamp(base + bump[activity] + shift[rate], -10, 0)
     }
+    case 'maintain':
+      // "Keep it steady" (maintenance-loop.md): energy at estimated maintenance, no "metabolic
+      // adaptation" deduction (maintenance-numbers rule 5); the adaptive estimate corrects it later
     case 'feel-better':
       // "Feel better and move more" (workout plan D6): no body-change aim, so energy stays at
       // maintenance whatever the pace setting.
@@ -329,6 +332,7 @@ export function goalAdjustPct(goal: Goal, bf: number, activity: ActivityLevel, r
  */
 export const PROTEIN_PER_KG: Record<Goal, number> = {
   'lose-fat': 2.0,
+  maintain: 1.4,
   'build-muscle': 1.8,
   'increase-strength': 1.8,
   'increase-endurance': 1.6,

@@ -247,9 +247,13 @@ async function buildWeek(page, snap) {
   if (await intro.count()) {
     await page.getByText('Part 3 of 3 · Your plan').waitFor()
     if (snap != null) await shot(page, snap + 'ob3-0-intro')
+    expect(await focusedH1(page) === 'Your plan is ready', 'Build my week focuses the Part 3 heading: ' + await focusedH1(page))
     await btn(page, 'See my week').click()
   }
+  await sum.waitFor()
+  expect(/^(Your first week|A simple first week)$/.test(await focusedH1(page) ?? ''), 'the summary starts at its heading: ' + await focusedH1(page))
 }
+const focusedH1 = (page) => page.evaluate(() => { const a = document.activeElement; return a && a.tagName === 'H1' ? a.textContent : null })
 const summaryUp = (page) => page.getByRole('heading', { name: /^(Your first week|A simple first week)$/ }).waitFor()
 const otherPlans = (page) => btn(page, 'See other plans').click()
 
@@ -432,6 +436,56 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await tap(page, 'Under 5,000 steps'); await h1(page, 'How you like to train')
     const dr = await draft(page)
     expect(dr.age === 32 && dr.weight === 79 && dr.weightUnit === 'lb' && dr.height == null, 'kept in kg, the unit remembered, the untouched height left out: ' + JSON.stringify({ a: dr.age, w: dr.weight, u: dr.weightUnit, h: dr.height }))
+  })
+
+  await run('VoiceOver: an adjust on a picker moves it; each new screen focuses its heading', async ({ page }) => {
+    // iOS VoiceOver's swipe up/down on a role=slider: WebKit can't set a custom slider's value, so it
+    // dispatches a trusted keydown/keyup on the slider itself (ArrowUp/Down when aria-orientation is
+    // vertical, else ArrowRight/Left in LTR), whether or not it has DOM focus
+    // (AccessibilityNodeObject::postKeyboardKeysForValueChange). This sends the same pair.
+    const adjust = (name, key) => page.evaluate(([name, key]) => {
+      const el = [...document.querySelectorAll('[role="slider"]')].find((x) => x.getAttribute('aria-label') === name)
+      if (!el) throw new Error('no slider ' + name)
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+      const code = { ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 }[key]
+      for (const type of ['keydown', 'keyup']) el.dispatchEvent(new KeyboardEvent(type, { key, code: key, keyCode: code, which: code, bubbles: true, cancelable: true, composed: true }))
+    }, [name, key])
+    const focusedHeading = () => page.evaluate(() => { const a = document.activeElement; return a && a.tagName === 'H1' ? a.textContent : null })
+    await btn(page, 'Let’s go').click()
+    expect(await focusedHeading() !== null, 'the screen after the intro starts at its heading')
+    await cont(page)
+    await h1(page, 'How old are you?')
+    expect(await focusedHeading() === 'How old are you?', 'Continue moves focus to the new heading: ' + await focusedHeading())
+    const wheel = page.getByRole('slider', { name: 'Age in years' })
+    expect((await wheel.getAttribute('aria-orientation')) === 'vertical', 'the wheel is vertical, so VoiceOver sends up and down')
+    await adjust('Age in years', 'ArrowUp')
+    expect((await wheel.getAttribute('aria-valuetext')) === '31 years', 'swipe up on an untouched wheel: ' + await wheel.getAttribute('aria-valuetext'))
+    await adjust('Age in years', 'ArrowDown'); await adjust('Age in years', 'ArrowDown')
+    expect((await wheel.getAttribute('aria-valuenow')) === '29', 'swipe down twice: ' + await wheel.getAttribute('aria-valuenow'))
+    expect(!(await btn(page, 'Continue').isDisabled()), 'once moved, Continue is on')
+    await cont(page)
+    for (let i = 0; i < 3; i++) await page.getByRole('radiogroup').nth(i).getByRole('radio', { name: 'No', exact: true }).click()
+    await cont(page); await cont(page)
+    await radio(page, 'Build muscle')
+    const before = await page.getByRole('heading', { level: 1 }).first().textContent()
+    await page.waitForTimeout(450)
+    const after = await focusedHeading()
+    expect(after !== null && after !== before, 'tap-to-advance moves focus to the next heading: ' + before + ' → ' + after)
+    await cont(page); await tap(page, 'No')
+    await h1(page, 'About your body')
+    expect(await focusedHeading() === 'About your body', 'tap-to-advance lands on About your body')
+    await adjust('Height', 'ArrowRight')
+    expect((await page.getByRole('slider', { name: 'Height' }).getAttribute('aria-valuetext')) === '171 centimetres', 'swipe up on the height ruler')
+    await cont(page)
+    await h1(page, 'What do you weigh?')
+    await adjust('Weight', 'ArrowRight'); await adjust('Weight', 'ArrowRight')
+    const ruler = page.getByRole('slider', { name: 'Weight' })
+    expect((await ruler.getAttribute('aria-valuetext')) === '72 kilograms', 'swipe up twice on the weight ruler: ' + await ruler.getAttribute('aria-valuetext'))
+    await adjust('Weight', 'ArrowLeft')
+    expect((await ruler.getAttribute('aria-valuenow')) === '71', 'swipe down')
+    await radio(page, 'st lb')
+    await adjust('Weight', 'ArrowRight')
+    expect(/^11 stone \d+ pounds$/.test(await ruler.getAttribute('aria-valuetext')), 'st lb is read in words: ' + await ruler.getAttribute('aria-valuetext'))
   })
 
   await run('dark mode: intro, age, body, weight, days, summary', async ({ page }) => {
