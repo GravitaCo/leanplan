@@ -633,6 +633,19 @@ navigation in its own section, "9 · Navigation", showing the current five tabs 
 from the Summary Mind card. Open: with Profile and Plan both kept global, a Mind tab needs a sixth
 tab or something else to give way.
 
+### Reset pacer direction (Benn, 8 Oct 2026)
+
+Benn rejected the plain circle and chose a soft glowing sphere from a reference: canvas 8c,
+"P6 · Glow". A radial gradient from `--card` at the centre to `--mind-fill` and `--mind` at the
+rim, four fine `--mind` rings fading outwards, in light and dark. The 1-2-3 phase count sits in the
+centre in the guided player's count style (`.gp-count`), in `--label` with the phase word in
+`--mind-ink`; it counts up within each phase, never down the session. The sphere grows on the
+in-breath, a little more on the second, and settles slowly on the out-breath; reduced motion holds
+it still while the word and count step. The demo timing on the board (2 s, 1 s, 6 s) is not final:
+real timings come from `skills.ts` with a source. In the build, the count and phase word must be
+driven from JS, because the app's reduced-motion rule cuts CSS animations short. P1 to P5 stay on
+the canvas for reference until Benn retires them.
+
 ### Open for Benn (on the boards)
 
 - (a) Mind, Rest or Recharge; and the skill names.
