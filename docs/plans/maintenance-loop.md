@@ -223,3 +223,20 @@ builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
   gets mind and movement lines only (board ml-a2), none with wellbeing flagged or in a hard week.
 - **Ease off:** the shorter sessions pre-selected for 7 days (`easyFrom`/`easyUntil`); the food
   range is not widened.
+
+## Benn's answers to Engineering II (8 Oct 2026)
+
+1. **No lower range after a hard week.** "Adjust my range" down is hidden after a hard week (the
+   one hard-week predicate above) and comes back the next calm week. Boards ml-b2 and ml-a5 showed
+   it; the build follows the safety rule.
+2. **Weight opt-in applies to everyone**, asked once at the first review. Until someone says yes,
+   the Summary Weight tile still logs a weigh-in but shows no number or trend.
+3. **Weight-based checks need the opt-in**: the weigh-in check, drift and "your range from your
+   logs" only run for people who chose to include weight.
+4. **"Your 4-week check"** replaces "Your 3-week check" (ml-b1 to ml-b3), with "The last 4 weeks".
+5. **Ease off** pre-selects the shorter sessions for 7 days and leaves food alone; its line becomes
+   "A lighter week: shorter sessions, more room."
+6. **Reminder back-off as on ml-d2**: weekly until 3 in a row go unopened, then it pauses and Tali
+   asks once in the app, "Keep the weekly reminder?"
+7. **The medical question for every goal**: reworded on a new board for Benn's approval (it mentions
+   eating less today); the flag keeps protein at the minimum.

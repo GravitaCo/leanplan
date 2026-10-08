@@ -194,6 +194,11 @@ export function optionText(o: LoopOption, r: RangeChange | null, ctx: { drift?: 
   }
 }
 
+/** The weigh-in check's title (ml-b1 to ml-b3, renamed by Benn on 8 Oct: the check reads 4 weeks of data). */
+export const CHECK_TITLE = 'Your 4-week check'
+export const CHECK_LEAD = 'Your 4-week average is in. Some options, if you want them.'
+export const CHECK_ROWS = 'The last 4 weeks'
+
 /** The lead line of "Change one thing" (ml-a5). */
 export function changeOneLead(ctx: 'calm' | 'hard' | 'gentle' | 'drift', m: MindContext): string {
   if (ctx !== 'hard') return 'Pick one small thing to try.'
@@ -228,7 +233,8 @@ export const GENTLE_FOOT = 'Gentle mode: no numbers here, and weight isn’t par
 /** Choices for next week (ml-a1, ml-a4). */
 export const CHOICE_TEXT = {
   keep: { title: 'Keep it as it is', sub: 'What you’re doing is working for you.' },
-  'ease-off': { title: 'Ease off', sub: 'A lighter week: fewer sessions, a wider food range, more room.' },
+  // Benn, 8 Oct: Ease off pre-selects shorter sessions and leaves food as it is, so the copy says so
+  'ease-off': { title: 'Ease off', sub: 'A lighter week: shorter sessions, more room.' },
   'ease-off-gentle': { title: 'Ease off', sub: 'A lighter week, with more room.' },
   'change-one': { title: 'Change one thing', sub: 'Pick one small thing to try.' },
   'change-one-hard': { title: 'Change one thing', sub: 'Pick one small thing to try. Sleep and hunger first, after a week like this one.' },
