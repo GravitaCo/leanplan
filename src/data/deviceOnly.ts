@@ -32,7 +32,8 @@ export interface DeviceOnly {
   /** YYYY-MM-DD, the day the low-mood signpost last showed */
   lowMoodShown?: string
   notify?: NotifyEvent[]
-  ui?: { sleepMore?: boolean }
+  /** `backoffSeen`: per reminder type, the back-off (profile.mind.halved) whose notice was closed */
+  ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string> }
 }
 
 /** A note's text, all its pairs and the "went OK" line together, in characters. */
@@ -142,7 +143,15 @@ export function cleanDeviceOnly(x: unknown, owner: string | undefined): DeviceOn
   const notify = cleanNotify(d.notify)
   if (notify.length) out.notify = notify
   const ui = d.ui as Record<string, unknown> | undefined
-  if (ui && typeof ui === 'object' && ui.sleepMore === true) out.ui = { sleepMore: true }
+  if (ui && typeof ui === 'object') {
+    const o: NonNullable<DeviceOnly['ui']> = {}
+    if (ui.sleepMore === true) o.sleepMore = true
+    const seen: Record<string, string> = {}
+    const bs = ui.backoffSeen
+    if (bs && typeof bs === 'object') for (const [k, v] of Object.entries(bs)) if (/^[a-z-]{1,32}$/.test(k) && isIso(v)) seen[k] = v
+    if (Object.keys(seen).length) o.backoffSeen = seen
+    if (Object.keys(o).length) out.ui = o
+  }
   return Object.keys(out).length ? out : undefined
 }
 
@@ -259,6 +268,18 @@ export function setSleepMoreOpen(s: PersistedState, open: boolean): void {
   delete d.ui.sleepMore
   if (!Object.keys(d.ui).length) delete d.ui
   if (!Object.keys(d).length) delete s.deviceOnly
+}
+
+/** The back-off notice for `kind` (B11.14) was closed while that back-off (started `at`) ran: it
+ *  stays hidden on this device until the type backs off again (a new `at`). Not health data. */
+export function dismissBackoff(s: PersistedState, kind: string, at: string): void {
+  const d = (s.deviceOnly ??= {})
+  d.ui = { ...d.ui, backoffSeen: { ...d.ui?.backoffSeen, [kind]: at } }
+}
+
+/** Whether the back-off notice for `kind`, started `at`, was closed on this device. */
+export function backoffDismissed(s: PersistedState, kind: string, at: string | undefined): boolean {
+  return !!at && s.deviceOnly?.ui?.backoffSeen?.[kind] === at
 }
 
 /** The reminder delivery events this device has seen, oldest first. */

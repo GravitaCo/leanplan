@@ -53,7 +53,7 @@ import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from 
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
-import { subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
+import { pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
@@ -67,7 +67,7 @@ import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
-import { clearNotifyStore, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
+import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 
 enableMapSet()
@@ -214,6 +214,16 @@ export interface StoreState {
   ingestNotifyLog: (events: unknown[]) => NotifyKind[]
   /** "Back to usual" (B11.16): that type's back-off ends and its run of ignored reminders restarts */
   backToUsual: (kind: NotifyKind) => void
+  /**
+   * A Mind reminder type on or off (Profile › Notifications, B11; security-data L7). On needs a
+   * current health yes ('consent') and notification permission ('denied' / 'unsupported'), asked
+   * here, in the tap. The setting saves on this device first; the push subscription is made now
+   * when online and signed in, or on the next connection (`_meta.pushPending`). Off ends the
+   * subscription only when no other reminder uses it. The time zone is recorded (setMindPrefs).
+   */
+  setMindReminder: (kind: NotifyKind, on: boolean) => Promise<true | 'unsaved' | 'consent' | 'denied' | 'unsupported'>
+  /** The back-off notice (B11.14) closed: hidden on this device until that type backs off again */
+  dismissBackoff: (kind: NotifyKind) => void
   /**
    * The activity-level suggestion showed: record the day, as TodayScreen did with setPrefs. With
    * the asks budget (`pick`), only when it actually showed (mayMarkSeen; nutrition-accuracy: a
@@ -535,6 +545,16 @@ export function ignoredInARow(log: readonly NotifyEvent[], kind: string): number
   return run
 }
 
+/** A Mind reminder type is on (profile.mind.notify). */
+export function mindRemindersOn(p: Pick<Profile, 'mind'> | null | undefined): boolean {
+  return NOTIFY_KINDS.some((k) => p?.mind?.notify?.[k] === true)
+}
+
+/** Any reminder that needs this browser's push subscription is on. */
+export function remindersOn(p: Pick<Profile, 'mind' | 'notificationsEnabled' | 'reviewPush'> | null | undefined): boolean {
+  return !!p?.notificationsEnabled || !!p?.reviewPush || mindRemindersOn(p)
+}
+
 /** Lowest calorie target the app will set without medical support. */
 const KCAL_FLOOR = 1200
 
@@ -605,6 +625,23 @@ export const useStore = create<StoreState>()(
      * or connection); once it's gone without a deletion, they're registered again without asking,
      * or, if that can't be done, the setting turns off so Profile says what's true.
      */
+    /** A Mind reminder was turned on: register this browser for pushes once online and signed in
+     *  (permission was asked in the tap; resubscribePush never asks). Retried on the next
+     *  connection and launch until it works. */
+    let subscribing = false
+    const subscribeIfPending = async (): Promise<void> => {
+      const s = get()
+      if (!s.data._meta?.pushPending || subscribing || s.underAge) return
+      if (!remindersOn(s.data.profile)) { set((st) => { delete ensureMeta(st.data, false).pushPending }); persist(); return }
+      if (!s.authed || !navigator.onLine || !consentLetsSync(s.data)) return
+      subscribing = true
+      try {
+        const ok = await withTimeout(resubscribePush(), 8000, false)
+        if (ok) { set((st) => { delete ensureMeta(st.data, false).pushPending }); persist() }
+      } finally {
+        subscribing = false
+      }
+    }
     let restoring = false
     const settleReminders = async (): Promise<void> => {
       const s = get()
@@ -944,9 +981,11 @@ export const useStore = create<StoreState>()(
         if (!touched.length) return false
         // all three pillars off is never allowed (B1.9): refused, nothing saved
         if (Array.isArray(next.off) && PILLARS.every((x) => (next.off as Pillar[]).includes(x))) return false
-        // turning a reminder on records this device's time zone, so reminders follow its clock (B11)
-        const turnedOn = touched.includes('notify') && NOTIFY_KINDS.some((x) => (next.notify as MindPrefs['notify'])?.[x] && !before.notify?.[x])
-        const tz = turnedOn ? deviceTimeZone() : undefined
+        // saving reminder settings (a type, or the times) while a reminder is on records this
+        // device's time zone, so reminders follow its clock (B11)
+        const anyOn = NOTIFY_KINDS.some((x) => (next.notify as MindPrefs['notify'])?.[x] === true)
+        const reminderSave = touched.some((k) => k === 'notify' || k === 'wakeAt' || k === 'windDownAt')
+        const tz = anyOn && reminderSave ? deviceTimeZone() : undefined
         if (tz && !('tz' in patch) && next.tz !== tz) { next.tz = tz; touched.push('tz') }
         const clean = validMindPrefs(next) ?? {}
         // a malformed value is refused, never saved as a removal
@@ -1039,6 +1078,39 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         if (had) saved(); else persist()
+      },
+
+      setMindReminder: async (kind, on) => {
+        if (!NOTIFY_KINDS.includes(kind)) return 'unsupported'
+        if (on) {
+          // reminders read the profile on the server: never before the health yes (B11 [C])
+          if (!consentLetsSync(get().data)) return 'consent'
+          if (!pushSupported()) return 'unsupported'
+          if (Notification.permission === 'denied') return 'denied'
+          if (Notification.permission !== 'granted') {
+            const perm = await Notification.requestPermission().catch(() => 'denied' as NotificationPermission)
+            if (perm !== 'granted') return 'denied'
+          }
+        }
+        if (!get().setMindPrefs({ notify: { [kind]: on } })) return 'unsaved'
+        if (on) {
+          set((st) => { ensureMeta(st.data, false).pushPending = true })
+          const stored = persist()
+          void subscribeIfPending()
+          return stored ? true : 'unsaved'
+        }
+        if (!remindersOn(get().data.profile)) {
+          set((st) => { delete ensureMeta(st.data, false).pushPending })
+          persist()
+          void withTimeout(unsubscribePush(), 5000, undefined)
+        }
+        return true
+      },
+
+      dismissBackoff: (kind) => {
+        const at = get().data.profile.mind?.halved?.[kind]
+        if (!at) return
+        deviceWrite((d) => dismissBackoffIn(d, kind, at))
       },
 
       noteActivityShown: (pick) => {
@@ -1381,8 +1453,9 @@ export const useStore = create<StoreState>()(
         if (enabled) {
           const ok = await subscribePush()
           if (!ok) return false
-        } else if (!get().data.profile.reviewPush) {
-          // the subscription is shared with the weekly review reminder: kept while that's on
+        } else if (!get().data.profile.reviewPush && !mindRemindersOn(get().data.profile)) {
+          // the subscription is shared with the weekly review reminder and the Mind reminders:
+          // kept while any of those is on
           await unsubscribePush()
         }
         set((st) => {
@@ -1398,7 +1471,7 @@ export const useStore = create<StoreState>()(
         if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
         if (enabled) {
           if (!(await subscribePush())) return false
-        } else if (!get().data.profile.notificationsEnabled) {
+        } else if (!get().data.profile.notificationsEnabled && !mindRemindersOn(get().data.profile)) {
           await unsubscribePush()
         }
         set((st) => {
@@ -1558,6 +1631,7 @@ export const useStore = create<StoreState>()(
         // reminders and the 18+ stop: held while it shows (a launch with a stored under-18 age), or
         // restored after one that went; never waited on
         void settleReminders()
+        void subscribeIfPending()
 
         if (session) get().runSync()
         window.addEventListener('offline', () => set((st) => { st.online = false }))
@@ -1568,6 +1642,7 @@ export const useStore = create<StoreState>()(
           // back online: an under-18 deletion still to do retries straight away (runSync)
           underAgeTried = 0
           void settleReminders()
+          void subscribeIfPending()
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1587,6 +1662,8 @@ export const useStore = create<StoreState>()(
         // Only sync with a real authenticated session (none while offline or while asking whose
         // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
+        // a Mind reminder turned on while offline or signed out: register for pushes now
+        void subscribeIfPending()
         if (syncing || deleting) return
         // an under-18 account still to delete (onboarding §14): nothing syncs, the deletion retries
         // (at most once a minute: a failed deletion schedules a sync of its own)

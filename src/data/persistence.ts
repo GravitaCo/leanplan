@@ -34,6 +34,9 @@ export interface SyncMeta {
   /** reminders were paused on this device while the 18+ stop showed (store settleReminders,
    *  core/domain/age.ts reminderAction): restored, or turned off, once it's gone. Device only */
   pushHeld?: boolean
+  /** a Mind reminder was turned on and this browser isn't registered for pushes yet (store
+   *  setMindReminder, security-data L7): registered on the next connection. Device only */
+  pushPending?: boolean
 }
 
 export interface PersistedState extends AppState {

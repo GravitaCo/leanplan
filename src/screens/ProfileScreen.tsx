@@ -26,6 +26,7 @@ import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/d
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { PillarsSettings } from './profile/PillarsSettings'
+import { BackoffNotices, MindReminderRows, YourTimes } from './profile/NotificationsSettings'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -355,7 +356,10 @@ export function ProfileScreen() {
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
 
       <div className="lbl">Notifications</div>
-      <div className="list icons">
+      {/* wellbeing (B11): the back-off notice, then the Mind reminder types above supplements */}
+      {WELLBEING_ENABLED && <BackoffNotices />}
+      <div className={'list icons' + (WELLBEING_ENABLED ? ' nf-rows' : '')}>
+        {WELLBEING_ENABLED && <MindReminderRows />}
         <SettingRow icon="bell" color={MINDF} soft label="Supplement reminders" sub={notifStatus}
           right={<Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
               const ok = await setNotifications(!pr.notificationsEnabled)
@@ -371,6 +375,7 @@ export function ProfileScreen() {
               showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
             }} />} />
       </div>
+      {WELLBEING_ENABLED && <YourTimes />}
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
 
       <div className="lbl">Account and data</div>

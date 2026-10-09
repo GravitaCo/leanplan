@@ -3,6 +3,7 @@ import { useStore } from './store/store'
 import { healthConsentAnswered, liveConsentDue } from './data/consent'
 import { takeReauthReturn } from './data/account'
 import { getUid } from './data/supabase'
+import { takeNotifyEvents, takeNotifyParam } from './data/notifyLog'
 import { ONBOARDING_ENABLED, wizardDue } from './screens/onboarding/Consent'
 import { FIRST_PULL_WAIT_MS } from './data/firstRun'
 import { preloadHealthAnswers } from './screens/profile/lazyHealthAnswers'
@@ -61,6 +62,23 @@ function TaliApp() {
     useStore.getState().openReview()
     q.delete('review')
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash)
+  }, [])
+
+  // a tap on a Mind reminder opens ./?n=<kind> (public/sw.js): the worker recorded the open, so
+  // the parameter only goes from the address. The reminder delivery log the worker keeps in
+  // IndexedDB is read and emptied on launch and whenever Tali comes back to the front (security-
+  // data H3): two ignored in a row start that type's back-off. Not while the device's data may
+  // belong to someone else (the owner question clears the log instead).
+  useEffect(() => {
+    takeNotifyParam()
+    const ingest = () => {
+      if (useStore.getState().ownerAsk) return
+      void takeNotifyEvents().then((ev) => { if (ev.length && !useStore.getState().ownerAsk) useStore.getState().ingestNotifyLog(ev) })
+    }
+    ingest()
+    const onShow = () => { if (!document.hidden) ingest() }
+    document.addEventListener('visibilitychange', onShow)
+    return () => document.removeEventListener('visibilitychange', onShow)
   }, [])
 
   // back from a Google re-sign-in for account deletion: reopen its confirm step (once, same account)

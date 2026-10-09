@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v101'
+const CACHE = 'tali-v102'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -61,8 +61,63 @@ self.addEventListener('activate', (e) => {
   )
 })
 
+/* Reminder delivery log (security-data H3), for the back-off: the app has no other way to learn
+ * that a reminder arrived but wasn't opened. Only the Mind reminder types are recorded (never
+ * supplement or review reminders), as {kind, at, ev} with ev shown, opened or closed: no text,
+ * nothing from the log. The app reads and empties it on launch (src/data/notifyLog.ts), and
+ * deletes it on wipe, sign-out-and-remove and when the device changes hands. */
+const NOTIFY_DB = 'tali-notify'
+const NOTIFY_STORE = 'events'
+const NOTIFY_MAX = 60
+/* The only words a Mind reminder shows, whatever the payload says (supabase/functions/_shared/
+ * reminders.ts REMINDER_COPY; npm test checks they agree). One tag per type. */
+const MIND_COPY = {
+  checkin: { title: 'Tali', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
+  'wind-down': { title: 'Tali', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
+  plan: { title: 'Tali', body: 'How are your plans going?', tag: 'tali-plan' },
+}
+const mindKindOf = (tag) => Object.keys(MIND_COPY).find((k) => MIND_COPY[k].tag === tag) || null
+
+function notifyRecord(kind, ev) {
+  if (!kind || typeof indexedDB === 'undefined') return Promise.resolve()
+  return new Promise((resolve) => {
+    let req
+    try { req = indexedDB.open(NOTIFY_DB, 1) } catch { resolve(); return }
+    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(NOTIFY_STORE)) req.result.createObjectStore(NOTIFY_STORE, { autoIncrement: true }) }
+    req.onerror = () => resolve()
+    req.onblocked = () => resolve()
+    req.onsuccess = () => {
+      const db = req.result
+      try {
+        const tx = db.transaction(NOTIFY_STORE, 'readwrite')
+        const st = tx.objectStore(NOTIFY_STORE)
+        st.add({ kind, at: new Date().toISOString(), ev })
+        // the app empties it; if it isn't opened for a long time, keep only the newest
+        const c = st.count()
+        c.onsuccess = () => {
+          let extra = c.result - NOTIFY_MAX
+          if (extra <= 0) return
+          st.openCursor().onsuccess = (e) => { const cur = e.target.result; if (cur && extra-- > 0) { cur.delete(); cur.continue() } }
+        }
+        tx.oncomplete = tx.onerror = tx.onabort = () => { db.close(); resolve() }
+      } catch { db.close(); resolve() }
+    }
+  })
+}
+
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {}
+  const kind = mindKindOf(data.tag)
+  if (kind) {
+    // a Mind reminder (check-in, wind-down, plan check-in): fixed neutral copy, its own tag; a
+    // tap opens ./?n=<kind>
+    const c = MIND_COPY[kind]
+    e.waitUntil(Promise.all([
+      self.registration.showNotification(c.title, { body: c.body, tag: c.tag, data: { url: './?n=' + kind, kind } }),
+      notifyRecord(kind, 'shown'),
+    ]))
+    return
+  }
   // A supplement reminder never shows a supplement name on the lock screen (it can reveal
   // medication), even from an older server that still sends one: fixed text, one tag.
   // Every other push type must set its own tali-<kind> tag, or it shows as a supplement reminder.
@@ -79,10 +134,17 @@ self.addEventListener('push', (e) => {
   )
 })
 
+const mindOf = (n) => { const d = n.data || {}; return d.kind && MIND_COPY[d.kind] ? d.kind : null }
+
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const url = (e.notification.data && e.notification.data.url) || './'
-  e.waitUntil(clients.openWindow(url))
+  e.waitUntil(Promise.all([clients.openWindow(url), notifyRecord(mindOf(e.notification), 'opened')]))
+})
+
+// swiped away without opening: counts towards the back-off (two ignored in a row)
+self.addEventListener('notificationclose', (e) => {
+  e.waitUntil(notifyRecord(mindOf(e.notification), 'closed'))
 })
 
 function put(req, res) {

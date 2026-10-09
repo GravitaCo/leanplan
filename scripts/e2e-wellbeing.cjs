@@ -900,7 +900,9 @@ async function wp5FlagOffHeaders({ page }) {
   // WP7: Summary on a hard day and the one prompt slot (board B2, B9)
   const PLAN_DUE = [{ id: 'e2e-plan-1', when: 'after work', then: 'walk home the long way', created: '2026-09-01', reviews: [] }]
   const SUPPS = [{ id: 's1', name: 'Vitamin D', time: '08:00' }, { id: 's2', name: 'Creatine', time: '08:00' }]
-  const wp7Hard = (patch = {}) => { const s = hardDay(); Object.assign(s.state.profile, { plans: PLAN_DUE, supplements: SUPPS }, patch); return s }
+  // reviewWeight: the weight tile shows the number (main's opt-in, ml-c4); lastReviewAt: the weekly review
+  // (main) isn't waiting, so the plan review banner is the one that shows (on review days it waits for it)
+  const wp7Hard = (patch = {}) => { const s = hardDay(); Object.assign(s.state.profile, { plans: PLAN_DUE, supplements: SUPPS, reviewWeight: true, lastReviewAt: HARD_DAY }, patch); return s }
   const sumMind = (page) => page.locator('section.wb-mind')
   const foodKcal = async (page) => (await page.locator('section[aria-labelledby="sum-food"] .kbig .num').first().innerText()).trim()
 
@@ -928,11 +930,13 @@ async function wp5FlagOffHeaders({ page }) {
     void rows
     // Move: the lighter choices named (B2.26)
     await page.locator('section[aria-labelledby="sum-move"]').getByText('5 exercises · lighter choices today').waitFor()
-    // Weight: when it was, no weekly change, no sparkline (R5, R6)
+    // Weight: when it was, no weekly change, no sparkline (R5, R6). Since main's maintenance loop
+    // (merged 9 Oct) the tile shows a number only for people who chose to include weight
+    // (reviewWeight), with the day it was; on a hard day it drops the trend words too
     const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
-    expect((await wt.locator('.s').innerText()).trim() === 'Last weigh-in', 'weight sub: ' + (await wt.locator('.s').innerText()))
-    expect((await wt.locator('.v').innerText()).replace(/\s+/g, '') === '81.8kg', 'weight value')
-    expect(!(await wt.locator('svg').count()), 'no sparkline')
+    expect((await wt.locator('.v').innerText()).replace(/\s+/g, '') === '81.8kg', 'weight value: ' + (await wt.locator('.v').innerText()))
+    expect((await wt.locator('.s').innerText()).trim() === 'Wednesday', 'weight sub (the day it was): ' + (await wt.locator('.s').innerText()))
+    expect(!(await wt.locator('svg, .wt-trend').count()), 'no sparkline, no trend words')
     await page.locator('.tile', { hasText: 'Supplements' }).waitFor()
     await shot(page, 'wp7-hard-day')
     await page.evaluate(() => window.scrollTo(0, 700))
@@ -1014,7 +1018,7 @@ async function wp5FlagOffHeaders({ page }) {
     const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
     expect((await wt.locator('.s').innerText()).trim() !== 'Last weigh-in', 'ordinary weight sub')
     await shot(page, 'wp7-ordinary')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.days[shift(ORDINARY_DAY, -40)] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })), weight: 82.4 }); o.state._meta.days[shift(ORDINARY_DAY, -40)] = { u: ORDINARY_DAY + 'T07:00:00.000Z', dirty: false }; Object.assign(o.state.profile, { plans: PLAN_DUE, supplements: SUPPS }); return o })() })
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.days[shift(ORDINARY_DAY, -40)] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })), weight: 82.4 }); o.state._meta.days[shift(ORDINARY_DAY, -40)] = { u: ORDINARY_DAY + 'T07:00:00.000Z', dirty: false }; Object.assign(o.state.profile, { plans: PLAN_DUE, supplements: SUPPS, reviewWeight: true, lastReviewAt: ORDINARY_DAY }); return o })() })
 
   await run('wp7-flag-off', async ({ page }) => {
     await page.locator('.mind-row').waitFor()
@@ -1238,6 +1242,152 @@ async function wp5FlagOffHeaders({ page }) {
     expect(new Set(seen.map((s) => s.count)).size > 2, 'reduced: the count still steps')
     await still(page, 'wp12-reset-reduced')
   }, { seed: hardDay(), url: WBR, fakeClock: true, reducedMotion: true })
+
+  // WP17: Profile › Notifications (board B11): the Mind reminder types, "Your times", the back-off notice
+  const openNotify = async (page) => {
+    await page.locator('nav.tabbar').waitFor()
+    const hdrBtn = page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true }).first()
+    if (await hdrBtn.count()) await hdrBtn.click(); else await tab(page, 'Profile')
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    const lbl = page.locator('.screen .lbl', { hasText: /^Notifications$/ })
+    await lbl.waitFor()
+    await lbl.scrollIntoViewIfNeeded()
+    await page.evaluate(() => { const el = [...document.querySelectorAll('.screen .lbl')].find((x) => x.textContent.trim() === 'Notifications'); window.scrollBy(0, el.getBoundingClientRect().top - 60) })
+    return page.locator('.screen')
+  }
+  const notifyRows = async (page) => {
+    const lbl = page.locator('.screen .lbl', { hasText: /^Notifications$/ })
+    // the first .list.icons after the Notifications label
+    return (await page.evaluate(() => {
+      const el = [...document.querySelectorAll('.screen .lbl')].find((x) => x.textContent.trim() === 'Notifications')
+      let n = el.nextElementSibling
+      while (n && !n.matches('.list.icons')) n = n.nextElementSibling
+      return n ? [...n.querySelectorAll('.li .t')].map((x) => x.textContent.trim()) : []
+    })) || (void lbl)
+  }
+  const B11_FOOT = "Tali sends at most one of these a day, and nothing after your wind-down time or before you're usually up. Supplement reminders come at the times you set."
+  const B11_14 = 'The last 2 check-in reminders went unopened, so Tali now sends them half as often. Nothing you need to do.'
+  const swn = (page, name) => page.getByRole('switch', { name, exact: true })
+
+  await run('wp17-notify-off', async ({ page }) => {
+    await openNotify(page)
+    const rows = await notifyRows(page)
+    expect(JSON.stringify(rows) === JSON.stringify(['Check-in', 'Wind-down', 'Plan check-in', 'Supplement reminders', 'Weekly review reminder']), 'rows: ' + rows.join(', '))
+    for (const n of ['Check-in reminders', 'Wind-down reminders', 'Plan check-in reminders']) expect((await swn(page, n).getAttribute('aria-checked')) === 'false', n + ' off by default')
+    await page.getByText("A morning reminder, after you're usually up", { exact: true }).waitFor()
+    await page.getByText('Your times', { exact: true }).waitFor()
+    expect((await page.locator('#nf-wake').inputValue()) === '07:00' && (await page.locator('#nf-wind').inputValue()) === '22:30', 'default times')
+    await page.getByText(B11_FOOT, { exact: true }).waitFor()
+    expect(!(await page.getByText(/lock screen|supplement names/i).count()), 'no names setting (B11b not approved)')
+    expect(!(await page.locator('.banner.nf-back').count()), 'no back-off notice')
+    const m = ((await stored(page)) || {}).profile?.mind || {}
+    expect(!m.notify && !m.tz, 'nothing saved by opening Profile: ' + JSON.stringify(m))
+    await shot(page, 'wp17-notify-off')
+  }, { url: WB, seed: ordinaryDay() })
+
+  await run('wp17-notify-on', async ({ page, ctx }) => {
+    await page.locator('nav.tabbar').waitFor()
+    // headless Chromium reports notifications as blocked whatever is granted: stand in for a phone
+    // where the person allows them (the prompt itself can't be shown headless)
+    await ctx.grantPermissions(['notifications'], { origin: new URL(page.url()).origin })
+    await ctx.addInitScript(() => {
+      let p = 'default'
+      const N = function () {}
+      Object.defineProperty(N, 'permission', { get: () => p })
+      N.requestPermission = async () => { p = 'granted'; return p }
+      window.Notification = N
+    })
+    await page.reload()
+    await openNotify(page)
+    await swn(page, 'Check-in reminders').click()
+    await page.getByText('Reminders on', { exact: true }).waitFor()
+    await swn(page, 'Wind-down reminders').click()
+    await swn(page, 'Plan check-in reminders').click()
+    await page.waitForTimeout(400)
+    for (const n of ['Check-in reminders', 'Wind-down reminders', 'Plan check-in reminders']) expect((await swn(page, n).getAttribute('aria-checked')) === 'true', n + ' on')
+    const st = await stored(page)
+    const m = st.profile.mind
+    expect(m.notify.checkin === true && m.notify['wind-down'] === true && m.notify.plan === true, 'saved: ' + JSON.stringify(m))
+    expect(m.tz === 'Europe/London' && st.profile.answeredAt['mind.tz'] && st.profile.answeredAt['mind.notify'], 'time zone from the device: ' + JSON.stringify(m))
+    // the rows show when each goes: the check-in 90 minutes after the usual wake time
+    const vals = await page.evaluate(() => [...document.querySelectorAll('.screen .list.icons .li')].filter((li) => li.querySelector('[role=switch][aria-label$="reminders"]')).map((li) => (li.querySelector('.tr')?.textContent || '').trim()))
+    expect(vals[0] === '08:30' && vals[1] === '22:30' && vals[2] === '', 'row times: ' + vals.join(','))
+    // a new wake time moves the check-in, and is saved (health data, with the yes)
+    await page.locator('#nf-wake').fill('06:30')
+    await page.waitForTimeout(300)
+    expect(((await stored(page)).profile.mind || {}).wakeAt === '06:30', 'wake time saved')
+    await page.getByText('08:00', { exact: true }).waitFor()
+    await page.locator('#nf-wake').fill('07:00')
+    await page.waitForTimeout(300)
+    await page.locator('#nf-wake').blur()
+    await shot(page, 'wp17-notify-on')
+    // off again: saved as off, the others stay on
+    await swn(page, 'Plan check-in reminders').click()
+    await page.waitForTimeout(300)
+    expect((await stored(page)).profile.mind.notify.plan === false, 'plan off')
+  }, { url: WB, seed: ordinaryDay() })
+
+  await run('wp17-notify-consent', async ({ page }) => {
+    await openNotify(page)
+    await swn(page, 'Check-in reminders').click()
+    await page.getByText('Reminders start once you’ve agreed in Profile, then Privacy.', { exact: true }).waitFor()
+    expect((await swn(page, 'Check-in reminders').getAttribute('aria-checked')) === 'false', 'still off')
+    expect(!(((await stored(page)) || {}).profile?.mind || {}).notify, 'nothing saved without a current health yes')
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.consents = { records: [{ ...GRANTED.records[0], granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return o })() })
+
+  await run('wp17-backoff', async ({ page }) => {
+    await page.locator('nav.tabbar').waitFor()
+    // the service worker's log: two check-in reminders shown and not opened (written as sw.js does)
+    await page.evaluate(() => new Promise((res, rej) => {
+      const r = indexedDB.open('tali-notify', 1)
+      r.onupgradeneeded = () => r.result.createObjectStore('events', { autoIncrement: true })
+      r.onerror = () => rej(r.error)
+      r.onsuccess = () => {
+        const tx = r.result.transaction('events', 'readwrite')
+        const s = tx.objectStore('events')
+        s.add({ kind: 'checkin', at: '2026-10-08T07:30:00.000Z', ev: 'shown' })
+        s.add({ kind: 'checkin', at: '2026-10-09T07:30:00.000Z', ev: 'shown' })
+        s.add({ kind: 'checkin', at: '2026-10-10T07:30:00.000Z', ev: 'shown' })
+        tx.oncomplete = () => { r.result.close(); res() }
+      }
+    }))
+    // Tali comes back to the front: it reads and empties the log
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+    await page.waitForFunction(() => (JSON.parse(localStorage.getItem('leanplan.v1')).profile.mind || {}).halved?.checkin)
+    const left = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('tali-notify'); r.onsuccess = () => { const q = r.result.transaction('events').objectStore('events').count(); q.onsuccess = () => { res(q.result); r.result.close() } } }))
+    expect(left === 0, 'the log was emptied: ' + left)
+    await openNotify(page)
+    const b = page.locator('.banner.nf-back')
+    await b.getByText(B11_14, { exact: true }).waitFor()
+    await b.getByRole('button', { name: 'Back to usual' }).waitFor()
+    const x = await b.getByRole('button', { name: 'Dismiss' }).boundingBox()
+    expect(x && x.width >= 44 && x.height >= 44, 'dismiss target: ' + JSON.stringify(x))
+    await shot(page, 'wp17-backoff')
+    await b.getByRole('button', { name: 'Back to usual' }).click()
+    await b.waitFor({ state: 'detached' })
+    expect(!((await stored(page)).profile.mind.halved || {}).checkin, 'back to usual saved')
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, tz: 'Europe/London' } }; return o })() })
+
+  await run('wp17-backoff-dismiss', async ({ page }) => {
+    await openNotify(page)
+    const b = page.locator('.banner.nf-back')
+    await b.waitFor()
+    await b.getByRole('button', { name: 'Dismiss' }).click()
+    await b.waitFor({ state: 'detached' })
+    expect(((await stored(page)).profile.mind.halved || {}).checkin, 'dismiss keeps the back-off')
+    await page.reload()
+    await openNotify(page)
+    await page.waitForTimeout(300)
+    expect(!(await page.locator('.banner.nf-back').count()), 'still hidden after a reload')
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, halved: { checkin: '2026-10-09T07:30:00.000Z' }, tz: 'Europe/London' } }; return o })() })
+
+  await run('wp17-flag-off', async ({ page }) => {
+    await openNotify(page)
+    const rows = await notifyRows(page)
+    expect(JSON.stringify(rows) === JSON.stringify(['Supplement reminders', 'Weekly review reminder']), 'flag off rows: ' + rows.join(', '))
+    expect(!(await page.getByText('Your times', { exact: true }).count()) && !(await page.getByText(B11_FOOT).count()), 'no B11 parts with the flag off')
+    await shot(page, 'wp17-flag-off-notify')
+  }, { seed: ordinaryDay() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
