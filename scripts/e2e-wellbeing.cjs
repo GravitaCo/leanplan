@@ -540,6 +540,122 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('.sheet').getByText('How are you feeling?').waitFor()
   }, { seed: hardDayNoCheckin(), url: WB })
 
+  // WP9: Profile's pillars and asks settings (board B1)
+  const B116 = 'Finding food tracking hard? Gentle display hides the numbers, and support is here.'
+  const openProfileWb = async (page) => {
+    await page.locator('nav.tabbar').waitFor()
+    await page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true }).first().click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    const sec = page.locator('section.pillars')
+    await sec.waitFor()
+    await sec.locator('.lbl').first().scrollIntoViewIfNeeded()
+    await page.evaluate(() => { const el = document.querySelector('section.pillars'); window.scrollBy(0, el.getBoundingClientRect().top - 60) })
+    return sec
+  }
+  const sw = (sec, name) => sec.getByRole('switch', { name, exact: true })
+  const mindPrefs = async (page) => ((await stored(page)) || {}).profile?.mind || {}
+
+  await run('wp9-pillars', async ({ page }) => {
+    const sec = await openProfileWb(page)
+    // between "You and your goal" and "Tracking"
+    const order = await page.evaluate(() => [...document.querySelectorAll('.screen .lbl')].map((x) => x.textContent.trim()))
+    const i = order.indexOf('What do you want Tali for?')
+    expect(order[i - 1] === 'You and your goal' && order[i + 1] === 'How often Tali asks' && order[i + 2] === 'Tracking', 'group order: ' + order.join(' | '))
+    const rows = (await sec.locator('.list.icons .li .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(rows) === JSON.stringify(['Mind', 'Food', 'Move']), 'rows: ' + rows.join(', '))
+    for (const p of ['Mind', 'Food', 'Move']) expect((await sw(sec, p).getAttribute('aria-checked')) === 'true' && await sw(sec, p).isEnabled(), p + ' on and enabled')
+    await sec.getByText("Keep at least one on. One that's off leaves Today and stops its prompts. Nothing is deleted, and you can switch it back any time.").waitFor()
+    await sec.getByRole('radio', { name: 'Usual' }).waitFor()
+    expect((await sec.getByRole('radio', { name: 'Usual' }).getAttribute('aria-checked')) === 'true', 'Usual selected')
+    await sec.getByText("Usual: up to 3 suggestions or prompts a day. Fewer prompts: 1. On a harder day, Tali asks for less either way. Anything you open yourself doesn't count.").waitFor()
+    await shot(page, 'wp9-all-on')
+
+    // Food off: B1.14 replaces B1.8; not on the at-risk route, so no B1.16
+    await sw(sec, 'Food').click()
+    await sec.getByText("Food is off. Today won't show calories, ranges or food prompts. Your food log is kept.").waitFor()
+    expect(!(await sec.getByText(/Keep at least one on/).count()), 'B1.8 replaced')
+    expect(!(await page.getByText(B116).count()), 'no B1.16 outside the at-risk route')
+    await page.waitForTimeout(300)
+    let m = await mindPrefs(page)
+    expect(JSON.stringify(m.off) === '["food"]', 'saved off: ' + JSON.stringify(m))
+    const st = await stored(page)
+    expect(st.profile.answeredAt && st.profile.answeredAt['mind.off'], 'mind.off stamped')
+    expect(Object.values(st.days).some((d) => (d.foods || []).length), 'the food log is kept')
+    await shot(page, 'wp9-food-off')
+
+    // only Move on: its switch is disabled with B1.9; tapping it changes nothing
+    await sw(sec, 'Mind').click()
+    await sec.getByText('At least one stays on').waitFor()
+    await sec.getByText(/Keep at least one on/).waitFor() // the board's only-Move frame keeps B1.8
+    expect(await sw(sec, 'Move').isDisabled(), 'Move disabled')
+    await sw(sec, 'Move').click({ force: true })
+    await page.waitForTimeout(300)
+    m = await mindPrefs(page)
+    expect(JSON.stringify(m.off) === '["mind","food"]', 'only Move on: ' + JSON.stringify(m))
+    // the Mind tab is faded and switched off (WP5)
+    expect((await page.locator('nav.tabbar').getByRole('button', { name: 'Mind, switched off in Profile', exact: true }).count()) === 1, 'Mind tab off')
+    await shot(page, 'wp9-only-move')
+
+    // asks: Fewer prompts
+    await sec.getByRole('radio', { name: 'Fewer prompts' }).click()
+    await page.waitForTimeout(300)
+    expect((await mindPrefs(page)).asks === 'fewer', 'asks saved')
+    // everything back on: off removed
+    await sw(sec, 'Mind').click()
+    await sw(sec, 'Food').click()
+    await page.waitForTimeout(300)
+    m = await mindPrefs(page)
+    expect(m.off === undefined && m.asks === 'fewer', 'all on again: ' + JSON.stringify(m))
+    await page.reload()
+    const sec2 = await openProfileWb(page)
+    expect((await sec2.getByRole('radio', { name: 'Fewer prompts' }).getAttribute('aria-checked')) === 'true', 'Fewer prompts kept over a reload')
+  }, { url: WB, seed: ordinaryDay() })
+
+  await run('wp9-gentle', async ({ page }) => {
+    const sec = await openProfileWb(page)
+    expect(!(await page.getByText(B116).count()), 'no B1.16 while Food is on')
+    await sw(sec, 'Food').click()
+    const hard = sec.locator('.pillars-hard')
+    await hard.waitFor()
+    expect((await hard.innerText()).trim() === B116, 'B1.16: ' + (await hard.innerText()))
+    await shot(page, 'wp9-food-off-gentle')
+    // "support is here": the Support sheet in one tap
+    await hard.getByRole('button', { name: 'support is here' }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('Support and helplines', { exact: true }).waitFor()
+    await sheet.getByText('Samaritans', { exact: true }).first().waitFor()
+    await shot(page, 'wp9-support')
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    // "Gentle display": Profile › Display open, in view
+    await hard.getByRole('button', { name: 'Gentle display' }).click()
+    const display = page.locator('button.li[aria-expanded="true"]', { hasText: 'Display' })
+    await display.waitFor()
+    await page.waitForTimeout(300)
+    const box = await display.boundingBox()
+    expect(box && box.y > 0 && box.y < 844 - 83, 'Display in view: ' + JSON.stringify(box))
+    await page.getByRole('radio', { name: 'Gentle' }).waitFor()
+    expect((await page.getByRole('radio', { name: 'Gentle' }).getAttribute('aria-checked')) === 'true', 'still gentle')
+    await shot(page, 'wp9-display')
+    // Food off and on again never resets gentle mode or foodMode
+    await sw(sec, 'Food').click()
+    await page.waitForTimeout(300)
+    const p = (await stored(page)).profile
+    expect(p.gentle === true && p.foodMode === 'sometimes' && !(p.mind && p.mind.off), 'gentle kept: ' + JSON.stringify({ gentle: p.gentle, foodMode: p.foodMode, mind: p.mind }))
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, gentle: true, foodMode: 'sometimes' }; return o })() })
+
+  await run('wp9-flag-off', async ({ page }) => {
+    await page.locator('nav.tabbar').waitFor()
+    await tab(page, 'Profile')
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    await page.getByText('Tracking', { exact: true }).waitFor()
+    expect(!(await page.getByText('What do you want Tali for?').count()) && !(await page.getByText('How often Tali asks').count()), 'no B1 group with the flag off')
+    const order = await page.evaluate(() => [...document.querySelectorAll('.screen .lbl')].map((x) => x.textContent.trim()))
+    const i = order.indexOf('You and your goal')
+    expect(order[i + 1] === 'Tracking', 'flag off: ' + order.join(' | '))
+    await shot(page, 'wp9-flag-off-profile')
+  }, { seed: ordinaryDay() })
+
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
   void WB; void WBR; void lowMoodFortnight

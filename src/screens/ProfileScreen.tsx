@@ -23,6 +23,8 @@ import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { PillarsSettings } from './profile/PillarsSettings'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -121,6 +123,15 @@ export function ProfileScreen() {
   const healthRec = latestConsent(data, 'health')
   const healthAt = healthRec?.granted ? new Date(healthRec.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null
   const toggle = (s: Section) => setOpen((o) => (o === s ? null : s))
+  // B1.16's "Gentle display": Profile › Display opened and brought into view (one tap)
+  const openDisplay = () => {
+    setOpen('display')
+    requestAnimationFrame(() => {
+      const row = [...document.querySelectorAll<HTMLElement>('button.li[aria-expanded]')].find((b) => b.querySelector('.t')?.textContent === 'Display')
+      row?.scrollIntoView({ block: 'center' })
+      row?.focus({ preventScroll: true })
+    })
+  }
 
   const [name, setName] = useState(pr.name || '')
   const [emailField, setEmailField] = useState(email || '')
@@ -279,6 +290,9 @@ export function ProfileScreen() {
         <SettingRow icon="dumbbell" color={MOVEF} soft label="Training" value={trainDays === 1 ? '1 day a week' : `${trainDays} days a week`} onPress={() => setTab('plan')} />
       </div>
       <div className="foot">Your weekly training schedule lives on Plan.</div>
+
+      {/* WP9, board B1: pillars and how often Tali asks (flag on only) */}
+      {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} />}
 
       <div className="lbl">Tracking</div>
       <div className="list icons">
