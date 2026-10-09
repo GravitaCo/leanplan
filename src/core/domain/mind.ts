@@ -2,7 +2,7 @@ import type { CheckIn, DayLog, IfThenPlan, Pillar, SkillId, SleepBand } from '@/
 import type { UkNation } from '@/core/data/signposts'
 import { SKILLS, THINGS, type Thing } from '@/core/data/skills'
 import { lowSignals } from './dayOptions'
-import { shiftDay } from './date'
+import { shiftDay, ymd } from './date'
 import { SKILL_IDS, SLEEP_BANDS } from './checkin'
 import { bandWords, isLongBand, nightFor } from './sleep'
 
@@ -212,9 +212,22 @@ export const LOW_MOOD_DAYS = 14
 export const LOW_MOOD_MIN_ANSWERS = 5
 export const LOW_MOOD_GAP_DAYS = 30
 
-/** `lastShown` is deviceOnly.lowMoodShown ("YYYY-MM-DD" or an ISO time). */
+/**
+ * The local day of a stored "last shown" value: a "YYYY-MM-DD" is already local (the store writes
+ * todayStr()); an ISO time is read as the device's local date, never by slicing its UTC date, which
+ * can land a day out. Anything else is undefined (as if never shown).
+ */
+export function localDayOf(v: string | undefined): string | undefined {
+  if (!v) return undefined
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  const t = new Date(v)
+  return isNaN(t.getTime()) ? undefined : ymd(t)
+}
+
+/** `lastShown` is deviceOnly.lowMoodShown (a local "YYYY-MM-DD"; an older ISO time is read as its local date). */
 export function lowMoodDue(days: Days, today: string, lastShown?: string): boolean {
-  if (lastShown && lastShown.slice(0, 10) > shiftDay(today, -LOW_MOOD_GAP_DAYS)) return false
+  const shown = localDayOf(lastShown)
+  if (shown && shown > shiftDay(today, -LOW_MOOD_GAP_DAYS)) return false
   const moods = lastDays(today, LOW_MOOD_DAYS).map((d) => checkinOn(days, d)?.mood || 0).filter((m) => m > 0)
   if (moods.length < LOW_MOOD_MIN_ANSWERS) return false
   return moods.filter((m) => m <= 2).length * 2 > moods.length
@@ -232,5 +245,17 @@ export function lowMoodLine(nation: UkNation): string {
 
 /** Every user-facing string in this file, for the copy lint. */
 export function mindCopy(): string[] {
-  return [OBS_HEADING, OBS_ENERGY, OBS_SUB, REFLECTION_NOT_ENOUGH, REFLECTION_LATER, ...(['england', 'scotland', 'wales', 'northern-ireland'] as UkNation[]).map(lowMoodLine)]
+  // the reflection card's generated lines too (mental-performance, WP3 review): every sleep band's
+  // "Mostly ..." line, the Sleep, Skills and Plans labels, and sample check-in and plan counts
+  const allSkills = Object.fromEntries(SKILLS.map((s, i) => [s.id, i + 1])) as WeekReflection['skills']
+  const samples: WeekReflection[] = [
+    ...SLEEP_BANDS.map((sleep): WeekReflection => ({ days: [], checkins: 1, sleep, skills: allSkills, plansReviewed: 1, observation: null })),
+    { days: [], checkins: 3, sleep: 'not-enough', skills: {}, plansReviewed: 2, observation: null },
+  ]
+  const generated = samples.flatMap(reflectionLines).flatMap((l) => (l.label ? [l.label, l.value] : [l.value]))
+  return [
+    OBS_HEADING, OBS_ENERGY, OBS_SUB, REFLECTION_NOT_ENOUGH, REFLECTION_LATER,
+    ...(['england', 'scotland', 'wales', 'northern-ireland'] as UkNation[]).map(lowMoodLine),
+    ...new Set(generated),
+  ]
 }

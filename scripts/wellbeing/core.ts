@@ -2,7 +2,7 @@
    scripts/test-wellbeing.ts; returns the number of failures. */
 import type { AppState, CheckIn, DayLog, IfThenPlan, LoggedFood, SleepBand } from '@/core/types'
 import { askBudget, pickAsks, mayMarkSeen, daysUsing, ASK_IDS, type AskId } from '@/core/domain/asks'
-import { hardDay, observation, weekReflection, reflectionLines, thingOptions, lowMoodDue, lowMoodLine, mindCopy, recentCheckins, OBS_ENERGY, REFLECTION_NOT_ENOUGH, type ThingCtx } from '@/core/domain/mind'
+import { hardDay, observation, weekReflection, reflectionLines, thingOptions, lowMoodDue, localDayOf, lowMoodLine, mindCopy, recentCheckins, OBS_ENERGY, REFLECTION_NOT_ENOUGH, type ThingCtx } from '@/core/domain/mind'
 import { nightFor, bandLabel, bandOfMinutes, bandWords } from '@/core/domain/sleep'
 import { pacerAt, runMs, breathMs, fmtLeft } from '@/core/domain/pacer'
 import { RESET_PATTERN, RESET_LENGTHS, SKILLS, THINGS, skillsCopy, skillsWithScreen, thingByKey, thingText } from '@/core/data/skills'
@@ -10,6 +10,7 @@ import { BANNED_COPY, COPY_ALLOWED, WELLBEING_BANNED, copyIssues, mindCopyIssues
 import { entriesToRepeat, sameAsYesterdayRow } from '@/core/domain/insights'
 import { dayTotals } from '@/core/domain/nutrition'
 import { shiftDay } from '@/core/domain/date'
+import { SLEEP_BANDS } from '@/core/domain/checkin'
 
 const day = (checkin: CheckIn | null, foods: LoggedFood[] = []): DayLog => ({ foods, supps: {}, weight: null, workout: null, checkin })
 const ci = (x: Partial<CheckIn>): CheckIn => ({ mood: 0, hunger: 0, ...x })
@@ -45,6 +46,11 @@ export function coreSuite(): number {
   ok('Fewer prompts: one ask', fewer.show.join() === 'thing')
   const sign = pickAsks(['signpost', 'thing', 'plan-review', 'welcome-back'], { ...settled, signpostToday: true })
   ok('signpost day: the signpost is the only ask, no chips', sign.show.join() === 'signpost' && sign.held.some((h) => h.id === 'thing' && h.reason === 'signpost'))
+  const signAll = pickAsks(['signpost', 'checkin', 'quick-check', 'reflection', 'thing', 'food-ask'], { ...settled, signpostToday: true })
+  ok('signpost day: the quick-check list and the reflection wait too (held, never marked seen)', (['quick-check', 'reflection', 'food-ask'] as AskId[]).every((id) => signAll.held.some((h) => h.id === id && h.reason === 'signpost') && !mayMarkSeen(signAll, id)), JSON.stringify(signAll))
+  ok('signpost day: the check-in prompt stays (it supplies the mood answers)', signAll.show.join() === 'signpost,checkin', signAll.show.join())
+  const signEarly = pickAsks(['signpost', 'checkin', 'quick-check'], { daysUsing: 3, signpostToday: true })
+  ok('signpost day in weeks 1 and 2: signpost and check-in only', signEarly.show.join() === 'signpost,checkin' && signEarly.held.some((h) => h.id === 'quick-check' && h.reason === 'signpost'))
   ok('Support is never an ask', !ASK_IDS.some((id) => /support/i.test(id)) && pickAsks(['support' as AskId, 'thing'], settled).show.join() === 'thing')
   const early = pickAsks(['checkin', 'thing', 'plan-review', 'welcome-back', 'reflection', 'food-ask'], { daysUsing: 5 })
   ok('weeks 1 and 2: only the check-in prompt and the one thing (food asks keep their own schedule)', early.show.join() === 'thing,checkin,food-ask', early.show.join())
@@ -133,13 +139,21 @@ export function coreSuite(): number {
   ok('low mood: 5 answers, most Low or Rough', lowMoodDue(moods([2, 1, 2, 3, 4]), '2026-10-20'))
   ok('low mood: half is not most', !lowMoodDue(moods([2, 1, 3, 4, 2, 4]), '2026-10-20'))
   ok('low mood: not again within 30 days', !lowMoodDue(moods([2, 1, 2, 2, 2]), '2026-10-20', '2026-09-25') && lowMoodDue(moods([2, 1, 2, 2, 2]), '2026-10-20', '2026-09-20'))
+  {
+    // an ISO time is read as its local date, not its UTC date (mental-performance, WP3 minor)
+    const iso = new Date(2026, 8, 20, 23, 30).toISOString() // 20 Sep, 23:30 local
+    ok('low mood: a stored ISO time counts on its local day', localDayOf(iso) === '2026-09-20' && localDayOf('2026-09-20') === '2026-09-20' && localDayOf('nonsense') === undefined && localDayOf(undefined) === undefined, iso)
+    ok('low mood: the 30-day gap uses that local day', lowMoodDue(moods([2, 1, 2, 2, 2]), '2026-10-20', iso) && !lowMoodDue(moods([2, 1, 2, 2, 2]), '2026-10-20', new Date(2026, 8, 21, 0, 30).toISOString()))
+  }
   ok('low mood: England and Wales name NHS 111', lowMoodLine('england').includes('calling NHS 111') && lowMoodLine('wales') === lowMoodLine('england'))
   ok('low mood: Scotland names NHS 24 (B6.11)', lowMoodLine('scotland').includes('calling NHS 24 on 111'))
   ok('low mood: Northern Ireland has no NHS 111 (B6.10)', lowMoodLine('northern-ireland') === 'Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.')
 
   /* ---------- pacer ---------- */
   const P = RESET_PATTERN
-  ok('pacer timings flagged as unsourced placeholders', P.placeholder && P.source.startsWith('PENDING'))
+  ok('pacer timings: still a placeholder until Benn approves them, 2/1/6 kept', P.placeholder === true && P.phases.map((p) => p.s).join('/') === '2/1/6')
+  ok('pacer source: a Tali pacing choice, never Balban counts', P.source.startsWith('Tali pacing choice.') && P.source.includes('Balban et al. 2023') && P.source.includes('no fixed counts') && !P.source.includes('PENDING'))
+  ok('pacer: the breath out is longer than both breaths in together, the second in shorter', P.phases[2].s > P.phases[0].s + P.phases[1].s && P.phases[1].s < P.phases[0].s)
   ok('pacer: Reset lengths 1, 2 and 5 minutes', RESET_LENGTHS.join() === '1,2,5')
   const at = (ms: number) => pacerAt(P, ms, 1)
   ok('pacer: words step at the phase edges', at(0).word === 'Breathe in' && at(1999).word === 'Breathe in' && at(2000).word === 'And in again' && at(2999).word === 'And in again' && at(3000).word === 'Breathe out' && at(8999).word === 'Breathe out' && at(9000).word === 'Breathe in')
@@ -156,10 +170,14 @@ export function coreSuite(): number {
   ok('BANNED_COPY and the deck §0 list pass every skills.ts string', !skillHits.length, skillHits.join(' | '))
   const mindHits = mindCopy().filter((t) => mindCopyIssues(t).length)
   ok('and every mind.ts string', !mindHits.length, mindHits.join(' | '))
+  const mc = mindCopy()
+  ok('mindCopy covers the generated reflection lines', SLEEP_BANDS.every((b) => mc.includes('Mostly ' + bandWords(b))) && ['Sleep', 'Skills', 'Plans'].every((l) => mc.includes(l)) && mc.some((t) => /check-ins? this week$/.test(t)) && mc.some((t) => /plans? reviewed$/.test(t)))
+  ok('MHRA claim words caught', ['Eases anxiety', 'Feeling anxious?', 'Stops panic', 'Resets your nervous system', 'Tones the vagus nerve', 'Vagal breathing', 'Lowers cortisol', 'Boosts HRV', 'Heart rate variability', 'Proven to work', 'Heals stress', 'Calm your mind', 'Calms your body'].every((t) => mindCopyIssues(t).length > 0))
+  ok('B6 lines and health words still pass', ['Eating disorder support', 'Mental health crisis line', 'Your health data', 'Healthy habits', 'A calm few minutes'].every((t) => !mindCopyIssues(t).length))
   ok('new bans: skip, readiness, recovery debt, you should rest', ['Skip today', 'You skipped a day', 'Your readiness', 'Recovery debt', 'You should rest'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved setup copy keeps "skip" (engine and wizard lint unchanged)', !copyIssues('Skip any question you like.').length && BANNED_COPY.every((r) => !WELLBEING_BANNED.includes(r)))
   const b317 = 'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.'
-  ok('the accepted B3.17 ("jump rope") is the one allowed string, and passes', COPY_ALLOWED.size === 1 && COPY_ALLOWED.has(b317) && mindCopyIssues(b317).length === 0)
+  ok('no allowed exceptions; the accepted B3.17 ("jump rope") passes on its own', COPY_ALLOWED.size === 0 && mindCopyIssues(b317).length === 0)
   ok('the old "skipping" B3.17 wording is no longer allowed', mindCopyIssues(b317.replace('jump rope', 'skipping')).length > 0 && mindCopyIssues('Try skipping today').length > 0)
   ok('deck §0 words caught', ['Try this meditation', 'Your sleep score', 'A clinical tool', 'You missed yesterday', "You haven't logged today", 'Screening for low mood'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved lines with near words pass', ['For everyday wellbeing. Not a treatment for any condition.', 'Show supplement names in reminders', 'Lock screen'].every((t) => !mindCopyIssues(t).length))

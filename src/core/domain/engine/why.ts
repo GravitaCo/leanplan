@@ -220,13 +220,11 @@ export const WELLBEING_BANNED: RegExp[] = [/\bskip(s|ped|ping)?\b/i, /\breadines
 
 /**
  * Exact strings that may use a banned word in an approved sense. Whole strings only, so the word
- * stays banned everywhere else. B3.17 (accepted, fitness-workouts, 8 Oct): the rope exercise is
- * "jump rope", so the earlier "skipping" wording is no longer allowed. The accepted string passes
- * the lint on its own; it stays listed as the approved wording.
+ * stays banned everywhere else. Empty for now (mental-performance, WP3 review): the accepted B3.17
+ * says "jump rope" and passes on its own. Add an entry only when a final approved string needs one,
+ * as the exact whole string.
  */
-export const COPY_ALLOWED: ReadonlySet<string> = new Set([
-  'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.',
-])
+export const COPY_ALLOWED: ReadonlySet<string> = new Set<string>()
 
 /**
  * Words kept off every Mind screen (copy deck §0, plan §3 and §8.1: no clinical, therapy or
@@ -240,6 +238,10 @@ export const MIND_BANNED: RegExp[] = [
   /\bscreening\b/i, /\bscreen(s|ed)? (for|you)\b/i, /\bdetect(s|ed|ing|ion)?\b/i, /\bsymptoms?\b/i,
   /\b(depression|depressed|anxiety disorder|insomnia|burnout|PTSD|ADHD)\b/i,
   /\bscores?\b/i, /\bstreaks?\b/i, /\breadiness\b/i, /\brecovery score\b/i, /\byou missed\b/i, /\byou haven'?t logged\b/i,
+  // claim words under MHRA intended-purpose rules (mental-performance, WP3 review). "disorder" and
+  // "mental health" stay allowed: B6 names "Eating disorder support" and "Mental health crisis line".
+  /\banxi(ety|ous)\b/i, /\bpanic\b/i, /\bnervous system\b/i, /\bvag(us|al)\b/i, /\bcortisol\b/i,
+  /\bHRV\b/i, /\bheart rate variability\b/i, /\bproven\b/i, /\bheal(s|ed|ing)?\b/i, /\bcalm(s)? your\b/i,
 ]
 /** Copy lint for Mind and Train hard-day strings: BANNED_COPY, WELLBEING_BANNED and MIND_BANNED, less COPY_ALLOWED. */
 export const mindCopyIssues = (text: string): string[] =>

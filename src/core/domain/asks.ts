@@ -95,7 +95,7 @@ export interface AskCtx {
   hard?: boolean
   /** today's mood is 1 or 2 (Rough or Low): a due plan review waits a day */
   lowMood?: boolean
-  /** the low-mood signpost shows today: it is the only ask */
+  /** the low-mood signpost shows today: it is the only ask (the check-in prompt stays) */
   signpostToday?: boolean
   /** days since the person started (0 on the first day); see `daysUsing` */
   daysUsing?: number
@@ -114,7 +114,9 @@ export interface AskPick {
  * screen's own priority order within a rank (for example welcome-back before activity before
  * burn-note, as TodayScreen orders them). Unknown ids are ignored. Order: safety, then
  * time-sensitive (the plan review), then the one thing, then the rest.
- * - On a signpost day the signpost is the only ask (no chips, nothing else budgeted).
+ * - On a signpost day the signpost is the only ask: no chips, nothing else budgeted, and no
+ *   unbudgeted card either (the food quick-check list, the reflection). Only the Mind card's check-in
+ *   prompt stays: it is the card's baseline and supplies the mood answers (mental-performance, WP3).
  * - On a hard day the optional food prompts and the other banners wait; the plan review may still
  *   take the one ask (unless mood is Low or Rough), which hides the one-thing chips.
  * - On a Low or Rough mood day the plan review and the if-then offer wait a day.
@@ -130,7 +132,7 @@ export function pickAsks(due: readonly AskId[], ctx: AskCtx): AskPick {
   for (const id of ordered) {
     const m = ASKS[id]
     const hold = (reason: HeldReason) => held.push({ id, reason })
-    if (ctx.signpostToday && id !== 'signpost' && (m.budgeted || id === 'thing')) { hold('signpost'); continue }
+    if (ctx.signpostToday && id !== 'signpost' && id !== 'checkin') { hold('signpost'); continue }
     if (early && !m.early && !m.ownSchedule) { hold('early-weeks'); continue }
     if (ctx.hard && m.food) { hold('hard-day'); continue }
     if (ctx.lowMood && m.plans) { hold('low-mood'); continue }

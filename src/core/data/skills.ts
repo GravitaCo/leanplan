@@ -69,8 +69,11 @@ export const thingText = (text: string, ctx: { windDownAt?: string } = {}): stri
 
 /**
  * Reset's breath (deck B7.4, B7.8a to c: a breath in, a small second breath on top, a long breath
- * out). The seconds are PLACEHOLDERS, not sourced values: mental-performance is to source them
- * (Balban 2023's cyclic sighing protocol) before MIND_REVIEWED can go on.
+ * out). The seconds are a Tali pacing choice, not sourced values: Balban et al. 2023's cyclic
+ * sighing was self-paced with no fixed counts (mental-performance, WP3 review). The constraint is a
+ * slow inhale, a shorter second inhale, and a breath out longer than both inhales together.
+ * mental-performance suggests 3/1/6 over 2/1/6; Benn decides the numbers, and `placeholder` stays
+ * true until he approves them (MIND_REVIEWED stays off till then).
  */
 export const RESET_PATTERN: PacerPattern = {
   phases: [
@@ -78,7 +81,7 @@ export const RESET_PATTERN: PacerPattern = {
     { motion: 'in-again', word: 'And in again', s: 1 },
     { motion: 'out', word: 'Breathe out', s: 6 },
   ],
-  source: 'PENDING: mental-performance to source (Balban 2023 protocol)',
+  source: 'Tali pacing choice. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.',
   placeholder: true,
 }
 

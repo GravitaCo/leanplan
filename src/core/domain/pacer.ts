@@ -21,9 +21,9 @@ export interface PacerPhase {
 
 export interface PacerPattern {
   phases: PacerPhase[]
-  /** where the timings come from; 'PENDING: …' until sourced */
+  /** where the timings come from (a source, or a stated product choice) */
   source: string
-  /** true while the timings are unsourced placeholders (blocks MIND_REVIEWED) */
+  /** true until the timings are approved (blocks MIND_REVIEWED) */
   placeholder: boolean
 }
 
