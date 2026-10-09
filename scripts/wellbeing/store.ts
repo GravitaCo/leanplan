@@ -7,7 +7,7 @@ import type { CheckIn, DayLog, LoggedFood } from '@/core/types'
 import { useStore, selectAskCtx, selectNotesContext, ignoredInARow } from '@/store/store'
 import { freshForAccount, type PersistedState } from '@/data/persistence'
 import { addUnloadNote, deleteUnloadNote, unloadNotes, UNLOAD_MAX_NOTES, type NotifyEvent } from '@/data/deviceOnly'
-import { sameAsYesterdayRow } from '@/core/domain/insights'
+import { plansDue, sameAsYesterdayRow } from '@/core/domain/insights'
 import { dayTotals } from '@/core/domain/nutrition'
 import { pickAsks } from '@/core/domain/asks'
 import { todayStr, shiftDay } from '@/core/domain/date'
@@ -168,6 +168,26 @@ export function storeSuite(): number {
     useStore.setState((s) => { delete s.data.profile.activityShown })
     ok('noteActivityShown never marks a held suggestion', st().noteActivityShown(pick) === false && data().profile.activityShown === undefined)
     ok('and marks one that showed (or with no budget, flag off)', st().noteActivityShown(null) === true && data().profile.activityShown === st().cur)
+
+    /* ---------- a plan review held on a hard day comes back the next ordinary day (Benn, 9 Oct 2026) ---------- */
+    reset()
+    {
+      const d0 = shiftDay(today, -1)
+      useStore.setState((s) => {
+        s.data.days[shiftDay(today, -60)] = day(null)
+        // a hard day with mood OK: the scale's worst sleep and energy
+        s.data.days[d0] = day({ mood: 3, hunger: 2, sleep: 1, stress: 2, energy: 1 })
+        s.data.days[today] = day({ mood: 4, hunger: 2, sleep: 3, stress: 2, energy: 3 })
+        s.data.profile.plans = [{ id: 'p1', when: 'after lunch', then: 'get outside for 10 minutes', created: shiftDay(today, -10), reviews: [] }]
+      })
+      const ctx0 = selectAskCtx(st(), d0)
+      const pick0 = pickAsks(plansDue(data().profile, d0).length ? ['thing', 'plan-review'] : ['thing'], ctx0)
+      ok('hard day (mood OK): the due plan review is held, not shown', ctx0.hard === true && ctx0.lowMood === false && pick0.show.join() === 'thing' && pick0.held.some((h) => h.id === 'plan-review' && h.reason === 'hard-day'), { ctx0, pick0 })
+      const ctx1 = selectAskCtx(st(), today)
+      const due1 = plansDue(data().profile, today)
+      const pick1 = pickAsks(due1.length ? ['thing', 'plan-review'] : ['thing'], ctx1)
+      ok('next ordinary day: still due (nothing reviewed) and shown', ctx1.hard === false && due1.length === 1 && pick1.show.includes('plan-review'), { ctx1, pick1 })
+    }
 
     /* ---------- Same as yesterday: the tap adds exactly the row's kcal (nutrition R2) ---------- */
     reset()

@@ -45,7 +45,7 @@ export const OBS_MIN_PAIRS = 8
 export const OBS_MIN_SIDE = 3
 
 export const OBS_HEADING = 'Something in your answers'
-export const OBS_ENERGY = 'Over the last two weeks, on nights over 7 hours you more often rated energy OK or Good.'
+export const OBS_ENERGY = 'Over the last two weeks, on nights of 7 hours or more you more often rated energy OK or Good.'
 export const OBS_SUB = 'Just a pattern in your own answers, not a rule.'
 
 export interface Observation {
@@ -58,7 +58,7 @@ export interface Observation {
 
 /**
  * The one observation (mental-performance rule 2): sleep band paired with the energy answer over
- * the 14 days ending `today`. It shows only when nights over 7 hours more often came with energy
+ * the 14 days ending `today`. It shows only when nights of 7 hours or more more often came with energy
  * OK or Good (2 or 3) than shorter nights did: the positive side only. Never food, weight or
  * skills. Sleep with stress is allowed by the rules but has no approved line, so it isn't offered.
  */

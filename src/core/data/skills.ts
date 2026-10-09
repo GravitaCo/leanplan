@@ -47,18 +47,19 @@ export interface Thing {
   skill?: SkillId
   /** "Make it a plan" prefill (deck B9.11, B9.13); absent = the sheet opens empty */
   plan?: { when: string; then: string }
-  /** copy not on an approved board yet: needs mental-performance and Benn before it ships */
+  /** copy not on an approved board yet: needs mental-performance and Benn before it ships (none pending since 9 Oct 2026) */
   pending?: string
 }
 
 export const THINGS: readonly Thing[] = [
   // hard day, Mind-led (deck B2.6a, B2.6b; plan §7.3 "a 2-minute Reset or Get outside")
-  { key: 'reset-2', label: '2-minute Reset', done: '2-minute Reset', pillar: 'mind', skill: 'reset', pending: 'done wording not in the deck (B9.7a pattern: unchanged)' },
-  { key: 'outside-10', label: 'Get outside for 10 minutes', done: 'Got outside for 10 minutes', pillar: 'move', pending: 'done wording not in the deck (B9.7b pattern)' },
+  // done lines approved by Benn on 9 Oct 2026 (wellbeing plan §10b)
+  { key: 'reset-2', label: '2-minute Reset', done: '2-minute Reset', pillar: 'mind', skill: 'reset' },
+  { key: 'outside-10', label: 'Get outside for 10 minutes', done: 'Got outside', pillar: 'move' },
   // ordinary day, one per pillar (deck B9.3a to c; B9.2c for Mind without a session)
   { key: 'reset-before-session', label: 'Reset before your session', done: 'Reset before your session', pillar: 'mind', skill: 'reset' },
   { key: 'wind-down-from', label: 'Wind down from {time}', done: 'Wound down from {time}', pillar: 'mind' },
-  { key: 'lunch-somewhere', label: 'Lunch somewhere you like', done: 'Had lunch somewhere you like', pillar: 'food', pending: 'done wording not in the deck' },
+  { key: 'lunch-somewhere', label: 'Lunch somewhere you like', done: 'Lunch somewhere you like', pillar: 'food' },
   { key: 'outside-lunch', label: 'Get outside at lunch', done: 'Got outside at lunch', pillar: 'move', plan: { when: 'after lunch', then: 'get outside for 10 minutes' } },
 ]
 
@@ -72,17 +73,17 @@ export const thingText = (text: string, ctx: { windDownAt?: string } = {}): stri
  * out). The seconds are a Tali pacing choice, not sourced values: Balban et al. 2023's cyclic
  * sighing was self-paced with no fixed counts (mental-performance, WP3 review). The constraint is a
  * slow inhale, a shorter second inhale, and a breath out longer than both inhales together.
- * mental-performance suggests 3/1/6 over 2/1/6; Benn decides the numbers, and `placeholder` stays
- * true until he approves them (MIND_REVIEWED stays off till then).
+ * 3 s in, 1 s in again, 6 s out (mental-performance's suggestion), approved by Benn on 9 Oct 2026
+ * (wellbeing plan §10b), so `placeholder` is false.
  */
 export const RESET_PATTERN: PacerPattern = {
   phases: [
-    { motion: 'in', word: 'Breathe in', s: 2 },
+    { motion: 'in', word: 'Breathe in', s: 3 },
     { motion: 'in-again', word: 'And in again', s: 1 },
     { motion: 'out', word: 'Breathe out', s: 6 },
   ],
-  source: 'Tali pacing choice. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.',
-  placeholder: true,
+  source: 'Tali pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.',
+  placeholder: false,
 }
 
 /** Reset's lengths in minutes (deck B7.5 "1 min" · "2 min" · "5 min"; 2 is the default). */

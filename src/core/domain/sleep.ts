@@ -11,7 +11,7 @@ import { SLEEP_BANDS, SLEEP_SOURCES } from './checkin'
 const BAND_LABEL: Record<SleepBand, string> = { lt5: 'Under 5', '5-6': '5–6', '6-7': '6–7', '7-8': '7–8', '8+': '8+' }
 /**
  * The band in a sentence. "6 to 7 hours" is deck B4.10 ("Mostly 6 to 7 hours"); the other four follow
- * the same pattern and are not on a board yet (flag to design and mental-performance).
+ * the same pattern, approved by Benn as written on 9 Oct 2026 (wellbeing plan §10b).
  */
 const BAND_WORDS: Record<SleepBand, string> = { lt5: 'under 5 hours', '5-6': '5 to 6 hours', '6-7': '6 to 7 hours', '7-8': '7 to 8 hours', '8+': '8 hours or more' }
 
@@ -27,7 +27,7 @@ export function bandOfMinutes(min: number): SleepBand {
   return '8+'
 }
 
-/** The "over 7 hours" side of the sleep observation (deck B4.17): the 7–8 and 8+ bands. */
+/** The "7 hours or more" side of the sleep observation (deck B4.17): the 7–8 and 8+ bands. */
 export const isLongBand = (b: SleepBand): boolean => b === '7-8' || b === '8+'
 
 export interface NightView {

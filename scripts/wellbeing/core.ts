@@ -38,8 +38,14 @@ export function coreSuite(): number {
   ok('hard day: non-safety banners wait', ['welcome-back', 'activity'].every((id) => hard.held.some((h) => h.id === id && h.reason === 'hard-day')))
   ok('hard day: food asks deferred (held, not dropped)', ['food-ask', 'quick-check', 'pregnancy-reask'].every((id) => hard.held.some((h) => h.id === id && h.reason === 'hard-day')))
   ok('hard day: a held activity suggestion may not be marked seen', !mayMarkSeen(hard, 'activity'))
-  const hardReview = pickAsks(['thing', 'plan-review'], { ...settled, hard: true })
-  ok('hard day, mood OK: plan review takes the one ask and hides the chips', hardReview.show.join() === 'plan-review' && hardReview.held.some((h) => h.id === 'thing'))
+  const hardReview = pickAsks(['thing', 'plan-review', 'if-then-offer'], { ...settled, hard: true })
+  ok('hard day, mood OK: plan review held for an ordinary day, the one thing stays (Benn, 9 Oct 2026)', hardReview.show.join() === 'thing' && hardReview.held.some((h) => h.id === 'plan-review' && h.reason === 'hard-day') && hardReview.held.some((h) => h.id === 'if-then-offer' && h.reason === 'hard-day') && !mayMarkSeen(hardReview, 'plan-review'), hardReview)
+  const hardOnly = pickAsks(['plan-review'], { ...settled, hard: true })
+  ok('hard day with nothing else due: the plan review still waits', !hardOnly.show.length && hardOnly.held.some((h) => h.id === 'plan-review' && h.reason === 'hard-day'))
+  const lowNotHard = pickAsks(['thing', 'plan-review'], { ...settled, lowMood: true })
+  ok('Low mood alone holds it too', lowNotHard.show.join() === 'thing' && lowNotHard.held.some((h) => h.id === 'plan-review' && h.reason === 'low-mood'))
+  const nextDay = pickAsks(['thing', 'plan-review'], settled)
+  ok('the next ordinary day the plan review is back first', nextDay.show.join() === 'plan-review,thing')
   const low = pickAsks(['thing', 'plan-review', 'if-then-offer'], { ...settled, hard: true, lowMood: true })
   ok('Low or Rough mood: plan review deferred, never marked seen', low.show.join() === 'thing' && low.held.some((h) => h.id === 'plan-review' && h.reason === 'low-mood') && !mayMarkSeen(low, 'plan-review'))
   const fewer = pickAsks(['thing', 'welcome-back'], { ...settled, asks: 'fewer' })
@@ -107,7 +113,7 @@ export function coreSuite(): number {
     return out
   }
   const o = observation(obsDays(4, 0, 1, 3), '2026-10-11')
-  ok('observation: 8 pairs, 4 a side, long nights better: B4.17 text', o?.text === OBS_ENERGY && OBS_ENERGY === 'Over the last two weeks, on nights over 7 hours you more often rated energy OK or Good.')
+  ok('observation: 8 pairs, 4 a side, long nights better: B4.17 text', o?.text === OBS_ENERGY && OBS_ENERGY === 'Over the last two weeks, on nights of 7 hours or more you more often rated energy OK or Good.')
   ok('observation: 7 pairs give none', observation(obsDays(4, 0, 1, 2), '2026-10-11') === null)
   ok('observation: 2 on one side gives none', observation(obsDays(2, 0, 2, 4), '2026-10-11') === null)
   ok('observation: positive side only (short nights better gives none)', observation(obsDays(1, 3, 4, 0), '2026-10-11') === null)
@@ -130,6 +136,8 @@ export function coreSuite(): number {
   ok('Wind down and Get outside have no screen yet', skillsWithScreen().map((s) => s.id).join() === 'reset,unload')
   ok('thing text fills the time', thingText(thingByKey('wind-down-from')!.label, { windDownAt: '22:30' }) === 'Wind down from 22:30' && thingByKey('nope') === undefined)
   ok('thing keys are unique and key-shaped', new Set(THINGS.map((t) => t.key)).size === THINGS.length && THINGS.every((t) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(t.key)))
+  ok('done lines approved by Benn 9 Oct 2026', thingByKey('outside-10')?.done === 'Got outside' && thingByKey('lunch-somewhere')?.done === 'Lunch somewhere you like' && thingByKey('reset-2')?.done === '2-minute Reset')
+  ok('no thing copy is pending', THINGS.every((t) => !t.pending), THINGS.filter((t) => t.pending).map((t) => t.key))
   ok('Get outside at lunch prefills its plan (B9.11, B9.13)', thingByKey('outside-lunch')?.plan?.when === 'after lunch' && thingByKey('outside-lunch')?.plan?.then === 'get outside for 10 minutes')
 
   /* ---------- low-mood signpost ---------- */
@@ -151,19 +159,19 @@ export function coreSuite(): number {
 
   /* ---------- pacer ---------- */
   const P = RESET_PATTERN
-  ok('pacer timings: still a placeholder until Benn approves them, 2/1/6 kept', P.placeholder === true && P.phases.map((p) => p.s).join('/') === '2/1/6')
-  ok('pacer source: a Tali pacing choice, never Balban counts', P.source.startsWith('Tali pacing choice.') && P.source.includes('Balban et al. 2023') && P.source.includes('no fixed counts') && !P.source.includes('PENDING'))
+  ok('pacer timings: 3/1/6, approved by Benn 9 Oct 2026, no longer a placeholder', P.placeholder === false && P.phases.map((p) => p.s).join('/') === '3/1/6')
+  ok('pacer source: a Tali pacing choice approved by Benn, never Balban counts', P.source === 'Tali pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.' && !P.source.includes('PENDING'))
   ok('pacer: the breath out is longer than both breaths in together, the second in shorter', P.phases[2].s > P.phases[0].s + P.phases[1].s && P.phases[1].s < P.phases[0].s)
   ok('pacer: Reset lengths 1, 2 and 5 minutes', RESET_LENGTHS.join() === '1,2,5')
   const at = (ms: number) => pacerAt(P, ms, 1)
-  ok('pacer: words step at the phase edges', at(0).word === 'Breathe in' && at(1999).word === 'Breathe in' && at(2000).word === 'And in again' && at(2999).word === 'And in again' && at(3000).word === 'Breathe out' && at(8999).word === 'Breathe out' && at(9000).word === 'Breathe in')
-  ok('pacer: counts up within each phase, whole seconds', at(0).count === 1 && at(999).count === 1 && at(1000).count === 2 && at(2500).count === 1 && at(3000).count === 1 && at(5500).count === 3 && at(8999).count === 6)
-  ok('pacer: the sphere fills on the way in and empties on the way out', at(0).scale === 0 && at(2000).scale > 0.7 && Math.abs(at(3000).scale - 1) < 1e-9 && at(6000).scale < 1 && at(8999).scale < 0.01)
+  ok('pacer: words step at the phase edges', at(0).word === 'Breathe in' && at(2999).word === 'Breathe in' && at(3000).word === 'And in again' && at(3999).word === 'And in again' && at(4000).word === 'Breathe out' && at(9999).word === 'Breathe out' && at(10000).word === 'Breathe in')
+  ok('pacer: counts up within each phase, whole seconds', at(0).count === 1 && at(999).count === 1 && at(1000).count === 2 && at(2999).count === 3 && at(3500).count === 1 && at(4000).count === 1 && at(6500).count === 3 && at(9999).count === 6)
+  ok('pacer: the sphere fills on the way in and empties on the way out', at(0).scale === 0 && at(3000).scale > 0.7 && Math.abs(at(4000).scale - 1) < 1e-9 && at(7000).scale < 1 && at(9999).scale < 0.01)
   const total = runMs(P, 1)
-  ok('pacer: a run is whole breaths', total % breathMs(P) === 0 && total === 63000)
+  ok('pacer: a run is whole breaths', total % breathMs(P) === 0 && total === 60000)
   const end = pacerAt(P, total, 1)
   ok('pacer: ends on a breath out, done', end.done && end.motion === 'out' && end.scale === 0 && end.leftMs === 0 && !pacerAt(P, total - 1, 1).done && pacerAt(P, total - 1, 1).motion === 'out')
-  ok('pacer: time left', fmtLeft(at(0).leftMs) === '1:03' && fmtLeft(80000) === '1:20')
+  ok('pacer: time left', fmtLeft(at(0).leftMs) === '1:00' && fmtLeft(80000) === '1:20')
 
   /* ---------- copy lint ---------- */
   const skillHits = skillsCopy().filter((t) => mindCopyIssues(t).length)

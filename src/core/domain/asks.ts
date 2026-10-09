@@ -45,7 +45,10 @@ interface AskMeta {
   budgeted: boolean
   /** an optional food prompt, held back on a hard day and offered again the next day */
   food?: boolean
-  /** the plan-review kind: waits a day on a Low or Rough mood day */
+  /**
+   * the plan-review kind: held on any hard day and on a Low or Rough mood day (Benn, 9 Oct 2026),
+   * never dropped; it is offered again the next ordinary day
+   */
   plans?: boolean
   /** shown in the first two weeks (only the check-in prompt and the one thing, plus safety) */
   early?: boolean
@@ -93,7 +96,7 @@ export interface AskCtx {
   asks?: 'usual' | 'fewer'
   /** mind.hardDay(...) */
   hard?: boolean
-  /** today's mood is 1 or 2 (Rough or Low): a due plan review waits a day */
+  /** today's mood is 1 or 2 (Rough or Low): a due plan review waits for an ordinary day */
   lowMood?: boolean
   /** the low-mood signpost shows today: it is the only ask (the check-in prompt stays) */
   signpostToday?: boolean
@@ -117,9 +120,13 @@ export interface AskPick {
  * - On a signpost day the signpost is the only ask: no chips, nothing else budgeted, and no
  *   unbudgeted card either (the food quick-check list, the reflection). Only the Mind card's check-in
  *   prompt stays: it is the card's baseline and supplies the mood answers (mental-performance, WP3).
- * - On a hard day the optional food prompts and the other banners wait; the plan review may still
- *   take the one ask (unless mood is Low or Rough), which hides the one-thing chips.
- * - On a Low or Rough mood day the plan review and the if-then offer wait a day.
+ * - On a hard day the one thing is the single ask: the optional food prompts, the other banners,
+ *   the plan review and the if-then offer all wait (Benn, 9 Oct 2026; reason 'hard-day').
+ * - On a Low or Rough mood day the plan review and the if-then offer wait too (reason 'low-mood',
+ *   which wins when the day is both).
+ * A held plan review is never dropped or marked seen: plansDue (core/domain/insights) is still true
+ * the next day because nothing was reviewed, and that day's ctx (store selectAskCtx, from that day's
+ * check-in) brings it back as soon as the day is an ordinary one.
  */
 export function pickAsks(due: readonly AskId[], ctx: AskCtx): AskPick {
   const budget = askBudget(ctx)
@@ -136,6 +143,7 @@ export function pickAsks(due: readonly AskId[], ctx: AskCtx): AskPick {
     if (early && !m.early && !m.ownSchedule) { hold('early-weeks'); continue }
     if (ctx.hard && m.food) { hold('hard-day'); continue }
     if (ctx.lowMood && m.plans) { hold('low-mood'); continue }
+    if (ctx.hard && m.plans) { hold('hard-day'); continue }
     if (ctx.hard && m.rank === 'rest' && m.budgeted) { hold('hard-day'); continue }
     if (m.budgeted) {
       if (used >= budget) { hold('budget'); continue }
