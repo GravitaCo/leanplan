@@ -957,10 +957,8 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await stored(page)).days[HARD_DAY].checkin.thing.key === 'outside-10', 'thing stored')
     expect((await stored(page)).days[HARD_DAY].checkin.mood === 2, 'mood kept')
     await shot(page, 'wp7-thing-done')
-    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
-    await page.locator('.sheet').getByText('New plan').waitFor()
-    await page.locator('.sheet').getByRole('button', { name: 'Cancel' }).click().catch(() => page.keyboard.press('Escape'))
-    await page.locator('.sheet').waitFor({ state: 'detached' })
+    // close-out change 5: Get outside for 10 minutes has no approved plan prefill, so no "Make it a plan"
+    expect(!(await card.getByRole('button', { name: 'Make it a plan', exact: true }).count()), 'no Make it a plan without a prefill')
     // the card opens the Mind tab
     await card.locator('.wb-mind-row').click()
     await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
@@ -1389,7 +1387,8 @@ async function wp5FlagOffHeaders({ page }) {
     await shot(page, 'wp17-flag-off-notify')
   }, { seed: ordinaryDay() })
   /* ---------- WP15: the low-mood signpost on Summary (B6 frame 2), behind MIND_REVIEWED ---------- */
-  const LM_EN = 'Things seem to have been hard for a while. Talking to your GP or calling NHS 111 can help, and Samaritans are there any time on 116 123.'
+  // close-out change 2: the B6.10 line for every nation (no stored nation, so no NHS route that may not exist there)
+  const LM_EN = 'Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.'
   const lmBanner = (page) => page.locator('.pillars > .lm-banner')
   const lmChips = (page) => page.locator('section.wb-mind .wb-things .chip')
   /** the fortnight, with the device-only "last shown" day set */
@@ -1398,6 +1397,7 @@ async function wp5FlagOffHeaders({ page }) {
   await run('wp15-signpost', async ({ page, net }) => {
     const b = lmBanner(page)
     await b.getByText(LM_EN, { exact: true }).waitFor()
+    expect(!(await b.getByText(/NHS/).count()), 'the banner names no NHS route')
     // under the Mind card, the only ask: no chips, nothing else in the slot
     expect((await page.locator('.pillars > *').nth(1).evaluate((e) => e.classList.contains('lm-banner'))), 'banner directly under the Mind card')
     expect(!(await lmChips(page).count()) && !(await page.getByText("One thing for today, if you'd like:").count()), 'no one-thing chips on a signpost day')
@@ -1487,7 +1487,7 @@ async function wp5FlagOffHeaders({ page }) {
   await run('wp15-flag-off', async ({ page }) => {
     await page.locator('.mind-row').waitFor()
     await page.waitForTimeout(800)
-    expect(!(await page.locator('.lm-banner').count()) && !(await page.getByText(LM_EN).count()), 'flag off: no signpost')
+    expect(!(await page.locator('.lm-banner').count()) && !(await page.getByText(LM_EN).count()) && !(await page.getByText('Things seem to have been hard').count()), 'flag off: no signpost')
     expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
     await shot(page, 'wp15-flag-off')
   }, { seed: lmSeed(HARD_DAY) })
@@ -1524,6 +1524,8 @@ async function wp5FlagOffHeaders({ page }) {
     await sheet.getByText('New plan').waitFor()
     expect((await sheet.locator('#pl_when').inputValue()) === 'after lunch', 'When… prefilled')
     expect((await sheet.locator('#pl_then').inputValue()) === 'get outside for 10 minutes', "I'll… prefilled")
+    // close-out change 5: no food examples behind a Mind plan's fields
+    expect((await sheet.locator('#pl_when').getAttribute('placeholder')) === null && (await sheet.locator('#pl_then').getAttribute('placeholder')) === null, 'no When/I\'ll placeholders')
     expect((await sheet.locator('#pl_cope').inputValue()) === '' && (await sheet.locator('#pl_cope').getAttribute('placeholder')) === 'Optional', 'coping field empty')
     await sheet.getByText('Saved under Mind plans on Plan', { exact: true }).waitFor()
     expect(!((await stored(page)).profile.plans || []).length, 'nothing saved before Save')
@@ -1534,6 +1536,12 @@ async function wp5FlagOffHeaders({ page }) {
     const plans = (await stored(page)).profile.plans || []
     expect(plans.length === 1 && plans[0].kind === 'mind' && plans[0].when === 'after lunch' && plans[0].then === 'get outside for 10 minutes', 'Mind plan saved: ' + JSON.stringify(plans))
     await shot(page, 'wp14-saved')
+    // close-out change 5: once today's Mind plan is saved, no second "Make it a plan"
+    await card.locator('.wb-done', { hasText: 'Got outside at lunch' }).waitFor()
+    expect(!(await card.getByRole('button', { name: 'Make it a plan', exact: true }).count()), 'Make it a plan hidden once saved today')
+    await page.reload()
+    await card.locator('.wb-done', { hasText: 'Got outside at lunch' }).waitFor()
+    expect(!(await card.getByRole('button', { name: 'Make it a plan', exact: true }).count()), 'still hidden after a reload')
     // Plan: under "Mind plans", not under "If–then plans"
     await tab(page, 'Plan')
     const head = page.locator('.grp-h', { hasText: 'Mind plans' })
@@ -1582,6 +1590,46 @@ async function wp5FlagOffHeaders({ page }) {
     await ifThen.scrollIntoViewIfNeeded()
     await shot(page, 'wp14-flag-off-plan')
   }, { seed: wp14Ordinary({ plans: [{ id: 'e2e-mind-1', when: 'after lunch', then: 'get outside for 10 minutes', created: ORDINARY_DAY, reviews: [], kind: 'mind' }] }) })
+
+  // Close-out (mental-performance change 1): the weekly review card and "Keep the weekly reminder?"
+  // go through the asks budget. A review is waiting (no lastReviewAt) and the reminder went unopened
+  // on 3 review days (20 Sep, 27 Sep, 4 Oct), so the keep ask is due too.
+  const reviewSeed = (todayCheckin) => {
+    const s = wp7Hard({ lastReviewAt: undefined, reviewPush: true, reviewPushFrom: '2026-09-15' })
+    delete s.state.profile.lastReviewAt
+    if (todayCheckin) s.state.days[HARD_DAY].checkin = todayCheckin
+    return s
+  }
+  const rvCard = (page) => page.locator('.pillars > .rv-due')
+  const keepBanner = (page) => page.locator('.pillars > .banner', { hasText: 'Keep the weekly reminder?' })
+
+  await run('closeout-review-held-hard-day', async ({ page }) => {
+    const card = sumMind(page)
+    await card.getByText('A lighter day is still a good day.').waitFor()
+    await card.getByText("One thing for today, if you'd like:").waitFor()
+    await page.waitForTimeout(800)
+    expect(!(await rvCard(page).count()), 'the weekly review card waits on a hard day')
+    expect(!(await keepBanner(page).count()), '"Keep the weekly reminder?" waits on a hard day')
+    expect(!(await page.getByText('How are your plans going?').count()), 'the plan review waits too')
+    expect(!(await page.locator('.pillars > .banner, .pillars > .dayopt').count()), 'prompt slot empty')
+    const st = await stored(page)
+    expect(st.profile.reviewPush === true && !st.profile.reviewHidden && !st.profile.lastReviewAt, 'nothing marked, hidden or switched off: ' + JSON.stringify({ reviewPush: st.profile.reviewPush, reviewHidden: st.profile.reviewHidden }))
+    await shot(page, 'closeout-review-held-hard-day')
+  }, { url: WB, seed: reviewSeed() })
+
+  await run('closeout-review-shows-ordinary', async ({ page }) => {
+    // the same week with an ordinary check-in today: both come back
+    await rvCard(page).getByText('Weekly review').waitFor()
+    await keepBanner(page).waitFor()
+    expect(!(await page.getByText('How are your plans going?').count()), 'the plan banner still waits for the review card')
+    await shot(page, 'closeout-review-shows-ordinary')
+  }, { url: WB, seed: reviewSeed(ci(HARD_DAY, 4, 3, 1, 3)) })
+
+  await run('closeout-review-tap-hard-day', async ({ page }) => {
+    // the reminder tap (./?review=1) still opens the review on a hard day: the person chose it
+    await page.locator('.rv-h1').waitFor()
+    await shot(page, 'closeout-review-tap-hard-day')
+  }, { url: WB + '?review=1', seed: reviewSeed() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

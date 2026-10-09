@@ -102,6 +102,19 @@ export function planDue(plans: unknown, day: string): boolean {
   })
 }
 
+/**
+ * The plan check-in goes at most once in this many days while plans stay unreviewed (its row says
+ * "When a plan is due for its weekly look"), so it never takes the daily slot every morning and
+ * starves the check-in reminder (mental-performance close-out, change 3). Judgement call.
+ */
+export const PLAN_GAP_DAYS = 7
+
+/** Days since this type was last sent (`byKind`, from notify_sent); Infinity if never. */
+const sinceLast = (byKind: Record<string, unknown> | null | undefined, k: MindKind, day: string): number => {
+  const last = obj(byKind)[k]
+  return typeof last === 'string' ? dayNum(day) - dayNum(last) : Infinity
+}
+
 /** A halved type goes only when its last one (`byKind`, from notify_sent) is HALVED_GAP_DAYS old. */
 export function halvedAllows(mind: MindPrefsLike | null | undefined, kind: MindKind, byKind: Record<string, unknown> | null | undefined, day: string): boolean {
   if (!obj(mind?.halved)[kind]) return true
@@ -125,7 +138,8 @@ export interface DueInput {
 /**
  * The Mind types due now, in the order they'd claim the day (the function claims the first, and
  * sends only if the claim succeeds). Empty once one went today (the cap), in quiet hours, for a
- * type that isn't on (`notify[kind] === true`), or a halved one sent too recently.
+ * type that isn't on (`notify[kind] === true`), a halved one sent too recently, or a plan check-in
+ * sent within PLAN_GAP_DAYS.
  */
 export function dueKinds(x: DueInput): MindKind[] {
   if (x.lastOn && x.lastOn >= x.day) return []
@@ -136,7 +150,7 @@ export function dueKinds(x: DueInput): MindKind[] {
   return order.filter((k) =>
     on[k] === true && at[k] === x.time &&
     !inQuietHours(x.time, t.windDownAt, t.wakeAt) &&
-    (k !== 'plan' || planDue(x.plans, x.day)) &&
+    (k !== 'plan' || (planDue(x.plans, x.day) && sinceLast(x.byKind, 'plan', x.day) >= PLAN_GAP_DAYS)) &&
     halvedAllows(x.mind, k, x.byKind, x.day))
 }
 

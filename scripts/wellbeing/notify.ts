@@ -18,7 +18,7 @@ import { privacyPolicy } from '@/core/legal/privacy'
 import { NOTIFY_COPY, backoffLine, notifyStrings } from '@/screens/profile/notifyCopy'
 import {
   CHECKIN_AFTER_WAKE_MIN, DEFAULT_WAKE, DEFAULT_WIND_DOWN, MIND_KINDS, REMINDER_COPY, dueKinds, halvedAllows, inQuietHours,
-  kindTimes, localNow, payloadFor, planDue, suppPayload, suppsDue,
+  kindTimes, localNow, payloadFor, planDue, PLAN_GAP_DAYS, suppPayload, suppsDue,
 } from '../../supabase/functions/_shared/reminders'
 import { USER_TABLES } from '../../supabase/functions/_shared/account'
 
@@ -99,6 +99,17 @@ export async function notifySuite(): Promise<number> {
   const plans = (d: string): IfThenPlan[] => [{ id: 'p', when: 'w', then: 't', created: d, reviews: [] }]
   ok('the plan check-in only when a plan is due for its weekly look, and it goes first', dueKinds({ mind: mind(), plans: plans('2026-10-01'), day, time: '08:30' }).join() === 'plan,checkin'
     && dueKinds({ mind: mind(), plans: plans('2026-10-05'), day, time: '08:30' }).join() === 'checkin')
+  // close-out change 3: at most once every PLAN_GAP_DAYS while the plan stays unreviewed
+  {
+    const p8 = plans('2026-10-01') // made on 1 Oct: day 8 is 9 Oct, day 9 is 10 Oct, still unreviewed on both
+    const d8 = dueKinds({ mind: mind(), plans: p8, day: '2026-10-09', time: '08:30', lastOn: '2026-10-08', byKind: { checkin: '2026-10-08' } })
+    const d9 = dueKinds({ mind: mind(), plans: p8, day: '2026-10-10', time: '08:30', lastOn: '2026-10-09', byKind: { plan: '2026-10-09', checkin: '2026-10-08' } })
+    const d15 = dueKinds({ mind: mind(), plans: p8, day: '2026-10-15', time: '08:30', lastOn: '2026-10-14', byKind: { plan: '2026-10-09', checkin: '2026-10-14' } })
+    const d16 = dueKinds({ mind: mind(), plans: p8, day: '2026-10-16', time: '08:30', lastOn: '2026-10-15', byKind: { plan: '2026-10-09', checkin: '2026-10-15' } })
+    ok('a plan still unreviewed on days 8 and 9 sends the plan check-in on day 8 only (day 9 goes to the check-in)',
+      PLAN_GAP_DAYS === 7 && d8[0] === 'plan' && !d9.includes('plan') && d9.join() === 'checkin', { d8, d9 })
+    ok('the plan check-in comes back 7 days after the last one, not 6', !d15.includes('plan') && d16[0] === 'plan', { d15, d16 })
+  }
   ok('halving: a halved type goes only when its last one is at least 2 days old',
     !halvedAllows(mind({ halved: { checkin: 'x' } }), 'checkin', { checkin: '2026-10-08' }, day) && halvedAllows(mind({ halved: { checkin: 'x' } }), 'checkin', { checkin: '2026-10-07' }, day)
     && halvedAllows(mind({ halved: { checkin: 'x' } }), 'checkin', null, day) && halvedAllows(mind(), 'checkin', { checkin: '2026-10-08' }, day)

@@ -6,7 +6,7 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
 import { pickAsks } from '@/core/domain/asks'
-import { lowMoodDue, lowMoodLine } from '@/core/domain/mind'
+import { LOW_MOOD_LINE_ANY_NATION, lowMoodDue, lowMoodLine, mindCopy } from '@/core/domain/mind'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import type { CheckIn, DayLog } from '@/core/types'
 import { LowMoodBanner } from '@/screens/today/LowMoodBanner'
@@ -49,13 +49,14 @@ export function signpostSuite(): number {
   ok('30 days after: due again', lowMoodDue(after, shift(today, 30), today))
 
   /* ---------- the banner ---------- */
-  const render = (nation?: Parameters<typeof LowMoodBanner>[0]['nation']) => renderToString(createElement(LowMoodBanner, { nation, onSupport: noop, onDismiss: noop }))
-  const en = render()
-  ok('England line (B6.9)', text(en).includes('Things seem to have been hard for a while. Talking to your GP or calling NHS 111 can help, and Samaritans are there any time on 116 123.'), text(en))
-  ok('Wales as England', text(render('wales')).includes(lowMoodLine('england')))
-  const ni = text(render('northern-ireland'))
-  ok('Northern Ireland line (B6.10), no NHS 111', ni.includes('Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.') && !ni.includes('NHS 111'), ni)
-  ok('Scotland line (B6.11)', text(render('scotland')).includes('Things seem to have been hard for a while. Talking to your GP or calling NHS 24 on 111 can help, and Samaritans are there any time on 116 123.'))
+  const en = renderToString(createElement(LowMoodBanner, { onSupport: noop, onDismiss: noop }))
+  // close-out change 2: the B6.10 line for every nation (no NHS 111 in Northern Ireland)
+  ok('banner line is B6.10 for every nation', text(en).includes('Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.') && LOW_MOOD_LINE_ANY_NATION === lowMoodLine('northern-ireland'), text(en))
+  ok('banner names no NHS route', !/NHS/.test(text(en)), text(en))
+  ok('England line kept (B6.9)', lowMoodLine('england') === 'Things seem to have been hard for a while. Talking to your GP or calling NHS 111 can help, and Samaritans are there any time on 116 123.')
+  ok('Wales as England', lowMoodLine('wales') === lowMoodLine('england'))
+  ok('Scotland line kept (B6.11)', lowMoodLine('scotland') === 'Things seem to have been hard for a while. Talking to your GP or calling NHS 24 on 111 can help, and Samaritans are there any time on 116 123.')
+  ok('LOW_MOOD_LINE_ANY_NATION is in mindCopy()', mindCopy().includes(LOW_MOOD_LINE_ANY_NATION))
   ok('"See support" button (B6.12)', /<button[^>]*class="btn gray sm"[^>]*>See support<\/button>/.test(en), en)
   ok('Dismiss (B6.13) is labelled', /<button[^>]*class="x"[^>]*aria-label="Dismiss"/.test(en) || /aria-label="Dismiss"[^>]*class="x"/.test(en), en)
   ok('a note, not an alert', en.includes('role="note"') && !en.includes('role="alert"'))
@@ -69,7 +70,7 @@ export function signpostSuite(): number {
   ok('no red in the WP15 styles', !/--red|danger|warn/.test(wp15))
 
   /* ---------- copy ---------- */
-  const strings = [...Object.values(LOW_MOOD), ...(['england', 'scotland', 'wales', 'northern-ireland'] as const).map(lowMoodLine)]
+  const strings = [...Object.values(LOW_MOOD), LOW_MOOD_LINE_ANY_NATION, ...(['england', 'scotland', 'wales', 'northern-ireland'] as const).map(lowMoodLine)]
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every signpost string passes mindCopyIssues', issues.length === 0, JSON.stringify(issues))
   ok('no em dashes', strings.every((s) => !s.includes('—')))

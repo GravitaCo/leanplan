@@ -94,7 +94,8 @@ export const REFLECTION = {
 
 /** Every string above, for the copy lint. */
 /** WP15: the low-mood signpost on Summary (board B6 frame 2, canvas wp-b6-more). Its line is
- *  core/domain/mind lowMoodLine(nation): B6.9, B6.10 Northern Ireland, B6.11 Scotland. B6.14 is not
+ *  core/domain/mind LOW_MOOD_LINE_ANY_NATION (B6.10, on the banner for every nation); lowMoodLine(nation)
+ *  keeps B6.9, B6.10 Northern Ireland and B6.11 Scotland for when a nation is stored. B6.14 is not
  *  shown (held for the clinician review). */
 export const LOW_MOOD = {
   /** B6.12, opens the Support sheet */

@@ -234,7 +234,15 @@ export function lowMoodDue(days: Days, today: string, lastShown?: string): boole
 }
 
 /**
- * The signpost's line by nation (deck B6.9; B6.10 Northern Ireland, where there's no NHS 111;
+ * The banner's line for every nation (deck B6.10): true in all four, since it names no NHS route.
+ * NHS 111 and NHS 24 stay one tap away under "See support", where the sheet has a nation picker
+ * (mental-performance close-out, change 2: Tali stores no nation, and England's line would name
+ * NHS 111 in Northern Ireland).
+ */
+export const LOW_MOOD_LINE_ANY_NATION = 'Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.'
+
+/**
+ * The signpost's line by nation, kept for when a nation is stored later (deck B6.9; B6.10 Northern Ireland, where there's no NHS 111;
  * B6.11 Scotland, NHS 24). Exact NHS wording is still to be checked (plan §13).
  */
 export function lowMoodLine(nation: UkNation): string {
@@ -255,6 +263,7 @@ export function mindCopy(): string[] {
   const generated = samples.flatMap(reflectionLines).flatMap((l) => (l.label ? [l.label, l.value] : [l.value]))
   return [
     OBS_HEADING, OBS_ENERGY, OBS_SUB, REFLECTION_NOT_ENOUGH, REFLECTION_LATER,
+    LOW_MOOD_LINE_ANY_NATION,
     ...(['england', 'scotland', 'wales', 'northern-ireland'] as UkNation[]).map(lowMoodLine),
     ...new Set(generated),
   ]

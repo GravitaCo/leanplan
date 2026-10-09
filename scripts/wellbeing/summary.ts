@@ -3,12 +3,13 @@
    states and the copy lint. Run from scripts/test-wellbeing.ts; returns the number of failures. */
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
-import type { CheckIn, DayLog } from '@/core/types'
+import type { CheckIn, DayLog, IfThenPlan } from '@/core/types'
+import { THINGS } from '@/core/data/skills'
 import { pickAsks } from '@/core/domain/asks'
 import { thingOptions } from '@/core/domain/mind'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { MindCard, type MindCardProps } from '@/screens/today/MindCard'
-import { checkedIn, checkinTime, lastWeighIn, pillarsOn, summaryDue, weighInSub } from '@/screens/today/summary'
+import { checkedIn, checkinTime, lastWeighIn, makePlanOffered, pillarsOn, summaryDue, weighInSub } from '@/screens/today/summary'
 import { summaryCopy } from '@/screens/today/summaryCopy'
 
 const ON = pillarsOn(undefined)
@@ -41,6 +42,23 @@ export function summarySuite(): number {
   const activity = pickAsks(summaryDue({ thing: true, banner: 'suggest' }, ON), { hard: true, daysUsing: 60 })
   ok('a held activity suggestion is not shown (so never marked seen)', !activity.show.includes('activity'))
 
+  /* ---------- the weekly review card and "Keep the weekly reminder?" (close-out change 1) ---------- */
+  ok('review and review-keep join the due list', summaryDue({ planReview: true, review: true, reviewKeep: true, thing: true }, ON).join() === 'plan-review,review,thing,review-keep'
+    && summaryDue({ review: true, reviewKeep: true }, pillarsOn(['mind'])).join() === 'review,review-keep')
+  const rv = { thing: true, review: true, reviewKeep: true, banner: 'missed' as const }
+  const rvOrd = pickAsks(summaryDue(rv, ON), { daysUsing: 60 })
+  ok('ordinary day: the review card, the one thing and the keep ask all show', rvOrd.show.join() === 'review,thing,review-keep,welcome-back', rvOrd.show.join())
+  const rvHard = pickAsks(summaryDue(rv, ON), { hard: true, daysUsing: 60 })
+  ok('hard day: the review card and the keep ask are held', rvHard.show.join() === 'thing' && rvHard.held.some((h) => h.id === 'review' && h.reason === 'hard-day') && rvHard.held.some((h) => h.id === 'review-keep' && h.reason === 'hard-day'), JSON.stringify(rvHard))
+  const rvLow = pickAsks(summaryDue(rv, ON), { lowMood: true, daysUsing: 60 })
+  ok('Low or Rough mood day: the review card waits (it carries the plan check-in)', !rvLow.show.includes('review') && rvLow.held.some((h) => h.id === 'review' && h.reason === 'low-mood'), JSON.stringify(rvLow))
+  const rvSign = pickAsks(summaryDue({ ...rv, signpost: true, checkin: false }, ON), { signpostToday: true, daysUsing: 60 })
+  ok('signpost day: the signpost is the only ask, the review card and the keep ask wait', rvSign.show.join() === 'signpost' && ['review', 'review-keep'].every((id) => rvSign.held.some((h) => h.id === id && h.reason === 'signpost')), rvSign.show.join())
+  const rvEarly = pickAsks(summaryDue({ review: true, reviewKeep: true }, ON), { daysUsing: 3 })
+  ok('first two weeks: both keep their own schedule', rvEarly.show.join() === 'review,review-keep', rvEarly.show.join())
+  const rvFewer = pickAsks(summaryDue({ review: true, reviewKeep: true, thing: true }, ON), { asks: 'fewer', daysUsing: 60 })
+  ok('Fewer prompts: the review card is not budgeted (it waits to be opened); the keep ask counts', rvFewer.show.join() === 'review,thing' && rvFewer.held.some((h) => h.id === 'review-keep' && h.reason === 'budget'), rvFewer.show.join())
+
   /* ---------- one-thing chips: no food chip on a hard day ---------- */
   const hardThings = thingOptions({ hard: true, skillsAvailable: false }).map((t) => t.key)
   ok('hard day, sub-flag off: Get outside only', hardThings.join() === 'outside-10', hardThings.join())
@@ -65,7 +83,7 @@ export function summarySuite(): number {
   /* ---------- the Mind card (render) ---------- */
   const base: MindCardProps = {
     checkin: c({ mood: 2, sleep: 1, stress: 2, energy: 1, hunger: 2, t: '2026-10-08T07:40:00.000Z' }), isToday: true, hard: true, thingSlot: true,
-    options: thingOptions({ hard: true, skillsAvailable: true }), onOpen: () => {}, onCheckIn: () => {}, onMakePlan: () => {},
+    options: thingOptions({ hard: true, skillsAvailable: true }), onOpen: () => {}, onCheckIn: () => {}, onMakePlan: () => {}, day: '2026-10-08',
   }
   const r = (p: Partial<MindCardProps>) => text(renderToString(createElement(MindCard, { ...base, ...p })))
   const hardCard = r({})
@@ -78,7 +96,15 @@ export function summarySuite(): number {
   const picked = r({ checkin: { ...base.checkin!, thing: { key: 'outside-10' } } })
   ok('picked: Today, Done, Change', picked.includes('Today: Get outside for 10 minutes') && picked.includes('Done') && picked.includes('Change') && !picked.includes('One thing'), picked)
   const done = r({ checkin: { ...base.checkin!, thing: { key: 'outside-10', done: '2026-10-08T12:00:00.000Z' } } })
-  ok('done: the tick line and Make it a plan', done.includes('Got outside') && done.includes('Make it a plan') && !done.includes('Change'), done)
+  ok('done: the tick line, no Make it a plan for a thing without a prefill', done.includes('Got outside') && !done.includes('Make it a plan') && !done.includes('Change'), done)
+  // close-out change 5: "Make it a plan" only with an approved prefill, and not once today's Mind plan is saved
+  const doneLunch = (plans?: IfThenPlan[]) => r({ hard: false, checkin: { ...base.checkin!, thing: { key: 'outside-lunch', done: '2026-10-08T12:00:00.000Z' } }, plans })
+  const mp = (created: string, kind?: 'mind'): IfThenPlan => ({ id: 'x' + created, when: 'w', then: 't', created, reviews: [], ...(kind ? { kind } : {}) })
+  ok('done with a prefill: Make it a plan', doneLunch().includes('Got outside at lunch') && doneLunch().includes('Make it a plan'), doneLunch())
+  ok('a Mind plan saved today hides Make it a plan', !doneLunch([mp('2026-10-08', 'mind')]).includes('Make it a plan'))
+  ok("yesterday's Mind plan or today's If-then plan doesn't hide it", doneLunch([mp('2026-10-07', 'mind'), mp('2026-10-08')]).includes('Make it a plan'))
+  ok('makePlanOffered: every thing without a prefill is never offered',
+    THINGS.filter((t) => !t.plan).every((t) => !makePlanOffered(t, [], '2026-10-08')) && THINGS.filter((t) => t.plan).every((t) => makePlanOffered(t, [], '2026-10-08')) && !makePlanOffered(undefined, [], '2026-10-08'))
   const ordinaryCard = r({ hard: false, checkin: c({ mood: 4, t: '2026-10-10T07:40:00.000Z' }) })
   ok('ordinary day: no lighter line', !ordinaryCard.includes('A lighter day') && ordinaryCard.includes('Feeling good'), ordinaryCard)
   ok('past day: no chips, no lighter line', !r({ isToday: false }).includes('One thing') && !r({ isToday: false }).includes('A lighter day'))

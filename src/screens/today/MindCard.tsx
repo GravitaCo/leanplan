@@ -3,10 +3,11 @@
  * opens the Mind tab. Before the check-in a "Check in" button opens the sheet in one tap. On a hard
  * day a divider and "A lighter day is still a good day." Then the day's one thing, when the asks
  * budget gave it the slot: chips from thingOptions (Mind-led on a hard day, no food chip), then
- * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan". A chip whose thing
+ * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan" (only for a thing
+ * with an approved prefill, and not once today's Mind plan is saved). A chip whose thing
  * has a skill screen (Reset) also opens it on the Mind tab, only with MIND_REVIEWED (plan WP14).
  */
-import type { CheckIn, Pillar } from '@/core/types'
+import type { CheckIn, IfThenPlan, Pillar } from '@/core/types'
 import { skillById, thingByKey, thingText, type Thing } from '@/core/data/skills'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { MOODS } from '@/core/domain/insights'
@@ -14,7 +15,7 @@ import { useStore, type MindView } from '@/store/store'
 import { pressable } from '@/ui/primitives'
 import { Chevron, Icon } from '@/ui/icons'
 import { SUMMARY_MIND } from './summaryCopy'
-import { checkedIn, checkinTime } from './summary'
+import { checkedIn, checkinTime, makePlanOffered } from './summary'
 
 const DOT: Record<Pillar, string> = { mind: 'var(--mind)', food: 'var(--food)', move: 'var(--move)' }
 
@@ -38,9 +39,13 @@ export interface MindCardProps {
   onCheckIn: () => void
   /** "Make it a plan" (B9.8): opens the prefilled Mind plan sheet (today/ThingPlanSheet) */
   onMakePlan: (thing: Thing) => void
+  /** the profile's plans, so "Make it a plan" hides once today's Mind plan is saved (makePlanOffered) */
+  plans?: readonly IfThenPlan[]
+  /** the day shown, "YYYY-MM-DD" */
+  day: string
 }
 
-export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDownAt, onOpen, onCheckIn, onMakePlan }: MindCardProps) {
+export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDownAt, onOpen, onCheckIn, onMakePlan, plans, day }: MindCardProps) {
   const pickThing = useStore((s) => s.pickThing)
   const doneThing = useStore((s) => s.doneThing)
   const clearThing = useStore((s) => s.clearThing)
@@ -101,7 +106,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
       {picked && c?.thing?.done && (
         <>
           <div className="wb-done"><span className="tick"><Icon name="check" size={16} stroke={2.6} /></span>{txt(picked.done)}</div>
-          <button className="linkbtn wb-plan" onClick={() => onMakePlan(picked)}>{SUMMARY_MIND.makePlan}</button>
+          {makePlanOffered(picked, plans, day) && <button className="linkbtn wb-plan" onClick={() => onMakePlan(picked)}>{SUMMARY_MIND.makePlan}</button>}
         </>
       )}
     </section>

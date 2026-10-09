@@ -2,7 +2,8 @@
  * Summary with the wellbeing flag on (board B2, build plan WP7): the pure parts, with no React,
  * so scripts/wellbeing/summary.ts can test them. TodayScreen gathers the facts and renders.
  */
-import type { CheckIn, DayLog, Pillar } from '@/core/types'
+import type { CheckIn, DayLog, IfThenPlan, Pillar } from '@/core/types'
+import type { Thing } from '@/core/data/skills'
 import type { AskId } from '@/core/domain/asks'
 import { parseYmd } from '@/core/domain/date'
 import { WEIGH_IN } from './summaryCopy'
@@ -62,6 +63,10 @@ export interface SummaryDue {
   thing?: boolean
   /** "How are your plans going?" */
   planReview?: boolean
+  /** main's weekly review card (reviewWaiting) */
+  review?: boolean
+  /** "Keep the weekly reminder?" (reminderAskDue, never in a care week) */
+  reviewKeep?: boolean
   /** the single banner slot under the Mind card, as TodayScreen picks it (one at most) */
   banner?: 'missed' | 'suggest' | 'burn' | null
   /** the onboarding sheets */
@@ -83,12 +88,25 @@ export function summaryDue(due: SummaryDue, on: Record<Pillar, boolean>): AskId[
   const out: AskId[] = []
   if (on.mind && due.signpost) out.push('signpost')
   if (due.planReview) out.push('plan-review')
+  if (due.review) out.push('review')
   if (on.mind && due.thing) out.push('thing')
   if (due.ifThen) out.push('if-then-offer')
+  if (due.reviewKeep) out.push('review-keep')
   if (due.banner && !(due.banner === 'burn' && !on.food)) out.push(BANNER_ASK[due.banner])
   if (on.food && due.foodAsk) out.push('food-ask')
   if (due.pregnancyReask) out.push('pregnancy-reask')
   if (on.food && due.quickCheck) out.push('quick-check')
   if (on.mind && due.checkin) out.push('checkin')
   return out
+}
+
+/**
+ * Whether the Mind card offers "Make it a plan" after the one thing is done (mental-performance
+ * close-out, change 5): only for a thing with an approved `plan` prefill, and not once a Mind plan
+ * was saved that day. Mind plans are made only from the one thing, and a day has one thing, so a
+ * Mind plan created today is the plan from today's thing (no link is stored, so no data change).
+ */
+export function makePlanOffered(thing: Thing | undefined, plans: readonly IfThenPlan[] | undefined, today: string): boolean {
+  if (!thing?.plan) return false
+  return !(plans ?? []).some((p) => p.kind === 'mind' && p.created?.slice(0, 10) === today)
 }

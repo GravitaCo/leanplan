@@ -36,6 +36,10 @@ export type AskId =
   | 'checkin'
   /** the weekly reflection card on the Mind page */
   | 'reflection'
+  /** main's weekly review card on Summary (it carries the plan check-in, so it waits like the plan review) */
+  | 'review'
+  /** "Keep the weekly reminder?" on Summary */
+  | 'review-keep'
 
 type Rank = 'safety' | 'time' | 'thing' | 'rest'
 
@@ -69,6 +73,9 @@ const ASKS: Record<AskId, AskMeta> = {
   'quick-check': { rank: 'rest', budgeted: false, food: true, ownSchedule: true },
   checkin: { rank: 'rest', budgeted: false, early: true },
   reflection: { rank: 'rest', budgeted: false },
+  // waits until it's opened, so holding it a day costs nothing (mental-performance close-out, change 1)
+  review: { rank: 'time', budgeted: false, plans: true, ownSchedule: true },
+  'review-keep': { rank: 'rest', budgeted: true, ownSchedule: true },
 }
 export const ASK_IDS = Object.keys(ASKS) as AskId[]
 const RANK_ORDER: Rank[] = ['safety', 'time', 'thing', 'rest']
@@ -116,7 +123,7 @@ export interface AskPick {
  * Which of today's due asks show. `due` is everything that would show without a budget, in the
  * screen's own priority order within a rank (for example welcome-back before activity before
  * burn-note, as TodayScreen orders them). Unknown ids are ignored. Order: safety, then
- * time-sensitive (the plan review), then the one thing, then the rest.
+ * time-sensitive (the plan review and the weekly review card), then the one thing, then the rest.
  * - On a signpost day the signpost is the only ask: no chips, nothing else budgeted, and no
  *   unbudgeted card either (the food quick-check list, the reflection). Only the Mind card's check-in
  *   prompt stays: it is the card's baseline and supplies the mood answers (mental-performance, WP3).

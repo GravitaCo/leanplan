@@ -208,7 +208,7 @@ export function TodayScreen() {
   // ask is never shown, opened or marked seen, and comes back on a day it shows
   const pick = askCtx ? pickAsks(summaryDue({
     signpost: askCtx.signpostToday, checkin: !checked, thing: checked && (things.length > 0 || !!thingByKey(day.checkin?.thing?.key)),
-    planReview: due.length > 0, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue,
+    planReview: due.length > 0, review: reviewDue, reviewKeep: keepAsk, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue,
     quickCheck: flags.length > 0,
   }, on), askCtx) : null
   const shown = (id: AskId) => !pick || pick.show.includes(id)
@@ -255,7 +255,7 @@ export function TodayScreen() {
           <MindCard checkin={day.checkin} isToday={isToday} hard={hard} thingSlot={shown('thing')} options={things} windDownAt={p.mind?.windDownAt}
             onOpen={() => openMind()}
             onCheckIn={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}
-            onMakePlan={(thing) => setSheet({ k: 'thing-plan', thing })} />
+            onMakePlan={(thing) => setSheet({ k: 'thing-plan', thing })} plans={p.plans} day={cur} />
         ) : <button className="card pcard mind-row" onClick={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}>
           <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="smile" size={20} /></span>
           <span className="m">
@@ -269,7 +269,9 @@ export function TodayScreen() {
         </button>}
 
         {signpost.show && <LowMoodBanner onSupport={() => setSheet({ k: 'support' })} onDismiss={signpost.dismiss} />}
-        {reviewDue && (
+        {/* the review card and the keep ask go through the asks budget (mental-performance close-out,
+            change 1); a ?review=1 tap still opens the review, because the person chose it */}
+        {reviewDue && shown('review') && (
           <div className="card rv-due">
             <button className="rv-due-b" onClick={openReview}>
               <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="review" size={20} /></span>
@@ -283,7 +285,7 @@ export function TodayScreen() {
           </div>
         )}
 
-        {keepAsk && (
+        {keepAsk && shown('review-keep') && (
           <div className="banner">
             <span style={{ color: 'var(--mind-ink)' }}><Icon name="bell" /></span>
             <div><b>Keep the weekly reminder?</b><br /><span className="muted">It’s paused for now. Some weeks you won’t need it, and that’s fine.</span>

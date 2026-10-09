@@ -48,7 +48,9 @@ export function PlanEditSheet({ id, prefill, kind, onClose }: { id?: string; pre
   const [when, setWhen] = useState(plan?.when ?? prefill?.when ?? '')
   const [then, setThen] = useState(plan?.then ?? prefill?.then ?? '')
   const [cope, setCope] = useState(plan?.cope ?? '')
-  // a new Mind plan; editing one keeps its kind in the store
+  // a new Mind plan; editing one keeps its kind in the store. Its When and I'll fields have no
+  // placeholder: the food examples brought food timing into a Mind flow (mental-performance
+  // close-out, change 5), and Mind examples wait for Benn
   const mind = !plan && kind === 'mind'
   const save = () => {
     if (!when.trim() || !then.trim()) { showToast("Fill in when and what you'll do"); return }
@@ -61,9 +63,9 @@ export function PlanEditSheet({ id, prefill, kind, onClose }: { id?: string; pre
   return (
     <Sheet title={plan ? 'Edit plan' : 'New plan'} onClose={onClose} right={<button className="navbtn b" onClick={save}>Save</button>}>
       <label className="lbl" htmlFor="pl_when" style={{ display: 'block' }}>When…</label>
-      <input id="pl_when" className="sheet-input" value={when} placeholder="I get home from work hungry" onChange={(e) => setWhen(e.target.value)} />
+      <input id="pl_when" className="sheet-input" value={when} placeholder={mind ? undefined : 'I get home from work hungry'} onChange={(e) => setWhen(e.target.value)} />
       <label className="lbl" htmlFor="pl_then" style={{ display: 'block' }}>I'll…</label>
-      <input id="pl_then" className="sheet-input" value={then} placeholder="have a yoghurt before I start cooking" onChange={(e) => setThen(e.target.value)} />
+      <input id="pl_then" className="sheet-input" value={then} placeholder={mind ? undefined : 'have a yoghurt before I start cooking'} onChange={(e) => setThen(e.target.value)} />
       <label className="lbl" htmlFor="pl_cope" style={{ display: 'block' }}>If something gets in the way…</label>
       <input id="pl_cope" className="sheet-input" value={cope} placeholder={mind ? MIND_PLAN.optional : 'keep protein bars in my bag'} onChange={(e) => setCope(e.target.value)} />
       {mind && <div className="foot">{MIND_PLAN.savedUnder}</div>}

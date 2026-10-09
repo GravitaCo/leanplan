@@ -1,7 +1,8 @@
 /**
  * The low-mood signpost on Summary (wellbeing board B6 frame 2, canvas wp-b6-more; build plan
  * WP15). A mind-coloured banner, not a warning (never red): the info icon on a --mind-fill square,
- * the line by nation (lowMoodLine: B6.9, B6.10 Northern Ireland, B6.11 Scotland), "See support"
+ * the B6.10 line for every nation (LOW_MOOD_LINE_ANY_NATION: no stored nation, so no NHS route
+ * that may not exist where the person lives; the Support sheet has the nation picker), "See support"
  * (B6.12), which opens the Support sheet, and Dismiss (B6.13) with a 44 px target.
  *
  * Behind WELLBEING_ENABLED and MIND_REVIEWED (clinician review pending): TodayScreen only asks for
@@ -10,13 +11,11 @@
  * is markLowMoodShown, the local date it showed, on this device only (never synced).
  */
 import { useEffect, useState } from 'react'
-import { lowMoodLine } from '@/core/domain/mind'
-import type { UkNation } from '@/core/data/signposts'
+import { LOW_MOOD_LINE_ANY_NATION } from '@/core/domain/mind'
 import { Icon } from '@/ui/icons'
 import { LOW_MOOD } from '../mind/copy'
 
-export function LowMoodBanner({ nation = 'england', onSupport, onDismiss }: {
-  nation?: UkNation
+export function LowMoodBanner({ onSupport, onDismiss }: {
   onSupport: () => void
   onDismiss: () => void
 }) {
@@ -24,7 +23,7 @@ export function LowMoodBanner({ nation = 'england', onSupport, onDismiss }: {
     <div className="banner lm-banner" role="note">
       <span className="psq lm-sq" aria-hidden="true"><Icon name="info" size={18} /></span>
       <div className="lm-body">
-        <div>{lowMoodLine(nation)}</div>
+        <div>{LOW_MOOD_LINE_ANY_NATION}</div>
         <button className="btn gray sm" onClick={onSupport}>{LOW_MOOD.seeSupport}</button>
       </div>
       <button className="x" aria-label={LOW_MOOD.dismiss} onClick={onDismiss}>

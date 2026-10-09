@@ -45,8 +45,13 @@ export function oneThingSuite(): number {
   ok('sheet: B9.15 group line, then the B9.16 foot', text(sheet).includes(`${MIND_PLAN.savedUnder} Specific beats ambitious.`), text(sheet))
   const empty = renderToString(createElement(ThingPlanSheet, { thing: thingByKey('lunch-somewhere')!, onClose: () => {} }))
   ok('a thing with no prefill opens empty, still as a Mind plan', /id="pl_when"[^>]*value=""/.test(empty) && text(empty).includes(MIND_PLAN.savedUnder))
+  // close-out change 5: no food examples in a Mind plan's When and I'll fields
+  const noPh = (html: string, id: string) => !new RegExp(`<input[^>]*id="${id}"[^>]*placeholder=`).test(html) && !new RegExp(`<input[^>]*placeholder=[^>]*id="${id}"`).test(html)
+  ok("Mind plan sheet: no placeholder for When or I'll (no food examples)", noPh(empty, 'pl_when') && noPh(empty, 'pl_then') && noPh(sheet, 'pl_when') && noPh(sheet, 'pl_then')
+    && !/yoghurt|hungry|protein bars/.test(empty + sheet), empty)
   const ordinary = renderToString(createElement(PlanEditSheet, { onClose: () => {} }))
-  ok('an ordinary New plan is unchanged (no group line, old placeholder)', !text(ordinary).includes(MIND_PLAN.savedUnder) && /keep protein bars in my bag/.test(ordinary))
+  ok('an ordinary New plan is unchanged (no group line, old placeholders)', !text(ordinary).includes(MIND_PLAN.savedUnder) && /keep protein bars in my bag/.test(ordinary)
+    && /placeholder="I get home from work hungry"/.test(ordinary) && /placeholder="have a yoghurt before I start cooking"/.test(ordinary))
 
   /* ---------- Plan's groups ---------- */
   const pl = (id: string, kind?: 'mind'): IfThenPlan => ({ id, when: 'after lunch', then: 'x', created: '2026-10-10', reviews: [], ...(kind ? { kind } : {}) })

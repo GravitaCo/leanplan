@@ -135,6 +135,9 @@ export function coreSuite(): number {
   ok('only Reset things open a skill, and only skills with a screen', THINGS.every((t) => !t.skill || SKILLS.find((s) => s.id === t.skill)?.screen))
   ok('Wind down and Get outside have no screen yet', skillsWithScreen().map((s) => s.id).join() === 'reset,unload')
   ok('thing text fills the time', thingText(thingByKey('wind-down-from')!.label, { windDownAt: '22:30' }) === 'Wind down from 22:30' && thingByKey('nope') === undefined)
+  // close-out change 7: no time, no dangling " from "
+  ok('thing text with no time: "Wind down" and "Wound down"', thingText(thingByKey('wind-down-from')!.label) === 'Wind down' && thingText(thingByKey('wind-down-from')!.done, { windDownAt: '' }) === 'Wound down'
+    && skillsCopy().includes('Wind down') && skillsCopy().includes('Wound down') && !skillsCopy().some((x) => / from $/.test(x)))
   ok('thing keys are unique and key-shaped', new Set(THINGS.map((t) => t.key)).size === THINGS.length && THINGS.every((t) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(t.key)))
   ok('done lines approved by Benn 9 Oct 2026', thingByKey('outside-10')?.done === 'Got outside' && thingByKey('lunch-somewhere')?.done === 'Lunch somewhere you like' && thingByKey('reset-2')?.done === '2-minute Reset')
   ok('no thing copy is pending', THINGS.every((t) => !t.pending), THINGS.filter((t) => t.pending).map((t) => t.key))

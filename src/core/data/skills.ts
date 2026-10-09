@@ -65,8 +65,13 @@ export const THINGS: readonly Thing[] = [
 
 export const thingByKey = (key: string | undefined): Thing | undefined => (key ? THINGS.find((t) => t.key === key) : undefined)
 
-/** A thing's chip label or done line with its time filled in ("Wind down from 22:30"). */
-export const thingText = (text: string, ctx: { windDownAt?: string } = {}): string => text.replace('{time}', ctx.windDownAt || '')
+/**
+ * A thing's chip label or done line with its time filled in ("Wind down from 22:30"). With no time
+ * (cleared after the pick) the " from {time}" goes: "Wind down" (the B5.10 skill name) and
+ * "Wound down" (mental-performance close-out, change 7; "Wound down" needs Benn's approval).
+ */
+export const thingText = (text: string, ctx: { windDownAt?: string } = {}): string =>
+  ctx.windDownAt ? text.replace('{time}', ctx.windDownAt) : text.replace(' from {time}', '')
 
 /**
  * Reset's breath (deck B7.4, B7.8a to c: a breath in, a small second breath on top, a long breath
@@ -95,6 +100,8 @@ export function skillsCopy(): string[] {
   return [
     ...SKILLS.flatMap((s) => [s.name, s.sub]),
     ...THINGS.flatMap((t) => [t.label, t.done, ...(t.plan ? [t.plan.when, t.plan.then] : [])]),
+    // the no-time forms (thingText): "Wind down", "Wound down"
+    ...THINGS.flatMap((t) => [t.label, t.done]).filter((x) => x.includes('{time}')).map((x) => thingText(x)),
     ...RESET_PATTERN.phases.map((p) => p.word),
   ]
 }
