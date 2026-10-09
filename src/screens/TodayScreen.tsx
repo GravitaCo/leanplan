@@ -43,11 +43,14 @@ import { offerLighter } from '@/core/domain/dayOptions'
 import { thingByKey, type Thing } from '@/core/data/skills'
 import { MindCard } from './today/MindCard'
 import { ThingPlanSheet } from './today/ThingPlanSheet'
+import { LowMoodBanner, useLowMoodSignpost } from './today/LowMoodBanner'
+import { SupportSheet } from './mind/SupportSheet'
+import { lowMoodShownOn } from '@/data/deviceOnly'
 import { BANNER_ASK, checkedIn, lastWeighIn, pillarsOn, summaryDue, weighInSub } from './today/summary'
 import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from './today/summaryCopy'
 import './today/summary.css'
 
-type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | { k: 'thing-plan'; thing: Thing } | null
+type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | { k: 'thing-plan'; thing: Thing } | { k: 'support' } | null
 
 /** "22–28 Sept", or "29 Sept – 5 Oct" across a month end. */
 function weekSpan(a: string, b: string): string {
@@ -80,6 +83,7 @@ export function TodayScreen() {
   // (the effects that open these sheets sit below the asks budget, in the same order as before)
   const openMind = useStore((s) => s.openMind)
   const noteActivityShown = useStore((s) => s.noteActivityShown)
+  const markLowMoodShown = useStore((s) => s.markLowMoodShown)
   const repeatYesterday = useStore((s) => s.repeatYesterday)
 
   const p = data.profile
@@ -161,7 +165,9 @@ export function TodayScreen() {
   // With the flag off: every pillar on, no asks budget, and everything below reads as before.
   const wb = WELLBEING_ENABLED
   const on = pillarsOn(wb ? p.mind?.off : undefined)
-  const askCtx = wb && isToday ? selectAskCtx({ data }, cur) : null
+  const ctx0 = wb && isToday ? selectAskCtx({ data }, cur) : null
+  // WP15: the low-mood signpost belongs to the Mind pillar; with Mind off it never takes the day
+  const askCtx = ctx0 && { ...ctx0, signpostToday: !!ctx0.signpostToday && on.mind }
   const hard = !!askCtx?.hard
   const things = askCtx ? thingOptions({
     hard, off: p.mind?.off, gentle, wellbeingRouting: yes || some, sessionToday: logged || planned.length > 0,
@@ -171,7 +177,7 @@ export function TodayScreen() {
   // the one prompt slot: what is due today goes through the asks budget (core/domain/asks); a held
   // ask is never shown, opened or marked seen, and comes back on a day it shows
   const pick = askCtx ? pickAsks(summaryDue({
-    checkin: !checked, thing: checked && (things.length > 0 || !!thingByKey(day.checkin?.thing?.key)),
+    signpost: askCtx.signpostToday, checkin: !checked, thing: checked && (things.length > 0 || !!thingByKey(day.checkin?.thing?.key)),
     planReview: due.length > 0, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue,
     quickCheck: flags.length > 0,
   }, on), askCtx) : null
@@ -181,6 +187,8 @@ export function TodayScreen() {
   const ifThenGo = ifThenDue && shown('if-then-offer')
   const foodAskGo = foodAsk0 && shown('food-ask') ? foodAsk0 : null
   const suggestVisible = suggestShown && shown('activity') ? suggestShown : null
+  // WP15 (board B6 frame 2): the only ask on its day; shown once, marked with the local date
+  const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data), markLowMoodShown)
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (ifThenGo && !reask && !sheet) setIfThen(true) }, [ifThenGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (foodAskGo && !reask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -228,6 +236,8 @@ export function TodayScreen() {
           </span>
           <Chevron />
         </button>}
+
+        {signpost.show && <LowMoodBanner onSupport={() => setSheet({ k: 'support' })} onDismiss={signpost.dismiss} />}
 
         {prompt === 'missed' && promptOk && (
           <div className="banner">
@@ -468,6 +478,7 @@ export function TodayScreen() {
       {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}
       {sheet?.k === 'add' && <AddFoodSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'thing-plan' && <ThingPlanSheet thing={sheet.thing} onClose={() => setSheet(null)} />}
+      {sheet?.k === 'support' && <SupportSheet onClose={() => setSheet(null)} />}
     </div>
   )
 }

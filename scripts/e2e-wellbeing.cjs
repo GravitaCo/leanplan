@@ -1239,6 +1239,110 @@ async function wp5FlagOffHeaders({ page }) {
     await still(page, 'wp12-reset-reduced')
   }, { seed: hardDay(), url: WBR, fakeClock: true, reducedMotion: true })
 
+  /* ---------- WP15: the low-mood signpost on Summary (B6 frame 2), behind MIND_REVIEWED ---------- */
+  const LM_EN = 'Things seem to have been hard for a while. Talking to your GP or calling NHS 111 can help, and Samaritans are there any time on 116 123.'
+  const lmBanner = (page) => page.locator('.pillars > .lm-banner')
+  const lmChips = (page) => page.locator('section.wb-mind .wb-things .chip')
+  /** the fortnight, with the device-only "last shown" day set */
+  const lmSeed = (at, shownOn) => { const s = lowMoodFortnight(at); if (shownOn) s.state.deviceOnly = { lowMoodShown: shownOn }; return s }
+
+  await run('wp15-signpost', async ({ page, net }) => {
+    const b = lmBanner(page)
+    await b.getByText(LM_EN, { exact: true }).waitFor()
+    // under the Mind card, the only ask: no chips, nothing else in the slot
+    expect((await page.locator('.pillars > *').nth(1).evaluate((e) => e.classList.contains('lm-banner'))), 'banner directly under the Mind card')
+    expect(!(await lmChips(page).count()) && !(await page.getByText("One thing for today, if you'd like:").count()), 'no one-thing chips on a signpost day')
+    expect((await page.locator('.pillars > .banner, .pillars > .dayopt').count()) === 1, 'the signpost is the only banner')
+    expect(!(await page.getByText('Tali will ask for less for a while.').count()), 'no B6.14 line')
+    // mind-coloured, not a warning: the square in --mind-fill with --mind-ink, a note role
+    const tok = (v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
+    const sq = await b.locator('.lm-sq').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color])
+    expect(sq[0] === (await tok('--mind-fill')) && sq[1] === (await tok('--mind-ink')), 'square colours: ' + sq.join(' / '))
+    expect((await b.getAttribute('role')) === 'note', 'role note')
+    const x = await b.getByRole('button', { name: 'Dismiss', exact: true }).boundingBox()
+    expect(x && x.width >= 44 && x.height >= 44, 'Dismiss target 44 px: ' + JSON.stringify(x))
+    const see = await b.getByRole('button', { name: 'See support', exact: true }).boundingBox()
+    expect(see && see.height >= 44, 'See support 44 px: ' + JSON.stringify(see))
+    // marked shown on this device with the local date, and never synced
+    await page.waitForTimeout(1500)
+    expect((await stored(page)).deviceOnly?.lowMoodShown === HARD_DAY, 'lowMoodShown stored: ' + JSON.stringify((await stored(page)).deviceOnly))
+    expect(!JSON.stringify(net.posts).includes('lowMoodShown'), 'lowMoodShown never synced')
+    await shot(page, 'wp15-signpost')
+
+    // See support opens the Support sheet and records nothing
+    const before = keep(await stored(page))
+    const posts = net.posts.length
+    await b.getByRole('button', { name: 'See support', exact: true }).click()
+    const sheet = page.locator('.sheet', { hasText: 'Support and helplines' })
+    await sheet.getByText('Samaritans', { exact: true }).waitFor()
+    await shot(page, 'wp15-support')
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    await page.waitForTimeout(1500)
+    expect(keep(await stored(page)) === before, 'opening Support changed the saved state')
+    expect(net.posts.length === posts, 'opening Support sent ' + (net.posts.length - posts) + ' request(s)')
+
+    // still up after a tab switch, until dismissed
+    await tab(page, 'Food')
+    await tab(page, 'Summary')
+    await b.getByText(LM_EN, { exact: true }).waitFor()
+    await b.getByRole('button', { name: 'Dismiss', exact: true }).click()
+    await b.waitFor({ state: 'detached' })
+    await tab(page, 'Food')
+    await tab(page, 'Summary')
+    await page.locator('section.wb-mind').waitFor()
+    expect(!(await lmBanner(page).count()), 'dismissed stays dismissed')
+    expect(!(await lmChips(page).count()), 'still the only ask that day: no chips after dismissing')
+    await shot(page, 'wp15-dismissed')
+    // a reload: not shown again
+    await page.reload()
+    await page.locator('section.wb-mind').waitFor()
+    await page.waitForTimeout(800)
+    expect(!(await lmBanner(page).count()), 'not shown again after a reload')
+  }, { url: WBR, seed: lmSeed(HARD_DAY) })
+
+  await run('wp15-signpost-29-days', async ({ page }) => {
+    await page.locator('section.wb-mind').waitFor()
+    await lmChips(page).first().waitFor()
+    expect(!(await lmBanner(page).count()), 'not shown within 30 days of the last time')
+  }, { url: WBR, seed: lmSeed(shift(HARD_DAY, 29), HARD_DAY) })
+
+  await run('wp15-signpost-30-days', async ({ page }) => {
+    await lmBanner(page).getByText(LM_EN, { exact: true }).waitFor()
+    await page.waitForTimeout(1200)
+    expect((await stored(page)).deviceOnly?.lowMoodShown === shift(HARD_DAY, 30), 'marked again with the new local date')
+  }, { url: WBR, seed: lmSeed(shift(HARD_DAY, 30), HARD_DAY) })
+
+  await run('wp15-signpost-few', async ({ page }) => {
+    await page.locator('section.wb-mind').waitFor()
+    await lmChips(page).first().waitFor()
+    expect(!(await lmBanner(page).count()), 'fewer than 5 answered check-ins: no signpost')
+  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); for (const d of Object.keys(s.state.days).sort().slice(0, 4)) delete s.state.days[d]; return s })() })
+
+  await run('wp15-signpost-mind-off', async ({ page }) => {
+    await page.locator('section[aria-labelledby="sum-food"]').waitFor()
+    await page.waitForTimeout(800)
+    expect(!(await lmBanner(page).count()), 'Mind off: no signpost')
+    expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
+  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); s.state.profile.mind = { off: ['mind'] }; return s })() })
+
+  await run('wp15-sub-flag-off', async ({ page }) => {
+    await page.locator('section.wb-mind').waitFor()
+    await lmChips(page).first().waitFor()
+    await page.waitForTimeout(800)
+    expect(!(await lmBanner(page).count()), 'MIND_REVIEWED off: never shown')
+    expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
+    await shot(page, 'wp15-sub-flag-off')
+  }, { url: WB, seed: lmSeed(HARD_DAY) })
+
+  await run('wp15-flag-off', async ({ page }) => {
+    await page.locator('.mind-row').waitFor()
+    await page.waitForTimeout(800)
+    expect(!(await page.locator('.lm-banner').count()) && !(await page.getByText(LM_EN).count()), 'flag off: no signpost')
+    expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
+    await shot(page, 'wp15-flag-off')
+  }, { seed: lmSeed(HARD_DAY) })
+
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
   void WB; void WBR; void lowMoodFortnight
