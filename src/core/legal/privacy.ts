@@ -13,7 +13,7 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-10-08',
+    updated: '2026-10-09',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -102,7 +102,7 @@ export function privacyPolicy(): LegalDoc {
           `GitHub Pages: hosts the app's files and sees technical request data.`,
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos and their preview images, and sees technical request data (such as your IP address and which video or image is requested) when the app shows or plays them.`,
-          `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A supplement reminder carries only the supplement name; the weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you."). Both are encrypted so the push service can't read them.`,
+          `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A reminder says “Time for your supplements”. It is encrypted so the push service can't read it. The weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you."), encrypted the same way.`,
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
         ],

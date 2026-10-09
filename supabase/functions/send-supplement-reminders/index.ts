@@ -143,12 +143,15 @@ Deno.serve(async (req: Request) => {
 
     if (!profile?.notificationsEnabled) continue;
 
-    const supplements: Array<{ id: string; name: string; time: string }> =
+    const supplements: Array<{ time: string }> =
       profile?.supplements ?? [];
 
     const dueNow = supplements.filter((s) => s.time === londonTime);
 
-    for (const supp of dueNow) {
+    // Generic text only: a lock screen is visible to anyone nearby and a supplement name can
+    // reveal medication, so the payload never carries one. One notification per subscription
+    // with one fixed tag, however many supplements are due, so they don't stack.
+    if (dueNow.length) {
       const pushSub = {
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth_key },
@@ -157,9 +160,9 @@ Deno.serve(async (req: Request) => {
         await (webpush as any).sendNotification(
           pushSub,
           JSON.stringify({
-            title: "Supplement reminder",
-            body: supp.name,
-            tag: `supp-${supp.id}`,
+            title: "Time for your supplements",
+            body: "Time for your supplements",
+            tag: "tali-supp",
             icon: "/icon-192.png",
           })
         );
@@ -169,7 +172,6 @@ Deno.serve(async (req: Request) => {
         console.error(`push failed: status ${err?.statusCode ?? "unknown"}`);
         if (err.statusCode === 410 || err.statusCode === 404) {
           await supabase.from("push_subscriptions").delete().eq("id", sub.id);
-          break;
         }
       }
     }

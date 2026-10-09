@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v100'
+const CACHE = 'tali-v101'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -63,10 +63,13 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {}
+  // A supplement reminder never shows a supplement name on the lock screen (it can reveal
+  // medication), even from an older server that still sends one: fixed text, one tag.
+  const supp = !data.tag || data.tag === 'tali-supp' || String(data.tag).startsWith('supp-')
   e.waitUntil(
-    self.registration.showNotification(data.title || 'Tali', {
-      body: data.body || '',
-      tag: data.tag || 'tali-supp',
+    self.registration.showNotification(supp ? 'Time for your supplements' : data.title || 'Tali', {
+      body: supp ? 'Time for your supplements' : data.body || '',
+      tag: supp ? 'tali-supp' : data.tag,
       // where a tap goes: the weekly review reminder opens the review (ml-d2)
       data: { url: data.url || './' },
     }),
