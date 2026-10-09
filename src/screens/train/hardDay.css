@@ -1,0 +1,16 @@
+/* WP8: Train hard-day choices (board B3, behind WELLBEING_ENABLED). Only these classes are new;
+   with the flag off nothing renders with them. Tokens only, from theme.css. */
+.lighter.hd > .t { font-size: 15px; font-weight: 400; line-height: 1.4; }
+.hd-opts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.opttile {
+  border: 0; background: var(--bg); border-radius: 18px; padding: 12px 14px; min-height: 64px; width: 100%;
+  display: flex; align-items: center; gap: 12px; text-align: left; color: var(--label); font: inherit;
+}
+.opttile .dot { width: 10px; height: 10px; border-radius: 5px; background: var(--move); flex: none; }
+.opttile .m { flex: 1; min-width: 0; }
+.opttile .k { display: block; font-size: 12px; font-weight: 500; color: var(--label2); }
+.opttile .tt { display: block; font-size: 16px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
+.opttile .d { display: block; font-size: 12px; color: var(--label2); margin-top: 4px; }
+.opttile .chev { width: 14px; height: 14px; color: var(--label3); }
+.lighter.hd .foot { padding: 12px 0 0; }
+.lighter.hd .foot + .foot { padding-top: 8px; }

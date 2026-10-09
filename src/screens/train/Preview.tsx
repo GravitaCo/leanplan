@@ -4,11 +4,11 @@ import { keyTitle, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import type { Routine, Session } from '@/core/types'
 import { Icon } from '@/ui/icons'
 import { FIRST_SESSION } from '../onboarding/copyApp'
-import { WORKOUTS, SWAPS } from '@/core/data/workouts'
+import { WORKOUTS, SWAPS, type SwapId } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
-import { shorterPrescription } from '@/core/domain/dayOptions'
+import { shorterPrescription, type ShorterKind } from '@/core/domain/dayOptions'
 import { exById, fmtSet } from '@/core/domain/library'
-import { fmtTarget, lastTime, readyToStepUp, setCount, setsLine, splitLogged, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { fmtTarget, lastTime, parseRx, readyToStepUp, setCount, setsLine, splitLogged, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
 import { BackButton, TitleRow } from '@/ui/primitives'
 import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
@@ -18,16 +18,24 @@ import { Thumb } from './Thumb'
 import { bareName, warmupCopy } from './GuidedPlayer'
 import { WarmupCard } from './WarmupCard'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { HARD_DAY_COPY, easierAim, swapTile } from './hardDay'
 
-/** Day-of choices (plan §0.2): equal options, the planned session always one tap away. */
-export type Choice = 'planned' | 'shorter' | 'mobility' | 'walk'
-export const CHOICES: [Choice, string][] = [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
+/**
+ * Day-of choices (plan §0.2): equal options, the planned session always one tap away. With
+ * WELLBEING_ENABLED (board B3) there are three: As planned, Shorter and 'swap', the day-matched
+ * swap (hardDay.swapForWorkout); without it, today's four.
+ */
+export type Choice = 'planned' | 'shorter' | 'mobility' | 'walk' | 'swap'
+export const CHOICES: [Choice, string][] = WELLBEING_ENABLED
+  ? [['planned', 'As planned'], ['shorter', 'Shorter'], ['swap', 'Swap']]
+  : [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
 
 /**
  * Session preview (Flow 1 step 2): the version for today, the exercise list with what to aim
  * for, swaps for today only, then Start. Cardio days and the gentle swaps save from here.
  */
-export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan, generated }: {
+export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan, generated, swapId = 'mobility', shorterKind, noShorter, roughNote }: {
   /** a built-in's type or the id of one of the user's own workouts */
   type: WorkoutKey
   choice: Choice
@@ -46,6 +54,14 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   onEditPlan: () => void
   /** a workout the engine generated (onboarding flag): a quiet thumbs up or down on each exercise (ob5-3) */
   generated?: Routine
+  /** the day-matched swap the 'swap' choice opens (wellbeing flag) */
+  swapId?: SwapId
+  /** which shorter version today is (wellbeing flag; none: today's behaviour) */
+  shorterKind?: ShorterKind | null
+  /** a rough night left nothing in the shorter version: the swap is offered instead */
+  noShorter?: boolean
+  /** B3.17 under the Shorter note */
+  roughNote?: boolean
 }) {
   const rate = useStore((s) => s.rateExercise)
   const prefs = useStore((s) => s.data.profile.training?.exPrefs)
@@ -57,7 +73,9 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const [demo, setDemo] = useState<number | null>(null)
   const closeDemo = useCallback(() => setDemo(null), [])
   const shorter = choice === 'shorter'
-  const swap = choice === 'mobility' || choice === 'walk' ? SWAPS[choice] : null
+  const swapKey: SwapId | null = choice === 'swap' ? swapId : choice === 'mobility' || choice === 'walk' ? choice : null
+  const swap = swapKey ? SWAPS[swapKey] : null
+  const easier = shorter && shorterKind === 'easier'
   const title = swap ? swap.title.split(' · ')[0] : keyTitle(type, routines)
   const logged = session?.ex?.some((e) => working(e.sets).length > 0)
   const wSlot = warmupSlot(slots.map((s) => s.shape))
@@ -76,15 +94,17 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
     return slots.map((s) => {
       const last = lastTime(days, cur, s.x?.id, s.shown.n, s.fullRx)
       const mine = working(bySlot[s.i])
-      const t = targetFor(s.shape, s.rx, last, 0, [])
+      const t = targetFor(s.shape, s.rx, last, 0, [], { shorter: shorterKind })
       // a passive hint only, never on a shorter day, and nothing changes by itself
       const up = !shorter && !mine.length && readyToStepUp(last, s.fullRx) ? ' · Top of the range last time: try a little more weight if it felt steady' : ''
+      const reps = parseRx(s.rx).reps
       const detail = mine.length ? `Logged: ${setsLine(mine, s.shape)}`
+        : easier && reps && (s.shape === 'weight-reps' || s.shape === 'reps') ? easierAim(reps, t?.w, 'easier', !!t?.assist)
         : t && (s.shape === 'weight-reps' || s.shape === 'reps') ? `Aim for ${fmtTarget(t, s.shape)}${up}`
         : last ? `Last time: ${last.sets.map((r) => fmtSet(r, last.log ?? s.shape)).filter(Boolean).join(', ')}` : ''
       return { s, detail, done: mine.length }
     })
-  }, [slots, days, cur, session, shorter])
+  }, [slots, days, cur, session, shorter, shorterKind, easier])
 
   const sub = swap
     ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`
@@ -98,11 +118,12 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
       <div className="sub" style={{ marginTop: 2 }}>{sub}</div>
 
       <div className="vchips" role="radiogroup" aria-label="Today's version">
-        {CHOICES.filter(([k]) => !(logged && (k === 'mobility' || k === 'walk'))).map(([k, label]) => (
-          <button key={k} role="radio" aria-checked={choice === k} className={'vchip' + (choice === k ? ' on' : '')} onClick={() => onChoice(k)}>{label}</button>
+        {CHOICES.filter(([k]) => !(logged && (k === 'mobility' || k === 'walk' || k === 'swap')) && !(noShorter && k === 'shorter' && choice !== 'shorter')).map(([k, label]) => (
+          <button key={k} role="radio" aria-checked={choice === k} className={'vchip' + (choice === k ? ' on' : '')} onClick={() => onChoice(k)}>{k === 'swap' ? swapTile(swapId).title : label}</button>
         ))}
       </div>
       {note && <div className="foot" style={{ padding: '0 4px 10px' }}>{note}</div>}
+      {roughNote && shorter && <div className="foot" style={{ padding: '0 4px 10px' }}>{HARD_DAY_COPY.roughNote}</div>}
       {swap && <div className="foot" style={{ padding: '0 4px 10px' }}>This counts as today's session. Your plan carries on as usual.</div>}
 
       {swap ? (
@@ -114,15 +135,15 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
               <div className="cue">{e.cue}</div>
             </div>
           ))}
-          {choice === 'walk' && (
+          {swapKey === 'walk' && (
             <div className="list">
               <div className="frow"><label htmlFor="w_min">Minutes</label>
                 <input id="w_min" type="number" inputMode="numeric" value={walkMins} placeholder={swap.mins} onChange={(e) => setWalkMins(e.target.value)} /></div>
             </div>
           )}
           <div className="foot" style={{ padding: '4px 4px 0' }}>{RED_FLAG}</div>
-          <div className="stack"><button className="btn" onClick={() => { saveCardio(swap.cardioType, choice === 'walk' ? walkMins || swap.mins : swap.mins, 'swap'); onBack() }}>
-            Save {choice === 'walk' ? 'walk' : 'mobility'}</button></div>
+          <div className="stack"><button className="btn" onClick={() => { saveCardio(swap.cardioType, swapKey === 'walk' ? walkMins || swap.mins : swap.mins, 'swap'); onBack() }}>
+            Save {swapKey === 'walk' ? 'walk' : 'mobility'}</button></div>
         </>
       ) : type === 'Cardio' ? (
         <>
@@ -180,7 +201,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           </div>
           {generated && <div className="foot" style={{ padding: '4px 4px 0' }}>{FIRST_SESSION.thumbsNote}</div>}
           <div className="foot" style={{ padding: '4px 4px 0' }}>
-            Swaps here only change today. Stop each set with two or three reps to spare.{slots.some((s) => s.swapped && s.x?.care?.length) ? ' ' + CARE_DISCLAIMER : ''} {RED_FLAG}
+            Swaps here only change today. {easier ? HARD_DAY_COPY.spareEasier : 'Stop each set with two or three reps to spare.'}{slots.some((s) => s.swapped && s.x?.care?.length) ? ' ' + CARE_DISCLAIMER : ''} {RED_FLAG}
           </div>
           <div className="stack pv-cta">
             <button className="btn" onClick={onStart}>{logged ? 'Continue' : 'Start'}</button>

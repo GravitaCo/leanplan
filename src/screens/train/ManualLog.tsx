@@ -13,6 +13,7 @@ import { Icon } from '@/ui/icons'
 import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
 import { HoldTimer, RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
+import { HARD_DAY_COPY } from './hardDay'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
 
@@ -30,7 +31,7 @@ function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
  * add set), for logging after the fact and for editing a session already logged. It is the
  * earlier Train card form, unchanged in what it saves.
  */
-export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
+export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }: {
   /** a built-in's type or the id of one of the user's own workouts */
   type: WorkoutKey
   slots: Slot[]
@@ -38,6 +39,8 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
   swaps: Record<number, string>
   onSwap: (i: number, id: string) => void
   onBack: () => void
+  /** an easier Shorter day (wellbeing flag): three or four reps to spare */
+  easier?: boolean
 }) {
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
@@ -182,7 +185,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
       <div className="stack"><button className="btn" onClick={commit}>Save {shorter ? 'shorter ' : ''}{title}</button></div>
       <div className="foot" style={{ padding: '12px 4px 0' }}>
         {/* no progression prompt on a shorter day (plan §4.0.5) */}
-        Stop each set with two or three reps to spare.{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} {RED_FLAG}
+        {easier && shorter ? HARD_DAY_COPY.spareEasier : 'Stop each set with two or three reps to spare.'}{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} {RED_FLAG}
       </div>
 
       {demo != null && (() => { const sh = slots.find((s) => s.i === demo)?.shown; return sh?.video ? <DemoPlayer ex={sh} onClose={closeDemo} /> : null })()}

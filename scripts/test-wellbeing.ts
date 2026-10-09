@@ -7,6 +7,7 @@ import { dataSyncedSuite } from './wellbeing/data-synced'
 import { coreSuite } from './wellbeing/core'
 import { dataDeviceSuite } from './wellbeing/data-device'
 import { storeSuite } from './wellbeing/store'
+import { trainSuite } from './wellbeing/train'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -19,5 +20,6 @@ export async function wellbeingSuite(fakeServer: FakeServer): Promise<number> {
   bad += coreSuite()
   bad += await dataDeviceSuite(fakeServer)
   bad += storeSuite()
+  bad += trainSuite()
   return bad
 }

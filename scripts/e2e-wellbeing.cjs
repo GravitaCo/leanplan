@@ -82,7 +82,7 @@ const ci = (d, mood, sleep, stress, energy, hunger = 3) => ({ mood, hunger, slee
  * over the 14 days before; the usual breakfast yesterday and on 9 recent days; Legs & Core
  * planned; weight 81.8 kg.
  */
-function hardDay() {
+function hardDay({ schedule = SCHEDULE } = {}) {
   const days = {}
   const ordinary = [[4, 2, 2, 2], [3, 2, 2, 2], [4, 3, 1, 3], [3, 2, 2, 2], [4, 2, 1, 2], [3, 3, 2, 2], [4, 2, 2, 3], [3, 2, 2, 2], [4, 3, 1, 2], [3, 2, 2, 2], [4, 2, 2, 2]]
   const checked = [1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13] // 11 of the 14 days before
@@ -92,7 +92,24 @@ function hardDay() {
   const y = shift(HARD_DAY, -1)
   days[y].weight = 81.8
   days[HARD_DAY] = dayOf({ checkin: { mood: 2, hunger: 2, sleep: 1, stress: 2, energy: 1, sore: 0, note: '', t: HARD_DAY + 'T07:40:00.000Z' } })
-  return { at: HARD_DAY, state: deviceState({ days, profile: { ...PROFILE }, schedule: { ...SCHEDULE }, at: HARD_DAY }) }
+  return { at: HARD_DAY, state: deviceState({ days, profile: { ...PROFILE }, schedule: { ...schedule }, at: HARD_DAY }) }
+}
+
+/** WP8: the hard day, with Legs & Core last Thursday (barbell squat 40 kg × 10, three sets). */
+function hardDayWithLastTime() {
+  const seed = hardDay()
+  const d = shift(HARD_DAY, -7)
+  seed.state.days[d].sessions = [{ id: 'e2e-legs-1', modality: 'strength', title: 'Legs & Core', routineId: 'builtin-Legs', at: d + 'T18:00:00.000Z',
+    ex: [{ name: 'Barbell squat', exId: 'back-squat', log: 'weight-reps', rx: '3 × 10–12', sets: [{ w: '40', reps: '10' }, { w: '40', reps: '10' }, { w: '40', reps: '10' }] }] }]
+  return seed
+}
+
+/** WP8: the hard day (a rough night) with an own workout that has moves with steadier versions. */
+function roughNightOwnWorkout() {
+  const seed = hardDay()
+  seed.state.routines = [{ id: '99999999-8888-4777-8666-555555555555', name: 'Hill legs', modality: 'strength', effort: 'hard', source: 'custom', _dirty: true, _u: HARD_DAY + 'T07:00:00.000Z',
+    blocks: [{ id: 'b1', kind: 'sets', slots: [{ exId: 'step-up', rx: '3 × 10–12' }, { exId: 'cardio-run', rx: '20–30 min' }, { exId: 'mountain-climber', rx: '3 × 20–30' }, { exId: 'back-squat', rx: '3 × 10–12' }] }] }]
+  return seed
 }
 
 /** Ordinary day (deck B9, Sat 10 Oct): a good check-in, the usual breakfast, nothing hard. */
@@ -353,6 +370,94 @@ async function wp5FlagOffHeaders({ page }) {
   await run('wp5-nav', wp5Nav, { url: WB, seed: hardDay() })
   await run('wp5-mind-off', wp5MindOff, { url: WB, seed: (() => { const s = hardDay(); s.state.profile.mind = { off: ['mind'] }; return s })() })
   await run('wp5-flag-off-headers', wp5FlagOffHeaders, { seed: hardDay() })
+
+  // WP8: Train hard-day choices (board B3)
+  await run('wp8-train-hard-day', async ({ page }) => {
+    await tab(page, 'Train')
+    await page.locator('.hdr .ltitle', { hasText: 'Train' }).waitFor()
+    const card = page.locator('.card.lighter.hd')
+    await card.getByText('Rough night? Here are a few options for today. All of them count.').waitFor()
+    const tiles = (await card.locator('.opttile').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim())
+    expect(tiles.length === 3, 'three tiles: ' + tiles.join(' | '))
+    expect(tiles[0] === 'As planned Legs & Core 5 exercises · 14–15 sets', 'tile 1: ' + tiles[0])
+    expect(tiles[1] === 'Shorter Legs & Core 10 sets · easier effort', 'tile 2: ' + tiles[1])
+    expect(tiles[2] === 'Swap Hips, hamstrings and calves About 10 min · on a mat', 'tile 3: ' + tiles[2])
+    expect(!(await card.locator('.opttile.on, .opttile[aria-pressed="true"], .chip').count()), 'nothing selected, no chips')
+    await card.getByText("Shorter means fewer sets and an easier effort: stop each set with three or four reps to spare, at last time's weight or lighter.").waitFor()
+    await card.getByText('Resting today is fine too.').waitFor()
+    expect(!(await card.getByRole('button', { name: 'Resting today is fine too.' }).count()), 'rest is a plain line')
+    expect(!(await card.getByText(/jump rope/).count()), 'no rough-night note: Legs & Core has nothing to change')
+    await shot(page, 'wp8-train-hard-day')
+    // Shorter: 10 sets, B3.14, the aim line and the footer at three or four
+    await card.locator('.opttile').nth(1).click()
+    await page.locator('.pv .ltitle', { hasText: 'Legs & Core' }).waitFor()
+    const sub = await page.locator('.pv .sub').first().innerText()
+    expect(sub.includes('10 sets'), 'preview sub: ' + sub)
+    const chips = (await page.locator('.vchips .vchip').allTextContents()).map((s) => s.trim())
+    expect(chips.join() === 'As planned,Shorter,Hips, hamstrings and calves', 'chips: ' + chips.join(' | '))
+    expect((await page.locator('.vchip[aria-checked="true"]').innerText()).trim() === 'Shorter', 'Shorter on')
+    await page.getByText('Shorter today: fewer sets, three or four reps to spare on each, and no adding weight. Change it any time.').waitFor()
+    const first = await page.locator('.pv-row').first().innerText()
+    expect(first.includes('2 × 10–12') && first.includes('Aim for 10–12 reps with 3 or 4 to spare, at 40 kg or lighter'), 'aim line: ' + first)
+    await page.getByText('Swaps here only change today. Stop each set with three or four reps to spare.', { exact: false }).waitFor()
+    await shot(page, 'wp8-preview-shorter')
+    // the player: the aim line, and last time's reps with no +1
+    await page.locator('.pv-cta .btn', { hasText: 'Start' }).click()
+    const gp = page.locator('.gp')
+    await gp.waitFor()
+    const skipWarm = gp.getByRole('button', { name: 'Skip warm-up' })
+    if (await skipWarm.count()) await skipWarm.click()
+    await gp.locator('.gp-name', { hasText: 'Barbell squat' }).waitFor()
+    await gp.getByText('Aim for 10–12 reps with 3 or 4 to spare').waitFor()
+    const prog = await gp.locator('.gp-prog .t').innerText()
+    expect(prog.includes('Set 1 of 2') && prog.includes('40 kg × 10') && !prog.includes('× 11'), 'target: ' + prog)
+    await shot(page, 'wp8-player-shorter')
+  }, { url: WB, seed: hardDayWithLastTime() })
+
+  await run('wp8-rough-night', async ({ page }) => {
+    // an own workout with a step-up, a run and mountain climbers, after a rough night
+    await tab(page, 'Train')
+    await page.locator('.hdr .ltitle', { hasText: 'Train' }).waitFor()
+    await page.locator('.addrow').click()
+    await page.locator('.sheet').getByText('Hill legs').click()
+    await page.locator('.pv .ltitle', { hasText: 'Hill legs' }).waitFor()
+    const chips = (await page.locator('.vchips .vchip').allTextContents()).map((s) => s.trim())
+    expect(chips.join() === 'As planned,Shorter,Hips, hamstrings and calves', 'chips: ' + chips.join(' | '))
+    expect(!(await page.getByText(/jump rope/).count()), 'no rough-night note on As planned')
+    await page.locator('.vchip', { hasText: 'Shorter' }).click()
+    await page.getByText('After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.').waitFor()
+    const rows = (await page.locator('.pv-row .m > .t').allTextContents()).map((s) => s.trim())
+    expect(rows.length === 3 && !rows.some((r) => /^(Step-up|Run|Mountain climber)$/.test(r)), 'rows: ' + rows.join(' | '))
+    await page.getByText(/In place of Step-up, today only/).waitFor()
+    await shot(page, 'wp8-rough-night-shorter')
+    // As planned is never changed
+    await page.locator('.vchip', { hasText: 'As planned' }).click()
+    const planned = (await page.locator('.pv-row .m > .t').allTextContents()).map((s) => s.trim())
+    expect(planned.length === 4 && planned.includes('Step-up') && planned.includes('Mountain climber'), 'as planned: ' + planned.join(' | '))
+  }, { url: WB, seed: roughNightOwnWorkout() })
+
+  await run('wp8-cardio-day', async ({ page }) => {
+    // a cardio day: the swap is 10-minute mobility and the effort note is the cardio one
+    await tab(page, 'Train')
+    const card = page.locator('.card.lighter.hd')
+    await card.getByText('Rough night? Here are a few options for today. All of them count.').waitFor()
+    const tiles = (await card.locator('.opttile').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim())
+    expect(tiles[2] === 'Swap 10-minute mobility Hips, back and shoulders · on a mat', 'tile 3: ' + tiles[2])
+    await card.getByText('Shorter means fewer minutes at an easy pace, one where you could chat in full sentences.').waitFor()
+    await shot(page, 'wp8-train-cardio-day')
+  }, { url: WB, seed: hardDay({ schedule: { ...SCHEDULE, 4: 'Cardio' } }) })
+
+  await run('wp8-ordinary-day', async ({ page }) => {
+    await tab(page, 'Train')
+    const row = page.locator('.card.lighter.hd button.lh')
+    await row.getByText('Shorter or a gentler swap').waitFor()
+    expect((await row.getAttribute('aria-expanded')) === 'false', 'folded')
+    await shot(page, 'wp8-train-ordinary-folded')
+    await row.click()
+    expect((await page.locator('.card.lighter.hd .opttile').count()) === 3, 'three tiles when unfolded')
+    expect(!(await page.getByText('Resting today is fine too.').count()), 'the rest line is for a hard day')
+    await shot(page, 'wp8-train-ordinary-open')
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.schedule[6] = 'Push'; return o })() }) // Push on the Saturday
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

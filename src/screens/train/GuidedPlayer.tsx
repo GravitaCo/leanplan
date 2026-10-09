@@ -22,6 +22,8 @@ import { HoldTimer, RED_FLAG } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
+import type { ShorterKind } from '@/core/domain/dayOptions'
+import { easierAim } from './hardDay'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -92,7 +94,7 @@ type SheetKind = null | 'adjust' | 'warmup' | 'menu' | 'leave' | 'finish' | 'hol
  * leaving part-way keeps it. Nothing here waits on the network: a clip that can't load falls
  * back to its poster or the cue.
  */
-export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished, generated }: {
+export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished, generated, shorterKind }: {
   /** a built-in's type or the id of one of the user's own workouts */
   type: WorkoutKey
   slots: Slot[]
@@ -103,6 +105,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   onFinished?: () => void
   /** a workout the engine generated (onboarding flag): "Find your weight" and "How was that set?" (ob5-1, ob5-2) */
   generated?: Routine
+  /** which shorter version today is (wellbeing flag): 'easier' aims for 3 or 4 to spare, never +1 */
+  shorterKind?: ShorterKind | null
 }) {
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
@@ -168,7 +172,10 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const finding = !!calib && setNo === 0 && found[slot.i] === undefined && !complete
   const lastW = calib?.lastW && +calib.lastW ? +calib.lastW : null
   useEffect(() => { setFindW(lastW) }, [slot.i, lastW])
-  const t0 = complete ? null : targetFor(slot.shape, slot.rx, last, setNo, done)
+  const t0 = complete ? null : targetFor(slot.shape, slot.rx, last, setNo, done, { shorter: shorter ? shorterKind : null })
+  // an easier Shorter day (B3.16): the effort to aim for, under the name
+  const aimReps = parseRx(slot.rx).reps
+  const easierLine = shorter && shorterKind === 'easier' && !complete && aimReps && (slot.shape === 'weight-reps' || slot.shape === 'reps') ? easierAim(aimReps) : null
   const target = t0 && found[slot.i] !== undefined && setNo === 0 ? { ...t0, w: found[slot.i] }
     : !t0 && found[slot.i] !== undefined && setNo === 0 && !complete ? { w: found[slot.i], reps: String(calib?.t.reps?.hi ?? parseRx(slot.rx).reps?.hi ?? 10) } : t0
   // "How was that set?" on the last set of each exercise (ob5-2), with Skip
@@ -420,6 +427,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             {holdClip && <div className="gp-kick">{video?.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</div>}
             <h1 className="gp-name">{name}</h1>
             {!plain && <p className="gp-line">{firstLine(slot.shown.cue)}</p>}
+            {easierLine && <p className="gp-line sm num">{easierLine}</p>}
             {slot.swapped && <p className="gp-line sm">In place of {bareName(slot.planned.n)}, today only.</p>}
           </div>
           <div className="gp-prog">

@@ -5,7 +5,7 @@ import type { ExerciseTemplate, LoggedExercise, Session } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
-import { lowSignals, offerLighter } from '@/core/domain/dayOptions'
+import { lowSignals, offerLighter, roughNight, shorterPrescription, showRoughNightNote, type ShorterKind } from '@/core/domain/dayOptions'
 import { sessionsOf, warmupOnly, workoutsOf } from '@/core/domain/sessions'
 import { showLoadNote } from '@/core/domain/load'
 import { exById } from '@/core/domain/library'
@@ -27,6 +27,9 @@ import { GuidedPlayer } from './train/GuidedPlayer'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { ManualLog } from './train/ManualLog'
 import { Thumb } from './train/Thumb'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { HARD_DAY_COPY, hardDayChoices, roughShorter, swapForWorkout, swapTile } from './train/hardDay'
+import './train/hardDay.css'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 
@@ -63,6 +66,8 @@ export function TrainScreen() {
   const [mode, setMode] = useState<'preview' | 'manual'>('preview')
   const [playing, setPlaying] = useState(false)
   const [swapsBy, setSwapsBy] = useState<Record<string, Record<number, string>>>({})
+  // slots put back with Undo after a rough night's steadier swap (wellbeing flag): they stay as planned
+  const [keepBy, setKeepBy] = useState<Record<string, number[]>>({})
   // the person's pick for today, for the workout it was made on (it never carries into another)
   const [pick0, setPick0] = useState<{ c: Choice; k: WorkoutKey } | null>(null)
   const setPicked = (c: Choice | null, k: WorkoutKey | null = open) => setPick0(c && k ? { c, k } : null)
@@ -103,7 +108,7 @@ export function TrainScreen() {
   const easy = easyWeek || (!restDay && maintain && planned.some((k) => isHardKey(k, routines)))
   const [lighterOpen, setLighterOpen] = useState(false)
 
-  useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
+  useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setKeepBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
   // Plan's "Do this today" hands a workout over
   useEffect(() => {
     if (!trainOpen) return
@@ -139,9 +144,30 @@ export function TrainScreen() {
   function setSwap(t: WorkoutKey, i: number, id: string) {
     const cur0 = swapsFor(t)
     const n = { ...cur0 }
-    if (id === templateFor(t, routines)?.ex[i]?.id) delete n[i]; else n[i] = id
+    const back = id === templateFor(t, routines)?.ex[i]?.id
+    if (back) delete n[i]; else n[i] = id
     setSwapsBy((p) => ({ ...p, [t]: n }))
+    if (WELLBEING_ENABLED && back) setKeepBy((p) => ({ ...p, [t]: [...(p[t] || []).filter((k) => k !== i), i] }))
   }
+  // the hard-day choices (board B3, wellbeing flag): after a rough night the shorter version
+  // swaps to steadier moves and leaves intervals out; "As planned" never changes
+  const rough = WELLBEING_ENABLED && roughNight(low)
+  /** a workout's version for today: the swaps, and the slots it leaves out */
+  const versionOf = (t: WorkoutKey, shorter: boolean): { swaps: Record<number, string>; leaveOut: number[]; empty: boolean } => {
+    const own = swapsFor(t)
+    if (!rough || !shorter) return { swaps: own, leaveOut: [], empty: false }
+    return roughShorter(templateFor(t, routines)?.ex ?? [], own, keepBy[t] || [], exById)
+  }
+  /** B3.17: a rough night and something in the workout (as shown) that the shorter version changes */
+  const roughNoteFor = (t: WorkoutKey): boolean => {
+    if (!rough) return false
+    const own = swapsFor(t)
+    return showRoughNightNote(low, (templateFor(t, routines)?.ex ?? []).map((e, i) => exById(own[i] ?? e.id)))
+  }
+  /** which shorter version: a maintenance week keeps the usual effort; every other Shorter is easier */
+  const shorterKindFor = (t: WorkoutKey, shorter: boolean): ShorterKind | null =>
+    !WELLBEING_ENABLED || !shorter ? null
+      : maintain && !easyWeek && !offer && isHardKey(t, routines) && planPos?.maintenanceWeek != null ? 'maintain' : 'easier'
   function openWorkout(t: WorkoutKey, c?: Choice) {
     if (!templateFor(t, routines)) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
     if (c) setPicked(c, t)
@@ -158,23 +184,32 @@ export function TrainScreen() {
 
   // ---------- a workout is open: preview, the manual form, or the player ----------
   if (open) {
-    const choice = choiceFor(open)
+    const tplEx = templateFor(open, routines)?.ex ?? []
+    // a rough night that leaves nothing in the shorter version offers the swap instead
+    const noShorter = rough && versionOf(open, true).empty
+    const choice0 = choiceFor(open)
+    const choice: Choice = noShorter && choice0 === 'shorter' ? 'swap' : choice0
     const shorter = choice === 'shorter'
-    const swaps = swapsFor(open)
-    const slots = slotsOf(templateFor(open, routines)?.ex ?? [], swaps, shorter, exById)
+    const v = versionOf(open, shorter)
+    const swaps = v.swaps
+    const slots = slotsOf(tplEx, swaps, shorter, exById).filter((x) => !v.leaveOut.includes(x.i))
     const option = shorter ? 'shorter' as const : undefined
+    const kind = shorterKindFor(open, shorter)
+    const day = WELLBEING_ENABLED ? swapForWorkout(tplEx, exById) : null
+    const shorterNote = shorter ? easyNote ?? (WELLBEING_ENABLED ? (day?.day === 'cardio' ? HARD_DAY_COPY.effortCardio : HARD_DAY_COPY.preview) : null) : null
     // a workout the engine generated (behind the onboarding flag): thumbs, find your weight, how was that set
     const generated = ONBOARDING_ENABLED ? (routines || []).find((r) => r.id === open && r.source === 'recommended' && r.blocks.some((b) => b.slots.some((x) => x.why?.length))) : undefined
     if (mode === 'manual') {
-      return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} />
+      return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} easier={kind === 'easier'} />
     }
     return (
       <>
         <Preview type={open} choice={choice} onChoice={(c) => setPicked(c, open)} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
-          session={builtin(open)} note={choice === 'shorter' ? easyNote : null} dayName={dayName} isToday={isToday}
+          session={builtin(open)} note={shorterNote} dayName={dayName} isToday={isToday}
           onStart={() => setPlaying(true)} onManual={() => { setMode('manual'); window.scrollTo(0, 0) }} onBack={closeWorkout}
-          onEditPlan={() => openPlan(open)} generated={generated} />
-        {playing && <GuidedPlayer type={open} slots={slots} option={option} generated={generated} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
+          onEditPlan={() => openPlan(open)} generated={generated}
+          swapId={day?.swap} shorterKind={kind} noShorter={noShorter} roughNote={roughNoteFor(open)} />
+        {playing && <GuidedPlayer type={open} slots={slots} option={option} generated={generated} shorterKind={kind} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
       </>
     )
   }
@@ -185,16 +220,18 @@ export function TrainScreen() {
     const session = builtin(k)
     const shorterK = choiceFor(k) === 'shorter'
     const cardio = k === 'Cardio'
-    const sets = !cardio && tpl ? slotsOf(tpl.ex, swapsFor(k), shorterK, exById).reduce((a, x) => a + x.sets, 0) : 0
+    const vk = versionOf(k, shorterK)
+    const kSlots = tpl ? slotsOf(tpl.ex, vk.swaps, shorterK, exById).filter((x) => !vk.leaveOut.includes(x.i)) : []
+    const sets = !cardio ? kSlots.reduce((a, x) => a + x.sets, 0) : 0
     const done = session?.ex ? session.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
     // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
     const inProgress = !!session && !cardio && session.open === true
-    const n = tpl?.ex.length ?? 0
+    const n = WELLBEING_ENABLED && tpl ? kSlots.length : tpl?.ex.length ?? 0
     // a plan's lighter week or maintenance opens hard workouts shorter, with a way back to the full one (Plans 3)
     const planShort = maintain && !easyWeek && shorterK && !cardio
     const sub = cardio ? WORKOUTS.Cardio.ex[0].t
       : planShort ? `Shorter version · ${setCount(tpl?.ex ?? [], true)}`
-      : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
+      : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(WELLBEING_ENABLED ? kSlots.map((x) => x.shown) : tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
     return { k, session, inProgress, show: !session || inProgress, sets, done, sub, planShort, video: keyVideo(k, routines) }
   }
   const rows = planned.map(rowOf)
@@ -206,7 +243,7 @@ export function TrainScreen() {
   // a plan's lighter week says so on the workout itself, so the options card stays folded
   const lighterUp = lighterShown && (offer || easyWeek)
 
-  const lighter = (
+  const lighter = WELLBEING_ENABLED ? hardDayCard() : (
     <div className={'card lighter' + (lighterUp || lighterOpen ? ' open' : '')}>
       {lighterUp ? (
         <div className="t">{offer
@@ -227,6 +264,61 @@ export function TrainScreen() {
       )}
     </div>
   )
+
+  /**
+   * Board B3: three equal options for the day's first workout (As planned, Shorter, the
+   * day-matched swap), nothing selected, each opening the preview; the effort note, the
+   * rough-night note when it applies, and "Resting today is fine too." as a plain line.
+   */
+  function hardDayCard() {
+    const k = first
+    const tpl = k ? templateFor(k, routines) : null
+    const up = lighterUp || lighterOpen
+    const cardio = k === 'Cardio'
+    const short = k ? versionOf(k, true) : null
+    const day = tpl ? swapForWorkout(tpl.ex, exById) : null
+    const title = k ? keyTitle(k, routines) : ''
+    const sSlots = tpl && short ? slotsOf(tpl.ex, short.swaps, true, exById).filter((x) => !short.leaveOut.includes(x.i)) : []
+    const tiles = hardDayChoices(!!short?.empty).map((c) => {
+      if (c === 'planned') {
+        const n = tpl?.ex.length ?? 0
+        return { c, k: HARD_DAY_COPY.planned, t: title, d: cardio ? WORKOUTS.Cardio.ex[0].t : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [])}` }
+      }
+      if (c === 'shorter') {
+        return { c, k: HARD_DAY_COPY.shorter, t: title, d: `${cardio ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : setCount(sSlots.map((x) => x.shown), true)} · ${HARD_DAY_COPY.easierEffort}` }
+      }
+      const sw = swapTile(day?.swap ?? 'mobility')
+      return { c, k: HARD_DAY_COPY.swapKicker, t: sw.title, d: sw.detail }
+    })
+    return (
+      <div className={'card lighter hd' + (up ? ' open' : '')}>
+        {lighterUp ? (
+          <div className="t">{offer ? (roughNight(low) ? HARD_DAY_COPY.roughNight : HARD_DAY_COPY.toughDay) : easyNote}</div>
+        ) : (
+          <button className="lh" aria-expanded={lighterOpen} onClick={() => setLighterOpen(!lighterOpen)}>
+            <span className="t">Lighter options</span>
+            <span className="s">{HARD_DAY_COPY.collapsed} <Chevron rotate={lighterOpen ? 270 : 90} /></span>
+          </button>
+        )}
+        {up && k && (
+          <>
+            <div className="hd-opts" role="group" aria-label="Today's session">
+              {tiles.map((x) => (
+                <button key={x.c} type="button" className="opttile" onClick={() => openWorkout(k, x.c)}>
+                  <span className="dot" aria-hidden="true" />
+                  <span className="m"><span className="k">{x.k}</span><span className="tt">{x.t}</span><span className="d num">{x.d}</span></span>
+                  <Chevron />
+                </button>
+              ))}
+            </div>
+            <div className="foot">{day?.day === 'cardio' ? HARD_DAY_COPY.effortCardio : HARD_DAY_COPY.effort}</div>
+            {roughNoteFor(k) && <div className="foot">{HARD_DAY_COPY.roughNote}</div>}
+            {offer && <div className="foot">{HARD_DAY_COPY.rest}</div>}
+          </>
+        )}
+      </div>
+    )
+  }
 
   const sessSub = (x: Session) => {
     const n = x.ex ? x.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
