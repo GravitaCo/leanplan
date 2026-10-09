@@ -23,7 +23,7 @@ export function resetSuite(): number {
   const issues = copy.map((t) => [t, mindCopyIssues(t)] as const).filter(([, i]) => i.length)
   ok('every Reset string passes mindCopyIssues', !issues.length, issues)
   ok('no em dashes', copy.every((t) => !t.includes('—')))
-  ok('B7.14 "That’s {length}." singular and plural', finishedLine(1) === 'That’s 1 minute.' && finishedLine(2) === 'That’s 2 minutes.' && finishedLine(5) === 'That’s 5 minutes.')
+  ok('B7.14 "That\'s {length}." singular and plural', finishedLine(1) === "That's 1 minute." && finishedLine(2) === "That's 2 minutes." && finishedLine(5) === "That's 5 minutes.")
   ok('B7.5 and B7.9 shapes', lengthLabel(2) === '2 min' && leftLine('1:20') === '1:20 left')
   ok('B7.12, B7.13, B7.15 verbatim',
     RESET.stopAnyTime === 'Stop any time. If this makes you feel worse, try a walk instead.'

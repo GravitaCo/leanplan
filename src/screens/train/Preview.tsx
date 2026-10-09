@@ -109,7 +109,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const sub = swap
     ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`
     : type === 'Cardio' ? `${dayName} · ${shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}`
-    : `${dayName} · ${warm ? 'warm-up and ' : ''}${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
+    : `${dayName} · ${warm || (WELLBEING_ENABLED && wSlot >= 0) ? 'warm-up and ' : ''}${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
 
   return (
     <div className="screen pv">
@@ -117,7 +117,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
       <TitleRow title={title} />
       <div className="sub" style={{ marginTop: 2 }}>{sub}</div>
 
-      <div className="vchips" role="radiogroup" aria-label="Today's version">
+      <div className={'vchips' + (WELLBEING_ENABLED ? ' hd-wrap' : '')} role="radiogroup" aria-label="Today's version">
         {CHOICES.filter(([k]) => !(logged && (k === 'mobility' || k === 'walk' || k === 'swap')) && !(noShorter && k === 'shorter' && choice !== 'shorter')).map(([k, label]) => (
           <button key={k} role="radio" aria-checked={choice === k} className={'vchip' + (choice === k ? ' on' : '')} onClick={() => onChoice(k)}>{k === 'swap' ? swapTile(swapId).title : label}</button>
         ))}

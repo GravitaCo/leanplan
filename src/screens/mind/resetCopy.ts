@@ -31,8 +31,8 @@ export const lengthLabel = (min: number): string => `${min} min`
 /** B7.9 "{m}:{ss} left"; `left` is fmtLeft's "1:20" */
 export const leftLine = (left: string): string => `${left} left`
 
-/** B7.14 "That’s {length}." for a finished run only ("That’s 2 minutes.") */
-export const finishedLine = (min: number): string => `That’s ${min} ${min === 1 ? 'minute' : 'minutes'}.`
+/** B7.14 "That's {length}." for a finished run only ("That's 2 minutes.") */
+export const finishedLine = (min: number): string => `That's ${min} ${min === 1 ? 'minute' : 'minutes'}.`
 
 /** Every string Reset can show (with the lengths it offers), for the copy lint. */
 export function resetCopy(lengths: readonly number[]): string[] {

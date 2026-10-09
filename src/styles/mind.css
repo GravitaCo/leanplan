@@ -17,7 +17,7 @@
 .mind-skills .li .t, .mind-skills .li .s { display: block; }
 .mind-skills .li .s { white-space: normal; line-height: 1.35; }
 .mind .mind-plans .li .m { flex: 1 1 auto; }
-.mind-wellness { text-align: center; padding: 6px 16px 0; }
+.mind-wellness { text-align: center; padding: 6px 4px 0; }
 
 /* ===================== WP13: Unload (B8) ===================== */
 .unload .ul-lead { margin: 2px 4px 14px; font-size: 17px; line-height: 1.4; }
@@ -26,6 +26,8 @@
 .unload .ul-pair label { font-size: 13px; color: var(--label2); margin: 0 2px; }
 .unload .ul-pair textarea, .unload .ul-pair input, .unload .ul-ok input { background: var(--bg); border-radius: 12px; padding: 11px 14px; }
 .unload .ul-pair textarea { display: block; min-height: 88px; resize: none; line-height: 1.35; }
+/* "Next step" (B8): two rows, so its hint wraps instead of being cut off */
+.unload .ul-pair textarea.ul-next { min-height: 68px; }
 .unload .foot { padding: 0 4px; margin-bottom: 8px; line-height: 1.4; }
 .unload .foot .linkbtn.inl { font-size: 13px; }
 .unload .ul-support { margin-top: 4px; }

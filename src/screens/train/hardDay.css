@@ -14,3 +14,9 @@
 .opttile .chev { width: 14px; height: 14px; color: var(--label3); }
 .lighter.hd .foot { padding: 12px 0 0; }
 .lighter.hd .foot + .foot { padding-top: 8px; }
+/* the day's choices with the flag on (B3 "Preview after choosing Shorter"): they wrap onto lines,
+   no sideways scroll, 44 px targets; a long swap name wraps inside its chip. Flag off: .hd-wrap is
+   never set, so today's chips are unchanged. */
+.vchips.hd-wrap { flex-wrap: wrap; overflow: visible; gap: 6px; margin: 16px 0 12px; padding: 0; }
+.vchips.hd-wrap .vchip { flex: 0 1 auto; max-width: 100%; height: auto; min-height: 44px; border-radius: 22px; padding: 6px 14px; line-height: 1.25; white-space: normal; text-align: left; }
+.vchips.hd-wrap .vchip.on { font-weight: 600; }

@@ -810,11 +810,11 @@ async function wp5FlagOffHeaders({ page }) {
     await sup.waitFor({ state: 'detached' })
 
     // fill: a pair, then a second pair with only a next step, then the went-OK line
-    await sheet.locator('.ul-pair textarea').first().fill('The deadline on Friday, and the car needs booking in. ' + SENT)
-    await sheet.locator('.ul-pair input').first().fill('Block an hour on Wednesday morning')
+    await sheet.locator('.ul-pair textarea:not(.ul-next)').first().fill('The deadline on Friday, and the car needs booking in. ' + SENT)
+    await sheet.locator('.ul-pair textarea.ul-next').first().fill('Block an hour on Wednesday morning')
     expect(!(await done.isDisabled()), 'Done is on once something is written')
     await sheet.getByRole('button', { name: 'Add another' }).click()
-    await sheet.locator('.ul-pair input').nth(1).fill('Ring the garage ' + SENT)
+    await sheet.locator('.ul-pair textarea.ul-next').nth(1).fill('Ring the garage ' + SENT)
     const wentOk = sheet.getByRole('button', { name: 'One thing that went OK today' })
     expect((await wentOk.getAttribute('aria-expanded')) === 'false', 'went OK starts closed')
     await wentOk.click()
@@ -864,7 +864,7 @@ async function wp5FlagOffHeaders({ page }) {
 
   await run('wp13-unload-earlier', async ({ page }) => {
     const sheet = await openUnload(page)
-    await sheet.locator('.ul-pair textarea').fill('Work is a lot this week')
+    await sheet.locator('.ul-pair textarea:not(.ul-next)').fill('Work is a lot this week')
     await sheet.getByRole('button', { name: 'Done', exact: true }).click()
     await sheet.waitFor({ state: 'detached' })
     const again = await openUnload(page)
@@ -886,7 +886,7 @@ async function wp5FlagOffHeaders({ page }) {
     await ctx.setOffline(true)
     await page.evaluate(() => window.dispatchEvent(new Event('offline')))
     const sheet = await openUnload(page)
-    await sheet.locator('.ul-pair textarea').fill('Offline thought ' + SENT)
+    await sheet.locator('.ul-pair textarea:not(.ul-next)').fill('Offline thought ' + SENT)
     await sheet.getByRole('button', { name: 'Done', exact: true }).click()
     await sheet.waitFor({ state: 'detached' })
     await page.locator('.toast.show', { hasText: 'Saved on this device' }).waitFor()
@@ -1216,7 +1216,7 @@ async function wp5FlagOffHeaders({ page }) {
     await scr.locator('.seg').getByRole('radio', { name: '1 min' }).click()
     await scr.getByRole('button', { name: 'Start', exact: true }).click()
     await page.clock.runFor(75000)
-    await scr.locator('.reset-end').getByText('That’s 1 minute.', { exact: true }).waitFor()
+    await scr.locator('.reset-end').getByText("That's 1 minute.", { exact: true }).waitFor()
     await scr.locator('.reset-end').getByText(R.back, { exact: true }).waitFor()
     await page.clock.runFor(3000)
     const after = (await stored(page)).days[HARD_DAY].checkin
@@ -1630,6 +1630,122 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('.rv-h1').waitFor()
     await shot(page, 'closeout-review-tap-hard-day')
   }, { url: WB + '?review=1', seed: reviewSeed() })
+
+  /* ---------- Close-out (design review): fixes so the build matches the approved boards ---------- */
+  const tokColor = (page, v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
+  const tokBg = (page, v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.backgroundColor = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c }, v)
+  /** the day's choice chips: the row's wrap and scroll, and each chip's box */
+  const chipsFit = (page) => page.locator('.vchips').evaluate((row) => {
+    const r = row.getBoundingClientRect()
+    const chips = [...row.querySelectorAll('.vchip')].map((c) => { const b = c.getBoundingClientRect(); return { t: c.textContent.trim(), h: b.height, l: b.left, r: b.right, sw: c.scrollWidth, cw: c.clientWidth } })
+    return { wrap: getComputedStyle(row).flexWrap, scroll: row.scrollWidth > row.clientWidth + 1, left: r.left, right: r.right, chips }
+  })
+
+  // section 9: Reset is a card screen with no tab bar (as the guided player); Back and the avatar stay
+  await run('closeout-design-reset', async ({ page }) => {
+    await openMindTab(page)
+    expect(await page.locator('nav.tabbar').isVisible(), 'the tab bar on the Mind page')
+    await page.locator('.mind-skills').getByRole('button', { name: /^Reset/ }).click()
+    const scr = page.locator('.screen.reset')
+    await scr.locator('.ltitle', { hasText: 'Reset' }).waitFor()
+    expect(!(await page.locator('nav.tabbar').isVisible()), 'no tab bar on Reset')
+    expect(await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).isVisible(), 'Back "Mind" stays')
+    expect(await scr.locator('.hdr-row.av').getByRole('button', { name: 'Profile', exact: true }).isVisible(), 'the Profile avatar stays')
+    await shot(page, 'closeout-design-reset')
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await page.waitForTimeout(200)
+    const foot = await scr.locator('.reset-wellness').boundingBox()
+    expect(foot && foot.y + foot.height <= 844, 'the wellness line clears the bottom: ' + JSON.stringify(foot))
+    await shot(page, 'closeout-design-reset-foot')
+    // a finished run: "That's 1 minute." with a straight apostrophe, as the rest of the new copy
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await scr.locator('.seg').getByRole('radio', { name: '1 min' }).click()
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    await page.clock.runFor(70000)
+    await scr.locator('.reset-end').getByText("That's 1 minute.", { exact: true }).waitFor()
+    expect(!(await page.locator('nav.tabbar').isVisible()), 'still no tab bar when finished')
+    await shot(page, 'closeout-design-reset-finished')
+    await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).click()
+    await page.locator('.screen.mind').waitFor()
+    expect(await page.locator('nav.tabbar').isVisible(), 'the tab bar back on the Mind page')
+  }, { url: WBR, seed: hardDay(), fakeClock: true })
+
+  // B3 "Preview after choosing Shorter": the chips wrap at 44 px; the sub-line names the warm-up
+  const pushThursday = () => { const s = hardDayWithLastTime(); s.state.schedule[4] = 'Push'; return s }
+  for (const [name, seed, sub, swapName] of [
+    ['closeout-design-chips-legs', hardDayWithLastTime, 'Thursday · warm-up and 5 exercises · 10 sets', 'Hips, hamstrings and calves'],
+    ['closeout-design-chips-push', pushThursday, 'Thursday · warm-up and ', 'Upper back, chest and shoulders'],
+  ]) {
+    await run(name, async ({ page }) => {
+      await tab(page, 'Train')
+      await page.locator('.card.lighter.hd .opttile').nth(1).click()
+      await page.locator('.pv .vchip[aria-checked="true"]', { hasText: 'Shorter' }).waitFor()
+      const s = (await page.locator('.pv .sub').first().innerText()).trim()
+      expect(s.startsWith(sub), 'preview sub: ' + s)
+      const f = await chipsFit(page)
+      expect(f.wrap === 'wrap' && !f.scroll, 'chips wrap, no sideways scroll: ' + JSON.stringify(f))
+      expect(f.chips.map((c) => c.t).join() === 'As planned,Shorter,' + swapName, 'chips: ' + f.chips.map((c) => c.t).join(' | '))
+      for (const c of f.chips) expect(c.h >= 44 && c.l >= f.left - 0.5 && c.r <= f.right + 0.5 && c.sw <= c.cw + 1, 'chip fits at 44 px: ' + JSON.stringify(c))
+      await shot(page, name)
+    }, { url: WB, seed: seed() })
+  }
+
+  // flag off: the chips and the sub-line exactly as main
+  await run('closeout-design-chips-flag-off', async ({ page }) => {
+    await tab(page, 'Train')
+    await page.locator('.hdr .ltitle', { hasText: 'Train' }).waitFor()
+    const fold = page.locator('.card.lighter button.lh')
+    if (await fold.count()) await fold.click()
+    await page.locator('.card.lighter .chips .chip', { hasText: 'Shorter' }).click()
+    await page.locator('.pv .vchip[aria-checked="true"]', { hasText: 'Shorter' }).waitFor()
+    const s = (await page.locator('.pv .sub').first().innerText()).trim()
+    expect(!s.includes('warm-up'), 'flag-off sub as main: ' + s)
+    const row = await page.locator('.vchips').evaluate((e) => ({ cls: e.className, ox: getComputedStyle(e).overflowX, wrap: getComputedStyle(e).flexWrap, h: e.querySelector('.vchip').getBoundingClientRect().height }))
+    expect(row.cls === 'vchips' && row.ox === 'auto' && row.wrap === 'nowrap' && row.h === 32, 'flag-off chips as main: ' + JSON.stringify(row))
+    await shot(page, 'closeout-design-chips-flag-off')
+  }, { seed: hardDayWithLastTime() })
+
+  // B8: "Next step" is a 2-row text box like "On my mind", so its hint wraps instead of being cut off
+  await run('closeout-design-unload', async ({ page }) => {
+    const sheet = await openUnload(page)
+    const next = sheet.locator('.ul-pair textarea.ul-next')
+    expect((await next.getAttribute('rows')) === '2', 'two rows')
+    await sheet.getByLabel('Next step').waitFor()
+    const m = await next.evaluate((e) => ({ h: e.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(e).lineHeight), ph: e.placeholder }))
+    expect(m.h >= 2 * m.lh + 20 && m.ph === "Optional. One small thing, or 'nothing for now'", 'Next step box: ' + JSON.stringify(m))
+    await shot(page, 'closeout-design-unload')
+  }, { url: WBR, seed: hardDay() })
+
+  // B5: the wellness line at the foot of the Mind page, as the board draws it
+  await run('closeout-design-mind-foot', async ({ page }) => {
+    await openMindTab(page)
+    const foot = page.locator('.screen.mind .mind-wellness')
+    const a = await foot.evaluate((e) => ({ align: getComputedStyle(e).textAlign, pl: getComputedStyle(e).paddingLeft }))
+    expect(a.align === 'center' && a.pl === '4px', 'B5 wellness line: ' + JSON.stringify(a))
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await shot(page, 'closeout-design-mind-foot')
+  }, { url: WB, seed: hardDay() })
+
+  // B6: the signpost's close button, a --label2 cross on a --fill circle in a 44 px target; and on a
+  // signpost day the weekly review card and "Keep the weekly reminder?" wait (21185bf)
+  await run('closeout-design-signpost', async ({ page }) => {
+    const b = lmBanner(page)
+    await b.getByText(LM_EN, { exact: true }).waitFor()
+    const x = b.getByRole('button', { name: 'Dismiss', exact: true })
+    const st = await x.evaluate((e) => { const c = getComputedStyle(e); const s = getComputedStyle(e.firstElementChild); const r = e.firstElementChild.getBoundingClientRect(); return { color: c.color, bg: c.backgroundColor, w: e.getBoundingClientRect().width, cbg: s.backgroundColor, cw: r.width, rad: s.borderRadius } })
+    expect(st.color === (await tokColor(page, '--label2')) && st.bg === 'rgba(0, 0, 0, 0)' && st.w >= 44 && st.cbg === (await tokBg(page, '--fill')) && st.cw === 28 && st.rad === '50%', 'the close button: ' + JSON.stringify(st))
+    await page.waitForTimeout(800)
+    expect(!(await page.locator('.pillars > .rv-due').count()), 'no weekly review card on a signpost day')
+    expect(!(await page.locator('.pillars > .banner', { hasText: 'Keep the weekly reminder?' }).count()), 'no keep-reminder ask on a signpost day')
+    expect((await page.locator('.pillars > .banner, .pillars > .dayopt, .pillars > .rv-due').count()) === 1, 'the signpost is the only ask')
+    await shot(page, 'closeout-design-signpost')
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(300)
+      await b.screenshot({ path: path.join(OUT, `closeout-design-signpost-banner-${scheme}.png`) })
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); Object.assign(s.state.profile, { reviewPush: true, reviewPushFrom: '2026-09-15' }); delete s.state.profile.lastReviewAt; return s })() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

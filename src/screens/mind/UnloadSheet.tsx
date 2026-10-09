@@ -142,7 +142,7 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
               <label htmlFor={`${id}-m${i}`}>{UNLOAD.mind}</label>
               <textarea id={`${id}-m${i}`} rows={3} value={p.mind} placeholder={UNLOAD.mindHint} autoComplete="off" onChange={(e) => setPair(i, { mind: e.target.value })} />
               <label htmlFor={`${id}-n${i}`}>{UNLOAD.next}</label>
-              <input id={`${id}-n${i}`} value={p.next ?? ''} placeholder={UNLOAD.nextHint} autoComplete="off" onChange={(e) => setPair(i, { next: e.target.value })} />
+              <textarea id={`${id}-n${i}`} className="ul-next" rows={2} value={p.next ?? ''} placeholder={UNLOAD.nextHint} autoComplete="off" onChange={(e) => setPair(i, { next: e.target.value })} />
             </div>
           ))}
           <div className="list">

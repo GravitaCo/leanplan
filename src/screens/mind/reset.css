@@ -29,3 +29,8 @@
 .reset-end-t { font-size: 22px; font-weight: 600; }
 .reset-end-s { font-size: 15px; color: var(--label2); }
 .reset-end-only { font-size: 17px; }
+
+/* section 9, "card screen, no tab bar as on B7": while Reset is open the tab bar goes, as in the
+   guided player; the Back button and the Profile avatar stay. Only Reset's own markup matches. */
+.app-shell:has(.screen.reset) > .tabbar { display: none; }
+.app-shell:has(.screen.reset) { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }

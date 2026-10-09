@@ -33,7 +33,7 @@ function useReducedMotion(): boolean {
  * Reset (board B7 with the P6 Glow pacer, canvas 8c; deck B7): a pushed view inside the Mind tab,
  * Back "Mind" and the title with the Profile avatar. Ready: the sub-line, the length, the how-to,
  * the pacer at rest and Start. Running (as the Glow boards): the pacer, the time left and Stop.
- * Finished: "That’s {length}." and B7.15. Stopped early: B7.15 only, never the time done.
+ * Finished: "That's {length}." and B7.15. Stopped early: B7.15 only, never the time done.
  * Only a finished run is logged (logSkill, plan C21). The safety lines, the support row and the
  * wellness line sit at the foot throughout. Reached only when MIND_REVIEWED is on (MindPage).
  */
