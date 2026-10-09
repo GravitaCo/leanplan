@@ -54,6 +54,8 @@ export function weighInSub(last: string | null | undefined, today: string): stri
 
 /** What could show on Summary today, before the asks budget (core/domain/asks pickAsks) decides. */
 export interface SummaryDue {
+  /** WP15: the low-mood signpost (selectAskCtx's signpostToday, only with MIND_REVIEWED) */
+  signpost?: boolean
   /** today's check-in isn't done: the Mind card's "Check in" (unbudgeted) */
   checkin?: boolean
   /** the one thing has chips to offer, or one is already picked */
@@ -74,11 +76,12 @@ export const BANNER_ASK: Record<'missed' | 'suggest' | 'burn', AskId> = { missed
 
 /**
  * The due list for pickAsks, with the switched-off pillars' asks left out (C1): Mind off takes
- * the check-in prompt and the one thing with its card; Food off takes the food asks, the quick
+ * the check-in prompt, the one thing with its card and the low-mood signpost; Food off takes the food asks, the quick
  * check and the range note.
  */
 export function summaryDue(due: SummaryDue, on: Record<Pillar, boolean>): AskId[] {
   const out: AskId[] = []
+  if (on.mind && due.signpost) out.push('signpost')
   if (due.planReview) out.push('plan-review')
   if (on.mind && due.thing) out.push('thing')
   if (due.ifThen) out.push('if-then-offer')

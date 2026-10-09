@@ -3,18 +3,26 @@
  * opens the Mind tab. Before the check-in a "Check in" button opens the sheet in one tap. On a hard
  * day a divider and "A lighter day is still a good day." Then the day's one thing, when the asks
  * budget gave it the slot: chips from thingOptions (Mind-led on a hard day, no food chip), then
- * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan".
+ * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan". A chip whose thing
+ * has a skill screen (Reset) also opens it on the Mind tab, only with MIND_REVIEWED (plan WP14).
  */
 import type { CheckIn, Pillar } from '@/core/types'
-import { thingByKey, thingText, type Thing } from '@/core/data/skills'
+import { skillById, thingByKey, thingText, type Thing } from '@/core/data/skills'
+import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { MOODS } from '@/core/domain/insights'
-import { useStore } from '@/store/store'
+import { useStore, type MindView } from '@/store/store'
 import { pressable } from '@/ui/primitives'
 import { Chevron, Icon } from '@/ui/icons'
 import { SUMMARY_MIND } from './summaryCopy'
 import { checkedIn, checkinTime } from './summary'
 
 const DOT: Record<Pillar, string> = { mind: 'var(--mind)', food: 'var(--food)', move: 'var(--move)' }
+
+/** The Mind view a picked chip opens: its skill, when that skill has a reviewed screen; else none. */
+export function thingView(t: Thing, reviewed: boolean): MindView | null {
+  const sk = t.skill ? skillById(t.skill) : undefined
+  return reviewed && sk?.screen && (sk.id === 'reset' || sk.id === 'unload') ? sk.id : null
+}
 
 export interface MindCardProps {
   checkin: CheckIn | null | undefined
@@ -28,7 +36,7 @@ export interface MindCardProps {
   windDownAt?: string
   onOpen: () => void
   onCheckIn: () => void
-  /** "Make it a plan" (B9.8). WP14 opens the prefilled plan sheet from here. */
+  /** "Make it a plan" (B9.8): opens the prefilled Mind plan sheet (today/ThingPlanSheet) */
   onMakePlan: (thing: Thing) => void
 }
 
@@ -36,6 +44,12 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
   const pickThing = useStore((s) => s.pickThing)
   const doneThing = useStore((s) => s.doneThing)
   const clearThing = useStore((s) => s.clearThing)
+  const openMind = useStore((s) => s.openMind)
+  const pick = (t: Thing) => {
+    if (!pickThing(t.key)) return
+    const view = thingView(t, MIND_REVIEWED)
+    if (view) openMind(view)
+  }
   const done = checkedIn(c)
   const time = checkinTime(c?.t)
   const mood = c?.mood ? MOODS[c.mood - 1]?.toLowerCase() : undefined
@@ -68,7 +82,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
           <div className="wb-lead">{SUMMARY_MIND.thingLead}</div>
           <div className="chips wb-things">
             {options.map((t) => (
-              <button key={t.key} className="chip" aria-pressed="false" onClick={() => pickThing(t.key)}>
+              <button key={t.key} className="chip" aria-pressed="false" onClick={() => pick(t)}>
                 <span className="dot" style={{ background: DOT[t.pillar] }} />{txt(t.label)}
               </button>
             ))}

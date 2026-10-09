@@ -66,3 +66,12 @@
 .list.nf-rows .li .s { white-space: normal; line-height: 1.35; }
 .list.nf-rows .li .m { flex: 1 1 auto; min-width: 0; max-width: none; }
 .list.nf-rows .li .tr { flex: none; overflow: visible; }
+/* ===================== WP15: low-mood signpost on Summary (B6 frame 2) ===================== */
+/* a mind-coloured note, never a warning: the info icon on a --mind-fill square, never --red */
+.lm-banner { line-height: 1.38; }
+.lm-banner .lm-sq { width: 36px; height: 36px; border-radius: 11px; background: var(--mind-fill); color: var(--mind-ink); }
+.lm-banner .lm-body { flex: 1; min-width: 0; }
+.lm-banner .lm-body .btn.sm { margin-top: 10px; height: 44px; padding: 0 18px; border-radius: 22px; }
+/* Dismiss: a 44 px target around the 28 px circle drawn on the board */
+.lm-banner .x { margin: -8px -8px 0 auto; background: none; width: 44px; height: 44px; border-radius: 0; padding: 0; }
+.lm-banner .x > span { width: 28px; height: 28px; border-radius: 50%; background: var(--fill); display: flex; align-items: center; justify-content: center; }
