@@ -593,8 +593,8 @@ reviews below are still open. Nothing here changes app code.
 - **Pillars (§7.2):** the Food-off line reads "Finding food tracking hard? Gentle display hides the
   numbers, and support is here." (each one tap). With Mind off, Support stays in Profile and the
   low-mood signpost can't show (an accepted limit). Switching Food off never resets gentle mode.
-- **Hard day (§7.3):** the one thing is the single ask. A due plan review waits a day on a Low or
-  Rough mood day (judgement call). The weight tile shows "Last weigh-in", not the weekly change.
+- **Hard day (§7.3):** the one thing is the single ask. A due plan review waits a day on any
+  hard day (Benn, 9 Oct; see Build decisions). The weight tile shows "Last weigh-in", not the weekly change.
   Usuals start with "Same as yesterday".
 - **Notifications (§7.4):** new types are opt-in, off by default, and need a current health yes.
   Back-off notice: "The last 2 check-in reminders went unopened, so Tali now sends them half as
