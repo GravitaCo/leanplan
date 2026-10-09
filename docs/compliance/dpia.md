@@ -686,6 +686,94 @@ Review earlier when any of these happens:
 
 ---
 
+## 8. Addendum: wellbeing Phase 1 (Mind)
+
+**Draft, awaiting Benn's sign-off.** Drafted 9 October 2026 from the compliance close-out of
+`claude/confident-maxwell-ihd64e` at `b7df11c`. The Mind features are built but off
+(`WELLBEING_ENABLED` in `src/data/wellbeingFlag.ts`; the skill screens and the signpost also sit
+behind `MIND_REVIEWED`). Benn signs this section before the flag goes on. The register row
+"Wellbeing Phase 1" and items 42 to 44 hold the detail; plan: `docs/plans/wellbeing-plan.md` §9.
+
+### 8.1 Processing
+
+- **Synced inside the check-in** (`supps._checkin` on `day_logs`): the sleep band and wake time
+  (`night`), the Mind skills used as ids and times (`skills`), and the one thing for the day as a
+  key from a fixed list and when it was done (`thing`).
+- **Synced in `profile.mind`:** which pillars are on, how often Tali asks (`asks`), usual wake and
+  wind-down times, which reminder types are on and their back-off (`notify`, `halved`), and the
+  IANA time zone (`tz`). Mind plans are if-then plans marked with `IfThenPlan.kind`.
+- **Server:** `notify_sent` (the last day a Mind reminder was sent, and the last day per type),
+  so the reminder service keeps to one a day (`docs/migrations/2026-10-09-notify-sent.sql`).
+- **Device only** (`deviceOnly` in `leanplan.v1`, `src/data/deviceOnly.ts`): Unload notes, the
+  low-mood marker (`lowMoodShown`), the reminder delivery log (from the `tali-notify` IndexedDB,
+  moved into `leanplan.v1` by the app) and the "More about sleep" open state.
+
+### 8.2 Lawful basis
+
+Art. 6(1)(b) with Art. 9(2)(a) explicit consent, as for the rest of the log (section 4.1). No
+re-consent is needed: the consent wording already names sleep, stress and mood
+(`ConsentScreen.tsx:40`), and no `CONSENT_VERSION` bump is required. Reminders and the server
+record only run with a current health yes. The time zone is not health data and stays on the
+phones after a withdrawal; the account copy goes with `settings`.
+
+### 8.3 Minimisation
+
+- No free text is synced: skills, the one thing, sleep bands and plan kinds are keys, checked by
+  shape on load and on every pull (`validCheckin`, `validMindPrefs`, `validPlanKind`).
+- Unload notes stay on the phone: never synced, never sent to an AI service, never shown in a
+  notification.
+- Push text is fixed, with no mood or sleep word in any payload (`_shared/reminders.ts`).
+- The low-mood check runs on the phone and tells no one.
+
+### 8.4 New risks
+
+Proposed scores, using the scale in section 5, for Benn to confirm at sign-off.
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R14 | **Unload notes exposed** on a shared or lost phone, or in an export file. | Possible | Significant | Medium |
+| R15 | **People treat Tali as a crisis service**, and rely on it when they need urgent help. | Possible | Severe | High |
+| R16 | **Which reminders someone gets reveals Mind use**, for example on a lock screen or through the server record. | Possible | Minimal | Low |
+| R17 | **Inaccurate signposting by nation**: a person in Northern Ireland is told to call NHS 111, which doesn't run there (register item 44). | Probable (as built) | Significant | Medium |
+
+### 8.5 Measures
+
+- **R14 Unload notes.** In place: the owner stamp (`_meta.owner`), and notes hidden when the
+  phone asks whose data it is (`ownerCheck`); cleared on withdrawal of health consent; the privacy
+  policy warns that exports include them. Residual: **low**.
+- **R15 Crisis service.** In place: the B6.7 copy in the app (the Support and Unload sheets say
+  Tali isn't a crisis service and to call 999 in danger); the terms paragraph on the Mind part
+  (`termsOfUse({ mind: true })`); 999 first in the Support sheet; the low-mood signpost;
+  clinician review before `MIND_REVIEWED` goes on. Residual: **medium**, and
+  only with the clinician review done; without it, treat as high (see 7.3).
+- **R16 Reminders reveal Mind use.** In place: every Mind reminder is off by default and opt-in
+  per type; the server only sends with a current health yes; `notify_sent` is cleared on
+  withdrawal and on account deletion (`clear_log_after_withdrawal()`, `USER_TABLES`); the
+  function's logs are counts only; push text is generic. Residual: **low**.
+- **R17 Signposting by nation.** Recommended (register item 44): show the nation-neutral line to
+  everyone until a nation is known, or, if Benn chooses a stored nation, collect it in Profile only
+  on the conditions in item 44. Must be settled before `MIND_REVIEWED` goes on. Residual: **low**
+  once settled.
+
+### 8.6 Medical device boundary
+
+The skills are general wellness (breathing, journalling, wind-down). Tali shows no diagnosis,
+score or risk prediction, and the low-mood rule only signposts (most mood answers Low or Rough
+over two weeks, at least five answers, at most once a month on each phone; `lowMoodDue` in
+`src/core/domain/mind.ts`). This view stays subject to the clinician review (the Mind analogue of
+D1), as in section 4.8.
+
+### 8.7 Sign-off
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 8 approved by | | Benn, before `WELLBEING_ENABLED` goes on. |
+| Clinician advice (Mind) | | Before `MIND_REVIEWED` goes on. |
+| Register item 42 deployed | | Before or with the flag. |
+| Register item 44 decided | | Benn with mental-performance. |
+
+---
+
 ## Sources checked
 
 - Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.

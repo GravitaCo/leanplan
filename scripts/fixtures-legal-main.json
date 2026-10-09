@@ -1,0 +1,318 @@
+{
+  "source": "git show origin/main:src/core/legal/* at d404a34, rendered with no arguments",
+  "privacy": {
+    "title": "Privacy policy",
+    "updated": "2026-10-09",
+    "intro": "This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app (app.tali.fit) and the Tali website (www.tali.fit). Tali is run by Gravita Creative Ltd (\"we\", \"us\"). We are the controller of your personal data under the UK GDPR, the Data Protection Act 2018 and, for people in the EU, the EU GDPR.",
+    "sections": [
+      {
+        "h": "Who we are",
+        "p": [
+          "Gravita Creative Ltd, a company registered in England and Wales, company number 08348225. Registered office: 64 Carlton Lane, Rothwell, Leeds, LS26 0SX. Privacy questions and requests: benn@gravita.co."
+        ]
+      },
+      {
+        "h": "The short version",
+        "ul": [
+          "Tali stores your log on your phone so it works offline. Once you agree, it also syncs to a database in Ireland (EU) that's private to your account.",
+          "When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.",
+          "No ads, no analytics, no tracking cookies, and we never sell your data or share it for marketing.",
+          "You can export everything or delete your account from the app at any time."
+        ]
+      },
+      {
+        "h": "What we collect in the app",
+        "p": [
+          "Only what you enter, or what is needed to run your account:"
+        ],
+        "ul": [
+          "Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.",
+          "Profile: display name, sex (and, if you set Tali up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tali worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.",
+          "Setup health questions: when you set Tali up, it asks a few questions so your plan starts safely. Each one is optional. For the health check (heart, dizziness, pregnancy or recent surgery), the question about some conditions and medicines (diabetes treated with insulin or tablets that can cause lows, kidney disease, a weight-loss injection) and how things have been lately (sleep, stress and how much room you have for change), we keep only the result, such as \"start gently\" or \"don't suggest eating less\", never which item you picked (apart from pregnancy, below). We never keep which condition or medicine applies to you. We do keep your answer about how food and weight feel for you (as \"yes\", \"sometimes\", \"no\" or \"rather not say\") and whether it turned Gentle mode on. If you answered sometimes, Tali asks once, about two weeks in, whether you'd like your food range on Today as well as on Food, and we keep what you chose. If you answered yes, Tali asks at your week-4 look-back whether a calorie range would help, and we keep what you chose and the date, so that after \"Not now\" it waits 12 weeks before asking again. Closing either question counts as the second answer (\"Keep it on Food\" or \"Not now\"). Because these choices are tied to your answer, we treat them as health data too. We also keep whether you're pregnant or breastfeeding (not which) with the date you told us. If you told us you are, Tali asks every 12 weeks whether that still applies; if you choose \"Ask me later\" or close the question, we keep that date too and ask again two weeks later. We also keep when each answer was last changed, so answers given on two phones don't overwrite each other. You can see these answers, and change or clear them, in the app (Profile, then Health data, then Health check answers). How things have been lately isn't listed there: you can change it, or skip it to delete it, by redoing setup (Profile, then Health data, then Redo setup), which also lets you change what would make Tali worth it and your daily movement.",
+          "Your log: food and drink, portions, recipes and custom foods, including foods you scan with their barcode and where the numbers came from; body weight; workouts, including exercises, sets, time, effort and how you felt (sleep, stress, energy and soreness, if you answer); workouts you create and weekly training plans, with the reasons Tali gives for their choices (some come from your answers above, such as going easy on your knees or starting gently) and any notes you add when a plan ends; supplements and reminder times; mood and hunger check-ins and their notes; and your if-then plans.",
+          "Settings: calorie and macro targets and ranges, weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.",
+          "Weekly review: the day you picked, whether to include your weight (left out unless you say yes), when you last opened it, when your goal or calorie target last changed, and your choice for next week (keep, ease off or change one thing, and which) with its date. If you choose \"Make this my new starting point\", we keep that weight and date. We also keep which pattern lines Tali has shown you, such as hunger on short-sleep days, and when, so one isn't repeated too soon. Because they come from your log, we treat your starting point, the pattern lines, your choice for next week and any week your phone marks for the reminder to skip as health data.",
+          "On your device only: the list of ingredients you have at home, used for meal suggestions. It is never uploaded.",
+          "On your device only, while you set Tali up: your answers so far, so you can pick up where you left off. This draft is never uploaded, and is deleted when you finish setup, withdraw consent for health data, remove this device's log or delete your account.",
+          "Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send the reminders you chose: supplement reminders, and a weekly review reminder on the day you picked, at the time you picked in UK time. For the weekly one we use when you last opened your review, so it pauses after three in a row go unopened, and the date of any week your phone marked to skip.",
+          "Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.",
+          "Feedback: if you send feedback from the app, it goes from your own email app to us, with the app version and your browser and device type. Please leave out health details you'd rather keep private."
+        ]
+      },
+      {
+        "h": "What we collect on the website",
+        "ul": [
+          "Early access: if you join the list, your email address.",
+          "Technical: like any website, the servers that deliver and run the site and app see your IP address, browser and the time of each request, which our providers keep for a short time under their own retention periods, for security and fault-finding.",
+          "Bot protection: when a website page with the sign-up form opens, it loads Cloudflare Turnstile, which checks technical signals from your browser to tell people from bots, whether or not you use the form."
+        ]
+      },
+      {
+        "h": "Health data",
+        "p": [
+          "Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood, and your answers to the setup health questions, including pregnancy) can say something about your health, a special category of personal data, and your diet pattern may also reveal beliefs. So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. The setup questions about your health only appear once you've agreed. If you used Tali before we asked, what you logged then was already synced to your account. If you used Tali before we asked, you can choose \"Not now\". Everything you log then stays on your phone, and nothing syncs to your account or is backed up there. What was already in your account is kept there, unused, until 28 October 2026, and then deleted unless you've agreed. Your phone keeps its copy, and if you agree later it uploads again from your phone. We ask once more after two weeks. Reminders only run once you've agreed.",
+          "You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tali syncing anything you log and deletes your log, profile, settings and reminders from your account, so your log stays only on your phones. It also clears your weigh-ins, check-ins, body details (weight, body fat, height and the sex answer used for your energy estimate), your setup answers (the health check, medical and lately results, pregnancy, how food and weight feel and what you chose when Tali asked about a food or calorie range, what would make Tali worth it, daily movement), your training preferences (including any injuries you've noted), and the reasons in your plans and workouts that came from them, and your steady starting weight, the pattern lines Tali has shown you and your choice for next week, from this phone straight away, and from your other phones the next time each one connects. Your name, age, goal, the sex shown in Profile and whether Gentle mode is on stay on your phones. Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before."
+        ]
+      },
+      {
+        "h": "Why we use it, and our legal basis",
+        "ul": [
+          "To provide the app: store and sync your log (only once you've agreed), calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.",
+          "To look up a product when you scan its barcode. Basis: our contract with you.",
+          "To read and answer feedback you send us. Basis: our legitimate interest in improving Tali.",
+          "To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.",
+          "To keep accounts, the app and the site secure and working (sign-in, stopping bots and abuse, fixing faults). Basis: our legitimate interest in running a secure service.",
+          "To send account emails you need, such as confirming your address or resetting your password. Basis: our contract with you.",
+          "To keep a record of the consents you give and withdraw, so we can show what you agreed to and when. Basis: legal obligation (the law requires us to be able to show consent). Kept until you delete your account.",
+          "To answer your requests and meet legal duties. Basis: legal obligation."
+        ]
+      },
+      {
+        "h": "Automatic calculations",
+        "p": [
+          "Tali suggests calorie and macro targets, meals and workout adjustments from what you enter, using standard formulas. They are suggestions you can change at any time. Some setup answers change what Tali shows, as safety settings: a yes in the health check starts your plan more gently; a yes to the question about conditions and medicines means Tali won't suggest eating less; if you tell Tali you're pregnant or breastfeeding, food stays at maintenance with no calorie number; a yes about food and weight turns on Gentle mode: there's no calorie target, your weight isn't shown on Today, and a calorie range appears on Food only if you ask for one when Tali checks at week 4; and a sometimes leaves Gentle mode off and keeps food to a maintenance range, with your weight not shown on Today and your day on Today in words unless you choose to see the range there. After a yes or sometimes, Tali never suggests eating less and doesn't step up your workouts by itself. These don't diagnose anything and aren't medical advice. Your weekly review puts your own log side by side and, once there is enough data, may show one pattern line, such as \"hunger was higher on your short-sleep days\". It describes your data; it isn't a cause or a diagnosis. After about four weeks Tali may suggest a small change, to food, sleep, stress or training, from your weight trend and what you logged, only if you chose to include your weight. Nothing changes unless you choose it. After a harder week, Tali doesn't suggest eating less, and in a week where your check-ins were very low the weekly reminder skips that week. On a day when at least two of your check-in answers are harder for you than usual (the hardest answer, or harder than your own recent ones) for sleep, stress, energy or, on lifting days, soreness, Train offers lighter options next to your planned workout, a shorter version, 10 minutes of mobility or an easy walk, and you choose: nothing changes unless you pick one. They have no legal or similarly significant effect on you, and nobody makes decisions about you from them."
+        ]
+      },
+      {
+        "h": "Who else handles your data",
+        "p": [
+          "We use a small number of service providers who process data for us, on our instructions:"
+        ],
+        "ul": [
+          "Supabase: the app's database, sign-in, account emails and reminder service. Your account data is stored in the AWS eu-west-1 region (Ireland).",
+          "GitHub Pages: hosts the app's files and sees technical request data.",
+          "Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.",
+          "Bunny.net: delivers the exercise demo videos and their preview images, and sees technical request data (such as your IP address and which video or image is requested) when the app shows or plays them.",
+          "Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. A supplement reminder says \"Time for your supplements\". It is encrypted so the push service can't read it. The weekly review reminder carries only a fixed message (\"Your week is ready\", \"Take a look whenever suits you.\"), encrypted the same way.",
+          "Google Workspace: our email, which receives feedback and requests you send us.",
+          "Google: only if you choose \"Continue with Google\". Google handles that sign-in under its own privacy policy."
+        ]
+      },
+      {
+        "h": "",
+        "p": [
+          "Open Food Facts is not our service provider. When you scan a barcode, your phone asks Open Food Facts (openfoodfacts.org, a non-profit in France) for that product, so it sees the barcode and your IP address, under its own privacy policy. Nothing else you log is sent to it."
+        ]
+      },
+      {
+        "h": "International transfers",
+        "p": [
+          "Your app account data is stored in the EU. Some of our providers are based in, or may access data from, the United States. Where personal data leaves the UK or EU, we rely on the safeguards the law provides, such as the UK International Data Transfer Addendum, the EU Standard Contractual Clauses or the UK-US and EU-US Data Privacy Framework. Contact us for details of the safeguard for a particular provider."
+        ]
+      },
+      {
+        "h": "How long we keep it",
+        "ul": [
+          "App account data is kept while you have an account, except as described below. When you delete your account it is removed from our live database straight away. Copies in our database provider's backups, and our providers' security logs, are deleted as they expire on those providers' regular cycles. Early access emails on the website are separate and aren't affected.",
+          "If you withdraw consent for health data, we delete your log, profile, settings and reminders from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.",
+          "If you used Tali before we asked for consent and haven't agreed by 28 October 2026 (whether you chose \"Not now\" or haven't opened the app since), we delete your log, profile, settings and reminders from your account on that date, and keep your account. What's on your phone stays there.",
+          "When we delete data from your account for either of these reasons, copies in our database provider's backups are deleted as they expire on its regular cycle.",
+          "Data on your device stays until you delete it in the app, clear your browser data or remove Tali.",
+          "Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.",
+          "Emails you send us are kept only as long as needed to deal with them."
+        ]
+      },
+      {
+        "h": "Cookies and storage on your device",
+        "p": [
+          "The app uses your browser's storage only for things it needs to work, and the website sets one security cookie. We use no advertising or analytics cookies. Our cookie policy lists each one: https://www.tali.fit/legals/cookie-policy."
+        ]
+      },
+      {
+        "h": "Security",
+        "p": [
+          "Data travels over encrypted connections. Each row in the app's database is locked to its owner, so no other user can read it, and passwords are stored as hashes. If a breach is likely to put your rights at high risk, we will tell you, and we will report breaches to the Information Commissioner's Office as the law requires."
+        ]
+      },
+      {
+        "h": "Your rights",
+        "p": [
+          "You have the right to:"
+        ],
+        "ul": [
+          "access your data and get a copy in a portable format (in the app: Profile, then Back up and restore, then Export);",
+          "correct it (you can edit most of it in the app, including your setup health answers in Profile, then Health data, and we'll correct anything else if you email us);",
+          "have it deleted (in the app: Profile, then Privacy, then Delete account);",
+          "restrict or object to how we use it;",
+          "withdraw consent at any time, including leaving the early access list."
+        ]
+      },
+      {
+        "h": "",
+        "p": [
+          "To use a right the app doesn't cover, email benn@gravita.co. We reply within one month, and it's free.",
+          "If you're unhappy with how we handle your data, please tell us first so we can put it right. You can also complain to the Information Commissioner's Office (ico.org.uk, 0303 123 1113) or, in the EU, to your local data protection authority."
+        ]
+      },
+      {
+        "h": "Age",
+        "p": [
+          "Tali is for people aged 18 and over. We don't knowingly collect data from anyone younger. If Tali learns that you're under 18, whether you tell it during setup, enter it in your profile, restore a backup that says so, or it's already saved on your phone or in your account, it stops there. While it shows, nothing new is saved and nothing syncs to or from your account and reminders stop. A backup that says you're under 18 isn't loaded. If you entered your age by mistake, you can go back and correct it. If you choose to close, Tali deletes your account and your data on that phone. During setup, if your phone is offline, it finishes the next time it connects. If deleting your account needs you to sign in again, Tali asks you to. If you close the app without choosing, your account stays as it is until you delete it or contact us. If you think a child has used Tali, contact us and we will delete their data."
+        ]
+      },
+      {
+        "h": "Changes",
+        "p": [
+          "We update this policy when what we do changes, and show the new date at the top. If a change affects what you've consented to, the app will ask you again. The current version is always at https://www.tali.fit/legals/privacy."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms and conditions",
+    "updated": "2026-09-28",
+    "intro": "These terms are the agreement between you and Gravita Creative Ltd (\"we\", \"us\") for using the Tali app and website. Gravita Creative Ltd is registered in England and Wales, company number 08348225, registered office 64 Carlton Lane, Rothwell, Leeds, LS26 0SX. By using Tali you accept these terms. Please read the health section in particular.",
+    "sections": [
+      {
+        "h": "Who can use Tali",
+        "p": [
+          "You must be 18 or over. Tali is for personal, non-commercial use."
+        ]
+      },
+      {
+        "h": "Not medical advice",
+        "p": [
+          "Tali offers general wellness and fitness information. It is not a medical device and does not diagnose, treat or prevent any condition. It is not a substitute for advice from a doctor, dietitian or other qualified professional.",
+          "Talk to a GP before changing your diet or starting exercise, and do not use Tali to guide your eating, if you:"
+        ],
+        "ul": [
+          "are pregnant or breastfeeding;",
+          "have, or have had, an eating disorder or a difficult relationship with food;",
+          "have diabetes, heart, kidney or liver disease, or another medical condition;",
+          "take medication affected by diet or exercise."
+        ]
+      },
+      {
+        "h": "",
+        "p": [
+          "Tali's setup questions about your health only decide how gently your plan starts and whether Tali suggests eating less. They are not a medical check, and they can't tell you whether exercise or a change in diet is safe for you. If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won't suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.",
+          "Stop exercising and get medical help if you feel pain, dizziness or shortness of breath. If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time."
+        ]
+      },
+      {
+        "h": "Numbers are estimates",
+        "p": [
+          "Calorie and nutrient values come from published sources such as UK CoFID and brand information, and portions are often estimated. Tali shows a margin (±) for this reason. Targets are calculated with standard formulas and are a starting point, not a prescription. Always check the label if you have an allergy or a medical reason to be exact. Tali does not provide allergen information.",
+          "Scanned products come from Open Food Facts, a public database, and can be wrong or out of date, so check the numbers against the pack before you save."
+        ]
+      },
+      {
+        "h": "Your account",
+        "ul": [
+          "Keep your password safe. You are responsible for activity under your account.",
+          "Once you’ve agreed to Tali keeping your health data, your log is stored on your phone and synced to your account. Until then, or if you withdraw, new entries are kept only on your phone. If you used Tali before we asked and haven’t agreed by 28 October 2026, we delete the copy in your account then. Changes made offline only reach your account once you’re back online. Export a backup now and then: if you lose or reset your phone or clear its browser data, anything that isn’t in your account is gone.",
+          "You can delete your account at any time in Profile, then Privacy, then Delete account."
+        ]
+      },
+      {
+        "h": "Your content",
+        "p": [
+          "What you log is yours. You let us store and process it only to run Tali for you, as described in the privacy policy. We do not claim ownership of it."
+        ]
+      },
+      {
+        "h": "Feedback",
+        "p": [
+          "If you send us ideas or feedback, we may use them to improve Tali without owing you anything for them."
+        ]
+      },
+      {
+        "h": "Fair use",
+        "p": [
+          "Don't misuse Tali: no attempts to access other people's data, disrupt the service, reverse engineer it to harm it, or use it for anything unlawful. We may suspend accounts that do, and will tell you why unless the law prevents it."
+        ]
+      },
+      {
+        "h": "The service",
+        "p": [
+          "Tali is currently free. We work to keep it available and accurate but cannot promise it will always be available, error free or unchanged. We may change or stop features. If we plan to close Tali or your account, we will give you reasonable notice where we can so you can export your data."
+        ]
+      },
+      {
+        "h": "Our responsibility to you",
+        "p": [
+          "Nothing in these terms limits our liability for death or personal injury caused by our negligence, for fraud, or for anything else the law does not allow us to limit. Your legal rights as a consumer are not affected.",
+          "Otherwise, because Tali is a free wellness tool, we are not responsible for loss that was not foreseeable, for loss caused by you not following the health guidance above, or for business losses. We are not responsible for losing data stored only on your device.",
+          "Early access is a test version. Features may change, break or be removed, and we may reset or end early access, telling you first where we can."
+        ]
+      },
+      {
+        "h": "Changes to these terms",
+        "p": [
+          "We may update these terms, for example when the law or Tali changes. We will show the new date above, and for important changes we will ask you to agree again in the app. The current version is always at https://www.tali.fit/legals/terms."
+        ]
+      },
+      {
+        "h": "Law",
+        "p": [
+          "These terms are governed by the law of England and Wales. If you live elsewhere in the UK or in the EU, you keep the protection of your local consumer law and can bring a claim in your local courts.",
+          "Questions or complaints: benn@gravita.co."
+        ]
+      }
+    ]
+  },
+  "cookies": {
+    "title": "Cookie policy",
+    "updated": "2026-09-28",
+    "intro": "This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. Tali is run by Gravita Creative Ltd.",
+    "sections": [
+      {
+        "h": "Why there is no cookie banner",
+        "p": [
+          "The law (the Privacy and Electronic Communications Regulations) lets a service use cookies and storage that are strictly necessary for something you've asked for without asking first. Everything below is in that category. If we ever want to add anything that isn't, such as analytics, we will ask for your permission before using it."
+        ]
+      },
+      {
+        "h": "In the app",
+        "p": [
+          "The app sets no cookies. It uses your browser's local storage, which stays on your device, so that it works offline and keeps you signed in:"
+        ],
+        "ul": [
+          "leanplan.v1: your log, profile, settings and consent choices. Kept until you remove this device's log when signing out, delete your account, or clear your browser data.",
+          "tali.mode: which kind of account this device's log belongs to. Kept until you sign out.",
+          "tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.",
+          "tali.sound: whether the workout player plays sounds. Kept until you change it or clear your data.",
+          "tali.onboarding: your answers so far while you set Tali up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.",
+          "tali.setupCardHidden: that you hid the \"Finish your setup\" card on Today. Kept until you remove this device's log, delete your account or clear your browser data.",
+          "tali.pendingDelete: if you tell Tali during setup that you're under 18 and the account can't be deleted straight away: which account to delete, and how many tries Tali has made. Tali tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tali clears this device's data, until Tali sees that account has been deleted, or, once it's 30 days old, the next time Tali opens; you can also remove it by clearing your browser data.",
+          "tali.labelConsent: an older record of a label-photo choice, moved into leanplan.v1 the next time the app opens, then removed.",
+          "sb-… (keys starting \"sb-\"): keeps you signed in to your account. Set by our sign-in provider, Supabase. Kept until you sign out.",
+          "tali.reauthForDelete (session storage): set for a few minutes while you confirm it's you to delete your account. Cleared when you come back or close the tab.",
+          "App files: the app saves its own code, icons and font in your browser's cache so it opens with no connection. These contain no personal data."
+        ]
+      },
+      {
+        "h": "On the website",
+        "ul": [
+          "_cfuvid: set by Cloudflare, which delivers the site, to protect it from abuse and excessive requests. It is deleted when you close your browser.",
+          "Pages with the early access form load Cloudflare Turnstile when they open. It checks technical signals from your browser to tell people from bots, to keep the form free of spam. We use it only for that."
+        ]
+      },
+      {
+        "h": "",
+        "p": [
+          "At the time of writing, the website sets no other cookies."
+        ]
+      },
+      {
+        "h": "Other sites",
+        "p": [
+          "If you choose \"Continue with Google\", or follow a link to another site (for example a YouTube search for an exercise), that site may set its own cookies under its own policy. We don't control or receive them."
+        ]
+      },
+      {
+        "h": "Your choices",
+        "p": [
+          "You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. If you haven't agreed to Tali keeping your health data, or have withdrawn it, your log is kept only on your phones, so clearing this device's data can delete it for good. In the app, Sign out, then \"Sign out and remove this device's log\" deletes your log from this device, and Profile, then Privacy, then Delete account deletes everything.",
+          "Questions: benn@gravita.co. More about how we handle personal data: https://www.tali.fit/legals/privacy."
+        ]
+      },
+      {
+        "h": "Changes",
+        "p": [
+          "We update this policy when what we store changes, and show the new date at the top. The current version is always at https://www.tali.fit/legals/cookie-policy."
+        ]
+      }
+    ]
+  }
+}

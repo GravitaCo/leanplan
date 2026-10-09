@@ -6,10 +6,11 @@ const who = () => fact('controller', 'legal name')
  * Terms and conditions. Written for a free service to consumers. A paid tier needs a legal
  * review first (cancellation rights, subscription rules, app store terms).
  */
-export function termsOfUse(): LegalDoc {
+export function termsOfUse({ mind = false }: { mind?: boolean } = {}): LegalDoc {
   return {
     title: 'Terms and conditions',
-    updated: '2026-09-28',
+    // E (compliance close-out 2026-10-09): set the Mind date to the flag-on date at flag-on
+    updated: mind ? '2026-10-09' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -43,6 +44,11 @@ export function termsOfUse(): LegalDoc {
             'If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won\'t suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.',
           'Stop exercising and get medical help if you feel pain, dizziness or shortness of breath. ' +
             'If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time.',
+          ...(mind
+            ? [
+                "The Mind part of Tali (check-ins, Reset, Unload, Wind down and the one thing for the day) offers general wellbeing ideas. It isn't therapy or counselling, and it isn't a crisis service. Tali doesn't monitor what you write, and nobody is alerted because of how you answer. If your mood answers have been low for a while, the app may show you where to find support, and that is all it does. If you or someone else is in danger now, call 999.",
+              ]
+            : []),
         ],
       },
       {

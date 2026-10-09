@@ -34,7 +34,7 @@ export function toHtml(doc: LegalDoc): string {
 const site = process.argv.includes('--site')
 const docs: Record<LegalDocId, LegalDoc> = site
   ? { privacy: sitePrivacy(), terms: siteTerms(), cookies: siteCookies() }
-  : { privacy: privacyPolicy({ mind: WELLBEING_ENABLED }), terms: termsOfUse(), cookies: cookiePolicy({ mind: WELLBEING_ENABLED }) }
+  : { privacy: privacyPolicy({ mind: WELLBEING_ENABLED }), terms: termsOfUse({ mind: WELLBEING_ENABLED }), cookies: cookiePolicy({ mind: WELLBEING_ENABLED }) }
 console.log(site ? 'Interim website-only versions' : `Full app + website versions (Mind ${WELLBEING_ENABLED ? 'on' : 'off'})`)
 const items = (Object.keys(docs) as LegalDocId[]).map((id) => ({
   id,
