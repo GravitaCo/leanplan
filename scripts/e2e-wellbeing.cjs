@@ -474,6 +474,7 @@ async function wp5FlagOffHeaders({ page }) {
     const main = page.locator('.screen.mind')
     expect((await main.locator('.eyebrow').textContent()).trim() === 'Thursday 8 October', 'eyebrow')
     expect(!(await main.locator('.pv-back, .hdr .navbtn').count()), 'no back button on the tab root')
+    expect((await main.locator('.hdr-row.av').getByRole('button', { name: 'Profile', exact: true }).count()) === 1, 'the Profile avatar beside the title')
     const pairs = (await main.locator('.mind-g2 > div').allTextContents()).map((s) => s.trim())
     expect(JSON.stringify(pairs) === JSON.stringify(['MoodLow', 'SleepPoor', 'StressSome', 'EnergyLow']), 'pairs: ' + pairs.join(', '))
     await main.getByRole('button', { name: 'Update', exact: true }).waitFor()

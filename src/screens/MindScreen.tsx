@@ -1,13 +1,9 @@
-import { PageHeader } from '@/ui/primitives'
+import { MindPage } from './mind/MindPage'
 
 /**
- * The Mind tab root (WP5 placeholder, behind WELLBEING_ENABLED): only the large title and the
- * Profile avatar for now. WP6 replaces it with the B5 Mind page, keeping this name and file.
+ * The Mind tab root (behind WELLBEING_ENABLED; App.tsx mounts it while the Mind pillar is on):
+ * the B5 Mind page from screens/mind/ (WP6), which replaced WP5's placeholder here.
  */
 export function MindScreen() {
-  return (
-    <div className="screen">
-      <PageHeader title="Mind" />
-    </div>
-  )
+  return <MindPage />
 }
