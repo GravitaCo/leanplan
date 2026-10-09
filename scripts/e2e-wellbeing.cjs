@@ -655,6 +655,110 @@ async function wp5FlagOffHeaders({ page }) {
     expect(order[i + 1] === 'Tracking', 'flag off: ' + order.join(' | '))
     await shot(page, 'wp9-flag-off-profile')
   }, { seed: ordinaryDay() })
+  // WP10: the check-in's "More about sleep" (board B10)
+  /** the hard day, with yesterday's wake time at 07:10 (B10.8's pre-fill) */
+  const hardDayWoke = () => { const s = hardDay(); const y = shift(HARD_DAY, -1); s.state.days[y].checkin.night = { source: 'self', band: '7-8', wakeAt: '07:10', t: y + 'T08:30:00.000Z' }; return s }
+  const openCheckin = async (page) => {
+    await openMindTab(page)
+    await page.locator('.screen.mind').getByRole('button', { name: 'Update', exact: true }).click()
+    const sheet = page.locator('.sheet').first()
+    await sheet.getByText('How are you feeling?').waitFor()
+    return sheet
+  }
+  const B10_13 = "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter options."
+  /** scrolls the check-in so the disclosure sits near the top of the sheet */
+  const toDisclosure = (page) => page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); const m = document.querySelector('.ck-more'); if (bd && m) bd.scrollTop = m.offsetTop - 140 })
+
+  await run('wp10-checkin', async ({ page, net }) => {
+    let sheet = await openCheckin(page)
+    const more = sheet.getByRole('button', { name: 'More about sleep' })
+    expect((await more.getAttribute('aria-expanded')) === 'false', 'closed by default')
+    expect(!(await sheet.getByText('Woke up around').count()) && !(await sheet.getByText('Roughly how long?').count()), 'nothing inside while closed')
+    await sheet.getByText(B10_13).waitFor()
+    await sheet.getByText("Tali doesn't read your notes. If you're struggling,", { exact: false }).waitFor()
+    expect(!(await sheet.getByText('Skip anything you like.', { exact: false }).count()), 'the old foot is gone with the flag on')
+    await shot(page, 'wp10-checkin-closed')
+    await page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); if (bd) bd.scrollTop = bd.scrollHeight })
+    await shot(page, 'wp10-checkin-closed-foot')
+    // open: yesterday's wake time shows only now
+    await more.click()
+    expect((await more.getAttribute('aria-expanded')) === 'true', 'open')
+    await sheet.getByText('Roughly how long?').waitFor()
+    const wake = sheet.locator('input[type="time"]')
+    expect((await wake.inputValue()) === '07:10', 'pre-filled from yesterday: ' + (await wake.inputValue()))
+    const bands = (await sheet.locator('.ck-bands button').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim())
+    expect(bands.join('|') === 'Under 5 hours|5–6 hours|6–7 hours|7–8 hours|8+ hours', 'bands: ' + bands.join('|'))
+    expect(!(await sheet.locator('.ck-bands button[aria-pressed="true"]').count()), 'no band preselected')
+    await sheet.locator('.ck-bands button', { hasText: '6–7' }).click()
+    await wake.fill('07:10')
+    await sheet.getByText('A rough idea is plenty. Leave it blank if you like.').waitFor()
+    const on = sheet.locator('.ck-bands button[aria-pressed="true"]')
+    const bg = await on.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).boxShadow])
+    const others = await sheet.locator('.ck-bands button[aria-pressed="false"]').evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor))
+    expect(others.length === 4 && new Set(others).size === 1 && !others.includes(bg[0]) && /2px/.test(bg[1]), 'band selection: ' + JSON.stringify({ bg, others }))
+    await toDisclosure(page)
+    await shot(page, 'wp10-checkin-open')
+    // dark: the bands read on --elev inside the sheet
+    await page.emulateMedia({ colorScheme: 'dark' })
+    const dark = await sheet.locator('.ck-bands button[aria-pressed="false"]').first().evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(dark === 'rgb(44, 44, 46)', 'dark band button on --elev: ' + dark)
+    await page.emulateMedia({ colorScheme: 'light' })
+    // "support is here" opens Support over the check-in; Escape closes Support only
+    await sheet.getByRole('button', { name: 'support is here' }).click()
+    const support = page.locator('.sheet', { hasText: 'Support and helplines' })
+    await support.getByText('Samaritans', { exact: true }).waitFor()
+    await shot(page, 'wp10-checkin-support')
+    await page.keyboard.press('Escape')
+    await support.waitFor({ state: 'detached' })
+    expect((await sheet.locator('.ck-bands button[aria-pressed="true"]').innerText()).includes('6–7'), 'answers kept under Support')
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    await page.waitForTimeout(1500)
+    const st = await stored(page)
+    const c = st.days[HARD_DAY].checkin
+    expect(c.mood === 2 && c.sleep === 1 && c.stress === 2 && c.energy === 1, 'answers unchanged: ' + JSON.stringify(c))
+    expect(c.night && c.night.source === 'self' && c.night.band === '6-7' && c.night.wakeAt === '07:10' && c.night.t, 'night: ' + JSON.stringify(c.night))
+    expect(st.deviceOnly && st.deviceOnly.ui && st.deviceOnly.ui.sleepMore === true, 'open state kept on the device')
+    expect(!JSON.stringify(net.posts).includes('sleepMore'), 'the open state never syncs')
+    // reload and reopen: open, 6–7, 07:10, mood still Low
+    await page.reload()
+    sheet = await openCheckin(page)
+    expect((await sheet.getByRole('button', { name: 'More about sleep' }).getAttribute('aria-expanded')) === 'true', 'still open next time')
+    expect((await sheet.locator('.ck-bands button[aria-pressed="true"]').innerText()).includes('6–7'), '6–7 kept')
+    expect((await sheet.locator('input[type="time"]').inputValue()) === '07:10', '07:10 kept')
+    expect((await sheet.locator('.scale').first().locator('button[aria-pressed="true"]').innerText()).trim() === 'Low', 'mood still Low')
+  }, { seed: hardDayWoke(), url: WB })
+
+  await run('wp10-prefill-untouched', async ({ page }) => {
+    // left open last time: yesterday's time shows, but isn't saved unless the person answers there
+    const sheet = await openCheckin(page)
+    expect((await sheet.getByRole('button', { name: 'More about sleep' }).getAttribute('aria-expanded')) === 'true', 'open from last time')
+    expect((await sheet.locator('input[type="time"]').inputValue()) === '07:10', 'pre-filled when already open')
+    await sheet.locator('.scale').first().getByRole('button', { name: 'Okay', exact: true }).click()
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    const c = (await stored(page)).days[HARD_DAY].checkin
+    expect(c.mood === 3 && !c.night, 'no night recorded from the pre-fill alone: ' + JSON.stringify(c))
+  }, { seed: (() => { const s = hardDayWoke(); s.state.deviceOnly = { ui: { sleepMore: true } }; return s })(), url: WB })
+
+  await run('wp10-flag-off', async ({ page }) => {
+    // flag off: the sheet as on main (no disclosure, the old foot, no support line)
+    await page.locator('.mind-row').click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('How are you feeling?').waitFor()
+    expect(!(await sheet.getByText('More about sleep').count()), 'no disclosure')
+    expect(!(await sheet.getByText('support is here', { exact: false }).count()) && !(await sheet.getByText(B10_13).count()), 'no flag-on feet')
+    await sheet.getByText('Skip anything you like.', { exact: false }).waitFor()
+    await sheet.locator('.scale').first().getByRole('button', { name: 'Okay', exact: true }).click()
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    const c = (await stored(page)).days[HARD_DAY].checkin
+    expect(c.mood === 3 && !c.night, 'flag-off save: ' + JSON.stringify(c))
+    await page.locator('.mind-row').click()
+    await page.locator('.sheet').getByText('How are you feeling?').waitFor()
+    await page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); if (bd) bd.scrollTop = bd.scrollHeight })
+    await shot(page, 'wp10-flag-off-checkin-foot')
+  }, { seed: hardDayWoke() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
