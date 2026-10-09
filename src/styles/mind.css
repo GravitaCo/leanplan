@@ -33,3 +33,22 @@
 .unload .ul-notes .li .t, .unload .ul-notes .li .s { display: block; }
 .unload .ul-notes .li .s { white-space: normal; line-height: 1.35; }
 .unload .ul-notes .linkbtn { flex: none; min-height: 44px; padding: 10px 0 10px 8px; }
+
+/* ===================== WP11: weekly reflection (B4, on the Mind page under B5.16) ===================== */
+.mind .lbl.mind-week-h { display: flex; justify-content: space-between; gap: 8px; }
+.card.mind-week { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.mind-week-count { font-size: 17px; font-weight: 600; }
+.mind-week-k { font-size: 13px; font-weight: 600; color: var(--label2); }
+.mind-week-v { font-size: 17px; margin-top: 1px; }
+/* the five sleep bands, the most common filled in the neutral --band; decorative (the words carry it) */
+.mind-bands { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.mind-band { height: 8px; border-radius: 4px; background: var(--fill); }
+.mind-band.on { background: var(--band); }
+.mind-band-l { font-size: 11px; color: var(--label2); text-align: center; }
+.mind-week-later { font-size: 15px; color: var(--label2); line-height: 1.4; }
+.card.mind-week .linkbtn.mind-week-link { align-self: flex-start; min-height: 44px; padding: 0; font-size: 15px; text-align: left; }
+.mind-obs { display: flex; gap: 14px; border-top: 1px solid var(--sep); padding-top: 14px; }
+.mind-obs-sq { width: 36px; height: 36px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--mind-fill); color: var(--mind-ink); }
+.mind-obs-h { margin: 0; font-size: 13px; font-weight: 600; color: var(--mind-ink); }
+.mind-obs-t { font-size: 15px; line-height: 1.45; margin-top: 2px; }
+.mind-obs-s { font-size: 13px; color: var(--label2); margin-top: 4px; }

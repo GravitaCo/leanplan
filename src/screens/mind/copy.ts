@@ -81,7 +81,18 @@ export const UNLOAD = {
   nextPrefix: 'Next step: ',
 }
 
+/**
+ * WP11: the weekly reflection on the Mind page (boards B4, B5.16). The lines, the B4.7 line and
+ * the observation come from core/domain/mind.ts (reflectionLines, REFLECTION_LATER, observation).
+ */
+export const REFLECTION = {
+  /** B5.16, the section label (the card's own B4.1 heading is dropped under it) */
+  title: 'Your week',
+  /** B4.15 */
+  seeWeek: 'See your whole week',
+}
+
 /** Every string above, for the copy lint. */
 export function mindPageCopy(): string[] {
-  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD)]
+  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD), ...Object.values(REFLECTION)]
 }

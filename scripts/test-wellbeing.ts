@@ -12,6 +12,7 @@ import { mindPageSuite } from './wellbeing/mind-page'
 import { pillarsSuite } from './wellbeing/pillars'
 import { checkinSuite } from './wellbeing/checkin'
 import { unloadSuite } from './wellbeing/unload'
+import { reflectionSuite } from './wellbeing/reflection'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -29,5 +30,6 @@ export async function wellbeingSuite(fakeServer: FakeServer): Promise<number> {
   bad += pillarsSuite()
   bad += checkinSuite()
   bad += unloadSuite()
+  bad += reflectionSuite()
   return bad
 }

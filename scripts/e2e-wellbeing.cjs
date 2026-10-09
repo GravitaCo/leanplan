@@ -893,6 +893,88 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!seen.some((s) => s.includes(SENT)), 'no request carried the note after reconnecting')
   }, { seed: hardDay(), url: WBR })
 
+  /* ---------- WP11: the weekly reflection (B4) on the Mind page ---------- */
+  /** a seed past the first two weeks (asks.ts holds the reflection back before day 14): a day 30 days back */
+  const settledIn = (seed) => { const d = shift(seed.at, -30); seed.state.days[d] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })) }); seed.state._meta.days[d] = { ...seed.state._meta.days[seed.at] }; return seed }
+  /** B4 state B, Sat 10 Oct (week 5–11 Oct): 5 check-ins, mostly 6 to 7 hours, Reset twice and Unload once,
+   * 1 plan reviewed; over 14 days long nights with energy OK or Good, shorter ones Low (one observation) */
+  const reflectionWeek = () => {
+    const days = {}
+    const night = (d, band) => ({ source: 'self', band, t: d + 'T07:30:00.000Z' })
+    const add = (d, energy, band, skills = []) => {
+      days[d] = dayOf({ checkin: { ...ci(d, 4, 2, 2, energy), night: night(d, band), ...(skills.length ? { skills: skills.map((id, i) => ({ id, at: d + `T1${i}:00:00.000Z` })) } : {}) } })
+    }
+    add('2026-10-05', 1, '6-7', ['reset']); add('2026-10-06', 1, '6-7'); add('2026-10-07', 3, '7-8', ['reset', 'unload']); add('2026-10-08', 1, '6-7'); add(ORDINARY_DAY, 3, '7-8')
+    for (let n = 1; n <= 7; n++) add(shift('2026-10-05', -n), n % 2 ? 3 : 1, n % 2 ? '8+' : '5-6')
+    const plans = [{ id: 'aaaaaaaa-1111-4222-8333-444444444444', when: 'When I sit down after work', then: 'I will step outside for five minutes', created: '2026-09-01T08:00:00.000Z',
+      lastReview: '2026-10-07', reviews: [{ d: '2026-09-30', r: 'mixed' }, { d: '2026-10-07', r: 'worked' }] }]
+    return settledIn({ at: ORDINARY_DAY, state: deviceState({ days, profile: { ...PROFILE, plans }, schedule: { ...SCHEDULE }, at: ORDINARY_DAY }) })
+  }
+  const weekCard = (page) => page.locator('.screen.mind section.mind-week')
+  const noOf7 = async (page) => expect(!/\d+ of 7\b/.test(await page.locator('.screen.mind').innerText()), 'a count "of 7" on the Mind page')
+
+  await run('wp11-reflection-a', async ({ page }) => {
+    // ordinary day, under 8 data points: state A
+    await openMindTab(page)
+    const main = page.locator('.screen.mind')
+    await main.locator('.mind-week-h', { hasText: 'Your week' }).getByText('5–11 Oct').waitFor()
+    const card = weekCard(page)
+    await card.getByText('4 check-ins this week', { exact: true }).waitFor()
+    await card.getByText('Not enough answers yet', { exact: true }).waitFor()
+    await card.getByText('Patterns from your own answers can show up here over time.', { exact: true }).waitFor()
+    expect(await card.locator('.mind-bands').count() === 0, 'a band strip with no sleep answers')
+    expect(await card.locator('.mind-obs').count() === 0, 'an observation under 8 data points')
+    const text = await card.innerText()
+    expect(!/Skills|Plans|Food|Weight|kcal/.test(text), 'a line that should be left out: ' + text)
+    await noOf7(page)
+    await card.scrollIntoViewIfNeeded()
+    await shot(page, 'wp11-reflection-a')
+    // "See your whole week" goes to Summary's This week
+    await card.getByRole('button', { name: 'See your whole week' }).click()
+    await page.locator('#sum-week').waitFor()
+  }, { seed: settledIn(ordinaryDay()), url: WB })
+
+  await run('wp11-reflection-b', async ({ page }) => {
+    await openMindTab(page)
+    const card = weekCard(page)
+    await card.getByText('5 check-ins this week', { exact: true }).waitFor()
+    await card.getByText('Mostly 6 to 7 hours', { exact: true }).waitFor()
+    await card.getByText('Reset twice, Unload once', { exact: true }).waitFor()
+    await card.getByText('1 plan reviewed', { exact: true }).waitFor()
+    const strip = card.locator('.mind-bands')
+    expect((await strip.getAttribute('aria-hidden')) === 'true', 'the band strip is not aria-hidden')
+    expect(await strip.locator('.mind-band').count() === 5 && await strip.locator('.mind-band.on').count() === 1, 'five segments, one filled')
+    expect((await strip.locator('.mind-band').nth(2).getAttribute('class')).includes('on'), 'the 6–7 segment is the filled one')
+    const bg = await strip.locator('.mind-band.on').evaluate((e) => getComputedStyle(e).backgroundColor)
+    const band = await page.evaluate(() => { const s = document.createElement('span'); s.style.background = 'var(--band)'; document.body.append(s); const c = getComputedStyle(s).backgroundColor; s.remove(); return c })
+    expect(bg === band, `filled segment ${bg}, --band ${band}`)
+    const obs = card.locator('.mind-obs')
+    await obs.getByRole('heading', { name: 'Something in your answers' }).waitFor()
+    expect(/^Over the last two weeks, on nights .*7 hours.* you more often rated energy OK or Good\.$/.test((await obs.locator('.mind-obs-t').innerText()).trim()), 'the observation line')
+    await obs.getByText('Just a pattern in your own answers, not a rule.', { exact: true }).waitFor()
+    expect(await card.getByText('Patterns from your own answers can show up here over time.').count() === 0, 'the later line beside an observation')
+    expect(!/Food|Weight|kcal|weigh/.test(await card.innerText()), 'a food or weight line')
+    await noOf7(page)
+    await card.scrollIntoViewIfNeeded()
+    await shot(page, 'wp11-reflection-b')
+    await page.locator('.screen.mind .mind-wellness').scrollIntoViewIfNeeded()
+    await shot(page, 'wp11-reflection-b-foot')
+  }, { seed: reflectionWeek(), url: WB })
+
+  await run('wp11-reflection-held', async ({ page }) => {
+    // the first two weeks: no reflection yet (asks.ts holds it back before day 14)
+    await openMindTab(page)
+    await page.locator('.screen.mind .mind-plans').waitFor()
+    expect(await page.locator('.screen.mind .mind-week-h').count() === 0, 'the reflection shows in the first two weeks')
+  }, { seed: ordinaryDay(), url: WB })
+
+  await run('wp11-reflection-food-off', async ({ page }) => {
+    await openMindTab(page)
+    const card = weekCard(page)
+    await card.getByText('Mostly 6 to 7 hours', { exact: true }).waitFor()
+    expect(await card.getByRole('button', { name: 'See your whole week' }).count() === 0, 'the link with Food off')
+  }, { seed: (() => { const s = reflectionWeek(); s.state.profile.mind = { off: ['food'] }; return s })(), url: WB })
+
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
   void WB; void WBR; void lowMoodFortnight
