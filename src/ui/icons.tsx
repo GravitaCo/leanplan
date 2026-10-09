@@ -40,6 +40,11 @@ const PATHS = {
   mail: <><rect x="3.5" y="5.5" width="17" height="13" rx="3" /><path d="M4.5 7.5l7.5 5.5 7.5-5.5" /></>,
   thumbUp: <path d="M7.5 10.5v9.5M7.5 10.5l3.6-6.3a1.9 1.9 0 0 1 3.5 1.3l-.8 4.1h4.6a2 2 0 0 1 2 2.4l-1.3 6.4a2 2 0 0 1-2 1.6H7.5M7.5 10.5h-3v9.5h3" />,
   thumbDown: <path d="M16.5 13.5V4M16.5 13.5l-3.6 6.3a1.9 1.9 0 0 1-3.5-1.3l.8-4.1H5.6a2 2 0 0 1-2-2.4l1.3-6.4a2 2 0 0 1 2-1.6h9.6M16.5 13.5h3V4h-3" />,
+  // Mind skills (wellbeing board B5): plain glyphs, no lotus, figure or sparkles
+  wind: <path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7" />,
+  moon: <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
+  pen: <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

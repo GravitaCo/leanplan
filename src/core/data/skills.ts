@@ -14,7 +14,7 @@ export interface Skill {
   name: string
   /** the row's one-line sub (deck B5.9, B5.11, B5.13, B5.15); describes the activity, no mechanism line */
   sub: string
-  /** icon name in ui/icons (WP6 may add dedicated glyphs) */
+  /** icon name in ui/icons (board B5: wind, moon, pen, sun) */
   icon: string
   /** the icon square's colour */
   pillar: Pillar
@@ -26,10 +26,10 @@ export interface Skill {
 }
 
 export const SKILLS: readonly Skill[] = [
-  { id: 'reset', name: 'Reset', sub: 'A few slow breaths, with long breaths out · 1 to 5 min', icon: 'leaf', pillar: 'mind', screen: true },
-  { id: 'wind-down', name: 'Wind down', sub: 'Your own routine for the evening', icon: 'bulb', pillar: 'mind', screen: false },
-  { id: 'unload', name: 'Unload', sub: "Write what's on your mind, and one next step for each", icon: 'book', pillar: 'mind', screen: true },
-  { id: 'outside', name: 'Get outside', sub: 'Daylight, and a walk if you like', icon: 'leaf', pillar: 'move', screen: false },
+  { id: 'reset', name: 'Reset', sub: 'A few slow breaths, with long breaths out · 1 to 5 min', icon: 'wind', pillar: 'mind', screen: true },
+  { id: 'wind-down', name: 'Wind down', sub: 'Your own routine for the evening', icon: 'moon', pillar: 'mind', screen: false },
+  { id: 'unload', name: 'Unload', sub: "Write what's on your mind, and one next step for each", icon: 'pen', pillar: 'mind', screen: true },
+  { id: 'outside', name: 'Get outside', sub: 'Daylight, and a walk if you like', icon: 'sun', pillar: 'move', screen: false },
 ]
 
 export const skillById = (id: string): Skill | undefined => SKILLS.find((s) => s.id === id)

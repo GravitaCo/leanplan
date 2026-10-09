@@ -10,7 +10,7 @@ export type UkNation = 'england' | 'scotland' | 'wales' | 'northern-ireland'
 /** The four nations with their names, in the order the signpost lists show them. */
 export const NATIONS: [UkNation, string][] = [['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']]
 
-export type SignpostKind = 'beat' | 'samaritans' | 'childline' | 'nhs111' | 'nhs111-mental-health' | 'gp' | 'midwife' | 'emergency'
+export type SignpostKind = 'beat' | 'samaritans' | 'shout' | 'childline' | 'nhs111' | 'nhs111-mental-health' | 'gp' | 'midwife' | 'emergency'
 
 export interface Signpost {
   kind: SignpostKind
@@ -27,6 +27,11 @@ export interface Signpost {
   note?: string
   /** the service's own page (webchat, email); re-check with the numbers */
   web?: string
+  /** a text service (Shout): the short number and the word to send; shown in words as well,
+   *  since not every phone fills in an `sms:` link's message */
+  sms?: { to: string; body: string }
+  /** when this entry was last checked, where it differs from CHECKED_ON */
+  checkedOn?: string
 }
 
 export const CHECKED_ON = '2026-09-27'
@@ -47,6 +52,17 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     web: 'https://www.beateatingdisorders.org.uk/',
   },
   samaritans: { kind: 'samaritans', name: 'Samaritans', phone: '116 123', hours: '24 hours, every day', free: true },
+  // Shout: checked by compliance against Shout's own FAQ on 7 Oct 2026 (wellbeing copy deck B6.6).
+  // Free from the main UK networks (not every small network), so the copy says exactly that.
+  shout: {
+    kind: 'shout',
+    name: 'Shout',
+    sms: { to: '85258', body: 'SHOUT' },
+    hours: '24 hours, every day',
+    free: true,
+    note: 'Text SHOUT to 85258. Free from the main UK networks.',
+    checkedOn: '2026-10-07',
+  },
   childline: { kind: 'childline', name: 'Childline', phone: '0800 1111', hours: '24 hours, every day', free: true },
   nhs111: {
     kind: 'nhs111',
@@ -71,6 +87,12 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
   midwife: { kind: 'midwife', name: 'Your midwife or GP', hours: 'Surgery hours' },
   emergency: { kind: 'emergency', name: 'Emergency services', phone: '999', hours: '24 hours, every day', free: true, note: 'If you or someone else is in danger now.' },
 }
+
+/**
+ * An `sms:` link that opens a new message to the number with the word filled in. `?&body=` is the
+ * form both iOS and Android read; the row also says "Text SHOUT to 85258", so it works either way.
+ */
+export const smsHref = (sms: { to: string; body: string }): string => `sms:${sms.to}?&body=${encodeURIComponent(sms.body)}`
 
 /** Beat's number for a nation. */
 export const beatFor = (nation: UkNation): string => SIGNPOSTS.beat.byNation![nation]

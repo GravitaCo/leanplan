@@ -1,0 +1,19 @@
+/* Wellbeing Phase 1 styles (build plan, ground rule 5). Owned by WP6; later packages append their
+   own block under a "WPn" heading so rebases merge cleanly. Tokens only (theme.css). Nothing here
+   applies until a Mind screen renders, and those sit behind WELLBEING_ENABLED. */
+
+/* ===================== WP6: Mind page (B5), Support sheet (B6) ===================== */
+.mind .lbl.mind-lbl-first { padding-top: 4px; }
+/* Today: the check-in in short pairs, 2 by 2 (B5.5): 13 px labels, 17 px values */
+.card.mind-today { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.mind-g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.mind-g2 .k { font-size: 13px; color: var(--label2); }
+.mind-g2 .v { font-size: 17px; font-weight: 500; margin-top: 1px; }
+.mind-ask { font-size: 17px; font-weight: 500; }
+.mind-ask-sub { font-size: 13px; color: var(--label2); margin-top: 2px; }
+/* the board's "Update" and "Check in" are 44 px tall (deck 0.3: 44 px targets), not the 36 px .btn.sm */
+.card.mind-today .btn.sm { align-self: flex-start; height: 44px; border-radius: 22px; padding: 0 18px; }
+/* skill rows: the one-line sub may wrap to a second line rather than be cut off (B5.9) */
+.mind-skills .li .s { white-space: normal; line-height: 1.35; }
+.mind .mind-plans .li .m { flex: 1 1 auto; }
+.mind-wellness { text-align: center; padding: 6px 16px 0; }
