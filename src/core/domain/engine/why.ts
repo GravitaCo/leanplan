@@ -220,11 +220,13 @@ export const WELLBEING_BANNED: RegExp[] = [/\bskip(s|ped|ping)?\b/i, /\breadines
 
 /**
  * Exact strings that may use a banned word in an approved sense. Whole strings only, so the word
- * stays banned everywhere else. Empty for now (mental-performance, WP3 review): the accepted B3.17
- * says "jump rope" and passes on its own. Add an entry only when a final approved string needs one,
- * as the exact whole string.
+ * stays banned everywhere else. The accepted B3.17 says "jump rope" and passes on its own. Add an
+ * entry only when a final approved string needs one, as the exact whole string.
+ * - B8.11 (Unload foot, final): "only" says where the notes are kept, not a judgement.
  */
-export const COPY_ALLOWED: ReadonlySet<string> = new Set<string>()
+export const COPY_ALLOWED: ReadonlySet<string> = new Set<string>([
+  "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.",
+])
 
 /**
  * Words kept off every Mind screen (copy deck §0, plan §3 and §8.1: no clinical, therapy or

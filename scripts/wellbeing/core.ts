@@ -185,7 +185,9 @@ export function coreSuite(): number {
   ok('new bans: skip, readiness, recovery debt, you should rest', ['Skip today', 'You skipped a day', 'Your readiness', 'Recovery debt', 'You should rest'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved setup copy keeps "skip" (engine and wizard lint unchanged)', !copyIssues('Skip any question you like.').length && BANNED_COPY.every((r) => !WELLBEING_BANNED.includes(r)))
   const b317 = 'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.'
-  ok('no allowed exceptions; the accepted B3.17 ("jump rope") passes on its own', COPY_ALLOWED.size === 0 && mindCopyIssues(b317).length === 0)
+  const b811 = "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone."
+  ok('one allowed exception, the exact B8.11 line; the accepted B3.17 ("jump rope") passes on its own', COPY_ALLOWED.size === 1 && COPY_ALLOWED.has(b811) && mindCopyIssues(b811).length === 0 && mindCopyIssues(b317).length === 0)
+  ok('"only" stays banned outside that exact string', mindCopyIssues(b811.replace('device only', 'device')).length === 0 && mindCopyIssues(b811 + ' ').length > 0 && mindCopyIssues('Only 2 check-ins this week').length > 0)
   ok('the old "skipping" B3.17 wording is no longer allowed', mindCopyIssues(b317.replace('jump rope', 'skipping')).length > 0 && mindCopyIssues('Try skipping today').length > 0)
   ok('deck §0 words caught', ['Try this meditation', 'Your sleep score', 'A clinical tool', 'You missed yesterday', "You haven't logged today", 'Screening for low mood'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved lines with near words pass', ['For everyday wellbeing. Not a treatment for any condition.', 'Show supplement names in reminders', 'Lock screen'].every((t) => !mindCopyIssues(t).length))

@@ -759,6 +759,139 @@ async function wp5FlagOffHeaders({ page }) {
     await page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); if (bd) bd.scrollTop = bd.scrollHeight })
     await shot(page, 'wp10-flag-off-checkin-foot')
   }, { seed: hardDayWoke() })
+  // WP13: Unload (board B8), on the MIND_REVIEWED build. Every request the page makes is scanned
+  // for the note text (the Supabase stand-in and anything else), and the note sits only under
+  // deviceOnly on the device.
+  const SENT = 'SENTINEL-UNLOAD-E2E'
+  /** the hard day with one earlier note, Tuesday 6 October (board wp-b8-more) */
+  const hardDayWithNote = () => {
+    const s = hardDay()
+    s.state.deviceOnly = { unload: { owner: UID, notes: [{ id: 'e2e-note-1', at: '2026-10-06T19:30:00.000Z', pairs: [{ mind: 'Sort the boiler service', next: 'call on Thursday' }] }] } }
+    return s
+  }
+  const watchRequests = (page) => {
+    const seen = []
+    page.on('request', (r) => seen.push(r.url() + ' ' + (r.postData() || '')))
+    return seen
+  }
+  const openUnload = async (page) => {
+    await openMindTab(page)
+    await page.locator('.screen.mind .mind-skills .li', { hasText: 'Unload' }).click()
+    const sheet = page.locator('.sheet[aria-label="Unload"]')
+    await sheet.getByText("Write what's on your mind, and one next step for each.").waitFor()
+    return sheet
+  }
+
+  await run('wp13-unload', async ({ page, net }) => {
+    const seen = watchRequests(page)
+    const sheet = await openUnload(page)
+    const done = sheet.getByRole('button', { name: 'Done', exact: true })
+    expect(await done.isDisabled(), 'Done is off while empty')
+    expect((await sheet.locator('.ul-pair').count()) === 1, 'one pair to start')
+    await sheet.getByText("Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.").waitFor()
+    await sheet.getByText("Tali isn't a crisis service. In an emergency, call 999.").waitFor()
+    expect((await sheet.locator('.foot').nth(1).innerText()).trim() === "Tali doesn't read your notes. If you're struggling, support is here.", 'B8.12')
+    expect(!(await sheet.getByText('Earlier notes').count()), 'no Earlier notes row before any note')
+    await shot(page, 'wp13-unload-empty')
+    // "support is here" and the S.1 row open Support over the sheet, and close back to it
+    await sheet.getByRole('button', { name: 'support is here' }).click()
+    const sup = page.locator('.sheet[aria-label="Support and helplines"]')
+    await sup.waitFor()
+    await sup.getByRole('button', { name: 'Done' }).click()
+    await sup.waitFor({ state: 'detached' })
+    await sheet.getByRole('button', { name: 'Need support now?' }).click()
+    await sup.waitFor()
+    await sup.getByRole('button', { name: 'Done' }).click()
+    await sup.waitFor({ state: 'detached' })
+
+    // fill: a pair, then a second pair with only a next step, then the went-OK line
+    await sheet.locator('.ul-pair textarea').first().fill('The deadline on Friday, and the car needs booking in. ' + SENT)
+    await sheet.locator('.ul-pair input').first().fill('Block an hour on Wednesday morning')
+    expect(!(await done.isDisabled()), 'Done is on once something is written')
+    await sheet.getByRole('button', { name: 'Add another' }).click()
+    await sheet.locator('.ul-pair input').nth(1).fill('Ring the garage ' + SENT)
+    const wentOk = sheet.getByRole('button', { name: 'One thing that went OK today' })
+    expect((await wentOk.getAttribute('aria-expanded')) === 'false', 'went OK starts closed')
+    await wentOk.click()
+    await sheet.getByPlaceholder('Optional', { exact: true }).fill('Lunch outside ' + SENT)
+    await shot(page, 'wp13-unload-filled')
+
+    await done.click()
+    await sheet.waitFor({ state: 'detached' })
+    await page.locator('.toast.show', { hasText: 'Saved on this device' }).waitFor()
+    await page.screenshot({ path: path.join(OUT, 'wp13-unload-saved-light.png') })
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.screenshot({ path: path.join(OUT, 'wp13-unload-saved-dark.png') })
+    await page.emulateMedia({ colorScheme: 'light' })
+
+    const st = await stored(page)
+    const notes = st.deviceOnly && st.deviceOnly.unload && st.deviceOnly.unload.notes
+    expect(notes && notes.length === 1, 'one note saved: ' + JSON.stringify(st.deviceOnly))
+    expect(JSON.stringify(notes[0].pairs) === JSON.stringify([{ mind: 'The deadline on Friday, and the car needs booking in. ' + SENT, next: 'Block an hour on Wednesday morning' }, { mind: '', next: 'Ring the garage ' + SENT }]) && notes[0].ok === 'Lunch outside ' + SENT, 'pairs: ' + JSON.stringify(notes[0]))
+    expect(!JSON.stringify({ ...st, deviceOnly: undefined }).includes(SENT), 'the note text sits under deviceOnly only')
+    const c = st.days[HARD_DAY].checkin
+    expect(c.mood === 2 && (c.skills || []).some((s) => s.id === 'unload'), 'skill logged, mood kept: ' + JSON.stringify(c))
+
+    // the skill use syncs (so the scan below saw real uploads), the note never does
+    for (let i = 0; i < 20 && !net.posts.some((p) => p.t === 'day_logs' && JSON.stringify(p.list).includes('unload')); i++) await page.waitForTimeout(300)
+    expect(net.posts.some((p) => p.t === 'day_logs' && JSON.stringify(p.list).includes('"unload"')), 'the skill use synced')
+    const leaks = seen.filter((s) => s.includes(SENT) || s.includes('deviceOnly'))
+    expect(!leaks.length, 'a request carried note text: ' + leaks.join(' | ').slice(0, 300))
+    expect(seen.length > 0, 'requests were watched')
+
+    // Earlier notes: newest first, no count, Delete
+    const again = await openUnload(page)
+    const row = again.getByRole('button', { name: 'Earlier notes' })
+    expect(/^Earlier notes$/.test((await row.innerText()).trim()), 'no count on the row')
+    await row.click()
+    const list = page.locator('.sheet[aria-label="Earlier notes"]')
+    const items = list.locator('.ul-notes .li')
+    expect((await items.count()) === 1, 'one note listed')
+    const text = (await items.first().innerText()).replace(/\s+/g, ' ')
+    expect(text.includes('Thursday 8 October') && text.includes('The deadline on Friday, and the car needs booking in. ' + SENT + '. Next step: Block an hour on Wednesday morning') && text.includes('Next step: Ring the garage ' + SENT) && text.includes('Lunch outside ' + SENT), 'note: ' + text)
+    await items.first().getByRole('button', { name: /^Delete/ }).click()
+    await page.locator('.sheet[aria-label="Unload"]').waitFor()
+    expect(!(await page.locator('.sheet').getByText('Earlier notes').count()), 'no row once the last note is gone')
+    const after = await stored(page)
+    expect(!JSON.stringify(after).includes(SENT), 'deleted on the device')
+    expect(!seen.some((s) => s.includes(SENT)), 'still no request with the note text')
+  }, { seed: hardDay(), url: WBR })
+
+  await run('wp13-unload-earlier', async ({ page }) => {
+    const sheet = await openUnload(page)
+    await sheet.locator('.ul-pair textarea').fill('Work is a lot this week')
+    await sheet.getByRole('button', { name: 'Done', exact: true }).click()
+    await sheet.waitFor({ state: 'detached' })
+    const again = await openUnload(page)
+    await again.getByRole('button', { name: 'Earlier notes' }).click()
+    const list = page.locator('.sheet[aria-label="Earlier notes"]')
+    const days = (await list.locator('.ul-notes .li .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(days) === JSON.stringify(['Thursday 8 October', 'Tuesday 6 October']), 'newest first: ' + days.join(', '))
+    await list.getByText('Sort the boiler service. Next step: call on Thursday').waitFor()
+    await shot(page, 'wp13-unload-earlier')
+    // Back keeps the sheet open on the form
+    await list.getByRole('button', { name: 'Unload' }).click()
+    await page.locator('.sheet[aria-label="Unload"]').getByText('Earlier notes').waitFor()
+  }, { seed: hardDayWithNote(), url: WBR })
+
+  await run('wp13-unload-offline', async ({ page, ctx }) => {
+    // signed in, offline: Unload still saves on this device (signedIn, never authed)
+    const seen = watchRequests(page)
+    await page.locator('nav.tabbar').waitFor()
+    await ctx.setOffline(true)
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')))
+    const sheet = await openUnload(page)
+    await sheet.locator('.ul-pair textarea').fill('Offline thought ' + SENT)
+    await sheet.getByRole('button', { name: 'Done', exact: true }).click()
+    await sheet.waitFor({ state: 'detached' })
+    await page.locator('.toast.show', { hasText: 'Saved on this device' }).waitFor()
+    const st = await stored(page)
+    expect(JSON.stringify(st.deviceOnly).includes('Offline thought'), 'saved offline')
+    await ctx.setOffline(false)
+    await page.evaluate(() => window.dispatchEvent(new Event('online')))
+    await page.waitForTimeout(2500)
+    expect(!seen.some((s) => s.includes(SENT)), 'no request carried the note after reconnecting')
+  }, { seed: hardDay(), url: WBR })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

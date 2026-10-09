@@ -18,3 +18,18 @@
 .mind-skills .li .s { white-space: normal; line-height: 1.35; }
 .mind .mind-plans .li .m { flex: 1 1 auto; }
 .mind-wellness { text-align: center; padding: 6px 16px 0; }
+
+/* ===================== WP13: Unload (B8) ===================== */
+.unload .ul-lead { margin: 2px 4px 14px; font-size: 17px; line-height: 1.4; }
+/* one "On my mind" and "Next step" pair: a card, fields on the page colour (board wp-b8) */
+.unload .card.ul-pair { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 8px; }
+.unload .ul-pair label { font-size: 13px; color: var(--label2); margin: 0 2px; }
+.unload .ul-pair textarea, .unload .ul-pair input, .unload .ul-ok input { background: var(--bg); border-radius: 12px; padding: 11px 14px; }
+.unload .ul-pair textarea { display: block; min-height: 88px; resize: none; line-height: 1.35; }
+.unload .foot { padding: 0 4px; margin-bottom: 8px; line-height: 1.4; }
+.unload .foot .linkbtn.inl { font-size: 13px; }
+.unload .ul-support { margin-top: 4px; }
+/* Earlier notes: the whole note shows, newest first, each with Delete (board wp-b8-more) */
+.unload .ul-notes .li .t, .unload .ul-notes .li .s { display: block; }
+.unload .ul-notes .li .s { white-space: normal; line-height: 1.35; }
+.unload .ul-notes .linkbtn { flex: none; min-height: 44px; padding: 10px 0 10px 8px; }

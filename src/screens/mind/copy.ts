@@ -45,7 +45,43 @@ export const SUPPORT_MIND = {
   foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.',
 }
 
+/** WP13: Unload (board B8, canvas wp-b8-light, wp-b8-dark, wp-b8-more). Cancel and Done (B8.2)
+ *  are the sheet's usual buttons. */
+export const UNLOAD = {
+  /** B8.1 */
+  title: 'Unload',
+  /** B8.3 */
+  lead: "Write what's on your mind, and one next step for each.",
+  /** B8.4, B8.5 */
+  mind: 'On my mind',
+  mindHint: "Whatever's taking up room",
+  /** B8.6, B8.7 */
+  next: 'Next step',
+  nextHint: "Optional. One small thing, or 'nothing for now'",
+  /** B8.8 */
+  addAnother: 'Add another',
+  /** B8.9, B8.10 */
+  wentOk: 'One thing that went OK today',
+  wentOkHint: 'Optional',
+  /** B8.11 (final, mental-performance with compliance). "only" is banned elsewhere: this exact
+   *  string is in COPY_ALLOWED (why.ts). */
+  local: "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.",
+  /** B8.12, with "support is here" linked to the Support sheet */
+  notRead: "Tali doesn't read your notes. If you're struggling, support is here.",
+  notReadLead: "Tali doesn't read your notes. If you're struggling, ",
+  notReadLink: 'support is here',
+  /** B8.13 */
+  notCrisis: "Tali isn't a crisis service. In an emergency, call 999.",
+  /** B8.14, the toast after Done */
+  saved: 'Saved on this device',
+  /** B8.15, B8.16 */
+  earlier: 'Earlier notes',
+  delete: 'Delete',
+  /** the Earlier notes list: a next step after its thought (board wp-b8-more) */
+  nextPrefix: 'Next step: ',
+}
+
 /** Every string above, for the copy lint. */
 export function mindPageCopy(): string[] {
-  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND)]
+  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD)]
 }
