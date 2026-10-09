@@ -677,6 +677,14 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   names on the lock screen" setting. Boards are being drafted for approval.
 - **The supplement lock-screen fix ships ahead of Phase 1** once `ship-critic` passes; Benn is asked
   before anything is applied to the live database.
+- **Reset timings: 3 s in, 1 s in again, 6 s out** (about 6 breaths a minute), Tali's own pacing
+  choice. Balban et al. 2023 used self-paced cyclic sighing with no fixed counts, so the timings
+  are never attributed to the study.
+- **A due plan review waits a day on any hard day** (not only a low-mood one), so the Mind-led one
+  thing shows; it comes back the next ordinary day and is never dropped.
+- **Wording:** the weekly pattern line says "on nights of 7 hours or more"; the done ticks read "Got
+  outside" and "Lunch somewhere you like"; the sleep words "Mostly under 5 hours / 5 to 6 hours /
+  6 to 7 hours / 7 to 8 hours / 8 hours or more" are approved.
 - **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
   share one a day.
 
