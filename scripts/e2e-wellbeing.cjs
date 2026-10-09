@@ -892,6 +892,136 @@ async function wp5FlagOffHeaders({ page }) {
     await page.waitForTimeout(2500)
     expect(!seen.some((s) => s.includes(SENT)), 'no request carried the note after reconnecting')
   }, { seed: hardDay(), url: WBR })
+  // WP7: Summary on a hard day and the one prompt slot (board B2, B9)
+  const PLAN_DUE = [{ id: 'e2e-plan-1', when: 'after work', then: 'walk home the long way', created: '2026-09-01', reviews: [] }]
+  const SUPPS = [{ id: 's1', name: 'Vitamin D', time: '08:00' }, { id: 's2', name: 'Creatine', time: '08:00' }]
+  const wp7Hard = (patch = {}) => { const s = hardDay(); Object.assign(s.state.profile, { plans: PLAN_DUE, supplements: SUPPS }, patch); return s }
+  const sumMind = (page) => page.locator('section.wb-mind')
+  const foodKcal = async (page) => (await page.locator('section[aria-labelledby="sum-food"] .kbig .num').first().innerText()).trim()
+
+  await run('wp7-hard-day', async ({ page }) => {
+    const card = sumMind(page)
+    await card.getByText('Feeling low').waitFor()
+    await card.getByText(/^Checked in at \d\d:\d\d$/).waitFor()
+    await card.getByText('A lighter day is still a good day.').waitFor()
+    await card.getByText("One thing for today, if you'd like:").waitFor()
+    const chips = (await card.locator('.wb-things .chip').allTextContents()).map((s) => s.trim())
+    // MIND_REVIEWED off: the Reset chip opens a skill screen, so only Get outside (no food chip)
+    expect(chips.join() === 'Get outside for 10 minutes', 'chips: ' + chips.join(' | '))
+    // exactly one ask, and the slot under the card is empty: the due plan review waits
+    expect(!(await page.getByText('How are your plans going?').count()), 'plan review held on a hard day')
+    expect(!(await page.locator('.pillars > .banner, .pillars > .dayopt').count()), 'prompt slot empty')
+    expect(!(await page.getByText('Worth a quick check').count()), 'no quick check')
+    expect(!(await page.getByText('Rough night? Your usuals are first today.').count()), 'no B2.33 line')
+    // Food: numbers unchanged, usuals start with Same as yesterday (R1 to R3)
+    expect((await foodKcal(page)) === '0', 'Food card 0 kcal')
+    const rows = page.locator('.li', { has: page.locator('.t') })
+    const same = page.locator('.li.wb-same')
+    expect((await same.locator('.s').innerText()).trim() === 'Porridge, made with milk and Banana (1 ~118g) · 306 kcal', 'same row: ' + (await same.locator('.s').innerText()))
+    const usual = (await page.locator('.lbl', { hasText: 'Your usual breakfast' }).locator('xpath=following-sibling::div[1]').locator('.li .t').allTextContents()).map((s) => s.trim())
+    expect(usual[0] === 'Same as yesterday' && usual.length >= 2, 'usual list: ' + usual.join(' | '))
+    void rows
+    // Move: the lighter choices named (B2.26)
+    await page.locator('section[aria-labelledby="sum-move"]').getByText('5 exercises · lighter choices today').waitFor()
+    // Weight: when it was, no weekly change, no sparkline (R5, R6)
+    const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
+    expect((await wt.locator('.s').innerText()).trim() === 'Last weigh-in', 'weight sub: ' + (await wt.locator('.s').innerText()))
+    expect((await wt.locator('.v').innerText()).replace(/\s+/g, '') === '81.8kg', 'weight value')
+    expect(!(await wt.locator('svg').count()), 'no sparkline')
+    await page.locator('.tile', { hasText: 'Supplements' }).waitFor()
+    await shot(page, 'wp7-hard-day')
+    await page.evaluate(() => window.scrollTo(0, 700))
+    await shot(page, 'wp7-hard-day-lower')
+    await page.evaluate(() => window.scrollTo(0, 0))
+    // one tap on Same as yesterday adds exactly 306 kcal
+    await same.click()
+    await page.waitForFunction(() => document.querySelector('section[aria-labelledby="sum-food"] .kbig .num')?.textContent?.trim() === '306')
+    expect(!(await page.locator('.li.wb-same').count()), 'row gone once breakfast has entries')
+    // the one thing: pick, Done, Make it a plan (WP14's hook opens the plan sheet)
+    await card.locator('.wb-things .chip', { hasText: 'Get outside for 10 minutes' }).click()
+    await card.getByText('Today: Get outside for 10 minutes').waitFor()
+    await shot(page, 'wp7-thing-picked')
+    await card.getByRole('button', { name: 'Change', exact: true }).click()
+    await card.locator('.wb-things .chip').first().click()
+    await card.getByRole('button', { name: 'Done', exact: true }).click()
+    await card.locator('.wb-done', { hasText: 'Got outside' }).waitFor()
+    expect((await stored(page)).days[HARD_DAY].checkin.thing.key === 'outside-10', 'thing stored')
+    expect((await stored(page)).days[HARD_DAY].checkin.mood === 2, 'mood kept')
+    await shot(page, 'wp7-thing-done')
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
+    await page.locator('.sheet').getByText('New plan').waitFor()
+    await page.locator('.sheet').getByRole('button', { name: 'Cancel' }).click().catch(() => page.keyboard.press('Escape'))
+    await page.locator('.sheet').waitFor({ state: 'detached' })
+    // the card opens the Mind tab
+    await card.locator('.wb-mind-row').click()
+    await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
+  }, { url: WB, seed: wp7Hard() })
+
+  await run('wp7-hard-day-reviewed', async ({ page }) => {
+    const chips = (await sumMind(page).locator('.wb-things .chip').allTextContents()).map((s) => s.trim())
+    expect(chips.join() === '2-minute Reset,Get outside for 10 minutes', 'chips: ' + chips.join(' | '))
+    await shot(page, 'wp7-hard-day-reviewed')
+  }, { url: WBR, seed: wp7Hard() })
+
+  await run('wp7-before-checkin', async ({ page }) => {
+    const card = sumMind(page)
+    await card.getByText('How are you today?').waitFor()
+    await card.getByText('Mood, sleep, stress and energy · 20 seconds').waitFor()
+    expect(!(await card.getByText('A lighter day').count()) && !(await card.locator('.chip').count()), 'no lighter line or chips before the check-in')
+    await shot(page, 'wp7-before-checkin')
+    await card.getByRole('button', { name: 'Check in', exact: true }).click()
+    await page.locator('.sheet').getByText('How are you feeling?').waitFor()
+  }, { url: WB, seed: (() => { const s = wp7Hard(); delete s.state.days[HARD_DAY].checkin; return s })() })
+
+  await run('wp7-gentle', async ({ page }) => {
+    const same = page.locator('.li.wb-same .s')
+    expect((await same.innerText()).trim() === 'Porridge, made with milk and Banana (1 ~118g)', 'gentle: no kcal: ' + (await same.innerText()))
+    expect(!(await page.locator('.li .s', { hasText: 'kcal' }).count()), 'no kcal on usual rows')
+    await shot(page, 'wp7-gentle')
+  }, { url: WB, seed: wp7Hard({ gentle: true }) })
+
+  await run('wp7-food-off', async ({ page }) => {
+    await sumMind(page).getByText('A lighter day is still a good day.').waitFor()
+    expect(!(await page.locator('section[aria-labelledby="sum-food"]').count()), 'no Food card')
+    expect(!(await page.getByText('Your usual breakfast').count()), 'no usuals')
+    expect(!(await page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) }).count()), 'no weight tile')
+    await page.locator('.tile', { hasText: 'Supplements' }).waitFor()
+    await page.locator('section[aria-labelledby="sum-move"]').waitFor()
+    await shot(page, 'wp7-food-off')
+  }, { url: WB, seed: wp7Hard({ mind: { off: ['food'] } }) })
+
+  await run('wp7-mind-move-off', async ({ page }) => {
+    await page.locator('section[aria-labelledby="sum-food"]').waitFor()
+    expect(!(await page.locator('section.wb-mind, .mind-row').count()), 'no Mind card')
+    expect(!(await page.locator('section[aria-labelledby="sum-move"]').count()), 'no Move card')
+    await shot(page, 'wp7-mind-move-off')
+  }, { url: WB, seed: wp7Hard({ mind: { off: ['mind', 'move'] } }) })
+
+  await run('wp7-ordinary', async ({ page }) => {
+    // past the first two weeks, with a due plan review: the banner shows within the budget
+    const card = sumMind(page)
+    await card.getByText('Feeling good').waitFor()
+    expect(!(await card.getByText('A lighter day').count()), 'no lighter line')
+    await page.getByText('How are your plans going?').waitFor()
+    const chips = (await card.locator('.wb-things .chip').allTextContents()).map((s) => s.trim())
+    expect(chips.join() === 'Lunch somewhere you like,Get outside at lunch', 'chips: ' + chips.join(' | '))
+    expect(!(await page.locator('.li.wb-same').count()), 'no Same as yesterday row on an ordinary day')
+    const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
+    expect((await wt.locator('.s').innerText()).trim() !== 'Last weigh-in', 'ordinary weight sub')
+    await shot(page, 'wp7-ordinary')
+  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.days[shift(ORDINARY_DAY, -40)] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })), weight: 82.4 }); o.state._meta.days[shift(ORDINARY_DAY, -40)] = { u: ORDINARY_DAY + 'T07:00:00.000Z', dirty: false }; Object.assign(o.state.profile, { plans: PLAN_DUE, supplements: SUPPS }); return o })() })
+
+  await run('wp7-flag-off', async ({ page }) => {
+    await page.locator('.mind-row').waitFor()
+    expect(!(await page.locator('section.wb-mind, .li.wb-same').count()), 'no flag-on Mind card or Same as yesterday row')
+    expect(!(await page.getByText('A lighter day is still a good day.').count()), 'no lighter line')
+    await page.getByText('How are your plans going?').waitFor()
+    expect(!(await page.getByText('lighter choices today').count()), 'Move sub as today')
+    const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
+    expect((await wt.locator('.s').innerText()).trim() !== 'Last weigh-in', 'weight sub as today')
+    expect((await foodKcal(page)) === '0', 'Food card 0 kcal')
+    await shot(page, 'wp7-flag-off')
+  }, { seed: wp7Hard() })
 
   /* ---------- WP11: the weekly reflection (B4) on the Mind page ---------- */
   /** a seed past the first two weeks (asks.ts holds the reflection back before day 14): a day 30 days back */

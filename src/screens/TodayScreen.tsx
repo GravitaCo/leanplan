@@ -4,7 +4,7 @@
  * then weight and supplements, and the week against the target range.
  */
 import { useEffect, useState, type ReactNode } from 'react'
-import { useStore } from '@/store/store'
+import { selectAskCtx, useStore } from '@/store/store'
 import { canSaveHealthAnswers, healthDeclined, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
@@ -16,11 +16,11 @@ import { ACTIVITY } from '@/core/data/constants'
 import { CAPTURE_LABEL, dayMargin, entryErr, flaggedEntries, portionText } from '@/core/domain/estimate'
 import {
   HUNGER, MEAL_LABEL, MOODS, dayOf, dayStat, energyStatus, ifThenOfferDue, mealNow, plansDue, latestWeight, rangeExtra, rangeFor, showBurnNote,
-  usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
+  sameAsYesterdayRow, usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
 import { initials } from '@/ui/ProfileButton'
-import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { MIND_REVIEWED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { Icon, Chevron } from '@/ui/icons'
 import { KcalBar, MacroTrio, Sparkline, WeekBars } from '@/ui/charts'
 import { WeekStrip } from '@/ui/WeekStrip'
@@ -37,8 +37,17 @@ import { foodAskDue, foodView, mealWords, proteinRangeFor } from '@/core/domain/
 import { FOOD9 } from './onboarding/copyApp'
 import { FoodAskSheet } from './today/FoodAskSheet'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
+import { pickAsks, type AskId } from '@/core/domain/asks'
+import { thingOptions } from '@/core/domain/mind'
+import { offerLighter } from '@/core/domain/dayOptions'
+import { thingByKey, type Thing } from '@/core/data/skills'
+import { MindCard } from './today/MindCard'
+import { ThingPlanSheet } from './today/ThingPlanSheet'
+import { BANNER_ASK, checkedIn, lastWeighIn, pillarsOn, summaryDue, weighInSub } from './today/summary'
+import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from './today/summaryCopy'
+import './today/summary.css'
 
-type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
+type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | { k: 'thing-plan'; thing: Thing } | null
 
 /** "22–28 Sept", or "29 Sept – 5 Oct" across a month end. */
 function weekSpan(a: string, b: string): string {
@@ -62,15 +71,16 @@ export function TodayScreen() {
   // ob7-3: the 12-week "Does this still apply?", once when it's due, never blocking (closing = Ask me later)
   const reaskDue = useStore((s) => ONBOARDING_ENABLED && pregnancyReaskDue(s.data.profile.pregnancy, todayStr()))
   const [reask, setReask] = useState(false)
-  useEffect(() => { if (reaskDue && !sheet) setReask(true) }, [reaskDue]) // eslint-disable-line react-hooks/exhaustive-deps
   // ob5-4: "Plan when you'll do it", once, after the first workout (the 12-week question goes first)
   const ifThenDue = useStore((s) => ONBOARDING_ENABLED && s.cur === todayStr() && ifThenOfferDue(s.data))
   const [ifThen, setIfThen] = useState(false)
-  useEffect(() => { if (ifThenDue && !reask && !sheet) setIfThen(true) }, [ifThenDue, reask]) // eslint-disable-line react-hooks/exhaustive-deps
   // Onboarding 9: the one in-app ask (never a push): day 14 for Sometimes (ob9-3), week 4 for Yes (ob9-4)
   const foodAsk0 = useStore((s) => (!ONBOARDING_ENABLED || s.cur !== todayStr() ? null : foodAskDue(s.data.profile, todayStr(), canSaveHealthAnswers(s.data))))
   const [foodAsk, setFoodAsk] = useState<'today' | 'range' | null>(null)
-  useEffect(() => { if (foodAsk0 && !reask && !ifThen && !sheet) setFoodAsk(foodAsk0) }, [foodAsk0, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
+  // (the effects that open these sheets sit below the asks budget, in the same order as before)
+  const openMind = useStore((s) => s.openMind)
+  const noteActivityShown = useStore((s) => s.noteActivityShown)
+  const repeatYesterday = useStore((s) => s.repeatYesterday)
 
   const p = data.profile
   // Onboarding 9: a wellbeing Yes or Sometimes shows Today in words (Sometimes until its own yes at day 14)
@@ -108,9 +118,6 @@ export function TodayScreen() {
   const sugRaw = isToday && !gentle && !showBurnNote(data) ? activitySuggestion(data, cur) : null
   const suggest = sugRaw && !(missed && !sugRaw.up) ? sugRaw : null
   const suggestShown = suggest && !missed ? suggest : null
-  useEffect(() => {
-    if (suggestShown && markActivityShown(data, cur)) setPrefs({ activityShown: cur })
-  }, [suggestShown?.level, cur]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = weekOf(cur).map((d) => dayStat(data, d))
   const past = rows.filter((x) => !x.future)
@@ -150,6 +157,47 @@ export function TodayScreen() {
   const prompt: 'missed' | 'suggest' | 'burn' | null =
     missed ? 'missed' : suggest ? 'suggest' : burnNote ? 'burn' : null
 
+  // ---------- wellbeing (WELLBEING_ENABLED; board B2, build plan WP7) ----------
+  // With the flag off: every pillar on, no asks budget, and everything below reads as before.
+  const wb = WELLBEING_ENABLED
+  const on = pillarsOn(wb ? p.mind?.off : undefined)
+  const askCtx = wb && isToday ? selectAskCtx({ data }, cur) : null
+  const hard = !!askCtx?.hard
+  const things = askCtx ? thingOptions({
+    hard, off: p.mind?.off, gentle, wellbeingRouting: yes || some, sessionToday: logged || planned.length > 0,
+    windDownAt: p.mind?.windDownAt, skillsAvailable: MIND_REVIEWED,
+  }) : []
+  const checked = checkedIn(day.checkin)
+  // the one prompt slot: what is due today goes through the asks budget (core/domain/asks); a held
+  // ask is never shown, opened or marked seen, and comes back on a day it shows
+  const pick = askCtx ? pickAsks(summaryDue({
+    checkin: !checked, thing: checked && (things.length > 0 || !!thingByKey(day.checkin?.thing?.key)),
+    planReview: due.length > 0, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue,
+    quickCheck: flags.length > 0,
+  }, on), askCtx) : null
+  const shown = (id: AskId) => !pick || pick.show.includes(id)
+  const promptOk = !!prompt && shown(BANNER_ASK[prompt])
+  const reaskGo = reaskDue && shown('pregnancy-reask')
+  const ifThenGo = ifThenDue && shown('if-then-offer')
+  const foodAskGo = foodAsk0 && shown('food-ask') ? foodAsk0 : null
+  const suggestVisible = suggestShown && shown('activity') ? suggestShown : null
+  useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (ifThenGo && !reask && !sheet) setIfThen(true) }, [ifThenGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (foodAskGo && !reask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!suggestVisible) return
+    // nutrition-accuracy: only a suggestion that actually showed is recorded
+    if (wb) noteActivityShown(pick)
+    else if (markActivityShown(data, cur)) setPrefs({ activityShown: cur })
+  }, [suggestVisible?.level, cur]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Food on a hard day: "Same as yesterday" leads the usuals (nutrition-accuracy R1 to R4)
+  const same = wb && hard && on.food ? sameAsYesterdayRow(data, cur, meal, { gentle }) : null
+  // Weight on a hard day: when it was, not the weekly change, and no sparkline (R5, R6)
+  const lastW = wb && hard ? lastWeighIn(data.days, cur) : null
+  // Move: Train offers the lighter choices (the same test TrainScreen uses; B2.26)
+  const lighterMove = wb && !logged && !isRest &&
+    offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin))
+
   return (
     <div className="screen">
       <PageHeader
@@ -164,7 +212,12 @@ export function TodayScreen() {
 
       <div className="pillars">
         {/* ---------- Mind ---------- */}
-        <button className="card pcard mind-row" onClick={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}>
+        {wb ? on.mind && (
+          <MindCard checkin={day.checkin} isToday={isToday} hard={hard} thingSlot={shown('thing')} options={things} windDownAt={p.mind?.windDownAt}
+            onOpen={() => openMind()}
+            onCheckIn={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}
+            onMakePlan={(thing) => setSheet({ k: 'thing-plan', thing })} />
+        ) : <button className="card pcard mind-row" onClick={() => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))}>
           <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="smile" size={20} /></span>
           <span className="m">
             <span className="pk" style={{ color: 'var(--mind-ink)' }}>Mind</span>
@@ -174,9 +227,9 @@ export function TodayScreen() {
               : 'Mood, sleep, stress and energy · 20 seconds'}</span>
           </span>
           <Chevron />
-        </button>
+        </button>}
 
-        {prompt === 'missed' && (
+        {prompt === 'missed' && promptOk && (
           <div className="banner">
             <span style={{ color: 'var(--mind-ink)' }}><Icon name="leaf" /></span>
             <div><b>Welcome back.</b><br /><span className="muted">A day off logging doesn't undo anything. Pick up from here.</span></div>
@@ -184,7 +237,7 @@ export function TodayScreen() {
           </div>
         )}
 
-        {prompt === 'suggest' && suggest && (
+        {prompt === 'suggest' && promptOk && suggest && (
           <div className="card dayopt">
             <div className="t">{suggest.up ? '' : 'Weeks vary. '}Your logged sessions over the last 4 weeks
               fit <b>{ACTIVITY[suggest.level].label.replace(/ \(.*\)$/, '')}</b> best.
@@ -200,7 +253,7 @@ export function TodayScreen() {
           </div>
         )}
 
-        {prompt === 'burn' && (
+        {prompt === 'burn' && promptOk && (
           <div className="banner">
             <span style={{ color: 'var(--food-ink)' }}><Icon name="info" /></span>
             <div><b>Your range on workout days has changed.</b><br /><span className="muted">{p.activityLevel === 'sedentary'
@@ -211,7 +264,7 @@ export function TodayScreen() {
           </div>
         )}
 
-        {due.length > 0 && (
+        {due.length > 0 && shown('plan-review') && (
           <button className="banner" onClick={() => setSheet({ k: 'plans' })}>
             <span style={{ color: 'var(--mind-ink)' }}><Icon name="bulb" /></span>
             <div><b>How are your plans going?</b><br />
@@ -220,7 +273,7 @@ export function TodayScreen() {
         )}
 
         {/* ---------- Food ---------- */}
-        <section className="card pcard" aria-labelledby="sum-food">
+        {on.food && <section className="card pcard" aria-labelledby="sum-food">
           <div className="ph">
             <h2 id="sum-food" className="pk" style={{ color: 'var(--food-ink)' }}>Food</h2>
             <button className="linkbtn" onClick={() => setTab('food')}>Open</button>
@@ -266,9 +319,9 @@ export function TodayScreen() {
             </>
           )}
           <button className="btn gray" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={18} stroke={2.6} />{yes ? FOOD9.logMeal : 'Add food'}</button>
-        </section>
+        </section>}
 
-        {flags.length > 0 && (
+        {flags.length > 0 && on.food && shown('quick-check') && (
           <div className="list">
             <div style={{ padding: '14px 16px 6px' }}>
               <CatHead color="mind" icon="target" label="Worth a quick check" />
@@ -284,10 +337,17 @@ export function TodayScreen() {
           </div>
         )}
 
-        {us.length > 0 && (
+        {on.food && (us.length > 0 || same) && (
           <div>
             <div className="lbl">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
             <div className="list">
+              {same && (
+                <div className="li wb-same" {...pressable(() => repeatYesterday(meal))}>
+                  <div className="m"><div className="t">{SAME_AS_YESTERDAY}</div>
+                    <div className="s num wrap">{same.sub}</div></div>
+                  <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+                </div>
+              )}
               {us.map((u) => (
                 <div className="li" key={u.n} {...pressable(() => logEntries(usualEntries(data, u.n, meal)))}>
                   <div className="m"><div className="t">{u.n}</div>
@@ -296,29 +356,29 @@ export function TodayScreen() {
                 </div>
               ))}
             </div>
-            <div className="foot">Logged {us[0].count} times recently. One tap adds your usual portion.</div>
+            {us.length > 0 && <div className="foot">Logged {us[0].count} times recently. One tap adds your usual portion.</div>}
           </div>
         )}
 
         {/* ---------- Move ---------- */}
-        <section className="card pcard" aria-labelledby="sum-move">
+        {on.move && <section className="card pcard" aria-labelledby="sum-move">
           <h2 id="sum-move" className="pk" style={{ color: 'var(--move-ink)' }}>Move</h2>
           <div className="mv" {...pressable(() => setTab('train'))}>
             <span className="psq lg" style={{ background: 'var(--move-fill)' }}><Icon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={24} /></span>
             <span className="m">
               <span className="pt b">{moveTitle}</span>
-              <span className="ps">{moveSub}</span>
+              <span className="ps">{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</span>
             </span>
             {!logged && !isRest
               ? <button className="btn sm" onClick={(e) => { e.stopPropagation(); openTrain(first!) }}>Start</button>
               : <Chevron />}
           </div>
-        </section>
+        </section>}
 
         {/* ---------- Weight + supplements ---------- */}
-        {(!quiet || supps.length > 0) && (
+        {((!quiet && on.food) || supps.length > 0) && (
           <div className="tiles">
-            {!quiet && !fv.weightBack && (
+            {!quiet && on.food && !fv.weightBack && (
               // Onboarding 9: weigh-ins still work, but no weight or trend is shown back
               <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
                 <span className="tk">Weight</span>
@@ -326,7 +386,15 @@ export function TodayScreen() {
                 <span className="s">{day.weight ? 'Today' : 'Whenever it suits you'}</span>
               </div>
             )}
-            {!quiet && fv.weightBack && (
+            {!quiet && on.food && fv.weightBack && wb && hard && (
+              // a hard day (R5, R6): the last weigh-in and when it was; no weekly change, no sparkline
+              <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
+                <span className="tk">Weight</span>
+                <span className="v num">{lastW ? <>{r1(lastW.kg)}<small>kg</small></> : <span className="w">Add</span>}</span>
+                <span className="s">{weighInSub(lastW?.d, cur)}</span>
+              </div>
+            )}
+            {!quiet && on.food && fv.weightBack && !(wb && hard) && (
               <div className="tile st" {...pressable(() => setSheet({ k: 'weight' }))}>
                 <span className="tk">Weight</span>
                 <span className="v num">{day.weight ? <>{r1(day.weight)}<small>kg</small></> : weights.length ? <>{r1(weights[weights.length - 1])}<small>kg</small></> : <span className="w">Add</span>}</span>
@@ -399,6 +467,7 @@ export function TodayScreen() {
       {sheet?.k === 'plans' && <PlanReviewSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}
       {sheet?.k === 'add' && <AddFoodSheet onClose={() => setSheet(null)} />}
+      {sheet?.k === 'thing-plan' && <ThingPlanSheet thing={sheet.thing} onClose={() => setSheet(null)} />}
     </div>
   )
 }

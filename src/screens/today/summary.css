@@ -1,0 +1,18 @@
+/* WP7: Summary with the wellbeing flag on (board B2, B9). Tokens only; nothing here applies with
+   the flag off (every class is new and used only by today/MindCard and the hard-day rows). */
+.wb-mind { gap: 12px; }
+.wb-mind-row { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+/* B2.10: the ink pill as drawn, 44 px like Move's Start target */
+.wb-mind-row .btn.sm { height: 44px; padding: 0 18px; border-radius: 22px; flex: none; }
+.wb-sep { height: 1px; background: var(--sep); }
+.wb-lighter { font-size: 15px; color: var(--label); }
+.wb-lead { font-size: 13px; color: var(--label2); margin-bottom: -4px; }
+.wb-things .chip { min-height: 44px; border-radius: 22px; padding: 0 15px; display: inline-flex; align-items: center; gap: 8px; }
+.wb-mind .dot { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+.wb-today { display: flex; gap: 10px; align-items: center; font-size: 17px; }
+.wb-today .dot { width: 10px; height: 10px; border-radius: 5px; }
+.wb-acts { display: flex; gap: 20px; margin-top: -8px; }
+.wb-acts .linkbtn, .wb-mind .wb-plan { min-height: 44px; padding: 10px 0; }
+.wb-mind .wb-plan { align-self: flex-start; margin-top: -10px; }
+.wb-done { display: flex; gap: 8px; align-items: center; color: var(--label2); font-size: 15px; }
+.wb-done .tick { color: var(--mind-ink); display: flex; }
