@@ -65,7 +65,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
         {gentle ? `${r1(head.p)} g protein` : `${Math.round(head.k)} kcal · ${r1(head.p)} P · ${r1(head.c)} C · ${r1(head.f)} F`} {head.per}
         <div style={{ fontSize: 13, marginTop: 2 }}>
-          {source ? <>Source: {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
+          {source ? <>Source: {source.url ? <a className="srcln" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
         </div>
       </div>
       <MealSeg value={meal} onChange={setMeal} />

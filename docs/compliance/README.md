@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -19,7 +19,8 @@ Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), 
 | Server-side enforcement (2026-09-28) | `docs/migrations/2026-09-28-health-consent-server.sql`: a trigger on every log table refuses a signed-in person's insert or update unless their latest health consent is a yes (so a phone that hasn't heard of a withdrawal, or an old app version, can't upload); `clear_log_after_withdrawal()` deletes the account's copy in one transaction, only while the latest answer is a no, serialised with uploads by a per-person lock. `send-supplement-reminders` skips anyone without a current yes. Migration applied and function v4 deployed 2026-09-28 |
 | Unconsented cloud copy (decided 2026-09-28) | `docs/migrations/2026-09-28-unconsented-purge.sql`: a daily pg_cron job (`tali-purge-unconsented`, 03:17 UTC) deletes day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions and settings (never consents) for an account with no health answer 30 days after PURGE_FROM or its creation, whichever is later, and for a no over a day old (backstop). Service role only. The app and texts name the date (`UNCONSENTED_DELETION` in `src/core/legal/index.ts`; `npm test` checks it matches). A later first yes re-uploads the log from every phone that has one (`needsReupload`). Applied 2026-09-28 (cron job and ACLs checked) |
 | Withdrawal (Art. 7(3); decided 2026-09-27) | Profile → Privacy → Withdraw consent for health data (offers a backup first). A health "no" stops all log sync (`consentLetsSync` needs a current yes) and deletes the account's copy of the log through `clear_log_after_withdrawal()` (day_logs, custom_foods, recipes, routines, training_plans, push_subscriptions, settings), once per withdrawal record on every device (`pendingCloudClear`); consent records stay. On every phone it clears what `HEALTH_FIELDS` in `src/data/consent.ts` lists: weigh-ins, check-ins, weight, body fat, height, `sexAnswer`, daily movement and `activityMult`, the onboarding outcomes, pregnancy flag, motivations, `deficitChosen`, all of `profile.training`, and health-derived reasons (`healthWhy`) in `routines` and `training_plans`. Kept: name, age, legacy `sex`, units, goal, `gentle`, `onboardedAt`. "Give consent again" there afterwards; a later yes re-uploads the phone's log. |
-| Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore |
+| Resuming after a pause or withdrawal | A day or settings row another device changed since then keeps that device's version; this phone's version is kept (`consents.resumeCopy`) and offered for download in Back up and restore. A later health withdrawal strips the kept copy as it does the live log (`stripResumeCopy`: weigh-ins and check-ins, the profile through `withoutHealth` with `activityLevel` back to 'light', and `healthWhy` reasons from its workouts, their slots and plans); `npm test` asserts no `HEALTH_FIELDS` key survives (fixed 2026-10-08) |
+| Lighter-session offer (automatic calculation; disclosed 2026-10-08) | On Train, when two or more check-in signals (sleep, stress, energy, soreness on lifting days) are low against the person's own recent answers (`offerLighter` in `src/core/domain/dayOptions.ts`), the day's workout shows lighter options (shorter, 10-min mobility, easy walk) beside the planned one. Profiling of health data (Art. 4(4)), on the phone; nothing is applied automatically, no legal or similarly significant effect (Art. 22 not triggered). Privacy policy, Automatic calculations: compliance ruled 2026-10-08 that this line is owed now (`offerLighter` is live) and goes to main on its own |
 | Nothing reaches the cloud before consent | `runSync` in `src/store/store.ts`: until answered, it only reads the account's consent records (so consent given on another device counts) |
 | Onboarding wizard (built, off: `ONBOARDING_ENABLED` false in `screens/onboarding/Consent.tsx`; reviewed 2026-09-28) | Health steps (`HEALTH_STEPS` in `core/domain/wizard.ts`) only show, and answers only save, with a local health yes (`canSaveHealthAnswers`); `finishOnboarding` strips health fields without it. Stores outcomes only for readiness, medical and lately (`profile.outcomes`: readiness clear/flagged, medical clear/flagged, baseline ok/low); the raw items live in component state and are never saved or synced (`scripts/e2e-onboarding.cjs` asserts no raw screener answer in any upload). Kept as answered: wellbeing (flagged for Yes, sometimes, clear or undisclosed, plus `gentle` on when flagged; `sometimes` added by Onboarding 9, see item 34) and, from Onboarding 9, the food-range answers tied to it (`profile.foodOptIn`, own merge stamp `answeredAt.foodOptIn`: `today` 'today' | 'food' for the day-14 "Would you like your food range on Today?" after Sometimes, no date kept; `range` 'shown' | 'not-now' with `rangeAt`, a local date, for the week-4 "Would a calorie range help?" after Yes, so "Not now" rests 12 weeks; no separate "asked" flag, closing the sheet saves the second answer; checked in code 2026-10-01, item 34) and the pregnancy flag (`profile.pregnancy`, pregnant and breastfeeding not told apart, with `askedAt`). Also `motivations`, `height`, `sexAnswer`, `movement`, `activityMult`, `deficitChosen`, `training.*`, per-field `answeredAt`. Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC` on; column live, checked 2026-09-28). Profile › Health data › Health check answers (`screens/profile/HealthAnswers.tsx`, rows from `healthAnswerRows.ts`, behind the flag) shows what's stored and lets people change or clear pregnancy and conditions, clear the gentler start and change food and weight; the lately baseline has no row (a GAP on the boards; the privacy policy points to export and email for it). A clear or change re-runs routing and targets at once and the plan when the engine loads (`_meta.rerunAnswers`, device-only marker inside `leanplan.v1`). The 12-week re-ask opens once on Today when due (`pregnancyReaskDue`; closing or "Ask me later" sets `snoozedAt`, back in 14 days). The draft (`tali.onboarding`, device only) holds outcomes, never raw items, and is only written with a local yes when it holds health answers. Texts updated 2026-09-28 to cover all of this; items 32 to 38 re-checked 2026-09-28 |
 | Under-age stop (behind the wizard; `MIN_AGE` 18) | Age under 18 → kind stop (`NOTES.under16`), draft reset to the age alone, then `deleteUnderAge` records `tali.pendingDelete`, wipes the device only when it's that account's or nobody's (`underAgeWipesDevice`; uid from the live session, else the owner, else the saved session: `underAgeUid`; no uid, nothing recorded or wiped), and calls `delete-account` with `reason: 'under-age'`. That account's sync stays blocked; failures back off (1, 2, 4 min … at most an hour) and stop after 6 tries, and a 403 re-auth stops at once (`underAgeNext`): the device is then signed out and wiped, keeping `tali.pendingDelete`, and the sign-in screen says "Please sign in again to finish removing your account."; the next sign-in of that account finishes it. The function skips re-auth for that reason only when Auth's `created_at` is under 24 hours old (`newAccount`, `UNDER_AGE_WINDOW_S`). `delete-account` v2 deployed 2026-09-28 with this path; security-data reviewed it SAFE (repo comments record both) |
@@ -36,11 +37,11 @@ Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), 
 | Data | Purpose | Lawful basis | Where | Kept |
 |---|---|---|---|---|
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
-| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans and their `kind` (Mind plans: health data by inference, cleared on withdrawal), Mind settings (`profile.mind`: pillars switched off, how often Tali asks, usual wake and wind-down times (health data, cleared on withdrawal), reminder types, reminder back-off start times, IANA time zone from the device, lock-screen names on or off), `answeredAt` stamps | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
+| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans and their `kind` (Mind plans: health data by inference, cleared on withdrawal), Mind settings (`profile.mind`: pillars switched off, how often Tali asks, usual wake and wind-down times (health data, cleared on withdrawal), reminder types, reminder back-off start times, IANA time zone from the device, lock-screen names on or off), `answeredAt` stamps, weekly review settings (`reviewDay`, `reviewWeight`, `lastReviewAt`, `reviewHidden`, `targetSetAt`, `maintainFrom`, `loopChoice`), `steadyRef` and `patternShown` (health data by inference, with `loopChoice`: cleared on withdrawal through `HEALTH_FIELDS`; compliance 2026-10-08) | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Onboarding outcomes: readiness, medical and lately results (outcomes only), wellbeing (flagged for Yes, sometimes, clear, undisclosed), the food-range answers that follow a Yes or Sometimes (`profile.foodOptIn`: `today`, `range`, `rangeAt` for the week-4 answer only; Onboarding 9; health data by inference, since only people who answered Yes or Sometimes are asked), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode (wellbeing Yes only; Sometimes gets a maintenance range instead), signposting (`routeSafety`); the 12-week re-ask; the day-14 and week-4 range asks, a range shown only if the person opts in | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object, `foodOptIn` and its stamp with the profile health fields: checked 2026-10-01, item 34), or the account is deleted |
 | Day logs: foods, weight, workout, supplements taken, the check-in (mood, hunger, sleep, stress, energy, soreness, note, and the Mind fields nested in it: `night` sleep band and wake time, `skills` used as id and time, `thing` as a key and when done) | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Custom foods, recipes, workouts you create (`routines`, with slot reasons in `blocks`), weekly plans (`training_plans`, with plan reasons in `why`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes`, `routines`, `training_plans` | Until health consent is withdrawn (account copy cleared) or the account is deleted |
-| Push subscription (endpoint, keys) + supplement names/times | Reminders the user turned on | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off, health consent is withdrawn, or account deletion; dead endpoints (404/410) are removed by the function |
+| Push subscription (endpoint, keys) + supplement names/times (names stay in the profile; from 2026-10-09 the push payload carries no supplement name, only "Time for your supplements", item 41) + weekly review reminder (`reviewPush`, `reviewPushTime`, `reviewPushFrom`, `reviewPushSkip` (health data by inference: cleared on withdrawal through `HEALTH_FIELDS`; compliance 2026-10-08), read with `reviewDay` and `lastReviewAt` from the profile; no new columns, the back-off is computed from them; times are read in Europe/London (UK time) for every user) | Reminders the user turned on, each separately (the review reminder is a service message the person switched on, not marketing: PECR reg. 22 doesn't apply; compliance 2026-10-08) | 6(1)(b) + 9(2)(a) | `push_subscriptions`; read by edge function `send-supplement-reminders` with the service role | Until turned off, health consent is withdrawn, or account deletion; dead endpoints (404/410) are removed by the function |
 | Consent records (type, version, yes or no, time) | Show what was agreed and when (Art. 7(1), 5(2)) | 6(1)(c); 9(2)(f) if treated as special category | `consents` (append-only) and the device | Until account deletion |
 | Pre-consent log already in the account, with no answer yet ("Not now", or not opened since) | None active: kept unused, not read or updated | No Art. 9(2) condition identified. Held unread and unchanged for a fixed 30-day transition so the person can agree or have it deleted (Art. 5(1)(e)); a time-limited risk Benn accepted on 2026-09-28; solicitor's view pending (item 26) | Account tables | Until 30 days after PURGE_FROM (28 Oct 2026) or account creation, whichever is later; then deleted by `purge_unconsented_logs()` (daily pg_cron job `tali-purge-unconsented`, 03:17 UTC). Backups expire on Supabase's cycle (window unknown, item 30) |
 | Unload notes (device only): "On my mind" and "Next step" pairs and an optional "went OK" line, with an id and time (`deviceOnly.unload`, stamped with the device's owner account); the day the low-mood signpost last showed (`deviceOnly.lowMoodShown`, health by inference); reminder delivery events (`deviceOnly.notify`: kind, time, shown, opened or closed) and whether "More about sleep" was left open (`deviceOnly.ui`), neither health data | Unload: let the person write down what's on their mind; the marker: show the signpost at most once per 30 days; the log: send a reminder less often when it's ignored | 6(1)(b) for all of it; + 9(2)(a) for the notes and the marker; PECR reg. 6(4)(b) strictly necessary | Device only, inside `leanplan.v1` (never synced, sent to AI, put in a notification or the service worker, or logged); in the JSON export (the whole store, notes, marker and log); a restore merges the backup's notes by id under this device's owner (none while health consent is withdrawn or with no owner recorded, and `unloadImportResult` reports how many it left out and why) and never restores the marker, log or UI state | Notes and marker: until the person deletes a note, health consent is withdrawn (here or pulled from another device), the device's log is removed (sign out and remove, start fresh, keep for another account, account deletion) or browser data is cleared. Notes stamped with another account, or with no owner recorded, are dropped on load; while a "whose data is this?" question is pending they are hidden, not deleted. Caps: 2,000 characters a note, 20 pairs a note, 200 notes; refused past any of them (never pruned). Log and UI state: until the device's log is removed |
@@ -62,7 +63,7 @@ Last reviewed: 2026-10-08. Controller: Gravita Creative Ltd (company 08348225), 
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
-| Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted, contains a supplement name) |
+| Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted and carries no supplement name: the fixed text "Time for your supplements" for a supplement reminder (from 2026-10-09, item 41), or the fixed text "Your week is ready" / "Take a look whenever suits you." for the review reminder) |
 
 ## Publishing the legal pages
 
@@ -89,7 +90,7 @@ flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating prox
 automated safety routing from them (Art. 22 not triggered, but record why), the outcomes-only
 design, the under-age stop and automatic deletion, and plan reasons now syncing. Also record
 on-phone processing (item 27), the purge and the accepted 30-day gap (item 30(d)), and, before
-label scanning goes on, the Anthropic processing (item 24).
+label scanning goes on, the Anthropic processing (item 24). From 2026-10-08 the maintenance loop adds pattern lines from the person's own check-ins and the hard-week predicate that withholds eat-less suggestions (profiling of health data, Art. 4(4); no legal or similarly significant effect, Art. 22 not triggered): `docs/plans/maintenance-loop.md`. The weekly review reminder (a new push type) is added with it when built.
 
 ## Status
 
@@ -144,6 +145,11 @@ Added 2026-09-27 (consent release):
 17. Turnstile loads for every visitor to a page with the early-access form, not only people
     who submit it. Moving the form to its own page (or loading Turnstile only when someone
     starts typing) keeps it strictly necessary under PECR.
+    DECIDED (Benn, 2026-10-01): Turnstile is built into Webflow forms and can't be deferred or
+    loaded on demand, and a banner choice can't stop it loading. So it is classed as strictly
+    necessary (as `cookies.ts` already lists it), not as an optional category, in any cookie
+    banner. Residual: it loads for every visitor to a page with the form, which weakens the
+    strictly-necessary case; keeping the form on its own page (above) is the mitigation.
 18. Merged into item 2 (early-access invites).
 19. Push payload verified 2026-09-24 against the deployed `send-supplement-reminders` source
     (Supabase MCP): title, supplement name, tag, icon. The function's source is now in the repo
@@ -183,12 +189,15 @@ Added 2026-09-27 (consent release):
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
 23. Open Food Facts: barcode lookups go from the phone, so OFF sees users' IP addresses
-    (disclosed). Proxying them through an Edge Function would stop that.
+    (disclosed). Proxying them through an Edge Function would stop that, but Tali's server would
+    then see every barcode a signed-in user scans (a new flow needing privacy text). Deferred
+    (Benn, 2026-10-01): revisit before public launch.
 24. Label photo scanning (Anthropic) is off. Before turning it on: Anthropic DPA, transfer
     mechanism and TIA, retention/zero retention, consent copy fix, withdrawal toggle, privacy
     policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
-25. Repo markers: `docs/migrations/2026-09-consents.sql` and `2026-09-owner-fks.sql` still say
-    NOT APPLIED but are live (checked 2026-09-27). The `delete-account` function's comments are
+25. Done 2026-10-01: the headers of `docs/migrations/2026-09-consents.sql` and
+    `2026-09-owner-fks.sql` now say applied (re-checked on the live DB: the table and all four
+    validated constraints exist). The `delete-account` function's comments are
     now right (v2 deployed, item 36). `docs/migrations/2026-09-ai-usage.sql` was applied
     on 2026-09-28 (owner postgres, verified) and its header now says so.
 
@@ -216,7 +225,8 @@ Added 2026-09-28 (server-side enforcement):
 30. Open from the 30-day deletion (compliance, 2026-09-28):
     (a) DECIDED (Benn, 2026-09-28): no notice emails for now. Accepted risk: someone who doesn't
         open the app before 28 Oct, and no longer has the phone that holds their log, loses it.
-        Revisit before 28 Oct. If emails are sent later: each account with cloud data and no
+        Revisited 2026-10-01 (Benn): the date stays 28 Oct; 2 of the 6 accounts with cloud data
+        had no health yes on that day. If emails are sent later: each account with cloud data and no
         consent (6 on 2026-09-28), before the first purge, one by one from Google Workspace, no health details: "We've changed how Tali
         handles health data: we now ask before keeping it in your account. Open Tali and choose
         whether it's OK. If you haven't agreed by 28 October 2026, we'll delete the copy in your
@@ -224,8 +234,10 @@ Added 2026-09-28 (server-side enforcement):
         this email." If they go out after release day, move PURGE_FROM (and
         `UNCONSENTED_DELETION`) to the email date.
     (b) Find Supabase's backup retention window for this plan and record it.
-    (c) Dormant accounts: after a purge the account and email stay with no end date. Set an
-        inactivity period, with notice.
+    (c) Dormant accounts: after a purge the account and email stay with no end date. DECIDED
+        (Benn, 2026-10-01): 12 months of inactivity, then deletion with notice. Not built: needs
+        the way notices are sent (an email service is a new processor, item 2), a scheduled job,
+        privacy text and a register row.
     (d) The DPIA should record the purge and the accepted 30-day gap.
 
 31. Benn approved (2026-09-28, in the build session) two changes shipped with the consent release:
@@ -350,6 +362,24 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     passwords). The organisation moved to the Pro plan for it; Supabase stays the same processor,
     so no policy change. The security advisor no longer flags it. Open, low: `pg_net` sits in the
     public schema (advisor 0014); move it when convenient.
+
+40. Noted (2026-10-07): the website home page has an HTML embed that plays a muted looping MP4 of
+    the app (hosted on Webflow's asset CDN, `cdn.prod.website-files.com`) under a phone frame. Its
+    inline script only plays or pauses the video when it scrolls into view and skips playback
+    under `prefers-reduced-motion`. No cookies, storage, third-party requests or data collection,
+    so no policy change: `src/core/legal/website.ts` and `privacy.ts` already cover Webflow
+    delivery and request data. The footer says the app screens show a sample account; any future
+    image with a falling weight trend needs that caption directly under it (CAP 13).
+41. Done in code (2026-10-09; security-data, confirmed by Benn): supplement reminders showed the
+    supplement name on the lock screen, which can reveal medication. `send-supplement-reminders`
+    now sends one generic notification per subscription when any supplement is due (title and
+    body "Time for your supplements", tag `tali-supp`, so they don't stack); the payload never
+    carries a name. `public/sw.js` also forces that text for any supplement push, so an older
+    deployed function can't show a name once the app updates. Logs and the response stay
+    counts-only; auth, the `health_consent_current` gate and the schedule are unchanged. Privacy
+    policy (Who else, push service) updated. Supersedes the payload in item 19. Open: deploy the
+    edge function (Supabase) and republish the privacy page to Webflow (`npm run legal:html`).
+    An opt-in to show names ships later with the wellbeing work.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

@@ -47,7 +47,7 @@ build can reuse it. Keep React/DOM out of `core/` and `data/`.
 
 - `src/core/`: `types.ts`; `domain/` (nutrition, workout, date math,
   TDEE, `library.ts` for swaps and "last time", `guided.ts` for guided-session targets, rest
-  and "last time" by rep range, `week.ts` for week warnings, `routines.ts` for the user's own workouts, `plans.ts` for training plans,
+  and "last time" by rep range, `week.ts` for week warnings, `weekPicture.ts` for the one shared weekly picture across mind, food, movement and body (with `maintenanceLoop.ts` on top: weekly review, weigh-in check, adaptive maintenance, band check; thresholds in `loopThresholds.ts` are placeholders until `nutrition-accuracy` and `mental-performance` set them), `routines.ts` for the user's own workouts, `plans.ts` for training plans,
   `engine/` the personalised training engine, `wizard.ts`/`onboarding.ts` for first run); `data/`
   (the food DB with its chain menus, the exercise library `exercises.ts` with its committed id
   list `docs/data/exercise-ids.json`, Push/Pull/Legs workouts, Tali's plan workouts
@@ -90,7 +90,8 @@ setting (`prefers-color-scheme`); there is no in-app override.
   dark; use `--on-food` for icons on a solid food square. Data-type names map onto them:
   `--energy` and `--body` → food, `--activity` → move, `--mind`. Protein, carbs, fat and
   supplements share the food colour and are told apart by their labels.
-- **Target ranges** use the neutral grey `--band`, never a pillar colour. No status red/amber for
+- **Target ranges** use the neutral grey `--band`, never a pillar colour. Chart rows (the week bars' 1 px
+  gridlines) use `--grid` (#E5E5E9 light, #38383A dark). No status red/amber for
   eating: targets are ranges and copy stays neutral.
 - **Type:** Geist (variable, bundled in `public/fonts/` under the OFL, preloaded so it works
   offline). Numbers use `.num` (tabular). Scale: 34 large titles, 22 section titles, 17 body, 13 footnotes.

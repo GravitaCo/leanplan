@@ -46,6 +46,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
     increment: ['next-stack'], ladders: [{ chain: 'squat-gym', step: 1 }],
     cue: "Feet shoulder-width on the platform. Lower until knees ~90°, keep your lower back on the pad. Push through mid-foot. Don't slam the knees straight at the top.",
+    video: DEMOS.legPress,
   },
   {
     id: 'romanian-deadlift', n: 'Romanian deadlift (dumbbell or barbell)', modality: 'strength', log: 'weight-reps',
@@ -105,6 +106,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'h-push-gym', step: 2 }],
     cue: "Bench at ~30°. Lower to the upper chest, press up and slightly together. Control the way down.",
+    video: DEMOS.inclineDbPress,
   },
   {
     id: 'db-shoulder-press', n: 'Dumbbell shoulder press (seated)', modality: 'strength', log: 'weight-reps',
@@ -131,6 +133,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: false,
     increment: ['next-stack'],
     cue: "Elbows tucked at your sides and still. Push the rope down until the arms are straight, spread it slightly at the bottom. Only the forearms move.",
+    video: DEMOS.tricepsPushdown,
   },
   {
     id: 'lat-pulldown', n: 'Lat pulldown', modality: 'strength', log: 'weight-reps',
@@ -139,6 +142,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
     increment: ['next-stack'], ladders: [{ chain: 'v-pull', step: 1 }],
     cue: "Lean back slightly, pull the bar to your upper chest, lead with the elbows. No yanking or swinging.",
+    video: DEMOS.latPulldown,
   },
   {
     id: 'seated-cable-row', n: 'Seated cable row', modality: 'strength', log: 'weight-reps',
@@ -164,6 +168,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 50 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['next-stack', 'next-band'],
     cue: "Rope at head height. Pull it towards your forehead, elbows high and wide, squeeze the rear shoulders. Light weight, slow.",
+    video: DEMOS.facePull,
   },
   {
     id: 'biceps-curl', n: 'Biceps curl (barbell or dumbbell)', modality: 'strength', log: 'weight-reps',
@@ -198,6 +203,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'squat-gym', step: 2 }],
     cue: "Hold a dumbbell or kettlebell close to your chest, feet a little wider than your hips. Sit down between your heels, keeping your chest up and knees following your toes, then stand by pushing through your whole foot. Don't let your heels lift or your chest drop towards your knees.",
+    video: DEMOS.gobletSquat,
   },
   {
     id: 'db-split-squat', n: 'Dumbbell split squat', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -206,6 +212,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 30, setSec: 60 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'lunge-loaded', step: 2 }],
     cue: "Hold the dumbbells by your sides and take a long stride, back heel lifted. Lower straight down until the back knee is just above the floor, then push up through the front foot. Keep the front knee in line with your toes rather than letting it fall inwards.",
+    video: DEMOS.dbSplitSquat,
   },
   {
     id: 'hip-thrust', n: 'Hip thrust', modality: 'strength', log: 'weight-reps',
@@ -214,6 +221,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 75, setSec: 40 }, skill: 2, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['plate-2.5', 'next-weight'], ladders: [{ chain: 'hinge-loaded', step: 2 }],
     cue: "Sit with your upper back against a bench, the weight padded across your hips and feet flat. Drive through your heels to lift your hips until your body is level from shoulders to knees, squeeze your glutes, then lower slowly. Keep your chin tucked and ribs down, and don't arch your lower back at the top.",
+    video: DEMOS.hipThrust,
   },
   {
     id: 'leg-curl', n: 'Leg curl (machine)', modality: 'strength', log: 'weight-reps',
@@ -222,6 +230,14 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'low', homeFriendly: false,
     increment: ['next-stack'],
     cue: "Line your knees up with the machine's pivot and set the pad just above your heels. Curl smoothly, pause, then lower slowly. Keep your hips down on the seat or bench rather than lifting them to help.",
+  },
+  {
+    id: 'hip-abduction-machine', n: 'Hip abduction (machine)', modality: 'strength', log: 'weight-reps',
+    equipment: ['machine'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
+    pattern: 'isolation', primary: 'glutes',
+    timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'low', homeFriendly: false,
+    increment: ['next-stack'], video: DEMOS.hipAbduction,
+    cue: "Sit back with the pads on the outsides of your knees and your feet on the foot bars. Push your knees out to the sides as far as is comfortable, pause, then bring them back in slowly without letting the weights touch down. Keep your back on the pad and don't rock forward to push wider.",
   },
   {
     id: 'step-up', n: 'Step-up', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -239,6 +255,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 40, setSec: 40 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'h-push-gym', step: 2 }],
     cue: "Lie on a flat bench with feet flat and the dumbbells at chest level. Press up until your arms are straight over your shoulders, then lower under control, elbows angled slightly in from your sides. Don't flare the elbows out wide or bang the dumbbells together.",
+    video: DEMOS.dbBenchPress,
   },
   {
     id: 'one-arm-db-row', n: 'One-arm dumbbell row', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -279,6 +296,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 20, setSec: 30 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'],
     cue: "Bend at the hips and knees to pick up a weight in each hand, then stand tall. Walk with short, steady steps, shoulders down and away from your ears. Don't lean to one side or let the weights swing; put them down with a flat back.",
+    video: DEMOS.farmerCarry,
   },
   {
     id: 'pallof-press', n: 'Pallof press', modality: 'strength', log: 'weight-reps', perSide: true,
@@ -1164,6 +1182,7 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 5, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
     cue: "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush.",
+    video: DEMOS.shoulderRolls,
   },
   {
     id: 'lying-knee-rolls', n: 'Lying knee rolls', modality: 'mobility', log: 'reps', perSide: true,

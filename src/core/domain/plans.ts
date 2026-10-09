@@ -425,10 +425,10 @@ export function nextSuggestions(done: TrainingPlan | undefined, p?: Fit): PlanTe
 /** Energy in the Food targets for each goal, in words (goalAdjustPct in nutrition.ts). */
 const ENERGY_WORDS: Record<Goal, string> = {
   'build-muscle': 'a small surplus', 'lose-fat': 'a moderate deficit', 'increase-strength': 'energy at about maintenance',
-  'increase-endurance': 'enough energy to fuel your training', 'feel-better': 'energy at about maintenance',
+  'increase-endurance': 'enough energy to fuel your training', 'feel-better': 'energy at about maintenance', maintain: 'energy at about maintenance',
 }
 const GOAL_WORDS: Record<Goal, string> = {
-  'build-muscle': 'building muscle', 'lose-fat': 'losing fat', 'increase-strength': 'getting stronger', 'increase-endurance': 'endurance', 'feel-better': 'feeling better',
+  'build-muscle': 'building muscle', 'lose-fat': 'losing fat', 'increase-strength': 'getting stronger', 'increase-endurance': 'endurance', 'feel-better': 'feeling better', maintain: 'keeping things steady',
 }
 
 /**

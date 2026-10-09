@@ -16,6 +16,7 @@ import { keyTitle, warmupForSlots } from '@/core/domain/routines'
 import { PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
 import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
+import { SCREEN_H } from './screenHeading'
 import { renderWhy, type PlannedSession } from '@/core/domain/engine'
 import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
 import { explainStart } from '@/core/domain/targets'
@@ -99,7 +100,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
         <div className="shade" aria-hidden="true" />
         <div className="tx">
           <div className="k">{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</div>
-          <h1>{r.starter && !chosen ? SUMMARY.starterHeroT : SUMMARY.heroT}</h1>
+          <h1 {...SCREEN_H}>{r.starter && !chosen ? SUMMARY.starterHeroT : SUMMARY.heroT}</h1>
           <div className="s num">{chosen ? chosen.tagline : shapeLine(d, m)}</div>
         </div>
       </header>

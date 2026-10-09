@@ -48,6 +48,7 @@ import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
 import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
@@ -88,6 +89,20 @@ export interface StoreState {
   tab: Tab
   /** one-shot: the Profile section to open on arrival (UI only, never persisted) */
   profileOpen: string | null
+  /** the weekly review is open over Summary (UI only; a review reminder opens the app here) */
+  reviewOpen: boolean
+  openReview: () => void
+  closeReview: () => void
+  /** the review was opened today: it stops being "waiting" on Summary, and a missed week reads as welcome back */
+  markReviewOpened: () => void
+  /** "For next week" (ml-a1, ml-a4): the choice, which option for "Change one thing", and Ease off's shorter sessions */
+  chooseNextWeek: (choice: NonNullable<Profile['loopChoice']>['choice'], option?: string) => void
+  /** a range change the person chose (ml-a5, ml-b1, ml-c3): never applied without their tap */
+  applyRangeChange: (rc: RangeChange) => void
+  /** "Make this my new starting point" (ml-c3) */
+  setSteadyStart: (kg: number) => void
+  /** a pattern line was shown: the same pair waits 4 weeks */
+  notePatternShown: (code: string) => void
   sync: SyncStatus
   email: string | null
   authReady: boolean
@@ -253,6 +268,10 @@ export interface StoreState {
   updateEmail: (email: string) => Promise<string | null>
   /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
   setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
+  /** the weekly review reminder (ml-d1, ml-e4): switched on separately, on the same push subscription */
+  setReviewPush: (enabled: boolean) => Promise<boolean>
+  /** "Keep the weekly reminder?" after 3 unopened (ml-d2): yes counts afresh from today, no turns it off */
+  keepReviewPush: (keep: boolean) => Promise<void>
   /** false when refused: a backup with an under-18 age is never loaded (the stop screen shows) */
   importBackup: (state: PersistedState) => boolean
 
@@ -665,6 +684,7 @@ export const useStore = create<StoreState>()(
       cur: todayStr(),
       tab: 'today',
       profileOpen: null,
+      reviewOpen: false,
       sync: 'idle',
       email: null,
       authReady: false,
@@ -693,6 +713,45 @@ export const useStore = create<StoreState>()(
       setTab: (t) => set((st) => { st.tab = t }),
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
       clearProfileOpen: () => set((st) => { st.profileOpen = null }),
+      openReview: () => set((st) => { st.tab = 'today'; st.reviewOpen = true }),
+      closeReview: () => set((st) => { st.reviewOpen = false }),
+      markReviewOpened: () => {
+        const today = todayStr()
+        if (get().data.profile.lastReviewAt === today) return
+        set((st) => { st.data.profile.lastReviewAt = today; markSettingsDirty(st.data) })
+        persist()
+      },
+      chooseNextWeek: (choice, option) => {
+        const today = todayStr()
+        const health = healthLoggingAllowed(get().data)
+        set((st) => {
+          // the choice follows from the log, so it's health data: not kept while health consent is withdrawn
+          if (health) st.data.profile.loopChoice = { d: today, choice, ...(option ? { option } : {}) }
+          if (choice === 'ease-off' || choice === 'ease-back') Object.assign(st.data.profile, easeOffFields(today))
+          markSettingsDirty(st.data)
+        })
+        saved()
+      },
+      applyRangeChange: (rc) => {
+        set((st) => {
+          st.data.target = targetAfter(st.data.target, rc)
+          st.data.profile.targetSetAt = todayStr()
+          markSettingsDirty(st.data)
+        })
+        saved('Your range is updated. You can change it back any time in Profile.')
+      },
+      setSteadyStart: (kg) => {
+        if (!healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
+        set((st) => { st.data.profile.steadyRef = { kg: Math.round(kg * 10) / 10, from: todayStr() }; markSettingsDirty(st.data) })
+        saved('Your steady range is centred on where you are now.')
+      },
+      notePatternShown: (code) => {
+        if (!healthLoggingAllowed(get().data)) return
+        const today = todayStr()
+        if (get().data.profile.patternShown?.[code] === today) return
+        set((st) => { st.data.profile.patternShown = { ...st.data.profile.patternShown, [code]: today }; markSettingsDirty(st.data) })
+        persist()
+      },
       setDate: (d) => set((st) => { st.cur = d }),
 
       showToast: (msg, action) => {
@@ -1240,7 +1299,10 @@ export const useStore = create<StoreState>()(
         const macroKcal = t.p * 4 + t.c * 4 + t.f * 9
         const c = floored && macroKcal < KCAL_FLOOR ? t.c + Math.round((KCAL_FLOOR - macroKcal) / 4) : t.c
         set((st) => {
-          st.data.target = { ...t, c, kcal: Math.max(KCAL_FLOOR, t.kcal) }
+          const kcal = Math.max(KCAL_FLOOR, t.kcal)
+          // the weigh-in check skips the 14 days after a target change (maintenance-numbers rules)
+          if (kcal !== st.data.target.kcal) st.data.profile.targetSetAt = todayStr()
+          st.data.target = { ...t, c, kcal }
           if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
           markSettingsDirty(st.data)
         })
@@ -1273,7 +1335,12 @@ export const useStore = create<StoreState>()(
 
       setPrefs: (patch) => {
         if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return
-        set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
+        set((st) => {
+          // picking "Keep it steady" starts the steady range's clock and clears an old reference
+          if (startsMaintain(st.data.profile.goal, patch)) { st.data.profile.maintainFrom = todayStr(); delete st.data.profile.steadyRef }
+          Object.assign(st.data.profile, patch)
+          markSettingsDirty(st.data)
+        })
         saved()
       },
 
@@ -1314,7 +1381,8 @@ export const useStore = create<StoreState>()(
         if (enabled) {
           const ok = await subscribePush()
           if (!ok) return false
-        } else {
+        } else if (!get().data.profile.reviewPush) {
+          // the subscription is shared with the weekly review reminder: kept while that's on
           await unsubscribePush()
         }
         set((st) => {
@@ -1324,6 +1392,29 @@ export const useStore = create<StoreState>()(
         const stored = persist()
         get().scheduleSync()
         return stored || 'unsaved'
+      },
+
+      setReviewPush: async (enabled) => {
+        if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
+        if (enabled) {
+          if (!(await subscribePush())) return false
+        } else if (!get().data.profile.notificationsEnabled) {
+          await unsubscribePush()
+        }
+        set((st) => {
+          const p = st.data.profile
+          p.reviewPush = enabled
+          if (enabled) { p.reviewPushFrom = todayStr(); p.reviewPushTime ??= '09:00' }
+          markSettingsDirty(st.data)
+        })
+        persist()
+        get().scheduleSync()
+        return true
+      },
+      keepReviewPush: async (keep) => {
+        if (!keep) { await get().setReviewPush(false); return }
+        set((st) => { st.data.profile.reviewPushFrom = todayStr(); markSettingsDirty(st.data) })
+        saved('The weekly reminder stays on.')
       },
 
       importBackup: (incoming) => {
@@ -1750,7 +1841,8 @@ export const useStore = create<StoreState>()(
             // the wizard's weight is today's weigh-in (as a weight saved on Profile is)
             if (st.data.days[today]?.weight !== weightKg) { ensureDay(st.data, today).weight = weightKg; markDayDirty(st.data, today) }
           }
-          if (target) st.data.target = target
+          if (target) { st.data.target = target; st.data.profile.targetSetAt = todayStr() }
+          if (profile.goal === 'maintain') st.data.profile.maintainFrom = todayStr()
           markSettingsDirty(st.data)
           if (plan) acceptGenerated(st.data, plan)
         })

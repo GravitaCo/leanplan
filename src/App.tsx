@@ -54,6 +54,15 @@ function TaliApp() {
     initAuth()
   }, [initAuth])
 
+  // the weekly review reminder opens the app at the review (ml-d2): ./?review=1, read once
+  useEffect(() => {
+    const q = new URLSearchParams(location.search)
+    if (q.get('review') !== '1') return
+    useStore.getState().openReview()
+    q.delete('review')
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash)
+  }, [])
+
   // back from a Google re-sign-in for account deletion: reopen its confirm step (once, same account)
   useEffect(() => {
     if (authed && takeReauthReturn(getUid())) openProfile('delete-confirm')

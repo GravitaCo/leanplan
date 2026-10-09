@@ -124,7 +124,7 @@ without a session. The service role key is used only inside Edge Functions and a
 - `send-supplement-reminders` (`supabase/functions/send-supplement-reminders/index.ts`): run by a
   cron job with a secret (constant-time check), reads push subscriptions and supplement names with
   the service role, skips anyone without a current health yes, and sends an encrypted Web Push
-  containing the supplement name.
+  with the fixed text "Time for your supplements" (no supplement name, from 2026-10-09).
 - `ai-read-label`: sends a food-label photo to Anthropic and returns the values. Deployed, but
   switched off in the app (`LABEL_SCAN_ENABLED` false) and not described in the privacy policy
   (D5).
@@ -161,7 +161,7 @@ and checked where noted):
 | Bunny.net (BunnyWay d.o.o.) | Processor: some exercise demo videos (`src/core/data/media.ts:57`; others are served from the app itself, `VIDEO_BASE` line 8) | Slovenia per Bunny's published details (register: confirm) | IP address and request data when the app shows a demo's preview image or plays the video |
 | Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts:46`) |
 | Google (sign-in) | Independent controller | Global | Only for people who choose Google |
-| Apple, Google, Mozilla push services | Deliver reminders | Global | An encrypted payload; they cannot read the supplement name |
+| Apple, Google, Mozilla push services | Deliver reminders | Global | An encrypted payload with no supplement name (fixed text) |
 | Open Food Facts | Independent controller | France | Barcode and IP address |
 | Anthropic | Would be a processor for label reading | US | Nothing today in the app (off); see D5 |
 

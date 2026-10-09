@@ -2,7 +2,7 @@
    scripts/test-core.ts (npm test); returns the number of failures. */
 import { readFileSync, readdirSync } from 'node:fs'
 import { liveConsentDue, pendingCloudClear, needsReupload, markReupload, pushConsents, pullConsents, healthConsentAnswered, HEALTH_WITHDRAW_PROMPT, healthWithdrawalBackup, CONSENT_VERSIONS, LEGACY_LABEL_VERSION, applyHealthWithdrawal, canSaveHealthAnswers, hasConsent, healthDataSummary, healthLoggingAllowed, latestConsent, migrateLabelConsent, recordConsent, removeLegacyLabelFlag, unsyncedConsents, withdraw,
-  consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause, unconsentedCopyLine } from '@/data/consent'
+  consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause, unconsentedCopyLine, HEALTH_FIELDS, healthWhy } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
@@ -627,6 +627,34 @@ async function withdrawnLocalOnly(fakeServer: FakeServer): Promise<void> {
   p.consents!.resumeCopy!.days!['2026-09-04'].weight = 70
   withdraw(p, pm, 'health')
   checks.push(['a withdrawal also clears health fields from the kept copy', p.consents?.resumeCopy?.days?.['2026-09-04']?.weight === null])
+
+  // a withdrawal pulled from another device: nothing in HEALTH_FIELDS, and no health-derived
+  // reason, stays in the kept copy (profile, workouts, their slots, plans)
+  const rc = stateFromBackup({ days: {} } as never)
+  const rcm = ensureMeta(rc, false)
+  recordConsent(rc, 'health', true, undefined, '2026-09-20T08:00:00.000Z')
+  const keptProfile = { name: 'A', age: 40, goal: 'lose', weight: 80, bodyFat: 25, height: 175, sexAnswer: 'female', movement: 'on-feet', activityMult: 1.5, activityLevel: 'active',
+    outcomes: { readiness: 'clear', wellbeing: 'sometimes' }, pregnancy: { answer: 'no', at: '2026-09-01' }, motivations: ['energy'], deficitChosen: 'gentle', foodOptIn: { range: 'shown' },
+    training: { daysPerWeek: 3, bodyAreas: ['knees'], limitationsNote: 'knees' }, steadyRef: 80, patternShown: '2026-09-01', loopChoice: 'hold', reviewPushSkip: '2026-09-01',
+    answeredAt: { foodOptIn: '2026-09-01T08:00:00.000Z', pregnancy: '2026-09-01T08:00:00.000Z', name: '2026-09-01T08:00:00.000Z' } }
+  const healthy = [{ code: 'body-area', field: 'bodyAreas' }, { code: 'goal', field: 'lately' }, { code: 'feel' }]
+  const plain = { code: 'days', field: 'daysPerWeek' }
+  rc.consents!.resumeCopy = { at: '2026-09-21T08:00:00.000Z', settings: { target: null, schedule: null, profile: JSON.parse(JSON.stringify(keptProfile)) },
+    routines: { R1: { id: 'R1', name: 'Mine', why: [...healthy, plain], blocks: [{ slots: [{ why: [...healthy, plain] }] }] } as never },
+    trainingPlans: { P1: { id: 'P1', name: 'Plan', why: [...healthy, plain] } as never } }
+  recordConsent(rc, 'health', false)
+  const rcApplied = applyHealthWithdrawal(rc, rcm)
+  const rcCopy = rc.consents?.resumeCopy
+  const rcProfile = (rcCopy?.settings?.profile ?? {}) as Record<string, unknown>
+  const survivors = HEALTH_FIELDS.filter((f) => f.startsWith('profile.')).map((f) => f.slice(8))
+    // the activity level goes back to the default ('light'), as on the phone; it isn't removed
+    .filter((k) => k === 'activityLevel' ? rcProfile[k] !== 'light' : rcProfile[k] != null)
+  const rcWhys = [...(rcCopy?.routines?.R1?.why ?? []), ...(rcCopy?.routines?.R1?.blocks ?? []).flatMap((b) => b.slots.flatMap((x) => x.why ?? [])), ...(rcCopy?.trainingPlans?.P1?.why ?? [])]
+  checks.push(['a pulled withdrawal leaves no HEALTH_FIELDS key in the kept copy\'s profile' + (survivors.length ? ' (kept: ' + survivors.join(', ') + ')' : ''), rcApplied && survivors.length === 0])
+  checks.push(['the kept copy keeps what a withdrawal keeps', rcProfile.name === 'A' && rcProfile.age === 40 && rcProfile.goal === 'lose'])
+  const rcStamps = (rcProfile.answeredAt ?? {}) as Record<string, string>
+  checks.push(['the kept copy\'s health stamps carry the clear time, other stamps stay, height is null', rcStamps.foodOptIn !== '2026-09-01T08:00:00.000Z' && rcStamps.pregnancy !== '2026-09-01T08:00:00.000Z' && !!rcStamps.foodOptIn && rcStamps.name === '2026-09-01T08:00:00.000Z' && rcProfile.height === null])
+  checks.push(['no health-derived reason stays in the kept copy\'s workouts, slots or plans', rcWhys.length === 3 && !rcWhys.some(healthWhy) && rcWhys.every((w) => w.code === 'days')])
 
   // a phone clock running fast can't put a yes after a later withdrawal: a synced record counts
   // from the earlier of its time and its arrival on the server (as the server orders them)

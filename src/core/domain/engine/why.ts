@@ -15,6 +15,7 @@ const GOAL_WORDS: Record<Goal, string> = {
   'build-muscle': 'building muscle',
   'increase-strength': 'getting stronger',
   'lose-fat': 'losing fat',
+  maintain: 'keeping things steady',
   'increase-endurance': 'building stamina',
   'feel-better': 'feeling better day to day',
 }

@@ -20,6 +20,7 @@ import { LEGAL_LABEL, LegalLink } from './legal/LegalDoc'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
+import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
@@ -28,13 +29,14 @@ import { PillarsSettings } from './profile/PillarsSettings'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
+  { value: 'maintain', label: 'Keep it steady' },
   { value: 'build-muscle', label: 'Build muscle' },
   { value: 'increase-strength', label: 'Increase strength' },
   { value: 'increase-endurance', label: 'Improve endurance' },
   { value: 'feel-better', label: 'Feel better and move more' },
 ]
 const GOAL_TARGET_LABEL: Record<Goal, string> = {
-  'lose-fat': 'Fat loss', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
+  'lose-fat': 'Fat loss', maintain: 'Steady', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
 }
 function directionLabel(pct: number): string {
   if (pct < 0) return `${-pct}% below maintenance`
@@ -79,6 +81,8 @@ export function ProfileScreen() {
   const removeSupplement = useStore((s) => s.removeSupplement)
   const updateEmail = useStore((s) => s.updateEmail)
   const setNotifications = useStore((s) => s.setNotifications)
+  const setReviewPush = useStore((s) => s.setReviewPush)
+  const [reviewDayOpen, setReviewDayOpen] = useState(false)
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
 
@@ -340,6 +344,16 @@ export function ProfileScreen() {
         </Disclosure>
       </div>
 
+      {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
+      <div className="lbl">Weekly review</div>
+      <div className="list icons">
+        <SettingRow icon="review" color={MINDF} soft label="Review day" value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
+        <SettingRow icon="weight" color={FOODF} soft label="Include weight in reviews"
+          right={<Toggle label="Include weight in reviews" on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
+      </div>
+      <div className="foot">Your review shows how often you weighed in and, after 4 weeks, the trend in words. Summary shows your latest weigh-in. Never with gentle display. Change it any time.</div>
+      {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
+
       <div className="lbl">Notifications</div>
       <div className="list icons">
         <SettingRow icon="bell" color={MINDF} soft label="Supplement reminders" sub={notifStatus}
@@ -348,6 +362,13 @@ export function ProfileScreen() {
               const done = pr.notificationsEnabled ? 'Reminders off' : 'Reminders on'
               showToast(ok === 'unsaved' ? done + ', but this device couldn’t save the setting. Storage may be full.'
                 : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
+            }} />} />
+        {/* ml-e4: the weekly review reminder, switched on separately (off unless someone turns it on) */}
+        <SettingRow icon="bell" color={MINDF} soft label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
+          right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
+              const on = !pr.reviewPush
+              const ok = await setReviewPush(on)
+              showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
             }} />} />
       </div>
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>

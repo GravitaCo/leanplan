@@ -64,6 +64,7 @@ import { onboardingSuite } from './test-onboarding'
 import { engineSuite } from './test-engine'
 import { wizardSuite } from './test-wizard'
 import { wellbeingSuite } from './test-wellbeing'
+import { loopSuite } from './test-loop'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -232,7 +233,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
-  const ok = clips.length >= 8 && inWorkouts.length === 5 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
+  const ok = clips.length >= 8 && inWorkouts.length === 9 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
   const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
@@ -1978,4 +1979,4 @@ function feedbackForm(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

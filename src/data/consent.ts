@@ -327,6 +327,8 @@ export const HEALTH_FIELDS = [
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
   'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.plans(kind)',
   'device.unload', 'device.lowMoodShown',
+  // the maintenance loop (compliance, 8 Oct 2026): a reference body weight, and lines derived from the log
+  'profile.steadyRef', 'profile.patternShown', 'profile.loopChoice', 'profile.reviewPushSkip',
 ] as const
 
 export interface HealthDataSummary {
@@ -345,7 +347,7 @@ export interface HealthDataSummary {
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
-const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn']
+const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn', 'steadyRef', 'patternShown', 'loopChoice', 'reviewPushSkip']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
 const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
@@ -472,18 +474,36 @@ export function applyHealthWithdrawal(s: PersistedState, meta: SyncMeta): boolea
   return true
 }
 
-/** The kept copy from a resume holds full days and a profile: after a withdrawal, not their health fields. */
+/**
+ * The kept copy from a resume holds full days, a profile, workouts and plans: after a withdrawal,
+ * none of what clearHealthData clears (HEALTH_FIELDS and the health-derived reasons) stays in it.
+ */
 function stripResumeCopy(log: ConsentLog): void {
   const c = log.resumeCopy
   if (!c) return
   for (const d of Object.values(c.days || {})) { if (d) { d.weight = null; d.checkin = null } }
   if (c.settings?.profile && typeof c.settings.profile === 'object') {
-    const p = withProfileHealth(c.settings.profile as Partial<Profile>, profileHealth(null))
-    // Mind times and Mind plans go too (the check-in's Mind fields went with the check-in above)
-    if (p.mind && typeof p.mind === 'object') p.mind = withoutMindHealth(p.mind)
-    if (Array.isArray(p.plans)) p.plans = p.plans.filter((x) => !isKindPlan(x))
-    c.settings.profile = p
+    const orig = c.settings.profile as Partial<Profile>
+    const p = withoutHealth(orig)
+    // the activity level derived from daily movement goes back to the default with it, as on the phone
+    if (orig.activityMult != null) p.activityLevel = 'light'
+    // the required height stays as a key, cleared to null, as on the phone
+    if ('height' in orig) p.height = null
+    // and the merge stamps of the cleared fields carry the clear time, as clearHealthData does, so
+    // the copy doesn't show when (or whether) a health question was answered
+    const u = nowIso()
+    const st = { ...(orig.answeredAt || {}) } as Record<string, string>
+    for (const f of CLEARED_STAMPS) st[f] = u
+    p.answeredAt = st as Profile['answeredAt']
+    c.settings = { ...c.settings, profile: p }
   }
+  const strip = (list: Why[] | undefined): Why[] | undefined => list?.filter((w) => !healthWhy(w))
+  for (const r of Object.values(c.routines || {})) {
+    if (!r) continue
+    if (r.why) r.why = strip(r.why)
+    for (const b of r.blocks || []) for (const sl of b.slots || []) if (sl.why) sl.why = strip(sl.why)
+  }
+  for (const pl of Object.values(c.trainingPlans || {})) if (pl?.why) pl.why = strip(pl.why)
 }
 
 /**

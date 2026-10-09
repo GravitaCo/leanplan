@@ -4,6 +4,7 @@ import App from './App'
 import './styles/theme.css'
 import './styles/onboarding.css'
 import './styles/mind.css'
+import './styles/loop.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

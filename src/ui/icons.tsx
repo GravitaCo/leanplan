@@ -22,6 +22,14 @@ const PATHS = {
   play: <path d="M8 5.5v13l10.5-6.5z" />,
   pause: <path d="M8.5 5.5v13M15.5 5.5v13" />,
   target: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r=".8" /></>,
+  /** a level line with one rise and fall: "Keep it steady" (board ml-c1) */
+  steady: <path d="M3 12h4l2-4 3 8 2-4h7" />,
+  /** a weight (boards ml-a1, ml-a3) */
+  weight: <><path d="M5 20h14l-2-12H7z" /><path d="M9.5 8a2.5 2.5 0 0 1 5 0" /></>,
+  /** a line going up: "Something in your data" (ml-a1) */
+  trend: <path d="M4 18l5-6 4 3 7-9" />,
+  /** a clock turning back: the weekly review card on Summary (ml-e3) */
+  review: <><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" /><path d="M3.5 4.5v4h4" /><path d="M12 8v4.5l3 1.8" /></>,
   bolt: <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />,
   book: <><path d="M5 5.5a2 2 0 0 1 2-2h11.5v14H7a2 2 0 0 0-2 2z" /><path d="M5 19.5a2 2 0 0 0 2 2h11.5v-4" /></>,
   hand: <path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.9-2.5L2.8 15a1.6 1.6 0 0 1 2.5-2L8 15.5" />,

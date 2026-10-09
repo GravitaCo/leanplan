@@ -55,6 +55,7 @@
   --mind: #2e7479;  --mind-ink: #2e7479;  --mind-fill: #9cc9c9;
   --food: #87cf59;  --food-ink: #437722;  --food-fill: #c9eca0;
   --band: #c7c7cc;     /* target-range band on bars and charts: neutral grey, never a pillar colour */
+  --grid: #e5e5e9;     /* 1 px chart rows */
   --on-food: #1d1d1f;  /* icons on a solid food square: the green is too light for white */
   --move: #a8502b;  --move-ink: #a8502b;  --move-fill: #e6ad8f;
 
@@ -87,6 +88,7 @@
     --mind: #7fc0c2;  --mind-ink: #7fc0c2;  --mind-fill: #2f5557;
     --food: #9fec85;  --food-ink: #9fec85;  --food-fill: #344c24;
     --band: #48484a;
+    --grid: #38383a;
     --on-food: #000000;
     --move: #e39a76;  --move-ink: #e39a76;  --move-fill: #6e3b25;
     --on-cat: #000000;
@@ -155,7 +157,7 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .ltitle { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 2px 0 0; }
 .avatar {
   width: 40px; height: 40px; border-radius: 50%; border: 0; flex: none; margin-bottom: 0;
-  background: var(--tint-soft); color: var(--tint); font-size: 16px; font-weight: 600;
+  background: var(--tint); color: var(--on-tint); font-size: 16px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
 .avatar.lg { width: 60px; height: 60px; font-size: 24px; margin: 0; }
@@ -279,13 +281,15 @@ svg.bars { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
 svg.bars text { font-size: 11px; fill: var(--label2); font-weight: 600; }
 svg.bars text.on { fill: var(--label); }
 svg.bars text.v { font-size: 11px; font-weight: 500; }
-svg.bars .band, .wkey i.band { opacity: 0.8; }
-@media (prefers-color-scheme: dark) { svg.bars .band, .wkey i.band { opacity: 1; } }
+svg.bars .grid line { stroke: var(--grid); stroke-width: 1; }
+svg.bars text.ax { font-size: 10px; font-weight: 500; }
+/* a food's source link in the portion sheet */
+a.srcln { color: var(--tint); text-decoration: none; }
+a.srcln:hover, a.srcln:focus-visible { text-decoration: underline; }
 .wkey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--label2); margin-top: 8px; }
 .wkey > span { display: inline-flex; align-items: center; gap: 6px; }
 .wkey i { display: inline-block; flex-shrink: 0; }
 .wkey i.bar { width: 8px; height: 12px; border-radius: 3px; background: var(--energy); }
-.wkey i.band { width: 16px; height: 4px; border-radius: 2px; background: var(--band); }
 
 /* ===================== CONTROLS ===================== */
 .btn {
@@ -570,6 +574,14 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .tile.st .tk .num { font-weight: 500; }
 .tile.st .v { margin-top: 2px; font-size: 26px; letter-spacing: -0.02em; }
 .tile.st .s { font-size: 12px; margin-top: 0; }
+/* Summary: Move and Weight side by side */
+.tiles.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+.tile.mvt .tk { align-items: flex-start; }
+.tile.mvt .psq { width: 32px; height: 32px; border-radius: 10px; margin: -4px -2px 0 0; }
+.mvt-b { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding-top: 12px; }
+.mvt-t { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.tile.mvt .btn.sm { align-self: flex-start; height: 32px; padding: 0 14px; font-size: 14px; }
+.tile.mvt .mvt-b + .btn.sm { margin-top: 10px; }
 .supps { display: flex; flex-direction: column; margin-top: 4px; }
 .supps button { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 5px 0; text-align: left; font-size: 14px; color: var(--label); min-height: 32px; }
 .supps .n { flex: 1; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
