@@ -174,7 +174,12 @@ async function scenario(browser, name, fn, opts = {}) {
   await ctx.route(/openfoodfacts\.org/, (r) => r.abort())
   await ctx.route(/b-cdn\.net|mediadelivery\.net/, (r) => r.abort()) // demo clips need no network here
   const page = await ctx.newPage()
-  if (opts.seed?.at) await page.clock.setFixedTime(new Date(opts.seed.at + 'T09:00:00'))
+  // opts.fakeClock (WP12): timers and requestAnimationFrame under Playwright's clock, so a scenario can
+  // pause it and step time with runFor; otherwise the date is fixed and timers run in real time
+  if (opts.seed?.at) {
+    if (opts.fakeClock) await page.clock.install({ time: new Date(opts.seed.at + 'T09:00:00') })
+    else await page.clock.setFixedTime(new Date(opts.seed.at + 'T09:00:00'))
+  }
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   try {
@@ -1104,6 +1109,135 @@ async function wp5FlagOffHeaders({ page }) {
     await card.getByText('Mostly 6 to 7 hours', { exact: true }).waitFor()
     expect(await card.getByRole('button', { name: 'See your whole week' }).count() === 0, 'the link with Food off')
   }, { seed: (() => { const s = reflectionWeek(); s.state.profile.mind = { off: ['food'] }; return s })(), url: WB })
+
+  /* ---------- WP12: Reset with the P6 Glow pacer (B7, canvas 8c), MIND_REVIEWED build ---------- */
+  const R = {
+    sub: 'A few slow breaths. Eyes open is fine.',
+    stop: 'Stop any time. If this makes you feel worse, try a walk instead.',
+    dizzy: 'If you feel dizzy or uncomfortable, breathe normally.',
+    back: 'Come back to this whenever you like.',
+    reduced: 'Motion is reduced on this device, so follow the words.',
+  }
+  /** Mind tab → Reset, then pause the clock so the pacer only moves when the scenario steps it */
+  const openReset = async (page) => {
+    await openMindTab(page)
+    await page.locator('.mind-skills').getByRole('button', { name: /^Reset/ }).click()
+    const scr = page.locator('.screen.reset')
+    await scr.locator('.ltitle', { hasText: 'Reset' }).waitFor()
+    const now = await page.evaluate(() => Date.now())
+    await page.clock.pauseAt(now + 1000)
+    return scr
+  }
+  /** the pacer's word, count and sphere scale now */
+  const pacerNow = (scr) => scr.evaluate((el) => {
+    const t = (s) => (el.querySelector(s)?.textContent || '').trim()
+    const sph = el.querySelector('.reset-glow .sph')
+    return { word: t('.cnt .p'), count: t('.cnt .n'), left: t('.reset-left'), sphere: sph ? sph.style.transform : '', phase: el.querySelector('.reset-glow')?.getAttribute('data-phase') }
+  })
+  /** both schemes without waiting on the (paused) clock */
+  const still = async (page, name) => {
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(150)
+      await page.screenshot({ path: path.join(OUT, `${name}-${scheme}.png`) })
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+  }
+  /** step the clock in 250 ms slices until `until(state)` holds; returns every state seen */
+  const stepUntil = async (page, scr, until, maxMs = 30000) => {
+    const seen = []
+    for (let t = 0; t <= maxMs; t += 250) {
+      const s = await pacerNow(scr)
+      seen.push(s)
+      if (until(s)) return seen
+      await page.clock.runFor(250)
+    }
+    throw new Error('pacer never reached the state; last ' + JSON.stringify(seen[seen.length - 1]))
+  }
+  const resetSkills = async (page) => ((await stored(page)).days[HARD_DAY].checkin.skills || []).filter((x) => x.id === 'reset')
+
+  await run('wp12-reset', async ({ page }) => {
+    const scr = await openReset(page)
+    // ready: Back "Mind", the avatar, sub, 1/2/5 min with 2 selected, how-to, the sphere at rest, Start, foot
+    await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).waitFor()
+    expect((await scr.locator('.hdr-row.av').getByRole('button', { name: 'Profile', exact: true }).count()) === 1, 'the Profile avatar beside the title')
+    await scr.getByText(R.sub).waitFor()
+    expect((await scr.locator('.seg [aria-checked="true"]').textContent()).trim() === '2 min', '2 min selected')
+    for (const s of [R.stop, R.dizzy, 'Need support now?', 'For everyday wellbeing. Not a treatment for any condition.']) await scr.getByText(s, { exact: true }).waitFor()
+    expect(!(await scr.locator('.cnt').count()) && !(await scr.locator('.reset-left').count()), 'no count or time before Start')
+    expect((await pacerNow(scr)).sphere === 'scale(0.8)', 'sphere at rest')
+    // mind tokens: a crisp --mind rim on the sphere, the phase word in --mind-ink (checked once running)
+    const tokColor = (v) => scr.evaluate((el, v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; el.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
+    const sphShadow = await scr.locator('.reset-glow .sph').evaluate((e) => getComputedStyle(e).boxShadow)
+    expect(sphShadow.includes(await tokColor('--mind')) && sphShadow.includes('inset'), 'sphere rim in --mind: ' + sphShadow)
+    await still(page, 'wp12-reset-ready')
+
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    expect(!(await scr.getByText(R.sub).count()), 'running hides the sub, length and how-to (Glow boards)')
+    expect(!(await scr.getByText(R.reduced).count()), 'no reduced-motion line with motion on')
+    await page.clock.runFor(1500)
+    const mid = await pacerNow(scr)
+    expect(mid.word === 'Breathe in' && mid.count === '2', 'mid breath in: ' + JSON.stringify(mid))
+    expect(/^\d+:\d\d left$/.test(mid.left), 'time left line: ' + mid.left)
+    const sc = Number((mid.sphere.match(/[\d.]+/) || [0])[0])
+    expect(sc > 0.8 && sc < 1, 'the sphere grows on the breath in: ' + mid.sphere)
+    const wordColor = await scr.locator('.cnt .p').evaluate((e) => getComputedStyle(e).color)
+    const numFont = await scr.locator('.cnt .n').evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight, c.fontVariantNumeric].join(' ') })
+    expect(numFont.startsWith('112px 200') && numFont.includes('tabular-nums'), 'count type: ' + numFont)
+    expect(wordColor === (await tokColor('--mind-ink')), 'phase word in --mind-ink: ' + wordColor)
+    await still(page, 'wp12-reset-in')
+
+    // words step in order and counts go up within each phase (timings from skills.ts)
+    const seen = await stepUntil(page, scr, (s) => s.word === 'Breathe out' && Number(s.count) >= 3)
+    const words = seen.map((s) => s.word).filter((w, i, a) => w && w !== a[i - 1])
+    expect(JSON.stringify(words) === JSON.stringify(['Breathe in', 'And in again', 'Breathe out']), 'words: ' + words.join(' → '))
+    for (let i = 1; i < seen.length; i++) if (seen[i].word === seen[i - 1].word) expect(Number(seen[i].count) >= Number(seen[i - 1].count), 'counts up')
+    const outSc = Number(((await pacerNow(scr)).sphere.match(/[\d.]+/) || [0])[0])
+    expect(outSc < 1, 'settling on the breath out')
+    await still(page, 'wp12-reset-out')
+
+    // stop early: quietly, B7.15 only, never the time done, nothing logged
+    await scr.getByRole('button', { name: 'Stop', exact: true }).click()
+    await scr.locator('.reset-end').getByText(R.back, { exact: true }).waitFor()
+    expect(!(await scr.getByText(/That’s|That's/).count()), 'no partial time after a stop')
+    expect(!(await scr.locator('.reset-left, .cnt').count()), 'no time left after a stop')
+    await page.clock.runFor(3000)
+    expect(!(await resetSkills(page)).length, 'a stopped run is not logged')
+    await still(page, 'wp12-reset-stopped')
+    await scr.getByRole('button', { name: 'Done', exact: true }).click()
+    await page.locator('.screen.mind').waitFor()
+  }, { seed: hardDay(), url: WBR, fakeClock: true })
+
+  await run('wp12-reset-finish', async ({ page }) => {
+    const scr = await openReset(page)
+    const before = (await stored(page)).days[HARD_DAY].checkin
+    await scr.locator('.seg').getByRole('radio', { name: '1 min' }).click()
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    await page.clock.runFor(75000)
+    await scr.locator('.reset-end').getByText('That’s 1 minute.', { exact: true }).waitFor()
+    await scr.locator('.reset-end').getByText(R.back, { exact: true }).waitFor()
+    await page.clock.runFor(3000)
+    const after = (await stored(page)).days[HARD_DAY].checkin
+    expect((await resetSkills(page)).length === 1, 'a finished run is logged once: ' + JSON.stringify(after.skills))
+    expect(after.mood === before.mood && after.sleep === before.sleep && after.stress === before.stress, 'the check-in answers are untouched')
+    await still(page, 'wp12-reset-finished')
+  }, { seed: hardDay(), url: WBR, fakeClock: true })
+
+  await run('wp12-reset-reduced', async ({ page }) => {
+    const scr = await openReset(page)
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    await scr.getByText(R.reduced, { exact: true }).waitFor()
+    await page.clock.runFor(1500)
+    const first = await pacerNow(scr)
+    expect(first.word === 'Breathe in', 'reduced: word steps: ' + JSON.stringify(first))
+    const seen = await stepUntil(page, scr, (s) => s.word === 'Breathe out' && Number(s.count) >= 3)
+    const words = seen.map((s) => s.word).filter((w, i, a) => w && w !== a[i - 1])
+    expect(JSON.stringify(words) === JSON.stringify(['Breathe in', 'And in again', 'Breathe out']), 'reduced words: ' + words.join(' → '))
+    const scales = [...new Set(seen.map((s) => s.sphere))]
+    expect(scales.length === 1 && scales[0] === 'scale(0.9)', 'reduced: the sphere holds a middle size: ' + scales.join(', '))
+    expect(new Set(seen.map((s) => s.count)).size > 2, 'reduced: the count still steps')
+    await still(page, 'wp12-reset-reduced')
+  }, { seed: hardDay(), url: WBR, fakeClock: true, reducedMotion: true })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

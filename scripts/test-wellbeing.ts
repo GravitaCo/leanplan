@@ -14,6 +14,7 @@ import { checkinSuite } from './wellbeing/checkin'
 import { unloadSuite } from './wellbeing/unload'
 import { reflectionSuite } from './wellbeing/reflection'
 import { summarySuite } from './wellbeing/summary'
+import { resetSuite } from './wellbeing/reset'
 
 type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn: typeof fetch; calls: string[] }
 
@@ -33,5 +34,6 @@ export async function wellbeingSuite(fakeServer: FakeServer): Promise<number> {
   bad += unloadSuite()
   bad += reflectionSuite()
   bad += summarySuite()
+  bad += resetSuite()
   return bad
 }

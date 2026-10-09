@@ -1,0 +1,31 @@
+/* WP12: Reset (board B7) with the P6 Glow pacer (canvas 8c, wp-pacer-glow-light/dark). A card
+   screen in mind tokens: never --tint, never full-bleed black. Tokens only (theme.css). Kept beside
+   the screen (as train/hardDay.css) so parallel packages don't collide in styles/mind.css. */
+.reset-main { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.reset-main > .card { margin: 0; }
+.reset-main > .foot { padding: 0 4px; }
+.reset-sub { font-size: 17px; color: var(--label2); margin: 2px 4px 4px; }
+.reset-how { font-size: 15px; line-height: 1.45; padding: 4px 4px 0; }
+.reset-main .seg button { min-height: 32px; }
+.reset-main > .foot.reset-reduced { color: var(--label); }
+.reset-left { text-align: center; }
+.reset-main > .foot.reset-wellness { text-align: center; padding-top: 6px; }
+
+/* the pacer card: sphere, rings, and the count with the phase word in the centre */
+.card.reset-glow { position: relative; height: 400px; padding: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.reset-glow .sph {
+  position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--card) 0%, var(--card) 58%, var(--mind-fill) 88%, var(--mind) 100%);
+  box-shadow: inset 0 0 0 2px var(--mind);
+}
+.reset-glow .rg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; border-style: solid; border-color: var(--mind); }
+/* the guided player's .gp-count type (112 px, weight 200, tabular), on the card in --label and --mind-ink */
+.reset-glow .cnt { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; }
+.reset-glow .cnt .n { font-size: 112px; line-height: 1; font-weight: 200; letter-spacing: -0.05em; color: var(--label); }
+.reset-glow .cnt .p { font-size: 17px; font-weight: 500; margin-top: 4px; color: var(--mind-ink); }
+
+/* finished and stopped early */
+.card.reset-end { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 40px 16px; }
+.reset-end-t { font-size: 22px; font-weight: 600; }
+.reset-end-s { font-size: 15px; color: var(--label2); }
+.reset-end-only { font-size: 17px; }
