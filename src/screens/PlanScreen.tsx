@@ -18,7 +18,9 @@ import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
-import { PlanEditSheet, PLAN_OUTCOME, whenLine } from './plan/PlanSheets'
+import { MIND_PLAN, PlanEditSheet, PLAN_OUTCOME, planGroups, whenLine } from './plan/PlanSheets'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import type { IfThenPlan } from '@/core/types'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
 import { aboutLine, routineEstMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { MODALITY_LABEL } from '@/core/data/modalities'
@@ -36,6 +38,19 @@ export function PlanScreen() {
   const planOpen = useStore((s) => s.planOpen)
   const clearOpen = useStore((s) => s.clearOpen)
   const [editing, setEditing] = useState<{ id?: string } | null>(null)
+  // if–then plans, with Mind plans in their own group when the wellbeing flag is on
+  const groups = planGroups(plans, WELLBEING_ENABLED)
+  const planRow = (pl: IfThenPlan) => {
+    const lr = pl.reviews.length ? pl.reviews[pl.reviews.length - 1] : null
+    return (
+      <button className="li" key={pl.id} onClick={() => setEditing({ id: pl.id })}>
+        <div className="m"><div className="t">{whenLine(pl.when)}</div>
+          <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div>
+          {pl.cope && <div className="s">Backup: {pl.cope}</div>}</div>
+        <Chevron />
+      </button>
+    )
+  }
   const [guide, setGuide] = useState<Guide | null>(null)
   const [dayIdx, setDayIdx] = useState<number | null>(null)
   // a built-in's type or the id of one of the user's own workouts (plan P4)
@@ -280,23 +295,21 @@ export function PlanScreen() {
 
       <div className="grp-h"><span>If–then plans</span></div>
       <div className="list">
-        {plans.map((pl) => {
-          const lr = pl.reviews.length ? pl.reviews[pl.reviews.length - 1] : null
-          return (
-            <button className="li" key={pl.id} onClick={() => setEditing({ id: pl.id })}>
-              <div className="m"><div className="t">{whenLine(pl.when)}</div>
-                <div className="s">I'll {pl.then}{lr ? ` · ${PLAN_OUTCOME[lr.r]}` : ''}</div>
-                {pl.cope && <div className="s">Backup: {pl.cope}</div>}</div>
-              <Chevron />
-            </button>
-          )
-        })}
+        {groups.ifThen.map(planRow)}
         <button className="li act" onClick={() => setEditing({})}><Icon name="plus" size={17} /><span>New plan</span></button>
       </div>
       <div className="foot">
         Pick a moment that trips you up and decide ahead of time what you'll do. For example: when I get home hungry, I'll have
         yoghurt before I cook. We'll check in weekly, because the follow-up is what makes plans stick.
       </div>
+
+      {/* WELLBEING_ENABLED: plans made from the day's one thing (board B9, kind 'mind') */}
+      {groups.mind.length > 0 && (
+        <>
+          <div className="grp-h"><span>{MIND_PLAN.group}</span></div>
+          <div className="list">{groups.mind.map(planRow)}</div>
+        </>
+      )}
 
       <div className="grp-h"><span>Guides</span></div>
       <div className="list icons">
