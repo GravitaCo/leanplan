@@ -12,7 +12,7 @@ import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/cor
 import { aboutLine, routineEstMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
 import { MODALITY_LABEL } from '@/core/data/modalities'
-import { BackButton, Sheet } from '@/ui/primitives'
+import { BackButton, Sheet, TitleRow } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { LibrarySheet } from '../train/LibrarySheet'
@@ -176,7 +176,7 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
   return (
     <div className="screen">
       <div className="pv-back"><BackButton label="My week" onClick={onBack} /></div>
-      <h1 className="ltitle">{day}</h1>
+      <TitleRow title={day} />
       <div className="sub" style={{ margin: '2px 0 16px' }}>{v === 'Rest' ? 'Rest day · recovery counts too' : 'Every week'}</div>
 
       {v !== 'Rest' && (

@@ -10,6 +10,8 @@ const PATHS = {
   scale: <><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="M8.2 10a5.2 5.2 0 0 1 7.6 0L12 13.5z" /></>,
   pill: <><path d="M10.5 20.5a4.95 4.95 0 0 1-7-7l6-6a4.95 4.95 0 0 1 7 7z" /><path d="M8.5 10.5l5 5" /></>,
   smile: <><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14c.9 1.3 2.1 2 3.5 2s2.6-.7 3.5-2M9 9.5h.01M15 9.5h.01" /></>,
+  // the Mind tab (canvas section 9, nav-mindtab-*): the smile as drawn on the approved board
+  mind: <><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.2 2.1 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" /></>,
   check: <path d="M5 12.5l4.2 4.2L19 7" />,
   checkc: <><circle cx="12" cy="12" r="8.5" /><path d="M8 12.3l2.7 2.7L16 9.6" /></>,
   plus: <path d="M12 5v14M5 12h14" />,

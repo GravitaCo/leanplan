@@ -8,7 +8,7 @@ import { howToLink } from '@/core/domain/workout'
 import { todayStr } from '@/core/domain/date'
 import { buildLogged, lastTime, splitLogged, swapInto, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
-import { BackButton, Seg, Toggle } from '@/ui/primitives'
+import { BackButton, Seg, Toggle, TitleRow } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
 import { HoldTimer, RED_FLAG } from './HoldTimer'
@@ -97,7 +97,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack }: {
   return (
     <div className="screen">
       <div className="pv-back"><BackButton label={title} onClick={onBack} /></div>
-      <h1 className="ltitle">Log sets by hand</h1>
+      <TitleRow title="Log sets by hand" />
       <div className="sub" style={{ margin: '2px 0 16px' }}>Type in what you did. Blank sets aren't saved.</div>
       {slots.map((sl) => {
         const exi = sl.i

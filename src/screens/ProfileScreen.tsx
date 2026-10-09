@@ -166,7 +166,7 @@ export function ProfileScreen() {
 
   return (
     <div className="screen">
-      <PageHeader title="Profile" />
+      <PageHeader title="Profile" profile={false} />
 
       {/* identity: tap to edit your name and email */}
       <div className="list idcard">

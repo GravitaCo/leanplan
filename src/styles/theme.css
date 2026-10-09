@@ -159,6 +159,16 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
   display: flex; align-items: center; justify-content: center;
 }
 .avatar.lg { width: 60px; height: 60px; font-size: 24px; margin: 0; }
+/* WP5 (WELLBEING_ENABLED, canvas section 9): the Profile avatar beside every title, in a 44 px tap
+   area, its top level with the title's first 40 px line however many lines the title wraps to */
+.hdr-row.av { align-items: flex-start; }
+.hdr-row.av .ltitle { min-width: 0; overflow-wrap: break-word; }
+.hdr-acts { display: flex; align-items: flex-start; gap: 8px; flex: none; }
+.pfl {
+  width: 44px; height: 44px; margin: 0 -2px -2px 0; padding: 2px; border: 0; background: none; flex: none;
+  display: flex; align-items: flex-start; justify-content: center;
+}
+.pv .hdr-row.av .pfl { margin-top: -2px; }
 .roundbtn {
   width: 44px; height: 44px; border-radius: 50%; border: 0; flex: none; margin-bottom: 0;
   background: var(--btn); color: var(--btn-ink); display: flex; align-items: center; justify-content: center;
@@ -432,6 +442,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
   display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; font-weight: 500; letter-spacing: 0.1px;
 }
 .tabbar button.on { color: var(--tint); }
+/* the Mind tab with the Mind pillar off (WP5): in place, faded as a disabled back button, not tappable */
+.tabbar button.off { color: var(--label3); cursor: default; }
 .toast {
   position: fixed; left: 50%; bottom: calc(72px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); z-index: 70;
   background: var(--elev); color: var(--label); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); padding: 10px 16px; border-radius: 20px;

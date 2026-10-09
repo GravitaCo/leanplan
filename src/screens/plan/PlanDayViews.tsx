@@ -6,7 +6,7 @@ import { WEEK_ORDER } from '@/core/domain/week'
 import { keyTitle, keyVideo, routineFor, isBuiltinKey, slotsOf as routineSlots, aboutLine, routineEstMins, type WorkoutKey } from '@/core/domain/routines'
 import { copyWeek, planWeekNotes } from '@/core/domain/plans'
 import { MODALITY_LABEL } from '@/core/data/modalities'
-import { BackButton, Sheet } from '@/ui/primitives'
+import { BackButton, Sheet, TitleRow } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
 import { AddWorkoutSheet, workoutSub } from './PlanViews'
@@ -110,7 +110,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
   return (
     <div className="screen">
       <div className="pv-back"><BackButton label={backLabel} onClick={onBack} /></div>
-      <h1 className="ltitle">{day}</h1>
+      <TitleRow title={day} />
       <div className="sub" style={{ margin: '2px 0 16px' }}>{rest ? 'Rest day · recovery counts too' : `Every week of ${ph?.name ?? 'this phase'}`}</div>
 
       {!rest && (
@@ -174,7 +174,7 @@ export function PlanWeekView({ planId, phaseIndex, onBack, onDay }: { planId: st
   return (
     <div className="screen">
       <div className="pv-back"><BackButton label="Plan" onClick={onBack} /></div>
-      <h1 className="ltitle">{ph?.name ?? 'Week'}</h1>
+      <TitleRow title={ph?.name ?? 'Week'} />
       <div className="sub" style={{ margin: '2px 0 16px' }}>{plan.name} · {ph?.weeks} {ph?.weeks === 1 ? 'week' : 'weeks'}</div>
       <div className="list wk">
         {WEEK_ORDER.map((d) => {

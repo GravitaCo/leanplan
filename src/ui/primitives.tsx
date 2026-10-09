@@ -2,6 +2,8 @@
 import { useEffect, useState, type ReactNode, type KeyboardEvent } from 'react'
 import { Icon, Chevron, type IconName } from './icons'
 import { ConnectionLine, ConnectionPill } from './ConnectionPill'
+import { ProfileButton } from './ProfileButton'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 
 /** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
@@ -10,21 +12,46 @@ export type Category = 'energy' | 'activity' | 'body' | 'mind'
  * A tab's large-title header. The connection pill sits on the top line (tap it for the line
  * underneath), across from the eyebrow; `right` sits beside the title. The pill belongs to the
  * five tab headers only: any other screen that uses this header passes `pill={false}`.
+ * With WELLBEING_ENABLED on, the Profile avatar sits beside the title as well (after `right`),
+ * top-aligned to its first line; Profile itself passes `profile={false}`.
  */
-export function PageHeader({ eyebrow, title, right, pill = true }: { eyebrow?: ReactNode; title: string; right?: ReactNode; pill?: boolean }) {
+export function PageHeader({ eyebrow, title, right, pill = true, profile = true }: { eyebrow?: ReactNode; title: string; right?: ReactNode; pill?: boolean; profile?: boolean }) {
   const [line, setLine] = useState(false)
+  const av = WELLBEING_ENABLED && profile
   return (
     <header className="hdr">
       <div className="hdr-top">
         <div className="eyebrow">{eyebrow}</div>
         {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
       </div>
-      <div className="hdr-row">
-        <h1 className="ltitle">{title}</h1>
-        {right}
-      </div>
+      {av ? (
+        <div className="hdr-row av">
+          <h1 className="ltitle">{title}</h1>
+          {right ? <div className="hdr-acts">{right}<ProfileButton /></div> : <ProfileButton />}
+        </div>
+      ) : (
+        <div className="hdr-row">
+          <h1 className="ltitle">{title}</h1>
+          {right}
+        </div>
+      )}
       {pill && line && <ConnectionLine />}
     </header>
+  )
+}
+
+/**
+ * A pushed screen's large title (under its back button). With WELLBEING_ENABLED on, the Profile
+ * avatar sits beside it, top-aligned to the first line when the title wraps; off, it's the plain
+ * `h1.ltitle` as before.
+ */
+export function TitleRow({ title }: { title: ReactNode }) {
+  if (!WELLBEING_ENABLED) return <h1 className="ltitle">{title}</h1>
+  return (
+    <div className="hdr-row av">
+      <h1 className="ltitle">{title}</h1>
+      <ProfileButton />
+    </div>
   )
 }
 

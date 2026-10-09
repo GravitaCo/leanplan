@@ -19,6 +19,8 @@ import {
   usualEntries, usuals, weekOf, weekSummary, weightSeries, weightWeekDelta,
 } from '@/core/domain/insights'
 import { PageHeader, CatHead, pressable } from '@/ui/primitives'
+import { initials } from '@/ui/ProfileButton'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { Icon, Chevron } from '@/ui/icons'
 import { KcalBar, MacroTrio, Sparkline, WeekBars } from '@/ui/charts'
 import { WeekStrip } from '@/ui/WeekStrip'
@@ -37,10 +39,6 @@ import { FoodAskSheet } from './today/FoodAskSheet'
 import { SetupCard, setupCardDue } from './onboarding/Consent'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'margin' } | { k: 'plans' } | { k: 'edit'; i: number } | { k: 'add' } | null
-
-function initials(name: string) {
-  return name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
-}
 
 /** "22–28 Sept", or "29 Sept – 5 Oct" across a month end. */
 function weekSpan(a: string, b: string): string {
@@ -157,7 +155,8 @@ export function TodayScreen() {
       <PageHeader
         eyebrow={<>{isToday ? 'Today' : f.dow} · {f.full.split(' ').slice(0, 2).join(' ')}</>}
         title="Summary"
-        right={<button className="avatar" aria-label="Profile" onClick={() => setTab('profile')}>{initials(p.name) || <Icon name="person" />}</button>}
+        // with the wellbeing flag on, PageHeader carries the Profile avatar itself (canvas section 9)
+        right={WELLBEING_ENABLED ? undefined : <button className="avatar" aria-label="Profile" onClick={() => setTab('profile')}>{initials(p.name) || <Icon name="person" />}</button>}
       />
       <WeekStrip />
       {/* ob2-0b, behind the onboarding flag: on the Starter week until the setup card is done */}

@@ -10,7 +10,7 @@ import { shorterPrescription } from '@/core/domain/dayOptions'
 import { exById, fmtSet } from '@/core/domain/library'
 import { fmtTarget, lastTime, readyToStepUp, setCount, setsLine, splitLogged, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
-import { BackButton } from '@/ui/primitives'
+import { BackButton, TitleRow } from '@/ui/primitives'
 import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
 import { RED_FLAG } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
@@ -94,7 +94,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   return (
     <div className="screen pv">
       <div className="pv-back"><BackButton label={isToday ? 'Today' : dayName} onClick={onBack} /></div>
-      <h1 className="ltitle">{title}</h1>
+      <TitleRow title={title} />
       <div className="sub" style={{ marginTop: 2 }}>{sub}</div>
 
       <div className="vchips" role="radiogroup" aria-label="Today's version">

@@ -7,7 +7,7 @@ import {
   bestFit, catalogue, eatingLine, filterCatalogue, fitOf, fits, PLAN_TEMPLATES, phaseWeek, planStart, startOn, timeline, totalWeeks,
   type CatalogueEntry, type PlanExperience, type PlanFilters, type PlanWhere,
 } from '@/core/domain/plans'
-import { BackButton, Sheet } from '@/ui/primitives'
+import { BackButton, Sheet, TitleRow } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { GOAL_CHIP, goalLabel, planArt, PlanTile, Timeline, TimelineKey, WeekRows } from './PlanParts'
 
@@ -96,7 +96,7 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
   return (
     <div className="screen">
       <div className="pv-back"><BackButton label="Plan" onClick={onBack} /></div>
-      <h1 className="ltitle">Plans</h1>
+      <TitleRow title="Plans" />
       <div className="pl-search">
         <div className="searchbar card-bg"><Icon name="search" size={17} />
           <input value={f.q ?? ''} placeholder="Search plans" aria-label="Search plans" onChange={(e) => setF({ ...f, q: e.target.value })} /></div>

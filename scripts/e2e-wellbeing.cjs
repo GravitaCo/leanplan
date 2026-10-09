@@ -223,6 +223,101 @@ async function flagOff({ page }) {
   }
 }
 
+/* ---------------- WP5: navigation ---------------- */
+
+const TABS_WB = ['Summary', 'Mind', 'Food', 'Train', 'Plan']
+
+/** The title's first line and the avatar share a top edge; the avatar's tap area is 44 px. */
+async function avatarBesideTitle(page, title) {
+  const row = page.locator('.hdr-row.av', { has: page.locator('.ltitle', { hasText: title }) }).first()
+  await row.waitFor()
+  const h1 = await row.locator('.ltitle').boundingBox()
+  const btn = row.getByRole('button', { name: 'Profile', exact: true })
+  const tap = await btn.boundingBox()
+  const av = await btn.locator('.avatar').boundingBox()
+  expect(Math.abs(av.y - h1.y) <= 1, `${title}: avatar top ${av.y} vs title top ${h1.y}`)
+  expect(tap.width >= 44 && tap.height >= 44, `${title}: tap area ${tap.width}×${tap.height}`)
+  expect(av.x + av.width <= 390 - 16 + 1, `${title}: avatar inside the gutter`)
+  return { h1, av }
+}
+const titled = (page, t) => page.locator('.ltitle', { hasText: t }).first().waitFor()
+
+/** Flag on: five tabs, an avatar beside every title, tapping it opens Profile (no avatar there). */
+async function wp5Nav({ page }) {
+  await page.locator('nav.tabbar').waitFor()
+  const labels = await tabLabels(page)
+  expect(JSON.stringify(labels) === JSON.stringify(TABS_WB), 'tab bar: ' + labels.join(', '))
+  for (const [t, title] of [['Summary', 'Summary'], ['Mind', 'Mind'], ['Food', 'Food'], ['Train', 'Train'], ['Plan', 'Plan']]) {
+    await tab(page, t)
+    await titled(page, title)
+    await avatarBesideTitle(page, title)
+    expect((await page.locator('.hdr .avatar').count()) === 1, `${t}: one avatar`)
+    const cur = await page.locator('nav.tabbar button[aria-current="page"]').allTextContents()
+    expect(cur.length === 1 && cur[0].trim() === t, `${t}: current tab ${cur.join(',')}`)
+    await shot(page, 'wp5-tab-' + t.toLowerCase())
+  }
+  // a pushed screen: Train's session preview, with the avatar beside its title
+  await tab(page, 'Train')
+  await page.locator('.li.trow').first().click()
+  await page.locator('.pv .ltitle').waitFor()
+  const name = (await page.locator('.pv .ltitle').textContent()).trim()
+  await avatarBesideTitle(page, name)
+  await shot(page, 'wp5-pushed-preview')
+  // a long title wraps to two lines and the avatar stays level with its first line
+  await page.locator('.pv .ltitle').evaluate((h) => { h.textContent = 'Hips, hamstrings and calves' })
+  const { h1 } = await avatarBesideTitle(page, 'Hips, hamstrings and calves')
+  expect(h1.height >= 79, 'long title wraps: ' + h1.height)
+  await shot(page, 'wp5-pushed-long-title')
+  // the avatar opens Profile: no avatar there, and no tab highlighted
+  await page.locator('.pv').getByRole('button', { name: 'Profile', exact: true }).click()
+  await titled(page, 'Profile')
+  expect(!(await page.locator('.hdr .pfl').count()), 'no avatar on Profile')
+  expect(!(await page.locator('nav.tabbar button[aria-current="page"]').count()), 'no tab highlighted on Profile')
+  await shot(page, 'wp5-profile')
+}
+
+/** Flag on, Mind pillar off: the Mind tab stays in place, faded, aria-disabled, and doesn't open. */
+async function wp5MindOff({ page }) {
+  await page.locator('nav.tabbar').waitFor()
+  const labels = await tabLabels(page)
+  expect(JSON.stringify(labels) === JSON.stringify(TABS_WB), 'tab bar: ' + labels.join(', '))
+  const mind = page.locator('nav.tabbar').getByRole('button', { name: 'Mind, switched off in Profile', exact: true })
+  expect((await mind.count()) === 1, 'Mind tab named "Mind, switched off in Profile"')
+  expect((await mind.getAttribute('aria-disabled')) === 'true', 'aria-disabled')
+  const col = await mind.evaluate((b) => getComputedStyle(b).color)
+  const label3 = await page.evaluate(() => { const s = document.createElement('span'); s.style.color = 'var(--label3)'; document.body.append(s); const c = getComputedStyle(s).color; s.remove(); return c })
+  expect(col === label3, `faded: ${col} vs ${label3}`)
+  await mind.click({ force: true }) // aria-disabled: Playwright would wait for it to enable
+  await page.waitForTimeout(200)
+  await titled(page, 'Summary')
+  expect(!(await page.locator('.ltitle', { hasText: /^Mind$/ }).count()), 'Mind did not open')
+  await shot(page, 'wp5-mind-off-summary')
+  // Support stays reachable from Profile (Health data, then Support and helplines)
+  await page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true }).click()
+  await titled(page, 'Profile')
+  await page.getByRole('button', { name: /Health data/ }).first().click()
+  await page.locator('.sheet').getByText('Support and helplines').click()
+  await page.locator('.sheet').getByText(/Samaritans/).first().waitFor()
+  await shot(page, 'wp5-mind-off-support')
+}
+
+/** Flag off: Summary keeps its own avatar (bottom-aligned, as on main); no other title has one. */
+async function wp5FlagOffHeaders({ page }) {
+  await page.locator('nav.tabbar').waitFor()
+  expect(!(await page.locator('.hdr-row.av, .pfl').count()), 'no flag-on header on Summary')
+  expect((await page.locator('.hdr button.avatar[aria-label="Profile"]').count()) === 1, 'Summary avatar as today')
+  for (const t of ['Food', 'Train', 'Plan', 'Profile']) {
+    await tab(page, t)
+    await titled(page, t)
+    expect(!(await page.locator('.hdr .avatar, .pfl').count()), `${t}: no avatar beside the title`)
+  }
+  await tab(page, 'Train')
+  await page.locator('.li.trow').first().click()
+  await page.locator('.pv .ltitle').waitFor()
+  expect(!(await page.locator('.pfl, .hdr-row.av').count()), 'pushed screen: no avatar')
+  await shot(page, 'wp5-flag-off-preview')
+}
+
 /* ---------------- scenarios ---------------- */
 
 ;(async () => {
@@ -253,6 +348,11 @@ async function flagOff({ page }) {
     expect((await page.locator('.sheet textarea').inputValue()) === 'Slept badly, walked at lunch', 'note shown again')
     await shot(page, 'flag-off-checkin-after-reload')
   }, { seed: ordinaryDay() })
+
+  // WP5: the Mind tab and the Profile avatar beside every title (canvas section 9)
+  await run('wp5-nav', wp5Nav, { url: WB, seed: hardDay() })
+  await run('wp5-mind-off', wp5MindOff, { url: WB, seed: (() => { const s = hardDay(); s.state.profile.mind = { off: ['mind'] }; return s })() })
+  await run('wp5-flag-off-headers', wp5FlagOffHeaders, { seed: hardDay() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

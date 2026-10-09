@@ -19,6 +19,8 @@ import { FoodScreen } from './screens/FoodScreen'
 import { TrainScreen } from './screens/TrainScreen'
 import { PlanScreen } from './screens/PlanScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
+import { MindScreen } from './screens/MindScreen'
+import { WELLBEING_ENABLED } from './data/wellbeingFlag'
 import { ConsentScreen } from './screens/legal/ConsentScreen'
 import { legalRedirect } from './screens/legal/LegalDoc'
 
@@ -86,6 +88,11 @@ function TaliApp() {
     if (w.requestIdleCallback) w.requestIdleCallback(run); else setTimeout(run, 3000)
   }, [signedIn])
 
+  // the Mind tab (WP5, behind WELLBEING_ENABLED): with the Mind pillar off it stays in the bar,
+  // faded, and can't be opened; anything that still lands on it shows Summary instead
+  const mindOff = WELLBEING_ENABLED && !!data.profile.mind?.off?.includes('mind')
+  const mindTab = WELLBEING_ENABLED && !mindOff
+
   // Each tab opens at the top, like a native tab bar.
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -136,7 +143,8 @@ function TaliApp() {
   return (
     <div className="app-shell">
       <div className="status-shim" />
-      {tab === 'today' && <TodayScreen />}
+      {(tab === 'today' || (tab === 'mind' && !mindTab)) && <TodayScreen />}
+      {tab === 'mind' && mindTab && <MindScreen />}
       {tab === 'food' && <FoodScreen />}
       {tab === 'train' && <TrainScreen />}
       {tab === 'plan' && <PlanScreen />}
@@ -148,7 +156,7 @@ function TaliApp() {
           <button onClick={() => { toastAction.run(); useStore.setState({ toast: null, toastAction: null }) }}>{toastAction.label}</button>
         )}
       </div>
-      <BottomNav active={tab} onChange={setTab} />
+      <BottomNav active={tab} onChange={setTab} mindOff={mindOff} />
     </div>
   )
 }
