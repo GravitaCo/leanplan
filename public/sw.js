@@ -65,11 +65,14 @@ self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {}
   // A supplement reminder never shows a supplement name on the lock screen (it can reveal
   // medication), even from an older server that still sends one: fixed text, one tag.
+  // Every other push type must set its own tali-<kind> tag, or it shows as a supplement reminder.
   const supp = !data.tag || data.tag === 'tali-supp' || String(data.tag).startsWith('supp-')
   e.waitUntil(
     self.registration.showNotification(supp ? 'Time for your supplements' : data.title || 'Tali', {
       body: supp ? 'Time for your supplements' : data.body || '',
       tag: supp ? 'tali-supp' : data.tag,
+      // a later reminder replacing an unread one still sounds (Safari ignores this)
+      renotify: supp,
       // where a tap goes: the weekly review reminder opens the review (ml-d2)
       data: { url: data.url || './' },
     }),

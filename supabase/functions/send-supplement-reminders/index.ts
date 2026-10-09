@@ -150,7 +150,8 @@ Deno.serve(async (req: Request) => {
 
     // Generic text only: a lock screen is visible to anyone nearby and a supplement name can
     // reveal medication, so the payload never carries one. One notification per subscription
-    // with one fixed tag, however many supplements are due, so they don't stack.
+    // with one fixed tag, however many supplements are due, so they don't stack. Every other push
+    // type sets its own tali-<kind> tag: public/sw.js shows a push with no tag as this reminder.
     if (dueNow.length) {
       const pushSub = {
         endpoint: sub.endpoint,
