@@ -85,7 +85,8 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   const prefs = { off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false, 'Not A Key': true, odd: 'yes' }, halved: { checkin: T, plan: 'x' }, tz: 'Europe/London', lockNames: false }
   checks.push(['Mind prefs: bad values dropped', JSON.stringify(validMindPrefs(prefs)) === JSON.stringify({ off: ['food'], asks: 'fewer', wakeAt: '06:45', windDownAt: '22:30', notify: { checkin: true, plan: false }, halved: { checkin: T }, tz: 'Europe/London', lockNames: false })])
   checks.push(['Mind prefs: all three pillars off means all on', validMindPrefs({ off: ['mind', 'food', 'move'] }) === undefined && validMindPrefs({ off: ['mind', 'sleep'] })?.off?.join() === 'mind'])
-  checks.push(['Mind prefs: bad times, asks and time zone dropped', validMindPrefs({ wakeAt: '7', windDownAt: '24:00', asks: 'never', tz: 'Europe/London; drop', lockNames: 'yes' }) === undefined])
+  checks.push(['Mind prefs: bad times, asks and time zone dropped', validMindPrefs({ wakeAt: '7', windDownAt: '24:00', asks: 'never', tz: 'Europe/London; drop' }) === undefined])
+  checks.push(['Mind prefs: a setting this version does not know (lockNames, B11b not built) is kept by shape', validMindPrefs({ lockNames: 'yes' })?.['lockNames' as keyof object] === 'yes'])
   const loaded = loadStateFrom(JSON.parse(JSON.stringify({
     days: {
       '2026-10-07': { foods: [], supps: {}, weight: null, workout: null, checkin: { ...full(), night: { ...NIGHT, band: 'X!' }, skills: [{ id: 'Nap time', at: T }] } },
@@ -122,7 +123,7 @@ export async function dataSyncedSuite(fakeServer: FakeServer): Promise<number> {
   checks.push(['a check-in left with nothing after validation loads as null (N1)', emptied.days['2026-10-08'].checkin === null])
 
   /* ---------- merge: newer mind.* wins from either side ---------- */
-  checks.push(['MERGED_FIELDS lists every Mind setting', ['mind.off', 'mind.asks', 'mind.wakeAt', 'mind.windDownAt', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames'].every((f) => (MERGED_FIELDS as readonly string[]).includes(f))])
+  checks.push(['MERGED_FIELDS lists every Mind setting', ['mind.off', 'mind.asks', 'mind.wakeAt', 'mind.windDownAt', 'mind.notify', 'mind.halved', 'mind.tz'].every((f) => (MERGED_FIELDS as readonly string[]).includes(f))])
   const base = (): Profile => ({ name: 'Sam', sex: 'F', age: 34, height: 170, activityLevel: 'light', supplements: [], notificationsEnabled: false })
   const local = base(); local.mind = { asks: 'fewer', wakeAt: '07:00', notify: { checkin: true, plan: true }, tz: 'Europe/London' }
   stampFields(local, ['mind.asks', 'mind.wakeAt', 'mind.notify', 'mind.tz'], '2026-10-08T10:00:00.000Z')

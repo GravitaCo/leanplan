@@ -32,15 +32,18 @@ create table if not exists public.notify_sent (
   updated_at timestamptz not null default now()
 );
 
--- RLS on: the person can read their own row (data access requests); nobody but the service role
--- writes it. Listed in docs/security-rls.sql §6 (never add it to the FOR ALL loops there).
+-- RLS on: the person can read their own row (data access requests) and delete it (only so
+-- clear_log_after_withdrawal(), SECURITY INVOKER and so run as `authenticated`, can clear it);
+-- nobody but the service role inserts or updates it. Listed in docs/security-rls.sql §6 (never
+-- add it to the FOR ALL loops there).
 alter table public.notify_sent enable row level security;
 drop policy if exists notify_sent_select_own on public.notify_sent;
 create policy notify_sent_select_own on public.notify_sent
   for select to authenticated using (user_id = auth.uid());
-revoke all on public.notify_sent from anon;
-revoke insert, update, delete, truncate on public.notify_sent from authenticated;
-grant select on public.notify_sent to authenticated;
+revoke all on public.notify_sent from anon, authenticated;
+grant select, delete on public.notify_sent to authenticated;
+drop policy if exists notify_sent_delete_own on public.notify_sent;
+create policy notify_sent_delete_own on public.notify_sent for delete to authenticated using (user_id = auth.uid());
 
 -- the upload guard, as on every log table (a signed-in person can't write here anyway; the
 -- service role passes)
@@ -62,6 +65,10 @@ begin
   if kind is null or kind not in ('checkin', 'wind-down', 'plan') then
     raise exception 'notify_claim: unknown kind' using errcode = '22023';
   end if;
+  -- the same per-person lock as the upload guard and the withdrawal clear: a claim can't race a
+  -- withdrawal, and a person without a current yes gets no Mind reminder
+  perform pg_advisory_xact_lock_shared(hashtextextended('tali-log:' || uid::text, 0));
+  if not public.health_consent_current(uid) then return false; end if;
   insert into public.notify_sent as n (user_id, last_on, by_kind)
   values (uid, day, jsonb_build_object(kind, day))
   on conflict (user_id) do update
@@ -171,3 +178,12 @@ revoke all on function public.purge_unconsented_logs() from public, anon, authen
 -- select tgname from pg_trigger where tgrelid = 'public.notify_sent'::regclass;
 -- As service role: select public.notify_claim('<uid>', '2026-10-09', 'checkin');  -- true
 --                  select public.notify_claim('<uid>', '2026-10-09', 'wind-down'); -- false (the cap)
+-- Withdrawal clear (clear_log_after_withdrawal() is SECURITY INVOKER, so it needs the owner's
+-- DELETE on notify_sent). With a test user who has a notify_sent row and whose latest health
+-- answer is a no:
+--   begin;
+--   set local role authenticated;
+--   select set_config('request.jwt.claims', '{"sub":"<test uid>","role":"authenticated"}', true);
+--   select public.clear_log_after_withdrawal();   -- succeeds: {"cleared": true, "rows": n, ...}
+--   select count(*) from public.notify_sent;      -- 0
+--   rollback;                                     -- or commit, on a throwaway test user

@@ -272,8 +272,6 @@ export interface MindPrefs {
   halved?: Partial<Record<NotifyKind, string>>
   /** IANA time zone, from the device, so reminders follow the person's own clock */
   tz?: string
-  /** "Show names on the lock screen"; default false */
-  lockNames?: boolean
 }
 
 export interface DayLog {

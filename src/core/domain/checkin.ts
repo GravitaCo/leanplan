@@ -112,7 +112,7 @@ export function validCheckin(x: unknown): CheckIn | null {
 }
 
 /** the `profile.mind` settings this version knows; any other key is a later version's and is kept */
-const MIND_KEYS = ['off', 'asks', 'wakeAt', 'windDownAt', 'notify', 'halved', 'tz', 'lockNames']
+const MIND_KEYS = ['off', 'asks', 'wakeAt', 'windDownAt', 'notify', 'halved', 'tz']
 
 /**
  * `profile.mind` made safe to read (loadStateFrom, sync on pull): bad values of the known settings
@@ -141,7 +141,6 @@ export function validMindPrefs(x: unknown): MindPrefs | undefined {
     if (Object.keys(h).length) m.halved = h
   }
   if (typeof x.tz === 'string' && x.tz.length <= 64 && /^[A-Za-z][A-Za-z0-9_+\-]*(\/[A-Za-z0-9_+\-]+)*$/.test(x.tz)) m.tz = x.tz
-  if (typeof x.lockNames === 'boolean') m.lockNames = x.lockNames
   for (const [k, v] of Object.entries(x)) if (!MIND_KEYS.includes(k) && v !== undefined) m[k] = v
   return Object.keys(m).length ? m : undefined
 }

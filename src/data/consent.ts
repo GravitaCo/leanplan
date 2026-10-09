@@ -349,7 +349,7 @@ export interface HealthDataSummary {
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
 const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn', 'steadyRef', 'patternShown', 'loopChoice', 'reviewPushSkip']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
-const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames']
+const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
 
 /** A profile patch without its health fields (saved while health consent is withdrawn). */

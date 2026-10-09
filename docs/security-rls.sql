@@ -69,5 +69,6 @@ end $$;
 -- 6) Tables with their own, narrower policies (never add them to the FOR ALL loops above):
 --   ai_usage  (docs/migrations/2026-09-ai-usage.sql)  owner SELECT only; writes via ai_usage_take()
 --   consents  (docs/migrations/2026-09-consents.sql)  owner SELECT + INSERT only; append-only history
---   notify_sent (docs/migrations/2026-10-09-notify-sent.sql, WRITTEN, NOT APPLIED)  owner SELECT only;
---             written only by the reminder function through notify_claim() (service role)
+--   notify_sent (docs/migrations/2026-10-09-notify-sent.sql, WRITTEN, NOT APPLIED)  owner SELECT + DELETE (DELETE only so
+--             clear_log_after_withdrawal(), SECURITY INVOKER, can clear it); inserted and updated only by
+--             the reminder function through notify_claim() (service role)

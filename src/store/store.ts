@@ -507,7 +507,7 @@ function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void 
 }
 
 /** The keys profile.mind may hold (MindPrefs); anything else in a patch is ignored. */
-const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true, lockNames: true }
+const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true }
 const isEmptyPref = (v: unknown): boolean =>
   v === undefined || (Array.isArray(v) ? !v.length : !!v && typeof v === 'object' && !Object.keys(v).length)
 
