@@ -74,8 +74,8 @@ export function mindPageSuite(): number {
 
   /* ---------- page helpers ---------- */
   ok('eyebrow reads "Thursday 8 October"', mindEyebrow('2026-10-08') === 'Thursday 8 October', mindEyebrow('2026-10-08'))
-  ok('the deck sample pairs: Low, Poor, Some, Low, then Hunger',
-    JSON.stringify(checkinPairs({ mood: 2, sleep: 1, stress: 2, energy: 1, hunger: 2, sore: 0 })) === JSON.stringify([['Mood', 'Low'], ['Sleep', 'Poor'], ['Stress', 'Some'], ['Energy', 'Low'], ['Hunger', 'Hungry']]))
+  ok('the deck sample pairs: Low, Poor, Some, Low (the four on board B5)',
+    JSON.stringify(checkinPairs({ mood: 2, sleep: 1, stress: 2, energy: 1, hunger: 2, sore: 2 })) === JSON.stringify([['Mood', 'Low'], ['Sleep', 'Poor'], ['Stress', 'Some'], ['Energy', 'Low']]))
   ok('unanswered questions are left out', checkinPairs({ mood: 0, hunger: 0, sleep: 3 }).map(([k]) => k).join() === 'Sleep' && checkinPairs(null).length === 0)
 
   /* ---------- opening Support writes nothing, counts nothing, syncs nothing ---------- */

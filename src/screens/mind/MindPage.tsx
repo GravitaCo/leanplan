@@ -3,7 +3,7 @@ import { useStore, type MindView } from '@/store/store'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { healthDeclined } from '@/data/consent'
 import { DAY_NAME, parseYmd, todayStr } from '@/core/domain/date'
-import { ENERGY, HUNGER, MOODS, SLEEP, SORE, STRESS } from '@/core/domain/insights'
+import { ENERGY, MOODS, SLEEP, STRESS } from '@/core/domain/insights'
 import { skillsWithScreen } from '@/core/data/skills'
 import type { CheckIn } from '@/core/types'
 import { PageHeader } from '@/ui/primitives'
@@ -24,15 +24,16 @@ export function mindEyebrow(ymd: string): string {
 }
 
 /**
- * Today's answers as label and value pairs, in the B5 order: the four short pairs (Mood, Sleep,
- * Stress, Energy), then Hunger and Soreness. Only answered questions show (B5.5: hunger and
- * soreness only if answered; an unanswered one of the four is left out rather than shown blank).
+ * Today's answers as label and value pairs, in the B5 order: Mood, Sleep, Stress, Energy. Only
+ * answered ones show. Hunger and soreness stay on the Summary card and in the sheet: the approved
+ * board draws the four pairs only, though the sample person answered hunger (deck B5 text says
+ * "Hunger and soreness only if answered"; the board wins, flagged for design).
  */
 export function checkinPairs(c: CheckIn | null | undefined): [string, string][] {
   if (!c) return []
   const rows: [string, number | undefined, readonly string[]][] = [
     [MIND.mood, c.mood, MOODS], [MIND.sleep, c.sleep, SLEEP], [MIND.stress, c.stress, STRESS],
-    [MIND.energy, c.energy, ENERGY], [MIND.hunger, c.hunger, HUNGER], [MIND.sore, c.sore, SORE],
+    [MIND.energy, c.energy, ENERGY],
   ]
   return rows.filter(([, v, labels]) => !!v && !!labels[v - 1]).map(([k, v, labels]) => [k, labels[v! - 1]])
 }

@@ -14,6 +14,7 @@
 /* the board's "Update" and "Check in" are 44 px tall (deck 0.3: 44 px targets), not the 36 px .btn.sm */
 .card.mind-today .btn.sm { align-self: flex-start; height: 44px; border-radius: 22px; padding: 0 18px; }
 /* skill rows: the one-line sub may wrap to a second line rather than be cut off (B5.9) */
+.mind-skills .li .t, .mind-skills .li .s { display: block; }
 .mind-skills .li .s { white-space: normal; line-height: 1.35; }
 .mind .mind-plans .li .m { flex: 1 1 auto; }
 .mind-wellness { text-align: center; padding: 6px 16px 0; }

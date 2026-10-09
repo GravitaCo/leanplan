@@ -19,13 +19,11 @@ export const MIND = {
   title: 'Mind',
   /** B5.4 */
   today: 'Today',
-  /** B5.5 labels (the values are insights.ts's MOODS, SLEEP, STRESS, ENERGY, HUNGER, SORE) */
+  /** B5.5 labels (the values are insights.ts's MOODS, SLEEP, STRESS, ENERGY) */
   mood: 'Mood',
   sleep: 'Sleep',
   stress: 'Stress',
   energy: 'Energy',
-  hunger: 'Hunger',
-  sore: 'Soreness',
   /** B5.6 */
   update: 'Update',
   /** before today's check-in (not drawn on B5; the Summary card's lines, deck B2.8 to B2.10) */

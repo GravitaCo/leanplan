@@ -458,6 +458,86 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await page.getByText('Resting today is fine too.').count()), 'the rest line is for a hard day')
     await shot(page, 'wp8-train-ordinary-open')
   }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.schedule[6] = 'Push'; return o })() }) // Push on the Saturday
+  // WP6: the Mind tab root (B5) and the Support sheet in the Mind context (B6 frame 1)
+  const openMindTab = async (page) => {
+    await page.locator('nav.tabbar').waitFor()
+    await tab(page, 'Mind')
+    await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
+  }
+  /** the parts of the saved state a Support visit must never touch */
+  const keep = (st) => JSON.stringify({ days: st.days, profile: st.profile, consents: st.consents, deviceOnly: st.deviceOnly, settings: st._meta && st._meta.settings })
+  /** the hard day before its check-in */
+  const hardDayNoCheckin = () => { const s = hardDay(); delete s.state.days[HARD_DAY].checkin; return s }
+
+  await run('wp6-mind', async ({ page, net }) => {
+    await openMindTab(page)
+    const main = page.locator('.screen.mind')
+    expect((await main.locator('.eyebrow').textContent()).trim() === 'Thursday 8 October', 'eyebrow')
+    expect(!(await main.locator('.pv-back, .hdr .navbtn').count()), 'no back button on the tab root')
+    const pairs = (await main.locator('.mind-g2 > div').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(pairs) === JSON.stringify(['MoodLow', 'SleepPoor', 'StressSome', 'EnergyLow']), 'pairs: ' + pairs.join(', '))
+    await main.getByRole('button', { name: 'Update', exact: true }).waitFor()
+    // S.1 directly under the Today card, above the fold at 390x844 (above the tab bar)
+    const row = main.getByRole('button', { name: 'Need support now?' })
+    const box = await row.boundingBox()
+    const bar = await page.locator('nav.tabbar').boundingBox()
+    expect(box && bar && box.y + box.height <= bar.y, 'support row above the fold: ' + JSON.stringify({ box, bar }))
+    expect(!(await main.getByText('Skills', { exact: true }).count()), 'no Skills section with MIND_REVIEWED off')
+    await main.getByText('If–then plans').waitFor()
+    await main.getByText('For everyday wellbeing. Not a treatment for any condition.').waitFor()
+    await shot(page, 'wp6-mind')
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await shot(page, 'wp6-mind-foot')
+    await page.evaluate(() => window.scrollTo(0, 0))
+
+    // opening Support writes nothing, counts nothing, syncs nothing
+    await page.waitForTimeout(1500)
+    const before = keep(await stored(page))
+    const posts = net.posts.length
+    await row.click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('Support and helplines', { exact: true }).waitFor()
+    const names = (await sheet.locator('.wz-sp .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(names) === JSON.stringify(['Samaritans', 'Shout', 'NHS 111, option 2', 'NHS 111', 'Beat', 'Emergency services']), 'rows: ' + names.join(', '))
+    const shout = sheet.locator('a.wz-sp', { hasText: 'Shout' })
+    expect((await shout.getAttribute('href')) === 'sms:85258?&body=SHOUT', 'Shout sms link')
+    await shout.getByText('Text SHOUT to 85258 · 24 hours, every day').waitFor()
+    await sheet.getByText('Tali isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.').waitFor()
+    await sheet.getByText('Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.').waitFor()
+    await shot(page, 'wp6-support')
+    // Northern Ireland: the GP in NHS 111's place
+    await sheet.getByRole('button', { name: 'Change' }).click()
+    await sheet.getByText('Northern Ireland', { exact: true }).click()
+    const ni = (await sheet.locator('.wz-sp .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(ni) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), 'NI rows: ' + ni.join(', '))
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    await page.waitForTimeout(1500)
+    expect(keep(await stored(page)) === before, 'opening Support changed the saved state')
+    expect(net.posts.length === posts, 'opening Support sent ' + (net.posts.length - posts) + ' request(s)')
+    // Update opens the existing check-in sheet
+    await main.getByRole('button', { name: 'Update', exact: true }).click()
+    await page.locator('.sheet').getByText('How are you feeling?').waitFor()
+  }, { seed: hardDay(), url: WB })
+
+  await run('wp6-mind-reviewed', async ({ page }) => {
+    await openMindTab(page)
+    const main = page.locator('.screen.mind')
+    await main.getByText('Skills', { exact: true }).waitFor()
+    const skills = (await main.locator('.mind-skills .li .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(skills) === JSON.stringify(['Reset', 'Unload']), 'skills: ' + skills.join(', '))
+    await shot(page, 'wp6-mind-reviewed')
+  }, { seed: hardDay(), url: WBR })
+
+  await run('wp6-mind-empty', async ({ page }) => {
+    // before today's check-in: the ask and "Check in", which opens the sheet
+    await openMindTab(page)
+    const main = page.locator('.screen.mind')
+    await main.getByText('How are you today?').waitFor()
+    await shot(page, 'wp6-mind-empty')
+    await main.getByRole('button', { name: 'Check in', exact: true }).click()
+    await page.locator('.sheet').getByText('How are you feeling?').waitFor()
+  }, { seed: hardDayNoCheckin(), url: WB })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
