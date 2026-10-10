@@ -1795,7 +1795,7 @@ function labelScan(): void {
     ['ref: other amounts scale the per-100 values (2 servings = 406.8)', two.k === 406.8],
     ['ref: not kept when the saved serving differs or the columns disagree', servingRef(barCheck, 45, 50) === undefined
       && servingRef(labelIssues(textsFromRead(read({ ...bar, fat: ['21.0g', '3.5g'] }, { serving_text: '45g' }), false)), 45, 45) === undefined],
-    ['flag: label scanning is off until the function is deployed', LABEL_SCAN_ENABLED === false],
+    ['flag: label scanning is on (ai-read-label and submit-product deployed)', LABEL_SCAN_ENABLED === true],
   )
   // the schema and its validator (server and client share them)
   const good = read(crisps)

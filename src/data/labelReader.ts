@@ -10,11 +10,12 @@ import { cleanToken, type ShareToken } from '../../supabase/functions/_shared/sh
 import { getToken, hasSession, supabase } from './supabase'
 
 /**
- * Label photo scanning is off until the ai-read-label function is deployed and smoke-tested
- * (ship-critic). While false, every entry point is hidden. A build with VITE_LABEL_SCAN=1 turns it
- * on, for local previews and the e2e test only.
+ * Label photo scanning, and with it Tali's shared product list (SHARED_PRODUCTS_ENABLED). On once
+ * ai-read-label (with PRODUCT_SIGNING_KEY), submit-product, lookup-product and report-product are
+ * deployed, the shared-products migration is applied and the privacy policy describes both
+ * (Compliance). Set back to false to hide every entry point again.
  */
-export const LABEL_SCAN_ENABLED: boolean = false || import.meta.env?.VITE_LABEL_SCAN === '1'
+export const LABEL_SCAN_ENABLED: boolean = true
 
 export const LABEL_TIMEOUT_MS = 20_000
 export const LABEL_FUNCTION = 'ai-read-label'

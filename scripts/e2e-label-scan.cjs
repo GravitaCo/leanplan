@@ -1,13 +1,11 @@
 /**
  * Headless end-to-end check of label photo scanning (phase 1), in Chromium with a fake camera.
  *
- * Label scanning is behind LABEL_SCAN_ENABLED (off), so test a build with it turned on, and
- * (optionally) check the normal build hides it:
+ * Label scanning is on (LABEL_SCAN_ENABLED), so test the normal build:
  *
- *   VITE_LABEL_SCAN=1 npx vite build --outDir dist-e2e && npx vite preview --outDir dist-e2e --port 4173 &
+ *   npm run build && npx vite preview --port 4173 &
  *   (the fixture is an onboarded profile, so VITE_ONBOARDING=1 on the same build passes too)
- *   npm run build && npx vite preview --port 4174 &
- *   E2E_URL_OFF=http://localhost:4174/ NODE_PATH=$(npm root -g) node scripts/e2e-label-scan.cjs
+ *   NODE_PATH=$(npm root -g) node scripts/e2e-label-scan.cjs
  *
  * Needs Playwright (global install is fine; browsers in PLAYWRIGHT_BROWSERS_PATH, e.g.
  * /opt/pw-browsers). Every Supabase request is intercepted: the session is a fake one, and the
@@ -17,7 +15,7 @@
  * a 1/7 misread → the suggestion is accepted; a function error → typing fallback; offline →
  * typing fallback; the function missing (a 404 preflight) → "isn't available", typing fallback;
  * the first read sends the label-photo consent to the server before the photo; the server
- * refusing for consent (403) → typing fallback; with the flag off, no entry point shows.
+ * refusing for consent (403) → typing fallback; with the flag on, the Scan the label entry point shows.
  */
 const { chromium } = require('playwright')
 const fs = require('node:fs')
@@ -276,14 +274,12 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     expect(saved.ref && saved.ref.g === 30 && saved.ref.k === 117 && saved.ref.f === 2.1, 'ref saved: ' + JSON.stringify(saved.ref))
   }))
 
-  if (process.env.E2E_URL_OFF) {
-    results.push(await scenario(browser, 'flag off: no label entry points', async ({ page }) => {
-      await page.getByRole('button', { name: 'Add food' }).first().click()
-      await page.getByRole('button', { name: /Create a food/ }).waitFor()
-      expect((await page.getByRole('button', { name: /Scan the label/ }).count()) === 0, 'Scan the label hidden')
-      expect((await page.getByText('Photo of the label').count()) === 0, 'Photo of the label hidden')
-    }, { url: process.env.E2E_URL_OFF }))
-  }
+  results.push(await scenario(browser, 'flag on: label entry points show', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add food' }).first().click()
+    // "Photo of the label" (after a barcode isn't found) is covered by e2e-shared-products.cjs
+    await page.getByRole('button', { name: /Create a food/ }).waitFor()
+    expect((await page.getByRole('button', { name: /Scan the label/ }).count()) === 1, 'Scan the label shows')
+  }))
 
   results.push(await scenario(browser, 'first read: the label-photo consent reaches the server before the photo', async ({ page, calls }) => {
     await captureLabel(page)
