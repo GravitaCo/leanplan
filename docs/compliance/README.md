@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -63,6 +63,7 @@ Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), 
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
+| ElevenLabs (Eleven Labs Inc.), Suno (Suno Inc.) | Neither processor nor recipient: tools Benn uses offline to make the guided audio (wellbeing Phase 2); no user data goes to them. Gravita is their customer under their own terms | US | Licensing checks in item 46; keep them out of the app at runtime |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted and carries no supplement name: the fixed text "Time for your supplements" for a supplement reminder (from 2026-10-09, item 41; once the generalised function is deployed, the supplement names only for someone who turned on "Show supplement names in reminders", item 45), or the fixed text "Your week is ready" / "Take a look whenever suits you." for the review reminder; the Mind reminders, once deployed (item 42), carry fixed text too: "How are you today? A quick check-in, if you have a moment.", "Your wind-down starts now, if you'd like it.", "How are your plans going?") |
 
@@ -80,7 +81,7 @@ terms `6ab56fd7d03958d70ceaf978`, cookie-policy `6ab56fd7d03958d70ceaf97a`.
 
 **Draft written 2026-09-30: [`dpia.md`](./dpia.md), awaiting Benn's review and sign-off** (and a
 solicitor's, if he wants one). It opens with the decisions for Benn. Until it is signed this item
-stays open. Wellbeing Phase 1 (Mind) is drafted as `dpia.md` §8 (2026-10-09), signed off by Benn on 2026-10-10 (8.8, the supplement names setting, is not signed; that setting stays hidden). Sections 1 to 7 are still unsigned. Scope it had to cover, kept for reference:
+stays open. Wellbeing Phase 1 (Mind) is drafted as `dpia.md` §8 (2026-10-09), signed off by Benn on 2026-10-10 (8.8, the supplement names setting, is not signed; that setting stays hidden). Sections 1 to 7 are still unsigned. §9 (the Children's Code assessment, item 21) and §10 (wellbeing Phase 2, guided audio, item 46) were drafted 2026-10-10 and are not signed. Scope it had to cover, kept for reference:
 
 A DPIA is very likely required (UK GDPR Art. 35; ICO lists large-scale special-category
 data and health apps among the triggers). The consent, minimisation, RLS and deletion work
@@ -171,8 +172,11 @@ Added 2026-09-27 (consent release):
     shows; "Close and delete" opens the usual account deletion (with its re-sign-in); "I typed my
     age wrong" goes back (a stored under-18 age is cleared). The engine keeps an under-18 band as
     a backstop (no AI, words only). The ICO Children's Code is treated as out of scope on the basis
-    of a "likely to be accessed by children" assessment that is still to be written into the DPIA
-    (OPEN).
+    of a "likely to be accessed by children" assessment: drafted 2026-10-10 as `dpia.md` §9,
+    awaiting Benn's sign-off (§9.8). It concludes Tali is not likely to be accessed by a
+    significant number of children now, on evidence other than the self-declared gate (the ICO
+    says self-declaration alone doesn't show children can't access a service), and lists the
+    commitments that keep that true (§9.5) and what to decide before public launch (§9.7).
     - Supplement reminders stop while the stop shows: this device's push subscription ends through
       the existing unsubscribe path (best-effort, in the background; retried on a later launch or
       connection; device-only marker `_meta.pushHeld` inside `leanplan.v1`). "I typed my age wrong"
@@ -185,7 +189,9 @@ Added 2026-09-27 (consent release):
       built). For the Profile and backup paths the under-18 age isn't saved, so a relaunch returns
       to the normal app; the 30-day design therefore needs a marker, which is new processing
       needing its own privacy text, register line and, if it's a phone key, a `cookies.ts` entry.
-    - OPEN: the likely-to-be-accessed assessment in the DPIA.
+    - Drafted, awaiting sign-off: the likely-to-be-accessed assessment (`dpia.md` §9). Recommended
+      there, for Benn in Webflow (not done): "Tali is for adults aged 18 and over." in the website
+      footer, since the home page doesn't say it (the early access form does).
 22. Resolved 2026-09-27 (as built: the Withdrawal row above). Withdrawal used to clear
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
@@ -556,6 +562,82 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     built but only reachable once `MIND_REVIEWED` is on (the Wind down screen sits behind it). Server logic is unchanged: `suppPayload` already needs a stamped `lockNames: true`,
     which nobody can set while the row is hidden, so every supplement reminder stays generic. To
     show it: sign DPIA 8.8, set `SUPP_NAMES_ENABLED` on, and republish the privacy policy.
+
+46. Open (2026-10-10, wellbeing Phase 2, guided audio; not built). A few tracks for Reset and Wind
+    down, made once by Benn with ElevenLabs (AI voice) and possibly Suno (music), the same file for
+    everyone, on Bunny, with transcripts (`wellbeing-plan.md` §10; DPIA §10). Compliance view:
+    - **Not processors.** No user data goes to ElevenLabs or Suno, so neither is a processor or
+      recipient for Tali's users and neither goes in the privacy policy. Gravita is their customer
+      under their terms. This holds only if: the scripts carry no user data; the app never calls
+      their APIs; and the voice is not a clone of a real person (cloning Benn's or anyone's voice
+      processes that person's voice data and needs their written consent and a fresh look).
+    - **AI label (EU AI Act Art. 50; Regulation (EU) 2024/1689, applying from 2 August 2026,
+      Art. 113).** Art. 50(4) makes a deployer disclose audio that is a "deep fake" (Art. 3(60):
+      content resembling existing persons that would falsely appear authentic). A designed voice
+      that resembles no real person is arguably not one, and Art. 50(1) (systems that interact
+      with people) doesn't cover a pre-recorded track; Art. 50(2) marking falls on ElevenLabs and
+      Suno as providers. So the strict duty may not bite, but the label costs nothing, ElevenLabs'
+      Prohibited Use Policy s.10 requires disclosure where leaving it out "would materially
+      mislead", and EU users are in scope (Art. 2(1)(c)). The UK has no AI labelling law; the
+      relevant rules are misleading-practice ones (CAP Code s.3 for marketing; DMCC Act 2024 Part
+      4), which a label also answers. Art. 50(5): clear, distinguishable, at the latest at first
+      exposure, and accessible. Recommended:
+      - **On the player, before Play:** in the line under the track title, as text (not an icon
+        or tooltip, not `aria-hidden`): "6 min · AI voice", or "6 min · AI voice and music" if
+        Suno music is used.
+      - **First line of the transcript:** "The voice in this track is made with AI." (with music:
+        "The voice and music in this track are made with AI."), then, only if true, "The words
+        were written and checked by the Tali team."
+      - **Anywhere a track is used outside the app** (website, social, store listing): the same
+        caption. Never imply a human narrator.
+      - **Not needed:** a spoken disclaimer at the start of the track, or a line in the privacy
+        policy (no personal data). A sentence in the terms' Mind paragraph is optional.
+      - **Keep provenance:** don't strip or alter ElevenLabs or Suno watermarks or metadata (both
+        sets of terms forbid it). Check whether Bunny's processing re-encodes the file and drops
+        embedded metadata; if so, keep the originals and the generation log (below).
+    - **Licensing, for Benn to check on his own accounts** (terms read on 10 October 2026 via an
+      automated fetch; check the live pages, the plan pages and the account screens, which I
+      couldn't see; not legal advice):
+      - ElevenLabs (Terms of Service for the EEA, Switzerland and UK, last updated 9 October 2026;
+        the fetched page named Eleven Labs Inc. as the contracting party): free plans are
+        non-commercial only (s.1(c)(i)); paid plans may be used commercially (s.1(c)(ii)), so be
+        on a paid plan when each track is generated and keep the invoice. You keep the rights in
+        Output (s.4(c)(ii)), but give ElevenLabs a perpetual licence over your Content, including
+        to develop products (s.4(d)): opt out of training (s.4(i)) before generating. Check the
+        chosen voice: a default or designed voice is simplest; a Voice Library voice is under the
+        Voice Library Addendum (last updated 6 March 2026), where the owner can remove it after a
+        notice period and Output made before then stays usable, so download and keep the files.
+        Check the voice's own card for any restriction. No attribution duty was found.
+      - Suno (Terms of Service, revised 10 August 2026, effective 3 September 2026, Suno Inc.):
+        Free or Basic Outputs are personal, non-commercial only; Pro and Premier get Suno's rights
+        assigned and commercial use, but only for a permitted Download through Suno's own channel,
+        and those rights survive cancellation for Downloads already obtained. Remixes are
+        non-commercial on every tier. Suno keeps a perpetual licence to use Output (including to
+        promote and improve its models), may show it to other users, makes no promise that
+        copyright exists in it, and says other rights holders may collect revenue where Output is
+        distributed on third-party platforms. Don't remove its fingerprint or watermark. Check the
+        download allowance on the plan. Consider whether a licensed royalty-free bed, or no music,
+        is simpler: the music is optional and Suno's licence is narrower than ElevenLabs'.
+      - Both: keep a short generation log (date, plan, voice or model, script version, file
+        names) with the source files, outside the app bundle.
+    - **Privacy policy (`privacy.ts`), when Phase 2 ships, gated on its own flag:** the Bunny
+      bullet becomes "Bunny.net: delivers the exercise demo videos and their preview images, and
+      the guided audio tracks, and sees technical request data (such as your IP address and which
+      video, image or track is requested) when the app shows or plays them." Bump `updated`. No
+      `CONSENT_VERSION` bump. Register: extend the Bunny row in Processors and transfers. If the
+      app keeps any record of which track was played or for how long, that is a new field: "Your
+      log" text, this register and DPIA §10 first (recommended: keep none; finishing a track uses
+      the existing `skills` entry). Bundle the transcripts with the app, so they cause no request.
+    - **Cookie policy (`cookies.ts`), only if tracks are kept for offline use:** today the service
+      worker leaves every cross-origin file to the network (`public/sw.js:175`), so nothing from
+      Bunny is cached and no change is needed. If Phase 2 caches tracks, add under "In the app":
+      "Guided audio: when you play a track (or save it to use offline), the app keeps a copy of
+      the audio file in your browser's cache so it plays without a connection. It's the same file
+      for everyone and contains no personal data. It stays until you clear your browser data."
+      This is storage on the device under PECR reg. 6, exempt as strictly necessary for a service
+      the user asked for (reg. 6(4)(b)) as long as it is only done on play or on a "save" tap, not
+      pre-fetched for everyone. Bump `updated`.
+    - **Children:** DPIA §9 (item 21) covers the audio: plain, adult, neutral titles (§9.5 item 3).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

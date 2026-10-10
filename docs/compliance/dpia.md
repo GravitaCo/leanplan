@@ -31,7 +31,7 @@ Open judgement calls, each with a recommendation. Section 7 has the sign-off tab
 | D5 | `ai-read-label` (Anthropic) is deployed, but label reading is switched off in the app and not in the privacy policy. A signed-in person who writes their own label-photo consent record could still call it. | **Disable the function (or add a server-side off switch) until register item 24 is done**, and route the change through `security-data`. Low risk (it sends a pack photo, not health data), but it is an undisclosed processor that can be reached. |
 | D6 | Dormant accounts: after a purge, or when someone stops using Tali, the account (email, consent records) is kept with no end date (register item 30(c)). | **Set an inactivity period with notice before public launch.** A starting point to discuss with the solicitor: delete accounts with no sign-in for 24 months, after one email 30 days before. The length is a judgement for Benn, not a legal fixed figure. |
 | D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx:64`), so health consent is a condition of using Tali. Art. 7(4) asks whether consent is freely given when a service depends on it. | **Keep the design** (the log is the service, and no other Art. 9(2) condition fits a consumer wellness app), **but ask the solicitor to confirm** this is defensible, and keep the unbundling from terms and marketing as it is. |
-| D8 | Age assurance: the live app relies on a self-declared "I'm 18 or over" box (`ConsentScreen.tsx:48`); the stronger age question and stop are behind the wizard flag. | **Accept self-declaration for now**, and record a short "likely to be accessed by children" assessment for the ICO Children's Code before public launch (marketing, app store listing, content). Revisit if the marketing could appeal to teenagers. |
+| D8 | Age assurance: the live app relies on a self-declared "I'm 18 or over" box (`ConsentScreen.tsx:48`); the stronger age question and stop are behind the wizard flag. | **Accept self-declaration for now**, and record a short "likely to be accessed by children" assessment for the ICO Children's Code before public launch (marketing, app store listing, content). Revisit if the marketing could appeal to teenagers. Drafted as section 9 (10 October 2026), awaiting Benn's sign-off there. |
 | D9 | ICO prior consultation (Art. 36). | **Not needed, on the conditions in section 7.3**: the measures marked "recommended" for R1, R3 and R7 are done before the relevant feature or launch, and D1 is done before the wizard goes on. If Benn decides to switch the wizard on for the public without D1, the residual risk for R3 is high and prior consultation should be considered. |
 | D10 | Legal basis for the consent records: the register says 6(1)(c) (and 9(2)(f) if a record counts as special category); the privacy policy says "legal obligation" (`privacy.ts:82`). | **Keep it, but ask the solicitor.** Art. 7(1) requires the controller to be able to show consent, which supports 6(1)(c); some advisers prefer 6(1)(f). A record that someone said yes to health processing may itself reveal health information, hence 9(2)(f) (legal claims). |
 | D11 | Breach response (register item 11): no named person or process for the 72-hour ICO notice (Art. 33) and telling users (Art. 34). | **Name Benn as the responsible person and write a one-page procedure** (who checks Supabase and GitHub alerts, how to assess, how to report) before public launch. |
@@ -540,7 +540,8 @@ items are not done.
   consent screen; behind the wizard, an age question that stops under-18s kindly, wipes the phone
   and deletes the new account (`delete-account` under-age path, register "Under-age stop" row); the
   policy says how to report a child's use (`privacy.ts:166`).
-- **Recommended:** a written "likely to be accessed by children" assessment (D8); fix register item
+- **Recommended:** a written "likely to be accessed by children" assessment (D8; drafted as
+  section 9, not signed); fix register item
   37(a): an under-age account that never signs in again stays on the server with nothing marking
   it; a `security-data` review of the client stop path.
 - **Residual:** possible, significant: **medium**, falling to **low** once the wizard's age stop is
@@ -844,6 +845,144 @@ with the clinician review moved to a gate before public launch. Four things to r
 
 ---
 
+## 9. Children's Code: "likely to be accessed by children" assessment (register item 21, D8)
+
+**Status: DRAFT for Benn's sign-off (9.8). Not signed.** Drafted 10 October 2026 by the
+`compliance` agent (an AI assistant) from `main` at `e293646`, the live website and the live
+Supabase account count. Not legal advice. Required before wellbeing Phase 2 (guided audio) by
+`docs/plans/wellbeing-plan.md` §8.2 item 5.
+
+### 9.1 The question
+
+The ICO's Age appropriate design code (the Children's Code, made under DPA 2018 s.123) applies to
+an information society service "likely to be accessed by children", meaning anyone under 18. Tali
+(the app and the website) is an information society service. The code applies to services aimed
+at children, and to services not aimed at children that are in fact accessed by a "significant
+number of children". The ICO sets no numerical threshold: "significant" means "more than a de
+minimis or insignificant number" (ICO, "Likely to be accessed by children" FAQs, checked 10
+October 2026). The ICO asks the service to record its decision, justify it and keep it under
+review, as part of the DPIA.
+
+### 9.2 Benn's position
+
+**Tali is for adults. No one under 18 should use it, and Tali is not designed, marketed or offered
+to anyone under 18.** It tracks calories, weight, body fat, diet and training load, and its Mind
+part covers sleep, stress and low mood. Those are not appropriate for children without the
+safeguards a children's service would need, and Gravita Creative Ltd has decided not to build
+that service. The 18+ rule is a design decision, not a formality (register item 21, decided 28
+September 2026).
+
+This position settles what Tali is **for**. On its own it does not settle whether children are
+**likely** to access it: the ICO tests that against evidence, which 9.3 sets out.
+
+### 9.3 Evidence, by the ICO's factors
+
+| ICO factor | Evidence | Points to |
+|---|---|---|
+| Access controls | The terms say "You must be 18 or over" (`src/core/legal/terms.ts:30`, `MIN_AGE` in `src/core/legal/index.ts:34`). The sign-up screen says "Tali is for people aged 18 and over" (`src/screens/AuthScreen.tsx:197`). Consent can't be given without ticking "I'm 18 or over" (`src/screens/legal/ConsentScreen.tsx:48`). An under-18 age stops the app at Profile save, backup import, cloud pull and launch (`AgeStop.tsx`, register item 21), and the wizard's age question stops and deletes (behind `ONBOARDING_ENABLED`). The website's early access form says "You must be 18 or over to join" (live, checked 10 October 2026). **All of this is self-declared.** The ICO says "Self-declaration will not be sufficient to demonstrate that children cannot access your service." So it supports the conclusion but is not relied on as the reason for it. | Adults only, weakly evidenced |
+| Number of users | 10 accounts in total, the most recent created on 28 September 2026, none since (count only, Supabase `auth.users`, 10 October 2026; no row content read). Testers are a closed group. Unknown: whether every one is an adult known to Benn; Benn to confirm at 9.8. | Not likely now |
+| Behavioural evidence (research, analytics) | None: Tali has no analytics by design, and the age stop records nothing centrally. So there is no data either way, and at public launch there won't be any unless something is added. | No evidence (a gap) |
+| Advertising | No ads in the app, no paid marketing, no third-party ads. | Not likely |
+| Complaints | Unknown: none recorded in the register. Benn to confirm at 9.8 that no one has reported a child using Tali. The privacy policy says how to report one (`privacy.ts:248`, "Age"). | Not likely now |
+| Content and design | Adult topics throughout: calorie ranges, weight, body fat, pregnancy and medical questions in setup, training load, supplements. No cartoons, characters, games, rewards, badges, levels, leaderboards, sharing or social features; streak language is banned in generated copy (`src/core/domain/loopCopy.ts:14`, `src/core/domain/engine/why.ts:208`). The website speaks to adults (mood, food and movement, "talk to a qualified professional ... if you're pregnant"). **Counter-factor:** the Mind skills (sleep, breathing, journalling) appeal more to teenagers than calorie tracking does (`wellbeing-plan.md` §8.2 item 5), and a guided audio track is the kind of content teenagers look for. Phase 2 keeps that in check by design: a few short tracks (3 to 10 minutes), plain spoken instructions in an adult voice, no characters, stories, sleep stories, library, celebrity voices or trending music, neutral titles, no exam or school framing (9.5). | Not likely, with one counter-factor managed |
+| Similar services | Unknown: no study was checked for this draft. It is reasonable to assume some teenagers use mainstream sleep, meditation and calorie apps. That is a reason to keep the marketing and the audio adult (9.5), not evidence that teenagers use Tali. | Counter-factor |
+| Business model and marketing | Free, closed test, not publicised. No youth channels, school or university partnerships, youth influencers, or child-oriented products. The plan rules out exam-stress marketing (`wellbeing-plan.md` §8.2 item 5). | Not likely |
+
+### 9.4 Conclusion
+
+**On this evidence, Tali is not likely to be accessed by a significant number of children, so the
+Children's Code does not apply to it at present.** The conclusion rests on what Tali is (an adult
+diet, weight and training app), how few people can reach it (10 accounts, none new since 28
+September), and how it is presented (adult content, no youth marketing, no game or social
+features), not on the self-declared age gate.
+
+The conclusion is a judgement, made in a closed test. It is strongest now and weakens at public
+launch, when the number of users grows, the app is publicised and the only access control is
+still self-declared. Because Tali processes diet, weight and mood data that would be high risk for
+a child, the right response if the evidence changes is the ICO's second option, consistent with
+Benn's position: **restrict access with stronger age assurance**, rather than redesign Tali to
+conform to the code for children.
+
+### 9.5 Commitments that keep the conclusion true
+
+These are the conditions the conclusion depends on. Breaking one is a review trigger (9.6).
+
+1. **Marketing to adults only.** No channel, influencer, creator, school, college or university
+   partnership, or platform placement aimed at under-18s; no exam, revision or school stress
+   framing; ad targeting (if any is ever bought) set to 18+.
+2. **Content stays adult and plain.** No cartoons, mascots, characters, games, rewards, badges,
+   levels, leaderboards or social sharing.
+3. **Guided audio (Phase 2) stays small and plain:** a few tracks for Reset and Wind down; a calm
+   adult voice speaking plain instructions; no stories, characters, celebrity or influencer
+   voices, or trending music; neutral titles ("Wind down, 6 min", not "Exam night calm"); and the
+   same age rule as the rest of Tali (no separate access to the audio before sign-up and consent).
+4. **18+ said wherever Tali is offered.** Already on the sign-up screen, the consent screen, the
+   terms and the early access form. **Recommended (Webflow, for Benn; not done here):** add "Tali
+   is for adults aged 18 and over." to the website footer next to the wellness line, since the
+   home page doesn't say it today (checked 10 October 2026). An app store listing, if ever, uses
+   the store's adult rating and says 18+ in the description.
+5. **Reports acted on.** A report of a child using Tali is answered and the data deleted, as the
+   privacy policy says, and noted in the register.
+
+### 9.6 Review triggers
+
+Reassess, and update this section, when any of these happens: public launch (sign-up open and
+publicised); any paid marketing or creator partnership; an app store release; a report or sign of
+a child using Tali; any social, sharing or community feature; the audio growing beyond a few
+tracks or into stories or music; a change in ICO guidance on this test or on age assurance; and at
+least yearly.
+
+### 9.7 Open for Benn before public launch (not decided here)
+
+- **Age assurance strength.** The ICO's view is that self-declaration does not show children
+  cannot access a service, and its Opinion on age assurance expects the method to match the risk.
+  Today's conclusion does not depend on the gate, but after launch it may. Before launch, decide
+  whether self-declaration stays (with the 9.5 commitments and a reason recorded here) or whether
+  an age estimation or verification step is added at sign-up (a new processor and new processing:
+  privacy policy, register and DPIA first). A solicitor's view is worth having here.
+- **Seeing whether it's working.** With no analytics, the only signals after launch are reports
+  and age stops, and the stop records nothing centrally. Benn may want an anonymous count of age
+  stops (new processing: policy and register first), or may accept relying on reports.
+
+### 9.8 Sign-off
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Assessment and conclusion (9.4) approved by | | Benn. |
+| Commitments (9.5) accepted by | | Including whether the website footer line is added. |
+| Testers are adults known to Benn; no report of a child using Tali | | Benn to confirm; the evidence in 9.3 assumes both. |
+| Next review | | At public launch at the latest (9.6). |
+
+---
+
+## 10. Note: wellbeing Phase 2, guided audio (proposed 10 October 2026, not built, not signed)
+
+Phase 2 (`wellbeing-plan.md` §10): a few guided audio tracks for Reset and Wind down, 3 to 10
+minutes, made once by Benn with ElevenLabs (AI voice) and possibly Suno (background music), the
+same file for everyone, hosted on Bunny like the exercise videos, with transcripts. Register item
+46 holds the detail and the checks.
+
+- **Personal data.** No user data goes to ElevenLabs or Suno: the scripts are Tali's own words and
+  the tracks are made offline, before any user exists for them. Neither is a processor or a
+  recipient for Tali's users (register, Processors and transfers). The only new flow is the one
+  Bunny already has for the videos: when the app fetches a track, Bunny sees the IP address, the
+  browser and which file is requested. A request for a wind-down track at night says little about
+  anyone's health; keeping file names neutral (Bunny's ids, not `sleep-help.mp3`) and the referrer
+  to the origin (the browser default) keeps it that way. Same basis as the video row: 6(1)(f).
+- **No listening history.** The app keeps no record of which track was played or for how long. If
+  finishing a track counts as doing the skill, it uses the existing `skills` entry (id and time),
+  with nothing new stored. Anything more is a new field: policy, register and this DPIA first.
+- **Transparency.** The voice (and any music) is AI-generated and labelled where it plays (register
+  item 46: EU AI Act Art. 50, applying from 2 August 2026).
+- **Children.** Section 9 covers it: the audio stays plain and adult (9.5 item 3).
+- **New risk.** None proposed. R4 is unchanged with 9.5 in place.
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 10 noted by | | Before Phase 2 is built. |
+
+---
+
 ## Sources checked
 
 - Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.
@@ -855,3 +994,9 @@ with the clinician review moved to a gate before public launch. Four things to r
 - ICO, "Examples of processing likely to result in high risk" (ico.org.uk), 30 Sept 2026.
 - UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); not re-read for this
   draft beyond the articles cited.
+- 10 October 2026 (sections 9 and 10): `main` at `e293646`; live www.tali.fit home and
+  early-access pages (text and form fields); Supabase `auth.users` count and creation dates only;
+  ICO, "Likely to be accessed by children" FAQs (ico.org.uk); Regulation (EU) 2024/1689 Art. 50
+  (eur-lex); ElevenLabs Terms of Service (EEA/UK version), Prohibited Use Policy and Voice Library
+  Addendum (elevenlabs.io); Suno Terms of Service (suno.com/terms). Reports that the 2026 Digital
+  Omnibus left Art. 50(4) on 2 August 2026 come from secondary sources, not the Official Journal.
