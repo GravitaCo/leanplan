@@ -238,7 +238,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `When we delete data from your account for either of these reasons, copies in our database provider's backups are deleted as they expire on its regular cycle.`,
           ...(products
             ? [
-                `Label photos: Tali doesn't keep them. Anthropic deletes them as described above. The daily count of photo reads is kept until you delete your account.`,
+                `Label photos: Tali doesn't keep them. Anthropic deletes them as described above. The daily count of photo reads is deleted after 60 days, or sooner if you delete your account.`,
                 `Products on the shared list are kept for as long as the list exists, unless we remove them after a report or a check. Because nothing links them to you, deleting your account doesn't remove them, and we can't find the ones you added. Products still waiting on your phone are removed if you turn sharing off, withdraw consent for health data, or someone else signs in on that phone.`,
               ]
             : []),

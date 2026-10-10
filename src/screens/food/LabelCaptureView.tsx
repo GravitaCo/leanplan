@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import { consentLetsSync } from '@/data/consent'
+import { consentLetsSync, hasCurrentConsent } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
@@ -26,7 +26,9 @@ const FRONT_EDGE = 1024
 const MAX_BYTES = 1_500_000
 const CHECK_EVERY_MS = 350
 
-export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic’s AI service to read the numbers, under their data policy. You can check the numbers before anything is saved.'
+/** Compliance's wording (register item 24, Oct 2026): Anthropic acts on Tali's instructions under
+ *  the DPA. Changing it bumps CONSENT_VERSIONS['label-photo'] (src/data/consent.ts). */
+export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.'
 export const GUIDANCE = 'Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.'
 
 type Shot = { blob: Blob; url: string; issue: QualityIssue | null }
@@ -83,9 +85,9 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   onDone: (draft: ScanDraft, notice?: string) => void
 }) {
   const customFoods = useStore((s) => s.data.customFoods)
-  const hasConsent = useStore((s) => s.hasConsent)
   const grantConsent = useStore((s) => s.grantConsent)
-  const [step, setStep] = useState<Step>(() => (hasConsent('label-photo') ? 'panel' : 'consent'))
+  // the notice again when the yes was to older wording (CONSENT_VERSIONS['label-photo'])
+  const [step, setStep] = useState<Step>(() => (hasCurrentConsent(useStore.getState().data, 'label-photo') ? 'panel' : 'consent'))
   const [panel, setPanel] = useState<Shot | null>(null)
   const [front, setFront] = useState<Shot | null>(null)
   const [camera, setCamera] = useState<'starting' | 'on' | CameraFail>('starting')

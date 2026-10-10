@@ -10,6 +10,7 @@ import { marginNote, sourceCard, tierErr, type SharedInfo } from '@/core/domain/
 import { reportShared, type ReportReason } from '@/data/sharedProducts'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
+import { LegalLink } from '../legal/LegalDoc'
 
 /** sp-2 / sp-3 / sp-3b: where the numbers came from, with Report this product under it. */
 export function SharedSourceCard({ info, barcode, onReport }: { info: SharedInfo; barcode: string; onReport: () => void }) {
@@ -43,7 +44,8 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
   )
 }
 
-/** sp-1: compliance's copy, word for word. Either answer saves the food; no never blocks anything. */
+/** sp-1: compliance's copy, word for word, then a link to the terms (where the sharing licence
+ *  lives). Either answer saves the food; no never blocks anything. */
 export const OPT_IN = {
   title: 'Add new products you scan to Tali’s shared list?',
   body: 'We save the barcode, name and figures, never who added them. Because of that, we can’t remove one you added later. Turn this off any time in Profile, Privacy.',
@@ -58,6 +60,8 @@ export function ShareOptInSheet({ onAnswer }: { onAnswer: (yes: boolean) => void
       <div className="sp-tile" aria-hidden="true"><Icon name="people" size={20} stroke={1.8} /></div>
       <h2>{OPT_IN.title}</h2>
       <p>{OPT_IN.body}</p>
+      {/* the sharing licence lives in the terms (Compliance, Oct 2026); the copy above stays word for word */}
+      <p className="sp-terms"><LegalLink id="terms" /></p>
       <button className="btn yes" onClick={() => onAnswer(true)}>{OPT_IN.yes}</button>
       <button className="btn gray" onClick={() => onAnswer(false)}>{OPT_IN.no}</button>
     </BareSheet>

@@ -156,7 +156,7 @@ async function captureLabel(page, { consent = true } = {}) {
   await page.getByRole('button', { name: 'Add food' }).first().click()
   await page.getByRole('button', { name: /Scan the label/ }).click()
   if (consent) {
-    await page.getByText('Tali doesn’t keep your photo. It’s sent to Anthropic’s AI service to read the numbers, under their data policy. You can check the numbers before anything is saved.').waitFor()
+    await page.getByText('Tali doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.').waitFor()
     await page.getByRole('button', { name: 'OK, take a photo' }).click()
   }
   await page.getByText('Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.').waitFor()

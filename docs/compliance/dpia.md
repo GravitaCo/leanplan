@@ -871,10 +871,14 @@ This section supersedes D5 and the Anthropic row in section 2.1 once signed.
 - **Stored.** `products` (barcode, version, name, figures, counters, first-of-month dates),
   `product_sigs_seen` (SHA-256 of each accepted signature, with its month, purged after two
   months, so one read counts once) and `product_quota` (global daily counters).
-- **Lookups and reports.** Signed-in users look a barcode up with `lookup_product()` (POST body,
-  so the barcode isn't in a logged URL) and can report a version with `report_product()`, which
-  keeps no reporter. Moderation: `shared-products-moderation.md`.
-- **Device.** `tali.products` caches up to 200 looked-up products for offline use.
+- **Lookups and reports.** Signed-in users look a barcode up through the `lookup-product` Edge
+  Function (POST body, so the barcode isn't in a logged URL) and report a version through
+  `report-product`. Each checks the session with Auth and limits each caller in memory (the
+  account id is held for at most an hour, never logged or stored), then calls `lookup_product()`
+  or `report_product()` with the service role; neither RPC receives or keeps who asked.
+  Moderation: `shared-products-moderation.md`.
+- **Device.** `tali.products` caches up to 200 looked-up products for offline use, noting (on the
+  device only) which account filled it; it is cleared when another account signs in.
 
 ### 9.2 Lawful basis
 
@@ -913,11 +917,9 @@ anonymisation, identifiability).
   only that a person has that food in their log, which Tali already holds with their consent:
   the list adds nothing new about them. That is why the residual risk is low, not why the join
   is allowed.
-- **Residual weakness (register item 46).** `products.id` is a sequential identity and
-  `product_quota.new_rows` counts per day, so together they can give the day a version was added.
-  With no identity in the rows this doesn't identify anyone, but `security-data` should close it
-  (trim `product_quota` in the function and/or stop relying on a sequential id) so "month only"
-  is true in full.
+- **Closed (register item 46).** `products.id` was a sequential identity that, with
+  `product_quota.new_rows` per day, could give the day a version was added. It is now a random
+  UUID, so "month only" is true in full.
 
 Consequences: account deletion, health withdrawal and the purge don't touch the list (by design;
 not in `USER_TABLES`, `clear_log_after_withdrawal()` or `purge_unconsented_logs()`); withdrawing

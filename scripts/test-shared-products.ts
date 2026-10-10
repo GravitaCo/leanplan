@@ -9,7 +9,7 @@ import { kjFromKcal } from '@/core/domain/label'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { sourceErr, sourceOf, SOURCES } from '@/core/data/sources'
 import { cleanLookupRow, draftFromShared, marginNote, pct, sameAsFound, shareDecision, shareEligible, sourceCard, tierErr, tierOf, TIER_SOURCE, type SharedProduct } from '@/core/domain/sharedProduct'
-import { CONSENT_TYPES, CONSENT_VERSIONS, cleanConsents, hasConsent, latestConsent, recordConsent, withdraw } from '@/data/consent'
+import { CONSENT_TYPES, CONSENT_VERSIONS, cleanConsents, hasConsent, hasCurrentConsent, latestConsent, recordConsent, withdraw } from '@/data/consent'
 import { stateFromBackup, type SyncMeta } from '@/data/persistence'
 import {
   cacheGet, cachePut, canSendOutbox, CACHE_KEY, CACHE_MAX, dropOutbox, LOOKUP_FUNCTION, REPORT_FUNCTION, lookupShared, OUTBOX_KEY, OUTBOX_MAX, queueShare, readOutbox, reconcileOutbox,
@@ -162,6 +162,13 @@ function consentGating() {
   const kept = cleanConsents(JSON.parse(JSON.stringify(s.consents)))
   report('consent', [
     ['a consent type of its own, versioned', (CONSENT_TYPES as readonly string[]).includes('shared-products') && CONSENT_VERSIONS['shared-products'] === '2026-10-v1'],
+    ['label-photo notice reworded: version 2026-10-v1, and an older yes is asked again', (() => {
+      const x = stateFromBackup({ days: {} } as never)
+      recordConsent(x, 'label-photo', true, '2026-09-v1')
+      const old = hasConsent(x, 'label-photo') && !hasCurrentConsent(x, 'label-photo')
+      recordConsent(x, 'label-photo', true)
+      return CONSENT_VERSIONS['label-photo'] === '2026-10-v1' && old && hasCurrentConsent(x, 'label-photo')
+    })()],
     ['first eligible save asks; after a yes it shares; after a no it keeps the food to itself', before === 'ask' && yes === 'share' && no === 'keep'],
     ['a read that can’t be shared never asks', shareDecision(false, null) === 'none' && shareDecision(false, { granted: true }) === 'none'],
     ['a no is a record (asked once), and survives a backup round trip', !hasConsent(s, 'shared-products') && kept.records.filter((r) => r.type === 'shared-products').length === 2],

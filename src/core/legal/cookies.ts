@@ -56,7 +56,7 @@ export function cookiePolicy({ onboarding = false, mind = false, products = fals
             : []),
           ...(products
             ? [
-                `tali.products: up to 200 products you've looked up on Tali's shared product list, so they still open with no connection. Kept until you remove this device's log, delete your account or clear your browser data.`,
+                `tali.products: up to 200 products you've looked up on Tali's shared product list, so they still open with no connection, with a note of which account looked them up. That note never leaves your device. Kept until someone else signs in, you remove this device's log, delete your account or clear your browser data.`,
                 `tali.productOutbox: new products you agreed to share that haven't been sent yet, with a note of which account added them. That note never leaves your device. Each is removed once it's sent, or if you turn sharing off, withdraw consent for health data, someone else signs in, you remove this device's log or delete your account.`,
               ]
             : []),

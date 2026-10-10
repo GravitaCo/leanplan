@@ -1181,6 +1181,8 @@ label a, .prose a { color: var(--tint); text-decoration: none; }
 .sp-tile { width: 52px; height: 52px; border-radius: 16px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; }
 .sp-optin h2 { margin: 16px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
 .sp-optin p { margin: 10px 0 0; font-size: 17px; line-height: 1.45; color: var(--label2); }
+.sp-optin p.sp-terms { margin-top: 8px; font-size: 13px; line-height: 18px; }
+.sp-optin p.sp-terms a { color: var(--tint); }
 .sp-optin .btn { margin-top: 8px; }
 .sp-optin .btn.yes { margin-top: 24px; }
 /* the report sheet (sp-6) */

@@ -35,7 +35,9 @@ export type ConsentType = (typeof CONSENT_TYPES)[number]
 export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   health: '2026-09-v1',
   ai: '2026-09-v1',
-  'label-photo': '2026-09-v1',
+  // 2026-10-v1: the notice now says Anthropic reads the photo for Tali only and doesn't train on it
+  // (compliance register item 24). An older yes is asked again with the new notice.
+  'label-photo': '2026-10-v1',
   // the opt-in to add new label-read products to Tali's shared list (sp-1; Profile › Privacy sp-5).
   // Checked by the server too (shared_products_allowed, docs/migrations/2026-10-10-shared-products.sql)
   'shared-products': '2026-10-v1',
@@ -197,6 +199,12 @@ export function latestConsent(s: PersistedState, type: ConsentType): ConsentReco
 /** Whether the person's latest answer for this type is yes. No record = no. */
 export function hasConsent(s: PersistedState, type: ConsentType): boolean {
   return latestConsent(s, type)?.granted === true
+}
+
+/** A yes given to the current wording (CONSENT_VERSIONS): an older yes is asked again. */
+export function hasCurrentConsent(s: PersistedState, type: ConsentType): boolean {
+  const r = latestConsent(s, type)
+  return !!r && r.granted && r.version === CONSENT_VERSIONS[type]
 }
 
 /**
