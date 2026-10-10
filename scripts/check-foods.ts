@@ -30,6 +30,25 @@ for (const f of FOODS) {
   if (diff.length) r.errors.push(`${f.n}: differs from its audited ${f.src} values (${diff.map((m) => `${m} ${f[m]} vs ${want[m]}`).join(', ')})`)
 }
 
+// Composite estimates (`est-cofid:CODE+CODE+…`): the audit record lists each CoFID component with
+// its grams and CoFID values; the food must be exactly their weighted sum, served at their total.
+type Part = { code: string; g: number; k: number | null; p: number | null; c: number | null; f: number | null }
+for (const f of FOODS) {
+  const [key, code] = f.src?.split(':') ?? []
+  if (key !== 'est-cofid' || !code?.includes('+')) continue
+  const a = byName.get(f.n) as (Row & { ref: { components?: Part[] } }) | undefined
+  const parts = a?.ref.components
+  if (!parts || a!.ref.code !== code || parts.map((x) => x.code).join('+') !== code) { r.errors.push(`${f.n}: composite ${f.src} has no matching audit record of its components`); continue }
+  const missing = parts.filter((x) => [x.k, x.p, x.c, x.f].some((v) => v == null) || !(x.g > 0))
+  if (missing.length) { r.errors.push(`${f.n}: component(s) ${missing.map((x) => x.code).join(', ')} have no CoFID values`); continue }
+  const g = parts.reduce((s, x) => s + x.g, 0)
+  const per = (m: 'k' | 'p' | 'c' | 'f') => parts.reduce((s, x) => s + x[m]! * x.g, 0) / g
+  const want = { k: Math.round(per('k')), p: r1(per('p')), c: r1(per('c')), f: r1(per('f')) }
+  const diff = (['k', 'p', 'c', 'f'] as const).filter((m) => f[m] !== want[m])
+  if (diff.length) r.errors.push(`${f.n}: isn't the sum of its components (${diff.map((m) => `${m} ${f[m]} vs ${want[m]}`).join(', ')})`)
+  if (f.g !== g) r.errors.push(`${f.n}: serving ${f.g} g isn't the components' total ${g} g`)
+}
+
 const sourced = FOODS.length - r.unsourced.length
 const withRef = FOODS.filter((f) => f.ref).length
 console.log(`${FOODS.length} foods · ${sourced} with a cited source · ${withRef} checked against a published figure · ${r.unsourced.length} not yet checked`)

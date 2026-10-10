@@ -17,6 +17,8 @@ import type { Food, FoodCategory } from '@/core/types'
  *   Blackham T (2022), LJMU PhD thesis, Appendix 4.0-4.1.
  * - `est-cofid:<code>`: a common dish CoFID doesn't have, carrying the closest CoFID dish's values
  *   exactly (±40%, labelled as an estimate). The reason for each match is noted.
+ * - `est-cofid:<code>+<code>+…`: a composite (a kebab, a burrito), the weighted sum of its CoFID
+ *   components (±40%, an estimate). See COMPOSITES; check:foods recomputes each from its audit record.
  * Every CoFID value was checked against the CoFID 2021 workbook, sheet "1.3 Proximates" (Oct 2026).
  *
  * Portions (`g`), from a published weight where one exists, else marked ASSUMPTION:
@@ -40,6 +42,112 @@ const LAB = 'takeaway-lab:Jaworowska 2014'
 function dish(n: string, k: number, p: number, c: number, f: number, g: number, src: string, cat: FoodCategory = 'fastfood'): Food {
   return { n, k, p, c, f, g, cat, src, eat: true }
 }
+
+/**
+ * CoFID 2021 per-100 g values for the components of composite dishes, copied exactly (checked
+ * against the workbook, sheet "1.3 Proximates", Oct 2026; "Tr" as 0). Exported so check:foods can
+ * recompute each composite from its audit record.
+ */
+export const COMPONENTS: Record<string, { name: string; k: number; p: number; c: number; f: number }> = {
+  '19-539': { name: 'Doner kebabs, meat only (20 takeaway samples)', k: 377, p: 23.5, c: 0, f: 31.4 },
+  '19-150': { name: 'Shish kebab, meat only (20 takeaway samples)', k: 206, p: 29.0, c: 0, f: 10.0 },
+  '18-323': { name: 'Chicken, breast, grilled without skin, meat only', k: 148, p: 32.0, c: 0, f: 2.2 },
+  '18-551': { name: 'Pork, shoulder steaks (collar), grilled, lean and fat', k: 292, p: 29.2, c: 0, f: 19.5 },
+  '16-389': { name: 'Prawns, king, purchased cooked', k: 68, p: 16.2, c: 0, f: 0.4 },
+  '13-485': { name: 'Potato chips, from takeaway fish and chip shops', k: 214, p: 3.5, c: 33.2, f: 8.4 },
+  '11-974': { name: 'Bread, pitta, white', k: 255, p: 9.1, c: 55.1, f: 1.3 },
+  '11-973': { name: 'Bread, naan, retail', k: 285, p: 7.8, c: 50.2, f: 7.3 },
+  '11-1006': { name: 'Bread rolls, white, soft', k: 254, p: 9.3, c: 51.5, f: 2.6 },
+  '11-925': { name: 'Tortilla, wheat, soft', k: 285, p: 7.8, c: 53.9, f: 5.7 },
+  '11-937': { name: 'Bread, garlic and herb, retail', k: 348, p: 7.0, c: 45.1, f: 16.7 },
+  '17-644': { name: 'Tortilla chips fried in sunflower oil', k: 504, p: 7.2, c: 60.8, f: 27.4 },
+  '11-862': { name: 'Rice, white, long grain, boiled', k: 131, p: 2.8, c: 31.1, f: 0.4 },
+  '13-660': { name: 'Beans, red kidney, canned, re-heated, drained', k: 100, p: 8.6, c: 15.1, f: 1.0 },
+  '15-795': { name: 'Falafel, fried in rapeseed oil, homemade', k: 183, p: 6.4, c: 15.9, f: 11.2 },
+  '12-346': { name: 'Cheese, Cheddar, English', k: 416, p: 25.4, c: 0.1, f: 34.9 },
+  '12-360': { name: 'Cheese, Mozzarella, fresh', k: 257, p: 18.6, c: 0, f: 20.3 },
+  '17-685': { name: 'Butter, salted', k: 744, p: 0.6, c: 0.6, f: 82.2 },
+  '15-648': { name: 'Salad, green (lettuce, cucumber, pepper, celery)', k: 13, p: 1.0, c: 1.6, f: 0.4 },
+  '13-520': { name: 'Lettuce, average, raw', k: 11, p: 1.2, c: 1.4, f: 0.1 },
+  '13-517': { name: 'Tomatoes, standard, raw', k: 14, p: 0.5, c: 3.0, f: 0.1 },
+  '13-499': { name: 'Onions, raw', k: 35, p: 1.0, c: 8.0, f: 0.1 },
+  '13-316': { name: 'Peppers, capsicum, chilli, green, raw', k: 20, p: 2.9, c: 0.7, f: 0.6 },
+  '13-505': { name: 'Mushrooms, white, raw', k: 7, p: 1.0, c: 0.3, f: 0.2 },
+  '17-654': { name: 'Mayonnaise, standard, retail (as garlic sauce)', k: 686, p: 1.1, c: 2.4, f: 74.8 },
+  '17-719': { name: 'Chilli sauce', k: 40, p: 1.3, c: 7.3, f: 0.8 },
+  '17-705': { name: 'Barbecue sauce', k: 140, p: 1.0, c: 36.1, f: 0.1 },
+  '13-556': { name: 'Houmous', k: 307, p: 6.8, c: 10.5, f: 26.7 },
+  '12-547': { name: 'Tzatziki', k: 76, p: 3.4, c: 3.4, f: 5.5 },
+  '17-681': { name: 'Stock, chicken, ready made, retail', k: 12, p: 2.3, c: 0.2, f: 0.2 },
+  '14-889': { name: 'Coconut milk, retail', k: 169, p: 1.1, c: 3.3, f: 16.9 },
+}
+
+/** Per-100 g values of a dish made of `parts` ([CoFID code, grams]): the weighted sum of the
+ *  components, kcal whole and macros to 0.1 g. Pure sum-of-parts; nothing else is added. */
+export function compose(parts: [string, number][]): { k: number; p: number; c: number; f: number; g: number } {
+  const g = parts.reduce((s, [, w]) => s + w, 0)
+  const per = (m: 'k' | 'p' | 'c' | 'f') => parts.reduce((s, [code, w]) => {
+    const v = COMPONENTS[code]
+    if (!v) throw new Error(`composite: no CoFID values recorded for ${code}`)
+    return s + v[m] * w
+  }, 0) / g
+  return { k: Math.round(per('k')), p: Math.round(per('p') * 10) / 10, c: Math.round(per('c') * 10) / 10, f: Math.round(per('f') * 10) / 10, g }
+}
+
+/** Each composite's parts by name, so check:foods can match them to the audit record. */
+export const COMPOSITE_PARTS: Record<string, [string, number][]> = {}
+
+/** A composite dish: `est-cofid:CODE+CODE+…`, the serving is the sum of the parts. */
+function composite(n: string, parts: [string, number][], cat: FoodCategory = 'fastfood'): Food {
+  COMPOSITE_PARTS[n] = parts
+  const v = compose(parts)
+  return dish(n, v.k, v.p, v.c, v.f, v.g, `est-cofid:${parts.map(([code]) => code).join('+')}`, cat)
+}
+
+/**
+ * Composite dishes (est-cofid, ±40%): no CoFID row or lab analysis covers them, so each is the
+ * weighted sum of its CoFID components. The amount of each part is an ASSUMPTION (a typical
+ * takeaway build) unless noted; the doner kebabs keep CoFID's own doner-in-pitta make-up
+ * (19-526: 50% meat, 22% pitta, 28% salad) as a guide. Garlic sauce is counted as mayonnaise
+ * (what most kebab-shop garlic sauce is); "sauces" means 20-25 g each of garlic and chilli.
+ */
+const COMPOSITES: Food[] = [
+  // doner meat 120 g, pitta 75 g, salad 60 g, garlic sauce 20 g, chilli sauce 20 g = 295 g
+  composite('Doner kebab, small, in pitta (takeaway)', [['19-539', 120], ['11-974', 75], ['15-648', 60], ['17-654', 20], ['17-719', 20]]),
+  // doner meat 200 g, pitta 90 g, salad 80 g, garlic 25 g, chilli 25 g = 420 g
+  composite('Doner kebab, large, in pitta (takeaway)', [['19-539', 200], ['11-974', 90], ['15-648', 80], ['17-654', 25], ['17-719', 25]]),
+  // doner meat 120 g, naan 173 g (safefood 2015 takeaway naan average), salad 60 g, garlic 20 g, chilli 20 g
+  composite('Doner kebab, small, in naan (takeaway)', [['19-539', 120], ['11-973', 173], ['15-648', 60], ['17-654', 20], ['17-719', 20]]),
+  // doner meat 200 g, naan 173 g (safefood 2015), salad 80 g, garlic 25 g, chilli 25 g
+  composite('Doner kebab, large, in naan (takeaway)', [['19-539', 200], ['11-973', 173], ['15-648', 80], ['17-654', 25], ['17-719', 25]]),
+  // doner 100 g, lamb shish meat 100 g, grilled chicken breast 100 g (for chicken shish: CoFID has
+  // no chicken shish row), naan 173 g (safefood 2015), salad 80 g, garlic 25 g, chilli 25 g
+  composite('Mixed kebab, in naan (takeaway)', [['19-539', 100], ['19-150', 100], ['18-323', 100], ['11-973', 173], ['15-648', 80], ['17-654', 25], ['17-719', 25]]),
+  // chips 284 g ([SF] regular), doner meat 150 g, cheddar 40 g, garlic 25 g, chilli 25 g, barbecue sauce 25 g
+  composite('Halal snack pack, doner meat on chips with cheese and sauces (takeaway)', [['13-485', 284], ['19-539', 150], ['12-346', 40], ['17-654', 25], ['17-719', 25], ['17-705', 25]]),
+  // chips 284 g ([SF] regular), cheddar 50 g
+  composite('Cheesy chips (takeaway)', [['13-485', 284], ['12-346', 50]]),
+  // chips 142 g ([SF] small), soft white roll 70 g, butter 10 g
+  composite('Chip butty (takeaway)', [['13-485', 142], ['11-1006', 70], ['17-685', 10]]),
+  // garlic bread 150 g, mozzarella 50 g
+  composite('Garlic bread with cheese (takeaway)', [['11-937', 150], ['12-360', 50]]),
+  // falafel 120 g (about 4), wheat tortilla 80 g, salad 60 g, houmous 30 g
+  composite('Falafel wrap (takeaway)', [['15-795', 120], ['11-925', 80], ['15-648', 60], ['13-556', 30]]),
+  // pork shoulder, grilled, 120 g (gyros is usually pork in the UK), pitta 75 g, chips 80 g,
+  // tzatziki 40 g, tomato 30 g, onion 15 g
+  composite('Gyros, pork, in pitta (takeaway)', [['18-551', 120], ['11-974', 75], ['13-485', 80], ['12-547', 40], ['13-517', 30], ['13-499', 15]]),
+  // tortilla chips 100 g, cheddar 60 g, tomato 40 g, onion 15 g, green chilli 10 g (CoFID has
+  // no salsa or soured cream row, so tomato, onion and chilli stand in for salsa; no soured cream)
+  composite('Nachos with cheese (takeaway)', [['17-644', 100], ['12-346', 60], ['13-517', 40], ['13-499', 15], ['13-316', 10]]),
+  // wheat tortilla 100 g, long grain rice 120 g, grilled chicken breast 100 g, kidney beans 60 g,
+  // cheddar 30 g, lettuce 20 g, tomato 30 g (no soured cream: no CoFID row)
+  composite('Chicken burrito (takeaway)', [['11-925', 100], ['11-862', 120], ['18-323', 100], ['13-660', 60], ['12-346', 30], ['13-520', 20], ['13-517', 30]]),
+  // chicken stock 300 g, king prawns 60 g, mushrooms 30 g, tomato 20 g (the paste, lime and fish
+  // sauce add little and have no CoFID rows)
+  composite('Tom yum soup, prawn (takeaway)', [['17-681', 300], ['16-389', 60], ['13-505', 30], ['13-517', 20]], 'ready'),
+  // coconut milk 150 g, chicken stock 150 g, grilled chicken breast 60 g, mushrooms 30 g
+  composite('Tom kha soup, chicken (takeaway)', [['14-889', 150], ['17-681', 150], ['18-323', 60], ['13-505', 30]], 'ready'),
+]
 
 // ── Fish and chip shop ──
 // CoFID 16-368: cod in batter, 10 samples from takeaways
@@ -196,6 +304,10 @@ const THAI: Food[] = [
   dish('Chicken with cashew nuts, Thai (takeaway)', 160, 18.4, 4.8, 7.0, 400, 'est-cofid:19-569', 'ready'),
   // CoFID 19-323: chicken satay, 10 takeaway samples. ASSUMPTION 120 g (a starter of 4 skewers)
   dish('Chicken satay (takeaway)', 191, 21.7, 3.0, 10.3, 120, 'cofid-takeaway:19-323', 'ready'),
+  // as cod fishcakes (recipe, fried): the closest CoFID fishcake. Thai fishcakes are a fried fish
+  // paste with curry paste and beans, with no flour or potato, so likely lower in carbs.
+  // ASSUMPTION 120 g (a starter of about 5)
+  dish('Thai fishcakes (takeaway)', 235, 11.3, 15.2, 14.7, 120, 'est-cofid:16-458', 'ready'),
 ]
 
-export const OTHER_TAKEAWAY: Food[] = [...FISH_AND_CHIPS, ...KEBAB, ...PIZZA, ...CHICKEN_SHOP, ...THAI]
+export const OTHER_TAKEAWAY: Food[] = [...FISH_AND_CHIPS, ...KEBAB, ...PIZZA, ...CHICKEN_SHOP, ...THAI, ...COMPOSITES]
