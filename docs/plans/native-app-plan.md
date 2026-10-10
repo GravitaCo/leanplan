@@ -86,6 +86,54 @@ config plugins and builds in the cloud (EAS), so no one needs to maintain Xcode 
 - **Health Connect** through `react-native-health-connect` (Expo plugin) [E: package docs]. Google
   requires a declaration for each permission, with a reason, before release.
 
+### 3.4 Sleep and walking: the specialists' rules (10 Oct 2026)
+
+**Sleep** (`mental-performance`):
+- **The person's own check-in answer always wins.** Never prefill it, never change it. The watch
+  reading shows next to the question while it's unanswered: "Your watch: about 6 to 7 hours, up
+  around 7:10." / "Your own answer is what Tali goes by." Feedback about sleep changes how people
+  feel the next day whatever their real sleep (Gavriloff et al. 2018) [E].
+- The hard-week predicate, pattern lines and day-of options read only the person's answer. A short
+  night on the watch never makes a hard week or a low signal; a disagreement is never mentioned.
+- **No sleep stages:** read only time asleep, bed time and wake time (staging is weak, Chinoy et al.
+  2021; watches overcount sleep, Miller et al. 2022; over-focus on sleep data, Baron et al. 2017) [E].
+- **Bands only** (the five self-report bands): no minutes, no scores, no colours; never "bad",
+  "restless", "debt", "deficit", "recovery score", "only". Gentle mode or wellbeing flagged: imported,
+  never shown; never in care versions or safety weeks.
+- Weekly review: one context line after "What you did", with 4+ watch nights: "Your watch had you
+  mostly at 6 to 7 hours this week." Wake-time line (positive only, 5+ nights within an hour): "You
+  woke around the same time most days, which helps your body clock." No sleep tile on Summary.
+- Connect screen: "Your watch's sleep shows next to your check-in. Watches estimate sleep, so how you
+  feel is the one that counts."
+- **Two code fixes before import:** (A) a night imported from the watch must not count as a check-in
+  (`hasCheckinContent` in `checkin.ts`, `mindOf` in `weekPicture.ts`, `weekReflection` in `mind.ts`);
+  (B) an import never replaces the person's own night record (`source: 'self'`); a separate device
+  field is new data, so `compliance` first.
+
+**Walking** (`nutrition-accuracy`, with `mental-performance` on wording):
+- **Each step counts in one place only** [G]. Today a step can count in the steps band, in the
+  activity level (a 20+ minute walk is a training day) and in `rangeExtra` for sedentary people.
+- **Steps suggest a new steps band, never apply it**, with `activitySuggestion`'s rules (28-day
+  window and cool-down, no downward offer after a break): median daily steps, days under 1,000 left
+  out as "watch not worn", 3 of 4 weeks in the new band and 500+ steps past the boundary. Steps
+  inside counted walking workouts come off. Accepting recomputes `activityMult` and sets
+  `targetSetAt`. Stops once adaptive maintenance has an estimate, which already includes walking.
+- **Imported walks count as training** only when the person confirms them or the pace maps to 4.8+
+  MET ("Brisk walk"); commute walks stay as steps.
+- **Apple's active energy is never used** (energy error over 20 to 30% for every brand: Shcherbina
+  2017, Fuller 2020, Germini 2022) [E]. Sedentary people keep Tali's own MET estimate in
+  `rangeExtra`, with ±30% of it added to the day margin [G]. Watch calories (9.5): not now; only
+  after a validation against weigh-ins beats Tali's estimate, and then at ±35% or more.
+- A change of more than 2,500 steps a day between the halves of the adaptive window marks the
+  estimate as mixed or withholds it.
+- **Wording:** no step target, ring, streak, "keep going" or week-on-week increase; never linked to
+  food ("earned", "burned"). Weekly words: "You walked on 5 days this week", steps one tap away.
+  Gentle mode or wellbeing flagged: no step numbers, no band suggestion. A concern signal (steps
+  rising sharply while mood or hunger answers drop) waits for the safety tiers' clinical review.
+
+Measure in the concierge pilot: check-in answer rate before and after connecting a watch, gentle-mode
+switches and disconnects in the first 30 days, and "Did your watch data ever worry you?"
+
 ## 4. Micro animations
 
 - **Reanimated** for motion on the UI thread, plus **haptics** for confirmations (a set logged, a
@@ -165,8 +213,8 @@ Micro animations run through phases 1 to 3, board by board.
 4. **First HealthKit data: sleep and walking (Benn, 10 Oct).** Walking means steps and walking
    workouts; `nutrition-accuracy` reviews how they may affect anything numeric, `mental-performance`
    how sleep sits beside the check-in. The other rows in section 3.1 wait.
-5. **Watch calories:** whether workout energy from a watch may ever widen the food range
-   (`nutrition-accuracy` to advise).
+5. **Watch calories:** not now (`nutrition-accuracy`, 10 Oct, section 3.4); only after a validation
+   against weigh-ins.
 6. **The web app:** kept running alongside native for good, or retired once native is in both stores.
 7. **Budget:** EAS build minutes, a device cloud (for example BrowserStack) for phones we don't own,
    and AI costs per the ai-platform-plan (`cfo` to cost).
