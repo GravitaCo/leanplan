@@ -45,11 +45,11 @@ alter table public.notify_sent alter column last_on drop not null;
 alter table public.notify_sent enable row level security;
 drop policy if exists notify_sent_select_own on public.notify_sent;
 create policy notify_sent_select_own on public.notify_sent
-  for select to authenticated using (user_id = auth.uid());
+  for select to authenticated using (user_id = (select auth.uid()));
 revoke all on public.notify_sent from anon, authenticated;
 grant select, delete on public.notify_sent to authenticated;
 drop policy if exists notify_sent_delete_own on public.notify_sent;
-create policy notify_sent_delete_own on public.notify_sent for delete to authenticated using (user_id = auth.uid());
+create policy notify_sent_delete_own on public.notify_sent for delete to authenticated using (user_id = (select auth.uid()));
 
 -- the upload guard, as on every log table (a signed-in person can't write here anyway; the
 -- service role passes)
@@ -193,8 +193,17 @@ revoke all on function public.purge_unconsented_logs() from public, anon, authen
 -- select polname, polcmd from pg_policy where polrelid = 'public.notify_sent'::regclass;
 -- select proname, proacl from pg_proc where proname in ('notify_claim','clear_log_after_withdrawal','purge_unconsented_logs');
 -- select tgname from pg_trigger where tgrelid = 'public.notify_sent'::regclass;
--- As service role: select public.notify_claim('<uid>', '2026-10-09', 'checkin');  -- true
---                  select public.notify_claim('<uid>', '2026-10-09', 'wind-down'); -- false (the cap)
+-- The claim, as service role, on a test user whose latest health answer is a yes. Run it inside
+-- begin; ... rollback; as below: without the rollback it writes a real notify_sent row.
+-- check-in and plan share the one-a-day cap (last_on); wind-down records only by_kind['wind-down'],
+-- leaves last_on alone, and goes once a day whatever the check-in claim did.
+--   begin;
+--   select public.notify_claim('<uid>', '2026-10-09', 'checkin');   -- true
+--   select public.notify_claim('<uid>', '2026-10-09', 'plan');      -- false (the cap: one check-in or plan a day)
+--   select public.notify_claim('<uid>', '2026-10-09', 'wind-down'); -- true (outside the cap)
+--   select public.notify_claim('<uid>', '2026-10-09', 'wind-down'); -- false (once a day)
+--   select public.notify_claim('<uid>', '2026-10-10', 'plan');      -- true (next day)
+--   rollback;
 -- Withdrawal clear (clear_log_after_withdrawal() is SECURITY INVOKER, so it needs the owner's
 -- DELETE on notify_sent). With a test user who has a notify_sent row and whose latest health
 -- answer is a no:

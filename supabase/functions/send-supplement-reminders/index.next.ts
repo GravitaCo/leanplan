@@ -197,7 +197,8 @@ Deno.serve(async (req: Request) => {
       if (!subs.length) break;
       const { data: claimed, error: clErr } = await supabase.rpc("notify_claim", { uid, day: local.day, kind });
       if (clErr) { console.error(`claim failed: ${clErr.code}`); continue; }
-      if (claimed !== true) { capped++; continue; }
+      // already claimed: a capped type counts in `capped`; a wind-down already sent today doesn't
+      if (claimed !== true) { if (isCapped(kind)) capped++; continue; }
       const left: Sub[] = [];
       for (const sub of subs) if ((await send(sub, payloadFor(kind))) !== "gone") left.push(sub);
       subs = left;

@@ -276,8 +276,9 @@ export async function notifySuite(): Promise<number> {
   ok('the function reads times in the person\'s zone, the review reminder in UK time', /localNow\(profile\?\.mind\?\.tz, now\)/.test(fn) && /reviewDue\(profile, london\.day, london\.dow, london\.time\)/.test(fn))
   const sql = readFileSync('docs/migrations/2026-10-09-notify-sent.sql', 'utf8')
   ok('migration: notify_sent with RLS on, owner-only SELECT and DELETE (for the withdrawal clear), no owner INSERT or UPDATE', /create table if not exists public\.notify_sent/.test(sql) && /references auth\.users \(id\) on delete cascade/.test(sql)
-    && /enable row level security/.test(sql) && /for select to authenticated using \(user_id = auth\.uid\(\)\)/.test(sql)
-    && /create policy notify_sent_delete_own on public\.notify_sent for delete to authenticated using \(user_id = auth\.uid\(\)\)/.test(sql)
+    && /enable row level security/.test(sql) && /for select to authenticated using \(user_id = \(select auth\.uid\(\)\)\);/.test(sql)
+    && /create policy notify_sent_delete_own on public\.notify_sent for delete to authenticated using \(user_id = \(select auth\.uid\(\)\)\);/.test(sql)
+    && !/using \(user_id = auth\.uid\(\)\)/.test(sql)
     && /revoke all on public\.notify_sent from anon, authenticated;/.test(sql) && /grant select, delete on public\.notify_sent to authenticated;/.test(sql)
     && !/create policy[^;]*for (insert|update|all)/i.test(sql) && !/grant[^;]*(insert|update)[^;]*on public\.notify_sent/i.test(sql))
   ok('migration: notify_claim takes the per-person log lock and needs a current health yes', /kind not in[\s\S]*?end if;\s*(--[^\n]*\n\s*)*perform pg_advisory_xact_lock_shared\(hashtextextended\('tali-log:' \|\| uid::text, 0\)\);\s*if not public\.health_consent_current\(uid\) then return false; end if;\s*if kind = 'wind-down' then\s*(--[^\n]*\n\s*)*insert into public\.notify_sent/.test(sql))
@@ -286,6 +287,19 @@ export async function notifySuite(): Promise<number> {
   ok('migration: the wind-down claim is its own day in by_kind and leaves last_on alone', /last_on date,\n/.test(sql) && /alter column last_on drop not null/.test(sql)
     && /if kind = 'wind-down' then[\s\S]*?values \(uid, null, jsonb_build_object\(kind, day\)\)[\s\S]*?set by_kind = n\.by_kind \|\| excluded\.by_kind,[\s\S]*?where n\.by_kind ->> 'wind-down' is null or \(n\.by_kind ->> 'wind-down'\)::date < day[\s\S]*?end if;/.test(sql)
     && !/set last_on/.test((sql.match(/if kind = 'wind-down' then([\s\S]*?)end if;/) || ['', 'set last_on'])[1]))
+  const verify = sql.slice(sql.indexOf('-- Verify'))
+  const claimEx = (verify.match(/--\s+begin;\n((?:--[^\n]*\n)*?)--\s+rollback;/) || ['', ''])[1]
+  const claims = [...claimEx.matchAll(/notify_claim\('<uid>', '2026-10-09', '([a-z-]+)'\);\s*-- (true|false)/g)].map((m) => `${m[1]}:${m[2]}`)
+  ok('migration Verify: the notify_claim example runs inside begin; ... rollback; and writes nothing',
+    claimEx.length > 0 && !/notify_claim\(/.test(verify.replace(/--\s+begin;\n(?:--[^\n]*\n)*?--\s+rollback;/g, '')))
+  ok('migration Verify: describes the cap and the wind-down branch (check-in true then false; wind-down true once, apart from the check-in, then false)',
+    claims.join(',') === 'checkin:true,plan:false,wind-down:true,wind-down:false' && /'2026-10-10', 'plan'\);\s*-- true \(next day\)/.test(claimEx)
+    && /wind-down records only by_kind\['wind-down'\],\s*\n--\s*leaves last_on alone/.test(verify) && /without the rollback it writes a real notify_sent row/.test(verify)
+    && !/'wind-down'\);\s*-- false \(the cap\)/.test(verify), claims)
+  ok('the function checks health consent per person before reading the profile or claiming', fn.indexOf('rpc("health_consent_current", { uid })') > 0
+    && fn.indexOf('rpc("health_consent_current", { uid })') < fn.indexOf('from("settings")') && /for \(const uid of consenting\)/.test(fn))
+  ok('each Mind reminder (wind-down too) is claimed once per person before any subscription is sent to',
+    /for \(const kind of toSend\) \{[\s\S]*?rpc\("notify_claim", \{ uid, day: local\.day, kind \}\);[\s\S]*?if \(claimed !== true\) \{ if \(isCapped\(kind\)\) capped\+\+; continue; \}[\s\S]*?for \(const sub of subs\) if \(\(await send\(sub, payloadFor\(kind\)\)\)/.test(fn))
   ok('the function claims wind-down apart from the capped types', /due\.find\(isCapped\), due\.find\(\(k\) => !isCapped\(k\)\)/.test(fn))
   ok('migration: the consent trigger, the withdrawal clear and the 30-day purge cover notify_sent',
     /create trigger require_health_consent before insert or update on public\.notify_sent/.test(sql)
