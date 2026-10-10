@@ -802,7 +802,7 @@ settings (register item 45, branch `claude/wellbeing-b12-b13`), both behind `WEL
 |---|---|---|
 | 8.8 approved by | | Before `WELLBEING_ENABLED` goes on with B11b. |
 
-### 8.9 Note for Benn: Mind on, then skills on for testing (compliance, 10 October 2026, not signed)
+### 8.9 Mind on, then skills on for testing (compliance, 10 October 2026; approved by Benn the same day)
 
 Sections 8.1 to 8.7 are as signed and are not changed by this note. On 10 October 2026 Benn turned
 `WELLBEING_ENABLED` on for everyone, with `MIND_REVIEWED` and `SUPP_NAMES_ENABLED` off and the
@@ -840,7 +840,7 @@ with the clinician review moved to a gate before public launch. Four things to r
 
 | Item | Name and date | Notes |
 |---|---|---|
-| 8.9 noted by | | The clinician gate moved to public launch; R15 residual medium while testing is closed. |
+| 8.9 noted by | Benn, 10 October 2026 (in the build conversation) | Benn's words: "switch on once live then update the DPIA and when we have the money a clinician will review. again no public access yet". Benn rates R15 medium while access stays non-public. Recorded fact: sign-up at app.tali.fit is technically open to anyone with the link (`src/screens/AuthScreen.tsx`, plain sign-up); the app isn't publicised. Recommended, not done: turn off "Allow new users to sign up" in Supabase Auth and add testers by invite, so "non-public" is enforced rather than relied on. If the app is publicised or sign-ups from unknown people appear before the clinician review, R15 is high and 7.3 applies. |
 
 ---
 

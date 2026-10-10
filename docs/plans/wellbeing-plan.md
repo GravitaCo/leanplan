@@ -706,6 +706,9 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   Support sheet opens on "Showing services for the whole UK" with no NHS 111 until a nation is
   picked; Northern Ireland shows Your GP and the GP out-of-hours service for the area, no number
   (register item 44). Text-only, existing layout.
+- **Skills live for testing (Benn, 10 Oct 2026):** "switch on once live then update the DPIA and when
+  we have the money a clinician will review. again no public access yet". DPIA 8.9 recorded with his
+  approval; the clinician review is the gate before public launch.
 - **Supplement reminders sit outside the one-a-day limit**, and since 10 Oct so does the wind-down
   reminder (still once a day at most); check-in and plan reminders share one a day.
 - **Benn, 10 Oct 2026: Mind and the navigation turned on for everyone; skills and signposting stay
