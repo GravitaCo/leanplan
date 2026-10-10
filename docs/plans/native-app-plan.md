@@ -8,7 +8,11 @@ checked against a source, **[I]** inference, **[G]** judgement call.
 1. **Native apps for iPhone and Android**, from one codebase, alongside the web app.
 2. **Must have:** micro animations, wearable data, AI processing.
 3. **Wearables order:** Apple Watch first, then Fitbit.
-4. **The stack stays:** Supabase (Postgres, auth, row-level security, edge functions, on AWS
+4. **Answers of 10 Oct:** the app stays **Tali**; the store listing uses a version of it (Tali
+   Wellbeing proposed, section 9.1). Developer accounts under Gravita Creative Ltd: yes. Test
+   device: an Apple Watch to start. **First wearable data: sleep and walking**, reviewed by
+   `nutrition-accuracy` (walking) and `mental-performance` (sleep) before build.
+5. **The stack stays:** Supabase (Postgres, auth, row-level security, edge functions, on AWS
    eu-west-1) and the current hosting. No move to MongoDB or a separate AWS setup (see section 10).
 
 ## 1. Framework: React Native with Expo
@@ -150,12 +154,17 @@ Micro animations run through phases 1 to 3, board by board.
 
 ## 9. Decisions for Benn
 
-1. **Store name:** "Tali" clashes in the stores (a different "Tali" medical app appeared when a tester
-   searched, 9 Oct). A distinct listing name, and a trademark check, before submission.
-2. **Developer accounts** under Gravita Creative Ltd: Apple Developer Program (about $99 a year) and
-   Google Play (about $25 once) [I: check current prices].
-3. **Test devices** to have: an Apple Watch and iPhone, a low-end Android phone, a Fitbit.
-4. **Which HealthKit data** to read first (section 3.1), with the owners named there.
+1. **Store name** (Benn, 10 Oct: the app stays Tali). Proposed listing: **Tali Wellbeing**, subtitle
+   "Food, movement and mind" (alternatives: "Tali: Food, Move, Mind"; "Tali Daily"). Reserve it in
+   App Store Connect as soon as the account exists; App Store names must be unique. Trademark check
+   before submission. Benn to choose.
+2. **Developer accounts** under Gravita Creative Ltd: **yes (Benn, 10 Oct)**. Apple Developer Program
+   (about $99 a year) and Google Play (about $25 once) [I: check current prices].
+3. **Test devices:** an Apple Watch to start (Benn, 10 Oct); a low-end Android phone and a Fitbit
+   later, for phases 1 and 4.
+4. **First HealthKit data: sleep and walking (Benn, 10 Oct).** Walking means steps and walking
+   workouts; `nutrition-accuracy` reviews how they may affect anything numeric, `mental-performance`
+   how sleep sits beside the check-in. The other rows in section 3.1 wait.
 5. **Watch calories:** whether workout energy from a watch may ever widen the food range
    (`nutrition-accuracy` to advise).
 6. **The web app:** kept running alongside native for good, or retired once native is in both stores.
