@@ -696,8 +696,8 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   "After lunch, I'll get outside for 10 minutes"; "When it's lunchtime, I'll have lunch somewhere I
   like"); "Wound down" approved; the Profile avatar is soft mauve with a mauve letter, as the
   boards draw it; with Food off, Summary's "This week" card drops its calorie lines.
-- **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
-  share one a day.
+- **Supplement reminders sit outside the one-a-day limit**, and since 10 Oct so does the wind-down
+  reminder (still once a day at most); check-in and plan reminders share one a day.
 
 ### Open for Benn (on the boards)
 

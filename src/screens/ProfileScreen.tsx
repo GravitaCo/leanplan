@@ -187,7 +187,7 @@ export function ProfileScreen() {
       {/* identity: tap to edit your name and email */}
       <div className="list idcard">
         <button className="li" onClick={() => toggle('profile')} aria-expanded={open === 'profile'}>
-          <span className="avatar lg">{initials || <Icon name="person" size={28} />}</span>
+          <span className={WELLBEING_ENABLED ? 'avatar lg soft' : 'avatar lg'}>{initials || <Icon name="person" size={28} />}</span>
           <div className="m">
             <div className="idn">{pr.name || 'Add your name'}</div>
             {(goalLabel || kcalText) && <div className="s num">{[goalLabel, kcalText && kcalText + ' a day'].filter(Boolean).join(' · ')}</div>}

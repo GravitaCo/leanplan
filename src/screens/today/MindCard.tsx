@@ -3,9 +3,10 @@
  * opens the Mind tab. Before the check-in a "Check in" button opens the sheet in one tap. On a hard
  * day a divider and "A lighter day is still a good day." Then the day's one thing, when the asks
  * budget gave it the slot: chips from thingOptions (Mind-led on a hard day, no food chip), then
- * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan" (only for a thing
- * with an approved prefill, and not once today's Mind plan is saved). A chip whose thing
- * has a skill screen (Reset) also opens it on the Mind tab, only with MIND_REVIEWED (plan WP14).
+ * "Today: {thing}" with Done and Change, then a quiet tick with "Make it a plan" (every thing has an
+ * approved prefill; hidden once today's Mind plan is saved). Picking a chip never navigates (Benn,
+ * 10 Oct 2026): for a thing whose skill has a screen (Reset, only with MIND_REVIEWED) the "Today:"
+ * line is a pressable row that opens it, and a finished Reset ticks the thing done (ResetScreen).
  */
 import type { CheckIn, IfThenPlan, Pillar } from '@/core/types'
 import { skillById, thingByKey, thingText, type Thing } from '@/core/data/skills'
@@ -19,7 +20,8 @@ import { checkedIn, checkinTime, makePlanOffered } from './summary'
 
 const DOT: Record<Pillar, string> = { mind: 'var(--mind)', food: 'var(--food)', move: 'var(--move)' }
 
-/** The Mind view a picked chip opens: its skill, when that skill has a reviewed screen; else none. */
+/** The Mind view a picked thing's "Today:" line opens: its skill, when that skill has a reviewed
+ *  screen; else none (the line is plain text). */
 export function thingView(t: Thing, reviewed: boolean): MindView | null {
   const sk = t.skill ? skillById(t.skill) : undefined
   return reviewed && sk?.screen && (sk.id === 'reset' || sk.id === 'unload') ? sk.id : null
@@ -50,11 +52,8 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
   const doneThing = useStore((s) => s.doneThing)
   const clearThing = useStore((s) => s.clearThing)
   const openMind = useStore((s) => s.openMind)
-  const pick = (t: Thing) => {
-    if (!pickThing(t.key)) return
-    const view = thingView(t, MIND_REVIEWED)
-    if (view) openMind(view)
-  }
+  // picking only records the choice for the day; it never opens a screen (Benn, 10 Oct 2026)
+  const pick = (t: Thing) => { pickThing(t.key) }
   const done = checkedIn(c)
   const time = checkinTime(c?.t)
   const mood = c?.mood ? MOODS[c.mood - 1]?.toLowerCase() : undefined
@@ -65,6 +64,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
   const picked = isToday && done ? thingByKey(c?.thing?.key) : undefined
   const txt = (s: string) => thingText(s, { windDownAt })
   const chips = isToday && done && thingSlot && !picked && options.length > 0
+  const opens = picked ? thingView(picked, MIND_REVIEWED) : null
   const lighter = isToday && done && hard
 
   return (
@@ -96,7 +96,9 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
       )}
       {picked && !c?.thing?.done && (
         <>
-          <div className="wb-today"><span className="dot" style={{ background: DOT[picked.pillar] }} />{SUMMARY_MIND.today(txt(picked.label))}</div>
+          {opens
+            ? <div className="wb-today press" {...pressable(() => openMind(opens))}><span className="dot" style={{ background: DOT[picked.pillar] }} /><span className="m">{SUMMARY_MIND.today(txt(picked.label))}</span><Chevron /></div>
+            : <div className="wb-today"><span className="dot" style={{ background: DOT[picked.pillar] }} />{SUMMARY_MIND.today(txt(picked.label))}</div>}
           <div className="wb-acts">
             <button className="linkbtn" onClick={() => doneThing()}>{SUMMARY_MIND.done}</button>
             <button className="linkbtn" onClick={() => clearThing()}>{SUMMARY_MIND.change}</button>
@@ -106,7 +108,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
       {picked && c?.thing?.done && (
         <>
           <div className="wb-done"><span className="tick"><Icon name="check" size={16} stroke={2.6} /></span>{txt(picked.done)}</div>
-          {makePlanOffered(picked, plans, day) && <button className="linkbtn wb-plan" onClick={() => onMakePlan(picked)}>{SUMMARY_MIND.makePlan}</button>}
+          {makePlanOffered(picked, plans, day, { windDownAt }) && <button className="linkbtn wb-plan" onClick={() => onMakePlan(picked)}>{SUMMARY_MIND.makePlan}</button>}
         </>
       )}
     </section>

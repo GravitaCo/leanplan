@@ -18,7 +18,9 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy({ mind = false }: { mind?: boolean } = {}): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-10-09',
+    // the Mind version changed on 10 Oct (the wind-down reminder outside the one-a-day cap); with
+    // Mind off the text is main's
+    updated: mind ? '2026-10-10' : '2026-10-09',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -64,7 +66,7 @@ export function privacyPolicy({ mind = false }: { mind?: boolean } = {}): LegalD
           `On your device only, while you set Tali up: your answers so far, so you can pick up where you left off. This draft is never uploaded, and is deleted when you finish setup, withdraw consent for health data, remove this device's log or delete your account.`,
           `Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send the reminders you chose: supplement reminders, and a weekly review reminder on the day you picked, at the time you picked in UK time. For the weekly one we use when you last opened your review, so it pauses after three in a row go unopened, and the date of any week your phone marked to skip.` +
             (mind
-              ? ` In the Mind part of the app you can also turn on a check-in reminder (in the morning, after you're usually up), a wind-down reminder and a plan check-in reminder, each one separately, and only once you've agreed to Tali keeping your health data. Tali sends at most one of these a day, never after your wind-down time or before you're usually up, and sends one half as often if the last two weren't opened. They follow your time zone, as do your supplement reminders once it's saved. To keep to one a day, our reminder service keeps the last day it sent you one of these, and the last day for each type. That record is deleted when you withdraw consent for health data or delete your account.`
+              ? ` In the Mind part of the app you can also turn on a check-in reminder (in the morning, after you're usually up), a wind-down reminder and a plan check-in reminder, each one separately, and only once you've agreed to Tali keeping your health data. Tali sends at most one check-in or plan check-in reminder a day, and the wind-down reminder at most once a day at the time you set. None of them comes after your wind-down time or before you're usually up, and each is sent half as often if the last two weren't opened. They follow your time zone, as do your supplement reminders once it's saved. To keep to these limits, our reminder service keeps the last day it sent you a check-in or plan check-in reminder, and the last day for each type. That record is deleted when you withdraw consent for health data or delete your account.`
               : ''),
           `Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.`,
           `Feedback: if you send feedback from the app, it goes from your own email app to us, with the app version and your browser and device type. Please leave out health details you'd rather keep private.`,

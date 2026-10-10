@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '@/store/store'
-import { RESET_DEFAULT_LENGTH, RESET_LENGTHS, RESET_PATTERN } from '@/core/data/skills'
+import { RESET_DEFAULT_LENGTH, RESET_LENGTHS, RESET_PATTERN, resetTicksThing } from '@/core/data/skills'
+import { todayStr } from '@/core/domain/date'
 import { fmtLeft, runMs } from '@/core/domain/pacer'
 import { BackButton, Seg, TitleRow } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
@@ -34,11 +35,13 @@ function useReducedMotion(): boolean {
  * Back "Mind" and the title with the Profile avatar. Ready: the sub-line, the length, the how-to,
  * the pacer at rest and Start. Running (as the Glow boards): the pacer, the time left and Stop.
  * Finished: "That's {length}." and B7.15. Stopped early: B7.15 only, never the time done.
- * Only a finished run is logged (logSkill, plan C21). The safety lines, the support row and the
+ * Only a finished run is logged (logSkill, plan C21), and a finished run ticks today's thing done
+ * when it's a Reset thing (doneThing; Benn, 10 Oct 2026); a stopped one changes nothing. The safety lines, the support row and the
  * wellness line sit at the foot throughout. Reached only when MIND_REVIEWED is on (MindPage).
  */
 export function ResetScreen({ onBack }: { onBack: () => void }) {
   const logSkill = useStore((s) => s.logSkill)
+  const doneThing = useStore((s) => s.doneThing)
   const reduced = useReducedMotion()
   const [len, setLen] = useState<Length>(RESET_DEFAULT_LENGTH as Length)
   const [stage, setStage] = useState<Stage>('ready')
@@ -55,7 +58,11 @@ export function ResetScreen({ onBack }: { onBack: () => void }) {
     setStage('running')
     window.scrollTo?.(0, 0)
   }
-  const finish = () => { setStage('finished'); logSkill('reset') }
+  const finish = () => {
+    setStage('finished')
+    logSkill('reset')
+    if (resetTicksThing(useStore.getState().data.days[todayStr()]?.checkin?.thing)) doneThing()
+  }
   const pickLength = (v: string) => { setLen(Number(v) as Length); if (ended) setStage('ready') }
 
   return (

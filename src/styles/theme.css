@@ -161,6 +161,9 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
   display: flex; align-items: center; justify-content: center;
 }
 .avatar.lg { width: 60px; height: 60px; font-size: 24px; margin: 0; }
+/* WELLBEING_ENABLED (Benn, 10 Oct 2026, as the boards draw it): the Profile avatar is soft mauve
+   with a mauve letter. Only flag-on avatars carry .soft, so the flag-off Summary avatar is main's */
+.avatar.soft { background: var(--tint-soft); color: var(--tint); }
 /* WP5 (WELLBEING_ENABLED, canvas section 9): the Profile avatar beside every title, in a 44 px tap
    area, its top level with the title's first 40 px line however many lines the title wraps to */
 .hdr-row.av { align-items: flex-start; }

@@ -17,7 +17,7 @@ import { cookiePolicy } from '@/core/legal/cookies'
 import { privacyPolicy } from '@/core/legal/privacy'
 import { NOTIFY_COPY, backoffLine, notifyStrings } from '@/screens/profile/notifyCopy'
 import {
-  CHECKIN_AFTER_WAKE_MIN, DEFAULT_WAKE, DEFAULT_WIND_DOWN, MIND_KINDS, REMINDER_COPY, dueKinds, halvedAllows, inQuietHours,
+  CAPPED_KINDS, CHECKIN_AFTER_WAKE_MIN, DEFAULT_WAKE, DEFAULT_WIND_DOWN, MIND_KINDS, REMINDER_COPY, dueKinds, isCapped, halvedAllows, inQuietHours,
   kindTimes, localNow, payloadFor, planDue, PLAN_GAP_DAYS, suppPayload, suppsDue,
 } from '../../supabase/functions/_shared/reminders'
 import { USER_TABLES } from '../../supabase/functions/_shared/account'
@@ -93,7 +93,20 @@ export async function notifySuite(): Promise<number> {
   ok('a type with no opt-in is never due (off, missing or not exactly true)',
     !dueKinds({ mind: { notify: { checkin: false } }, day, time: '08:30' }).length && !dueKinds({ mind: {}, day, time: '08:30' }).length
     && !dueKinds({ mind: { notify: { checkin: 'yes' } }, day, time: '08:30' }).length && !dueKinds({ mind: null, day, time: '08:30' }).length)
-  ok('at most one a day: nothing once the day is claimed', !dueKinds({ mind: mind(), day, time: '22:30', lastOn: day }).length && dueKinds({ mind: mind(), day, time: '22:30', lastOn: '2026-10-08' }).length === 1)
+  ok('at most one check-in or plan reminder a day: nothing capped once the day is claimed', !dueKinds({ mind: mind(), day, time: '08:30', lastOn: day }).length
+    && dueKinds({ mind: mind(), day, time: '08:30', lastOn: '2026-10-08' }).join() === 'checkin' && !dueKinds({ mind: mind(), plans: [{ id: 'p', when: 'w', then: 't', created: '2026-10-01', reviews: [] }], day, time: '08:30', lastOn: day }).length)
+  // Benn, 10 Oct 2026: the wind-down reminder sits outside the cap, still once a day, halved, never in quiet hours
+  ok('wind-down is outside the cap: due after the day\'s check-in went', CAPPED_KINDS.join() === 'checkin,plan' && !isCapped('wind-down')
+    && dueKinds({ mind: mind(), day, time: '22:30', lastOn: day, byKind: { checkin: day } }).join() === 'wind-down')
+  ok('wind-down still at most once a day', !dueKinds({ mind: mind(), day, time: '22:30', byKind: { 'wind-down': day } }).length
+    && dueKinds({ mind: mind(), day, time: '22:30', byKind: { 'wind-down': '2026-10-08' } }).join() === 'wind-down')
+  ok('wind-down still halves', !dueKinds({ mind: mind({ halved: { 'wind-down': 'x' } }), day, time: '22:30', byKind: { 'wind-down': '2026-10-08' } }).length
+    && dueKinds({ mind: mind({ halved: { 'wind-down': 'x' } }), day, time: '22:30', byKind: { 'wind-down': '2026-10-07' } }).join() === 'wind-down')
+  ok('a wind-down sent today doesn\'t use up the check-in', dueKinds({ mind: mind(), day, time: '08:30', byKind: { 'wind-down': day } }).join() === 'checkin')
+  ok('wind-down and the check-in can both go on one day when their times meet (up 07:00, winding down 08:30)',
+    dueKinds({ mind: mind({ windDownAt: '08:30' }), day, time: '08:30' }).join() === 'checkin,wind-down')
+  ok('wind-down never in quiet hours (a wind-down time inside quiet hours can\'t happen; the check-in in quiet hours waits)',
+    !dueKinds({ mind: mind({ windDownAt: '08:00' }), day, time: '08:30' }).length)
   ok('a check-in time that falls in quiet hours is never sent (up at 07:00, winding down from 08:00: the 08:30 check-in waits)',
     !dueKinds({ mind: mind({ wakeAt: '07:00', windDownAt: '08:00' }), day, time: '08:30' }).length)
   const plans = (d: string): IfThenPlan[] => [{ id: 'p', when: 'w', then: 't', created: d, reviews: [] }]
@@ -244,7 +257,7 @@ export async function notifySuite(): Promise<number> {
   ok('every B11 string passes mindCopyIssues', issues.length === 0, issues)
   ok('no em dashes in any B11 or reminder string', ![...notifyStrings(), ...Object.values(REMINDER_COPY).map((c) => c.body)].some((s) => s.includes('—')))
   ok('B11.14 verbatim for check-in', backoffLine('checkin') === 'The last 2 check-in reminders went unopened, so Tali now sends them half as often. Nothing you need to do.')
-  ok('B11.12 verbatim', NOTIFY_COPY.foot === "Tali sends at most one of these a day, and nothing after your wind-down time or before you're usually up. Supplement reminders come at the times you set.")
+  ok('B11.12 verbatim', NOTIFY_COPY.foot === "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.")
   const ui = readFileSync('src/screens/profile/NotificationsSettings.tsx', 'utf8') + readFileSync('src/screens/profile/notifyCopy.ts', 'utf8')
   ok('no lock-screen names setting is built (B11b not approved)', !/lockNames|Show supplement names|lock screen/i.test(ui.replace(/\/\*\*[\s\S]*?\*\//g, '')))
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
@@ -267,9 +280,13 @@ export async function notifySuite(): Promise<number> {
     && /create policy notify_sent_delete_own on public\.notify_sent for delete to authenticated using \(user_id = auth\.uid\(\)\)/.test(sql)
     && /revoke all on public\.notify_sent from anon, authenticated;/.test(sql) && /grant select, delete on public\.notify_sent to authenticated;/.test(sql)
     && !/create policy[^;]*for (insert|update|all)/i.test(sql) && !/grant[^;]*(insert|update)[^;]*on public\.notify_sent/i.test(sql))
-  ok('migration: notify_claim takes the per-person log lock and needs a current health yes', /kind not in[\s\S]*?end if;\s*(--[^\n]*\n\s*)*perform pg_advisory_xact_lock_shared\(hashtextextended\('tali-log:' \|\| uid::text, 0\)\);\s*if not public\.health_consent_current\(uid\) then return false; end if;\s*insert into public\.notify_sent/.test(sql))
-  ok('migration: notify_claim is atomic and service-role only', /on conflict \(user_id\) do update/.test(sql) && /where n\.last_on < excluded\.last_on/.test(sql)
+  ok('migration: notify_claim takes the per-person log lock and needs a current health yes', /kind not in[\s\S]*?end if;\s*(--[^\n]*\n\s*)*perform pg_advisory_xact_lock_shared\(hashtextextended\('tali-log:' \|\| uid::text, 0\)\);\s*if not public\.health_consent_current\(uid\) then return false; end if;\s*if kind = 'wind-down' then\s*(--[^\n]*\n\s*)*insert into public\.notify_sent/.test(sql))
+  ok('migration: notify_claim is atomic and service-role only', /on conflict \(user_id\) do update/.test(sql) && /where n\.last_on is null or n\.last_on < excluded\.last_on/.test(sql)
     && /revoke execute on function public\.notify_claim\(uuid, date, text\) from public, anon, authenticated/.test(sql) && /grant execute on function public\.notify_claim\(uuid, date, text\) to service_role/.test(sql))
+  ok('migration: the wind-down claim is its own day in by_kind and leaves last_on alone', /last_on date,\n/.test(sql) && /alter column last_on drop not null/.test(sql)
+    && /if kind = 'wind-down' then[\s\S]*?values \(uid, null, jsonb_build_object\(kind, day\)\)[\s\S]*?set by_kind = n\.by_kind \|\| excluded\.by_kind,[\s\S]*?where n\.by_kind ->> 'wind-down' is null or \(n\.by_kind ->> 'wind-down'\)::date < day[\s\S]*?end if;/.test(sql)
+    && !/set last_on/.test((sql.match(/if kind = 'wind-down' then([\s\S]*?)end if;/) || ['', 'set last_on'])[1]))
+  ok('the function claims wind-down apart from the capped types', /due\.find\(isCapped\), due\.find\(\(k\) => !isCapped\(k\)\)/.test(fn))
   ok('migration: the consent trigger, the withdrawal clear and the 30-day purge cover notify_sent',
     /create trigger require_health_consent before insert or update on public\.notify_sent/.test(sql)
     && /function public\.clear_log_after_withdrawal\(\)[\s\S]*delete from public\.notify_sent/.test(sql)

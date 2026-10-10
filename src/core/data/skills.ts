@@ -45,7 +45,11 @@ export interface Thing {
   pillar: Pillar
   /** a skill whose screen the chip opens; only set where that screen exists (sub-flag MIND_REVIEWED) */
   skill?: SkillId
-  /** "Make it a plan" prefill (deck B9.11, B9.13); absent = the sheet opens empty */
+  /**
+   * "Make it a plan" prefill (deck B9.11, B9.13; the rest approved by Benn, 10 Oct 2026, from
+   * mental-performance's close-out change 5). `{time}` is the wind-down time, filled in when the
+   * sheet opens (thingPlan). Every thing has one; a thing without one offers no "Make it a plan".
+   */
   plan?: { when: string; then: string }
   /** copy not on an approved board yet: needs mental-performance and Benn before it ships (none pending since 9 Oct 2026) */
   pending?: string
@@ -54,24 +58,46 @@ export interface Thing {
 export const THINGS: readonly Thing[] = [
   // hard day, Mind-led (deck B2.6a, B2.6b; plan §7.3 "a 2-minute Reset or Get outside")
   // done lines approved by Benn on 9 Oct 2026 (wellbeing plan §10b)
-  { key: 'reset-2', label: '2-minute Reset', done: '2-minute Reset', pillar: 'mind', skill: 'reset' },
-  { key: 'outside-10', label: 'Get outside for 10 minutes', done: 'Got outside', pillar: 'move' },
+  { key: 'reset-2', label: '2-minute Reset', done: '2-minute Reset', pillar: 'mind', skill: 'reset', plan: { when: 'I need a breather', then: 'do a 2-minute Reset' } },
+  { key: 'outside-10', label: 'Get outside for 10 minutes', done: 'Got outside', pillar: 'move', plan: { when: 'after lunch', then: 'get outside for 10 minutes' } },
   // ordinary day, one per pillar (deck B9.3a to c; B9.2c for Mind without a session)
-  { key: 'reset-before-session', label: 'Reset before your session', done: 'Reset before your session', pillar: 'mind', skill: 'reset' },
-  { key: 'wind-down-from', label: 'Wind down from {time}', done: 'Wound down from {time}', pillar: 'mind' },
-  { key: 'lunch-somewhere', label: 'Lunch somewhere you like', done: 'Lunch somewhere you like', pillar: 'food' },
+  { key: 'reset-before-session', label: 'Reset before your session', done: 'Reset before your session', pillar: 'mind', skill: 'reset', plan: { when: "I'm getting ready to train", then: 'do a 2-minute Reset' } },
+  // "Wound down" (the done line with no time) approved by Benn, 10 Oct 2026
+  { key: 'wind-down-from', label: 'Wind down from {time}', done: 'Wound down from {time}', pillar: 'mind', plan: { when: 'it gets to {time}', then: 'start winding down' } },
+  // the lunch plan is context only: no amount, timing or rule (mental-performance)
+  { key: 'lunch-somewhere', label: 'Lunch somewhere you like', done: 'Lunch somewhere you like', pillar: 'food', plan: { when: "it's lunchtime", then: 'have lunch somewhere I like' } },
   { key: 'outside-lunch', label: 'Get outside at lunch', done: 'Got outside at lunch', pillar: 'move', plan: { when: 'after lunch', then: 'get outside for 10 minutes' } },
 ]
 
 export const thingByKey = (key: string | undefined): Thing | undefined => (key ? THINGS.find((t) => t.key === key) : undefined)
 
 /**
+ * Whether a finished Reset run ticks today's thing done (Benn, 10 Oct 2026; mental-performance
+ * close-out, change 6): only when today's thing is a Reset thing (`skill: 'reset'`) not yet done.
+ * A stopped run changes nothing (ResetScreen never asks).
+ */
+export const resetTicksThing = (thing: { key: string; done?: string } | undefined): boolean =>
+  !!thing && !thing.done && thingByKey(thing.key)?.skill === 'reset'
+
+/**
  * A thing's chip label or done line with its time filled in ("Wind down from 22:30"). With no time
  * (cleared after the pick) the " from {time}" goes: "Wind down" (the B5.10 skill name) and
- * "Wound down" (mental-performance close-out, change 7; "Wound down" needs Benn's approval).
+ * "Wound down" (mental-performance close-out, change 7; approved by Benn, 10 Oct 2026).
  */
 export const thingText = (text: string, ctx: { windDownAt?: string } = {}): string =>
   ctx.windDownAt ? text.replace('{time}', ctx.windDownAt) : text.replace(' from {time}', '')
+
+/**
+ * A thing's "Make it a plan" prefill with the wind-down time filled in ("it gets to 22:30"), read
+ * when the sheet opens. None when the thing has no prefill, or its prefill needs a time and none is
+ * set (the time was cleared after the pick): then "Make it a plan" isn't offered.
+ */
+export function thingPlan(t: Thing | undefined, ctx: { windDownAt?: string } = {}): { when: string; then: string } | undefined {
+  if (!t?.plan) return undefined
+  const fill = (x: string) => (x.includes('{time}') ? (ctx.windDownAt ? x.replace('{time}', ctx.windDownAt) : undefined) : x)
+  const when = fill(t.plan.when), then = fill(t.plan.then)
+  return when && then ? { when, then } : undefined
+}
 
 /**
  * Reset's breath (deck B7.4, B7.8a to c: a breath in, a small second breath on top, a long breath
@@ -100,6 +126,8 @@ export function skillsCopy(): string[] {
   return [
     ...SKILLS.flatMap((s) => [s.name, s.sub]),
     ...THINGS.flatMap((t) => [t.label, t.done, ...(t.plan ? [t.plan.when, t.plan.then] : [])]),
+    // the prefills as filled in ("it gets to 22:30")
+    ...THINGS.map((t) => thingPlan(t, { windDownAt: '22:30' })).flatMap((p) => (p ? [p.when, p.then] : [])),
     // the no-time forms (thingText): "Wind down", "Wound down"
     ...THINGS.flatMap((t) => [t.label, t.done]).filter((x) => x.includes('{time}')).map((x) => thingText(x)),
     ...RESET_PATTERN.phases.map((p) => p.word),

@@ -16,9 +16,11 @@
 //   The weekly review reminder stays on UK time, as the privacy policy says (maintenance loop).
 // - The Mind reminders (check-in, wind-down, plan check-in): only types the person turned on
 //   (`profile.mind.notify[kind] === true`), never in quiet hours (after the wind-down time, before
-//   the usual wake time), at most one a day: the day is claimed in notify_sent (notify_claim,
-//   atomic) before anything is sent, so two runs or two subscriptions can never send two. A halved
-//   type goes only every other day (by_kind). Supplement reminders don't claim the day.
+//   the usual wake time). At most one check-in or plan reminder a day: the day is claimed in
+//   notify_sent (notify_claim, atomic) before anything is sent, so two runs or two subscriptions
+//   can never send two. The wind-down reminder sits outside that cap (Benn, 10 Oct 2026) but is
+//   claimed the same way for its own day (by_kind), so it too goes at most once a day. A halved
+//   type goes only every other day (by_kind). Supplement reminders don't claim anything.
 // - Every payload is fixed copy from ../_shared/reminders.ts: no supplement name, no mood or sleep
 //   word, nothing from the log. Logs and the response carry counts only.
 //
@@ -27,7 +29,7 @@
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push";
-import { dueKinds, localNow, payloadFor, suppPayload, suppsDue } from "../_shared/reminders.ts";
+import { dueKinds, isCapped, localNow, payloadFor, suppPayload, suppsDue, type MindKind } from "../_shared/reminders.ts";
 
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
@@ -185,15 +187,20 @@ Deno.serve(async (req: Request) => {
       subs = left;
     }
 
-    // the Mind reminders: opt-in, quiet hours, one a day (claimed first), halving
+    // the Mind reminders: opt-in, quiet hours, halving. One check-in or plan reminder a day (the
+    // first due, claimed before sending); the wind-down reminder outside that cap, once a day
+    // (its own claim). Each is claimed before it's sent.
     const row = sentRows.get(uid);
     const due = dueKinds({ mind: profile?.mind, plans: profile?.plans, day: local.day, time: local.time, lastOn: row?.last_on ?? null, byKind: row?.by_kind ?? null });
-    if (due.length && subs.length) {
-      const kind = due[0];
+    const toSend = [due.find(isCapped), due.find((k) => !isCapped(k))].filter((k): k is MindKind => !!k);
+    for (const kind of toSend) {
+      if (!subs.length) break;
       const { data: claimed, error: clErr } = await supabase.rpc("notify_claim", { uid, day: local.day, kind });
       if (clErr) { console.error(`claim failed: ${clErr.code}`); continue; }
       if (claimed !== true) { capped++; continue; }
-      for (const sub of subs) await send(sub, payloadFor(kind));
+      const left: Sub[] = [];
+      for (const sub of subs) if ((await send(sub, payloadFor(kind))) !== "gone") left.push(sub);
+      subs = left;
     }
   }
 

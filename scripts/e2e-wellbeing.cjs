@@ -957,8 +957,8 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await stored(page)).days[HARD_DAY].checkin.thing.key === 'outside-10', 'thing stored')
     expect((await stored(page)).days[HARD_DAY].checkin.mood === 2, 'mood kept')
     await shot(page, 'wp7-thing-done')
-    // close-out change 5: Get outside for 10 minutes has no approved plan prefill, so no "Make it a plan"
-    expect(!(await card.getByRole('button', { name: 'Make it a plan', exact: true }).count()), 'no Make it a plan without a prefill')
+    // Benn, 10 Oct 2026: every thing has a prefill, so "Make it a plan" shows for Get outside for 10 minutes too
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).waitFor()
     // the card opens the Mind tab
     await card.locator('.wb-mind-row').click()
     await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
@@ -1263,7 +1263,7 @@ async function wp5FlagOffHeaders({ page }) {
       return n ? [...n.querySelectorAll('.li .t')].map((x) => x.textContent.trim()) : []
     })) || (void lbl)
   }
-  const B11_FOOT = "Tali sends at most one of these a day, and nothing after your wind-down time or before you're usually up. Supplement reminders come at the times you set."
+  const B11_FOOT = "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set."
   const B11_14 = 'The last 2 check-in reminders went unopened, so Tali now sends them half as often. Nothing you need to do.'
   const swn = (page, name) => page.getByRole('switch', { name, exact: true })
 
@@ -1555,10 +1555,15 @@ async function wp5FlagOffHeaders({ page }) {
   }, { url: WBR, seed: wp14Ordinary() })
 
   await run('wp14-reset-opens', async ({ page }) => {
-    // MIND_REVIEWED: a chip with a skill opens it (Reset, on the Mind tab)
-    await sumMind(page).locator('.wb-things .chip', { hasText: 'Reset before your session' }).click()
-    await page.locator('.screen.reset .ltitle', { hasText: 'Reset' }).waitFor()
+    // Benn, 10 Oct 2026: picking the Reset chip stays on Summary; the "Today:" line opens Reset
+    const card = sumMind(page)
+    await card.locator('.wb-things .chip', { hasText: 'Reset before your session' }).click()
+    await card.getByText('Today: Reset before your session').waitFor()
+    await page.waitForTimeout(400)
+    expect(!(await page.locator('.screen.reset').count()) && (await card.isVisible()), 'picking never navigates')
     expect((await stored(page)).days[ORDINARY_DAY].checkin.thing.key === 'reset-before-session', 'Reset picked')
+    await card.locator('.wb-today.press[role="button"]').click()
+    await page.locator('.screen.reset .ltitle', { hasText: 'Reset' }).waitFor()
   }, { url: WBR, seed: wp14Ordinary() })
 
   await run('wp14-subflag-off', async ({ page }) => {
@@ -1746,6 +1751,193 @@ async function wp5FlagOffHeaders({ page }) {
     }
     await page.emulateMedia({ colorScheme: 'light' })
   }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); Object.assign(s.state.profile, { reviewPush: true, reviewPushFrom: '2026-09-15' }); delete s.state.profile.lastReviewAt; return s })() })
+
+  /* ---------- Benn's close-out decisions (10 Oct 2026, wellbeing plan "Close-out decisions") ---------- */
+
+  // 2: picking a Reset suggestion never navigates; the "Today:" line (a pressable row) opens Reset;
+  // a stopped run changes nothing; a finished one ticks the thing done. 3: its plan prefill.
+  await run('closeout-reset-thing', async ({ page }) => {
+    const card = sumMind(page)
+    await card.locator('.wb-things .chip', { hasText: 'Reset before your session' }).click()
+    const line = card.locator('.wb-today.press[role="button"]')
+    await line.waitFor()
+    await page.waitForTimeout(400)
+    expect(!(await page.locator('.screen.reset').count()), 'picking never navigates')
+    expect((await line.innerText()).trim() === 'Today: Reset before your session', 'the line: ' + (await line.innerText()))
+    expect((await line.locator('svg').count()) >= 1, 'a chevron on the pressable row')
+    const box = await line.boundingBox()
+    expect(box && box.height >= 44, 'a 44 px row: ' + JSON.stringify(box))
+    await shot(page, 'closeout-reset-today-line')
+    // a stopped run: nothing ticked
+    await line.click()
+    let scr = page.locator('.screen.reset')
+    await scr.locator('.ltitle', { hasText: 'Reset' }).waitFor()
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    await page.clock.runFor(4000)
+    await scr.getByRole('button', { name: 'Stop', exact: true }).click()
+    await page.clock.runFor(3000)
+    expect(!(await stored(page)).days[ORDINARY_DAY].checkin.thing.done, 'a stopped run ticks nothing')
+    await scr.getByRole('button', { name: 'Done', exact: true }).click()
+    await tab(page, 'Summary')
+    await card.getByText('Today: Reset before your session').waitFor()
+    // a finished run ticks it done
+    await card.locator('.wb-today.press').click()
+    scr = page.locator('.screen.reset')
+    await scr.locator('.seg').getByRole('radio', { name: '1 min' }).click()
+    await scr.getByRole('button', { name: 'Start', exact: true }).click()
+    await page.clock.runFor(75000)
+    await scr.locator('.reset-end').getByText("That's 1 minute.", { exact: true }).waitFor()
+    await page.clock.runFor(3000)
+    const ci0 = (await stored(page)).days[ORDINARY_DAY].checkin
+    expect(!!ci0.thing.done && ci0.thing.key === 'reset-before-session', 'a finished run ticks the thing done: ' + JSON.stringify(ci0.thing))
+    expect((ci0.skills || []).filter((x) => x.id === 'reset').length === 1, 'and logs the Reset once')
+    await scr.getByRole('button', { name: 'Done', exact: true }).click()
+    await tab(page, 'Summary')
+    await card.locator('.wb-done', { hasText: 'Reset before your session' }).waitFor()
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('New plan').waitFor()
+    expect((await sheet.locator('#pl_when').inputValue()) === "I'm getting ready to train" && (await sheet.locator('#pl_then').inputValue()) === 'do a 2-minute Reset', 'reset-before-session prefill')
+    await shot(page, 'closeout-reset-plan-sheet')
+  }, { url: WBR, seed: wp14Ordinary(), fakeClock: true })
+
+  // 3: the hard-day 2-minute Reset: pick (no navigation), Done, Make it a plan, saved, read on Plan
+  await run('closeout-plan-reset-2', async ({ page }) => {
+    const card = sumMind(page)
+    await card.locator('.wb-things .chip', { hasText: '2-minute Reset' }).click()
+    await card.getByText('Today: 2-minute Reset').waitFor()
+    await page.waitForTimeout(400)
+    expect(!(await page.locator('.screen.reset').count()), 'picking never navigates')
+    await card.getByRole('button', { name: 'Done', exact: true }).click()
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('New plan').waitFor()
+    expect((await sheet.locator('#pl_when').inputValue()) === 'I need a breather' && (await sheet.locator('#pl_then').inputValue()) === 'do a 2-minute Reset', 'reset-2 prefill')
+    await sheet.getByRole('button', { name: 'Save', exact: true }).click()
+    await sheet.waitFor({ state: 'detached' })
+    expect(!(await card.getByRole('button', { name: 'Make it a plan', exact: true }).count()), 'hidden once saved today')
+    await tab(page, 'Plan')
+    const head = page.locator('.grp-h', { hasText: 'Mind plans' })
+    await head.waitFor()
+    await head.locator('xpath=following-sibling::div[1]').locator('.li', { hasText: 'When I need a breather' }).getByText("I'll do a 2-minute Reset").waitFor()
+    await head.scrollIntoViewIfNeeded()
+    await shot(page, 'closeout-plan-reset-2')
+  }, { url: WBR, seed: wp7Hard() })
+
+  // 3 and 4: Wind down (no skill screen, so the line is plain); "Wound down from 22:30"; the time
+  // filled in when the sheet opens
+  await run('closeout-plan-wind-down', async ({ page }) => {
+    const card = sumMind(page)
+    await card.locator('.wb-things .chip', { hasText: 'Wind down from 22:30' }).click()
+    await card.getByText('Today: Wind down from 22:30').waitFor()
+    expect(!(await card.locator('.wb-today.press, .wb-today[role="button"]').count()), 'no pressable line without a skill screen')
+    await card.getByRole('button', { name: 'Done', exact: true }).click()
+    await card.locator('.wb-done', { hasText: 'Wound down from 22:30' }).waitFor()
+    await shot(page, 'closeout-wound-down')
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('New plan').waitFor()
+    expect((await sheet.locator('#pl_when').inputValue()) === 'it gets to 22:30' && (await sheet.locator('#pl_then').inputValue()) === 'start winding down', 'wind-down prefill')
+    await shot(page, 'closeout-plan-wind-down-sheet')
+    await sheet.getByRole('button', { name: 'Save', exact: true }).click()
+    await sheet.waitFor({ state: 'detached' })
+    await tab(page, 'Plan')
+    const head = page.locator('.grp-h', { hasText: 'Mind plans' })
+    await head.locator('xpath=following-sibling::div[1]').locator('.li', { hasText: 'When it gets to 22:30' }).getByText("I'll start winding down").waitFor()
+  }, { url: WB, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
+
+  // 3: lunch somewhere you like
+  await run('closeout-plan-lunch', async ({ page }) => {
+    const card = sumMind(page)
+    await card.locator('.wb-things .chip', { hasText: 'Lunch somewhere you like' }).click()
+    await card.getByRole('button', { name: 'Done', exact: true }).click()
+    await card.getByRole('button', { name: 'Make it a plan', exact: true }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('New plan').waitFor()
+    expect((await sheet.locator('#pl_when').inputValue()) === "it's lunchtime" && (await sheet.locator('#pl_then').inputValue()) === 'have lunch somewhere I like', 'lunch prefill')
+  }, { url: WB, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
+
+  // 5: the Profile avatar is soft mauve with a mauve letter (flag on), 4.5:1 in light and dark
+  const contrast = (a, b) => {
+    const lum = (c) => { const v = (c.match(/[\d.]+/g) || []).slice(0, 3).map((x) => { const n = Number(x) / 255; return n <= 0.03928 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4 }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2] }
+    const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+    return (x + 0.05) / (y + 0.05)
+  }
+  const tok = (page, v, prop = 'color') => page.evaluate(([v, prop]) => { const d = document.createElement('span'); d.style[prop] = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d)[prop]; d.remove(); return c }, [v, prop])
+  const avatarColours = (loc) => loc.evaluate((e) => { const c = getComputedStyle(e); return { bg: c.backgroundColor, fg: c.color } })
+  await run('closeout-avatar-soft', async ({ page }) => {
+    await page.locator('.hdr .pfl .avatar').first().waitFor()
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(200)
+      const a = await avatarColours(page.locator('.hdr .pfl .avatar').first())
+      expect(a.bg === (await tok(page, '--tint-soft', 'backgroundColor')) && a.fg === (await tok(page, '--tint')), `${scheme}: avatar ${JSON.stringify(a)}`)
+      const r = contrast(a.fg, a.bg)
+      expect(r >= 4.5, `${scheme}: letter contrast ${r.toFixed(2)}`)
+      console.log(`  avatar ${scheme}: ${a.fg} on ${a.bg}, ${r.toFixed(2)}:1`)
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+    await shot(page, 'closeout-avatar-summary')
+    await page.locator('.hdr .pfl').first().click()
+    const lg = page.locator('.idcard .avatar.lg')
+    await lg.waitFor()
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(200)
+      const a = await avatarColours(lg)
+      expect(a.bg === (await tok(page, '--tint-soft', 'backgroundColor')) && a.fg === (await tok(page, '--tint')) && contrast(a.fg, a.bg) >= 4.5, `${scheme}: Profile avatar ${JSON.stringify(a)}`)
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+    await shot(page, 'closeout-avatar-profile')
+  }, { url: WB, seed: hardDay() })
+
+  await run('closeout-avatar-flag-off', async ({ page }) => {
+    // flag off: main's solid mauve avatar with the on-tint letter, on Summary and on Profile
+    const av = page.locator('button.avatar[aria-label="Profile"]')
+    await av.waitFor()
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(200)
+      const a = await avatarColours(av)
+      expect(a.bg === (await tok(page, '--tint', 'backgroundColor')) && a.fg === (await tok(page, '--on-tint')), `${scheme}: flag-off avatar ${JSON.stringify(a)}`)
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+    expect(!(await page.locator('.avatar.soft').count()), 'no soft avatar with the flag off')
+    await av.click()
+    const lg = page.locator('.idcard .avatar.lg')
+    await lg.waitFor()
+    const a = await avatarColours(lg)
+    expect(a.bg === (await tok(page, '--tint', 'backgroundColor')) && !(await page.locator('.avatar.soft').count()), 'flag-off Profile avatar ' + JSON.stringify(a))
+  }, { seed: hardDay() })
+
+  // 6: with Food off, "This week" keeps its header and Workouts, and drops energy, the bars, protein and days logged
+  const weekCardSum = (page) => page.locator('section[aria-labelledby="sum-week"]')
+  await run('closeout-week-food-off', async ({ page }) => {
+    const wk = weekCardSum(page)
+    await wk.waitFor()
+    await wk.scrollIntoViewIfNeeded()
+    const t = await wk.innerText()
+    expect(/This week/.test(t) && /Workouts/.test(t), 'header and Workouts kept: ' + t)
+    expect(!/Energy|Protein|Logged|kcal|Eaten|Your range/.test(t), 'no calorie or food lines: ' + t)
+    expect(!(await wk.locator('.wkey, svg').count()), 'no week bars')
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await shot(page, 'closeout-week-food-off')
+  }, { url: WB, seed: wp7Hard({ mind: { off: ['food'] } }) })
+
+  await run('closeout-week-food-on', async ({ page }) => {
+    const wk = weekCardSum(page)
+    await wk.waitFor()
+    const t = await wk.innerText()
+    expect(/Energy/.test(t) && /Protein/.test(t) && /Workouts/.test(t) && /Logged/.test(t) && (await wk.locator('.wkey').count()) === 1, 'Food on: the card as before: ' + t)
+  }, { url: WB, seed: wp7Hard() })
+
+  await run('closeout-week-flag-off', async ({ page }) => {
+    // flag off, a profile that switched Food off on a flag-on build: the card is main's
+    const wk = weekCardSum(page)
+    await wk.waitFor()
+    const t = await wk.innerText()
+    expect(/Energy/.test(t) && /Protein/.test(t) && /Workouts/.test(t) && /Logged/.test(t) && (await wk.locator('.wkey').count()) === 1, 'flag off: the card as main: ' + t)
+  }, { seed: wp7Hard({ mind: { off: ['food'] } }) })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

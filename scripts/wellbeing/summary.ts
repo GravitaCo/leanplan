@@ -96,15 +96,17 @@ export function summarySuite(): number {
   const picked = r({ checkin: { ...base.checkin!, thing: { key: 'outside-10' } } })
   ok('picked: Today, Done, Change', picked.includes('Today: Get outside for 10 minutes') && picked.includes('Done') && picked.includes('Change') && !picked.includes('One thing'), picked)
   const done = r({ checkin: { ...base.checkin!, thing: { key: 'outside-10', done: '2026-10-08T12:00:00.000Z' } } })
-  ok('done: the tick line, no Make it a plan for a thing without a prefill', done.includes('Got outside') && !done.includes('Make it a plan') && !done.includes('Change'), done)
+  ok('done: the tick line and Make it a plan (every thing has a prefill since 10 Oct)', done.includes('Got outside') && done.includes('Make it a plan') && !done.includes('Change'), done)
   // close-out change 5: "Make it a plan" only with an approved prefill, and not once today's Mind plan is saved
   const doneLunch = (plans?: IfThenPlan[]) => r({ hard: false, checkin: { ...base.checkin!, thing: { key: 'outside-lunch', done: '2026-10-08T12:00:00.000Z' } }, plans })
   const mp = (created: string, kind?: 'mind'): IfThenPlan => ({ id: 'x' + created, when: 'w', then: 't', created, reviews: [], ...(kind ? { kind } : {}) })
   ok('done with a prefill: Make it a plan', doneLunch().includes('Got outside at lunch') && doneLunch().includes('Make it a plan'), doneLunch())
   ok('a Mind plan saved today hides Make it a plan', !doneLunch([mp('2026-10-08', 'mind')]).includes('Make it a plan'))
   ok("yesterday's Mind plan or today's If-then plan doesn't hide it", doneLunch([mp('2026-10-07', 'mind'), mp('2026-10-08')]).includes('Make it a plan'))
-  ok('makePlanOffered: every thing without a prefill is never offered',
-    THINGS.filter((t) => !t.plan).every((t) => !makePlanOffered(t, [], '2026-10-08')) && THINGS.filter((t) => t.plan).every((t) => makePlanOffered(t, [], '2026-10-08')) && !makePlanOffered(undefined, [], '2026-10-08'))
+  ok('makePlanOffered: all five things (Benn, 10 Oct 2026), Wind down only while a wind-down time is set',
+    THINGS.every((t) => !!t.plan) && THINGS.every((t) => makePlanOffered(t, [], '2026-10-08', { windDownAt: '22:30' })) && !makePlanOffered(undefined, [], '2026-10-08')
+    && THINGS.filter((t) => t.key !== 'wind-down-from').every((t) => makePlanOffered(t, [], '2026-10-08')) && !makePlanOffered(THINGS.find((t) => t.key === 'wind-down-from'), [], '2026-10-08'))
+  ok('makePlanOffered: still hidden once a Mind plan was saved today, for every thing', THINGS.every((t) => !makePlanOffered(t, [mp('2026-10-08', 'mind')], '2026-10-08', { windDownAt: '22:30' })))
   const ordinaryCard = r({ hard: false, checkin: c({ mood: 4, t: '2026-10-10T07:40:00.000Z' }) })
   ok('ordinary day: no lighter line', !ordinaryCard.includes('A lighter day') && ordinaryCard.includes('Feeling good'), ordinaryCard)
   ok('past day: no chips, no lighter line', !r({ isToday: false }).includes('One thing') && !r({ isToday: false }).includes('A lighter day'))

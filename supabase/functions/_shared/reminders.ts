@@ -5,9 +5,12 @@
  *
  * - The three Mind reminder types (check-in, wind-down, plan check-in) are opt-in, one by one, and
  *   only ever sent with a current health yes (the function checks health_consent_current).
- * - At most one of them a day (the server claims the day in `notify_sent` before it sends), never
- *   after the person's wind-down time or before they're usually up. Supplement reminders are the
- *   person's own, at the times they set: outside the cap and the quiet hours.
+ * - At most one check-in or plan reminder a day (the server claims the day in `notify_sent` before
+ *   it sends), never after the person's wind-down time or before they're usually up. The wind-down
+ *   reminder is a cue the person set for themselves, so it sits outside that cap (Benn, 10 Oct 2026,
+ *   wellbeing plan "Close-out decisions"): still at most once a day (its own claim, by_kind), still
+ *   halved, never in quiet hours. Supplement reminders are the person's own, at the times they
+ *   set: outside the cap and the quiet hours.
  * - A type the person stopped opening (two in a row, counted on the phone: profile.mind.halved)
  *   is sent half as often: only when its last one was at least two days ago.
  * - Times are the person's own clock: `profile.mind.tz` (IANA, from the phone), else UK time.
@@ -18,6 +21,9 @@
 
 export const MIND_KINDS = ['checkin', 'wind-down', 'plan'] as const
 export type MindKind = (typeof MIND_KINDS)[number]
+/** The types that share the one-a-day cap (`notify_sent.last_on`). Wind-down is outside it. */
+export const CAPPED_KINDS: readonly MindKind[] = ['checkin', 'plan']
+export const isCapped = (k: MindKind): boolean => CAPPED_KINDS.includes(k)
 
 /** used when the person hasn't set their times (Profile › Notifications › Your times) */
 export const DEFAULT_WAKE = '07:00'
@@ -130,25 +136,29 @@ export interface DueInput {
   /** the person's local day and time (localNow) */
   day: string
   time: string
-  /** notify_sent for this person: the last day one was sent, and per type */
+  /** notify_sent for this person: the last day a check-in or plan reminder was sent (the cap), and
+   *  the last day per type (the wind-down reminder's once a day, the halving and the plan gap) */
   lastOn?: string | null
   byKind?: Record<string, unknown> | null
 }
 
 /**
- * The Mind types due now, in the order they'd claim the day (the function claims the first, and
- * sends only if the claim succeeds). Empty once one went today (the cap), in quiet hours, for a
- * type that isn't on (`notify[kind] === true`), a halved one sent too recently, or a plan check-in
- * sent within PLAN_GAP_DAYS.
+ * The Mind types due now, in the order they'd be claimed. The check-in and plan check-in share the
+ * daily cap: none of them once one went today (`lastOn`), and the function claims the first due and
+ * sends only if the claim succeeds. The wind-down reminder is outside the cap: due unless one already
+ * went today (`byKind['wind-down']`), claimed on its own. Never in quiet hours, never for a type
+ * that isn't on (`notify[kind] === true`), a halved one sent too recently, or a plan check-in sent
+ * within PLAN_GAP_DAYS.
  */
 export function dueKinds(x: DueInput): MindKind[] {
-  if (x.lastOn && x.lastOn >= x.day) return []
+  const capped = !!x.lastOn && x.lastOn >= x.day
   const on = obj(x.mind?.notify)
   const t = usualTimes(x.mind)
   const at = kindTimes(x.mind)
   const order: MindKind[] = ['plan', 'checkin', 'wind-down']
   return order.filter((k) =>
     on[k] === true && at[k] === x.time &&
+    (isCapped(k) ? !capped : sinceLast(x.byKind, k, x.day) >= 1) &&
     !inQuietHours(x.time, t.windDownAt, t.wakeAt) &&
     (k !== 'plan' || (planDue(x.plans, x.day) && sinceLast(x.byKind, 'plan', x.day) >= PLAN_GAP_DAYS)) &&
     halvedAllows(x.mind, k, x.byKind, x.day))

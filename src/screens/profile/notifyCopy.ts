@@ -18,8 +18,8 @@ export const NOTIFY_COPY = {
   timesHeading: 'Your times',
   wakeAt: 'Usually up around',
   windDownAt: 'Wind down from',
-  /** B11.12 */
-  foot: "Tali sends at most one of these a day, and nothing after your wind-down time or before you're usually up. Supplement reminders come at the times you set.",
+  /** B11.12, as Benn reworded it on 10 Oct 2026 (wind-down outside the one-a-day cap) */
+  foot: "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.",
   /** B11.15, B11.16 */
   backToUsual: 'Back to usual',
   dismiss: 'Dismiss',

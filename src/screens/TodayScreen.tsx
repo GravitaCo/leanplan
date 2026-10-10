@@ -515,24 +515,26 @@ export function TodayScreen() {
             <h2 id="sum-week" className="pk2">This week</h2>
             <span className="sub num" style={{ fontSize: 13 }}>{weekSpan(rows[0].d, rows[6].d)}</span>
           </div>
-          <div>
+          {/* with the Food pillar off (flag on) the card drops its calorie and food lines: energy, the
+              week's bars, protein and days logged (Benn, 10 Oct 2026); workouts stay */}
+          {on.food && <div>
             <div className="sk">Energy</div>
             <div className="wline">{energyLine}</div>
-          </div>
-          <div>
+          </div>}
+          {on.food && <div>
             <WeekBars rows={rows} lo={baseLo} hi={baseHi} cur={cur} numbers={!gentle} />
             <div className="wkey">
               <span><i className="bar" />Eaten{gentle ? '' : ', kcal'}</span>
               {!yes && <span>Your range{gentle ? '' : <span className="num"> {fmt(baseLo)}–{fmt(baseHi)}</span>}{rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}</span>}
             </div>
-          </div>
+          </div>}
           <div className="stat3">
-            <div>
+            {on.food && <div>
               <div className="sk">Protein</div>
               {ws.logged >= 2
                 ? <><div className="sv num">{fmt(ws.avgP)} g</div><div className="ss">{dl == null ? 'a day' : Math.abs(dl) >= 5 ? `a day, ${dl > 0 ? 'up' : 'down'} ${Math.abs(dl)} g` : 'a day, steady'}</div></>
                 : <><div className="sv num">–</div><div className="ss">after 2 days</div></>}
-            </div>
+            </div>}
             <div>
               <div className="sk">Workouts</div>
               {workoutsDone
@@ -540,10 +542,10 @@ export function TodayScreen() {
                 : <><div className="sv">None yet</div><div className="ss">this week</div></>}
             </div>
             {/* ml-e1: a count, no denominator and no dots (they pointed at gaps); the same days as the energy line */}
-            <div {...pressable(() => setTab('food'))} aria-label={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`}>
+            {on.food && <div {...pressable(() => setTab('food'))} aria-label={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`}>
               <div className="sk">Logged</div>
               <div className="sv num">{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</div>
-            </div>
+            </div>}
           </div>
         </section>
       </div>

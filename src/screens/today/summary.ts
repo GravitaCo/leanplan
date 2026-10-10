@@ -3,7 +3,7 @@
  * so scripts/wellbeing/summary.ts can test them. TodayScreen gathers the facts and renders.
  */
 import type { CheckIn, DayLog, IfThenPlan, Pillar } from '@/core/types'
-import type { Thing } from '@/core/data/skills'
+import { thingPlan, type Thing } from '@/core/data/skills'
 import type { AskId } from '@/core/domain/asks'
 import { parseYmd } from '@/core/domain/date'
 import { WEIGH_IN } from './summaryCopy'
@@ -102,11 +102,12 @@ export function summaryDue(due: SummaryDue, on: Record<Pillar, boolean>): AskId[
 
 /**
  * Whether the Mind card offers "Make it a plan" after the one thing is done (mental-performance
- * close-out, change 5): only for a thing with an approved `plan` prefill, and not once a Mind plan
+ * close-out, change 5): for a thing with an approved prefill (all of them since Benn's 10 Oct
+ * wording; "Wind down from {time}" only while a wind-down time is set), and not once a Mind plan
  * was saved that day. Mind plans are made only from the one thing, and a day has one thing, so a
  * Mind plan created today is the plan from today's thing (no link is stored, so no data change).
  */
-export function makePlanOffered(thing: Thing | undefined, plans: readonly IfThenPlan[] | undefined, today: string): boolean {
-  if (!thing?.plan) return false
+export function makePlanOffered(thing: Thing | undefined, plans: readonly IfThenPlan[] | undefined, today: string, ctx: { windDownAt?: string } = {}): boolean {
+  if (!thingPlan(thing, ctx)) return false
   return !(plans ?? []).some((p) => p.kind === 'mind' && p.created?.slice(0, 10) === today)
 }

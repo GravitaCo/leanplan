@@ -8,16 +8,19 @@
 -- definitions there, with notify_sent added. Safe to re-run.
 --
 -- notify_sent: one row per person, written only by the reminder function (service role):
---   last_on  the person's local day the last Mind reminder (check-in, wind-down, plan check-in)
---            was sent: at most one a day
+--   last_on  the person's local day the last check-in or plan check-in reminder was sent: at most
+--            one of those a day (null until one has gone)
 --   by_kind  {"checkin": "2026-10-09", ...}: the last day per type, for the halving rule (a type
---            the person stopped opening goes every other day)
+--            the person stopped opening goes every other day) and for the wind-down reminder, which
+--            sits outside the cap (Benn, 10 Oct 2026) but still goes at most once a day
 -- Health data by inference (which Mind reminders someone gets), 6(1)(b) + 9(2)(a): kept until a
 -- withdrawal (cleared with the log) or account deletion (cascade, and USER_TABLES).
 --
--- notify_claim(uid, day, kind): atomic. Claims `day` for that person and records `kind`, and
--- returns true only if no Mind reminder was claimed for that day yet. The function claims first
--- and sends only on true, so two runs, two subscriptions or a retry never send two.
+-- notify_claim(uid, day, kind): atomic. For a check-in or plan check-in it claims `day` for that
+-- person (last_on) and records `kind`, and returns true only if neither was claimed for that day
+-- yet. For the wind-down reminder it claims only by_kind's 'wind-down' day and leaves last_on alone,
+-- so it never uses up the day's check-in or plan reminder. The function claims first and sends only
+-- on true, so two runs, two subscriptions or a retry never send two.
 --
 -- Rollback (only with the function back on index.ts, which doesn't use it):
 --   drop function public.notify_claim(uuid, date, text); drop table public.notify_sent;
@@ -27,10 +30,13 @@
 
 create table if not exists public.notify_sent (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  last_on date not null,
+  last_on date,
   by_kind jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+-- last_on is null for someone who has only had a wind-down reminder (outside the cap); a re-run
+-- over an earlier draft of this table relaxes it
+alter table public.notify_sent alter column last_on drop not null;
 
 -- RLS on: the person can read their own row (data access requests) and delete it (only so
 -- clear_log_after_withdrawal(), SECURITY INVOKER and so run as `authenticated`, can clear it);
@@ -69,13 +75,24 @@ begin
   -- withdrawal, and a person without a current yes gets no Mind reminder
   perform pg_advisory_xact_lock_shared(hashtextextended('tali-log:' || uid::text, 0));
   if not public.health_consent_current(uid) then return false; end if;
+  if kind = 'wind-down' then
+    -- outside the daily cap: its own day only, last_on untouched
+    insert into public.notify_sent as n (user_id, last_on, by_kind)
+    values (uid, null, jsonb_build_object(kind, day))
+    on conflict (user_id) do update
+      set by_kind = n.by_kind || excluded.by_kind,
+          updated_at = now()
+      where n.by_kind ->> 'wind-down' is null or (n.by_kind ->> 'wind-down')::date < day
+    returning true into ok;
+    return coalesce(ok, false);
+  end if;
   insert into public.notify_sent as n (user_id, last_on, by_kind)
   values (uid, day, jsonb_build_object(kind, day))
   on conflict (user_id) do update
     set last_on = excluded.last_on,
         by_kind = n.by_kind || jsonb_build_object(kind, excluded.last_on),
         updated_at = now()
-    where n.last_on < excluded.last_on
+    where n.last_on is null or n.last_on < excluded.last_on
   returning true into ok;
   return coalesce(ok, false);
 end;
