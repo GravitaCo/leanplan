@@ -10,10 +10,12 @@ const email = () => fact('contactEmail', 'privacy email')
  * (LABEL_SCAN_ENABLED in src/data/labelReader.ts) and deliberately not described yet: add it, with
  * its transfer and retention, before that flag is turned on.
  * Wellbeing Phase 1 (Mind: sleep band, skills, the one thing, Mind plans and settings, and the
- * device-only Unload notes, low-mood marker, reminder log and sleep disclosure) is built but off
- * (WELLBEING_ENABLED in src/data/wellbeingFlag.ts). Its sentences are gated on `mind`:
- * `npm run legal:html` publishes with mind = WELLBEING_ENABLED, and check:legal checks both
- * versions. The lighter-session line in Automatic calculations is live and not gated.
+ * device-only Unload notes, low-mood marker, reminder log and sleep disclosure) is on for everyone
+ * from 10 Oct 2026 (WELLBEING_ENABLED in src/data/wellbeingFlag.ts). Its sentences are gated on
+ * `mind`: `npm run legal:html` publishes with mind = WELLBEING_ENABLED, and check:legal checks both
+ * versions. The supplement names setting (B11b) is gated on `suppNames` as well
+ * (SUPP_NAMES_ENABLED, hidden until DPIA 8.8 is signed); with it off the text says supplement
+ * reminders stay generic. The lighter-session line in Automatic calculations is live and not gated.
  * First-run onboarding (the setup questions, Redo setup, Health check answers and the wizard's
  * under-18 deletion) is built but off (ONBOARDING_ENABLED in src/data/onboardingFlag.ts). Its
  * passages are gated on `onboarding`: `npm run legal:html` publishes with
@@ -21,7 +23,10 @@ const email = () => fact('contactEmail', 'privacy email')
  * its own passages. With onboarding on and Mind off, the text is main's as of 2026-10-09 (npm test
  * compares it with scripts/fixtures-legal-onboarding.json).
  */
-export function privacyPolicy({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
+export function privacyPolicy({ onboarding = false, mind = false, suppNames = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean } = {}): LegalDoc {
+  // B11b's "Show supplement names in reminders" is built but hidden until DPIA 8.8 is signed
+  // (SUPP_NAMES_ENABLED, register item 45): its sentences need Mind on as well.
+  const names = mind && suppNames
   return {
     title: 'Privacy policy',
     // the Mind version changed on 10 Oct (the wind-down reminder outside the one-a-day cap; B12's
@@ -85,7 +90,10 @@ export function privacyPolicy({ onboarding = false, mind = false }: { onboarding
             : []),
           `Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send the reminders you chose: supplement reminders, and a weekly review reminder on the day you picked, at the time you picked in UK time. For the weekly one we use when you last opened your review, so it pauses after three in a row go unopened, and the date of any week your phone marked to skip.` +
             (mind
-              ? ` In the Mind part of the app you can also turn on a check-in reminder (in the morning, after you're usually up), a wind-down reminder and a plan check-in reminder, each one separately, and only once you've agreed to Tali keeping your health data. Tali sends at most one check-in or plan check-in reminder a day, and the wind-down reminder at most once a day at the time you set. None of them comes after your wind-down time or before you're usually up, and each is sent half as often if the last two weren't opened. They follow your time zone, as do your supplement reminders once it's saved. To keep to these limits, our reminder service keeps the last day it sent you a check-in or plan check-in reminder, and the last day for each type. That record is deleted when you withdraw consent for health data or delete your account. You can also choose whether supplement reminders name the supplement ("Show supplement names in reminders", off unless you turn it on). With it on, the names appear on your screen, even when it's locked. We keep that choice with your other reminder settings.`
+              ? ` In the Mind part of the app you can also turn on a check-in reminder (in the morning, after you're usually up), a wind-down reminder and a plan check-in reminder, each one separately, and only once you've agreed to Tali keeping your health data. Tali sends at most one check-in or plan check-in reminder a day, and the wind-down reminder at most once a day at the time you set. None of them comes after your wind-down time or before you're usually up, and each is sent half as often if the last two weren't opened. They follow your time zone, as do your supplement reminders once it's saved. To keep to these limits, our reminder service keeps the last day it sent you a check-in or plan check-in reminder, and the last day for each type. That record is deleted when you withdraw consent for health data or delete your account.` +
+                (names
+                  ? ` You can also choose whether supplement reminders name the supplement ("Show supplement names in reminders", off unless you turn it on). With it on, the names appear on your screen, even when it's locked. We keep that choice with your other reminder settings.`
+                  : ` Supplement reminders never name the supplement.`)
               : ''),
           `Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.`,
           `Feedback: if you send feedback from the app, it goes from your own email app to us, with the app version and your browser and device type. Please leave out health details you'd rather keep private.`,
@@ -118,7 +126,7 @@ export function privacyPolicy({ onboarding = false, mind = false }: { onboarding
                   ? `your body details (weight, body fat, height and the sex answer used for your energy estimate); your setup answers (the health check, medical and lately results, pregnancy, how food and weight feel and what you chose when Tali asked about a food or calorie range, what would make Tali worth it, daily movement); your training preferences (including any injuries you've noted); the reasons in your plans and workouts that came from them; `
                   : `your body details (weight and height); `) +
                 `your steady starting weight, the pattern lines Tali has shown you and your choice for next week; your usual wake and wind-down times and your wind-down routine; your Mind plans; and your Unload notes and when Tali last showed you where to find support. ` +
-                `Your name, age, goal, ${onboarding ? 'the sex shown in Profile' : 'sex'} and whether Gentle mode is on stay on your phones, as do your other Mind settings (which parts of Tali you use, how often it asks, your reminder choices, including whether supplement reminders show names, and your time zone). `
+                `Your name, age, goal, ${onboarding ? 'the sex shown in Profile' : 'sex'} and whether Gentle mode is on stay on your phones, as do your other Mind settings (which parts of Tali you use, how often it asks, your reminder choices${names ? ', including whether supplement reminders show names,' : ''} and your time zone). `
               : onboarding
                 ? `It also clears your weigh-ins, check-ins, body details (weight, body fat, height and the sex answer used for your energy estimate), your setup answers (the health check, medical and lately results, pregnancy, how food and weight feel and what you chose when Tali asked about a food or calorie range, what would make Tali worth it, daily movement), your training preferences (including any injuries you've noted), and the reasons in your plans and workouts that came from them, and your steady starting weight, the pattern lines Tali has shown you and your choice for next week, from this phone straight away, and from your other phones the next time each one connects. ` +
                   `Your name, age, goal, the sex shown in Profile and whether Gentle mode is on stay on your phones. `
@@ -165,7 +173,7 @@ export function privacyPolicy({ onboarding = false, mind = false }: { onboarding
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos and their preview images, and sees technical request data (such as your IP address and which video or image is requested) when the app shows or plays them.`,
           `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. ` +
-            (mind
+            (names
               ? `A supplement reminder says "Time for your supplements", or names the supplement if you turned on "Show supplement names in reminders". `
               : `A supplement reminder says "Time for your supplements". `) +
             `It is encrypted so the push service can't read it. The weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you."), encrypted the same way.` +

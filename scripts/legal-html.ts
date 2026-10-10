@@ -10,7 +10,7 @@ import { privacyPolicy } from '@/core/legal/privacy'
 import { termsOfUse } from '@/core/legal/terms'
 import { cookiePolicy } from '@/core/legal/cookies'
 import { sitePrivacy, siteTerms, siteCookies } from '@/core/legal/website'
-import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -37,9 +37,9 @@ const docs: Record<LegalDocId, LegalDoc> = site
   ? { privacy: sitePrivacy(), terms: siteTerms(), cookies: siteCookies() }
   : (() => {
       const flags = { onboarding: ONBOARDING_ENABLED, mind: WELLBEING_ENABLED }
-      return { privacy: privacyPolicy(flags), terms: termsOfUse(flags), cookies: cookiePolicy(flags) }
+      return { privacy: privacyPolicy({ ...flags, suppNames: SUPP_NAMES_ENABLED }), terms: termsOfUse(flags), cookies: cookiePolicy(flags) }
     })()
-console.log(site ? 'Interim website-only versions' : `Full app + website versions (onboarding ${ONBOARDING_ENABLED ? 'on' : 'off'}, Mind ${WELLBEING_ENABLED ? 'on' : 'off'})`)
+console.log(site ? 'Interim website-only versions' : `Full app + website versions (onboarding ${ONBOARDING_ENABLED ? 'on' : 'off'}, Mind ${WELLBEING_ENABLED ? 'on' : 'off'}, supplement names ${SUPP_NAMES_ENABLED ? 'on' : 'off'})`)
 const items = (Object.keys(docs) as LegalDocId[]).map((id) => ({
   id,
   name: docs[id].title,

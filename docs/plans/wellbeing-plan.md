@@ -704,6 +704,11 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   compliance (privacy policy, register) before it ships.
 - **Supplement reminders sit outside the one-a-day limit**, and since 10 Oct so does the wind-down
   reminder (still once a day at most); check-in and plan reminders share one a day.
+- **Benn, 10 Oct 2026: Mind and the navigation turned on for everyone; skills and signposting stay
+  off until the clinician review; supplement names setting hidden until DPIA 8.8 is signed.**
+  `WELLBEING_ENABLED` is on (a `VITE_WELLBEING=0` build turns it off for the flag-off checks),
+  `MIND_REVIEWED` stays off (register item 44), and a separate `SUPP_NAMES_ENABLED`, off, hides the
+  B11b row and its footer and the privacy policy's sentences about it (register item 45).
 
 ### Open for Benn (on the boards)
 

@@ -494,6 +494,15 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     and ship at least one release before WELLBEING_ENABLED goes on or `index.next.ts` deploys; and
     turning the setting from on to off syncs the settings straight away instead of after the
     debounce, while still saving locally first and offline (L2).
+    2026-10-10 (Benn): Mind and the new navigation turned on for everyone (WELLBEING_ENABLED on);
+    the names setting is built but hidden until DPIA 8.8 is signed. A separate flag,
+    `SUPP_NAMES_ENABLED` (off; `src/data/wellbeingFlag.ts`), gates the Profile row and its footer
+    and the privacy policy's sentences about it (`privacyPolicy`'s `suppNames`, published by
+    `npm run legal:html` from the flag). With it off the Mind version of the policy doesn't mention
+    the setting and says supplement reminders never name the supplement. The routine (B12) ships
+    with Mind. Server logic is unchanged: `suppPayload` already needs a stamped `lockNames: true`,
+    which nobody can set while the row is hidden, so every supplement reminder stays generic. To
+    show it: sign DPIA 8.8, set `SUPP_NAMES_ENABLED` on, and republish the privacy policy.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

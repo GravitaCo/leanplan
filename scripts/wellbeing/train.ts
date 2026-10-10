@@ -27,7 +27,7 @@ export function trainSuite(): number {
 
   /* ---------- choices ---------- */
   ok('three equal choices; Shorter dropped when a rough night empties it', hardDayChoices(false).join() === 'planned,shorter,swap' && hardDayChoices(true).join() === 'planned,swap')
-  ok('flag off (unit tests): the four chips as today', CHOICES.map(([, l]) => l).join() === 'As planned,Shorter,10-min mobility,Easy walk')
+  ok('flag on (as built for users): the three B3 chips', CHOICES.map(([, l]) => l).join() === 'As planned,Shorter,Swap')
   ok('Legs & Core shorter is 10 sets', setCount(slotsOf(WORKOUTS.Legs.ex, {}, true, exById).map((s) => s.shown), true) === '10 sets')
 
   /* ---------- the rough-night shorter version ---------- */

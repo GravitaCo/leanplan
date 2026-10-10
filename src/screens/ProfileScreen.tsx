@@ -24,7 +24,7 @@ import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
-import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { PillarsSettings } from './profile/PillarsSettings'
 import { BackoffNotices, MindReminderRows, SuppNamesFoot, SuppNamesRow, YourTimes } from './profile/NotificationsSettings'
 
@@ -370,7 +370,7 @@ export function ProfileScreen() {
                 : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
             }} />} />
         {/* wellbeing (B11b): whether supplement reminders name the supplement, off by default */}
-        {WELLBEING_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
+        {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
         {/* ml-e4: the weekly review reminder, switched on separately (off unless someone turns it on) */}
         <SettingRow icon="bell" color={MINDF} soft label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
           right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
@@ -379,7 +379,7 @@ export function ProfileScreen() {
               showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
             }} />} />
       </div>
-      {WELLBEING_ENABLED && pr.notificationsEnabled && <SuppNamesFoot />}
+      {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesFoot />}
       {WELLBEING_ENABLED && <YourTimes />}
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
 

@@ -1,19 +1,22 @@
 /**
- * Headless end-to-end checks for Wellbeing Phase 1 (build plan, "Headless verification"). Three
- * builds: the normal one (flag off, what users get), one with WELLBEING_ENABLED on and one with
- * MIND_REVIEWED on as well:
+ * Headless end-to-end checks for Wellbeing Phase 1 (build plan, "Headless verification"). Four
+ * builds: the normal one (WELLBEING_ENABLED on, MIND_REVIEWED and SUPP_NAMES_ENABLED off: what
+ * users get from 10 Oct 2026), one forced off with VITE_WELLBEING=0 (the flag-off scenarios: the
+ * app as it was before), one with MIND_REVIEWED on and one with SUPP_NAMES_ENABLED on:
  *
- *   npm run build && npx vite preview --port 4176 &
- *   VITE_WELLBEING=1 npx vite build --outDir dist-wb && npx vite preview --outDir dist-wb --port 4177 &
- *   VITE_WELLBEING=1 VITE_MIND_REVIEWED=1 npx vite build --outDir dist-wbr && npx vite preview --outDir dist-wbr --port 4178 &
- *   E2E_URL=http://localhost:4176/ E2E_URL_WB=http://localhost:4177/ E2E_URL_WBR=http://localhost:4178/ NODE_PATH=$(npm root -g) node scripts/e2e-wellbeing.cjs [--only=flag-off]
+ *   VITE_WELLBEING=0 npx vite build --outDir dist-off && npx vite preview --outDir dist-off --port 4176 &
+ *   npm run build && npx vite preview --port 4177 &
+ *   VITE_MIND_REVIEWED=1 npx vite build --outDir dist-wbr && npx vite preview --outDir dist-wbr --port 4178 &
+ *   VITE_SUPP_NAMES=1 npx vite build --outDir dist-wbn && npx vite preview --outDir dist-wbn --port 4179 &
+ *   E2E_URL=http://localhost:4176/ E2E_URL_WB=http://localhost:4177/ E2E_URL_WBR=http://localhost:4178/ E2E_URL_WBN=http://localhost:4179/ NODE_PATH=$(npm root -g) node scripts/e2e-wellbeing.cjs [--only=flag-off]
  *
  * Needs Playwright (a global install is fine; browsers in PLAYWRIGHT_BROWSERS_PATH, e.g.
  * /opt/pw-browsers). Every Supabase request is answered by an in-memory PostgREST stand-in
  * (as in e2e-foundations.cjs), so the real project is never reached. State is seeded through
  * `leanplan.v1`; the browser clock is fixed to the seed's day (Europe/London). Screenshots go to
  * E2E_OUT, each in light and dark. `--only=<name>` runs the scenarios whose name starts with it.
- * The `flag-off` scenario stays in every run: with the flag off the app is exactly as on main.
+ * The `flag-off` scenario stays in every run: with the flag forced off the app is exactly as it was
+ * before Mind went on (BASE is the VITE_WELLBEING=0 build).
  */
 const { chromium } = (() => { try { return require('playwright') } catch { return require(require('node:child_process').execSync('npm root -g').toString().trim() + '/playwright') } })()
 const fs = require('node:fs')
@@ -23,6 +26,8 @@ const os = require('node:os')
 const BASE = process.env.E2E_URL || 'http://localhost:4176/'
 const WB = process.env.E2E_URL_WB || 'http://localhost:4177/'
 const WBR = process.env.E2E_URL_WBR || 'http://localhost:4178/'
+/** SUPP_NAMES_ENABLED on (B11b's names setting, hidden for users until DPIA 8.8 is signed) */
+const WBN = process.env.E2E_URL_WBN || 'http://localhost:4179/'
 const OUT = process.env.E2E_OUT || fs.mkdtempSync(path.join(os.tmpdir(), 'tali-e2e-wb-'))
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) || '').slice(7)
 const UID = '11111111-2222-4333-8444-555555555555'
@@ -2080,6 +2085,15 @@ async function wp5FlagOffHeaders({ page }) {
     await sw.click()
     await page.waitForTimeout(300)
     expect((await stored(page)).profile.mind.lockNames === false, 'off again, saved as off')
+  }, { url: WBN, seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; s.state.profile.supplements = [{ name: 'Vitamin D', time: '08:00' }]; return s })() })
+
+  // the normal build (what users get): Mind on, the names setting hidden until DPIA 8.8 is signed
+  await run('b11b-hidden', async ({ page }) => {
+    await openNotify(page)
+    const rows = await notifyRows(page)
+    expect(JSON.stringify(rows) === JSON.stringify(['Check-in', 'Wind-down', 'Plan check-in', 'Supplement reminders', 'Weekly review reminder']), 'rows: ' + rows.join(', '))
+    expect(!(await page.getByText(/supplement names|lock screen|name the supplement/i).count()), 'no names setting or its foot')
+    await shot(page, 'b11b-hidden')
   }, { url: WB, seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; s.state.profile.supplements = [{ name: 'Vitamin D', time: '08:00' }]; return s })() })
 
   await run('b11b-flag-off', async ({ page }) => {
@@ -2089,8 +2103,8 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await page.getByText(/supplement names|lock screen/i).count()), 'flag off: no names setting')
   }, { seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; return s })() })
 
-  // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
-  // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
+  // Later packages add their scenarios here, against WB (the normal build: flag on), WBR (MIND_REVIEWED
+  // on) and WBN (SUPP_NAMES_ENABLED on), with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
   void WB; void WBR; void lowMoodFortnight
 
   await browser.close()

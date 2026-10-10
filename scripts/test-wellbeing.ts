@@ -1,8 +1,9 @@
 /* Wellbeing Phase 1 tests (build plan, ground rule 6). Run from scripts/test-core.ts (npm test);
    returns the number of failures. Each work package adds its own suite under scripts/wellbeing/
-   and one line below. `npm test` bundles with import.meta.env empty, so WELLBEING_ENABLED and
-   MIND_REVIEWED read false here: suites call core with explicit arguments instead. */
-import { WELLBEING_ENABLED, MIND_REVIEWED } from '@/data/wellbeingFlag'
+   and one line below. `npm test` bundles with import.meta.env empty, so the flags read as a
+   production build does: WELLBEING_ENABLED on (Benn, 10 Oct 2026), MIND_REVIEWED and
+   SUPP_NAMES_ENABLED off. Suites call core with explicit arguments, so they don't depend on it. */
+import { WELLBEING_ENABLED, MIND_REVIEWED, SUPP_NAMES_ENABLED } from '@/data/wellbeingFlag'
 import { dataSyncedSuite } from './wellbeing/data-synced'
 import { coreSuite } from './wellbeing/core'
 import { dataDeviceSuite } from './wellbeing/data-device'
@@ -25,9 +26,9 @@ type FakeServer = (rows: Record<string, any[]>, broken?: string[]) => { fetchFn:
 
 export async function wellbeingSuite(fakeServer: FakeServer): Promise<number> {
   let bad = 0
-  const ok = !WELLBEING_ENABLED && !MIND_REVIEWED
+  const ok = WELLBEING_ENABLED && !MIND_REVIEWED && !SUPP_NAMES_ENABLED
   if (!ok) bad++
-  console.log(ok ? 'PASS' : 'FAIL', 'wellbeing: both flags off in unit tests')
+  console.log(ok ? 'PASS' : 'FAIL', 'wellbeing: a build with no env vars has Mind on, Mind skills off, supplement names off')
   bad += await dataSyncedSuite(fakeServer)
   bad += coreSuite()
   bad += await dataDeviceSuite(fakeServer)
