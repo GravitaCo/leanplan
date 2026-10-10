@@ -82,7 +82,8 @@ export function privacyPolicy({ onboarding = false }: { onboarding?: boolean } =
         p: [
           (onboarding
             ? `Much of what you log in the app (weight, diet, exercise, injuries, sleep, stress, supplements, mood, and your answers to the setup health questions, including pregnancy) can say something`
-            : `Much of what you log in the app (weight, diet, exercise, sleep, stress, supplements and mood) can say something`) +
+            : // injuries stay: the consent screen names them, and notes can carry them (compliance, 2026-10-10)
+              `Much of what you log in the app (weight, diet, exercise, any injuries you mention, sleep, stress, supplements and mood) can say something`) +
             ` about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
             `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. ` +
             (onboarding ? `The setup questions about your health only appear once you've agreed. ` : '') +
