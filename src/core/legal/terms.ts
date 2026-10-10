@@ -14,8 +14,9 @@ const who = () => fact('controller', 'legal name')
 export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
   return {
     title: 'Terms and conditions',
-    // E (compliance close-out 2026-10-09): set the Mind date to the flag-on date at flag-on
-    updated: mind ? '2026-10-09' : '2026-09-28',
+    // Mind on 10 Oct 2026; the Mind paragraph no longer names the skill screens or the low-mood
+    // signpost, which stay behind MIND_REVIEWED (compliance 2026-10-10), so it holds either way
+    updated: mind ? '2026-10-10' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -55,7 +56,7 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
             'If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time.',
           ...(mind
             ? [
-                "The Mind part of Tali (check-ins, Reset, Unload, Wind down and the one thing for the day) offers general wellbeing ideas. It isn't therapy or counselling, and it isn't a crisis service. Tali doesn't monitor what you write, and nobody is alerted because of how you answer. If your mood answers have been low for a while, the app may show you where to find support, and that is all it does. If you or someone else is in danger now, call 999.",
+                "The Mind part of Tali, including check-ins and the one thing for the day, offers general wellbeing ideas. It isn't therapy or counselling, and it isn't a crisis service. Tali doesn't monitor what you write, and nobody is alerted because of how you answer. Tali can show you where to find support (\"Need support now?\" in Mind), and that is all it does. If you or someone else is in danger now, call 999.",
               ]
             : []),
         ],

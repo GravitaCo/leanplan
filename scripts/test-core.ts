@@ -2010,7 +2010,7 @@ function legalOnboardingGate(): void {
     ['off: no onboarding-only wording' + (leaks.length ? ` (${leaks.join(', ')})` : ''), !leaks.length],
     ['off with Mind on: no onboarding-only wording' + (leaksMind.length ? ` (${leaksMind.join(', ')})` : ''), !leaksMind.length],
     ['off: dates (privacy 2026-10-09, terms and cookies 2026-09-28)', off.privacy.updated === '2026-10-09' && off.terms.updated === '2026-09-28' && off.cookies.updated === '2026-09-28'],
-    ['off with Mind on: dates (privacy 2026-10-10, terms and cookies 2026-10-09)', offMind.privacy.updated === '2026-10-10' && offMind.terms.updated === '2026-10-09' && offMind.cookies.updated === '2026-10-09'],
+    ['off with Mind on: dates (privacy and terms 2026-10-10, cookies 2026-10-09)', offMind.privacy.updated === '2026-10-10' && offMind.terms.updated === '2026-10-10' && offMind.cookies.updated === '2026-10-09'],
     ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)', live.every((w) => text(off.privacy).includes(w))],
     ['off with Mind on: the live passages stay', live.every((w) => text(offMind.privacy).includes(w))],
     ['off with Mind on: the Mind passages are there (privacy, cookies, terms)',

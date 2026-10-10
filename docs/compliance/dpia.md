@@ -802,6 +802,32 @@ settings (register item 45, branch `claude/wellbeing-b12-b13`), both behind `WEL
 |---|---|---|
 | 8.8 approved by | | Before `WELLBEING_ENABLED` goes on with B11b. |
 
+### 8.9 Note for Benn: Mind on, skills off (compliance, 10 October 2026, not signed)
+
+Sections 8.1 to 8.7 are as signed and are not changed by this note. On 10 October 2026 Benn turned
+`WELLBEING_ENABLED` on for everyone, with `MIND_REVIEWED` and `SUPP_NAMES_ENABLED` off and the
+reminder function deploying with the release (register item 42). Three things to record:
+
+- **Which rows gate which flag.** 8.7 says "The flag still waits on the rows below". Read with
+  each row's note, `WELLBEING_ENABLED` waited only on item 42; the clinician advice and item 44
+  gate `MIND_REVIEWED`, which stays off.
+- **R15 for the version that ships.** The skill screens (Reset, Unload, Wind down, Get outside)
+  and the low-mood signpost are not reachable, so two measures listed under R15 (the Unload
+  sheet's copy and the signpost) are not live, and neither is the content the clinician is to
+  review. What is live: the terms paragraph on the Mind part (reworded 10 October so it no longer
+  promises the signpost), "Need support now?" on the Mind page and in the check-in, opening the
+  Support sheet with 999 and the not-a-crisis-service line, and the wellness line. Proposed
+  residual for this version: **medium** while testing is closed (the app isn't public). Before
+  public launch, Benn to confirm a residual for whatever is then live; if R15 is still rated high
+  then, 7.3 applies (Art. 36 prior consultation).
+- **8.1 and the reminder cap.** Since 10 October the wind-down reminder sits outside the one a
+  day cap, at most once a day of its own (register Record of processing, push row; the privacy
+  policy says so). `notify_sent` keeps the last day per type for that. No new risk.
+
+| Item | Name and date | Notes |
+|---|---|---|
+| 8.9 noted by | | R15 residual for the skills-off version. |
+
 ---
 
 ## Sources checked
