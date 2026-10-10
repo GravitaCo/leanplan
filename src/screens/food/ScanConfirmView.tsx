@@ -21,7 +21,7 @@ import { sameAsFound, shareDecision, shareEligible, TIER_SOURCE } from '@/core/d
 import { ReportProductSheet, ShareOptInSheet, SharedServing, SharedSourceCard } from './SharedProduct'
 import type { Food, MealSlot } from '@/core/types'
 import { checkLabel, foodFromConfirmed, type FoodKind, type LabelField, type LabelValues, type ScanDraft } from '@/core/domain/barcode'
-import { cellId, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
+import { cellId, kjFromKcal, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
 import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LabelPhotoButton } from './common'
@@ -87,6 +87,8 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
   const unit = ml ? 'ml' : 'g'
   const g = parseFloat(serving.replace(',', '.')) || 0
   const untouched = (f: LabelField) => text[f] === toText(draft.values[f])
+  // kJ worked out from kcal when it isn't there (a shared product keeps no kJ): shown, never saved
+  const kjShown = values.kj === undefined && values.k !== undefined ? kjFromKcal(values.k) : undefined
 
   // label photo: the misread checks, re-run on the panel as it stands now (an untouched field
   // keeps the text as read, so "<0.5g" or a flagged unit stays visible until it's edited)
@@ -251,13 +253,15 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           const read = info ? parseCell(servText[f], f, 'serving') : undefined
           const per = read?.value !== undefined
             ? (read.mark === 'lt' ? '<' + round(read.raw!, Math.max(read.dp - 1, 0)) : round(read.value, Math.max(read.dp, 0)))
-            : f === 'alcohol' ? (v !== undefined ? round(v, 1) : '—') : v !== undefined && g > 0 ? round((v * g) / 100, dp) : '—'
+            : f === 'alcohol' ? (v !== undefined ? round(v, 1) : '')
+            : f === 'kj' && v === undefined && kjShown !== undefined && g > 0 ? round((kjShown * g) / 100, dp)
+            : v !== undefined && g > 0 ? round((v * g) / 100, dp) : ''
           const s = suggFor(f)
           const own = (rowIssues.get(f) || []).find(oneRow)
           return (
             <div key={f} role="row" className={'nrow' + (odd.has(f) ? ' flag' : '') + (need ? ' need' : '')}>
               <label htmlFor={'sc_' + f} className={sub ? 'sub' : undefined} role="rowheader">{label}{u && <small>{u}</small>}</label>
-              <input id={'sc_' + f} className="num" type="number" inputMode="decimal" placeholder={need ? 'Needed' : '—'} value={text[f]}
+              <input id={'sc_' + f} className="num" type="number" inputMode="decimal" placeholder={need ? 'Needed' : f === 'kj' && kjShown !== undefined ? String(kjShown) : ''} value={text[f]}
                 aria-invalid={odd.has(f) || need || undefined} onChange={(e) => setText({ ...text, [f]: e.target.value })} />
               <span className="num nserv" role="cell" data-f={f} data-read={read?.value !== undefined || undefined}>{per}</span>
               {s ? (

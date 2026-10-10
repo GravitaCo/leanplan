@@ -5,9 +5,10 @@
 import { checkDigitOk, foodFromConfirmed, type LabelValues } from '@/core/domain/barcode'
 import { draftFromLabel, type LabelRead } from '@/core/domain/label'
 import { buildEntry } from '@/core/domain/estimate'
+import { kjFromKcal } from '@/core/domain/label'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { sourceErr, sourceOf, SOURCES } from '@/core/data/sources'
-import { cleanLookupRow, draftFromShared, marginNote, sameAsFound, shareDecision, shareEligible, sourceCard, tierErr, tierOf, TIER_SOURCE, type SharedProduct } from '@/core/domain/sharedProduct'
+import { cleanLookupRow, draftFromShared, marginNote, pct, sameAsFound, shareDecision, shareEligible, sourceCard, tierErr, tierOf, TIER_SOURCE, type SharedProduct } from '@/core/domain/sharedProduct'
 import { CONSENT_TYPES, CONSENT_VERSIONS, cleanConsents, hasConsent, latestConsent, recordConsent, withdraw } from '@/data/consent'
 import { stateFromBackup, type SyncMeta } from '@/data/persistence'
 import {
@@ -285,19 +286,27 @@ async function lookups() {
 function tiersAndMargins() {
   const p = (reads: number, status: SharedProduct['status'] = 'unverified', audited?: string) => ({ reads, status, audited })
   const food = (src: string) => ({ id: 'x', n: 'Flapjack', k: 442, p: 5.5, c: 58, f: 20, g: 65, src })
-  const entryErr = (src: string, custom = true) => buildEntry(food(src), { mode: 'serv', serv: 1 } as never, 'snack' as never, DEFAULT_PROFILE, { custom, fat: null, askFat: false }).entry.err
+  const portion = { serv: { mode: 'serv', serv: 1 }, g: { mode: 'g', grams: 65, learned: null }, hand: { mode: 'hand', type: 'cupped', count: 1 } } as const
+  const entryErr = (src: string, custom = true, how: keyof typeof portion = 'serv') => buildEntry(food(src), portion[how] as never, 'snack' as never, DEFAULT_PROFILE, { custom, fat: null, askFat: false }).entry.err
   const row = { version: 1, name: 'Oat & raisin flapjack', k: 442, p: 5.5, c: 58, f: 20, fibre: 4, sugars: 30, sat: 9, salt: 0.3, ml: false, serving_g: 65, status: 'unverified', label_reads: 3, audited_on: null }
   const d = draftFromShared(cleanLookupRow(row)!, '5012345678900', [])
   const saved = foodFromConfirmed({ barcode: d.barcode, name: d.name, values: d.values, ml: d.ml, kind: 'eat', g: 65, source: 'label', sharedSrc: `${TIER_SOURCE[d.shared!.tier]}:${d.barcode}` })
   report('tiers and margins', [
     ['tiers: verified only by Tali’s audit; counted from COUNTED_READS reads; else unchecked', tierOf(p(1)) === 'unchecked' && tierOf(p(COUNTED_READS - 1)) === 'unchecked' && tierOf(p(COUNTED_READS)) === 'counted' && tierOf(p(50, 'verified', '2026-10')) === 'verified' && tierOf(p(50, 'verified')) === 'counted' && tierOf(p(1, 'disputed')) === 'unchecked'],
-    ['source keys and margins (pending nutrition-accuracy): 0.2 per-100, 0.15, 0.12', SOURCES['shared-unchecked'].err === 0.2 && SOURCES['shared-unchecked'].perHundred === true && SOURCES['shared-counted'].err === 0.15 && SOURCES['shared-verified'].err === 0.12],
-    ['sp-2/3/3b One serving: 287 kcal ± 57, ± 43, ± 34', Math.round(287 * tierErr('unchecked')) === 57 && Math.round(287 * tierErr('counted')) === 43 && Math.round(287 * tierErr('verified')) === 34],
-    ['margin lines as on the boards', marginNote('unchecked') === '± 20% while a shared product is unchecked, against ± 15% for a food you add yourself.' && marginNote('counted') === '± 15% once it’s been read from the pack 3 times, the same as a food you add yourself.' && marginNote('verified') === '± 12%, the same as a built-in food.'],
+    ['source keys hold each tier’s extra margin: +0.09 (per-100), +0.04, +0', SOURCES['shared-unchecked'].err === 0.09 && SOURCES['shared-unchecked'].perHundred === true && SOURCES['shared-counted'].err === 0.04 && SOURCES['shared-verified'].err === 0],
+    ['One serving margins add (0.12 + 0.03 + extra): 0.24, 0.19, 0.15', tierErr('unchecked') === 0.24 && tierErr('counted') === 0.19 && tierErr('verified') === 0.15],
+    ['sp-2/3/3b One serving: 287 kcal ± 69, ± 55, ± 43', Math.round(287 * tierErr('unchecked')) === 69 && Math.round(287 * tierErr('counted')) === 55 && Math.round(287 * tierErr('verified')) === 43],
+    ['margin lines', marginNote('unchecked') === '±\u00a024% while a shared product is unchecked, against ±\u00a015% for a food you add yourself.' && marginNote('counted') === '±\u00a019% once it’s been read from the pack 3 times, against ±\u00a015% for a food you add yourself.' && marginNote('verified') === '±\u00a015%, the same as a food you add yourself.'],
+    ['pct keeps "±" and the figure together (a non-breaking space)', pct(0.15) === '±\u00a015%' && !/± /.test(marginNote('unchecked'))],
     ['source cards as on the boards', sourceCard({ tier: 'unchecked', reads: 1 }).title === 'Added by a Tali user, not yet checked. Check against your pack.' && sourceCard({ tier: 'counted', reads: 3 }).title === 'Read from the pack 3 times' && sourceCard({ tier: 'counted', reads: 3 }).sub === 'Check against your pack.' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).title === 'Checked by Tali, Oct 2026' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).sub === 'Only Tali’s own checks set this.'],
-    ['a saved shared food logs at its tier’s margin (serving): 0.2, 0.15, 0.12; a typed label 0.15', entryErr('shared-unchecked:5012345678900') === 0.2 && entryErr('shared-counted:5012345678900') === 0.15 && entryErr('shared-verified:5012345678900') === 0.12 && entryErr('label') === 0.15],
-    ['a saved shared food cites the list', sourceErr(food('shared-unchecked:1')) === 0.2 && sourceOf(food('shared-verified:5012345678900'))?.text === 'Tali’s shared list: checked by Tali · 5012345678900'],
+    ['margins add, by capture: weighed 0.20 / 0.15 / 0.11, serving 0.24 / 0.19 / 0.15, hand 0.32 / 0.27 / 0.23', (['unchecked', 'counted', 'verified'] as const).map((t) => [entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'g'), entryErr(TIER_SOURCE[t] + ':5012345678900'), entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'hand')].join('/')).join(' ') === '0.2/0.24/0.32 0.15/0.19/0.27 0.11/0.15/0.23',
+      (['unchecked', 'counted', 'verified'] as const).map((t) => [entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'g'), entryErr(TIER_SOURCE[t] + ':5012345678900'), entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'hand')].join('/')).join(' ')],
+    ['a typed label is unchanged (serving 0.15, weighed 0.11); a shared food adds the label margin even as a built-in path', entryErr('label') === 0.15 && entryErr('label', true, 'g') === 0.11 && entryErr('shared-counted:1', false) === 0.19],
+    ['a saved shared food cites the list', sourceErr(food('shared-unchecked:1')) === 0.09 && sourceOf(food('shared-verified:5012345678900'))?.text === 'Tali’s shared list: checked by Tali · 5012345678900'],
     ['found product → confirm draft: values, serving, tier, never in OFF', d.source === 'shared' && d.values.k === 442 && d.serving.eat === 65 && d.shared?.tier === 'counted' && d.offMissing === true],
+    ['with a pack serving it opens as "Eat as it is"; without one, "For cooking"', d.kind === 'eat' && draftFromShared(cleanLookupRow({ ...row, serving_g: null })!, '5012345678900', []).kind === 'cook'],
+    ['kJ is worked out from kcal for display (kcal × 4.184, rounded)', kjFromKcal(442) === 1849 && kjFromKcal(0) === 0 && kjFromKcal(390) === 1632 && d.values.kj === undefined],
+    ['the confirm view shows no "—" placeholders', !readFileSync('src/screens/food/ScanConfirmView.tsx', 'utf8').includes('—')],
     ['saved unchanged it keeps the tier’s source; changed figures make it the user’s own label', saved.src === 'shared-counted:5012345678900' && sameAsFound(d.shared!, d.values, false) && !sameAsFound(d.shared!, { ...d.values, k: 440 }, false) && !sameAsFound(d.shared!, d.values, true)],
     ['reports go through report-product; lookups through lookup-product; both RPCs are service-role only', (() => {
       const sql = readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')

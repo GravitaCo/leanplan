@@ -60,16 +60,18 @@ export const SOURCES: Record<string, Source> = {
   'costa-uk': { label: 'Costa Coffee UK in-store allergen & nutrition guide, Autumn 2026', url: 'https://www.costa.co.uk/nutrition', err: MENU_ERR },
   // Tali's shared product list (docs/migrations/2026-10-10-shared-products.sql): a pack label read
   // by another Tali user's label photo, saved as `<key>:<barcode>` with the tier it had when saved.
-  // MARGINS PENDING nutrition-accuracy confirmation (boards sp-2, sp-3, sp-3b, Oct 2026):
-  // unchecked ±20%, read from the pack COUNTED_READS times ±15% (a food you add yourself),
-  // checked by Tali's own audit ±12% (a built-in food). Never cited by a built-in food.
-  'shared-unchecked': { label: 'Tali’s shared list: added by a Tali user, not yet checked', url: '', err: 0.2, perHundred: true },
-  'shared-counted': { label: 'Tali’s shared list: read from the pack by several Tali users', url: '', err: 0.15 },
-  'shared-verified': { label: 'Tali’s shared list: checked by Tali', url: '', err: 0.12 },
+  // Here `err` is the tier's EXTRA margin, added on top of the capture margin and the label margin
+  // (estimate.ts buildEntry: CAPTURE_ERR[how] + OWN_LABEL_ERR + err; margins add, nutrition-accuracy
+  // Oct 2026). Unchecked +9% (weighed ±20%, a serving ±24%, by hand ±32%); read from the pack
+  // COUNTED_READS times +4% (±15%, ±19%, ±27%); checked by Tali's own audit +0, the same as a food
+  // you add yourself (±11%, ±15%, ±23%). Never cited by a built-in food.
+  'shared-unchecked': { label: 'Tali’s shared list: added by a Tali user, not yet checked', url: '', err: 0.09, perHundred: true },
+  'shared-counted': { label: 'Tali’s shared list: read from the pack by several Tali users', url: '', err: 0.04 },
+  'shared-verified': { label: 'Tali’s shared list: checked by Tali', url: '', err: 0 },
 }
 
-/** A food saved from Tali's shared product list. Its source margin applies although it's the
- *  user's own saved food (sourceErr), and no "food you add yourself" margin is added on top. */
+/** A food saved from Tali's shared product list. Its tier's extra margin (sourceErr) is added to
+ *  the capture and label margins, although it's the user's own saved food. */
 export const isSharedSource = (src: string | undefined): boolean => !!src && src.startsWith('shared-') && !!SOURCES[src.split(':')[0]]
 
 /** Chain menus: sources whose values are a restaurant's published per-item figures. */
@@ -85,6 +87,7 @@ const isScanned = (f: Pick<Food, 'src' | 'id'>) => !!f.id && !!f.src && f.src.sp
  *  the pack is the most accurate information we have). */
 export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
   if (isScanned(f)) return 0
+  // the tier's extra margin (added, not compared: buildEntry)
   if (isSharedSource(f.src)) return SOURCES[f.src!.split(':')[0]].err ?? 0
   return (!f.id && f.src && SOURCES[f.src.split(':')[0]]?.err) || 0
 }

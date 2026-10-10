@@ -73,6 +73,8 @@ export interface LabelIssue {
 }
 
 const KJ_PER_KCAL = 4.184
+/** kJ worked out from kcal, for display where a label's kJ isn't stored (a shared product). */
+export const kjFromKcal = (kcal: number): number => Math.round(kcal * KJ_PER_KCAL)
 /** kJ ↔ kcal must agree this closely (plan §1.3.1, widened to 2.5% by nutrition-accuracy), plus 1 kcal for rounding. */
 const KJ_TOL = 0.025
 /** UK reference intakes (Regulation (EU) 1169/2011 Annex XIII, retained in UK law). */

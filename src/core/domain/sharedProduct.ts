@@ -9,6 +9,7 @@
 import type { LabelValues, ScanDraft } from './barcode'
 import { uniqueName } from './barcode'
 import { SOURCES } from '@/core/data/sources'
+import { CAPTURE_ERR, OWN_LABEL_ERR, sharedErr } from './estimate'
 import { COUNTED_READS, SHARED_FIELDS, gtin14, roundShared, type SharedValues, type ShareToken } from '../../../supabase/functions/_shared/shared-product'
 
 export type SharedTier = 'unchecked' | 'counted' | 'verified'
@@ -73,10 +74,11 @@ export function tierOf(p: Pick<SharedProduct, 'status' | 'reads' | 'audited'>): 
   return p.reads >= COUNTED_READS ? 'counted' : 'unchecked'
 }
 
-/** The tier's margin (a fraction), from its source. */
-export const tierErr = (t: SharedTier): number => SOURCES[TIER_SOURCE[t]].err ?? 0
+/** The tier's margin for one serving (a fraction): serving, label and tier margins added. */
+export const tierErr = (t: SharedTier): number => sharedErr('serv', SOURCES[TIER_SOURCE[t]].err ?? 0)
 
-const pct = (x: number) => `± ${Math.round(x * 100)}%`
+/** "± 15%", with a non-breaking space so the figure never wraps away from its sign. */
+export const pct = (x: number) => `±\u00a0${Math.round(x * 100)}%`
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /** The source card at the top of the confirm view (boards sp-2, sp-3, sp-3b). */
@@ -91,9 +93,10 @@ export function sourceCard(s: Pick<SharedInfo, 'tier' | 'reads' | 'audited'>): {
 
 /** The line under "One serving" that explains its margin. */
 export function marginNote(t: SharedTier): string {
-  const own = SOURCES['shared-counted'].err ?? 0.15
-  if (t === 'verified') return `${pct(tierErr(t))}, the same as a built-in food.`
-  if (t === 'counted') return `${pct(tierErr(t))} once it’s been read from the pack ${COUNTED_READS} times, the same as a food you add yourself.`
+  // a serving of a label you add yourself
+  const own = +(CAPTURE_ERR.serv + OWN_LABEL_ERR).toFixed(2)
+  if (t === 'verified') return `${pct(tierErr(t))}, the same as a food you add yourself.`
+  if (t === 'counted') return `${pct(tierErr(t))} once it’s been read from the pack ${COUNTED_READS} times, against ${pct(own)} for a food you add yourself.`
   return `${pct(tierErr(t))} while a shared product is unchecked, against ${pct(own)} for a food you add yourself.`
 }
 
@@ -110,7 +113,8 @@ export function draftFromShared(p: SharedProduct, barcode: string, taken: Iterab
     values,
     kcalFromKj: false,
     ml: v.ml,
-    kind: 'cook',
+    // a pack serving means it's eaten as it is (boards sp-2, sp-3, sp-3b); without one, cooked with
+    kind: v.serving_g !== undefined ? 'eat' : 'cook',
     meal: false,
     serving: { eat: v.serving_g, cook: v.serving_g ?? 100 },
     wholePack: false,

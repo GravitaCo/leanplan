@@ -36,8 +36,7 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
     <>
       <div className="sp-serv" data-margin={info.tier}>
         <span>One serving</span>
-        {/* margins pending nutrition-accuracy confirmation (src/core/data/sources.ts) */}
-        <b className="num">{k} kcal <span>± {Math.round(k * tierErr(info.tier))}</span></b>
+        <b className="num">{k} kcal <span>±{'\u00a0'}{Math.round(k * tierErr(info.tier))}</span></b>
       </div>
       <div className="foot">{marginNote(info.tier)}</div>
     </>
