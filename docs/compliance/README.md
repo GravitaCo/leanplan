@@ -446,6 +446,13 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     while the flag is off, so "A supplement reminder says "Time for your supplements"" stays true.
     Before it ships: security-data and compliance review, then the same deploy as item 42 (the
     generalised function); nothing applied or deployed with this change.
+    Compliance review 2026-10-10: basis and transparency fine (6(1)(b) + 9(2)(a); the consent
+    wording already names sleep; no `CONSENT_VERSION` bump). The names sentence in the Reminders
+    bullet moved after the Mind reminder limits, so "None of them" no longer reads as covering
+    supplement reminders, and now says the names show on a locked screen. DPIA: section 8 says
+    push text is fixed, which names-on qualifies; addendum 8.8 (new risk R18) proposed for Benn to
+    sign before the flag goes on. Open copy question for Benn: should the toggle's footer also say
+    a name can reveal something about your health.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR
