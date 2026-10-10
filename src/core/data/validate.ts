@@ -60,7 +60,7 @@ export function validateFoods(foods: Food[]): FoodReport {
       const s = SOURCES[f.src.split(':')[0]]
       if (!s) errors.push(`${id}: unknown source "${f.src}"`)
       // menu-label sources publish per-portion or per-item figures: those must be recorded
-      else if (s.err && !f.ref) errors.push(`${id}: ${s.label} food has no published figure (ref) to check against`)
+      else if (s.err && !s.estimate && !s.perHundred && !f.ref) errors.push(`${id}: ${s.label} food has no published figure (ref) to check against`)
     } else unsourced.push(id)
     for (const m of refMismatches(f)) errors.push(`${id}: doesn't match its source: ${m}`)
     for (const c of checkPer100(f, { k: true, macros: true }, !!f.each)) {

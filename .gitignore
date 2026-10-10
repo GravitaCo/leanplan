@@ -15,3 +15,8 @@ dist-e2e
 .env.*
 dist-wb
 dist-wbr
+
+# copyrighted chain guides: download to re-run an importer, never commit (sha256 in each importer)
+nutritional_downloads/Starbucks-*
+nutritional_downloads/TobyCarvery-*
+scripts/import/data/costa-*.pdf

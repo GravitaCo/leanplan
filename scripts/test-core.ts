@@ -108,7 +108,10 @@ const extra: [string, string, string][] = [
   ['search: eggs -> egg, not Greggs', rankByName(['Greggs BLT', 'Egg, whole', 'Greggs Free Range Egg Pot'], (x) => x, ['eggs']).join('|'), 'Egg, whole|Greggs Free Range Egg Pot'],
   ['search: brand name isn\'t the dish', rankByName(['Pizza Hut Fries', 'Pizza, cheese & tomato'], (x) => x, ['pizza'])[0], 'Pizza, cheese & tomato'],
   ['search: eggs finds eggs when a dish says Eggs', rankByName(['Greggs BLT', 'PizzaExpress Eggs Benedict', 'Egg, whole'], (x) => x, ['eggs'])[0], 'Egg, whole'],
+  ['search: carvery finds the carvery dish before the brand', rankByName(['Toby Carvery Tomato Soup', 'Toby Carvery Carvery meat, average portion (Sunday)'], (x) => x, ['carvery'])[0], 'Toby Carvery Carvery meat, average portion (Sunday)'],
+  ['search: kashmiri korma isn\'t the Kashmiri Aroma brand', rankByName(['Kashmiri Aroma chicken korma', 'Aagrah Kashmiri korma'], (x) => x, ['kashmiri', 'korma'])[0], 'Aagrah Kashmiri korma'],
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
+  ['search: accents fold both ways', [rankByName(['Caffè Nero Latte Regular (oat)', 'Oat milk'], (x) => x, ['caffe', 'latte']).join('|'), rankByName(['Creme egg'], (x) => x, ['crème']).join('|')].join(' / '), 'Caffè Nero Latte Regular (oat) / Creme egg'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
 // Chain foods: one serving, through the app's real logging path, must show exactly the kcal the
