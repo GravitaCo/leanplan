@@ -19,7 +19,7 @@ import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
 import { clearDeviceHealth, unloadCount } from './deviceOnly'
 
-export const CONSENT_TYPES = ['health', 'ai', 'label-photo'] as const
+export const CONSENT_TYPES = ['health', 'ai', 'label-photo', 'shared-products'] as const
 export type ConsentType = (typeof CONSENT_TYPES)[number]
 
 /**
@@ -36,6 +36,9 @@ export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   health: '2026-09-v1',
   ai: '2026-09-v1',
   'label-photo': '2026-09-v1',
+  // the opt-in to add new label-read products to Tali's shared list (sp-1; Profile › Privacy sp-5).
+  // Checked by the server too (shared_products_allowed, docs/migrations/2026-10-10-shared-products.sql)
+  'shared-products': '2026-10-v1',
 }
 /** The version given to a label-photo consent carried over from the old device-only flag. */
 export const LEGACY_LABEL_VERSION = 'device-v0'

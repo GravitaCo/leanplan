@@ -58,7 +58,19 @@ export const SOURCES: Record<string, Source> = {
   'pret-uk': { label: 'Pret A Manger UK, Oct 2026', url: 'https://www.pret.co.uk/en-GB/products', err: MENU_ERR },
   'chopstix-uk': { label: 'Chopstix UK, Sep 2026', url: 'https://chopstixnoodles.co.uk/wp-content/uploads/2026/09/NUTRITIONAL-TABLE-V22-SEPT-26.pdf', err: MENU_ERR },
   'costa-uk': { label: 'Costa Coffee UK in-store allergen & nutrition guide, Autumn 2026', url: 'https://www.costa.co.uk/nutrition', err: MENU_ERR },
+  // Tali's shared product list (docs/migrations/2026-10-10-shared-products.sql): a pack label read
+  // by another Tali user's label photo, saved as `<key>:<barcode>` with the tier it had when saved.
+  // MARGINS PENDING nutrition-accuracy confirmation (boards sp-2, sp-3, sp-3b, Oct 2026):
+  // unchecked ±20%, read from the pack COUNTED_READS times ±15% (a food you add yourself),
+  // checked by Tali's own audit ±12% (a built-in food). Never cited by a built-in food.
+  'shared-unchecked': { label: 'Tali’s shared list: added by a Tali user, not yet checked', url: '', err: 0.2, perHundred: true },
+  'shared-counted': { label: 'Tali’s shared list: read from the pack by several Tali users', url: '', err: 0.15 },
+  'shared-verified': { label: 'Tali’s shared list: checked by Tali', url: '', err: 0.12 },
 }
+
+/** A food saved from Tali's shared product list. Its source margin applies although it's the
+ *  user's own saved food (sourceErr), and no "food you add yourself" margin is added on top. */
+export const isSharedSource = (src: string | undefined): boolean => !!src && src.startsWith('shared-') && !!SOURCES[src.split(':')[0]]
 
 /** Chain menus: sources whose values are a restaurant's published per-item figures. */
 export function isMenuSource(src: string | undefined): boolean {
@@ -73,12 +85,14 @@ const isScanned = (f: Pick<Food, 'src' | 'id'>) => !!f.id && !!f.src && f.src.sp
  *  the pack is the most accurate information we have). */
 export function sourceErr(f: Pick<Food, 'src' | 'id'>): number {
   if (isScanned(f)) return 0
+  if (isSharedSource(f.src)) return SOURCES[f.src!.split(':')[0]].err ?? 0
   return (!f.id && f.src && SOURCES[f.src.split(':')[0]]?.err) || 0
 }
 
 /** Human line for a food's source: "UK CoFID 2021 · 19-539", "Your label", or null if unchecked.
  *  A scanned food keeps its Open Food Facts line (with the barcode), like built-in OFF foods. */
 export function sourceOf(f: Pick<Food, 'src' | 'id'>): { text: string; url: string } | null {
+  if (isSharedSource(f.src)) { const [key, code] = f.src!.split(':'); return { text: code ? `${SOURCES[key].label} · ${code}` : SOURCES[key].label, url: '' } }
   if (f.id && !isScanned(f)) return { text: 'Your label', url: '' }
   // checked line by line against the user's own pack: credit that, not the crowdsourced record
   if (isScanned(f)) return { text: `Your pack label (found via Open Food Facts) · ${f.src!.split(':')[1] ?? ''}`.replace(/ · $/, ''), url: SOURCES.off.url }

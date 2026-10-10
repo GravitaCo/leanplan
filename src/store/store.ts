@@ -69,6 +69,8 @@ import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
+import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
 
 enableMapSet()
 
@@ -311,6 +313,14 @@ export interface StoreState {
    *  and, through sync, on the server */
   withdrawConsent: (type: ConsentType) => void
   hasConsent: (type: ConsentType) => boolean
+  /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
+   *  the reads waiting to be sent */
+  setShareProducts: (on: boolean) => void
+  /** queue a signed label read for Tali's shared list (only with a yes to sharing); it's sent
+   *  later, after a random delay, never on this save path */
+  queueSharedProduct: (t: ShareToken) => boolean
+  /** send the queued reads now, if signed in as their owner, online and consented */
+  sendSharedProducts: () => Promise<void>
   /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
    *  (a second "Not now", at the one re-ask, keeps it paused) */
   notNowHealth: () => void
@@ -578,6 +588,8 @@ function clearSavedSession() {
 
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
+/** shared-list sends that left reads waiting, this app session: a few more tries, then the next save or reconnect */
+let shareRetries = 0
 const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
 /** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
 const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
@@ -1593,6 +1605,8 @@ export const useStore = create<StoreState>()(
           }
           setSession(s.access_token, uid)
           saveMode('account')
+          // reads queued by another account on this phone are never sent as this one
+          reconcileOutbox(uid, consented(get().data, 'shared-products') && consented(get().data, 'health'))
           set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null; st.authProvider = (s.user.app_metadata?.provider as string | undefined) ?? null })
         }
         applySession = live
@@ -1657,6 +1671,8 @@ export const useStore = create<StoreState>()(
           underAgeTried = 0
           void settleReminders()
           void subscribeIfPending()
+          // shared-list reads waiting: sent after a random delay, not with the reconnect
+          if (SHARED_PRODUCTS_ENABLED && readOutbox()?.items.length) scheduleSend(() => void get().sendSharedProducts())
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1897,15 +1913,44 @@ export const useStore = create<StoreState>()(
       declineConsent: (type) => {
         // nothing to clear for someone new, but withdraw() also covers anything logged meanwhile
         set((st) => { withdraw(st.data, meta(st.data), type) })
+        if (type === 'health' || type === 'shared-products') dropOutbox()
         saved()
       },
 
       withdrawConsent: (type) => {
         set((st) => { withdraw(st.data, meta(st.data), type) })
+        // no more sharing: reads waiting to be sent go too
+        if (type === 'health' || type === 'shared-products') dropOutbox()
         saved()
       },
 
       hasConsent: (type) => consented(get().data, type),
+
+      setShareProducts: (on) => {
+        if (on) get().grantConsent('shared-products')
+        else get().withdrawConsent('shared-products')
+      },
+
+      queueSharedProduct: (t) => {
+        const d = get().data
+        // the account whose data this is (signed in, or offline since launch): kept on the device only
+        const owner = get().authed ? getUid() : d._meta?.owner
+        if (!SHARED_PRODUCTS_ENABLED || !owner || !consented(d, 'shared-products') || !consented(d, 'health')) return false
+        queueShare(t, owner)
+        scheduleSend(() => void get().sendSharedProducts())
+        return true
+      },
+
+      sendSharedProducts: async () => {
+        const ok = () => canSendOutbox({ authed: get().authed, online: navigator.onLine, uid: get().authed ? getUid() : null, health: consented(get().data, 'health'), shared: consented(get().data, 'shared-products'), underAge: !!get().underAge }, readOutbox())
+        if (!ok()) return
+        // the server checks the shared-products yes itself: send one given moments ago first
+        if (!(await get().flushConsents()) || !ok()) return
+        const r = await sendOutbox(getUid(), { still: ok })
+        if (r.sent) shareRetries = 0
+        // something stayed (the server busy, or the connection dropped): a few more tries later
+        if (r.kept && navigator.onLine && ++shareRetries <= 3) scheduleSend(() => void get().sendSharedProducts())
+      },
 
       canSaveHealth: () => canSaveHealthAnswers(get().data),
 

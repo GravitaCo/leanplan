@@ -52,11 +52,12 @@ type View =
   | { kind: 'portion'; food: Food; custom: boolean }
   | { kind: 'recipe'; index: number }
   | { kind: 'quick' }
-  | { kind: 'create'; barcode?: string; note?: string }
+  /** `offMissing`: Open Food Facts answered "not found" for the barcode (a label read may then join the shared list) */
+  | { kind: 'create'; barcode?: string; note?: string; offMissing?: boolean }
   | { kind: 'scan' }
   | { kind: 'confirm'; draft: ScanDraft; notice?: string; back?: View; id?: number }
   /** a photo of the label: after a barcode scan it keeps the barcode (and OFF's name) */
-  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View }
+  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View; offMissing?: boolean }
 
 export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
@@ -72,10 +73,10 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
   if (view.kind === 'create') {
     return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })}
-      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view }) : undefined} />
+      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view, offMissing: view.offMissing }) : undefined} />
   }
   if (view.kind === 'label') {
-    const toConfirm = (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft, notice, back: view.back, id: Date.now() })
+    const toConfirm = (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft: view.offMissing ? { ...draft, offMissing: true } : draft, notice, back: view.back, id: Date.now() })
     const lp: LabelProps = { onBack: () => go(view.back), onClose, animate: !moved, barcode: view.barcode, base: view.base, onDone: toConfirm }
     return (
       <Suspense fallback={<Sheet title="Scan the label" onClose={onClose} animate={!moved}><div className="empty" role="status">Opening the camera…</div></Sheet>}>
@@ -86,15 +87,16 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'confirm') {
     const d = view.draft
     // OFF's figures, or a label that couldn't be read: offer reading the user's own pack
-    const photo = LABEL_SCAN_ENABLED && (d.source !== 'label' || view.notice) ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view }) : undefined
+    // offMissing carries over: from a shared product (never in Open Food Facts) or a typed label after a not-found
+    const photo = LABEL_SCAN_ENABLED && (d.source !== 'label' || view.notice) ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view, offMissing: d.offMissing }) : undefined
     return <ScanConfirmView key={view.id ?? 0} {...common} onBack={() => go(view.back ?? { kind: 'scan' })} draft={d} notice={view.notice} onLabelPhoto={photo}
       onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
   }
   if (view.kind === 'scan') {
     return <ScanView {...common} onResult={(r) => {
       if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
-      else if (r.kind === 'found') go({ kind: 'confirm', draft: r.draft })
-      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why] })
+      else if (r.kind === 'found' || r.kind === 'shared') go({ kind: 'confirm', draft: r.draft })
+      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why], offMissing: r.why === 'not-found' })
     }} />
   }
   return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />

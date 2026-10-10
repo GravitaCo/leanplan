@@ -6,6 +6,7 @@
  */
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { validateLabelRead, type LabelRead } from '@/core/domain/label'
+import { cleanToken, type ShareToken } from '../../supabase/functions/_shared/shared-product'
 import { getToken, hasSession, supabase } from './supabase'
 
 /**
@@ -19,7 +20,9 @@ export const LABEL_TIMEOUT_MS = 20_000
 export const LABEL_FUNCTION = 'ai-read-label'
 
 export type LabelReadResult =
-  | { status: 'ok'; read: LabelRead }
+  /** `share`: the read's values signed for Tali's shared list, when a barcode went with the photo
+   *  and the read parsed cleanly (ai-read-label); shared only if the user saves them unchanged */
+  | { status: 'ok'; read: LabelRead; share?: ShareToken }
   /** no connection, or too slow */
   | { status: 'offline' }
   /** online, but the function couldn't be reached (not deployed, or its host is down) */
@@ -37,9 +40,11 @@ export type LabelReadResult =
 
 /**
  * `images`: base64 JPEGs (no data: prefix), each already downscaled to ≤ 1.5 MB. The result is
- * validated here too, so the app never trusts the wire.
+ * validated here too, so the app never trusts the wire. `barcode`: the pack's, when one was
+ * scanned, so the reader can sign the read for the shared list (it's never stored there unless
+ * the user agrees to share and saves the read unchanged).
  */
-export async function readLabel(images: { panel: string; front?: string }, opts: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<LabelReadResult> {
+export async function readLabel(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<LabelReadResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { status: 'offline' }
   if (!hasSession()) return { status: 'no-session' }
   const ctl = new AbortController()
@@ -48,7 +53,11 @@ export async function readLabel(images: { panel: string; front?: string }, opts:
   opts.signal?.addEventListener('abort', stop)
   try {
     const { data, error } = await supabase.functions.invoke(LABEL_FUNCTION, {
-      body: images.front ? { panel: images.panel, front: images.front } : { panel: images.panel },
+      body: {
+        panel: images.panel,
+        ...(images.front ? { front: images.front } : {}),
+        ...(images.barcode && /^\d{8,14}$/.test(images.barcode) ? { barcode: images.barcode } : {}),
+      },
       // the session the app already holds: never wait on a token refresh here
       headers: { Authorization: 'Bearer ' + getToken() },
       signal: ctl.signal,
@@ -76,7 +85,10 @@ export async function readLabel(images: { panel: string; front?: string }, opts:
       return { status: 'error' }
     }
     const read = data && typeof data === 'object' && (data as { ok?: unknown }).ok === true ? validateLabelRead((data as { read?: unknown }).read) : null
-    return read ? { status: 'ok', read } : { status: 'error' }
+    if (!read) return { status: 'error' }
+    // a signature for another barcode, or a malformed one, is simply not there
+    const share = cleanToken((data as { share?: unknown }).share)
+    return share ? { status: 'ok', read, share } : { status: 'ok', read }
   } catch (e) {
     const name = (e as { name?: string })?.name
     if (ctl.signal.aborted || navigator.onLine === false) return { status: 'offline' }

@@ -180,13 +180,14 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       if (useStore.getState().underAge) throw new Error('under age')
       // the server checks the label-photo consent itself: send a yes given moments ago first
       await useStore.getState().flushConsents()
-      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }, { signal: ctl.signal })
+      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}), ...(barcode ? { barcode } : {}) }, { signal: ctl.signal })
     } catch {
       res = { status: 'error' }
     }
     if (!aliveRef.current) return
     if (res.status === 'ok') {
-      onDone(draftFromLabel(res.read, { barcode, base, taken: taken() }))
+      const draft = draftFromLabel(res.read, { barcode, base, taken: taken() })
+      onDone(res.share ? { ...draft, share: res.share } : draft)
       return
     }
     const then = base

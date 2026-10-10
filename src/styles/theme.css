@@ -1162,3 +1162,39 @@ label a, .prose a { color: var(--tint); text-decoration: none; }
 .pick-fig .u { font-size: 26px; font-weight: 500; color: var(--label2); }
 .pick-fig .v.h76 ~ .u { font-size: 24px; }
 .pick-fig.unset .v { color: var(--label3); }
+
+/* ===================== SHARED PRODUCTS (boards sp-1, sp-2, sp-3, sp-3b, sp-6) ===================== */
+/* where a found product came from, at the top of Check the label */
+.sp-src { display: flex; gap: 12px; align-items: flex-start; background: var(--elev); border-radius: var(--radius); padding: 14px 16px; }
+.sp-src > .i { flex: none; margin-top: 1px; color: var(--label2); }
+.sp-src .m { flex: 1; min-width: 0; }
+.sp-src .t { font-size: 16px; line-height: 1.35; }
+.sp-src .s { font-size: 15px; color: var(--label2); margin-top: 2px; }
+.sp-src .bc { font-size: 13px; color: var(--label2); margin-top: 4px; }
+.sp-report { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 2px 0 -10px; padding: 0; border: 0; background: none; font-size: 15px; font-weight: 500; color: var(--tint); }
+/* One serving with its margin */
+.sp-serv { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; background: var(--elev); border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; font-size: 17px; }
+.sp-serv b { font-weight: 600; }
+.sp-serv b span { font-weight: 400; color: var(--label2); }
+/* the one-time opt-in (sp-1) */
+.sheet.sp-optin .sheet-bd { display: flex; flex-direction: column; padding: 12px 20px calc(env(safe-area-inset-bottom) + 34px); }
+.sp-tile { width: 52px; height: 52px; border-radius: 16px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; }
+.sp-optin h2 { margin: 16px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.sp-optin p { margin: 10px 0 0; font-size: 17px; line-height: 1.45; color: var(--label2); }
+.sp-optin .btn { margin-top: 8px; }
+.sp-optin .btn.yes { margin-top: 24px; }
+/* the report sheet (sp-6) */
+.sp-rep-hd { padding: 0 4px; }
+.sp-rep-hd .t { font-size: 17px; font-weight: 600; }
+.sp-rep-hd .bc { font-size: 13px; color: var(--label2); margin-top: 2px; }
+.sp-why { border: 0; margin: 0; padding: 0; min-width: 0; }
+.sp-why legend { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; padding: 22px 4px 10px; }
+.sp-why .list { margin: 0; }
+.sp-why label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; position: relative; cursor: pointer; }
+.sp-why label + label::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--sep); }
+.sp-why input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.sp-why .dot { width: 24px; height: 24px; border-radius: 12px; border: 2px solid var(--fill3); box-sizing: border-box; flex: none; display: flex; align-items: center; justify-content: center; }
+.sp-why input:checked + .dot { border: 0; background: var(--tint); color: var(--on-tint); }
+.sp-why input:focus-visible + .dot { outline: 2px solid var(--tint); outline-offset: 2px; }
+.sp-why .w { flex: 1; font-size: 17px; }
+.sp-why-send { margin-top: 24px; }

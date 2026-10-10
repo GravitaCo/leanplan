@@ -58,6 +58,12 @@ const PATHS = {
   // Wind down's routine (wellbeing board B12): a cup (caffeine earlier) and a rolled mat (floor stretches)
   cup: <path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10.5h1.5a2.25 2.25 0 0 1 0 4.5H16M8.5 3.5v3M12.5 3.5v3" />,
   mat: <><rect x="3" y="13.5" width="13" height="6" rx="1.5" /><circle cx="18" cy="16.5" r="3" /><path d="M18 16.5h.01" /></>,
+  /** two people: Tali's shared product list (boards sp-1, sp-2) */
+  people: <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.2c2.2.2 3.8 1.8 4.5 4.8" /></>,
+  /** a stack of pages: read from the pack several times (sp-3) */
+  pages: <><rect x="4" y="4" width="13" height="16" rx="2.5" /><path d="M8 9h5M8 13h5M20 7v12a2 2 0 0 1-2 2H9" /></>,
+  /** a flag: Report this product (sp-2, sp-6) */
+  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

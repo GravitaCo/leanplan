@@ -16,7 +16,7 @@ import type {
 } from '@/core/types'
 import { r1 } from './date'
 import { amountText, roundAmount, scaleFood, unitOf } from './nutrition'
-import { sourceErr } from '@/core/data/sources'
+import { isSharedSource, sourceErr } from '@/core/data/sources'
 
 /** Extra relative error when the cooking-fat question is skipped: we don't add fat we
  *  weren't told about, we just say we're less sure. */
@@ -170,7 +170,8 @@ export function buildEntry(
   const s = scaleFood(food, grams)
   // labels copied by hand are a little less certain than the curated database
   // menu-label sources (restaurant chains) are wider than a weighed portion can make them
-  const err = +Math.max(CAPTURE_ERR[how] + (opts.custom ? 0.03 : 0), sourceErr(food)).toFixed(2)
+  // a saved shared-list product carries its tier's margin instead of the "added yourself" one
+  const err = +Math.max(CAPTURE_ERR[how] + (opts.custom && !isSharedSource(food.src) ? 0.03 : 0), sourceErr(food)).toFixed(2)
   const entry: LoggedFood = { n: food.n, grams, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f), meal, src: opts.custom ? 'custom' : 'db', how, err }
   if (unit !== 'g') entry.unit = unit
   if (portion.mode === 'hand') entry.hand = { type: portion.type, count: portion.count }
