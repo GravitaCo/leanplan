@@ -5,8 +5,11 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
  * the user's device (cookies, localStorage, caches), not just cookies, so every key the
  * app writes is listed. Adding a key, an embed or any analytics means this changes too,
  * and anything not strictly necessary needs opt-in consent before it is set.
+ * tali.onboarding, tali.setupCardHidden and tali.pendingDelete are only written by first-run
+ * onboarding (ONBOARDING_ENABLED, src/data/onboardingFlag.ts), so they are gated on `onboarding`:
+ * `npm run legal:html` publishes with onboarding = ONBOARDING_ENABLED.
  */
-export function cookiePolicy(): LegalDoc {
+export function cookiePolicy({ onboarding = false }: { onboarding?: boolean } = {}): LegalDoc {
   return {
     title: 'Cookie policy',
     updated: '2026-09-28',
@@ -32,9 +35,13 @@ export function cookiePolicy(): LegalDoc {
           `tali.mode: which kind of account this device's log belongs to. Kept until you sign out.`,
           `tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.`,
           `tali.sound: whether the workout player plays sounds. Kept until you change it or clear your data.`,
-          `tali.onboarding: your answers so far while you set Tali up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.`,
-          `tali.setupCardHidden: that you hid the "Finish your setup" card on Today. Kept until you remove this device's log, delete your account or clear your browser data.`,
-          `tali.pendingDelete: if you tell Tali during setup that you're under ${MIN_AGE} and the account can't be deleted straight away: which account to delete, and how many tries Tali has made. Tali tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tali clears this device's data, until Tali sees that account has been deleted, or, once it's 30 days old, the next time Tali opens; you can also remove it by clearing your browser data.`,
+          ...(onboarding
+            ? [
+                `tali.onboarding: your answers so far while you set Tali up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.`,
+                `tali.setupCardHidden: that you hid the "Finish your setup" card on Today. Kept until you remove this device's log, delete your account or clear your browser data.`,
+                `tali.pendingDelete: if you tell Tali during setup that you're under ${MIN_AGE} and the account can't be deleted straight away: which account to delete, and how many tries Tali has made. Tali tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tali clears this device's data, until Tali sees that account has been deleted, or, once it's 30 days old, the next time Tali opens; you can also remove it by clearing your browser data.`,
+              ]
+            : []),
           `tali.labelConsent: an older record of a label-photo choice, moved into leanplan.v1 the next time the app opens, then removed.`,
           `sb-… (keys starting "sb-"): keeps you signed in to your account. Set by our sign-in provider, Supabase. Kept until you sign out.`,
           `tali.reauthForDelete (session storage): set for a few minutes while you confirm it's you to delete your account. Cleared when you come back or close the tab.`,

@@ -11,6 +11,11 @@ import { entryAmount, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
+import LEGAL_ONBOARDING from './fixtures-legal-onboarding.json'
+import { privacyPolicy } from '@/core/legal/privacy'
+import { termsOfUse } from '@/core/legal/terms'
+import { cookiePolicy } from '@/core/legal/cookies'
+import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
 import { DEMOS } from '@/core/data/media'
@@ -1938,4 +1943,29 @@ function feedbackForm(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+// Legal texts gated on first-run onboarding (ONBOARDING_ENABLED): on, the text is main's as of
+// 2026-10-09 (the fixture); off (what's published today), nothing that only onboarding does.
+// Changing the onboarding text on purpose means regenerating the fixture in the same change.
+function legalOnboardingGate(): void {
+  const on = { privacy: privacyPolicy({ onboarding: true }), terms: termsOfUse({ onboarding: true }), cookies: cookiePolicy({ onboarding: true }) }
+  const off = { privacy: privacyPolicy({ onboarding: false }), terms: termsOfUse({ onboarding: false }), cookies: cookiePolicy({ onboarding: false }) }
+  const text = (d: object) => JSON.stringify(d)
+  const onlyOnboarding = ['setup', 'set Tali up', 'Health check answers', 'Health data, then', 'tali.onboarding', 'tali.setupCardHidden', 'tali.pendingDelete', 'body fat', 'worth it', 'reasons Tali gives', 'training preferences', 'pregnan']
+  // terms keep the general GP advice for pregnancy; only the setup paragraph goes
+  const leaks = (Object.keys(off) as (keyof typeof off)[]).flatMap((k) =>
+    onlyOnboarding.filter((w) => !(k === 'terms' && w === 'pregnan') && text(off[k]).includes(w)).map((w) => `${k}: ${w}`))
+  const checks: [string, boolean][] = [
+    ['onboarding is off in this build', ONBOARDING_ENABLED === false],
+    ['on: privacy equals the fixture (main, 2026-10-09)', text(on.privacy) === text(LEGAL_ONBOARDING.privacy)],
+    ['on: terms equal the fixture', text(on.terms) === text(LEGAL_ONBOARDING.terms)],
+    ['on: cookie policy equals the fixture', text(on.cookies) === text(LEGAL_ONBOARDING.cookies)],
+    ['no option means off', text(privacyPolicy()) === text(off.privacy) && text(termsOfUse()) === text(off.terms) && text(cookiePolicy()) === text(off.cookies)],
+    ['off: no onboarding-only wording' + (leaks.length ? ` (${leaks.join(', ')})` : ''), !leaks.length],
+    ['off: dates (privacy 2026-10-09, terms and cookies 2026-09-28)', off.privacy.updated === '2026-10-09' && off.terms.updated === '2026-09-28' && off.cookies.updated === '2026-09-28'],
+    ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)',
+      ['Weekly review: the day you picked', 'a weekly review reminder', 'Train offers lighter options', 'You can withdraw that consent', 'If Tali learns that you\'re under'].every((w) => text(off.privacy).includes(w))],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

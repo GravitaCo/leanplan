@@ -20,7 +20,13 @@ for (const [k, v] of Object.entries(LEGAL)) {
   if (k === 'icoNumber') console.log('WARN LEGAL.icoNumber is not set: pay the ICO data protection fee (ico.org.uk/fee) and add the number')
   else fail(`LEGAL.${k} is not set`)
 }
-for (const doc of [privacyPolicy(), termsOfUse(), cookiePolicy(), sitePrivacy(), siteTerms(), siteCookies()]) {
+// both versions of the gated texts: onboarding off, as now, and on, as published once
+// ONBOARDING_ENABLED goes on (scripts/legal-html.ts publishes with onboarding = ONBOARDING_ENABLED)
+const gated = [false, true].flatMap((onboarding) => [privacyPolicy({ onboarding }), cookiePolicy({ onboarding }), termsOfUse({ onboarding })])
+if (JSON.stringify(gated[0]) === JSON.stringify(gated[3])) fail('Privacy policy: the onboarding gate changes nothing')
+if (JSON.stringify(gated[1]) === JSON.stringify(gated[4])) fail('Cookie policy: the onboarding gate changes nothing')
+if (JSON.stringify(gated[2]) === JSON.stringify(gated[5])) fail('Terms: the onboarding gate changes nothing')
+for (const doc of [...gated, sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)
   if (!doc.sections.length) fail(`${doc.title}: no sections`)
