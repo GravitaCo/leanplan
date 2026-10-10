@@ -165,11 +165,10 @@ export function windDownSuite(): number {
     suppPayload({ lockNames: true }, [{ name: 'x'.repeat(200), time: '08:00' }], '08:00', ST).body.length === SUPP_NAME_MAX
     && JSON.stringify(suppPayload({ lockNames: true }, [{ name: '   ', time: '08:00' }, { time: '08:00' }], '08:00', ST)) === generic
     && JSON.stringify(suppPayload({ lockNames: true }, supps, 'later', ST)) === generic)
-  const fn = readFileSync('supabase/functions/send-supplement-reminders/index.next.ts', 'utf8')
-  const live = readFileSync('supabase/functions/send-supplement-reminders/index.ts', 'utf8')
+  const fn = readFileSync('supabase/functions/send-supplement-reminders/index.ts', 'utf8')
   ok('the function passes the person\'s Mind settings to suppPayload and never reads a name itself',
     /const payload = suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time, profile\?\.answeredAt\);/.test(fn) && /send\(sub, payload\)/.test(fn) && !/\.name\b/.test(fn))
-  ok('the deployed index.ts is untouched by B11b (still generic, no names setting)', !/lockNames|tali-supp-named/.test(live))
+  ok('the deployed function decides names only through suppPayload (no lockNames check of its own)', !fn.split('\n').filter((l) => !/^\s*\/\//.test(l)).some((l) => /lockNames|tali-supp-named/.test(l)))
 
   /* ---------- the service worker: a name only for the named tag ---------- */
   const shown: { title: string; body: string; tag: string }[] = []

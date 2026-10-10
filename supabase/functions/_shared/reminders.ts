@@ -1,6 +1,6 @@
 /**
  * Reminder rules (wellbeing Phase 1, board B11; security-data H2 to H4), shared by the generalised
- * `send-supplement-reminders` Edge Function (Deno: index.next.ts), the app (Profile › Notifications)
+ * `send-supplement-reminders` Edge Function (Deno: index.ts), the app (Profile › Notifications)
  * and the tests. Pure TS with no imports, so both runtimes load it as is.
  *
  * - The three Mind reminder types (check-in, wind-down, plan check-in) are opt-in, one by one, and

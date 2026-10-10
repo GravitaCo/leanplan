@@ -1,14 +1,34 @@
-// Supplement reminders and the weekly review reminder (Web Push), called by a cron job with the
-// cron secret. The review reminder (boards ml-d1, ml-d2; maintenance-loop.md) mirrors
-// `reminderDue` in src/core/domain/maintenanceLoop.ts: keep the two in step.
-// Copy of the deployed function, kept in the repo (docs/compliance/README.md). Deploy with
-// verify_jwt off: it authenticates with the cron secret, not a user's JWT.
+// ============================================================================
+// Supplement reminders, the weekly review reminder and the Mind reminders (Web Push), called by a
+// cron job with the cron secret. Copy of the deployed function, kept in the repo
+// (docs/compliance/README.md item 42). Deploy with verify_jwt off (supabase/config.toml): it
+// authenticates with the cron secret, not a user's JWT. Deployed 10 Oct 2026 with Mind turned on;
+// needs docs/migrations/2026-10-09-notify-sent.sql (applied 10 Oct 2026). The review reminder
+// mirrors `reminderDue` in src/core/domain/maintenanceLoop.ts: keep the two in step.
+//
+// What changed against the earlier supplement-only version:
+// - Subscriptions are grouped by person; consent and settings are read once per person, the
+//   settings in one batch.
+// - Times follow the person's own clock: profile.mind.tz (IANA, from the phone), else UK time.
+//   The weekly review reminder stays on UK time, as the privacy policy says (maintenance loop).
+// - The Mind reminders (check-in, wind-down, plan check-in): only types the person turned on
+//   (`profile.mind.notify[kind] === true`), never in quiet hours (after the wind-down time, before
+//   the usual wake time). At most one check-in or plan reminder a day: the day is claimed in
+//   notify_sent (notify_claim, atomic) before anything is sent, so two runs or two subscriptions
+//   can never send two. The wind-down reminder sits outside that cap (Benn, 10 Oct 2026) but is
+//   claimed the same way for its own day (by_kind), so it too goes at most once a day. A halved
+//   type goes only every other day (by_kind). Supplement reminders don't claim anything.
+// - Every payload is fixed copy from ../_shared/reminders.ts: no mood or sleep word, nothing from
+//   the log. A supplement reminder names the supplement only when the person turned on "Show
+//   supplement names in reminders" (B11b, profile.mind.lockNames === true); otherwise the name is
+//   left out of the payload entirely. Logs and the response carry counts only.
 //
 // Health consent (docs/migrations/2026-09-28-health-consent-server.sql): someone whose latest
-// health answer isn't a yes gets no reminders, since reminders use their supplements (health
-// data) from the synced profile.
+// health answer isn't a yes gets no reminders, and their profile isn't read.
+// ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push";
+import { dueKinds, isCapped, localNow, payloadFor, suppPayload, suppsDue, type MindKind } from "../_shared/reminders.ts";
 
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
@@ -52,7 +72,7 @@ function unopened(p: any, today: string): number {
   return n;
 }
 
-/** Same rule as the app: switched on, the review day at the chosen time, not opened yet, not a skipped week, fewer than 3 unopened. */
+/** Same rule as the app (src/core/domain/maintenanceLoop.ts reminderDue): unchanged from index.ts. */
 function reviewDue(p: any, today: string, dow: number, time: string): boolean {
   if (!p?.reviewPush) return false;
   if ((p.reviewDay ?? 0) !== dow || (p.reviewPushTime ?? "09:00") !== time) return false;
@@ -60,6 +80,8 @@ function reviewDue(p: any, today: string, dow: number, time: string): boolean {
   if (p.reviewPushSkip === today) return false;
   return unopened(p, today) < 3;
 }
+
+type Sub = { id: string; user_id: string; endpoint: string; p256dh: string; auth_key: string };
 
 Deno.serve(async (req: Request) => {
   // Fail closed. The secret comes from the CRON_SECRET env var if set,
@@ -79,15 +101,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const now = new Date();
-  // the review day and the review reminder's date, in London time like the supplement times
-  const londonDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const londonDow = new Date(londonDate + "T12:00:00Z").getUTCDay();
-  const londonTime = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/London",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(now);
+  const london = localNow("Europe/London", now);
 
   const { data: subscriptions, error } = await supabase
     .from("push_subscriptions")
@@ -95,88 +109,103 @@ Deno.serve(async (req: Request) => {
 
   if (error) console.error(`subscriptions query failed: ${error.code}`);
   if (error || !subscriptions?.length) {
-    return json({ time: londonTime, sent: 0, failed: 0 });
+    return json({ time: london.time, sent: 0, failed: 0 });
   }
 
-  // Counts only: supplement names can reveal medication, so they never
-  // appear in the response or the logs.
+  // Counts only: supplement names can reveal medication, and which reminders someone gets says
+  // something about them, so neither appears in the response or the logs.
   let sent = 0;
   let failed = 0;
   let skipped = 0;
-  const consent = new Map<string, boolean>();
+  let capped = 0;
 
-  for (const sub of subscriptions) {
-    // no current yes to health data: no reminder (and the profile isn't read)
-    if (!consent.has(sub.user_id)) {
-      const { data: ok, error: cErr } = await supabase.rpc("health_consent_current", { uid: sub.user_id });
-      if (cErr) console.error(`consent check failed: ${cErr.code}`);
-      consent.set(sub.user_id, ok === true);
-    }
-    if (!consent.get(sub.user_id)) { skipped++; continue; }
+  const byUser = new Map<string, Sub[]>();
+  for (const s of subscriptions as Sub[]) {
+    const list = byUser.get(s.user_id) ?? [];
+    list.push(s);
+    byUser.set(s.user_id, list);
+  }
 
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("profile")
-      .eq("user_id", sub.user_id)
-      .single();
+  // no current yes to health data: no reminder, and the profile isn't read
+  const consenting: string[] = [];
+  for (const uid of byUser.keys()) {
+    const { data: ok, error: cErr } = await supabase.rpc("health_consent_current", { uid });
+    if (cErr) console.error(`consent check failed: ${cErr.code}`);
+    if (ok === true) consenting.push(uid); else skipped += byUser.get(uid)!.length;
+  }
+  if (!consenting.length) return json({ time: london.time, sent, failed, skipped });
 
-    const profile = settings?.profile as any;
+  const profiles = new Map<string, any>();
+  const sentRows = new Map<string, { last_on: string | null; by_kind: Record<string, unknown> | null }>();
+  for (let i = 0; i < consenting.length; i += 200) {
+    const ids = consenting.slice(i, i + 200);
+    const { data: rows, error: sErr } = await supabase.from("settings").select("user_id, profile").in("user_id", ids);
+    if (sErr) console.error(`settings query failed: ${sErr.code}`);
+    for (const r of rows ?? []) profiles.set(r.user_id, r.profile);
+    const { data: ns, error: nErr } = await supabase.from("notify_sent").select("user_id, last_on, by_kind").in("user_id", ids);
+    if (nErr) console.error(`notify_sent query failed: ${nErr.code}`);
+    for (const r of ns ?? []) sentRows.set(r.user_id, r);
+  }
 
-    // the weekly review reminder: generic text only, nothing from the log (a lock screen is visible
-    // to anyone nearby); switched on separately from supplement reminders
-    if (reviewDue(profile, londonDate, londonDow, londonTime)) {
-      try {
-        await (webpush as any).sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
-          JSON.stringify({ title: "Your week is ready", body: "Take a look whenever suits you.", tag: "tali-review", url: "./?review=1", icon: "/icon-192.png" }),
-        );
-        sent++;
-      } catch (err: any) {
-        failed++;
-        console.error(`push failed: status ${err?.statusCode ?? "unknown"}`);
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          await supabase.from("push_subscriptions").delete().eq("id", sub.id);
-          continue;
-        }
+  const send = async (sub: Sub, payload: unknown): Promise<"ok" | "gone" | "failed"> => {
+    try {
+      await (webpush as any).sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+        JSON.stringify(payload),
+      );
+      sent++;
+      return "ok";
+    } catch (err: any) {
+      failed++;
+      console.error(`push failed: status ${err?.statusCode ?? "unknown"}`);
+      if (err?.statusCode === 410 || err?.statusCode === 404) {
+        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+        return "gone";
       }
+      return "failed";
+    }
+  };
+
+  for (const uid of consenting) {
+    const profile = profiles.get(uid);
+    if (!profile) continue;
+    let subs = byUser.get(uid)!;
+    const local = localNow(profile?.mind?.tz, now);
+
+    // the weekly review reminder: unchanged, UK time
+    if (reviewDue(profile, london.day, london.dow, london.time)) {
+      const left: Sub[] = [];
+      for (const sub of subs) if ((await send(sub, { title: "Your week is ready", body: "Take a look whenever suits you.", tag: "tali-review", url: "./?review=1", icon: "/icon-192.png" })) !== "gone") left.push(sub);
+      subs = left;
     }
 
-    if (!profile?.notificationsEnabled) continue;
+    // supplement reminders: the person's own times, outside the daily cap; generic text unless
+    // they turned names on (B11b: suppPayload reads the names only when mind.lockNames is true
+    // and stamped, security-data L1)
+    if (profile?.notificationsEnabled && suppsDue(profile?.supplements, local.time) > 0) {
+      const payload = suppPayload(profile?.mind, profile?.supplements, local.time, profile?.answeredAt);
+      const left: Sub[] = [];
+      for (const sub of subs) if ((await send(sub, payload)) !== "gone") left.push(sub);
+      subs = left;
+    }
 
-    const supplements: Array<{ time: string }> =
-      profile?.supplements ?? [];
-
-    const dueNow = supplements.filter((s) => s.time === londonTime);
-
-    // Generic text only: a lock screen is visible to anyone nearby and a supplement name can
-    // reveal medication, so the payload never carries one. One notification per subscription
-    // with one fixed tag, however many supplements are due, so they don't stack. Every other push
-    // type sets its own tali-<kind> tag: public/sw.js shows a push with no tag as this reminder.
-    if (dueNow.length) {
-      const pushSub = {
-        endpoint: sub.endpoint,
-        keys: { p256dh: sub.p256dh, auth: sub.auth_key },
-      };
-      try {
-        await (webpush as any).sendNotification(
-          pushSub,
-          JSON.stringify({
-            title: "Time for your supplements",
-            body: "Time for your supplements",
-            tag: "tali-supp",
-            icon: "/icon-192.png",
-          })
-        );
-        sent++;
-      } catch (err: any) {
-        failed++;
-        console.error(`push failed: status ${err?.statusCode ?? "unknown"}`);
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          await supabase.from("push_subscriptions").delete().eq("id", sub.id);
-        }
-      }
+    // the Mind reminders: opt-in, quiet hours, halving. One check-in or plan reminder a day (the
+    // first due, claimed before sending); the wind-down reminder outside that cap, once a day
+    // (its own claim). Each is claimed before it's sent.
+    const row = sentRows.get(uid);
+    const due = dueKinds({ mind: profile?.mind, plans: profile?.plans, day: local.day, time: local.time, lastOn: row?.last_on ?? null, byKind: row?.by_kind ?? null });
+    const toSend = [due.find(isCapped), due.find((k) => !isCapped(k))].filter((k): k is MindKind => !!k);
+    for (const kind of toSend) {
+      if (!subs.length) break;
+      const { data: claimed, error: clErr } = await supabase.rpc("notify_claim", { uid, day: local.day, kind });
+      if (clErr) { console.error(`claim failed: ${clErr.code}`); continue; }
+      // already claimed: a capped type counts in `capped`; a wind-down already sent today doesn't
+      if (claimed !== true) { if (isCapped(kind)) capped++; continue; }
+      const left: Sub[] = [];
+      for (const sub of subs) if ((await send(sub, payloadFor(kind))) !== "gone") left.push(sub);
+      subs = left;
     }
   }
 
-  return json({ time: londonTime, sent, failed, skipped });
+  return json({ time: london.time, sent, failed, skipped, capped });
 });

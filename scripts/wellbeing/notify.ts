@@ -2,7 +2,7 @@
    migration (written, not applied), the service worker's fixed copy and delivery log, the app's
    read-and-empty of that log, Profile's reminder toggles (setMindReminder) and the back-off notice.
    Run from scripts/test-wellbeing.ts; returns the number of failures. */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import type { IfThenPlan } from '@/core/types'
 import { useStore, mindRemindersOn, remindersOn } from '@/store/store'
 import { freshForAccount, loadStateFrom } from '@/data/persistence'
@@ -263,11 +263,12 @@ export async function notifySuite(): Promise<number> {
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
   ok('Profile mounts the B11 parts only with the wellbeing flag', /WELLBEING_ENABLED && <BackoffNotices \/>/.test(prof) && /WELLBEING_ENABLED && <MindReminderRows \/>/.test(prof) && /WELLBEING_ENABLED && <YourTimes \/>/.test(prof))
 
-  /* ---------- the server files (WP16: written, not applied) ---------- */
-  const fn = readFileSync('supabase/functions/send-supplement-reminders/index.next.ts', 'utf8')
-  const live = readFileSync('supabase/functions/send-supplement-reminders/index.ts', 'utf8')
-  ok('the generalised function is a separate, clearly marked file; index.ts (deployed, lock-screen fix) is unchanged in shape',
-    /NOT DEPLOYED/.test(fn.slice(0, 200)) && /from "\.\.\/_shared\/reminders\.ts"/.test(fn) && !/_shared\/reminders/.test(live) && /tag: "tali-supp"/.test(live))
+  /* ---------- the server function (WP16: deployed with Mind, 10 Oct 2026) ---------- */
+  const fn = readFileSync('supabase/functions/send-supplement-reminders/index.ts', 'utf8')
+  const cfg = readFileSync('supabase/config.toml', 'utf8')
+  ok('the generalised function is the deployed index.ts (no second copy), with verify_jwt off in config.toml',
+    !existsSync('supabase/functions/send-supplement-reminders/index.next.ts') && /Copy of the deployed function/.test(fn.slice(0, 400)) && !/NOT DEPLOYED/.test(fn)
+    && /from "\.\.\/_shared\/reminders\.ts"/.test(fn) && /\[functions\.send-supplement-reminders\]\s*(#[^\n]*\n\s*)*verify_jwt = false/.test(cfg))
   const consoleLines = fn.split('\n').filter((l) => /console\.(log|warn|error|info)/.test(l))
   ok('the function never logs a supplement name, a profile or a kind', consoleLines.length > 0 && consoleLines.every((l) => !/name|profile|kind|supplement|mind/i.test(l.replace(/console\.\w+\(`[^`$]*/, ''))))
   ok('the function never reads a supplement name itself (suppPayload does, only with lockNames)', !/\.name\b/.test(fn) && /suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time, profile\?\.answeredAt\)/.test(fn))

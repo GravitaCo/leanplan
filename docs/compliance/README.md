@@ -390,7 +390,7 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     same day (`docs/migrations/2026-10-10-notify-sent-remaining.sql`; verified: both clear
     notify_sent, grants unchanged, no new advisor warnings). The reminder function is not deployed.
     To ship it: copy
-    `supabase/functions/send-supplement-reminders/index.next.ts` over `index.ts` and deploy it,
+    `supabase/functions/send-supplement-reminders/index.next.ts` over `index.ts` (done 10 Oct 2026: the new code is now `index.ts`, `index.next.ts` removed, verify_jwt off in `supabase/config.toml`) and deploy it,
     then redeploy `delete-account` so its `USER_TABLES` includes `notify_sent` (it skips a missing
     table, so the order is safe). Supplement reminders stay generic (item 41) unless the person
     turns on the names setting (B11b, approved 2026-10-10, built behind the flag: item 45). Privacy and cookie policy text for the Mind reminders is in
@@ -482,7 +482,7 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     - `lockNames`, "Show supplement names in reminders" (Profile, Notifications, under
       Supplement reminders), off unless the person turns it on. Re-adds the setting security-data
       L1 took out (2026-10-09). A preference, kept on withdrawal. The reminder service
-      (`send-supplement-reminders/index.next.ts` with `_shared/reminders.ts` `suppPayload`) reads
+      (`send-supplement-reminders/index.ts` with `_shared/reminders.ts` `suppPayload`) reads
       supplement names only when it is `true`: then the payload's title is "Supplement reminder"
       and its body the names due (tag `tali-supp-named`); otherwise the generic "Time for your
       supplements" with no name anywhere in the payload. `public/sw.js` shows a name only for that
@@ -512,8 +512,8 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     `SUPP_NAMES_ENABLED` (off; `src/data/wellbeingFlag.ts`), gates the Profile row and its footer
     and the privacy policy's sentences about it (`privacyPolicy`'s `suppNames`, published by
     `npm run legal:html` from the flag). With it off the Mind version of the policy doesn't mention
-    the setting and says supplement reminders never name the supplement. The routine (B12) ships
-    with Mind. Server logic is unchanged: `suppPayload` already needs a stamped `lockNames: true`,
+    the setting and says supplement reminders never name the supplement. The routine (B12) is
+    built but only reachable once `MIND_REVIEWED` is on (the Wind down screen sits behind it). Server logic is unchanged: `suppPayload` already needs a stamped `lockNames: true`,
     which nobody can set while the row is hidden, so every supplement reminder stays generic. To
     show it: sign DPIA 8.8, set `SUPP_NAMES_ENABLED` on, and republish the privacy policy.
 

@@ -13,3 +13,8 @@ verify_jwt = false
 # missing or malformed Authorization with 401, then has Auth verify the token (auth.getUser) and
 # takes the user id only from that answer. The service role key never leaves the function.
 verify_jwt = false
+
+[functions.send-supplement-reminders]
+# Called only by the cron job with the cron secret (x-cron-secret), never with a user's JWT, so the
+# gateway's JWT check is off; the function itself refuses anything without the secret (401).
+verify_jwt = false
