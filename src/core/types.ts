@@ -38,6 +38,10 @@ export interface Food {
   /** eaten as it comes (a ready meal, crisps, a drink): logged by the serving, never offered as a
    *  "What can I make?" ingredient and ranked after ingredients in the recipe builder */
   eat?: true
+  /** other names people search for this food by ("dhal", "lamb curry"), never shown. Built-in
+   *  foods only (not synced). A query that is exactly one of them ranks this food first; otherwise
+   *  their words match like the name's, after foods whose name matches (core/domain/search.ts) */
+  aka?: string[]
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean

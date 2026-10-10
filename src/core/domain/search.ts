@@ -8,6 +8,9 @@
  * - A plural also matches as its singular when that is a whole word ("eggs" → "Egg, whole").
  * - Ties keep database order, which is curated (common foods first), instead of
  *   favouring short names.
+ * - Optional aliases (a food's `aka`): a query that is exactly an alias ranks that item first
+ *   ("dhal" → "Tarka dal", "tikka masala" → the takeaway chicken tikka masala); otherwise an
+ *   alias matches like the name, but after any item whose own name matches as well.
  */
 
 /** How a word matched: 0 = at a word start ("Egg"), 1 = ending a word ("cheese|burger|",
@@ -50,17 +53,36 @@ function hit(name: string, query: string[]): Hit | null {
   return { tier, score, whole }
 }
 
-/** Items whose `name` matches every word, best first. */
-export function rankByName<T>(items: T[], name: (x: T) => string, words: string[]): T[] {
+/** An alias match ranks after a name match of the same tier (names are under 100 characters). */
+const AKA_PENALTY = 100
+
+const better = (a: Hit | null, b: Hit | null) => (!a ? b : !b ? a : b.tier < a.tier || (b.tier === a.tier && b.score < a.score) ? b : a)
+
+/** The item's best match over its name and its aliases. An alias equal to the whole query is
+ *  tier -1, ahead of every name match. */
+function hitWithAka(name: string, aka: readonly string[] | undefined, words: string[]): Hit | null {
+  let h = hit(name, words)
+  if (!aka?.length) return h
+  const q = fold(words.join(' '))
+  for (const a of aka) {
+    if (fold(a) === q) return { tier: -1, score: 0, whole: true }
+    const ah = hit(a, words)
+    if (ah) h = better(h, { ...ah, score: ah.score + AKA_PENALTY })
+  }
+  return h
+}
+
+/** Items whose `name` (or one of its `aka` aliases) matches every word, best first. */
+export function rankByName<T>(items: T[], name: (x: T) => string, words: string[], aka?: (x: T) => readonly string[] | undefined): T[] {
+  const match = (x: T, ws: string[]) => hitWithAka(name(x), aka?.(x), ws)
   // A plural also searches as its singular when the singular is a whole word somewhere
   // ("eggs" finds "Egg, whole" even though "Eggs Benedict" matches too), but not when it
   // isn't ("pea" only inside "pear": "peas" keeps "Chickpeas"). Each item keeps its better match.
   const singular = words.map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w))
-  const alt = singular.some((w, i) => w !== words[i]) ? items.map((x) => hit(name(x), singular)) : null
-  const useAlt = !!alt && alt.some((h) => h?.tier === 0 && h.whole)
-  const better = (a: Hit | null, b: Hit | null) => (!a ? b : !b ? a : b.tier < a.tier || (b.tier === a.tier && b.score < a.score) ? b : a)
+  const alt = singular.some((w, i) => w !== words[i]) ? items.map((x) => match(x, singular)) : null
+  const useAlt = !!alt && alt.some((h) => !!h && h.tier <= 0 && h.whole)
   const hits = items
-    .map((x, i) => ({ x, i, h: useAlt ? better(hit(name(x), words), alt![i]) : hit(name(x), words) }))
+    .map((x, i) => ({ x, i, h: useAlt ? better(match(x, words), alt![i]) : match(x, words) }))
     .filter((o) => o.h !== null) as { x: T; i: number; h: Hit }[]
   const useMid = !hits.some((o) => o.h.tier < 2)
   return hits

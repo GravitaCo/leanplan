@@ -185,7 +185,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const words = meaningful.length ? meaningful : [query]
     const recipes = recipesByUse(data).map((ri) => ({ r: data.recipes[ri], ri }))
       .filter((o) => words.every((w) => o.r.name.toLowerCase().includes(w)))
-    const foods = rankByName(all.map((f, i) => ({ f, i })), (o) => o.f.n, words).slice(0, 50)
+    const foods = rankByName(all.map((f, i) => ({ f, i })), (o) => o.f.n, words, (o) => o.f.aka).slice(0, 50)
     body = (
       <>
         {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}

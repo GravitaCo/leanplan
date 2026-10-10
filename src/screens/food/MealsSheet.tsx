@@ -42,7 +42,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     const query = q.trim().toLowerCase()
     const words = queryWords(query)
     // ready meals and menu items stay addable, but after the ingredients that match
-    const matches = query ? ingredientsFirst(rankByName(all, (f) => f.n, words.length ? words : [query]), (f) => f).slice(0, 30) : []
+    const matches = query ? ingredientsFirst(rankByName(all, (f) => f.n, words.length ? words : [query], (f) => f.aka), (f) => f).slice(0, 30) : []
     const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
     const save = () => {
       if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
