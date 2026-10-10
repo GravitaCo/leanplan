@@ -14,6 +14,10 @@ export interface Source {
   url: string
   /** minimum typical relative error for values from this source, when it's known to be wide */
   err?: number
+  /** a named dish estimated from the closest CoFID dish: no published figure (ref) exists */
+  estimate?: true
+  /** lab values per 100 g with a wide margin: there is no per-portion published figure (ref) */
+  perHundred?: true
 }
 
 /** UK menu calorie labels: 21% mean absolute error per item (bomb calorimetry of 295 items,
@@ -22,6 +26,9 @@ const MENU_ERR = 0.2
 
 export const SOURCES: Record<string, Source> = {
   cofid: { label: 'UK CoFID 2021', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid' },
+  // the same CoFID rows, for dishes CoFID sampled from UK takeaways: ±30% for how much takeaway
+  // recipes and portions vary (nutrition-accuracy, Oct 2026). Audited like `cofid`.
+  'cofid-takeaway': { label: 'UK CoFID 2021 (takeaway samples)', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid', err: 0.3, perHundred: true },
   usda: { label: 'USDA FoodData Central (US data; carbs include fibre)', url: 'https://fdc.nal.usda.gov/' },
   label: { label: 'Pack label', url: '' },
   off: { label: 'Pack label via Open Food Facts', url: 'https://world.openfoodfacts.org/' },
@@ -32,7 +39,18 @@ export const SOURCES: Record<string, Source> = {
   'popeyes-uk': { label: 'Popeyes UK, Sep 2026', url: 'https://popeyesuk.com/nutrition', err: MENU_ERR },
   'pizzahut-uk': { label: 'Pizza Hut Restaurants UK (dine-in), Jul 2026', url: '', err: MENU_ERR },
   'pizzaexpress-uk': { label: 'PizzaExpress UK (England, Wales & Scotland), Sep 2026', url: 'https://www.pizzaexpress.com/allergens-and-nutritionals', err: MENU_ERR },
+  'toby-uk': { label: 'Toby Carvery UK, Oct 2026', url: 'https://allergens.mbplc.io/AllergenGuideTobyEstate.html', err: MENU_ERR },
+  // Restaurants that publish no nutrition (Benn, Oct 2026): each dish carries the closest UK
+  // CoFID dish's values (lab-tested or recipe-calculated) (`est-cofid:<CoFID code>`) and a typical portion from published
+  // takeaway surveys. Never the restaurant's own figures; ±40% (nutrition-accuracy, Oct 2026).
+  'est-cofid': { label: 'Estimated from the closest UK dish in CoFID 2021, not the restaurant’s own figures', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid', err: 0.4, estimate: true },
+  'slims-uk': { label: 'Slim Chickens UK, Oct 2026', url: 'https://menus.tenkites.com/brg/slimscore', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
+  // Autumn 2026 booklets (food v17/08/26, beverages v18/09/26); the PDF links change each season
+  'starbucks-uk': { label: 'Starbucks UK, Sep 2026', url: 'https://www.starbucks.co.uk/nutrition', err: MENU_ERR },
+  'nero-uk': { label: 'Caffè Nero UK, Sep 2026', url: 'https://caffenerowebsite.blob.core.windows.net/production/data/menus/caffenero_nutrition_allergens-en_GB.pdf', err: MENU_ERR },
+  'pret-uk': { label: 'Pret A Manger UK, Oct 2026', url: 'https://www.pret.co.uk/en-GB/products', err: MENU_ERR },
+  'costa-uk': { label: 'Costa Coffee UK in-store allergen & nutrition guide, Autumn 2026', url: 'https://www.costa.co.uk/nutrition', err: MENU_ERR },
 }
 
 /** Chain menus: sources whose values are a restaurant's published per-item figures. */

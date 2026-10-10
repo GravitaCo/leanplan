@@ -2,11 +2,20 @@ import type { Food } from '@/core/types'
 import { GREGGS } from './chains/greggs'
 import { KFC } from './chains/kfc'
 import { POPEYES } from './chains/popeyes'
+import { SLIMS } from './chains/slims'
 import { PIZZAHUT } from './chains/pizzahut'
 import { BURGERKING } from './chains/burgerking'
 import { NANDOS } from './chains/nandos'
 import { PIZZAEXPRESS } from './chains/pizzaexpress'
+import { STARBUCKS } from './chains/starbucks'
+import { CAFFENERO } from './chains/caffenero'
+import { PRET } from './chains/pret'
+import { TOBY } from './chains/toby'
+import { COSTA } from './chains/costa'
 import { INGREDIENTS } from './ingredients'
+import { CHINESE_TAKEAWAY } from './takeaway/chinese'
+import { AAGRAH } from './restaurants/aagrah'
+import { KASHMIRI_AROMA } from './restaurants/kashmiriaroma'
 
 /** Built-in food database — values per 100 g (per 100 ml when `ml` is set, per item when
  *  `each` is set). `src` cites where the values come from (see `sources.ts`); every change
@@ -2946,5 +2955,4 @@ const BASE: Food[] = [
   }
 ]
 
-/** Chain menus are generated files in `chains/` (see scripts/import/). */
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, PIZZAHUT, BURGERKING, NANDOS, PIZZAEXPRESS)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, SLIMS, PIZZAHUT, BURGERKING, NANDOS, PIZZAEXPRESS, STARBUCKS, CAFFENERO, PRET, TOBY, CHINESE_TAKEAWAY, AAGRAH, KASHMIRI_AROMA, COSTA)

@@ -22,7 +22,7 @@ for (const a of audit) {
 const r1 = (x: number | null) => Math.round((x ?? 0) * 10) / 10
 for (const f of FOODS) {
   const key = f.src?.split(':')[0]
-  if (key !== 'cofid' && key !== 'usda') continue
+  if (key !== 'cofid' && key !== 'cofid-takeaway' && key !== 'usda') continue
   const a = byName.get(f.n)
   if (!a || a.ref.k == null) { r.errors.push(`${f.n}: cites ${f.src} but has no audit record`); continue }
   const want = { k: Math.round(a.ref.k), p: r1(a.ref.p), c: r1(a.ref.c), f: r1(a.ref.f) }

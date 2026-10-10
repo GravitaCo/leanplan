@@ -19,10 +19,16 @@ function isWordChar(ch: string | undefined): boolean {
 }
 
 /** Chain names that contain food words: matches inside them count less than the dish itself. */
-const BRAND = /^(pizza hut|pizzaexpress|burger king|greggs|kfc|popeyes|nando's|subway|mcdonald's|domino's)\b/i
+const BRAND = /^(pizza hut|pizzaexpress|burger king|greggs|kfc|popeyes|slim chickens|nando's|subway|mcdonald's|domino's|toby carvery|kashmiri aroma|aagrah)\b/i
 
-function hit(name: string, words: string[]): Hit | null {
-  const n = name.toLowerCase()
+/** Lower case without accents, so "caffe" finds "Caffè Nero" and "creme" finds "Crème". */
+function fold(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+function hit(name: string, query: string[]): Hit | null {
+  const n = fold(name)
+  const words = query.map(fold)
   const brandEnd = n.match(BRAND)?.[0].length ?? 0
   let tier = 0, score = 0, whole = true
   for (const w of words) {

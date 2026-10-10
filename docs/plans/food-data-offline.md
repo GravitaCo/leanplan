@@ -51,6 +51,10 @@ writes a generated file in `src/core/data/chains/`. Nothing is typed by hand.
   with no AI, and cross-checks every row (per-portion kcal = per-100 g × portion). It drops
   multi-item boxes, drinks' syrup and cream add-ons, decaf duplicates and hospital-shop items.
   It keeps existing Tali names so learned usuals still match.
+- **Caffè Nero:** `python3 scripts/import/caffenero.py <caffenero_nutrition_allergens-en_GB.pdf>`
+  (the GB guide linked from caffenero.com/uk/menu). It reads the PDF by word position, food per
+  portion (per item where the printed weight disagrees with the per-100 g column) and drinks per item
+  in each drink's standard milk plus oat for the core milk coffees. It prints what it left out and why.
 - **Every refresh:** re-run when the chain publishes a new file, review the diff, then run
   `npm run check:foods`. Chains whose files are scanned images need an AI reading step instead
   (not built yet).
