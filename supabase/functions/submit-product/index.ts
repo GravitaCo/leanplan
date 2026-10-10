@@ -27,93 +27,24 @@
 import { jwtPayload } from '../_shared/account.ts'
 import { cleanToken, gtin14 } from '../_shared/shared-product.ts'
 import { MIN_KEY_LENGTH, sigHash, verifyShare } from '../_shared/product-sig.ts'
-
-const ORIGINS = [
-  /^https:\/\/app\.tali\.fit$/,
-  /^http:\/\/localhost(:\d+)?$/,
-  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
-  // local preview on a phone through a tunnel (docs/local-preview.md)
-  /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/,
-]
+import { BEARER_RE, corsFor, json, publishableKey, rateLimiter, readLimited } from '../_shared/product-fn.ts'
 
 /** A submission is a few hundred bytes. */
 const MAX_BODY = 4_096
 const OFF_TIMEOUT_MS = 4_000
 const OFF_API = 'https://world.openfoodfacts.org/api/v2/product/'
 
-/** Per caller, per function instance. */
-const PER_MINUTE = 5
-const PER_HOUR = 30
+/** Per caller, per function instance: 5 a minute, 30 an hour (memory only). */
+const take = rateLimiter(5, 30)
 
 type ErrorCode = 'bad_request' | 'forbidden' | 'too_large' | 'unauthorized' | 'consent' | 'limit' | 'signature' | 'refused' | 'off' | 'retry' | 'config'
 const STATUS: Record<ErrorCode, number> = {
   bad_request: 400, forbidden: 403, too_large: 413, unauthorized: 401, consent: 403, limit: 429, signature: 422, refused: 422, off: 409, retry: 503, config: 500,
 }
 
-const corsFor = (origin: string | null): Record<string, string> | null =>
-  origin && ORIGINS.some((re) => re.test(origin))
-    ? {
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Max-Age': '86400',
-        Vary: 'Origin',
-      }
-    : null
-
-const json = (body: unknown, status: number, cors: Record<string, string> | null) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(cors ?? {}) } })
-
 /** Outcome and timings only. */
 function log(outcome: string, extra: Record<string, number | string> = {}) {
   console.log(JSON.stringify({ fn: 'submit-product', outcome, ...extra }))
-}
-
-/* ---------------- per-caller limit (memory only) ---------------- */
-
-const seen = new Map<string, number[]>()
-/** Take one submission for this caller, or false when they're over the limit. */
-function take(sub: string, now = Date.now()): boolean {
-  const hour = now - 3_600_000
-  const times = (seen.get(sub) || []).filter((t) => t > hour)
-  if (times.length >= PER_HOUR || times.filter((t) => t > now - 60_000).length >= PER_MINUTE) {
-    seen.set(sub, times)
-    return false
-  }
-  times.push(now)
-  seen.set(sub, times)
-  // keep the map small: forget callers with nothing in the last hour
-  if (seen.size > 5_000) for (const [k, v] of seen) if (!v.some((t) => t > hour)) seen.delete(k)
-  return true
-}
-
-/* ---------------- helpers ---------------- */
-
-async function readLimited(req: Request, max: number): Promise<string | null> {
-  if (!req.body) return ''
-  const reader = req.body.getReader()
-  const chunks: Uint8Array[] = []
-  let size = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    size += value.byteLength
-    if (size > max) { await reader.cancel().catch(() => {}); return null }
-    chunks.push(value)
-  }
-  const all = new Uint8Array(size)
-  let at = 0
-  for (const c of chunks) { all.set(c, at); at += c.byteLength }
-  return new TextDecoder().decode(all)
-}
-
-/** The project's publishable key: the new-style `default` entry, else the legacy anon key. */
-function publishableKey(): string | undefined {
-  try {
-    const keys = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}')
-    if (typeof keys?.default === 'string' && keys.default) return keys.default
-  } catch { /* not JSON: fall back */ }
-  return Deno.env.get('SUPABASE_ANON_KEY') || undefined
 }
 
 /** Whether the caller may share, asked as the caller (this also verifies their JWT). */
@@ -169,7 +100,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return fail('bad_request')
 
   const auth = req.headers.get('Authorization') || ''
-  if (!/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(auth)) return fail('unauthorized')
+  if (!BEARER_RE.test(auth)) return fail('unauthorized')
   const key = Deno.env.get('PRODUCT_SIGNING_KEY') || ''
   const url = Deno.env.get('SUPABASE_URL'), anon = publishableKey(), service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (key.length < MIN_KEY_LENGTH || !url || !anon || !service) return fail('config')

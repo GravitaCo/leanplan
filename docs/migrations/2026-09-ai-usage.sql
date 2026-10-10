@@ -98,7 +98,8 @@ $$;
 revoke all on function public.ai_usage_take(text) from public, anon;
 grant execute on function public.ai_usage_take(text) to authenticated;
 
--- Optional housekeeping (keeps the table tiny): delete rows older than 60 days.
+-- Housekeeping: rows older than 60 days are deleted daily by pg_cron (tali-ai-usage-cleanup,
+-- docs/migrations/2026-10-10-shared-products.sql §10). By hand:
 -- delete from public.ai_usage where day < (now() at time zone 'utc')::date - 60;
 
 -- Verify:

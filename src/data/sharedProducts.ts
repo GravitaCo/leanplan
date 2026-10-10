@@ -2,15 +2,16 @@
  * Tali's shared product list on the device (docs/migrations/2026-10-10-shared-products.sql):
  *
  * - lookupShared(): asked before Open Food Facts when a barcode isn't on the device, with the same
- *   timeout and offline handling. A POST RPC, so the barcode never sits in a URL. Found products
- *   are kept in a small device cache (`tali.products`), so a product looked up before still opens
- *   offline.
+ *   timeout and offline handling. A POST to the `lookup-product` Edge Function (which limits each
+ *   caller), so the barcode never sits in a URL. Found products are kept in a small device cache
+ *   (`tali.products`), so a product looked up before still opens offline. The cache records on
+ *   this device which account filled it, and is cleared when a different account signs in.
  * - The outbox (`tali.productOutbox`): signed label reads the user agreed to share, waiting to be
  *   sent to the `submit-product` Edge Function. It records on this device only which account
  *   queued it, never sends anyone's id, and is sent only when signed in, online and consented,
  *   after a small random delay: never on launch or on a save path (the store schedules it).
  *   It's dropped when a different account signs in or the consent is withdrawn.
- * - reportShared(): the sp-6 report, anonymous.
+ * - reportShared(): the sp-6 report, anonymous, through the `report-product` Edge Function.
  *
  * No React, no DOM beyond fetch, localStorage and timers.
  */
@@ -19,7 +20,7 @@ import { cleanLookupRow, type SharedProduct } from '@/core/domain/sharedProduct'
 import { cleanToken, gtin14, tokenFresh, type ShareToken } from '../../supabase/functions/_shared/shared-product'
 import { LABEL_SCAN_ENABLED } from './labelReader'
 import { OFF_TIMEOUT_MS } from './products'
-import { getToken, hasSession, sbFetch, supabase } from './supabase'
+import { fnFetch, getToken, getUid, hasSession, supabase } from './supabase'
 
 /** The list grows only from label photos, so it's on exactly when label scanning is. */
 export const SHARED_PRODUCTS_ENABLED: boolean = LABEL_SCAN_ENABLED
@@ -31,6 +32,8 @@ export const CACHE_MAX = 200
 /** reads waiting to be sent (oldest go first) */
 export const OUTBOX_MAX = 50
 export const SUBMIT_FUNCTION = 'submit-product'
+export const LOOKUP_FUNCTION = 'lookup-product'
+export const REPORT_FUNCTION = 'report-product'
 export const SUBMIT_TIMEOUT_MS = 15_000
 
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
@@ -49,6 +52,12 @@ function writeJson(st: Store | null, key: string, v: unknown): void {
 interface CacheEntry { p: SharedProduct; at: number }
 type Cache = Record<string, CacheEntry>
 
+/** The account that filled the cache (on this device only), or null. */
+function cacheOwner(st: Store | null): string | null {
+  const x = readJson(st, CACHE_KEY) as { owner?: unknown } | null
+  return x && typeof x.owner === 'string' && x.owner ? x.owner : null
+}
+
 function readCache(st: Store | null): Cache {
   const x = readJson(st, CACHE_KEY) as { v?: number; items?: Record<string, { p?: unknown; at?: unknown }> } | null
   const out: Cache = {}
@@ -66,12 +75,17 @@ function toRow(p: unknown): unknown {
   return { ...s.values, version: s.version, status: s.status, label_reads: s.reads, ...(s.audited ? { audited_on: s.audited + '-01' } : {}) }
 }
 
-/** Keep a found product on the device; the least recently looked up go past CACHE_MAX. */
-export function cachePut(st: Store | null, code: string, p: SharedProduct, now = Date.now()): void {
-  const c = readCache(st)
+/** Keep a found product on the device for `owner` (the signed-in account); the least recently
+ *  looked up go past CACHE_MAX. Another account's cache is started afresh. */
+export function cachePut(st: Store | null, code: string, p: SharedProduct, now = Date.now(), owner: string = getUid()): void {
+  const c = cacheOwner(st) === owner ? readCache(st) : {}
   c[code] = { p, at: now }
   const keep = Object.entries(c).sort((a, b) => b[1].at - a[1].at).slice(0, CACHE_MAX)
-  writeJson(st, CACHE_KEY, { v: 1, items: Object.fromEntries(keep) })
+  writeJson(st, CACHE_KEY, { v: 1, owner, items: Object.fromEntries(keep) })
+}
+/** Forget every cached product. */
+export function dropCache(st: Store | null = local()): void {
+  try { st?.removeItem(CACHE_KEY) } catch { /* nothing to drop */ }
 }
 export function cacheGet(st: Store | null, code: string): SharedProduct | null {
   return readCache(st)[code]?.p ?? null
@@ -80,7 +94,7 @@ function cacheDrop(st: Store | null, code: string): void {
   const c = readCache(st)
   if (!c[code]) return
   delete c[code]
-  writeJson(st, CACHE_KEY, { v: 1, items: c })
+  writeJson(st, CACHE_KEY, { v: 1, owner: cacheOwner(st), items: c })
 }
 
 /* ---------------- lookup ---------------- */
@@ -97,7 +111,7 @@ export type SharedLookup =
  * Look a barcode up on the shared list. Offline, a product looked up before comes from the
  * device cache. Not signed in (or a restricted in-store code): not found, so Open Food Facts runs.
  */
-export async function lookupShared(codes: { code: string; alt?: string }, opts: { timeoutMs?: number; signal?: AbortSignal; storage?: Store | null; fetcher?: typeof sbFetch } = {}): Promise<SharedLookup> {
+export async function lookupShared(codes: { code: string; alt?: string }, opts: { timeoutMs?: number; signal?: AbortSignal; storage?: Store | null; fetcher?: typeof fnFetch } = {}): Promise<SharedLookup> {
   const st = opts.storage === undefined ? local() : opts.storage
   const gtin = gtin14(codes.code) ?? (codes.alt ? gtin14(codes.alt) : null)
   if (!gtin) return { status: 'not-found' }
@@ -109,10 +123,10 @@ export async function lookupShared(codes: { code: string; alt?: string }, opts: 
   const stop = () => ctl.abort()
   opts.signal?.addEventListener('abort', stop)
   try {
-    const res = await (opts.fetcher ?? sbFetch)('/rpc/lookup_product', {
-      method: 'POST', body: JSON.stringify({ p_barcode: gtin }), headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+    const res = await (opts.fetcher ?? fnFetch)(LOOKUP_FUNCTION, {
+      method: 'POST', body: JSON.stringify({ barcode: gtin }), headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
     })
-    // the RPC isn't there yet (migration not applied): carry on to Open Food Facts
+    // the function isn't there yet (not deployed): carry on to Open Food Facts
     if (res.status === 404) return cached ? { status: 'found', product: cached } : { status: 'not-found' }
     if (!res.ok) return cached ? { status: 'found', product: cached } : { status: 'error' }
     const rows = await res.json().catch(() => null)
@@ -164,8 +178,13 @@ export function queueShare(t: ShareToken, owner: string, st: Store | null = loca
   writeOutbox(st, { v: 1, owner, items: items.slice(-OUTBOX_MAX) })
 }
 
-/** Drop the queue when it isn't this account's, or sharing isn't (or is no longer) agreed. */
+/**
+ * At sign-in: drop the queue when it isn't this account's, or sharing isn't (or is no longer)
+ * agreed; and clear the product cache when another account (or none on record) filled it, so one
+ * person's lookups never show on the next person's device history. Returns whether the queue went.
+ */
 export function reconcileOutbox(uid: string | null, consented: boolean, st: Store | null = local()): boolean {
+  if (readJson(st, CACHE_KEY) !== null && (!uid || cacheOwner(st) !== uid)) dropCache(st)
   const o = readOutbox(st)
   if (!o) return false
   if (!consented || !uid || o.owner !== uid) { dropOutbox(st); return true }
@@ -253,15 +272,15 @@ export function cancelScheduledSend(): void {
 export type ReportReason = 'figures' | 'wrong' | 'name' | 'other'
 
 /** The sp-6 report: anonymous (the server keeps a count, never who). */
-export async function reportShared(barcode: string, version: number, reason: ReportReason, opts: { fetcher?: typeof sbFetch; timeoutMs?: number } = {}): Promise<'sent' | 'offline' | 'error'> {
+export async function reportShared(barcode: string, version: number, reason: ReportReason, opts: { fetcher?: typeof fnFetch; timeoutMs?: number } = {}): Promise<'sent' | 'offline' | 'error'> {
   const gtin = gtin14(barcode)
   if (!gtin) return 'error'
   if (offline() || !hasSession()) return 'offline'
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), opts.timeoutMs ?? OFF_TIMEOUT_MS)
   try {
-    const res = await (opts.fetcher ?? sbFetch)('/rpc/report_product', {
-      method: 'POST', body: JSON.stringify({ p_barcode: gtin, p_version: version, p_reason: reason }), headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+    const res = await (opts.fetcher ?? fnFetch)(REPORT_FUNCTION, {
+      method: 'POST', body: JSON.stringify({ barcode: gtin, version, reason }), headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
     })
     return res.ok ? 'sent' : 'error'
   } catch {

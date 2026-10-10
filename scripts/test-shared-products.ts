@@ -11,11 +11,11 @@ import { cleanLookupRow, draftFromShared, marginNote, sameAsFound, shareDecision
 import { CONSENT_TYPES, CONSENT_VERSIONS, cleanConsents, hasConsent, latestConsent, recordConsent, withdraw } from '@/data/consent'
 import { stateFromBackup, type SyncMeta } from '@/data/persistence'
 import {
-  cacheGet, cachePut, canSendOutbox, CACHE_KEY, CACHE_MAX, dropOutbox, lookupShared, OUTBOX_KEY, OUTBOX_MAX, queueShare, readOutbox, reconcileOutbox,
+  cacheGet, cachePut, canSendOutbox, CACHE_KEY, CACHE_MAX, dropOutbox, LOOKUP_FUNCTION, REPORT_FUNCTION, lookupShared, OUTBOX_KEY, OUTBOX_MAX, queueShare, readOutbox, reconcileOutbox,
   reportShared, sendDelayMs, sendOutbox, type SendResult,
 } from '@/data/sharedProducts'
 import { setSession } from '@/data/supabase'
-import { CAPS, COUNTED_READS, SHARED_TABLES, cleanToken, gtin14, nameProblem, valuesFromRead, type ShareToken } from '../supabase/functions/_shared/shared-product'
+import { CAPS, COUNTED_READS, SHARED_TABLES, cleanName, cleanToken, gtin14, kjAgrees, nameProblem, valuesFlags, valuesFromRead, valuesProblem, type ShareToken } from '../supabase/functions/_shared/shared-product'
 import { signShare, sigHash, verifyShare } from '../supabase/functions/_shared/product-sig'
 import { FRONT_NAME_MAX } from '../supabase/functions/_shared/label-parse'
 import { MAX_NAME } from '@/core/domain/barcode'
@@ -76,11 +76,14 @@ function names() {
     ['Call 07700 900123', 'digits'], ['0800-123-4567 snacks', 'digits'], ['1234567', 'digits'],
     ['Gluten free bread', 'free-from'], ['Nut-free bar', 'free-from'], ['Dairy Free choc', 'free-from'], ['FREE FROM range', 'free-from'], ['Allergen-free cookies', 'free-from'], ['glutenfree loaf', 'free-from'], ['Peanut safe snack', 'free-from'], ['Egg free mayo', 'free-from'],
     ['x'.repeat(81), 'length'], ['   ', 'length'],
+    ['Flap\u200Bjack', 'invisible'], ['Flapjack\u200F', 'invisible'], ['\u202Ekcajpalf', 'invisible'], ['Oat\u202A bar', 'invisible'], ['Flapjack\u2066', 'invisible'], ['Flapjack\u2069', 'invisible'], ['Flap\u200Cjack', 'invisible'], ['Flap\u200Djack', 'invisible'],
   ]
   const bads = refused.filter(([n, why]) => nameProblem(n) !== why)
   report('names', [
     ['ordinary names pass', ok.every((n) => nameProblem(n) === null), ok.filter((n) => nameProblem(n) !== null)],
     ['links, markup, @, long digit runs, free-from claims and over-long names are refused, each for its reason', !bads.length, bads.map(([n]) => [n, nameProblem(n)])],
+    ['zero-width and bidi controls survive cleanName, so they are refused, not hidden', cleanName('Flap\u200Bjack') === 'Flap\u200Bjack' && nameProblem('Oat\u2010bar\u2019s \u2030') === null],
+    ['the SQL refuses the same controls (U+200B-U+200F, U+202A-U+202E, U+2066-U+2069)', readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8').includes("n ~ '[\\u200B-\\u200F\\u202A-\\u202E\\u2066-\\u2069]'")],
     ['the SQL refuses the same patterns (links, @, digit runs, free-from)', ['www\\.', '[<>{}@]', "([0-9][ .-]?){6}[0-9]", 'free[[:space:]-]*from', 'gluten|wheat|nut|peanut'].every((x) => readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8').includes(x))],
   ])
 }
@@ -98,7 +101,22 @@ async function signedReads() {
     ['a free-from name on the pack: nothing to share', valuesFromRead(readOf(GRANOLA, { brand: 'Tali', product: 'Gluten Free Granola', variety: '', pack_size: '' })) === null],
     ['a flagged cell (kJ in the kcal row, a doubled decimal point) or a missing required figure: nothing', valuesFromRead(readOf({ ...GRANOLA, kcal: '1640kJ' })) === null && valuesFromRead(readOf({ ...GRANOLA, fat: '7.1.1g' })) === null && valuesFromRead(readOf({ ...GRANOLA, protein: '' })) === null],
     ['an alcohol row or no per-100 basis: nothing', valuesFromRead(readOf({ ...GRANOLA, alcohol: '4.5%' })) === null && valuesFromRead(readOf(GRANOLA, undefined, 'unknown')) === null],
-    ['implausible figures (kcal far from the macros): nothing', valuesFromRead(readOf({ ...GRANOLA, kcal: '90kcal' })) === null],
+    ['kJ and kcal that disagree (more than max(2.5%, 1 kcal)): nothing', valuesFromRead(readOf({ ...GRANOLA, kcal: '90kcal' })) === null && valuesFromRead(readOf({ ...GRANOLA, kj: '1700kJ' })) === null],
+    ['kJ and kcal within 2.5%: kept; no kJ on the label: kept', valuesFromRead(readOf({ ...GRANOLA, kj: '1660kJ' }))?.k === 390 && valuesFromRead(readOf({ ...GRANOLA, kj: '' }))?.k === 390],
+    ['kjAgrees: 2.5% or 1 kcal, whichever is larger', kjAgrees(1640, 390) && kjAgrees(1673, 390) && !kjAgrees(1720, 390) && kjAgrees(13, 3) && !kjAgrees(17, 3) && !kjAgrees(8, 3)],
+    ['energy vs macros: only kJ in the kcal row is refused, a plain gap is kept', (() => {
+      // macros give 97 kcal: 400 is kJ in the kcal row; 50 or 200 is only a gap
+      const base = { name: 'x', k: 97, p: 2, c: 20, f: 1, ml: false }
+      return valuesProblem({ ...base, k: 400 }) === 'energy' && valuesProblem({ ...base, k: 50 }) === null && valuesProblem({ ...base, k: 200 }) === null && valuesProblem(base) === null
+    })()],
+    ['salt up to 100 kept, over 10 flagged, over 100 refused', (() => {
+      const base = { name: 'Stock cubes', k: 250, p: 10, c: 30, f: 10, ml: false }
+      return valuesProblem({ ...base, salt: 45.5 }) === null && valuesFlags({ ...base, salt: 45.5 }).join() === 'salt' && valuesFlags({ ...base, salt: 10 }).length === 0 && valuesProblem({ ...base, salt: 100.5 }) === 'range salt'
+    })()],
+    ['the SQL matches: salt numeric(5,2) to 100, flagged over 10, no energy-gap refusal', (() => {
+      const sql = readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')
+      return sql.includes('salt numeric(5,2) check (salt between 0 and 100)') && sql.includes("product_num(p_values, 'salt', 0, 100)") && sql.includes('coalesce(v_salt > 10, false)') && !/abs\(v_k - mk\)/.test(sql) && /v_k \/ mk between 3\.5 and 4\.9/.test(sql)
+    })()],
     ['"<0.5g" kept at the list’s precision (0.3)', lt?.sugars === 0.3],
     ['signed, the token verifies', !!t && (await verify(t))],
     ['a changed value, name, barcode or time fails', !!t && !(await verify({ ...t, values: { ...t.values, k: 391 } })) && !(await verify({ ...t, values: { ...t.values, name: 'Other' } })) && !(await verify({ ...t, barcode: '00036000291452' })) && !(await verify({ ...t, iat: now + 1 }))],
@@ -232,20 +250,34 @@ async function lookups() {
   for (let i = 0; i < CACHE_MAX + 10; i++) cachePut(capped, String(10_000_000_000_000 + i).padStart(14, '0'), p, i)
   const cacheSize = Object.keys(JSON.parse(capped.raw.get(CACHE_KEY)!).items).length
   setSession('h.e30.s', 'u')
-  const rep = await reportShared('5012345678900', 2, 'name', { fetcher: fetcher(ok(true)) })
+  const rep = await reportShared('5012345678900', 2, 'name', { fetcher: fetcher(ok({ ok: true })) })
+  const repLimited = await reportShared('5012345678900', 2, 'name', { fetcher: fetcher(() => new Response('{}', { status: 429 })) })
   setSession(null, null)
+  // the cache belongs to the account that filled it: another account signing in clears it
+  const A = '11111111-1111-4111-8111-111111111111', B = '22222222-2222-4222-8222-222222222222'
+  const own = fakeStorage(); cachePut(own, '05012345678900', p, 1, A)
+  const keptA = !reconcileOutbox(A, true, own) && !!cacheGet(own, '05012345678900')
+  reconcileOutbox(B, true, own)
+  const clearedB = !own.raw.has(CACHE_KEY)
+  const legacy = fakeStorage({ [CACHE_KEY]: JSON.stringify({ v: 1, items: {} }) }); reconcileOutbox(A, true, legacy)
+  const mixed = fakeStorage(); cachePut(mixed, '05012345678900', p, 1, A); cachePut(mixed, '05000157024671', p, 2, B)
+  const mixedOk = !cacheGet(mixed, '05012345678900') && !!cacheGet(mixed, '05000157024671')
 
   report('lookup and report', [
-    ['found: a POST RPC, the barcode only in the body (as GTIN-14)', found.status === 'found' && calls[0].path === '/rpc/lookup_product' && calls[0].method === 'POST' && JSON.parse(calls[0].body).p_barcode === '05012345678900' && !calls[0].path.includes('5012345678900')],
+    ['found: a POST to the lookup-product function, the barcode only in the body (as GTIN-14)', found.status === 'found' && calls[0].path === LOOKUP_FUNCTION && LOOKUP_FUNCTION === 'lookup-product' && calls[0].method === 'POST' && JSON.parse(calls[0].body).barcode === '05012345678900' && Object.keys(JSON.parse(calls[0].body)).join() === 'barcode'],
     ['found products are cached on the device', !!cached && cached.version === 2 && cached.values.k === 442],
-    ['not on the list (or the RPC not there yet): not found, so Open Food Facts runs', missing.status === 'not-found'],
+    ['not on the list (or the function not deployed yet): not found, so Open Food Facts runs', missing.status === 'not-found'],
     ['a server error: error (Open Food Facts runs)', err.status === 'error'],
     ['no connection: the cached product still opens', fromCache.status === 'found'],
     ['gone from the list: the cache forgets it', empty.status === 'not-found' && !cacheGet(st, '05012345678900')],
     ['in-store codes are never looked up', instore.status === 'not-found' && !calls.some((c) => c.body.includes('210123'))],
     ['not signed in: not looked up', noSession.status === 'not-found'],
     ['the cache is capped, least recently used out', cacheSize === CACHE_MAX],
-    ['a report is a POST RPC with no identity', rep === 'sent' && calls.at(-1)!.path === '/rpc/report_product' && Object.keys(JSON.parse(calls.at(-1)!.body)).sort().join() === 'p_barcode,p_reason,p_version'],
+    ['a report is a POST to the report-product function with no identity', rep === 'sent' && calls.at(-2)!.path === REPORT_FUNCTION && REPORT_FUNCTION === 'report-product' && Object.keys(JSON.parse(calls.at(-2)!.body)).sort().join() === 'barcode,reason,version'],
+    ['a report over the per-caller limit (429) is an error, not sent', repLimited === 'error'],
+    ['the cache is kept for its own account and cleared when another account signs in', keptA && clearedB],
+    ['a cache with no owner on record is cleared at sign-in', !legacy.raw.has(CACHE_KEY)],
+    ['another account’s lookup starts the cache afresh', mixedOk],
     ['a malformed row is refused', cleanLookupRow({ ...row, k: 'lots' }) === null && cleanLookupRow({ ...row, name: '' }) === null && cleanLookupRow(null) === null],
   ])
 }
@@ -267,6 +299,16 @@ function tiersAndMargins() {
     ['a saved shared food cites the list', sourceErr(food('shared-unchecked:1')) === 0.2 && sourceOf(food('shared-verified:5012345678900'))?.text === 'Tali’s shared list: checked by Tali · 5012345678900'],
     ['found product → confirm draft: values, serving, tier, never in OFF', d.source === 'shared' && d.values.k === 442 && d.serving.eat === 65 && d.shared?.tier === 'counted' && d.offMissing === true],
     ['saved unchanged it keeps the tier’s source; changed figures make it the user’s own label', saved.src === 'shared-counted:5012345678900' && sameAsFound(d.shared!, d.values, false) && !sameAsFound(d.shared!, { ...d.values, k: 440 }, false) && !sameAsFound(d.shared!, d.values, true)],
+    ['reports go through report-product; lookups through lookup-product; both RPCs are service-role only', (() => {
+      const sql = readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')
+      return sql.includes('grant execute on function public.report_product(text, integer, text) to service_role;') && sql.includes('grant execute on function public.lookup_product(text) to service_role;')
+        && !/grant execute on function public\.(report|lookup)_product\([^)]*\) to authenticated/.test(sql)
+        && readFileSync('supabase/functions/report-product/index.ts', 'utf8').includes('rateLimiter(5, 20)') && readFileSync('supabase/functions/lookup-product/index.ts', 'utf8').includes('rateLimiter(20, 200)')
+    })()],
+    ['a name report hides at 2, any report at 3 (CAPS mirrored in SQL)', CAPS.nameReportsToHide === 2 && CAPS.reportsToHide === 3 && /name_reports \+ \(p_reason = 'name'\)::integer >= 2/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8'))],
+    ['report_product takes the submit_product lock', (readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8').match(/pg_advisory_xact_lock\(hashtextextended\('tali-product:' \|\| gtin, 0\)\)/g) || []).length === 2],
+    ['product ids are random UUIDs, not a sequence (no day signal)', /id uuid primary key default gen_random_uuid\(\)/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')) && !/generated always as identity/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8'))],
+    ['ai_usage rows older than 60 days are cleared daily by pg_cron', /cron\.schedule\('tali-ai-usage-cleanup', '41 3 \* \* \*', 'select public\.ai_usage_cleanup\(\)'\)/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')) && /day < \(now\(\) at time zone 'utc'\)::date - 60/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8'))],
     ['caps as Benn set them (10 a version a month, 5 versions, 300 new a day) are in the SQL', CAPS.countsPerVersionMonth === 10 && CAPS.versionsPerBarcode === 5 && CAPS.newRowsPerDay === 300 && /month_count < 10/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')) && /nver > 5/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')) && /new_rows < 300/.test(readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8'))],
     ['the three shared tables are the ones the migration creates', SHARED_TABLES.every((t) => readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8').includes('create table if not exists public.' + t + ' ('))],
   ])

@@ -7,15 +7,19 @@ product, so a takedown never involves contacting or identifying a user.
 
 ## What hides a product automatically
 
-The Report sheet in the app (board sp-6) calls `report_product()`. It records no reporter.
+The Report sheet in the app (board sp-6) calls the `report-product` Edge Function, which checks
+the caller is signed in, limits each caller to 5 reports a minute and 20 an hour (in memory only),
+then calls `report_product()`. Nothing records the reporter.
 
-- **"Offensive or personal details in the name"**: the version is hidden from lookups at once.
-- **Any other reason** ("Figures don't match the pack", "Wrong product", "Something else"): the
-  version is hidden after **3** reports.
+- **"Offensive or personal details in the name"**: the version is hidden from lookups after
+  **2** such reports, so one person can't hide a product alone.
+- **Any reason**: the version is hidden after **3** reports in all.
 - Reports are capped at 500 a day across everyone, so a flood can't hide the whole list.
 
-Names with links, `@`, markup, seven or more digits in a row, or free-from and allergen claims
-("gluten free", "nut free", "free from", and similar) are refused before they're ever stored.
+Names with links, `@`, markup, seven or more digits in a row, zero-width or bidi control
+characters, or free-from and allergen claims ("gluten free", "nut free", "free from", and similar)
+are refused before they're ever stored. Salt over 10 g per 100 g is kept (seasonings, stock) but
+marks the row `flagged` for the next audit.
 
 ## Review (weekly, or within 2 working days of a name report)
 
@@ -23,9 +27,9 @@ Run in the Supabase SQL editor as the service role:
 
 ```sql
 -- hidden or reported versions, newest first
-select id, barcode, version, name, k, p, c, f, reports, hidden, status, label_reads, last_confirmed
+select id, barcode, version, name, k, p, c, f, salt, reports, name_reports, flagged, hidden, status, label_reads, last_confirmed
 from public.products
-where hidden or reports > 0
+where hidden or reports > 0 or flagged
 order by hidden desc, reports desc, last_confirmed desc;
 ```
 
@@ -43,7 +47,7 @@ For each row, decide:
    the pack.
 3. **Nothing wrong** (a mistaken or malicious report): restore it.
    ```sql
-   update public.products set hidden = false, reports = 0 where id = <id>;
+   update public.products set hidden = false, reports = 0, name_reports = 0 where id = <id>;
    ```
 
 A product a user saved to their own foods before the takedown stays in their own log (it's their

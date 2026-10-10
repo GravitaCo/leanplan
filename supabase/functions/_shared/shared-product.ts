@@ -29,14 +29,16 @@ export const CAPS = {
   versionsPerBarcode: 5,
   /** new product rows across everyone per UTC day */
   newRowsPerDay: 300,
-  /** reports (any reason but the name) that hide a version until it's reviewed */
+  /** reports (any reason) that hide a version until it's reviewed */
   reportsToHide: 3,
+  /** "Offensive or personal details in the name" reports that hide it (two, so one person can't) */
+  nameReportsToHide: 2,
   /** reports across everyone per UTC day */
   reportsPerDay: 500,
 } as const
 
-/** Label reads after which a product counts as "read from the pack N times" (sp-3). Pending
- *  nutrition-accuracy confirmation, with the margins in src/core/data/sources.ts. */
+/** Label reads after which a product counts as "read from the pack N times" (sp-3), with the
+ *  margins in src/core/data/sources.ts (nutrition-accuracy, Oct 2026). */
 export const COUNTED_READS = 3
 
 /** How long a signed read can wait in the device outbox before it's dropped. */
@@ -70,7 +72,7 @@ export function gtin14(raw: string): string | null {
 
 /* ---------------- names ---------------- */
 
-export type NameProblem = 'length' | 'link' | 'contact' | 'digits' | 'free-from'
+export type NameProblem = 'length' | 'invisible' | 'link' | 'contact' | 'digits' | 'free-from'
 
 const LINK = /(https?:|:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|uk|io|co|me|info|app|shop|biz|xyz|ly|gg|tv)\b)/i
 /** markup, and anything that looks like an email or a handle */
@@ -83,7 +85,11 @@ const DIGITS = /(?:\d[ .-]?){6}\d/
  */
 const FREE_FROM = /\b(free[\s-]*from|allerg(en|y|ies)[\s-]*(free|safe|friendly)|(gluten|wheat|nut|peanut|tree[\s-]*nut|dairy|milk|lactose|egg|soy|soya|sesame|celery|mustard|lupin|sulphites?|sulfites?|fish|shellfish|crustaceans?|molluscs?|casein|coeliac|celiac)[\s-]*(free|safe))\b/i
 
-/** Printable text, single-spaced, trimmed. */
+/** Zero-width and bidi control characters (U+200B-U+200F, U+202A-U+202E, U+2066-U+2069): they
+ *  can hide or reorder text in a name everyone sees. Refused, not stripped. */
+export const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069]/
+
+/** Printable text, single-spaced, trimmed. Invisible controls are kept, so nameProblem refuses them. */
 export function cleanName(x: string): string {
   return x.replace(/[\x00-\x1f\x7f\p{Zl}\p{Zp}]/gu, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -92,6 +98,7 @@ export function cleanName(x: string): string {
 export function nameProblem(raw: string): NameProblem | null {
   const name = cleanName(raw)
   if (name.length < 1 || name.length > NAME_MAX) return 'length'
+  if (INVISIBLE.test(name)) return 'invisible'
   if (LINK.test(name)) return 'link'
   if (CONTACT.test(name)) return 'contact'
   if (DIGITS.test(name)) return 'digits'
@@ -123,7 +130,18 @@ const REQUIRED: SharedField[] = ['k', 'p', 'c', 'f']
 const ROW: Record<SharedField, keyof LabelRead['rows']> = { k: 'kcal', p: 'protein', c: 'carbohydrate', f: 'fat', fibre: 'fibre', sugars: 'sugars', sat: 'saturates', salt: 'salt' }
 /** decimal places kept (the SQL columns' scale) */
 const DP: Record<SharedField, number> = { k: 0, p: 1, c: 1, f: 1, fibre: 1, sugars: 1, sat: 1, salt: 2 }
-const MAX: Record<SharedField, number> = { k: 900, p: 100, c: 110, f: 100, fibre: 100, sugars: 110, sat: 100, salt: 10 }
+const MAX: Record<SharedField, number> = { k: 900, p: 100, c: 110, f: 100, fibre: 100, sugars: 110, sat: 100, salt: 100 }
+/** Salt over this (g per 100) is usual only for seasonings and stock: kept, but flagged for audit. */
+export const SALT_FLAG = 10
+const KJ_PER_KCAL = 4.184
+/** kJ and kcal must agree this closely, plus 1 kcal for rounding (core/domain/label.ts KJ_TOL). */
+const KJ_TOL = 0.025
+
+/** Whether a label's kJ and kcal figures agree (kJ ÷ 4.184 within max(2.5%, 1 kcal) of kcal). */
+export function kjAgrees(kj: number, kcal: number): boolean {
+  const fromKj = kj / KJ_PER_KCAL
+  return Math.abs(fromKj - kcal) <= Math.max(KJ_TOL * Math.max(fromKj, kcal), 1)
+}
 
 /** A value at the precision the list keeps it. */
 export const roundShared = (f: SharedField, v: number): number => {
@@ -144,25 +162,35 @@ export function valuesProblem(v: SharedValues): string | null {
   if (v.p + v.c + v.f > (v.ml ? 140 : 110)) return 'macros'
   if (v.sat !== undefined && v.sat > v.f) return 'sat'
   if (v.sugars !== undefined && v.sugars > v.c) return 'sugars'
+  // kJ printed in the kcal row: about 4.184 times what the macros give. Only that is refused; a
+  // plain gap between the energy and the macros is left to the label (polyols, rounding, alcohol)
   const mk = 4 * v.p + 4 * v.c + 9 * v.f + 2 * (v.fibre ?? 0)
   if (mk >= 20) {
     const ratio = v.k / mk
-    if ((ratio >= 3.5 && ratio <= 4.9) || Math.abs(v.k - mk) > Math.max(60, 0.5 * Math.max(v.k, mk))) return 'energy'
+    if (ratio >= 3.5 && ratio <= 4.9) return 'energy'
   }
   if (v.serving_g !== undefined && !(v.serving_g > 0 && v.serving_g <= 5000)) return 'serving'
   return null
 }
 
+/** Values kept on the list but marked for audit (mirrored in SQL as `flagged`). */
+export function valuesFlags(v: SharedValues): 'salt'[] {
+  return v.salt !== undefined && v.salt > SALT_FLAG ? ['salt'] : []
+}
+
 /**
  * The shareable values in a label read, or null when anything about it isn't clean enough to
  * share: no front-of-pack name (or a name the list refuses), no per-100 basis, a required figure
- * missing, any per-100 cell the parser flags, or an alcohol row (the list doesn't hold it). The
+ * missing, any per-100 cell the parser flags, kJ and kcal that disagree (kjAgrees: the list keeps no kJ, so
+ * this is checked here, where the read is), or an alcohol row (the list doesn't hold it). The
  * app parses the same cells with the same parser (label-parse.ts), so a read the user confirms
  * unchanged matches these values exactly.
  */
 export function valuesFromRead(read: LabelRead): SharedValues | null {
   if (!read.readable || (read.basis !== '100g' && read.basis !== '100ml')) return null
   if (read.rows.alcohol.per100.text) return null
+  // the kJ and kcal figures of the per-100 column must agree (label.ts labelIssues, rule 1)
+  const kjText = read.rows.kj.per100.text
   const name = cleanName(frontName(read.front))
   if (nameProblem(name)) return null
   const v: SharedValues = { name, k: 0, p: 0, c: 0, f: 0, ml: read.basis === '100ml' }
@@ -172,6 +200,10 @@ export function valuesFromRead(read: LabelRead): SharedValues | null {
     const cell = parseCell(text, f as LabelCellField, 'per100')
     if (cell.flag || cell.value === undefined) return null
     v[f] = roundShared(f, cell.value)
+  }
+  if (kjText) {
+    const kj = parseCell(kjText, 'kj', 'per100')
+    if (kj.flag || kj.value === undefined || !kjAgrees(kj.value, v.k)) return null
   }
   const g = parseServing(read.serving_text)
   if (g !== undefined) v.serving_g = Math.round(g * 10) / 10

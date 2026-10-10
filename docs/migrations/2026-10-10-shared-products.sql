@@ -21,11 +21,24 @@
 --   caller), an in-memory per-caller limit, the read's signature from ai-read-label (HMAC over
 --   barcode and parsed values, no user id), the name rules and Open Food Facts, then calls it.
 --   The RPC never receives who called.
--- - Reads: lookup_product(barcode) for signed-in users, POST /rpc/lookup_product, so the barcode
---   isn't in a logged URL. No table grant at all: no bulk scraping, no GET with a query string.
--- - Reports: report_product(barcode, version, reason) for signed-in users. Anonymous; a global
---   daily cap; a version hides after CAPS.reportsToHide reports, at once for the name option.
---   Takedown and review: docs/compliance/shared-products-moderation.md.
+-- - Reads: lookup_product(barcode), executable by service_role ONLY, through the `lookup-product`
+--   Edge Function: Auth verifies the caller, then an in-memory per-caller limit (20 a minute, 200
+--   an hour per instance), then the lookup. The barcode travels in a POST body, never a logged URL.
+--   No table grant at all: no bulk read, no GET with a query string. Residual scraping risk: many
+--   accounts, or many function instances, each under the limit, could still walk barcodes slowly.
+--   What they'd get is per-100 figures and a name read from packs (no people); accepted.
+-- - Reports: report_product(barcode, version, reason), service_role ONLY, through the
+--   `report-product` Edge Function (Auth check, then 5 a minute and 20 an hour per caller, in
+--   memory; nothing about the reporter is stored). A global daily cap; a version hides after
+--   CAPS.reportsToHide reports of any reason, or CAPS.nameReportsToHide (2) name reports, so one
+--   person can't hide a product alone. Takedown and review: docs/compliance/shared-products-moderation.md.
+-- - Ids are random UUIDs, not a sequence: a sequential id beside product_quota's daily counts
+--   would give away the day a product was added (dates are first-of-month only on purpose).
+-- - kJ isn't kept: ai-read-label signs a read only when its per-100 kJ and kcal agree (kJ ÷ 4.184
+--   within max(2.5%, 1 kcal) of kcal, valuesFromRead in shared-product.ts), so that rule is
+--   checked where the read is. Here, the energy check refuses only kJ printed in the kcal row
+--   (kcal 3.5 to 4.9 times what the macros give). Salt up to 100 g per 100 g is kept (seasonings,
+--   stock) and over 10 g sets `flagged` for audit.
 -- - "verified" is set only by a service-role audit (nutrition-accuracy), never by counts: with no
 --   identity, agreement between submissions can't show independent people.
 -- - Nothing here holds a person's rows: NOT in USER_TABLES, clear_log_after_withdrawal() or
@@ -79,7 +92,7 @@ revoke all on function public.gtin14(text) from public, anon, authenticated;
 
 -- 2. Tables
 create table if not exists public.products (
-  id bigint generated always as identity primary key,
+  id uuid primary key default gen_random_uuid(),
   barcode text not null check (barcode ~ '^[0-9]{14}$'),
   version smallint not null check (version between 1 and 5),
   name text not null check (char_length(name) between 1 and 80),
@@ -90,7 +103,7 @@ create table if not exists public.products (
   fibre numeric(4,1) check (fibre between 0 and 100),
   sugars numeric(4,1) check (sugars between 0 and 110),
   sat numeric(4,1) check (sat between 0 and 100),
-  salt numeric(4,2) check (salt between 0 and 10),
+  salt numeric(5,2) check (salt between 0 and 100),
   ml boolean not null default false,
   serving_g numeric(6,1) check (serving_g > 0 and serving_g <= 5000),
   status text not null default 'unverified' check (status in ('unverified', 'verified', 'disputed')),
@@ -98,6 +111,8 @@ create table if not exists public.products (
   label_reads integer not null default 0 check (label_reads >= 0),  -- signed label reads counted
   month_count smallint not null default 0 check (month_count >= 0), -- counted this month (cap)
   reports integer not null default 0 check (reports >= 0),          -- reports since the last review
+  name_reports integer not null default 0 check (name_reports >= 0), -- of which "the name"
+  flagged boolean not null default false,                           -- worth a look at audit (salt > 10)
   hidden boolean not null default false,                            -- out of lookups until reviewed
   first_seen date not null check (extract(day from first_seen) = 1),
   last_confirmed date not null check (extract(day from last_confirmed) = 1),
@@ -125,8 +140,9 @@ alter table public.product_quota enable row level security;
 alter table public.product_sigs_seen enable row level security;
 revoke all on public.products, public.product_quota, public.product_sigs_seen from public, anon, authenticated;
 
--- 4. Lookup for signed-in users: the barcode's visible versions, current first, with only what
---    the app shows (no counters it doesn't need, no report counts). POST /rest/v1/rpc/lookup_product.
+-- 4. Lookup: the barcode's visible versions, current first, with only what the app shows (no
+--    counters it doesn't need, no report counts). Service role only: the lookup-product function
+--    (signed-in callers, limited per caller) is the only way in.
 create or replace function public.lookup_product(p_barcode text)
 returns table (
   version smallint, name text, k numeric, p numeric, c numeric, f numeric, fibre numeric,
@@ -141,12 +157,12 @@ as $$
   select pr.version, pr.name, pr.k, pr.p, pr.c, pr.f, pr.fibre, pr.sugars, pr.sat, pr.salt, pr.ml,
          pr.serving_g, pr.status, pr.is_current, pr.label_reads, pr.audited_on
   from public.products pr
-  where auth.uid() is not null and not pr.hidden and pr.barcode = public.gtin14(p_barcode)
+  where not pr.hidden and pr.barcode = public.gtin14(p_barcode)
   order by pr.is_current desc, pr.label_reads desc, pr.version desc
   limit 5
 $$;
-revoke all on function public.lookup_product(text) from public, anon;
-grant execute on function public.lookup_product(text) to authenticated;
+revoke all on function public.lookup_product(text) from public, anon, authenticated;
+grant execute on function public.lookup_product(text) to service_role;
 
 -- 5. Whether the caller may share: signed in, the latest health answer a yes and the latest
 --    shared-products answer a yes. SECURITY INVOKER (reads the caller's own consents through RLS).
@@ -187,7 +203,8 @@ $$;
 revoke all on function public.product_num(jsonb, text, numeric, numeric) from public, anon, authenticated;
 
 -- 7. A name the list refuses (it's shown to everyone): too long, links, markup, contact details,
---    long digit runs, free-from and allergen claims. Mirrors nameProblem() in shared-product.ts.
+--    long digit runs, free-from and allergen claims, zero-width and bidi controls (U+200B-U+200F,
+--    U+202A-U+202E, U+2066-U+2069). Mirrors nameProblem() in shared-product.ts.
 create or replace function public.product_name_refused(n text)
 returns boolean
 language sql
@@ -196,6 +213,7 @@ set search_path = ''
 as $$
   select n is null or char_length(n) not between 1 and 80
     or n ~ '[[:cntrl:]]'
+    or n ~ '[\u200B-\u200F\u202A-\u202E\u2066-\u2069]'
     or n ~* '(https?:|://|www\.|\m[a-z0-9-]+\.(com|net|org|uk|io|co|me|info|app|shop|biz|xyz|ly|gg|tv)\M)'
     or n ~ '[<>{}@]'
     or n ~ '([0-9][ .-]?){6}[0-9]'
@@ -219,7 +237,7 @@ declare
   v_name text; v_ml boolean;
   v_k numeric; v_p numeric; v_c numeric; v_f numeric; v_fibre numeric; v_sugars numeric;
   v_sat numeric; v_salt numeric; v_serv numeric; mk numeric;
-  pid bigint;
+  pid uuid;
   nver integer;
   counted boolean;
   v_lead record;
@@ -244,7 +262,7 @@ begin
     v_fibre := public.product_num(p_values, 'fibre', 0, 100);
     v_sugars := public.product_num(p_values, 'sugars', 0, 110);
     v_sat := public.product_num(p_values, 'sat', 0, 100);
-    v_salt := public.product_num(p_values, 'salt', 0, 10);
+    v_salt := public.product_num(p_values, 'salt', 0, 100);
     v_serv := public.product_num(p_values, 'serving_g', 0.1, 5000);
   exception when sqlstate '22023' or invalid_text_representation or numeric_value_out_of_range then
     return jsonb_build_object('error', 'values');
@@ -263,8 +281,9 @@ begin
      or v_sat > v_f or v_sugars > v_c then
     return jsonb_build_object('error', 'values');
   end if;
+  -- only kJ printed in the kcal row is refused (about 4.184 times the macros' energy)
   mk := 4 * v_p + 4 * v_c + 9 * v_f + 2 * coalesce(v_fibre, 0);
-  if mk >= 20 and (v_k / mk between 3.5 and 4.9 or abs(v_k - mk) > greatest(60, 0.5 * greatest(v_k, mk))) then
+  if mk >= 20 and v_k / mk between 3.5 and 4.9 then
     return jsonb_build_object('error', 'values');
   end if;
 
@@ -294,9 +313,9 @@ begin
       return jsonb_build_object('error', 'busy');
     end if;
     insert into public.products (barcode, version, name, k, p, c, f, fibre, sugars, sat, salt,
-                                 ml, serving_g, first_seen, last_confirmed)
+                                 ml, serving_g, flagged, first_seen, last_confirmed)
       values (gtin, nver, v_name, v_k, v_p, v_c, v_f, v_fibre, v_sugars, v_sat, v_salt,
-              v_ml, v_serv, v_month, v_month)
+              v_ml, v_serv, coalesce(v_salt > 10, false), v_month, v_month)
       returning id into pid;
   end if;
 
@@ -339,9 +358,11 @@ $$;
 revoke all on function public.submit_product(text, jsonb, text) from public, anon, authenticated;
 grant execute on function public.submit_product(text, jsonb, text) to service_role;
 
--- 9. Reports (sp-6): anonymous, signed-in users, POST /rest/v1/rpc/report_product. Nothing about
---    the reporter is kept. Rate limit: a global daily cap (500), identity-free. A version hides
---    from lookups after 3 reports, at once for "Offensive or personal details in the name".
+-- 9. Reports (sp-6): anonymous. Service role only: the report-product function (signed-in
+--    callers, limited per caller in memory) is the only way in. Nothing about the reporter is
+--    kept. A global daily cap (500), identity-free. A version hides from lookups after 3 reports,
+--    or 2 for "Offensive or personal details in the name". The same per-barcode lock as
+--    submit_product, so a report and a submission can't interleave on one barcode.
 --    Returns true when the report was taken (false: unknown product, or today's cap reached).
 create or replace function public.report_product(p_barcode text, p_version integer, p_reason text)
 returns boolean
@@ -352,12 +373,12 @@ as $$
 declare
   v_today date := (now() at time zone 'utc')::date;
   gtin text := public.gtin14(p_barcode);
-  pid bigint;
+  pid uuid;
 begin
-  if auth.uid() is null then raise exception 'not signed in' using errcode = '42501'; end if;
-  if gtin is null or p_version is null or p_reason not in ('figures', 'wrong', 'name', 'other') then
+  if gtin is null or p_version is null or p_reason is null or p_reason not in ('figures', 'wrong', 'name', 'other') then
     raise exception 'bad report' using errcode = '22023';
   end if;
+  perform pg_advisory_xact_lock(hashtextextended('tali-product:' || gtin, 0));
   select id into pid from public.products where barcode = gtin and version = p_version;
   if pid is null then return false; end if;
   insert into public.product_quota as t (day, reports) values (v_today, 1)
@@ -367,14 +388,37 @@ begin
   end if;
   update public.products set
     reports = reports + 1,
-    hidden = hidden or p_reason = 'name' or reports + 1 >= 3,
-    is_current = case when p_reason = 'name' or reports + 1 >= 3 then false else is_current end
+    name_reports = name_reports + (p_reason = 'name')::integer,
+    hidden = hidden or reports + 1 >= 3 or name_reports + (p_reason = 'name')::integer >= 2,
+    is_current = case when reports + 1 >= 3 or name_reports + (p_reason = 'name')::integer >= 2
+                      then false else is_current end
   where id = pid;
   return true;
 end;
 $$;
-revoke all on function public.report_product(text, integer, text) from public, anon;
-grant execute on function public.report_product(text, integer, text) to authenticated;
+revoke all on function public.report_product(text, integer, text) from public, anon, authenticated;
+grant execute on function public.report_product(text, integer, text) to service_role;
+
+-- 10. Housekeeping the plan describes (compliance register item 24): ai_usage (one count per
+--     person, task and day for the label-read cap) keeps 60 days, then goes. Daily at 03:41 UTC
+--     through pg_cron, like tali-purge-unconsented. Not callable by any API role.
+create or replace function public.ai_usage_cleanup()
+returns integer
+language sql
+security definer
+set search_path = ''
+as $$
+  with gone as (
+    delete from public.ai_usage where day < (now() at time zone 'utc')::date - 60 returning 1
+  )
+  select count(*)::integer from gone
+$$;
+revoke all on function public.ai_usage_cleanup() from public, anon, authenticated, service_role;
+do $$ begin
+  if not exists (select 1 from cron.job where jobname = 'tali-ai-usage-cleanup') then
+    perform cron.schedule('tali-ai-usage-cleanup', '41 3 * * *', 'select public.ai_usage_cleanup()');
+  end if;
+end $$;
 
 notify pgrst, 'reload schema';
 
@@ -382,7 +426,7 @@ notify pgrst, 'reload schema';
 --   update public.products set audited_on = date_trunc('month', now())::date, status = 'verified'
 --     where id = … and is_current;
 -- Review a hidden version (moderation procedure): restore with
---   update public.products set hidden = false, reports = 0 where id = …;
+--   update public.products set hidden = false, reports = 0, name_reports = 0 where id = …;
 -- or take it down for good with: delete from public.products where id = …;
 --
 -- Verify (expect rls = true and no policies on the three tables; no table grants to anon or
@@ -396,9 +440,12 @@ notify pgrst, 'reload schema';
 --   where p.proname in ('submit_product', 'lookup_product', 'report_product', 'shared_products_allowed')
 --   and has_function_privilege(r.oid, p.oid, 'execute') and r.rolname in ('anon', 'authenticated', 'service_role');
 -- Tests (as authenticated with request.jwt.claims set): select from products is refused;
--- submit_product is refused (permission denied); lookup_product with a GET is not used by the app.
+-- submit_product, lookup_product and report_product are refused (permission denied).
+-- Flagged for audit (salt over 10 g per 100 g): select id, barcode, name, salt from public.products where flagged;
 --
 -- Rollback (before any product is shared):
+--   select cron.unschedule('tali-ai-usage-cleanup');
+--   drop function public.ai_usage_cleanup();
 --   drop function public.submit_product(text, jsonb, text), public.lookup_product(text),
 --     public.report_product(text, integer, text), public.shared_products_allowed(),
 --     public.product_name_refused(text), public.product_num(jsonb, text, numeric, numeric), public.gtin14(text);
