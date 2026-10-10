@@ -83,6 +83,10 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     free: true,
     note: 'Call 111 and choose option 2 for your local NHS mental health crisis line.',
   },
+  // Northern Ireland has no NHS 111: nidirect sends urgent care that can't wait for the surgery to
+  // the GP out-of-hours service (6pm weekdays until the surgery opens, 24 hours at weekends and on
+  // public holidays), with a local number per area, no single one ("GP out of hours service" and
+  // "Mental health emergency - if you're in crisis or despair", nidirect.gov.uk, checked 10 Oct 2026).
   gp: { kind: 'gp', name: 'Your GP', hours: 'Surgery hours' },
   midwife: { kind: 'midwife', name: 'Your midwife or GP', hours: 'Surgery hours' },
   emergency: { kind: 'emergency', name: 'Emergency services', phone: '999', hours: '24 hours, every day', free: true, note: 'If you or someone else is in danger now.' },
@@ -94,8 +98,16 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
  */
 export const smsHref = (sms: { to: string; body: string }): string => `sms:${sms.to}?&body=${encodeURIComponent(sms.body)}`
 
-/** Beat's number for a nation. */
-export const beatFor = (nation: UkNation): string => SIGNPOSTS.beat.byNation![nation]
+/**
+ * Beat's number while no nation is known (the Mind Support sheet before a nation is picked): the
+ * line nhs.uk gives as "the Beat helpline" with no nation attached (nhs.uk, Eating disorders
+ * overview, page last reviewed 23 January 2024; checked 10 Oct 2026). Beat's own helplines page
+ * lists it under England, so a picked nation still gets its own line.
+ */
+export const BEAT_ANY_NATION = '0808 801 0677'
+
+/** Beat's number for a nation, or the one nhs.uk gives for everyone when no nation is known. */
+export const beatFor = (nation: UkNation | null): string => (nation ? SIGNPOSTS.beat.byNation![nation] : BEAT_ANY_NATION)
 
 /** Where to go for urgent advice that isn't an emergency: NHS 111, or the GP in Northern Ireland. */
 export const urgentAdviceFor = (nation: UkNation): Signpost =>
@@ -104,8 +116,13 @@ export const urgentAdviceFor = (nation: UkNation): Signpost =>
 /** The name to show for a service in a nation ("NHS 24 (111)" in Scotland). */
 export const signpostName = (sp: Signpost, nation?: UkNation): string => (nation && sp.nameByNation?.[nation]) || sp.name
 
-/** The signposts that apply in a nation (drops services, like NHS 111 option 2, that don't run there). */
-export const signpostsFor = (kinds: SignpostKind[], nation: UkNation): Signpost[] =>
-  kinds.map((k) => SIGNPOSTS[k]).filter((sp) => !sp.nations || sp.nations.includes(nation) || (sp.kind === 'nhs111' && nation === 'northern-ireland'))
-    .map((sp) => (sp.kind === 'nhs111' && nation === 'northern-ireland' ? SIGNPOSTS.gp : sp))
+/**
+ * The signposts that apply in a nation (drops services, like NHS 111 option 2, that don't run there).
+ * `null`, no nation known (register item 44): only services that run in all four nations, with the GP
+ * in NHS 111's place, as in Northern Ireland, so nobody is sent to a 111 that doesn't run where they
+ * live. Picking a nation brings the NHS 111 route back.
+ */
+export const signpostsFor = (kinds: SignpostKind[], nation: UkNation | null): Signpost[] =>
+  kinds.map((k) => SIGNPOSTS[k]).filter((sp) => !sp.nations || sp.kind === 'nhs111' || (nation !== null && sp.nations.includes(nation)))
+    .map((sp) => (sp.kind === 'nhs111' && (nation === 'northern-ireland' || nation === null) ? SIGNPOSTS.gp : sp))
     .filter((sp, i, all) => all.findIndex((x) => x.kind === sp.kind) === i)

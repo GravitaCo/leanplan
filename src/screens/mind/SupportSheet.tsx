@@ -12,19 +12,22 @@ import { SUPPORT_MIND } from './copy'
  * Opened from "Need support now?" anywhere (Mind page, later the check-in, skills and the low-mood
  * note). Its foot says opening it is private, so it must stay pure UI: no store, no persisted
  * field, no network, no count against the day's asks (scripts/wellbeing/mind-page.ts checks it).
- * The nation is this sheet's own state, England until changed and forgotten on close, as on
- * Profile's sheet (profile/AccountData.tsx), whose layout (ob9-7) this reuses. Never red.
+ * The nation is this sheet's own state, forgotten on close, as on Profile's sheet
+ * (profile/AccountData.tsx), whose layout (ob9-7) this reuses. It starts with no nation (register
+ * item 44): "Showing services for the whole UK" and only services that run in all four nations (the
+ * GP, not NHS 111, which doesn't run in Northern Ireland); "Change" picks a nation and brings its NHS
+ * route. Never red.
  */
 export function SupportSheet({ onClose }: { onClose: () => void }) {
-  const [nation, setNation] = useState<UkNation>('england')
+  const [nation, setNation] = useState<UkNation | null>(null)
   const [picking, setPicking] = useState(false)
-  const name = NATIONS.find(([k]) => k === nation)![1]
+  const name = nation ? NATIONS.find(([k]) => k === nation)![1] : SUPPORT_MIND.anyNation
   return (
     <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sp-sheet">
         <div className="sp-lead">{SUPPORT.lead}</div>
         {picking
-          ? <Opts label="Nation" opts={NATIONS} value={nation} onPick={(k) => { setNation(k); setPicking(false) }} />
+          ? <Opts label="Nation" opts={NATIONS} value={nation ?? undefined} onPick={(k) => { setNation(k); setPicking(false) }} />
           : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{SUPPORT.change}</button></div>}
         <SupportRows list={supportList(nation, { context: 'mind' })} />
         <div className="sp-foot">{SUPPORT_MIND.notCrisis}</div>

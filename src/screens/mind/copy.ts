@@ -43,6 +43,11 @@ export const SUPPORT_MIND = {
   notCrisis: 'Tali isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.',
   /** B6.8: true only while opening the sheet is never recorded, counted or synced (tested) */
   foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.',
+  /** register item 44: the nation line before a nation is picked ("Showing services for the whole UK") */
+  anyNation: 'the whole UK',
+  /** register item 44: Northern Ireland's GP row (no NHS 111 there; nidirect "GP out of hours
+   *  service", checked 10 Oct 2026: a local number per area, so no number here) */
+  gpOutOfHours: 'Medical help when it isn’t an emergency. Out of hours, call the GP out-of-hours service for your area.',
 }
 
 /** WP13: Unload (board B8, canvas wp-b8-light, wp-b8-dark, wp-b8-more). Cancel and Done (B8.2)

@@ -30,7 +30,7 @@ function memoryStorage(): Storage {
   }
 }
 
-const names = (n: UkNation, context?: 'mind') => supportList(n, context ? { context } : {}).map((r) => r.name)
+const names = (n: UkNation | null, context?: 'mind') => supportList(n, context ? { context } : {}).map((r) => r.name)
 
 export function mindPageSuite(): number {
   let bad = 0
@@ -51,6 +51,16 @@ export function mindPageSuite(): number {
   ok('Mind order, Wales', JSON.stringify(names('wales', 'mind')) === JSON.stringify(england), names('wales', 'mind'))
   ok('Mind order, Scotland (NHS 24, no option 2 line)', JSON.stringify(names('scotland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'NHS 24 (111)', 'Beat', 'Emergency services']), names('scotland', 'mind'))
   ok('Mind order, Northern Ireland (the GP, no NHS 111)', JSON.stringify(names('northern-ireland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), names('northern-ireland', 'mind'))
+  // register item 44: no nation known, so nothing that doesn't run in all four nations
+  ok('Mind order, no nation yet (the GP, no NHS 111 or option 2 line)', JSON.stringify(names(null, 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), names(null, 'mind'))
+  const anyRows = supportList(null, { context: 'mind' })
+  ok('no nation yet: no 111 anywhere, Beat on the UK-wide line nhs.uk gives, 999 and Samaritans kept',
+    anyRows.every((r) => !/111/.test(`${r.name} ${r.desc} ${r.num}`)) && anyRows.find((r) => r.name === 'Beat')?.tel === '0808 801 0677'
+      && anyRows.find((r) => r.name === 'Emergency services')?.tel === '999' && anyRows.find((r) => r.name === 'Samaritans')?.tel === '116 123', anyRows)
+  const niGp = supportList('northern-ireland', { context: 'mind' }).find((r) => r.name === 'Your GP')
+  ok('Northern Ireland: the GP row names the GP out-of-hours service, no number, no 111',
+    niGp?.desc === SUPPORT_MIND.gpOutOfHours && SUPPORT_MIND.gpOutOfHours.includes('GP out-of-hours service') && !niGp.tel && !/111/.test(niGp.desc), niGp)
+  ok('England, Wales and Scotland keep 111 once picked', (['england', 'wales', 'scotland'] as UkNation[]).every((n) => supportList(n, { context: 'mind' }).some((r) => r.tel === '111')))
   ok('Profile order unchanged (ob9-7)', JSON.stringify(names('england')) === JSON.stringify(['Beat', 'NHS 111, option 2', 'NHS 111', 'Samaritans', 'Emergency services']), names('england'))
   ok('Shout only in the Mind context', NATIONS.every(([n]) => !names(n).includes('Shout') && names(n, 'mind').includes('Shout')))
   const row = supportList('england', { context: 'mind' })[1]
@@ -59,7 +69,7 @@ export function mindPageSuite(): number {
   ok('Beat, the NHS lines and 999 keep their numbers in the Mind context', NATIONS.every(([n]) => supportList(n, { context: 'mind' }).every((r) => r.name === 'Shout' || r.name === 'Your GP' ? true : !!r.tel)))
 
   /* ---------- copy lint ---------- */
-  const strings = [...mindPageCopy(), SUPPORT.title, SUPPORT.lead, ...NATIONS.flatMap(([n]) => supportList(n, { context: 'mind' }).flatMap((r) => [r.name, r.desc]))]
+  const strings = [...mindPageCopy(), SUPPORT.title, SUPPORT.lead, ...[...NATIONS.map(([n]) => n), null].flatMap((n) => supportList(n, { context: 'mind' }).flatMap((r) => [r.name, r.desc])), SUPPORT.showing(SUPPORT_MIND.anyNation)]
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every Mind page and Support string passes mindCopyIssues', issues.length === 0, issues)
   ok('no em dashes', strings.every((s) => !s.includes('—')))
@@ -106,7 +116,8 @@ export function mindPageSuite(): number {
     ok('opening Support writes nothing to the device', storage() === before.storage)
     ok('opening Support notifies no store subscriber and makes no request', notified === 0 && fetches === 0, { notified, fetches })
     const at = (s: string) => html.indexOf(s)
-    ok('the sheet: Samaritans first, Shout second, 999 last, both feet', at('Samaritans') > 0 && at('Samaritans') < at('Shout') && at('Shout') < at('NHS 111') && at('Beat') < at('Emergency services')
+    ok('the sheet opens on the whole UK (register item 44): no 111 until a nation is picked', html.includes('Showing services for the whole UK') && !html.includes('111') && html.includes('Your GP'))
+    ok('the sheet: Samaritans first, Shout second, 999 last, both feet', at('Samaritans') > 0 && at('Samaritans') < at('Shout') && at('Shout') < at('Your GP') && at('Your GP') < at('Beat') && at('Beat') < at('Emergency services')
       && html.includes('href="sms:85258?&amp;body=SHOUT"') && html.includes('Text SHOUT to 85258') && html.includes(SUPPORT_MIND.notCrisis) && html.includes('Texting Shout is free from the main UK networks.'))
     ok('the sheet is never red', !/--red|class="[^"]*\bdanger\b/.test(html))
 
