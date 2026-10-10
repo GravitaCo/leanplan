@@ -132,21 +132,23 @@ function signposts(): void {
     ['Samaritans 116 123, Childline 0800 1111, 999', SIGNPOSTS.samaritans.phone === '116 123' && SIGNPOSTS.childline.phone === '0800 1111' && SIGNPOSTS.emergency.phone === '999'],
     ['Beat is free', SIGNPOSTS.beat.free === true],
     ['Scotland calls it NHS 24 (111)', signpostName(SIGNPOSTS.nhs111, 'scotland') === 'NHS 24 (111)' && signpostName(SIGNPOSTS.nhs111, 'england') === 'NHS 111'],
-    ['NHS 111 option 2 (mental health) in England and Wales with the wellbeing signposts', SIGNPOSTS['nhs111-mental-health'].nations!.join() === 'england,wales'
+    ['NHS 111 option 2 (mental health) in England and Wales, the mental health option in Scotland, with the wellbeing signposts', SIGNPOSTS['nhs111-mental-health'].nations!.join() === 'england,wales,scotland' && SIGNPOSTS['nhs111-mental-health'].nameByNation?.scotland === 'NHS 24 (111), mental health option'
       && routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost.includes('nhs111-mental-health')],
     ['per nation: Northern Ireland gets the GP, no option 2', (() => {
       const kinds = routeSafety(answers({ outcomes: { ...CLEAR, wellbeing: 'flagged' } })).signpost
       const ni = signpostsFor(kinds, 'northern-ireland').map((x) => x.kind), en = signpostsFor(kinds, 'england').map((x) => x.kind)
       return !ni.includes('nhs111') && !ni.includes('nhs111-mental-health') && ni.includes('gp') && en.includes('nhs111-mental-health') && en.includes('nhs111') })()],
     ['steps and job questions say "not counting workouts"', STEPS_QUESTION.includes('not counting workouts') && JOB_QUESTION.includes('not counting workouts')],
-    ['Profile support sheet: Beat by nation with its web link, option 2 where it runs, NHS 111 / NHS 24 / the GP, Samaritans, 999 (ob9-7)', (() => {
+    ['Profile support sheet: Beat by nation with its web link, Lifeline in Northern Ireland, option 2 where it runs, NHS 111 / NHS 24 / the GP (no label), Samaritans, 999; whole UK until picked (ob9-7)', (() => {
       const en = supportList('england'), sc = supportList('scotland'), wa = supportList('wales'), ni = supportList('northern-ireland')
       const names = (l: typeof en) => l.map((x) => x.name).join('|')
       return names(en) === 'Beat|NHS 111, option 2|NHS 111|Samaritans|Emergency services' && names(wa) === names(en)
-        && names(sc) === 'Beat|NHS 24 (111)|Samaritans|Emergency services' && names(ni) === 'Beat|Your GP|Samaritans|Emergency services'
+        && names(sc) === 'Beat|NHS 24 (111), mental health option|NHS 24 (111)|Samaritans|Emergency services' && names(ni) === 'Beat|Lifeline|Your GP|Samaritans|Emergency services'
+        && names(supportList(null)) === 'Beat|Your GP|Samaritans|Emergency services' && supportList(null)[0].num === '0808 801 0677'
+        && ni[1].tel === '0808 808 8000' && ni[1].desc === 'Mental health crisis line · 24 hours, every day' && !ni[2].tel && !ni[2].num
         && en[0].num === '0808 801 0677' && sc[0].num === '0808 801 0432' && wa[0].num === '0808 801 0433' && ni[0].num === '0808 801 0434'
         && [en, sc, wa, ni].every((l) => l[0].web === SIGNPOSTS.beat.web && l[0].webLabel === SUPPORT.beatWeb && l.at(-1)!.tel === '999' && l.at(-2)!.tel === '116 123')
-        && !ni[1].tel && en[0].desc === 'Eating disorder support · 3pm–8pm, Monday to Friday' && en[1].desc === 'Mental health crisis line · 24 hours, every day'
+        && en[0].desc === 'Eating disorder support · 3pm–8pm, Monday to Friday' && en[1].desc === 'Mental health crisis line · 24 hours, every day'
         && en[2].desc === 'Medical help when it isn’t an emergency · 24 hours' && en[3].desc === 'Talk about anything · 24 hours, every day'
     })()],
     ['NHS 111 in England, Wales, Scotland; GP in Northern Ireland', urgentAdviceFor('wales').kind === 'nhs111' && urgentAdviceFor('northern-ireland').kind === 'gp' && !SIGNPOSTS.nhs111.nations!.includes('northern-ireland')],

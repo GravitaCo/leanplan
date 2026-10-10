@@ -500,6 +500,15 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     policy's Unload sentence adds the optional "one thing that went OK" the notes hold. DPIA note
     8.9 rewritten for skills on, for Benn to initial (the clinician gate moved; R15 medium only
     while testing is closed).
+    Update (mental-performance and Benn, 2026-10-10): Lifeline joins Northern Ireland; the whole-UK
+    view says choosing a nation adds local NHS services; the GP row lost its untappable 'Contact';
+    Profile's sheet opens on the whole UK too, Beat first. Lifeline is 0808 808 8000, free, 24 hours
+    (nidirect "Mental health emergency - if you're in crisis or despair", checked 10 Oct 2026; no web
+    link, its site didn't answer our check). Northern Ireland's GP row now reads "Evenings and
+    weekends, call your area's GP out-of-hours service." Scotland gains NHS 24's mental health line
+    ("NHS 24 (111), mental health option": 111, the Mental Health Hub, free, 24 hours; NHS inform
+    "Mental health services at NHS 24", checked 10 Oct 2026, which names the option, not a number).
+    No new data: the nation is still sheet state only, never stored.
 
 45. Open (2026-10-10, wellbeing, boards B12 and B11b approved by Benn on 10 Oct 2026; built
     behind WELLBEING_ENABLED, not shipped). Two new Mind settings on `profile.mind`, both synced

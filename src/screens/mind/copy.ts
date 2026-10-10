@@ -46,8 +46,9 @@ export const SUPPORT_MIND = {
   /** register item 44: the nation line before a nation is picked ("Showing services for the whole UK") */
   anyNation: 'the whole UK',
   /** register item 44: Northern Ireland's GP row (no NHS 111 there; nidirect "GP out of hours
-   *  service", checked 10 Oct 2026: a local number per area, so no number here) */
-  gpOutOfHours: 'Medical help when it isn’t an emergency. Out of hours, call the GP out-of-hours service for your area.',
+   *  service", checked 10 Oct 2026: evenings and weekends, a local number per area, so no
+   *  number here) */
+  gpOutOfHours: 'Medical help when it isn’t an emergency. Evenings and weekends, call your area’s GP out-of-hours service.',
 }
 
 /** WP13: Unload (board B8, canvas wp-b8-light, wp-b8-dark, wp-b8-more). Cancel and Done (B8.2)

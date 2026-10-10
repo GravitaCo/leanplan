@@ -15,6 +15,7 @@ import { supportList } from '@/screens/profile/supportRows'
 import { SUPPORT } from '@/screens/onboarding/copyApp'
 import { mindPageCopy, SHARED, SUPPORT_MIND, MIND } from '@/screens/mind/copy'
 import { SupportSheet } from '@/screens/mind/SupportSheet'
+import { SupportSheet as ProfileSupportSheet } from '@/screens/profile/AccountData'
 import { MindPageView, checkinPairs, mindEyebrow } from '@/screens/mind/MindPage'
 import type { CheckIn } from '@/core/types'
 
@@ -49,8 +50,18 @@ export function mindPageSuite(): number {
   const england = ['Samaritans', 'Shout', 'NHS 111, option 2', 'NHS 111', 'Beat', 'Emergency services']
   ok('Mind order, England', JSON.stringify(names('england', 'mind')) === JSON.stringify(england), names('england', 'mind'))
   ok('Mind order, Wales', JSON.stringify(names('wales', 'mind')) === JSON.stringify(england), names('wales', 'mind'))
-  ok('Mind order, Scotland (NHS 24, no option 2 line)', JSON.stringify(names('scotland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'NHS 24 (111)', 'Beat', 'Emergency services']), names('scotland', 'mind'))
-  ok('Mind order, Northern Ireland (the GP, no NHS 111)', JSON.stringify(names('northern-ireland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), names('northern-ireland', 'mind'))
+  ok('Mind order, Scotland (NHS 24 with its mental health option)', JSON.stringify(names('scotland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'NHS 24 (111), mental health option', 'NHS 24 (111)', 'Beat', 'Emergency services']), names('scotland', 'mind'))
+  const scMh = supportList('scotland', { context: 'mind' })[2]
+  ok('Scotland\'s mental health line: 111, crisis line, 24 hours, never "option 2"', scMh.tel === '111' && scMh.desc === 'Mental health crisis line · 24 hours, every day' && !/option 2/.test(scMh.name), scMh)
+  ok('Mind order, Northern Ireland (Lifeline, then the GP, no NHS 111)', JSON.stringify(names('northern-ireland', 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'Lifeline', 'Your GP', 'Beat', 'Emergency services']), names('northern-ireland', 'mind'))
+  const lifeline = SIGNPOSTS.lifeline
+  ok('Lifeline: 0808 808 8000, Northern Ireland only, 24 hours, free, checked 10 Oct 2026 (nidirect)',
+    lifeline.phone === '0808 808 8000' && JSON.stringify(lifeline.nations) === '["northern-ireland"]' && lifeline.hours === '24 hours, every day' && lifeline.free === true && lifeline.checkedOn === '2026-10-10')
+  const lifeRow = supportList('northern-ireland', { context: 'mind' }).find((r) => r.name === 'Lifeline')
+  ok('the Lifeline row: crisis line, 24 hours, calls', lifeRow?.desc === 'Mental health crisis line · 24 hours, every day' && lifeRow.tel === '0808 808 8000' && lifeRow.num === '0808 808 8000', lifeRow)
+  ok('Lifeline only in Northern Ireland, in both sheets', [...(['england', 'scotland', 'wales'] as UkNation[]), null].every((n) => !names(n, 'mind').includes('Lifeline') && !names(n).includes('Lifeline')) && names('northern-ireland').includes('Lifeline'))
+  ok('the GP row has no right-hand label in either sheet (no tint text that isn\'t a link)',
+    [...NATIONS.map(([n]) => n), null].every((n) => [supportList(n, { context: 'mind' }), supportList(n)].every((l) => l.filter((r) => r.name === 'Your GP').every((r) => !r.num && !r.tel))))
   // register item 44: no nation known, so nothing that doesn't run in all four nations
   ok('Mind order, no nation yet (the GP, no NHS 111 or option 2 line)', JSON.stringify(names(null, 'mind')) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), names(null, 'mind'))
   const anyRows = supportList(null, { context: 'mind' })
@@ -59,9 +70,11 @@ export function mindPageSuite(): number {
       && anyRows.find((r) => r.name === 'Emergency services')?.tel === '999' && anyRows.find((r) => r.name === 'Samaritans')?.tel === '116 123', anyRows)
   const niGp = supportList('northern-ireland', { context: 'mind' }).find((r) => r.name === 'Your GP')
   ok('Northern Ireland: the GP row names the GP out-of-hours service, no number, no 111',
-    niGp?.desc === SUPPORT_MIND.gpOutOfHours && SUPPORT_MIND.gpOutOfHours.includes('GP out-of-hours service') && !niGp.tel && !/111/.test(niGp.desc), niGp)
+    niGp?.desc === SUPPORT_MIND.gpOutOfHours && SUPPORT_MIND.gpOutOfHours === 'Medical help when it isn’t an emergency. Evenings and weekends, call your area’s GP out-of-hours service.' && !niGp.tel && !/111/.test(niGp.desc), niGp)
   ok('England, Wales and Scotland keep 111 once picked', (['england', 'wales', 'scotland'] as UkNation[]).every((n) => supportList(n, { context: 'mind' }).some((r) => r.tel === '111')))
-  ok('Profile order unchanged (ob9-7)', JSON.stringify(names('england')) === JSON.stringify(['Beat', 'NHS 111, option 2', 'NHS 111', 'Samaritans', 'Emergency services']), names('england'))
+  ok('Profile order, England unchanged (ob9-7)', JSON.stringify(names('england')) === JSON.stringify(['Beat', 'NHS 111, option 2', 'NHS 111', 'Samaritans', 'Emergency services']), names('england'))
+  ok('Profile order, whole UK: Beat first, the GP, no 111', JSON.stringify(names(null)) === JSON.stringify(['Beat', 'Your GP', 'Samaritans', 'Emergency services']) && supportList(null).every((r) => !/111/.test(`${r.name} ${r.desc} ${r.num}`)), names(null))
+  ok('Profile order, Northern Ireland: Beat, Lifeline, the GP', JSON.stringify(names('northern-ireland')) === JSON.stringify(['Beat', 'Lifeline', 'Your GP', 'Samaritans', 'Emergency services']), names('northern-ireland'))
   ok('Shout only in the Mind context', NATIONS.every(([n]) => !names(n).includes('Shout') && names(n, 'mind').includes('Shout')))
   const row = supportList('england', { context: 'mind' })[1]
   ok('the Shout row keeps "Text SHOUT to 85258" visible and texts, never calls',
@@ -69,7 +82,7 @@ export function mindPageSuite(): number {
   ok('Beat, the NHS lines and 999 keep their numbers in the Mind context', NATIONS.every(([n]) => supportList(n, { context: 'mind' }).every((r) => r.name === 'Shout' || r.name === 'Your GP' ? true : !!r.tel)))
 
   /* ---------- copy lint ---------- */
-  const strings = [...mindPageCopy(), SUPPORT.title, SUPPORT.lead, ...[...NATIONS.map(([n]) => n), null].flatMap((n) => supportList(n, { context: 'mind' }).flatMap((r) => [r.name, r.desc])), SUPPORT.showing(SUPPORT_MIND.anyNation)]
+  const strings = [...mindPageCopy(), SUPPORT.title, SUPPORT.lead, ...[...NATIONS.map(([n]) => n), null].flatMap((n) => supportList(n, { context: 'mind' }).flatMap((r) => [r.name, r.desc])), SUPPORT.showing(SUPPORT_MIND.anyNation), SUPPORT.choose, SUPPORT.chooseNation]
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every Mind page and Support string passes mindCopyIssues', issues.length === 0, issues)
   ok('no em dashes', strings.every((s) => !s.includes('—')))
@@ -117,9 +130,19 @@ export function mindPageSuite(): number {
     ok('opening Support notifies no store subscriber and makes no request', notified === 0 && fetches === 0, { notified, fetches })
     const at = (s: string) => html.indexOf(s)
     ok('the sheet opens on the whole UK (register item 44): no 111 until a nation is picked', html.includes('Showing services for the whole UK') && !html.includes('111') && html.includes('Your GP'))
+    ok('whole UK: the button reads Choose, and the footnote sits under the list', />Choose</.test(html) && !/>Change</.test(html) && html.includes(SUPPORT.chooseNation)
+      && at(SUPPORT.chooseNation) > at('Emergency services') && at(SUPPORT.chooseNation) < at(SUPPORT_MIND.notCrisis))
+    ok('whole UK: no Lifeline, and the GP row has no "Contact"', !html.includes('Lifeline') && !html.includes('>Contact<'))
     ok('the sheet: Samaritans first, Shout second, 999 last, both feet', at('Samaritans') > 0 && at('Samaritans') < at('Shout') && at('Shout') < at('Your GP') && at('Your GP') < at('Beat') && at('Beat') < at('Emergency services')
       && html.includes('href="sms:85258?&amp;body=SHOUT"') && html.includes('Text SHOUT to 85258') && html.includes(SUPPORT_MIND.notCrisis) && html.includes('Texting Shout is free from the main UK networks.'))
     ok('the sheet is never red', !/--red|class="[^"]*\bdanger\b/.test(html))
+    // Profile's sheet (ob9-7) opens on the whole UK too (Benn, 10 Oct 2026)
+    const ph = renderToString(createElement(ProfileSupportSheet, { onClose: () => {} }))
+    const pat = (x: string) => ph.indexOf(x)
+    ok('Profile sheet: opens on the whole UK, Choose, the footnote under the list, Beat first, its own foot, no 111',
+      ph.includes('Showing services for the whole UK') && />Choose</.test(ph) && !/>Change</.test(ph) && !ph.includes('111') && !ph.includes('Lifeline') && !ph.includes('>Contact<')
+        && pat('Beat') > 0 && pat('Beat') < pat('Your GP') && pat('Your GP') < pat('Samaritans') && pat('Emergency services') < pat(SUPPORT.chooseNation)
+        && pat(SUPPORT.chooseNation) < pat(SUPPORT.foot) && ph.includes('tel:08088010677'))
 
     // the page from plain props (MindPageView: the store is read by MindPage around it)
     const noop = () => {}

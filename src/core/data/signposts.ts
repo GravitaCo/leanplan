@@ -10,7 +10,7 @@ export type UkNation = 'england' | 'scotland' | 'wales' | 'northern-ireland'
 /** The four nations with their names, in the order the signpost lists show them. */
 export const NATIONS: [UkNation, string][] = [['england', 'England'], ['scotland', 'Scotland'], ['wales', 'Wales'], ['northern-ireland', 'Northern Ireland']]
 
-export type SignpostKind = 'beat' | 'samaritans' | 'shout' | 'childline' | 'nhs111' | 'nhs111-mental-health' | 'gp' | 'midwife' | 'emergency'
+export type SignpostKind = 'beat' | 'samaritans' | 'shout' | 'lifeline' | 'childline' | 'nhs111' | 'nhs111-mental-health' | 'gp' | 'midwife' | 'emergency'
 
 export interface Signpost {
   kind: SignpostKind
@@ -63,6 +63,18 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     note: 'Text SHOUT to 85258. Free from the main UK networks.',
     checkedOn: '2026-10-07',
   },
+  // Lifeline: Northern Ireland's crisis line. nidirect ("Mental health emergency - if you're in crisis
+  // or despair", nidirect.gov.uk, checked 10 Oct 2026): "telephone: 0808 808 8000", "confidential,
+  // free and open 24 hours every day". No `web`: lifelinehelpline.info didn't answer our check that day.
+  lifeline: {
+    kind: 'lifeline',
+    name: 'Lifeline',
+    phone: '0808 808 8000',
+    nations: ['northern-ireland'],
+    hours: '24 hours, every day',
+    free: true,
+    checkedOn: '2026-10-10',
+  },
   childline: { kind: 'childline', name: 'Childline', phone: '0800 1111', hours: '24 hours, every day', free: true },
   nhs111: {
     kind: 'nhs111',
@@ -74,14 +86,20 @@ export const SIGNPOSTS: Record<SignpostKind, Signpost> = {
     free: true,
     note: 'In Northern Ireland, contact your GP.',
   },
+  // Scotland: NHS 24's Mental Health Hub, reached by phoning 111 and choosing the mental health
+  // option; free, 24 hours a day, 7 days a week, for anyone in Scotland ("Mental health services at
+  // NHS 24" and "Get urgent mental health help", nhsinform.scot, checked 10 Oct 2026). Those pages
+  // name the option, not its number, so Scotland's row says "mental health option", not "option 2".
   'nhs111-mental-health': {
     kind: 'nhs111-mental-health',
     name: 'NHS 111, option 2 (mental health)',
     phone: '111',
-    nations: ['england', 'wales'],
+    nations: ['england', 'wales', 'scotland'],
+    nameByNation: { scotland: 'NHS 24 (111), mental health option' },
     hours: '24 hours, every day',
     free: true,
-    note: 'Call 111 and choose option 2 for your local NHS mental health crisis line.',
+    note: 'Call 111 and choose option 2 for your local NHS mental health crisis line (in Scotland, the mental health option).',
+    checkedOn: '2026-10-10',
   },
   // Northern Ireland has no NHS 111: nidirect sends urgent care that can't wait for the surgery to
   // the GP out-of-hours service (6pm weekdays until the surgery opens, 24 hours at weekends and on

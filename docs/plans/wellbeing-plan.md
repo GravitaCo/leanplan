@@ -724,6 +724,14 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   (no NHS 111 or option 2 line, Beat's UK-wide number) until a nation is picked; England and Wales
   then show NHS 111 and option 2, Scotland NHS 24 (111), Northern Ireland the GP and the GP
   out-of-hours service. The low-mood banner already used the nation-neutral line (B6.10).
+- **Benn, 10 Oct 2026: approved Lifeline for Northern Ireland, the whole-UK footnote and Choose
+  button, removing the GP row's Contact label, and Profile's Support sheet opening on the whole
+  UK** (recommended by mental-performance; register item 44). Lifeline (0808 808 8000, nidirect)
+  sits after Shout in the Mind sheet and after Beat in Profile's; while no nation is picked the
+  button reads "Choose" and the footnote says "Choose your nation above to see your local NHS
+  services."; Northern Ireland's GP row reads "Medical help when it isn't an emergency. Evenings
+  and weekends, call your area's GP out-of-hours service." Also added with it: Scotland's NHS 24
+  mental health option (111, the Mental Health Hub, NHS inform).
 
 ### Open for Benn (on the boards)
 

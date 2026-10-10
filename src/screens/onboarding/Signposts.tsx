@@ -28,7 +28,7 @@ export function Signposts({ list }: { list: SP[] }) {
             </div>
           )
         }
-        const inner = <><span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span></span><span className="n num">{s.num}</span></>
+        const inner = <><span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span></span>{s.num && <span className="n num">{s.num}</span>}</>
         return s.tel
           ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{inner}</a>
           : <div key={s.name} className="wz-sp">{inner}</div>

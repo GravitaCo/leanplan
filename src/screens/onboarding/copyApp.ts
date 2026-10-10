@@ -93,6 +93,10 @@ export const SUPPORT = {
   lead: 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.',
   showing: (nation: string) => `Showing services for ${nation}`,
   change: 'Change',
+  /** the nation button before a nation is picked (Benn, 10 Oct 2026) */
+  choose: 'Choose',
+  /** under the list in the whole-UK view (Benn, 10 Oct 2026) */
+  chooseNation: 'Choose your nation above to see your local NHS services.',
   /** only true while opening the sheet is never logged, synced or sent (s-ob10) */
   foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.',
   beat: 'Eating disorder support',
@@ -101,6 +105,4 @@ export const SUPPORT = {
   urgent: 'Medical help when it isn’t an emergency',
   samaritans: 'Talk about anything',
   emergency: 'If you or someone else is in danger now',
-  /** Northern Ireland's GP has no one number (the onboarding lists' word) */
-  contact: 'Contact',
 }

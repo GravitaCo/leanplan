@@ -15,8 +15,9 @@ import { SUPPORT_MIND } from './copy'
  * The nation is this sheet's own state, forgotten on close, as on Profile's sheet
  * (profile/AccountData.tsx), whose layout (ob9-7) this reuses. It starts with no nation (register
  * item 44): "Showing services for the whole UK" and only services that run in all four nations (the
- * GP, not NHS 111, which doesn't run in Northern Ireland); "Change" picks a nation and brings its NHS
- * route. Never red.
+ * GP, not NHS 111, which doesn't run in Northern Ireland); "Choose" picks a nation and brings its NHS
+ * route. Never red. While no nation is picked the button reads "Choose" and a footnote under the
+ * list says choosing one adds local NHS services; after a pick it reads "Change" (Benn, 10 Oct 2026).
  */
 export function SupportSheet({ onClose }: { onClose: () => void }) {
   const [nation, setNation] = useState<UkNation | null>(null)
@@ -28,8 +29,9 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
         <div className="sp-lead">{SUPPORT.lead}</div>
         {picking
           ? <Opts label="Nation" opts={NATIONS} value={nation ?? undefined} onPick={(k) => { setNation(k); setPicking(false) }} />
-          : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{SUPPORT.change}</button></div>}
+          : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{nation ? SUPPORT.change : SUPPORT.choose}</button></div>}
         <SupportRows list={supportList(nation, { context: 'mind' })} />
+        {!nation && <div className="sp-foot">{SUPPORT.chooseNation}</div>}
         <div className="sp-foot">{SUPPORT_MIND.notCrisis}</div>
         <div className="sp-foot">{SUPPORT_MIND.foot}</div>
       </div>
@@ -59,7 +61,7 @@ function SupportRows({ list }: { list: SupportRow[] }) {
         }
         return s.tel
           ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{text}<span className="n num">{s.num}</span></a>
-          : <div key={s.name} className="wz-sp">{text}<span className="n num">{s.num}</span></div>
+          : <div key={s.name} className="wz-sp">{text}{s.num && <span className="n num">{s.num}</span>}</div>
       })}
     </div>
   )

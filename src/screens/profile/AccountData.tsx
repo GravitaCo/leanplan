@@ -18,6 +18,7 @@ import { Signposts } from '../onboarding/Signposts'
 import { Opts } from '../onboarding/Opts'
 import { NATIONS, type UkNation } from '@/core/data/signposts'
 import { supportList } from './supportRows'
+import { SUPPORT_MIND } from '../mind/copy'
 import { healthAnswersView } from '@/core/domain/onboarding'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
@@ -112,20 +113,23 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
 /**
  * Onboarding 10 (board ob9-7, note s-ob10). Its foot says opening it is private, so it must stay
  * pure UI: no store action, no persisted field, no network. The nation is this sheet's own state
- * (England until changed, forgotten on close), and the list is signposts.ts's, bundled with the app.
+ * (forgotten on close), and the list is signposts.ts's, bundled with the app. It opens on the whole
+ * UK, as the Mind sheet does (register item 44; Benn, 10 Oct 2026): Beat first on its UK-wide line,
+ * the GP in NHS 111's place, "Choose" and a footnote until a nation is picked, then "Change".
  */
 export function SupportSheet({ onClose }: { onClose: () => void }) {
-  const [nation, setNation] = useState<UkNation>('england')
+  const [nation, setNation] = useState<UkNation | null>(null)
   const [picking, setPicking] = useState(false)
-  const name = NATIONS.find(([k]) => k === nation)![1]
+  const name = nation ? NATIONS.find(([k]) => k === nation)![1] : SUPPORT_MIND.anyNation
   return (
     <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sp-sheet">
         <div className="sp-lead">{SUPPORT.lead}</div>
         {picking
-          ? <Opts label="Nation" opts={NATIONS} value={nation} onPick={(k) => { setNation(k); setPicking(false) }} />
-          : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{SUPPORT.change}</button></div>}
+          ? <Opts label="Nation" opts={NATIONS} value={nation ?? undefined} onPick={(k) => { setNation(k); setPicking(false) }} />
+          : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{nation ? SUPPORT.change : SUPPORT.choose}</button></div>}
         <Signposts list={supportList(nation)} />
+        {!nation && <div className="sp-foot">{SUPPORT.chooseNation}</div>}
         <div className="sp-foot">{SUPPORT.foot}</div>
       </div>
     </Sheet>
