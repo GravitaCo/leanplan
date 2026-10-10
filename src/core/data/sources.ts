@@ -56,6 +56,7 @@ export const SOURCES: Record<string, Source> = {
   'starbucks-uk': { label: 'Starbucks UK, Sep 2026', url: 'https://www.starbucks.co.uk/nutrition', err: MENU_ERR },
   'nero-uk': { label: 'Caffè Nero UK, Sep 2026', url: 'https://caffenerowebsite.blob.core.windows.net/production/data/menus/caffenero_nutrition_allergens-en_GB.pdf', err: MENU_ERR },
   'pret-uk': { label: 'Pret A Manger UK, Oct 2026', url: 'https://www.pret.co.uk/en-GB/products', err: MENU_ERR },
+  'chopstix-uk': { label: 'Chopstix UK, Sep 2026', url: 'https://chopstixnoodles.co.uk/wp-content/uploads/2026/09/NUTRITIONAL-TABLE-V22-SEPT-26.pdf', err: MENU_ERR },
   'costa-uk': { label: 'Costa Coffee UK in-store allergen & nutrition guide, Autumn 2026', url: 'https://www.costa.co.uk/nutrition', err: MENU_ERR },
 }
 

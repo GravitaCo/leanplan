@@ -125,6 +125,9 @@ for (const [q, want] of [
   ['kung po', 'Kung pao chicken (kung po)'],
   ['salt and pepper chicken', 'Salt and pepper chicken'],
   ['crispy chilli beef', 'Crispy chilli beef'],
+  // the Chopstix menu doesn't push the generic dishes down
+  ['egg fried rice', 'Egg fried rice'],
+  ['chow mein', 'Chow mein'],
 ] as const) {
   const got = rankByName(FOODS, (f) => f.n, queryWords(q))[0]?.n
   const ok = got === want; if (!ok) bad++
