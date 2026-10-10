@@ -673,8 +673,8 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   tabs always stay; a switched-off Food or Move only disappears from Today and the reflection.
 - **Train copy:** fitness-workouts' corrected B3 strings are accepted (three or four reps to spare,
   day-matched swap names, the rough-night note); the B3 board is updated to match.
-- **Not drawn yet, so not in this build:** the Wind down and Get outside screens and the "Show
-  names on the lock screen" setting. Boards are being drafted for approval.
+- **Not in the first build:** the Wind down and Get outside screens and the "Show names on the
+  lock screen" setting. Their boards were approved on 10 Oct 2026 (below) and follow the merge.
 - **The supplement lock-screen fix ships ahead of Phase 1** once `ship-critic` passes; Benn is asked
   before anything is applied to the live database.
 - **Reset timings: 3 s in, 1 s in again, 6 s out** (about 6 breaths a minute), Tali's own pacing
@@ -696,6 +696,12 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   "After lunch, I'll get outside for 10 minutes"; "When it's lunchtime, I'll have lunch somewhere I
   like"); "Wound down" approved; the Profile avatar is soft mauve with a mauve letter, as the
   boards draw it; with Food off, Summary's "This week" card drops its calorie lines.
+- **Boards approved (Benn, 10 Oct 2026):** B12 Wind down, B13 Get outside, B11b "Show supplement
+  names in reminders" (a Profile setting, off by default; reminders stay generic unless the person
+  turns it on) and section 9's Mind-off frame (the Mind tab faded and disabled, as built). B12, B13
+  and B11b are built behind `WELLBEING_ENABLED` after the Phase 1 merge; B11b brings back the
+  setting security-data L1 took out of the data model, so it goes past security-data and
+  compliance (privacy policy, register) before it ships.
 - **Supplement reminders sit outside the one-a-day limit**, and since 10 Oct so does the wind-down
   reminder (still once a day at most); check-in and plan reminders share one a day.
 
