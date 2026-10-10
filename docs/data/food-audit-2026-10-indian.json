@@ -1,0 +1,1862 @@
+[
+ {
+  "n": "Vegetable pakora",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-620",
+   "name": "Pakora, vegetable, takeaway and restaurant",
+   "k": 293.0,
+   "p": 8.4,
+   "c": 16.5,
+   "f": 22.0
+  },
+  "status": "new",
+  "serving_g": 150,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken pakora",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-501",
+   "name": "Chicken pieces, coated, takeaway",
+   "k": 267.0,
+   "p": 18.5,
+   "c": 17.6,
+   "f": 14.1
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Fish pakora",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-368",
+   "name": "Cod, in batter, fried, takeaway",
+   "k": 240.0,
+   "p": 16.8,
+   "c": 10.7,
+   "f": 14.7
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Meat samosas",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-326",
+   "name": "Meat samosas, takeaway",
+   "k": 272.0,
+   "p": 11.4,
+   "c": 18.9,
+   "f": 17.3
+  },
+  "status": "new",
+  "serving_g": 120,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable samosas",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-305",
+   "name": "Samosas, vegetable, retail",
+   "k": 217.0,
+   "p": 5.1,
+   "c": 30.0,
+   "f": 9.3
+  },
+  "status": "estimate",
+  "serving_g": 120,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken tikka",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-540",
+   "name": "Curry, chicken tandoori, retail, reheated",
+   "k": 214.0,
+   "p": 27.4,
+   "c": 2.0,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb tikka",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-172",
+   "name": "Lamb, shoulder, diced, kebabs, grilled, lean and fat",
+   "k": 288.0,
+   "p": 28.5,
+   "c": 0.0,
+   "f": 19.3
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Seekh kebab",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-642",
+   "name": "Kofta, beef, homemade",
+   "k": 290.0,
+   "p": 25.3,
+   "c": 1.3,
+   "f": 20.5
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Shami kebab",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-594",
+   "name": "Kofta, lamb, coated with breadcrumbs, homemade",
+   "k": 277.0,
+   "p": 23.8,
+   "c": 9.7,
+   "f": 16.0
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Tandoori chicken, quarter (meat off the bone)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-540",
+   "name": "Curry, chicken tandoori, retail, reheated",
+   "k": 214.0,
+   "p": 27.4,
+   "c": 2.0,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Tandoori chicken, half (meat off the bone)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-540",
+   "name": "Curry, chicken tandoori, retail, reheated",
+   "k": 214.0,
+   "p": 27.4,
+   "c": 2.0,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken wings, tandoori (meat off the bone)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-541",
+   "name": "Chicken wings, marinated, meat and skin, barbecued",
+   "k": 274.0,
+   "p": 27.4,
+   "c": 4.1,
+   "f": 16.6
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Aloo tikki",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-849",
+   "name": "Potato cakes, fried in rapeseed oil",
+   "k": 210.0,
+   "p": 3.9,
+   "c": 31.4,
+   "f": 8.4
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken chaat",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Poppadom (papadom, papadum)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-998",
+   "name": "Papadums, takeaway",
+   "k": 501.0,
+   "p": 11.5,
+   "c": 28.3,
+   "f": 38.8
+  },
+  "status": "new",
+  "serving_g": 12,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Puri",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-911",
+   "name": "Puri, homemade",
+   "k": 366.0,
+   "p": 7.2,
+   "c": 36.5,
+   "f": 22.3
+  },
+  "status": "estimate",
+  "serving_g": 40,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mango chutney",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-343",
+   "name": "Chutney, mango, sweet",
+   "k": 189.0,
+   "p": 0.7,
+   "c": 48.3,
+   "f": 0.1
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mint yoghurt sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-832",
+   "name": "Raita, homemade",
+   "k": 57.0,
+   "p": 4.4,
+   "c": 5.8,
+   "f": 2.4
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Raita",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-832",
+   "name": "Raita, homemade",
+   "k": 57.0,
+   "p": 4.4,
+   "c": 5.8,
+   "f": 2.4
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken tikka masala (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken dhansak",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken dopiaza",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken madras",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken vindaloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken phall",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken bhuna",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken rogan josh",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken balti",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken karahi",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken pathia",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken saag",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken methi",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken achari",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Butter chicken",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken makhani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken pasanda",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb rogan josh",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb vindaloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-599",
+   "name": "Curry, lamb vindaloo, homemade",
+   "k": 199.0,
+   "p": 19.8,
+   "c": 2.7,
+   "f": 12.9
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb madras",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb bhuna",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb balti",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb karahi",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb jalfrezi",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb dopiaza",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb dhansak",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb pathia",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb saag",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb achari",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb korma",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb tikka masala",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb pasanda",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-595",
+   "name": "Curry, lamb rogan josh, homemade",
+   "k": 149.0,
+   "p": 14.4,
+   "c": 3.9,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Keema curry",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-480",
+   "name": "Kheema, lamb, homemade",
+   "k": 178.0,
+   "p": 11.0,
+   "c": 4.0,
+   "f": 13.4
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn bhuna",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-365",
+   "name": "Curry, Prawn bhuna, takeaway",
+   "k": 120.0,
+   "p": 8.6,
+   "c": 1.8,
+   "f": 8.7
+  },
+  "status": "new",
+  "serving_g": 520,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn madras",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-366",
+   "name": "Curry, Prawn madras, takeaway",
+   "k": 115.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 8.3
+  },
+  "status": "new",
+  "serving_g": 520,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn vindaloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-366",
+   "name": "Curry, Prawn madras, takeaway",
+   "k": 115.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 8.3
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn korma",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn jalfrezi",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn dhansak",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn pathia",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn saag",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn bhuna",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-365",
+   "name": "Curry, Prawn bhuna, takeaway",
+   "k": 120.0,
+   "p": 8.6,
+   "c": 1.8,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn madras",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-366",
+   "name": "Curry, Prawn madras, takeaway",
+   "k": 115.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 8.3
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn rogan josh",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-365",
+   "name": "Curry, Prawn bhuna, takeaway",
+   "k": 120.0,
+   "p": 8.6,
+   "c": 1.8,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn jalfrezi",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn balti",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-365",
+   "name": "Curry, Prawn bhuna, takeaway",
+   "k": 120.0,
+   "p": 8.6,
+   "c": 1.8,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn karahi",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-365",
+   "name": "Curry, Prawn bhuna, takeaway",
+   "k": 120.0,
+   "p": 8.6,
+   "c": 1.8,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn dopiaza",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn korma",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn tikka masala",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable korma",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable madras",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable bhuna",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable jalfrezi",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable balti",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable dhansak",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable dopiaza",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable vindaloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-619",
+   "name": "Curry, vegetable, ready meal, without rice, cooked",
+   "k": 94.0,
+   "p": 2.1,
+   "c": 8.4,
+   "f": 6.0
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Paneer tikka masala",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mattar paneer",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 520,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Saag paneer",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-629",
+   "name": "Saag, homemade",
+   "k": 111.0,
+   "p": 3.3,
+   "c": 5.0,
+   "f": 8.8
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken biryani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-454",
+   "name": "Biryani, chicken, takeaway",
+   "k": 163.0,
+   "p": 8.5,
+   "c": 16.6,
+   "f": 7.4
+  },
+  "status": "new",
+  "serving_g": 550,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Lamb biryani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-591",
+   "name": "Curry, lamb biryani, homemade",
+   "k": 195.0,
+   "p": 7.1,
+   "c": 20.9,
+   "f": 9.2
+  },
+  "status": "estimate",
+  "serving_g": 550,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Prawn biryani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-454",
+   "name": "Biryani, chicken, takeaway",
+   "k": 163.0,
+   "p": 8.5,
+   "c": 16.6,
+   "f": 7.4
+  },
+  "status": "estimate",
+  "serving_g": 550,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "King prawn biryani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-454",
+   "name": "Biryani, chicken, takeaway",
+   "k": 163.0,
+   "p": 8.5,
+   "c": 16.6,
+   "f": 7.4
+  },
+  "status": "estimate",
+  "serving_g": 550,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Special biryani",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-454",
+   "name": "Biryani, chicken, takeaway",
+   "k": 163.0,
+   "p": 8.5,
+   "c": 16.6,
+   "f": 7.4
+  },
+  "status": "estimate",
+  "serving_g": 550,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable biryani",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Vegetable biryani",
+   "k": 151.0,
+   "p": 2.8,
+   "c": 15.4,
+   "f": 7.9
+  },
+  "status": "lab",
+  "serving_g": 834,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 834 g."
+ },
+ {
+  "n": "Chicken shashlik",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-540",
+   "name": "Curry, chicken tandoori, retail, reheated",
+   "k": 214.0,
+   "p": 27.4,
+   "c": 2.0,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mixed grill",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-540",
+   "name": "Curry, chicken tandoori, retail, reheated",
+   "k": 214.0,
+   "p": 27.4,
+   "c": 2.0,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Tandoori king prawns",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-388",
+   "name": "Prawns, king, grilled from raw",
+   "k": 102.0,
+   "p": 23.5,
+   "c": 0.0,
+   "f": 0.9
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken korma with pilau rice",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Chicken korma with pilau rice",
+   "k": 179.0,
+   "p": 7.4,
+   "c": 17.3,
+   "f": 8.5
+  },
+  "status": "lab",
+  "serving_g": 869,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 869 g."
+ },
+ {
+  "n": "Chicken tikka masala with keema rice",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Chicken tikka masala with keema rice",
+   "k": 187.0,
+   "p": 8.9,
+   "c": 16.9,
+   "f": 9.6
+  },
+  "status": "lab",
+  "serving_g": 808,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=21; median meal 808 g."
+ },
+ {
+  "n": "Lamb rogan josh with pilau rice",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Lamb rogan josh with pilau rice",
+   "k": 174.0,
+   "p": 7.7,
+   "c": 16.1,
+   "f": 7.9
+  },
+  "status": "lab",
+  "serving_g": 758,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 758 g."
+ },
+ {
+  "n": "King prawn rogan josh with pilau rice",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "King prawn rogan josh with pilau rice",
+   "k": 136.0,
+   "p": 4.6,
+   "c": 17.8,
+   "f": 4.6
+  },
+  "status": "lab",
+  "serving_g": 772,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=22; median meal 772 g."
+ },
+ {
+  "n": "Lamb bhuna with chips",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Lamb bhuna with chips",
+   "k": 206.0,
+   "p": 7,
+   "c": 18.4,
+   "f": 11.2
+  },
+  "status": "lab",
+  "serving_g": 745,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=22; median meal 745 g."
+ },
+ {
+  "n": "Chips and curry sauce",
+  "ref": {
+   "source": "UK lab analysis of takeaway meals",
+   "code": null,
+   "name": "Chips and curry sauce",
+   "k": 191.0,
+   "p": 2.5,
+   "c": 24.2,
+   "f": 9
+  },
+  "status": "lab",
+  "serving_g": 487,
+  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight) (English category): n=9; median meal 487 g."
+ },
+ {
+  "n": "Saag aloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-695",
+   "name": "Bhaji, spinach and potato, homemade",
+   "k": 192.0,
+   "p": 3.6,
+   "c": 13.4,
+   "f": 14.1
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Bombay aloo",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-739",
+   "name": "Curry, Bombay potato, homemade",
+   "k": 118.0,
+   "p": 1.8,
+   "c": 13.8,
+   "f": 6.7
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Aloo gobi",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-679",
+   "name": "Bhaji, cauliflower and potato, homemade",
+   "k": 106.0,
+   "p": 3.3,
+   "c": 10.1,
+   "f": 6.8
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chana masala",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-108",
+   "name": "Curry, chick pea, whole and tomato, Punjabi, with vegetable oil, homemade",
+   "k": 112.0,
+   "p": 5.6,
+   "c": 12.4,
+   "f": 4.9
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Tarka dal",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-762",
+   "name": "Curry, lentil, red/masoor dahl, Punjabi, homemade",
+   "k": 141.0,
+   "p": 7.2,
+   "c": 19.3,
+   "f": 4.6
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Bhindi bhaji",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-627",
+   "name": "Curry, bhindi subji, homemade",
+   "k": 71.0,
+   "p": 2.9,
+   "c": 4.9,
+   "f": 4.6
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mushroom bhaji",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-681",
+   "name": "Bhaji, mushroom, homemade",
+   "k": 168.0,
+   "p": 1.2,
+   "c": 4.1,
+   "f": 16.6
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Cauliflower bhaji",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-680",
+   "name": "Bhaji, cauliflower and vegetable, homemade",
+   "k": 117.0,
+   "p": 3.1,
+   "c": 6.6,
+   "f": 9.1
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Saag bhaji",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-629",
+   "name": "Saag, homemade",
+   "k": 111.0,
+   "p": 3.3,
+   "c": 5.0,
+   "f": 8.8
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable bhaji (side dish)",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-699",
+   "name": "Bhaji, vegetable, with rapeseed oil, homemade",
+   "k": 213.0,
+   "p": 1.8,
+   "c": 10.1,
+   "f": 18.5
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Boiled rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-858",
+   "name": "Rice, white, basmati, boiled in unsalted water",
+   "k": 117.0,
+   "p": 2.8,
+   "c": 26.5,
+   "f": 0.7
+  },
+  "status": "estimate",
+  "serving_g": 284,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mushroom rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-846",
+   "name": "Pilau, mushroom, homemade",
+   "k": 138.0,
+   "p": 2.5,
+   "c": 23.9,
+   "f": 3.5
+  },
+  "status": "estimate",
+  "serving_g": 289,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Vegetable rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-472",
+   "name": "Pilau, vegetable, homemade",
+   "k": 112.0,
+   "p": 3.3,
+   "c": 22.6,
+   "f": 1.5
+  },
+  "status": "estimate",
+  "serving_g": 289,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Keema rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-591",
+   "name": "Curry, lamb biryani, homemade",
+   "k": 195.0,
+   "p": 7.1,
+   "c": 20.9,
+   "f": 9.2
+  },
+  "status": "estimate",
+  "serving_g": 289,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Plain naan",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "estimate",
+  "serving_g": 173,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Garlic naan",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "estimate",
+  "serving_g": 173,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Peshwari naan",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-910",
+   "name": "Bread, naan, peshwari naan, takeaway and retail",
+   "k": 251.0,
+   "p": 7.6,
+   "c": 39.8,
+   "f": 7.9
+  },
+  "status": "new",
+  "serving_g": 173,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Keema naan",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "estimate",
+  "serving_g": 173,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Cheese naan",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "estimate",
+  "serving_g": 173,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Kulcha",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-973",
+   "name": "Bread, naan, retail",
+   "k": 285.0,
+   "p": 7.8,
+   "c": 50.2,
+   "f": 7.3
+  },
+  "status": "estimate",
+  "serving_g": 173,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chapati",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-459",
+   "name": "Chapatis, made without fat",
+   "k": 202.0,
+   "p": 7.3,
+   "c": 43.7,
+   "f": 1.0
+  },
+  "status": "estimate",
+  "serving_g": 50,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Tandoori roti",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-459",
+   "name": "Chapatis, made without fat",
+   "k": 202.0,
+   "p": 7.3,
+   "c": 43.7,
+   "f": 1.0
+  },
+  "status": "estimate",
+  "serving_g": 90,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Paratha",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1104",
+   "name": "Paratha, homemade",
+   "k": 333.0,
+   "p": 7.8,
+   "c": 45.8,
+   "f": 14.4
+  },
+  "status": "estimate",
+  "serving_g": 100,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chips (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 400,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Curry sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-751",
+   "name": "Sauce, curry, sweet, UK type, homemade",
+   "k": 92.0,
+   "p": 1.1,
+   "c": 9.8,
+   "f": 5.7
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Chicken tikka naan wrap",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-525",
+   "name": "Shish kebab in pitta bread with salad",
+   "k": 149.0,
+   "p": 13.6,
+   "c": 15.4,
+   "f": 4.1
+  },
+  "status": "estimate",
+  "serving_g": 386,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Gulab jamun",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1083",
+   "name": "Gulab jamen/jambu, retail",
+   "k": 306.0,
+   "p": 7.2,
+   "c": 43.3,
+   "f": 12.8
+  },
+  "status": "estimate",
+  "serving_g": 80,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Sweet lassi",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-373",
+   "name": "Lassi, sweetened",
+   "k": 65.0,
+   "p": 2.6,
+   "c": 12.3,
+   "f": 0.9
+  },
+  "status": "new",
+  "serving_g": 300,
+  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
+ },
+ {
+  "n": "Mango lassi",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-373",
+   "name": "Lassi, sweetened",
+   "k": 65.0,
+   "p": 2.6,
+   "c": 12.3,
+   "f": 0.9
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+ }
+]

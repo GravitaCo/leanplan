@@ -1050,21 +1050,6 @@
   "note": "30 g assumed."
  },
  {
-  "n": "Chips (takeaway)",
-  "ref": {
-   "source": "CoFID",
-   "code": "13-485",
-   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
-   "k": 214.0,
-   "p": 3.5,
-   "c": 33.2,
-   "f": 8.4
-  },
-  "status": "estimate",
-  "serving_g": 462,
-  "note": "Estimate from CoFID 13-485 (Potato chips, fried in commercial oil, from takeaway fish and chip shops). Match and portion (462 g): see src/core/data/takeaway/chinese.ts."
- },
- {
   "n": "Salt and pepper chips",
   "ref": {
    "source": "CoFID",
@@ -1078,21 +1063,6 @@
   "status": "estimate",
   "serving_g": 462,
   "note": "Estimate from CoFID 13-485 (Potato chips, fried in commercial oil, from takeaway fish and chip shops). Match and portion (462 g): see src/core/data/takeaway/chinese.ts."
- },
- {
-  "n": "Chips and curry sauce",
-  "ref": {
-   "source": "LJMU takeaway analysis",
-   "code": null,
-   "name": "Chips and curry sauce",
-   "k": 191,
-   "p": 2.5,
-   "c": 24.2,
-   "f": 9.0
-  },
-  "status": "new",
-  "serving_g": 487,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 9 meals, per 100 g medians; portion median 487 g."
  },
  {
   "n": "Chinese curry sauce",

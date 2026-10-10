@@ -69,6 +69,27 @@ const COFID: Record<string, { name: string; basis: string; k: number; p: number;
   '11-1104': { name: 'Paratha, homemade', basis: 'recipe', k: 333, p: 7.8, c: 45.8, f: 14.4 },
   '11-459': { name: 'Chapatis, made without fat', basis: 'analysed and calculated', k: 202, p: 7.3, c: 43.7, f: 1.0 },
   '17-832': { name: 'Raita, homemade', basis: 'recipe, spiced yoghurt', k: 57, p: 4.4, c: 5.8, f: 2.4 },
+
+  // added for the generic Indian takeaway list (../takeaway/indian.ts), Oct 2026, copied from
+  // the same CoFID 2021 sheet
+  '16-333': { name: 'Curry, prawn, takeaway', basis: '20 takeaway samples: 10 bhuna, 10 madras', k: 118, p: 8.2, c: 2.3, f: 8.5 },
+  '18-501': { name: 'Chicken pieces, coated, takeaway', basis: '8 takeaway samples: nuggets, bites, popcorn chicken', k: 267, p: 18.5, c: 17.6, f: 14.1 },
+  '16-368': { name: 'Cod, in batter, fried, takeaway', basis: '10 takeaway samples', k: 240, p: 16.8, c: 10.7, f: 14.7 },
+  '19-525': { name: 'Shish kebab in pitta bread with salad', basis: 'calculated from takeaway shish kebab, pitta and salad', k: 149, p: 13.6, c: 15.4, f: 4.1 },
+  '19-541': { name: 'Chicken wings, marinated, meat and skin, barbecued', basis: '4 retail samples incl. hot and spicy', k: 274, p: 27.4, c: 4.1, f: 16.6 },
+  '16-388': { name: 'Prawns, king, grilled from raw', basis: '9 retail samples', k: 102, p: 23.5, c: 0.0, f: 0.9 },
+  '18-172': { name: 'Lamb, shoulder, diced, kebabs, grilled, lean and fat', basis: 'calculated, 85% lean', k: 288, p: 28.5, c: 0.0, f: 19.3 },
+  '15-629': { name: 'Saag, homemade', basis: '5 analysed samples, spinach curry', k: 111, p: 3.3, c: 5.0, f: 8.8 },
+  '12-472': { name: 'Pilau, vegetable, homemade', basis: '6 analysed samples', k: 112, p: 3.3, c: 22.6, f: 1.5 },
+  '11-911': { name: 'Puri, homemade', basis: '9 analysed samples, 3 from cafés: deep-fried chapati', k: 366, p: 7.2, c: 36.5, f: 22.3 },
+  '19-599': { name: 'Curry, lamb vindaloo, homemade', basis: 'recipe', k: 199, p: 19.8, c: 2.7, f: 12.9 },
+  '19-642': { name: 'Kofta, beef, homemade', basis: 'recipe: spiced minced beef', k: 290, p: 25.3, c: 1.3, f: 20.5 },
+  '19-594': { name: 'Kofta, lamb, coated with breadcrumbs, homemade', basis: 'recipe', k: 277, p: 23.8, c: 9.7, f: 16.0 },
+  '15-849': { name: 'Potato cakes, fried in rapeseed oil', basis: 'recipe', k: 210, p: 3.9, c: 31.4, f: 8.4 },
+  '15-739': { name: 'Curry, Bombay potato, homemade', basis: 'recipe: potato, tomato, spices', k: 118, p: 1.8, c: 13.8, f: 6.7 },
+  '15-699': { name: 'Bhaji, vegetable, with rapeseed oil, homemade', basis: 'recipe: mixed vegetables', k: 213, p: 1.8, c: 10.1, f: 18.5 },
+  '15-751': { name: 'Sauce, curry, sweet, UK type, homemade', basis: 'recipe: basic UK curry sauce', k: 92, p: 1.1, c: 9.8, f: 5.7 },
+  '11-1083': { name: 'Gulab jamen/jambu, retail', basis: 'recipe', k: 306, p: 7.2, c: 43.3, f: 12.8 },
 }
 
 /** Default servings in g (ml for lassi). Published where a source exists, else ASSUMPTION. */
@@ -100,12 +121,22 @@ export const PORTION = {
 
 /** One restaurant dish: `name` (a stable ID), the CoFID code it's estimated from, the serving. */
 export function est(name: string, code: string, g: number, cat: FoodCategory = 'ready', ml = false): Food {
+  return cofidFood('est-cofid', name, code, g, cat, ml)
+}
+
+/** A generic dish that IS the CoFID takeaway row (CoFID sampled that dish from takeaways), so it
+ *  cites `cofid-takeaway` (±30%) instead of being an estimate. Needs an audit record in docs/data. */
+export function takeawayRow(name: string, code: string, g: number, cat: FoodCategory = 'ready', ml = false): Food {
+  return cofidFood('cofid-takeaway', name, code, g, cat, ml)
+}
+
+function cofidFood(key: 'est-cofid' | 'cofid-takeaway', name: string, code: string, g: number, cat: FoodCategory, ml: boolean): Food {
   const v = COFID[code]
-  if (!v) throw new Error(`est-cofid: no CoFID values recorded for ${code}`)
+  if (!v) throw new Error(`${key}: no CoFID values recorded for ${code}`)
   const food: Food = { n: name, k: v.k, p: v.p, c: v.c, f: v.f, g }
   if (ml) food.ml = true
   food.cat = cat
-  food.src = `est-cofid:${code}`
+  food.src = `${key}:${code}`
   food.eat = true
   return food
 }

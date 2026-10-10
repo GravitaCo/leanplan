@@ -204,11 +204,9 @@ export const CHINESE_TAKEAWAY: Food[] = [
 
   // ── Chips and sauces ──
   // as CoFID's chips from takeaway fish and chip shops. [L] 462 g (chips with sweet and sour chicken, less the chicken)
-  { n: 'Chips (takeaway)', k: 214, p: 3.5, c: 33.2, f: 8.4, g: 462, cat: 'ready', eat: true, src: 'est-cofid:13-485' },
   // takeaway chips tossed with peppers, onion, salt and chilli: as CoFID's takeaway chips. 462 g, as above
   { n: 'Salt and pepper chips', k: 214, p: 3.5, c: 33.2, f: 8.4, g: 462, cat: 'ready', eat: true, src: 'est-cofid:13-485' },
   // [L] chips and curry sauce: 9 meals, 487 g (459-548)
-  { n: 'Chips and curry sauce', k: 191, p: 2.5, c: 24.2, f: 9.0, g: 487, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
   // as CoFID's sweet UK-style curry sauce (the same roux-thickened, mild curry sauce). 200 g assumed (a pot)
   { n: 'Chinese curry sauce', k: 92, p: 1.1, c: 9.8, f: 5.7, g: 200, cat: 'sauces', eat: true, src: 'est-cofid:15-751' },
   // dipping sauce bought from Chinese restaurants. 100 g assumed (one pot)
