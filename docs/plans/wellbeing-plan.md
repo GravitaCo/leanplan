@@ -709,6 +709,14 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   `WELLBEING_ENABLED` is on (a `VITE_WELLBEING=0` build turns it off for the flag-off checks),
   `MIND_REVIEWED` stays off (register item 44), and a separate `SUPP_NAMES_ENABLED`, off, hides the
   B11b row and its footer and the privacy policy's sentences about it (register item 45).
+- **Benn, 10 Oct 2026: the Mind skills (Reset, Wind down, Unload, Get outside) and the low-mood
+  signpost turned on for testing while the app isn't public; the clinician review is now a gate
+  before public launch.** `MIND_REVIEWED` is on by default (a `VITE_MIND_REVIEWED=0` build turns it
+  off for the skills-off checks), `SUPP_NAMES_ENABLED` stays off. With it, register item 44: the
+  Mind Support sheet opens on "Showing services for the whole UK" with the GP in NHS 111's place
+  (no NHS 111 or option 2 line, Beat's UK-wide number) until a nation is picked; England and Wales
+  then show NHS 111 and option 2, Scotland NHS 24 (111), Northern Ireland the GP and the GP
+  out-of-hours service. The low-mood banner already used the nation-neutral line (B6.10).
 
 ### Open for Benn (on the boards)
 

@@ -5,7 +5,7 @@
  * that may not exist where the person lives; the Support sheet has the nation picker), "See support"
  * (B6.12), which opens the Support sheet, and Dismiss (B6.13) with a 44 px target.
  *
- * Behind WELLBEING_ENABLED and MIND_REVIEWED (clinician review pending): TodayScreen only asks for
+ * Behind WELLBEING_ENABLED and MIND_REVIEWED (on since 10 Oct 2026, Benn; clinician review before public launch): TodayScreen only asks for
  * it when the asks budget shows the 'signpost' ask, which selectAskCtx gives only with the sub-flag.
  * The banner itself records nothing: opening Support from it is private (B6.8), and the only write
  * is markLowMoodShown, the local date it showed, on this device only (never synced).

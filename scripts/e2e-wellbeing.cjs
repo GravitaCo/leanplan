@@ -1,14 +1,15 @@
 /**
  * Headless end-to-end checks for Wellbeing Phase 1 (build plan, "Headless verification"). Four
- * builds: the normal one (WELLBEING_ENABLED on, MIND_REVIEWED and SUPP_NAMES_ENABLED off: what
- * users get from 10 Oct 2026), one forced off with VITE_WELLBEING=0 (the flag-off scenarios: the
- * app as it was before), one with MIND_REVIEWED on and one with SUPP_NAMES_ENABLED on:
+ * builds: the normal one (WB: WELLBEING_ENABLED and MIND_REVIEWED on, SUPP_NAMES_ENABLED off: what
+ * users get from 10 Oct 2026, Benn), one forced off with VITE_WELLBEING=0 (the flag-off scenarios:
+ * the app as it was before), one with the skills forced off with VITE_MIND_REVIEWED=0 (WBS: Mind on,
+ * no skill screens or low-mood signpost) and one with SUPP_NAMES_ENABLED on (WBN):
  *
  *   VITE_WELLBEING=0 npx vite build --outDir dist-off && npx vite preview --outDir dist-off --port 4176 &
  *   npm run build && npx vite preview --port 4177 &
- *   VITE_MIND_REVIEWED=1 npx vite build --outDir dist-wbr && npx vite preview --outDir dist-wbr --port 4178 &
+ *   VITE_MIND_REVIEWED=0 npx vite build --outDir dist-wbs && npx vite preview --outDir dist-wbs --port 4178 &
  *   VITE_SUPP_NAMES=1 npx vite build --outDir dist-wbn && npx vite preview --outDir dist-wbn --port 4179 &
- *   E2E_URL=http://localhost:4176/ E2E_URL_WB=http://localhost:4177/ E2E_URL_WBR=http://localhost:4178/ E2E_URL_WBN=http://localhost:4179/ NODE_PATH=$(npm root -g) node scripts/e2e-wellbeing.cjs [--only=flag-off]
+ *   E2E_URL=http://localhost:4176/ E2E_URL_WB=http://localhost:4177/ E2E_URL_WBS=http://localhost:4178/ E2E_URL_WBN=http://localhost:4179/ NODE_PATH=$(npm root -g) node scripts/e2e-wellbeing.cjs [--only=flag-off]
  *
  * Needs Playwright (a global install is fine; browsers in PLAYWRIGHT_BROWSERS_PATH, e.g.
  * /opt/pw-browsers). Every Supabase request is answered by an in-memory PostgREST stand-in
@@ -24,8 +25,10 @@ const path = require('node:path')
 const os = require('node:os')
 
 const BASE = process.env.E2E_URL || 'http://localhost:4176/'
+/** the normal build: Mind and the skills on, supplement names off */
 const WB = process.env.E2E_URL_WB || 'http://localhost:4177/'
-const WBR = process.env.E2E_URL_WBR || 'http://localhost:4178/'
+/** VITE_MIND_REVIEWED=0: Mind on, the skill screens and the low-mood signpost off */
+const WBS = process.env.E2E_URL_WBS || 'http://localhost:4178/'
 /** SUPP_NAMES_ENABLED on (B11b's names setting, hidden for users until DPIA 8.8 is signed) */
 const WBN = process.env.E2E_URL_WBN || 'http://localhost:4179/'
 const OUT = process.env.E2E_OUT || fs.mkdtempSync(path.join(os.tmpdir(), 'tali-e2e-wb-'))
@@ -377,8 +380,8 @@ async function wp5FlagOffHeaders({ page }) {
   }, { seed: ordinaryDay() })
 
   // WP5: the Mind tab and the Profile avatar beside every title (canvas section 9)
-  await run('wp5-nav', wp5Nav, { url: WB, seed: hardDay() })
-  await run('wp5-mind-off', wp5MindOff, { url: WB, seed: (() => { const s = hardDay(); s.state.profile.mind = { off: ['mind'] }; return s })() })
+  await run('wp5-nav', wp5Nav, { url: WBS, seed: hardDay() })
+  await run('wp5-mind-off', wp5MindOff, { url: WBS, seed: (() => { const s = hardDay(); s.state.profile.mind = { off: ['mind'] }; return s })() })
   await run('wp5-flag-off-headers', wp5FlagOffHeaders, { seed: hardDay() })
 
   // WP8: Train hard-day choices (board B3)
@@ -422,7 +425,7 @@ async function wp5FlagOffHeaders({ page }) {
     const prog = await gp.locator('.gp-prog .t').innerText()
     expect(prog.includes('Set 1 of 2') && prog.includes('40 kg × 10') && !prog.includes('× 11'), 'target: ' + prog)
     await shot(page, 'wp8-player-shorter')
-  }, { url: WB, seed: hardDayWithLastTime() })
+  }, { url: WBS, seed: hardDayWithLastTime() })
 
   await run('wp8-rough-night', async ({ page }) => {
     // an own workout with a step-up, a run and mountain climbers, after a rough night
@@ -444,7 +447,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('.vchip', { hasText: 'As planned' }).click()
     const planned = (await page.locator('.pv-row .m > .t').allTextContents()).map((s) => s.trim())
     expect(planned.length === 4 && planned.includes('Step-up') && planned.includes('Mountain climber'), 'as planned: ' + planned.join(' | '))
-  }, { url: WB, seed: roughNightOwnWorkout() })
+  }, { url: WBS, seed: roughNightOwnWorkout() })
 
   await run('wp8-cardio-day', async ({ page }) => {
     // a cardio day: the swap is 10-minute mobility and the effort note is the cardio one
@@ -455,7 +458,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(tiles[2] === 'Swap 10-minute mobility Hips, back and shoulders · on a mat', 'tile 3: ' + tiles[2])
     await card.getByText('Shorter means fewer minutes at an easy pace, one where you could chat in full sentences.').waitFor()
     await shot(page, 'wp8-train-cardio-day')
-  }, { url: WB, seed: hardDay({ schedule: { ...SCHEDULE, 4: 'Cardio' } }) })
+  }, { url: WBS, seed: hardDay({ schedule: { ...SCHEDULE, 4: 'Cardio' } }) })
 
   await run('wp8-ordinary-day', async ({ page }) => {
     await tab(page, 'Train')
@@ -467,7 +470,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await page.locator('.card.lighter.hd .opttile').count()) === 3, 'three tiles when unfolded')
     expect(!(await page.getByText('Resting today is fine too.').count()), 'the rest line is for a hard day')
     await shot(page, 'wp8-train-ordinary-open')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.schedule[6] = 'Push'; return o })() }) // Push on the Saturday
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.schedule[6] = 'Push'; return o })() }) // Push on the Saturday
   // WP6: the Mind tab root (B5) and the Support sheet in the Mind context (B6 frame 1)
   const openMindTab = async (page) => {
     await page.locator('nav.tabbar').waitFor()
@@ -508,19 +511,32 @@ async function wp5FlagOffHeaders({ page }) {
     await row.click()
     const sheet = page.locator('.sheet')
     await sheet.getByText('Support and helplines', { exact: true }).waitFor()
+    // register item 44: no nation until one is picked, so no NHS 111 (it doesn't run in Northern Ireland)
+    await sheet.getByText('Showing services for the whole UK', { exact: true }).waitFor()
     const names = (await sheet.locator('.wz-sp .t').allTextContents()).map((s) => s.trim())
-    expect(JSON.stringify(names) === JSON.stringify(['Samaritans', 'Shout', 'NHS 111, option 2', 'NHS 111', 'Beat', 'Emergency services']), 'rows: ' + names.join(', '))
+    expect(JSON.stringify(names) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), 'rows: ' + names.join(', '))
+    expect(!/111/.test(await sheet.locator('.wz-group').innerText()), 'no 111 before a nation is picked')
+    expect((await sheet.locator('a[href="tel:999"]').count()) === 1 && (await sheet.locator('a[href="tel:08088010677"]').count()) === 1, '999 and Beat’s UK-wide line')
     const shout = sheet.locator('a.wz-sp', { hasText: 'Shout' })
     expect((await shout.getAttribute('href')) === 'sms:85258?&body=SHOUT', 'Shout sms link')
     await shout.getByText('Text SHOUT to 85258 · 24 hours, every day').waitFor()
     await sheet.getByText('Tali isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.').waitFor()
     await sheet.getByText('Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.').waitFor()
     await shot(page, 'wp6-support')
-    // Northern Ireland: the GP in NHS 111's place
+    // England: NHS 111 and option 2 come back
+    await sheet.getByRole('button', { name: 'Change' }).click()
+    await sheet.getByText('England', { exact: true }).click()
+    await sheet.getByText('Showing services for England', { exact: true }).waitFor()
+    const en = (await sheet.locator('.wz-sp .t').allTextContents()).map((s) => s.trim())
+    expect(JSON.stringify(en) === JSON.stringify(['Samaritans', 'Shout', 'NHS 111, option 2', 'NHS 111', 'Beat', 'Emergency services']), 'England rows: ' + en.join(', '))
+    // Northern Ireland: the GP and the GP out-of-hours service in NHS 111's place
     await sheet.getByRole('button', { name: 'Change' }).click()
     await sheet.getByText('Northern Ireland', { exact: true }).click()
     const ni = (await sheet.locator('.wz-sp .t').allTextContents()).map((s) => s.trim())
     expect(JSON.stringify(ni) === JSON.stringify(['Samaritans', 'Shout', 'Your GP', 'Beat', 'Emergency services']), 'NI rows: ' + ni.join(', '))
+    await sheet.getByText('Medical help when it isn’t an emergency. Out of hours, call the GP out-of-hours service for your area.', { exact: true }).waitFor()
+    expect(!/111/.test(await sheet.locator('.wz-group').innerText()), 'no 111 in Northern Ireland')
+    await shot(page, 'wp6-support-ni')
     await sheet.getByRole('button', { name: 'Done' }).click()
     await sheet.waitFor({ state: 'detached' })
     await page.waitForTimeout(1500)
@@ -529,7 +545,7 @@ async function wp5FlagOffHeaders({ page }) {
     // Update opens the existing check-in sheet
     await main.getByRole('button', { name: 'Update', exact: true }).click()
     await page.locator('.sheet').getByText('How are you feeling?').waitFor()
-  }, { seed: hardDay(), url: WB })
+  }, { seed: hardDay(), url: WBS })
 
   await run('wp6-mind-reviewed', async ({ page }) => {
     await openMindTab(page)
@@ -538,7 +554,7 @@ async function wp5FlagOffHeaders({ page }) {
     const skills = (await main.locator('.mind-skills .li .t').allTextContents()).map((s) => s.trim())
     expect(JSON.stringify(skills) === JSON.stringify(['Reset', 'Wind down', 'Unload', 'Get outside']), 'skills: ' + skills.join(', '))
     await shot(page, 'wp6-mind-reviewed')
-  }, { seed: hardDay(), url: WBR })
+  }, { seed: hardDay(), url: WB })
 
   await run('wp6-mind-empty', async ({ page }) => {
     // before today's check-in: the ask and "Check in", which opens the sheet
@@ -548,7 +564,7 @@ async function wp5FlagOffHeaders({ page }) {
     await shot(page, 'wp6-mind-empty')
     await main.getByRole('button', { name: 'Check in', exact: true }).click()
     await page.locator('.sheet').getByText('How are you feeling?').waitFor()
-  }, { seed: hardDayNoCheckin(), url: WB })
+  }, { seed: hardDayNoCheckin(), url: WBS })
 
   // WP9: Profile's pillars and asks settings (board B1)
   const B116 = 'Finding food tracking hard? Gentle display hides the numbers, and support is here.'
@@ -619,7 +635,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.reload()
     const sec2 = await openProfileWb(page)
     expect((await sec2.getByRole('radio', { name: 'Fewer prompts' }).getAttribute('aria-checked')) === 'true', 'Fewer prompts kept over a reload')
-  }, { url: WB, seed: ordinaryDay() })
+  }, { url: WBS, seed: ordinaryDay() })
 
   await run('wp9-gentle', async ({ page }) => {
     const sec = await openProfileWb(page)
@@ -652,7 +668,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.waitForTimeout(300)
     const p = (await stored(page)).profile
     expect(p.gentle === true && p.foodMode === 'sometimes' && !(p.mind && p.mind.off), 'gentle kept: ' + JSON.stringify({ gentle: p.gentle, foodMode: p.foodMode, mind: p.mind }))
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, gentle: true, foodMode: 'sometimes' }; return o })() })
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, gentle: true, foodMode: 'sometimes' }; return o })() })
 
   await run('wp9-flag-off', async ({ page }) => {
     await page.locator('nav.tabbar').waitFor()
@@ -737,7 +753,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await sheet.locator('.ck-bands button[aria-pressed="true"]').innerText()).includes('6–7'), '6–7 kept')
     expect((await sheet.locator('input[type="time"]').inputValue()) === '07:10', '07:10 kept')
     expect((await sheet.locator('.scale').first().locator('button[aria-pressed="true"]').innerText()).trim() === 'Low', 'mood still Low')
-  }, { seed: hardDayWoke(), url: WB })
+  }, { seed: hardDayWoke(), url: WBS })
 
   await run('wp10-prefill-untouched', async ({ page }) => {
     // left open last time: yesterday's time shows, but isn't saved unless the person answers there
@@ -749,7 +765,7 @@ async function wp5FlagOffHeaders({ page }) {
     await sheet.waitFor({ state: 'detached' })
     const c = (await stored(page)).days[HARD_DAY].checkin
     expect(c.mood === 3 && !c.night, 'no night recorded from the pre-fill alone: ' + JSON.stringify(c))
-  }, { seed: (() => { const s = hardDayWoke(); s.state.deviceOnly = { ui: { sleepMore: true } }; return s })(), url: WB })
+  }, { seed: (() => { const s = hardDayWoke(); s.state.deviceOnly = { ui: { sleepMore: true } }; return s })(), url: WBS })
 
   await run('wp10-flag-off', async ({ page }) => {
     // flag off: the sheet as on main (no disclosure, the old foot, no support line)
@@ -865,7 +881,7 @@ async function wp5FlagOffHeaders({ page }) {
     const after = await stored(page)
     expect(!JSON.stringify(after).includes(SENT), 'deleted on the device')
     expect(!seen.some((s) => s.includes(SENT)), 'still no request with the note text')
-  }, { seed: hardDay(), url: WBR })
+  }, { seed: hardDay(), url: WB })
 
   await run('wp13-unload-earlier', async ({ page }) => {
     const sheet = await openUnload(page)
@@ -882,7 +898,7 @@ async function wp5FlagOffHeaders({ page }) {
     // Back keeps the sheet open on the form
     await list.getByRole('button', { name: 'Unload' }).click()
     await page.locator('.sheet[aria-label="Unload"]').getByText('Earlier notes').waitFor()
-  }, { seed: hardDayWithNote(), url: WBR })
+  }, { seed: hardDayWithNote(), url: WB })
 
   await run('wp13-unload-offline', async ({ page, ctx }) => {
     // signed in, offline: Unload still saves on this device (signedIn, never authed)
@@ -901,7 +917,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.evaluate(() => window.dispatchEvent(new Event('online')))
     await page.waitForTimeout(2500)
     expect(!seen.some((s) => s.includes(SENT)), 'no request carried the note after reconnecting')
-  }, { seed: hardDay(), url: WBR })
+  }, { seed: hardDay(), url: WB })
   // WP7: Summary on a hard day and the one prompt slot (board B2, B9)
   const PLAN_DUE = [{ id: 'e2e-plan-1', when: 'after work', then: 'walk home the long way', created: '2026-09-01', reviews: [] }]
   const SUPPS = [{ id: 's1', name: 'Vitamin D', time: '08:00' }, { id: 's2', name: 'Creatine', time: '08:00' }]
@@ -967,13 +983,13 @@ async function wp5FlagOffHeaders({ page }) {
     // the card opens the Mind tab
     await card.locator('.wb-mind-row').click()
     await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
-  }, { url: WB, seed: wp7Hard() })
+  }, { url: WBS, seed: wp7Hard() })
 
   await run('wp7-hard-day-reviewed', async ({ page }) => {
     const chips = (await sumMind(page).locator('.wb-things .chip').allTextContents()).map((s) => s.trim())
     expect(chips.join() === '2-minute Reset,Get outside for 10 minutes', 'chips: ' + chips.join(' | '))
     await shot(page, 'wp7-hard-day-reviewed')
-  }, { url: WBR, seed: wp7Hard() })
+  }, { url: WB, seed: wp7Hard() })
 
   await run('wp7-before-checkin', async ({ page }) => {
     const card = sumMind(page)
@@ -983,14 +999,14 @@ async function wp5FlagOffHeaders({ page }) {
     await shot(page, 'wp7-before-checkin')
     await card.getByRole('button', { name: 'Check in', exact: true }).click()
     await page.locator('.sheet').getByText('How are you feeling?').waitFor()
-  }, { url: WB, seed: (() => { const s = wp7Hard(); delete s.state.days[HARD_DAY].checkin; return s })() })
+  }, { url: WBS, seed: (() => { const s = wp7Hard(); delete s.state.days[HARD_DAY].checkin; return s })() })
 
   await run('wp7-gentle', async ({ page }) => {
     const same = page.locator('.li.wb-same .s')
     expect((await same.innerText()).trim() === 'Porridge, made with milk and Banana (1 ~118g)', 'gentle: no kcal: ' + (await same.innerText()))
     expect(!(await page.locator('.li .s', { hasText: 'kcal' }).count()), 'no kcal on usual rows')
     await shot(page, 'wp7-gentle')
-  }, { url: WB, seed: wp7Hard({ gentle: true }) })
+  }, { url: WBS, seed: wp7Hard({ gentle: true }) })
 
   await run('wp7-food-off', async ({ page }) => {
     await sumMind(page).getByText('A lighter day is still a good day.').waitFor()
@@ -1000,14 +1016,14 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('.tile', { hasText: 'Supplements' }).waitFor()
     await page.locator('section[aria-labelledby="sum-move"]').waitFor()
     await shot(page, 'wp7-food-off')
-  }, { url: WB, seed: wp7Hard({ mind: { off: ['food'] } }) })
+  }, { url: WBS, seed: wp7Hard({ mind: { off: ['food'] } }) })
 
   await run('wp7-mind-move-off', async ({ page }) => {
     await page.locator('section[aria-labelledby="sum-food"]').waitFor()
     expect(!(await page.locator('section.wb-mind, .mind-row').count()), 'no Mind card')
     expect(!(await page.locator('section[aria-labelledby="sum-move"]').count()), 'no Move card')
     await shot(page, 'wp7-mind-move-off')
-  }, { url: WB, seed: wp7Hard({ mind: { off: ['mind', 'move'] } }) })
+  }, { url: WBS, seed: wp7Hard({ mind: { off: ['mind', 'move'] } }) })
 
   await run('wp7-ordinary', async ({ page }) => {
     // past the first two weeks, with a due plan review: the banner shows within the budget
@@ -1021,7 +1037,7 @@ async function wp5FlagOffHeaders({ page }) {
     const wt = page.locator('.tile', { has: page.locator('.tk', { hasText: 'Weight' }) })
     expect((await wt.locator('.s').innerText()).trim() !== 'Last weigh-in', 'ordinary weight sub')
     await shot(page, 'wp7-ordinary')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.days[shift(ORDINARY_DAY, -40)] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })), weight: 82.4 }); o.state._meta.days[shift(ORDINARY_DAY, -40)] = { u: ORDINARY_DAY + 'T07:00:00.000Z', dirty: false }; Object.assign(o.state.profile, { plans: PLAN_DUE, supplements: SUPPS, reviewWeight: true, lastReviewAt: ORDINARY_DAY }); return o })() })
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.days[shift(ORDINARY_DAY, -40)] = dayOf({ foods: BREAKFAST.map((f) => ({ ...f })), weight: 82.4 }); o.state._meta.days[shift(ORDINARY_DAY, -40)] = { u: ORDINARY_DAY + 'T07:00:00.000Z', dirty: false }; Object.assign(o.state.profile, { plans: PLAN_DUE, supplements: SUPPS, reviewWeight: true, lastReviewAt: ORDINARY_DAY }); return o })() })
 
   await run('wp7-flag-off', async ({ page }) => {
     await page.locator('.mind-row').waitFor()
@@ -1074,7 +1090,7 @@ async function wp5FlagOffHeaders({ page }) {
     // "See your whole week" goes to Summary's This week
     await card.getByRole('button', { name: 'See your whole week' }).click()
     await page.locator('#sum-week').waitFor()
-  }, { seed: settledIn(ordinaryDay()), url: WB })
+  }, { seed: settledIn(ordinaryDay()), url: WBS })
 
   await run('wp11-reflection-b', async ({ page }) => {
     await openMindTab(page)
@@ -1101,23 +1117,23 @@ async function wp5FlagOffHeaders({ page }) {
     await shot(page, 'wp11-reflection-b')
     await page.locator('.screen.mind .mind-wellness').scrollIntoViewIfNeeded()
     await shot(page, 'wp11-reflection-b-foot')
-  }, { seed: reflectionWeek(), url: WB })
+  }, { seed: reflectionWeek(), url: WBS })
 
   await run('wp11-reflection-held', async ({ page }) => {
     // the first two weeks: no reflection yet (asks.ts holds it back before day 14)
     await openMindTab(page)
     await page.locator('.screen.mind .mind-plans').waitFor()
     expect(await page.locator('.screen.mind .mind-week-h').count() === 0, 'the reflection shows in the first two weeks')
-  }, { seed: ordinaryDay(), url: WB })
+  }, { seed: ordinaryDay(), url: WBS })
 
   await run('wp11-reflection-food-off', async ({ page }) => {
     await openMindTab(page)
     const card = weekCard(page)
     await card.getByText('Mostly 6 to 7 hours', { exact: true }).waitFor()
     expect(await card.getByRole('button', { name: 'See your whole week' }).count() === 0, 'the link with Food off')
-  }, { seed: (() => { const s = reflectionWeek(); s.state.profile.mind = { off: ['food'] }; return s })(), url: WB })
+  }, { seed: (() => { const s = reflectionWeek(); s.state.profile.mind = { off: ['food'] }; return s })(), url: WBS })
 
-  /* ---------- WP12: Reset with the P6 Glow pacer (B7, canvas 8c), MIND_REVIEWED build ---------- */
+  /* ---------- WP12: Reset with the P6 Glow pacer (B7, canvas 8c), the normal build (MIND_REVIEWED on) ---------- */
   const R = {
     sub: 'A few slow breaths. Eyes open is fine.',
     stop: 'Stop any time. If this makes you feel worse, try a walk instead.',
@@ -1213,7 +1229,7 @@ async function wp5FlagOffHeaders({ page }) {
     await still(page, 'wp12-reset-stopped')
     await scr.getByRole('button', { name: 'Done', exact: true }).click()
     await page.locator('.screen.mind').waitFor()
-  }, { seed: hardDay(), url: WBR, fakeClock: true })
+  }, { seed: hardDay(), url: WB, fakeClock: true })
 
   await run('wp12-reset-finish', async ({ page }) => {
     const scr = await openReset(page)
@@ -1228,7 +1244,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await resetSkills(page)).length === 1, 'a finished run is logged once: ' + JSON.stringify(after.skills))
     expect(after.mood === before.mood && after.sleep === before.sleep && after.stress === before.stress, 'the check-in answers are untouched')
     await still(page, 'wp12-reset-finished')
-  }, { seed: hardDay(), url: WBR, fakeClock: true })
+  }, { seed: hardDay(), url: WB, fakeClock: true })
 
   await run('wp12-reset-reduced', async ({ page }) => {
     const scr = await openReset(page)
@@ -1244,7 +1260,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(scales.length === 1 && scales[0] === 'scale(0.9)', 'reduced: the sphere holds a middle size: ' + scales.join(', '))
     expect(new Set(seen.map((s) => s.count)).size > 2, 'reduced: the count still steps')
     await still(page, 'wp12-reset-reduced')
-  }, { seed: hardDay(), url: WBR, fakeClock: true, reducedMotion: true })
+  }, { seed: hardDay(), url: WB, fakeClock: true, reducedMotion: true })
 
   // WP17: Profile › Notifications (board B11): the Mind reminder types, "Your times", the back-off notice
   const openNotify = async (page) => {
@@ -1286,7 +1302,7 @@ async function wp5FlagOffHeaders({ page }) {
     const m = ((await stored(page)) || {}).profile?.mind || {}
     expect(!m.notify && !m.tz, 'nothing saved by opening Profile: ' + JSON.stringify(m))
     await shot(page, 'wp17-notify-off')
-  }, { url: WB, seed: ordinaryDay() })
+  }, { url: WBS, seed: ordinaryDay() })
 
   await run('wp17-notify-on', async ({ page, ctx }) => {
     await page.locator('nav.tabbar').waitFor()
@@ -1328,7 +1344,7 @@ async function wp5FlagOffHeaders({ page }) {
     await swn(page, 'Plan check-in reminders').click()
     await page.waitForTimeout(300)
     expect((await stored(page)).profile.mind.notify.plan === false, 'plan off')
-  }, { url: WB, seed: ordinaryDay() })
+  }, { url: WBS, seed: ordinaryDay() })
 
   await run('wp17-notify-consent', async ({ page }) => {
     await openNotify(page)
@@ -1336,7 +1352,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.getByText('Reminders start once you’ve agreed in Profile, then Privacy.', { exact: true }).waitFor()
     expect((await swn(page, 'Check-in reminders').getAttribute('aria-checked')) === 'false', 'still off')
     expect(!(((await stored(page)) || {}).profile?.mind || {}).notify, 'nothing saved without a current health yes')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.consents = { records: [{ ...GRANTED.records[0], granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return o })() })
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.consents = { records: [{ ...GRANTED.records[0], granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return o })() })
 
   await run('wp17-backoff', async ({ page }) => {
     await page.locator('nav.tabbar').waitFor()
@@ -1369,7 +1385,7 @@ async function wp5FlagOffHeaders({ page }) {
     await b.getByRole('button', { name: 'Back to usual' }).click()
     await b.waitFor({ state: 'detached' })
     expect(!((await stored(page)).profile.mind.halved || {}).checkin, 'back to usual saved')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, tz: 'Europe/London' } }; return o })() })
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, tz: 'Europe/London' } }; return o })() })
 
   await run('wp17-backoff-dismiss', async ({ page }) => {
     await openNotify(page)
@@ -1382,7 +1398,7 @@ async function wp5FlagOffHeaders({ page }) {
     await openNotify(page)
     await page.waitForTimeout(300)
     expect(!(await page.locator('.banner.nf-back').count()), 'still hidden after a reload')
-  }, { url: WB, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, halved: { checkin: '2026-10-09T07:30:00.000Z' }, tz: 'Europe/London' } }; return o })() })
+  }, { url: WBS, seed: (() => { const o = ordinaryDay(); o.state.profile = { ...o.state.profile, mind: { notify: { checkin: true }, halved: { checkin: '2026-10-09T07:30:00.000Z' }, tz: 'Europe/London' } }; return o })() })
 
   await run('wp17-flag-off', async ({ page }) => {
     await openNotify(page)
@@ -1453,32 +1469,32 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('section.wb-mind').waitFor()
     await page.waitForTimeout(800)
     expect(!(await lmBanner(page).count()), 'not shown again after a reload')
-  }, { url: WBR, seed: lmSeed(HARD_DAY) })
+  }, { url: WB, seed: lmSeed(HARD_DAY) })
 
   await run('wp15-signpost-29-days', async ({ page }) => {
     await page.locator('section.wb-mind').waitFor()
     await lmChips(page).first().waitFor()
     expect(!(await lmBanner(page).count()), 'not shown within 30 days of the last time')
-  }, { url: WBR, seed: lmSeed(shift(HARD_DAY, 29), HARD_DAY) })
+  }, { url: WB, seed: lmSeed(shift(HARD_DAY, 29), HARD_DAY) })
 
   await run('wp15-signpost-30-days', async ({ page }) => {
     await lmBanner(page).getByText(LM_EN, { exact: true }).waitFor()
     await page.waitForTimeout(1200)
     expect((await stored(page)).deviceOnly?.lowMoodShown === shift(HARD_DAY, 30), 'marked again with the new local date')
-  }, { url: WBR, seed: lmSeed(shift(HARD_DAY, 30), HARD_DAY) })
+  }, { url: WB, seed: lmSeed(shift(HARD_DAY, 30), HARD_DAY) })
 
   await run('wp15-signpost-few', async ({ page }) => {
     await page.locator('section.wb-mind').waitFor()
     await lmChips(page).first().waitFor()
     expect(!(await lmBanner(page).count()), 'fewer than 5 answered check-ins: no signpost')
-  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); for (const d of Object.keys(s.state.days).sort().slice(0, 4)) delete s.state.days[d]; return s })() })
+  }, { url: WB, seed: (() => { const s = lowMoodFortnight(); for (const d of Object.keys(s.state.days).sort().slice(0, 4)) delete s.state.days[d]; return s })() })
 
   await run('wp15-signpost-mind-off', async ({ page }) => {
     await page.locator('section[aria-labelledby="sum-food"]').waitFor()
     await page.waitForTimeout(800)
     expect(!(await lmBanner(page).count()), 'Mind off: no signpost')
     expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
-  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); s.state.profile.mind = { off: ['mind'] }; return s })() })
+  }, { url: WB, seed: (() => { const s = lowMoodFortnight(); s.state.profile.mind = { off: ['mind'] }; return s })() })
 
   await run('wp15-sub-flag-off', async ({ page }) => {
     await page.locator('section.wb-mind').waitFor()
@@ -1487,7 +1503,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await lmBanner(page).count()), 'MIND_REVIEWED off: never shown')
     expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'nothing marked')
     await shot(page, 'wp15-sub-flag-off')
-  }, { url: WB, seed: lmSeed(HARD_DAY) })
+  }, { url: WBS, seed: lmSeed(HARD_DAY) })
 
   await run('wp15-flag-off', async ({ page }) => {
     await page.locator('.mind-row').waitFor()
@@ -1557,7 +1573,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await ifThen.locator('.li', { hasText: 'After lunch' }).count()), 'not under If–then plans')
     await head.scrollIntoViewIfNeeded()
     await shot(page, 'wp14-plan-tab')
-  }, { url: WBR, seed: wp14Ordinary() })
+  }, { url: WB, seed: wp14Ordinary() })
 
   await run('wp14-reset-opens', async ({ page }) => {
     // Benn, 10 Oct 2026: picking the Reset chip stays on Summary; the "Today:" line opens Reset
@@ -1569,26 +1585,26 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await stored(page)).days[ORDINARY_DAY].checkin.thing.key === 'reset-before-session', 'Reset picked')
     await card.locator('.wb-today.press[role="button"]').click()
     await page.locator('.screen.reset .ltitle', { hasText: 'Reset' }).waitFor()
-  }, { url: WBR, seed: wp14Ordinary() })
+  }, { url: WB, seed: wp14Ordinary() })
 
   await run('wp14-subflag-off', async ({ page }) => {
     // without MIND_REVIEWED: no skill chip; Wind down when a wind-down time is set
     const chips = await chipsOf(page)
     expect(chips.join() === 'Wind down from 22:30,Lunch somewhere you like,Get outside at lunch', 'chips: ' + chips.join(' | '))
-  }, { url: WB, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
+  }, { url: WBS, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
 
   await run('wp14-gentle', async ({ page }) => {
     await sumMind(page).getByText("One thing for today, if you'd like:").waitFor()
     const chips = await chipsOf(page)
     expect(chips.join() === 'Reset before your session,Get outside at lunch', 'gentle: no food chip: ' + chips.join(' | '))
-  }, { url: WBR, seed: wp14Ordinary({ gentle: true }) })
+  }, { url: WB, seed: wp14Ordinary({ gentle: true }) })
 
   await run('wp14-next-day', async ({ page }) => {
     // yesterday's thing (done) leaves no trace today: fresh chips, no tick, no "Today:" line
     const card = sumMind(page)
     await card.getByText("One thing for today, if you'd like:").waitFor()
     expect(!(await card.locator('.wb-done, .wb-today').count()), 'no trace of yesterday')
-  }, { url: WBR, seed: (() => { const o = wp14Ordinary(); const y = shift(ORDINARY_DAY, -1); o.state.days[y].checkin = { ...ci(y, 4, 3, 1, 3), thing: { key: 'outside-lunch', done: y + 'T13:00:00.000Z' } }; return o })() })
+  }, { url: WB, seed: (() => { const o = wp14Ordinary(); const y = shift(ORDINARY_DAY, -1); o.state.days[y].checkin = { ...ci(y, 4, 3, 1, 3), thing: { key: 'outside-lunch', done: y + 'T13:00:00.000Z' } }; return o })() })
 
   await run('wp14-flag-off', async ({ page }) => {
     // flag off: a synced Mind plan sits under If–then plans as any plan does; no Mind plans group
@@ -1625,7 +1641,7 @@ async function wp5FlagOffHeaders({ page }) {
     const st = await stored(page)
     expect(st.profile.reviewPush === true && !st.profile.reviewHidden && !st.profile.lastReviewAt, 'nothing marked, hidden or switched off: ' + JSON.stringify({ reviewPush: st.profile.reviewPush, reviewHidden: st.profile.reviewHidden }))
     await shot(page, 'closeout-review-held-hard-day')
-  }, { url: WB, seed: reviewSeed() })
+  }, { url: WBS, seed: reviewSeed() })
 
   await run('closeout-review-shows-ordinary', async ({ page }) => {
     // the same week with an ordinary check-in today: both come back
@@ -1633,13 +1649,13 @@ async function wp5FlagOffHeaders({ page }) {
     await keepBanner(page).waitFor()
     expect(!(await page.getByText('How are your plans going?').count()), 'the plan banner still waits for the review card')
     await shot(page, 'closeout-review-shows-ordinary')
-  }, { url: WB, seed: reviewSeed(ci(HARD_DAY, 4, 3, 1, 3)) })
+  }, { url: WBS, seed: reviewSeed(ci(HARD_DAY, 4, 3, 1, 3)) })
 
   await run('closeout-review-tap-hard-day', async ({ page }) => {
     // the reminder tap (./?review=1) still opens the review on a hard day: the person chose it
     await page.locator('.rv-h1').waitFor()
     await shot(page, 'closeout-review-tap-hard-day')
-  }, { url: WB + '?review=1', seed: reviewSeed() })
+  }, { url: WBS + '?review=1', seed: reviewSeed() })
 
   /* ---------- Close-out (design review): fixes so the build matches the approved boards ---------- */
   const tokColor = (page, v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
@@ -1678,7 +1694,7 @@ async function wp5FlagOffHeaders({ page }) {
     await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).click()
     await page.locator('.screen.mind').waitFor()
     expect(await page.locator('nav.tabbar').isVisible(), 'the tab bar back on the Mind page')
-  }, { url: WBR, seed: hardDay(), fakeClock: true })
+  }, { url: WB, seed: hardDay(), fakeClock: true })
 
   // B3 "Preview after choosing Shorter": the chips wrap at 44 px; the sub-line names the warm-up
   const pushThursday = () => { const s = hardDayWithLastTime(); s.state.schedule[4] = 'Push'; return s }
@@ -1697,7 +1713,7 @@ async function wp5FlagOffHeaders({ page }) {
       expect(f.chips.map((c) => c.t).join() === 'As planned,Shorter,' + swapName, 'chips: ' + f.chips.map((c) => c.t).join(' | '))
       for (const c of f.chips) expect(c.h >= 44 && c.l >= f.left - 0.5 && c.r <= f.right + 0.5 && c.sw <= c.cw + 1, 'chip fits at 44 px: ' + JSON.stringify(c))
       await shot(page, name)
-    }, { url: WB, seed: seed() })
+    }, { url: WBS, seed: seed() })
   }
 
   // flag off: the chips and the sub-line exactly as main
@@ -1724,7 +1740,7 @@ async function wp5FlagOffHeaders({ page }) {
     const m = await next.evaluate((e) => ({ h: e.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(e).lineHeight), ph: e.placeholder }))
     expect(m.h >= 2 * m.lh + 20 && m.ph === "Optional. One small thing, or 'nothing for now'", 'Next step box: ' + JSON.stringify(m))
     await shot(page, 'closeout-design-unload')
-  }, { url: WBR, seed: hardDay() })
+  }, { url: WB, seed: hardDay() })
 
   // B5: the wellness line at the foot of the Mind page, as the board draws it
   await run('closeout-design-mind-foot', async ({ page }) => {
@@ -1734,7 +1750,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(a.align === 'center' && a.pl === '4px', 'B5 wellness line: ' + JSON.stringify(a))
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await shot(page, 'closeout-design-mind-foot')
-  }, { url: WB, seed: hardDay() })
+  }, { url: WBS, seed: hardDay() })
 
   // B6: the signpost's close button, a --label2 cross on a --fill circle in a 44 px target; and on a
   // signpost day the weekly review card and "Keep the weekly reminder?" wait (21185bf)
@@ -1755,7 +1771,7 @@ async function wp5FlagOffHeaders({ page }) {
       await b.screenshot({ path: path.join(OUT, `closeout-design-signpost-banner-${scheme}.png`) })
     }
     await page.emulateMedia({ colorScheme: 'light' })
-  }, { url: WBR, seed: (() => { const s = lowMoodFortnight(); Object.assign(s.state.profile, { reviewPush: true, reviewPushFrom: '2026-09-15' }); delete s.state.profile.lastReviewAt; return s })() })
+  }, { url: WB, seed: (() => { const s = lowMoodFortnight(); Object.assign(s.state.profile, { reviewPush: true, reviewPushFrom: '2026-09-15' }); delete s.state.profile.lastReviewAt; return s })() })
 
   /* ---------- Benn's close-out decisions (10 Oct 2026, wellbeing plan "Close-out decisions") ---------- */
 
@@ -1804,7 +1820,7 @@ async function wp5FlagOffHeaders({ page }) {
     await sheet.getByText('New plan').waitFor()
     expect((await sheet.locator('#pl_when').inputValue()) === "I'm getting ready to train" && (await sheet.locator('#pl_then').inputValue()) === 'do a 2-minute Reset', 'reset-before-session prefill')
     await shot(page, 'closeout-reset-plan-sheet')
-  }, { url: WBR, seed: wp14Ordinary(), fakeClock: true })
+  }, { url: WB, seed: wp14Ordinary(), fakeClock: true })
 
   // 3: the hard-day 2-minute Reset: pick (no navigation), Done, Make it a plan, saved, read on Plan
   await run('closeout-plan-reset-2', async ({ page }) => {
@@ -1827,7 +1843,7 @@ async function wp5FlagOffHeaders({ page }) {
     await head.locator('xpath=following-sibling::div[1]').locator('.li', { hasText: 'When I need a breather' }).getByText("I'll do a 2-minute Reset").waitFor()
     await head.scrollIntoViewIfNeeded()
     await shot(page, 'closeout-plan-reset-2')
-  }, { url: WBR, seed: wp7Hard() })
+  }, { url: WB, seed: wp7Hard() })
 
   // 3 and 4: Wind down (no skill screen, so the line is plain); "Wound down from 22:30"; the time
   // filled in when the sheet opens
@@ -1849,7 +1865,7 @@ async function wp5FlagOffHeaders({ page }) {
     await tab(page, 'Plan')
     const head = page.locator('.grp-h', { hasText: 'Mind plans' })
     await head.locator('xpath=following-sibling::div[1]').locator('.li', { hasText: 'When it gets to 22:30' }).getByText("I'll start winding down").waitFor()
-  }, { url: WB, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
+  }, { url: WBS, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
 
   // 3: lunch somewhere you like
   await run('closeout-plan-lunch', async ({ page }) => {
@@ -1860,7 +1876,7 @@ async function wp5FlagOffHeaders({ page }) {
     const sheet = page.locator('.sheet')
     await sheet.getByText('New plan').waitFor()
     expect((await sheet.locator('#pl_when').inputValue()) === "it's lunchtime" && (await sheet.locator('#pl_then').inputValue()) === 'have lunch somewhere I like', 'lunch prefill')
-  }, { url: WB, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
+  }, { url: WBS, seed: wp14Ordinary({ mind: { windDownAt: '22:30' } }) })
 
   // 5: the Profile avatar is soft mauve with a mauve letter (flag on), 4.5:1 in light and dark
   const contrast = (a, b) => {
@@ -1894,7 +1910,7 @@ async function wp5FlagOffHeaders({ page }) {
     }
     await page.emulateMedia({ colorScheme: 'light' })
     await shot(page, 'closeout-avatar-profile')
-  }, { url: WB, seed: hardDay() })
+  }, { url: WBS, seed: hardDay() })
 
   await run('closeout-avatar-flag-off', async ({ page }) => {
     // flag off: main's solid mauve avatar with the on-tint letter, on Summary and on Profile
@@ -1927,14 +1943,14 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await wk.locator('.wkey, svg').count()), 'no week bars')
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
     await shot(page, 'closeout-week-food-off')
-  }, { url: WB, seed: wp7Hard({ mind: { off: ['food'] } }) })
+  }, { url: WBS, seed: wp7Hard({ mind: { off: ['food'] } }) })
 
   await run('closeout-week-food-on', async ({ page }) => {
     const wk = weekCardSum(page)
     await wk.waitFor()
     const t = await wk.innerText()
     expect(/Energy/.test(t) && /Protein/.test(t) && /Workouts/.test(t) && /Logged/.test(t) && (await wk.locator('.wkey').count()) === 1, 'Food on: the card as before: ' + t)
-  }, { url: WB, seed: wp7Hard() })
+  }, { url: WBS, seed: wp7Hard() })
 
   await run('closeout-week-flag-off', async ({ page }) => {
     // flag off, a profile that switched Food off on a flag-on build: the card is main's
@@ -1944,7 +1960,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(/Energy/.test(t) && /Protein/.test(t) && /Workouts/.test(t) && /Logged/.test(t) && (await wk.locator('.wkey').count()) === 1, 'flag off: the card as main: ' + t)
   }, { seed: wp7Hard({ mind: { off: ['food'] } }) })
 
-  /* ---------- B12 Wind down, B13 Get outside (MIND_REVIEWED build), B11b names setting (flag on) ---------- */
+  /* ---------- B12 Wind down, B13 Get outside (the normal build, MIND_REVIEWED on), B11b names setting ---------- */
   /** both schemes, the whole page (the skill screens run past one phone screen) */
   const fullShot = async (page, name) => {
     for (const scheme of ['light', 'dark']) {
@@ -2010,7 +2026,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.locator('.screen.wind-down .pv-back').getByRole('button', { name: 'Mind' }).click()
     await page.locator('.mind-skills').waitFor()
     expect(await page.locator('nav.tabbar').isVisible(), 'tab bar back')
-  }, { seed: withMind({ windDownAt: '22:30' }), url: WBR })
+  }, { seed: withMind({ windDownAt: '22:30' }), url: WB })
 
   await run('b12-no-time', async ({ page }) => {
     await openSkill(page, 'Wind down')
@@ -2027,14 +2043,14 @@ async function wp5FlagOffHeaders({ page }) {
     await page.waitForTimeout(300)
     const top = await page.locator('#nf-h').evaluate((e) => e.getBoundingClientRect().top)
     expect(top >= -1 && top < 300, 'Profile opened at Notifications: ' + top)
-  }, { seed: ordinaryDay(), url: WBR })
+  }, { seed: ordinaryDay(), url: WB })
 
   await run('b12-health-declined', async ({ page }) => {
     await openSkill(page, 'Wind down')
     await page.locator('.screen.wind-down').getByRole('button', { name: 'Change your routine' }).click()
     await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
     expect(!(await page.getByText("Pick what you'd like in your evening.").count()), 'no sheet without a health yes')
-  }, { seed: (() => { const s = ordinaryDay(); s.state.consents = { records: [...GRANTED.records, { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return s })(), url: WBR })
+  }, { seed: (() => { const s = ordinaryDay(); s.state.consents = { records: [...GRANTED.records, { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return s })(), url: WB })
 
   await run('b13-outside', async ({ page }) => {
     await openSkill(page, 'Get outside')
@@ -2064,7 +2080,7 @@ async function wp5FlagOffHeaders({ page }) {
     // the next Train visit is the usual list, not the log sheet again
     await tab(page, 'Summary'); await tab(page, 'Train')
     expect(!(await page.locator('.sheet[aria-label="Log a session"]').count()), 'no sheet on the next visit')
-  }, { seed: ordinaryDay(), url: WBR })
+  }, { seed: ordinaryDay(), url: WB })
 
   await run('b11b-names', async ({ page }) => {
     await openNotify(page)
@@ -2087,7 +2103,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await stored(page)).profile.mind.lockNames === false, 'off again, saved as off')
   }, { url: WBN, seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; s.state.profile.supplements = [{ name: 'Vitamin D', time: '08:00' }]; return s })() })
 
-  // the normal build (what users get): Mind on, the names setting hidden until DPIA 8.8 is signed
+  // the normal build (what users get): Mind and the skills on, the names setting hidden until DPIA 8.8 is signed
   await run('b11b-hidden', async ({ page }) => {
     await openNotify(page)
     const rows = await notifyRows(page)
@@ -2103,9 +2119,60 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!(await page.getByText(/supplement names|lock screen/i).count()), 'flag off: no names setting')
   }, { seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; return s })() })
 
-  // Later packages add their scenarios here, against WB (the normal build: flag on), WBR (MIND_REVIEWED
-  // on) and WBN (SUPP_NAMES_ENABLED on), with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
-  void WB; void WBR; void lowMoodFortnight
+  /* ---------- Benn, 10 Oct 2026: the skills on in the normal build (MIND_REVIEWED on by default) ---------- */
+  await run('skills-on-default', async ({ page }) => {
+    await openMindTab(page)
+    const main = page.locator('.screen.mind')
+    await main.locator('.mind-skills').waitFor()
+    const skills = (await main.locator('.mind-skills .li .t').allTextContents()).map((x) => x.trim())
+    expect(JSON.stringify(skills) === JSON.stringify(['Reset', 'Wind down', 'Unload', 'Get outside']), 'skills: ' + skills.join(', '))
+    await main.locator('.mind-week-h', { hasText: 'Your week' }).waitFor()
+    await weekCard(page).getByText('Reset twice, Unload once', { exact: true }).waitFor()
+    await fullShot(page, 'skills-on-mind')
+    // Reset
+    await openSkill(page, 'Reset')
+    await page.locator('.screen.reset').getByRole('button', { name: 'Start', exact: true }).waitFor()
+    await fullShot(page, 'skills-on-reset')
+    await page.locator('.screen.reset .pv-back').getByRole('button', { name: 'Mind' }).click()
+    // Wind down
+    await openSkill(page, 'Wind down')
+    await page.locator('.screen.wind-down .ltitle', { hasText: 'Wind down' }).waitFor()
+    await fullShot(page, 'skills-on-wind-down')
+    await page.locator('.screen.wind-down .pv-back').getByRole('button', { name: 'Mind' }).click()
+    // Unload
+    const ul = await openUnload(page)
+    await shot(page, 'skills-on-unload')
+    await ul.getByRole('button', { name: 'Cancel' }).click()
+    await ul.waitFor({ state: 'detached' })
+    // Get outside
+    await openSkill(page, 'Get outside')
+    await page.locator('.screen.outside .ltitle', { hasText: 'Get outside' }).waitFor()
+    await fullShot(page, 'skills-on-outside')
+    await page.locator('.screen.outside .pv-back').getByRole('button', { name: 'Mind' }).click()
+    // the Support sheet, the whole UK first (register item 44)
+    await page.locator('.screen.mind').getByRole('button', { name: 'Need support now?' }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText('Showing services for the whole UK', { exact: true }).waitFor()
+    expect(!/111/.test(await sheet.locator('.wz-group').innerText()), 'no 111 before a nation is picked')
+    await shot(page, 'skills-on-support')
+    await sheet.getByRole('button', { name: 'Change' }).click()
+    await sheet.getByText('Northern Ireland', { exact: true }).click()
+    await sheet.getByText('Showing services for Northern Ireland', { exact: true }).waitFor()
+    await shot(page, 'skills-on-support-ni')
+  }, { url: WB, seed: (() => { const s = reflectionWeek(); s.state.profile.mind = { windDownAt: '22:30' }; return s })() })
+
+  // the skills forced off (VITE_MIND_REVIEWED=0): Mind on, no Skills section
+  await run('skills-forced-off', async ({ page }) => {
+    await openMindTab(page)
+    await page.locator('.screen.mind .mind-week-h', { hasText: 'Your week' }).waitFor()
+    expect(!(await page.locator('.screen.mind .mind-skills').count()), 'no Skills section with VITE_MIND_REVIEWED=0')
+    expect(!(await page.locator('.screen.mind').getByText('Get outside', { exact: true }).count()), 'no skill rows')
+    await shot(page, 'skills-forced-off-mind')
+  }, { url: WBS, seed: reflectionWeek() })
+
+  // Later packages add their scenarios here, against WB (the normal build: Mind and the skills on), WBS
+  // (the skills forced off) and WBN (SUPP_NAMES_ENABLED on), with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().
+  void WBS; void WB; void lowMoodFortnight
 
   await browser.close()
   const bad = results.filter((r) => !r).length

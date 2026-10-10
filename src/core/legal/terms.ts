@@ -15,7 +15,7 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
   return {
     title: 'Terms and conditions',
     // Mind on 10 Oct 2026; the Mind paragraph no longer names the skill screens or the low-mood
-    // signpost, which stay behind MIND_REVIEWED (compliance 2026-10-10), so it holds either way
+    // signpost (MIND_REVIEWED, on by default since 10 Oct 2026, can be built off), so it holds either way
     updated: mind ? '2026-10-10' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +

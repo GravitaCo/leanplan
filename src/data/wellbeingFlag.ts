@@ -8,12 +8,13 @@
 export const WELLBEING_ENABLED: boolean = import.meta.env?.VITE_WELLBEING !== '0'
 
 /**
- * Clinician-pending content (§12.5, register item 44): the low-mood signpost, the skill screens
- * and their copy, and any one-thing option that opens a skill screen. Off until the clinician
- * review; needs WELLBEING_ENABLED too. VITE_MIND_REVIEWED=1 for headless tests and local previews
- * only.
+ * The clinician-pending content (§12.5, register item 44): the low-mood signpost, the skill screens
+ * (Reset, Wind down, Unload, Get outside) and their copy, and any one-thing option that opens a skill
+ * screen. On for everyone while the app isn't public (Benn, 10 Oct 2026); the clinician review is now
+ * a gate before public launch. Needs WELLBEING_ENABLED too. A build with VITE_MIND_REVIEWED=0 turns
+ * it off (headless skills-off scenarios and local previews only), as VITE_WELLBEING=0 does for Mind.
  */
-export const MIND_REVIEWED: boolean = WELLBEING_ENABLED && (false || import.meta.env?.VITE_MIND_REVIEWED === '1')
+export const MIND_REVIEWED: boolean = WELLBEING_ENABLED && import.meta.env?.VITE_MIND_REVIEWED !== '0'
 
 /**
  * "Show supplement names in reminders" (board B11b): built, hidden until DPIA 8.8 is signed
