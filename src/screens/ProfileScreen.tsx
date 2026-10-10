@@ -26,7 +26,7 @@ import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/d
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { PillarsSettings } from './profile/PillarsSettings'
-import { BackoffNotices, MindReminderRows, YourTimes } from './profile/NotificationsSettings'
+import { BackoffNotices, MindReminderRows, SuppNamesFoot, SuppNamesRow, YourTimes } from './profile/NotificationsSettings'
 
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -107,6 +107,8 @@ export function ProfileScreen() {
     clearProfileOpen()
     if (profileOpen === 'health-answers') { setView('answers'); return }
     if (profileOpen === 'health' || profileOpen === 'delete-confirm') return
+    // Wind down's "Set a wind-down time" (B12): Notifications, where the times are, brought into view
+    if (profileOpen === 'notifications') { requestAnimationFrame(() => document.getElementById('nf-h')?.scrollIntoView({ block: 'start' })); return }
     // bring the suggested targets into view: accepting them is the next step (plan P1.5)
     requestAnimationFrame(() => document.getElementById('sug-targets')?.scrollIntoView({ block: 'center' }))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -355,7 +357,7 @@ export function ProfileScreen() {
       <div className="foot">Your review shows how often you weighed in and, after 4 weeks, the trend in words. Summary shows your latest weigh-in. Never with gentle display. Change it any time.</div>
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
 
-      <div className="lbl">Notifications</div>
+      <div className="lbl" id="nf-h">Notifications</div>
       {/* wellbeing (B11): the back-off notice, then the Mind reminder types above supplements */}
       {WELLBEING_ENABLED && <BackoffNotices />}
       <div className={'list icons' + (WELLBEING_ENABLED ? ' nf-rows' : '')}>
@@ -367,6 +369,8 @@ export function ProfileScreen() {
               showToast(ok === 'unsaved' ? done + ', but this device couldn’t save the setting. Storage may be full.'
                 : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
             }} />} />
+        {/* wellbeing (B11b): whether supplement reminders name the supplement, off by default */}
+        {WELLBEING_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
         {/* ml-e4: the weekly review reminder, switched on separately (off unless someone turns it on) */}
         <SettingRow icon="bell" color={MINDF} soft label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
           right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
@@ -375,6 +379,7 @@ export function ProfileScreen() {
               showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
             }} />} />
       </div>
+      {WELLBEING_ENABLED && pr.notificationsEnabled && <SuppNamesFoot />}
       {WELLBEING_ENABLED && <YourTimes />}
       <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
 

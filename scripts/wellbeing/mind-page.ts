@@ -70,7 +70,7 @@ export function mindPageSuite(): number {
   const icons = readFileSync('src/ui/icons.tsx', 'utf8')
   ok('wind, moon, pen and sun exist, and every skill uses one that does', ['wind', 'moon', 'pen', 'sun'].every((n) => new RegExp(`^\\s+${n}: <`, 'm').test(icons))
     && SKILLS.every((s) => new RegExp(`^\\s+${s.icon}: <`, 'm').test(icons)))
-  ok('the Skills list has Reset and Unload only', skillsWithScreen().map((s) => s.id).join() === 'reset,unload')
+  ok('the Skills list has all four skills (B12, B13 approved)', skillsWithScreen().map((s) => s.id).join() === 'reset,wind-down,unload,outside')
 
   /* ---------- page helpers ---------- */
   ok('eyebrow reads "Thursday 8 October"', mindEyebrow('2026-10-08') === 'Thursday 8 October', mindEyebrow('2026-10-08'))
@@ -125,8 +125,8 @@ export function mindPageSuite(): number {
     ok('no back button on the tab root', !page.includes('pv-back') && !page.includes('navbtn'))
     const reviewed = view(sample, true)
     const r = (s: string) => reviewed.indexOf(s)
-    ok('with MIND_REVIEWED: Skills lists Reset then Unload only, under the support row', r('>Skills<') > r('Need support now?') && r('>Reset<') > r('>Skills<') && r('>Unload<') > r('>Reset<')
-      && !reviewed.includes('Wind down') && !reviewed.includes('Get outside'))
+    ok('with MIND_REVIEWED: Skills lists Reset, Wind down, Unload, Get outside, under the support row', r('>Skills<') > r('Need support now?') && r('>Reset<') > r('>Skills<')
+      && r('>Wind down<') > r('>Reset<') && r('>Unload<') > r('>Wind down<') && r('>Get outside<') > r('>Unload<'))
     const empty = view(null, false)
     ok('before today’s check-in: the ask and "Check in"', empty.includes(MIND.askTitle) && empty.includes('>Check in<') && !empty.includes('>Update<'))
     ok('rendering the page writes nothing', plain() === before.state && storage() === before.storage && fetches === 0)

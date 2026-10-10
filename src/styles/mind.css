@@ -77,3 +77,39 @@
 /* Dismiss: a 44 px target around the 28 px circle drawn on the board */
 .lm-banner .x { margin: -8px -8px 0 auto; background: none; width: 44px; height: 44px; border-radius: 0; padding: 0; }
 .lm-banner .x > span { width: 28px; height: 28px; border-radius: 50%; background: var(--fill); display: flex; align-items: center; justify-content: center; }
+
+/* ===================== B12 Wind down, B13 Get outside (pushed card screens, like Reset) ===================== */
+/* the board's .main: a column with 10 px gaps; labels sit 10 px above their list */
+.wd-main { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.wd-main > .card { margin: 0; }
+.wd-main > .foot { padding: 0 4px; line-height: 1.4; }
+.wd-main > .lbl { padding: 10px 4px 0; }
+.wd-sub { font-size: 17px; color: var(--label2); margin: 2px 4px 4px; }
+.wd-main > .foot.wd-wellness { text-align: center; padding-top: 6px; }
+/* "Your routine" with "From 22:30" on the right (B12) */
+.lbl.wd-lbl { display: flex; justify-content: space-between; gap: 8px; }
+/* step rows: name and sub each on their own line; the sub wraps rather than cut off */
+.wd-steps .li .t, .wd-steps .li .s { display: block; }
+.wd-steps .li .s { white-space: normal; line-height: 1.35; }
+.wd-steps .li.act { gap: 12px; }
+/* the sheet: the lead line, then the steps with their toggles, then the time line */
+.wd-lead { font-size: 15px; line-height: 1.4; padding: 0 4px 12px; }
+.wd-pick + .foot.wd-time, .wd-pick + .list.wd-set { margin-top: 8px; }
+.foot.wd-time { padding: 0 4px; line-height: 1.4; }
+/* Get outside (B13): the lead card and the walk row, 56 px squares in move tokens */
+.card.go-lead { display: flex; flex-direction: row; align-items: flex-start; gap: 14px; padding: 16px; }
+.go-sq { flex: none; display: flex; align-items: center; justify-content: center; }
+.go-sq.lg { width: 56px; height: 56px; border-radius: 14px; }
+.go-text { font-size: 17px; line-height: 1.4; }
+.li.go-walk { min-height: 76px; }
+.li.go-walk .t { display: block; font-weight: 600; }
+.li.go-walk .s { display: block; }
+/* Start: the board's 44 px ink pill (deck 0.3: 44 px targets), not the 36 px .btn.sm */
+.li.go-walk .btn.sm { flex: none; height: 44px; border-radius: 22px; padding: 0 18px; }
+/* card screens with no tab bar, as Reset (section 9, B7): the Back button and the avatar stay */
+.app-shell:has(.screen.wind-down) > .tabbar, .app-shell:has(.screen.outside) > .tabbar { display: none; }
+.app-shell:has(.screen.wind-down), .app-shell:has(.screen.outside) { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+/* B11b: "Show supplement names in reminders", a sub-row under Supplement reminders: no icon, its
+   text lined up with the rows' labels (the board's .li.sub, 58 px in); the label wraps */
+.list.icons .li.nf-sub { padding-left: 58px; }
+.list.icons .li.nf-sub .t { white-space: normal; line-height: 1.3; }

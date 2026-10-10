@@ -259,7 +259,7 @@ export async function notifySuite(): Promise<number> {
   ok('B11.14 verbatim for check-in', backoffLine('checkin') === 'The last 2 check-in reminders went unopened, so Tali now sends them half as often. Nothing you need to do.')
   ok('B11.12 verbatim', NOTIFY_COPY.foot === "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.")
   const ui = readFileSync('src/screens/profile/NotificationsSettings.tsx', 'utf8') + readFileSync('src/screens/profile/notifyCopy.ts', 'utf8')
-  ok('no lock-screen names setting is built (B11b not approved)', !/lockNames|Show supplement names|lock screen/i.test(ui.replace(/\/\*\*[\s\S]*?\*\//g, '')))
+  ok('B11b: the names setting saves lockNames, nothing else', /setMindPrefs\(\{ lockNames: !on \}\)/.test(ui) && /NOTIFY_COPY as C/.test(ui) && /names: 'Show supplement names in reminders'/.test(ui))
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
   ok('Profile mounts the B11 parts only with the wellbeing flag', /WELLBEING_ENABLED && <BackoffNotices \/>/.test(prof) && /WELLBEING_ENABLED && <MindReminderRows \/>/.test(prof) && /WELLBEING_ENABLED && <YourTimes \/>/.test(prof))
 
@@ -270,9 +270,9 @@ export async function notifySuite(): Promise<number> {
     /NOT DEPLOYED/.test(fn.slice(0, 200)) && /from "\.\.\/_shared\/reminders\.ts"/.test(fn) && !/_shared\/reminders/.test(live) && /tag: "tali-supp"/.test(live))
   const consoleLines = fn.split('\n').filter((l) => /console\.(log|warn|error|info)/.test(l))
   ok('the function never logs a supplement name, a profile or a kind', consoleLines.length > 0 && consoleLines.every((l) => !/name|profile|kind|supplement|mind/i.test(l.replace(/console\.\w+\(`[^`$]*/, ''))))
-  ok('no supplement name ever reaches a payload', !/\.name\b/.test(fn) && /suppPayload\(\)/.test(fn))
+  ok('the function never reads a supplement name itself (suppPayload does, only with lockNames)', !/\.name\b/.test(fn) && /suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time, profile\?\.answeredAt\)/.test(fn))
   ok('the function keeps the consent gate, claims before sending and leaves supplements outside the cap',
-    /health_consent_current/.test(fn) && /rpc\("notify_claim"/.test(fn) && fn.indexOf('rpc("notify_claim"') < fn.indexOf('payloadFor(kind)') && fn.indexOf('send(sub, suppPayload())') < fn.indexOf('rpc("notify_claim"'))
+    /health_consent_current/.test(fn) && /rpc\("notify_claim"/.test(fn) && fn.indexOf('rpc("notify_claim"') < fn.indexOf('payloadFor(kind)') && fn.indexOf('send(sub, payload)') > 0 && fn.indexOf('send(sub, payload)') < fn.indexOf('rpc("notify_claim"'))
   ok('the function reads times in the person\'s zone, the review reminder in UK time', /localNow\(profile\?\.mind\?\.tz, now\)/.test(fn) && /reviewDue\(profile, london\.day, london\.dow, london\.time\)/.test(fn))
   const sql = readFileSync('docs/migrations/2026-10-09-notify-sent.sql', 'utf8')
   ok('migration: notify_sent with RLS on, owner-only SELECT and DELETE (for the withdrawal clear), no owner INSERT or UPDATE', /create table if not exists public\.notify_sent/.test(sql) && /references auth\.users \(id\) on delete cascade/.test(sql)

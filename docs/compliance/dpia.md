@@ -772,6 +772,36 @@ D1), as in section 4.8.
 | Register item 42 deployed | | Before or with the flag. `notify_sent` table and `notify_claim()` applied 10 October 2026; the withdrawal clear and the 30-day purge still to update. |
 | Register item 44 decided | | Benn with mental-performance. |
 
+### 8.8 Note for Benn: B12 and B11b (proposed 10 October 2026, not signed)
+
+Sections 8.1 to 8.7 above are as signed and are not changed by this note. It records two later
+settings (register item 45, branch `claude/wellbeing-b12-b13`), both behind `WELLBEING_ENABLED`.
+
+- **Wind down routine** (`profile.mind.routine`, B12): keys from a fixed list, never text. Health
+  data by inference (sleep behaviour). Same basis as 8.2, same measures as the wake and wind-down
+  times: not saved without a current health yes, cleared on withdrawal (`HEALTH_FIELDS`), checked
+  by shape (`validRoutine`). No new risk; it falls under 8.3.
+- **"Show supplement names in reminders"** (`profile.mind.lockNames`, B11b): off by default. When
+  the person turns it on, supplement reminders carry the names due, which can reveal a condition
+  or a medicine. This qualifies two signed lines: 8.3 "Push text is fixed" and R16 "push text is
+  generic" now hold unless the person has turned names on. Proposed new risk:
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R18 | **A supplement name on the lock screen reveals health information**, for example a prescription medicine someone has added as a supplement, to anyone who can see the phone. | Possible (only for people who turn it on) | Significant | Medium |
+
+  Proposed measures, all built: off by default (Art. 25(2)); the person's own choice, with the
+  footer under the toggle saying anyone who can see the screen may read the name, even when it's
+  locked; the privacy policy (Mind version) says the same; with it off the names are not read and
+  never reach the payload (`suppPayload`); the payload is encrypted end to end, so the push
+  service can't read it; the function logs counts only; names cut to 60 characters, at most 6.
+  Proposed residual: **low**. Open: whether the footer should also say a name can reveal
+  something about your health (a copy change for Benn).
+
+| Item | Name and date | Notes |
+|---|---|---|
+| 8.8 approved by | | Before `WELLBEING_ENABLED` goes on with B11b. |
+
 ---
 
 ## Sources checked

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useStore } from '@/store/store'
+import { useStore, TRAIN_LOG_WALK } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
 import type { ExerciseTemplate, LoggedExercise, Session } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
@@ -57,6 +57,8 @@ export function TrainScreen() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
+  // Get outside's Start (B13) opens "Log a session" set to an Easy walk
+  const [logWalk, setLogWalk] = useState(false)
   const [libOpen, setLibOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
   // two taps to remove, so a mis-tap never deletes logged sets
@@ -109,10 +111,10 @@ export function TrainScreen() {
   const [lighterOpen, setLighterOpen] = useState(false)
 
   useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setKeepBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
-  // Plan's "Do this today" hands a workout over
+  // Plan's "Do this today" hands a workout over; Get outside's Start (B13) hands over an Easy walk to log
   useEffect(() => {
     if (!trainOpen) return
-    openWorkout(trainOpen)
+    if (trainOpen === TRAIN_LOG_WALK) { setLogWalk(true); setLogOpen(true) } else openWorkout(trainOpen)
     clearOpen()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainOpen])
@@ -453,7 +455,7 @@ export function TrainScreen() {
         onLog={() => { setAddOpen(false); setLogOpen(true) }}
         onWorkout={(w) => { setAddOpen(false); openWorkout(w) }}
         onLibrary={() => { setAddOpen(false); setLibOpen(true) }} />}
-      {logOpen && <LogSessionSheet onClose={() => setLogOpen(false)} />}
+      {logOpen && <LogSessionSheet preset={logWalk ? { modality: 'cardio', cardioKey: 'Easy walk' } : undefined} onClose={() => { setLogOpen(false); setLogWalk(false) }} />}
       {libOpen && <LibrarySheet onClose={() => setLibOpen(false)} />}
       {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
     </div>

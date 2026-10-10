@@ -104,6 +104,40 @@ export const LOW_MOOD = {
   dismiss: 'Dismiss',
 }
 
+/**
+ * B12: Wind down (canvas wp-b12-light, wp-b12-dark; approved by Benn, 10 Oct 2026). Verbatim from
+ * new-copy-b11b-b13.md, its FINAL section winning. The title and sub are the skill's own (skills.ts),
+ * and so are the routine rows (WIND_DOWN_ITEMS). Left off on purpose: the plan's alcohol note (a
+ * mechanism claim) and "Stop any time" (nothing runs here).
+ */
+export const WIND_DOWN = {
+  routine: 'Your routine',
+  /** the label's right side, "From 22:30"; left out with no wind-down time set */
+  from: (t: string) => `From ${t}`,
+  change: 'Change your routine',
+  anyOrder: 'Do as much or as little as you like, in any order.',
+  /** FINAL (mental-performance, compliance): NHS wording, months or affecting daily life */
+  gp: "If sleep has been hard going for a while, or it's making everyday life hard, it's worth talking to a GP.",
+  /** the sheet */
+  sheetTitle: 'Your routine',
+  sheetLead: "Pick what you'd like in your evening. Change it any time.",
+  timeLine: (t: string) => `Your wind-down time is ${t}. You can change it in Profile, under Notifications.`,
+  /** with no wind-down time set, instead of a default (FINAL); opens Profile › Notifications */
+  setTime: 'Set a wind-down time',
+}
+
+/** B13: Get outside (canvas wp-b13-light, wp-b13-dark; approved by Benn, 10 Oct 2026). Move tokens. */
+export const OUTSIDE = {
+  lead: 'Some time outdoors, in whatever way suits you: an easy walk, somewhere green to sit, or a few minutes in daylight.',
+  walkHeading: "If you'd like a walk",
+  /** the row (the Easy walk's own prescription, core/data/workouts.ts SWAPS.walk); Start logs it on Train */
+  walk: 'Easy walk',
+  walkTime: '10–20 min',
+  start: 'Start',
+  walkFoot: "Walk at a relaxed pace, one where you could chat in full sentences. Stop whenever you've had enough.",
+}
+
 export function mindPageCopy(): string[] {
-  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD), ...Object.values(REFLECTION), ...Object.values(LOW_MOOD)]
+  return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD), ...Object.values(REFLECTION), ...Object.values(LOW_MOOD),
+    ...Object.values(WIND_DOWN).map((v) => (typeof v === 'function' ? v('22:30') : v)), ...Object.values(OUTSIDE)]
 }

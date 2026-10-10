@@ -37,9 +37,10 @@ function useReducedMotion(): boolean {
  * Finished: "That's {length}." and B7.15. Stopped early: B7.15 only, never the time done.
  * Only a finished run is logged (logSkill, plan C21), and a finished run ticks today's thing done
  * when it's a Reset thing (doneThing; Benn, 10 Oct 2026); a stopped one changes nothing. The safety lines, the support row and the
- * wellness line sit at the foot throughout. Reached only when MIND_REVIEWED is on (MindPage).
+ * wellness line sit at the foot throughout. Reached only when MIND_REVIEWED is on (MindPage); from
+ * Wind down's routine (B12) its Back reads "Wind down" and goes back there.
  */
-export function ResetScreen({ onBack }: { onBack: () => void }) {
+export function ResetScreen({ onBack, backLabel = MIND.title }: { onBack: () => void; backLabel?: string }) {
   const logSkill = useStore((s) => s.logSkill)
   const doneThing = useStore((s) => s.doneThing)
   const reduced = useReducedMotion()
@@ -67,7 +68,7 @@ export function ResetScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="screen mind-pushed reset">
-      <div className="pv-back"><BackButton label={MIND.title} onClick={onBack} /></div>
+      <div className="pv-back"><BackButton label={backLabel} onClick={onBack} /></div>
       <TitleRow title={RESET.title} />
       <div className="reset-main">
         {!running && (

@@ -133,7 +133,7 @@ export function coreSuite(): number {
   ok('a switched-off pillar disappears', keys({ off: ['food'] }) === 'reset-before-session,outside-lunch' && keys({ off: ['move'], hard: true }) === 'reset-2')
   ok('Mind off: no chips', keys({ off: ['mind'] }) === '' && keys({ off: ['mind'], hard: true }) === '')
   ok('only Reset things open a skill, and only skills with a screen', THINGS.every((t) => !t.skill || SKILLS.find((s) => s.id === t.skill)?.screen))
-  ok('Wind down and Get outside have no screen yet', skillsWithScreen().map((s) => s.id).join() === 'reset,unload')
+  ok('every skill has a screen now (B12, B13 approved 10 Oct 2026), in list order', skillsWithScreen().map((s) => s.id).join() === 'reset,wind-down,unload,outside')
   ok('thing text fills the time', thingText(thingByKey('wind-down-from')!.label, { windDownAt: '22:30' }) === 'Wind down from 22:30' && thingByKey('nope') === undefined)
   // close-out change 7: no time, no dangling " from "
   ok('thing text with no time: "Wind down" and "Wound down"', thingText(thingByKey('wind-down-from')!.label) === 'Wind down' && thingText(thingByKey('wind-down-from')!.done, { windDownAt: '' }) === 'Wound down'

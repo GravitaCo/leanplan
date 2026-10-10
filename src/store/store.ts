@@ -73,8 +73,12 @@ import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 enableMapSet()
 
 export type Tab = 'today' | 'mind' | 'food' | 'train' | 'plan' | 'profile'
-/** a pushed view inside the Mind tab (wellbeing Phase 1), opened from elsewhere (a one-thing chip) */
-export type MindView = 'reset' | 'unload'
+/** a pushed view inside the Mind tab (wellbeing Phase 1), opened from the Skills list or from
+ *  elsewhere (a one-thing chip); Unload is a sheet, the others are screens */
+export type MindView = 'reset' | 'unload' | 'wind-down' | 'outside'
+/** openTrain's hand-off for Get outside's "Easy walk" Start (B13): Train's "Log a session" sheet,
+ *  set to an Easy walk; never a workout key */
+export const TRAIN_LOG_WALK = '@log-easy-walk'
 
 /**
  * Where an under-18 age came from (Tali is strictly 18+). 'profile': typed on Profile and not
@@ -507,7 +511,7 @@ function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void 
 }
 
 /** The keys profile.mind may hold (MindPrefs); anything else in a patch is ignored. */
-const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true }
+const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true, routine: true, lockNames: true }
 const isEmptyPref = (v: unknown): boolean =>
   v === undefined || (Array.isArray(v) ? !v.length : !!v && typeof v === 'object' && !Object.keys(v).length)
 
@@ -967,7 +971,8 @@ export const useStore = create<StoreState>()(
         const touched: (keyof MindPrefs)[] = []
         for (const [k, v] of Object.entries(patch) as [keyof MindPrefs, unknown][]) {
           if (!(k in MIND_KEYS)) continue
-          // the wake and wind-down times are health data: not kept while health logging is off
+          // the wake and wind-down times and the wind-down routine are health data: not kept while
+          // health logging is off
           if (v != null && (MIND_HEALTH_KEYS as readonly string[]).includes(k) && !healthLoggingAllowed(data)) continue
           touched.push(k)
           if (v == null) { delete next[k]; continue }
@@ -991,6 +996,8 @@ export const useStore = create<StoreState>()(
         // a malformed value is refused, never saved as a removal
         // (an emptied list or object is a removal, not a malformed value)
         for (const k of touched) if (!isEmptyPref(next[k]) && clean[k] === undefined) return false
+        // a routine with anything but known-shaped keys in it (text, repeats) is refused whole, never trimmed
+        if (touched.includes('routine') && Array.isArray(next.routine) && (clean.routine?.length ?? -1) !== next.routine.length) return false
         const changed = touched.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(clean[k]))
         if (!changed.length) return true
         set((st) => {
@@ -999,6 +1006,13 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         saved()
+        // supplement names turned off: sync the settings straight away rather than after the
+        // debounce, so the server stops naming them as soon as it can (security-data L2). Not
+        // awaited: the save above is already local, and runSync does nothing offline or signed out.
+        if (before.lockNames === true && clean.lockNames !== true) {
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          void get().runSync()
+        }
         return true
       },
 

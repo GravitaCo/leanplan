@@ -8,6 +8,7 @@
  * - "Your times": the usual wake and wind-down times (health data: not editable while health
  *   logging is off). Unset times show the defaults the reminders use (_shared/reminders.ts).
  * - The back-off notice (B11.14 to B11.16) for each type the phone saw go unopened twice in a row.
+ * - B11b: "Show supplement names in reminders", under Supplement reminders (SuppNamesRow).
  * Copy: notifyCopy.ts.
  */
 import { useStore } from '@/store/store'
@@ -55,6 +56,27 @@ export function MindReminderRows() {
     </>
   )
 }
+
+/**
+ * B11b (approved by Benn, 10 Oct 2026): "Show supplement names in reminders", a sub-row under
+ * Supplement reminders (shown while they're on), off by default. Saved as `profile.mind.lockNames`
+ * (a preference, kept on withdrawal); the reminder service names the supplement only when it is
+ * true, and otherwise sends "Time for your supplements" with no name anywhere in the payload
+ * (supabase/functions/_shared/reminders.ts suppPayload).
+ */
+export function SuppNamesRow() {
+  const on = useStore((s) => s.data.profile.mind?.lockNames === true)
+  const setMindPrefs = useStore((s) => s.setMindPrefs)
+  return (
+    <div className="li nf-sub">
+      <span className="m"><span className="t">{C.names}</span></span>
+      <Toggle label={C.names} on={on} onChange={() => setMindPrefs({ lockNames: !on })} />
+    </div>
+  )
+}
+
+/** B11b's foot, under the Notifications list. */
+export const SuppNamesFoot = () => <div className="foot nf-names-foot">{C.namesFoot}</div>
 
 /** "Your times" (B11.9 to B11.11) and the foot (B11.12). */
 export function YourTimes() {

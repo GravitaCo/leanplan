@@ -12,7 +12,7 @@
 import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan, Why, WhyCode } from '@/core/types'
 import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
-import { isKindPlan, MIND_HEALTH_KEYS } from '@/core/domain/checkin'
+import { isKindPlan, MIND_HEALTH_KEYS, MIND_TIME_KEYS } from '@/core/domain/checkin'
 import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
@@ -313,9 +313,10 @@ export function unsyncedConsents(s: PersistedState): number {
  *   days, weekdays, minutes, place, kit, what they enjoy, likes and dislikes)
  * - Mind (wellbeing Phase 1; security-data M5): the check-in's nested `night`, `skills` and `thing`
  *   go with `day.checkin`; the usual wake and wind-down times (`profile.mind.wakeAt`,
- *   `profile.mind.windDownAt`); and Mind plans (`profile.plans` with a `kind`), health data by
- *   inference. The other Mind settings (pillars, asks, reminder types and back-off, time zone,
- *   lock-screen names) are preferences and stay.
+ *   `profile.mind.windDownAt`); Wind down's routine (`profile.mind.routine`, B12: it reveals sleep
+ *   behaviour); and Mind plans (`profile.plans` with a `kind`), health data by inference. The
+ *   other Mind settings (pillars, asks, reminder types and back-off, time zone, and whether
+ *   supplement reminders show names, B11b) are preferences and stay.
  * - device only, never synced (src/data/deviceOnly.ts, security-data H1 and M5): the Unload notes
  *   (`unload`) and the day the low-mood signpost last showed (`lowMoodShown`).
  *   A "Not now" keeps them.
@@ -325,7 +326,7 @@ export function unsyncedConsents(s: PersistedState): number {
 export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
-  'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.plans(kind)',
+  'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.mind.routine', 'profile.plans(kind)',
   'device.unload', 'device.lowMoodShown',
   // the maintenance loop (compliance, 8 Oct 2026): a reference body weight, and lines derived from the log
   'profile.steadyRef', 'profile.patternShown', 'profile.loopChoice', 'profile.reviewPushSkip',
@@ -342,6 +343,8 @@ export interface HealthDataSummary {
   mindPlans: number
   /** the usual wake and wind-down times set */
   mindTimes: number
+  /** Wind down's routine (B12): 1 when one is saved (even with nothing picked), else 0 */
+  mindRoutine: number
   /** Unload notes on this device (device only, never synced: deviceOnly.ts) */
   unloadNotes: number
 }
@@ -349,7 +352,7 @@ export interface HealthDataSummary {
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
 const PROFILE_HEALTH: (keyof Profile)[] = ['weight', 'bodyFat', 'height', 'sexAnswer', 'movement', 'activityMult', 'outcomes', 'pregnancy', 'motivations', 'deficitChosen', 'foodOptIn', 'steadyRef', 'patternShown', 'loopChoice', 'reviewPushSkip']
 /** the per-field merge stamps of what a withdrawal clears, so the clear wins over older copies elsewhere */
-const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz']
+const KEPT_ON_WITHDRAWAL = ['name', 'age', 'sex', 'units', 'goal', 'gentle', 'onboardedAt', 'mind.off', 'mind.asks', 'mind.notify', 'mind.halved', 'mind.tz', 'mind.lockNames']
 const CLEARED_STAMPS = MERGED_FIELDS.filter((f) => !KEPT_ON_WITHDRAWAL.includes(f))
 
 /** A profile patch without its health fields (saved while health consent is withdrawn). */
@@ -362,7 +365,7 @@ export function withoutHealth<P extends Partial<Profile>>(patch: P): P {
   return out
 }
 
-/** Mind settings without the health ones (the usual wake and wind-down times). */
+/** Mind settings without the health ones (the usual wake and wind-down times, the wind-down routine). */
 function withoutMindHealth(m: NonNullable<Profile['mind']>): NonNullable<Profile['mind']> {
   const out = { ...m }
   for (const k of MIND_HEALTH_KEYS) delete out[k]
@@ -387,7 +390,8 @@ export function healthDataSummary(s: PersistedState): HealthDataSummary {
     profileFields: PROFILE_HEALTH.filter((k) => s.profile?.[k] != null).length,
     trainingPrefs: Object.values(t ?? {}).filter((v) => v != null && !(Array.isArray(v) && !v.length) && v !== '').length,
     mindPlans: (s.profile?.plans || []).filter(isKindPlan).length,
-    mindTimes: MIND_HEALTH_KEYS.filter((k) => s.profile?.mind?.[k] != null).length,
+    mindTimes: MIND_TIME_KEYS.filter((k) => s.profile?.mind?.[k] != null).length,
+    mindRoutine: s.profile?.mind?.routine != null ? 1 : 0,
     unloadNotes: unloadCount(s),
   }
 }

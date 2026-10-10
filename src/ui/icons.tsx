@@ -55,6 +55,9 @@ const PATHS = {
   // a list (Profile › Notifications: the plan check-in, wellbeing board B11)
   list: <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+  // Wind down's routine (wellbeing board B12): a cup (caffeine earlier) and a rolled mat (floor stretches)
+  cup: <path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10.5h1.5a2.25 2.25 0 0 1 0 4.5H16M8.5 3.5v3M12.5 3.5v3" />,
+  mat: <><rect x="3" y="13.5" width="13" height="6" rx="1.5" /><circle cx="18" cy="16.5" r="3" /><path d="M18 16.5h.01" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

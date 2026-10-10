@@ -5,7 +5,7 @@
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v102'
+const CACHE = 'tali-v103'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -119,12 +119,15 @@ self.addEventListener('push', (e) => {
     return
   }
   // A supplement reminder never shows a supplement name on the lock screen (it can reveal
-  // medication), even from an older server that still sends one: fixed text, one tag.
+  // medication), even from an older server that still sends one: fixed text, one tag. The one
+  // exception is a person who turned on "Show supplement names in reminders" (B11b): only then does
+  // the reminder service send the tag tali-supp-named with the names, shown under the same tag.
   // Every other push type must set its own tali-<kind> tag, or it shows as a supplement reminder.
-  const supp = !data.tag || data.tag === 'tali-supp' || String(data.tag).startsWith('supp-')
+  const named = data.tag === 'tali-supp-named' && typeof data.body === 'string' && data.body.trim() !== ''
+  const supp = named || !data.tag || data.tag === 'tali-supp' || String(data.tag).startsWith('tali-supp') || String(data.tag).startsWith('supp-')
   e.waitUntil(
-    self.registration.showNotification(supp ? 'Time for your supplements' : data.title || 'Tali', {
-      body: supp ? 'Time for your supplements' : data.body || '',
+    self.registration.showNotification(named ? 'Supplement reminder' : supp ? 'Time for your supplements' : data.title || 'Tali', {
+      body: named ? data.body.slice(0, 400) : supp ? 'Time for your supplements' : data.body || '',
       tag: supp ? 'tali-supp' : data.tag,
       // a later reminder replacing an unread one still sounds (Safari ignores this)
       renotify: supp,

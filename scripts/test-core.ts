@@ -2014,7 +2014,7 @@ function legalOnboardingGate(): void {
     ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)', live.every((w) => text(off.privacy).includes(w))],
     ['off with Mind on: the live passages stay', live.every((w) => text(offMind.privacy).includes(w))],
     ['off with Mind on: the Mind passages are there (privacy, cookies, terms)',
-      ['a rough band for how long you slept', 'Mind settings: which parts of Tali you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
+      ['a rough band for how long you slept', 'Mind settings: which parts of Tali you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times and your wind-down routine; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
         ['It also holds things that are never synced', 'tali-notify'].every((w) => text(offMind.cookies).includes(w)) &&
         text(offMind.terms).includes("it isn't a crisis service")],
     ['off with Mind on: the Health data list keeps injuries', text(offMind.privacy).includes('any injuries you mention')],

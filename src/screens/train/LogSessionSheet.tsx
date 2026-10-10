@@ -10,10 +10,14 @@ import { RED_FLAG } from './HoldTimer'
  * Quick log of any movement (workout plan P2, §2.2): the kind, minutes and, optionally, a name,
  * effort and (for cardio) distance. Detail is always optional; it adds to the day's other sessions.
  */
-export function LogSessionSheet({ onClose }: { onClose: () => void }) {
+export function LogSessionSheet({ onClose, preset }: {
+  onClose: () => void
+  /** where it starts (Get outside's Easy walk, B13: cardio, "Easy walk"); else yoga */
+  preset?: { modality: Modality; cardioKey?: string }
+}) {
   const addSession = useStore((s) => s.addSession)
-  const [modality, setModality] = useState<Modality>('yoga')
-  const [cardioKey, setCardioKey] = useState('Brisk walk')
+  const [modality, setModality] = useState<Modality>(preset?.modality ?? 'yoga')
+  const [cardioKey, setCardioKey] = useState(preset?.cardioKey ?? 'Brisk walk')
   const [name, setName] = useState('')
   const [mins, setMins] = useState('')
   const [km, setKm] = useState('')

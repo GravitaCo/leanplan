@@ -254,8 +254,8 @@ export type NotifyKind = 'checkin' | 'wind-down' | 'plan'
 
 /**
  * Mind settings (wellbeing plan §9), on `profile.mind`, merged field by field with `answeredAt`
- * stamps ('mind.off', 'mind.asks' …). `wakeAt` and `windDownAt` are health data (cleared on
- * withdrawal); the rest are preferences, kept.
+ * stamps ('mind.off', 'mind.asks' …). `wakeAt`, `windDownAt` and `routine` are health data (cleared
+ * on withdrawal); the rest are preferences, kept.
  */
 export interface MindPrefs {
   /** pillars switched off; absent = all on; never all three */
@@ -272,6 +272,15 @@ export interface MindPrefs {
   halved?: Partial<Record<NotifyKind, string>>
   /** IANA time zone, from the device, so reminders follow the person's own clock */
   tz?: string
+  /**
+   * Wind down's "Your routine" (board B12): keys from core/data/skills.ts WIND_DOWN_ITEMS, never
+   * text. Absent = the default routine; an empty list = nothing picked. A key this version doesn't
+   * know is kept (a later version's step). Health data (it reveals sleep behaviour): cleared on
+   * withdrawal, like windDownAt.
+   */
+  routine?: string[]
+  /** "Show supplement names in reminders" (board B11b); absent or false = reminders stay generic */
+  lockNames?: boolean
 }
 
 export interface DayLog {
