@@ -1,7 +1,7 @@
 /**
  * Headless end-to-end check of Tali's shared product list (boards sp-1 to sp-6), in Chromium with
  * a fake camera, in light and dark. Every Supabase request is intercepted: the session is a fake
- * one, lookup_product / report_product and the ai-read-label and submit-product functions are
+ * one, the lookup-product, report-product, ai-read-label and submit-product functions are
  * mocked per scenario, and Open Food Facts answers "not found". Nothing real is called.
  *
  * The list is on only with label scanning (SHARED_PRODUCTS_ENABLED = LABEL_SCAN_ENABLED):
@@ -24,6 +24,8 @@ const os = require('node:os')
 const BASE = process.env.E2E_URL || 'http://localhost:4173/'
 const OUT = process.env.E2E_OUT || fs.mkdtempSync(path.join(os.tmpdir(), 'tali-e2e-sp-'))
 fs.mkdirSync(OUT, { recursive: true })
+// a FAIL shot from an earlier run in the same folder would read as this run's
+for (const f of fs.readdirSync(OUT)) if (f.startsWith('FAIL-')) fs.rmSync(path.join(OUT, f))
 const W = 640, H = 480
 const UID = '11111111-2222-4333-8444-555555555555'
 const CODE = '5012345678900'
@@ -101,7 +103,7 @@ async function scenario(browser, name, scheme, fn, opts = {}) {
   const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'e2e@example.com', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
   const session = { access_token: fakeJwt(UID), token_type: 'bearer', expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: 'r', user }
   const records = [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' },
-    { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'label-photo', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }, ...(opts.consents || [])]
+    { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'label-photo', version: '2026-10-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }, ...(opts.consents || [])]
   const u = new Date().toISOString()
   const device = { days: {}, consents: { records },
     _meta: { settings: { u, dirty: false }, days: {}, foodDeletes: [], recipeDeletes: [], lastPull: null, owner: UID },
@@ -111,8 +113,8 @@ async function scenario(browser, name, scheme, fn, opts = {}) {
     localStorage.setItem('tali.mode', 'account')
     if (!localStorage.getItem('leanplan.v1')) localStorage.setItem('leanplan.v1', st)
   }, [JSON.stringify(session), JSON.stringify(device)])
-  const calls = { lookup: [], report: [], submit: [], read: [], urls: [] }
-  const state = { lookup: [], submit: { status: 200, body: { ok: true } } }
+  const calls = { lookup: [], report: [], submit: [], read: [], urls: [], direct: [] }
+  const state = { lookup: [], submit: { status: 200, body: { ok: true } }, report: { status: 200, body: { ok: true } } }
   await ctx.route(/supabase\.co\//, async (route) => {
     const req = route.request(), url = req.url(), method = req.method()
     calls.urls.push(method + ' ' + url)
@@ -124,13 +126,15 @@ async function scenario(browser, name, scheme, fn, opts = {}) {
         calls.read.push({ barcode: body.barcode })
         return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, read: READ, ...(body.barcode ? { share: SHARE } : {}) }) })
       }
+      if (url.includes('lookup-product')) { calls.lookup.push({ method, url, body: req.postData() }); return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(state.lookup) }) }
+      if (url.includes('report-product')) { calls.report.push({ method, url, body: req.postData() }); return route.fulfill({ status: state.report.status, contentType: 'application/json', headers: cors, body: JSON.stringify(state.report.body) }) }
       if (url.includes('submit-product')) {
         calls.submit.push(body)
         return route.fulfill({ status: state.submit.status, contentType: 'application/json', headers: cors, body: JSON.stringify(state.submit.body) })
       }
     }
-    if (url.includes('/rest/v1/rpc/lookup_product')) { calls.lookup.push({ method, url, body: req.postData() }); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(state.lookup) }) }
-    if (url.includes('/rest/v1/rpc/report_product')) { calls.report.push({ method, url, body: req.postData() }); return route.fulfill({ status: 200, contentType: 'application/json', body: 'true' }) }
+    // the RPCs are service-role only now: the app never calls them directly
+    if (url.includes('/rest/v1/rpc/lookup_product') || url.includes('/rest/v1/rpc/report_product')) { calls.direct.push(url); return route.fulfill({ status: 403, contentType: 'application/json', body: '{}' }) }
     if (url.includes('/auth/v1/user')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(user) })
     if (url.includes('/rest/v1/')) return route.fulfill({ status: method === 'GET' ? 200 : 201, contentType: 'application/json', body: method === 'GET' ? '[]' : '' })
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
@@ -148,7 +152,9 @@ async function scenario(browser, name, scheme, fn, opts = {}) {
     console.log('PASS', name, `(${scheme})`)
     return true
   } catch (e) {
-    await page.screenshot({ path: path.join(OUT, 'FAIL-' + scheme + '-' + name.replace(/\W+/g, '-') + '.png'), fullPage: true }).catch(() => {})
+    // the window as the person sees it: a full-page capture draws the page beyond the window
+    // below a fixed sheet (the Food week card under "Check the label"), which no one ever sees
+    await page.screenshot({ path: path.join(OUT, 'FAIL-' + scheme + '-' + name.replace(/\W+/g, '-') + '.png') }).catch(() => {})
     console.log('FAIL', name, `(${scheme})`, '\n  ', e.message.split('\n')[0], '\n   screenshot in', OUT)
     return false
   } finally {
@@ -156,6 +162,12 @@ async function scenario(browser, name, scheme, fn, opts = {}) {
   }
 }
 
+/** The margin lines (a non-breaking space after each ±). */
+const MARGIN = {
+  unchecked: '±\u00a024% while a shared product is unchecked, against ±\u00a015% for a food you add yourself.',
+  counted: '±\u00a019% once it’s been read from the pack 3 times, against ±\u00a015% for a food you add yourself.',
+  verified: '±\u00a015%, the same as a food you add yourself.',
+}
 const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
 const shot = (page, scheme, name, full = false) => page.screenshot({ path: path.join(OUT, `${name}-${scheme}.png`), fullPage: full })
 /** The sheet's own scroller, for a full-length view of a tall sheet. */
@@ -204,12 +216,14 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
     results.push(await scenario(browser, 'opt-in at the first save → Yes → queued, sent after the delay', scheme, async ({ page, calls }) => {
       await scanCode(page)
       await page.getByText(/Not found\. Enter it from the label/).waitFor()
-      expect(calls.lookup.length === 1 && calls.lookup[0].method === 'POST' && !calls.lookup[0].url.includes(CODE) && JSON.parse(calls.lookup[0].body).p_barcode === '0' + CODE, 'lookup is a POST with the barcode in the body: ' + JSON.stringify(calls.lookup))
+      expect(calls.lookup.length === 1 && calls.lookup[0].method === 'POST' && calls.lookup[0].url.endsWith('/functions/v1/lookup-product') && JSON.parse(calls.lookup[0].body).barcode === '0' + CODE && !calls.direct.length, 'lookup is a POST to lookup-product with the barcode in the body: ' + JSON.stringify(calls.lookup))
       await readLabelForCode(page)
       expect(calls.read[0]?.barcode === CODE, 'the barcode went with the photo, to be signed')
       await page.getByRole('button', { name: 'Save food' }).click()
       await page.getByText('Add new products you scan to Tali’s shared list?').waitFor()
       await page.getByText('We save the barcode, name and figures, never who added them. Because of that, we can’t remove one you added later. Turn this off any time in Profile, Privacy.').waitFor()
+      const terms = page.locator('.sp-optin .sp-terms a')
+      expect((await terms.textContent()) === 'Terms and conditions' && (await terms.getAttribute('href')) === 'https://www.tali.fit/legals/terms' && (await terms.getAttribute('target')) === '_blank', 'the opt-in links to the terms')
       await page.waitForTimeout(400)
       await shot(page, scheme, 'sp-1-optin')
       expect(!(await outbox(page)), 'nothing queued before the answer')
@@ -260,24 +274,41 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       state.lookup = [FLAPJACK(1)]
       await scanCode(page)
       await page.getByText('Added by a Tali user, not yet checked. Check against your pack.').waitFor()
-      await page.locator('#sc_g').fill('65')
-      await page.getByText('± 20% while a shared product is unchecked, against ± 15% for a food you add yourself.').waitFor()
+      // a pack serving: "Eat as it is", the serving filled in
+      expect((await page.locator('#sc_g').inputValue()) === '65', 'the pack serving is filled in')
+      expect(await page.getByText('Eaten as it comes, like a ready meal, crisps or a drink. Logged by the serving.').isVisible(), 'opens as Eat as it is')
+      await page.getByText(MARGIN.unchecked).waitFor()
       const serv = (await page.locator('.sp-serv').textContent()) || ''
-      expect(serv.includes('287 kcal') && serv.includes('± 57'), 'One serving 287 kcal ± 57: ' + serv)
+      expect(serv.includes('287 kcal') && serv.includes('±\u00a069'), 'One serving 287 kcal ± 69: ' + serv)
+      // kJ worked out from kcal for display (442 kcal = 1849 kJ; 65 g = 1202 kJ), never a dash
+      expect((await page.locator('#sc_kj').getAttribute('placeholder')) === '1849' && (await page.locator('#sc_kj').inputValue()) === '' && (await page.locator('.nserv[data-f="kj"]').textContent()) === '1202', 'kJ from kcal')
+      expect(!(await page.locator('.ntab').textContent()).includes('—') && !(await page.locator('.ntab input[placeholder="—"]').count()), 'no dash placeholders')
       await page.waitForTimeout(300)
       await sheetShot(page, scheme, 'sp-2-found-unchecked')
       await page.getByRole('button', { name: 'Report this product' }).click()
       await page.getByText('What’s wrong?').waitFor()
       const send = page.getByRole('button', { name: 'Send', exact: true })
       expect(await send.isDisabled(), 'Send is off until a reason is picked')
+      await page.waitForTimeout(300)
+      await shot(page, scheme, 'sp-6-report-send-off')
       await page.getByText('Offensive or personal details in the name').click()
       expect(!(await send.isDisabled()), 'Send on once picked')
       await page.waitForTimeout(300)
       await shot(page, scheme, 'sp-6-report')
+      // a server error first: the error toast, the sheet stays
+      state.report = { status: 500, body: { ok: false, error: 'retry' } }
+      await send.click()
+      await page.getByText('Couldn’t send the report. Try again in a moment.').waitFor()
+      await page.waitForTimeout(200)
+      await shot(page, scheme, 'sp-6-toast-error')
+      await page.getByText('Couldn’t send the report. Try again in a moment.').waitFor({ state: 'hidden', timeout: 8000 })
+      state.report = { status: 200, body: { ok: true } }
       await send.click()
       await page.getByText('Report sent. Thank you.').waitFor()
-      const r = calls.report[0]
-      expect(r && r.method === 'POST' && !r.url.includes(CODE) && r.body === JSON.stringify({ p_barcode: '0' + CODE, p_version: 1, p_reason: 'name' }), 'report: anonymous POST: ' + JSON.stringify(r))
+      await page.waitForTimeout(200)
+      await shot(page, scheme, 'sp-6-toast-sent')
+      const r = calls.report.at(-1)
+      expect(r && r.method === 'POST' && r.url.endsWith('/functions/v1/report-product') && r.body === JSON.stringify({ barcode: '0' + CODE, version: 1, reason: 'name' }) && !calls.direct.length, 'report: anonymous POST to report-product: ' + JSON.stringify(r))
       // saved unchanged: the food keeps the list's source and the unchecked margin
       await page.getByRole('button', { name: 'Save food' }).click()
       await page.getByText('Oat & raisin flapjack').first().waitFor()
@@ -291,10 +322,12 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await scanCode(page)
       await page.getByText('Read from the pack 3 times', { exact: true }).waitFor()
       await page.locator('#sc_g').fill('65')
-      await page.getByText('± 15% once it’s been read from the pack 3 times, the same as a food you add yourself.').waitFor()
-      expect(((await page.locator('.sp-serv').textContent()) || '').includes('± 43'), '± 43')
+      await page.getByText(MARGIN.counted).waitFor()
+      expect(((await page.locator('.sp-serv').textContent()) || '').includes('±\u00a055'), '± 55')
       await page.waitForTimeout(300)
       await sheetShot(page, scheme, 'sp-3-found-counted')
+      // the sheet layer covers the whole window (the page below it is never on screen)
+      expect(await page.evaluate(() => Math.abs(document.querySelector('.sheet-root').getBoundingClientRect().height - innerHeight) < 1), 'the sheet layer fills the window')
       await page.getByRole('button', { name: 'Back' }).first().click()
       state.lookup = [FLAPJACK(7, true)]
       await page.locator('#bc_num').fill(CODE)
@@ -302,8 +335,8 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await page.getByText('Checked by Tali, Oct 2026').waitFor()
       await page.getByText('Only Tali’s own checks set this.').waitFor()
       await page.locator('#sc_g').fill('65')
-      await page.getByText('± 12%, the same as a built-in food.').waitFor()
-      expect(((await page.locator('.sp-serv').textContent()) || '').includes('± 34'), '± 34')
+      await page.getByText(MARGIN.verified).waitFor()
+      expect(((await page.locator('.sp-serv').textContent()) || '').includes('±\u00a043'), '± 43')
       await page.waitForTimeout(300)
       await sheetShot(page, scheme, 'sp-3b-verified')
     }))
