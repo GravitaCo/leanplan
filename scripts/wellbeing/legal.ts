@@ -1,7 +1,10 @@
 /* Legal parity (compliance close-out 2026-10-09, finding A): with Mind off, the three legal texts
-   must render exactly what main publishes, so merging the wellbeing branch changes no published
-   wording. The fixture is main's own src/core/legal rendered with no arguments (privacyPolicy(),
-   termsOfUse(), cookiePolicy()), committed as scripts/fixtures-legal-main.json. Equal documents
+   must render exactly what main published, so merging the wellbeing branch changes no published
+   wording. The fixture is main's own src/core/legal at d404a34 rendered with no arguments
+   (privacyPolicy(), termsOfUse(), cookiePolicy()), committed as scripts/fixtures-legal-main.json.
+   Since the onboarding gate (ONBOARDING_ENABLED) that text is the onboarding-on version, so the
+   parity is checked with { onboarding: true, mind: false }; onboarding off is checked in
+   scripts/test-core.ts (legalOnboardingGate). Equal documents
    give equal Webflow HTML (scripts/legal-html.ts renders from the document alone).
    When main's legal text changes on purpose, regenerate the fixture from main: export main's src
    with `git archive origin/main src`, bundle a script that writes those three calls as JSON with
@@ -21,18 +24,19 @@ export function legalSuite(): number {
     if (!cond) bad++
     console.log(cond ? 'PASS' : 'FAIL', 'legal: ' + name)
   }
-  const docs = { privacy: privacyPolicy({ mind: false }), terms: termsOfUse({ mind: false }), cookies: cookiePolicy({ mind: false }) }
+  const docs = { privacy: privacyPolicy({ onboarding: true, mind: false }), terms: termsOfUse({ onboarding: true, mind: false }), cookies: cookiePolicy({ onboarding: true, mind: false }) }
   for (const id of ['privacy', 'terms', 'cookies'] as const) {
     const same = JSON.stringify(docs[id]) === JSON.stringify(MAIN[id])
-    ok(`${id} with Mind off is exactly main's published text`, same)
+    ok(`${id} with Mind off (onboarding on) is exactly main's text at d404a34`, same)
     if (!same) {
       const a = flat(docs[id]).split('\n'), b = flat(MAIN[id]).split('\n')
       const i = a.findIndex((l, n) => l !== b[n])
       if (i >= 0) console.log(`  first difference:\n  branch: ${a[i]}\n  main:   ${b[i]}`)
     }
   }
-  // the defaults are the Mind-off texts, as main calls them
-  ok('defaults equal Mind off', JSON.stringify([privacyPolicy(), termsOfUse(), cookiePolicy()]) === JSON.stringify([docs.privacy, docs.terms, docs.cookies]))
+  // the defaults are both flags off, as main calls them
+  const offOff = [privacyPolicy({ onboarding: false, mind: false }), termsOfUse({ onboarding: false, mind: false }), cookiePolicy({ onboarding: false, mind: false })]
+  ok('defaults equal Mind off (and onboarding off)', JSON.stringify([privacyPolicy(), termsOfUse(), cookiePolicy()]) === JSON.stringify(offOff))
 
   const tOn = flat(termsOfUse({ mind: true })), tOff = flat(docs.terms)
   ok('terms: Mind paragraph only with Mind on', tOn.includes("It isn't therapy or counselling, and it isn't a crisis service.") && !tOff.includes('crisis service'))

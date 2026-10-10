@@ -18,8 +18,9 @@ import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { SETUP_CARD } from './copyApp'
+import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
-export const ONBOARDING_ENABLED: boolean = false || import.meta.env?.VITE_ONBOARDING === '1'
+export { ONBOARDING_ENABLED }
 
 /* ---------------- when each one shows ---------------- */
 

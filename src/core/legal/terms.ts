@@ -5,8 +5,13 @@ const who = () => fact('controller', 'legal name')
 /**
  * Terms and conditions. Written for a free service to consumers. A paid tier needs a legal
  * review first (cancellation rights, subscription rules, app store terms).
+ * The setup-questions paragraph is gated on `onboarding` (ONBOARDING_ENABLED, src/data/onboardingFlag.ts)
+ * and the Mind paragraph on `mind` (WELLBEING_ENABLED): `npm run legal:html` publishes with both
+ * flags. With both off, the text matches the page live on www.tali.fit (checked 2026-10-10), so the
+ * date stays; with onboarding on and Mind off, it's main's as of 2026-10-09
+ * (scripts/fixtures-legal-onboarding.json).
  */
-export function termsOfUse({ mind = false }: { mind?: boolean } = {}): LegalDoc {
+export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
   return {
     title: 'Terms and conditions',
     // E (compliance close-out 2026-10-09): set the Mind date to the flag-on date at flag-on
@@ -40,8 +45,12 @@ export function termsOfUse({ mind = false }: { mind?: boolean } = {}): LegalDoc 
       {
         h: '',
         p: [
-          'Tali\'s setup questions about your health only decide how gently your plan starts and whether Tali suggests eating less. They are not a medical check, and they can\'t tell you whether exercise or a change in diet is safe for you. ' +
-            'If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won\'t suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.',
+          ...(onboarding
+            ? [
+                'Tali\'s setup questions about your health only decide how gently your plan starts and whether Tali suggests eating less. They are not a medical check, and they can\'t tell you whether exercise or a change in diet is safe for you. ' +
+                  'If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won\'t suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.',
+              ]
+            : []),
           'Stop exercising and get medical help if you feel pain, dizziness or shortness of breath. ' +
             'If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time.',
           ...(mind

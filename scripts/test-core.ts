@@ -11,6 +11,11 @@ import { entryAmount, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
+import LEGAL_ONBOARDING from './fixtures-legal-onboarding.json'
+import { privacyPolicy } from '@/core/legal/privacy'
+import { termsOfUse } from '@/core/legal/terms'
+import { cookiePolicy } from '@/core/legal/cookies'
+import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
 import { DEMOS } from '@/core/data/media'
@@ -1979,4 +1984,42 @@ function feedbackForm(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+// Legal texts gated on first-run onboarding (ONBOARDING_ENABLED) and on Mind (WELLBEING_ENABLED),
+// each flag on its own passages. Onboarding on with Mind off: main's text as of 2026-10-09 (the
+// fixture). Onboarding off (what's published today), with Mind off or on: nothing that only
+// onboarding does. Changing the onboarding text on purpose means regenerating the fixture in the
+// same change. The Mind-off parity with main is in scripts/wellbeing/legal.ts.
+function legalOnboardingGate(): void {
+  const render = (onboarding: boolean, mind: boolean) => ({ privacy: privacyPolicy({ onboarding, mind }), terms: termsOfUse({ onboarding, mind }), cookies: cookiePolicy({ onboarding, mind }) })
+  const on = render(true, false)
+  const off = render(false, false)
+  const offMind = render(false, true)
+  const text = (d: object) => JSON.stringify(d)
+  const onlyOnboarding = ['setup', 'set Tali up', 'Health check answers', 'Health data, then', 'tali.onboarding', 'tali.setupCardHidden', 'tali.pendingDelete', 'body fat', 'worth it', 'reasons Tali gives', 'training preferences', 'pregnan']
+  // terms keep the general GP advice for pregnancy; only the setup paragraph goes
+  const leaksIn = (docs: typeof off) => (Object.keys(docs) as (keyof typeof docs)[]).flatMap((k) =>
+    onlyOnboarding.filter((w) => !(k === 'terms' && w === 'pregnan') && text(docs[k]).includes(w)).map((w) => `${k}: ${w}`))
+  const leaks = leaksIn(off), leaksMind = leaksIn(offMind)
+  const live = ['Weekly review: the day you picked', 'a weekly review reminder', 'Train offers lighter options', 'You can withdraw that consent', 'If Tali learns that you\'re under']
+  const checks: [string, boolean][] = [
+    ['onboarding is off in this build', ONBOARDING_ENABLED === false],
+    ['on: privacy equals the fixture (main, 2026-10-09)', text(on.privacy) === text(LEGAL_ONBOARDING.privacy)],
+    ['on: terms equal the fixture', text(on.terms) === text(LEGAL_ONBOARDING.terms)],
+    ['on: cookie policy equals the fixture', text(on.cookies) === text(LEGAL_ONBOARDING.cookies)],
+    ['no option means off', text(privacyPolicy()) === text(off.privacy) && text(termsOfUse()) === text(off.terms) && text(cookiePolicy()) === text(off.cookies)],
+    ['off: no onboarding-only wording' + (leaks.length ? ` (${leaks.join(', ')})` : ''), !leaks.length],
+    ['off with Mind on: no onboarding-only wording' + (leaksMind.length ? ` (${leaksMind.join(', ')})` : ''), !leaksMind.length],
+    ['off: dates (privacy 2026-10-09, terms and cookies 2026-09-28)', off.privacy.updated === '2026-10-09' && off.terms.updated === '2026-09-28' && off.cookies.updated === '2026-09-28'],
+    ['off with Mind on: dates (privacy 2026-10-10, terms and cookies 2026-10-09)', offMind.privacy.updated === '2026-10-10' && offMind.terms.updated === '2026-10-09' && offMind.cookies.updated === '2026-10-09'],
+    ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)', live.every((w) => text(off.privacy).includes(w))],
+    ['off with Mind on: the live passages stay', live.every((w) => text(offMind.privacy).includes(w))],
+    ['off with Mind on: the Mind passages are there (privacy, cookies, terms)',
+      ['a rough band for how long you slept', 'Mind settings: which parts of Tali you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
+        ['It also holds things that are never synced', 'tali-notify'].every((w) => text(offMind.cookies).includes(w)) &&
+        text(offMind.terms).includes("it isn't a crisis service")],
+    ['off with Mind on: the Health data list keeps injuries', text(offMind.privacy).includes('any injuries you mention')],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

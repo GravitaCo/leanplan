@@ -20,12 +20,24 @@ for (const [k, v] of Object.entries(LEGAL)) {
   if (k === 'icoNumber') console.log('WARN LEGAL.icoNumber is not set: pay the ICO data protection fee (ico.org.uk/fee) and add the number')
   else fail(`LEGAL.${k} is not set`)
 }
-// both versions of the gated texts: Mind (wellbeing) off, as now, and on, as published once
-// WELLBEING_ENABLED goes on (scripts/legal-html.ts publishes with mind = WELLBEING_ENABLED)
-const gated = [false, true].flatMap((mind) => [privacyPolicy({ mind }), cookiePolicy({ mind }), termsOfUse({ mind })])
-if (JSON.stringify(gated[0]) === JSON.stringify(gated[3])) fail('Privacy policy: the Mind gate changes nothing')
-if (JSON.stringify(gated[1]) === JSON.stringify(gated[4])) fail('Cookie policy: the Mind gate changes nothing')
-if (JSON.stringify(gated[2]) === JSON.stringify(gated[5])) fail('Terms: the Mind gate changes nothing')
+// every version of the gated texts: onboarding and Mind (wellbeing) each off, as now, and on, as
+// published once ONBOARDING_ENABLED or WELLBEING_ENABLED goes on (scripts/legal-html.ts publishes
+// with onboarding = ONBOARDING_ENABLED and mind = WELLBEING_ENABLED)
+const combos = [false, true].flatMap((onboarding) => [false, true].map((mind) => ({ onboarding, mind })))
+const gated = combos.flatMap((o) => [privacyPolicy(o), cookiePolicy(o), termsOfUse(o)])
+const same = (a: object, b: object) => JSON.stringify(a) === JSON.stringify(b)
+// each flag must change each document it gates, whatever the other flag is
+for (const other of [false, true]) {
+  const onb = (onboarding: boolean) => ({ onboarding, mind: other })
+  const mnd = (mind: boolean) => ({ onboarding: other, mind })
+  const tag = (f: string) => `(${f} ${other ? 'on' : 'off'})`
+  if (same(privacyPolicy(onb(false)), privacyPolicy(onb(true)))) fail(`Privacy policy: the onboarding gate changes nothing ${tag('Mind')}`)
+  if (same(cookiePolicy(onb(false)), cookiePolicy(onb(true)))) fail(`Cookie policy: the onboarding gate changes nothing ${tag('Mind')}`)
+  if (same(termsOfUse(onb(false)), termsOfUse(onb(true)))) fail(`Terms: the onboarding gate changes nothing ${tag('Mind')}`)
+  if (same(privacyPolicy(mnd(false)), privacyPolicy(mnd(true)))) fail(`Privacy policy: the Mind gate changes nothing ${tag('onboarding')}`)
+  if (same(cookiePolicy(mnd(false)), cookiePolicy(mnd(true)))) fail(`Cookie policy: the Mind gate changes nothing ${tag('onboarding')}`)
+  if (same(termsOfUse(mnd(false)), termsOfUse(mnd(true)))) fail(`Terms: the Mind gate changes nothing ${tag('onboarding')}`)
+}
 for (const doc of [...gated, sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)

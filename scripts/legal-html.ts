@@ -11,6 +11,7 @@ import { termsOfUse } from '@/core/legal/terms'
 import { cookiePolicy } from '@/core/legal/cookies'
 import { sitePrivacy, siteTerms, siteCookies } from '@/core/legal/website'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 /** escape, then turn URLs, emails and bare domains we name into links */
@@ -34,8 +35,11 @@ export function toHtml(doc: LegalDoc): string {
 const site = process.argv.includes('--site')
 const docs: Record<LegalDocId, LegalDoc> = site
   ? { privacy: sitePrivacy(), terms: siteTerms(), cookies: siteCookies() }
-  : { privacy: privacyPolicy({ mind: WELLBEING_ENABLED }), terms: termsOfUse({ mind: WELLBEING_ENABLED }), cookies: cookiePolicy({ mind: WELLBEING_ENABLED }) }
-console.log(site ? 'Interim website-only versions' : `Full app + website versions (Mind ${WELLBEING_ENABLED ? 'on' : 'off'})`)
+  : (() => {
+      const flags = { onboarding: ONBOARDING_ENABLED, mind: WELLBEING_ENABLED }
+      return { privacy: privacyPolicy(flags), terms: termsOfUse(flags), cookies: cookiePolicy(flags) }
+    })()
+console.log(site ? 'Interim website-only versions' : `Full app + website versions (onboarding ${ONBOARDING_ENABLED ? 'on' : 'off'}, Mind ${WELLBEING_ENABLED ? 'on' : 'off'})`)
 const items = (Object.keys(docs) as LegalDocId[]).map((id) => ({
   id,
   name: docs[id].title,
