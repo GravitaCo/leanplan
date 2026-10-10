@@ -531,7 +531,7 @@ async function wp5FlagOffHeaders({ page }) {
     const main = page.locator('.screen.mind')
     await main.getByText('Skills', { exact: true }).waitFor()
     const skills = (await main.locator('.mind-skills .li .t').allTextContents()).map((s) => s.trim())
-    expect(JSON.stringify(skills) === JSON.stringify(['Reset', 'Unload']), 'skills: ' + skills.join(', '))
+    expect(JSON.stringify(skills) === JSON.stringify(['Reset', 'Wind down', 'Unload', 'Get outside']), 'skills: ' + skills.join(', '))
     await shot(page, 'wp6-mind-reviewed')
   }, { seed: hardDay(), url: WBR })
 
@@ -1276,7 +1276,7 @@ async function wp5FlagOffHeaders({ page }) {
     await page.getByText('Your times', { exact: true }).waitFor()
     expect((await page.locator('#nf-wake').inputValue()) === '07:00' && (await page.locator('#nf-wind').inputValue()) === '22:30', 'default times')
     await page.getByText(B11_FOOT, { exact: true }).waitFor()
-    expect(!(await page.getByText(/lock screen|supplement names/i).count()), 'no names setting (B11b not approved)')
+    expect(!(await page.getByText(/lock screen|supplement names/i).count()), 'no names setting while supplement reminders are off (B11b)')
     expect(!(await page.locator('.banner.nf-back').count()), 'no back-off notice')
     const m = ((await stored(page)) || {}).profile?.mind || {}
     expect(!m.notify && !m.tz, 'nothing saved by opening Profile: ' + JSON.stringify(m))
@@ -1938,6 +1938,156 @@ async function wp5FlagOffHeaders({ page }) {
     const t = await wk.innerText()
     expect(/Energy/.test(t) && /Protein/.test(t) && /Workouts/.test(t) && /Logged/.test(t) && (await wk.locator('.wkey').count()) === 1, 'flag off: the card as main: ' + t)
   }, { seed: wp7Hard({ mind: { off: ['food'] } }) })
+
+  /* ---------- B12 Wind down, B13 Get outside (MIND_REVIEWED build), B11b names setting (flag on) ---------- */
+  /** both schemes, the whole page (the skill screens run past one phone screen) */
+  const fullShot = async (page, name) => {
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme })
+      await page.waitForTimeout(450)
+      await page.screenshot({ path: path.join(OUT, `${name}-${scheme}.png`), fullPage: true })
+    }
+    await page.emulateMedia({ colorScheme: 'light' })
+  }
+  const withMind = (mind, profile = {}) => { const s = ordinaryDay(); s.state.profile = { ...s.state.profile, ...profile, mind }; return s }
+  const openSkill = async (page, name) => {
+    await openMindTab(page)
+    await page.locator('.mind-skills').getByRole('button', { name: new RegExp('^' + name) }).click()
+  }
+
+  await run('b12-wind-down', async ({ page }) => {
+    await openSkill(page, 'Wind down')
+    const scr = page.locator('.screen.wind-down')
+    await scr.locator('.ltitle', { hasText: 'Wind down' }).waitFor()
+    await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).waitFor()
+    expect((await scr.locator('.hdr-row.av').getByRole('button', { name: 'Profile', exact: true }).count()) === 1, 'the Profile avatar beside the title')
+    expect(!(await page.locator('nav.tabbar').isVisible()), 'no tab bar, as Reset')
+    expect((await scr.locator('.wd-lbl').innerText()).replace(/\s+/g, ' ').trim() === 'Your routine From 22:30', 'label and time: ' + await scr.locator('.wd-lbl').innerText())
+    const rows = (await scr.locator('.wd-steps .li .t').allTextContents()).map((x) => x.trim())
+    expect(JSON.stringify(rows) === JSON.stringify(['Dim the lights', 'Caffeine earlier in the day', 'Unload', 'Reset']), 'default steps: ' + rows.join(', '))
+    for (const t of ['Do as much or as little as you like, in any order.', "If sleep has been hard going for a while, or it's making everyday life hard, it's worth talking to a GP.", 'Need support now?', 'For everyday wellbeing. Not a treatment for any condition.'])
+      await scr.getByText(t, { exact: true }).waitFor()
+    // mind tokens on the step squares, never move or tint
+    const bg = await scr.locator('.wd-steps .ico').first().evaluate((e) => e.getAttribute('style'))
+    expect(/--mind-fill/.test(bg) && /--mind-ink/.test(bg), 'step icon in mind tokens: ' + bg)
+    await fullShot(page, 'b12-wind-down')
+    // the sheet: four switches on, Floor stretches not offered, the time line; turn Dim the lights off
+    await scr.getByRole('button', { name: 'Change your routine' }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByText("Pick what you'd like in your evening. Change it any time.", { exact: true }).waitFor()
+    await sheet.getByText('Your wind-down time is 22:30. You can change it in Profile, under Notifications.', { exact: true }).waitFor()
+    expect((await sheet.getByRole('switch').count()) === 4 && (await sheet.locator('[role=switch][aria-checked=true]').count()) === 4, 'four steps, all on')
+    expect(!(await sheet.getByText('Floor stretches').count()), 'Floor stretches not offered yet')
+    await shot(page, 'b12-routine-sheet')
+    await sheet.getByRole('switch', { name: 'Dim the lights' }).click()
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    const m = (await stored(page)).profile.mind
+    expect(JSON.stringify(m.routine) === '["caffeine-earlier","unload","reset"]' && (await stored(page)).profile.answeredAt['mind.routine'], 'routine saved as keys: ' + JSON.stringify(m))
+    expect(!(await scr.getByText('Dim the lights').count()), 'the step left the screen')
+    // Cancel changes nothing
+    await scr.getByRole('button', { name: 'Change your routine' }).click()
+    await page.locator('.sheet').getByRole('switch', { name: 'Unload' }).click()
+    await page.locator('.sheet').getByRole('button', { name: 'Cancel' }).click()
+    await page.waitForTimeout(300)
+    expect(JSON.stringify((await stored(page)).profile.mind.routine) === '["caffeine-earlier","unload","reset"]', 'Cancel kept it')
+    // Reset opens with Back "Wind down" and comes back here
+    await scr.getByRole('button', { name: /^Reset/ }).click()
+    const rs = page.locator('.screen.reset')
+    await rs.locator('.pv-back').getByRole('button', { name: 'Wind down' }).click()
+    await page.locator('.screen.wind-down .ltitle', { hasText: 'Wind down' }).waitFor()
+    // Unload opens its sheet over Wind down, and closes back to it
+    await page.locator('.screen.wind-down').getByRole('button', { name: /^Unload/ }).click()
+    await page.locator('.sheet').getByText("Write what's on your mind, and one next step for each.", { exact: true }).waitFor()
+    await page.locator('.sheet').getByRole('button', { name: 'Cancel' }).click()
+    await page.locator('.screen.wind-down .ltitle').waitFor()
+    // Back to the Mind page, with the tab bar
+    await page.locator('.screen.wind-down .pv-back').getByRole('button', { name: 'Mind' }).click()
+    await page.locator('.mind-skills').waitFor()
+    expect(await page.locator('nav.tabbar').isVisible(), 'tab bar back')
+  }, { seed: withMind({ windDownAt: '22:30' }), url: WBR })
+
+  await run('b12-no-time', async ({ page }) => {
+    await openSkill(page, 'Wind down')
+    const scr = page.locator('.screen.wind-down')
+    await scr.locator('.ltitle', { hasText: 'Wind down' }).waitFor()
+    expect((await scr.locator('.wd-lbl').innerText()).trim() === 'Your routine', 'no "From" without a time')
+    await scr.getByRole('button', { name: 'Change your routine' }).click()
+    const sheet = page.locator('.sheet')
+    await sheet.getByRole('button', { name: 'Set a wind-down time' }).waitFor()
+    expect(!(await sheet.getByText(/22:30|Your wind-down time is/).count()), 'never a default time')
+    await shot(page, 'b12-routine-no-time')
+    await sheet.getByRole('button', { name: 'Set a wind-down time' }).click()
+    await page.locator('#nf-wind').waitFor()
+    await page.waitForTimeout(300)
+    const top = await page.locator('#nf-h').evaluate((e) => e.getBoundingClientRect().top)
+    expect(top >= -1 && top < 300, 'Profile opened at Notifications: ' + top)
+  }, { seed: ordinaryDay(), url: WBR })
+
+  await run('b12-health-declined', async ({ page }) => {
+    await openSkill(page, 'Wind down')
+    await page.locator('.screen.wind-down').getByRole('button', { name: 'Change your routine' }).click()
+    await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
+    expect(!(await page.getByText("Pick what you'd like in your evening.").count()), 'no sheet without a health yes')
+  }, { seed: (() => { const s = ordinaryDay(); s.state.consents = { records: [...GRANTED.records, { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-10-01T08:00:00.000Z' }] }; return s })(), url: WBR })
+
+  await run('b13-outside', async ({ page }) => {
+    await openSkill(page, 'Get outside')
+    const scr = page.locator('.screen.outside')
+    await scr.locator('.ltitle', { hasText: 'Get outside' }).waitFor()
+    await scr.locator('.pv-back').getByRole('button', { name: 'Mind' }).waitFor()
+    expect(!(await page.locator('nav.tabbar').isVisible()), 'no tab bar')
+    for (const t of ['Daylight, and a walk if you like', 'Some time outdoors, in whatever way suits you: an easy walk, somewhere green to sit, or a few minutes in daylight.', "If you'd like a walk", 'Easy walk', '10–20 min',
+      "Walk at a relaxed pace, one where you could chat in full sentences. Stop whenever you've had enough.", 'Need support now?', 'For everyday wellbeing. Not a treatment for any condition.'])
+      await scr.getByText(t, { exact: true }).waitFor()
+    const sq = await scr.locator('.go-sq').first().evaluate((e) => e.getAttribute('style'))
+    expect(/--move-fill/.test(sq) && /--move-ink/.test(sq), 'move tokens: ' + sq)
+    const h = await scr.getByRole('button', { name: 'Start' }).evaluate((e) => e.getBoundingClientRect().height)
+    expect(h >= 44, 'Start is 44 px: ' + h)
+    await fullShot(page, 'b13-outside')
+    await scr.getByRole('button', { name: 'Start' }).click()
+    // Train, today, with "Log a session" set to an Easy walk (no stand-alone walk session exists)
+    const sheet = page.locator('.sheet[aria-label="Log a session"]')
+    await sheet.waitFor()
+    expect((await sheet.getByRole('radio', { name: 'Cardio' }).getAttribute('aria-checked')) === 'true' && (await sheet.locator('#ls_type').inputValue()) === 'Easy walk', 'set to an Easy walk')
+    await shot(page, 'b13-start-walk')
+    await sheet.locator('#ls_min').fill('15')
+    await sheet.getByRole('button', { name: 'Save' }).click()
+    await sheet.waitFor({ state: 'detached' })
+    const ss = (await stored(page)).days[ORDINARY_DAY].sessions || []
+    expect(ss.some((x) => x.modality === 'cardio' && x.title === 'Easy walk' && x.mins === 15), 'walk logged on today: ' + JSON.stringify(ss))
+    // the next Train visit is the usual list, not the log sheet again
+    await tab(page, 'Summary'); await tab(page, 'Train')
+    expect(!(await page.locator('.sheet[aria-label="Log a session"]').count()), 'no sheet on the next visit')
+  }, { seed: ordinaryDay(), url: WBR })
+
+  await run('b11b-names', async ({ page }) => {
+    await openNotify(page)
+    const rows = await notifyRows(page)
+    expect(JSON.stringify(rows) === JSON.stringify(['Check-in', 'Wind-down', 'Plan check-in', 'Supplement reminders', 'Show supplement names in reminders', 'Weekly review reminder']), 'rows: ' + rows.join(', '))
+    const sw = swn(page, 'Show supplement names in reminders')
+    expect((await sw.getAttribute('aria-checked')) === 'false', 'off by default')
+    const FOOT = 'With this off, reminders just say “Time for your supplements”. With it on, they name the supplement, and anyone who can see your screen may read it, even when it\'s locked.'
+    await page.getByText(FOOT, { exact: true }).waitFor()
+    expect(!((await stored(page)).profile.mind || {}).lockNames, 'nothing saved by opening Profile')
+    await shot(page, 'b11b-names-off')
+    await sw.click()
+    await page.waitForTimeout(300)
+    expect((await sw.getAttribute('aria-checked')) === 'true', 'on')
+    const st = await stored(page)
+    expect(st.profile.mind.lockNames === true && st.profile.answeredAt['mind.lockNames'], 'saved: ' + JSON.stringify(st.profile.mind))
+    await shot(page, 'b11b-names-on')
+    await sw.click()
+    await page.waitForTimeout(300)
+    expect((await stored(page)).profile.mind.lockNames === false, 'off again, saved as off')
+  }, { url: WB, seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; s.state.profile.supplements = [{ name: 'Vitamin D', time: '08:00' }]; return s })() })
+
+  await run('b11b-flag-off', async ({ page }) => {
+    await page.locator('nav.tabbar').waitFor()
+    await tab(page, 'Profile')
+    await page.getByText('Supplement reminders', { exact: true }).first().waitFor()
+    expect(!(await page.getByText(/supplement names|lock screen/i).count()), 'flag off: no names setting')
+  }, { seed: (() => { const s = ordinaryDay(); s.state.profile.notificationsEnabled = true; return s })() })
 
   // Later packages add their scenarios here, against WB (flag on) and WBR (flag on, MIND_REVIEWED on),
   // with the seeds above: hardDay(), ordinaryDay(), lowMoodFortnight().

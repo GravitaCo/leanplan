@@ -1,7 +1,8 @@
 /**
  * Profile › Notifications, the Mind reminder types (wellbeing board B11, canvas wp-b11-light,
  * wp-b11-dark and wp-b11-more; approved for now by Benn, 8 Oct 2026). Verbatim from the copy deck
- * v2, ids cited. The lock-screen names setting (B11b) isn't approved yet: not here. React-free so
+ * v2, ids cited. B11b (the supplement names setting, approved by Benn, 10 Oct 2026) from
+ * new-copy-b11b-b13.md, FINAL section. React-free so
  * the tests can lint every string (mindCopyIssues). What the reminders themselves say (B11.17 to
  * B11.19) lives with the server rules: supabase/functions/_shared/reminders.ts REMINDER_COPY.
  */
@@ -20,6 +21,9 @@ export const NOTIFY_COPY = {
   windDownAt: 'Wind down from',
   /** B11.12, as Benn reworded it on 10 Oct 2026 (wind-down outside the one-a-day cap) */
   foot: "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.",
+  /** B11b (FINAL): the toggle under Supplement reminders, and the foot under the list */
+  names: 'Show supplement names in reminders',
+  namesFoot: 'With this off, reminders just say “Time for your supplements”. With it on, they name the supplement, and anyone who can see your screen may read it, even when it\'s locked.',
   /** B11.15, B11.16 */
   backToUsual: 'Back to usual',
   dismiss: 'Dismiss',
@@ -38,6 +42,6 @@ export function notifyStrings(): string[] {
   const c = NOTIFY_COPY
   return [
     ...Object.values(c.rows).flatMap((r) => [r.label, r.sub, r.aria]), c.timesHeading, c.wakeAt, c.windDownAt, c.foot,
-    c.backToUsual, c.dismiss, ...(Object.keys(BACKOFF_NAME) as NotifyKind[]).map(backoffLine),
+    c.names, c.namesFoot, c.backToUsual, c.dismiss, ...(Object.keys(BACKOFF_NAME) as NotifyKind[]).map(backoffLine),
   ]
 }

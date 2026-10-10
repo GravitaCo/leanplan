@@ -21,8 +21,10 @@
 //   can never send two. The wind-down reminder sits outside that cap (Benn, 10 Oct 2026) but is
 //   claimed the same way for its own day (by_kind), so it too goes at most once a day. A halved
 //   type goes only every other day (by_kind). Supplement reminders don't claim anything.
-// - Every payload is fixed copy from ../_shared/reminders.ts: no supplement name, no mood or sleep
-//   word, nothing from the log. Logs and the response carry counts only.
+// - Every payload is fixed copy from ../_shared/reminders.ts: no mood or sleep word, nothing from
+//   the log. A supplement reminder names the supplement only when the person turned on "Show
+//   supplement names in reminders" (B11b, profile.mind.lockNames === true); otherwise the name is
+//   left out of the payload entirely. Logs and the response carry counts only.
 //
 // Health consent (docs/migrations/2026-09-28-health-consent-server.sql): someone whose latest
 // health answer isn't a yes gets no reminders, and their profile isn't read.
@@ -180,10 +182,12 @@ Deno.serve(async (req: Request) => {
       subs = left;
     }
 
-    // supplement reminders: the person's own times, outside the daily cap; generic text only
+    // supplement reminders: the person's own times, outside the daily cap; generic text unless
+    // they turned names on (B11b: suppPayload reads the names only when mind.lockNames is true)
     if (profile?.notificationsEnabled && suppsDue(profile?.supplements, local.time) > 0) {
+      const payload = suppPayload(profile?.mind, profile?.supplements, local.time);
       const left: Sub[] = [];
-      for (const sub of subs) if ((await send(sub, suppPayload())) !== "gone") left.push(sub);
+      for (const sub of subs) if ((await send(sub, payload)) !== "gone") left.push(sub);
       subs = left;
     }
 

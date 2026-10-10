@@ -82,7 +82,7 @@ async function consent(fakeServer: FakeServer): Promise<void> {
   checks.push(['withdrawal clears profile weight, body fat and every training preference (limitations, kit …)', s.profile.weight === undefined && s.profile.bodyFat === undefined && s.profile.training?.limitations === undefined && s.profile.training?.limitationsNote === undefined && s.profile.training?.equipment === undefined])
   checks.push(['cleared days and settings are marked to sync; untouched days are not', m.days['2026-09-20'].dirty && !m.days['2026-09-21']?.dirty && m.settings.dirty])
   checks.push(['after withdrawal: the guard refuses and the old logging paths stop', !canSaveHealthAnswers(s) && !healthLoggingAllowed(s)])
-  checks.push(['nothing left to clear', JSON.stringify(healthDataSummary(s)) === '{"weighIns":0,"checkins":0,"profileFields":0,"trainingPrefs":0,"mindPlans":0,"mindTimes":0,"unloadNotes":0}'])
+  checks.push(['nothing left to clear', JSON.stringify(healthDataSummary(s)) === '{"weighIns":0,"checkins":0,"profileFields":0,"trainingPrefs":0,"mindPlans":0,"mindTimes":0,"mindRoutine":0,"unloadNotes":0}'])
 
   // withdrawal before the grant synced: both upload, the server's latest is the withdrawal
   const s2 = stateFromBackup({ days: {} } as never)

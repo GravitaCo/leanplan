@@ -15,8 +15,12 @@
  *   is sent half as often: only when its last one was at least two days ago.
  * - Times are the person's own clock: `profile.mind.tz` (IANA, from the phone), else UK time.
  * - What a reminder says is fixed, neutral copy (B11.17 to B11.19): never a mood or sleep word,
- *   never anything from the log, never a supplement name. public/sw.js shows the same fixed copy
- *   whatever the payload says, and `npm test` checks the two agree.
+ *   never anything from the log. public/sw.js shows the same fixed copy whatever the payload says,
+ *   and `npm test` checks the two agree.
+ * - A supplement reminder carries no supplement name unless the person turned on "Show supplement
+ *   names in reminders" (B11b: `profile.mind.lockNames === true`, nothing else counts). With it off
+ *   or missing, the name is left out of the payload entirely, not just hidden (security-data).
+ *   The wind-down and check-in reminders never carry a mood or sleep word either way.
  */
 
 export const MIND_KINDS = ['checkin', 'wind-down', 'plan'] as const
@@ -41,9 +45,19 @@ export const REMINDER_COPY: Record<MindKind | 'supp', ReminderCopy> = {
   checkin: { title: 'Tali', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
   'wind-down': { title: 'Tali', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
   plan: { title: 'Tali', body: 'How are your plans going?', tag: 'tali-plan' },
-  // main's lock-screen fix (2026-10-09): no supplement name, ever, until a names setting is approved
+  // main's lock-screen fix (2026-10-09): no supplement name unless the person turned names on (B11b)
   supp: { title: 'Time for your supplements', body: 'Time for your supplements', tag: 'tali-supp' },
 }
+
+/**
+ * B11b, with "Show supplement names in reminders" on: the title, and the tag public/sw.js shows a
+ * name for (it shows it under `tali-supp`, so it replaces an unread reminder like any other). Any
+ * other supplement tag gets the generic text on the phone, whatever the payload says.
+ */
+export const SUPP_NAMED = { title: 'Supplement reminder', tag: 'tali-supp-named' } as const
+/** a supplement name in a payload is cut to this many characters, and a payload names at most SUPP_MAX_NAMES */
+export const SUPP_NAME_MAX = 60
+export const SUPP_MAX_NAMES = 6
 
 export interface MindPrefsLike {
   wakeAt?: unknown
@@ -51,6 +65,8 @@ export interface MindPrefsLike {
   notify?: unknown
   halved?: unknown
   tz?: unknown
+  /** B11b: "Show supplement names in reminders"; only `true` names a supplement */
+  lockNames?: unknown
 }
 
 export const isHHMM = (v: unknown): v is string => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v)
@@ -169,9 +185,25 @@ export function payloadFor(kind: MindKind): ReminderCopy & { url: string; icon: 
   return { ...REMINDER_COPY[kind], url: './?n=' + kind, icon: '/icon-192.png' }
 }
 
-/** The supplement reminder's payload: generic text only, one tag, however many are due. */
-export function suppPayload(): ReminderCopy & { icon: string } {
-  return { ...REMINDER_COPY.supp, icon: '/icon-192.png' }
+/**
+ * The supplement reminder's payload, one however many are due. Generic text and tag `tali-supp`
+ * unless `mind.lockNames === true` (B11b), and then only: the title "Supplement reminder" and the
+ * names of the supplements due at `time` as the body ("Vitamin D, Magnesium"), tag
+ * `tali-supp-named`. With the setting off or missing the supplements aren't read at all, so no
+ * name can reach the payload. A due supplement with no usable name falls back to the generic text.
+ */
+export function suppPayload(mind?: MindPrefsLike | null, supplements?: unknown, time?: string): ReminderCopy & { icon: string } {
+  const generic = { ...REMINDER_COPY.supp, icon: '/icon-192.png' }
+  if (mind?.lockNames !== true || !isHHMM(time) || !Array.isArray(supplements)) return generic
+  const names: string[] = []
+  for (const s of supplements) {
+    const x = obj(s)
+    if (x.time !== time || typeof x.name !== 'string') continue
+    const n = x.name.replace(/\s+/g, ' ').trim().slice(0, SUPP_NAME_MAX).trim()
+    if (n && !names.includes(n)) names.push(n)
+  }
+  if (!names.length) return generic
+  return { title: SUPP_NAMED.title, body: names.slice(0, SUPP_MAX_NAMES).join(', '), tag: SUPP_NAMED.tag, icon: '/icon-192.png' }
 }
 
 /** Supplements due at `time` (their own times, in the person's clock). */

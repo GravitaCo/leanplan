@@ -16,6 +16,8 @@ export const MERGED_FIELDS = [
   'training.place', 'training.equipment', 'training.modalities', 'training.cardioPrefs', 'training.limitations',
   // Mind settings (wellbeing Phase 1; security-data M6): `notify` and `halved` merge as whole objects
   'mind.off', 'mind.asks', 'mind.wakeAt', 'mind.windDownAt', 'mind.notify', 'mind.halved', 'mind.tz',
+  // B12 Wind down's routine (health data) and B11b's supplement names setting (a preference)
+  'mind.routine', 'mind.lockNames',
 ] as const
 export type MergedField = (typeof MERGED_FIELDS)[number]
 

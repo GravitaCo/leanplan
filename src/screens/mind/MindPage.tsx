@@ -4,7 +4,7 @@ import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { healthDeclined } from '@/data/consent'
 import { DAY_NAME, parseYmd, todayStr } from '@/core/domain/date'
 import { ENERGY, MOODS, SLEEP, STRESS } from '@/core/domain/insights'
-import { skillsWithScreen } from '@/core/data/skills'
+import { skillById, skillsWithScreen } from '@/core/data/skills'
 import type { CheckIn } from '@/core/types'
 import { PageHeader } from '@/ui/primitives'
 import { Chevron, Icon, type IconName } from '@/ui/icons'
@@ -14,6 +14,8 @@ import { SupportSheet } from './SupportSheet'
 import { ReflectionCard } from './ReflectionCard'
 import { ResetScreen } from './ResetScreen'
 import { UnloadSheet } from './UnloadSheet'
+import { WindDownScreen } from './WindDownScreen'
+import { OutsideScreen } from './OutsideScreen'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -56,12 +58,23 @@ export function MindPage() {
   const mindOpen = useStore((s) => s.mindOpen)
   const clearOpen = useStore((s) => s.clearOpen)
   const [sheet, setSheet] = useState<'checkin' | 'support' | null>(null)
-  const [view, setView] = useState<MindView | null>(null)
+  // the pushed views, newest last: a skill screen, or Unload's sheet over the page or a screen
+  // (Wind down's routine opens Reset and Unload from inside it, and Back returns there)
+  const [views, setViews] = useState<MindView[]>([])
+  const push = (v: MindView) => {
+    setViews((vs) => [...vs, v])
+    if (v !== 'unload') window.scrollTo?.(0, 0)
+  }
+  const pop = () => {
+    const top = views[views.length - 1]
+    setViews((vs) => vs.slice(0, -1))
+    if (top !== 'unload') window.scrollTo?.(0, 0)
+  }
 
   // a one-thing chip with a skill opens its view on arrival (openMind); only once the skill screens are reviewed
   useEffect(() => {
     if (!mindOpen) return
-    if (MIND_REVIEWED) setView(mindOpen)
+    if (MIND_REVIEWED) setViews([mindOpen])
     clearOpen()
   }, [mindOpen, clearOpen])
 
@@ -73,14 +86,19 @@ export function MindPage() {
     setSheet('checkin')
   }
 
-  if (view === 'reset') return <ResetScreen onBack={() => setView(null)} />
+  const unload = views[views.length - 1] === 'unload' ? <UnloadSheet onClose={pop} /> : null
+  const screens = views.filter((v) => v !== 'unload')
+  const screen = screens[screens.length - 1]
+  if (screen === 'reset') return <ResetScreen onBack={pop} backLabel={screens.length > 1 && screens[screens.length - 2] === 'wind-down' ? skillById('wind-down')!.name : MIND.title} />
+  if (screen === 'wind-down') return <WindDownScreen onBack={pop} onSkill={push}>{unload}</WindDownScreen>
+  if (screen === 'outside') return <OutsideScreen onBack={pop} />
 
   return (
     <MindPageView today={today} checkin={checkin} skillsOn={MIND_REVIEWED}
-      onCheckin={openCheckin} onSupport={() => setSheet('support')} onSkill={(id) => setView(id)} onPlans={() => setTab('plan')}>
+      onCheckin={openCheckin} onSupport={() => setSheet('support')} onSkill={push} onPlans={() => setTab('plan')}>
       {sheet === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
       {sheet === 'support' && <SupportSheet onClose={() => setSheet(null)} />}
-      {view === 'unload' && <UnloadSheet onClose={() => setView(null)} />}
+      {unload}
     </MindPageView>
   )
 }
@@ -130,7 +148,7 @@ export function MindPageView({ today, checkin, skillsOn, onCheckin, onSupport, o
           <div className="lbl">{MIND.skills}</div>
           <div className="list icons mind-skills">
             {skills.map((sk) => (
-              <button key={sk.id} className="li" onClick={() => onSkill(sk.id === 'unload' ? 'unload' : 'reset')}>
+              <button key={sk.id} className="li" onClick={() => onSkill(sk.id)}>
                 <span className="ico" style={{ background: `var(--${sk.pillar}-fill)`, color: `var(--${sk.pillar}-ink)` }}><Icon name={sk.icon as IconName} size={18} /></span>
                 <span className="m"><span className="t">{sk.name}</span><span className="s">{sk.sub}</span></span>
                 <Chevron />
