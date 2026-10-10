@@ -14,6 +14,7 @@ import { TOBY } from './chains/toby'
 import { COSTA } from './chains/costa'
 import { INGREDIENTS } from './ingredients'
 import { CHINESE_TAKEAWAY } from './takeaway/chinese'
+import { INDIAN_TAKEAWAY } from './takeaway/indian'
 import { AAGRAH } from './restaurants/aagrah'
 import { KASHMIRI_AROMA } from './restaurants/kashmiriaroma'
 
@@ -2955,4 +2956,4 @@ const BASE: Food[] = [
   }
 ]
 
-export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, SLIMS, PIZZAHUT, BURGERKING, NANDOS, PIZZAEXPRESS, STARBUCKS, CAFFENERO, PRET, TOBY, CHINESE_TAKEAWAY, AAGRAH, KASHMIRI_AROMA, COSTA)
+export const FOODS: Food[] = BASE.concat(INGREDIENTS, GREGGS, KFC, POPEYES, SLIMS, PIZZAHUT, BURGERKING, NANDOS, PIZZAEXPRESS, STARBUCKS, CAFFENERO, PRET, TOBY, CHINESE_TAKEAWAY, INDIAN_TAKEAWAY, AAGRAH, KASHMIRI_AROMA, COSTA)

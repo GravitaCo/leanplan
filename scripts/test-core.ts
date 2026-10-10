@@ -112,6 +112,11 @@ const extra: [string, string, string][] = [
   ['search: kashmiri korma isn\'t the Kashmiri Aroma brand', rankByName(['Kashmiri Aroma chicken korma', 'Aagrah Kashmiri korma'], (x) => x, ['kashmiri', 'korma'])[0], 'Aagrah Kashmiri korma'],
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
   ['search: accents fold both ways', [rankByName(['Caffè Nero Latte Regular (oat)', 'Oat milk'], (x) => x, ['caffe', 'latte']).join('|'), rankByName(['Creme egg'], (x) => x, ['crème']).join('|')].join(' / '), 'Caffè Nero Latte Regular (oat) / Creme egg'],
+  // the generic Indian takeaway dish comes first in the real database, ahead of restaurant versions
+  ...([
+    ['chicken pakora', 'Chicken pakora'], ['lamb bhuna', 'Lamb bhuna'], ['garlic naan', 'Garlic naan'],
+    ['pilau rice', 'Pilau rice'], ['chicken madras', 'Chicken madras'], ['saag aloo', 'Saag aloo'],
+  ] as const).map(([q, want]): [string, unknown, unknown] => [`search (full db): ${q}`, rankByName(FOODS, (f) => f.n, q.split(' '))[0]?.n, want]),
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
 // Chain foods: one serving, through the app's real logging path, must show exactly the kcal the

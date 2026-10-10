@@ -44,6 +44,10 @@ export const SOURCES: Record<string, Source> = {
   // CoFID dish's values (lab-tested or recipe-calculated) (`est-cofid:<CoFID code>`) and a typical portion from published
   // takeaway surveys. Never the restaurant's own figures; ±40% (nutrition-accuracy, Oct 2026).
   'est-cofid': { label: 'Estimated from the closest UK dish in CoFID 2021, not the restaurant’s own figures', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid', err: 0.4, estimate: true },
+  // Peer-reviewed UK lab analyses of real takeaway meals (Jaworowska et al., LJMU; Jaworowska &
+  // Force 2025): the paper's median per-100 g values and median portion. Each dish cites its
+  // paper in a comment. ±30% for how much takeaway recipes and portions vary.
+  'takeaway-lab': { label: 'UK lab analysis of takeaway meals', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11764605/', err: 0.3, estimate: true },
   'slims-uk': { label: 'Slim Chickens UK, Oct 2026', url: 'https://menus.tenkites.com/brg/slimscore', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
   // Autumn 2026 booklets (food v17/08/26, beverages v18/09/26); the PDF links change each season
