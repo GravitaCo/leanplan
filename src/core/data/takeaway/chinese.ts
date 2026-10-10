@@ -1,4 +1,5 @@
 import type { Food } from '@/core/types'
+import { composite } from './other'
 
 /**
  * UK Chinese takeaway dishes (generic, not any restaurant's own figures), under the plain names
@@ -10,13 +11,15 @@ import type { Food } from '@/core/types'
  *   the sweet and sour sauce is LFRA, "Nutrient analysis of miscellaneous foods", 1992). A separate
  *   source key from `cofid` so these carry a ±30% margin: takeaway recipes and portions vary far
  *   more than a lab row suggests (nutrition-accuracy, Oct 2026).
- * - `takeaway-lab:LJMU`: whole meals bought from independent takeaways in Liverpool, Wirral and
- *   Knowsley and lab-analysed (Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430; the per-100 g
+ * - `takeaway-lab:Blackham2022`: whole meals bought from independent takeaways in Liverpool, Wirral
+ *   and Knowsley and lab-analysed (Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430; the per-100 g
  *   medians for energy, protein, carbohydrate and fat are in Blackham T (2022) PhD thesis, LJMU,
- *   Appendix Tables 8.5 and 8.6, portions in Table 8.3). Used only where CoFID has no takeaway row
- *   for the dish. ±30%, as CoFID's takeaway rows.
+ *   Research Online eprint 20540, Appendix Tables 8.5 and 8.6, portions in Table 8.3). Used only
+ *   where CoFID has no takeaway row for the dish. ±30%, as CoFID's takeaway rows.
  * - `est-cofid:<code>`: a common dish with no published analysis, carrying the closest CoFID
  *   dish's values (labelled as an estimate in the app, ±40%). The reason for each match is noted.
+ * - `est-cofid:<code>+<code>`: a composite, the weighted sum of CoFID components (./other.ts
+ *   COMPOSITES; check:foods recomputes it from its audit record). ±40%, an estimate.
  *
  * Portions (`g`): where a UK survey weighed the dish as sold, `g` is its median (or mean) portion:
  * - [L] Jaworowska et al. 2014 (above), whole meal as sold, median: Blackham 2022 Table 8.3, and
@@ -38,7 +41,7 @@ import type { Food } from '@/core/types'
 export const CHINESE_TAKEAWAY: Food[] = [
   // ── Rice ──
   // [L] special fried rice: 21 meals, 686 g (604-742)
-  { n: 'Special fried rice', k: 200, p: 11.5, c: 22.8, f: 7.3, g: 686, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Special fried rice', k: 200, p: 11.5, c: 22.8, f: 7.3, g: 686, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // [H] egg fried rice 558 g (499-617)
   { n: 'Egg fried rice (takeaway)', k: 186, p: 4.3, c: 33.3, f: 4.9, g: 558, cat: 'ready', eat: true, src: 'cofid-takeaway:11-444' },
   // as takeaway egg fried rice (the same fried rice with meat, prawns or mushrooms added).
@@ -49,7 +52,7 @@ export const CHINESE_TAKEAWAY: Food[] = [
   // special fried rice seasoned with curry powder: as takeaway egg fried rice. 686 g, as [L]'s special fried rice
   { n: 'Singapore fried rice', k: 186, p: 4.3, c: 33.3, f: 4.9, g: 686, cat: 'ready', eat: true, src: 'est-cofid:11-444' },
   // plain boiled long-grain rice. [L] 297 g (sweet and sour chicken with boiled rice, less the chicken)
-  { n: 'Boiled rice (takeaway)', k: 131, p: 2.8, c: 31.1, f: 0.4, g: 297, cat: 'ready', eat: true, src: 'est-cofid:11-862' },
+  { n: 'Boiled rice, Chinese takeaway', k: 131, p: 2.8, c: 31.1, f: 0.4, g: 297, cat: 'ready', eat: true, src: 'est-cofid:11-862' },
 
   // ── Noodles ──
   // as chicken chow mein (mixed meats and prawns with the same noodles). [H] special chow mein 551 g (525-594)
@@ -60,9 +63,9 @@ export const CHINESE_TAKEAWAY: Food[] = [
   // as chicken chow mein. No survey weighed beef chow mein: 551 g, the lowest standard-outlet chow mein median ([H])
   { n: 'Beef chow mein (takeaway)', k: 147, p: 8.5, c: 12.7, f: 7.2, g: 551, cat: 'ready', eat: true, src: 'est-cofid:19-321' },
   // [L] prawn chow mein: 21 meals, 679 g (584-834)
-  { n: 'King prawn chow mein', k: 102, p: 5.8, c: 12.8, f: 3.5, g: 679, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'King prawn chow mein', k: 102, p: 5.8, c: 12.8, f: 3.5, g: 679, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // [L] char siu chow mein: 10 meals, 716 g (680-848)
-  { n: 'Char siu (barbecue pork) chow mein (takeaway)', k: 129, p: 10.3, c: 9.6, f: 5.3, g: 716, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Char siu (barbecue pork) chow mein (takeaway)', k: 129, p: 10.3, c: 9.6, f: 5.3, g: 716, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // as chicken chow mein (the same takeaway noodles; likely a little lower in protein without the
   // chicken). 551 g, as special chow mein ([H])
   { n: 'Vegetable chow mein', k: 147, p: 8.5, c: 12.7, f: 7.2, g: 551, cat: 'ready', eat: true, src: 'est-cofid:19-321' },
@@ -108,19 +111,19 @@ export const CHINESE_TAKEAWAY: Food[] = [
   // CoFID: chicken satay, 10 takeaway samples (chicken in satay sauce)
   { n: 'Chicken satay (in satay sauce)', k: 191, p: 21.7, c: 3.0, f: 10.3, g: 430, cat: 'ready', eat: true, src: 'cofid-takeaway:19-323' },
   // [L] chicken satay with fried rice: 10 meals, 891 g (781-1063)
-  { n: 'Chicken satay with egg fried rice', k: 146, p: 7.4, c: 17.8, f: 4.4, g: 891, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
-  // Chinese curry (chicken and onion in a curry sauce): as CoFID's takeaway chicken curry (Indian
-  // takeaways, the only lab-tested takeaway chicken curry). [S] beef curry mean 555 g
-  { n: 'Chinese chicken curry', k: 145, p: 11.7, c: 2.5, f: 9.8, g: 555, cat: 'ready', eat: true, src: 'est-cofid:19-322' },
+  { n: 'Chicken satay with egg fried rice', k: 146, p: 7.4, c: 17.8, f: 4.4, g: 891, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
+  // Chinese curry (chicken in a mild, sweet curry sauce): grilled chicken breast 180 g + CoFID's
+  // sweet UK-style curry sauce 375 g (ASSUMPTION amounts) = 555 g, [S] beef curry mean
+  composite('Chinese chicken curry', [['18-323', 180], ['15-751', 375]], 'ready'),
   // [L] sweet and sour chicken with boiled rice: 10 meals, 766 g (744-868)
-  { n: 'Sweet and sour chicken with boiled rice', k: 188, p: 6.3, c: 28.4, f: 5.2, g: 766, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Sweet and sour chicken with boiled rice', k: 188, p: 6.3, c: 28.4, f: 5.2, g: 766, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // [L] sweet and sour chicken with chips: 22 meals, 931 g (785-1199)
-  { n: 'Sweet and sour chicken with chips', k: 208, p: 5.9, c: 26.7, f: 8.0, g: 931, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Sweet and sour chicken with chips', k: 208, p: 5.9, c: 26.7, f: 8.0, g: 931, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
 
   // ── Beef ──
   { n: 'Beef with green peppers in black bean sauce (takeaway)', k: 103, p: 10.5, c: 2.7, f: 5.6, g: 430, cat: 'ready', eat: true, src: 'cofid-takeaway:19-460' },
   // [L] beef in black bean sauce with fried rice: 31 meals, 915 g (871-1013)
-  { n: 'Beef in black bean sauce with egg fried rice', k: 147, p: 6.5, c: 17.4, f: 5.3, g: 915, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Beef in black bean sauce with egg fried rice', k: 147, p: 6.5, c: 17.4, f: 5.3, g: 915, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // as beef in black bean sauce (stir-fried beef and vegetables in a thickened brown sauce)
   { n: 'Beef in oyster sauce (takeaway)', k: 103, p: 10.5, c: 2.7, f: 5.6, g: 430, cat: 'ready', eat: true, src: 'est-cofid:19-460' },
   { n: 'Beef with ginger and spring onions', k: 103, p: 10.5, c: 2.7, f: 5.6, g: 430, cat: 'ready', eat: true, src: 'est-cofid:19-460' },
@@ -156,7 +159,7 @@ export const CHINESE_TAKEAWAY: Food[] = [
   // ── King prawns ──
   { n: 'Szechuan prawns with vegetables (takeaway)', k: 83, p: 7.8, c: 2.5, f: 4.7, g: 430, cat: 'ready', eat: true, src: 'cofid-takeaway:16-335' },
   // [L] kung po king prawns with boiled rice: 10 meals, 882 g (794-931)
-  { n: 'Kung pao king prawns with boiled rice (kung po)', k: 126, p: 4.1, c: 22.5, f: 2.7, g: 882, cat: 'ready', eat: true, src: 'takeaway-lab:LJMU' },
+  { n: 'Kung pao king prawns with boiled rice (kung po)', k: 126, p: 4.1, c: 22.5, f: 2.7, g: 882, cat: 'ready', eat: true, src: 'takeaway-lab:Blackham2022' },
   // stir-fried king prawns and vegetables in a sauce: as Szechuan prawns with vegetables
   { n: 'King prawns in black bean sauce', k: 83, p: 7.8, c: 2.5, f: 4.7, g: 430, cat: 'ready', eat: true, src: 'est-cofid:16-335' },
   { n: 'King prawn chop suey', k: 83, p: 7.8, c: 2.5, f: 4.7, g: 430, cat: 'ready', eat: true, src: 'est-cofid:16-335' },
@@ -203,10 +206,10 @@ export const CHINESE_TAKEAWAY: Food[] = [
   { n: 'Prawn crackers (takeaway)', k: 570, p: 0.3, c: 58.2, f: 39.0, g: 30, cat: 'snacks', eat: true, src: 'cofid-takeaway:11-1023' },
 
   // ── Chips and sauces ──
-  // as CoFID's chips from takeaway fish and chip shops. [L] 462 g (chips with sweet and sour chicken, less the chicken)
-  // takeaway chips tossed with peppers, onion, salt and chilli: as CoFID's takeaway chips. 462 g, as above
+  // takeaway chips tossed with peppers, onion, salt and chilli: as CoFID's takeaway chips. [L] 462 g
+  // (chips with sweet and sour chicken, less the chicken)
   { n: 'Salt and pepper chips', k: 214, p: 3.5, c: 33.2, f: 8.4, g: 462, cat: 'ready', eat: true, src: 'est-cofid:13-485' },
-  // [L] chips and curry sauce: 9 meals, 487 g (459-548)
+  // chips and curry sauce is "Chips and curry sauce (takeaway)" in other.ts
   // as CoFID's sweet UK-style curry sauce (the same roux-thickened, mild curry sauce). 200 g assumed (a pot)
   { n: 'Chinese curry sauce', k: 92, p: 1.1, c: 9.8, f: 5.7, g: 200, cat: 'sauces', eat: true, src: 'est-cofid:15-751' },
   // dipping sauce bought from Chinese restaurants. 100 g assumed (one pot)

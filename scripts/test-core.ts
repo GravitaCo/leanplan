@@ -139,6 +139,41 @@ for (const [q, want] of [
   console.log(ok ? 'PASS' : 'FAIL', `search (database): ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 
+// Indian takeaway searches, through the app's real path (queryWords, and each food's `aka`)
+{
+  const top = (q: string, k: number) => rankByName(FOODS, (f) => f.n, queryWords(q), (f) => f.aka).slice(0, k).map((f) => f.n)
+  const cases: [string, string, number][] = [
+    // [query, dish, must be within the top k]
+    ['lamb curry', 'Lamb rogan josh', 1],
+    ['dhal', 'Tarka dal', 1],
+    ['dal', 'Tarka dal', 1],
+    ['dahl', 'Tarka dal', 1],
+    // the generic Indian takeaway curry, above the Chinese and Thai ones
+    ['chicken curry', 'Chicken curry, Indian (takeaway)', 1],
+    // the takeaway dish above the retail "Chicken tikka masala" (CoFID 19-296, a stable name)
+    ['chicken tikka masala', 'Chicken tikka masala (takeaway)', 1],
+    ['tikka masala', 'Chicken tikka masala (takeaway)', 1],
+    ['palak paneer', 'Saag paneer', 1],
+    ['matar paneer', 'Mattar paneer', 1],
+  ]
+  for (const [q, dish, k] of cases) {
+    const got = top(q, k)
+    const ok = got.includes(dish); if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search indian: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(dish))
+  }
+  // the retail tikka masala is still found, right after the takeaway one
+  const ctm = top('chicken tikka masala', 2)
+  const ok = ctm[1] === 'Chicken tikka masala'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'search indian: retail tikka masala second', JSON.stringify(ctm))
+  // aliases: an exact alias pins; a partial alias match ranks after any name match
+  const items = [{ n: 'Mung dal, dried' }, { n: 'Tarka dal', aka: ['dhal', 'dal'] }, { n: 'Lentil soup', aka: ['dal soup'] }]
+  const r = (q: string) => rankByName(items, (x) => x.n, queryWords(q), (x) => x.aka).map((x) => x.n).join('|')
+  const got = [r('dal'), r('dhal'), r('soup')].join(' / ')
+  const want = 'Tarka dal|Mung dal, dried|Lentil soup / Tarka dal / Lentil soup'
+  const ok2 = got === want; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'search: aliases pin on an exact query, else rank after names', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
+}
+
 // Common UK takeaway searches find a generic dish first, never a chain's, and the takeaway dish
 // itself in the top two (an older generic food can hold the top spot on a tie: ties keep db order).
 {

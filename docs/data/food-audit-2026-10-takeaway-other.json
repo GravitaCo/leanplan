@@ -2,44 +2,47 @@
  {
   "n": "Fish and chips, cod or haddock (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Fish and chips, cod or haddock (takeaway)",
    "k": 229,
    "p": 6.7,
    "c": 25.8,
    "f": 11.1
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 749,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 64 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 749 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Chips and curry sauce (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Chips and curry sauce (takeaway)",
    "k": 191,
    "p": 2.5,
    "c": 24.2,
    "f": 9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 487,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 9 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 487 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Fried chicken and chips (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Fried chicken and chips (takeaway)",
    "k": 226,
    "p": 10.9,
    "c": 24.4,
    "f": 9.7
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 694,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 25 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 694 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Cod in batter, small (takeaway)",
@@ -419,58 +422,62 @@
  {
   "n": "Doner kebab (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Doner kebab (takeaway)",
    "k": 277,
    "p": 13.4,
    "c": 18.2,
    "f": 15.6
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 447,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 447 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Doner kebab with chips (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Doner kebab with chips (takeaway)",
    "k": 254,
    "p": 8.6,
    "c": 22.9,
    "f": 13.3
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 751,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 32 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 751 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Chicken kebab, shish or doner, in bread with salad (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Chicken kebab, shish or doner, in bread with salad (takeaway)",
    "k": 147,
    "p": 15.2,
    "c": 11.8,
    "f": 5.6
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 481,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 22 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 481 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Shish kebab, lamb, in bread with salad (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Shish kebab, lamb, in bread with salad (takeaway)",
    "k": 155,
    "p": 15,
    "c": 13.8,
    "f": 4
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 386,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed whole takeaway meal, n = 21 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 386 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Shish kebab meat only, lamb (takeaway)",
@@ -595,170 +602,182 @@
  {
   "n": "Margherita pizza, 10-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Margherita pizza, 10-inch, whole (takeaway)",
    "k": 301,
-   "p": 13.4,
+   "p": 13.6,
    "c": 32.7,
    "f": 12.8
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 354,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 354 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Margherita pizza, 12-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Margherita pizza, 12-inch, whole (takeaway)",
    "k": 301,
-   "p": 13.4,
+   "p": 13.6,
    "c": 32.7,
    "f": 12.8
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 510,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 510 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Margherita pizza, 14-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Margherita pizza, 14-inch, whole (takeaway)",
    "k": 301,
-   "p": 13.4,
+   "p": 13.6,
    "c": 32.7,
    "f": 12.8
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 694,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 694 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Pepperoni pizza, 10-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Pepperoni pizza, 10-inch, whole (takeaway)",
    "k": 304,
    "p": 14.1,
    "c": 31.7,
    "f": 14.3
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 354,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 354 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Pepperoni pizza, 12-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Pepperoni pizza, 12-inch, whole (takeaway)",
    "k": 304,
    "p": 14.1,
    "c": 31.7,
    "f": 14.3
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 510,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 510 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Pepperoni pizza, 14-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Pepperoni pizza, 14-inch, whole (takeaway)",
    "k": 304,
    "p": 14.1,
    "c": 31.7,
    "f": 14.3
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 694,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 12 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 694 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Meat feast pizza, 10-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Meat feast pizza, 10-inch, whole (takeaway)",
    "k": 288,
    "p": 15.8,
    "c": 26.4,
    "f": 12.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 354,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 20 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 354 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Meat feast pizza, 12-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Meat feast pizza, 12-inch, whole (takeaway)",
    "k": 288,
    "p": 15.8,
    "c": 26.4,
    "f": 12.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 510,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 20 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 510 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Meat feast pizza, 14-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Meat feast pizza, 14-inch, whole (takeaway)",
    "k": 288,
    "p": 15.8,
    "c": 26.4,
    "f": 12.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 694,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 20 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 694 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Ham and pineapple pizza, 10-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Ham and pineapple pizza, 10-inch, whole (takeaway)",
    "k": 257,
    "p": 13.7,
    "c": 28,
    "f": 9.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 354,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 354 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Ham and pineapple pizza, 12-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Ham and pineapple pizza, 12-inch, whole (takeaway)",
    "k": 257,
    "p": 13.7,
    "c": 28,
    "f": 9.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 510,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 510 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Ham and pineapple pizza, 14-inch, whole (takeaway)",
   "ref": {
-   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
+   "name": "Ham and pineapple pizza, 14-inch, whole (takeaway)",
    "k": 257,
    "p": 13.7,
    "c": 28,
    "f": 9.9
   },
-  "status": "estimate",
+  "status": "lab",
   "serving_g": 694,
-  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+  "note": "Lab-analysed takeaway pizza, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6. Portion 694 g: safefood 2012 by size, see src/core/data/takeaway/other.ts."
  },
  {
   "n": "Vegetarian pizza, 10-inch, whole (takeaway)",
@@ -1061,7 +1080,7 @@
   "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
  },
  {
-  "n": "Chicken satay (takeaway)",
+  "n": "Chicken satay skewers, starter (takeaway)",
   "ref": {
    "source": "CoFID",
    "code": "19-323",

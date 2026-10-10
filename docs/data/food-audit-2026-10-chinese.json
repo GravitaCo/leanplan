@@ -2,7 +2,7 @@
  {
   "n": "Special fried rice",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Special fried rice",
    "k": 200,
@@ -10,9 +10,9 @@
    "c": 22.8,
    "f": 7.3
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 686,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 21 meals, per 100 g medians; portion median 686 g."
+  "note": "Lab-analysed whole takeaway meal, n = 21 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 686 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Egg fried rice (takeaway)",
@@ -90,7 +90,7 @@
   "note": "Estimate from CoFID 11-444 (Rice, egg fried, takeaway). Match and portion (686 g): see src/core/data/takeaway/chinese.ts."
  },
  {
-  "n": "Boiled rice (takeaway)",
+  "n": "Boiled rice, Chinese takeaway",
   "ref": {
    "source": "CoFID",
    "code": "11-862",
@@ -152,7 +152,7 @@
  {
   "n": "King prawn chow mein",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Prawn chow mein",
    "k": 102,
@@ -160,14 +160,14 @@
    "c": 12.8,
    "f": 3.5
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 679,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 21 meals, per 100 g medians; portion median 679 g."
+  "note": "Lab-analysed whole takeaway meal, n = 21 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 679 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Char siu (barbecue pork) chow mein (takeaway)",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Char sui chow mein",
    "k": 129,
@@ -175,9 +175,9 @@
    "c": 9.6,
    "f": 5.3
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 716,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 716 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 716 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Vegetable chow mein",
@@ -452,7 +452,7 @@
  {
   "n": "Chicken satay with egg fried rice",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Chicken satay with fried rice",
    "k": 146,
@@ -460,29 +460,48 @@
    "c": 17.8,
    "f": 4.4
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 891,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 891 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 891 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Chinese chicken curry",
   "ref": {
-   "source": "CoFID",
-   "code": "19-322",
-   "name": "Curry, chicken, average, takeaway",
-   "k": 145.0,
-   "p": 11.7,
-   "c": 2.5,
-   "f": 9.8
+   "source": "CoFID composite (weighted sum of components)",
+   "code": "18-323+15-751",
+   "components": [
+    {
+     "code": "18-323",
+     "name": "Chicken, breast, grilled without skin, meat only",
+     "g": 180,
+     "k": 148.0,
+     "p": 32.0,
+     "c": 0.0,
+     "f": 2.2
+    },
+    {
+     "code": "15-751",
+     "name": "Sauce, curry, sweet, UK type, homemade",
+     "g": 375,
+     "k": 92.0,
+     "p": 1.1,
+     "c": 9.8,
+     "f": 5.7
+    }
+   ],
+   "k": 110,
+   "p": 11.1,
+   "c": 6.6,
+   "f": 4.6
   },
   "status": "estimate",
   "serving_g": 555,
-  "note": "Estimate from CoFID 19-322 (Curry, chicken, average, takeaway). Match and portion (555 g): see src/core/data/takeaway/chinese.ts."
+  "note": "Sum of CoFID components (CoFID 2021, sheet 1.3 Proximates); amounts are ASSUMPTIONS, see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Sweet and sour chicken with boiled rice",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Sweet & sour chicken with boiled rice",
    "k": 188,
@@ -490,14 +509,14 @@
    "c": 28.4,
    "f": 5.2
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 766,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 766 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 766 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Sweet and sour chicken with chips",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Sweet & sour chicken with chips",
    "k": 208,
@@ -505,9 +524,9 @@
    "c": 26.7,
    "f": 8.0
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 931,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 22 meals, per 100 g medians; portion median 931 g."
+  "note": "Lab-analysed whole takeaway meal, n = 22 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 931 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Beef with green peppers in black bean sauce (takeaway)",
@@ -527,7 +546,7 @@
  {
   "n": "Beef in black bean sauce with egg fried rice",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Beef in black bean sauce with fried rice",
    "k": 147,
@@ -535,9 +554,9 @@
    "c": 17.4,
    "f": 5.3
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 915,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 31 meals, per 100 g medians; portion median 915 g."
+  "note": "Lab-analysed whole takeaway meal, n = 31 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 915 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Beef in oyster sauce (takeaway)",
@@ -752,7 +771,7 @@
  {
   "n": "Kung pao king prawns with boiled rice (kung po)",
   "ref": {
-   "source": "LJMU takeaway analysis",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Kung po king prawns with boiled rice",
    "k": 126,
@@ -760,9 +779,9 @@
    "c": 22.5,
    "f": 2.7
   },
-  "status": "new",
+  "status": "lab",
   "serving_g": 882,
-  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 882 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 882 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "King prawns in black bean sauce",

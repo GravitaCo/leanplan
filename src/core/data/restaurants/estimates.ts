@@ -9,15 +9,17 @@ import type { Food, FoodCategory } from '@/core/types'
  *
  * KNOWN BIAS, for nutrition-accuracy to review (values are deliberately NOT corrected):
  * CoFID likely reads low against real takeaways. Jaworowska et al. 2014 (below) lab-analysed
- * chicken korma with pilau rice at a median 1594 kcal for 869 g. The same meal from CoFID
- * (about 580 g of 19-322 at 145 kcal + 289 g of 11-968 at 134 kcal) comes to about 1228 kcal,
- * about 23% low. Their Indian meals averaged 176 kcal/100 g against 145 for 19-322.
+ * chicken korma with pilau rice at a median 1595 kcal for 869 g (Blackham 2022, LJMU PhD thesis,
+ * eprint 20540, Appendix Table 8.3). The same meal from CoFID (about 580 g of 19-322 at 145 kcal
+ * + 289 g of 11-968 at 134 kcal) comes to about 1228 kcal, about 23% low. Their Indian meals had
+ * a median 176 kcal/100 g (Table 8.5) against 145 for 19-322.
  *
  * PORTIONS. Neither restaurant gives weights, so default servings come from published takeaway
  * surveys where one exists, and are marked ASSUMPTION where none does:
  *  - Jaworowska A, Blackham T, Long R et al. (2014) Nutritional composition of takeaway food in
  *    the UK. Nutrition & Food Science 44(5):414-430, doi:10.1108/NFS-08-2013-0093 (LJMU,
- *    Liverpool and Wirral, 95 Indian meals): Indian meal median 803 g; chicken korma with pilau
+ *    Liverpool and Wirral, 95 Indian meals; weights as tabled in Blackham 2022, Appendix Table
+ *    8.3, the source the `takeaway-lab:Blackham2022` dishes cite): Indian meal median 803 g; chicken korma with pilau
  *    869 g; lamb rogan josh with pilau 758 g; king prawn rogan josh with pilau 772 g; vegetable
  *    biryani 834 g. These are whole meals (curry plus rice), with no split between the two.
  *  - safefood (2015) What's in your Indian takeaway? (280 samples, 36 outlets, island of

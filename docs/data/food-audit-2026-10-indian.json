@@ -780,6 +780,21 @@
   "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
  },
  {
+  "n": "Chicken curry, Indian (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "new",
+  "serving_g": 520,
+  "note": "CoFID takeaway sample (50 takeaway chicken curries pooled). Portion: src/core/data/takeaway/indian.ts."
+ },
+ {
   "n": "Prawn bhuna",
   "ref": {
    "source": "CoFID",
@@ -1157,47 +1172,113 @@
  {
   "n": "Paneer tikka masala",
   "ref": {
-   "source": "CoFID",
-   "code": "19-322",
-   "name": "Curry, chicken, average, takeaway",
-   "k": 145.0,
-   "p": 11.7,
-   "c": 2.5,
-   "f": 9.8
+   "source": "CoFID composite (weighted sum of components)",
+   "code": "12-495+17-626",
+   "components": [
+    {
+     "code": "12-495",
+     "name": "Cheese, Paneer",
+     "g": 150,
+     "k": 328.0,
+     "p": 26.0,
+     "c": 0.9,
+     "f": 24.5
+    },
+    {
+     "code": "17-626",
+     "name": "Sauce, Indian cook in, korma/tikka masala",
+     "g": 370,
+     "k": 133.0,
+     "p": 1.7,
+     "c": 10.9,
+     "f": 9.5
+    }
+   ],
+   "k": 189,
+   "p": 8.7,
+   "c": 8.0,
+   "f": 13.8
   },
   "status": "estimate",
   "serving_g": 520,
-  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+  "note": "Sum of CoFID components (CoFID 2021, sheet 1.3 Proximates); amounts are ASSUMPTIONS, see src/core/data/takeaway/indian.ts."
  },
  {
   "n": "Mattar paneer",
   "ref": {
-   "source": "CoFID",
-   "code": "19-322",
-   "name": "Curry, chicken, average, takeaway",
-   "k": 145.0,
-   "p": 11.7,
-   "c": 2.5,
-   "f": 9.8
+   "source": "CoFID composite (weighted sum of components)",
+   "code": "12-495+13-536+15-881",
+   "components": [
+    {
+     "code": "12-495",
+     "name": "Cheese, Paneer",
+     "g": 120,
+     "k": 328.0,
+     "p": 26.0,
+     "c": 0.9,
+     "f": 24.5
+    },
+    {
+     "code": "13-536",
+     "name": "Peas, frozen, boiled in unsalted water",
+     "g": 150,
+     "k": 70.0,
+     "p": 5.5,
+     "c": 11.2,
+     "f": 0.7
+    },
+    {
+     "code": "15-881",
+     "name": "Sauce, curry, tomato and onion, homemade",
+     "g": 250,
+     "k": 201.0,
+     "p": 1.7,
+     "c": 6.1,
+     "f": 19.2
+    }
+   ],
+   "k": 193,
+   "p": 8.4,
+   "c": 6.4,
+   "f": 15.1
   },
   "status": "estimate",
   "serving_g": 520,
-  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+  "note": "Sum of CoFID components (CoFID 2021, sheet 1.3 Proximates); amounts are ASSUMPTIONS, see src/core/data/takeaway/indian.ts."
  },
  {
   "n": "Saag paneer",
   "ref": {
-   "source": "CoFID",
-   "code": "15-629",
-   "name": "Saag, homemade",
-   "k": 111.0,
-   "p": 3.3,
-   "c": 5.0,
-   "f": 8.8
+   "source": "CoFID composite (weighted sum of components)",
+   "code": "15-629+12-495",
+   "components": [
+    {
+     "code": "15-629",
+     "name": "Saag, homemade",
+     "g": 175,
+     "k": 111.0,
+     "p": 3.3,
+     "c": 5.0,
+     "f": 8.8
+    },
+    {
+     "code": "12-495",
+     "name": "Cheese, Paneer",
+     "g": 75,
+     "k": 328.0,
+     "p": 26.0,
+     "c": 0.9,
+     "f": 24.5
+    }
+   ],
+   "k": 176,
+   "p": 10.1,
+   "c": 3.8,
+   "f": 13.5
   },
   "status": "estimate",
   "serving_g": 250,
-  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+  "note": "Sum of CoFID components (CoFID 2021, sheet 1.3 Proximates); amounts are ASSUMPTIONS, see src/core/data/takeaway/indian.ts."
  },
  {
   "n": "Chicken biryani",
@@ -1277,7 +1358,7 @@
  {
   "n": "Vegetable biryani",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Vegetable biryani",
    "k": 151.0,
@@ -1287,7 +1368,7 @@
   },
   "status": "lab",
   "serving_g": 834,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 834 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 834 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Chicken shashlik",
@@ -1337,7 +1418,7 @@
  {
   "n": "Chicken korma with pilau rice",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Chicken korma with pilau rice",
    "k": 179.0,
@@ -1347,12 +1428,12 @@
   },
   "status": "lab",
   "serving_g": 869,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 869 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 869 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Chicken tikka masala with keema rice",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Chicken tikka masala with keema rice",
    "k": 187.0,
@@ -1362,27 +1443,27 @@
   },
   "status": "lab",
   "serving_g": 808,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=21; median meal 808 g."
+  "note": "Lab-analysed whole takeaway meal, n = 21 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 808 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Lamb rogan josh with pilau rice",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Lamb rogan josh with pilau rice",
    "k": 174.0,
-   "p": 7.7,
+   "p": 7.6,
    "c": 16.1,
    "f": 7.9
   },
   "status": "lab",
   "serving_g": 758,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=10; median meal 758 g."
+  "note": "Lab-analysed whole takeaway meal, n = 10 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 758 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "King prawn rogan josh with pilau rice",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "King prawn rogan josh with pilau rice",
    "k": 136.0,
@@ -1392,12 +1473,12 @@
   },
   "status": "lab",
   "serving_g": 772,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=22; median meal 772 g."
+  "note": "Lab-analysed whole takeaway meal, n = 22 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 772 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Lamb bhuna with chips",
   "ref": {
-   "source": "UK lab analysis of takeaway meals",
+   "source": "Blackham 2022, LJMU PhD thesis (Research Online eprint 20540), Appendix Tables 8.5-8.6 (per 100 g medians)",
    "code": null,
    "name": "Lamb bhuna with chips",
    "k": 206.0,
@@ -1407,22 +1488,7 @@
   },
   "status": "lab",
   "serving_g": 745,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight): n=22; median meal 745 g."
- },
- {
-  "n": "Chips and curry sauce",
-  "ref": {
-   "source": "UK lab analysis of takeaway meals",
-   "code": null,
-   "name": "Chips and curry sauce",
-   "k": 191.0,
-   "p": 2.5,
-   "c": 24.2,
-   "f": 9
-  },
-  "status": "lab",
-  "serving_g": 487,
-  "note": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 (per 100 g medians) and Table 2 (meal weight) (English category): n=9; median meal 487 g."
+  "note": "Lab-analysed whole takeaway meal, n = 22 (Jaworowska et al. 2014 sampling: Liverpool, Wirral, Knowsley); per 100 g from Blackham 2022 Tables 8.5-8.6, median portion 745 g from Table 8.3 or as noted in the source file."
  },
  {
   "n": "Saag aloo",
@@ -1575,7 +1641,7 @@
   "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
  },
  {
-  "n": "Boiled rice",
+  "n": "Boiled rice, Indian takeaway",
   "ref": {
    "source": "CoFID",
    "code": "11-858",
@@ -1697,17 +1763,36 @@
  {
   "n": "Cheese naan",
   "ref": {
-   "source": "CoFID",
-   "code": "11-973",
-   "name": "Bread, naan, retail",
-   "k": 285.0,
-   "p": 7.8,
-   "c": 50.2,
-   "f": 7.3
+   "source": "CoFID composite (weighted sum of components)",
+   "code": "11-973+12-346",
+   "components": [
+    {
+     "code": "11-973",
+     "name": "Bread, naan, retail",
+     "g": 173,
+     "k": 285.0,
+     "p": 7.8,
+     "c": 50.2,
+     "f": 7.3
+    },
+    {
+     "code": "12-346",
+     "name": "Cheese, Cheddar, English",
+     "g": 40,
+     "k": 416.0,
+     "p": 25.4,
+     "c": 0.1,
+     "f": 34.9
+    }
+   ],
+   "k": 310,
+   "p": 11.1,
+   "c": 40.8,
+   "f": 12.5
   },
   "status": "estimate",
-  "serving_g": 173,
-  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
+  "serving_g": 213,
+  "note": "Sum of CoFID components (CoFID 2021, sheet 1.3 Proximates); amounts are ASSUMPTIONS, see src/core/data/takeaway/indian.ts."
  },
  {
   "n": "Kulcha",
@@ -1767,36 +1852,6 @@
   },
   "status": "estimate",
   "serving_g": 100,
-  "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
- },
- {
-  "n": "Chips (takeaway)",
-  "ref": {
-   "source": "CoFID",
-   "code": "13-485",
-   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
-   "k": 214.0,
-   "p": 3.5,
-   "c": 33.2,
-   "f": 8.4
-  },
-  "status": "new",
-  "serving_g": 400,
-  "note": "CoFID takeaway sample. Portion and match quality: src/core/data/takeaway/indian.ts."
- },
- {
-  "n": "Curry sauce",
-  "ref": {
-   "source": "CoFID",
-   "code": "15-751",
-   "name": "Sauce, curry, sweet, UK type, homemade",
-   "k": 92.0,
-   "p": 1.1,
-   "c": 9.8,
-   "f": 5.7
-  },
-  "status": "estimate",
-  "serving_g": 150,
   "note": "Estimate from the closest CoFID dish. Portion and match quality: src/core/data/takeaway/indian.ts."
  },
  {

@@ -8,13 +8,14 @@ import type { Food, FoodCategory } from '@/core/types'
  * Values, per 100 g, in this order of preference:
  * - `cofid-takeaway:<code>`: the CoFID 2021 row exactly, for a dish CoFID sampled from UK
  *   takeaways (fish and chip shops, kebab shops, Thai restaurants). ±30%.
- * - `takeaway-lab:<paper>`: a whole takeaway meal lab-analysed in a UK survey, per 100 g as the
- *   paper gives it (median). ±30%, shown as an estimate.
- *   [J14] Jaworowska A, Blackham T, Long R, et al. (2014) Nutritional composition of takeaway
- *   food in the UK. Nutr Food Sci 44(5):414-430, doi:10.1108/NFS-08-2013-0093. 489 meals from
- *   274 independent takeaways in Liverpool, Wirral and Knowsley, analysed by Eurofins. Table 1
- *   (per 100 g, median) and Table 2 (portion as sold, median g). The same data are reprinted in
- *   Blackham T (2022), LJMU PhD thesis, Appendix 4.0-4.1.
+ * - `takeaway-lab:Blackham2022`: a whole takeaway meal lab-analysed in a UK survey, per 100 g
+ *   (median). ±30%, as CoFID's takeaway rows (a lab analysis, so not labelled as an estimate).
+ *   Values from Blackham T (2022) PhD thesis, LJMU (Research Online eprint 20540), Appendix 4.1,
+ *   Table 8.5 (energy, protein, carbohydrate per 100 g) and Table 8.6 (fat per 100 g); portion as
+ *   sold from Appendix 4.0, Table 8.3 (median g). The sampling is [J14] Jaworowska A, Blackham T,
+ *   Long R, et al. (2014) Nutritional composition of takeaway food in the UK. Nutr Food Sci
+ *   44(5):414-430, doi:10.1108/NFS-08-2013-0093: 489 meals from 274 independent takeaways in
+ *   Liverpool, Wirral and Knowsley, analysed by Eurofins.
  * - `est-cofid:<code>`: a common dish CoFID doesn't have, carrying the closest CoFID dish's values
  *   exactly (±40%, labelled as an estimate). The reason for each match is noted.
  * - `est-cofid:<code>+<code>+…`: a composite (a kebab, a burrito), the weighted sum of its CoFID
@@ -22,7 +23,7 @@ import type { Food, FoodCategory } from '@/core/types'
  * Every CoFID value was checked against the CoFID 2021 workbook, sheet "1.3 Proximates" (Oct 2026).
  *
  * Portions (`g`), from a published weight where one exists, else marked ASSUMPTION:
- * - [J14] Table 2 median portion of the whole meal as sold.
+ * - [J14] median portion of the whole meal as sold (Blackham 2022, Table 8.3).
  * - [JF25] Jaworowska A, Force S (2025) Int J Environ Res Public Health 22(1):121,
  *   PMC11764605, Table 1, "standard" London takeaways, median portion: beef burger 207 g.
  * - [SF] Seafish, NFFF and AHDB Potatoes, proposed standard fish and chip portion sizes
@@ -37,7 +38,7 @@ import type { Food, FoodCategory } from '@/core/types'
  *   510 × 196/144 = 694 g.
  */
 
-const LAB = 'takeaway-lab:Jaworowska 2014'
+const LAB = 'takeaway-lab:Blackham2022'
 
 function dish(n: string, k: number, p: number, c: number, f: number, g: number, src: string, cat: FoodCategory = 'fastfood'): Food {
   return { n, k, p, c, f, g, cat, src, eat: true }
@@ -80,6 +81,13 @@ export const COMPONENTS: Record<string, { name: string; k: number; p: number; c:
   '12-547': { name: 'Tzatziki', k: 76, p: 3.4, c: 3.4, f: 5.5 },
   '17-681': { name: 'Stock, chicken, ready made, retail', k: 12, p: 2.3, c: 0.2, f: 0.2 },
   '14-889': { name: 'Coconut milk, retail', k: 169, p: 1.1, c: 3.3, f: 16.9 },
+  // for the Indian and Chinese composites (indian.ts, chinese.ts), Oct 2026
+  '12-495': { name: 'Cheese, paneer', k: 328, p: 26.0, c: 0.9, f: 24.5 },
+  '15-629': { name: 'Saag, homemade (5 analysed samples, spinach curry)', k: 111, p: 3.3, c: 5.0, f: 8.8 },
+  '17-626': { name: 'Sauce, Indian cook in, korma/tikka masala (10 retail samples)', k: 133, p: 1.7, c: 10.9, f: 9.5 },
+  '15-881': { name: 'Sauce, curry, tomato and onion, homemade (recipe)', k: 201, p: 1.7, c: 6.1, f: 19.2 },
+  '13-536': { name: 'Peas, frozen, boiled in unsalted water', k: 70, p: 5.5, c: 11.2, f: 0.7 },
+  '15-751': { name: 'Sauce, curry, sweet, UK type, homemade (recipe)', k: 92, p: 1.1, c: 9.8, f: 5.7 },
 }
 
 /** Per-100 g values of a dish made of `parts` ([CoFID code, grams]): the weighted sum of the
@@ -97,8 +105,9 @@ export function compose(parts: [string, number][]): { k: number; p: number; c: n
 /** Each composite's parts by name, so check:foods can match them to the audit record. */
 export const COMPOSITE_PARTS: Record<string, [string, number][]> = {}
 
-/** A composite dish: `est-cofid:CODE+CODE+…`, the serving is the sum of the parts. */
-function composite(n: string, parts: [string, number][], cat: FoodCategory = 'fastfood'): Food {
+/** A composite dish: `est-cofid:CODE+CODE+…`, the serving is the sum of the parts. Also used by
+ *  indian.ts and chinese.ts; each needs an audit record listing its components in docs/data. */
+export function composite(n: string, parts: [string, number][], cat: FoodCategory = 'fastfood'): Food {
   COMPOSITE_PARTS[n] = parts
   const v = compose(parts)
   return dish(n, v.k, v.p, v.c, v.f, v.g, `est-cofid:${parts.map(([code]) => code).join('+')}`, cat)
@@ -245,10 +254,10 @@ const KEBAB: Food[] = [
 ]
 
 // ── Pizza takeaway ──
-// [J14] Table 1 medians per 100 g: margherita n = 12, pepperoni n = 12, meat n = 20,
+// [J14] medians per 100 g (Blackham 2022, Tables 8.5-8.6): margherita n = 12, pepperoni n = 12, meat n = 20,
 // ham and pineapple n = 10. Vegetarian: CoFID 11-1014 (30 retail and takeaway samples).
 const PIZZAS: [string, number, number, number, number, string][] = [
-  ['Margherita pizza', 301, 13.4, 32.7, 12.8, LAB],
+  ['Margherita pizza', 301, 13.6, 32.7, 12.8, LAB],
   ['Pepperoni pizza', 304, 14.1, 31.7, 14.3, LAB],
   ['Meat feast pizza', 288, 15.8, 26.4, 12.9, LAB],
   ['Ham and pineapple pizza', 257, 13.7, 28.0, 9.9, LAB],
@@ -302,8 +311,9 @@ const THAI: Food[] = [
   dish('Pad see ew, chicken (takeaway)', 147, 8.5, 12.7, 7.2, 400, 'est-cofid:19-321', 'ready'),
   // as stir-fried chicken with mushrooms and cashew nuts (recipe)
   dish('Chicken with cashew nuts, Thai (takeaway)', 160, 18.4, 4.8, 7.0, 400, 'est-cofid:19-569', 'ready'),
-  // CoFID 19-323: chicken satay, 10 takeaway samples. ASSUMPTION 120 g (a starter of 4 skewers)
-  dish('Chicken satay (takeaway)', 191, 21.7, 3.0, 10.3, 120, 'cofid-takeaway:19-323', 'ready'),
+  // CoFID 19-323: chicken satay, 10 takeaway samples. ASSUMPTION 120 g (a starter of 4 skewers).
+  // The main in satay sauce is "Chicken satay (in satay sauce)" in chinese.ts
+  dish('Chicken satay skewers, starter (takeaway)', 191, 21.7, 3.0, 10.3, 120, 'cofid-takeaway:19-323', 'ready'),
   // as cod fishcakes (recipe, fried): the closest CoFID fishcake. Thai fishcakes are a fried fish
   // paste with curry paste and beans, with no flour or potato, so likely lower in carbs.
   // ASSUMPTION 120 g (a starter of about 5)
