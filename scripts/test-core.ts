@@ -60,6 +60,7 @@ import { scaleFood as scaleFoodRef } from '@/core/domain/nutrition'
 import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { measureFrame, qualityIssue, toGray } from '@/core/domain/labelQuality'
 import { LABEL_ROWS, LABEL_SCHEMA } from '../supabase/functions/_shared/label-read'
+import { sharedProductsSuite } from './test-shared-products'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
@@ -2106,4 +2107,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
