@@ -1,5 +1,20 @@
 [
  {
+  "n": "Special fried rice",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Special fried rice",
+   "k": 200,
+   "p": 11.5,
+   "c": 22.8,
+   "f": 7.3
+  },
+  "status": "new",
+  "serving_g": 686,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 21 meals, per 100 g medians; portion median 686 g."
+ },
+ {
   "n": "Egg fried rice (takeaway)",
   "ref": {
    "source": "CoFID",
@@ -15,19 +30,79 @@
   "note": "Portion: Jaworowska & Force 2025 (London, standard outlets) median 558 g."
  },
  {
-  "n": "Chicken chow mein, whole box (takeaway)",
+  "n": "Chicken fried rice",
   "ref": {
    "source": "CoFID",
-   "code": "19-321",
-   "name": "Chow mein, chicken, takeaway",
-   "k": 147.0,
-   "p": 8.5,
-   "c": 12.7,
-   "f": 7.2
+   "code": "11-444",
+   "name": "Rice, egg fried, takeaway",
+   "k": 186.0,
+   "p": 4.3,
+   "c": 33.3,
+   "f": 4.9
   },
-  "status": "new",
-  "serving_g": 690,
-  "note": "Portion: Jaworowska et al. 2014 (Liverpool) median 690 g, n=10."
+  "status": "estimate",
+  "serving_g": 686,
+  "note": "Estimate from CoFID 11-444 (Rice, egg fried, takeaway). Match and portion (686 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "King prawn fried rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-444",
+   "name": "Rice, egg fried, takeaway",
+   "k": 186.0,
+   "p": 4.3,
+   "c": 33.3,
+   "f": 4.9
+  },
+  "status": "estimate",
+  "serving_g": 686,
+  "note": "Estimate from CoFID 11-444 (Rice, egg fried, takeaway). Match and portion (686 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Mushroom fried rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-444",
+   "name": "Rice, egg fried, takeaway",
+   "k": 186.0,
+   "p": 4.3,
+   "c": 33.3,
+   "f": 4.9
+  },
+  "status": "estimate",
+  "serving_g": 686,
+  "note": "Estimate from CoFID 11-444 (Rice, egg fried, takeaway). Match and portion (686 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Singapore fried rice",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-444",
+   "name": "Rice, egg fried, takeaway",
+   "k": 186.0,
+   "p": 4.3,
+   "c": 33.3,
+   "f": 4.9
+  },
+  "status": "estimate",
+  "serving_g": 686,
+  "note": "Estimate from CoFID 11-444 (Rice, egg fried, takeaway). Match and portion (686 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Boiled rice (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-862",
+   "name": "Rice, white, long grain, boiled in unsalted water",
+   "k": 131.0,
+   "p": 2.8,
+   "c": 31.1,
+   "f": 0.4
+  },
+  "status": "estimate",
+  "serving_g": 297,
+  "note": "Estimate from CoFID 11-862 (Rice, white, long grain, boiled in unsalted water). Match and portion (297 g): see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Special chow mein (takeaway)",
@@ -45,7 +120,7 @@
   "note": "Estimate from chicken chow mein. Portion: Jaworowska & Force 2025 median 551 g."
  },
  {
-  "n": "Char siu (barbecue pork) chow mein (takeaway)",
+  "n": "Chicken chow mein, whole box (takeaway)",
   "ref": {
    "source": "CoFID",
    "code": "19-321",
@@ -55,9 +130,9 @@
    "c": 12.7,
    "f": 7.2
   },
-  "status": "estimate",
-  "serving_g": 716,
-  "note": "Estimate from chicken chow mein. Portion: Jaworowska et al. 2014 median 716 g, n=10."
+  "status": "new",
+  "serving_g": 690,
+  "note": "Portion: Jaworowska et al. 2014 (Liverpool) median 690 g, n=10."
  },
  {
   "n": "Beef chow mein (takeaway)",
@@ -75,6 +150,81 @@
   "note": "Estimate from chicken chow mein. No portion survey; lowest standard chow mein median."
  },
  {
+  "n": "King prawn chow mein",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Prawn chow mein",
+   "k": 102,
+   "p": 5.8,
+   "c": 12.8,
+   "f": 3.5
+  },
+  "status": "new",
+  "serving_g": 679,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 21 meals, per 100 g medians; portion median 679 g."
+ },
+ {
+  "n": "Char siu (barbecue pork) chow mein (takeaway)",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Char sui chow mein",
+   "k": 129,
+   "p": 10.3,
+   "c": 9.6,
+   "f": 5.3
+  },
+  "status": "new",
+  "serving_g": 716,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 716 g."
+ },
+ {
+  "n": "Vegetable chow mein",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-321",
+   "name": "Chow mein, chicken, takeaway",
+   "k": 147.0,
+   "p": 8.5,
+   "c": 12.7,
+   "f": 7.2
+  },
+  "status": "estimate",
+  "serving_g": 551,
+  "note": "Estimate from CoFID 19-321 (Chow mein, chicken, takeaway). Match and portion (551 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Singapore noodles (Singapore vermicelli)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-321",
+   "name": "Chow mein, chicken, takeaway",
+   "k": 147.0,
+   "p": 8.5,
+   "c": 12.7,
+   "f": 7.2
+  },
+  "status": "estimate",
+  "serving_g": 551,
+  "note": "Estimate from CoFID 19-321 (Chow mein, chicken, takeaway). Match and portion (551 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Fried noodles with beansprouts",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1096",
+   "name": "Noodles, egg, fried with spring onions, homemade",
+   "k": 244.0,
+   "p": 5.0,
+   "c": 30.5,
+   "f": 12.2
+  },
+  "status": "estimate",
+  "serving_g": 551,
+  "note": "Estimate from CoFID 11-1096 (Noodles, egg, fried with spring onions, homemade). Match and portion (551 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
   "n": "Sweet and sour chicken (takeaway)",
   "ref": {
    "source": "CoFID",
@@ -88,6 +238,396 @@
   "status": "new",
   "serving_g": 430,
   "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
+ },
+ {
+  "n": "Sweet and sour chicken, Hong Kong style",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Sweet and sour chicken balls with sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 469,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (469 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken balls, battered (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-304",
+   "name": "Sweet and sour pork, battered, takeaway",
+   "k": 240.0,
+   "p": 7.8,
+   "c": 22.4,
+   "f": 13.9
+  },
+  "status": "estimate",
+  "serving_g": 200,
+  "note": "Estimate from battered sweet and sour pork. 200 g assumed."
+ },
+ {
+  "n": "Kung pao chicken (kung po)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-569",
+   "name": "Chicken, stir-fried with mushrooms and cashew nuts, homemade",
+   "k": 160.0,
+   "p": 18.4,
+   "c": 4.8,
+   "f": 7.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-569 (Chicken, stir-fried with mushrooms and cashew nuts, homemade). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken with cashew nuts",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-569",
+   "name": "Chicken, stir-fried with mushrooms and cashew nuts, homemade",
+   "k": 160.0,
+   "p": 18.4,
+   "c": 4.8,
+   "f": 7.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-569 (Chicken, stir-fried with mushrooms and cashew nuts, homemade). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Salt and pepper chicken",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-501",
+   "name": "Chicken pieces, coated, takeaway",
+   "k": 267.0,
+   "p": 18.5,
+   "c": 17.6,
+   "f": 14.1
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 18-501 (Chicken pieces, coated, takeaway). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Honey chilli chicken",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Lemon chicken",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken in black bean sauce (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from beef in black bean sauce. 430 g, as the other mains (Jaworowska & Force 2025)."
+ },
+ {
+  "n": "Chicken in oyster sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-460 (Stir-fry beef with green peppers and blackbean sauce, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken with mushrooms",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-460 (Stir-fry beef with green peppers and blackbean sauce, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken chop suey",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-460 (Stir-fry beef with green peppers and blackbean sauce, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Szechuan chicken",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-335",
+   "name": "Szechuan prawns with vegetables, takeaway",
+   "k": 83.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 4.7
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 16-335 (Szechuan prawns with vegetables, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken satay (in satay sauce)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-323",
+   "name": "Chicken satay, takeaway",
+   "k": 191.0,
+   "p": 21.7,
+   "c": 3.0,
+   "f": 10.3
+  },
+  "status": "new",
+  "serving_g": 430,
+  "note": "CoFID 19-323. Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken satay with egg fried rice",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Chicken satay with fried rice",
+   "k": 146,
+   "p": 7.4,
+   "c": 17.8,
+   "f": 4.4
+  },
+  "status": "new",
+  "serving_g": 891,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 891 g."
+ },
+ {
+  "n": "Chinese chicken curry",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-322",
+   "name": "Curry, chicken, average, takeaway",
+   "k": 145.0,
+   "p": 11.7,
+   "c": 2.5,
+   "f": 9.8
+  },
+  "status": "estimate",
+  "serving_g": 555,
+  "note": "Estimate from CoFID 19-322 (Curry, chicken, average, takeaway). Match and portion (555 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Sweet and sour chicken with boiled rice",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Sweet & sour chicken with boiled rice",
+   "k": 188,
+   "p": 6.3,
+   "c": 28.4,
+   "f": 5.2
+  },
+  "status": "new",
+  "serving_g": 766,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 766 g."
+ },
+ {
+  "n": "Sweet and sour chicken with chips",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Sweet & sour chicken with chips",
+   "k": 208,
+   "p": 5.9,
+   "c": 26.7,
+   "f": 8.0
+  },
+  "status": "new",
+  "serving_g": 931,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 22 meals, per 100 g medians; portion median 931 g."
+ },
+ {
+  "n": "Beef with green peppers in black bean sauce (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "new",
+  "serving_g": 430,
+  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
+ },
+ {
+  "n": "Beef in black bean sauce with egg fried rice",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Beef in black bean sauce with fried rice",
+   "k": 147,
+   "p": 6.5,
+   "c": 17.4,
+   "f": 5.3
+  },
+  "status": "new",
+  "serving_g": 915,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 31 meals, per 100 g medians; portion median 915 g."
+ },
+ {
+  "n": "Beef in oyster sauce (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from beef in black bean sauce. 430 g, as the other mains (Jaworowska & Force 2025)."
+ },
+ {
+  "n": "Beef with ginger and spring onions",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-460 (Stir-fry beef with green peppers and blackbean sauce, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Beef chop suey",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-460",
+   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
+   "k": 103.0,
+   "p": 10.5,
+   "c": 2.7,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-460 (Stir-fry beef with green peppers and blackbean sauce, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Szechuan beef",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-335",
+   "name": "Szechuan prawns with vegetables, takeaway",
+   "k": 83.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 4.7
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 16-335 (Szechuan prawns with vegetables, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Crispy chilli beef",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chinese beef curry",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-488",
+   "name": "Curry, beef, retail, reheated",
+   "k": 137.0,
+   "p": 13.5,
+   "c": 6.3,
+   "f": 6.6
+  },
+  "status": "estimate",
+  "serving_g": 555,
+  "note": "Estimate from CoFID 19-488 (Curry, beef, retail, reheated). Match and portion (555 g): see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Sweet and sour pork (takeaway)",
@@ -120,94 +660,49 @@
   "note": "CoFID: sauce not included. 200 g assumed."
  },
  {
-  "n": "Chicken balls, battered (takeaway)",
+  "n": "Char siu (Chinese barbecue roast pork)",
   "ref": {
    "source": "CoFID",
-   "code": "19-304",
-   "name": "Sweet and sour pork, battered, takeaway",
-   "k": 240.0,
-   "p": 7.8,
-   "c": 22.4,
-   "f": 13.9
+   "code": "19-264",
+   "name": "Pork, spare ribs, 'barbecue style', meat only, retail, reheated",
+   "k": 281.0,
+   "p": 26.3,
+   "c": 5.8,
+   "f": 17.1
   },
   "status": "estimate",
   "serving_g": 200,
-  "note": "Estimate from battered sweet and sour pork. 200 g assumed."
+  "note": "Estimate from CoFID 19-264 (Pork, spare ribs, 'barbecue style', meat only, retail, reheated). Match and portion (200 g): see src/core/data/takeaway/chinese.ts."
  },
  {
-  "n": "Beef with green peppers in black bean sauce (takeaway)",
+  "n": "Spare ribs, Chinese barbecue, meat only (takeaway)",
   "ref": {
    "source": "CoFID",
-   "code": "19-460",
-   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
-   "k": 103.0,
-   "p": 10.5,
-   "c": 2.7,
-   "f": 5.6
-  },
-  "status": "new",
-  "serving_g": 430,
-  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
- },
- {
-  "n": "Chicken in black bean sauce (takeaway)",
-  "ref": {
-   "source": "CoFID",
-   "code": "19-460",
-   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
-   "k": 103.0,
-   "p": 10.5,
-   "c": 2.7,
-   "f": 5.6
+   "code": "19-264",
+   "name": "Pork, spare ribs, 'barbecue style', meat only, retail, reheated",
+   "k": 281.0,
+   "p": 26.3,
+   "c": 5.8,
+   "f": 17.1
   },
   "status": "estimate",
-  "serving_g": 430,
-  "note": "Estimate from beef in black bean sauce. 430 g, as the other mains (Jaworowska & Force 2025)."
+  "serving_g": 150,
+  "note": "Estimate: takeaway row 18-499 has no energy or carbohydrate; retail Chinese/barbecue ribs, meat only. 150 g meat assumed."
  },
  {
-  "n": "Beef in oyster sauce (takeaway)",
+  "n": "Salt and pepper spare ribs, meat only",
   "ref": {
    "source": "CoFID",
-   "code": "19-460",
-   "name": "Stir-fry beef with green peppers and blackbean sauce, takeaway",
-   "k": 103.0,
-   "p": 10.5,
-   "c": 2.7,
-   "f": 5.6
+   "code": "19-264",
+   "name": "Pork, spare ribs, 'barbecue style', meat only, retail, reheated",
+   "k": 281.0,
+   "p": 26.3,
+   "c": 5.8,
+   "f": 17.1
   },
   "status": "estimate",
-  "serving_g": 430,
-  "note": "Estimate from beef in black bean sauce. 430 g, as the other mains (Jaworowska & Force 2025)."
- },
- {
-  "n": "Szechuan prawns with vegetables (takeaway)",
-  "ref": {
-   "source": "CoFID",
-   "code": "16-335",
-   "name": "Szechuan prawns with vegetables, takeaway",
-   "k": 83.0,
-   "p": 7.8,
-   "c": 2.5,
-   "f": 4.7
-  },
-  "status": "new",
-  "serving_g": 430,
-  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
- },
- {
-  "n": "Stir-fried vegetables (takeaway)",
-  "ref": {
-   "source": "CoFID",
-   "code": "15-364",
-   "name": "Vegetables, stir-fried, takeaway",
-   "k": 52.0,
-   "p": 1.8,
-   "c": 2.1,
-   "f": 4.1
-  },
-  "status": "new",
-  "serving_g": 430,
-  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
+  "serving_g": 150,
+  "note": "Estimate from CoFID 19-264 (Pork, spare ribs, 'barbecue style', meat only, retail, reheated). Match and portion (150 g): see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Crispy duck, Chinese style (takeaway)",
@@ -240,19 +735,244 @@
   "note": "Pancakes only. 60 g assumed."
  },
  {
-  "n": "Spare ribs, Chinese barbecue, meat only (takeaway)",
+  "n": "Szechuan prawns with vegetables (takeaway)",
   "ref": {
    "source": "CoFID",
-   "code": "19-264",
-   "name": "Pork, spare ribs, 'barbecue style', meat only, retail, reheated",
-   "k": 281.0,
-   "p": 26.3,
-   "c": 5.8,
-   "f": 17.1
+   "code": "16-335",
+   "name": "Szechuan prawns with vegetables, takeaway",
+   "k": 83.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 4.7
+  },
+  "status": "new",
+  "serving_g": 430,
+  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
+ },
+ {
+  "n": "Kung pao king prawns with boiled rice (kung po)",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Kung po king prawns with boiled rice",
+   "k": 126,
+   "p": 4.1,
+   "c": 22.5,
+   "f": 2.7
+  },
+  "status": "new",
+  "serving_g": 882,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 10 meals, per 100 g medians; portion median 882 g."
+ },
+ {
+  "n": "King prawns in black bean sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-335",
+   "name": "Szechuan prawns with vegetables, takeaway",
+   "k": 83.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 4.7
   },
   "status": "estimate",
-  "serving_g": 150,
-  "note": "Estimate: takeaway row 18-499 has no energy or carbohydrate; retail Chinese/barbecue ribs, meat only. 150 g meat assumed."
+  "serving_g": 430,
+  "note": "Estimate from CoFID 16-335 (Szechuan prawns with vegetables, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "King prawn chop suey",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-335",
+   "name": "Szechuan prawns with vegetables, takeaway",
+   "k": 83.0,
+   "p": 7.8,
+   "c": 2.5,
+   "f": 4.7
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 16-335 (Szechuan prawns with vegetables, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "King prawns with cashew nuts",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-569",
+   "name": "Chicken, stir-fried with mushrooms and cashew nuts, homemade",
+   "k": 160.0,
+   "p": 18.4,
+   "c": 4.8,
+   "f": 7.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-569 (Chicken, stir-fried with mushrooms and cashew nuts, homemade). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Sweet and sour king prawns",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-324",
+   "name": "Sweet and sour chicken, takeaway",
+   "k": 194.0,
+   "p": 7.6,
+   "c": 19.7,
+   "f": 10.0
+  },
+  "status": "estimate",
+  "serving_g": 430,
+  "note": "Estimate from CoFID 19-324 (Sweet and sour chicken, takeaway). Match and portion (430 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Salt and pepper king prawns",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-443",
+   "name": "Scampi, coated in breadcrumbs, fried in sunflower oil",
+   "k": 243.0,
+   "p": 10.6,
+   "c": 22.2,
+   "f": 13.0
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 16-443 (Scampi, coated in breadcrumbs, fried in sunflower oil). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "King prawn satay",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-323",
+   "name": "Chicken satay, takeaway",
+   "k": 191.0,
+   "p": 21.7,
+   "c": 3.0,
+   "f": 10.3
+  },
+  "status": "estimate",
+  "serving_g": 517,
+  "note": "Estimate from CoFID 19-323 (Chicken satay, takeaway). Match and portion (517 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chinese king prawn curry",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-333",
+   "name": "Curry, prawn, takeaway",
+   "k": 118.0,
+   "p": 8.2,
+   "c": 2.3,
+   "f": 8.5
+  },
+  "status": "estimate",
+  "serving_g": 555,
+  "note": "Estimate from CoFID 16-333 (Curry, prawn, takeaway). Match and portion (555 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken foo yung",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-946",
+   "name": "Omelette, plain, homemade",
+   "k": 191.0,
+   "p": 10.9,
+   "c": 0.0,
+   "f": 16.4
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 12-946 (Omelette, plain, homemade). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Special foo yung",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-946",
+   "name": "Omelette, plain, homemade",
+   "k": 191.0,
+   "p": 10.9,
+   "c": 0.0,
+   "f": 16.4
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 12-946 (Omelette, plain, homemade). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Mushroom foo yung",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-946",
+   "name": "Omelette, plain, homemade",
+   "k": 191.0,
+   "p": 10.9,
+   "c": 0.0,
+   "f": 16.4
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 12-946 (Omelette, plain, homemade). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Stir-fried vegetables (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-364",
+   "name": "Vegetables, stir-fried, takeaway",
+   "k": 52.0,
+   "p": 1.8,
+   "c": 2.1,
+   "f": 4.1
+  },
+  "status": "new",
+  "serving_g": 430,
+  "note": "430 g: Jaworowska & Force 2025 main with egg fried rice (990/998 g) less the rice (558 g)."
+ },
+ {
+  "n": "Beansprouts, stir-fried (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-567",
+   "name": "Beansprouts, mung, stir-fried in rapeseed oil",
+   "k": 72.0,
+   "p": 1.9,
+   "c": 2.5,
+   "f": 6.1
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 13-567 (Beansprouts, mung, stir-fried in rapeseed oil). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Salt and pepper tofu",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-571",
+   "name": "Tofu, soya bean, steamed, fried",
+   "k": 261.0,
+   "p": 23.5,
+   "c": 2.0,
+   "f": 17.7
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from CoFID 13-571 (Tofu, soya bean, steamed, fried). Match and portion (250 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chicken and sweetcorn soup",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-695",
+   "name": "Soup, chicken, cream of, canned",
+   "k": 58.0,
+   "p": 1.7,
+   "c": 4.5,
+   "f": 3.8
+  },
+  "status": "estimate",
+  "serving_g": 300,
+  "note": "Estimate from CoFID 17-695 (Soup, chicken, cream of, canned). Match and portion (300 g): see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Spring roll, vegetable (takeaway)",
@@ -270,6 +990,21 @@
   "note": "Estimate from meat spring roll. 50 g assumed."
  },
  {
+  "n": "Wontons, fried",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-327",
+   "name": "Spring rolls, meat, takeaway",
+   "k": 242.0,
+   "p": 6.5,
+   "c": 18.2,
+   "f": 16.4
+  },
+  "status": "estimate",
+  "serving_g": 100,
+  "note": "Estimate from CoFID 19-327 (Spring rolls, meat, takeaway). Match and portion (100 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
   "n": "Sesame prawn toast (takeaway)",
   "ref": {
    "source": "CoFID",
@@ -285,6 +1020,21 @@
   "note": "80 g assumed."
  },
  {
+  "n": "Salt and pepper chicken wings, meat only",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-327",
+   "name": "Chicken, portions, not coated, deep-fried, meat and skin",
+   "k": 259.0,
+   "p": 26.9,
+   "c": 0.0,
+   "f": 16.8
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from CoFID 18-327 (Chicken, portions, not coated, deep-fried, meat and skin). Match and portion (150 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
   "n": "Prawn crackers (takeaway)",
   "ref": {
    "source": "CoFID",
@@ -298,6 +1048,66 @@
   "status": "new",
   "serving_g": 30,
   "note": "30 g assumed."
+ },
+ {
+  "n": "Chips (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "estimate",
+  "serving_g": 462,
+  "note": "Estimate from CoFID 13-485 (Potato chips, fried in commercial oil, from takeaway fish and chip shops). Match and portion (462 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Salt and pepper chips",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "estimate",
+  "serving_g": 462,
+  "note": "Estimate from CoFID 13-485 (Potato chips, fried in commercial oil, from takeaway fish and chip shops). Match and portion (462 g): see src/core/data/takeaway/chinese.ts."
+ },
+ {
+  "n": "Chips and curry sauce",
+  "ref": {
+   "source": "LJMU takeaway analysis",
+   "code": null,
+   "name": "Chips and curry sauce",
+   "k": 191,
+   "p": 2.5,
+   "c": 24.2,
+   "f": 9.0
+  },
+  "status": "new",
+  "serving_g": 487,
+  "note": "Jaworowska et al. 2014 / Blackham 2022 Appendix Tables 8.3, 8.5, 8.6: 9 meals, per 100 g medians; portion median 487 g."
+ },
+ {
+  "n": "Chinese curry sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-751",
+   "name": "Sauce, curry, sweet, UK type, homemade",
+   "k": 92.0,
+   "p": 1.1,
+   "c": 9.8,
+   "f": 5.7
+  },
+  "status": "estimate",
+  "serving_g": 200,
+  "note": "Estimate from CoFID 15-751 (Sauce, curry, sweet, UK type, homemade). Match and portion (200 g): see src/core/data/takeaway/chinese.ts."
  },
  {
   "n": "Sweet and sour sauce (takeaway)",

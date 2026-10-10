@@ -44,6 +44,12 @@ export const SOURCES: Record<string, Source> = {
   // CoFID dish's values (lab-tested or recipe-calculated) (`est-cofid:<CoFID code>`) and a typical portion from published
   // takeaway surveys. Never the restaurant's own figures; ±40% (nutrition-accuracy, Oct 2026).
   'est-cofid': { label: 'Estimated from the closest UK dish in CoFID 2021, not the restaurant’s own figures', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid', err: 0.4, estimate: true },
+  // whole takeaway meals bought from independent UK takeaways and lab-analysed (energy, protein,
+  // carbohydrate, fat per 100 g, medians): Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430,
+  // doi:10.1108/NFS-08-2013-0093; full tables in Blackham T (2022) PhD thesis, Liverpool John
+  // Moores University, Appendix Tables 8.3, 8.5, 8.6. Per-100 values with a wide margin, like
+  // `cofid-takeaway` (±30%): no per-portion figure (ref) applies. Audited in docs/data like CoFID.
+  'takeaway-lab': { label: 'UK lab analysis of takeaway meals (Liverpool, Wirral and Knowsley; Jaworowska et al. 2014)', url: 'https://researchonline.ljmu.ac.uk/id/eprint/20540/', err: 0.3, perHundred: true },
   'slims-uk': { label: 'Slim Chickens UK, Oct 2026', url: 'https://menus.tenkites.com/brg/slimscore', err: MENU_ERR },
   'kfc-uk': { label: 'KFC UK, Aug 2026', url: 'https://brand-uk.assets.kfc.co.uk/nutrition-allergens.pdf', err: MENU_ERR },
   // Autumn 2026 booklets (food v17/08/26, beverages v18/09/26); the PDF links change each season
