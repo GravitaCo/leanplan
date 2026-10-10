@@ -6,9 +6,8 @@
  * creates it: `npm test` fails when a table in docs/security-rls.sql or docs/migrations/ is missing.
  * Only push_subscriptions, routines and training_plans cascade from auth.users (live DB, 27 Sept
  * 2026), so the explicit deletes are what remove settings, day_logs, custom_foods and recipes.
- * `notify_sent` (docs/migrations/2026-10-09-notify-sent.sql, written, not applied yet) is listed
- * ahead of its migration: the function skips a table that doesn't exist (missingTable), so the
- * deletion works before and after it's applied. It also cascades from auth.users.
+ * `notify_sent` (docs/migrations/2026-10-09-notify-sent.sql, applied 2026-10-10) is listed too; the
+ * function skips a table that doesn't exist (missingTable). It also cascades from auth.users.
  */
 export const USER_TABLES = ['consents', 'ai_usage', 'push_subscriptions', 'notify_sent', 'training_plans', 'routines', 'recipes', 'custom_foods', 'day_logs', 'settings'] as const
 

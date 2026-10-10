@@ -1,5 +1,5 @@
--- The part of 2026-10-09-notify-sent.sql not yet on the live database (10 Oct 2026): the withdrawal
--- clear and the 30-day purge, with notify_sent added. Paste into the Supabase SQL editor and run.
+-- The part of 2026-10-09-notify-sent.sql the Supabase tool couldn't apply: the withdrawal clear and the
+-- 30-day purge, with notify_sent added. Run by Benn in the SQL editor, 10 Oct 2026.
 
 -- Clearing the account's copy after a withdrawal (2026-09-28-health-consent-server.sql §3), with
 -- notify_sent added

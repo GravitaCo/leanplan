@@ -1,8 +1,8 @@
 -- ============================================================================
 -- Tali: the server's daily cap for Mind reminders (wellbeing Phase 1, build plan WP16;
--- security-data H4). PARTLY APPLIED, 10 Oct 2026 (Benn's go-ahead): the table, its policies, grants
--- and trigger, and notify_claim() are live. clear_log_after_withdrawal() and purge_unconsented_logs()
--- below are NOT yet updated on the live database; run them before the reminder function uses notify_claim.
+-- security-data H4). APPLIED, 10 Oct 2026 (Benn's go-ahead): the table, its policies, grants, trigger
+-- and notify_claim() through the Supabase tool; clear_log_after_withdrawal() and
+-- purge_unconsented_logs() by Benn in the SQL editor (2026-10-10-notify-sent-remaining.sql).
 --
 -- Needs 2026-09-28-health-consent-server.sql and 2026-09-28-unconsented-purge.sql first: this
 -- re-creates clear_log_after_withdrawal() and purge_unconsented_logs() from their current
