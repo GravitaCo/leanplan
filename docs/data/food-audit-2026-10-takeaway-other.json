@@ -1,0 +1,1078 @@
+[
+ {
+  "n": "Fish and chips, cod or haddock (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 229,
+   "p": 6.7,
+   "c": 25.8,
+   "f": 11.1
+  },
+  "status": "estimate",
+  "serving_g": 749,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chips and curry sauce (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 191,
+   "p": 2.5,
+   "c": 24.2,
+   "f": 9
+  },
+  "status": "estimate",
+  "serving_g": 487,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fried chicken and chips (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 226,
+   "p": 10.9,
+   "c": 24.4,
+   "f": 9.7
+  },
+  "status": "estimate",
+  "serving_g": 694,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Cod in batter, small (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-368",
+   "name": "Cod, in batter, fried, takeaway",
+   "k": 240.0,
+   "p": 16.8,
+   "c": 10.7,
+   "f": 14.7
+  },
+  "status": "new",
+  "serving_g": 99,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Cod in batter, regular (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-368",
+   "name": "Cod, in batter, fried, takeaway",
+   "k": 240.0,
+   "p": 16.8,
+   "c": 10.7,
+   "f": 14.7
+  },
+  "status": "new",
+  "serving_g": 198,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Cod in batter, large (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-368",
+   "name": "Cod, in batter, fried, takeaway",
+   "k": 240.0,
+   "p": 16.8,
+   "c": 10.7,
+   "f": 14.7
+  },
+  "status": "new",
+  "serving_g": 296,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Haddock in batter, small (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-495",
+   "name": "Haddock, in batter, fried in retail blend oil",
+   "k": 232.0,
+   "p": 17.1,
+   "c": 10.0,
+   "f": 14.0
+  },
+  "status": "new",
+  "serving_g": 99,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Haddock in batter, regular (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-495",
+   "name": "Haddock, in batter, fried in retail blend oil",
+   "k": 232.0,
+   "p": 17.1,
+   "c": 10.0,
+   "f": 14.0
+  },
+  "status": "new",
+  "serving_g": 198,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Haddock in batter, large (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-495",
+   "name": "Haddock, in batter, fried in retail blend oil",
+   "k": 232.0,
+   "p": 17.1,
+   "c": 10.0,
+   "f": 14.0
+  },
+  "status": "new",
+  "serving_g": 296,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Plaice in batter, small (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-499",
+   "name": "Plaice, in batter, fried in retail blend oil",
+   "k": 257.0,
+   "p": 15.2,
+   "c": 12.0,
+   "f": 16.8
+  },
+  "status": "new",
+  "serving_g": 99,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Plaice in batter, regular (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-499",
+   "name": "Plaice, in batter, fried in retail blend oil",
+   "k": 257.0,
+   "p": 15.2,
+   "c": 12.0,
+   "f": 16.8
+  },
+  "status": "new",
+  "serving_g": 198,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Plaice in batter, large (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-499",
+   "name": "Plaice, in batter, fried in retail blend oil",
+   "k": 257.0,
+   "p": 15.2,
+   "c": 12.0,
+   "f": 16.8
+  },
+  "status": "new",
+  "serving_g": 296,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Rock salmon (huss) in batter (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-138",
+   "name": "Rock Salmon/Dogfish, in batter, fried in retail blend oil",
+   "k": 295.0,
+   "p": 14.7,
+   "c": 10.3,
+   "f": 21.9
+  },
+  "status": "new",
+  "serving_g": 198,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Cod roe in batter (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-301",
+   "name": "Roe, cod, hard, coated in batter, fried",
+   "k": 189.0,
+   "p": 12.4,
+   "c": 8.9,
+   "f": 11.8
+  },
+  "status": "new",
+  "serving_g": 100,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chips, small (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 142,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chips, regular (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 284,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chips, large (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-485",
+   "name": "Potato chips, fried in commercial oil, from takeaway fish and chip shops",
+   "k": 214.0,
+   "p": 3.5,
+   "c": 33.2,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 425,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fried chicken, chip shop, not battered (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-327",
+   "name": "Chicken, portions, not coated, deep-fried, meat and skin",
+   "k": 259.0,
+   "p": 26.9,
+   "c": 0.0,
+   "f": 16.8
+  },
+  "status": "new",
+  "serving_g": 200,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Saveloy (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-319",
+   "name": "Saveloy, unbattered, takeaway",
+   "k": 296.0,
+   "p": 13.8,
+   "c": 10.8,
+   "f": 22.3
+  },
+  "status": "new",
+  "serving_g": 100,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Battered sausage (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-512",
+   "name": "Sausages, pork, chilled, fried in vegetable oil",
+   "k": 308.0,
+   "p": 13.9,
+   "c": 9.9,
+   "f": 23.9
+  },
+  "status": "estimate",
+  "serving_g": 120,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Scampi (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-443",
+   "name": "Scampi, coated in breadcrumbs, fried in sunflower oil",
+   "k": 243.0,
+   "p": 10.6,
+   "c": 22.2,
+   "f": 13.0
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fishcake (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-458",
+   "name": "Fishcakes, cod, homemade",
+   "k": 235.0,
+   "p": 11.3,
+   "c": 15.2,
+   "f": 14.7
+  },
+  "status": "estimate",
+  "serving_g": 120,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Steak pie (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-506",
+   "name": "Pie, beef, puff or shortcrust pastry, individual, retail",
+   "k": 292.0,
+   "p": 9.2,
+   "c": 25.5,
+   "f": 17.7
+  },
+  "status": "estimate",
+  "serving_g": 200,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken and mushroom pie (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-515",
+   "name": "Pie, chicken, individual, baked",
+   "k": 288.0,
+   "p": 9.0,
+   "c": 24.6,
+   "f": 17.7
+  },
+  "status": "estimate",
+  "serving_g": 200,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Mushy peas (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-563",
+   "name": "Peas, mushy, canned, re-heated",
+   "k": 81.0,
+   "p": 5.8,
+   "c": 13.8,
+   "f": 0.7
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Curry sauce, chip shop (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-751",
+   "name": "Sauce, curry, sweet, UK type, homemade",
+   "k": 92.0,
+   "p": 1.1,
+   "c": 9.8,
+   "f": 5.7
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Gravy, chip shop (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-725",
+   "name": "Gravy instant granules, made up with water",
+   "k": 30.0,
+   "p": 0.3,
+   "c": 4.7,
+   "f": 1.2
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Tartare sauce (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-722",
+   "name": "Tartare sauce",
+   "k": 299.0,
+   "p": 1.3,
+   "c": 17.9,
+   "f": 24.6
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Doner kebab (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 277,
+   "p": 13.4,
+   "c": 18.2,
+   "f": 15.6
+  },
+  "status": "estimate",
+  "serving_g": 447,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Doner kebab with chips (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 254,
+   "p": 8.6,
+   "c": 22.9,
+   "f": 13.3
+  },
+  "status": "estimate",
+  "serving_g": 751,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken kebab, shish or doner, in bread with salad (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 147,
+   "p": 15.2,
+   "c": 11.8,
+   "f": 5.6
+  },
+  "status": "estimate",
+  "serving_g": 481,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Shish kebab, lamb, in bread with salad (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 155,
+   "p": 15,
+   "c": 13.8,
+   "f": 4
+  },
+  "status": "estimate",
+  "serving_g": 386,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Shish kebab meat only, lamb (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-150",
+   "name": "Shish kebab, meat only",
+   "k": 206.0,
+   "p": 29.0,
+   "c": 0.0,
+   "f": 10.0
+  },
+  "status": "new",
+  "serving_g": 150,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Kofte kebab meat only (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-642",
+   "name": "Kofta, beef, homemade",
+   "k": 290.0,
+   "p": 25.3,
+   "c": 1.3,
+   "f": 20.5
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Lahmacun (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1015",
+   "name": "Pizza, meat topped, retail and takeaway",
+   "k": 255.0,
+   "p": 13.2,
+   "c": 29.1,
+   "f": 10.3
+  },
+  "status": "estimate",
+  "serving_g": 180,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Garlic sauce or garlic and herb dip (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-654",
+   "name": "Mayonnaise, standard, retail",
+   "k": 686.0,
+   "p": 1.1,
+   "c": 2.4,
+   "f": 74.8
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chilli sauce, kebab shop (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-719",
+   "name": "Chilli sauce",
+   "k": 40.0,
+   "p": 1.3,
+   "c": 7.3,
+   "f": 0.8
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Salad, kebab shop (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-648",
+   "name": "Salad, green",
+   "k": 13.0,
+   "p": 1.0,
+   "c": 1.6,
+   "f": 0.4
+  },
+  "status": "estimate",
+  "serving_g": 80,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Beef burger in a bun (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-544",
+   "name": "Burger, hamburger, takeaway",
+   "k": 246.0,
+   "p": 13.5,
+   "c": 31.2,
+   "f": 8.3
+  },
+  "status": "new",
+  "serving_g": 207,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Quarter pounder with cheese (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-487",
+   "name": "Burger, Quarter Pounder with cheese, takeaway",
+   "k": 263.0,
+   "p": 16.3,
+   "c": 21.2,
+   "f": 13.2
+  },
+  "status": "new",
+  "serving_g": 207,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Margherita pizza, 10-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 301,
+   "p": 13.4,
+   "c": 32.7,
+   "f": 12.8
+  },
+  "status": "estimate",
+  "serving_g": 354,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Margherita pizza, 12-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 301,
+   "p": 13.4,
+   "c": 32.7,
+   "f": 12.8
+  },
+  "status": "estimate",
+  "serving_g": 510,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Margherita pizza, 14-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 301,
+   "p": 13.4,
+   "c": 32.7,
+   "f": 12.8
+  },
+  "status": "estimate",
+  "serving_g": 694,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Pepperoni pizza, 10-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 304,
+   "p": 14.1,
+   "c": 31.7,
+   "f": 14.3
+  },
+  "status": "estimate",
+  "serving_g": 354,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Pepperoni pizza, 12-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 304,
+   "p": 14.1,
+   "c": 31.7,
+   "f": 14.3
+  },
+  "status": "estimate",
+  "serving_g": 510,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Pepperoni pizza, 14-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 304,
+   "p": 14.1,
+   "c": 31.7,
+   "f": 14.3
+  },
+  "status": "estimate",
+  "serving_g": 694,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Meat feast pizza, 10-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 288,
+   "p": 15.8,
+   "c": 26.4,
+   "f": 12.9
+  },
+  "status": "estimate",
+  "serving_g": 354,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Meat feast pizza, 12-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 288,
+   "p": 15.8,
+   "c": 26.4,
+   "f": 12.9
+  },
+  "status": "estimate",
+  "serving_g": 510,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Meat feast pizza, 14-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 288,
+   "p": 15.8,
+   "c": 26.4,
+   "f": 12.9
+  },
+  "status": "estimate",
+  "serving_g": 694,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Ham and pineapple pizza, 10-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 257,
+   "p": 13.7,
+   "c": 28,
+   "f": 9.9
+  },
+  "status": "estimate",
+  "serving_g": 354,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Ham and pineapple pizza, 12-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 257,
+   "p": 13.7,
+   "c": 28,
+   "f": 9.9
+  },
+  "status": "estimate",
+  "serving_g": 510,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Ham and pineapple pizza, 14-inch, whole (takeaway)",
+  "ref": {
+   "source": "Jaworowska et al. 2014, Nutr Food Sci 44(5):414-430, Table 1 median",
+   "code": null,
+   "k": 257,
+   "p": 13.7,
+   "c": 28,
+   "f": 9.9
+  },
+  "status": "estimate",
+  "serving_g": 694,
+  "note": "Lab-analysed whole takeaway meal (Liverpool, Wirral, Knowsley). See src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Vegetarian pizza, 10-inch, whole (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1014",
+   "name": "Pizza, vegetarian, retail and takeaway",
+   "k": 216.0,
+   "p": 10.8,
+   "c": 29.6,
+   "f": 6.9
+  },
+  "status": "new",
+  "serving_g": 354,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Vegetarian pizza, 12-inch, whole (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1014",
+   "name": "Pizza, vegetarian, retail and takeaway",
+   "k": 216.0,
+   "p": 10.8,
+   "c": 29.6,
+   "f": 6.9
+  },
+  "status": "new",
+  "serving_g": 510,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Vegetarian pizza, 14-inch, whole (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1014",
+   "name": "Pizza, vegetarian, retail and takeaway",
+   "k": 216.0,
+   "p": 10.8,
+   "c": 29.6,
+   "f": 6.9
+  },
+  "status": "new",
+  "serving_g": 694,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Garlic bread (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-937",
+   "name": "Bread, garlic and herb, retail",
+   "k": 348.0,
+   "p": 7.0,
+   "c": 45.1,
+   "f": 16.7
+  },
+  "status": "estimate",
+  "serving_g": 150,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken wings, barbecue, weighed with bone (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-652",
+   "name": "Chicken wings, marinated, meat and skin, barbecued, weighed with bone",
+   "k": 179.0,
+   "p": 17.8,
+   "c": 2.7,
+   "f": 10.8
+  },
+  "status": "estimate",
+  "serving_g": 180,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Barbecue dip (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-705",
+   "name": "Barbecue sauce",
+   "k": 140.0,
+   "p": 1.0,
+   "c": 36.1,
+   "f": 0.1
+  },
+  "status": "estimate",
+  "serving_g": 30,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fried chicken, coated, off the bone (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-500",
+   "name": "Chicken portions, battered, deep fried, takeaway",
+   "k": 233.0,
+   "p": 24.8,
+   "c": 4.8,
+   "f": 12.8
+  },
+  "status": "new",
+  "serving_g": 150,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fried chicken drumstick, coated (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-500",
+   "name": "Chicken portions, battered, deep fried, takeaway",
+   "k": 233.0,
+   "p": 24.8,
+   "c": 4.8,
+   "f": 12.8
+  },
+  "status": "new",
+  "serving_g": 70,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Fried chicken wings, coated, plain or spicy (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-500",
+   "name": "Chicken portions, battered, deep fried, takeaway",
+   "k": 233.0,
+   "p": 24.8,
+   "c": 4.8,
+   "f": 12.8
+  },
+  "status": "new",
+  "serving_g": 100,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken strips, coated (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-501",
+   "name": "Chicken pieces, coated, takeaway",
+   "k": 267.0,
+   "p": 18.5,
+   "c": 17.6,
+   "f": 14.1
+  },
+  "status": "new",
+  "serving_g": 120,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Popcorn chicken (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-501",
+   "name": "Chicken pieces, coated, takeaway",
+   "k": 267.0,
+   "p": 18.5,
+   "c": 17.6,
+   "f": 14.1
+  },
+  "status": "new",
+  "serving_g": 120,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Peri-peri chicken, quarter, weighed with bone (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-338",
+   "name": "Chicken, leg quarter, roasted, meat and skin, weighed with bone",
+   "k": 120.0,
+   "p": 10.7,
+   "c": 0.0,
+   "f": 8.6
+  },
+  "status": "estimate",
+  "serving_g": 250,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Peri-peri chicken, half, weighed with bone (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-342",
+   "name": "Chicken, whole, roasted, meat and skin, weighed with bone",
+   "k": 138.0,
+   "p": 16.6,
+   "c": 0.0,
+   "f": 7.9
+  },
+  "status": "estimate",
+  "serving_g": 450,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Thai green curry, chicken (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-465",
+   "name": "Curry, chicken, Thai green, takeaway and restaurant",
+   "k": 119.0,
+   "p": 8.8,
+   "c": 1.5,
+   "f": 8.7
+  },
+  "status": "new",
+  "serving_g": 400,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Thai red curry, chicken (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-465",
+   "name": "Curry, chicken, Thai green, takeaway and restaurant",
+   "k": 119.0,
+   "p": 8.8,
+   "c": 1.5,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 400,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Massaman curry (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-465",
+   "name": "Curry, chicken, Thai green, takeaway and restaurant",
+   "k": 119.0,
+   "p": 8.8,
+   "c": 1.5,
+   "f": 8.7
+  },
+  "status": "estimate",
+  "serving_g": 400,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Thai vegetable curry (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "15-634",
+   "name": "Curry, Thai, stir-fry vegetable, takeaway and restaurant",
+   "k": 101.0,
+   "p": 3.8,
+   "c": 3.3,
+   "f": 8.2
+  },
+  "status": "new",
+  "serving_g": 400,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Pad thai, chicken (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-321",
+   "name": "Chow mein, chicken, takeaway",
+   "k": 147.0,
+   "p": 8.5,
+   "c": 12.7,
+   "f": 7.2
+  },
+  "status": "estimate",
+  "serving_g": 400,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Pad see ew, chicken (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-321",
+   "name": "Chow mein, chicken, takeaway",
+   "k": 147.0,
+   "p": 8.5,
+   "c": 12.7,
+   "f": 7.2
+  },
+  "status": "estimate",
+  "serving_g": 400,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken with cashew nuts, Thai (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-569",
+   "name": "Chicken, stir-fried with mushrooms and cashew nuts, homemade",
+   "k": 160.0,
+   "p": 18.4,
+   "c": 4.8,
+   "f": 7.0
+  },
+  "status": "estimate",
+  "serving_g": 400,
+  "note": "Estimate from the closest CoFID dish. Portion: see src/core/data/takeaway/other.ts."
+ },
+ {
+  "n": "Chicken satay (takeaway)",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-323",
+   "name": "Chicken satay, takeaway",
+   "k": 191.0,
+   "p": 21.7,
+   "c": 3.0,
+   "f": 10.3
+  },
+  "status": "new",
+  "serving_g": 120,
+  "note": "CoFID takeaway sample. Portion: see src/core/data/takeaway/other.ts."
+ }
+]

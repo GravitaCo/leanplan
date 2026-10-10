@@ -7,7 +7,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry, CAPTURE_ERR } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { entryAmount, relog, usuals } from '@/core/domain/insights'
+import { entryAmount, relog, usuals, queryWords } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
@@ -114,6 +114,26 @@ const extra: [string, string, string][] = [
   ['search: accents fold both ways', [rankByName(['Caffè Nero Latte Regular (oat)', 'Oat milk'], (x) => x, ['caffe', 'latte']).join('|'), rankByName(['Creme egg'], (x) => x, ['crème']).join('|')].join(' / '), 'Caffè Nero Latte Regular (oat) / Creme egg'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
+// Common UK takeaway searches find a generic dish first, never a chain's, and the takeaway dish
+// itself in the top two (an older generic food can hold the top spot on a tie: ties keep db order).
+{
+  const top = (q: string, k: number) => rankByName(FOODS, (f) => f.n, queryWords(q)).slice(0, k).map((f) => f.n)
+  const cases: [string, string, string[]][] = [
+    ['fish and chips', 'Fish and chips, cod or haddock (takeaway)', []],
+    ['cod and chips', 'Fish and chips, cod or haddock (takeaway)', []],
+    ['doner kebab', 'Doner kebab (takeaway)', ['Doner kebab meat']],
+    ['chips small', 'Chips, small (takeaway)', []],
+    ['pepperoni pizza', 'Pepperoni pizza, 10-inch, whole (takeaway)', ['Pizza, pepperoni']],
+    ['pad thai', 'Pad thai, chicken (takeaway)', []],
+    ['green curry', 'Thai green curry, chicken (takeaway)', []],
+  ]
+  for (const [q, dish, generic] of cases) {
+    const got = top(q, 2)
+    const ok = (got[0] === dish || generic.includes(got[0])) && got.includes(dish)
+    if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search takeaway: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(dish))
+  }
+}
 // Chain foods: one serving, through the app's real logging path, must show exactly the kcal the
 // data implies (the importers separately assert that equals the chain's published per-portion kcal).
 {

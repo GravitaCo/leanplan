@@ -29,6 +29,9 @@ export const SOURCES: Record<string, Source> = {
   // the same CoFID rows, for dishes CoFID sampled from UK takeaways: ±30% for how much takeaway
   // recipes and portions vary (nutrition-accuracy, Oct 2026). Audited like `cofid`.
   'cofid-takeaway': { label: 'UK CoFID 2021 (takeaway samples)', url: 'https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid', err: 0.3, perHundred: true },
+  // whole takeaway meals lab-analysed in peer-reviewed UK surveys (median per 100 g; the paper is
+  // named per food). ±30%, shown as an estimate (nutrition-accuracy, Oct 2026)
+  'takeaway-lab': { label: 'UK lab analysis of takeaway meals', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11764605/', err: 0.3, estimate: true },
   usda: { label: 'USDA FoodData Central (US data; carbs include fibre)', url: 'https://fdc.nal.usda.gov/' },
   label: { label: 'Pack label', url: '' },
   off: { label: 'Pack label via Open Food Facts', url: 'https://world.openfoodfacts.org/' },
