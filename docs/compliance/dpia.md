@@ -688,7 +688,7 @@ Review earlier when any of these happens:
 
 ## 8. Addendum: wellbeing Phase 1 (Mind)
 
-**Draft, awaiting Benn's sign-off.** Drafted 9 October 2026 from the compliance close-out of
+**Signed off by Benn, 10 October 2026**, with the risk scores in 8.4 as proposed. Drafted 9 October 2026 from the compliance close-out of
 `claude/confident-maxwell-ihd64e` at `b7df11c`. The Mind features are built but off
 (`WELLBEING_ENABLED` in `src/data/wellbeingFlag.ts`; the skill screens and the signpost also sit
 behind `MIND_REVIEWED`). Benn signs this section before the flag goes on. The register row
@@ -727,7 +727,7 @@ phones after a withdrawal; the account copy goes with `settings`.
 
 ### 8.4 New risks
 
-Proposed scores, using the scale in section 5, for Benn to confirm at sign-off.
+Scores using the scale in section 5, confirmed by Benn at sign-off (10 October 2026).
 
 | # | Risk to individuals | Likelihood | Severity | Overall |
 |---|---|---|---|---|
@@ -767,9 +767,9 @@ D1), as in section 4.8.
 
 | Item | Name and date | Notes |
 |---|---|---|
-| Section 8 approved by | | Benn, before `WELLBEING_ENABLED` goes on. |
+| Section 8 approved by | Benn, 10 October 2026 | Scores in 8.4 confirmed as proposed. The flag still waits on the rows below. |
 | Clinician advice (Mind) | | Before `MIND_REVIEWED` goes on. |
-| Register item 42 deployed | | Before or with the flag. |
+| Register item 42 deployed | | Before or with the flag. `notify_sent` table and `notify_claim()` applied 10 October 2026; the withdrawal clear and the 30-day purge still to update. |
 | Register item 44 decided | | Benn with mental-performance. |
 
 ---
