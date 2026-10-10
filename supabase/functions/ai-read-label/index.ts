@@ -10,15 +10,24 @@
  * - Output is validated against the same schema before it's returned; anything else becomes a
  *   typed error, never raw model text.
  * - Nothing about the photo or its values is logged or stored: counts, sizes and timings only.
+ * - Shared product list (docs/migrations/2026-10-10-shared-products.sql): when the app sends the
+ *   pack's barcode with the photo, and the read parses cleanly into shareable values
+ *   (valuesFromRead, the app's own parser), the reply carries `share`: those values, the barcode
+ *   as GTIN-14 and the time, signed with PRODUCT_SIGNING_KEY (HMAC, no user id). submit-product
+ *   accepts only such signed values, so typed figures and names can't reach the list. Signing
+ *   needs no extra consent (nothing is stored or sent anywhere); sharing does, and is checked
+ *   there. The barcode is never logged. Without the key the read works and nothing is signed.
  *
  * Secrets: ANTHROPIC_API_KEY (required). Optional: LABEL_MODEL (default claude-opus-5-5, the quality baseline per
  * ai-platform-plan.md §6 (Benn, 28 Sept 2026); move to claude-sonnet-5 only once an eval shows it reads labels as well),
- * LABEL_EFFORT (default low). SUPABASE_URL and the RPC's apikey come from the platform: the
+ * LABEL_EFFORT (default low), PRODUCT_SIGNING_KEY (≥ 32 random characters, the same on submit-product). SUPABASE_URL and the RPC's apikey come from the platform: the
  * `default` entry of SUPABASE_PUBLISHABLE_KEYS, else the legacy SUPABASE_ANON_KEY (retired end of
  * 2026). The RPC also refuses a caller whose latest label-photo consent isn't a yes (403 consent).
  */
 import Anthropic from 'npm:@anthropic-ai/sdk@0.128.0'
 import { LABEL_SCHEMA, validateLabelRead } from '../_shared/label-read.ts'
+import { gtin14, valuesFromRead } from '../_shared/shared-product.ts'
+import { MIN_KEY_LENGTH, signShare } from '../_shared/product-sig.ts'
 
 const MODEL = Deno.env.get('LABEL_MODEL') || 'claude-opus-5-5'
 const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
@@ -28,7 +37,7 @@ const EFFORT: Effort = envEffort && EFFORT_LEVELS.includes(envEffort) ? envEffor
 
 /** ~1.5 MB of JPEG, as base64 (4 chars per 3 bytes). */
 const MAX_IMAGE_B64 = 2_100_000
-/** Both images plus JSON punctuation, in bytes. */
+/** Both images, a barcode and JSON punctuation, in bytes. */
 const MAX_BODY = 2 * MAX_IMAGE_B64 + 1_000
 /** Output cap: the JSON is ~1.5k tokens; the rest is room for brief adaptive thinking. */
 const MAX_TOKENS = 3000
@@ -126,6 +135,23 @@ async function takeScan(auth: string): Promise<'ok' | 'limit' | 'consent' | 'una
   return typeof left === 'number' && left >= 0 ? 'ok' : 'limit'
 }
 
+/**
+ * The read's shareable values, signed with the barcode, or null (no barcode, a read that isn't
+ * clean enough to share, or no signing key). Never fails the read itself.
+ */
+async function signed(read: NonNullable<ReturnType<typeof validateLabelRead>>, barcode: unknown) {
+  const key = Deno.env.get('PRODUCT_SIGNING_KEY') || ''
+  const code = typeof barcode === 'string' ? gtin14(barcode) : null
+  if (!code || key.length < MIN_KEY_LENGTH) return null
+  const values = valuesFromRead(read)
+  if (!values) return null
+  try {
+    return await signShare(key, code, values, Math.floor(Date.now() / 1000))
+  } catch {
+    return null
+  }
+}
+
 /** The project's publishable key: the new-style `default` entry, else the legacy anon key. */
 function publishableKey(): string | undefined {
   try {
@@ -154,7 +180,7 @@ Deno.serve(async (req) => {
   if (!key) return fail('config')
   if (Number(req.headers.get('Content-Length') || 0) > MAX_BODY) return fail('too_large')
 
-  let body: { panel?: unknown; front?: unknown }
+  let body: { panel?: unknown; front?: unknown; barcode?: unknown }
   try {
     const raw = await readLimited(req, MAX_BODY)
     if (raw === null) return fail('too_large')
@@ -166,6 +192,8 @@ Deno.serve(async (req) => {
   const tooBig = (x: unknown) => typeof x === 'string' && x.length > MAX_IMAGE_B64
   if (tooBig(body.panel) || tooBig(body.front)) return fail('too_large')
   if (!jpeg(body.panel) || (body.front !== undefined && !jpeg(body.front))) return fail('bad_request')
+  // the pack's barcode, only to sign a shareable read: digits only, never logged
+  if (body.barcode !== undefined && (typeof body.barcode !== 'string' || !/^\d{8,14}$/.test(body.barcode))) return fail('bad_request')
   const images = body.front ? [body.panel, body.front as string] : [body.panel]
   const kb = Math.round(images.reduce((s, x) => s + x.length, 0) * 0.75 / 1024)
 
@@ -216,6 +244,7 @@ Deno.serve(async (req) => {
   const read = validateLabelRead(parsed)
   if (!read) return fail('upstream', { ...usage, why: 'schema' })
   if (!read.readable) return fail('unreadable', usage)
-  log('ok', { ms: Date.now() - started, ...usage })
-  return json({ ok: true, read }, 200, cors)
+  const share = await signed(read, body.barcode)
+  log('ok', { ms: Date.now() - started, ...usage, signed: share ? 1 : 0 })
+  return json(share ? { ok: true, read, share } : { ok: true, read }, 200, cors)
 })

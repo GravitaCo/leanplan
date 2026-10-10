@@ -18,3 +18,9 @@ verify_jwt = false
 # Called only by the cron job with the cron secret (x-cron-secret), never with a user's JWT, so the
 # gateway's JWT check is off; the function itself refuses anything without the secret (401).
 verify_jwt = false
+
+[functions.submit-product]
+# Same gate as ai-read-label: the gateway's JWT check is off; the function refuses a missing or
+# malformed Authorization with 401, and shared_products_allowed(), called with the caller's JWT,
+# verifies it and checks the health and shared-products consents before anything is written.
+verify_jwt = false
