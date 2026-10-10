@@ -270,7 +270,7 @@ export async function notifySuite(): Promise<number> {
     /NOT DEPLOYED/.test(fn.slice(0, 200)) && /from "\.\.\/_shared\/reminders\.ts"/.test(fn) && !/_shared\/reminders/.test(live) && /tag: "tali-supp"/.test(live))
   const consoleLines = fn.split('\n').filter((l) => /console\.(log|warn|error|info)/.test(l))
   ok('the function never logs a supplement name, a profile or a kind', consoleLines.length > 0 && consoleLines.every((l) => !/name|profile|kind|supplement|mind/i.test(l.replace(/console\.\w+\(`[^`$]*/, ''))))
-  ok('the function never reads a supplement name itself (suppPayload does, only with lockNames)', !/\.name\b/.test(fn) && /suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time\)/.test(fn))
+  ok('the function never reads a supplement name itself (suppPayload does, only with lockNames)', !/\.name\b/.test(fn) && /suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time, profile\?\.answeredAt\)/.test(fn))
   ok('the function keeps the consent gate, claims before sending and leaves supplements outside the cap',
     /health_consent_current/.test(fn) && /rpc\("notify_claim"/.test(fn) && fn.indexOf('rpc("notify_claim"') < fn.indexOf('payloadFor(kind)') && fn.indexOf('send(sub, payload)') > 0 && fn.indexOf('send(sub, payload)') < fn.indexOf('rpc("notify_claim"'))
   ok('the function reads times in the person\'s zone, the review reminder in UK time', /localNow\(profile\?\.mind\?\.tz, now\)/.test(fn) && /reviewDue\(profile, london\.day, london\.dow, london\.time\)/.test(fn))

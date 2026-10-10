@@ -1006,6 +1006,13 @@ export const useStore = create<StoreState>()(
           markSettingsDirty(st.data)
         })
         saved()
+        // supplement names turned off: sync the settings straight away rather than after the
+        // debounce, so the server stops naming them as soon as it can (security-data L2). Not
+        // awaited: the save above is already local, and runSync does nothing offline or signed out.
+        if (before.lockNames === true && clean.lockNames !== true) {
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          void get().runSync()
+        }
         return true
       },
 

@@ -191,10 +191,13 @@ export function payloadFor(kind: MindKind): ReminderCopy & { url: string; icon: 
  * names of the supplements due at `time` as the body ("Vitamin D, Magnesium"), tag
  * `tali-supp-named`. With the setting off or missing the supplements aren't read at all, so no
  * name can reach the payload. A due supplement with no usable name falls back to the generic text.
+ * The setting also needs its own answered stamp (`answeredAt['mind.lockNames']`, as stampFields
+ * writes it): a profile re-uploaded by an app from before B11b drops the Mind stamps, so a
+ * `lockNames` with no stamp is treated as off (security-data L1).
  */
-export function suppPayload(mind?: MindPrefsLike | null, supplements?: unknown, time?: string): ReminderCopy & { icon: string } {
+export function suppPayload(mind?: MindPrefsLike | null, supplements?: unknown, time?: string, answeredAt?: unknown): ReminderCopy & { icon: string } {
   const generic = { ...REMINDER_COPY.supp, icon: '/icon-192.png' }
-  if (mind?.lockNames !== true || !isHHMM(time) || !Array.isArray(supplements)) return generic
+  if (mind?.lockNames !== true || typeof obj(answeredAt)['mind.lockNames'] !== 'string' || !isHHMM(time) || !Array.isArray(supplements)) return generic
   const names: string[] = []
   for (const s of supplements) {
     const x = obj(s)

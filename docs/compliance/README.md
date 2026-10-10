@@ -453,6 +453,12 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     push text is fixed, which names-on qualifies; addendum 8.8 (new risk R18) proposed for Benn to
     sign before the flag goes on. Open copy question for Benn: should the toggle's footer also say
     a name can reveal something about your health.
+    Security-data fixes 2026-10-10: `suppPayload` names supplements only when `mind.lockNames` is
+    `true` and carries its own `answeredAt['mind.lockNames']` stamp, so a profile re-uploaded by a
+    pre-B11b app (which drops Mind stamps) falls back to the generic text (L1), and this must merge
+    and ship at least one release before WELLBEING_ENABLED goes on or `index.next.ts` deploys; and
+    turning the setting from on to off syncs the settings straight away instead of after the
+    debounce, while still saving locally first and offline (L2).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

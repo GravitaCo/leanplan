@@ -183,9 +183,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // supplement reminders: the person's own times, outside the daily cap; generic text unless
-    // they turned names on (B11b: suppPayload reads the names only when mind.lockNames is true)
+    // they turned names on (B11b: suppPayload reads the names only when mind.lockNames is true
+    // and stamped, security-data L1)
     if (profile?.notificationsEnabled && suppsDue(profile?.supplements, local.time) > 0) {
-      const payload = suppPayload(profile?.mind, profile?.supplements, local.time);
+      const payload = suppPayload(profile?.mind, profile?.supplements, local.time, profile?.answeredAt);
       const left: Sub[] = [];
       for (const sub of subs) if ((await send(sub, payload)) !== "gone") left.push(sub);
       subs = left;

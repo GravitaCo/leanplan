@@ -117,6 +117,19 @@ export function windDownSuite(): number {
     ok('without a health yes the routine isn\'t kept', store().setMindPrefs({ routine: ['reset'] }) === false && store().data.profile.mind?.routine === undefined)
     ok('lockNames saves without a health yes (a preference)', store().setMindPrefs({ lockNames: true }) && store().data.profile.mind?.lockNames === true && !!store().data.profile.answeredAt?.['mind.lockNames'])
     ok('lockNames: a non-boolean is refused', store().setMindPrefs({ lockNames: 'yes' as unknown as boolean }) === false && store().data.profile.mind?.lockNames === true)
+    {
+      // L2: turning names off syncs straight away (not after the debounce); turning them on does not
+      const real = store().runSync
+      let runs = 0
+      useStore.setState({ runSync: async () => { runs++ } })
+      store().setMindPrefs({ lockNames: true })
+      const onRuns = runs
+      const offSaved = store().setMindPrefs({ lockNames: false })
+      ok('L2: turning names off saves locally and runs the settings sync at once; turning on waits for the debounce',
+        offSaved && store().data.profile.mind?.lockNames === false && onRuns === 0 && runs === 1)
+      useStore.setState({ runSync: real })
+      store().setMindPrefs({ lockNames: true })
+    }
     reset('yes')
     store().setMindPrefs({ routine: ['unload'], lockNames: true })
     store().withdrawConsent('health')
@@ -128,6 +141,8 @@ export function windDownSuite(): number {
   /* ---------- the payload rule (supabase/functions/_shared/reminders.ts) ---------- */
   const supps = [{ name: 'Vitamin D', time: '08:00' }, { name: '  Magnesium\n glycinate ', time: '08:00' }, { name: 'Iron', time: '20:00' }, { name: 'Vitamin D', time: '08:00' }]
   const generic = JSON.stringify({ ...REMINDER_COPY.supp, icon: '/icon-192.png' })
+  // the setting's own answered stamp, as stampFields writes it (security-data L1)
+  const ST = { 'mind.lockNames': '2026-10-01T08:00:00.000Z' }
   const noName = (p: unknown) => !/Vitamin|Magnesium|Iron/.test(JSON.stringify(p))
   ok('no setting, setting off, or anything but true: the generic payload, with no name anywhere in it',
     [suppPayload(), suppPayload(undefined, supps, '08:00'), suppPayload({}, supps, '08:00'), suppPayload({ lockNames: false }, supps, '08:00'),
@@ -138,18 +153,22 @@ export function windDownSuite(): number {
   let read = false
   try { suppPayload({ lockNames: false }, trap, '08:00') } catch { read = true }
   ok('with the setting off the supplements are never read', !read)
-  const on = suppPayload({ lockNames: true }, supps, '08:00')
+  const on = suppPayload({ lockNames: true }, supps, '08:00', ST)
+  ok('L1: lockNames true with no stamp (a pre-B11b app re-uploaded the profile) or a bad stamp: generic',
+    [suppPayload({ lockNames: true }, supps, '08:00'), suppPayload({ lockNames: true }, supps, '08:00', {}), suppPayload({ lockNames: true }, supps, '08:00', null),
+      suppPayload({ lockNames: true }, supps, '08:00', { 'mind.routine': ST['mind.lockNames'] }), suppPayload({ lockNames: true }, supps, '08:00', { 'mind.lockNames': 1 })]
+      .every((p) => JSON.stringify(p) === generic && noName(p)))
   ok('setting on: "Supplement reminder" with the names due at that time, once each, tag tali-supp-named',
     on.title === 'Supplement reminder' && on.body === 'Vitamin D, Magnesium glycinate' && on.tag === SUPP_NAMED.tag && on.tag === 'tali-supp-named', on)
   ok('setting on: a supplement due at another time is never named', !on.body.includes('Iron'))
   ok('setting on: long names are cut; no usable name falls back to the generic text',
-    suppPayload({ lockNames: true }, [{ name: 'x'.repeat(200), time: '08:00' }], '08:00').body.length === SUPP_NAME_MAX
-    && JSON.stringify(suppPayload({ lockNames: true }, [{ name: '   ', time: '08:00' }, { time: '08:00' }], '08:00')) === generic
-    && JSON.stringify(suppPayload({ lockNames: true }, supps, 'later')) === generic)
+    suppPayload({ lockNames: true }, [{ name: 'x'.repeat(200), time: '08:00' }], '08:00', ST).body.length === SUPP_NAME_MAX
+    && JSON.stringify(suppPayload({ lockNames: true }, [{ name: '   ', time: '08:00' }, { time: '08:00' }], '08:00', ST)) === generic
+    && JSON.stringify(suppPayload({ lockNames: true }, supps, 'later', ST)) === generic)
   const fn = readFileSync('supabase/functions/send-supplement-reminders/index.next.ts', 'utf8')
   const live = readFileSync('supabase/functions/send-supplement-reminders/index.ts', 'utf8')
   ok('the function passes the person\'s Mind settings to suppPayload and never reads a name itself',
-    /const payload = suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time\);/.test(fn) && /send\(sub, payload\)/.test(fn) && !/\.name\b/.test(fn))
+    /const payload = suppPayload\(profile\?\.mind, profile\?\.supplements, local\.time, profile\?\.answeredAt\);/.test(fn) && /send\(sub, payload\)/.test(fn) && !/\.name\b/.test(fn))
   ok('the deployed index.ts is untouched by B11b (still generic, no names setting)', !/lockNames|tali-supp-named/.test(live))
 
   /* ---------- the service worker: a name only for the named tag ---------- */
@@ -164,7 +183,7 @@ export function windDownSuite(): number {
   try {
     runInNewContext(readFileSync('public/sw.js', 'utf8'), { self, indexedDB: undefined, URL, Promise, console })
     const push = (payload: unknown) => handlers.push({ data: { json: () => payload }, waitUntil: () => {} })
-    push(suppPayload({ lockNames: true }, supps, '08:00'))
+    push(suppPayload({ lockNames: true }, supps, '08:00', ST))
     push(suppPayload({ lockNames: false }, supps, '08:00'))
     push({ title: 'Vitamin D', body: 'Vitamin D', tag: 'supp-123' })
     push({ title: 'x', body: 'Vitamin D', tag: 'tali-supp' })
