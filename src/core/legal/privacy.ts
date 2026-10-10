@@ -6,9 +6,10 @@ const email = () => fact('contactEmail', 'privacy email')
 /**
  * Privacy policy for the app (app.tali.fit) and the website (www.tali.fit). Must describe
  * what the code and the site actually do: any new data field, recipient, SDK, embed or
- * purpose means this changes in the same commit. Label photo reading (Anthropic) is switched off
- * (LABEL_SCAN_ENABLED in src/data/labelReader.ts) and deliberately not described yet: add it, with
- * its transfer and retention, before that flag is turned on.
+ * purpose means this changes in the same commit. Label photo reading (Anthropic) and Tali's shared
+ * product list are gated on `products` (LABEL_SCAN_ENABLED in src/data/labelReader.ts, which also
+ * switches SHARED_PRODUCTS_ENABLED): `npm run legal:html` publishes with products = LABEL_SCAN_ENABLED,
+ * and check:legal checks both versions. With it off the text is as before (compliance, 2026-10-10).
  * Wellbeing Phase 1 (Mind: sleep band, skills, the one thing, Mind plans and settings, and the
  * device-only Unload notes, low-mood marker, reminder log and sleep disclosure) is on for everyone
  * from 10 Oct 2026 (WELLBEING_ENABLED in src/data/wellbeingFlag.ts). Its sentences are gated on
@@ -23,7 +24,7 @@ const email = () => fact('contactEmail', 'privacy email')
  * its own passages. With onboarding on and Mind off, the text is main's as of 2026-10-09 (npm test
  * compares it with scripts/fixtures-legal-onboarding.json).
  */
-export function privacyPolicy({ onboarding = false, mind = false, suppNames = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean } = {}): LegalDoc {
+export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean } = {}): LegalDoc {
   // B11b's "Show supplement names in reminders" is built but hidden until DPIA 8.8 is signed
   // (SUPP_NAMES_ENABLED, register item 45): its sentences need Mind on as well.
   const names = mind && suppNames
@@ -32,7 +33,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
     // the Mind version changed on 10 Oct (the wind-down reminder outside the one-a-day cap; B12's
     // wind-down routine and B11b's supplement names setting); with
     // Mind off the text is main's
-    updated: mind ? '2026-10-10' : '2026-10-09',
+    // label photos and the shared product list (`products`) on 10 Oct 2026
+    updated: mind || products ? '2026-10-10' : '2026-10-09',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -49,7 +51,9 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: 'The short version',
         ul: [
           `Tali stores your log on your phone so it works offline. Once you agree, it also syncs to a database in Ireland (EU) that's private to your account.`,
-          `When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.`,
+          products
+            ? `When you scan a barcode, Tali looks the product up on its own shared product list and on Open Food Facts, a public food database. If you photograph a label, an AI service reads the numbers and Tali doesn't keep the photo.`
+            : `When you scan a barcode, Tali looks the product up on Open Food Facts, a public food database.`,
           `No ads, no analytics, no tracking cookies, and we never sell your data or share it for marketing.`,
           `You can export everything or delete your account from the app at any time.`,
         ],
@@ -76,6 +80,13 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `Settings: calorie and macro targets and ranges, weekly workout schedule, display preferences (including Gentle mode), accuracy preferences and hand-portion sizes.`,
           `Weekly review: the day you picked, whether to include your weight (left out unless you say yes), when you last opened it, when your goal or calorie target last changed, and your choice for next week (keep, ease off or change one thing, and which) with its date. If you choose "Make this my new starting point", we keep that weight and date. We also keep which pattern lines Tali has shown you, such as hunger on short-sleep days, and when, so one isn't repeated too soon. Because they come from your log, we treat your starting point, the pattern lines, your choice for next week and any week your phone marks for the reminder to skip as health data.`,
           ...(mind ? [`Mind settings: which parts of Tali you use (Mind, Food, Move), how often Tali asks you things, your usual wake and wind-down times, the steps you picked for your wind-down routine (from a fixed list, never your own words), which reminders you turned on and whether Tali is sending one of them less often because the last ones weren't opened, and your time zone (from your device, saved when you change these reminder settings while one of them is on, so reminders follow your own clock; it isn't updated when you travel unless you change them again). We also keep when each of these was last changed, so changes made on two phones don't overwrite each other.`] : []),
+          ...(products
+            ? [
+                `Label photos: if you photograph a pack's nutrition table (and, if you like, its front), the photo is sent to read the numbers and the name, then dropped. Tali never stores it. With it we send the pack's barcode, if you scanned one, to our own server only, so the read can be offered to the shared product list (below); the barcode isn't sent to the AI service. We keep a count of how many photos you've had read each day, to keep to a daily limit.`,
+                `Shared product list: Tali keeps a list of products people have added, so the next person who scans the same barcode finds it. If you say yes to sharing (you're asked the first time you save a new product read from a label photo, and can turn it off in Profile, then Privacy), each new product you save from a label photo, with the name and numbers unchanged, is added with its barcode, the name read from the pack and the figures per 100 g or 100 ml, and the month it was added. Only products Open Food Facts doesn't have are added. Nothing you type in yourself is added, and nothing about you is: no name, email, account or device number, and no exact date. Until it's sent, a product waiting to be added stays on your phone with a note of which account added it, which never leaves your phone.`,
+                `Reports: if you report a product on the shared list, we keep the reason you picked against that product. We don't keep who sent it.`,
+              ]
+            : []),
           `On your device only: the list of ingredients you have at home, used for meal suggestions. It is never uploaded.`,
           ...(mind
             ? [
@@ -138,7 +149,15 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: 'Why we use it, and our legal basis',
         ul: [
           `To provide the app: store and sync your log (only once you've agreed), calculate your targets, ranges and trends, suggest meals and workouts, and send reminders you asked for. Basis: our contract with you, and your explicit consent for health data.`,
-          `To look up a product when you scan its barcode. Basis: our contract with you.`,
+          products
+            ? `To look up a product when you scan its barcode, and to read a label photo when you ask Tali to. Basis: our contract with you.`
+            : `To look up a product when you scan its barcode. Basis: our contract with you.`,
+          ...(products
+            ? [
+                `To add new products you save from a label photo to the shared product list. Basis: your consent, given separately when Tali first asks (and, because it comes from what you log, your explicit consent for health data too). Once a product is added, it isn't linked to you.`,
+                `To keep the shared product list accurate and free of abuse (reports, hiding and removing products). Basis: our legitimate interest in a list everyone can rely on.`,
+              ]
+            : []),
           `To read and answer feedback you send us. Basis: our legitimate interest in improving Tali.`,
           `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else, and you can ask to be removed at any time by emailing us.`,
           `To keep accounts, the app and the site secure and working (sign-in, stopping bots and abuse, fixing faults). Basis: our legitimate interest in running a secure service.`,
@@ -180,6 +199,11 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             (mind
               ? ` So do the check-in, wind-down and plan check-in reminders ("How are you today? A quick check-in, if you have a moment.", "Your wind-down starts now, if you'd like it." and "How are your plans going?"): never anything you logged.`
               : ''),
+          ...(products
+            ? [
+                `Anthropic: reads label photos with its AI service (Claude) and sends back the numbers and name it reads. It receives only the photos, with nothing about you. Under our contract it may not use them to train its AI, and it deletes them within 30 days, unless it needs to keep them longer to enforce its usage policy or the law requires it.`,
+              ]
+            : []),
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
         ],
@@ -187,7 +211,13 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
       {
         h: '',
         p: [
-          `Open Food Facts is not our service provider. When you scan a barcode, your phone asks Open Food Facts (openfoodfacts.org, a non-profit in France) for that product, so it sees the barcode and your IP address, under its own privacy policy. Nothing else you log is sent to it.`,
+          `Open Food Facts is not our service provider. When you scan a barcode, your phone asks Open Food Facts (openfoodfacts.org, a non-profit in France) for that product, so it sees the barcode and your IP address, under its own privacy policy. Nothing else you log is sent to it.` +
+            (products ? ` Before a product joins the shared list, our server asks Open Food Facts once more whether it has that barcode. That request comes from our server, with the barcode only.` : ''),
+          ...(products
+            ? [
+                `The shared product list is shown to everyone who uses Tali: anyone who scans the same barcode sees the name and figures. It never shows, or holds, who added a product.`,
+              ]
+            : []),
         ],
       },
       {
@@ -195,7 +225,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         p: [
           `Your app account data is stored in the EU. Some of our providers are based in, or may access data from, the United States. ` +
             `Where personal data leaves the UK or EU, we rely on the safeguards the law provides, such as the UK International Data Transfer Addendum, ` +
-            `the EU Standard Contractual Clauses or the UK-US and EU-US Data Privacy Framework. Contact us for details of the safeguard for a particular provider.`,
+            `the EU Standard Contractual Clauses or the UK-US and EU-US Data Privacy Framework. Contact us for details of the safeguard for a particular provider.` +
+            (products ? ` Label photos are read by Anthropic, which may process them in the United States.` : ''),
         ],
       },
       {
@@ -205,6 +236,12 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `If you withdraw consent for health data, we delete your log, profile, settings and reminders from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.`,
           `If you used Tali before we asked for consent and haven't agreed by ${UNCONSENTED_DELETION.long} (whether you chose "Not now" or haven't opened the app since), we delete your log, profile, settings and reminders from your account on that date, and keep your account. What's on your phone stays there.`,
           `When we delete data from your account for either of these reasons, copies in our database provider's backups are deleted as they expire on its regular cycle.`,
+          ...(products
+            ? [
+                `Label photos: Tali doesn't keep them. Anthropic deletes them as described above. The daily count of photo reads is kept until you delete your account.`,
+                `Products on the shared list are kept for as long as the list exists, unless we remove them after a report or a check. Because nothing links them to you, deleting your account doesn't remove them, and we can't find the ones you added. Products still waiting on your phone are removed if you turn sharing off, withdraw consent for health data, or someone else signs in on that phone.`,
+              ]
+            : []),
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tali.`,
           `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,
@@ -241,6 +278,11 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: '',
         p: [
           `To use a right the app doesn't cover, email ${email()}. We reply within one month, and it's free.`,
+          ...(products
+            ? [
+                `Products on the shared list can't be linked to you, so we can't show you, correct or delete the ones you added as yours. If a product name contains your personal details, report it in the app or email us and we'll remove it.`,
+              ]
+            : []),
           `If you're unhappy with how we handle your data, please tell us first so we can put it right. You can also complain to the Information Commissioner's Office (ico.org.uk, 0303 123 1113) or, in the EU, to your local data protection authority.`,
         ],
       },

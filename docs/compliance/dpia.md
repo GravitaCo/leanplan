@@ -842,6 +842,134 @@ with the clinician review moved to a gate before public launch. Four things to r
 |---|---|---|
 | 8.9 noted by | Benn, 10 October 2026 (in the build conversation) | Benn's words: "switch on once live then update the DPIA and when we have the money a clinician will review. again no public access yet". Benn rates R15 medium while access stays non-public. Recorded fact: sign-up at app.tali.fit is technically open to anyone with the link (`src/screens/AuthScreen.tsx`, plain sign-up); the app isn't publicised. Recommended, not done: turn off "Allow new users to sign up" in Supabase Auth and add testers by invite, so "non-public" is enforced rather than relied on. If the app is publicised or sign-ups from unknown people appear before the clinician review, R15 is high and 7.3 applies. |
 
+## 9. Addendum: label photos (Anthropic) and the shared product list
+
+**Drafted 10 October 2026 by compliance, for Benn to sign.** Covers `origin/shared-products` at
+`e8ac601`, which turns on label scanning (`LABEL_SCAN_ENABLED`) and with it the shared product
+list (`SHARED_PRODUCTS_ENABLED`). Register items 24 and 46 hold the detail and the open points.
+This section supersedes D5 and the Anthropic row in section 2.1 once signed.
+
+### 9.1 Processing
+
+- **Label photos.** The person photographs a pack's nutrition table (and, optionally, its front).
+  The phone downscales the photos and sends them, with the pack's barcode if one was scanned, to
+  `ai-read-label`. The function checks the session, the daily cap and the `label-photo` record
+  (`ai_usage_take`), sends **only the photos** to Anthropic's API (no user id, email or barcode),
+  validates the transcription and returns it. Nothing about the photo or its values is stored or
+  logged (counts, sizes and timings only). `ai_usage` keeps a per-person daily count.
+- **Signing.** If the read parses cleanly and a barcode came with it, the function signs the
+  barcode (GTIN-14), the parsed values and the time with `PRODUCT_SIGNING_KEY`. No user id is in
+  the signature. The token goes back to the phone only.
+- **Sharing.** With a yes to `shared-products` (asked once, at the first save of a new label-read
+  product; a toggle in Profile › Privacy) and a current health yes, a product saved with the name
+  and figures unchanged joins `tali.productOutbox` on the phone, which records which account
+  queued it (device only). It's sent later, after a random delay, to `submit-product`, which
+  checks the JWT and both consents as the caller (`shared_products_allowed()`), applies an
+  in-memory rate limit keyed on `sub` (held up to an hour, never logged or stored), verifies the
+  signature, asks Open Food Facts from the server whether it has the barcode, and calls
+  `submit_product()` with the service role. That function receives **no identity**.
+- **Stored.** `products` (barcode, version, name, figures, counters, first-of-month dates),
+  `product_sigs_seen` (SHA-256 of each accepted signature, with its month, purged after two
+  months, so one read counts once) and `product_quota` (global daily counters).
+- **Lookups and reports.** Signed-in users look a barcode up with `lookup_product()` (POST body,
+  so the barcode isn't in a logged URL) and can report a version with `report_product()`, which
+  keeps no reporter. Moderation: `shared-products-moderation.md`.
+- **Device.** `tali.products` caches up to 200 looked-up products for offline use.
+
+### 9.2 Lawful basis
+
+- **Label photos:** Art. 6(1)(b). The person asks Tali to read a label; a pack photo is not health
+  data and nothing about the person goes with it. The `label-photo` record is the notice and the
+  server's gate, not consent in the Art. 7 sense, so no withdrawal toggle is owed: not taking a
+  photo is the opt-out, and typing the label in is always offered.
+- **Contributing to the list:** Art. 6(1)(a) consent, separate from everything else
+  (`shared-products`, its own version), with Art. 9(2)(a) health consent also required by the
+  server, because the request shows that a named account saved that food. It is unbundled (either
+  answer saves the food), specific, and as easy to withdraw as to give (one toggle).
+- **The stored list:** not personal data (9.3). Moderation of anything that turns out to be
+  personal (a person's details typed into a pack name is refused by `product_name_refused`, but a
+  name read from a photo could still carry one): Art. 6(1)(f).
+
+### 9.3 Why the stored list is anonymous, and the rule that keeps it so
+
+The test is whether a person is identifiable by means reasonably likely to be used, by Tali or
+anyone else, taking account of cost, time and technology (UK GDPR Recital 26; ICO guidance on
+anonymisation, identifiability).
+
+- **Nothing in the rows points to a person.** No user id, pseudonym, hash of an id, device id or
+  IP; dates are the month only; the signature hash is over the product and time, not the
+  person, and is kept two months. The rows describe a product, not anyone's behaviour.
+- **The write path can't carry identity.** `submit_product()` is service-role only and takes no
+  identity argument; the function's logs hold outcome and timings only; the `sub` used for rate
+  limiting lives in memory for an hour at most.
+- **Timing is blurred.** The phone sends after a random delay, not at the moment of the save, and
+  a product can be confirmed by several people over a month, so a row's counters don't map to one
+  request.
+- **The one route back is a join Tali must never make.** A person's own `custom_foods` row holds
+  the same barcode, name and figures (it's their copy). Matching `products` against
+  `custom_foods` would suggest who probably added a product. **Rule: Tali never joins `products`
+  (or `product_sigs_seen`) with `custom_foods` or any other user table, by barcode, name, figures
+  or time, in SQL, scripts, analytics or support work.** Even if someone did, it would tell them
+  only that a person has that food in their log, which Tali already holds with their consent:
+  the list adds nothing new about them. That is why the residual risk is low, not why the join
+  is allowed.
+- **Residual weakness (register item 46).** `products.id` is a sequential identity and
+  `product_quota.new_rows` counts per day, so together they can give the day a version was added.
+  With no identity in the rows this doesn't identify anyone, but `security-data` should close it
+  (trim `product_quota` in the function and/or stop relying on a sequential id) so "month only"
+  is true in full.
+
+Consequences: account deletion, health withdrawal and the purge don't touch the list (by design;
+not in `USER_TABLES`, `clear_log_after_withdrawal()` or `purge_unconsented_logs()`); withdrawing
+`shared-products` stops future sharing and drops the outbox but can't recall what was added
+(Art. 7(3) affects only processing of personal data); and rights requests about contributions
+fall under Art. 11(2), since Tali can't identify whose they were. The opt-in copy and the
+privacy policy say so. A version can still be taken down after a report.
+
+### 9.4 Transfer to Anthropic (short TIA)
+
+- **What goes:** one or two downscaled photos of a food pack. No identifiers. Incidental content
+  in the frame (a hand, a kitchen) is possible but not sought.
+- **Who and where:** Anthropic Ireland, Limited contracts with UK and EEA customers under
+  Anthropic's Commercial Terms, which incorporate its DPA and bar training on Customer Content;
+  processing is likely in the US. Retention: deleted within 30 days of receipt, unless kept
+  longer to enforce the usage policy or by law (Anthropic privacy centre, checked 10 Oct 2026).
+- **Risk in the destination:** public-authority access to a pack photo with no link to a person
+  would reveal nothing about anyone. Remote likelihood, minimal severity.
+- **Still open (Benn, before merge):** confirm the API key's organisation is on the Commercial
+  Terms and record the DPA's transfer mechanism (IDTA, UK Addendum to the SCCs, or the UK
+  Extension to the DPF). Zero data retention is optional at this risk level.
+
+### 9.5 New risks
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R19 | **Label photos kept or reused by the AI provider**, or incidental personal content in a photo exposed. | Remote | Minimal | Low |
+| R20 | **A contribution traced back to a person** (a join with `custom_foods`, timing, logs). | Remote | Minimal | Low |
+| R21 | **Personal or abusive text in a shared product name**, shown to every user who scans that barcode. | Possible | Significant | Medium |
+| R22 | **Wrong figures on the shared list** lead someone to log the wrong amount (accuracy, not data protection; with `nutrition-accuracy`). | Possible | Minimal | Low |
+
+### 9.6 Measures
+
+- **R19.** Photos only, no identifiers; DPA and no-training terms; 30-day deletion; nothing stored
+  by Tali. To do: the DPA confirmation above. Residual: **low**.
+- **R20.** The design in 9.3, the no-join rule, the random send delay; to do: the `security-data`
+  fix in item 46. Residual: **low**.
+- **R21.** Name rules refuse links, `@`, markup, long digit runs and claims before storage; a name
+  report hides a version at once; review within 2 working days; deletion of personal data at
+  once (`shared-products-moderation.md`); terms forbid false or abusive entries. Residual:
+  **low**.
+- **R22.** Only signed label reads, unchanged; tiers and margins on screen; three reports hide a
+  version; "verified" only by an audit. Residual: **low**.
+
+### 9.7 Sign-off
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 9 approved by | | Before `LABEL_SCAN_ENABLED` reaches `main`. |
+| Anthropic DPA and transfer mechanism recorded | | Register item 24. |
+| `security-data` fix for day-level ordering | | Register item 46; should fix, not a gate. |
+
 ---
 
 ## Sources checked
@@ -853,5 +981,10 @@ with the clinician review moved to a gate before public launch. Four things to r
 - Live privacy page, www.tali.fit/legals/privacy, 30 Sept 2026: the consent-release text, without
   the onboarding sections.
 - ICO, "Examples of processing likely to result in high risk" (ico.org.uk), 30 Sept 2026.
+- Section 9 (10 Oct 2026): code on `shared-products-legal` (from `e8ac601`); Anthropic Commercial
+  Terms (anthropic.com/legal/commercial-terms: DPA incorporated by reference, no training on
+  Customer Content, Anthropic Ireland, Limited for UK/EEA customers) and the Anthropic privacy
+  centre article on API retention (privacy.claude.com), both 10 Oct 2026. The DPA itself was not
+  read. UK GDPR Recital 26 and Arts. 7(3), 11 not re-read for this draft.
 - UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); not re-read for this
   draft beyond the articles cited.

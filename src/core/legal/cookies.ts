@@ -12,11 +12,13 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
  * tali.onboarding, tali.setupCardHidden and tali.pendingDelete are only written by first-run
  * onboarding (ONBOARDING_ENABLED, src/data/onboardingFlag.ts), so they are gated on `onboarding`:
  * `npm run legal:html` publishes with onboarding = ONBOARDING_ENABLED. Each flag gates its own keys.
+ * tali.products and tali.productOutbox are written only with the shared product list on
+ * (SHARED_PRODUCTS_ENABLED, which follows LABEL_SCAN_ENABLED), so they are gated on `products`.
  */
-export function cookiePolicy({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
+export function cookiePolicy({ onboarding = false, mind = false, products = false }: { onboarding?: boolean; mind?: boolean; products?: boolean } = {}): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: mind ? '2026-10-09' : '2026-09-28',
+    updated: products ? '2026-10-10' : mind ? '2026-10-09' : '2026-09-28',
     intro:
       `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
@@ -50,6 +52,12 @@ export function cookiePolicy({ onboarding = false, mind = false }: { onboarding?
                 `tali.onboarding: your answers so far while you set Tali up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.`,
                 `tali.setupCardHidden: that you hid the "Finish your setup" card on Today. Kept until you remove this device's log, delete your account or clear your browser data.`,
                 `tali.pendingDelete: if you tell Tali during setup that you're under ${MIN_AGE} and the account can't be deleted straight away: which account to delete, and how many tries Tali has made. Tali tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tali clears this device's data, until Tali sees that account has been deleted, or, once it's 30 days old, the next time Tali opens; you can also remove it by clearing your browser data.`,
+              ]
+            : []),
+          ...(products
+            ? [
+                `tali.products: up to 200 products you've looked up on Tali's shared product list, so they still open with no connection. Kept until you remove this device's log, delete your account or clear your browser data.`,
+                `tali.productOutbox: new products you agreed to share that haven't been sent yet, with a note of which account added them. That note never leaves your device. Each is removed once it's sent, or if you turn sharing off, withdraw consent for health data, someone else signs in, you remove this device's log or delete your account.`,
               ]
             : []),
           `tali.labelConsent: an older record of a label-photo choice, moved into leanplan.v1 the next time the app opens, then removed.`,

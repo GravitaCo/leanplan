@@ -9,15 +9,17 @@ const who = () => fact('controller', 'legal name')
  * and the Mind paragraph on `mind` (WELLBEING_ENABLED): `npm run legal:html` publishes with both
  * flags. With both off, the text matches the page live on www.tali.fit (checked 2026-10-10), so the
  * date stays; with onboarding on and Mind off, it's main's as of 2026-10-09
- * (scripts/fixtures-legal-onboarding.json).
+ * (scripts/fixtures-legal-onboarding.json). Label photos and the shared product list are gated on
+ * `products` (LABEL_SCAN_ENABLED): the licence for shared products, its fair-use lines and the
+ * estimate lines. With it off the text is as before.
  */
-export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
+export function termsOfUse({ onboarding = false, mind = false, products = false }: { onboarding?: boolean; mind?: boolean; products?: boolean } = {}): LegalDoc {
   return {
     title: 'Terms and conditions',
     // Mind on 10 Oct 2026. The Mind paragraph names the skills and the low-mood signpost again
     // (MIND_REVIEWED on by default since 10 Oct 2026, compliance the same day), so the not-therapy
     // line covers them; a VITE_MIND_REVIEWED=0 build over-describes, as the privacy policy does
-    updated: mind ? '2026-10-10' : '2026-09-28',
+    updated: mind || products ? '2026-10-10' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -68,7 +70,9 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
           'Calorie and nutrient values come from published sources such as UK CoFID and brand information, and portions are often estimated. ' +
             'Tali shows a margin (±) for this reason. Targets are calculated with standard formulas and are a starting point, not a prescription. ' +
             'Always check the label if you have an allergy or a medical reason to be exact. Tali does not provide allergen information.',
-          'Scanned products come from Open Food Facts, a public database, and can be wrong or out of date, so check the numbers against the pack before you save.',
+          products
+            ? 'Scanned products come from Tali\'s shared product list, which other people add to, or from Open Food Facts, a public database. Numbers read from a label photo are read by AI and can be misread. Any of these can be wrong or out of date, so check the numbers against the pack before you save.'
+            : 'Scanned products come from Open Food Facts, a public database, and can be wrong or out of date, so check the numbers against the pack before you save.',
         ],
       },
       {
@@ -85,6 +89,17 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
           'What you log is yours. You let us store and process it only to run Tali for you, as described in the privacy policy. We do not claim ownership of it.',
         ],
       },
+      ...(products
+        ? [
+            {
+              h: 'Products you share',
+              p: [
+                'If you choose to share new products, each one you save from a label photo is added to Tali\'s shared product list: its barcode, the name read from the pack and its figures. You give us a free, worldwide, permanent licence to use, copy, change, show and share them as part of Tali, including to every Tali user. You can turn sharing off at any time, but because a shared product isn\'t linked to you, the licence for products already added can\'t be taken back.',
+                'Only share products you photographed yourself, from the real pack. We can hide, change or remove any product on the list at any time, for example after a report.',
+              ],
+            },
+          ]
+        : []),
       {
         h: 'Feedback',
         p: ['If you send us ideas or feedback, we may use them to improve Tali without owing you anything for them.'],
@@ -93,6 +108,9 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
         h: 'Fair use',
         p: [
           'Don\'t misuse Tali: no attempts to access other people\'s data, disrupt the service, reverse engineer it to harm it, or use it for anything unlawful. ' +
+            (products
+              ? 'On the shared product list, that includes adding products or figures you know are wrong, photos made up to look like a label, sending false reports, and copying the list in bulk. '
+              : '') +
             'We may suspend accounts that do, and will tell you why unless the law prevents it.',
         ],
       },
