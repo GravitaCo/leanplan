@@ -7,7 +7,7 @@ import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
 import { buildEntry, scaleEntry, CAPTURE_ERR } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { entryAmount, relog, usuals } from '@/core/domain/insights'
+import { entryAmount, queryWords, relog, usuals } from '@/core/domain/insights'
 import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
 import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
@@ -114,13 +114,33 @@ const extra: [string, string, string][] = [
   ['search: accents fold both ways', [rankByName(['Caffè Nero Latte Regular (oat)', 'Oat milk'], (x) => x, ['caffe', 'latte']).join('|'), rankByName(['Creme egg'], (x) => x, ['crème']).join('|')].join(' / '), 'Caffè Nero Latte Regular (oat) / Creme egg'],
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
+// Chinese takeaway: the dish words people type find the generic dish first, in the real database
+// and with the app's own query splitting (AddFoodSheet)
+for (const [q, want] of [
+  ['special fried rice', 'Special fried rice'],
+  ['special chow mein', 'Special chow mein (takeaway)'],
+  ['singapore rice', 'Singapore fried rice'],
+  ['singapore noodles', 'Singapore noodles (Singapore vermicelli)'],
+  ['kung pao', 'Kung pao chicken (kung po)'],
+  ['kung po', 'Kung pao chicken (kung po)'],
+  ['salt and pepper chicken', 'Salt and pepper chicken'],
+  ['crispy chilli beef', 'Crispy chilli beef'],
+  // the Chopstix menu doesn't push the generic dishes down
+  ['egg fried rice', 'Egg fried rice'],
+  ['chow mein', 'Chow mein'],
+] as const) {
+  const got = rankByName(FOODS, (f) => f.n, queryWords(q))[0]?.n
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', `search (database): ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
 // Chain foods: one serving, through the app's real logging path, must show exactly the kcal the
 // data implies (the importers separately assert that equals the chain's published per-portion kcal).
 {
   const chain = FOODS.filter((f) => f.src && SOURCES[f.src.split(':')[0]]?.err)
   const off = chain.filter((f) => {
     const e = buildEntry(f, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
-    return Math.round(e.k) !== Math.round((f.k * f.g) / (f.each ? 1 : 100))
+    // an entry keeps kcal to 0.1 (buildEntry), so x.45-x.5 shows as the next whole kcal: compare the same way
+    return Math.round(e.k) !== Math.round(Math.round((f.k * f.g) / (f.each ? 1 : 100) * 10) / 10)
   })
   const ok = off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', `chain servings match their data (${chain.length} foods)`, ok ? '' : off.map((f) => f.n).join(', '))

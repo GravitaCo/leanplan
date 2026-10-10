@@ -19,7 +19,7 @@ function isWordChar(ch: string | undefined): boolean {
 }
 
 /** Chain names that contain food words: matches inside them count less than the dish itself. */
-const BRAND = /^(pizza hut|pizzaexpress|burger king|greggs|kfc|popeyes|slim chickens|nando's|subway|mcdonald's|domino's|toby carvery|kashmiri aroma|aagrah)\b/i
+const BRAND = /^(pizza hut|pizzaexpress|burger king|greggs|kfc|popeyes|slim chickens|nando's|subway|mcdonald's|domino's|toby carvery|kashmiri aroma|aagrah|chopstix)\b/i
 
 /** Lower case without accents, so "caffe" finds "Caffè Nero" and "creme" finds "Crème". */
 function fold(s: string): string {
