@@ -702,6 +702,10 @@ log is kept and comes back when the pillar is switched on. Still open: the items
   and B11b are built behind `WELLBEING_ENABLED` after the Phase 1 merge; B11b brings back the
   setting security-data L1 took out of the data model, so it goes past security-data and
   compliance (privacy policy, register) before it ships.
+- **Support sheet, whole UK first (Benn, 10 Oct 2026, approved from screenshots):** the Mind
+  Support sheet opens on "Showing services for the whole UK" with no NHS 111 until a nation is
+  picked; Northern Ireland shows Your GP and the GP out-of-hours service for the area, no number
+  (register item 44). Text-only, existing layout.
 - **Supplement reminders sit outside the one-a-day limit**, and since 10 Oct so does the wind-down
   reminder (still once a day at most); check-in and plan reminders share one a day.
 - **Benn, 10 Oct 2026: Mind and the navigation turned on for everyone; skills and signposting stay
