@@ -484,6 +484,22 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     build. Still open: mental-performance to confirm the wording, the clinician review before
     public launch, and Profile's own Support sheet (board ob9-7, live on main), which still opens
     on England and names NHS 111 until a nation is picked.
+    Compliance review 2026-10-10 (skills on): the Mind sheet's lists are accurate (checked against
+    nidirect "Mental health emergency" and NHS inform "Mental health services at NHS 24", 10 Oct
+    2026) but incomplete in two nations, a decision for Benn with mental-performance and a design
+    change, so not made here. Northern Ireland: nidirect's crisis page leads with Lifeline (0808
+    808 8000, 24 hours, free), Northern Ireland's equivalent of NHS 111 option 2; recommended as a
+    row in the Mind sheet and in Profile's when Northern Ireland is picked, before testing widens.
+    Scotland: NHS 24 has a mental health option on 111 (the Mental Health Hub), but
+    `nhs111-mental-health` covers England and Wales only, so Scotland shows no mental health line;
+    recommended the same way. Profile's sheet opening on England is labelled ("Showing services for
+    England") with Change beside it, so it isn't inaccurate; recommended to open on the whole UK like
+    the Mind sheet before public launch, for one rule in both places. Texts: the terms' Mind
+    paragraph names the skills (Reset, Wind down, Unload) and "sometimes after a run of low moods"
+    again, so the not-therapy and not-a-crisis-service lines cover what is now live; the privacy
+    policy's Unload sentence adds the optional "one thing that went OK" the notes hold. DPIA note
+    8.9 rewritten for skills on, for Benn to initial (the clinician gate moved; R15 medium only
+    while testing is closed).
 
 45. Open (2026-10-10, wellbeing, boards B12 and B11b approved by Benn on 10 Oct 2026; built
     behind WELLBEING_ENABLED, not shipped). Two new Mind settings on `profile.mind`, both synced

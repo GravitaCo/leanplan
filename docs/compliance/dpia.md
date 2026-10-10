@@ -802,31 +802,45 @@ settings (register item 45, branch `claude/wellbeing-b12-b13`), both behind `WEL
 |---|---|---|
 | 8.8 approved by | | Before `WELLBEING_ENABLED` goes on with B11b. |
 
-### 8.9 Note for Benn: Mind on, skills off (compliance, 10 October 2026, not signed)
+### 8.9 Note for Benn: Mind on, then skills on for testing (compliance, 10 October 2026, not signed)
 
 Sections 8.1 to 8.7 are as signed and are not changed by this note. On 10 October 2026 Benn turned
 `WELLBEING_ENABLED` on for everyone, with `MIND_REVIEWED` and `SUPP_NAMES_ENABLED` off and the
-reminder function deploying with the release (register item 42). Three things to record:
+reminder function deploying with the release (register item 42). Later the same day Benn turned
+`MIND_REVIEWED` on by default too (branch `claude/wellbeing-flag-on`): the skill screens (Reset,
+Wind down, Unload, Get outside) and the low-mood signpost, for testing while the app isn't public,
+with the clinician review moved to a gate before public launch. Four things to record:
 
 - **Which rows gate which flag.** 8.7 says "The flag still waits on the rows below". Read with
-  each row's note, `WELLBEING_ENABLED` waited only on item 42; the clinician advice and item 44
-  gate `MIND_REVIEWED`, which stays off.
-- **R15 for the version that ships.** The skill screens (Reset, Unload, Wind down, Get outside)
-  and the low-mood signpost are not reachable, so two measures listed under R15 (the Unload
-  sheet's copy and the signpost) are not live, and neither is the content the clinician is to
-  review. What is live: the terms paragraph on the Mind part (reworded 10 October so it no longer
-  promises the signpost), "Need support now?" on the Mind page and in the check-in, opening the
-  Support sheet with 999 and the not-a-crisis-service line, and the wellness line. Proposed
-  residual for this version: **medium** while testing is closed (the app isn't public). Before
-  public launch, Benn to confirm a residual for whatever is then live; if R15 is still rated high
-  then, 7.3 applies (Art. 36 prior consultation).
+  each row's note, `WELLBEING_ENABLED` waited only on item 42. The clinician advice row said
+  "Before `MIND_REVIEWED` goes on"; Benn's decision moves it to "before public launch". This note
+  records that change; it needs Benn's initials below to stand against the signed 8.7.
+- **R15 while testing is closed.** 8.5 says R15's residual is medium "only with the clinician
+  review done; without it, treat as high". With the skills and the signpost on and no review yet,
+  the measures are the B6.7 copy (Support and Unload sheets), the terms' Mind paragraph (which
+  names the skills and the low-mood signpost again from 10 October), "Need support now?" on the
+  Mind page and in the check-in, the Support sheet with 999 and the not-a-crisis-service line, and
+  the low-mood signpost. Proposed residual: **medium, only while testing is closed**: a small
+  group of known testers who have been told Tali isn't a crisis service, which lowers the
+  likelihood to unlikely. That reasoning holds only if sign-up is not open to the public in
+  practice; Benn to confirm who can create an account at app.tali.fit today. If anyone can, the
+  closed-testing argument doesn't hold and R15 stays high, so 7.3 (Art. 36 prior consultation)
+  applies until the clinician review is done. Before public launch: the clinician review, then
+  Benn confirms a residual for what is live; if R15 is still high then, 7.3 applies.
+- **R17 settled for the Mind sheet** (register item 44): the Mind Support sheet opens on the whole
+  UK with the GP in NHS 111's place and no 111 line until a nation is picked; the low-mood banner
+  uses the nation-neutral line. Residual **low** for the Mind context. Open, for Benn with
+  mental-performance: Northern Ireland's crisis line (Lifeline, 0808 808 8000, 24 hours, the line
+  nidirect's "Mental health emergency" page leads with) and Scotland's NHS 24 mental health option
+  (111, NHS inform) are not listed; Profile's own Support sheet still opens on England, labelled
+  as such.
 - **8.1 and the reminder cap.** Since 10 October the wind-down reminder sits outside the one a
   day cap, at most once a day of its own (register Record of processing, push row; the privacy
   policy says so). `notify_sent` keeps the last day per type for that. No new risk.
 
 | Item | Name and date | Notes |
 |---|---|---|
-| 8.9 noted by | | R15 residual for the skills-off version. |
+| 8.9 noted by | | The clinician gate moved to public launch; R15 residual medium while testing is closed. |
 
 ---
 

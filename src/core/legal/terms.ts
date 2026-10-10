@@ -14,8 +14,9 @@ const who = () => fact('controller', 'legal name')
 export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: boolean; mind?: boolean } = {}): LegalDoc {
   return {
     title: 'Terms and conditions',
-    // Mind on 10 Oct 2026; the Mind paragraph no longer names the skill screens or the low-mood
-    // signpost (MIND_REVIEWED, on by default since 10 Oct 2026, can be built off), so it holds either way
+    // Mind on 10 Oct 2026. The Mind paragraph names the skills and the low-mood signpost again
+    // (MIND_REVIEWED on by default since 10 Oct 2026, compliance the same day), so the not-therapy
+    // line covers them; a VITE_MIND_REVIEWED=0 build over-describes, as the privacy policy does
     updated: mind ? '2026-10-10' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
@@ -56,7 +57,7 @@ export function termsOfUse({ onboarding = false, mind = false }: { onboarding?: 
             'If you are struggling with food, mood or your body, you can talk to your GP, call Beat (0808 801 0677) about eating disorders, or Samaritans (116 123) at any time.',
           ...(mind
             ? [
-                "The Mind part of Tali, including check-ins and the one thing for the day, offers general wellbeing ideas. It isn't therapy or counselling, and it isn't a crisis service. Tali doesn't monitor what you write, and nobody is alerted because of how you answer. Tali can show you where to find support (\"Need support now?\" in Mind), and that is all it does. If you or someone else is in danger now, call 999.",
+                "The Mind part of Tali, including check-ins, the one thing for the day and skills such as Reset, Wind down and Unload, offers general wellbeing ideas. It isn't therapy or counselling, and it isn't a crisis service. Tali doesn't monitor what you write, and nobody is alerted because of how you answer. Tali can show you where to find support (\"Need support now?\" in Mind, and sometimes after a run of low moods), and that is all it does. If you or someone else is in danger now, call 999.",
               ]
             : []),
         ],
