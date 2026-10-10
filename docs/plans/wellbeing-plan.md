@@ -685,6 +685,17 @@ log is kept and comes back when the pillar is switched on. Still open: the items
 - **Wording:** the weekly pattern line says "on nights of 7 hours or more"; the done ticks read "Got
   outside" and "Lunch somewhere you like"; the sleep words "Mostly under 5 hours / 5 to 6 hours /
   6 to 7 hours / 7 to 8 hours / 8 hours or more" are approved.
+- **Close-out decisions (Benn, 10 Oct 2026):** republish all three legal pages from `main` to
+  Webflow as drafts (after `ship-critic`), Benn publishes; the wind-down reminder sits outside the
+  one-a-day limit like supplement reminders (footer: "Tali sends at most one check-in or plan
+  reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and
+  supplement reminders come at the times you set."); picking a Reset suggestion never opens Reset
+  by itself (the "Today" line opens it, and a finished run ticks it done); plan wording approved
+  for the five suggestions ("When I need a breather, I'll do a 2-minute Reset"; "When I'm getting
+  ready to train, I'll do a 2-minute Reset"; "When it gets to {time}, I'll start winding down";
+  "After lunch, I'll get outside for 10 minutes"; "When it's lunchtime, I'll have lunch somewhere I
+  like"); "Wound down" approved; the Profile avatar is soft mauve with a mauve letter, as the
+  boards draw it; with Food off, Summary's "This week" card drops its calorie lines.
 - **Supplement reminders sit outside the one-a-day limit**; check-in, wind-down and plan reminders
   share one a day.
 
