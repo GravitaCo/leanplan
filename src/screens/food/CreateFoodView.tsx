@@ -4,6 +4,7 @@ import type { Food, MealSlot } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { Checks, LabelPhotoButton } from './common'
+import { useDuplicateSave } from './DuplicateViews'
 
 /** Save a food from its packet label, then pick the portion. */
 export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note, onLabelPhoto }: {
@@ -15,7 +16,8 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
   /** "Photo of the label": read the numbers from a photo instead of typing them */
   onLabelPhoto?: () => void
 }) {
-  const saveCustomFood = useStore((s) => s.saveCustomFood)
+  // the same barcode, or a food that looks like a saved one, asks first (boards dup-1, dup-2)
+  const dup = useDuplicateSave(onSaved, 'typed')
   const showToast = useStore((s) => s.showToast)
   const [unit, setUnit] = useState<'g' | 'ml'>('g')
   const [f, setF] = useState({ n: '', g: '100', k: '', p: '', c: '', fat: '' })
@@ -28,8 +30,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
     if (!f.n.trim()) { showToast('Give it a name'); return }
     // a likely typo gets one nudge; the user has the packet, so a second Save keeps their numbers
     if (!warned && checks.some((c) => c.level === 'warn')) { setWarned(true); showToast('Check the note below, or tap Save again to keep these numbers'); return }
-    const food = saveCustomFood({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml', ...(barcode ? { barcode } : {}) })
-    onSaved(food)
+    dup.save({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml', ...(barcode ? { barcode } : {}) })
   }
   const row = (key: keyof typeof f, label: string, u: string, ph = '0') => (
     <div className="frow">
@@ -65,6 +66,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
       </div>
       <Checks checks={checks} ok={given.k && given.macros ? 'Adds up: the calories match the protein, carbs and fat.' : undefined}
         onFix={(k) => setF({ ...f, k: String(k) })} />
+      {dup.sheet}
     </Sheet>
   )
 }

@@ -409,6 +409,52 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
 .sheet .scale button.on { background: var(--tint); }
 
+/* duplicate foods (boards dup-1 to dup-4) */
+.sheet.dup .sheet-bd { padding: 12px 16px calc(env(safe-area-inset-bottom) + 24px); }
+.dup-hd { padding: 0 4px; }
+.dup-ico { width: 52px; height: 52px; border-radius: 16px; background: var(--tint-soft); color: var(--tint); display: flex; align-items: center; justify-content: center; }
+.dup-t { margin: 16px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.dup-lead { margin: 8px 0 0; font-size: 17px; line-height: 1.45; color: var(--label2); }
+.dup-k { font-size: 13px; color: var(--label2); }
+.dup-name .m { padding: 0; }
+.dup-was { font-size: 15px; color: var(--label2); margin-top: 3px; }
+.dup-now { font-size: 17px; margin-top: 2px; }
+.dup-was small, .dup-now small { font-size: 13px; color: var(--label2); }
+.dup-old { color: var(--label2); }
+.dup-arrow { color: var(--label2); font-size: 15px; }
+.dup-new { font-weight: 600; }
+.dup-same, .dup-same .m { font-size: 15px; color: var(--label2); }
+.dup-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+.btn.dup-link { background: none; color: var(--tint); margin-top: -4px; }
+.foot.dup-foot { padding-top: 2px; }
+.dup-names { margin-top: 18px; }
+.dup-nm { display: block; font-size: 17px; margin-top: 2px; }
+.dup-tab { padding: 0 16px; }
+.dup-row { display: grid; grid-template-columns: minmax(0, 1fr) 92px 92px; column-gap: 10px; align-items: center; min-height: 44px; font-size: 17px; border-top: 1px solid var(--sep); }
+.dup-row > span + span { text-align: right; }
+.dup-row.dup-th { min-height: 36px; font-size: 13px; color: var(--label2); border-top: 0; }
+/* dup-3: the quiet row in My foods */
+.li.dup-hint { min-height: 60px; padding: 8px 16px; }
+.ico.dup-hint-ico { background: var(--tint-soft); color: var(--tint); }
+.dup-hint .t, .dup-hint .s { display: block; }
+/* dup-4: pick the one to keep */
+.sheet-bd:has(> .dup-merge) { display: flex; flex-direction: column; padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
+.dup-merge { flex: 1; display: flex; flex-direction: column; }
+.dup-t.dup-pick { margin: 0; padding: 12px 4px 0; }
+.dup-lead.dup-pad { margin-top: 6px; padding: 0 4px; }
+.dup-fs { border: 0; margin: 18px 0 0; padding: 0; min-width: 0; }
+.li.dup-opt { align-items: flex-start; padding: 13px 16px; min-height: 52px; cursor: pointer; }
+.dup-radio { width: 24px; height: 24px; border-radius: 12px; border: 2px solid var(--fill3); flex: none; margin-top: 2px; display: flex; align-items: center; justify-content: center; color: var(--on-tint); }
+.dup-radio.on { background: var(--tint); border: 0; }
+.dup-opt input:focus-visible + .dup-radio { outline: 2px solid var(--tint); outline-offset: 2px; }
+.dup-opt .dup-nm { margin-top: 0; }
+.dup-sub { display: block; font-size: 13px; color: var(--label2); margin-top: 3px; }
+.dup-what { background: var(--elev); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 15px; line-height: 1.45; margin: 0; }
+.dup-switch { margin: 8px 0 0; }
+.dup-switch .li { min-height: 52px; }
+.dup-grow { flex: 1; }
+.dup-merge .dup-acts { margin-top: 16px; }
+
 /* ===================== TRAIN ===================== */
 .ex .h { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .ex .n { font-size: 17px; font-weight: 600; }

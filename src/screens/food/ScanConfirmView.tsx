@@ -9,13 +9,13 @@
  * suspected misread offers its one suggested fix to accept with a tap.
  */
 import { useState } from 'react'
-import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { checkLabel, foodFromConfirmed, type FoodKind, type LabelField, type LabelValues, type ScanDraft } from '@/core/domain/barcode'
 import { cellId, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
 import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LabelPhotoButton } from './common'
+import { useDuplicateSave } from './DuplicateViews'
 
 /** UK label order. `sub` rows are the "of which" lines; `unit` is shown beside the name. */
 const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: number }[] = [
@@ -46,7 +46,8 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
   /** "Photo of the label": read the numbers from the user's own pack instead */
   onLabelPhoto?: () => void
 }) {
-  const saveCustomFood = useStore((s) => s.saveCustomFood)
+  // the same barcode, or a food that looks like a saved one, asks first (boards dup-1, dup-2)
+  const dup = useDuplicateSave(onSaved, 'scan')
   const info = draft.label
   const [kind, setKind] = useState<FoodKind>(draft.kind)
   const [ml, setMl] = useState(draft.ml)
@@ -132,8 +133,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
     // whole number, since saved servings are whole grams)
     const printed = info ? parseServing(info.texts.servingText) : undefined
     const ref = live && Number.isInteger(g) ? servingRef(live, printed, g) : undefined
-    const food = saveCustomFood(foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source, ref }))
-    onSaved(food)
+    dup.save(foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source, ref }))
   }
   const accept = () => {
     if (!sugg) return
@@ -249,6 +249,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
         <button className="btn" onClick={save} disabled={missing}>{missing ? 'Fill in the marked fields' : 'Save food'}</button>
       </div>
       <div className="foot">Saved foods appear in search{draft.barcode ? ' and open straight away next time you scan them, even offline' : ''}.</div>
+      {dup.sheet}
     </Sheet>
   )
 }
