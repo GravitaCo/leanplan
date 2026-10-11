@@ -45,6 +45,9 @@ export interface Food {
   /** custom foods only: ids of the user's other saved foods they said are different ("They're
    *  different", board dup-4), so the "look the same" hint never pairs them again */
   notSame?: string[]
+  /** custom foods only: names this food had before, or of foods merged into it (boards dup-1,
+   *  dup-4). Logs under those names count as this food; days are never rewritten */
+  alias?: string[]
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean

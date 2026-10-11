@@ -47,7 +47,7 @@ import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
-import { markDifferent, mergeFoods, moveLogs, updatedFood } from '@/core/domain/duplicates'
+import { markDifferent, mergeFoods, nameAfterUpdate, updatedFood } from '@/core/domain/duplicates'
 import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
@@ -890,13 +890,12 @@ export const useStore = create<StoreState>()(
       updateCustomFood: (id, next, keepName = false) => {
         const old = get().data.customFoods.find((x) => x.id === id)
         if (!old) return null
-        let food = updatedFood(old, next, keepName)
-        // the server holds one food per name: a name another saved food has stays as it was
-        if (get().data.customFoods.some((x) => x.id !== id && x.n.toLowerCase() === food.n.toLowerCase())) food = { ...food, n: old.n }
+        // a name another saved food has stays as it was (the server holds one food per name); a new
+        // name keeps the old one as an alias, so its logs still count. No day is rewritten.
+        const food = updatedFood(old, next, nameAfterUpdate(get().data.customFoods, old, next, keepName))
         set((st) => {
           const cur = st.data.customFoods.find((x) => x.id === id)
           if (!cur) return
-          for (const d of moveLogs(st.data.days, cur.n, food.n)) markDayDirty(st.data, d)
           for (const k of Object.keys(cur) as (keyof Food)[]) delete cur[k]
           Object.assign(cur, food, { _dirty: true, _u: nowIso() })
         })
@@ -906,9 +905,10 @@ export const useStore = create<StoreState>()(
 
       mergeCustomFoods: (keepId, dropId, takeBarcode) => {
         set((st) => {
+          // the other's names become the kept food's aliases: no day is rewritten, so another
+          // device's newer logs can't be overwritten and logged numbers never change
           const r = mergeFoods(st.data, keepId, dropId, takeBarcode)
           if (!r) return
-          for (const d of r.days) markDayDirty(st.data, d)
           meta(st.data).foodDeletes.push(r.removed)
           const keep = st.data.customFoods.find((x) => x.id === keepId)
           if (keep) Object.assign(keep, { _dirty: true, _u: nowIso() })

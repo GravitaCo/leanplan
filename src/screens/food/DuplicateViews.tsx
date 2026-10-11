@@ -10,7 +10,7 @@
 import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
-import { foodChanges, hasChanges, likelySaved, savedWithBarcode, timesLogged, type ChangeField } from '@/core/domain/duplicates'
+import { foodChanges, hasChanges, likelySaved, nameAfterUpdate, savedWithBarcode, timesLogged, type ChangeField } from '@/core/domain/duplicates'
 import { uniqueName } from '@/core/domain/barcode'
 import { MEAL_LABEL, usuals } from '@/core/domain/insights'
 import { r1 } from '@/core/domain/date'
@@ -39,7 +39,7 @@ export function useDuplicateSave(onSaved: (f: Food) => void, from: NewFrom) {
     const same = savedWithBarcode(foods, next.barcode)
     if (same) {
       // nothing would change: it's the saved food, opened as it is
-      if (!hasChanges(foodChanges(same, next))) { onSaved(same); return }
+      if (!hasChanges(foodChanges(same, { ...next, n: nameAfterUpdate(foods, same, next) }))) { onSaved(same); return }
       setAsk({ kind: 'barcode', saved: same, next }); return
     }
     const like = likelySaved(foods, next as Food)
@@ -57,7 +57,9 @@ export function useDuplicateSave(onSaved: (f: Food) => void, from: NewFrom) {
 /** dup-1: same barcode = same food. Only what changes, old → new; the rest summed up in one row. */
 function BarcodeUpdateSheet({ saved, next, onClose, onDone }: { saved: Food; next: Omit<Food, 'id'>; onClose: () => void; onDone: (f: Food | null) => void }) {
   const update = useStore((s) => s.updateCustomFood)
-  const ch = foodChanges(saved, next)
+  const customFoods = useStore((s) => s.data.customFoods)
+  // the name it will really have: a name another saved food holds isn't taken
+  const ch = foodChanges(saved, { ...next, n: nameAfterUpdate(customFoods || [], saved, next) })
   const title = `Update your saved ${saved.n}?`
   const val = (field: ChangeField, v: number) => (field === 'g' ? `${r1(v)}${unitOf(next)}` : field === 'k' ? String(Math.round(v)) : String(r1(v)))
   const same = ch.same.map((f, i) => (i === 0 ? FIELD[f].replace(' (kcal)', '') : FIELD[f].replace(' (kcal)', '').toLowerCase())).join(', ')
@@ -177,7 +179,7 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
   const data = useStore((s) => s.data)
   const merge = useStore((s) => s.mergeCustomFoods)
   const different = useStore((s) => s.markFoodsDifferent)
-  const logs = pair.map((f) => timesLogged(data.days, f.n))
+  const logs = pair.map((f) => timesLogged(data.days, f))
   // the one with more logs is kept by default (the first on a tie)
   const [keepIdx, setKeepIdx] = useState(logs[1] > logs[0] ? 1 : 0)
   const [takeBarcode, setTakeBarcode] = useState(true)

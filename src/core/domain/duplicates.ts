@@ -6,8 +6,10 @@
  * - likely the same (dup-2, dup-3): a very similar name and per-100 figures within tolerance.
  * - merging (dup-4): logs and usuals of the other food move to the kept one, calories as logged.
  *
- * Logs refer to foods by name (LoggedFood.n), and usuals and "Same as yesterday" match by name, so
- * "moving" a food's logs renames its entries; their logged numbers never change.
+ * Logs refer to foods by name (LoggedFood.n), and usuals and "Same as yesterday" match by name. A
+ * merged or renamed food keeps its earlier names as aliases (`alias`, synced in custom_foods.meta),
+ * and name matching goes through `aliasNames`, so logs follow the food without any day being
+ * rewritten (sync uploads whole days, so rewriting old ones could overwrite another device's).
  * Only the user's own foods (customFoods) are ever compared, never the built-in database.
  */
 import type { DayLog, Food } from '../types'
@@ -47,7 +49,9 @@ export function nameWords(name: string): Set<string> {
 }
 
 export function namesMatch(a: string, b: string): boolean {
-  const A = nameWords(a), B = nameWords(b)
+  return jaccardOk(nameWords(a), nameWords(b))
+}
+function jaccardOk(A: Set<string>, B: Set<string>): boolean {
   if (!A.size || !B.size) return false
   let both = 0
   for (const w of A) if (B.has(w)) both++
@@ -85,15 +89,23 @@ export function dismissed(a: Food, b: Food): boolean {
   return (!!b.id && !!a.notSame?.includes(b.id)) || (!!a.id && !!b.notSame?.includes(a.id))
 }
 
-/** Saved foods that look the same and haven't been told apart, in saved order (dup-3). */
+/** Each saved food's name words, worked out once per list (lists are immutable store snapshots). */
+const pairsMemo = new WeakMap<Food[], [Food, Food][]>()
+
+/** Saved foods that look the same and haven't been told apart, in saved order (dup-3). Memoised
+ *  per list, with each name's words computed once. */
 export function likelyPairs(saved: Food[]): [Food, Food][] {
+  const hit = pairsMemo.get(saved)
+  if (hit) return hit
+  const words = saved.map((f) => nameWords(f.n))
   const out: [Food, Food][] = []
   for (let i = 0; i < saved.length; i++) {
     for (let j = i + 1; j < saved.length; j++) {
       const a = saved[i], b = saved[j]
-      if (a.id && b.id && !dismissed(a, b) && likelySame(a, b)) out.push([a, b])
+      if (a.id && b.id && !dismissed(a, b) && jaccardOk(words[i], words[j]) && figuresMatch(a, b)) out.push([a, b])
     }
   }
+  pairsMemo.set(saved, out)
   return out
 }
 
@@ -105,6 +117,80 @@ export function markDifferent(a: Food, b: Food): void {
   if (!a.id || !b.id) return
   a.notSame = [...(a.notSame || []).filter((x) => x !== b.id), b.id].slice(-NOT_SAME_MAX)
   b.notSame = [...(b.notSame || []).filter((x) => x !== a.id), a.id].slice(-NOT_SAME_MAX)
+  fitMeta(a); fitMeta(b)
+}
+
+/* ---- names a food used to have (merges and renames) ---- */
+
+/**
+ * The Food fields that travel in `custom_foods.meta` (data/sync.ts), kept here so the size cap can
+ * be checked in core. The server caps meta at 2048 bytes (docs/migrations/2026-09-custom-foods-meta.sql).
+ */
+export const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode', 'eat', 'notSame', 'alias'] as const
+/** Room left under the server's cap for jsonb's own overhead. */
+export const META_BUDGET = 1700
+/** The most earlier names one food keeps, and their longest length. */
+export const ALIAS_MAX = 10
+export const ALIAS_LEN = 120
+
+const metaSize = (f: Food) => {
+  const m: Record<string, unknown> = {}
+  for (const k of FOOD_META_KEYS) if (f[k] !== undefined && f[k] !== false) m[k] = f[k]
+  return new TextEncoder().encode(JSON.stringify(m)).length
+}
+/** Keep a food's meta under the cap: the oldest earlier names go first, then the oldest "different". */
+export function fitMeta(f: Food): void {
+  while (metaSize(f) > META_BUDGET) {
+    if (f.alias?.length) { f.alias = f.alias.slice(1); if (!f.alias.length) delete f.alias }
+    else if (f.notSame?.length) { f.notSame = f.notSame.slice(1); if (!f.notSame.length) delete f.notSame }
+    else break
+  }
+}
+
+/** Clean a stored alias list: strings only, trimmed, not the food's own name, newest kept. */
+export function cleanAlias(f: Food): void {
+  if (f.alias === undefined) return
+  const own = (f.n || '').toLowerCase()
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const x of (Array.isArray(f.alias) ? f.alias : []).slice().reverse()) {
+    if (typeof x !== 'string') continue
+    const t = x.trim().slice(0, ALIAS_LEN)
+    if (!t || t.toLowerCase() === own || seen.has(t)) continue
+    seen.add(t)
+    out.unshift(t)
+    if (out.length >= ALIAS_MAX) break
+  }
+  if (out.length) f.alias = out; else delete f.alias
+}
+
+/** Add earlier names to a food (its logs under those names now count as this food). */
+export function addAliases(f: Food, names: (string | undefined)[]): void {
+  f.alias = [...(f.alias || []), ...names.filter((x): x is string => !!x)]
+  cleanAlias(f)
+  fitMeta(f)
+}
+
+const aliasMemo = new WeakMap<Food[], Map<string, string>>()
+/**
+ * Earlier name → the saved food's current name, for matching logs (usuals, "Same as yesterday",
+ * last time, times logged). A name that is some saved food's current name is never an alias, and
+ * the first food to claim an alias keeps it. Memoised per list.
+ */
+export function aliasNames(foods: Food[] | undefined): Map<string, string> {
+  if (!foods) return new Map()
+  const hit = aliasMemo.get(foods)
+  if (hit) return hit
+  const current = new Set(foods.map((f) => f.n))
+  const out = new Map<string, string>()
+  for (const f of foods) for (const a of f.alias || []) if (!current.has(a) && !out.has(a)) out.set(a, f.n)
+  aliasMemo.set(foods, out)
+  return out
+}
+
+/** The name a log entry counts under today: a saved food's current name for an earlier one. */
+export function currentName(names: Map<string, string>, x: { n: string; src?: string }): string {
+  return x.src === 'db' || x.src === 'recipe' ? x.n : names.get(x.n) ?? x.n
 }
 
 /* ---- what would change (dup-1) ---- */
@@ -136,60 +222,59 @@ export function foodChanges(old: Food, next: Pick<Food, 'n' | 'g' | 'k' | 'p' | 
 export const hasChanges = (c: FoodChanges) => !!c.name || c.figures.length > 0
 
 /**
- * The saved food after taking `next`'s figures (dup-1 "Update it", dup-2 "Use the scanned one").
- * The id always stays, so it syncs as an update; `keepName` keeps the saved name (dup-2).
+ * The name a saved food ends up with when it takes `next` (dup-1 "Update it", dup-2 "Use the scanned
+ * one"): the saved name when asked to keep it, or when another saved food already has the new one
+ * (the server holds one food per name).
  */
-export function updatedFood(old: Food, next: Omit<Food, 'id'>, keepName = false): Food {
-  const { id, notSame, _u, _dirty } = old
-  const out: Food = { ...next, id, n: keepName ? old.n : next.n.trim(), g: Math.round(next.g) }
-  if (!out.barcode && old.barcode) out.barcode = old.barcode
+export function nameAfterUpdate(foods: Food[], old: Food, next: Pick<Food, 'n'>, keepName = false): string {
+  const n = next.n.trim()
+  if (keepName || !n) return old.n
+  return foods.some((x) => x.id !== old.id && x.n.toLowerCase() === n.toLowerCase()) ? old.n : n
+}
+
+/**
+ * The saved food after taking `next`'s figures under the name `name` (see nameAfterUpdate). The id
+ * always stays, so it syncs as an update. A changed name keeps the old one as an alias, so the
+ * logs under it still count; what `next` doesn't say (barcode, category, cook, eat) stays.
+ */
+export function updatedFood(old: Food, next: Omit<Food, 'id'>, name: string = old.n): Food {
+  const { id, notSame, alias, _u, _dirty } = old
+  const out: Food = { ...next, id, n: name, g: Math.round(next.g) }
+  for (const k of ['barcode', 'cat', 'cook', 'eat'] as const) if (out[k] === undefined && old[k] !== undefined) (out as unknown as Record<string, unknown>)[k] = old[k]
   if (notSame?.length) out.notSame = notSame
+  if (alias?.length) out.alias = alias
+  if (name !== old.n) addAliases(out, [old.n])
+  else fitMeta(out)
   if (_u) out._u = _u
   if (_dirty) out._dirty = _dirty
   return out
 }
 
-/* ---- logs follow the food ---- */
+/* ---- logs follow the food (without rewriting a single day) ---- */
 
-/**
- * Point every log entry of the food named `from` at `to` (and the cooking fat logged with it).
- * Logged calories and macros never change. Returns the dates that changed, to sync.
- */
-export function moveLogs(days: Record<string, DayLog>, from: string, to: string): string[] {
-  if (!from || from === to) return []
-  const changed: string[] = []
-  for (const d of Object.keys(days)) {
-    let hit = false
-    for (const x of days[d].foods || []) {
-      if (x.n === from && x.src !== 'db' && x.src !== 'recipe' && x.src !== 'fat') { x.n = to; hit = true }
-      if (x.src === 'fat' && x.fatFor === from) { x.fatFor = to; hit = true }
-    }
-    if (hit) changed.push(d)
-  }
-  return changed.sort()
-}
-
-/** How many times a food was logged (cooking fat not counted). */
-export function timesLogged(days: Record<string, DayLog>, name: string): number {
+/** How many times a food was logged under its name or an earlier one (cooking fat not counted). */
+export function timesLogged(days: Record<string, DayLog>, f: Pick<Food, 'n' | 'alias'>): number {
+  const names = new Set([f.n, ...(f.alias || [])])
   let n = 0
-  for (const d of Object.keys(days)) for (const x of days[d].foods || []) if (x.n === name && x.src !== 'fat' && x.src !== 'db' && x.src !== 'recipe') n++
+  for (const d of Object.keys(days)) for (const x of days[d].foods || []) if (names.has(x.n) && x.src !== 'fat' && x.src !== 'db' && x.src !== 'recipe') n++
   return n
 }
 
 /**
- * Merge `drop` into `keep` (dup-4): logs move, `drop` goes, and with `takeBarcode` the kept food
- * takes the other's barcode. Mutates `foods` and `days`; returns the changed dates and the
- * removed food's id (for the delete to sync).
+ * Merge `drop` into `keep` (dup-4): `drop` goes and its names become `keep`'s aliases, so its logs
+ * count as `keep` from now on. Days are never rewritten (another device may hold newer ones), so
+ * logged numbers can't change. With `takeBarcode` the kept food takes the other's barcode.
+ * Mutates `customFoods`; returns the removed food's id (for the delete to sync).
  */
-export function mergeFoods(state: { customFoods: Food[]; days: Record<string, DayLog> }, keepId: string, dropId: string, takeBarcode: boolean): { days: string[]; removed: string } | null {
+export function mergeFoods(state: { customFoods: Food[] }, keepId: string, dropId: string, takeBarcode: boolean): { removed: string } | null {
   const keep = state.customFoods.find((f) => f.id === keepId)
   const drop = state.customFoods.find((f) => f.id === dropId)
   if (!keep || !drop || keep === drop) return null
-  const days = moveLogs(state.days, drop.n, keep.n)
   if (takeBarcode && drop.barcode) keep.barcode = drop.barcode
   const others = (drop.notSame || []).filter((x) => x !== keep.id)
   if (others.length) keep.notSame = [...new Set([...(keep.notSame || []), ...others])].slice(-NOT_SAME_MAX)
   if (keep.notSame) { keep.notSame = keep.notSame.filter((x) => x !== drop.id); if (!keep.notSame.length) delete keep.notSame }
   state.customFoods.splice(state.customFoods.indexOf(drop), 1)
-  return { days, removed: dropId }
+  addAliases(keep, [...(drop.alias || []), drop.n])
+  return { removed: dropId }
 }
