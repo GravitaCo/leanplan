@@ -33,8 +33,9 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
     // the Mind version changed on 10 Oct (the wind-down reminder outside the one-a-day cap; B12's
     // wind-down routine and B11b's supplement names setting); with
     // Mind off the text is main's
-    // label photos and the shared product list (`products`) on 10 Oct 2026
-    updated: mind || products ? '2026-10-10' : '2026-10-09',
+    // label photos and the shared product list (`products`) on 10 Oct 2026; Anthropic's transfer
+    // safeguard named on 11 Oct 2026
+    updated: products ? '2026-10-11' : mind ? '2026-10-10' : '2026-10-09',
     intro:
       `This explains what Tali collects, why, who else handles it and the rights you have. It covers the Tali app ` +
       `(app.tali.fit) and the Tali website (www.tali.fit). Tali is run by ${who()} ("we", "us"). We are the controller ` +
@@ -226,7 +227,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `Your app account data is stored in the EU. Some of our providers are based in, or may access data from, the United States. ` +
             `Where personal data leaves the UK or EU, we rely on the safeguards the law provides, such as the UK International Data Transfer Addendum, ` +
             `the EU Standard Contractual Clauses or the UK-US and EU-US Data Privacy Framework. Contact us for details of the safeguard for a particular provider.` +
-            (products ? ` Label photos are read by Anthropic, which may process them in the United States.` : ''),
+            (products ? ` Label photos are read by Anthropic, which may process them in the United States. For that we rely on the EU Standard Contractual Clauses, with the UK International Data Transfer Addendum, in Anthropic's data processing terms.` : ''),
         ],
       },
       {

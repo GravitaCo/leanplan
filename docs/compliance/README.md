@@ -212,8 +212,18 @@ Added 2026-09-27 (consent release):
     - Basis decided: contract (the person asks for the read), not consent. So no Art. 7(3)
       withdrawal toggle is owed: not taking a photo is the opt-out, and "Type it in instead" is
       always there. The `label-photo` record stays as the notice and the server gate.
-    - OPEN before merge (Benn): confirm the API key's Anthropic organisation is on the Commercial
-      Terms (DPA incorporated) and record the DPA's transfer mechanism here.
+    - Closed 2026-10-11: Benn confirmed the `ANTHROPIC_API_KEY` was created in the Anthropic
+      Console (workspace "Tali", an API organisation, not a consumer Claude.ai account), so the
+      Commercial Terms (effective 2025-06-17) apply: they govern API keys, the contracting
+      entity is Anthropic Ireland, Limited for UK/EEA/Swiss customers, and they incorporate the
+      DPA. Transfer mechanism, from the DPA (effective 2025-02-24, read 2026-10-11 at
+      https://www.anthropic.com/legal/data-processing-addendum): EU SCCs Module Two/Three
+      (s. I.1, Irish law) with the ICO UK Addendum B.1.0 for UK GDPR data (s. I.2, Sch. 3 Part
+      B). No reliance on the DPF or the UK-US data bridge (not mentioned). Privacy policy now
+      names that safeguard. DPIA 9.4 and 9.7 updated. Small check, not a gate: the Console
+      organisation's billing country should be the UK.
+    - Done 2026-10-11: Benn (Gravita Creative Ltd) approved DPIA §9, label photo scanning and the
+      shared product list.
     - Done 2026-10-10 (Benn: wording changes need no board): the on-screen notice now reads
       "Tali doesn't keep your photo. It's sent to Anthropic, the AI service we use, only to read
       the numbers, and isn't used to train its AI. You can check the numbers before anything is

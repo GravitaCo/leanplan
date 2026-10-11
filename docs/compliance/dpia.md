@@ -844,7 +844,8 @@ with the clinician review moved to a gate before public launch. Four things to r
 
 ## 9. Addendum: label photos (Anthropic) and the shared product list
 
-**Drafted 10 October 2026 by compliance, for Benn to sign.** Covers `origin/shared-products` at
+**Drafted 10 October 2026 by compliance; approved by Benn (Gravita Creative Ltd, controller) on
+11 October 2026.** Covers `origin/shared-products` at
 `e8ac601`, which turns on label scanning (`LABEL_SCAN_ENABLED`) and with it the shared product
 list (`SHARED_PRODUCTS_ENABLED`). Register items 24 and 46 hold the detail and the open points.
 This section supersedes D5 and the Anthropic row in section 2.1 once signed.
@@ -932,15 +933,36 @@ privacy policy say so. A version can still be taken down after a report.
 
 - **What goes:** one or two downscaled photos of a food pack. No identifiers. Incidental content
   in the frame (a hand, a kitchen) is possible but not sought.
-- **Who and where:** Anthropic Ireland, Limited contracts with UK and EEA customers under
-  Anthropic's Commercial Terms, which incorporate its DPA and bar training on Customer Content;
-  processing is likely in the US. Retention: deleted within 30 days of receipt, unless kept
-  longer to enforce the usage policy or by law (Anthropic privacy centre, checked 10 Oct 2026).
+- **Who and where:** the `ANTHROPIC_API_KEY` in `ai-read-label` was created in the Anthropic
+  Console, in a workspace called "Tali" in an API organisation, not a consumer Claude.ai account
+  (Benn, 11 Oct 2026). The Commercial Terms (effective 17 June 2025) "govern Customer's use of
+  Anthropic API keys", and "Anthropic" means Anthropic Ireland, Limited where the customer
+  resides in the EEA, Switzerland or UK. They incorporate the DPA (s. C) and say Anthropic "may
+  not train models on Customer Content" (s. B). Processing is likely in the US. Retention:
+  deleted within 30 days of receipt, unless kept longer to enforce the usage policy or by law
+  (Anthropic privacy centre, checked 10 Oct 2026).
+- **Mechanism (Anthropic DPA, effective 24 Feb 2025, read 11 Oct 2026 at
+  https://www.anthropic.com/legal/data-processing-addendum):** the EU SCCs (Decision 2021/914),
+  Module Two (controller to processor) and/or Module Three, incorporated by reference and deemed
+  executed "to the extent required" (s. I.1), Irish law and courts (Sch. 3 A.1.c, A.1.d); for
+  UK GDPR data, the ICO's International Data Transfer Addendum to the SCCs (template B.1.0)
+  is incorporated (s. I.2, Sch. 3 Part B), and Anthropic as importer may end it under its
+  Table 4 terms. The importer is "the Anthropic entity that executed the Agreement" (Sch. 1
+  A.2). The DPA does not mention the Data Privacy Framework, its UK Extension (the UK-US data
+  bridge) or the IDTA itself; Tali does not rely on them for Anthropic. Anthropic must give the
+  information needed for a TIA (s. I.4); subprocessors listed at anthropic.com/subprocessors
+  (Sch. 4; not read: the page didn't render without a browser).
+- **Gap noted, accepted at this risk level:** the UK to Ireland leg is covered by UK adequacy
+  for the EEA; the onward transfer from Anthropic Ireland to Anthropic, PBC or its US
+  subprocessors is Anthropic's under s. C.2 (subprocessor terms substantially as protective),
+  and its own mechanism was not seen. For a pack photo with no identifiers this does not change
+  the outcome.
 - **Risk in the destination:** public-authority access to a pack photo with no link to a person
   would reveal nothing about anyone. Remote likelihood, minimal severity.
-- **Still open (Benn, before merge):** confirm the API key's organisation is on the Commercial
-  Terms and record the DPA's transfer mechanism (IDTA, UK Addendum to the SCCs, or the UK
-  Extension to the DPF). Zero data retention is optional at this risk level.
+- **Closed 11 Oct 2026:** the organisation is on the Commercial Terms (Benn's confirmation
+  above) and the mechanism is recorded. One small check left, not a gate: the organisation's
+  billing country in the Console should be the UK, so the contracting entity is Anthropic
+  Ireland, Limited. Zero data retention is optional at this risk level.
 
 ### 9.5 New risks
 
@@ -953,8 +975,8 @@ privacy policy say so. A version can still be taken down after a report.
 
 ### 9.6 Measures
 
-- **R19.** Photos only, no identifiers; DPA and no-training terms; 30-day deletion; nothing stored
-  by Tali. To do: the DPA confirmation above. Residual: **low**.
+- **R19.** Photos only, no identifiers; DPA (SCCs with the UK Addendum) and no-training terms;
+  30-day deletion; nothing stored by Tali. Residual: **low**.
 - **R20.** The design in 9.3, the no-join rule, the random send delay; to do: the `security-data`
   fix in item 46. Residual: **low**.
 - **R21.** Name rules refuse links, `@`, markup, long digit runs and claims before storage; a name
@@ -968,8 +990,8 @@ privacy policy say so. A version can still be taken down after a report.
 
 | Item | Name and date | Notes |
 |---|---|---|
-| Section 9 approved by | | Before `LABEL_SCAN_ENABLED` reaches `main`. |
-| Anthropic DPA and transfer mechanism recorded | | Register item 24. |
+| Section 9 approved by | Benn, Gravita Creative Ltd, 11 Oct 2026 | Approves label photo scanning and the shared product list. Before `LABEL_SCAN_ENABLED` reaches `main`. |
+| Anthropic DPA and transfer mechanism recorded | Compliance, 11 Oct 2026 (API organisation confirmed by Benn the same day) | EU SCCs Module Two/Three with the UK Addendum (DPA s. I, Sch. 3); see 9.4. Register item 24. |
 | `security-data` fix for day-level ordering | | Register item 46; should fix, not a gate. |
 
 ---
@@ -986,7 +1008,8 @@ privacy policy say so. A version can still be taken down after a report.
 - Section 9 (10 Oct 2026): code on `shared-products-legal` (from `e8ac601`); Anthropic Commercial
   Terms (anthropic.com/legal/commercial-terms: DPA incorporated by reference, no training on
   Customer Content, Anthropic Ireland, Limited for UK/EEA customers) and the Anthropic privacy
-  centre article on API retention (privacy.claude.com), both 10 Oct 2026. The DPA itself was not
-  read. UK GDPR Recital 26 and Arts. 7(3), 11 not re-read for this draft.
+  centre article on API retention (privacy.claude.com), both 10 Oct 2026. Anthropic DPA
+  (anthropic.com/legal/data-processing-addendum, effective 24 Feb 2025) and the Commercial Terms
+  preamble (effective 17 June 2025) read 11 Oct 2026; anthropic.com/subprocessors not readable. UK GDPR Recital 26 and Arts. 7(3), 11 not re-read for this draft.
 - UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); not re-read for this
   draft beyond the articles cited.
