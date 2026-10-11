@@ -28,6 +28,8 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { offBeforeShare } from '@/data/sharedProducts'
 import { draftForShare } from '@/core/domain/sharedProduct'
 import { InOffSheet, SHARE_ROW } from './SharedProduct'
+import { likelyPairs } from '@/core/domain/duplicates'
+import { SameFoodView, SameFoodsRow } from './DuplicateViews'
 
 type LabelProps = {
   onBack?: () => void; onClose: () => void; animate: boolean; barcode?: string; base?: ScanDraft; onDone: (d: ScanDraft, notice?: string) => void
@@ -68,6 +70,9 @@ type View =
    *  from this saved food's "Share this product" (sp-8b) */
   | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View; offMissing?: boolean; share?: Food }
 
+  /** two saved foods that look the same (board dup-4): pick the one to keep */
+  | { kind: 'same'; ids: [string, string] }
+
 
 export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
@@ -86,7 +91,13 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   const go = (v: View) => { setMoved(true); setView(v) }
   const back = initialView ? undefined : () => go({ kind: 'search' })
   const common = { meal, setMeal, onBack: back, onClose, animate: !moved }
+  const customFoods = useStore((s) => s.data.customFoods)
+  const cur = useStore((s) => s.cur)
 
+  if (view.kind === 'same') {
+    const pair = view.ids.map((id) => (customFoods || []).find((f) => f.id === id))
+    if (pair[0] && pair[1]) return <SameFoodView pair={[pair[0], pair[1]]} cur={cur} onBack={() => go({ kind: 'search' })} onClose={onClose} animate={!moved} />
+  }
   if (view.kind === 'portion') {
     const from = view
     const food = view.food
@@ -197,6 +208,8 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const us = usuals(data, cur, meal)
     const rc = recentFoods(data, all)
     const cf = data.customFoods || []
+    // one quiet row while two saved foods look the same (board dup-3)
+    const pair = likelyPairs(cf)[0]
     const byUse = recipesByUse(data)
     body = (
       <>
@@ -218,6 +231,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         {cf.length > 0 && (
           <>
             <div className="lbl">My foods</div>
+            {pair && <div className="list"><SameFoodsRow pair={pair} onOpen={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></div>}
             <div className="list">
               {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
                 <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={`Delete ${f.n}`}
@@ -225,6 +239,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
                   <Icon name="x" size={17} />
                 </button>))}
             </div>
+            {pair && <div className="foot dup-listfoot">Shown only while two saved foods look alike. Merging or “They’re different” clears it.</div>}
           </>
         )}
         {!rc.length && !cf.length && <><div className="lbl">Common</div><div className="list">{FOODS.slice(0, 8).map((f, i) => foodRow(f, i))}</div></>}

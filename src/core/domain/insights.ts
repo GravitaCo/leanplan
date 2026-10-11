@@ -15,6 +15,7 @@ import { maintenanceEstimate } from './targets'
 import { sexOf } from './onboarding'
 import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf, workoutsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
+import { aliasNames, currentName } from './duplicates'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
 
@@ -126,9 +127,11 @@ export function energyStatus(k: number, r: Range): DayStatus {
 
 /** The most recent time this food was logged — drives "your usual" portions. */
 export function lastUse(s: AppState, name: string): LoggedFood | null {
+  // a saved food's earlier names (a merge or rename, core/domain/duplicates) count as it
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
-    for (let i = fs.length - 1; i >= 0; i--) if (fs[i].n === name && fs[i].src !== 'fat') return fs[i]
+    for (let i = fs.length - 1; i >= 0; i--) if (fs[i].src !== 'fat' && currentName(names, fs[i]) === name) return fs[i]
   }
   return null
 }
@@ -148,15 +151,16 @@ export function isRemovedFood(x: LoggedFood): boolean {
 }
 
 export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedFood[] {
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
     for (let i = fs.length - 1; i >= 0; i--) {
-      if (fs[i].n !== name || fs[i].src === 'fat') continue
+      if (fs[i].src === 'fat' || currentName(names, fs[i]) !== name) continue
       if (isRemovedFood(fs[i])) return []
       // a cooking-fat entry is logged straight after its food
       const next = fs[i + 1]
-      const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
-      return [relog(fs[i], meal), ...fat]
+      const fat = next?.src === 'fat' && next.fatFor === fs[i].n ? [relog(next, meal, names)] : []
+      return [relog(fs[i], meal, names), ...fat]
     }
   }
   return []
@@ -226,16 +230,19 @@ export interface Usual { n: string; count: number; last: LoggedFood }
 export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   const days = Object.keys(s.days).filter((d) => d < cur).sort().reverse().slice(0, 21)
   const counts: Record<string, Usual> = {}
+  // a saved food's earlier names count as the food (core/domain/duplicates aliasNames)
+  const names = aliasNames(s.customFoods)
   for (const d of days) {
     const seen = new Set<string>()
     for (const x of s.days[d].foods || []) {
-      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n) || isRemovedFood(x)) continue
-      seen.add(x.n)
-      if (!counts[x.n]) counts[x.n] = { n: x.n, count: 0, last: x }
-      counts[x.n].count++
+      const n = currentName(names, x)
+      if (x.meal !== meal || x.src === 'fat' || seen.has(n) || isRemovedFood(x)) continue
+      seen.add(n)
+      if (!counts[n]) counts[n] = { n, count: 0, last: x }
+      counts[n].count++
     }
   }
-  const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
+  const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => currentName(names, x)))
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
 /**
@@ -262,9 +269,15 @@ export function entryAmount(x: LoggedFood, food: Food): number {
  * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
  * from an old snapshot. Same amount and unit; anything else keeps its logged numbers.
  */
-export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
+export function relog(x: LoggedFood, meal: MealSlot, names?: Map<string, string>): LoggedFood {
   const { ok: _ok, ...rest } = x
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  // a saved food merged or renamed since: the new entry carries its current name (the old one
+  // keeps its own), numbers as logged
+  if (names) {
+    out.n = currentName(names, x)
+    if (x.src === 'fat' && x.fatFor) out.fatFor = names.get(x.fatFor) ?? x.fatFor
+  }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
   const unit = food ? unitOf(food) : undefined
   // same unit: rescale the same amount. A food now sold per item (KFC Original Recipe, once per
@@ -285,11 +298,13 @@ export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[
 export function recentFoods(s: AppState, all: Food[], limit = 8): Food[] {
   const seen = new Set<string>()
   const out: Food[] = []
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse().slice(0, 14)) {
     for (const x of s.days[d].foods || []) {
-      if (seen.has(x.n)) continue
-      seen.add(x.n)
-      const m = all.find((f) => f.n === x.n)
+      const n = currentName(names, x)
+      if (seen.has(n)) continue
+      seen.add(n)
+      const m = all.find((f) => f.n === n)
       if (m) out.push(m)
       if (out.length >= limit) return out
     }
@@ -380,11 +395,12 @@ export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
  * The store's repeatYesterday and the Summary row both use this, so the row's kcal is exactly
  * what the tap adds. `gone` counts the foods left out.
  */
-export function entriesToRepeat(s: Pick<AppState, 'days'>, day: string, meal: MealSlot): { entries: LoggedFood[]; gone: number } {
+export function entriesToRepeat(s: Pick<AppState, 'days'> & Partial<Pick<AppState, 'customFoods'>>, day: string, meal: MealSlot): { entries: LoggedFood[]; gone: number } {
+  const names = aliasNames(s.customFoods)
   const all = (s.days[shiftDay(day, -1)]?.foods || []).filter((x) => x.meal === meal)
   const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
   const keep = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
-  return { entries: keep.map((x) => ({ ...relog(x, meal), how: x.how })), gone: gone.size }
+  return { entries: keep.map((x) => ({ ...relog(x, meal, names), how: x.how })), gone: gone.size }
 }
 
 export interface SameAsYesterdayRow {
@@ -407,7 +423,7 @@ const listNames = (ns: string[]): string => (ns.length <= 1 ? ns.join('') : `${n
  * is the sum of what entriesToRepeat would add (R2), formatted once, never yesterday's stored
  * total. No kcal in gentle mode (R3).
  */
-export function sameAsYesterdayRow(s: Pick<AppState, 'days'>, day: string, meal: MealSlot, opts: { gentle?: boolean; max?: number } = {}): SameAsYesterdayRow | null {
+export function sameAsYesterdayRow(s: Pick<AppState, 'days'> & Partial<Pick<AppState, 'customFoods'>>, day: string, meal: MealSlot, opts: { gentle?: boolean; max?: number } = {}): SameAsYesterdayRow | null {
   if ((s.days[day]?.foods || []).some((x) => x.meal === meal)) return null
   const { entries } = entriesToRepeat(s, day, meal)
   if (!entries.length) return null

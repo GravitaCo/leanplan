@@ -71,6 +71,7 @@ import { engineSuite } from './test-engine'
 import { wizardSuite } from './test-wizard'
 import { wellbeingSuite } from './test-wellbeing'
 import { loopSuite } from './test-loop'
+import { duplicatesSuite } from './test-duplicates'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -1664,6 +1665,7 @@ async function barcodeScan(): Promise<void> {
     ['pack size from a plain quantity; not from a multipack', packFromQuantity('150') === 150 && packFromQuantity('150 g') === 150 && packFromQuantity('1.5 kg') === 1500 && packFromQuantity('33cl') === 330 && packFromQuantity('4 x 250g') === undefined],
     ['a drink counts as liquid (per 100 ml offered up front)', draftFromOff('1', { quantity: '500 ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: {} }, []).liquid],
     ['made food keys off the saved eat flag, whatever the category', isMadeFood({ eat: true, cat: 'grains' }) && kitchenCandidates([], ['Granola bar'], [{ id: 'g', n: 'Granola bar', k: 1, p: 1, c: 1, f: 1, g: 40, cat: 'grains', eat: true }]).length === 0],
+    ['sync: a pulled alias of the wrong shape is cleaned, not trusted', (() => { const f = fromServerFood({ id: 'x', name: 'Oats', kcal: 1, protein: 1, carbs: 1, fat: 1, grams: 100, ml: false, updated_at: 'z', meta: { alias: [3, { a: 1 }, ' oats ', 'Oats'] } }); return JSON.stringify(f.alias) === '["oats"]' })()],
     ['sync (flag on): meta carries eat', (toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true) as any).meta.eat === true && fromServerFood({ ...toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true), updated_at: 'z' }).eat === true],
   )
 
@@ -2121,4 +2123,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

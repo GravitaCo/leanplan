@@ -66,6 +66,10 @@ const PATHS = {
   bars: <path d="M4 6v12M7 6v12M10.5 6v12M14 6v12M16.5 6v12M20 6v12" />,
   /** a flag: Report this product (sp-2, sp-6) */
   flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
+  // duplicate foods (boards dup-1 to dup-4): two arrows round (update a saved food) and two
+  // squares (two foods look the same)
+  refresh: <><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5" /><path d="M20 4v4.5h-4.5" /><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5" /><path d="M4 20v-4.5h4.5" /></>,
+  copy: <><rect x="8" y="8" width="12" height="12" rx="3" /><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

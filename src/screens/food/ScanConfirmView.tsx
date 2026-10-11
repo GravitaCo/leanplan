@@ -17,7 +17,7 @@
  * of Save. Share asks the sp-1 opt-in first when sharing isn't agreed yet; then the signed read is
  * queued and the saved food takes these figures, keeping its name (usuals match by name).
  */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import { latestConsent } from '@/data/consent'
 import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
@@ -29,6 +29,7 @@ import { cellId, kjFromKcal, labelIssues, parseCell, parseServing, servingRef, S
 import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LabelPhotoButton } from './common'
+import { useDuplicateSave } from './DuplicateViews'
 
 /** UK label order. `sub` rows are the "of which" lines; `unit` is shown beside the name. */
 const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: number }[] = [
@@ -62,9 +63,16 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
    *  food with its new figures */
   shareFor?: Food
 }) {
-  const saveCustomFood = useStore((s) => s.saveCustomFood)
   const queueSharedProduct = useStore((s) => s.queueSharedProduct)
   const setShareProducts = useStore((s) => s.setShareProducts)
+  // the same barcode, or a food that looks like a saved one, asks first (boards dup-1, dup-2). A
+  // share agreed for this read is queued only once a food is really saved or chosen
+  const pendingShare = useRef(false)
+  const dup = useDuplicateSave((f) => {
+    if (pendingShare.current && draft.share) queueSharedProduct(draft.share)
+    pendingShare.current = false
+    onSaved(f)
+  }, 'scan')
   const info = draft.label
   const shared = draft.shared
   const shareSavedFood = useStore((s) => s.shareSavedFood)
@@ -152,10 +160,9 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
     if (!servingTouched) setServing(draft.serving[k] != null ? String(draft.serving[k]) : '')
   }
   const commit = (def: Omit<Food, 'id'>, share: boolean) => {
-    const food = saveCustomFood(def)
-    // queued on the device only; sent later, after a random delay (never on this save)
-    if (share && draft.share) queueSharedProduct(draft.share)
-    onSaved(food)
+    // queued on the device only, once saved; sent later, after a random delay (never on this save)
+    pendingShare.current = share
+    dup.save(def)
   }
   const confirmed = (): Omit<Food, 'id'> => {
     // the pack's per-serving line, when it agrees and the saved serving is the printed one (a
@@ -336,6 +343,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           <div className="foot">Saved foods appear in search{draft.barcode ? ' and open straight away next time you scan them, even offline' : ''}.</div>
         </>
       )}
+      {dup.sheet}
     </Sheet>
     {optIn && <ShareOptInSheet onAnswer={answerOptIn} />}
     {shareAsk && <ShareOptInSheet onAnswer={answerShareAsk} />}

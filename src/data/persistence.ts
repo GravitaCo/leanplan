@@ -4,6 +4,7 @@ import { DEFAULT_TARGET, DEFAULT_PROFILE } from '@/core/data/constants'
 import { DEFAULT_SCHEDULE } from '@/core/data/workouts'
 import { parseYmd, todayStr, ymd } from '@/core/domain/date'
 import { ensureBurnSwitch } from '@/core/domain/insights'
+import { NOT_SAME_MAX, cleanAlias, fitMeta } from '@/core/domain/duplicates'
 import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
 import { nowIso, uuid, UUID_RE } from './supabase'
 import { cleanConsents, healthLoggingAllowed, unsyncedConsents, type ConsentLog } from './consent'
@@ -71,6 +72,17 @@ export function loadStateFrom(input: PersistedState | null): PersistedState {
   if (!Array.isArray(s.profile.supplements)) s.profile.supplements = []
   if (s.profile.notificationsEnabled === undefined) s.profile.notificationsEnabled = false
   if (!Array.isArray(s.customFoods)) s.customFoods = []
+  // "They're different" (board dup-4): only real ids kept, so an odd value can't fail a sync
+  // and a merged or renamed food's earlier names: strings only, capped, meta kept under its size cap
+  for (const f of s.customFoods) {
+    if (!f) continue
+    if (f.notSame !== undefined) {
+      const ids = Array.isArray(f.notSame) ? [...new Set(f.notSame.filter((x) => typeof x === 'string' && UUID_RE.test(x)))].slice(-NOT_SAME_MAX) : []
+      if (ids.length) f.notSame = ids; else delete f.notSame
+    }
+    cleanAlias(f)
+    if (f.notSame || f.alias) fitMeta(f)
+  }
   if (!Array.isArray(s.recipes)) s.recipes = []
   // the user's own workouts (plan P4): anything malformed is dropped rather than breaking the screen
   s.routines = (Array.isArray(s.routines) ? s.routines : []).filter((r) => !!r && typeof r === 'object' && typeof r.name === 'string' && Array.isArray(r.blocks))
