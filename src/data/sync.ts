@@ -8,7 +8,7 @@ import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/cor
 import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, ConsentRequiredError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
-import { FOOD_META_KEYS } from '@/core/domain/duplicates'
+import { cleanAlias, FOOD_META_KEYS } from '@/core/domain/duplicates'
 import { mergeProfiles } from '@/core/domain/profileMerge'
 import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
 import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, withoutHealth as profileWithoutHealth, type DaySnap, type ResumeCopy } from './consent'
@@ -62,6 +62,7 @@ export function fromServerFood(r: any): Food {
   const f: Food = { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
   const m = hasMeta(r) ? r.meta : null
   if (m) for (const k of FOOD_META_KEYS) if (m[k] !== undefined && m[k] !== null) (f as any)[k] = m[k]
+  cleanAlias(f) // aliases are matched against logs: never trust their shape from the server
   return f
 }
 const hasMeta = (r: any) => !!r.meta && typeof r.meta === 'object' && !Array.isArray(r.meta)

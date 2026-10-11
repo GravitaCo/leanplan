@@ -150,13 +150,14 @@ export function fitMeta(f: Food): void {
 /** Clean a stored alias list: strings only, trimmed, not the food's own name, newest kept. */
 export function cleanAlias(f: Food): void {
   if (f.alias === undefined) return
-  const own = (f.n || '').toLowerCase()
+  // exact, as log matching is: a rename that only changes capitals keeps the old spelling
+  const own = f.n || ''
   const seen = new Set<string>()
   const out: string[] = []
   for (const x of (Array.isArray(f.alias) ? f.alias : []).slice().reverse()) {
     if (typeof x !== 'string') continue
     const t = x.trim().slice(0, ALIAS_LEN)
-    if (!t || t.toLowerCase() === own || seen.has(t)) continue
+    if (!t || t === own || seen.has(t)) continue
     seen.add(t)
     out.unshift(t)
     if (out.length >= ALIAS_MAX) break
