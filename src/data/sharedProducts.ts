@@ -102,9 +102,9 @@ function cacheDrop(st: Store | null, code: string): void {
 export type SharedLookup =
   | { status: 'found'; product: SharedProduct }
   | { status: 'not-found' }
-  /** no connection, or too slow (and nothing cached): Open Food Facts would fail the same way */
+  /** no connection (and nothing cached): Open Food Facts would fail the same way */
   | { status: 'offline' }
-  /** the server answered with an error: go on to Open Food Facts */
+  /** the server answered with an error, or was too slow: no shared result, go on to Open Food Facts */
   | { status: 'error' }
 
 /**
@@ -119,7 +119,8 @@ export async function lookupShared(codes: { code: string; alt?: string }, opts: 
   if (offline()) return cached ? { status: 'found', product: cached } : { status: 'offline' }
   if (!hasSession()) return cached ? { status: 'found', product: cached } : { status: 'not-found' }
   const ctl = new AbortController()
-  const timer = setTimeout(() => ctl.abort(), opts.timeoutMs ?? OFF_TIMEOUT_MS)
+  let timedOut = false
+  const timer = setTimeout(() => { timedOut = true; ctl.abort() }, opts.timeoutMs ?? OFF_TIMEOUT_MS)
   const stop = () => ctl.abort()
   opts.signal?.addEventListener('abort', stop)
   try {
@@ -134,9 +135,13 @@ export async function lookupShared(codes: { code: string; alt?: string }, opts: 
     if (!p) { cacheDrop(st, gtin); return { status: 'not-found' } }
     cachePut(st, gtin, p)
     return { status: 'found', product: p }
-  } catch {
+  } catch (e) {
     if (cached) return { status: 'found', product: cached }
-    return ctl.signal.aborted || offline() ? { status: 'offline' } : { status: 'error' }
+    // a slow function isn't a lost connection: no shared result, Open Food Facts runs. Only a
+    // fetch that never reached the network (a TypeError) or a device that says it's offline is
+    // offline, as in products.ts
+    if (timedOut) return { status: 'error' }
+    return offline() || (e as { name?: string })?.name === 'TypeError' ? { status: 'offline' } : { status: 'error' }
   } finally {
     clearTimeout(timer)
     opts.signal?.removeEventListener('abort', stop)

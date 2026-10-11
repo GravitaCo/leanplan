@@ -250,6 +250,11 @@ async function lookups() {
   const err = await lookupShared({ code: '5000157024671' }, { storage: st, fetcher: fetcher(() => new Response('', { status: 500 })) })
   const fromCache = await lookupShared({ code: '5012345678900' }, { storage: st, fetcher: fetcher(() => { throw new TypeError('Failed to fetch') }) })
   const empty = await lookupShared({ code: '5012345678900' }, { storage: st, fetcher: fetcher(ok([])) })
+  // nothing cached for this code: a slow function, a 5xx and a lost connection
+  const hang = (async (_path: string, o: RequestInit = {}) => new Promise<Response>((_res, rej) => o.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))))) as never
+  const slow = await lookupShared({ code: '5000157024671' }, { storage: st, fetcher: hang, timeoutMs: 20 })
+  const err503 = await lookupShared({ code: '5000157024671' }, { storage: st, fetcher: fetcher(() => new Response('', { status: 503 })) })
+  const noNet = await lookupShared({ code: '5000157024671' }, { storage: st, fetcher: fetcher(() => { throw new TypeError('Failed to fetch') }) })
   const instore = await lookupShared({ code: withCheck('210123456789') }, { storage: st, fetcher: fetcher(ok([row])) })
   setSession(null, null)
   const noSession = await lookupShared({ code: '5012345678900' }, { storage: fakeStorage(), fetcher: fetcher(ok([row])) })
@@ -277,6 +282,8 @@ async function lookups() {
     ['not on the list (or the function not deployed yet): not found, so Open Food Facts runs', missing.status === 'not-found'],
     ['a server error: error (Open Food Facts runs)', err.status === 'error'],
     ['no connection: the cached product still opens', fromCache.status === 'found'],
+    ['a slow lookup (timeout) or a 5xx is no shared result, not offline: Open Food Facts runs', slow.status === 'error' && err503.status === 'error'],
+    ['only a real network failure (nothing cached) is offline', noNet.status === 'offline'],
     ['gone from the list: the cache forgets it', empty.status === 'not-found' && !cacheGet(st, '05012345678900')],
     ['in-store codes are never looked up', instore.status === 'not-found' && !calls.some((c) => c.body.includes('210123'))],
     ['not signed in: not looked up', noSession.status === 'not-found'],
