@@ -38,7 +38,7 @@ what has a per-call cost is paid. The package is called **Tali Plus** there; the
 | **Build a meal from what I have** (say or tick your ingredients, get ideas that use them, save one as a recipe) | Plus for AI ideas; free for ideas from your own recipes and the Tali library | `meal-suggestions-and-planning.md` §2, Phase 3 | Ideas from stored recipes cost nothing and work offline |
 | **Type or say a meal to log it** ("two eggs and toast") | Plus | `ai-platform-plan.md` §1 A | Per-call cost |
 | **Read a nutrition label from a photo** | Plus, or free (decision 4) | `label-scan-and-shared-products.md` | Benn made it free on 26 Sept 2026; on native it can run on the phone at no cost (§3.4), which keeps it free |
-| **AI meal plan for a few days, with a shopping list**, built from onboarding answers (goal, diet, allergies, time to cook) | Plus | `meal-suggestions-and-planning.md` §3, `monetisation-plan.md` §4.2 | Each generation is a paid call |
+| **AI meal plan for a few days, with a shopping list**, built from onboarding answers (goal and ranges today; diet, allergies, cooking time and household size are new fields, §5.2) | Plus | `meal-suggestions-and-planning.md` §3, `monetisation-plan.md` §4.2 | Each generation is a paid call |
 | Meal plans you build yourself, the shopping list from them, built-in plans and guides | **Free** | `monetisation-plan.md` §4.2 | "Pay to see a plan" is the most resented pattern in the category |
 | Weekly AI reflection | Plus, later | `ai-platform-plan.md` §1 C | Per-call cost |
 | Everything logged today, sync, export, offline, demo clips, safety content | **Free forever** | `monetisation-plan.md` §4.1 | Never paywalled |
@@ -102,8 +102,14 @@ cost of that choice should be explicit:
 **What native costs:**
 - **Store fees.** Apple's Small Business Program takes 15% (under $1M proceeds); Google Play
   subscriptions take 10% plus a 5% billing fee in the UK, EEA and US from 30 June 2026
-  (`monetisation-plan.md` §2.3, sources S12, S13; **VERIFY**). Net per payer drops from £3.15 (web,
-  Stripe, VAT-registered) to about £2.83 through the App Store (`monetisation-plan.md` §2.3).
+  (`monetisation-plan.md` §2.3, sources S12, S13; **VERIFY**). The Small Business Program has to be
+  applied for (it isn't automatic), and 30% applies above $1M proceeds. Blended net per payer (60%
+  annual, an ASSUMPTION) drops from £3.15 on web (Stripe, VAT-registered) to £2.83 on the App Store;
+  on the annual plan alone from £2.69 to £2.36 (`monetisation-plan.md` §2.3). Contribution per App
+  Store payer is £2.83 − £0.75 AI − £0.02 − £0.12 = **£1.94**, against **£2.26** on web, and break-even
+  rises from 89 payers to about (£200 + £6.20 Apple fee) ÷ £1.94 ≈ **106 payers**, before iOS CI and
+  native build time (`cfo`, 11 Oct 2026). Break-even also depends on the channel mix (App Store, Play,
+  web), for which there is no assumption yet.
 - **Apple Developer Program** $99 a year; Google Play $25 once (`monetisation-plan.md` §2.1).
 - **Release cadence.** Today a push to `main` is live in minutes. Store builds go through review
   (typically a day or two; **VERIFY**). §3.6 covers how to keep fixes fast.
@@ -196,15 +202,18 @@ release as today. `ship-critic` stays the gate for every channel.
 
 ### 4.1 Three channels, one entitlement
 
-| Channel | Who pays | Fee (`monetisation-plan.md` §2.3, **VERIFY**) | Required? |
+| Channel | Merchant of record | Fee (`monetisation-plan.md` §2.3, **VERIFY**) | Required? |
 |---|---|---|---|
 | iOS in-app purchase (StoreKit) | Apple | 15% (Small Business Program) | **Yes** for anything bought inside the iOS app: Apple requires in-app purchase for digital subscriptions sold in the app (Guideline 3.1.1). UK steering rules were still undecided by the CMA in mid-September 2026 |
 | Google Play Billing | Google | 10% + 5% billing fee | Yes for purchases inside the Android app (with exceptions in some regions; **VERIFY**) |
-| Web (Stripe) | Tali (Gravita, or a new company: decision 2) | 1.5% + 20p and 0.7% Billing for UK cards | For web sign-ups; cheapest channel |
+| Web (Stripe) | Tali (Gravita, or a new company: decision 2); Stripe bills on our behalf | 1.5% + 20p and 0.7% Billing for UK cards | For web sign-ups; cheapest channel |
 
 A subscription bought on any channel unlocks Plus everywhere the user signs in. Apple allows an app to
 give access to a subscription bought elsewhere (Guideline 3.1.3(b), multiplatform services) as long as
 it is also offered by in-app purchase in the app (**VERIFY**). What the iOS app may say about the
+**VAT (VERIFY with an accountant):** on store sales the store accounts for UK VAT, so the store net is
+probably £2.83 whether or not we're VAT-registered, while a web sale nets £3.82 if we're not registered
+(`monetisation-plan.md` §2.3). That bears on decision 2. What the iOS app may say about the
 cheaper web price depends on the steering rules in force at launch (`monetisation-plan.md` §10):
 plan for the strictest case (no link out) and relax it if the CMA's decision allows.
 
@@ -214,7 +223,7 @@ plan for the strictest case (no link out) and relax it if the CMA's decision all
 |---|---|---|
 | Receipt validation, renewals, refunds, grace periods, family sharing | Handled | We build and maintain each, per store |
 | Stripe web subscriptions in the same entitlement | Supported | We merge three sources ourselves |
-| Cost | Free to $2,500 monthly tracked revenue, then 1% (`monetisation-plan.md` S14, **VERIFY**) | Engineering time; ongoing maintenance as store APIs change |
+| Cost | Free to $2,500 monthly tracked revenue, then 1% (`monetisation-plan.md` S14, **VERIFY**). Tracked revenue appears to count before the store's cut, and Stripe revenue routed through it probably counts too (**VERIFY**): at about £4.00 gross per payer the free tier ends near 470 payers, then about 4p per payer a month | Engineering time; ongoing maintenance as store APIs change |
 | New processor | Yes (§6) | No new processor beyond Stripe, Apple, Google |
 
 **Recommendation: RevenueCat.** At Tali's scale it costs nothing until about $2,500 a month of revenue
@@ -242,10 +251,12 @@ own; see §4.3.
   recipes); logging them is free. Only new AI calls stop. Nothing the user created is locked.
 - RLS stays locked: the webhook uses the service role inside the function only; no client path gets
   service-role access (`docs/security-rls.sql`).
-- `entitlements` joins `USER_TABLES` in `supabase/functions/_shared/account.ts`, with one caveat:
-  payment and invoice records may need keeping for tax (HMRC: 6 years, **VERIFY**). Keep those with the
-  payment provider (Stripe, Apple, Google hold them), not in our database, so account deletion can
-  still delete everything of ours.
+- `entitlements` joins `USER_TABLES` in `supabase/functions/_shared/account.ts`. On account deletion the
+  entitlement row goes, the RevenueCat subscriber is deleted, an active Stripe subscription is cancelled
+  first, and Sign in with Apple tokens are revoked. **The duty to keep tax records is ours, not
+  Stripe's:** payment and VAT records for web sales are kept for 6 years (UK GDPR Art. 6(1)(c) and
+  Art. 17(3)(b); period per HMRC VAT Notice 700/21, **VERIFY**), outside the health data, and the
+  privacy policy says so.
 
 ### 4.4 Trial, prices and fair billing
 
@@ -253,22 +264,34 @@ From `monetisation-plan.md` §4.4 and §5.1, still Benn's decisions (§10):
 
 - **Price:** £4.99 a month or £39.99 a year (or £5.99 / £44.99 if AI costs need it). Whether store prices
   match web prices or carry the store fee is decision 6.
-- **Trial:** 14 days, no card, recommended. On iOS and Android a no-card trial means the trial is ours
-  (an entitlement row with an expiry), not the store's free-trial offer, which needs payment details
-  (**VERIFY** per store). That's simpler and can't surprise-bill anyone. One trial per account,
-  enforced on the server, so it can't be restarted.
+- **Trial: an open question on iOS.** `monetisation-plan.md` recommends 14 days with no card. On the
+  web that's simple: an entitlement row with an expiry, one per account, enforced on the server. On
+  iOS it may not pass review: Guideline 3.1.1 allows a free "XX-day trial" item only for
+  non-subscription apps, auto-renewing subscriptions offer trials through App Store Connect
+  introductory offers (tied to the Apple ID's payment method, and they renew), and 3.1.1 bars apps from
+  using their own mechanisms to unlock features (`cfo` and `compliance`, 11 Oct 2026; **VERIFY**).
+  Get a ruling (Apple's guidelines and, if needed, App Review) before building. The fallback is the
+  store's intro offer with a reminder before billing, which brings in the DMCC trial rules. Trial cost
+  (trial users × AI cost × half a month ÷ conversion rate) is unknown until the conversion rate is.
 - **Fair use:** a published monthly limit on AI calls, stated up front, enforced by the existing
   `ai_usage` caps. Repeat meals never count (they resolve on the phone).
 - **Cancel in one tap, pause beside it** (never in front), and a non-renewing annual pass. On iOS and
   Android, cancelling happens in the store's subscription settings; the app links straight there.
-- **DMCC subscription rules** (`monetisation-plan.md` §10 gives January 2027; **VERIFY** the date):
-  reminder before renewal, easy cancellation, cooling-off. Build to them from day one.
+- **DMCC subscription rules** (`monetisation-plan.md` §10 gives January 2027, from law-firm notes;
+  **VERIFY** against the commencement regulations on legislation.gov.uk): key information shown up
+  front, an express acknowledgement, reminders on a durable medium (which needs an email processor:
+  register item 30(c) says there is none), initial and renewal cooling-off, and cancellation as easy as
+  sign-up. Check whether CCR 2013 reg. 36 refund rules apply; Consumer Rights Act 2015 rights can't be
+  excluded. A founding-member offer must avoid the banned practices in DMCC Sch. 20, such as false
+  urgency. Build to all of it from day one.
 - **No lifetime deals** on anything with AI (`monetisation-plan.md` §4.4).
 
 ### 4.5 Account and subscription edge cases (each needs a test)
 
 - Deleting the account doesn't cancel a store subscription: the delete flow says so and links to the
-  store first. (Apple and Google bill the user, not us.)
+  store first. (Apple and Google bill the user, not us.) On the web, Stripe bills on our behalf, so
+  deleting the account must cancel the Stripe subscription.
+- Store refunds: Apple and Google grant refunds on their own terms, after the AI cost is spent.
 - A user subscribed on iOS opens the web app: Plus works; "Manage subscription" says "Manage in the App
   Store".
 - Two accounts on one device, and the owner check (`ownerCheck`): an entitlement belongs to the account,
@@ -300,16 +323,22 @@ Steps 1 and 5 are free and can ship to the web app before native; they make the 
 
 Plans and guides "based on onboarding" need the onboarding wizard on (`ONBOARDING_ENABLED` is off; its
 open review items are in `docs/compliance/README.md`, "onboarding wizard review"). The meal plan uses
-only goal, diet, allergies, cooking time and household size, and the calorie and protein ranges `core/`
-already computes. The model receives the ranges and preferences, **not** weight, body measurements or
-check-in data (data minimisation, `ai-platform-plan.md` §5). Gentle mode removes calorie numbers from
-the plan.
+goal, the calorie and protein ranges `core/` already computes, and four things onboarding **doesn't
+collect today**: diet, allergies, cooking time and household size (no fields in `core/types.ts`). Those
+are new fields and a privacy change. Allergies are health data (Art. 9), and the ranges are health data
+by inference, so the call needs a current health yes **and** an AI yes. The model never receives
+weight, body measurements or check-in data (data minimisation, `ai-platform-plan.md` §5). Gentle mode
+is applied on our server, never sent to the model as a fact about the person.
 
 ### 5.3 Cost per payer
 
-From `ai-platform-plan.md` §3.3 (prices checked September 2026, **VERIFY**): a heavy user costs about
-$1.20 to $4.00 a month depending on the model mix. At an App Store net of about £2.83 a month, an
-all-Opus heavy user loses money. Before launch: run the eval harness (not built yet;
+`ai-platform-plan.md` §3.3 was costed on Opus 5. At Opus 5.5 prices ($4 / $20 per million tokens,
+September 2026, **VERIFY**) an all-Opus heavy user costs about $2.80 to $3.20 (£2.10 to £2.40) a month.
+On the annual App Store plan that leaves £2.36 − £0.14 (infrastructure and free-user carry) = £2.22
+available, so that user still loses money (`cfo`, 11 Oct 2026). **Not costed yet:** the AI meal plan,
+"build a meal" ideas and the weekly reflection aren't in `ai-platform-plan.md` §3.2; a first
+ASSUMPTION for one meal plan (about 3,000 tokens in, 4,000 out, Opus 5.5) is about $0.09. Model them
+before setting the fair-use limit. Before launch: run the eval harness (not built yet;
 `ai-platform-plan.md` §6) to pick the cheapest model that holds quality per task, set the fair-use
 limit, and confirm `cfo` signs off the margin per channel.
 
@@ -330,11 +359,18 @@ goes past `compliance` (`CLAUDE.md`).
 
 | Item | Why | Status |
 |---|---|---|
-| Anthropic DPA, transfer mechanism (IDTA) and TIA, zero data retention per model, privacy section, DPIA update | Meal text and plans go to Anthropic; register item 24 already lists these for label reading | Open |
-| Separate AI consent on native, specific about what is sent | UK GDPR Art. 9 explicit consent; Apple requires apps to disclose and get permission before sharing personal data with third-party AI (June 2026 guidelines, `ai-platform-plan.md` §5; **VERIFY**) | `ai` consent exists (`consent.ts`), row hidden behind `AI_FEATURES_LIVE` |
+| Anthropic DPA; transfer mechanism (IDTA, or the UK Addendum to the EU SCCs, or the UK Extension to the EU-US Data Privacy Framework if Anthropic is certified: not checked) and TIA; EU SCCs for EU users; zero data retention per model; privacy section; DPIA updated and signed (its action D5 is still open) | Meal text and plans go to Anthropic; register item 24 already lists these for label reading | Open |
+| AI consent per purpose (meal text, plan inputs, photo), on web as well as native; bump `CONSENT_VERSIONS.ai` | UK GDPR Art. 9 explicit consent; Apple Guideline 5.1.2(i) requires disclosure and permission before sharing personal data with third-party AI (the date of that update is cited differently in different docs: **VERIFY**) | `ai` consent exists (`consent.ts`), row hidden behind `AI_FEATURES_LIVE` |
 | New processors: RevenueCat, Stripe; Apple and Google as payment providers | Payment and purchase data | New |
-| Sign in with Apple | New identity provider | New |
-| APNs and FCM device tokens | New identifiers | New |
+| Sign in with Apple | New identity provider; account deletion revokes its tokens; relay emails need our sending domain registered | New |
+| APNs and FCM device tokens | New identifiers. APNs and FCM payloads are readable by Apple and Google, unlike Web Push, which conflicts with item 45 (opt-in supplement names) and register row 67; keep native payloads to fixed text. Check that Firebase analytics are off | New |
+| Speech recognition | Apple's API can send audio to Apple unless on-device-only mode is set: require on-device, or disclose Apple as a recipient | New |
+| Email processor for renewal reminders | DMCC durable-medium reminders; none exists (register item 30(c)) | New |
+| Over-the-air update vendor, if used | Possible new processor | New |
+| Apple privacy manifests (for the SDKs, RevenueCat and Capacitor plugins included); Google Play account-deletion web URL and health apps declaration | Store requirements | New |
+| Store age ratings | Google Play ages come from the IARC questionnaire, so "18+" can't simply be set; keep the in-app age gate | New |
+| `terms.ts` rewrite | It says "Tali is currently free" and limits liability "because Tali is a free wellness tool"; both change. Add that the stores handle refunds for store purchases | New |
+| New company as seller (if decision 2 goes that way) | New controller: new policy texts and re-consent. Selling in EU storefronts likely counts as targeting EU users (register item 8: Art. 27 representative); EU VAT on web sales through OSS | Open |
 | `entitlements` table | New user-data table: RLS, `USER_TABLES` | New |
 | Subscription terms in `terms.ts`: price, renewal, cancellation, refunds, the "On your side" promise if adopted | Consumer law, DMCC | New |
 | Company and VAT: which entity sells (decision 2) | Controller name in the policies; VAT changes net receipts by up to 17% | Open |
@@ -384,6 +420,9 @@ the §6 compliance items are closed (no lawful way to send meal text to Anthropi
 
 ## 9. Reviews this plan needs before Phase 0 ends
 
+`security-data`, `cfo` and `compliance` reviewed this plan on 11 October 2026 (changelog); each still
+reviews the build of its part.
+
 - `cfo`: margin per channel at the chosen prices and model mix; RevenueCat versus our own; price parity.
 - `compliance`: §6 list complete; consent copy for native; subscription terms; entity and VAT.
 - `security-data`: `entitlements` table and webhook; native storage; device tokens; Bunny tokens.
@@ -403,7 +442,9 @@ the §6 compliance items are closed (no lawful way to send meal text to Anthropi
    nothing, which supports keeping it free.
 5. **Price points:** £4.99 / £39.99, or £5.99 / £44.99.
 6. **Store prices:** same as web (we absorb the store fee), or higher in the stores?
-7. **Trial:** 14 days with no card (recommended) or the stores' card-on-file trials; Family Sharing on iOS.
+7. **Trial mechanics on iOS** (§4.4): the next decision, because it shapes how the payments phase is
+   built. A server-granted no-card trial may not pass App Review; the alternative is the store's
+   intro offer with a reminder before billing. Also: Family Sharing on iOS, on or off.
 8. **RevenueCat (recommended) or our own entitlement service** (§4.2).
 9. **Keep "numbers only from the database, never from the AI"** (recommended), or allow AI estimates for
    unknown ingredients with a wide ± margin?
@@ -412,10 +453,15 @@ the §6 compliance items are closed (no lawful way to send meal text to Anthropi
     included, and it sits with the controller.
 12. **CI for iOS builds:** macOS runners or a build service (a running cost; `cfo`).
 13. **Web stays live after native launch** (recommended), and web sign-up and payment stay available.
+14. **A channel-mix assumption** (share of payers on App Store, Play and web) for `cfo` to set break-even.
 
 ---
 
 ## Changelog
 
+- 11 October 2026: reviewed by `security-data`, `cfo` and `compliance`; their corrections folded in
+  (native sign-in and CORS, entitlements RLS, signed clip URLs; channel margins and break-even, Opus 5.5
+  costs, the iOS trial question; tax-record retention, onboarding fields as new health data, DMCC
+  detail, native processors and store requirements).
 - 11 October 2026: first written, from Benn's brief (AI meal capture in two versions, meal plans from
   onboarding, AI in a paid upgrade with payment processing, shipped with the native app).
