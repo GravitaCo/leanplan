@@ -47,6 +47,7 @@ import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
+import { markDifferent, mergeFoods, moveLogs, updatedFood } from '@/core/domain/duplicates'
 import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
@@ -164,6 +165,13 @@ export interface StoreState {
   removeCustomFood: (index: number) => void
   /** give a saved food a barcode (a scan matched it by name); returns the updated food */
   linkBarcode: (id: string, barcode: string) => Food | null
+  /** take new figures into a saved food, keeping its id (boards dup-1, dup-2): with a new name its
+   *  logs and usuals follow it, numbers as logged. Returns the updated food */
+  updateCustomFood: (id: string, next: Omit<Food, 'id'>, keepName?: boolean) => Food | null
+  /** merge two saved foods that are the same (dup-4): the other's logs move to the kept one */
+  mergeCustomFoods: (keepId: string, dropId: string, takeBarcode: boolean) => void
+  /** "They're different" (dup-4): never pair these two again */
+  markFoodsDifferent: (aId: string, bId: string) => void
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -877,6 +885,46 @@ export const useStore = create<StoreState>()(
         const food = get().data.customFoods.find((x) => x.id === id)!
         get().showToast(`Barcode linked to your “${food.n}”`)
         return food
+      },
+
+      updateCustomFood: (id, next, keepName = false) => {
+        const old = get().data.customFoods.find((x) => x.id === id)
+        if (!old) return null
+        let food = updatedFood(old, next, keepName)
+        // the server holds one food per name: a name another saved food has stays as it was
+        if (get().data.customFoods.some((x) => x.id !== id && x.n.toLowerCase() === food.n.toLowerCase())) food = { ...food, n: old.n }
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (!cur) return
+          for (const d of moveLogs(st.data.days, cur.n, food.n)) markDayDirty(st.data, d)
+          for (const k of Object.keys(cur) as (keyof Food)[]) delete cur[k]
+          Object.assign(cur, food, { _dirty: true, _u: nowIso() })
+        })
+        saved('Food updated')
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      mergeCustomFoods: (keepId, dropId, takeBarcode) => {
+        set((st) => {
+          const r = mergeFoods(st.data, keepId, dropId, takeBarcode)
+          if (!r) return
+          for (const d of r.days) markDayDirty(st.data, d)
+          meta(st.data).foodDeletes.push(r.removed)
+          const keep = st.data.customFoods.find((x) => x.id === keepId)
+          if (keep) Object.assign(keep, { _dirty: true, _u: nowIso() })
+        })
+        saved()
+      },
+
+      markFoodsDifferent: (aId, bId) => {
+        set((st) => {
+          const a = st.data.customFoods.find((x) => x.id === aId)
+          const b = st.data.customFoods.find((x) => x.id === bId)
+          if (!a || !b) return
+          markDifferent(a, b)
+          for (const f of [a, b]) Object.assign(f, { _dirty: true, _u: nowIso() })
+        })
+        saved()
       },
 
       removeCustomFood: (index) => {

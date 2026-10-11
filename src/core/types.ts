@@ -42,6 +42,9 @@ export interface Food {
    *  foods only (not synced). A query that is exactly one of them ranks this food first; otherwise
    *  their words match like the name's, after foods whose name matches (core/domain/search.ts) */
   aka?: string[]
+  /** custom foods only: ids of the user's other saved foods they said are different ("They're
+   *  different", board dup-4), so the "look the same" hint never pairs them again */
+  notSame?: string[]
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean
