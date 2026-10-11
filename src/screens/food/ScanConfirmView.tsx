@@ -12,13 +12,17 @@
  * it came from (sp-2, sp-3, sp-3b), its margin and Report this product (sp-6). A label read that
  * may join the list (core/domain/sharedProduct.ts shareEligible) asks the one-time opt-in at its
  * first save (sp-1); either answer saves the food. A yes queues the signed read, sent later.
+ *
+ * Share this product (`shareFor`, sp-9): a saved food's label read opens here with Share instead
+ * of Save. Share asks the sp-1 opt-in first when sharing isn't agreed yet; then the signed read is
+ * queued and the saved food takes these figures, keeping its name (usuals match by name).
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { latestConsent } from '@/data/consent'
 import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { sameAsFound, shareDecision, shareEligible, TIER_SOURCE } from '@/core/domain/sharedProduct'
-import { ReportProductSheet, ShareOptInSheet, SharedServing, SharedSourceCard } from './SharedProduct'
+import { ReportProductSheet, SHARE_CHECK, ShareOptInSheet, SharedServing, SharedSourceCard } from './SharedProduct'
 import type { Food, MealSlot } from '@/core/types'
 import { checkLabel, foodFromConfirmed, type FoodKind, type LabelField, type LabelValues, type ScanDraft } from '@/core/domain/barcode'
 import { cellId, kjFromKcal, labelIssues, parseCell, parseServing, servingRef, SERVING_NEEDED, type LabelIssue, type LabelTexts } from '@/core/domain/label'
@@ -48,19 +52,24 @@ const round = (v: number, dp: number) => String(Math.round(v * 10 ** dp) / 10 **
 /** Issues that belong to one row (its two columns, its RI, its own text) are explained on that row. */
 const oneRow = (i: LabelIssue) => new Set(i.cells.map((c) => c.split(':')[0])).size === 1
 
-export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, notice, onLabelPhoto }: {
+export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, notice, onLabelPhoto, shareFor }: {
   draft: ScanDraft; meal: MealSlot; setMeal: (m: MealSlot) => void; onBack?: () => void; onClose: () => void; animate: boolean; onSaved: (f: Food) => void
   /** why the view opened this way (a photo that couldn't be read) */
   notice?: string
   /** "Photo of the label": read the numbers from the user's own pack instead */
   onLabelPhoto?: () => void
+  /** "Share this product" from this saved food (sp-9): Share in place of Save; onSaved gets the
+   *  food with its new figures */
+  shareFor?: Food
 }) {
   const saveCustomFood = useStore((s) => s.saveCustomFood)
   const queueSharedProduct = useStore((s) => s.queueSharedProduct)
   const setShareProducts = useStore((s) => s.setShareProducts)
   const info = draft.label
   const shared = draft.shared
+  const shareSavedFood = useStore((s) => s.shareSavedFood)
   const [optIn, setOptIn] = useState<Omit<Food, 'id'> | null>(null)
+  const [shareAsk, setShareAsk] = useState(false)
   const [reporting, setReporting] = useState(false)
   const [kind, setKind] = useState<FoodKind>(draft.kind)
   const [ml, setMl] = useState(draft.ml)
@@ -148,15 +157,37 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
     if (share && draft.share) queueSharedProduct(draft.share)
     onSaved(food)
   }
-  const save = () => {
-    if (missing) return
+  const confirmed = (): Omit<Food, 'id'> => {
     // the pack's per-serving line, when it agrees and the saved serving is the printed one (a
     // whole number, since saved servings are whole grams)
     const printed = info ? parseServing(info.texts.servingText) : undefined
     const ref = live && Number.isInteger(g) ? servingRef(live, printed, g) : undefined
     // a shared product saved with its figures unchanged keeps its tier's source and margin
     const sharedSrc = shared && sameAsFound(shared, values, ml) ? `${TIER_SOURCE[shared.tier]}:${draft.barcode}` : undefined
-    const def = foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source === 'shared' ? 'label' : draft.source, ref, sharedSrc })
+    return foodFromConfirmed({ barcode: draft.barcode, name, values, ml, kind, meal: draft.meal, cat: draft.cat, g, source: draft.source === 'shared' ? 'label' : draft.source, ref, sharedSrc })
+  }
+  // sp-9: only a read that may join the list (shareEligible: signed, not in Open Food Facts, unchanged)
+  const canShare = !!shareFor && !missing && SHARED_PRODUCTS_ENABLED && shareEligible(draft, { name, values, ml })
+  const doShare = () => {
+    if (!shareFor?.id || !draft.share) return
+    const food = shareSavedFood(shareFor.id, confirmed(), draft.share)
+    if (food) onSaved(food)
+  }
+  const share = () => {
+    if (!canShare) return
+    // not agreed yet (never asked, or a no): the sp-1 opt-in first, unchanged
+    if (latestConsent(useStore.getState().data, 'shared-products')?.granted) doShare()
+    else setShareAsk(true)
+  }
+  const answerShareAsk = (yes: boolean) => {
+    setShareAsk(false)
+    // a no is recorded once (as at a first save); an earlier no isn't recorded again
+    if (yes || !latestConsent(useStore.getState().data, 'shared-products')) setShareProducts(yes)
+    if (yes) doShare()
+  }
+  const save = () => {
+    if (missing) return
+    const def = confirmed()
     const shareable = SHARED_PRODUCTS_ENABLED && shareEligible(draft, { name, values, ml })
     const decision = shareDecision(shareable, latestConsent(useStore.getState().data, 'shared-products'))
     // the first time a product could be shared: ask once (sp-1), then save either way
@@ -184,7 +215,9 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
   return (
     <>
     <Sheet title="Check the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
-      right={<button className="navbtn b" onClick={save} disabled={missing}>Save</button>}>
+      right={shareFor
+        ? <button className="navbtn b" onClick={share} disabled={!canShare}>{SHARE_CHECK.share}</button>
+        : <button className="navbtn b" onClick={save} disabled={missing}>Save</button>}>
       {notice && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><Icon name="info" size={17} /><span>{notice}</span></div>}
       {shared ? (
         <SharedSourceCard info={shared} barcode={draft.barcode} onReport={() => setReporting(true)} />
@@ -225,7 +258,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
         <div className="foot num">Pack: {draft.pack} {unit}{servings ? ` · ${servings} serving${servings === 1 ? '' : 's'}` : ''}</div>
       )}
 
-      {showUnit ? (
+      {shareFor ? null : showUnit ? (
         <div style={{ marginTop: 12 }}>
           <Seg<'g' | 'ml'> options={[['g', 'Per 100 g'], ['ml', 'Per 100 ml']]} value={unit} onChange={(u) => setMl(u === 'ml')} />
         </div>
@@ -286,13 +319,26 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           {notes.map((m) => <div key={m} className="note"><Icon name="info" size={17} /><span>{m}</span></div>)}
         </div>
       )}
-      {allGood && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers are consistent with each other.</span></div>}
-      <div className="stack">
-        <button className="btn" onClick={save} disabled={missing}>{missing ? 'Fill in the marked fields' : 'Save food'}</button>
-      </div>
-      <div className="foot">Saved foods appear in search{draft.barcode ? ' and open straight away next time you scan them, even offline' : ''}.</div>
+      {allGood && !shareFor && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers are consistent with each other.</span></div>}
+      {shareFor ? (
+        <>
+          <div className="stack">
+            <button className="btn" onClick={share} disabled={!canShare}>{SHARE_CHECK.button}</button>
+          </div>
+          <div className="foot">{SHARE_CHECK.what}</div>
+          <div className="foot">{SHARE_CHECK.saved(shareFor.n)}</div>
+        </>
+      ) : (
+        <>
+          <div className="stack">
+            <button className="btn" onClick={save} disabled={missing}>{missing ? 'Fill in the marked fields' : 'Save food'}</button>
+          </div>
+          <div className="foot">Saved foods appear in search{draft.barcode ? ' and open straight away next time you scan them, even offline' : ''}.</div>
+        </>
+      )}
     </Sheet>
     {optIn && <ShareOptInSheet onAnswer={answerOptIn} />}
+    {shareAsk && <ShareOptInSheet onAnswer={answerShareAsk} />}
     {reporting && shared && <ReportProductSheet name={shared ? draft.baseName : name} barcode={draft.barcode} version={shared.version} onClose={() => setReporting(false)} />}
     </>
   )

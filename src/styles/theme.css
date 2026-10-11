@@ -1200,3 +1200,8 @@ label a, .prose a { color: var(--tint); text-decoration: none; }
 .sp-why input:focus-visible + .dot { outline: 2px solid var(--tint); outline-offset: 2px; }
 .sp-why .w { flex: 1; font-size: 17px; }
 .sp-why-send { margin-top: 24px; }
+/* Share this product (sp-7, sp-7b): the row at the foot of a saved food's sheet */
+.list.sp-share { margin-top: 18px; }
+.list.sp-share .li { min-height: 60px; }
+.list.sp-share .li.needsnet .ico { color: var(--label2); }
+.list.sp-share .li.needsnet .s { color: var(--label2); }

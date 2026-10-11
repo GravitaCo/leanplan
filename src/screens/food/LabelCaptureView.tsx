@@ -6,6 +6,10 @@
  *
  * Anything but a good read (offline, not signed in, slow, the daily cap, an error) opens the
  * confirm view to type the label in, so this is never a dead end. Loaded only when opened.
+ *
+ * For "Share this product" (`forShare`, sp-8b) it opens with one line saying why, and offers no
+ * "Type it in instead" (the shared list takes label-photo reads only); a failed read goes back to
+ * the food (`onFail`), and nothing is shared.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
@@ -18,6 +22,7 @@ import { readLabel, type LabelReadResult } from '@/data/labelReader'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { scaledCanvas, startRearCamera, stopCamera, type CameraFail } from './camera'
+import { SHARE_LABEL_NOTE } from './SharedProduct'
 
 /** Long edge of the photo that's sent: enough for small print, well under the 1.5 MB cap. */
 const PANEL_EDGE = 1600
@@ -75,7 +80,7 @@ const base64 = (b: Blob) => new Promise<string>((res, rej) => {
   r.readAsDataURL(b)
 })
 
-export default function LabelCaptureView({ onBack, onClose, animate, barcode, base, onDone }: {
+export default function LabelCaptureView({ onBack, onClose, animate, barcode, base, onDone, forShare, onFail }: {
   onBack?: () => void; onClose: () => void; animate: boolean
   /** a barcode scanned in the same session: saved with the food */
   barcode?: string
@@ -83,6 +88,10 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   base?: ScanDraft
   /** the confirm view's starting point; `notice` when the photo couldn't be read */
   onDone: (draft: ScanDraft, notice?: string) => void
+  /** opened from a saved food's "Share this product" (sp-8b) */
+  forShare?: boolean
+  /** share mode: the read failed (why, as a short line) */
+  onFail?: (note: string) => void
 }) {
   const customFoods = useStore((s) => s.data.customFoods)
   const grantConsent = useStore((s) => s.grantConsent)
@@ -192,6 +201,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       onDone(res.share ? { ...draft, share: res.share } : draft)
       return
     }
+    if (forShare && onFail) { onFail(FAIL_NOTE[res.status]); return }
     const then = base
       ? ' The Open Food Facts figures are below: check them against your pack.'
       : res.status === 'unavailable' ? ' Type it in instead.' : ' Type the numbers from the pack below.'
@@ -211,7 +221,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
         </div>
         <div className="stack">
           <button className="btn tinted" onClick={() => { grantConsent('label-photo'); setStep('panel') }}>OK, take a photo</button>
-          <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>
+          {!forShare && <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>}
         </div>
       </Sheet>
     )
@@ -261,7 +271,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   return (
     <Sheet title={title} onClose={onClose} animate={animate}
       left={isFront ? <BackButton onClick={() => setStep('review')} /> : left}>
-      <div className="foot" style={{ padding: '0 4px 10px' }}>{isFront ? 'Fit the front of the pack in the frame, with the name clear.' : GUIDANCE}</div>
+      {forShare && !isFront && <div className="note" role="status" style={{ marginTop: 0 }}><Icon name="info" size={17} /><span>{SHARE_LABEL_NOTE}</span></div>}
+      <div className="foot" style={{ padding: forShare && !isFront ? '12px 4px 10px' : '0 4px 10px' }}>{isFront ? 'Fit the front of the pack in the frame, with the name clear.' : GUIDANCE}</div>
       {/* always mounted, so the camera can attach as soon as it opens */}
       <div className="scanbox tall" hidden={!showLive}>
         <video ref={videoRef} playsInline muted autoPlay aria-label="Camera view" />
@@ -283,7 +294,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
           <input type="file" accept="image/*" className="vh" aria-label={isFront ? 'Choose a photo of the front of the pack' : 'Choose a photo of the nutrition table'}
             onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
         </label>
-        {!isFront && (
+        {!isFront && !forShare && (
           <button className="li" onClick={() => typeInstead()}>
             <div className="m"><div className="t">Type it in instead</div></div><Chevron />
           </button>

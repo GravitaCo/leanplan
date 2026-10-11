@@ -3,13 +3,16 @@
  * Benn 10 Oct 2026): the source card a found product opens with (sp-2, sp-3, sp-3b), its margin
  * (One serving), the one-time opt-in at the first save of a new label-read product (sp-1, copy
  * from compliance, word for word) and the report sheet (sp-6).
+ *
+ * Share this product (sp-7 to sp-9, approved by Benn 11 Oct 2026): the row on a saved food's sheet
+ * and the sheet that says Open Food Facts already has the product.
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { marginNote, sourceCard, tierErr, type SharedInfo } from '@/core/domain/sharedProduct'
 import { reportShared, type ReportReason } from '@/data/sharedProducts'
 import { BareSheet, Sheet } from '@/ui/primitives'
-import { Icon } from '@/ui/icons'
+import { Chevron, Icon } from '@/ui/icons'
 import { LegalLink } from '../legal/LegalDoc'
 
 /** sp-2 / sp-3 / sp-3b: where the numbers came from, with Report this product under it. */
@@ -117,3 +120,62 @@ export function ReportProductSheet({ name, barcode, version, onClose }: { name: 
     </Sheet>
   )
 }
+
+/** sp-7 / sp-7b: copy from the boards, word for word. */
+export const SHARE_ROW = {
+  title: 'Share this product',
+  sub: 'Helps others who scan this barcode',
+  offline: 'Needs a connection.',
+} as const
+
+/** sp-7: at the foot of a saved food's sheet, under Add. Offline it stays in view, off (sp-7b). */
+export function ShareProductRow({ state, busy, onShare }: { state: 'on' | 'offline'; busy?: boolean; onShare: () => void }) {
+  return (
+    <>
+      <div className="list icons sp-share">
+        {state === 'on' ? (
+          <button className="li" onClick={onShare} disabled={busy} aria-busy={busy || undefined}>
+            <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="people" size={18} stroke={1.8} /></span>
+            <div className="m"><div className="t">{SHARE_ROW.title}</div><div className="s">{SHARE_ROW.sub}</div></div><Chevron />
+          </button>
+        ) : (
+          <div className="li needsnet" aria-disabled="true">
+            <span className="ico" style={{ background: 'var(--fill2)' }}><Icon name="people" size={18} stroke={1.8} /></span>
+            <div className="m"><div className="t">{SHARE_ROW.title}</div><div className="s">{SHARE_ROW.sub}</div></div>
+          </div>
+        )}
+      </div>
+      {state === 'offline' && <div className="foot">{SHARE_ROW.offline}</div>}
+    </>
+  )
+}
+
+/** sp-8a: copy from the board, word for word. */
+export const IN_OFF = {
+  title: 'Open Food Facts already has this product',
+  body: 'Anyone who scans it gets it, so there’s nothing to share.',
+  ok: 'OK',
+} as const
+
+/** sp-8a: Open Food Facts has the product, so nothing is shared. OK (or closing it) and the row goes. */
+export function InOffSheet({ onOk }: { onOk: () => void }) {
+  return (
+    <BareSheet label={IN_OFF.title} onClose={onOk} className="sp-optin sp-inoff">
+      <div className="sp-tile" aria-hidden="true"><Icon name="bars" size={22} stroke={1.8} /></div>
+      <h2>{IN_OFF.title}</h2>
+      <p>{IN_OFF.body}</p>
+      <button className="btn yes" onClick={onOk}>{IN_OFF.ok}</button>
+    </BareSheet>
+  )
+}
+
+/** sp-8b: the one line above the label camera, saying why it opened. */
+export const SHARE_LABEL_NOTE = 'Open Food Facts doesn’t have this product. To share it, take a photo of the label.'
+
+/** sp-9: under Share this product. */
+export const SHARE_CHECK = {
+  share: 'Share',
+  button: 'Share this product',
+  what: 'Barcode, name and figures only, never who added them.',
+  saved: (name: string) => `Your saved ${name} takes these figures too.`,
+} as const
