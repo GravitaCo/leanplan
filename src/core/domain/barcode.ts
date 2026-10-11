@@ -62,6 +62,18 @@ export function normalizeBarcode(raw: string, format?: string): { code: string; 
   return null
 }
 
+/**
+ * Live camera reads: a code counts only once the same number has been read in `need` frames in a
+ * row. One frame can catch part of an EAN-13 and decode it as a different code whose check digit
+ * happens to pass (often an EAN-8), which then looks up the wrong product or none. A still photo
+ * is decoded whole, so it doesn't need this.
+ */
+export function confirmLiveRead(prev: { code: string; n: number } | null, code: string | null, need = 2): { state: { code: string; n: number } | null; confirmed: string | null } {
+  if (!code) return { state: prev, confirmed: null }
+  const n = prev && prev.code === code ? prev.n + 1 : 1
+  return { state: { code, n }, confirmed: n >= need ? code : null }
+}
+
 /** A food the user already has for this barcode: a saved scan, or a built-in food cited to OFF. */
 export function findByBarcode(foods: Food[], code: string): Food | undefined {
   return foods.find((f) => f.barcode === code) ?? foods.find((f) => f.src === 'off:' + code)
