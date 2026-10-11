@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
+import { confirmLiveRead, draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { draftFromShared } from '@/core/domain/sharedProduct'
@@ -100,13 +100,18 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     aliveRef.current = true
     let timer = 0
     let decoder: Decoder | null = null
+    let seen: { code: string; n: number } | null = null
     const loop = async () => {
       const v = videoRef.current
       if (!aliveRef.current || doneRef.current || !decoder) return
       if (v && v.readyState >= 2 && v.videoWidth > 0) {
         try {
           const hit = firstValid(await decoder.detect(v))
-          if (hit && aliveRef.current) { void handle(hit.raw, hit.format); return }
+          // the same number in two frames running before it counts (a partial read can pass its check digit)
+          const norm = hit ? normalizeBarcode(hit.raw, hit.format) : null
+          const r = confirmLiveRead(seen, norm?.code ?? null)
+          seen = r.state
+          if (hit && r.confirmed && aliveRef.current) { void handle(hit.raw, hit.format); return }
         } catch { /* a frame that can't be read: keep going */ }
       }
       timer = window.setTimeout(loop, SCAN_EVERY_MS)

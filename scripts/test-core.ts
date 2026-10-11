@@ -53,7 +53,7 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
-import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { checkDigitOk, classifyProduct, confirmLiveRead, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, servingRef, suggestFix, textsFromRead, validateLabelRead, variants, SERVING_NEEDED, type LabelRead } from '@/core/domain/label'
 import { scaleFood as scaleFoodRef } from '@/core/domain/nutrition'
@@ -1478,6 +1478,20 @@ async function barcodeScan(): Promise<void> {
     ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
     ['check digit: one digit off fails', !checkDigitOk('4006381333932') && !checkDigitOk('96385075') && !checkDigitOk('123')],
     ['UPC-E expands to its UPC-A', expandUpcE('04252614') === '042100005264'],
+    ['live read: one frame never counts; the same code twice running does', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      const one = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return one === null && st.confirmed === '5000118203664'
+    })()],
+    ['live read: a partial misread in between starts the count again', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      st = confirmLiveRead(st.state, '96385074')
+      const mid = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return mid === null && st.confirmed === null
+    })()],
+    ['live read: an empty frame keeps the count', confirmLiveRead(confirmLiveRead(null, '5000118203664').state, null).state?.n === 1],
     ['normalize: UPC-A gets the leading 0, keeps the 12-digit spelling as alt', JSON.stringify(normalizeBarcode('036000291452', 'upc_a')) === JSON.stringify({ code: '0036000291452', alt: '036000291452' })],
     ['normalize: EAN-13 with spaces', normalizeBarcode('4006 3813 3393 1')?.code === '4006381333931'],
     ['normalize: typed EAN-8 stays 8 digits', normalizeBarcode('96385074')?.code === '96385074'],
