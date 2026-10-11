@@ -8,13 +8,17 @@ import { buildEntry } from '@/core/domain/estimate'
 import { kjFromKcal } from '@/core/domain/label'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { sourceErr, sourceOf, SOURCES } from '@/core/data/sources'
+import { afterOffLookup, draftForShare, shareRowState, withSharedFigures } from '@/core/domain/sharedProduct'
+import { toServerFood } from '@/data/sync'
+import type { Food } from '@/core/types'
 import { cleanLookupRow, draftFromShared, marginNote, pct, sameAsFound, shareDecision, shareEligible, sourceCard, tierErr, tierOf, TIER_SOURCE, type SharedProduct } from '@/core/domain/sharedProduct'
 import { CONSENT_TYPES, CONSENT_VERSIONS, cleanConsents, hasConsent, hasCurrentConsent, latestConsent, recordConsent, withdraw } from '@/data/consent'
 import { stateFromBackup, type SyncMeta } from '@/data/persistence'
 import {
   cacheGet, cachePut, canSendOutbox, CACHE_KEY, CACHE_MAX, dropOutbox, LOOKUP_FUNCTION, REPORT_FUNCTION, lookupShared, OUTBOX_KEY, OUTBOX_MAX, queueShare, readOutbox, reconcileOutbox,
-  reportShared, sendDelayMs, sendOutbox, type SendResult,
+  reportShared, sendDelayMs, sendOutbox, type SendResult, offBeforeShare,
 } from '@/data/sharedProducts'
+import type { ProductLookup } from '@/data/products'
 import { setSession } from '@/data/supabase'
 import { CAPS, COUNTED_READS, SHARED_TABLES, cleanName, cleanToken, gtin14, kjAgrees, nameProblem, valuesFlags, valuesFromRead, valuesProblem, type ShareToken } from '../supabase/functions/_shared/shared-product'
 import { signShare, sigHash, verifyShare } from '../supabase/functions/_shared/product-sig'
@@ -148,6 +152,42 @@ function eligibility(t: ShareToken | null) {
     ['no signed read (typed in, or no barcode): not shared', !shareEligible({ ...draft, share: undefined }, conf()) && !shareEligible({ ...draft, barcode: '' }, conf())],
     ['a token for another barcode: not shared', !shareEligible({ ...draft, barcode: '036000291452' }, conf())],
     ['a "(2)" name for a second copy, from the same front name, still counts as unchanged', shareEligible({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: ['Tali Test Crunchy Granola Honey'] }), share: t!, offMissing: true }, { name: 'Tali Test Crunchy Granola Honey (2)', values: draft.values, ml: false })],
+  ])
+}
+
+/** "Share this product" on a saved food (boards sp-7 to sp-9, canvas note s-share). */
+async function shareSavedFood(t: ShareToken | null) {
+  const mine: Food = { id: '0b8f2a8e-1c9d-4c1e-9f57-7e1d2b3c4d5e', n: 'Oat & raisin flapjack', k: 430, p: 5, c: 57, f: 19, g: 65, barcode: '5000157024671', eat: true, cat: 'snacks', ref: { g: 65, k: 280 } }
+  const on = { enabled: true, online: true }
+  const row = (f: Partial<Food>, o = on) => shareRowState({ ...mine, ...f }, o)
+  // the OFF lookup a tap starts, with a fake Open Food Facts that answers `status`
+  const asked: { code: string; alt?: string }[] = []
+  const off = (status: ProductLookup['status'], online = true) => offBeforeShare(mine.barcode!, {
+    lookup: async (codes) => { asked.push(codes); return status === 'found' ? { status, code: codes.code, product: {} } : { status } as ProductLookup },
+    online: () => online,
+  })
+  const found = await off('found')
+  const draft = draftForShare({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: [mine.n, 'Tali Test Crunchy Granola Honey'] }), share: t ?? undefined }, mine)
+  const def = foodFromConfirmed({ barcode: draft.barcode, name: draft.name, values: draft.values, ml: draft.ml, kind: draft.kind, g: 40, source: 'label' })
+  const after = withSharedFigures(mine, def)
+  const server = toServerFood({ ...after, shareDone: 'shared' }, 'u') as { meta: Record<string, unknown> }
+  report('share this product', [
+    ['the row shows on a saved food with a barcode (typed or label source)', row({}) === 'on' && row({ src: 'label' }) === 'on'],
+    ['not on a built-in food, or one with no barcode', row({ id: undefined }) === 'hidden' && row({ barcode: undefined }) === 'hidden'],
+    ['not on a food from Open Food Facts, or from Tali’s shared list', row({ src: 'off:5000157024671' }) === 'hidden' && row({ src: 'shared-counted:5000157024671' }) === 'hidden'],
+    ['not once shared, or once Open Food Facts turned out to have it', row({ shareDone: 'shared' }) === 'hidden' && row({ shareDone: 'in-off' }) === 'hidden'],
+    ['not when shared products or label scanning are off', row({}, { enabled: false, online: true }) === 'hidden'],
+    ['offline it stays in view, off (sp-7b)', row({}, { enabled: true, online: false }) === 'offline' && row({ src: 'off:1' }, { enabled: true, online: false }) === 'hidden'],
+    ['Open Food Facts has it: sp-8a, asked with the scanner’s lookup and the code as saved', found === 'in-off' && asked[0]?.code === '5000157024671'],
+    ['not found, or an error while online: on to the label camera', (await off('not-found')) === 'label' && (await off('error', true)) === 'label'],
+    ['offline, or an error offline: it wasn’t asked, nothing goes on', (await off('offline')) === 'offline' && (await off('error', false)) === 'offline' && afterOffLookup('offline', true) === 'offline'],
+    ['the read for sharing is named as read, with offMissing set, and may be shared unchanged', draft.name === 'Tali Test Crunchy Granola Honey' && draft.offMissing === true && !!t && shareEligible(draft, { name: draft.name, values: draft.values, ml: draft.ml })],
+    ['it keeps the saved food’s kind, and its serving where the label prints none', draft.kind === 'eat' && (draft.serving.eat ?? 0) > 0],
+    ['shared, the saved food takes the read’s figures and keeps its name, id, barcode and category', after.n === 'Oat & raisin flapjack' && after.id === mine.id && after.barcode === mine.barcode && after.cat === 'snacks'
+      && after.k === draft.values.k && after.p === draft.values.p && after.c === draft.values.c && after.f === draft.values.f && after.src === 'label' && after.shareDone === 'shared'],
+    ['the old pack serving line goes with the old figures; the serving is the one confirmed', after.ref === undefined && after.g === 40 && after.eat === true && withSharedFigures(mine, { ...def, eat: undefined }).eat === undefined],
+    ['the saved food itself is unchanged until it’s shared', mine.n === 'Oat & raisin flapjack' && mine.k === 430 && mine.shareDone === undefined],
+    ['“shared” stays on the device: never in the synced row', !('shareDone' in server.meta) && !JSON.stringify(server).includes('shareDone')],
   ])
 }
 
@@ -348,6 +388,7 @@ export async function sharedProductsSuite(): Promise<number> {
   names()
   const t = await signedReads()
   eligibility(t)
+  await shareSavedFood(t)
   consentGating()
   await outbox(t)
   await lookups()

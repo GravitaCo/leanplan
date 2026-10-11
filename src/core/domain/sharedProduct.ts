@@ -6,9 +6,10 @@
  * The rules shared with the Edge Functions and the database (barcodes, names, signed values)
  * live in supabase/functions/_shared/shared-product.ts.
  */
+import type { Food } from '@/core/types'
 import type { LabelValues, ScanDraft } from './barcode'
 import { uniqueName } from './barcode'
-import { SOURCES } from '@/core/data/sources'
+import { isSharedSource, SOURCES } from '@/core/data/sources'
 import { CAPTURE_ERR, OWN_LABEL_ERR, sharedErr } from './estimate'
 import { COUNTED_READS, SHARED_FIELDS, gtin14, roundShared, type SharedValues, type ShareToken } from '../../../supabase/functions/_shared/shared-product'
 
@@ -161,4 +162,59 @@ export function shareDecision(eligible: boolean, latest: { granted: boolean } | 
   if (!eligible) return 'none'
   if (!latest) return 'ask'
   return latest.granted ? 'share' : 'keep'
+}
+
+/* ---------------- Share this product (boards sp-7 to sp-9, note s-share) ---------------- */
+
+/**
+ * The "Share this product" row on a saved food's sheet: only on the user's own saved food with a
+ * barcode, whose figures didn't come from Open Food Facts (`off:…`) or Tali's shared list
+ * (`shared-…`), and that isn't done yet (shared, or Open Food Facts turned out to have it). Offline
+ * it stays in view, off (sp-7b). `enabled`: SHARED_PRODUCTS_ENABLED and LABEL_SCAN_ENABLED.
+ */
+export function shareRowState(food: Pick<Food, 'id' | 'barcode' | 'src' | 'shareDone'>, opts: { enabled: boolean; online: boolean }): 'hidden' | 'on' | 'offline' {
+  if (!opts.enabled || !food.id || !food.barcode || food.shareDone) return 'hidden'
+  const key = food.src ? food.src.split(':')[0] : ''
+  if (key === 'off' || isSharedSource(food.src)) return 'hidden'
+  return opts.online ? 'on' : 'offline'
+}
+
+/**
+ * After the Open Food Facts lookup a tap on the row starts: it has the product (sp-8a); it doesn't,
+ * so on to the label camera (sp-8b); or it couldn't be asked. An error while online counts as not
+ * found (submit-product asks Open Food Facts again before anything joins the list); offline it
+ * wasn't asked, so nothing goes on (shareEligible needs offMissing, which "wasn't asked" never sets).
+ */
+export function afterOffLookup(status: 'found' | 'not-found' | 'offline' | 'error', online: boolean): 'in-off' | 'label' | 'offline' {
+  if (status === 'found') return 'in-off'
+  if (status === 'not-found') return 'label'
+  if (status === 'error' && online) return 'label'
+  return 'offline'
+}
+
+/**
+ * The saved food once its label read is shared (Benn, 11 Oct 2026): it takes the read's figures,
+ * so what the user logs matches what they shared, and keeps its name (usuals match by name), id,
+ * barcode and category. `def` is the confirmed read as foodFromConfirmed builds it.
+ */
+export function withSharedFigures(food: Food, def: Omit<Food, 'id'>): Food {
+  const out: Food = { ...food, k: def.k, p: def.p, c: def.c, f: def.f, g: Math.round(def.g), ml: def.ml, src: def.src, shareDone: 'shared' }
+  if (def.ref) out.ref = def.ref
+  else delete out.ref
+  if (def.eat) out.eat = true
+  else delete out.eat
+  return out
+}
+
+/**
+ * A saved food's label read, ready to check and share (sp-9): named as read from the pack (what the
+ * list gets; the saved food keeps its own name), with the food's own kind, and its serving where
+ * the label prints none. Reached only after Open Food Facts didn't have the barcode (offMissing).
+ */
+export function draftForShare(d: ScanDraft, food: Pick<Food, 'eat' | 'g'>): ScanDraft {
+  const typed = d.notes.some((n) => n.field === 'serving')
+  return {
+    ...d, name: d.baseName, kind: food.eat ? 'eat' : 'cook', offMissing: true,
+    serving: typed ? d.serving : { eat: d.serving.eat ?? food.g, cook: d.serving.cook ?? food.g },
+  }
 }

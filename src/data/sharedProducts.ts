@@ -16,10 +16,11 @@
  * No React, no DOM beyond fetch, localStorage and timers.
  */
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
-import { cleanLookupRow, type SharedProduct } from '@/core/domain/sharedProduct'
+import { afterOffLookup, cleanLookupRow, type SharedProduct } from '@/core/domain/sharedProduct'
+import { normalizeBarcode } from '@/core/domain/barcode'
 import { cleanToken, gtin14, tokenFresh, type ShareToken } from '../../supabase/functions/_shared/shared-product'
 import { LABEL_SCAN_ENABLED } from './labelReader'
-import { OFF_TIMEOUT_MS } from './products'
+import { lookupProduct, OFF_TIMEOUT_MS } from './products'
 import { fnFetch, getToken, getUid, hasSession, supabase } from './supabase'
 
 /** The list grows only from label photos, so it's on exactly when label scanning is. */
@@ -146,6 +147,20 @@ export async function lookupShared(codes: { code: string; alt?: string }, opts: 
     clearTimeout(timer)
     opts.signal?.removeEventListener('abort', stop)
   }
+}
+
+/* ---------------- Share this product (sp-7 to sp-9) ---------------- */
+
+/**
+ * A tap on a saved food's "Share this product" asks Open Food Facts first, with the scanner's own
+ * lookup: it has the product (sp-8a, nothing to share), it doesn't (on to the label camera, sp-8b),
+ * or it couldn't be asked (core/domain/sharedProduct.ts afterOffLookup).
+ */
+export async function offBeforeShare(barcode: string, deps: { lookup?: typeof lookupProduct; online?: () => boolean; signal?: AbortSignal } = {}): Promise<'in-off' | 'label' | 'offline'> {
+  const codes = normalizeBarcode(barcode) ?? { code: barcode }
+  const res = await (deps.lookup ?? lookupProduct)(codes, { signal: deps.signal })
+  const online = deps.online ? deps.online() : !offline()
+  return afterOffLookup(res.status, online)
 }
 
 /* ---------------- outbox ---------------- */

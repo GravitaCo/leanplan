@@ -45,6 +45,7 @@ import { markActivityShown } from '@/core/domain/activity'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
+import { withSharedFigures } from '@/core/domain/sharedProduct'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
 import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
@@ -319,6 +320,13 @@ export interface StoreState {
   /** queue a signed label read for Tali's shared list (only with a yes to sharing); it's sent
    *  later, after a random delay, never on this save path */
   queueSharedProduct: (t: ShareToken) => boolean
+  /** "Share this product" on a saved food (sp-9): queue its signed label read (as
+   *  queueSharedProduct), then the food takes the read's figures and keeps its name. Null when
+   *  nothing could be queued (the food is left as it was) */
+  shareSavedFood: (id: string, def: Omit<Food, 'id'>, t: ShareToken) => Food | null
+  /** Open Food Facts already has a saved food's product (sp-8a): its share row goes. On this
+   *  device only (Food.shareDone) */
+  markFoodInOff: (id: string) => void
   /** send the queued reads now, if signed in as their owner, online and consented */
   sendSharedProducts: () => Promise<void>
   /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
@@ -1939,6 +1947,27 @@ export const useStore = create<StoreState>()(
         queueShare(t, owner)
         scheduleSend(() => void get().sendSharedProducts())
         return true
+      },
+
+      shareSavedFood: (id, def, t) => {
+        const cur = get().data.customFoods.find((x) => x.id === id)
+        if (!cur || !get().queueSharedProduct(t)) return null
+        const food = withSharedFigures(cur, def)
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) { for (const k of Object.keys(f) as (keyof Food)[]) delete f[k]; Object.assign(f, food, { _dirty: true, _u: nowIso() }) }
+        })
+        saved()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      markFoodInOff: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          // device-only: not marked dirty, nothing to upload
+          if (f) f.shareDone = 'in-off'
+        })
+        persist()
       },
 
       sendSharedProducts: async () => {

@@ -42,6 +42,11 @@ export interface Food {
    *  foods only (not synced). A query that is exactly one of them ranks this food first; otherwise
    *  their words match like the name's, after foods whose name matches (core/domain/search.ts) */
   aka?: string[]
+  /** "Share this product" is done for this saved food (board sp-7): Open Food Facts already has it
+   *  ('in-off'), or its label read was queued for Tali's shared list ('shared'). On this device
+   *  only, never synced: the shared list never learns who added a product, so the account doesn't
+   *  record it either */
+  shareDone?: 'in-off' | 'shared'
   /** sync metadata (custom foods only) */
   _u?: string
   _dirty?: boolean

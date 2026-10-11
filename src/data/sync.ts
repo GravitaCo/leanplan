@@ -532,6 +532,8 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     // a row without `meta` (the column isn't there yet, or an older version wrote it) keeps this
     // device's extra fields for the same food, so a pull never strips a scan's barcode or source
     const mine = local.get(f.id)
+    // "Share this product" done (Food.shareDone) lives on this device only, never on the server
+    if (mine?.shareDone) f.shareDone = mine.shareDone
     if (mine && !hasMeta(row)) {
       for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
       // the server's row predates meta (or came from an older build): upload this device's extra
