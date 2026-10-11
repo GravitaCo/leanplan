@@ -232,6 +232,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
       const ob = await outbox(page)
       expect(ob && ob.owner === UID && ob.items.length === 1 && ob.items[0].barcode === '0' + CODE, 'queued with the owner on the device: ' + JSON.stringify(ob))
+      expect((await page.getByText('Share this product', { exact: true }).count()) === 0, 'shared on save: no "Share this product" row on the new food')
       const c = await consentsOf(page, 'shared-products')
       expect(c.length === 1 && c[0].granted === true && c[0].version === '2026-10-v1', 'a yes recorded: ' + JSON.stringify(c))
       // not sent on the save path

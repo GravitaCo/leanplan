@@ -68,10 +68,12 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
   // the same barcode, or a food that looks like a saved one, asks first (boards dup-1, dup-2). A
   // share agreed for this read is queued only once a food is really saved or chosen
   const pendingShare = useRef(false)
+  const markFoodShared = useStore((s) => s.markFoodShared)
   const dup = useDuplicateSave((f) => {
-    if (pendingShare.current && draft.share) queueSharedProduct(draft.share)
+    const queued = pendingShare.current && !!draft.share && queueSharedProduct(draft.share)
     pendingShare.current = false
-    onSaved(f)
+    // the food this read was saved as (new, kept or updated) has now been shared: its row goes
+    onSaved(queued && f.id ? markFoodShared(f.id) ?? f : f)
   }, 'scan')
   const info = draft.label
   const shared = draft.shared

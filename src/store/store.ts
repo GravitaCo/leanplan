@@ -335,6 +335,9 @@ export interface StoreState {
   /** Open Food Facts already has a saved food's product (sp-8a): its share row goes. On this
    *  device only (Food.shareDone) */
   markFoodInOff: (id: string) => void
+  /** this saved food's label read is queued for the shared list: its "Share this product" row
+   *  goes (device-only, like markFoodInOff). Returns the marked food */
+  markFoodShared: (id: string) => Food | null
   /** send the queued reads now, if signed in as their owner, online and consented */
   sendSharedProducts: () => Promise<void>
   /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
@@ -2016,6 +2019,15 @@ export const useStore = create<StoreState>()(
           if (f) f.shareDone = 'in-off'
         })
         persist()
+      },
+
+      markFoodShared: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) f.shareDone = 'shared'
+        })
+        persist()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
       },
 
       sendSharedProducts: async () => {
