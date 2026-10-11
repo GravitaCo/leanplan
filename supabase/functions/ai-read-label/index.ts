@@ -215,7 +215,8 @@ Deno.serve(async (req) => {
   // set explicitly, since 5.5 defaults to medium), and server-side fallbacks so a classifier decline
   // is retried on the recommended model. Haiku takes neither effort nor adaptive thinking; other
   // models skip the fallback beta.
-  const opus5 = MODEL === 'claude-opus-5' || MODEL === 'claude-opus-5-5'
+  // server-side fallbacks only when LABEL_FALLBACKS=1: the live API answered 400 with them on (11 Oct 2026)
+  const opus5 = Deno.env.get('LABEL_FALLBACKS') === '1' && (MODEL === 'claude-opus-5' || MODEL === 'claude-opus-5-5')
   const haiku = MODEL.startsWith('claude-haiku')
   const client = new Anthropic({ apiKey: key, timeout: MODEL_TIMEOUT_MS, maxRetries: 0 })
   let msg: Anthropic.Beta.BetaMessage
@@ -232,7 +233,11 @@ Deno.serve(async (req) => {
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return fail('busy', { images: images.length, kb })
     if (e instanceof Anthropic.APIConnectionTimeoutError) return fail('upstream', { images: images.length, kb, why: 'timeout' })
-    if (e instanceof Anthropic.APIError) return fail('upstream', { images: images.length, kb, status: e.status ?? 0 })
+    // the API's own error type and message (about the request's shape, never the photo or the person)
+    if (e instanceof Anthropic.APIError) {
+      const err = (e.error as { error?: { type?: string; message?: string } } | undefined)?.error
+      return fail('upstream', { images: images.length, kb, status: e.status ?? 0, type: String(err?.type ?? ''), msg: String(err?.message ?? e.message ?? '').slice(0, 200) })
+    }
     return fail('upstream', { images: images.length, kb })
   }
   const usage = { images: images.length, kb, model: msg.model, in: msg.usage.input_tokens, out: msg.usage.output_tokens }
