@@ -182,7 +182,8 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
   const logs = pair.map((f) => timesLogged(data.days, f))
   // the one with more logs is kept by default (the first on a tie)
   const [keepIdx, setKeepIdx] = useState(logs[1] > logs[0] ? 1 : 0)
-  const [takeBarcode, setTakeBarcode] = useState(true)
+  // off by default (Benn, 11 Oct 2026): both barcodes may be real, e.g. a multipack
+  const [takeBarcode, setTakeBarcode] = useState(false)
   const keep = pair[keepIdx], drop = pair[1 - keepIdx]
   const usualMeal = (f: Food): MealSlot | undefined => (['breakfast', 'lunch', 'dinner', 'snack'] as MealSlot[]).find((m) => usuals(data, cur, m).some((u) => u.n === f.n))
   const usualText = (m: MealSlot) => `your usual ${MEAL_LABEL[m].toLowerCase()}`
