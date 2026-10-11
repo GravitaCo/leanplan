@@ -146,14 +146,14 @@ native implementation, picked at start-up.
 
 | Area | Web today | Native | Notes |
 |---|---|---|---|
-| Local store (`persistence.ts`) | `localStorage`, key `leanplan.v1` | A native key-value or SQLite store | **The key name `leanplan.v1` and the data shape stay exactly the same** (`CLAUDE.md`). A user who moves from the PWA to the app signs in and syncs; there's no on-device migration between them (separate storage), so the first native sign-in must run the same owner check (`ownerCheck`) and sync as a new device does today. |
+| Local store (`persistence.ts`, `supabase.ts`) | `localStorage`: `leanplan.v1`, `tali.kitchen`, `tali.mode`, and the supabase-js login session (`createClient` sets no `storage`) | A native key-value or SQLite store for the app data; supabase-js gets a native `storage` adapter backed by the Keychain / Keystore (a secure store, not plain preferences) | **The key name `leanplan.v1` and the data shape stay exactly the same** (`CLAUDE.md`). A user who moves from the PWA to the app signs in and syncs; there's no on-device migration between them (separate storage), so the first native sign-in must run the same owner check (`ownerCheck`) and sync as a new device does today. |
 | Device-only data (`deviceOnly.*`: unload notes, reminder log) | `localStorage` | Same native store | These never sync, so moving from the PWA to the app leaves them behind. Say so in the "moving to the app" help text, and offer the JSON export (`backup.ts`), which already includes them. |
-| Push (`push.ts`) | Web Push (VAPID) | APNs (iOS) and FCM (Android) via a push plugin | The reminder functions (`send-supplement-reminders` and the generalised one) gain a second sender. Payloads stay the fixed, health-free text recorded in the register. New device-token storage needs `security-data` and the register. |
+| Push (`push.ts`) | Web Push (VAPID) | APNs (iOS) and FCM (Android) via a push plugin | The reminder functions (`send-supplement-reminders` and the generalised one) gain a second sender. Payloads stay the fixed, health-free text recorded in the register. Store native tokens in the existing `push_subscriptions` table with an added column (it already has owner-scoped RLS and is in `USER_TABLES`; nothing renamed). Delete the token on sign-out and account switch, as `unsubscribePush` does today, or one account's reminders reach the next person on that phone. Register change. |
 | Camera and barcode (`camera.ts`, `barcodeDecoder.ts`) | `getUserMedia`, `barcode-detector`, `zxing-wasm` | Native camera and barcode plugin | Faster and more reliable than the web path on iOS. |
-| Label reading (`labelReader.ts`) | Photo to the `ai-read-label` function (Anthropic) | On-device text recognition, then a table parser in `core/` | Free and offline; the photo never leaves the phone. Keeps the server path as a fallback. |
+| Label reading (`labelReader.ts`) | Photo to the `ai-read-label` function (Anthropic) | On-device text recognition, then a table parser in `core/` | Free and offline; the photo never leaves the phone. Keeps the server path as a fallback, which needs `capacitor://localhost` and `https://localhost` added to the function's `ORIGINS` (today native calls would get 403). The same applies to every new AI function. |
 | Voice input | None | On-device speech recognition | Feeds the same text path as typing. Needs microphone and speech permissions with specific purpose strings. |
-| Sign-in (`AuthScreen.tsx`) | Email and password, Google OAuth by redirect | Same, with native deep links for the OAuth return and password-reset links; **add Sign in with Apple** | Apple requires an equivalent privacy-focused login option when an app offers a third-party login such as Google (Guideline 4.8; **VERIFY**). Sign in with Apple is a new identity provider and a register change. |
-| Demo clips (Bunny Stream) | Plays because the browser sends the `app.tali.fit` referrer | **Will be refused** unless fixed | The library refuses requests with no referrer (`core/data/media.ts`). A native web view's origin is `capacitor://localhost` or `https://localhost`. Add the app origins to Bunny's allowed referrers, or switch to signed URLs (token authentication). Test on a device before release. |
+| Sign-in (`AuthScreen.tsx`) | Email and password, Google OAuth by redirect | Same, plus **Sign in with Apple**. `redirect()` builds from `window.location.origin`, which is `capacitor://localhost` in the shell, so on native `redirectTo` becomes a custom scheme or universal link on the Supabase redirect allow-list; use the PKCE flow and `exchangeCodeForSession` in the deep-link handler; run Google OAuth in the system browser (Google blocks embedded web views); Sign in with Apple via `signInWithIdToken` with a nonce. Password-reset links use the same deep link | Apple requires an equivalent privacy-focused login option when an app offers a third-party login such as Google (Guideline 4.8; **VERIFY**). Sign in with Apple is a new identity provider and a register change. |
+| Demo clips (Bunny Stream) | Plays because the browser sends the `app.tali.fit` referrer | **Will be refused** unless fixed | The library refuses requests with no referrer (`core/data/media.ts`). A native web view's origin is `capacitor://localhost` or `https://localhost`, and it may send no referrer at all. Allowing `localhost` as a referrer would open the library to any local page, so **use signed URLs (Bunny token authentication)**, signed by an Edge Function whose key lives in function secrets, never in the app bundle. Test on a device before release. |
 | Service worker (`public/sw.js`) | Caches the shell for offline | Not used | Assets are bundled in the app, so offline works without it. The web build keeps it. |
 | Fonts (Geist, bundled) | `public/fonts/` | Bundled the same way | No change. |
 | Links out (legal pages, "Watch how to do it") | New tab | In-app browser | |
@@ -225,11 +225,18 @@ own; see §4.3.
 
 - A new table, **`entitlements`** (one row per user: `plan`, `status`, `expires_at`, `channel`,
   `updated_at`). **Written only by a server-side webhook function** (RevenueCat and Stripe webhooks,
-  signature checked). The app can read its own row (RLS: `auth.uid()`); it can never write it.
-- **Every AI Edge Function checks the entitlement server-side** before calling the model, next to the
-  existing consent check and daily caps in `ai_usage_take`. The client-side flag only decides what to
+  signature checked, idempotent by event id, rejecting events whose user id doesn't match an account).
+  The app can read its own row; it can never write it. It must **not** join the `owner_full_access`
+  loop in `docs/security-rls.sql` (that policy is `for all`): a select-only policy plus
+  `revoke insert, update, delete` from `anon` and `authenticated`.
+- **Every AI Edge Function checks the entitlement server-side** before calling the model. Only
+  `ai-read-label` exists today; the check goes **inside** `ai_usage_take` (SECURITY DEFINER), which
+  already refuses on consent (-2), as a new refusal code (say -3, no entitlement). A direct RPC call
+  then can't get round the paywall, and there's no extra round trip. The client-side flag only decides what to
   show; it is never trusted to unlock a paid call.
-- **Offline:** the app caches the entitlement with its expiry, so Plus screens render offline. AI
+- **Offline:** the app caches the entitlement with its expiry, stamped with `_meta.owner` so a second
+  account on the device never inherits it, so Plus screens render offline. The cache only decides
+  what's shown. AI
   features need a connection anyway; everything free works offline exactly as today.
 - **Lapse is graceful.** When Plus ends, recipes made with AI stay the user's (they are ordinary
   recipes); logging them is free. Only new AI calls stop. Nothing the user created is locked.
@@ -248,7 +255,8 @@ From `monetisation-plan.md` §4.4 and §5.1, still Benn's decisions (§10):
   match web prices or carry the store fee is decision 6.
 - **Trial:** 14 days, no card, recommended. On iOS and Android a no-card trial means the trial is ours
   (an entitlement row with an expiry), not the store's free-trial offer, which needs payment details
-  (**VERIFY** per store). That's simpler and can't surprise-bill anyone.
+  (**VERIFY** per store). That's simpler and can't surprise-bill anyone. One trial per account,
+  enforced on the server, so it can't be restarted.
 - **Fair use:** a published monthly limit on AI calls, stated up front, enforced by the existing
   `ai_usage` caps. Repeat meals never count (they resolve on the phone).
 - **Cancel in one tap, pause beside it** (never in front), and a non-renewing annual pass. On iOS and
