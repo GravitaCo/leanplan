@@ -135,13 +135,13 @@ export async function lookupShared(codes: { code: string; alt?: string }, opts: 
     if (!p) { cacheDrop(st, gtin); return { status: 'not-found' } }
     cachePut(st, gtin, p)
     return { status: 'found', product: p }
-  } catch (e) {
+  } catch {
     if (cached) return { status: 'found', product: cached }
-    // a slow function isn't a lost connection: no shared result, Open Food Facts runs. Only a
-    // fetch that never reached the network (a TypeError) or a device that says it's offline is
-    // offline, as in products.ts
+    // only a device that says it's offline is offline. A slow function, or a fetch that fails
+    // while online (a TypeError: the function down, a CORS refusal), is an error, so the scan
+    // still goes on to Open Food Facts
     if (timedOut) return { status: 'error' }
-    return offline() || (e as { name?: string })?.name === 'TypeError' ? { status: 'offline' } : { status: 'error' }
+    return offline() ? { status: 'offline' } : { status: 'error' }
   } finally {
     clearTimeout(timer)
     opts.signal?.removeEventListener('abort', stop)
