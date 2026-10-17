@@ -286,3 +286,5 @@ This is where Tilo is weakest. [I] Everything in this section is my judgement, a
 Benn has registered **tilo.fit**. No decision to rename yet: it's held while the attorney clearance (UK, EU, US) and the waitlist test happen. gettilo.* was deliberately not registered, because GetTilo is the Berlin company's own name.
 
 Benn searched the UK IPO register himself (17 Oct 2026): no UK "Tilo" marks; one Austrian owner in an unrelated class (likely the tilo GmbH flooring company). Still to check by hand: phonetic variants (Teelo, Tila, Tylo, Tillo) on the UK register, and EUIPO/TMview including Germany.
+
+Benn searched the USPTO himself (17 Oct 2026): "Tilo" came back clear, matching the agent's finding (only the 2003 TILO in classes 37/42 for architecture). The similar-sounding US marks TILA (reg. 90667416, sleep and meditation app) and TEELO (app. 99588085, routines app) remain to be weighed. Still to do: EUIPO/TMview.
