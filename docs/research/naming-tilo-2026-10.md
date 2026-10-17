@@ -290,3 +290,5 @@ Benn searched the UK IPO register himself (17 Oct 2026): no UK "Tilo" marks; one
 Benn searched the USPTO himself (17 Oct 2026): "Tilo" came back clear, matching the agent's finding (only the 2003 TILO in classes 37/42 for architecture). The similar-sounding US marks TILA (reg. 90667416, sleep and meditation app) and TEELO (app. 99588085, routines app) remain to be weighed. Still to do: EUIPO/TMview.
 
 Benn searched EUIPO/TMview himself (17 Oct 2026): clean. So "Tilo" is clear on the UK, US (exact name) and EU registers as searched by Benn. Open items: similar-sounding US marks TILA and TEELO, unregistered use by small "Tilo" apps, and the waitlist/UK-ear test. Suggested next step: Benn files the UK trade mark himself (class 9 at minimum), which starts a six-month priority window for a US filing.
+
+Benn's call (17 Oct 2026): not concerned about similar-sounding names (TILA, TEELO); proceeding on the basis that Tilo is clear on the registers he searched.
