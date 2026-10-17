@@ -280,3 +280,7 @@ This is where Tilo is weakest. [I] Everything in this section is my judgement, a
 - Gerben IP: https://www.gerbenlaw.com/trademark-services/trademark-search-and-registration/
 
 **Domains:** RDAP via https://rdap.org/ and https://rdap.nic.fit/ ; IANA RDAP bootstrap https://data.iana.org/rdap/dns.json ; DNS via https://dns.google/
+
+## Update (17 October 2026)
+
+Benn has registered **tilo.fit**. No decision to rename yet: it's held while the attorney clearance (UK, EU, US) and the waitlist test happen. gettilo.* was deliberately not registered, because GetTilo is the Berlin company's own name.
