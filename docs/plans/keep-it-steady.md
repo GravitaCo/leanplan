@@ -9,7 +9,11 @@ Specialist reports (sources, evidence grades, exact copy): `docs/research/keep-i
 (`fitness.md`, `nutrition.md`, `mind.md`, `compliance.md`, `marketing.md`). Builds on
 `docs/plans/maintenance-loop.md` and its research. Nothing here is built yet.
 
-## The shape: one goal, one plan, one guide, no medication data
+## The shape: a small addition, not a change to the app
+
+Everything below is added to the app as it is: every other goal, plan and screen stays the same.
+People coming off weight-loss medication are the niche Tali leads with to break into the market
+(Benn, 18 Oct 2026); the app stays for everyone.
 
 - **Goal: Maintain** (Benn, 5 Oct: a first-class goal; people coming off these medicines will
   pick it). No new goal. The goal's explainer gets one line:
