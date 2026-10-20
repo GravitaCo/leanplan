@@ -8,9 +8,20 @@ import type { DayLog, Food, Profile, Recipe, Routine, TrainingPlan } from '@/cor
 import { sbGet, sbUpsert, sbDelete, sbFetch, getUid, nowIso, uuid, HttpError, ConsentRequiredError, UUID_RE } from './supabase'
 import type { AccountRows, PersistedState, SyncMeta } from './persistence'
 import { cleanPhases } from '@/core/domain/plans'
+import { cleanAlias, FOOD_META_KEYS } from '@/core/domain/duplicates'
 import { mergeProfiles } from '@/core/domain/profileMerge'
 import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
 import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPaused, holdHealth, profileHealth, sameHealth, withProfileHealth, withoutHealth as profileWithoutHealth, type DaySnap, type ResumeCopy } from './consent'
+
+/** A food took over another id after a name clash: "They're different" pairs (board dup-4) that
+ *  named the old id name the new one, and those foods upload again. */
+function remapNotSame(foods: Food[] | undefined, from: string, to: string): void {
+  for (const f of foods || []) {
+    if (!f.notSame?.includes(from)) continue
+    f.notSame = [...new Set(f.notSame.map((x) => (x === from ? to : x)))]
+    f._dirty = true
+  }
+}
 
 /* ---- client <-> server row mapping ---- */
 
@@ -23,8 +34,7 @@ import { pushConsents, pullConsents, latestConsent, healthDeclined, healthSyncPa
  */
 export const CUSTOM_FOOD_META = true
 
-/** The Food fields that travel in `meta` (everything the named columns don't hold). */
-const FOOD_META_KEYS = ['each', 'src', 'ref', 'cat', 'cook', 'barcode', 'eat'] as const
+/** The Food fields that travel in `meta` (everything the named columns don't hold): FOOD_META_KEYS. */
 type FoodMeta = Partial<Pick<Food, (typeof FOOD_META_KEYS)[number]>>
 
 function foodMeta(f: Food): FoodMeta | null {
@@ -52,6 +62,7 @@ export function fromServerFood(r: any): Food {
   const f: Food = { id: r.id, n: r.name, k: r.kcal, p: r.protein, c: r.carbs, f: r.fat, g: r.grams, ml: !!r.ml, _u: r.updated_at, _dirty: false }
   const m = hasMeta(r) ? r.meta : null
   if (m) for (const k of FOOD_META_KEYS) if (m[k] !== undefined && m[k] !== null) (f as any)[k] = m[k]
+  cleanAlias(f) // aliases are matched against logs: never trust their shape from the server
   return f
 }
 const hasMeta = (r: any) => !!r.meta && typeof r.meta === 'object' && !Array.isArray(r.meta)
@@ -221,7 +232,7 @@ async function upsertEach<T>(
  * - 403: RLS refused the id, so it belongs to another account (someone else's backup). Only
  *   when this account can't see that id do we give the record a fresh one.
  */
-function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => string, uid: string, deletes: string[], local: T[]) {
+function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => string, uid: string, deletes: string[], local: T[], remap?: (from: string, to: string) => void) {
   let names: { id: string; name: string }[] | null = null
   return async (x: T, e: HttpError): Promise<Undo | null> => {
     const was = x.id
@@ -236,7 +247,8 @@ function repairs<T extends { id?: string }>(table: string, nameOf: (x: T) => str
       x.id = hit.id
       const i = deletes.indexOf(hit.id)
       if (i >= 0) deletes.splice(i, 1)
-      return () => { x.id = was; if (i >= 0) deletes.splice(i, 0, hit.id) }
+      if (was) remap?.(was, hit.id)
+      return () => { x.id = was; if (i >= 0) deletes.splice(i, 0, hit.id); if (was) remap?.(hit.id, was) }
     }
     if (e.status === 403 && x.id) {
       const seen = await sbGet<unknown[]>('/' + table + '?id=eq.' + encodeURIComponent(x.id) + '&select=id')
@@ -378,7 +390,7 @@ export async function pushDirty(s: PersistedState, meta: SyncMeta): Promise<stri
   await deletes('custom_foods', 'foodDeletes')
   await deletes('recipes', 'recipeDeletes')
   const dirtyFoods = (s.customFoods || []).filter((f) => f._dirty)
-  await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes, s.customFoods)))
+  await step('custom foods', () => upsertEach('custom_foods', dirtyFoods, (f) => toServerFood(f, uid), 'id', (f) => (f._dirty = false), repairs('custom_foods', (f: Food) => f.n, uid, meta.foodDeletes, s.customFoods, (from, to) => remapNotSame(s.customFoods, from, to))))
   const dirtyRecipes = (s.recipes || []).filter((r) => r._dirty)
   await step('recipes', () => upsertEach('recipes', dirtyRecipes, (r) => toServerRecipe(r, uid), 'id', (r) => (r._dirty = false), repairs('recipes', (r: Recipe) => r.name, uid, meta.recipeDeletes, s.recipes)))
   // workouts have no name index (two may share a name), so only the 403 repair can apply
@@ -532,6 +544,8 @@ export async function pullAll(s: PersistedState, meta: SyncMeta): Promise<void> 
     // a row without `meta` (the column isn't there yet, or an older version wrote it) keeps this
     // device's extra fields for the same food, so a pull never strips a scan's barcode or source
     const mine = local.get(f.id)
+    // "Share this product" done (Food.shareDone) lives on this device only, never on the server
+    if (mine?.shareDone) f.shareDone = mine.shareDone
     if (mine && !hasMeta(row)) {
       for (const k of FOOD_META_KEYS) if (mine[k] !== undefined) (f as any)[k] = mine[k]
       // the server's row predates meta (or came from an older build): upload this device's extra

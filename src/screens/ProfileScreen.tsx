@@ -25,6 +25,7 @@ import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTar
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { PillarsSettings } from './profile/PillarsSettings'
 import { BackoffNotices, MindReminderRows, SuppNamesFoot, SuppNamesRow, YourTimes } from './profile/NotificationsSettings'
 
@@ -77,6 +78,7 @@ export function ProfileScreen() {
   const saveTargets = useStore((s) => s.saveTargets)
   const setTab = useStore((s) => s.setTab)
   const setPrefs = useStore((s) => s.setPrefs)
+  const setShareProducts = useStore((s) => s.setShareProducts)
   const addSupplement = useStore((s) => s.addSupplement)
   const updateSupplement = useStore((s) => s.updateSupplement)
   const removeSupplement = useStore((s) => s.removeSupplement)
@@ -440,6 +442,18 @@ export function ProfileScreen() {
               {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
             </p>
           </div>
+          {SHARED_PRODUCTS_ENABLED && (
+            // sp-5: on after a yes at the first shared product (sp-1), off after Not now
+            <>
+              <div className="list" style={{ margin: 0 }}>
+                <div className="li">
+                  <div className="m"><div className="t">Share new products I scan</div></div>
+                  <Toggle label="Share new products I scan" on={hasConsent(data, 'shared-products')} onChange={() => setShareProducts(!hasConsent(data, 'shared-products'))} />
+                </div>
+              </div>
+              <div className="foot" style={{ marginBottom: 16 }}>Barcode, name and figures only, never who added them.</div>
+            </>
+          )}
           <div className="list legal-rows" style={{ margin: '0 0 8px' }}>
             {(['privacy', 'terms', 'cookies'] as LegalDocId[]).map((id) => (
               <LegalLink key={id} id={id} className="li act"><div className="m"><div className="t">{LEGAL_LABEL[id]}</div></div><Chevron /></LegalLink>

@@ -5,7 +5,7 @@ record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is 
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
 
 ## What's in the app
 
@@ -48,6 +48,13 @@ Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), 
 | Unload notes (device only): "On my mind" and "Next step" pairs and an optional "went OK" line, with an id and time (`deviceOnly.unload`, stamped with the device's owner account); the day the low-mood signpost last showed (`deviceOnly.lowMoodShown`, health by inference); reminder delivery events (`deviceOnly.notify`: kind, time, shown, opened or closed) and whether "More about sleep" was left open (`deviceOnly.ui`), neither health data | Unload: let the person write down what's on their mind; the marker: show the signpost at most once per 30 days; the log: send a reminder less often when it's ignored | 6(1)(b) for all of it; + 9(2)(a) for the notes and the marker; PECR reg. 6(4)(b) strictly necessary | Device only, inside `leanplan.v1` (never synced, sent to AI, put in a notification or the service worker, or logged); in the JSON export (the whole store, notes, marker and log); a restore merges the backup's notes by id under this device's owner (none while health consent is withdrawn or with no owner recorded, and `unloadImportResult` reports how many it left out and why) and never restores the marker, log or UI state | Notes and marker: until the person deletes a note, health consent is withdrawn (here or pulled from another device), the device's log is removed (sign out and remove, start fresh, keep for another account, account deletion) or browser data is cleared. Notes stamped with another account, or with no owner recorded, are dropped on load; while a "whose data is this?" question is pending they are hidden, not deleted. Caps: 2,000 characters a note, 20 pairs a note, 200 notes; refused past any of them (never pruned). Log and UI state: until the device's log is removed |
 | Onboarding draft (`tali.onboarding`), setup card hidden (`tali.setupCardHidden`), pending under-age deletion (`tali.pendingDelete`: uid, time, tries, next try, stage) | Resume the wizard; remember a choice; finish an under-age deletion offline or after a fresh sign-in | 6(1)(b) (+ 9(2)(a) for the draft's health answers); PECR strictly necessary | Device only (`cookies.ts` lists them) | Draft: until setup finishes, a health withdrawal (here or pulled from another device), remove-this-device, or account deletion. Pending: until the deletion succeeds (or the device's data is cleared) |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
+| Label photos (pack nutrition table, optional front), with the pack's barcode if one was scanned (items 24, 46) | Read the numbers and name the person asks Tali to read | 6(1)(b) contract (the person asks for the read). The `label-photo` record (`LabelCaptureView` "OK, take a photo") is the notice and the server's gate, not the lawful basis: a pack photo is not health data, and nothing about the person goes with it | Phone → `ai-read-label` (Supabase, eu-west-1) → Anthropic (US). The barcode stops at the function (used only to sign a shareable read, never sent to the model or logged) | Tali: not stored (memory only; function logs hold counts, sizes and timings). Anthropic: deleted within 30 days of receipt unless kept longer to enforce its usage policy or by law (privacy.claude.com, "How long do you store my organization's data", checked 2026-10-10); no training on Customer Content (Commercial Terms §B) |
+| `ai_usage` (user id, day, count of label reads) | Daily cap on label reads | 6(1)(b) | `ai_usage` (owner SELECT only; in `USER_TABLES`) | 60 days, then deleted daily by pg_cron (`tali-ai-usage-cleanup`, `docs/migrations/2026-10-10-shared-products.sql` §10), or sooner on account deletion (item 24) |
+| Barcode lookups on the shared list (`lookup_product`, POST body) | Find a product another user added | 6(1)(b) | Supabase, as the signed-in caller | Not stored by Tali. Platform request logs (no body) on Supabase's retention |
+| Shared product submission: barcode (GTIN-14), name read from the pack, per-100 figures, serving, sent with the caller's JWT (item 46) | Add a new product to the shared list | 6(1)(a) consent (`shared-products`, `CONSENT_VERSIONS` 2026-10-v1, its own opt-in sp-1, withdrawn with the Profile › Privacy toggle sp-5) + 9(2)(a) health consent (the server needs both: `shared_products_allowed()`) | `submit-product` (Supabase) → `submit_product()` (service role). The caller's `sub` is held in function memory for at most an hour for the rate limit, never logged or stored | Personal data only in transit. What's stored is not linked to anyone (next row) |
+| Shared product list (`products`, `product_sigs_seen`, `product_quota`): barcode, version, name, figures, counters, month dates; SHA-256 of each accepted signature (month only, purged after 2 months); global daily counters | Shown to every signed-in user who scans the barcode | Not personal data once stored (UK GDPR Recital 26; reasoning in `dpia.md` §9). Moderation: 6(1)(f) for anything that turns out to be personal (a person's details in a product name) | `products` and the two helper tables, RLS on, no policies, no table grants; writes only by `submit_product()` | As long as the list exists, or until removed after a report or audit (`shared-products-moderation.md`). Not in `USER_TABLES`, `clear_log_after_withdrawal()` or `purge_unconsented_logs()`, by design |
+| Product reports: barcode, version, reason | Hide and review wrong or abusive entries | 6(1)(f) (no reporter kept) | `report_product()` counts on `products`; global daily cap in `product_quota` | Until the version is reviewed |
+| `tali.products` (device cache of up to 200 looked-up products, with the account that filled it), `tali.productOutbox` (signed reads waiting to be shared, with the queuing account's id) | Open looked-up products offline; send shared reads later, off the save path | Cache 6(1)(b); outbox 6(1)(a). PECR reg. 6(4)(b) strictly necessary | Device only (`cookies.ts`, `products` gate) | Cache: until another account signs in, or wipe (remove this device's log, delete account, clear browser data). Outbox: until sent, sharing or health consent withdrawn, another account sends, or wipe |
 | Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
 
@@ -62,7 +69,8 @@ Last reviewed: 2026-10-09. Controller: Gravita Creative Ltd (company 08348225), 
 | Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo video CDN (`src/core/data/media.ts`): the videos and their preview images, which load when the app shows an exercise row or entry, not only when a video plays; sees IP addresses. In use (confirmed by Benn, 28 Sept 2026) | BunnyWay d.o.o., Slovenia (EU); global edge network, storage may be outside the EU: confirm in Bunny's DPA and sub-processor list | Accept Bunny's DPA |
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
-| Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
+| Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23). `submit-product` also asks it, from the server, whether it has a barcode before a product is shared: the barcode only, no user data (disclosed, `products` gate) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
+| Anthropic (Anthropic Ireland, Limited contracts with UK/EEA customers under the Commercial Terms; Anthropic, PBC is US-based) | Processor: reads label photos (`ai-read-label`). Receives the photos only: no user id, email or barcode. The Commercial Terms incorporate the Anthropic DPA by reference and bar training on Customer Content (checked 2026-10-10) | US | Benn: confirm Tali's API key sits in an Anthropic Console organisation on the Commercial Terms (so the DPA applies), record the transfer mechanism the DPA uses (not confirmed: the DPA itself wasn't read), and decide whether to ask for zero data retention. TIA in `dpia.md` §9.4 (item 24) |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted and carries no supplement name: the fixed text "Time for your supplements" for a supplement reminder (from 2026-10-09, item 41; once the generalised function is deployed, the supplement names only for someone who turned on "Show supplement names in reminders", item 45), or the fixed text "Your week is ready" / "Take a look whenever suits you." for the review reminder; the Mind reminders, once deployed (item 42), carry fixed text too: "How are you today? A quick check-in, if you have a moment.", "Your wind-down starts now, if you'd like it.", "How are your plans going?") |
 
@@ -90,8 +98,9 @@ flag (diabetes with hypos risk, kidney disease, GLP-1), a disordered-eating prox
 `sometimes` stored apart, with the food-range answers after them: `dpia.md` §4.2 updated 2026-10-01, item 34),
 automated safety routing from them (Art. 22 not triggered, but record why), the outcomes-only
 design, the under-age stop and automatic deletion, and plan reasons now syncing. Also record
-on-phone processing (item 27), the purge and the accepted 30-day gap (item 30(d)), and, before
-label scanning goes on, the Anthropic processing (item 24). From 2026-10-08 the maintenance loop adds pattern lines from the person's own check-ins and the hard-week predicate that withholds eat-less suggestions (profiling of health data, Art. 4(4); no legal or similarly significant effect, Art. 22 not triggered): `docs/plans/maintenance-loop.md`. The weekly review reminder (a new push type) is added with it when built.
+on-phone processing (item 27), the purge and the accepted 30-day gap (item 30(d)), and the
+Anthropic processing (item 24): drafted with the shared product list as `dpia.md` §9 (2026-10-10,
+for Benn to sign). From 2026-10-08 the maintenance loop adds pattern lines from the person's own check-ins and the hard-week predicate that withholds eat-less suggestions (profiling of health data, Art. 4(4); no legal or similarly significant effect, Art. 22 not triggered): `docs/plans/maintenance-loop.md`. The weekly review reminder (a new push type) is added with it when built.
 
 ## Status
 
@@ -193,9 +202,39 @@ Added 2026-09-27 (consent release):
     (disclosed). Proxying them through an Edge Function would stop that, but Tali's server would
     then see every barcode a signed-in user scans (a new flow needing privacy text). Deferred
     (Benn, 2026-10-01): revisit before public launch.
-24. Label photo scanning (Anthropic) is off. Before turning it on: Anthropic DPA, transfer
-    mechanism and TIA, retention/zero retention, consent copy fix, withdrawal toggle, privacy
-    policy section, DPIA update, and schedule the `ai_usage` 60-day clean-up.
+24. Label photo scanning (Anthropic) goes on with the shared product list (commit e8ac601,
+    `LABEL_SCAN_ENABLED` true). Status 2026-10-10 (compliance, branch `shared-products-legal`):
+    - Done: privacy policy (what we collect, basis, Anthropic as a processor, transfer line,
+      retention), terms (AI reads can be wrong), DPIA §9 with a short TIA (§9.4). All gated on
+      `products` and published by `npm run legal:html` from `LABEL_SCAN_ENABLED`.
+    - Done: retention known. Anthropic deletes API inputs within 30 days unless kept for usage
+      policy enforcement or by law; no training on Customer Content (checked 2026-10-10).
+    - Basis decided: contract (the person asks for the read), not consent. So no Art. 7(3)
+      withdrawal toggle is owed: not taking a photo is the opt-out, and "Type it in instead" is
+      always there. The `label-photo` record stays as the notice and the server gate.
+    - Closed 2026-10-11: Benn confirmed the `ANTHROPIC_API_KEY` was created in the Anthropic
+      Console (workspace "Tali", an API organisation, not a consumer Claude.ai account), so the
+      Commercial Terms (effective 2025-06-17) apply: they govern API keys, the contracting
+      entity is Anthropic Ireland, Limited for UK/EEA/Swiss customers, and they incorporate the
+      DPA. Transfer mechanism, from the DPA (effective 2025-02-24, read 2026-10-11 at
+      https://www.anthropic.com/legal/data-processing-addendum): EU SCCs Module Two/Three
+      (s. I.1, Irish law) with the ICO UK Addendum B.1.0 for UK GDPR data (s. I.2, Sch. 3 Part
+      B). No reliance on the DPF or the UK-US data bridge (not mentioned). Privacy policy now
+      names that safeguard. DPIA 9.4 and 9.7 updated. Small check, not a gate: the Console
+      organisation's billing country should be the UK.
+    - Done 2026-10-11: Benn (Gravita Creative Ltd) approved DPIA §9, label photo scanning and the
+      shared product list.
+    - Done 2026-10-10 (Benn: wording changes need no board): the on-screen notice now reads
+      "Tali doesn't keep your photo. It's sent to Anthropic, the AI service we use, only to read
+      the numbers, and isn't used to train its AI. You can check the numbers before anything is
+      saved." (it said "under their data policy"; Anthropic acts on our instructions under the
+      DPA). `CONSENT_VERSIONS['label-photo']` is now `2026-10-v1`: an older yes sees the new
+      notice before the next photo.
+    - Done 2026-10-10: the `ai_usage` 60-day clean-up is scheduled with pg_cron
+      (`tali-ai-usage-cleanup`, daily 03:41 UTC, in the shared-products migration, applied with
+      it), and the policy now says the daily count is deleted after 60 days.
+    - Done 2026-10-10: the sp-1 opt-in links to the terms (where the sharing licence lives),
+      under the unchanged copy.
 25. Done 2026-10-01: the headers of `docs/migrations/2026-09-consents.sql` and
     `2026-09-owner-fks.sql` now say applied (re-checked on the live DB: the table and all four
     validated constraints exist). The `delete-account` function's comments are
@@ -556,6 +595,32 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     built but only reachable once `MIND_REVIEWED` is on (the Wind down screen sits behind it). Server logic is unchanged: `suppPayload` already needs a stamped `lockNames: true`,
     which nobody can set while the row is hidden, so every supplement reminder stays generic. To
     show it: sign DPIA 8.8, set `SUPP_NAMES_ENABLED` on, and republish the privacy policy.
+
+46. Shared product list (2026-10-10, compliance; branch `shared-products-legal`, built on
+    e8ac601). Anonymous by design (Benn, 10 Oct 2026). Checked in code: only reads
+    `ai-read-label` signed (HMAC over GTIN-14, parsed values and time, no user id) and saved
+    unchanged are shared; typed values and names can't pass `submit-product`'s signature check;
+    OFF products never join; no user id, hash or per-user row in the three tables; dates
+    first-of-month; the share token isn't stored in the saved food. Consent: its own type
+    (`shared-products`), checked on the server with health; withdrawal (Profile › Privacy toggle)
+    stops future sharing and drops the outbox (`withdrawConsent` in `store.ts`). Contributions
+    can't be withdrawn once shared: Art. 7(3) doesn't reach data that is no longer personal, and
+    Art. 11(2) applies to rights requests; the opt-in copy says so. Texts updated (privacy, terms
+    licence and fair use, cookies) behind `products`. DPIA §9.
+    - Done 2026-10-10: `products.id` is a random UUID (`gen_random_uuid()`), not a sequence, so
+      it no longer orders versions and the per-day `product_quota` counts can't be matched to a
+      row: "month only" holds. Lookups and reports now go through the `lookup-product` and
+      `report-product` Edge Functions (Auth check and an in-memory per-caller limit; the RPCs are
+      service-role only), and a name report needs 2 reports to hide a version.
+    - Done 2026-10-10: the opt-in sheet (sp-1) links to the terms (a "Terms and conditions"
+      link under the unchanged copy), where the licence for shared products is.
+    - Note: "we can't remove one you added later" holds for a person's own contribution; a
+      version can still be taken down after a report, and the privacy policy says so.
+    - Done 2026-10-10: `tali.products` notes (on the device only) which account filled it, and is
+      cleared when a different account signs in, with the outbox's owner check.
+    - Rule: never join `products` with `custom_foods` (or any user table) by barcode, name or
+      figures, in SQL, analytics or support work. That join is the only route to "who probably
+      added this". Recorded in DPIA §9.3.
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

@@ -60,6 +60,16 @@ export function sbFetch(path: string, opts: RequestInit = {}, token?: string): P
   return fetch(SB_REST + path, opts)
 }
 
+/** POST JSON to one of Tali's Edge Functions as the current session (`name`: e.g. 'lookup-product'). */
+export function fnFetch(name: string, opts: RequestInit = {}): Promise<Response> {
+  opts.headers = {
+    apikey: SB_KEY,
+    Authorization: 'Bearer ' + getToken(),
+    ...(opts.headers || {}),
+  }
+  return fetch(SB_URL + '/functions/v1/' + name, opts)
+}
+
 /** `token`: read as a session that isn't applied yet (the owner check before sign-in completes). */
 export async function sbGet<T = unknown>(path: string, token?: string): Promise<T> {
   const r = await sbFetch(path, {}, token)

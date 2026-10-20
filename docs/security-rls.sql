@@ -72,3 +72,12 @@ end $$;
 --   notify_sent (docs/migrations/2026-10-09-notify-sent.sql, applied 2026-10-10)  owner SELECT + DELETE (DELETE only so
 --             clear_log_after_withdrawal(), SECURITY INVOKER, can clear it); inserted and updated only by
 --             the reminder function through notify_claim() (service role)
+--   Shared product list (docs/migrations/2026-10-10-shared-products.sql; NOT APPLIED yet): no one's
+--   rows, no user id at all, so never in USER_TABLES, the withdrawal clear or the purge. RLS on,
+--   no policies, no table grants to anon or authenticated:
+--   products  read only through lookup_product() and reported only through report_product(),
+--             both service role only, called by the lookup-product and report-product functions
+--             (Auth check, per-caller limit); written only by submit_product() (service role,
+--             the submit-product function) and report_product()
+--   product_quota  global per-day counters (new rows, reports); written only by those functions
+--   product_sigs_seen  SHA-256 of accepted read signatures (replay guard, month only); service role

@@ -18,3 +18,20 @@ verify_jwt = false
 # Called only by the cron job with the cron secret (x-cron-secret), never with a user's JWT, so the
 # gateway's JWT check is off; the function itself refuses anything without the secret (401).
 verify_jwt = false
+
+[functions.submit-product]
+# Same gate as ai-read-label: the gateway's JWT check is off; the function refuses a missing or
+# malformed Authorization with 401, and shared_products_allowed(), called with the caller's JWT,
+# verifies it and checks the health and shared-products consents before anything is written.
+verify_jwt = false
+
+[functions.lookup-product]
+# Same gate as delete-account: the gateway's JWT check is off; the function refuses a missing or
+# malformed Authorization with 401, then has Auth verify the token (/auth/v1/user) before the
+# per-caller limit and the service-role lookup_product call.
+verify_jwt = false
+
+[functions.report-product]
+# Same gate as lookup-product: Auth verifies the token, then the per-caller limit, then the
+# service-role report_product call (no identity reaches the database).
+verify_jwt = false

@@ -53,13 +53,14 @@ import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/
 import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
-import { checkDigitOk, classifyProduct, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { checkDigitOk, classifyProduct, confirmLiveRead, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, servingRef, suggestFix, textsFromRead, validateLabelRead, variants, SERVING_NEEDED, type LabelRead } from '@/core/domain/label'
 import { scaleFood as scaleFoodRef } from '@/core/domain/nutrition'
 import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { measureFrame, qualityIssue, toGray } from '@/core/domain/labelQuality'
 import { LABEL_ROWS, LABEL_SCHEMA } from '../supabase/functions/_shared/label-read'
+import { sharedProductsSuite } from './test-shared-products'
 import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
 import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
 import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
@@ -70,6 +71,7 @@ import { engineSuite } from './test-engine'
 import { wizardSuite } from './test-wizard'
 import { wellbeingSuite } from './test-wellbeing'
 import { loopSuite } from './test-loop'
+import { duplicatesSuite } from './test-duplicates'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -1477,6 +1479,20 @@ async function barcodeScan(): Promise<void> {
     ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
     ['check digit: one digit off fails', !checkDigitOk('4006381333932') && !checkDigitOk('96385075') && !checkDigitOk('123')],
     ['UPC-E expands to its UPC-A', expandUpcE('04252614') === '042100005264'],
+    ['live read: one frame never counts; the same code twice running does', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      const one = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return one === null && st.confirmed === '5000118203664'
+    })()],
+    ['live read: a partial misread in between starts the count again', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      st = confirmLiveRead(st.state, '96385074')
+      const mid = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return mid === null && st.confirmed === null
+    })()],
+    ['live read: an empty frame keeps the count', confirmLiveRead(confirmLiveRead(null, '5000118203664').state, null).state?.n === 1],
     ['normalize: UPC-A gets the leading 0, keeps the 12-digit spelling as alt', JSON.stringify(normalizeBarcode('036000291452', 'upc_a')) === JSON.stringify({ code: '0036000291452', alt: '036000291452' })],
     ['normalize: EAN-13 with spaces', normalizeBarcode('4006 3813 3393 1')?.code === '4006381333931'],
     ['normalize: typed EAN-8 stays 8 digits', normalizeBarcode('96385074')?.code === '96385074'],
@@ -1649,6 +1665,7 @@ async function barcodeScan(): Promise<void> {
     ['pack size from a plain quantity; not from a multipack', packFromQuantity('150') === 150 && packFromQuantity('150 g') === 150 && packFromQuantity('1.5 kg') === 1500 && packFromQuantity('33cl') === 330 && packFromQuantity('4 x 250g') === undefined],
     ['a drink counts as liquid (per 100 ml offered up front)', draftFromOff('1', { quantity: '500 ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: {} }, []).liquid],
     ['made food keys off the saved eat flag, whatever the category', isMadeFood({ eat: true, cat: 'grains' }) && kitchenCandidates([], ['Granola bar'], [{ id: 'g', n: 'Granola bar', k: 1, p: 1, c: 1, f: 1, g: 40, cat: 'grains', eat: true }]).length === 0],
+    ['sync: a pulled alias of the wrong shape is cleaned, not trusted', (() => { const f = fromServerFood({ id: 'x', name: 'Oats', kcal: 1, protein: 1, carbs: 1, fat: 1, grams: 100, ml: false, updated_at: 'z', meta: { alias: [3, { a: 1 }, ' oats ', 'Oats'] } }); return JSON.stringify(f.alias) === '["oats"]' })()],
     ['sync (flag on): meta carries eat', (toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true) as any).meta.eat === true && fromServerFood({ ...toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true), updated_at: 'z' }).eat === true],
   )
 
@@ -1794,7 +1811,7 @@ function labelScan(): void {
     ['ref: other amounts scale the per-100 values (2 servings = 406.8)', two.k === 406.8],
     ['ref: not kept when the saved serving differs or the columns disagree', servingRef(barCheck, 45, 50) === undefined
       && servingRef(labelIssues(textsFromRead(read({ ...bar, fat: ['21.0g', '3.5g'] }, { serving_text: '45g' }), false)), 45, 45) === undefined],
-    ['flag: label scanning is off until the function is deployed', LABEL_SCAN_ENABLED === false],
+    ['flag: label scanning is on (ai-read-label and submit-product deployed)', LABEL_SCAN_ENABLED === true],
   )
   // the schema and its validator (server and client share them)
   const good = read(crisps)
@@ -2106,4 +2123,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

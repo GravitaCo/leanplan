@@ -2,7 +2,7 @@
  * The add-food flow in one sheet: search → portion, plus quick estimate, create-a-food and
  * recipe logging. Views swap inside the open sheet without replaying the slide-up.
  */
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
 import { rankByName } from '@/core/domain/search'
@@ -25,15 +25,24 @@ import { ScanConfirmView } from './ScanConfirmView'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { emptyLabelDraft } from '@/core/domain/label'
 import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
+import { offBeforeShare } from '@/data/sharedProducts'
+import { draftForShare } from '@/core/domain/sharedProduct'
+import { InOffSheet, SHARE_ROW } from './SharedProduct'
+import { likelyPairs } from '@/core/domain/duplicates'
+import { SameFoodView, SameFoodsRow } from './DuplicateViews'
 
-type LabelProps = { onBack?: () => void; onClose: () => void; animate: boolean; barcode?: string; base?: ScanDraft; onDone: (d: ScanDraft, notice?: string) => void }
+type LabelProps = {
+  onBack?: () => void; onClose: () => void; animate: boolean; barcode?: string; base?: ScanDraft; onDone: (d: ScanDraft, notice?: string) => void
+  /** from a saved food's "Share this product" (sp-8b): no typing in, and a failed read goes back */
+  forShare?: boolean; onFail?: (note: string) => void
+}
 
 /** Shown if the label camera's code can't load (offline before it was ever opened). */
-function LabelOffline({ onBack, onClose, animate, barcode, base, onDone }: LabelProps) {
+function LabelOffline({ onBack, onClose, animate, barcode, base, onDone, forShare }: LabelProps) {
   return (
     <Sheet title="Scan the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
       <div className="note" role="status"><Icon name="info" size={17} /><span>Label photos need a connection the first time they open.</span></div>
-      <div className="stack"><button className="btn tinted" onClick={() => onDone(base ?? emptyLabelDraft({ barcode, taken: [] }))}>Type it in instead</button></div>
+      {!forShare && <div className="stack"><button className="btn tinted" onClick={() => onDone(base ?? emptyLabelDraft({ barcode, taken: [] }))}>Type it in instead</button></div>}
     </Sheet>
   )
 }
@@ -52,31 +61,82 @@ type View =
   | { kind: 'portion'; food: Food; custom: boolean }
   | { kind: 'recipe'; index: number }
   | { kind: 'quick' }
-  | { kind: 'create'; barcode?: string; note?: string }
+  /** `offMissing`: Open Food Facts answered "not found" for the barcode (a label read may then join the shared list) */
+  | { kind: 'create'; barcode?: string; note?: string; offMissing?: boolean }
   | { kind: 'scan' }
-  | { kind: 'confirm'; draft: ScanDraft; notice?: string; back?: View; id?: number }
-  /** a photo of the label: after a barcode scan it keeps the barcode (and OFF's name) */
-  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View }
+  /** `share`: Check the label with Share, for this saved food (sp-9) */
+  | { kind: 'confirm'; draft: ScanDraft; notice?: string; back?: View; id?: number; share?: Food }
+  /** a photo of the label: after a barcode scan it keeps the barcode (and OFF's name). `share`:
+   *  from this saved food's "Share this product" (sp-8b) */
+  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: View; offMissing?: boolean; share?: Food }
+
+  /** two saved foods that look the same (board dup-4): pick the one to keep */
+  | { kind: 'same'; ids: [string, string] }
+
 
 export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
   const [view, setView] = useState<View>(initialView ? { kind: initialView } : { kind: 'search' })
   const [q, setQ] = useState('')
   const [moved, setMoved] = useState(false)
+  const showToast = useStore((s) => s.showToast)
+  const markFoodInOff = useStore((s) => s.markFoodInOff)
+  // "Share this product" (sp-7 to sp-9): the Open Food Facts lookup a tap starts, and its answer
+  const [shareBusy, setShareBusy] = useState(false)
+  const [inOff, setInOff] = useState<string | null>(null)
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const lookupRef = useRef<AbortController | null>(null)
+  useEffect(() => () => lookupRef.current?.abort(), [])
   const go = (v: View) => { setMoved(true); setView(v) }
   const back = initialView ? undefined : () => go({ kind: 'search' })
   const common = { meal, setMeal, onBack: back, onClose, animate: !moved }
+  const customFoods = useStore((s) => s.data.customFoods)
+  const cur = useStore((s) => s.cur)
 
-  if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
+  if (view.kind === 'same') {
+    const pair = view.ids.map((id) => (customFoods || []).find((f) => f.id === id))
+    if (pair[0] && pair[1]) return <SameFoodView pair={[pair[0], pair[1]]} cur={cur} onBack={() => go({ kind: 'search' })} onClose={onClose} animate={!moved} />
+  }
+  if (view.kind === 'portion') {
+    const from = view
+    const food = view.food
+    const startShare = async () => {
+      if (!food.id || !food.barcode || shareBusy) return
+      setShareBusy(true)
+      const ctl = new AbortController()
+      lookupRef.current = ctl
+      const next = await offBeforeShare(food.barcode, { signal: ctl.signal })
+      setShareBusy(false)
+      // closed, or moved on, while it looked up
+      if (ctl.signal.aborted || viewRef.current !== from) return
+      if (next === 'in-off') setInOff(food.id)
+      else if (next === 'label') go({ kind: 'label', barcode: food.barcode, back: from, offMissing: true, share: food })
+      else showToast(SHARE_ROW.offline)
+    }
+    return (
+      <>
+        <PortionView {...common} food={food} custom={view.custom} onShare={() => void startShare()} shareBusy={shareBusy} />
+        {inOff && inOff === food.id && <InOffSheet onOk={() => { markFoodInOff(inOff); setInOff(null) }} />}
+      </>
+    )
+  }
   if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
   if (view.kind === 'create') {
     return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })}
-      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view }) : undefined} />
+      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view, offMissing: view.offMissing }) : undefined} />
   }
   if (view.kind === 'label') {
-    const toConfirm = (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft, notice, back: view.back, id: Date.now() })
-    const lp: LabelProps = { onBack: () => go(view.back), onClose, animate: !moved, barcode: view.barcode, base: view.base, onDone: toConfirm }
+    const sf = view.share
+    const toConfirm = sf
+      ? (draft: ScanDraft) => go({ kind: 'confirm', draft: draftForShare(draft, sf), back: view.back, id: Date.now(), share: sf })
+      : (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft: view.offMissing ? { ...draft, offMissing: true } : draft, notice, back: view.back, id: Date.now() })
+    const lp: LabelProps = {
+      onBack: () => go(view.back), onClose, animate: !moved, barcode: view.barcode, base: view.base, onDone: toConfirm,
+      // a failed read goes back to the food: nothing is shared (canvas note s-share)
+      ...(sf ? { forShare: true, onFail: (note: string) => { go(view.back); showToast(note) } } : {}),
+    }
     return (
       <Suspense fallback={<Sheet title="Scan the label" onClose={onClose} animate={!moved}><div className="empty" role="status">Opening the camera…</div></Sheet>}>
         <LabelCaptureView {...lp} />
@@ -86,15 +146,16 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
   if (view.kind === 'confirm') {
     const d = view.draft
     // OFF's figures, or a label that couldn't be read: offer reading the user's own pack
-    const photo = LABEL_SCAN_ENABLED && (d.source !== 'label' || view.notice) ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view }) : undefined
+    // offMissing carries over: from a shared product (never in Open Food Facts) or a typed label after a not-found
+    const photo = LABEL_SCAN_ENABLED && !view.share && (d.source !== 'label' || view.notice) ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view, offMissing: d.offMissing }) : undefined
     return <ScanConfirmView key={view.id ?? 0} {...common} onBack={() => go(view.back ?? { kind: 'scan' })} draft={d} notice={view.notice} onLabelPhoto={photo}
-      onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
+      shareFor={view.share} onSaved={(food) => go({ kind: 'portion', food, custom: true })} />
   }
   if (view.kind === 'scan') {
     return <ScanView {...common} onResult={(r) => {
       if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
-      else if (r.kind === 'found') go({ kind: 'confirm', draft: r.draft })
-      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why] })
+      else if (r.kind === 'found' || r.kind === 'shared') go({ kind: 'confirm', draft: r.draft })
+      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why], offMissing: r.why === 'not-found' })
     }} />
   }
   return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />
@@ -147,6 +208,8 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const us = usuals(data, cur, meal)
     const rc = recentFoods(data, all)
     const cf = data.customFoods || []
+    // one quiet row while two saved foods look the same (board dup-3)
+    const pair = likelyPairs(cf)[0]
     const byUse = recipesByUse(data)
     body = (
       <>
@@ -168,6 +231,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         {cf.length > 0 && (
           <>
             <div className="lbl">My foods</div>
+            {pair && <div className="list"><SameFoodsRow pair={pair} onOpen={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></div>}
             <div className="list">
               {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
                 <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={`Delete ${f.n}`}
@@ -175,6 +239,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
                   <Icon name="x" size={17} />
                 </button>))}
             </div>
+            {pair && <div className="foot dup-listfoot">Shown only while two saved foods look alike. Merging or “They’re different” clears it.</div>}
           </>
         )}
         {!rc.length && !cf.length && <><div className="lbl">Common</div><div className="list">{FOODS.slice(0, 8).map((f, i) => foodRow(f, i))}</div></>}

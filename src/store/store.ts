@@ -45,8 +45,10 @@ import { markActivityShown } from '@/core/domain/activity'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
+import { withSharedFigures } from '@/core/domain/sharedProduct'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
 import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
+import { markDifferent, mergeFoods, nameAfterUpdate, updatedFood } from '@/core/domain/duplicates'
 import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
@@ -69,6 +71,8 @@ import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
+import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
 
 enableMapSet()
 
@@ -164,6 +168,13 @@ export interface StoreState {
   removeCustomFood: (index: number) => void
   /** give a saved food a barcode (a scan matched it by name); returns the updated food */
   linkBarcode: (id: string, barcode: string) => Food | null
+  /** take new figures into a saved food, keeping its id (boards dup-1, dup-2): with a new name its
+   *  logs and usuals follow it, numbers as logged. Returns the updated food */
+  updateCustomFood: (id: string, next: Omit<Food, 'id'>, keepName?: boolean) => Food | null
+  /** merge two saved foods that are the same (dup-4): the other's logs move to the kept one */
+  mergeCustomFoods: (keepId: string, dropId: string, takeBarcode: boolean) => void
+  /** "They're different" (dup-4): never pair these two again */
+  markFoodsDifferent: (aId: string, bId: string) => void
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
@@ -311,6 +322,24 @@ export interface StoreState {
    *  and, through sync, on the server */
   withdrawConsent: (type: ConsentType) => void
   hasConsent: (type: ConsentType) => boolean
+  /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
+   *  the reads waiting to be sent */
+  setShareProducts: (on: boolean) => void
+  /** queue a signed label read for Tali's shared list (only with a yes to sharing); it's sent
+   *  later, after a random delay, never on this save path */
+  queueSharedProduct: (t: ShareToken) => boolean
+  /** "Share this product" on a saved food (sp-9): queue its signed label read (as
+   *  queueSharedProduct), then the food takes the read's figures and keeps its name. Null when
+   *  nothing could be queued (the food is left as it was) */
+  shareSavedFood: (id: string, def: Omit<Food, 'id'>, t: ShareToken) => Food | null
+  /** Open Food Facts already has a saved food's product (sp-8a): its share row goes. On this
+   *  device only (Food.shareDone) */
+  markFoodInOff: (id: string) => void
+  /** this saved food's label read is queued for the shared list: its "Share this product" row
+   *  goes (device-only, like markFoodInOff). Returns the marked food */
+  markFoodShared: (id: string) => Food | null
+  /** send the queued reads now, if signed in as their owner, online and consented */
+  sendSharedProducts: () => Promise<void>
   /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
    *  (a second "Not now", at the one re-ask, keeps it paused) */
   notNowHealth: () => void
@@ -578,6 +607,8 @@ function clearSavedSession() {
 
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
+/** shared-list sends that left reads waiting, this app session: a few more tries, then the next save or reconnect */
+let shareRetries = 0
 const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
 /** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
 const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
@@ -877,6 +908,46 @@ export const useStore = create<StoreState>()(
         const food = get().data.customFoods.find((x) => x.id === id)!
         get().showToast(`Barcode linked to your “${food.n}”`)
         return food
+      },
+
+      updateCustomFood: (id, next, keepName = false) => {
+        const old = get().data.customFoods.find((x) => x.id === id)
+        if (!old) return null
+        // a name another saved food has stays as it was (the server holds one food per name); a new
+        // name keeps the old one as an alias, so its logs still count. No day is rewritten.
+        const food = updatedFood(old, next, nameAfterUpdate(get().data.customFoods, old, next, keepName))
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (!cur) return
+          for (const k of Object.keys(cur) as (keyof Food)[]) delete cur[k]
+          Object.assign(cur, food, { _dirty: true, _u: nowIso() })
+        })
+        saved('Food updated')
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      mergeCustomFoods: (keepId, dropId, takeBarcode) => {
+        set((st) => {
+          // the other's names become the kept food's aliases: no day is rewritten, so another
+          // device's newer logs can't be overwritten and logged numbers never change
+          const r = mergeFoods(st.data, keepId, dropId, takeBarcode)
+          if (!r) return
+          meta(st.data).foodDeletes.push(r.removed)
+          const keep = st.data.customFoods.find((x) => x.id === keepId)
+          if (keep) Object.assign(keep, { _dirty: true, _u: nowIso() })
+        })
+        saved()
+      },
+
+      markFoodsDifferent: (aId, bId) => {
+        set((st) => {
+          const a = st.data.customFoods.find((x) => x.id === aId)
+          const b = st.data.customFoods.find((x) => x.id === bId)
+          if (!a || !b) return
+          markDifferent(a, b)
+          for (const f of [a, b]) Object.assign(f, { _dirty: true, _u: nowIso() })
+        })
+        saved()
       },
 
       removeCustomFood: (index) => {
@@ -1593,6 +1664,8 @@ export const useStore = create<StoreState>()(
           }
           setSession(s.access_token, uid)
           saveMode('account')
+          // reads queued by another account on this phone are never sent as this one
+          reconcileOutbox(uid, consented(get().data, 'shared-products') && consented(get().data, 'health'))
           set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null; st.authProvider = (s.user.app_metadata?.provider as string | undefined) ?? null })
         }
         applySession = live
@@ -1657,6 +1730,8 @@ export const useStore = create<StoreState>()(
           underAgeTried = 0
           void settleReminders()
           void subscribeIfPending()
+          // shared-list reads waiting: sent after a random delay, not with the reconnect
+          if (SHARED_PRODUCTS_ENABLED && readOutbox()?.items.length) scheduleSend(() => void get().sendSharedProducts())
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -1897,15 +1972,74 @@ export const useStore = create<StoreState>()(
       declineConsent: (type) => {
         // nothing to clear for someone new, but withdraw() also covers anything logged meanwhile
         set((st) => { withdraw(st.data, meta(st.data), type) })
+        if (type === 'health' || type === 'shared-products') dropOutbox()
         saved()
       },
 
       withdrawConsent: (type) => {
         set((st) => { withdraw(st.data, meta(st.data), type) })
+        // no more sharing: reads waiting to be sent go too
+        if (type === 'health' || type === 'shared-products') dropOutbox()
         saved()
       },
 
       hasConsent: (type) => consented(get().data, type),
+
+      setShareProducts: (on) => {
+        if (on) get().grantConsent('shared-products')
+        else get().withdrawConsent('shared-products')
+      },
+
+      queueSharedProduct: (t) => {
+        const d = get().data
+        // the account whose data this is (signed in, or offline since launch): kept on the device only
+        const owner = get().authed ? getUid() : d._meta?.owner
+        if (!SHARED_PRODUCTS_ENABLED || !owner || !consented(d, 'shared-products') || !consented(d, 'health')) return false
+        queueShare(t, owner)
+        scheduleSend(() => void get().sendSharedProducts())
+        return true
+      },
+
+      shareSavedFood: (id, def, t) => {
+        const cur = get().data.customFoods.find((x) => x.id === id)
+        if (!cur || !get().queueSharedProduct(t)) return null
+        const food = withSharedFigures(cur, def)
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) { for (const k of Object.keys(f) as (keyof Food)[]) delete f[k]; Object.assign(f, food, { _dirty: true, _u: nowIso() }) }
+        })
+        saved()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      markFoodInOff: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          // device-only: not marked dirty, nothing to upload
+          if (f) f.shareDone = 'in-off'
+        })
+        persist()
+      },
+
+      markFoodShared: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) f.shareDone = 'shared'
+        })
+        persist()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      sendSharedProducts: async () => {
+        const ok = () => canSendOutbox({ authed: get().authed, online: navigator.onLine, uid: get().authed ? getUid() : null, health: consented(get().data, 'health'), shared: consented(get().data, 'shared-products'), underAge: !!get().underAge }, readOutbox())
+        if (!ok()) return
+        // the server checks the shared-products yes itself: send one given moments ago first
+        if (!(await get().flushConsents()) || !ok()) return
+        const r = await sendOutbox(getUid(), { still: ok })
+        if (r.sent) shareRetries = 0
+        // something stayed (the server busy, or the connection dropped): a few more tries later
+        if (r.kept && navigator.onLine && ++shareRetries <= 3) scheduleSend(() => void get().sendSharedProducts())
+      },
 
       canSaveHealth: () => canSaveHealthAnswers(get().data),
 

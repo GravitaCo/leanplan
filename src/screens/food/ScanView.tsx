@@ -1,15 +1,18 @@
 /**
  * Scan a pack's barcode: live camera, a photo of the barcode (the most reliable path on iOS), or
  * the number typed in. A valid code is looked up on the device first (a food saved from an
- * earlier scan opens at once, offline too), then on Open Food Facts; anything else goes to
- * "Create a food" with the barcode filled in. Logging never waits on the network.
+ * earlier scan opens at once, offline too), then on Tali's shared product list (when it's on),
+ * then on Open Food Facts; anything else goes to "Create a food" with the barcode filled in.
+ * Logging never waits on the network.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
+import { confirmLiveRead, draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
+import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import { draftFromShared } from '@/core/domain/sharedProduct'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecoder'
@@ -18,6 +21,8 @@ import { startRearCamera, stopCamera as stopStream } from './camera'
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }
   | { kind: 'found'; draft: ScanDraft }
+  /** on Tali's shared product list (sp-2, sp-3, sp-3b) */
+  | { kind: 'shared'; draft: ScanDraft }
   | { kind: 'missing'; barcode: string; why: 'not-found' | 'offline' | 'error' }
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
@@ -64,6 +69,14 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     setBusy(norm.code)
     const ctl = new AbortController()
     lookupRef.current = ctl
+    // Tali's shared list first (it never holds Open Food Facts products); no connection there
+    // means none for Open Food Facts either
+    if (SHARED_PRODUCTS_ENABLED) {
+      const sh = await lookupShared(norm, { signal: ctl.signal })
+      if (!aliveRef.current) return
+      if (sh.status === 'found') { onResult({ kind: 'shared', draft: draftFromShared(sh.product, norm.code, all.map((f) => f.n)) }); return }
+      if (sh.status === 'offline') { onResult({ kind: 'missing', barcode: norm.code, why: 'offline' }); return }
+    }
     const res = await lookupProduct(norm, { signal: ctl.signal })
     if (!aliveRef.current) return
     if (res.status !== 'found') { onResult({ kind: 'missing', barcode: norm.code, why: res.status }); return }
@@ -87,13 +100,18 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     aliveRef.current = true
     let timer = 0
     let decoder: Decoder | null = null
+    let seen: { code: string; n: number } | null = null
     const loop = async () => {
       const v = videoRef.current
       if (!aliveRef.current || doneRef.current || !decoder) return
       if (v && v.readyState >= 2 && v.videoWidth > 0) {
         try {
           const hit = firstValid(await decoder.detect(v))
-          if (hit && aliveRef.current) { void handle(hit.raw, hit.format); return }
+          // the same number in two frames running before it counts (a partial read can pass its check digit)
+          const norm = hit ? normalizeBarcode(hit.raw, hit.format) : null
+          const r = confirmLiveRead(seen, norm?.code ?? null)
+          seen = r.state
+          if (hit && r.confirmed && aliveRef.current) { void handle(hit.raw, hit.format); return }
         } catch { /* a frame that can't be read: keep going */ }
       }
       timer = window.setTimeout(loop, SCAN_EVERY_MS)

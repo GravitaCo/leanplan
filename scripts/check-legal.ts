@@ -26,7 +26,8 @@ for (const [k, v] of Object.entries(LEGAL)) {
 // The supplement names setting (B11b, SUPP_NAMES_ENABLED, hidden until DPIA 8.8 is signed) gates
 // sentences of the privacy policy only, and only with Mind on: each Mind-on privacy text is
 // checked with it off (as published now) and on.
-const combos = [false, true].flatMap((onboarding) => [false, true].map((mind) => ({ onboarding, mind })))
+// products (label photos and the shared product list, LABEL_SCAN_ENABLED) is checked off and on with each
+const combos = [false, true].flatMap((onboarding) => [false, true].flatMap((mind) => [false, true].map((products) => ({ onboarding, mind, products }))))
 const gated = [
   ...combos.flatMap((o) => [privacyPolicy(o), cookiePolicy(o), termsOfUse(o)]),
   ...combos.filter((o) => o.mind).map((o) => privacyPolicy({ ...o, suppNames: true })),
@@ -43,6 +44,19 @@ for (const other of [false, true]) {
   if (same(privacyPolicy(mnd(false)), privacyPolicy(mnd(true)))) fail(`Privacy policy: the Mind gate changes nothing ${tag('onboarding')}`)
   if (same(cookiePolicy(mnd(false)), cookiePolicy(mnd(true)))) fail(`Cookie policy: the Mind gate changes nothing ${tag('onboarding')}`)
   if (same(termsOfUse(mnd(false)), termsOfUse(mnd(true)))) fail(`Terms: the Mind gate changes nothing ${tag('onboarding')}`)
+}
+// the products gate changes all three documents, whatever the other flags are, and the published
+// version names Anthropic, the shared list and both device keys
+for (const onboarding of [false, true]) for (const mind of [false, true]) {
+  const o = { onboarding, mind }, tag = `(onboarding ${onboarding ? 'on' : 'off'}, Mind ${mind ? 'on' : 'off'})`
+  if (same(privacyPolicy({ ...o, products: false }), privacyPolicy({ ...o, products: true }))) fail(`Privacy policy: the products gate changes nothing ${tag}`)
+  if (same(termsOfUse({ ...o, products: false }), termsOfUse({ ...o, products: true }))) fail(`Terms: the products gate changes nothing ${tag}`)
+  if (same(cookiePolicy({ ...o, products: false }), cookiePolicy({ ...o, products: true }))) fail(`Cookie policy: the products gate changes nothing ${tag}`)
+  const pp = JSON.stringify(privacyPolicy({ ...o, products: true })), off = JSON.stringify(privacyPolicy({ ...o, products: false }))
+  if (!pp.includes('Anthropic') || !pp.includes('Shared product list')) fail(`Privacy policy: products on without Anthropic or the shared list ${tag}`)
+  if (off.includes('Anthropic') || off.includes('shared product list')) fail(`Privacy policy: products off still names Anthropic or the shared list ${tag}`)
+  const ck = JSON.stringify(cookiePolicy({ ...o, products: true }))
+  if (!ck.includes('tali.products:') || !ck.includes('tali.productOutbox:')) fail(`Cookie policy: products on without tali.products or tali.productOutbox ${tag}`)
 }
 // the names gate: with Mind on it changes the privacy policy, saying the reminders can name the
 // supplement only when on, and generic otherwise; with Mind off it changes nothing
