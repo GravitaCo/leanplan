@@ -12,7 +12,7 @@
 -- verbs (RLS still limits them to their own rows); the service role gets the same for the edge
 -- functions (reminders, delete-account); anon gets nothing, because the app never reads or writes
 -- these tables signed out. The live tables still carry the old defaults (anon included);
--- 2026-10-23-core-grants.sql brings them in line.
+-- 2026-10-23-core-grants.sql brought them in line (applied 23 Oct 2026).
 --
 -- Differences from live, on purpose:
 --   - user_id has no default. Live still defaults it to the retired guest id

@@ -1,7 +1,8 @@
 -- ============================================================================
 -- Tali: tighten the live grants on the five original synced tables (23 Oct 2026).
 --
--- NOT APPLIED yet. Needs Benn's go-ahead, then run once in the SQL editor. Safe to re-run.
+-- APPLIED 23 Oct 2026 (Benn's go-ahead; verified after: no anon grants, authenticated DELETE, INSERT,
+-- SELECT, UPDATE only). Safe to re-run.
 --
 -- Why: read from the live database on 23 Oct 2026, settings, day_logs, custom_foods, recipes and
 -- push_subscriptions still carry Supabase's old automatic grants: anon and authenticated hold every
