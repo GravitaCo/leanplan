@@ -6,7 +6,7 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
 import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
-import { MIN_AGE, asksMedical, clearHealthAnswerIn, setHealthAnswerIn, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
+import { MIN_AGE, clearHealthAnswerIn, setHealthAnswerIn, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
 import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_PER_KG, calorieFloor, mifflinBmr, suggestedTargets } from '@/core/domain/nutrition'
 import { RANGE_ASK_DAYS, RANGE_SNOOZE_DAYS, SOMETIMES_NO_DEFICIT_DAYS, TODAY_ASK_DAYS, answerFoodOptInIn, applyRestrictionSignalIn, foodModeOf, foodView, maintenanceRange, mealWords, proteinRangeFor, rangeAskDue, restrictionSignal, todayAskDue } from '@/core/domain/foodMode'
@@ -108,7 +108,6 @@ function routing(): void {
     ['wellbeing "Rather not say": maintenance pre-selected, gentle offered not on', wbUnsaid.startAtMaintenance && wbUnsaid.offerGentle && !wbUnsaid.gentle && !wbUnsaid.noDeficit && !wbUnsaid.defaults.includes('wellbeing')],
     ['readiness yes: gentler start plus signposting (not quiet)', ready.gentlerStart && ready.signpost.join() === 'nhs111,gp' && !ready.quietSignpost && !ready.noDeficit],
     ['medical flag: maintenance allowed, no high-protein anchor, GP note', med.noDeficit && !med.maintenanceOnly && !med.hideCalories && med.noProteinAnchor && med.gpNote && med.signpost.includes('gp')],
-    ['medical question only when the goal means eating less', asksMedical('lose-fat') && !asksMedical('build-muscle') && !asksMedical('increase-strength') && !asksMedical('increase-endurance') && !asksMedical('feel-better') && !asksMedical(undefined)],
     ['consent declined: no calorie numbers, no weight', noConsent.hideCalories && noConsent.hiddenReason === 'no-consent' && noConsent.hideWeight],
     ['signposts come in a fixed order, no repeats', new Set(wb.signpost).size === wb.signpost.length && wb.signpost[0] === 'emergency'],
     // §2.1 skipped answers

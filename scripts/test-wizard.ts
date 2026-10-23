@@ -56,7 +56,9 @@ function steps(): void {
   const s = stepsFor(d, true)
   report('steps', [
     ['s-ob1 order, then the setup card, then the summary', s.join() === 'intro,name,age,ready,why,goal,lately,wellbeing,body,medical,weight,move,handoff,moving,confidence,days,minutes,where,kit,enjoy,areas,plan-intro,summary', s.join()],
-    ['the medical question only when the goal means eating less', !stepsFor(full({ goal: 'build-muscle' }), true).includes('medical')],
+    ['the medical question for every goal, and a skipped goal (ml-e5)', (['lose-fat', 'maintain', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better', undefined] as const).every((g) => stepsFor(full({ goal: g }), true).includes('medical'))],
+    ['the medical note only after a tick, for any goal', stepsFor(full({ goal: 'build-muscle', outcomes: { medical: 'flagged' } }), true).join().includes('medical,medical-note') && !stepsFor(full({ goal: 'build-muscle', outcomes: { medical: 'clear' } }), true).includes('medical-note')],
+    ['the medical flag keeps protein at the minimum on a high-protein goal', (() => { const p = { ...DEFAULT_PROFILE, age: 30, height: 178, goal: 'build-muscle' as const, outcomes: { medical: 'flagged' as const } }; const r = routeSafety(safetyAnswersFrom(p, 80, true)); const t = suggestedTargets(p, 80, r); return r.noProteinAnchor && r.noDeficit && !!t && 'p' in t && t.p < Math.round(80 * 1.2) })()],
     ['18+ for now (Benn): 17 gets the kind stop too; 18 goes on', stepsFor(full({ age: 17 }), true).slice(-1)[0] === 'under16' && WIZARD_MIN_AGE === 18 && stepsFor(full({ age: 18 }), true).includes('ready')],
     ['under 16: the kind stop, and nothing after it', stepsFor(full({ age: 15 }), true).slice(-1)[0] === 'under16' && !stepsFor(full({ age: 15 }), true).includes('ready')],
     ['readiness yes: the gentle-start screen straight after', stepsFor(full({ outcomes: { readiness: 'flagged' } }), true).join().includes('ready,ready-note,why')],

@@ -2,7 +2,7 @@ import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
   MacroTarget, OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPlan, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
+import { legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
 import { suggestedTargets } from './nutrition'
 import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
@@ -188,7 +188,9 @@ export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   // Yes and Sometimes both get the signposting note (Onboarding 9 keeps it for both)
   if (wellbeingRouted(d.outcomes.wellbeing)) s.push('wellbeing-note')
   s.push('body')
-  if (asksMedical(d.goal)) { s.push('medical'); if (d.outcomes.medical === 'flagged') s.push('medical-note') }
+  // the medical question for every goal (ml-e5): the flag also keeps protein at the minimum
+  s.push('medical')
+  if (d.outcomes.medical === 'flagged') s.push('medical-note')
   s.push('weight', 'move', 'handoff')
   // Part 3's intro (ob3-0) follows the setup card; "Skip for now" goes straight to the summary
   if (!d.later) s.push(...setupSteps(d), 'plan-intro')

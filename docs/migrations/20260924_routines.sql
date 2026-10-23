@@ -27,6 +27,8 @@ create index if not exists routines_user_idx on public.routines (user_id);
 -- defence in depth against the schema's default grants
 revoke all on public.routines from anon;
 revoke truncate, references, trigger on public.routines from authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+grant select, insert, update, delete on public.routines to authenticated, service_role;
 
 alter table public.routines enable row level security;
 drop policy if exists "owner_full_access" on public.routines;

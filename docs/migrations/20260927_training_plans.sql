@@ -25,6 +25,8 @@ create index if not exists training_plans_user_idx on public.training_plans (use
 
 revoke all on public.training_plans from anon;
 revoke truncate, references, trigger on public.training_plans from authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+grant select, insert, update, delete on public.training_plans to authenticated, service_role;
 
 alter table public.training_plans enable row level security;
 drop policy if exists "owner_full_access" on public.training_plans;

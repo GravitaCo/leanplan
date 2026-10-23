@@ -44,7 +44,7 @@ export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | '
     emergency,
   ],
   medical: [
-    { name: 'Your GP or care team', desc: 'Before changing how much you eat', num: 'Contact' },
+    { name: 'Your GP or care team', desc: 'Before changing how much you eat or your protein', num: 'Contact' },
     { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
   ],
   // both 18+ stops (boards "Age 18+ · 1" and "· 2"): numbers from the checked list only
