@@ -251,7 +251,7 @@ builds (`weightTrend.ts`, `weekPicture.ts`, `maintenanceLoop.ts`, `loopCopy.ts`,
    quietly); the ml-d1 footnote ("Once a week on {day} at {time} UK time. It only says 'Your week is
    ready', nothing from your log. Turn it off any time in Profile."); ml-a5's "Wind down a little
    earlier on the nights that suit you."; "lately" in the calmer-days pattern line; the "Noted for
-   next week." toast. A hard week hides the pattern line. ml-e5 and ml-e5b approved for build. Built 23 Oct 2026: the wizard asks the medical question for every goal (`stepsFor`; `asksMedical` removed), with the ml-e5 "Why we ask" and the ml-e5b note and GP row; the privacy policy's safety line names the protein minimum. Live once `ONBOARDING_ENABLED` is on.
+   next week." toast. A hard week hides the pattern line. ml-e5 and ml-e5b approved for build. Built 23 Oct 2026: the wizard asks the medical question for every goal (`stepsFor`; `asksMedical` removed), with the ml-e5 "Why we ask" and the ml-e5b note and GP row; the privacy policy's safety line names the protein minimum. **Launch gate before `ONBOARDING_ENABLED` goes on:** nutrition-accuracy (23 Oct) found the ml-e5b lead's "protein at the everyday recommended amount" inaccurate from 65 (1.0 g/kg is PROT-AGE, not a UK figure), and that a current GLP-1 should probably keep the protein range while kidney disease keeps the minimum (with no 65+ raise; KDIGO 2024). Both go to Benn on the canvas first.
    Deploying the reminders function after ship-critic's SHIP is approved.
 10. **Lighter week (ship-critic, then mental-performance; Benn approved 8 Oct):** a week with 1 to 3
     active days reads "A quieter week. What you did still counts.", "Keep it as it is" reads "Same
