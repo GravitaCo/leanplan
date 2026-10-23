@@ -150,8 +150,9 @@ setting (`prefers-color-scheme`); there is no in-app override.
   and while the app asks whose data is on the device). A device from the old guest mode opens
   the sign-in screen, and its log moves into the account on first sign-in.
 - **Every new table's migration writes its grants out** (Supabase stopped default grants on new `public`
-  tables on 30 Oct 2026): `grant select, insert, update, delete` to `authenticated` (and `service_role` if an
-  edge function needs it), never to `anon`, in the same file as its RLS. The original five tables are
+  tables on 30 Oct 2026), in the same file as its RLS: `revoke all on <t> from anon;`, then `grant select,
+  insert, update, delete on <t> to authenticated`, and to `service_role` wherever an edge function, or an
+  INVOKER function it calls, touches the table (delete-account touches every table in `USER_TABLES`). The original five tables are
   recorded in `docs/migrations/2026-09-01-core-tables.sql`.
 - The device's data records its owner (`_meta.owner`); signing in as a different account asks
   before showing or syncing it (`ownerCheck` in `src/data/persistence.ts`).

@@ -41,6 +41,9 @@ create policy "owner_read" on public.ai_usage
 
 revoke all on public.ai_usage from anon, authenticated;
 grant select on public.ai_usage to authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+-- (delete-account removes the rows)
+grant select, delete on public.ai_usage to service_role;
 
 create or replace function public.ai_usage_take(p_task text)
 returns integer

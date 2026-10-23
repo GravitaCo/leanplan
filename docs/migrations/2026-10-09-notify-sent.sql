@@ -49,6 +49,9 @@ create policy notify_sent_select_own on public.notify_sent
   for select to authenticated using (user_id = (select auth.uid()));
 revoke all on public.notify_sent from anon, authenticated;
 grant select, delete on public.notify_sent to authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+-- (the reminder function reads it and notify_claim(), INVOKER, writes it as service_role; delete-account clears it)
+grant select, insert, update, delete on public.notify_sent to service_role;
 drop policy if exists notify_sent_delete_own on public.notify_sent;
 create policy notify_sent_delete_own on public.notify_sent for delete to authenticated using (user_id = (select auth.uid()));
 

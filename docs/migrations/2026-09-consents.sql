@@ -57,6 +57,9 @@ create policy "owner_insert" on public.consents
 revoke all on public.consents from anon, authenticated;
 grant select on public.consents to authenticated;
 grant insert (id, user_id, type, version, granted, recorded_at) on public.consents to authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+-- (delete-account removes the rows; health_consent_current() is INVOKER, so the reminders read them as service_role)
+grant select, delete on public.consents to service_role;
 
 -- Row cap per account. SECURITY INVOKER: it counts the caller's own rows, which RLS lets it see.
 create or replace function public.consents_cap()

@@ -91,6 +91,12 @@ create table if not exists public.push_subscriptions (
 revoke all on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from anon;
 revoke truncate, references, trigger on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from authenticated;
 grant select, insert, update, delete on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions to authenticated, service_role;
+-- PostgreSQL 17 adds MAINTAIN (vacuum, analyze, reindex, lock) to the old defaults; signed-in users don't need it
+do $$ begin
+  if current_setting('server_version_num')::int >= 170000 then
+    execute 'revoke maintain on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from authenticated';
+  end if;
+end $$;
 
 -- Owner-only RLS (the same policy docs/security-rls.sql sets)
 do $$

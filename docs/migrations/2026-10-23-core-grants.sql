@@ -18,5 +18,16 @@
 revoke all on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from anon;
 revoke truncate, references, trigger on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from authenticated;
 grant select, insert, update, delete on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions to authenticated, service_role;
+-- PostgreSQL 17 adds MAINTAIN (vacuum, analyze, reindex, lock) to the old defaults; signed-in users don't need it
+do $$ begin
+  if current_setting('server_version_num')::int >= 170000 then
+    execute 'revoke maintain on public.settings, public.day_logs, public.custom_foods, public.recipes, public.push_subscriptions from authenticated';
+  end if;
+end $$;
 
 -- Verify: the same query as at the end of 2026-09-01-core-tables.sql (expect no anon rows).
+-- Expect authenticated with DELETE, INSERT, SELECT, UPDATE only. Reviewed by security-data 23 Oct 2026
+-- (APPROVE WITH CHANGES, all in): no app or function path uses anon on these tables; an anon read
+-- now gets a 401 instead of an empty 200, which the sync and push code already ignore.
+-- After running: on a phone, sign in and sync, turn a reminder on (push subscribe), then sign out
+-- and sign in as a different account.
