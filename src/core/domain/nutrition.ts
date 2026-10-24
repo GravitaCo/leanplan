@@ -260,10 +260,17 @@ export const PROTEIN_CAPPED_PER_KG = { low: 1.2, mid: 1.4, high: 1.6 }
 const r5 = (x: number) => Math.round(x / 5) * 5
 /** grams a day, nearest 5 */
 export const proteinEverydayG = (kg: number): number => r5(kg * PROTEIN_RNI_PER_KG)
-/** The capped range, grams a day to the nearest 5. Without a height, actual weight with the top at 120 g. */
+/**
+ * The capped range, grams a day to the nearest 5. Without a height (it can be skipped) there's no
+ * BMI-25 weight, so actual weight inside the advisory's fixed 80 to 120 g a day: the low end at
+ * most 80, the top at most 120, and the middle between them.
+ */
 export function proteinCappedRange(kg: number, heightCm: number | null | undefined): { low: number; mid: number; high: number } {
   const k = PROTEIN_CAPPED_PER_KG
-  if (!heightCm) return { low: r5(kg * k.low), mid: Math.min(r5(kg * k.mid), 120), high: Math.min(r5(kg * k.high), 120) }
+  if (!heightCm) {
+    const low = Math.min(r5(kg * k.low), 80), high = Math.min(r5(kg * k.high), 120)
+    return { low, mid: Math.min(Math.max(r5(kg * k.mid), low), high), high }
+  }
   const ref = Math.min(kg, 25 * (heightCm / 100) ** 2)
   return { low: r5(ref * k.low), mid: r5(ref * k.mid), high: r5(ref * k.high) }
 }

@@ -28,6 +28,7 @@ export function LazyPregnancyCheckSheet(p: ComponentProps<typeof Check>) {
   return <Quiet><Suspense fallback={null}><Check {...p} /></Suspense></Quiet>
 }
 
-export function LazyMedicalSheet(p: ComponentProps<typeof Medical>) {
-  return <Quiet onFail={p.onClose}><Suspense fallback={null}><Medical {...p} /></Suspense></Quiet>
+/** `onFail`: the chunk couldn't load, so the question never showed (the re-ask isn't marked as asked) */
+export function LazyMedicalSheet({ onFail, ...p }: ComponentProps<typeof Medical> & { onFail?: () => void }) {
+  return <Quiet onFail={onFail ?? p.onClose}><Suspense fallback={null}><Medical {...p} /></Suspense></Quiet>
 }

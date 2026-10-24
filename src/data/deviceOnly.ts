@@ -228,13 +228,15 @@ export function unloadCount(s: Pick<PersistedState, 'deviceOnly'>): number {
   return Array.isArray(n) ? n.length : 0
 }
 
-/** Health withdrawal (consent.clearHealthData): the notes and the low-mood marker go. Returns
- *  whether anything changed. "Not now" never calls this. */
+/** Health withdrawal (consent.clearHealthData): the notes, the low-mood marker and the medical
+ *  re-ask marker (it implies a past medical yes) go. Returns whether anything changed. "Not now"
+ *  never calls this. */
 export function clearDeviceHealth(s: PersistedState): boolean {
   const d = s.deviceOnly
-  if (!d || (!d.unload && d.lowMoodShown === undefined)) return false
+  if (!d || (!d.unload && d.lowMoodShown === undefined && !d.ui?.medicalReasked)) return false
   delete d.unload
   delete d.lowMoodShown
+  if (d.ui?.medicalReasked) { delete d.ui.medicalReasked; if (!Object.keys(d.ui).length) delete d.ui }
   if (!Object.keys(d).length) delete s.deviceOnly
   return true
 }

@@ -224,9 +224,10 @@ export function TodayScreen() {
   // WP15 (board B6 frame 2): the only ask on its day; shown once, marked with the local date
   const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data), markLowMoodShown)
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (medReaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (ifThenGo && !reask && !sheet) setIfThen(true) }, [ifThenGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (foodAskGo && !reask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
+  // one sheet at a time: the medical re-ask waits for a pregnancy re-ask due the same day
+  useEffect(() => { if (medReaskGo && !reaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (ifThenGo && !reask && !medReask && !sheet) setIfThen(true) }, [ifThenGo, reask, medReask]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (foodAskGo && !reask && !medReask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, medReask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!suggestVisible) return
     // nutrition-accuracy: only a suggestion that actually showed is recorded
@@ -556,7 +557,7 @@ export function TodayScreen() {
       </div>
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
-      {medReask && <LazyMedicalSheet onClose={() => { markMedicalReasked(); setMedReask(false) }} />}
+      {medReask && <LazyMedicalSheet onClose={() => { markMedicalReasked(); setMedReask(false) }} onFail={() => setMedReask(false)} />}
       {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
       {ifThen && ifThenDue && <FirstPlanSheet onDone={() => { setIfThen(false); setPrefs({ ifThenOffered: true }) }} />}

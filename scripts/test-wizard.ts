@@ -68,7 +68,8 @@ function steps(): void {
     })()],
     ['protein figures: everyday 0.75 g/kg to 5 g at any age; capped 1.2 to 1.6 on a BMI-25 weight; no height tops out at 120', proteinEverydayG(80) === 60 && proteinEverydayG(130) === 100
       && JSON.stringify(proteinCappedRange(80, 175)) === '{"low":90,"mid":105,"high":125}' && proteinCappedRange(110, 170).high <= Math.round(1.6 * 25 * 1.7 ** 2 / 5) * 5
-      && proteinCappedRange(110, null).high === 120],
+      && [60, 100, 105, 140].every((kg) => { const c = proteinCappedRange(kg, null); return c.low <= c.mid && c.mid <= c.high && c.low <= 80 && c.high <= 120 })
+      && JSON.stringify(proteinCappedRange(140, null)) === '{"low":80,"mid":120,"high":120}' && JSON.stringify(proteinCappedRange(60, null)) === '{"low":70,"mid":85,"high":95}'],
     ['Food: "about" for the everyday amount, the capped range otherwise', JSON.stringify(proteinRangeFor({ goal: 'maintain', age: 70, height: 175, outcomes: { medical: 'flagged' } }, 80)) === '{"low":60,"high":null}'
       && JSON.stringify(proteinRangeFor({ goal: 'maintain', age: 30, height: 175, outcomes: { medical: 'no-deficit' } }, 80)) === '{"low":90,"high":125}'
       && FOOD9.proteinRange(45, 60, null) === 'Protein 45 g, about 60 g a day'],

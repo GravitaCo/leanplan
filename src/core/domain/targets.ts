@@ -122,8 +122,8 @@ export interface StartingTargets {
   /** the best estimate of what the person burns a day, nearest 50 kcal (ob9-1, ob9-5) */
   estimate: number | null
   /**
-   * grams a day, nearest 5 g. `anchor` false (medical flag): `high` is null and `low` is a
-   * minimum, shown as "at least {low} g"
+   * grams a day, nearest 5 g. `anchor` false after a medical tick: 'flagged' has `high` null and
+   * `low` the everyday amount, shown as "about {low} g"; 'no-deficit' has the capped range
    */
   protein: { low: number; high: number | null; anchor: boolean } | null
   /** signed % actually applied to maintenance, after routing, caps and floors */
