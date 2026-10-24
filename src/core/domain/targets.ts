@@ -1,5 +1,5 @@
 import type { DailyMovement, Goal, JobType, Profile, StepsBand } from '@/core/types'
-import { KCAL_PER_KG_LOST as KCAL_PER_KG, MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinMinimumG, type FloorApplied } from './nutrition'
+import { KCAL_PER_KG_LOST as KCAL_PER_KG, MIFFLIN_SEX_HALF_GAP, energyTarget, mifflinBmr, nearestLevel, proteinCappedRange, proteinEverydayG, type FloorApplied } from './nutrition'
 export { HELD_AT_MAINTENANCE_NOTE, ABSOLUTE_FLOOR, SEX_FLOOR, KCAL_PER_KG_LOST, MAX_LOSS_PCT_PER_WEEK, NEAR_MAINTENANCE_PCT, PROTEIN_RNI_PER_KG, type FloorApplied } from './nutrition'
 import { sexOf, type DefaultField, type HiddenReason, type SafetyRouting } from './onboarding'
 
@@ -95,8 +95,8 @@ export const REVIEW_AFTER = '3–4 weeks' as const
  * 1.6–2.2 (Morton et al. 2018, doi:10.1136/bjsports-2017-097608). Endurance: 1.2–1.6, the lower
  * part of the ACSM/AND/DC 1.2–2.0 (Thomas et al. 2016, doi:10.1016/j.jand.2015.12.006).
  * Feel better: 1.0–1.2 (PROT-AGE, Bauer et al. 2013, doi:10.1016/j.jamda.2013.05.021). Each
- * contains the `PROTEIN_PER_KG` anchor. No high-protein anchor (medical flag): a minimum only,
- * `proteinMinimumG` (0.75 g/kg, 1.0 from 65).
+ * contains the `PROTEIN_PER_KG` anchor. A medical tick replaces it (nutrition.ts): 'flagged' the
+ * everyday amount (`proteinEverydayG`, high null), 'no-deficit' the capped range (`proteinCappedRange`).
  */
 export const PROTEIN_RANGE_PER_KG: Record<Goal, { low: number; high: number }> = {
   'lose-fat': { low: 1.6, high: 2.2 },
@@ -201,8 +201,9 @@ export function startingTargets(
   const margin = RANGE_MARGIN * maint + (sex === 'unspecified' ? MIFFLIN_SEX_HALF_GAP * mult : 0)
 
   const band = PROTEIN_RANGE_PER_KG[goal ?? 'feel-better']
-  const protein = routing.noProteinAnchor
-    ? { low: proteinMinimumG(kg, p.age), high: null, anchor: false }
+  const capped = routing.proteinCapped ? proteinCappedRange(kg, p.height) : null
+  const protein = routing.noProteinAnchor ? { low: proteinEverydayG(kg), high: null, anchor: false }
+    : capped ? { low: capped.low, high: capped.high, anchor: false }
     : { low: r5(kg * band.low), high: r5(kg * band.high), anchor: true }
 
   let lowEA = false

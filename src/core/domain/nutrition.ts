@@ -117,8 +117,8 @@ export interface SuggestedTargets {
   bodyFatAssumed: boolean
   /** what capped the target, as in startingTargets */
   floorsApplied: FloorApplied[]
-  /** protein is a minimum (the medical flag's reference intake), not a goal anchor */
-  proteinMinimum: boolean
+  /** protein is the everyday amount (medical 'flagged'), shown as "about", not a goal anchor */
+  proteinEveryday: boolean
   /** a safety clamp turned the goal's deficit into maintenance (show HELD_AT_MAINTENANCE_NOTE) */
   heldAtMaintenance: boolean
 }
@@ -192,6 +192,8 @@ export interface EnergyTarget {
  * is). It never says why: age, BMI and screener answers are never shown back.
  */
 export const HELD_AT_MAINTENANCE_NOTE = 'Tali keeps this at maintenance for now, to keep things safe.'
+/** Under Profile's protein figure after a 'flagged' medical answer (Protein split 3, ml-e5e) */
+export const PROTEIN_EVERYDAY_NOTE = 'The everyday amount for adults.'
 
 const r50 = (x: number) => Math.round(x / 50) * 50
 const ceil50 = (x: number) => Math.ceil(x / 50) * 50
@@ -242,15 +244,29 @@ export function nearestLevel(mult: number): ActivityLevel {
 }
 
 /**
- * Protein minimum when the high-protein anchor is off (medical flag), g/kg: the UK reference
- * nutrient intake, 0.75 (COMA, DH 1991); from 65, 1.0 (PROT-AGE, Bauer et al. 2013,
- * doi:10.1016/j.jamda.2013.05.021). Shown as "at least", never as a target to hit.
+ * Protein after a medical tick (boards ml-e5c to e5e, Benn 24 Oct 2026; nutrition-accuracy and
+ * compliance, 24 Oct):
+ * - 'flagged' (kidney disease, any mix with it, or an answer from before the split): the everyday
+ *   amount for adults, the UK reference nutrient intake, 0.75 g/kg (COMA, DH 1991), at every age,
+ *   nearest 5 g, shown as "about", never a target. It sits under KDIGO 2024's 0.8 g/kg and far
+ *   under its 1.3 ceiling; the screen never names a condition or cites KDIGO (medical-device line).
+ * - 'no-deficit' (diabetes or a weight-loss injection, no kidney tick): 1.2 to 1.6 g/kg (joint
+ *   advisory, Mozaffarian et al. 2025, doi:10.1016/j.ajcnut.2025.04.023) on a weight capped at a
+ *   BMI of 25 (a judgement call: it gives the advisory's 80 to 120 g a day), whatever the goal;
+ *   one figure where one is needed is the middle, 1.4.
  */
 export const PROTEIN_RNI_PER_KG = 0.75
-export const PROTEIN_MIN_65_PER_KG = 1.0
-export const proteinMinimumPerKg = (age: number | null): number => (age != null && age >= 65 ? PROTEIN_MIN_65_PER_KG : PROTEIN_RNI_PER_KG)
-/** grams, rounded up to 5 so it stays a minimum */
-export const proteinMinimumG = (kg: number, age: number | null): number => Math.ceil((kg * proteinMinimumPerKg(age)) / 5) * 5
+export const PROTEIN_CAPPED_PER_KG = { low: 1.2, mid: 1.4, high: 1.6 }
+const r5 = (x: number) => Math.round(x / 5) * 5
+/** grams a day, nearest 5 */
+export const proteinEverydayG = (kg: number): number => r5(kg * PROTEIN_RNI_PER_KG)
+/** The capped range, grams a day to the nearest 5. Without a height, actual weight with the top at 120 g. */
+export function proteinCappedRange(kg: number, heightCm: number | null | undefined): { low: number; mid: number; high: number } {
+  const k = PROTEIN_CAPPED_PER_KG
+  if (!heightCm) return { low: r5(kg * k.low), mid: Math.min(r5(kg * k.mid), 120), high: Math.min(r5(kg * k.high), 120) }
+  const ref = Math.min(kg, 25 * (heightCm / 100) ** 2)
+  return { low: r5(ref * k.low), mid: r5(ref * k.mid), high: r5(ref * k.high) }
+}
 
 /** Interpolate x from [x0,x1] onto [y0,y1], clamped to the segment ends. */
 function lerp(x: number, x0: number, x1: number, y0: number, y1: number): number {
@@ -380,9 +396,11 @@ export function suggestedTargets(profile: Profile, weight: number | null, routin
   // the 0.8 g/kg floor binds (heavier, shorter people), fat is higher and carbs can fall below 45%.
   const fatShare = profile.goal === 'feel-better' ? (70 * 9) / 2000 : 0.25
   const f = Math.round(Math.max(0.8 * weight, (kcal * fatShare) / 9))
-  // the medical flag turns the high-protein anchor off: protein is the minimum instead
-  const proteinMinimum = !!routing?.noProteinAnchor
-  let p = proteinMinimum ? proteinMinimumG(weight, profile.age) : Math.round(weight * PROTEIN_PER_KG[profile.goal])
+  // a medical tick replaces the goal's anchor: the everyday amount, or the middle of the capped range
+  const proteinEveryday = !!routing?.noProteinAnchor
+  let p = proteinEveryday ? proteinEverydayG(weight)
+    : routing?.proteinCapped ? proteinCappedRange(weight, profile.height).mid
+    : Math.round(weight * PROTEIN_PER_KG[profile.goal])
   // Reconciliation: for very heavy users on a low calorie target, bodyweight-anchored
   // protein plus the fat floor can exceed the whole budget on their own - an impossible
   // prescription that a carbs->=0 clamp would only mask. Keep the fat floor (it is the
@@ -392,5 +410,5 @@ export function suggestedTargets(profile: Profile, weight: number | null, routin
   const c = Math.max(0, Math.round((kcal - p * 4 - f * 9) / 4))
 
   const floored = e.floorsApplied.some((x) => x !== 'weekly-loss-cap')
-  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: e.adjustPct, floored, bodyFatAssumed, floorsApplied: e.floorsApplied, proteinMinimum, heldAtMaintenance: e.heldAtMaintenance && !floored }
+  return { maint, kcal, p, c, f, goal: profile.goal, adjustPct: e.adjustPct, floored, bodyFatAssumed, floorsApplied: e.floorsApplied, proteinEveryday, heldAtMaintenance: e.heldAtMaintenance && !floored }
 }

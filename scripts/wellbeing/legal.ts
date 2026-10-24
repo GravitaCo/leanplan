@@ -10,7 +10,9 @@
    with `git archive origin/main src`, bundle a script that writes those three calls as JSON with
    esbuild aliasing @ to the export, and commit the output. Also checks the Mind-only sentences
    (finding B, C, D). Regenerated 23 Oct 2026 for one deliberate onboarding-on line (ml-e5: the
-   medical question asked for every goal, protein shown as a minimum); nothing else differs. Run from scripts/test-wellbeing.ts; returns the number of failures. */
+   medical question asked for every goal, protein shown as a minimum); nothing else differs.
+   Regenerated 24 Oct 2026 for the protein split (privacy: the two settings and their dates;
+   terms: "how much protein it shows" and its date), compliance's wording; nothing else differs. Run from scripts/test-wellbeing.ts; returns the number of failures. */
 import { privacyPolicy } from '@/core/legal/privacy'
 import { termsOfUse } from '@/core/legal/terms'
 import { cookiePolicy } from '@/core/legal/cookies'

@@ -35,7 +35,7 @@ export function answerRows(p: Profile): AnswerRow[] {
       ? { kind, label, value: H.yes, does: H.does.pregnancy, change: true, clear: true, confirm: true }
       : { kind, label, value: H.no, does: H.does.nothing, change: false, clear: true, confirm: false })
     else if (kind === 'medical') out.push(r.flagged
-      ? { kind, label, value: H.yes, does: H.does.medical, change: true, clear: true, confirm: true }
+      ? { kind, label, value: H.yes, does: r.value === 'no-deficit' ? H.does.medicalNoDeficit : H.does.medical, change: true, clear: true, confirm: true }
       : { kind, label, value: H.none, does: H.does.nothing, change: true, clear: true, confirm: false })
     // the health check keeps only the outcome, so there's nothing to change it to (s-ob7)
     else if (kind === 'readiness') out.push({ kind, label, value: r.flagged ? H.gentler : H.none, does: r.flagged ? H.does.readiness : H.does.nothing, change: false, clear: true, confirm: false })

@@ -85,10 +85,10 @@ function ClearConfirmSheet({ row, onClose }: { row: AnswerRow; onClose: () => vo
   )
 }
 
-/** Change for conditions: the wizard's question (ob4-5), saved as the outcome only. */
-function MedicalSheet({ onClose }: { onClose: () => void }) {
+/** Change for conditions: the wizard's question (ob4-5), saved as the outcome only; also the one-time re-ask on Today. */
+export function MedicalSheet({ onClose }: { onClose: () => void }) {
   const setAnswer = useStore((s) => s.setHealthAnswer)
-  const flagged = useStore((s) => s.data.profile.outcomes?.medical === 'flagged')
+  const flagged = useStore((s) => { const m = s.data.profile.outcomes?.medical; return m === 'flagged' || m === 'no-deficit' })
   // the ticks themselves are never kept, so the sheet starts from "None of these" or nothing
   const [ticked, setTicked] = useState<number[]>([])
   const [none, setNone] = useState(!flagged)
@@ -98,7 +98,7 @@ function MedicalSheet({ onClose }: { onClose: () => void }) {
     setNone(false)
     setTicked(ticked.includes(i) ? ticked.filter((x) => x !== i) : [...ticked, i])
   }
-  const outcome = medicalOutcome(ticked.length, none)
+  const outcome = medicalOutcome(ticked, none)
   const title = COPY.medical?.title ?? ''
   return (
     <BareSheet label={title} onClose={onClose} className="consent">

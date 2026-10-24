@@ -192,10 +192,15 @@ async function wizard(page, a = {}, snap) {
   await slide(page, 'Height', 172)
   await radio(page, 'Female'); await s('ob1-7-body')
   await radio(page, 'ft in'); await s('ob1-7-body-ftin'); await radio(page, 'cm'); await cont(page)
-  if ((a.goal ?? 'Lose fat') === 'Lose fat') {
-    await h1(page, 'Does any of this apply to you?')
-    await check(page, a.medical ? 'Kidney disease' : 'None of these'); await s('ob4-5-medical-q'); await cont(page)
-    if (a.medical) { await h1(page, 'Food stays at maintenance for now'); await s('ob4-6-medical'); await cont(page) }
+  // the medical question for every goal (ml-e5); kidney → Protein split 2's note, an injection → split 1's
+  await h1(page, 'Does any of this apply to you?')
+  const injection = a.medical === 'injection'
+  await check(page, injection ? 'A weight-loss injection, like semaglutide or tirzepatide' : a.medical ? 'Kidney disease' : 'None of these'); await s('ob4-5-medical-q'); await cont(page)
+  if (a.medical) {
+    await h1(page, 'Your food range stays at maintenance')
+    await page.getByText(injection ? 'Tali keeps your food range at maintenance. It’s a guide, not a number to hit.' : 'shows protein as the everyday amount for adults', { exact: false }).first().waitFor()
+    expect(injection === ((await page.getByText('protein', { exact: false }).count()) === 0), 'the injection note never mentions protein; the kidney note does')
+    await s(injection ? 'ob4-6-medical-injection' : 'ob4-6-medical'); await cont(page)
   }
   await h1(page, 'What do you weigh?')
   if (a.noWeight) { await s('ob1-7b-weight'); await btn(page, 'Skip').click() }
@@ -903,8 +908,15 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect(dr.outcomes.medical === 'flagged' && !JSON.stringify(dr).match(/kidney/i), 'outcome only')
   })
 
-  await run('safety: build muscle → no medical question (after a quick change from lose fat)', async ({ page }) => {
+  await run('safety: build muscle → the medical question too (after a quick change from lose fat)', async ({ page }) => {
     await wizard(page, { goal: 'Build muscle', quickChange: 'Lose fat' })
+  })
+
+  await run('safety: an injection (goal build muscle) → no-deficit, its own note, nothing kept but the setting', async ({ page }) => {
+    await wizard(page, { goal: 'Build muscle', medical: 'injection' }, 'route-injection/')
+    await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
+    const dr = await draft(page)
+    expect(dr.outcomes.medical === 'no-deficit' && !JSON.stringify(dr).match(/semaglutide|tirzepatide|injection/i), 'outcome only: ' + JSON.stringify(dr.outcomes))
   })
 
   await run('safety: under 18 → kind stop → Close deletes the account and this device’s data', async ({ page, net }) => {

@@ -73,6 +73,7 @@ export interface SummaryDue {
   ifThen?: boolean
   foodAsk?: boolean
   pregnancyReask?: boolean
+  medicalReask?: boolean
   /** the Food card's "Worth a quick check" list */
   quickCheck?: boolean
 }
@@ -95,6 +96,7 @@ export function summaryDue(due: SummaryDue, on: Record<Pillar, boolean>): AskId[
   if (due.banner && !(due.banner === 'burn' && !on.food)) out.push(BANNER_ASK[due.banner])
   if (on.food && due.foodAsk) out.push('food-ask')
   if (due.pregnancyReask) out.push('pregnancy-reask')
+  if (due.medicalReask) out.push('medical-reask')
   if (on.food && due.quickCheck) out.push('quick-check')
   if (on.mind && due.checkin) out.push('checkin')
   return out

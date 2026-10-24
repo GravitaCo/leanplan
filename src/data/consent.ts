@@ -312,7 +312,8 @@ export function unsyncedConsents(s: PersistedState): number {
  * - every day's weigh-in (`day.weight`) and check-in (`day.checkin`: mood, hunger, sleep, stress,
  *   energy, soreness, note)
  * - `profile.weight` (Profile's fallback weight) and `profile.bodyFat`
- * - the onboarding answers: the screener outcomes (`profile.outcomes`: readiness, medical,
+ * - the onboarding answers: the screener outcomes (`profile.outcomes`: readiness, medical (clear,
+ *   flagged or no-deficit; 'flagged' can suggest kidney disease, compliance 24 Oct 2026),
  *   wellbeing, the sleep/stress baseline), the pregnancy flag and when it was asked, "your why"
  *   (`profile.motivations`), body details (`profile.height`, `profile.sexAnswer`), daily movement
  *   and the multiplier it set (`profile.movement`, `profile.activityMult`, with `activityLevel` back

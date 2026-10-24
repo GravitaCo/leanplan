@@ -26,7 +26,7 @@ const beat = (desc: string): SP => ({
 })
 const emergency: SP = { name: 'Emergency', desc: 'If you or someone else is in danger now', num: SIGNPOSTS.emergency.phone, tel: SIGNPOSTS.emergency.phone }
 
-export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'under16', SP[]> = {
+export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'medicalNoDeficit' | 'under16', SP[]> = {
   wellbeing: [
     beat('For anyone worried about food, eating or their body.'),
     { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
@@ -44,7 +44,11 @@ export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | '
     emergency,
   ],
   medical: [
-    { name: 'Your GP or care team', desc: 'Before changing how much you eat or your protein', num: 'Contact' },
+    { name: 'Your GP or care team', desc: 'Before changing how much you eat, or how much protein you aim for', num: 'Contact' },
+    { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
+  ],
+  medicalNoDeficit: [
+    { name: 'Your GP or care team', desc: 'Before changing how much you eat', num: 'Contact' },
     { name: 'NHS 111', desc: 'Medical help when it isn’t an emergency, any time. In Northern Ireland, call your GP.', num: '111', tel: SIGNPOSTS.nhs111.phone },
   ],
   // both 18+ stops (boards "Age 18+ · 1" and "· 2"): numbers from the checked list only

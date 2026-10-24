@@ -308,15 +308,15 @@ function profileMatchesSummary(): void {
   for (const movement of [{ kind: 'steps', band: 'under-5k' }, { kind: 'steps', band: 'over-12.5k' }, { kind: 'job', job: 'manual' }, undefined] as Profile['movement'][])
     for (const goal of ['lose-fat', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better'] as const)
       for (const t of [null, lift3, { daysPerWeek: 5, minutes: 60, met: 8, endurance: true }])
-        for (const outcomes of [CLEAR, { ...CLEAR, medical: 'flagged' as const }, { ...CLEAR, baseline: 'low' as const }, { ...CLEAR, wellbeing: 'undisclosed' as const }])
+        for (const outcomes of [CLEAR, { ...CLEAR, medical: 'flagged' as const }, { ...CLEAR, medical: 'no-deficit' as const }, { ...CLEAR, baseline: 'low' as const }, { ...CLEAR, wellbeing: 'undisclosed' as const }])
           for (const sexAnswer of ['female', 'male', 'unspecified'] as const) {
             n++; if (!same(done({ movement, goal, outcomes, sexAnswer, sex: legacySex(sexAnswer), bodyFat: 30 }), t)) sweep = false
           }
   report('profile routing', [
     ['17-year-old on Profile: the stop, no numbers', teen.hidden === 'under16' && !('kcal' in teen)],
     ['older profiles keep their deficit (§12)', adultLegacy.adjustPct < 0],
-    ['medical flag: no deficit on Profile, protein at least 0.75 g/kg', med.adjustPct === 0 && med.proteinMinimum && med.p === 55],
-    ['medical flag at 70: at least 1.0 g/kg', med70.proteinMinimum && med70.p === 70],
+    ['medical flag: no deficit on Profile, protein about 0.75 g/kg', med.adjustPct === 0 && med.proteinEveryday && med.p === 55],
+    ['medical flag at 70: the same everyday amount, no step up at 65 (Protein split 3)', med70.proteinEveryday && med70.p === 55],
     ['gentle mode and pregnancy: no calorie number on Profile', gentle.hidden === 'gentle' && preg.hidden === 'pregnancy' && !('kcal' in gentle) && !('kcal' in preg)],
     ['wellbeing undisclosed: maintenance until the deficit is chosen', onProfile(unsaid).adjustPct === 0 && onProfile({ ...unsaid, deficitChosen: true }).adjustPct < 0],
     ['poor sleep: no deeper than −10% on Profile', sleepy.adjustPct === -10],

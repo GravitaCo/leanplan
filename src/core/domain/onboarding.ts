@@ -63,8 +63,10 @@ export interface SafetyRouting {
   startAtMaintenance: boolean
   /** gentle mode offered, not switched on */
   offerGentle: boolean
-  /** protein at the reference intake instead of the high-protein goal anchor */
+  /** protein at the everyday amount for adults instead of the goal's range (medical 'flagged') */
   noProteinAnchor: boolean
+  /** protein in the 1.2 to 1.6 g/kg range on a capped weight, whatever the goal (medical 'no-deficit') */
+  proteinCapped: boolean
   /** show the "check with your GP" note */
   gpNote: boolean
   /** signposting shown quietly, not as an alert (readiness skipped only) */
@@ -106,8 +108,30 @@ export function wellbeingAnswerOf(w: OnboardingOutcomes['wellbeing']): Wellbeing
   return w === 'flagged' ? 'yes' : w === 'sometimes' ? 'sometimes' : w === 'clear' ? 'no' : w === 'undisclosed' ? 'rather-not-say' : undefined
 }
 
-/** The medical question's outcome: a tick flags, "None of these" clears, nothing is skipped. */
-export const medicalOutcome = (ticked: number, none: boolean): OnboardingOutcomes['medical'] => (ticked > 0 ? 'flagged' : none ? 'clear' : undefined)
+/** Kidney disease's place in the question's items (copy.ts MEDICAL_ITEMS; a test pins it). */
+export const MEDICAL_KIDNEY = 1
+
+/**
+ * The medical question's outcome from the ticked items (indexes into MEDICAL_ITEMS): kidney
+ * disease, alone or with others, → 'flagged'; any other tick → 'no-deficit'; "None of these" →
+ * 'clear'; nothing → skipped. The ticks themselves are never kept.
+ */
+export const medicalOutcome = (ticked: readonly number[], none: boolean): OnboardingOutcomes['medical'] =>
+  ticked.includes(MEDICAL_KIDNEY) ? 'flagged' : ticked.length ? 'no-deficit' : none ? 'clear' : undefined
+
+/** The day the split took effect: a 'flagged' answered before it may be diabetes or an injection. */
+export const MEDICAL_SPLIT_FROM = '2026-10-24'
+
+/**
+ * The one-time re-ask (compliance, 24 Oct 2026): a 'flagged' answer from before the split kept the
+ * conservative everyday protein, so the question is asked once more on this device. Closing it
+ * leaves the answer as it is. `asked`: this device has shown it (deviceOnly.ui.medicalReasked).
+ */
+export function medicalReaskDue(p: Pick<Profile, 'outcomes' | 'answeredAt'>, asked: boolean): boolean {
+  if (asked || p.outcomes?.medical !== 'flagged') return false
+  const at = p.answeredAt?.['outcomes.medical']
+  return !at || at.slice(0, 10) < MEDICAL_SPLIT_FROM
+}
 
 /** The onboarding sex answer, read from older profiles too ('M' → male, 'F' → female). */
 export function sexOf(p: Pick<Profile, 'sex' | 'sexAnswer'>): SexAnswer {
@@ -169,7 +193,7 @@ export function healthAnswersView(p: Pick<Profile, 'outcomes' | 'pregnancy' | 'a
       if (p.pregnancy) { value = p.pregnancy.flagged ? 'flagged' : 'clear'; flagged = p.pregnancy.flagged }
     } else {
       value = p.outcomes?.[kind]
-      flagged = value === 'flagged' || value === 'low' || value === 'sometimes'
+      flagged = value === 'flagged' || value === 'no-deficit' || value === 'low' || value === 'sometimes'
     }
     if (value === undefined) continue
     const answeredAt = p.answeredAt?.[healthAnswerField(kind)] ?? (kind === 'pregnancy' ? p.pregnancy?.askedAt : undefined)
@@ -222,7 +246,7 @@ export function confirmPregnancyIn(p: Profile, status: PregnancyStatus, today: s
 
 /** Answers Profile's "Change" can set (board ob7-1): the conditions outcome and the wellbeing answer. */
 export type ChangeableAnswer =
-  | { kind: 'medical'; value: 'flagged' | 'clear' }
+  | { kind: 'medical'; value: 'flagged' | 'no-deficit' | 'clear' }
   | { kind: 'wellbeing'; value: 'flagged' | 'sometimes' | 'clear' | 'undisclosed' }
 
 /**
@@ -306,8 +330,9 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
  *   goal: the goal applies to training), weight hidden, the same signposting, gentle mode not on.
  *   "Rather not say" or skipped: maintenance pre-selected, gentle mode offered
  * - readiness yes: gentler start plus signposting; skipped: the same dose, signposting quietly
- * - medical flag: maintenance allowed (no deficit), no high-protein anchor, GP note. The flag
- *   keeps the protein rule even if the goal later stops meaning eating less.
+ * - medical 'flagged' (kidney disease, or an answer from before the split): maintenance allowed
+ *   (no deficit), protein at the everyday amount, GP note. 'no-deficit' (diabetes or an injection):
+ *   no deficit, a capped protein range, GP note. Both whatever the goal.
  * - sleep/stress low or skipped: calories near maintenance, a gentler start
  * - health consent declined: no calorie numbers and no weight until they agree (§14)
  */
@@ -316,7 +341,7 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
   const r: SafetyRouting = {
     noDeficit: false, hideWeight: false, noAI: false, gentle: false, foodMode: 'standard', maintenanceOnly: false,
     hideCalories: false, signpost: [], hiddenReason: null, gentlerStart: false, nearMaintenance: false,
-    startAtMaintenance: false, offerGentle: false, noProteinAnchor: false, gpNote: false,
+    startAtMaintenance: false, offerGentle: false, noProteinAnchor: false, proteinCapped: false, gpNote: false,
     quietSignpost: false, reasons: [], defaults: [],
   }
   const sp = new Set<SignpostKind>()
@@ -360,9 +385,10 @@ export function routeSafety(a: SafetyAnswers): SafetyRouting {
     r.defaults.push('readiness'); r.gentlerStart = true; quiet = true
   }
 
-  if (o.medical === 'flagged') {
+  if (o.medical === 'flagged' || o.medical === 'no-deficit') {
     r.reasons.push('medical')
-    r.noDeficit = true; r.noProteinAnchor = true; r.gpNote = true; sp.add('gp')
+    r.noDeficit = true; r.gpNote = true; sp.add('gp')
+    if (o.medical === 'flagged') r.noProteinAnchor = true; else r.proteinCapped = true
   }
 
   if (o.baseline !== 'ok') {

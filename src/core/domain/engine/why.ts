@@ -209,7 +209,16 @@ export const BANNED_COPY: RegExp[] = [
   /\bfell off\b/i, /\bonly\b/i, /\bshould\b/i, /%\s*adherence/i, /\b\d+\s+of\s+\d+\s+done\b/i, /\d+\s*%/,
   /\bideal\b/i, /\bproblem areas?\b/i, /\bburn(ing)? off\b/i, /\bcheat\b/i, /\bclean eating\b/i, /—/,
 ]
-export const copyIssues = (text: string): string[] => BANNED_COPY.filter((r) => r.test(text)).map((r) => r.source)
+export const copyIssues = (text: string): string[] => (SETUP_COPY_ALLOWED.has(text) ? [] : BANNED_COPY.filter((r) => r.test(text)).map((r) => r.source))
+
+/**
+ * Setup lines BANNED_COPY would stop where the banned word isn't a judgement, as the exact whole
+ * approved string. Protein split 3 (ml-e5e, Benn 24 Oct 2026; compliance's wording): "only" says
+ * what is kept.
+ */
+export const SETUP_COPY_ALLOWED: ReadonlySet<string> = new Set<string>([
+  'some conditions and medicines change how much food and protein are right for you, whatever your goal. We keep only what your answer changes in your plan, not which one you picked, though that can still hint at it. You can see, change or clear it in Profile.',
+])
 
 /**
  * Wellbeing Phase 1's additions (build plan WP3): no skipping days, no readiness or recovery

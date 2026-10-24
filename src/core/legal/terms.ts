@@ -19,7 +19,8 @@ export function termsOfUse({ onboarding = false, mind = false, products = false 
     // Mind on 10 Oct 2026. The Mind paragraph names the skills and the low-mood signpost again
     // (MIND_REVIEWED on by default since 10 Oct 2026, compliance the same day), so the not-therapy
     // line covers them; a VITE_MIND_REVIEWED=0 build over-describes, as the privacy policy does
-    updated: mind || products ? '2026-10-10' : '2026-09-28',
+    // with onboarding on: the setup questions also decide how much protein Tali shows, 24 Oct 2026
+    updated: onboarding ? '2026-10-24' : mind || products ? '2026-10-10' : '2026-09-28',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tali app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
@@ -51,7 +52,7 @@ export function termsOfUse({ onboarding = false, mind = false, products = false 
         p: [
           ...(onboarding
             ? [
-                'Tali\'s setup questions about your health only decide how gently your plan starts and whether Tali suggests eating less. They are not a medical check, and they can\'t tell you whether exercise or a change in diet is safe for you. ' +
+                'Tali\'s setup questions about your health only decide how gently your plan starts, whether Tali suggests eating less and how much protein it shows. They are not a medical check, and they can\'t tell you whether exercise or a change in diet is safe for you. ' +
                   'If you tell Tali you are pregnant or breastfeeding, or have one of the conditions or medicines it asks about, it won\'t suggest eating less. That is a safety setting, not advice for your situation, so still talk to your GP, midwife or care team.',
               ]
             : []),

@@ -61,7 +61,7 @@ export const FOOD9 = {
   seeRange: 'See your range on Food',
   /** the range, never a single number: "Roughly 1,650–2,200 a day" */
   range: (lo: number, hi: number) => `Roughly ${kc(lo)}–${kc(hi)} kcal a day`,
-  proteinRange: (eaten: number, lo: number, hi: number | null) => (hi == null ? `Protein ${kc(eaten)} g, at least ${kc(lo)} g a day` : `Protein ${kc(eaten)} g of ${kc(lo)}–${kc(hi)} g`),
+  proteinRange: (eaten: number, lo: number, hi: number | null) => (hi == null ? `Protein ${kc(eaten)} g, about ${kc(lo)} g a day` : `Protein ${kc(eaten)} g of ${kc(lo)}–${kc(hi)} g`),
   /** Yes, after "Show a range": on Food only */
   yesRangeS: 'There to help you eat enough, never less.',
   /** ob9-3 */

@@ -7,20 +7,21 @@ import {
   HEALTH_STEPS, applyDraft, draftFromProfile, baselineOutcome, dayList, defaultSpread, deficitOf, exposureOf, finishedProfile, loadOf, medicalOutcome, newDraft,
   afterAnswer, outcomeInputs, readinessOutcome, replacementFor, rerunForAnswers, stepsFor, summaryFor, trainingFrom, whyRows, MINUTES_MAP, MOVING_MAP, WIZARD_MIN_AGE, type WizardDraft,
 } from '@/core/domain/wizard'
-import { clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, numbersStayHidden, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, profileRouting, routeSafety, safetyAnswersFrom, setHealthAnswerIn, snoozePregnancyIn } from '@/core/domain/onboarding'
+import { MEDICAL_KIDNEY, MEDICAL_SPLIT_FROM, medicalReaskDue, clearHealthAnswerIn, confirmPregnancyIn, healthAnswersView, numbersStayHidden, pregnancyReaskDue, PREGNANCY_SNOOZE_DAYS, profileRouting, routeSafety, safetyAnswersFrom, setHealthAnswerIn, snoozePregnancyIn } from '@/core/domain/onboarding'
 import { startingTargets } from '@/core/domain/targets'
-import { suggestedTargets } from '@/core/domain/nutrition'
+import { proteinCappedRange, proteinEverydayG, suggestedTargets } from '@/core/domain/nutrition'
 import { allWhys, copyIssues, renderWhy } from '@/core/domain/engine'
 import { mergeProfiles, MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { foodAskDue } from '@/core/domain/foodMode'
+import { foodAskDue, proteinRangeFor } from '@/core/domain/foodMode'
 import { applyHealthWithdrawal, canSaveHealthAnswers, clearHealthData, HEALTH_FIELDS, healthDataSummary, healthWhy, recordConsent, withdraw, withoutHealth } from '@/data/consent'
 import { loadDraft, markPendingDeletion, pendingDeletion, pendingExpired, PENDING_MAX_DAYS, saveDraft, underAgeNext, underAgeRetryDelayMs, underAgeRetryDue, underAgeUid, underAgeWipesDevice, UNDER_AGE_MAX_TRIES, type PendingDeletion } from '@/data/onboardingDraft'
 import { ensureMeta, stateFromBackup } from '@/data/persistence'
 import { PLAN_WHY_SYNC, pullAll, pushDirty, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, NOTES, REDO } from '../src/screens/onboarding/copy'
+import { allCopy, CHECKIN, COPY, HEALTH_ANSWERS, MEDICAL_ITEMS, NOTES, REDO } from '../src/screens/onboarding/copy'
+import { FOOD9 } from '../src/screens/onboarding/copyApp'
 import { answerRows, clearConfirmLine } from '../src/screens/profile/healthAnswerRows'
 import { deleteAccount, refreshFailure, savedSessionUid } from '@/data/account'
 import { UNDER_AGE_REASON, newAccount } from '../supabase/functions/_shared/account'
@@ -58,7 +59,23 @@ function steps(): void {
     ['s-ob1 order, then the setup card, then the summary', s.join() === 'intro,name,age,ready,why,goal,lately,wellbeing,body,medical,weight,move,handoff,moving,confidence,days,minutes,where,kit,enjoy,areas,plan-intro,summary', s.join()],
     ['the medical question for every goal, and a skipped goal (ml-e5)', (['lose-fat', 'maintain', 'build-muscle', 'increase-strength', 'increase-endurance', 'feel-better', undefined] as const).every((g) => stepsFor(full({ goal: g }), true).includes('medical'))],
     ['the medical note only after a tick, for any goal', stepsFor(full({ goal: 'build-muscle', outcomes: { medical: 'flagged' } }), true).join().includes('medical,medical-note') && !stepsFor(full({ goal: 'build-muscle', outcomes: { medical: 'clear' } }), true).includes('medical-note')],
-    ['the medical flag keeps protein at the minimum on a high-protein goal', (() => { const p = { ...DEFAULT_PROFILE, age: 30, height: 178, goal: 'build-muscle' as const, outcomes: { medical: 'flagged' as const } }; const r = routeSafety(safetyAnswersFrom(p, 80, true)); const t = suggestedTargets(p, 80, r); return r.noProteinAnchor && r.noDeficit && !!t && 'p' in t && t.p < Math.round(80 * 1.2) })()],
+    ['the medical flag keeps protein at the everyday amount on a high-protein goal', (() => { const p = { ...DEFAULT_PROFILE, age: 30, height: 178, goal: 'build-muscle' as const, outcomes: { medical: 'flagged' as const } }; const r = routeSafety(safetyAnswersFrom(p, 80, true)); const t = suggestedTargets(p, 80, r); return r.noProteinAnchor && !r.proteinCapped && r.noDeficit && !!t && 'p' in t && t.p === 60 && t.proteinEveryday })()],
+    ['no-deficit: no deficit, the capped range whatever the goal, GP note (Protein split 1)', (() => {
+      const p = { ...DEFAULT_PROFILE, age: 35, height: 175, goal: 'build-muscle' as const, outcomes: { medical: 'no-deficit' as const } }
+      const r = routeSafety(safetyAnswersFrom(p, 80, true)); const t = suggestedTargets(p, 80, r); const st = startingTargets(p, null, r, 80)
+      return r.noDeficit && r.proteinCapped && !r.noProteinAnchor && r.gpNote && r.signpost.includes('gp') && !!t && 'p' in t && t.p === 105 && !t.proteinEveryday
+        && st.protein?.low === 90 && st.protein?.high === 125 && stepsFor(full({ goal: 'feel-better', outcomes: { medical: 'no-deficit' } }), true).join().includes('medical,medical-note')
+    })()],
+    ['protein figures: everyday 0.75 g/kg to 5 g at any age; capped 1.2 to 1.6 on a BMI-25 weight; no height tops out at 120', proteinEverydayG(80) === 60 && proteinEverydayG(130) === 100
+      && JSON.stringify(proteinCappedRange(80, 175)) === '{"low":90,"mid":105,"high":125}' && proteinCappedRange(110, 170).high <= Math.round(1.6 * 25 * 1.7 ** 2 / 5) * 5
+      && proteinCappedRange(110, null).high === 120],
+    ['Food: "about" for the everyday amount, the capped range otherwise', JSON.stringify(proteinRangeFor({ goal: 'maintain', age: 70, height: 175, outcomes: { medical: 'flagged' } }, 80)) === '{"low":60,"high":null}'
+      && JSON.stringify(proteinRangeFor({ goal: 'maintain', age: 30, height: 175, outcomes: { medical: 'no-deficit' } }, 80)) === '{"low":90,"high":125}'
+      && FOOD9.proteinRange(45, 60, null) === 'Protein 45 g, about 60 g a day'],
+    ['re-ask once: only a flagged answer from before the split, once per device', medicalReaskDue({ outcomes: { medical: 'flagged' } }, false)
+      && medicalReaskDue({ outcomes: { medical: 'flagged' }, answeredAt: { 'outcomes.medical': '2026-10-01T09:00:00Z' } }, false)
+      && !medicalReaskDue({ outcomes: { medical: 'flagged' }, answeredAt: { 'outcomes.medical': `${MEDICAL_SPLIT_FROM}T09:00:00Z` } }, false)
+      && !medicalReaskDue({ outcomes: { medical: 'flagged' } }, true) && !medicalReaskDue({ outcomes: { medical: 'no-deficit' } }, false) && !medicalReaskDue({ outcomes: { medical: 'clear' } }, false)],
     ['18+ for now (Benn): 17 gets the kind stop too; 18 goes on', stepsFor(full({ age: 17 }), true).slice(-1)[0] === 'under16' && WIZARD_MIN_AGE === 18 && stepsFor(full({ age: 18 }), true).includes('ready')],
     ['under 16: the kind stop, and nothing after it', stepsFor(full({ age: 15 }), true).slice(-1)[0] === 'under16' && !stepsFor(full({ age: 15 }), true).includes('ready')],
     ['readiness yes: the gentle-start screen straight after', stepsFor(full({ outcomes: { readiness: 'flagged' } }), true).join().includes('ready,ready-note,why')],
@@ -78,7 +95,10 @@ function outcomes(): void {
   report('outcomes only', [
     ['readiness: any yes flags, all no clears, anything else is skipped', readinessOutcome([false, true, false]) === 'flagged' && readinessOutcome([false, false, false]) === 'clear' && readinessOutcome([false, undefined, false]) === undefined],
     ['lately: poor sleep, high stress or little room is low; nothing picked is skipped', baselineOutcome({ sleep: 'mixed', stress: 'some', room: 'some' }) === 'ok' && baselineOutcome({ room: 'little' }) === 'low' && baselineOutcome({}) === undefined],
-    ['medical: a tick flags, "None of these" clears', medicalOutcome(1, false) === 'flagged' && medicalOutcome(0, true) === 'clear' && medicalOutcome(0, false) === undefined],
+    ['medical: kidney (alone or with others) flags, another tick is no-deficit, "None of these" clears',
+      MEDICAL_ITEMS[MEDICAL_KIDNEY] === 'Kidney disease' && medicalOutcome([1], false) === 'flagged' && medicalOutcome([0, 1, 2], false) === 'flagged'
+      && medicalOutcome([0], false) === 'no-deficit' && medicalOutcome([2], false) === 'no-deficit' && medicalOutcome([0, 2], false) === 'no-deficit'
+      && medicalOutcome([], true) === 'clear' && medicalOutcome([], false) === undefined],
     ['the engine reads outcomes, never raw answers', JSON.stringify(outcomeInputs({ baseline: 'low', wellbeing: 'undisclosed', readiness: 'flagged' })) === JSON.stringify({ readiness: 'flagged', lately: { sleep: 'poor' }, wellbeing: 'rather-not-say' })],
   ])
   const p = applyDraft(DEFAULT_PROFILE, full(), TODAY, AT)

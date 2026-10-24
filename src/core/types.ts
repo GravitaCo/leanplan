@@ -351,8 +351,14 @@ export type DailyMovement = { kind: 'steps'; band: StepsBand } | { kind: 'job'; 
 export interface OnboardingOutcomes {
   /** PAR-Q+ style readiness: any "yes" is 'flagged' */
   readiness?: 'clear' | 'flagged'
-  /** diabetes on insulin or sulfonylureas, kidney disease or a GLP-1 medicine: 'flagged' */
-  medical?: 'clear' | 'flagged'
+  /**
+   * The conditions and medicines question (ml-e5c to e5e, Benn 24 Oct 2026): kidney disease,
+   * any mix with it, and every answer from before the split → 'flagged' (protein at the everyday
+   * amount); diabetes on insulin or tablets that can cause lows, or a weight-loss injection, with
+   * no kidney tick → 'no-deficit' (a capped protein range). Both keep food at maintenance. Never
+   * which item was ticked (compliance, 24 Oct).
+   */
+  medical?: 'clear' | 'flagged' | 'no-deficit'
   /**
    * Yes → 'flagged' (the name predates the split: stored data keeps its meaning, never rename it);
    * Sometimes → 'sometimes' (Onboarding 9, from Oct 2026); No → 'clear'; "Rather not say" → 'undisclosed'

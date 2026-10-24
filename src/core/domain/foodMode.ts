@@ -1,6 +1,6 @@
 import type { DayLog, FoodOptIn, LoggedFood, MealSlot, Profile, SexAnswer } from '@/core/types'
 import { shiftDay } from './date'
-import { calorieFloor, proteinMinimumG } from './nutrition'
+import { calorieFloor, proteinCappedRange, proteinEverydayG } from './nutrition'
 import { PROTEIN_RANGE_PER_KG, RANGE_MARGIN } from './targets'
 import { setHealthAnswerIn } from './onboarding'
 
@@ -84,10 +84,11 @@ export function maintenanceRange(estimate: number, floor?: { bmr: number; sex: S
   return { lo, hi }
 }
 
-/** Protein as a range (Sometimes), grams a day to the nearest 5; with the medical flag a minimum only (high null). */
-export function proteinRangeFor(p: Pick<Profile, 'goal' | 'age' | 'outcomes'>, kg: number | null): { low: number; high: number | null } | null {
+/** Protein as a range (Sometimes), grams a day to the nearest 5; medical 'flagged' the everyday amount (high null), 'no-deficit' the capped range. */
+export function proteinRangeFor(p: Pick<Profile, 'goal' | 'age' | 'outcomes' | 'height'>, kg: number | null): { low: number; high: number | null } | null {
   if (!kg) return null
-  if (p.outcomes?.medical === 'flagged') return { low: proteinMinimumG(kg, p.age), high: null }
+  if (p.outcomes?.medical === 'flagged') return { low: proteinEverydayG(kg), high: null }
+  if (p.outcomes?.medical === 'no-deficit') { const c = proteinCappedRange(kg, p.height); return { low: c.low, high: c.high } }
   const b = PROTEIN_RANGE_PER_KG[p.goal ?? 'feel-better']
   return { low: Math.round((kg * b.low) / 5) * 5, high: Math.round((kg * b.high) / 5) * 5 }
 }

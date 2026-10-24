@@ -69,7 +69,7 @@ import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { isUnderAge, reminderAction } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
-import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
+import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
@@ -221,6 +221,8 @@ export interface StoreState {
   markLowMoodShown: () => boolean
   /** "More about sleep" left open or closed (device only) */
   setSleepMore: (open: boolean) => boolean
+  /** the one-time medical re-ask showed (device only) */
+  markMedicalReasked: () => boolean
   /**
    * Reminder delivery events read from the service worker's IndexedDB (WP17 reads and empties it):
    * kept in the device log; a reminder type ignored twice in a row starts its back-off
@@ -1127,6 +1129,8 @@ export const useStore = create<StoreState>()(
       },
 
       setSleepMore: (open) => deviceWrite((d) => setSleepMoreOpen(d, open)),
+
+      markMedicalReasked: () => deviceWrite((d) => markMedicalReaskedIn(d)),
 
       ingestNotifyLog: (events) => {
         if (!Array.isArray(events) || !events.length) return []

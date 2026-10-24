@@ -127,7 +127,7 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     case 'wellbeing-note': return <Note kind="wellbeing" onGo={() => go()} />
     case 'body': return <Body {...common} />
     case 'medical': return <Medical {...common} />
-    case 'medical-note': return <Note kind="medical" onGo={() => go()} />
+    case 'medical-note': return <Note kind={d.outcomes.medical === 'no-deficit' ? 'medicalNoDeficit' : 'medical'} onGo={() => go()} />
     case 'weight': return <Weight {...common} />
     case 'move': return <Move {...common} />
     case 'handoff': return <PartIntro step="handoff" photo={partTwoPhoto} onGo={() => go()} onAlt={() => go({ later: true })} />
@@ -451,7 +451,7 @@ function UnitSeg<T extends string>({ label, opts, value, onChange }: { label: st
 }
 
 function Medical({ d, go, back }: Common) {
-  const flagged = d.outcomes.medical === 'flagged'
+  const stored = d.outcomes.medical
   const [ticked, setTicked] = useState<number[]>([])
   const [none, setNone] = useState(d.outcomes.medical === 'clear')
   const pick = (k: string) => {
@@ -461,7 +461,8 @@ function Medical({ d, go, back }: Common) {
     setTicked(ticked.includes(i) ? ticked.filter((x) => x !== i) : [...ticked, i])
   }
   const done = () => {
-    const medical = medicalOutcome(ticked.length, none) ?? (flagged && !none ? 'flagged' : undefined)
+    // back here with nothing ticked: the stored yes stays (the ticks themselves were never kept)
+    const medical = medicalOutcome(ticked, none) ?? (stored && stored !== 'clear' && !none ? stored : undefined)
     const o = { ...d.outcomes, medical }
     if (!medical) delete o.medical
     go({ outcomes: o })
@@ -620,7 +621,7 @@ function Areas({ d, go, back }: Common) {
 
 // the signpost lists and the 18+ stop live in ./AgeStop (loaded with the app, so the stop works offline)
 
-function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 'medical'; onGo: () => void }) {
+function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | 'medicalNoDeficit'; onGo: () => void }) {
   useScrollLock()
   const c = NOTES[kind]
   return (

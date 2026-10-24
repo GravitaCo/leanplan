@@ -202,7 +202,8 @@ and checked where noted):
   `src/core/types.ts:274`): readiness `clear`/`flagged` (from the health check: heart, dizziness,
   pregnancy, recent surgery), medical `clear`/`flagged` (diabetes treated with insulin or tablets
   that can cause lows, kidney disease, a weight-loss injection), baseline `ok`/`low` (sleep, stress,
-  room for change). **Only the outcome is stored, never which item applied**; the raw items stay in
+  room for change). Medical is `clear`/`flagged`/`no-deficit` since 24 Oct 2026; `flagged` can
+  suggest kidney disease (4.2). **Only the outcome is stored, never which item applied**; the raw items stay in
   component state, and the end-to-end test checks no raw screener answer is ever uploaded
   (`scripts/e2e-onboarding.cjs:268`).
 - **Pregnancy** (`PregnancyFlag`, `src/core/types.ts:286`): `flagged` (pregnant and breastfeeding
@@ -364,8 +365,12 @@ release that turns it on (register item 38). The open question is conditionality
 ### 4.2 Data minimisation
 
 - **Outcomes-only storage** for the readiness, medical and lately questions: Tali stores "flagged"
-  or "clear", never the condition, medicine or symptom. This is the single most important
-  minimisation measure and it is tested (`scripts/e2e-onboarding.cjs:268`).
+  or "clear" (and, for medical, "no-deficit"), never the condition, medicine or symptom. This is the
+  single most important minimisation measure and it is tested (`scripts/e2e-onboarding.cjs:268`).
+  Residual inference (24 Oct 2026, register item 47): the medical "flagged" setting comes from a
+  kidney disease tick, or from an answer given before the split, so it can suggest kidney disease.
+  It is needed to work out the protein figure (storing the figure would reveal the same), it is
+  treated as health data like the rest, and the per-question notice and privacy policy say so.
 - Pregnant and breastfeeding are stored as one flag.
 - BMI is computed for a gate and never stored.
 - The kitchen list and the onboarding draft never leave the phone.
@@ -432,6 +437,12 @@ signposts. That keeps Tali on the general-wellness side (terms "Not medical advi
 note against MHRA's software and AI as a medical device guidance before public launch would
 settle it. Any future feature that interprets symptoms, flags a condition or suggests medication
 changes needs a fresh assessment.
+
+For the kidney answer Tali withholds higher protein targets and shows the general adult reference
+(0.75 g/kg, "the everyday amount for adults"); it does not set a condition-specific intake, and no
+condition or guideline is named next to the figure. For diabetes or a weight-loss injection the
+protein range is presented as Tali's ordinary range, never as something for the medicine
+(24 Oct 2026, register item 47).
 
 ### 4.9 Processors and transfers
 
@@ -519,8 +530,8 @@ items are not done.
   to guide their eating (`terms.ts:26` to `47`); the routing only ever makes Tali more cautious
   (`routeSafety`); skipped answers give cautious defaults (a gentler start, maintenance pre-selected,
   quiet signposting: `onboarding.ts:322` to `346`); pregnancy holds food at maintenance with no
-  calorie number; the medical flag removes the deficit and the high-protein anchor and adds a GP
-  note; a wellbeing yes turns on Gentle mode (no calorie target, totals in words, a maintenance range
+  calorie number; the medical flag removes the deficit and adds a GP note, with protein at the
+  everyday amount after a kidney tick or a capped 1.2 to 1.6 g/kg range otherwise (register item 47); a wellbeing yes turns on Gentle mode (no calorie target, totals in words, a maintenance range
   on Food only if the person asks for one at week 4) and a sometimes gives a maintenance range
   only (never a deficit, Today in words until the person opts in at day 14); both take the weight
   number off Today, stop automatic training increases and signpost Beat, NHS 111, Samaritans and

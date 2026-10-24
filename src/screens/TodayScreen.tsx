@@ -34,9 +34,9 @@ import { AddFoodSheet } from './food/AddFoodSheet'
 import { MarginSheet } from './food/MarginSheet'
 import { CheckinSheet } from './today/CheckinSheet'
 import { FirstPlanSheet, PlanReviewSheet } from './plan/PlanSheets'
-import { LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
+import { LazyMedicalSheet, LazyPregnancyCheckSheet } from './profile/lazyHealthAnswers'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
-import { pregnancyReaskDue } from '@/core/domain/onboarding'
+import { medicalReaskDue, pregnancyReaskDue } from '@/core/domain/onboarding'
 import { foodAskDue, foodView, mealWords, proteinRangeFor } from '@/core/domain/foodMode'
 import { FOOD9 } from './onboarding/copyApp'
 import { FoodAskSheet } from './today/FoodAskSheet'
@@ -49,7 +49,7 @@ import { MindCard } from './today/MindCard'
 import { ThingPlanSheet } from './today/ThingPlanSheet'
 import { LowMoodBanner, useLowMoodSignpost } from './today/LowMoodBanner'
 import { SupportSheet } from './mind/SupportSheet'
-import { lowMoodShownOn } from '@/data/deviceOnly'
+import { lowMoodShownOn, medicalReasked } from '@/data/deviceOnly'
 import { BANNER_ASK, checkedIn, pillarsOn, summaryDue } from './today/summary'
 import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from './today/summaryCopy'
 import './today/summary.css'
@@ -83,6 +83,9 @@ export function TodayScreen() {
   // ob7-3: the 12-week "Does this still apply?", once when it's due, never blocking (closing = Ask me later)
   const reaskDue = useStore((s) => ONBOARDING_ENABLED && pregnancyReaskDue(s.data.profile.pregnancy, todayStr()))
   const [reask, setReask] = useState(false)
+  const medReaskDue = useStore((s) => ONBOARDING_ENABLED && canSaveHealthAnswers(s.data) && medicalReaskDue(s.data.profile, medicalReasked(s.data)))
+  const markMedicalReasked = useStore((s) => s.markMedicalReasked)
+  const [medReask, setMedReask] = useState(false)
   // ob5-4: "Plan when you'll do it", once, after the first workout (the 12-week question goes first)
   const ifThenDue = useStore((s) => ONBOARDING_ENABLED && s.cur === todayStr() && ifThenOfferDue(s.data))
   const [ifThen, setIfThen] = useState(false)
@@ -208,18 +211,20 @@ export function TodayScreen() {
   // ask is never shown, opened or marked seen, and comes back on a day it shows
   const pick = askCtx ? pickAsks(summaryDue({
     signpost: askCtx.signpostToday, checkin: !checked, thing: checked && (things.length > 0 || !!thingByKey(day.checkin?.thing?.key)),
-    planReview: due.length > 0, review: reviewDue, reviewKeep: keepAsk, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue,
+    planReview: due.length > 0, review: reviewDue, reviewKeep: keepAsk, banner: prompt, ifThen: ifThenDue, foodAsk: !!foodAsk0, pregnancyReask: reaskDue, medicalReask: medReaskDue,
     quickCheck: flags.length > 0,
   }, on), askCtx) : null
   const shown = (id: AskId) => !pick || pick.show.includes(id)
   const promptOk = !!prompt && shown(BANNER_ASK[prompt])
   const reaskGo = reaskDue && shown('pregnancy-reask')
+  const medReaskGo = medReaskDue && shown('medical-reask')
   const ifThenGo = ifThenDue && shown('if-then-offer')
   const foodAskGo = foodAsk0 && shown('food-ask') ? foodAsk0 : null
   const suggestVisible = suggestShown && shown('activity') ? suggestShown : null
   // WP15 (board B6 frame 2): the only ask on its day; shown once, marked with the local date
   const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data), markLowMoodShown)
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (medReaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (ifThenGo && !reask && !sheet) setIfThen(true) }, [ifThenGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (foodAskGo && !reask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -551,6 +556,7 @@ export function TodayScreen() {
       </div>
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
+      {medReask && <LazyMedicalSheet onClose={() => { markMedicalReasked(); setMedReask(false) }} />}
       {reask && <LazyPregnancyCheckSheet mode="checkin" onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
       {ifThen && ifThenDue && <FirstPlanSheet onDone={() => { setIfThen(false); setPrefs({ ifThenOffered: true }) }} />}
