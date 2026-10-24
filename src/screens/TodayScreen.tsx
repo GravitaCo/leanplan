@@ -226,8 +226,9 @@ export function TodayScreen() {
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
   // one sheet at a time: the medical re-ask waits for a pregnancy re-ask due the same day
   useEffect(() => { if (medReaskGo && !reaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (ifThenGo && !reask && !medReask && !sheet) setIfThen(true) }, [ifThenGo, reask, medReask]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (foodAskGo && !reask && !medReask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reask, medReask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
+  // read the per-render "go" values too: asks that come due on the same render must not both open
+  useEffect(() => { if (ifThenGo && !reaskGo && !medReaskGo && !reask && !medReask && !sheet) setIfThen(true) }, [ifThenGo, reaskGo, medReaskGo, reask, medReask]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (foodAskGo && !reaskGo && !medReaskGo && !ifThenGo && !reask && !medReask && !ifThen && !sheet) setFoodAsk(foodAskGo) }, [foodAskGo, reaskGo, medReaskGo, ifThenGo, reask, medReask, ifThen]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!suggestVisible) return
     // nutrition-accuracy: only a suggestion that actually showed is recorded

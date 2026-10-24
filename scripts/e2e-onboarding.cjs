@@ -686,6 +686,15 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       expect((await page.getByRole('dialog', { name: 'Would a calorie range help?' }).count()) === 0, 'not asked again for 12 weeks')
     }, { ...withMeals({ ...ob9('flagged', { ago: 28 }), dark }) })
   }
+  // the medical re-ask and the day-14 food ask due on the same render: one sheet, then the other
+  await run('medical re-ask and the day-14 food ask due together: the re-ask alone, then the food ask', async ({ page }) => {
+    await h1(page, 'Does any of this apply to you?')
+    await page.waitForTimeout(800)
+    expect((await page.getByRole('dialog', { name: 'Would you like your food range on Today?' }).count()) === 0, 'no food ask under the re-ask')
+    await check(page, 'None of these'); await btn(page, 'Done').click()
+    await page.getByRole('dialog', { name: 'Would you like your food range on Today?' }).waitFor()
+    expect((await page.getByRole('heading', { name: 'Does any of this apply to you?' }).count()) === 0, 'the re-ask has gone')
+  }, (() => { const a = withMeals(ob9('sometimes', { ago: 14 })); a.state.profile.outcomes = { ...a.state.profile.outcomes, medical: 'flagged' }; return a })())
   // Onboarding 10 (ob9-8): every Sometimes user chooses where the range shows, either way
   for (const dark of [false, true]) {
     await run(`ob10 where your food range shows${dark ? ' (dark)' : ''}: unmarked, On Today, back to On Food`, async ({ page }) => {
@@ -1022,6 +1031,18 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
       profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }, dark })
   }
+  await run('medical re-ask: an answer from before the split is asked once, alone, even with the if-then offer due', async ({ page }) => {
+    await h1(page, 'Does any of this apply to you?')
+    await page.waitForTimeout(800)
+    expect((await page.getByRole('heading', { name: 'Plan when you’ll do it' }).count()) === 0, 'one sheet at a time: no if-then sheet under the re-ask')
+    await shot(page, 'medical-reask')
+    await check(page, 'A weight-loss injection, like semaglutide or tirzepatide'); await btn(page, 'Done').click()
+    await page.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('leanplan.v1')); return s.profile.outcomes?.medical === 'no-deficit' && s.deviceOnly?.ui?.medicalReasked === true })
+    await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(800)
+    expect((await page.getByRole('heading', { name: 'Does any of this apply to you?' }).count()) === 0, 'never asked again on this phone')
+  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', outcomes: { medical: 'flagged' } } } })
+
   await run('if-then: Not now waves it off for good', async ({ page }) => {
     await h1(page, 'Plan when you’ll do it'); await btn(page, 'Not now').click()
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.ifThenOffered === true)
