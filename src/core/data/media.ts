@@ -607,8 +607,8 @@ export const DEMOS = {
     tempo: [{ at: 0, kind: 'squeeze' }],
   },
   // Benn's upload (titled "Concentration curl"): a standing single-handle cable curl from a low pulley.
-  // One slow rep from the top: about 3.8 s down, a long pause with straight arms, about 6 s up.
-  // Phases from fitness-workouts (±0.25 s). Benn kept the muscular build: Tali includes all body types.
+  // One slow rep from the top: about 4.9 s down, a pause with straight arms, about 7.4 s up. Timed by
+  // frame-to-frame motion over the arm (24 fps). Benn kept the muscular build: Tali includes all body types.
   cableCurl: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/play_720p.mp4',
     poster: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/thumbnail.jpg',
@@ -616,8 +616,8 @@ export const DEMOS = {
     tempo: [
       { at: 0, kind: 'ready' },
       { at: 0.25, kind: 'lower', rep: 1 },
-      { at: 4.0, kind: 'stretch', rep: 1 },
-      { at: 8.5, kind: 'lift', rep: 1 },
+      { at: 5.1, kind: 'stretch', rep: 1 },
+      { at: 7.0, kind: 'lift', rep: 1 },
       { at: 14.4, kind: 'squeeze', rep: 1 },
     ],
   },

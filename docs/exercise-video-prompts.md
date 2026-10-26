@@ -142,10 +142,10 @@ heritage, build, hair and clothing so people see bodies like their own (Benn, 29
 floor position matter (a glute bridge, an incline push-up, a hinge); arm and shoulder moves keep
 a medium shot, because a vertical frame zoomed out that far makes the person too small (Benn).
 **Same background in every clip:** a low black bench and a small dumbbell rack, soft-focus
-against the wall, as in the clips already live (Benn, option 1). **Every body type, with ordinary bodies as the focus:** generated prompts ask for ordinary,
-everyday bodies, not fitness-model physiques, so muscular builds are never the focus. A clip of
-a more muscular person is still welcome when the move is right, because Tali includes all body
-types (Benn, 26 Oct 2026).
+against the wall, as in the clips already live (Benn, option 1). 
+**Every body type, with ordinary bodies as the focus:** prompts ask for ordinary, everyday bodies
+and never for a muscular or fitness-model build. A clip of a more muscular person is still welcome
+when the move is right, because Tali includes all body types (Benn, 26 Oct 2026).
 
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
 > In the soft-focus background against the wall: a low black bench and a small rack of black
