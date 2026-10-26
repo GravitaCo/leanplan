@@ -79,7 +79,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'core', primary: 'core', secondary: ['shoulders'],
     timeCost: { setupSec: 15, setSec: 30 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['time', 'chain'], ladders: [{ chain: 'core-anti-extension', step: 2 }],
-    cue: "Elbows under shoulders, straight line from head to heels, squeeze glutes. Stop the set when the hips sag.",
+    cue: "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag.",
   },
   {
     id: 'barbell-bench-press', n: 'Barbell bench press', modality: 'strength', log: 'weight-reps',

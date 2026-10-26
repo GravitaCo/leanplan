@@ -35,7 +35,7 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "plank", "n": "Plank",
         "t": "3 × 20–40 sec",
-        "cue": "Elbows under shoulders, straight line from head to heels, squeeze glutes. Stop the set when the hips sag."
+        "cue": "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag."
       }
     ]
   },
