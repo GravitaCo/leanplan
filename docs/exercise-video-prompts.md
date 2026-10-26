@@ -112,6 +112,24 @@ counter; they are there to show posture and set-up.
   (a rounded back, bouncing, swinging), regenerate it rather than accepting it.
 - **Match the app's cue.** Each prompt below follows the form cue the app already shows for that
   exercise, so the video and the text agree.
+- **Pick the camera angle that shows the move best; don't default to side-on** (Benn, 26 Oct 2026).
+  Choose the angle from the movement: side-on when the work goes forwards and back or up and down
+  (a squat's depth, a row's elbow path), front-on when it goes out to the side (an abduction, a
+  lateral raise), a three-quarter view when both matter, and whatever keeps the whole working limb
+  and the equipment in frame. Leave room above the head for moves that rise (a step-up).
+- **Clips are expensive: check before spending, not after** (Benn, 26 Oct 2026). Before a prompt
+  is generated, and above all before a retake:
+  - Say the move in one line (which joint moves, which way, which muscle) and check it against
+    the app's cue.
+  - If there is any doubt about how the move or the machine works, look it up in a trusted
+    reference first (an exercise library such as ACE or ExRx, the NHS, a manufacturer's manual)
+    and write the prompt from that.
+  - Have the `fitness-workouts` agent review the prompt.
+  - For a machine, make and check a still of the start position before animating it.
+  - A retake changes the one thing that failed and says so; no retake runs without Benn's OK.
+- **Prefer rewording the cue over a retake.** If a clip shows a safe, standard version of the
+  move that differs from the cue (for example a row braced on one hand instead of hand and knee),
+  widen the cue to cover it rather than spend credits on a retake.
 
 ## Character and scene block (use in every prompt)
 

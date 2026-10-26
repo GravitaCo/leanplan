@@ -456,4 +456,82 @@ export const DEMOS = {
       { at: 14.0, kind: 'ready' },
     ],
   },
+  // Seedance 2.5 (demonstrator W5). Left arm, braced on the right hand with feet staggered (the cue covers this).
+  // Two rows: about 1.7 s up, a squeeze at the hip, about 2 s down, a hang. Tracked by the dumbbell.
+  oneArmDbRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/fb1a3be2-2521-4662-9a4c-a425147ac3da/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/fb1a3be2-2521-4662-9a4c-a425147ac3da/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'pull', rep: 1 },
+      { at: 2.2, kind: 'squeeze', rep: 1 },
+      { at: 5.1, kind: 'return', rep: 1 },
+      { at: 7.3, kind: 'ready', rep: 2 },
+      { at: 9.15, kind: 'pull', rep: 2 },
+      { at: 10.8, kind: 'squeeze', rep: 2 },
+      { at: 13.0, kind: 'return', rep: 2 },
+      { at: 14.8, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W8). Two pulls, side-on: about 1.6 s in, a long squeeze at the ribs, about 2 s back
+  // to straight arms. The cable runs from a column off frame. Tracked by the handle.
+  seatedCableRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8529995f-f44a-4557-8cdc-ad60a443c3a1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8529995f-f44a-4557-8cdc-ad60a443c3a1/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.45, kind: 'pull', rep: 1 },
+      { at: 2.05, kind: 'squeeze', rep: 1 },
+      { at: 4.85, kind: 'return', rep: 1 },
+      { at: 7.0, kind: 'ready', rep: 2 },
+      { at: 8.4, kind: 'pull', rep: 2 },
+      { at: 9.95, kind: 'squeeze', rep: 2 },
+      { at: 12.85, kind: 'return', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2). Left leg working, side-on: about 1.5 s up onto the step, a pause standing tall,
+  // a slow step back down to the floor. Her head leaves the top of the frame while she stands on the step. Tracked by a dumbbell.
+  stepUp: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/5690a1c0-41da-4bf8-9e2d-4024cf44c431/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/5690a1c0-41da-4bf8-9e2d-4024cf44c431/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lift', rep: 1 },
+      { at: 1.8, kind: 'squeeze', rep: 1 },
+      { at: 4.4, kind: 'lower', rep: 1 },
+      { at: 5.9, kind: 'ready', rep: 2 },
+      { at: 8.6, kind: 'lift', rep: 2 },
+      { at: 9.9, kind: 'squeeze', rep: 2 },
+      { at: 12.2, kind: 'lower', rep: 2 },
+      { at: 13.4, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 from an approved still (demonstrator W6), side-on. Only the held part of Benn's upload
+  // (57893f03, 5.5 to 10.9 s), played forwards then backwards so the loop is seamless: she stays in the pose
+  // the whole time, settling very slightly. A hold, so one phase.
+  chairPose: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/thumbnail.jpg',
+    durationSec: 10.79,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Seedance 2.5 from two pose stills (demonstrator W4; Benn's reference photo for the cat and cow shapes),
+  // side-on. Opens in cow, then two slow rounds of about 4 s a shape: cat (back rounds up), cow (belly drops).
+  // Her face reaches the left edge in cow; Benn accepted the framing. Phases from fitness-workouts' review.
+  catCow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.3, kind: 'lift', rep: 1 },
+      { at: 5.0, kind: 'lower', rep: 1 },
+      { at: 9.0, kind: 'lift', rep: 2 },
+      { at: 12.3, kind: 'lower', rep: 2 },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

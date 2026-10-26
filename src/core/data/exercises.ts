@@ -150,7 +150,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     care: ['lower-back'], gentler: 'chest-supported-row',
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
-    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }],
+    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }], video: DEMOS.seatedCableRow,
     cue: "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back.",
   },
   {
@@ -245,7 +245,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
     timeCost: { setupSec: 20, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
-    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }],
+    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }], video: DEMOS.stepUp,
     cue: "Use a sturdy step or bench no higher than your knee, with your whole foot on it. Push through the front heel to stand up tall, then lower the other foot back to the floor slowly, keeping the working foot on the step. Don't push off the back foot to do the work.",
   },
   {
@@ -262,8 +262,8 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10 each side',
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     timeCost: { setupSec: 30, setSec: 65 }, skill: 1, impact: 'none', position: 'bench', unilateral: true, systemicCost: 'low', homeFriendly: true,
-    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }],
-    cue: "Rest one hand and knee on a bench with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
+    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }], video: DEMOS.oneArmDbRow,
+    cue: "Rest one hand, or one hand and the same-side knee, on a bench and hinge forward with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
   },
   {
     id: 'cable-fly', n: 'Cable fly', modality: 'strength', log: 'weight-reps',
@@ -887,8 +887,8 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '8–10 slow rounds', targets: ['spine', 'breath'],
     pattern: 'mobility',
     timeCost: { setupSec: 10, setSec: 55 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
-    increment: ['reps'],
-    cue: "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
+    increment: ['reps'], video: DEMOS.catCow,
+    cue: "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
   },
   {
     id: 'low-lunge', n: 'Low lunge', modality: 'yoga', log: 'hold', perSide: true,
@@ -921,8 +921,8 @@ export const EXERCISES: Exercise[] = [
     care: ['knees'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 25 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
-    increment: ['time'],
-    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Don't arch your lower back; keep your ribs soft and your knees behind your toes as much as feels natural.",
+    increment: ['time'], video: DEMOS.chairPose,
+    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Go only as low as you can hold with a long back. Don't arch your lower back; keep your ribs soft and your knees pointing the same way as your toes.",
   },
   {
     id: 'tree-pose', n: 'Tree pose', modality: 'yoga', log: 'hold', perSide: true,
