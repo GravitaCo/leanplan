@@ -146,7 +146,15 @@ async function slide(page, name, target) {
   if (now !== target) throw new Error(`slider ${name} stuck at ${now}, wanted ${target}`)
 }
 const sliderNow = async (page, name) => { const sl = page.getByRole('slider', { name, exact: true }).first(); return (await sl.getAttribute('aria-valuetext')) === 'Not set' ? null : +(await sl.getAttribute('aria-valuenow')) }
-const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
+// Profile left the tab bar when Mind became a tab (WELLBEING_ENABLED, on by default from 10 Oct 2026):
+// it is the avatar beside every title (src/ui/ProfileButton.tsx). A flag-off build keeps the Profile tab.
+// Profile itself has no avatar: already there, it stays (as tapping the old tab did).
+const tab = async (page, name) => {
+  if (name !== 'Profile') return page.locator('nav.tabbar').getByRole('button', { name }).click()
+  if (await page.locator('.hdr .ltitle', { hasText: /^Profile$/ }).count()) return
+  return page.locator('nav.tabbar').getByRole('button', { name: 'Profile', exact: true })
+    .or(page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true })).first().click()
+}
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const todayWd = new Date().getDay()
 const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
@@ -1018,6 +1026,16 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect((await stored(page)).profile.onboardedAt, 'setup saved on the way')
   }, { state: { ...newAccount(), consents: { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' } } })
 
+  // The if-then offer (ob5-4) is due after the first workout since setup, and goes through the asks
+  // budget: it isn't an early-weeks ask, so it waits until someone has used Tali for 14 days
+  // (EARLY_DAYS in core/domain/asks.ts, counted from their first logged day). So the seed is someone
+  // who set up 3 weeks ago, logged a weigh-in that day, and logs their first workout today.
+  const IF_THEN_START = (() => { const d = new Date(); d.setDate(d.getDate() - 21); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
+  const IF_THEN_FROM = IF_THEN_START + 'T08:00:00.000Z'
+  const IF_THEN_DAYS = {
+    [IF_THEN_START]: { foods: [], supps: {}, weight: 70, workout: null },
+    [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] },
+  }
   for (const dark of [false, true]) {
     await run(`if-then: once on Today after the first workout (ob5-4)${dark ? ', dark' : ''}`, async ({ page }) => {
       await h1(page, 'Plan when you’ll do it')
@@ -1028,27 +1046,33 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       await page.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('leanplan.v1')); return s.profile.ifThenOffered && s.profile.plans?.[0]?.when === 'after lunch' && s.profile.plans[0].then === 'do my workout' })
       await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(600)
       expect((await page.getByRole('heading', { name: 'Plan when you’ll do it' }).count()) === 0, 'never shown again')
-    }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
-      profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }, dark })
+    }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: IF_THEN_DAYS,
+      profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: IF_THEN_FROM } }, dark })
   }
-  await run('medical re-ask: an answer from before the split is asked once, alone, even with the if-then offer due', async ({ page }) => {
+  await run('medical re-ask: an answer from before the split is asked once, alone, with the if-then offer due: the re-ask, then the offer', async ({ page }) => {
     await h1(page, 'Does any of this apply to you?')
     await page.waitForTimeout(800)
     expect((await page.getByRole('heading', { name: 'Plan when you’ll do it' }).count()) === 0, 'one sheet at a time: no if-then sheet under the re-ask')
     await shot(page, 'medical-reask')
     await check(page, 'A weight-loss injection, like semaglutide or tirzepatide'); await btn(page, 'Done').click()
     await page.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('leanplan.v1')); return s.profile.outcomes?.medical === 'no-deficit' && s.deviceOnly?.ui?.medicalReasked === true })
+    // the if-then offer was due all along: it opens once the re-ask has closed, never under it
+    await h1(page, 'Plan when you’ll do it')
+    expect((await page.getByRole('heading', { name: 'Does any of this apply to you?' }).count()) === 0, 'the re-ask has gone')
+    await btn(page, 'Not now').click()
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.ifThenOffered === true)
     await page.reload(); await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor(); await page.waitForTimeout(800)
     expect((await page.getByRole('heading', { name: 'Does any of this apply to you?' }).count()) === 0, 'never asked again on this phone')
-  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
-    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', outcomes: { medical: 'flagged' } } } })
+    expect((await page.getByRole('heading', { name: 'Plan when you’ll do it' }).count()) === 0, 'the if-then offer, waved off, stays closed')
+  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: IF_THEN_DAYS,
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: IF_THEN_FROM, outcomes: { medical: 'flagged' } } } })
 
   await run('if-then: Not now waves it off for good', async ({ page }) => {
     await h1(page, 'Plan when you’ll do it'); await btn(page, 'Not now').click()
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).profile.ifThenOffered === true)
     expect(!(await stored(page)).profile.plans?.length, 'no plan saved')
-  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, sessions: [{ id: 'e2e-s1', modality: 'strength', title: 'Full body A', at: new Date().toISOString(), mins: 30 }] } },
-    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } } })
+  }, { state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: IF_THEN_DAYS,
+    profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, onboardedAt: IF_THEN_FROM } } })
 
   await run('a 1-day week', async ({ page }) => {
     await wizard(page, { goal: 'Feel better and move more' })
@@ -1114,8 +1138,11 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
 
   // ─── Onboarding 7: Health check answers and the 12-week check-in (boards ob7-1 to ob7-4) ───
   const weeksAgo = (w) => { const d = new Date(); d.setDate(d.getDate() - w * 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  // a 'flagged' medical answer is dated after the protein split (MEDICAL_SPLIT_FROM, 6c8c3a2): an
+  // undated one is from before it, and Today opens the one-time re-ask over everything (tested on its own)
   const answered = ({ dark, ...x } = {}) => ({ state: { ...newAccount(), target: { kcal: 2000, p: 150, c: 200, f: 70 }, days: { [today]: { foods: [], supps: {}, weight: 70, workout: null } },
-    profile: { name: 'Sam', sex: 'F', sexAnswer: 'female', age: 34, height: 168, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, goal: 'feel-better', onboardedAt: '2026-09-20T08:00:00.000Z', ...x } }, ...(dark ? { dark: true } : {}) })
+    profile: { name: 'Sam', sex: 'F', sexAnswer: 'female', age: 34, height: 168, weight: 70, activityLevel: 'light', activityMult: 1.3, supplements: [], notificationsEnabled: false, goal: 'feel-better', onboardedAt: '2026-09-20T08:00:00.000Z',
+      ...x, answeredAt: { ...(x.outcomes?.medical === 'flagged' ? { 'outcomes.medical': today + 'T08:00:00.000Z' } : {}), ...x.answeredAt } } }, ...(dark ? { dark: true } : {}) })
   const BOARD = { outcomes: { readiness: 'flagged', medical: 'flagged', wellbeing: 'flagged', baseline: 'ok' }, pregnancy: { flagged: true, askedAt: today }, gentle: true }
   const toAnswers = async (page) => {
     await tab(page, 'Profile')
@@ -1194,7 +1221,9 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     const rows = await rowTexts(page)
     expect(/^Conditions or medicines\nNone of these/.test(rows[0]) && /^Food and weight\nNo\n/.test(rows[1]), rows.join(' ¶ '))
     expect(!JSON.stringify(p).match(/insulin|kidney|semaglutide/i), 'no condition kept')
-  }, answered({ outcomes: { medical: 'flagged', wellbeing: 'flagged' }, gentle: true }))
+    // the food-and-weight answer is a week old: the week-4 "Would a calorie range help?" ask
+    // (rangeAskDue, from the later of onboardedAt and this answer) isn't due yet to cover Profile
+  }, answered({ outcomes: { medical: 'flagged', wellbeing: 'flagged' }, gentle: true, answeredAt: { 'outcomes.wellbeing': weeksAgo(1) + 'T08:00:00.000Z' } }))
 
   for (const dark of [false, true]) {
     await run(`ob7-3 12-week check-in on Today${dark ? ' (dark)' : ''}: once; Ask me later snoozes 2 weeks`, async ({ page }) => {
@@ -1421,7 +1450,13 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await page.getByText(/^Push/).first().click()
     await page.getByText('Warm up first').waitFor()
     expect((await page.getByText('5 minutes of easy movement, then one or two lighter').count()) === 1, 'the old "Warm up first" note, as on main')
-    expect((await page.locator('.wu-day').count()) === 0 && (await page.getByText(/warm-up and|Warm-up ·/).count()) === 0, 'no warm-up card or "warm-up and" label in the Train preview')
+    expect((await page.locator('.wu-day').count()) === 0 && (await page.getByText(/Warm-up ·/).count()) === 0, 'no warm-up card in the Train preview')
+    // the sub-line: with Mind on (WELLBEING_ENABLED, the default from 10 Oct 2026) board B3 says
+    // "warm-up and N exercises" whenever the preview shows a warm-up, the "Warm up first" note
+    // included (be635b1); with Mind off it reads as on main
+    const wbOn = (await page.locator('nav.tabbar').getByRole('button', { name: /^Mind/ }).count()) > 0
+    const wuAnd = await page.getByText(/warm-up and/).count()
+    expect(wbOn ? wuAnd === 1 : wuAnd === 0, `"warm-up and" in the Train preview's sub-line ${wbOn ? 'once (B3, Mind on)' : 'never (Mind off)'}: ${wuAnd}`)
     await btn(page, 'Start').click()
     await page.locator('.gp-main', { hasText: 'Log set' }).waitFor()
     expect((await page.locator('.gp-pill', { hasText: 'Warm-up' }).count()) === 0 && (await page.locator('.wu').count()) === 0, 'a live guided session opens on the first exercise, no warm-up block')
