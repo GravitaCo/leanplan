@@ -509,4 +509,13 @@ export const DEMOS = {
       { at: 14.0, kind: 'ready' },
     ],
   },
+  // Seedance 2.5 from an approved still (demonstrator W6), side-on: about 5 s sitting into the pose with the
+  // arms overhead, a hold to about 10.9 s (settling slightly deeper), about 3 s back up. A hold, so one phase.
+  chairPose: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/57893f03-be52-4334-acf6-f4654fce5bf2/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/57893f03-be52-4334-acf6-f4654fce5bf2/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
 } satisfies Record<string, ExerciseMedia>

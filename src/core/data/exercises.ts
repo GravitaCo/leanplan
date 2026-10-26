@@ -921,7 +921,7 @@ export const EXERCISES: Exercise[] = [
     care: ['knees'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 25 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
-    increment: ['time'],
+    increment: ['time'], video: DEMOS.chairPose,
     cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Go only as low as you can hold with a long back. Don't arch your lower back; keep your ribs soft and your knees pointing the same way as your toes.",
   },
   {
