@@ -127,7 +127,12 @@ async function scenario(browser, name, fn, opts = {}) {
 
 const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
-const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
+// Profile left the tab bar when Mind became a tab (WELLBEING_ENABLED, on by default from 10 Oct 2026):
+// it is the avatar beside every title (src/ui/ProfileButton.tsx). A flag-off build keeps the Profile tab.
+const tab = (page, name) => name === 'Profile'
+  ? page.locator('nav.tabbar').getByRole('button', { name: 'Profile', exact: true })
+    .or(page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true })).first().click()
+  : page.locator('nav.tabbar').getByRole('button', { name }).click()
 const h1 = (page, text) => page.getByRole('heading', { name: text, exact: true }).waitFor()
 const btn = (page, name) => page.getByRole('button', { name, exact: true })
 /** the wizard's age wheel (role=slider), set by keyboard: one nudge so it counts as picked, then the arrow keys */

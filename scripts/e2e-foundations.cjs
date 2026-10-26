@@ -150,7 +150,12 @@ async function agreeFullScreen(page) {
   for (const id of ['c_health', 'c_terms', 'c_age']) await page.locator(`label[for="${id}"]`).click()
   await cont.click()
 }
-const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { name }).click()
+// Profile left the tab bar when Mind became a tab (WELLBEING_ENABLED, on by default from 10 Oct 2026):
+// it is the avatar beside every title (src/ui/ProfileButton.tsx). A flag-off build keeps the Profile tab.
+const tab = (page, name) => name === 'Profile'
+  ? page.locator('nav.tabbar').getByRole('button', { name: 'Profile', exact: true })
+    .or(page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true })).first().click()
+  : page.locator('nav.tabbar').getByRole('button', { name }).click()
 
 ;(async () => {
   const browser = await chromium.launch()
@@ -170,6 +175,10 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
       await page.locator('.hdr .ltitle', { hasText: t }).waitFor()
       await page.locator('.hdr .cpill[data-conn="up-to-date"]').waitFor()
     }
+    // the Mind tab's header has none (MindPage passes pill={false}, Wellbeing WP6, c87d6c4)
+    await tab(page, 'Mind')
+    await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
+    expect((await page.locator('.hdr .cpill').count()) === 0, 'no pill on Mind')
   }, { state: deviceState() })
 
   await run('pill: saved on this phone, will sync (n)', async ({ page }) => {
@@ -321,7 +330,13 @@ const tab = (page, name) => page.locator('nav.tabbar').getByRole('button', { nam
     const st = await stored(page)
     expect(st.consents.healthPause && !latest(st, 'health') && st.days[today].weight === 70, 'paused, nothing recorded or cleared')
     // new health data while paused: until there's an answer nothing but consent syncs (CLAUDE.md)
-    await page.locator('.mind-row').click()
+    // with Mind on (WELLBEING_ENABLED, from 10 Oct 2026) the Summary Mind card opens the Mind page,
+    // where Update opens the same check-in sheet; a flag-off build keeps the old Mind row
+    await page.locator('.mind-row, .wb-mind-row').click()
+    if (!(await page.locator('.mind-row').count())) {
+      await page.locator('.hdr .ltitle', { hasText: 'Mind' }).waitFor()
+      await page.locator('section.mind-today').getByRole('button', { name: 'Update', exact: true }).click()
+    }
     await page.getByRole('button', { name: 'Great' }).first().click()
     await page.getByRole('button', { name: 'Done' }).click()
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('leanplan.v1')).days[new Date().toISOString().slice(0, 10)].checkin.mood === 5)
