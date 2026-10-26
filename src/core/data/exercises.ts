@@ -150,7 +150,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     care: ['lower-back'], gentler: 'chest-supported-row',
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
-    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }],
+    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }], video: DEMOS.seatedCableRow,
     cue: "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back.",
   },
   {
@@ -245,7 +245,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
     timeCost: { setupSec: 20, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
-    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }],
+    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }], video: DEMOS.stepUp,
     cue: "Use a sturdy step or bench no higher than your knee, with your whole foot on it. Push through the front heel to stand up tall, then lower the other foot back to the floor slowly, keeping the working foot on the step. Don't push off the back foot to do the work.",
   },
   {
@@ -262,7 +262,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10 each side',
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     timeCost: { setupSec: 30, setSec: 65 }, skill: 1, impact: 'none', position: 'bench', unilateral: true, systemicCost: 'low', homeFriendly: true,
-    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }],
+    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }], video: DEMOS.oneArmDbRow,
     cue: "Rest one hand, or one hand and the same-side knee, on a bench and hinge forward with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
   },
   {

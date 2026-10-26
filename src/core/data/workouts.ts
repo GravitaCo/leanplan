@@ -85,7 +85,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "seated-cable-row", "n": "Seated cable row",
         "t": "3 × 10–12",
-        "cue": "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back."
+        "cue": "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back.",
+        "video": DEMOS.seatedCableRow
       },
       {
         "id": "chest-supported-row", "n": "Chest-supported dumbbell row",
