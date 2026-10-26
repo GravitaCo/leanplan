@@ -36,7 +36,7 @@ export const DEMOS = {
   // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
   // which a page always sends, so these play in the app but not as bare links.
   // 17.8 s, trimmed to end with arms straight so the loop is seamless (re-uploaded on 8 Oct as
-  // 67eda569 after the first trimmed copy was removed; the untrimmed e3bb9bad runs on into a third rep)
+  // 67eda569 after the first trimmed copy was removed; the untrimmed upload has been deleted from Bunny)
   barbellCurl: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/play_720p.mp4',
     poster: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/thumbnail.jpg',
@@ -605,5 +605,20 @@ export const DEMOS = {
     durationSec: 15.04,
     hold: 'position',
     tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Benn's upload (titled "Concentration curl"): a standing single-handle cable curl from a low pulley.
+  // One slow rep from the top: about 3.8 s down, a long pause with straight arms, about 6 s up.
+  // Phases from fitness-workouts (±0.25 s). Benn kept the muscular build: Tali includes all body types.
+  cableCurl: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.25, kind: 'lower', rep: 1 },
+      { at: 4.0, kind: 'stretch', rep: 1 },
+      { at: 8.5, kind: 'lift', rep: 1 },
+      { at: 14.4, kind: 'squeeze', rep: 1 },
+    ],
   },
 } satisfies Record<string, ExerciseMedia>

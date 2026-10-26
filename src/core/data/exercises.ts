@@ -179,6 +179,14 @@ export const EXERCISES: Exercise[] = [
     cue: "Elbows pinned to your sides, curl without swinging the body. Lower slowly. Don't let the elbows drift forward.",
   },
   {
+    id: 'cable-curl', n: 'Cable biceps curl', modality: 'strength', log: 'weight-reps',
+    equipment: ['cable'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
+    pattern: 'isolation', primary: 'biceps', secondary: ['forearms'], video: DEMOS.cableCurl,
+    timeCost: { setupSec: 30, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: false,
+    increment: ['next-stack'],
+    cue: "Stand facing a low cable, holding the handle palms up with your elbows at your sides. Curl it up towards your shoulders, keeping the elbows still, then lower slowly until your arms are straight. Don't lean back or let the elbows drift forward.",
+  },
+  {
     id: 'cable-crunch', n: 'Cable crunch', modality: 'strength', log: 'weight-reps',
     equipment: ['cable'], difficulty: 'beginner', defaultRx: '3 × 12–15',
     pattern: 'core', primary: 'core', care: ['lower-back'], gentler: 'dead-bug',
