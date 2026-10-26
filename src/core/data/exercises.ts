@@ -888,7 +888,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'mobility',
     timeCost: { setupSec: 10, setSec: 55 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
     increment: ['reps'],
-    cue: "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
+    cue: "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
   },
   {
     id: 'low-lunge', n: 'Low lunge', modality: 'yoga', log: 'hold', perSide: true,
@@ -922,7 +922,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 25 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['time'],
-    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Don't arch your lower back; keep your ribs soft and your knees behind your toes as much as feels natural.",
+    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Go only as low as you can hold with a long back. Don't arch your lower back; keep your ribs soft and your knees pointing the same way as your toes.",
   },
   {
     id: 'tree-pose', n: 'Tree pose', modality: 'yoga', log: 'hold', perSide: true,

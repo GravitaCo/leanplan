@@ -157,7 +157,7 @@ export const SWAPS: Record<SwapId, WorkoutTemplate & { mins: string; cardioType:
       { "id": "shoulder-rolls", "n": "Shoulder rolls", "t": "10 each way",
         "cue": "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush." },
       { "id": "cat-cow", "n": "Cat–cow", "t": "1 × 10 slow reps",
-        "cue": "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms." },
+        "cue": "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms." },
       { "id": "half-kneeling-hip-flexor", "n": "Half-kneeling hip flexor stretch", "t": "45 sec each side",
         "cue": "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride." },
       { "id": "supine-hamstring-stretch", "n": "Lying hamstring stretch", "t": "45 sec each side",
