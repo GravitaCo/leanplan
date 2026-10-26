@@ -502,19 +502,20 @@ export const DEMOS = {
       { at: 0.3, kind: 'lift', rep: 1 },
       { at: 1.8, kind: 'squeeze', rep: 1 },
       { at: 4.4, kind: 'lower', rep: 1 },
-      { at: 6.6, kind: 'ready', rep: 2 },
+      { at: 5.9, kind: 'ready', rep: 2 },
       { at: 8.6, kind: 'lift', rep: 2 },
       { at: 9.9, kind: 'squeeze', rep: 2 },
       { at: 12.2, kind: 'lower', rep: 2 },
-      { at: 14.0, kind: 'ready' },
+      { at: 13.4, kind: 'ready' },
     ],
   },
-  // Seedance 2.5 from an approved still (demonstrator W6), side-on: about 5 s sitting into the pose with the
-  // arms overhead, a hold to about 10.9 s (settling slightly deeper), about 3 s back up. A hold, so one phase.
+  // Seedance 2.5 from an approved still (demonstrator W6), side-on. Only the held part of Benn's upload
+  // (57893f03, 5.5 to 10.9 s), played forwards then backwards so the loop is seamless: she stays in the pose
+  // the whole time, settling very slightly. A hold, so one phase.
   chairPose: {
-    src: 'https://vz-36841ffb-54c.b-cdn.net/57893f03-be52-4334-acf6-f4654fce5bf2/play_720p.mp4',
-    poster: 'https://vz-36841ffb-54c.b-cdn.net/57893f03-be52-4334-acf6-f4654fce5bf2/thumbnail.jpg',
-    durationSec: 15.04,
+    src: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/thumbnail.jpg',
+    durationSec: 10.79,
     hold: 'position',
     tempo: [{ at: 0, kind: 'squeeze' }],
   },
