@@ -152,10 +152,13 @@ async function agreeFullScreen(page) {
 }
 // Profile left the tab bar when Mind became a tab (WELLBEING_ENABLED, on by default from 10 Oct 2026):
 // it is the avatar beside every title (src/ui/ProfileButton.tsx). A flag-off build keeps the Profile tab.
-const tab = (page, name) => name === 'Profile'
-  ? page.locator('nav.tabbar').getByRole('button', { name: 'Profile', exact: true })
+// Profile itself has no avatar: already there, it stays (as tapping the old tab did).
+const tab = async (page, name) => {
+  if (name !== 'Profile') return page.locator('nav.tabbar').getByRole('button', { name }).click()
+  if (await page.locator('.hdr .ltitle', { hasText: /^Profile$/ }).count()) return
+  return page.locator('nav.tabbar').getByRole('button', { name: 'Profile', exact: true })
     .or(page.locator('.hdr').getByRole('button', { name: 'Profile', exact: true })).first().click()
-  : page.locator('nav.tabbar').getByRole('button', { name }).click()
+}
 
 ;(async () => {
   const browser = await chromium.launch()
