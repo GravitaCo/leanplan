@@ -887,7 +887,7 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '8–10 slow rounds', targets: ['spine', 'breath'],
     pattern: 'mobility',
     timeCost: { setupSec: 10, setSec: 55 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
-    increment: ['reps'],
+    increment: ['reps'], video: DEMOS.catCow,
     cue: "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
   },
   {

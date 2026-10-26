@@ -519,4 +519,19 @@ export const DEMOS = {
     hold: 'position',
     tempo: [{ at: 0, kind: 'squeeze' }],
   },
+  // Seedance 2.5 from two pose stills (demonstrator W4; Benn's reference photo for the cat and cow shapes),
+  // side-on. Opens in cow, then two slow rounds of about 4 s a shape: cat (back rounds up), cow (belly drops).
+  // Her face reaches the left edge in cow; Benn accepted the framing. Phases from fitness-workouts' review.
+  catCow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.3, kind: 'lift', rep: 1 },
+      { at: 5.0, kind: 'lower', rep: 1 },
+      { at: 9.0, kind: 'lift', rep: 2 },
+      { at: 12.3, kind: 'lower', rep: 2 },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>
