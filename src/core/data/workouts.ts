@@ -25,7 +25,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "leg-extension", "n": "Leg extension (machine)",
         "t": "2–3 × 12",
-        "cue": "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging."
+        "cue": "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging.",
+        "video": DEMOS.legExtension
       },
       {
         "id": "calf-raise", "n": "Seated or standing calf raise",
@@ -35,7 +36,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "plank", "n": "Plank",
         "t": "3 × 20–40 sec",
-        "cue": "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag."
+        "cue": "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag.",
+        "video": DEMOS.plank
       }
     ]
   },
@@ -63,7 +65,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "lateral-raise", "n": "Lateral raise",
         "t": "2–3 × 12–15",
-        "cue": "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum."
+        "cue": "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum.",
+        "video": DEMOS.lateralRaise
       },
       {
         "id": "triceps-pushdown", "n": "Triceps rope pushdown (cable)",
@@ -91,7 +94,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "chest-supported-row", "n": "Chest-supported dumbbell row",
         "t": "3 × 10",
-        "cue": "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking."
+        "cue": "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking.",
+        "video": DEMOS.chestSupportedRow
       },
       {
         "id": "face-pull", "n": "Face pull (cable)",

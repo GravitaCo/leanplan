@@ -62,7 +62,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['machine'], difficulty: 'beginner', defaultRx: '2–3 × 12',
     pattern: 'isolation', primary: 'quads', care: ['knees'],
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'low', homeFriendly: false,
-    increment: ['next-stack'],
+    increment: ['next-stack'], video: DEMOS.legExtension,
     cue: "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging.",
   },
   {
@@ -78,7 +78,7 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '3 × 20–40 sec',
     pattern: 'core', primary: 'core', secondary: ['shoulders'],
     timeCost: { setupSec: 15, setSec: 30 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
-    increment: ['time', 'chain'], ladders: [{ chain: 'core-anti-extension', step: 2 }],
+    increment: ['time', 'chain'], ladders: [{ chain: 'core-anti-extension', step: 2 }], video: DEMOS.plank,
     cue: "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag.",
   },
   {
@@ -123,7 +123,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'cable'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
     pattern: 'isolation', primary: 'shoulders',
     timeCost: { setupSec: 20, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
-    increment: ['next-weight', 'next-stack'],
+    increment: ['next-weight', 'next-stack'], video: DEMOS.lateralRaise,
     cue: "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum.",
   },
   {
@@ -158,7 +158,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10',
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps', 'shoulders'],
     timeCost: { setupSec: 45, setSec: 35 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
-    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 1 }],
+    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 1 }], video: DEMOS.chestSupportedRow,
     cue: "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking.",
   },
   {

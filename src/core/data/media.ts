@@ -534,4 +534,67 @@ export const DEMOS = {
       { at: 12.3, kind: 'lower', rep: 2 },
     ],
   },
+  // Seedance 2.5 from a checked still (demonstrator W6), front three-quarter. Two slow extensions: about 2.3 s
+  // up, a squeeze, about 2.7 s down. Her feet leave the frame at full extension. Phases from fitness-workouts.
+  legExtension: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lift', rep: 1 },
+      { at: 2.6, kind: 'squeeze', rep: 1 },
+      { at: 3.8, kind: 'lower', rep: 1 },
+      { at: 6.5, kind: 'ready', rep: 2 },
+      { at: 8.7, kind: 'lift', rep: 2 },
+      { at: 10.7, kind: 'squeeze', rep: 2 },
+      { at: 11.8, kind: 'lower', rep: 2 },
+      { at: 14.5, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 from a still copied from Benn's reference photo (demonstrator W7), side-on: chest on the incline
+  // pad, feet on the floor. Two rows to the hips. Her hips are cut at the left edge. Phases from fitness-workouts.
+  chestSupportedRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/344a03d7-ea79-41eb-8f69-fda1153a7249/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/344a03d7-ea79-41eb-8f69-fda1153a7249/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'pull', rep: 1 },
+      { at: 1.75, kind: 'squeeze', rep: 1 },
+      { at: 3.25, kind: 'return', rep: 1 },
+      { at: 6.2, kind: 'ready', rep: 2 },
+      { at: 8.8, kind: 'pull', rep: 2 },
+      { at: 10.75, kind: 'squeeze', rep: 2 },
+      { at: 12.3, kind: 'return', rep: 2 },
+      { at: 14.75, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W4), front-on. The take ended with her arms up, so rep 2 is followed by rep 1's real
+  // lowering (spliced, 3-frame crossfade) and the loop ends where it starts. Benn's raw upload (09b202ea) is not used.
+  lateralRaise: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/2f17ce31-7e47-4c77-ba31-04a61a5b158c/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/2f17ce31-7e47-4c77-ba31-04a61a5b158c/thumbnail.jpg',
+    durationSec: 19.58,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.1, kind: 'lift', rep: 1 },
+      { at: 3.2, kind: 'squeeze', rep: 1 },
+      { at: 5.1, kind: 'lower', rep: 1 },
+      { at: 8.4, kind: 'ready', rep: 2 },
+      { at: 10.8, kind: 'lift', rep: 2 },
+      { at: 13.0, kind: 'squeeze', rep: 2 },
+      { at: 14.2, kind: 'lower', rep: 2 },
+      { at: 17.5, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2), side-on: a straight-arm plank held still for the whole clip (Benn kept it; the
+  // cue covers forearms or straight arms). A hold, so one phase.
+  plank: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/451d5867-189d-45d9-b72b-3a9c445a2602/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/451d5867-189d-45d9-b72b-3a9c445a2602/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
 } satisfies Record<string, ExerciseMedia>

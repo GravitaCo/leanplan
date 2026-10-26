@@ -324,7 +324,7 @@ for (const [q, want] of [
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
-  const ok = clips.length >= 8 && inWorkouts.length === 10 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
+  const ok = clips.length >= 8 && inWorkouts.length === 14 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
   const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
