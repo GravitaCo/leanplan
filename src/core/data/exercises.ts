@@ -929,7 +929,7 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '5 slow breaths each side', targets: ['balance'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 65 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
-    increment: ['time'],
+    increment: ['time'], video: DEMOS.treePose,
     cue: "Stand tall near a wall for support if you like. Shift onto one foot and place the other foot on your ankle, calf or inner thigh, hands at your chest or reaching up. Never press the foot against the side of the knee, and let the pose wobble rather than gripping.",
   },
   {

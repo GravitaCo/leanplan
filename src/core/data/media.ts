@@ -597,4 +597,13 @@ export const DEMOS = {
     hold: 'position',
     tempo: [{ at: 0, kind: 'squeeze' }],
   },
+  // Seedance 2.5 from a still copied from Benn's reference photo (demonstrator W10), front-on: already in
+  // tree pose, foot high on the inner thigh above the knee, arms overhead, still for the whole clip. A hold.
+  treePose: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/66fcb75a-26be-4acf-8ebe-40b6dd67d575/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/66fcb75a-26be-4acf-8ebe-40b6dd67d575/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
 } satisfies Record<string, ExerciseMedia>
