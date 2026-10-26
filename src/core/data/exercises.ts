@@ -263,7 +263,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     timeCost: { setupSec: 30, setSec: 65 }, skill: 1, impact: 'none', position: 'bench', unilateral: true, systemicCost: 'low', homeFriendly: true,
     increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }],
-    cue: "Rest one hand and knee on a bench with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
+    cue: "Rest one hand, or one hand and the same-side knee, on a bench and hinge forward with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
   },
   {
     id: 'cable-fly', n: 'Cable fly', modality: 'strength', log: 'weight-reps',

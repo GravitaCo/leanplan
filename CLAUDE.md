@@ -121,7 +121,10 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Exercise demo videos
 
-- Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`.
+- Generation prompts (Seedance) and clip tips: `docs/exercise-video-prompts.md`. Its house rules
+  apply to every clip: the camera angle is whatever shows the move best (never side-on by default),
+  and because clips are expensive, a prompt is checked (references when unsure, `fitness-workouts`
+  review) before it is generated, and no retake runs without Benn's OK.
 - Clips live in the **Bunny Stream** library (the MP4 fallback `play_720p.mp4`, 720×1280, with
   Bunny's `thumbnail.jpg` as the poster; the library refuses requests with no referrer, so a
   clip plays in the app but not as a bare link). `BUNNY_STREAM_API_KEY` and
