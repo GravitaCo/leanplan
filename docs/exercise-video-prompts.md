@@ -127,6 +127,9 @@ counter; they are there to show posture and set-up.
   - Have the `fitness-workouts` agent review the prompt.
   - For a machine, make and check a still of the start position before animating it.
   - A retake changes the one thing that failed and says so; no retake runs without Benn's OK.
+- **Keep the age range broad** (Benn, 26 Oct 2026). Pick demonstrators so each batch spans ages: at least
+  half in their 20s or 30s, one in their 40s or 50s, and no more than one aged 60 or over in a batch of five.
+  Tali is for every age, so the clips should look it, with no lean towards older or younger people.
 - **Prefer rewording the cue over a retake.** If a clip shows a safe, standard version of the
   move that differs from the cue (for example a row braced on one hand instead of hand and knee),
   widen the cue to cover it rather than spend credits on a retake.
