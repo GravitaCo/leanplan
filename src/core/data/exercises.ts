@@ -62,7 +62,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['machine'], difficulty: 'beginner', defaultRx: '2–3 × 12',
     pattern: 'isolation', primary: 'quads', care: ['knees'],
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'low', homeFriendly: false,
-    increment: ['next-stack'],
+    increment: ['next-stack'], video: DEMOS.legExtension,
     cue: "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging.",
   },
   {
@@ -78,8 +78,8 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '3 × 20–40 sec',
     pattern: 'core', primary: 'core', secondary: ['shoulders'],
     timeCost: { setupSec: 15, setSec: 30 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
-    increment: ['time', 'chain'], ladders: [{ chain: 'core-anti-extension', step: 2 }],
-    cue: "Elbows under shoulders, straight line from head to heels, squeeze glutes. Stop the set when the hips sag.",
+    increment: ['time', 'chain'], ladders: [{ chain: 'core-anti-extension', step: 2 }], video: DEMOS.plank,
+    cue: "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag.",
   },
   {
     id: 'barbell-bench-press', n: 'Barbell bench press', modality: 'strength', log: 'weight-reps',
@@ -123,7 +123,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'cable'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
     pattern: 'isolation', primary: 'shoulders',
     timeCost: { setupSec: 20, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
-    increment: ['next-weight', 'next-stack'],
+    increment: ['next-weight', 'next-stack'], video: DEMOS.lateralRaise,
     cue: "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum.",
   },
   {
@@ -150,7 +150,7 @@ export const EXERCISES: Exercise[] = [
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     care: ['lower-back'], gentler: 'chest-supported-row',
     timeCost: { setupSec: 45, setSec: 40 }, skill: 1, impact: 'none', position: 'seated', systemicCost: 'medium', homeFriendly: false,
-    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }],
+    increment: ['next-stack'], ladders: [{ chain: 'h-pull-gym', step: 1 }], video: DEMOS.seatedCableRow,
     cue: "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back.",
   },
   {
@@ -158,7 +158,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10',
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps', 'shoulders'],
     timeCost: { setupSec: 45, setSec: 35 }, skill: 1, impact: 'none', position: 'bench', systemicCost: 'medium', homeFriendly: true,
-    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 1 }],
+    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 1 }], video: DEMOS.chestSupportedRow,
     cue: "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking.",
   },
   {
@@ -177,6 +177,14 @@ export const EXERCISES: Exercise[] = [
     timeCost: { setupSec: 20, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['next-weight', 'plate-2.5'],
     cue: "Elbows pinned to your sides, curl without swinging the body. Lower slowly. Don't let the elbows drift forward.",
+  },
+  {
+    id: 'cable-curl', n: 'Cable biceps curl', modality: 'strength', log: 'weight-reps',
+    equipment: ['cable'], difficulty: 'beginner', defaultRx: '2–3 × 12–15',
+    pattern: 'isolation', primary: 'biceps', secondary: ['forearms'], video: DEMOS.cableCurl,
+    timeCost: { setupSec: 30, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: false,
+    increment: ['next-stack'],
+    cue: "Stand facing a low cable, holding the handle palms up with your elbows at your sides. Curl it up towards your shoulders, keeping the elbows still, then lower slowly until your arms are straight. Don't lean back or let the elbows drift forward.",
   },
   {
     id: 'cable-crunch', n: 'Cable crunch', modality: 'strength', log: 'weight-reps',
@@ -245,7 +253,7 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 8–10 each side',
     pattern: 'lunge', primary: 'quads', secondary: ['glutes'], care: ['knees'], gentler: 'split-squat',
     timeCost: { setupSec: 20, setSec: 60 }, skill: 1, impact: 'low', position: 'standing', unilateral: true, systemicCost: 'medium', homeFriendly: true,
-    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }],
+    increment: ['next-weight', 'reps'], props: ['step'], ladders: [{ chain: 'lunge-home', step: 1 }, { chain: 'lunge-loaded', step: 1 }], video: DEMOS.stepUp,
     cue: "Use a sturdy step or bench no higher than your knee, with your whole foot on it. Push through the front heel to stand up tall, then lower the other foot back to the floor slowly, keeping the working foot on the step. Don't push off the back foot to do the work.",
   },
   {
@@ -262,8 +270,8 @@ export const EXERCISES: Exercise[] = [
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '3 × 10 each side',
     pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps'],
     timeCost: { setupSec: 30, setSec: 65 }, skill: 1, impact: 'none', position: 'bench', unilateral: true, systemicCost: 'low', homeFriendly: true,
-    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }],
-    cue: "Rest one hand and knee on a bench with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
+    increment: ['next-weight'], ladders: [{ chain: 'h-pull-gym', step: 2 }], video: DEMOS.oneArmDbRow,
+    cue: "Rest one hand, or one hand and the same-side knee, on a bench and hinge forward with your back flat. Let the dumbbell hang, then row it towards your hip, squeezing the shoulder blade, and lower slowly. Don't twist your body to heave the weight up.",
   },
   {
     id: 'cable-fly', n: 'Cable fly', modality: 'strength', log: 'weight-reps',
@@ -887,8 +895,8 @@ export const EXERCISES: Exercise[] = [
     equipment: [], difficulty: 'beginner', defaultRx: '8–10 slow rounds', targets: ['spine', 'breath'],
     pattern: 'mobility',
     timeCost: { setupSec: 10, setSec: 55 }, skill: 1, impact: 'none', position: 'floor', systemicCost: 'low', homeFriendly: true,
-    increment: ['reps'],
-    cue: "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
+    increment: ['reps'], video: DEMOS.catCow,
+    cue: "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms.",
   },
   {
     id: 'low-lunge', n: 'Low lunge', modality: 'yoga', log: 'hold', perSide: true,
@@ -921,15 +929,15 @@ export const EXERCISES: Exercise[] = [
     care: ['knees'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 25 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
-    increment: ['time'],
-    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Don't arch your lower back; keep your ribs soft and your knees behind your toes as much as feels natural.",
+    increment: ['time'], video: DEMOS.chairPose,
+    cue: "Stand with feet together or hip-width. Bend your knees and sit back as if onto a chair, arms reaching up or hands at your chest, weight towards your heels. Go only as low as you can hold with a long back. Don't arch your lower back; keep your ribs soft and your knees pointing the same way as your toes.",
   },
   {
     id: 'tree-pose', n: 'Tree pose', modality: 'yoga', log: 'hold', perSide: true,
     equipment: [], difficulty: 'beginner', defaultRx: '5 slow breaths each side', targets: ['balance'],
     pattern: 'mobility',
     timeCost: { setupSec: 5, setSec: 65 }, skill: 2, impact: 'none', position: 'standing', unilateral: true, systemicCost: 'low', homeFriendly: true,
-    increment: ['time'],
+    increment: ['time'], video: DEMOS.treePose,
     cue: "Stand tall near a wall for support if you like. Shift onto one foot and place the other foot on your ankle, calf or inner thigh, hands at your chest or reaching up. Never press the foot against the side of the knee, and let the pose wobble rather than gripping.",
   },
   {

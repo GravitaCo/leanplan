@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { kcalHidden } from '@/data/consent'
+import { hasConsent, kcalHidden } from '@/data/consent'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
@@ -11,6 +11,10 @@ import {
 import { MEAL_LABEL, entryAmount, lastFatFor, lastUse } from '@/core/domain/insights'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
+import { shareRowState } from '@/core/domain/sharedProduct'
+import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
+import { ShareProductRow } from './SharedProduct'
 
 type Mode = Portion['mode']
 const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
@@ -19,11 +23,17 @@ const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
  * Pick how much. Defaults to what the user had last time (learned portion), asks the
  * cooking-fat question only for foods usually cooked in fat, and previews the ± margin.
  */
-export function PortionView({ food, custom, meal, setMeal, onBack, onClose, animate }: {
+export function PortionView({ food, custom, meal, setMeal, onBack, onClose, animate, onShare, shareBusy }: {
   food: Food; custom: boolean; meal: MealSlot; setMeal: (m: MealSlot) => void
   onBack?: () => void; onClose: () => void; animate: boolean
+  /** "Share this product" (sp-7): offered on a saved food that qualifies (shareRowState) */
+  onShare?: () => void
+  /** its Open Food Facts lookup is running */
+  shareBusy?: boolean
 }) {
   const data = useStore((s) => s.data)
+  const online = useStore((s) => s.online)
+  const underAge = useStore((s) => !!s.underAge)
   const logEntries = useStore((s) => s.logEntries)
   const profile = data.profile
   const gentle = kcalHidden(data)
@@ -57,6 +67,13 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     logEntries(fatEntry ? [entry, fatEntry] : [entry], `${food.n} added`)
     onClose()
   }
+
+  // the saved food as it is now: its share row goes once it's shared or Open Food Facts has it
+  const saved = custom && food.id ? (data.customFoods || []).find((f) => f.id === food.id) : undefined
+  // a read is queued only with a yes to health data (queueSharedProduct), and no photo leaves the
+  // phone while an under-18 age is on screen
+  const shareOk = SHARED_PRODUCTS_ENABLED && LABEL_SCAN_ENABLED && hasConsent(data, 'health') && !underAge
+  const shareRow = saved ? shareRowState(saved, { enabled: shareOk, online }) : 'hidden'
 
   const maxG = Math.max(50, Math.round(food.g * 4))
   return (
@@ -151,6 +168,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         </div>
       </div>
       <button className="btn" onClick={commit} disabled={!entry.grams}>Add to {MEAL_LABEL[meal]}</button>
+      {shareRow !== 'hidden' && onShare && <ShareProductRow state={shareRow} busy={shareBusy} onShare={onShare} />}
     </Sheet>
   )
 }

@@ -5,6 +5,7 @@ import { liveConsentDue, pendingCloudClear, needsReupload, markReupload, pushCon
   consentLetsSync, REASK_AFTER_MS, existingConsentDue, grantHealth, healthDeclined, healthSyncPaused, holdHealth, pauseHealthSync, quietNumbers, settleHealthPause, unconsentedCopyLine, HEALTH_FIELDS, healthWhy } from '@/data/consent'
 import { deleteAccount, markReauth, sessionSignedInRecently, takeReauthReturn, tokenMatchesOwner, wipeStorage, DELETE_CONFIRM as CLIENT_CONFIRM } from '@/data/account'
 import { USER_TABLES, DELETE_CONFIRM, authTime, jwtPayload, signedInRecently } from '../supabase/functions/_shared/account'
+import { SHARED_TABLES } from '../supabase/functions/_shared/shared-product'
 import { connectionLabel, connectionState } from '@/core/domain/connection'
 import { ensureMeta, freshForAccount, keepForAccount, loadStateFrom, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { pushDirty, pullAll, clearCloudLog } from '@/data/sync'
@@ -208,8 +209,18 @@ async function deletion(): Promise<void> {
   const sql = [readFileSync('docs/security-rls.sql', 'utf8'), ...readdirSync('docs/migrations').map((x) => readFileSync('docs/migrations/' + x, 'utf8'))].join('\n')
   const created = [...sql.matchAll(/create table if not exists public\.(\w+)/g)].map((x) => x[1])
   const locked = (sql.match(/array\['([^\]]+)'\]/) || [])[1]?.split("','") || []
-  const need = [...new Set([...created, ...locked])]
+  // the shared product list holds no one's rows (no user id at all): never deleted per account
+  const shared = SHARED_TABLES as readonly string[]
+  const need = [...new Set([...created, ...locked])].filter((t) => !shared.includes(t))
   const gap = need.filter((t) => !(USER_TABLES as readonly string[]).includes(t))
+  checks.push(['shared tables: created in the migrations, never in USER_TABLES', shared.every((t) => created.includes(t) && !(USER_TABLES as readonly string[]).includes(t))])
+  const spSql = readFileSync('docs/migrations/2026-10-10-shared-products.sql', 'utf8')
+  const tableSql = (t: string) => (spSql.match(new RegExp('create table if not exists public\\.' + t + ' \\(([\\s\\S]*?)\\n\\);')) || [])[1] || ''
+  // the one uuid allowed is the row's own random id (gen_random_uuid: no sequence, no day signal)
+  const ownId = 'id uuid primary key default gen_random_uuid(),'
+  checks.push(['shared tables: no user id, uuid or timestamp column (dates only; the row id is random)', shared.every((t) => { const b = tableSql(t).replace(ownId, ''); return !!b && !/user_id|auth\.uid|uuid|timestamptz|created_at|ip\b/i.test(b) })])
+  checks.push(['shared tables: not in the withdrawal clear or the purge (nothing of anyone\'s to clear)', !/(products|product_quota|product_sigs_seen)/.test(readFileSync('docs/migrations/2026-09-28-health-consent-server.sql', 'utf8') + readFileSync('docs/migrations/2026-09-28-unconsented-purge.sql', 'utf8'))])
+  checks.push(['shared tables: listed in docs/security-rls.sql §6', shared.every((t) => readFileSync('docs/security-rls.sql', 'utf8').includes('  ' + t + ' '))])
   checks.push(['delete-account deletes from every user table in the schema docs' + (gap.length ? ' (missing ' + gap.join() + ')' : ''), need.length >= 9 && gap.length === 0])
   checks.push(['client and function agree on the confirm phrase', CLIENT_CONFIRM === DELETE_CONFIRM])
   // re-confirmed identity: the verified token's sign-in time (amr), never iat

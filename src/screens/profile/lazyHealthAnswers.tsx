@@ -11,6 +11,7 @@ export const preloadHealthAnswers = (): void => { load().catch(() => {}) }
 
 const Screen = lazy(() => load().then((m) => ({ default: m.HealthAnswersScreen })))
 const Check = lazy(() => load().then((m) => ({ default: m.PregnancyCheckSheet })))
+const Medical = lazy(() => load().then((m) => ({ default: m.MedicalSheet })))
 
 class Quiet extends Component<{ children: ReactNode; onFail?: () => void }, { failed: boolean }> {
   state = { failed: false }
@@ -25,4 +26,9 @@ export function LazyHealthAnswersScreen(p: ComponentProps<typeof Screen>) {
 
 export function LazyPregnancyCheckSheet(p: ComponentProps<typeof Check>) {
   return <Quiet><Suspense fallback={null}><Check {...p} /></Suspense></Quiet>
+}
+
+/** `onFail`: the chunk couldn't load, so the question never showed (the re-ask isn't marked as asked) */
+export function LazyMedicalSheet({ onFail, ...p }: ComponentProps<typeof Medical> & { onFail?: () => void }) {
+  return <Quiet onFail={onFail ?? p.onClose}><Suspense fallback={null}><Medical {...p} /></Suspense></Quiet>
 }

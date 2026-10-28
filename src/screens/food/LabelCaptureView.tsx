@@ -6,10 +6,14 @@
  *
  * Anything but a good read (offline, not signed in, slow, the daily cap, an error) opens the
  * confirm view to type the label in, so this is never a dead end. Loaded only when opened.
+ *
+ * For "Share this product" (`forShare`, sp-8b) it opens with one line saying why, and offers no
+ * "Type it in instead" (the shared list takes label-photo reads only); a failed read goes back to
+ * the food (`onFail`), and nothing is shared.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import { consentLetsSync } from '@/data/consent'
+import { consentLetsSync, hasCurrentConsent } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
@@ -18,6 +22,7 @@ import { readLabel, type LabelReadResult } from '@/data/labelReader'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { scaledCanvas, startRearCamera, stopCamera, type CameraFail } from './camera'
+import { SHARE_LABEL_NOTE } from './SharedProduct'
 
 /** Long edge of the photo that's sent: enough for small print, well under the 1.5 MB cap. */
 const PANEL_EDGE = 1600
@@ -26,7 +31,9 @@ const FRONT_EDGE = 1024
 const MAX_BYTES = 1_500_000
 const CHECK_EVERY_MS = 350
 
-export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic’s AI service to read the numbers, under their data policy. You can check the numbers before anything is saved.'
+/** Compliance's wording (register item 24, Oct 2026): Anthropic acts on Tali's instructions under
+ *  the DPA. Changing it bumps CONSENT_VERSIONS['label-photo'] (src/data/consent.ts). */
+export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.'
 export const GUIDANCE = 'Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.'
 
 type Shot = { blob: Blob; url: string; issue: QualityIssue | null }
@@ -73,7 +80,7 @@ const base64 = (b: Blob) => new Promise<string>((res, rej) => {
   r.readAsDataURL(b)
 })
 
-export default function LabelCaptureView({ onBack, onClose, animate, barcode, base, onDone }: {
+export default function LabelCaptureView({ onBack, onClose, animate, barcode, base, onDone, forShare, onFail }: {
   onBack?: () => void; onClose: () => void; animate: boolean
   /** a barcode scanned in the same session: saved with the food */
   barcode?: string
@@ -81,11 +88,15 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   base?: ScanDraft
   /** the confirm view's starting point; `notice` when the photo couldn't be read */
   onDone: (draft: ScanDraft, notice?: string) => void
+  /** opened from a saved food's "Share this product" (sp-8b) */
+  forShare?: boolean
+  /** share mode: the read failed (why, as a short line) */
+  onFail?: (note: string) => void
 }) {
   const customFoods = useStore((s) => s.data.customFoods)
-  const hasConsent = useStore((s) => s.hasConsent)
   const grantConsent = useStore((s) => s.grantConsent)
-  const [step, setStep] = useState<Step>(() => (hasConsent('label-photo') ? 'panel' : 'consent'))
+  // the notice again when the yes was to older wording (CONSENT_VERSIONS['label-photo'])
+  const [step, setStep] = useState<Step>(() => (hasCurrentConsent(useStore.getState().data, 'label-photo') ? 'panel' : 'consent'))
   const [panel, setPanel] = useState<Shot | null>(null)
   const [front, setFront] = useState<Shot | null>(null)
   const [camera, setCamera] = useState<'starting' | 'on' | CameraFail>('starting')
@@ -180,15 +191,17 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       if (useStore.getState().underAge) throw new Error('under age')
       // the server checks the label-photo consent itself: send a yes given moments ago first
       await useStore.getState().flushConsents()
-      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }, { signal: ctl.signal })
+      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}), ...(barcode ? { barcode } : {}) }, { signal: ctl.signal })
     } catch {
       res = { status: 'error' }
     }
     if (!aliveRef.current) return
     if (res.status === 'ok') {
-      onDone(draftFromLabel(res.read, { barcode, base, taken: taken() }))
+      const draft = draftFromLabel(res.read, { barcode, base, taken: taken() })
+      onDone(res.share ? { ...draft, share: res.share } : draft)
       return
     }
+    if (forShare && onFail) { onFail(FAIL_NOTE[res.status]); return }
     const then = base
       ? ' The Open Food Facts figures are below: check them against your pack.'
       : res.status === 'unavailable' ? ' Type it in instead.' : ' Type the numbers from the pack below.'
@@ -208,7 +221,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
         </div>
         <div className="stack">
           <button className="btn tinted" onClick={() => { grantConsent('label-photo'); setStep('panel') }}>OK, take a photo</button>
-          <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>
+          {!forShare && <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>}
         </div>
       </Sheet>
     )
@@ -258,7 +271,8 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   return (
     <Sheet title={title} onClose={onClose} animate={animate}
       left={isFront ? <BackButton onClick={() => setStep('review')} /> : left}>
-      <div className="foot" style={{ padding: '0 4px 10px' }}>{isFront ? 'Fit the front of the pack in the frame, with the name clear.' : GUIDANCE}</div>
+      {forShare && !isFront && <div className="note" role="status" style={{ marginTop: 0 }}><Icon name="info" size={17} /><span>{SHARE_LABEL_NOTE}</span></div>}
+      <div className="foot" style={{ padding: forShare && !isFront ? '12px 4px 10px' : '0 4px 10px' }}>{isFront ? 'Fit the front of the pack in the frame, with the name clear.' : GUIDANCE}</div>
       {/* always mounted, so the camera can attach as soon as it opens */}
       <div className="scanbox tall" hidden={!showLive}>
         <video ref={videoRef} playsInline muted autoPlay aria-label="Camera view" />
@@ -280,7 +294,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
           <input type="file" accept="image/*" className="vh" aria-label={isFront ? 'Choose a photo of the front of the pack' : 'Choose a photo of the nutrition table'}
             onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
         </label>
-        {!isFront && (
+        {!isFront && !forShare && (
           <button className="li" onClick={() => typeInstead()}>
             <div className="m"><div className="t">Type it in instead</div></div><Chevron />
           </button>

@@ -25,7 +25,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "leg-extension", "n": "Leg extension (machine)",
         "t": "2–3 × 12",
-        "cue": "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging."
+        "cue": "Pad on your lower shins. Straighten the legs smoothly, squeeze the thigh at the top, lower under control. No kicking or swinging.",
+        "video": DEMOS.legExtension
       },
       {
         "id": "calf-raise", "n": "Seated or standing calf raise",
@@ -35,7 +36,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "plank", "n": "Plank",
         "t": "3 × 20–40 sec",
-        "cue": "Elbows under shoulders, straight line from head to heels, squeeze glutes. Stop the set when the hips sag."
+        "cue": "On your forearms with elbows under shoulders, or on straight arms with hands under shoulders. Make a straight line from head to heels and squeeze your glutes. Forearms are easier on the wrists. Stop the set when the hips sag.",
+        "video": DEMOS.plank
       }
     ]
   },
@@ -63,7 +65,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "lateral-raise", "n": "Lateral raise",
         "t": "2–3 × 12–15",
-        "cue": "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum."
+        "cue": "Slight bend in the elbows, raise to shoulder height leading with the elbows. Light weight, no momentum.",
+        "video": DEMOS.lateralRaise
       },
       {
         "id": "triceps-pushdown", "n": "Triceps rope pushdown (cable)",
@@ -85,12 +88,14 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "seated-cable-row", "n": "Seated cable row",
         "t": "3 × 10–12",
-        "cue": "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back."
+        "cue": "Sit tall, slight knee bend. Pull the handle to your lower ribs, squeeze the shoulder blades. Don't heave with your back.",
+        "video": DEMOS.seatedCableRow
       },
       {
         "id": "chest-supported-row", "n": "Chest-supported dumbbell row",
         "t": "3 × 10",
-        "cue": "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking."
+        "cue": "Chest on an inclined bench, let the dumbbells hang. Row them to your hips, squeezing the shoulder blades. Keep your chest on the pad, no jerking.",
+        "video": DEMOS.chestSupportedRow
       },
       {
         "id": "face-pull", "n": "Face pull (cable)",
@@ -157,7 +162,7 @@ export const SWAPS: Record<SwapId, WorkoutTemplate & { mins: string; cardioType:
       { "id": "shoulder-rolls", "n": "Shoulder rolls", "t": "10 each way",
         "cue": "Stand or sit tall with your arms relaxed. Lift your shoulders up to your ears, roll them back and down, then reverse the direction. Keep it slow and smooth, and don't shrug up hard or rush." },
       { "id": "cat-cow", "n": "Cat–cow", "t": "1 × 10 slow reps",
-        "cue": "On hands and knees, with hands under shoulders and knees under hips. Breathe out and round your back towards the ceiling, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms." },
+        "cue": "On hands and knees, with hands under shoulders and knees under hips. Keep your hips over your knees and let only your spine move. Breathe out and round your back towards the ceiling, letting your head drop, then breathe in and let your belly drop gently as you look slightly forward. Move within a comfortable range, not to your limit. If your wrists complain, rest on your forearms." },
       { "id": "half-kneeling-hip-flexor", "n": "Half-kneeling hip flexor stretch", "t": "45 sec each side",
         "cue": "Kneel on one knee with the other foot in front, and fold the mat under the knee for padding. Tuck your tailbone under, then shift your hips forward until you feel a stretch at the front of the back hip. Keep your body upright and don't arch your lower back to go further. If kneeling is uncomfortable, do it standing in a long stride." },
       { "id": "supine-hamstring-stretch", "n": "Lying hamstring stretch", "t": "45 sec each side",

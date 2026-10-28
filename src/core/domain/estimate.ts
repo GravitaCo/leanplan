@@ -16,7 +16,7 @@ import type {
 } from '@/core/types'
 import { r1 } from './date'
 import { amountText, roundAmount, scaleFood, unitOf } from './nutrition'
-import { sourceErr } from '@/core/data/sources'
+import { isSharedSource, sourceErr } from '@/core/data/sources'
 
 /** Extra relative error when the cooking-fat question is skipped: we don't add fat we
  *  weren't told about, we just say we're less sure. */
@@ -42,6 +42,15 @@ export const CAPTURE_LABEL: Record<CaptureMethod, string> = {
   quick: 'Quick estimate',
   fat: 'Cooking fat',
 }
+
+/** Labels copied by hand (or read from a photo) are a little less certain than the curated database. */
+export const OWN_LABEL_ERR = 0.03
+
+/**
+ * The margin for a food from Tali's shared list: the capture margin, the label margin and the
+ * tier's extra (its source's err) all add (nutrition-accuracy, Oct 2026).
+ */
+export const sharedErr = (how: CaptureMethod, tierExtra: number): number => +(CAPTURE_ERR[how] + OWN_LABEL_ERR + tierExtra).toFixed(2)
 
 /** Entries logged before capture metadata existed get a middling default. */
 const LEGACY_ERR = 0.12
@@ -170,7 +179,10 @@ export function buildEntry(
   const s = scaleFood(food, grams)
   // labels copied by hand are a little less certain than the curated database
   // menu-label sources (restaurant chains) are wider than a weighed portion can make them
-  const err = +Math.max(CAPTURE_ERR[how] + (opts.custom ? 0.03 : 0), sourceErr(food)).toFixed(2)
+  // a saved shared-list product adds its tier's extra margin to both (margins add)
+  const err = isSharedSource(food.src)
+    ? sharedErr(how, sourceErr(food))
+    : +Math.max(CAPTURE_ERR[how] + (opts.custom ? OWN_LABEL_ERR : 0), sourceErr(food)).toFixed(2)
   const entry: LoggedFood = { n: food.n, grams, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f), meal, src: opts.custom ? 'custom' : 'db', how, err }
   if (unit !== 'g') entry.unit = unit
   if (portion.mode === 'hand') entry.hand = { type: portion.type, count: portion.count }

@@ -17,7 +17,7 @@ import {
   progressLine, reviewRows, sleepWords, stressWords, weightSub,
 } from '@/core/domain/loopCopy'
 import { suggestedTargets } from '@/core/domain/nutrition'
-import { asksMedical, profileRouting } from '@/core/domain/onboarding'
+import { profileRouting } from '@/core/domain/onboarding'
 import { GOAL_OPTIONS } from '@/core/domain/wizard'
 import { PROTEIN_RANGE_PER_KG } from '@/core/domain/targets'
 
@@ -328,7 +328,6 @@ function goal(): void {
     ['maintain is a goal in onboarding (ml-c1)', GOAL_OPTIONS.some(([g, t]) => g === 'maintain' && t === 'Keep it steady')],
     ['energy at maintenance', ok && (t as any).adjustPct === 0 && Math.abs((t as any).kcal - (t as any).maint) <= 50, t],
     ['protein 1.4 g/kg inside 1.2 to 1.6', ok && (t as any).p === 112 && PROTEIN_RANGE_PER_KG.maintain.low === 1.2 && PROTEIN_RANGE_PER_KG.maintain.high === 1.6],
-    ['the medical question is asked for maintain', asksMedical('maintain') && asksMedical('lose-fat') && !asksMedical('build-muscle')],
     ['rangeStep for maintain never cuts more than 150', (() => { const s = state({ goal: 'maintain' }, 2900); const x = rangeStep(s, 'less', 80, loopSafety(s, 80, true), TODAY); return !x || x.kcal - x.suggested <= 150 })()],
     ['maintain steps never stack past ±150 of the anchor, either way', (() => { const s = state({ goal: 'maintain' }, 2500); const sf = loopSafety(s, 80, true); const up = rangeStep(s, 'more', 80, sf, TODAY, undefined, 2400); const dn = rangeStep({ ...s, target: { ...s.target, kcal: 2300 } }, 'less', 80, sf, TODAY, undefined, 2400); return up?.suggested === 2550 && dn?.suggested === 2250 && rangeStep({ ...s, target: { ...s.target, kcal: 2550 } }, 'more', 80, sf, TODAY, undefined, 2400) === null })()],
   ])

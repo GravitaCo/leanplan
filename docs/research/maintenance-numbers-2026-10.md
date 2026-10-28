@@ -57,7 +57,7 @@ about 4 weeks against a range, never one week against the last.
    or *currently* taking a GLP-1: no eat-less suggestions and a GP note, but keep the protein range.
    Store outcomes only (an additive outcome such as `protein: 'minimum'` still goes past
    `compliance`). Today a person tapering who ticks the GLP-1 item loses the protein anchor, and
-   because `asksMedical` is true only for lose-fat, someone with kidney disease who picks
+   because `asksMedical` is true only for lose-fat (superseded 23 Oct 2026 by ml-e5: the question is asked for every goal), someone with kidney disease who picks
    build-muscle or strength is never asked and gets 1.6 to 2.2 g/kg.
 7. **Mind and food pattern lines.** Sleep to hunger and logged intake has decent evidence; stress to
    intake only as the person's own pattern (general evidence weak, g = 0.11); no mood lines; never

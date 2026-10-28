@@ -10,6 +10,8 @@
 import type { Food, FoodCategory, FoodRef } from '@/core/types'
 import { checkPer100 } from './checks'
 import type { LabelInfo } from './label'
+import type { ShareToken } from '../../../supabase/functions/_shared/shared-product'
+import type { SharedInfo } from './sharedProduct'
 
 /* ---------------- barcodes ---------------- */
 
@@ -160,10 +162,18 @@ export interface ScanDraft {
   usLabel: boolean
   /** the year OFF last saw an edit, when that's more than three years ago */
   staleYear?: number
-  /** where the numbers came from: Open Food Facts (the default) or the user's photo of the label */
-  source?: 'off' | 'label'
+  /** where the numbers came from: Open Food Facts (the default), the user's photo of the label,
+   *  or Tali's shared product list */
+  source?: 'off' | 'label' | 'shared'
   /** a label photo's read: the texts, the suggested fix and what to highlight (core/domain/label.ts) */
   label?: LabelInfo
+  /** a label read signed for the shared list (ai-read-label): shared only if saved unchanged */
+  share?: ShareToken
+  /** Open Food Facts answered "not found" for this barcode (or it's on Tali's shared list, which
+   *  never holds OFF products): only then may a label read join the shared list */
+  offMissing?: boolean
+  /** found on Tali's shared list: its tier and counts (core/domain/sharedProduct.ts) */
+  shared?: SharedInfo
 }
 
 const KJ_PER_KCAL = 4.184
@@ -451,12 +461,13 @@ export function linkableFood(foods: Food[], name: string): Food | undefined {
 }
 
 /** The food to save once the user has confirmed the values (per-100 values kept exactly). */
-export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; meal?: boolean; cat?: FoodCategory; g: number; source?: 'off' | 'label'; ref?: FoodRef }): Omit<Food, 'id'> {
+export function foodFromConfirmed(d: { barcode: string; name: string; values: LabelValues; ml: boolean; kind: FoodKind; meal?: boolean; cat?: FoodCategory; g: number; source?: 'off' | 'label'; ref?: FoodRef; sharedSrc?: string }): Omit<Food, 'id'> {
   const v = d.values
-  // a label photo is the user's own pack: cited like a typed label, with the barcode when there was one
+  // a label photo is the user's own pack: cited like a typed label, with the barcode when there was one.
+  // A shared-list product saved unchanged keeps its tier's source (`shared-…:<barcode>`)
   const food: Omit<Food, 'id'> = {
     n: d.name.trim(), k: v.k ?? 0, p: v.p ?? 0, c: v.c ?? 0, f: v.f ?? 0,
-    g: d.g > 0 ? d.g : 100, ml: d.ml, src: d.source === 'label' ? 'label' : 'off:' + d.barcode,
+    g: d.g > 0 ? d.g : 100, ml: d.ml, src: d.sharedSrc ?? (d.source === 'label' ? 'label' : 'off:' + d.barcode),
   }
   if (d.barcode) food.barcode = d.barcode
   // the pack's own per-serving line: one serving then logs exactly what the pack prints

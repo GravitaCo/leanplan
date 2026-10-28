@@ -27,7 +27,7 @@ export const COPY: Partial<Record<StepId, ScreenCopy>> = {
   lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can update this by redoing setup.' },
   wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides your weight, never suggests eating less and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more. You can change it in Profile any time.' },
   body: { title: 'About your body', why: 'your height and sex set your energy needs.', note: 'Sex changes the energy estimate a little. "Prefer not to say" uses a middle estimate with a wider range.' },
-  medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how eating less affects you. We keep what it means for your plan, not the condition.' },
+  medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how much food and protein are right for you, whatever your goal. We keep only what your answer changes in your plan, not which one you picked, though that can still hint at it. You can see, change or clear it in Profile.' },
   weight: { title: 'What do you weigh?', line: 'Roughly is fine. It stays private.', hint: 'Drag to set. Skip it and we won’t show calorie numbers yet.', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tali never shows it back.' },
   move: { title: 'How much do you move on a normal day?', lead: 'Not counting workouts.', why: 'it sets your everyday energy use. Workouts are counted separately.' },
   handoff: { title: 'How you like to train', lead: 'So your week fits your life. You can change any of it later.' },
@@ -105,7 +105,10 @@ export const NOTES = {
   wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and nothing asking you to eat less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
   pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
-  medical: { eyebrow: 'Your health', title: 'Food stays at maintenance for now', lead: 'With what you’ve told us, eating less is best planned with your GP or care team. Tali keeps food at maintenance and won’t suggest a high-protein target. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
+  /** Protein split 2 (ml-e5d): kidney disease, any mix with it, and answers from before the split */
+  medical: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat, or to how much protein you aim for, are best planned with your GP or care team. Tali keeps your food range at maintenance and shows protein as the everyday amount for adults. Both are guides, not numbers to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
+  /** Protein split 1 (ml-e5c): diabetes or a weight-loss injection, no kidney tick; never names a medicine */
+  medicalNoDeficit: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat are best planned with your GP or care team. Tali keeps your food range at maintenance. It’s a guide, not a number to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
 }
 
 const kc = (n: number) => n.toLocaleString('en-GB')
@@ -258,6 +261,8 @@ export const HEALTH_ANSWERS = {
   does: {
     pregnancy: 'Food stays at maintenance with no calorie number, and training stays gentle.',
     medical: 'Food stays at maintenance, with no high-protein target.',
+    /** GAP: no board line for Protein split 1; the approved note title (ml-e5c) */
+    medicalNoDeficit: 'Your food range stays at maintenance.',
     readiness: 'Your plan starts with lighter, low-impact sessions.',
     /** Yes: the ob9-1 card */
     wellbeing: 'No calorie target and no weight, and protein is shown in words.',

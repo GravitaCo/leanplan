@@ -202,6 +202,25 @@ async function storeTests(fakeServer: FakeServer, fresh: () => { customFoods: Fo
     ['keepName keeps the saved name', kept2?.n === mine.n && kept2.k === 431 && kept2._dirty === true],
     ['an unknown id changes nothing', useStore.getState().updateCustomFood('00000000-0000-4000-8000-000000000000', mine as Omit<Food, 'id'>) === null],
   ])
+
+  // "Share this product" is done once a read is queued: the row doesn't come back, on the device only
+  load()
+  const marked = useStore.getState().markFoodShared(ID1)
+  const markedClean = food(ID1)?._dirty === false
+  const upShared = useStore.getState().updateCustomFood(ID1, { ...scanned, k: 432 } as Omit<Food, 'id'>, true)
+  load()
+  useStore.setState((st) => { st.data.customFoods.find((f) => f.id === ID2)!.shareDone = 'shared' })
+  useStore.getState().mergeCustomFoods(ID1, ID2, true)
+  const tookBarcode = food(ID1)
+  load()
+  useStore.setState((st) => { st.data.customFoods.find((f) => f.id === ID2)!.shareDone = 'shared' })
+  useStore.getState().mergeCustomFoods(ID1, ID2, false)
+  report('store: shared once', [
+    ['markFoodShared marks the food, not dirty (nothing to upload)', marked?.shareDone === 'shared' && markedClean],
+    ['an update keeps it', upShared?.shareDone === 'shared'],
+    ['a merge that takes the other barcode takes its "shared" too', tookBarcode?.barcode === scanned.barcode && tookBarcode?.shareDone === 'shared'],
+    ['a merge that keeps its own barcode keeps its own state', food(ID1)?.barcode === mine.barcode && food(ID1)?.shareDone === undefined],
+  ])
 }
 
 /** The phone logs on Tuesday (newer); the tablet, offline, merges the two foods; the tablet then

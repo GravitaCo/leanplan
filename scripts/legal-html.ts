@@ -12,6 +12,7 @@ import { cookiePolicy } from '@/core/legal/cookies'
 import { sitePrivacy, siteTerms, siteCookies } from '@/core/legal/website'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 /** escape, then turn URLs, emails and bare domains we name into links */
@@ -36,10 +37,11 @@ const site = process.argv.includes('--site')
 const docs: Record<LegalDocId, LegalDoc> = site
   ? { privacy: sitePrivacy(), terms: siteTerms(), cookies: siteCookies() }
   : (() => {
-      const flags = { onboarding: ONBOARDING_ENABLED, mind: WELLBEING_ENABLED }
+      // products: label photos and the shared product list (SHARED_PRODUCTS_ENABLED follows LABEL_SCAN_ENABLED)
+      const flags = { onboarding: ONBOARDING_ENABLED, mind: WELLBEING_ENABLED, products: LABEL_SCAN_ENABLED }
       return { privacy: privacyPolicy({ ...flags, suppNames: SUPP_NAMES_ENABLED }), terms: termsOfUse(flags), cookies: cookiePolicy(flags) }
     })()
-console.log(site ? 'Interim website-only versions' : `Full app + website versions (onboarding ${ONBOARDING_ENABLED ? 'on' : 'off'}, Mind ${WELLBEING_ENABLED ? 'on' : 'off'}, supplement names ${SUPP_NAMES_ENABLED ? 'on' : 'off'})`)
+console.log(site ? 'Interim website-only versions' : `Full app + website versions (onboarding ${ONBOARDING_ENABLED ? 'on' : 'off'}, Mind ${WELLBEING_ENABLED ? 'on' : 'off'}, supplement names ${SUPP_NAMES_ENABLED ? 'on' : 'off'}, label photos and shared products ${LABEL_SCAN_ENABLED ? 'on' : 'off'})`)
 const items = (Object.keys(docs) as LegalDocId[]).map((id) => ({
   id,
   name: docs[id].title,

@@ -30,6 +30,8 @@ export type AskId =
   | 'food-ask'
   /** the 12-week pregnancy "Does this still apply?" */
   | 'pregnancy-reask'
+  /** the one-time medical question for a 'flagged' answer from before the split (medicalReaskDue) */
+  | 'medical-reask'
   /** the Food card's "Worth a quick check" list (optional precision) */
   | 'quick-check'
   /** the Mind card's "Check in" prompt before today's check-in */
@@ -70,6 +72,7 @@ const ASKS: Record<AskId, AskMeta> = {
   'burn-note': { rank: 'rest', budgeted: true },
   'food-ask': { rank: 'rest', budgeted: true, food: true, ownSchedule: true },
   'pregnancy-reask': { rank: 'rest', budgeted: true, food: true, ownSchedule: true },
+  'medical-reask': { rank: 'rest', budgeted: true, food: true, ownSchedule: true },
   'quick-check': { rank: 'rest', budgeted: false, food: true, ownSchedule: true },
   checkin: { rank: 'rest', budgeted: false, early: true },
   reflection: { rank: 'rest', budgeted: false },

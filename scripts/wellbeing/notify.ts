@@ -281,7 +281,9 @@ export async function notifySuite(): Promise<number> {
     && /create policy notify_sent_delete_own on public\.notify_sent for delete to authenticated using \(user_id = \(select auth\.uid\(\)\)\);/.test(sql)
     && !/using \(user_id = auth\.uid\(\)\)/.test(sql)
     && /revoke all on public\.notify_sent from anon, authenticated;/.test(sql) && /grant select, delete on public\.notify_sent to authenticated;/.test(sql)
-    && !/create policy[^;]*for (insert|update|all)/i.test(sql) && !/grant[^;]*(insert|update)[^;]*on public\.notify_sent/i.test(sql))
+    && !/create policy[^;]*for (insert|update|all)/i.test(sql) && !/grant[^;]*(insert|update)[^;]*on public\.notify_sent to [^;]*(authenticated|anon)/i.test(sql)
+    // the reminder function's role writes it (notify_claim is INVOKER), explicit since 30 Oct 2026
+    && /grant select, insert, update, delete on public\.notify_sent to service_role;/.test(sql))
   ok('migration: notify_claim takes the per-person log lock and needs a current health yes', /kind not in[\s\S]*?end if;\s*(--[^\n]*\n\s*)*perform pg_advisory_xact_lock_shared\(hashtextextended\('tali-log:' \|\| uid::text, 0\)\);\s*if not public\.health_consent_current\(uid\) then return false; end if;\s*if kind = 'wind-down' then\s*(--[^\n]*\n\s*)*insert into public\.notify_sent/.test(sql))
   ok('migration: notify_claim is atomic and service-role only', /on conflict \(user_id\) do update/.test(sql) && /where n\.last_on is null or n\.last_on < excluded\.last_on/.test(sql)
     && /revoke execute on function public\.notify_claim\(uuid, date, text\) from public, anon, authenticated/.test(sql) && /grant execute on function public\.notify_claim\(uuid, date, text\) to service_role/.test(sql))

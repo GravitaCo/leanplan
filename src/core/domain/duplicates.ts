@@ -241,7 +241,7 @@ export function nameAfterUpdate(foods: Food[], old: Food, next: Pick<Food, 'n'>,
 export function updatedFood(old: Food, next: Omit<Food, 'id'>, name: string = old.n): Food {
   const { id, notSame, alias, _u, _dirty } = old
   const out: Food = { ...next, id, n: name, g: Math.round(next.g) }
-  for (const k of ['barcode', 'cat', 'cook', 'eat'] as const) if (out[k] === undefined && old[k] !== undefined) (out as unknown as Record<string, unknown>)[k] = old[k]
+  for (const k of ['barcode', 'cat', 'cook', 'eat', 'shareDone'] as const) if (out[k] === undefined && old[k] !== undefined) (out as unknown as Record<string, unknown>)[k] = old[k]
   if (notSame?.length) out.notSame = notSame
   if (alias?.length) out.alias = alias
   if (name !== old.n) addAliases(out, [old.n])
@@ -271,7 +271,8 @@ export function mergeFoods(state: { customFoods: Food[] }, keepId: string, dropI
   const keep = state.customFoods.find((f) => f.id === keepId)
   const drop = state.customFoods.find((f) => f.id === dropId)
   if (!keep || !drop || keep === drop) return null
-  if (takeBarcode && drop.barcode) keep.barcode = drop.barcode
+  // "shared" belongs to the barcode: it moves with it
+  if (takeBarcode && drop.barcode) { keep.barcode = drop.barcode; if (drop.shareDone) keep.shareDone = drop.shareDone; else delete keep.shareDone }
   const others = (drop.notSame || []).filter((x) => x !== keep.id)
   if (others.length) keep.notSame = [...new Set([...(keep.notSame || []), ...others])].slice(-NOT_SAME_MAX)
   if (keep.notSame) { keep.notSame = keep.notSame.filter((x) => x !== drop.id); if (!keep.notSame.length) delete keep.notSame }

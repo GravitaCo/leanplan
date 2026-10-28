@@ -33,7 +33,8 @@ export interface DeviceOnly {
   lowMoodShown?: string
   notify?: NotifyEvent[]
   /** `backoffSeen`: per reminder type, the back-off (profile.mind.halved) whose notice was closed */
-  ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string> }
+  /** `medicalReasked`: the one-time re-ask of a 'flagged' answer from before the split was shown here */
+  ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string>; medicalReasked?: boolean }
 }
 
 /** A note's text, all its pairs and the "went OK" line together, in characters. */
@@ -146,6 +147,7 @@ export function cleanDeviceOnly(x: unknown, owner: string | undefined): DeviceOn
   if (ui && typeof ui === 'object') {
     const o: NonNullable<DeviceOnly['ui']> = {}
     if (ui.sleepMore === true) o.sleepMore = true
+    if (ui.medicalReasked === true) o.medicalReasked = true
     const seen: Record<string, string> = {}
     const bs = ui.backoffSeen
     if (bs && typeof bs === 'object') for (const [k, v] of Object.entries(bs)) if (/^[a-z-]{1,32}$/.test(k) && isIso(v)) seen[k] = v
@@ -226,13 +228,15 @@ export function unloadCount(s: Pick<PersistedState, 'deviceOnly'>): number {
   return Array.isArray(n) ? n.length : 0
 }
 
-/** Health withdrawal (consent.clearHealthData): the notes and the low-mood marker go. Returns
- *  whether anything changed. "Not now" never calls this. */
+/** Health withdrawal (consent.clearHealthData): the notes, the low-mood marker and the medical
+ *  re-ask marker (it implies a past medical yes) go. Returns whether anything changed. "Not now"
+ *  never calls this. */
 export function clearDeviceHealth(s: PersistedState): boolean {
   const d = s.deviceOnly
-  if (!d || (!d.unload && d.lowMoodShown === undefined)) return false
+  if (!d || (!d.unload && d.lowMoodShown === undefined && !d.ui?.medicalReasked)) return false
   delete d.unload
   delete d.lowMoodShown
+  if (d.ui?.medicalReasked) { delete d.ui.medicalReasked; if (!Object.keys(d.ui).length) delete d.ui }
   if (!Object.keys(d).length) delete s.deviceOnly
   return true
 }
@@ -268,6 +272,17 @@ export function setSleepMoreOpen(s: PersistedState, open: boolean): void {
   delete d.ui.sleepMore
   if (!Object.keys(d.ui).length) delete d.ui
   if (!Object.keys(d).length) delete s.deviceOnly
+}
+
+/** Whether the one-time medical re-ask (onboarding.ts medicalReaskDue) has shown on this device. */
+export function medicalReasked(s: PersistedState): boolean {
+  return s.deviceOnly?.ui?.medicalReasked === true
+}
+
+/** The re-ask showed, answered or closed: it isn't shown again on this device. */
+export function markMedicalReasked(s: PersistedState): void {
+  const d = (s.deviceOnly ??= {})
+  d.ui = { ...d.ui, medicalReasked: true }
 }
 
 /** The back-off notice for `kind` (B11.14) was closed while that back-off (started `at`) ran: it

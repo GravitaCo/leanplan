@@ -2,7 +2,7 @@ import type {
   BodyArea, CardioVariation, DailyMovement, DayLog, Equipment, Experience, Goal, HeightUnit, JobType, Modality, MovingNow,
   MacroTarget, OnboardingOutcomes, Profile, SexAnswer, StepsBand, TrainingPlace, TrainingPlan, TrainingPrefs, WeightUnit, Why,
 } from '@/core/types'
-import { asksMedical, legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
+import { legacySex, profileRouting, routeSafety, safetyAnswersFrom, wellbeingAnswerOf, wellbeingRouted, type SafetyRouting } from './onboarding'
 import { suggestedTargets } from './nutrition'
 import { answerTargets, planFromAnswers } from './answerTargets'
 import type { GeneratedPlan } from './engine/generate'
@@ -172,7 +172,7 @@ function setupSteps(d: WizardDraft): StepId[] {
  * The screens, in order, for what's been answered so far (s-ob1 order: name, age, health check,
  * your why, goal, how things are, food and weight, body, weight, daily movement; then the setup
  * card, then the summary). Signposting screens appear straight after the answer that routes to
- * them; the medical question only when the goal means eating less, after body (s-ob4).
+ * them; the medical question for every goal, after body (s-ob4, ml-e5).
  */
 export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   const health = (s: StepId[]) => (healthConsent ? s : s.filter((x) => !HEALTH_STEPS.includes(x)))
@@ -188,7 +188,9 @@ export function stepsFor(d: WizardDraft, healthConsent: boolean): StepId[] {
   // Yes and Sometimes both get the signposting note (Onboarding 9 keeps it for both)
   if (wellbeingRouted(d.outcomes.wellbeing)) s.push('wellbeing-note')
   s.push('body')
-  if (asksMedical(d.goal)) { s.push('medical'); if (d.outcomes.medical === 'flagged') s.push('medical-note') }
+  // the medical question for every goal (ml-e5); either yes gets its note (ml-e5c, ml-e5d)
+  s.push('medical')
+  if (d.outcomes.medical === 'flagged' || d.outcomes.medical === 'no-deficit') s.push('medical-note')
   s.push('weight', 'move', 'handoff')
   // Part 3's intro (ob3-0) follows the setup card; "Skip for now" goes straight to the summary
   if (!d.later) s.push(...setupSteps(d), 'plan-intro')
@@ -254,7 +256,7 @@ export function baselineOutcome(l: Lately): OnboardingOutcomes['baseline'] {
   return l.sleep === 'poor' || l.stress === 'high' || l.room === 'little' ? 'low' : 'ok'
 }
 
-/** The medical question (ob4-5): any condition ticked → 'flagged'; "None of these" → 'clear'. */
+/** The medical question (ob4-5): kidney → 'flagged', another tick → 'no-deficit', "None of these" → 'clear'. */
 export { medicalOutcome } from './onboarding'
 
 /** What the engine reads from the stored outcomes (it never needs the raw answers). */

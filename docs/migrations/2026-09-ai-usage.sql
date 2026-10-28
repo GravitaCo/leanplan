@@ -41,6 +41,9 @@ create policy "owner_read" on public.ai_usage
 
 revoke all on public.ai_usage from anon, authenticated;
 grant select on public.ai_usage to authenticated;
+-- explicit since Supabase stopped default grants on new public tables (30 Oct 2026); live already has these
+-- (delete-account removes the rows)
+grant select, delete on public.ai_usage to service_role;
 
 create or replace function public.ai_usage_take(p_task text)
 returns integer
@@ -98,7 +101,8 @@ $$;
 revoke all on function public.ai_usage_take(text) from public, anon;
 grant execute on function public.ai_usage_take(text) to authenticated;
 
--- Optional housekeeping (keeps the table tiny): delete rows older than 60 days.
+-- Housekeeping: rows older than 60 days are deleted daily by pg_cron (tali-ai-usage-cleanup,
+-- docs/migrations/2026-10-10-shared-products.sql §10). By hand:
 -- delete from public.ai_usage where day < (now() at time zone 'utc')::date - 60;
 
 -- Verify:

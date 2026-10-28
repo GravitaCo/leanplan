@@ -19,7 +19,7 @@ import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
 import { clearDeviceHealth, unloadCount } from './deviceOnly'
 
-export const CONSENT_TYPES = ['health', 'ai', 'label-photo'] as const
+export const CONSENT_TYPES = ['health', 'ai', 'label-photo', 'shared-products'] as const
 export type ConsentType = (typeof CONSENT_TYPES)[number]
 
 /**
@@ -35,7 +35,12 @@ export type ConsentType = (typeof CONSENT_TYPES)[number]
 export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   health: '2026-09-v1',
   ai: '2026-09-v1',
-  'label-photo': '2026-09-v1',
+  // 2026-10-v1: the notice now says Anthropic reads the photo for Tali only and doesn't train on it
+  // (compliance register item 24). An older yes is asked again with the new notice.
+  'label-photo': '2026-10-v1',
+  // the opt-in to add new label-read products to Tali's shared list (sp-1; Profile › Privacy sp-5).
+  // Checked by the server too (shared_products_allowed, docs/migrations/2026-10-10-shared-products.sql)
+  'shared-products': '2026-10-v1',
 }
 /** The version given to a label-photo consent carried over from the old device-only flag. */
 export const LEGACY_LABEL_VERSION = 'device-v0'
@@ -196,6 +201,12 @@ export function hasConsent(s: PersistedState, type: ConsentType): boolean {
   return latestConsent(s, type)?.granted === true
 }
 
+/** A yes given to the current wording (CONSENT_VERSIONS): an older yes is asked again. */
+export function hasCurrentConsent(s: PersistedState, type: ConsentType): boolean {
+  const r = latestConsent(s, type)
+  return !!r && r.granted && r.version === CONSENT_VERSIONS[type]
+}
+
 /**
  * The guard the onboarding questionnaire calls before it saves any health answer (weight,
  * readiness, sleep, stress, mood, the wellbeing outcome, limitations; plan §8): true only once a
@@ -301,7 +312,8 @@ export function unsyncedConsents(s: PersistedState): number {
  * - every day's weigh-in (`day.weight`) and check-in (`day.checkin`: mood, hunger, sleep, stress,
  *   energy, soreness, note)
  * - `profile.weight` (Profile's fallback weight) and `profile.bodyFat`
- * - the onboarding answers: the screener outcomes (`profile.outcomes`: readiness, medical,
+ * - the onboarding answers: the screener outcomes (`profile.outcomes`: readiness, medical (clear,
+ *   flagged or no-deficit; 'flagged' can suggest kidney disease, compliance 24 Oct 2026),
  *   wellbeing, the sleep/stress baseline), the pregnancy flag and when it was asked, "your why"
  *   (`profile.motivations`), body details (`profile.height`, `profile.sexAnswer`), daily movement
  *   and the multiplier it set (`profile.movement`, `profile.activityMult`, with `activityLevel` back
