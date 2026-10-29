@@ -212,7 +212,7 @@ Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store 
 
 ---
 
-### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 9f67114, not on `main`)
+### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 31767fa, not on `main`)
 
 Symptom-aware guidance for women: a one-row "Period today?" check-in that can soften what Tali asks
 of training and food on symptom days. Plan only, nothing built; it replaces the never-merged "Flow"
@@ -226,7 +226,7 @@ US; the name is "Cycle"; demonstrator videos are split out of this plan (they ar
 
 | Step | Scope | Status | Target |
 |---|---|---|---|
-| 1 | Design boards for Benn: Profile offer, setup and consent, check-in row, "Period started", lighter offer, weigh-in note, safety prompts, delete and export | Not started | |
+| 1 | Design boards for Benn: Profile offer, setup and consent, check-in row, "Period started", lighter offer, weigh-in note, safety prompts, delete and export | In progress: `design` drafting on the Design canvas (29 Oct) | |
 | 2 | v1, device-only: gate, setup, its own consent (a migration widening `consents_type_check`), check-in row, pain signal feeding Train's lighter offer only, hunger copy, weigh-in note and guard, safety signposting, delete, export, withdrawal, privacy policy, register and DPIA addendum | Not started | |
 | 3 | v1.1: patterns on request, a symptom-triggered if-then plan, an iron label, comfort-swap tags | Not started | |
 | 4 | Later: optional `cycle_days` sync, the US, life stages, Apple Health and Health Connect | Not started | |
@@ -242,7 +242,7 @@ since 9f67114). The gate reads `profile.sexAnswer`, which only the onboarding wi
 Switching it on is its own change with its own `ship-critic` pass, and carries the onboarding gates
 (DPIA §§1–7, register #34, clinician review for anyone beyond closed testers: §3, First-run
 onboarding). Existing users answer only through Profile › "Set up my plan" and won't see the Cycle
-offer until they run it; whether Cycle's launch should point them to it is open (§10 item 7).
+offer until they run it. Cycle's launch won't point them there (Benn, 29 Oct; `cycle.md` 31767fa).
 
 ## 4. Compliance items that affect the schedule
 
