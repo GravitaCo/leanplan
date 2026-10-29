@@ -212,7 +212,7 @@ Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store 
 
 ---
 
-### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 31767fa, not on `main`)
+### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at c9b9fc4, not on `main`)
 
 Symptom-aware guidance for women: a one-row "Period today?" check-in that can soften what Tali asks
 of training and food on symptom days. Plan only, nothing built; it replaces the never-merged "Flow"
@@ -231,10 +231,14 @@ US; the name is "Cycle"; demonstrator videos are split out of this plan (they ar
 | 3 | v1.1: patterns on request, a symptom-triggered if-then plan, an iron label, comfort-swap tags | Not started | |
 | 4 | Later: optional `cycle_days` sync, the US, life stages, Apple Health and Health Connect | Not started | |
 
-Blockers before the build (plan §10): demand research (two requests so far; a survey or interviews
-proposed); a clinician for the safety thresholds (unknown who); an MHRA view on the intended
-purpose; a lawyer on the Equality Act question and the GB iron claim thresholds; whether "UK first"
-is an in-app gate or marketing only; under-18 eligibility.
+More decisions (Benn, 29 Oct; `cycle.md` c9b9fc4): "UK first" means marketing only, with no
+in-app country gate; no under-18s (Tali is 18+ app-wide, `MIN_AGE`); Tali will never claim to be a
+medical device or give medical advice.
+
+Remaining blockers (plan §10): a clinician for the safety thresholds (not decided; blocks the
+safety prompts, not the boards); a regulatory check that the safety rules fit the no-device
+position (recommended, not yet agreed); a lawyer on the Equality Act question and the GB iron claim
+thresholds; demand research (two requests so far; a survey or interviews proposed).
 
 **v1 prerequisite: onboarding switched on** (Benn, 29 Oct 2026; `cycle.md` §3, §9 and §10 item 7
 since 9f67114). The gate reads `profile.sexAnswer`, which only the onboarding wizard sets
