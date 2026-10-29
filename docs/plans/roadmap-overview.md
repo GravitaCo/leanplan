@@ -1,6 +1,6 @@
 # Tali roadmap overview: every planned phase, its status and what gates it
 
-First compiled 11 Oct 2026; **updated 28 Oct 2026** with Benn's scheduling decisions and the state
+First compiled 11 Oct 2026; **updated 28 and 29 Oct 2026** with Benn's scheduling decisions and the state
 of `main` at f29c826. Sources: the plans in `docs/plans/`, the compliance register
 (`docs/compliance/README.md`), the DPIA, the code, and `npm run check:foods` /
 `check:exercises`. Status is what the docs state or the code shows; "unclear" means neither
@@ -10,8 +10,8 @@ so the **Target** columns stay blank until Benn sets dates.
 ## Benn's scheduling decisions (28 Oct 2026)
 
 1. **No public launch date.** Tali stays an **invited alpha**, nothing official, until every
-   workout is done for men and women (read here as: every library exercise has a demo clip, with
-   men and women demonstrators across the library; see "Alpha gate" below, to confirm).
+   workout has its demo videos in a woman's and a man's version (clarified 29 Oct: all clips so
+   far show a woman; see "Alpha gate" below).
 2. **A paid tier before Jan 2027 is unlikely.** So the DMCC subscription features (pause, a
    non-renewing pass) are off the critical path, and monetisation waits.
 3. **Solicitor and clinician:** the connections have to be made first. No budget or date yet.
@@ -22,7 +22,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | When | Stream | Why now | Target |
 |---|---|---|---|
 | Now | Food data clean-up and robustness (§1 below) | Benn's choice; 3,737 foods now ship in the main bundle | |
-| Now, alongside | Demo clips: 126 exercises still without one (§2) | The alpha gate | |
+| Now, alongside | Demo clips: men's versions, plus the workout moves with no clip yet (§2); boards for choosing which version shows | The alpha gate | |
 | Now, admin | ICO fee; republish the privacy page on Webflow (register #1, #43) | Owed now, whatever the schedule | |
 | Now, admin | Find a solicitor and a clinician (register #6, #44, DPIA D1) | Both gate onboarding-on beyond testers and any public launch | |
 | Next | Sign DPIA §§1–7, fix register #34, then turn onboarding on for the alpha | Brings the training engine (E1) to testers | |
@@ -77,28 +77,45 @@ passed about 1,000 to 1,500 foods.
 Every food change needs `nutrition-accuracy` and `ship-critic`; a schema change needs
 `security-data`.
 
-## 2. Alpha gate: demo clips for every exercise
+## 2. Alpha gate: a woman's and a man's demo clip for every workout
 
-`check:exercises` passes with 163 exercises. **37 have a demo clip; 126 don't.** The model holds
-one clip per exercise, and the house rules vary the demonstrator (women and men, a broad age
-range) across clips; the men's and women's prompt lists in `docs/video-prompts/` cover all 163.
+**Benn, 29 Oct 2026:** "done for men and women" means the videos for each workout. Every clip so
+far shows a woman; the male audience needs male versions. So the gate is two clips per exercise,
+one with a woman and one with a man.
 
-| Kind | Exercises | With a clip | Without |
-|---|---|---|---|
-| Strength | 48 | 24 | 24 |
-| Calisthenics | 42 | 6 | 36 |
-| Yoga | 22 | 3 | 19 |
-| Mobility | 21 | 4 | 17 |
-| Cardio | 15 | 0 | 15 |
-| Pilates | 15 | 0 | 15 |
-| **Total** | **163** | **37** | **126** |
+**Counts (29 Oct, `main` f29c826).** The library has 163 exercises; 37 have a clip, all with a
+woman. Tali's own workouts (the plans in `taliWorkouts.ts`, Legs / Push / Pull and Cardio in
+`workouts.ts`, and the hard-day swaps) plus the warm-ups use 59 of them.
 
-The 19 warm-up moves have their own prompt lists (not counted above). Hold and flow player modes
-(workouts plan, media track) are partly built: holds are done, flow is not.
+| Scope | Exercises | Women's clips done | Women's clips to make | Men's clips to make | Clips to make |
+|---|---|---|---|---|---|
+| **Tali's workouts and warm-ups** (proposed alpha gate) | 59 | 35 | 24 | 59 | **83** |
+| Rest of the library (used only in workouts people build themselves) | 104 | 2 | 102 | 104 | 206 |
+| **Whole library** | 163 | 37 | 126 | 163 | **289** |
 
-**To confirm with Benn:** does "done for men and women" mean one clip per exercise with men and
-women spread across the library (126 more clips), or a man's and a woman's clip for every
-exercise (about 289 more, and a change to the data model)?
+The 24 workout and warm-up moves with no clip at all: leg-curl, dead-bug, calf-raise,
+cable-crunch, cardio-walk, cardio-easy-walk, supine-hamstring-stretch, lying-knee-rolls,
+reclined-figure-four, childs-pose, wall-calf-stretch, open-book, thread-the-needle,
+doorway-chest-stretch, cross-body-shoulder, leg-swings, bodyweight-squat, worlds-greatest-stretch,
+hip-circles, hip-90-90, arm-circles, band-pull-apart, scapular-wall-slide, inchworm.
+
+Each clip also needs its tempo timeline measured from the footage, and the house rules
+(`docs/exercise-video-prompts.md`) apply: a checked prompt before generating, no retake without
+Benn's OK. The men's prompt lists in `docs/video-prompts/` already exist for every exercise.
+
+**Build work this needs (not started; needs boards and Benn's approval before any code):**
+
+1. **Data model:** an exercise holds one `video` today. It needs a woman's and a man's clip,
+   each with its own tempo timeline, and the `npm test` clip checks extended to both.
+2. **Which clip a person sees:** a design decision for the Design canvas, not made here. Options
+   include a "Demo videos" choice in Profile (women, men, or a mix) or following the onboarding sex
+   answer. Using the sex answer would put a health-adjacent field to a new use, so it goes past
+   `compliance` first; a plain preference does not.
+3. **When the engine builds plans** (once onboarding is on), it can pick any library exercise, so
+   the 104 library-only moves matter then too.
+
+**To confirm with Benn:** is the alpha gate Tali's workouts and warm-ups (83 clips) or the whole
+library (289 clips)?
 
 ---
 
@@ -213,7 +230,7 @@ build, and delete their data when testing ends.
 
 ## 5. Still needed to put dates in
 
-1. Confirm the reading of the alpha gate in §2 (126 clips, or a clip per sex per exercise).
+1. Confirm the alpha gate scope in §2: Tali's workouts and warm-ups (83 clips) or the whole library (289).
 2. Clip throughput: how many clips a week Benn can generate and approve (each is then timed and
    reviewed), which sets the alpha date.
 3. Build capacity per week, or ask Claude to propose dates from the scope above as estimates.
