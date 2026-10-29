@@ -4,6 +4,8 @@ Status: plan, revised 29 Oct 2026. Nothing here is built. Replaces the Flow sect
 `docs/plans/flow-and-demonstrator-videos.md` (branch `claude/gender-content-menstrual-cycle-owmfpx`,
 26 Sept 2026, never merged). The demonstrator-video part of that doc is out of scope here.
 
+Scope: UK first; US later (§6.1).
+
 Evidence ratings: **strong**, **moderate**, **weak**, **contested**, **unknown**. Nothing here is
 legal or medical advice; §8 lists what needs a lawyer and a clinician.
 
@@ -13,7 +15,7 @@ legal or medical advice; §8 lists what needs a lawyer and a clinician.
 |---|---|---|
 | 26 Sept | Not called "Flow". Working name **"Cycle"** (in copy, "Your cycle"). "Rhythm" was rejected because of "the rhythm method" (contraception). | Benn |
 | 29 Oct | **Only women see it.** The offer appears only when the onboarding answer is female. | Benn |
-| 29 Oct | **UK only** for now. US privacy law (FTC, state health-data laws, post-Dobbs subpoena risk) is out of scope until a US launch is planned. | Benn |
+| 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch, so v1 makes the choices in §6.1 now that keep the US open. | Benn |
 | 29 Oct | Demonstrator videos split out of this plan. | Benn |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
@@ -138,7 +140,7 @@ pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
   cost of sync (§6) and supports device-only for v1.
 - **Clips are on Bunny Stream**; irrelevant to Cycle now that videos are split out.
 
-## 6. Storage and privacy (UK)
+## 6. Storage and privacy
 
 - **v1 is device-only.** Cycle data lives in a new additive `cycle` field inside `leanplan.v1`
   (never rename the key). Never in `profile` or `settings` (which sync whole) and never on day logs.
@@ -173,6 +175,27 @@ pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
   10. Sign-off from `compliance`, `security-data`, `mental-performance`, `nutrition-accuracy`,
       `design` (and Benn on the boards) and `ship-critic`.
 
+### 6.1 Keeping the US open
+
+v1 ships to the UK, but the US will follow, so v1 avoids anything that would have to be undone:
+
+- **No third parties ever see cycle data:** no analytics or ad SDKs, no AI prompts, no push
+  payloads. The FTC acted against Flo (2021) and Premom (2023) for sharing cycle data, and the
+  Health Breach Notification Rule treats an unauthorised disclosure (for example to an analytics
+  SDK) as a breach.
+- **Device-only by default and minimal fields**, which also limits what a US subpoena could reach
+  after Dobbs; HIPAA doesn't cover Tali.
+- **Sync, when built, keeps the opaque `data` column** so client-side encryption can be switched on
+  for US users without a schema change.
+- **Consent and deletion already meet the stricter US state laws' shape** (separate opt-in consent,
+  deletion that reaches every device). Washington's My Health My Data Act, and Nevada and
+  Connecticut, need a separate consumer health data privacy policy and their own consent wording.
+
+Before marketing in the US: a US health-data privacy policy, a review against the FTC Act and the
+Health Breach Notification Rule, the state laws above (and any newer ones), whether to turn on
+client-side encryption for sync, and the FDA general-wellness line for the medical-device question.
+Unknown: which states' laws will apply at that point; check with counsel then.
+
 ## 7. Build order
 
 1. **Design boards** on the Design canvas for Benn: the Profile offer, setup, the check-in group,
@@ -193,3 +216,4 @@ pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
 3. **The onboarding line.** Offer Cycle once at the end of onboarding for women, or only in
    Profile? Recommendation: Profile only in v1, which is the least pressure.
 4. **Unknown:** the Supabase backup retention window (matters only once sync exists).
+5. **US timing.** When the US launch is planned, run §6.1's checklist with `compliance` before marketing there.
