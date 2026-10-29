@@ -212,7 +212,7 @@ Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store 
 
 ---
 
-### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 7f69d8f, not on `main`)
+### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at f624b1a, not on `main`)
 
 Symptom-aware guidance for women: a one-row "Period today?" check-in that can soften what Tali asks
 of training and food on symptom days. Plan only, nothing built; it replaces the never-merged "Flow"
@@ -236,9 +236,11 @@ proposed); a clinician for the safety thresholds (unknown who); an MHRA view on 
 purpose; a lawyer on the Equality Act question and the GB iron claim thresholds; whether "UK first"
 is an in-app gate or marketing only; under-18 eligibility.
 
-Dependency found in this review: the gate reads `profile.sexAnswer`, which the onboarding wizard
-sets (off for users). Profile sets it only when someone changes their sex there, so most current
-alpha users have no answer and would not see the offer until onboarding is on or Profile asks.
+**v1 prerequisite** (found in this review; in `cycle.md` §3, §9 and §10 item 7 since f624b1a):
+the gate reads `profile.sexAnswer`, which the onboarding wizard sets (off for users). Profile sets
+it only when someone changes their sex there, so most current alpha users have no answer. Two ways
+to meet it, both needing Benn's approval: turn onboarding on (§3, First-run onboarding), or have
+Profile ask the sex question once (Female / Male / Prefer not to say) for profiles with no answer.
 
 ## 4. Compliance items that affect the schedule
 
