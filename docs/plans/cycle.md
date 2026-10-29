@@ -18,6 +18,9 @@ a regulatory adviser and a clinician.
 | 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch (§7). | Benn |
 | 29 Oct | Demonstrator videos split out of this plan. | Benn |
 | 29 Oct | **Prerequisite: switch onboarding on** so people record the sex answer (not a one-off Profile question). | Benn |
+| 29 Oct | **UK first means marketing only.** No in-app country gate. | Benn |
+| 29 Oct | **No under-18s.** | Benn |
+| 29 Oct | **Tali will never claim to be a medical device or give medical advice.** | Benn |
 | 29 Oct | Existing users reach the offer through Profile › "Set up my plan" only; Cycle's launch doesn't point them there. | Benn |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
@@ -118,7 +121,8 @@ the app or on the website.
   data is kept.
 - **If `sexAnswer` changes away from female,** the entry disappears but the data stays until
   deleted. "Delete all cycle data" lives under Privacy for everyone.
-- **Under-18s:** eligibility is a `compliance` question (open, §10).
+- **Under-18s: no** (Benn, 29 Oct). Tali already requires 18+ (`MIN_AGE`, `src/core/legal`), so the
+  gate needs no extra age check; a test confirms Cycle is never offered below `MIN_AGE`.
 
 ## 4. Check-in: one optional row, not a second check-in
 
@@ -252,6 +256,10 @@ needs a pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
 
 ### Medical device line (MHRA, UK MDR 2002)
 
+**Benn's position (29 Oct): Tali will never claim to be a medical device or give medical advice.**
+Under UK MDR 2002, intended purpose is read from what the maker says (labelling, instructions,
+marketing), so this position does most of the work. It doesn't settle it alone: a regulator can
+also look at what the software does, so the features have to match the claim.
 Logging plus symptom-based wellness suggestions is probably general wellness. Forecasting, fertility
 or ovulation prediction, or assessing a cycle as "abnormal" moves towards device territory. v1
 needs a written **intended-purpose statement**: Tali logs what the person reports and signposts to
@@ -292,7 +300,10 @@ used in copy.
 
 ## 7. US later: keeping it open
 
-v1 ships to the UK, but the US will follow, so v1 avoids anything that would have to be undone:
+UK first means marketing only (Benn, 29 Oct): there is no in-app country gate, so anyone can turn
+Cycle on. For people in the EU, EU GDPR applies (close to UK GDPR, so v1 already meets most of it);
+whether Tali then needs an EU representative (Art. 27) depends on whether it offers the app to
+the EU, which is a `compliance` question before any EU marketing. v1 ships to the UK, but the US will follow, so v1 avoids anything that would have to be undone:
 
 - **No third parties ever see cycle data:** no analytics or ad SDKs, no AI prompts, no push
   payloads. The FTC acted against Flo (2021) and Premom (2023) for sharing cycle data, and the
@@ -338,11 +349,10 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    v1 has no analytics, the same people measure success afterwards: did they keep training (a
    session or a swap rather than a skip) on symptom days; did the check-in feel like more work;
    how many turned Cycle off; did anyone feel judged by the prompts.
-2. **Clinician review** of the §5.1 thresholds and copy. Unknown: who will do it.
-3. **Regulatory view** on the intended purpose and the §5.1 rules (MHRA).
+2. **Clinician review** of the §5.1 thresholds and copy. Not decided yet (Benn, 29 Oct); it blocks
+   the safety prompts, not the boards.
+3. **Regulatory view** on whether the §5.1 rules, especially the one that changes nutrition, fit
+   the no-medical-device position (§6). Recommended, not yet agreed.
 4. **Lawyer:** Equality Act 2010 s.29 and a women-only offer gated on a self-declared answer
    (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds.
-5. **What "UK first" means in practice:** UK marketing only, or an in-app gate? If people in the EU
-   can turn Cycle on, EU GDPR applies, and EU MDR may if they are targeted.
-6. **Under-18s:** eligibility (`compliance`).
-7. **Unknown:** the Supabase backup retention window (matters only once sync exists).
+5. **Unknown:** the Supabase backup retention window (matters only once sync exists).
