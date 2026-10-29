@@ -107,7 +107,7 @@ the app or on the website.
   It is off until they turn it on.
 - **Setup, after the cycle consent, asks one question** (answer changeable any time; never asks why):
   - Periods, no hormonal contraception
-  - On hormonal contraception (pill, coil, implant, injection)
+  - On hormonal contraception (pill, hormonal coil, implant, injection)
   - Irregular or unpredictable periods
   - Periods changing with age (perimenopause)
   - I don't have periods
@@ -115,7 +115,9 @@ the app or on the website.
 - **The answer is stored only in the device `cycle` store**, never in a synced field: it is health
   data, and contraception may touch "sex life" (Art. 9(1)). "I don't have periods" closes the offer;
   the most a synced field may hold is a plain "offer hidden" flag with no reason.
-- **Every answer gets the same features** (logging, the lighter offer, safety prompts and "Day N of
+- The copper coil isn't hormonal, hence "hormonal coil" (`design` review, 29 Oct; `compliance` and
+  the clinician to confirm the wording).
+- **Every answer gets the same features, except the no-period prompt (§5.1)** (logging, the lighter offer, safety prompts and "Day N of
   your period"), since none of them forecasts. Each answer says plainly what Tali will and won't do.
 - **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts;
   data is kept.
@@ -173,6 +175,8 @@ thresholds need clinician sign-off.
   - for people in a deficit, the loop stops suggesting a deficit until a period is logged, and says
     so plainly; the person can still set their own target. Whether that change to nutrition stays
     outside medical-device rules needs a regulatory view (§10);
+  - not for the hormonal contraception or perimenopause answers, where no bleeding is often
+    expected and the prompt would fire falsely (`design` review, 29 Oct; clinician to confirm);
   - whether "irregular" users get this prompt (they're equally at risk of low energy availability)
     is a clinician call.
 - **A static "When to get help" page** in Cycle settings for what Tali must not detect itself:
