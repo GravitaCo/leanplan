@@ -18,6 +18,7 @@ a regulatory adviser and a clinician.
 | 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch (§7). | Benn |
 | 29 Oct | Demonstrator videos split out of this plan. | Benn |
 | 29 Oct | **Prerequisite: switch onboarding on** so people record the sex answer (not a one-off Profile question). | Benn |
+| 29 Oct | Existing users reach the offer through Profile › "Set up my plan" only; Cycle's launch doesn't point them there. | Benn |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
 non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
@@ -93,7 +94,7 @@ the app or on the website.
   question. Switching it on is its own change, with its own `ship-critic` pass, before Cycle ships.
   - **New users** answer it in the wizard (Female / Male / Prefer not to say).
   - **Existing users** answer it only through Profile › "Set up my plan" (`first-run-onboarding.md`
-    §15). Until they run it they don't see the Cycle offer. That screen is prefilled from the
+    §15). Until they run it they don't see the Cycle offer, and Cycle's launch doesn't prompt them (Benn, 29 Oct). That screen is prefilled from the
     legacy M/F field, which defaulted to `'M'`; the person sees and confirms it, so it counts as
     their answer, but the wizard's sex step must show it as a choice they can change, not a
     silent default.
@@ -344,5 +345,4 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
 5. **What "UK first" means in practice:** UK marketing only, or an in-app gate? If people in the EU
    can turn Cycle on, EU GDPR applies, and EU MDR may if they are targeted.
 6. **Under-18s:** eligibility (`compliance`).
-7. **Existing users and the offer:** they see Cycle only after "Set up my plan". Is that enough, or should Cycle's launch point them to it once? (A visible change: Design canvas first.)
-8. **Unknown:** the Supabase backup retention window (matters only once sync exists).
+7. **Unknown:** the Supabase backup retention window (matters only once sync exists).
