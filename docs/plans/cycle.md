@@ -85,6 +85,13 @@ the app or on the website.
   (it is in `HEALTH_FIELDS`, `src/data/consent.ts`) while legacy `sex` stays, so `sexOf` would then
   return female for someone who chose not to say. Older profiles with no onboarding answer don't
   see the offer until they answer.
+- **Prerequisite: most current users have no `sexAnswer`.** Only the onboarding wizard sets it, and
+  that is off (`ONBOARDING_ENABLED`, `src/data/onboardingFlag.ts`). Profile sets it only when someone
+  changes Male/Female (`ProfileScreen.tsx`), and offers no "Prefer not to say". So before Cycle
+  ships, either onboarding is switched on, or Profile asks the sex question once (Female / Male /
+  Prefer not to say) for profiles without an answer. Either is a visible change for Benn's
+  approval. Inferring the answer from the legacy `sex` field is not an option (it defaulted to
+  `'M'` and stores "prefer not to say" as `'F'`).
 - **Seeing it collects nothing.** Women see one quiet offer in Profile (not a modal, not repeated).
   It is off until they turn it on.
 - **Setup, after the cycle consent, asks one question** (answer changeable any time; never asks why):
@@ -309,7 +316,7 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
 1. **Design boards** on the Design canvas for Benn: the Profile offer, setup and consent, the
    one-row check-in group, "Period started" and back-fill, the lighter offer, the weigh-in note,
    the safety prompts and "When to get help", delete and export.
-2. **Cycle v1 (device-only):** gate, setup and consent (with the `consents` migration); check-in row
+2. **Cycle v1 (device-only):** the `sexAnswer` prerequisite (§3); gate, setup and consent (with the `consents` migration); check-in row
    and store; Train's cycle signal; hunger copy; weigh-in note and guard; safety prompts; delete,
    export, withdrawal; legal, register and DPIA.
 3. **Cycle v1.1:** "Look for patterns"; symptom-triggered if-then template; iron label; comfort-swap
@@ -330,4 +337,5 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
 5. **What "UK first" means in practice:** UK marketing only, or an in-app gate? If people in the EU
    can turn Cycle on, EU GDPR applies, and EU MDR may if they are targeted.
 6. **Under-18s:** eligibility (`compliance`).
-7. **Unknown:** the Supabase backup retention window (matters only once sync exists).
+7. **The `sexAnswer` prerequisite (§3):** switch onboarding on first, or have Profile ask once?
+8. **Unknown:** the Supabase backup retention window (matters only once sync exists).
