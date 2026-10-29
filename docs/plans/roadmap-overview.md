@@ -1,6 +1,6 @@
 # Tali roadmap overview: every planned phase, its status and what gates it
 
-First compiled 11 Oct 2026; **updated 28 and 29 Oct 2026** with Benn's scheduling decisions and the state
+First compiled 11 Oct 2026; **updated 28 and 29 Oct 2026** (Cycle added 29 Oct) with Benn's scheduling decisions and the state
 of `main` at f29c826. Sources: the plans in `docs/plans/`, the compliance register
 (`docs/compliance/README.md`), the DPIA, the code, and `npm run check:foods` /
 `check:exercises`. Status is what the docs state or the code shows; "unclear" means neither
@@ -30,6 +30,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | Later | AI Phase 0 close-out, then AI Phase 1 (type a meal) | Paid plans wait on this | |
 | Later | Native spike, then wearables | Unlocks wellbeing Phase 3 and on-device reading | |
 | Later | Monetisation | After AI Phase 1; not before Jan 2027 | |
+| Not yet placed | Cycle (§3, "Cycle") | Plan only; demand research and a clinician first; Benn to place it | |
 
 ## Fixed dates
 
@@ -211,14 +212,42 @@ Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store 
 
 ---
 
+### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 7f69d8f, not on `main`)
+
+Symptom-aware guidance for women: a one-row "Period today?" check-in that can soften what Tali asks
+of training and food on symptom days. Plan only, nothing built; it replaces the never-merged "Flow"
+sections of the Sept plan. Reviewed by `compliance` and `mental-performance`; still needs `design`,
+`security-data`, `nutrition-accuracy` (for v1.1) and `ship-critic`.
+
+Benn's decisions (29 Oct 2026): only women see it (the onboarding sex answer is female, plus a
+current health consent yes), and it stays opt-in; UK first, with nothing in v1 that rules out the
+US; the name is "Cycle"; demonstrator videos are split out of this plan (they are the alpha gate in
+§2).
+
+| Step | Scope | Status | Target |
+|---|---|---|---|
+| 1 | Design boards for Benn: Profile offer, setup and consent, check-in row, "Period started", lighter offer, weigh-in note, safety prompts, delete and export | Not started | |
+| 2 | v1, device-only: gate, setup, its own consent (a migration widening `consents_type_check`), check-in row, pain signal feeding Train's lighter offer only, hunger copy, weigh-in note and guard, safety signposting, delete, export, withdrawal, privacy policy, register and DPIA addendum | Not started | |
+| 3 | v1.1: patterns on request, a symptom-triggered if-then plan, an iron label, comfort-swap tags | Not started | |
+| 4 | Later: optional `cycle_days` sync, the US, life stages, Apple Health and Health Connect | Not started | |
+
+Blockers before the build (plan §10): demand research (two requests so far; a survey or interviews
+proposed); a clinician for the safety thresholds (unknown who); an MHRA view on the intended
+purpose; a lawyer on the Equality Act question and the GB iron claim thresholds; whether "UK first"
+is an in-app gate or marketing only; under-18 eligibility.
+
+Dependency found in this review: the gate reads `profile.sexAnswer`, which the onboarding wizard
+sets (off for users). Profile sets it only when someone changes their sex there, so most current
+alpha users have no answer and would not see the offer until onboarding is on or Profile asks.
+
 ## 4. Compliance items that affect the schedule
 
 | Item | Status | Blocks | Target |
 |---|---|---|---|
 | #1 ICO fee | Owed now | A legal duty, not a build | |
 | #43 Republish the privacy page on Webflow | Owed now | The live policy is behind `main` | |
-| #6 Solicitor | Contact to be found | Public launch, any paid feature | |
-| #44, DPIA D1 Clinician | Contact to be found, unfunded | Onboarding beyond testers, public launch of Mind and loop safety tiers | |
+| #6 Solicitor | Contact to be found | Public launch, any paid feature, Cycle (Equality Act, iron claims) | |
+| #44, DPIA D1 Clinician | Contact to be found, unfunded | Onboarding beyond testers, public launch of Mind and loop safety tiers, Cycle safety thresholds | |
 | #7 DPIA §§1–7, 8.8 | Unsigned (§8 and §9 signed) | Onboarding flag, supplement names, AI Phase 0 | |
 | #34 Onboarding copy fixes | Open | Onboarding flag | |
 | #4 Processor DPAs | Open | Public launch | |
