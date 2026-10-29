@@ -30,7 +30,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | Later | AI Phase 0 close-out, then AI Phase 1 (type a meal) | Paid plans wait on this | |
 | Later | Native spike, then wearables | Unlocks wellbeing Phase 3 and on-device reading | |
 | Later | Monetisation | After AI Phase 1; not before Jan 2027 | |
-| Not yet placed | Cycle (§3, "Cycle") | Plan only; demand research and a clinician first; Benn to place it | |
+| Not yet placed | Cycle (§3, "Cycle") | Plan only; needs onboarding switched on first, plus demand research and a clinician; Benn to place it | |
 
 ## Fixed dates
 
@@ -212,7 +212,7 @@ Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store 
 
 ---
 
-### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at f624b1a, not on `main`)
+### Cycle (`cycle.md`, on branch `claude/cycle-plan-uk` at 9f67114, not on `main`)
 
 Symptom-aware guidance for women: a one-row "Period today?" check-in that can soften what Tali asks
 of training and food on symptom days. Plan only, nothing built; it replaces the never-merged "Flow"
@@ -236,11 +236,13 @@ proposed); a clinician for the safety thresholds (unknown who); an MHRA view on 
 purpose; a lawyer on the Equality Act question and the GB iron claim thresholds; whether "UK first"
 is an in-app gate or marketing only; under-18 eligibility.
 
-**v1 prerequisite** (found in this review; in `cycle.md` §3, §9 and §10 item 7 since f624b1a):
-the gate reads `profile.sexAnswer`, which the onboarding wizard sets (off for users). Profile sets
-it only when someone changes their sex there, so most current alpha users have no answer. Two ways
-to meet it, both needing Benn's approval: turn onboarding on (§3, First-run onboarding), or have
-Profile ask the sex question once (Female / Male / Prefer not to say) for profiles with no answer.
+**v1 prerequisite: onboarding switched on** (Benn, 29 Oct 2026; `cycle.md` §3, §9 and §10 item 7
+since 9f67114). The gate reads `profile.sexAnswer`, which only the onboarding wizard sets
+(`ONBOARDING_ENABLED`, off). Benn chose switching onboarding on over a one-off Profile question.
+Switching it on is its own change with its own `ship-critic` pass, and carries the onboarding gates
+(DPIA §§1–7, register #34, clinician review for anyone beyond closed testers: §3, First-run
+onboarding). Existing users answer only through Profile › "Set up my plan" and won't see the Cycle
+offer until they run it; whether Cycle's launch should point them to it is open (§10 item 7).
 
 ## 4. Compliance items that affect the schedule
 
