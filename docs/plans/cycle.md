@@ -1,13 +1,13 @@
 # Cycle: symptom-aware guidance for women
 
-Status: plan, revised 29 Oct 2026. Nothing here is built. Replaces the Flow sections of
-`docs/plans/flow-and-demonstrator-videos.md` (branch `claude/gender-content-menstrual-cycle-owmfpx`,
-26 Sept 2026, never merged). The demonstrator-video part of that doc is out of scope here.
+Status: plan, revised 29 Oct 2026 after `compliance` and `mental-performance` reviews. Nothing here
+is built. Replaces the Flow sections of `docs/plans/flow-and-demonstrator-videos.md` (branch
+`claude/gender-content-menstrual-cycle-owmfpx`, 26 Sept 2026, never merged). The demonstrator-video
+part of that doc is out of scope here.
 
-Scope: UK first; US later (§6.1).
-
-Evidence ratings: **strong**, **moderate**, **weak**, **contested**, **unknown**. Nothing here is
-legal or medical advice; §8 lists what needs a lawyer and a clinician.
+Scope: UK first; US later (§7). Evidence ratings: **strong**, **moderate**, **weak**,
+**contested**, **unknown**. Nothing here is legal or medical advice; §10 lists what needs a lawyer,
+a regulatory adviser and a clinician.
 
 ## 0. Decisions so far
 
@@ -15,167 +15,267 @@ legal or medical advice; §8 lists what needs a lawyer and a clinician.
 |---|---|---|
 | 26 Sept | Not called "Flow". Working name **"Cycle"** (in copy, "Your cycle"). "Rhythm" was rejected because of "the rhythm method" (contraception). | Benn |
 | 29 Oct | **Only women see it.** The offer appears only when the onboarding answer is female. | Benn |
-| 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch, so v1 makes the choices in §6.1 now that keep the US open. | Benn |
+| 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch (§7). | Benn |
 | 29 Oct | Demonstrator videos split out of this plan. | Benn |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
 non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
-§3 limits the second effect; the first is the accepted cost of the decision.
+§3 limits the second effect; the first is the accepted cost of the decision. In-app copy never says
+"for women".
 
 ## 1. Summary
 
 1. **Follow symptoms, not phases.** On average, cycle phase has a trivial effect on strength,
    endurance, adaptation, energy expenditure and mood, and people differ a great deal. Symptoms
    (cramps, heavy bleeding, fatigue, poor sleep) are common and do change how a day goes. Tali asks
-   how someone feels and adapts to that. Phase appears only as soft context ("Day 2 of your
-   period") and never changes a plan by itself.
-2. **It fits the mind-first frame.** Train already offers a lighter session when two or more
-   check-in answers are low (`lowSignals` / `offerLighter` in `src/core/domain/dayOptions.ts`).
-   Cycle symptoms become extra signals in that same rule.
-3. **No calorie or macro change by phase.** Resting energy use rises about +40 kcal/day in the
+   how someone feels and adapts to that.
+2. **No forecasts.** The only cycle context is "Day N of your period", counted from logged bleeding.
+   No phase names, no predicted next period, no fertile window. A forecast tells people how they
+   will feel (an expectation effect) and is a short step to fertility inference (a medical device).
+3. **It fits the mind-first frame.** Train already offers a lighter session when two or more
+   check-in answers are low. A painful day adds one signal to that offer, and only to that offer
+   (§5).
+4. **No calorie or macro change by phase.** Resting energy use may rise about +40 kcal/day in the
    luteal phase, well inside the ±170 kcal margin of a typical logged day.
-4. **The useful parts are specific:** permission-giving hunger copy, iron-rich food suggestions on
-   heavy days, a water-weight note in the weigh-in check, and a gentle GP prompt when periods stop
-   while eating in a deficit.
-5. **Cycle data is special-category health data.** It stays on the device in v1, behind its own
-   explicit consent, with a real "delete all" and no exposure to analytics, AI, push or the lock
-   screen. Tali stays out of fertility and ovulation prediction, or it becomes a medical device.
+5. **Cycle data is special-category health data.** The cycle log stays on the device in v1, behind
+   its own explicit consent, with a real "delete all", and never reaches analytics, AI, push or the
+   lock screen. Only the consent record syncs (§6).
 
-## 2. Evidence (unchanged from Sept; summary)
+## 2. Evidence
 
-- **Cycle variation (strong).** In 612,613 tracked cycles the average was 29.3 days; follicular
-  10 to 30 days, luteal 7 to 17 days (Bull et al. 2019). A calendar phase is an estimate, never a fact.
-- **Mood (contested).** 38% show no link between mood and phase (Romans et al. 2012). A real subgroup
-  worsens premenstrually. PMDD affects about 1.6% (confirmed) and is linked to suicidal ideation
-  (Reilly et al. 2024). Tali never labels or suggests PMS or PMDD.
-- **Expectation shapes symptoms (moderate).** People told they are premenstrual report more
-  symptoms (Ruble 1977). Tali never tells someone how they will feel.
-- **Energy (moderate direction, weak size).** +40 kcal/day resting in the luteal phase (Löfberg et
-  al. 2024, 95% CI −2 to 82); none on the combined pill. Intake rises about +168 kcal/day on
-  average (Tucker et al. 2025).
-- **Iron (strong).** Heavy periods raise the risk of deficiency; 25% of UK women aged 19 to 64 are
-  below the lower reference intake (NDNS years 9 to 11). Food-first copy is safe; doses are not.
-- **Training (strong that the average effect is trivial).** McNulty et al. 2020, Colenso-Semple et
-  al. 2023. Phase-timed training trials are small and conflicting. Symptoms are near-universal and
-  linked to missed or changed training (Bruinvels et al. 2021). Exercise may ease period pain
-  (Cochrane 2019, low-quality evidence). Some citations came from memory in the Sept review:
-  check each before any figure is quoted in the app.
-- **Low energy availability (strong).** Tali's own targets can produce it (a 60 kg, very active
-  woman on a 25% deficit lands near 27 kcal/kg lean mass). Periods stopping is the visible sign.
-  Never show an energy-availability number.
+Citations marked † were not re-verified in the Oct review: check each before any figure appears in
+the app or on the website.
+
+- **Cycle variation (strong).** In 612,613 tracked cycles the average was 29.3 days; follicular 10
+  to 30 days, luteal 7 to 17 days (Bull et al. 2019 †; users of a fertility app, so self-selected).
+  A calendar phase is an estimate, never a fact.
+- **Mood (contested).** Of 47 prospective studies, 18 (38%) found no link between mood and any
+  phase; 7 linked negative mood to the premenstrual phase alone and 18 to premenstrual plus another
+  phase (Romans et al. 2012). A real subgroup worsens premenstrually.
+- **PMDD.** Pooled prevalence 3.2% confirmed and 7.7% provisional; 1.6% in community samples with
+  confirmed diagnosis (Reilly et al. 2024). Its link to suicidal ideation needs its own primary
+  source: **unknown** until found. Tali never labels or suggests PMS or PMDD either way.
+- **Expectation shapes symptoms (weak to moderate).** People told they are premenstrual report more
+  symptoms (Ruble 1977 †, a single small deception study). Tali never tells someone how they will
+  feel.
+- **Energy (moderate direction, weak size).** About +40 kcal/day resting in the luteal phase
+  (Löfberg et al. 2024 †, 95% CI −2 to 82); none on the combined pill. Intake rises about +168
+  kcal/day on average (Tucker et al. 2025 †).
+- **Iron (strong that heavy periods raise risk).** The share of UK women aged 19 to 64 below the
+  lower reference intake is **unknown** for NDNS years 9 to 11 (other years show 21% to 30%): check
+  the GOV.UK tables. Food-first copy is safe; doses are not.
+- **Training (strong that the average effect is trivial).** McNulty et al. 2020 †, Colenso-Semple
+  et al. 2023 †. Phase-timed training trials are small and conflicting.
+- **Symptoms and training (moderate).** In a retrospective survey of 6,812 Strava users not on
+  combined hormonal contraception, symptoms were very common (mood changes or anxiety 90.6%,
+  fatigue 86.2%, cramps 84.2%) and a higher symptom index went with missing or changing training
+  (OR 1.09 per point; the index isn't validated; self-report) (Bruinvels et al., BJSM 2021).
+- **Exercise and period pain (weak).** Cochrane 2019 †, low-quality evidence. Tali makes no claim
+  that it eases pain.
+- **Low energy availability (strong that it happens; thresholds debated).** Tali's own targets can
+  produce it (illustration: a 60 kg, very active woman on a 25% deficit lands near 27 kcal/kg lean
+  mass; the 30 kcal/kg cut-off is itself debated). Periods stopping is the visible sign. Never show
+  an energy-availability number.
 
 ## 3. Who sees it
 
-- **The gate is `sexOf(profile) === 'female'`** (`src/core/domain/onboarding.ts`). Never the legacy
-  `sex` field: "Prefer not to say" is stored there as `'F'` (`legacySex`), so gating on it would
-  show Cycle to people who chose not to say. Older profiles with no onboarding answer fall back to
-  the legacy field through `sexOf`, which is acceptable.
-- **Seeing it collects nothing.** Women see one offer in Profile (and optionally one line after
-  onboarding, never a modal or repeated nudge). It is off until they turn it on.
-- **Setup asks one question:** natural cycle / hormonal contraception / irregular /
-  perimenopause / **I don't have periods** / prefer not to say. "I don't have periods" closes the
-  offer and removes it from Profile, with a way back under Privacy. Each other answer says plainly
-  what Tali will and won't do.
-- **Phase context stays off** for hormonal contraception, irregular, perimenopause, prefer not to
-  say, and anyone with fewer than two logged cycles. They get symptoms-only mode.
-- **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle: no prompts,
-  no phase context, data kept.
-- **If the sex answer changes away from female,** Cycle's entry disappears but the data stays until
-  deleted. "Delete all cycle data" lives under Privacy for everyone, so nobody keeps data they
-  can't remove.
+- **The gate is `profile.sexAnswer === 'female'` and a current health consent yes.** Not `sexOf`,
+  and never the legacy `sex` field. "Prefer not to say" is stored in legacy `sex` as `'F'`
+  (`legacySex`, `src/core/domain/onboarding.ts`), and a health withdrawal clears `sexAnswer`
+  (it is in `HEALTH_FIELDS`, `src/data/consent.ts`) while legacy `sex` stays, so `sexOf` would then
+  return female for someone who chose not to say. Older profiles with no onboarding answer don't
+  see the offer until they answer.
+- **Seeing it collects nothing.** Women see one quiet offer in Profile (not a modal, not repeated).
+  It is off until they turn it on.
+- **Setup, after the cycle consent, asks one question** (answer changeable any time; never asks why):
+  - Periods, no hormonal contraception
+  - On hormonal contraception (pill, coil, implant, injection)
+  - Irregular or unpredictable periods
+  - Periods changing with age (perimenopause)
+  - I don't have periods
+  - Prefer not to say
+- **The answer is stored only in the device `cycle` store**, never in a synced field: it is health
+  data, and contraception may touch "sex life" (Art. 9(1)). "I don't have periods" closes the offer;
+  the most a synced field may hold is a plain "offer hidden" flag with no reason.
+- **Every answer gets the same features** (logging, the lighter offer, safety prompts and "Day N of
+  your period"), since none of them forecasts. Each answer says plainly what Tali will and won't do.
+- **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts;
+  data is kept.
+- **If `sexAnswer` changes away from female,** the entry disappears but the data stays until
+  deleted. "Delete all cycle data" lives under Privacy for everyone.
+- **Under-18s:** eligibility is a `compliance` question (open, §10).
 
-## 4. Design
+## 4. Check-in: one optional row, not a second check-in
 
-### Check-in: one optional group, not a second check-in
+For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed to one row:
+"Period today?"** Pain and chips appear only after a bleeding answer or when the group is opened.
 
-For women who turned Cycle on, `CheckinSheet` gets a collapsible "Cycle" group:
-
-- **Bleeding today:** none / spotting / light / medium / heavy. This is the only way a period start
-  is recorded.
-- **Pain:** none / some / a lot, in the same three-step style as the other questions.
-- **Optional chips:** cramps, bloating, headache, breast tenderness, digestion. No "PMS" or "moody"
-  chip; mood is already asked.
+- **Bleeding:** none / spotting / light / medium / heavy.
+- **Pain:** No pain / A bit / A lot (same wording as the soreness scale).
+- **Optional chips:** cramps, bloating, headache, breast tenderness, upset stomach. No "PMS" or
+  "moody" chip; mood is already asked.
+- **The check-in isn't the only way in:** a "Period started" action on the Cycle page, and
+  back-filling or editing of past days, so a missed check-in doesn't corrupt the log or trigger a
+  false safety prompt.
 
 The answers are **not** stored on `CheckIn`: check-ins live on day logs, which sync to `day_logs`.
-They go to the separate device-only store in §6.
+They go to the device-only store in §6.
 
-### How it adapts
+## 5. How it adapts
 
 | Area | Change |
 |---|---|
-| Train | Heavy bleeding or pain "a lot" adds one signal to `lowSignals`, so the existing two-signal rule offers planned / shorter / gentle swap as equal choices. On those days, hide the step-up hint and the +1 rep target, as on shorter days. Later: optional exercise tags for comfort swaps (positions that suit a cramp day). |
-| Food | Targets unchanged. Hunger copy gives permission ("Hungrier than usual? Your range has room."), never lowers the range and never adds a compensating deficit later. On heavy days and a few after, suggest iron-rich foods (v1.1, needs the food-data work below). |
-| Body | In the maintenance loop's weigh-in check (`suggestRateAdjustment` in `maintenanceLoop.ts`): on weeks with logged bleeding, a neutral note ("Weight often reads a little higher around a period. It's mostly water and settles within days.") and no suggestion of a deeper deficit from that week. The 4-week trend already smooths most of the swing. |
-| Mind | After two or three logged cycles, personal patterns from the user's own log ("Your log shows lower energy on the first days of your last three periods. Want a lighter option ready then?"). An optional if-then template in `PlanSheets`. |
-| Safety | Rule-based prompts in `core/`, once per episode, linking out through `src/core/data/signposts.ts`: heavy bleeding 3+ days or bleeding over 7 days → NHS heavy periods page; pain "a lot" across 2+ cycles → suggest mentioning it to a GP; no period for 90+ days on a natural cycle → GP prompt and the loop moves from deficit to maintenance. Self-harm language uses the existing crisis script. Thresholds need clinician sign-off. |
+| Train | Pain "A lot" adds **one absolute signal** to Train's lighter offer only, through a separate optional argument such as `offerLighter(today, recent, cycle?)`. `lowSignals` itself is unchanged, because it also feeds `hardDay` (`mind.ts`) and `DayMind.low` (`weekPicture.ts`), which drive the synced weekly picture: a cycle signal there would label period weeks as hard weeks and leak cycle data. Heavy bleeding alone doesn't count; low energy is already asked. The offer copy never names the period ("A lighter session is here if you want it"), on Train and on Today. "As planned" stays exactly as planned: the step-up hint and +1 rep are hidden only when the person chooses Shorter or the swap, as today. |
+| Food | Targets unchanged. Hunger copy is triggered by the person's own hunger answer (Hungry or Starving), never by phase, and never mentions the period. Under or in range: "Hungry today? Your range has room." Above range: "Hungry today? Eating to your hunger is fine. One day doesn't change your week." Gentle or quiet modes: no range wording. Never a compensating deficit later. |
+| Body | In the maintenance loop's weigh-in check (`suggestRateAdjustment`, `maintenanceLoop.ts`): when bleeding was logged that week and the change is upwards, a note "Weight can read a bit higher around a period. It's mostly water and settles within days." Only where weight is already shown (never gentle or quiet modes). The loop never suggests a deeper deficit from that week or the next weigh-in check after a logged bleed (retention starts before bleeding). |
+| Patterns (v1.1) | Only when asked: a "Look for patterns" action on the Cycle page. Past tense, from the person's own log, with a consistency rule (held in every cycle and differed from their other days) and an honest "no clear pattern". No forecast ("want a lighter option ready then?" is out). Never food, hunger or weight patterns by cycle (they invite pre-emptive restriction). No mood patterns in v1.1. |
+| If-then (v1.1) | An optional template triggered by a symptom ("If I wake up with bad cramps, then..."), never by a date. Template-made plans live in synced `profile.plans`, so they carry no cycle wording beyond what the person types, or they wait for cycle sync. |
+| Food data (v1.1) | Additive copy, "foods with iron", never "swap". See §5.2. |
 
-### Copy rules
+### 5.1 Safety prompts
 
-- **Good:** "How's your body today? Skip anything." / "A lighter session is here if you want it." /
-  "Hungrier than usual? Your range has room."
-- **Never:** "Luteal phase: expect cravings"; "your hormones are peaking, so crush a PR"; "bloated?
-  cut salt and carbs"; anything with "should feel"; "avoid heavy lifting" in any phase; fertile
-  windows or ovulation; a diagnosis (PCOS, endometriosis, PMDD, REDs); "take iron" or any dose.
-- No streaks or "log every day". No "x of y". No pink or floral styling: the `--mind` pillar and the
-  neutral `--band` for ranges, per the Studio system.
+Generic signposting, never an assessment of the person's cycle (§6, medical-device line). Once per
+episode, through `src/core/data/signposts.ts`, shown in gentle mode too (without numbers). All
+thresholds need clinician sign-off.
 
-### Food data gap (v1.1)
+- **Bleeding for more than 7 days** → NHS heavy periods page.
+- **Heavy days across 2 or more cycles**, framed around impact ("if it's getting in the way of
+  things"), at most once per 3 months. A single heavy cycle doesn't fire it: self-rated "heavy"
+  would otherwise medicalise ordinary periods.
+- **Pain "A lot" across 2 or more cycles** → "Period pain that stops you doing things is worth
+  raising with a GP. You don't have to put up with it." No condition names.
+- **No logged period for a long stretch** (proposed 90 days; NHS says see a GP after missing three
+  in a row, which is longer for long cycles: clinician to set it):
+  - fires only if the person kept checking in through that time, and first asks "Has a period come
+    that isn't logged?";
+  - blame-free copy that allows for pregnancy: "Periods can stop for lots of reasons, including
+    eating less than your body needs or stress.";
+  - Beat alongside the GP for people with wellbeing Yes or gentle mode;
+  - for people in a deficit, the loop stops suggesting a deficit until a period is logged, and says
+    so plainly; the person can still set their own target. Whether that change to nutrition stays
+    outside medical-device rules needs a regulatory view (§10);
+  - whether "irregular" users get this prompt (they're equally at risk of low energy availability)
+    is a clinician call.
+- **A static "When to get help" page** in Cycle settings for what Tali must not detect itself:
+  bleeding between periods or after sex (GP); feeling faint or breathless with heavy bleeding
+  (NHS 111); sudden severe pain (111 or 999).
+- Self-harm language uses the existing crisis script.
+
+### 5.2 Iron (v1.1)
 
 `Food` stores only kcal, protein, carbs and fat; there is no iron. Most base foods cite CoFID, whose
-inorganics sheet has iron, but the importer reads only proximates. Two options: an optional `fe`
-field imported from CoFID, or a curated "iron-rich" tag at the GB "source of iron" claim threshold
-(check the current figure in GB law). Either way show a label, never a mg figure. Liver needs a
-pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
+inorganics sheet has iron, but the importer reads only proximates. Options: an optional `fe` field
+imported from CoFID, or a curated tag. Name the tag to match the threshold used: **"source of iron"**
+at 15% of the NRV per 100 g (about 2.1 mg), or "high in iron" at twice that; check the current GB
+figures (retained Reg. 1924/2006) on legislation.gov.uk. Whether the claims rules bind an app's
+labels is unknown, but use the authorised conditions anyway. Show a label, never a mg figure. Liver
+needs a pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
 
-## 5. What changed on main since Sept
+### 5.3 Wellbeing and eating-disorder rules
 
-- **Account deletion exists** (`src/data/account.ts`, `supabase/functions/_shared/account.ts`), a
-  Sept must-have now met.
-- **The onboarding sex answer** (`female` / `male` / `unspecified`) is the gate in §3. The legacy
-  default `sex: 'M'` (`src/core/data/constants.ts`) remains for profiles that never answered.
-- **The pregnancy flag** exists and is re-asked; Cycle pauses on it (§3).
-- **The maintenance loop** exists; the period-week guard and the water note belong in its weigh-in
-  check (§4).
-- **Server-side health consent and explicit grants** now apply to any new table. That raises the
-  cost of sync (§6) and supports device-only for v1.
-- **Clips are on Bunny Stream**; irrelevant to Cycle now that videos are split out.
+- No numbers from Cycle in gentle mode.
+- The no-period prompt is not wired to `restrictionSignal` (`foodMode.ts`) without a separate
+  `mental-performance` and Benn decision.
+- No praise for training through a period, no badges, no streaks, no "log every day", no "x of y".
 
-## 6. Storage and privacy
+### 5.4 Copy rules
 
-- **v1 is device-only.** Cycle data lives in a new additive `cycle` field inside `leanplan.v1`
-  (never rename the key). Never in `profile` or `settings` (which sync whole) and never on day logs.
-  Keeping it in `leanplan.v1` means sign-out, "Start fresh", the owner check and backup cover it.
-- **Trade-off, stated plainly to the user at setup:** a lost or wiped phone loses the cycle log
-  unless it was exported.
-- **Optional sync (later)** is a separate consent writing to a dedicated `cycle_days` table. Per the
-  current rules it needs, in one migration: owner-only RLS; `revoke all ... from anon`; grants to
-  `authenticated` and `service_role`; the `require_health_consent` trigger; lines in
-  `clear_log_after_withdrawal()` and `purge_unconsented_logs()`; a place in `USER_TABLES`; a purge
-  marker so deletes reach every device; and an opaque `data` column so client-side encryption can
-  follow without a schema change.
-- **UK GDPR / DPA 2018.** Special-category data (Art. 9) on explicit consent, separate from the
-  general health consent, withdrawable, with version and timestamp recorded through
-  `src/data/consent.ts`. Update the DPIA (`docs/compliance/dpia.md`), the register, and the privacy
-  policy in `src/core/legal/privacy.ts` in the same change; `npm run check:legal` must pass.
-- **Medical device line (MHRA, UK MDR 2002).** Logging plus symptom-based wellness suggestions is
-  probably general wellness. Fertility or ovulation prediction, or flagging "abnormal" cycles or
-  conditions, moves towards device territory. Signpost to a GP or the NHS instead.
-- **Must-haves before shipping:**
-  1. DPIA update reviewed by counsel.
-  2. A written position: Tali makes no fertility or ovulation claims.
-  3. Separate consent with version and timestamp.
-  4. "Delete all cycle data", working offline, reachable for everyone under Privacy.
-  5. Cycle data in the JSON export, with a note that the file isn't encrypted.
-  6. No cycle data in analytics, logs, push payloads, URLs or AI prompts; extend §5 of
-     `ai-platform-plan.md` to name it.
-  7. Notifications never mention periods.
-  8. Privacy policy and register updated.
-  9. Tests: sign-out wipes cycle data; a backup round-trip keeps it; no cycle field appears in any
-     `day_logs` or `settings` payload; the gate uses `sexOf`, so "prefer not to say" never sees it.
-  10. Sign-off from `compliance`, `security-data`, `mental-performance`, `nutrition-accuracy`,
-      `design` (and Benn on the boards) and `ship-critic`.
+- **Good:** "Period today? Skip anything." / "A lighter session is here if you want it." /
+  "Hungry today? Your range has room."
+- **Never:** phase names; "expect cravings"; "your hormones are peaking, so crush a PR"; "bloated?
+  cut salt and carbs"; anything with "should feel"; "avoid heavy lifting"; fertile windows,
+  ovulation or a predicted next period; a diagnosis (PCOS, endometriosis, PMDD, REDs); "take iron"
+  or any dose; "for women".
+- No pink or floral styling: the `--mind` pillar and the neutral `--band` for ranges, per Studio.
 
-### 6.1 Keeping the US open
+## 6. Storage, consent and privacy (UK)
+
+### Storage
+
+- **The cycle log is device-only in v1.** It lives in a new additive `cycle` field inside
+  `leanplan.v1` (never rename the key), registered with `src/data/deviceOnly.ts` like the Unload
+  notes. Never in `profile` or `settings` (which sync whole) and never on day logs.
+- **What does sync:** the cycle consent record (in `consents`), and at most a reason-free "offer
+  hidden" flag. The privacy policy says the account holds the fact that the person agreed to Cycle
+  (kept to show consent was given, Art. 7(1)).
+- **Sign-out:** a plain sign-out keeps `leanplan.v1` on the device behind the owner check (another
+  account signing in is asked before seeing it); "remove from this device" (`signOut({ remove:
+  true })`, `store.ts`) wipes it. Setup tells people this, and that a lost or wiped phone loses the
+  cycle log unless exported.
+- **Never carried across:** the old-guest "move into account" path and a different-account sign-in
+  never move cycle data.
+- **Backup import** never loads cycle data without a current cycle yes, and respects the owner check.
+
+### Consent
+
+- **A separate `cycle` consent type**, not a change to the health wording: Art. 9(2)(a) needs
+  explicit, specific consent, and rewording the health consent would bump `CONSENT_VERSIONS.health`
+  and re-ask every user, including those who never see Cycle.
+- Needs: a new `ConsentType` and `CONSENT_VERSIONS` entry, and **a migration widening
+  `consents_type_check`** (`docs/migrations/2026-10-10-shared-products.sql` allows only `health`,
+  `ai`, `label-photo`, `shared-products`). Written in the same file style as the other migrations.
+- The cycle consent requires a current health yes.
+- **A health withdrawal deletes the device cycle data** (add `device.cycle` to `HEALTH_FIELDS` and to
+  `clearHealthData` / `applyHealthWithdrawal`) and writes a cycle withdrawal record.
+- **Turning Cycle off records a withdrawal** (Art. 7(3)) and deletes the cycle data, offering the
+  export first.
+
+### Privacy policy, register, DPIA
+
+- `src/core/legal/privacy.ts`: a Cycle section; a line that the sex answer also decides whether
+  Cycle is offered (a new purpose: Art. 5(1)(b), 6(4), 13; it currently says "used for your energy
+  estimate"); bump `updated`. Publish the Cycle text only when Cycle ships (flag it or hold it), so
+  the policy never describes a feature that isn't live. Then `npm run check:legal`, `npm run
+  legal:html`, Webflow drafts, publish on Benn's go-ahead after `ship-critic`.
+- Register (`docs/compliance/README.md`): Cycle under "What's in the app" and a record-of-processing
+  row (device-only log, cloud consent record, retention, deletion paths).
+- DPIA: a §10 addendum in `docs/compliance/dpia.md` following the §8 and §9 pattern, covering
+  reproductive and contraception data; a shared phone or coercive partner (only the phone lock
+  protects it; there is no app lock); the unencrypted export; the setup answer; PMDD and
+  disordered-eating safety. Update the §7.3 view on ICO prior consultation (Art. 36); whether
+  residual risk stays below "high" is unknown until the addendum is written.
+
+### Medical device line (MHRA, UK MDR 2002)
+
+Logging plus symptom-based wellness suggestions is probably general wellness. Forecasting, fertility
+or ovulation prediction, or assessing a cycle as "abnormal" moves towards device territory. v1
+needs a written **intended-purpose statement**: Tali logs what the person reports and signposts to
+the NHS or a GP; it makes no assessment, diagnosis or fertility claim. Whether the §5.1 rules,
+especially the one that changes nutrition, stay outside UK MDR 2002 and MHRA software guidance is
+**unknown**: get a regulatory view.
+
+### Advertising (ASA/CAP)
+
+Any Cycle marketing on www.tali.fit needs documentary evidence for objective claims (CAP 12.1). No
+claim that Tali eases period pain or symptoms; no "train with your cycle" performance claims; iron
+copy only in authorised GB health-claim wording, if at all. Verify every † citation before it is
+used in copy.
+
+### Must-haves before shipping
+
+1. DPIA addendum, reviewed by counsel.
+2. The intended-purpose statement, and a written position that Tali makes no fertility or ovulation
+   claims.
+3. Separate cycle consent with version and timestamp, the `consents` migration, and withdrawal that
+   deletes.
+4. "Delete all cycle data", working offline, reachable for everyone under Privacy.
+5. Cycle data in the JSON export, with a note that the file isn't encrypted.
+6. No cycle data in analytics, logs, push payloads, URLs, AI prompts, the weekly picture or any
+   synced field; extend §5 of `ai-platform-plan.md` to name it.
+7. Notifications never mention periods.
+8. Privacy policy, register and website pages updated.
+9. Tests:
+   - "remove from this device" wipes cycle data; a plain sign-out keeps it behind the owner check;
+   - a different-account sign-in and the guest move never carry it across;
+   - a health withdrawal deletes it;
+   - a backup round-trip keeps it, and import needs a current cycle yes;
+   - no cycle field in any `day_logs`, `settings` or `profile` payload, or in `weekPicture`;
+   - the gate: prefer-not-to-say, then a health withdrawal, never sees the offer;
+   - `lowSignals`, `hardDay` and `weekPicture` give the same results with Cycle on or off.
+10. Sign-off from `compliance`, `security-data`, `mental-performance`, `nutrition-accuracy`,
+    `design` (and Benn on the boards) and `ship-critic`.
+
+## 7. US later: keeping it open
 
 v1 ships to the UK, but the US will follow, so v1 avoids anything that would have to be undone:
 
@@ -185,35 +285,49 @@ v1 ships to the UK, but the US will follow, so v1 avoids anything that would hav
   SDK) as a breach.
 - **Device-only by default and minimal fields**, which also limits what a US subpoena could reach
   after Dobbs; HIPAA doesn't cover Tali.
-- **Sync, when built, keeps the opaque `data` column** so client-side encryption can be switched on
-  for US users without a schema change.
-- **Consent and deletion already meet the stricter US state laws' shape** (separate opt-in consent,
+- **Sync, when built, keeps an opaque `data` column** so client-side encryption can be switched on
+  without a schema change.
+- **Consent and deletion already follow the stricter US state laws' shape** (separate opt-in,
   deletion that reaches every device). Washington's My Health My Data Act, and Nevada and
   Connecticut, need a separate consumer health data privacy policy and their own consent wording.
 
-Before marketing in the US: a US health-data privacy policy, a review against the FTC Act and the
-Health Breach Notification Rule, the state laws above (and any newer ones), whether to turn on
-client-side encryption for sync, and the FDA general-wellness line for the medical-device question.
-Unknown: which states' laws will apply at that point; check with counsel then.
+Before marketing in the US: a US health-data privacy policy; a review against the FTC Act and the
+Health Breach Notification Rule; the state laws above (and any newer ones); whether to turn on
+client-side encryption for sync; the FDA general-wellness line. Unknown: which states' laws will
+apply then; check with counsel.
 
-## 7. Build order
+## 8. Optional sync (later)
 
-1. **Design boards** on the Design canvas for Benn: the Profile offer, setup, the check-in group,
-   the Train lighter offer with a cycle signal, the weigh-in note, delete and export.
-2. **Cycle v1 (device-only):** gate, setup and consent; check-in group and store; symptom signals in
-   `dayOptions`; hunger copy; weigh-in note and period-week guard; safety prompts; delete and
-   export; legal updates.
-3. **Cycle v1.1:** iron-rich food label; personal patterns after two or three cycles; if-then
-   template; comfort-swap tags.
-4. **Later:** optional sync (`cycle_days`); life-stage modes (perimenopause depth, postpartum);
-   reading cycle data from Apple Health / Health Connect once there is a native build.
+A separate consent writing to a dedicated `cycle_days` table. Per the current rules, one migration
+holds: owner-only RLS; `revoke all ... from anon`; grants to `authenticated` and `service_role`; the
+`require_health_consent` trigger plus a server check of the cycle consent (the existing trigger
+checks health only); lines in `clear_log_after_withdrawal()` and `purge_unconsented_logs()`; a place
+in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data` column (§7).
 
-## 8. Open questions
+## 9. Build order
 
-1. **Demand.** Two women asked for this. A short survey or a few interviews before the build would
-   test how much people want it and what they'd use.
-2. **Clinician review** of the safety thresholds and copy before launch. Unknown: who will do it.
-3. **The onboarding line.** Offer Cycle once at the end of onboarding for women, or only in
-   Profile? Recommendation: Profile only in v1, which is the least pressure.
-4. **Unknown:** the Supabase backup retention window (matters only once sync exists).
-5. **US timing.** When the US launch is planned, run §6.1's checklist with `compliance` before marketing there.
+1. **Design boards** on the Design canvas for Benn: the Profile offer, setup and consent, the
+   one-row check-in group, "Period started" and back-fill, the lighter offer, the weigh-in note,
+   the safety prompts and "When to get help", delete and export.
+2. **Cycle v1 (device-only):** gate, setup and consent (with the `consents` migration); check-in row
+   and store; Train's cycle signal; hunger copy; weigh-in note and guard; safety prompts; delete,
+   export, withdrawal; legal, register and DPIA.
+3. **Cycle v1.1:** "Look for patterns"; symptom-triggered if-then template; iron label; comfort-swap
+   exercise tags.
+4. **Later:** optional sync (§8); US (§7); life-stage depth (perimenopause, postpartum); Apple Health
+   and Health Connect once there is a native build.
+
+## 10. Open questions
+
+1. **Demand.** Two women asked for this. Before the build, a short survey or a few interviews. Since
+   v1 has no analytics, the same people measure success afterwards: did they keep training (a
+   session or a swap rather than a skip) on symptom days; did the check-in feel like more work;
+   how many turned Cycle off; did anyone feel judged by the prompts.
+2. **Clinician review** of the §5.1 thresholds and copy. Unknown: who will do it.
+3. **Regulatory view** on the intended purpose and the §5.1 rules (MHRA).
+4. **Lawyer:** Equality Act 2010 s.29 and a women-only offer gated on a self-declared answer
+   (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds.
+5. **What "UK first" means in practice:** UK marketing only, or an in-app gate? If people in the EU
+   can turn Cycle on, EU GDPR applies, and EU MDR may if they are targeted.
+6. **Under-18s:** eligibility (`compliance`).
+7. **Unknown:** the Supabase backup retention window (matters only once sync exists).
