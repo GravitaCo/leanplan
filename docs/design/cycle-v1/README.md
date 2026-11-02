@@ -24,7 +24,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **A1 Profile: "Your cycle · Off" row in Tracking** ([dark](cy-a1-profile-dark.png))
 
-<img src="cy-a1-profile-light.png" width="300" alt="A1 Profile: "Your cycle · Off" row in Tracking">
+<img src="cy-a1-profile-light.png" width="300" alt="A1 Profile: &quot;Your cycle · Off&quot; row in Tracking">
 
 **A2 The offer: what Tali will and won't do; Set it up / Not now / I don't have periods** ([dark](cy-a2-intro-dark.png))
 
@@ -32,7 +32,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **A3 After "I don't have periods": no reason kept** ([dark](cy-a3-closed-dark.png))
 
-<img src="cy-a3-closed-light.png" width="300" alt="A3 After "I don't have periods": no reason kept">
+<img src="cy-a3-closed-light.png" width="300" alt="A3 After &quot;I don't have periods&quot;: no reason kept">
 
 ### B. Setup
 
@@ -42,11 +42,11 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **B2 "Which fits you best?" (six answers)** ([dark](cy-b2-question-dark.png))
 
-<img src="cy-b2-question-light.png" width="300" alt="B2 "Which fits you best?" (six answers)">
+<img src="cy-b2-question-light.png" width="300" alt="B2 &quot;Which fits you best?&quot; (six answers)">
 
 **B3 Here's how it works: "On this phone only"** ([dark](cy-b3-works-dark.png))
 
-<img src="cy-b3-works-light.png" width="300" alt="B3 Here's how it works: "On this phone only"">
+<img src="cy-b3-works-light.png" width="300" alt="B3 Here's how it works: &quot;On this phone only&quot;">
 
 **B3b The line shown for each answer** ([dark](cy-b3b-lines-dark.png))
 
@@ -56,7 +56,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **C1 Check-in: one row, "Period today?"** ([dark](cy-c1-checkin-dark.png))
 
-<img src="cy-c1-checkin-light.png" width="300" alt="C1 Check-in: one row, "Period today?"">
+<img src="cy-c1-checkin-light.png" width="300" alt="C1 Check-in: one row, &quot;Period today?&quot;">
 
 **C2 Check-in opened: bleeding, pain, symptoms** ([dark](cy-c2-checkin-open-dark.png))
 
@@ -66,7 +66,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **D1 Your cycle page: "Day 2 of your period"** ([dark](cy-d1-page-dark.png))
 
-<img src="cy-d1-page-light.png" width="300" alt="D1 Your cycle page: "Day 2 of your period"">
+<img src="cy-d1-page-light.png" width="300" alt="D1 Your cycle page: &quot;Day 2 of your period&quot;">
 
 **D1g Gentle mode: no day number** ([dark](cy-d1g-page-gentle-dark.png))
 
@@ -74,7 +74,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **D2 Between periods: "Period started"** ([dark](cy-d2-between-dark.png))
 
-<img src="cy-d2-between-light.png" width="300" alt="D2 Between periods: "Period started"">
+<img src="cy-d2-between-light.png" width="300" alt="D2 Between periods: &quot;Period started&quot;">
 
 **D3 Add or change a past day** ([dark](cy-d3-day-dark.png))
 
@@ -96,7 +96,7 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **E1 Train: the lighter offer on a pain "A lot" day** ([dark](cy-e1-train-dark.png))
 
-<img src="cy-e1-train-light.png" width="300" alt="E1 Train: the lighter offer on a pain "A lot" day">
+<img src="cy-e1-train-light.png" width="300" alt="E1 Train: the lighter offer on a pain &quot;A lot&quot; day">
 
 **E2 Summary wording unchanged** ([dark](cy-e2-summary-dark.png))
 
@@ -120,8 +120,8 @@ Still needed: `compliance` and `mental-performance` on the consent wording and a
 
 **G4 "Has a period come that isn't logged?"** ([dark](cy-g4-ask-dark.png))
 
-<img src="cy-g4-ask-light.png" width="300" alt="G4 "Has a period come that isn't logged?"">
+<img src="cy-g4-ask-light.png" width="300" alt="G4 &quot;Has a period come that isn't logged?&quot;">
 
 **G5 The reply after "No"** ([dark](cy-g5-answer-dark.png))
 
-<img src="cy-g5-answer-light.png" width="300" alt="G5 The reply after "No"">
+<img src="cy-g5-answer-light.png" width="300" alt="G5 The reply after &quot;No&quot;">
