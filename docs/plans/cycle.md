@@ -339,6 +339,8 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
 1. **Design boards** on the Design canvas for Benn: the Profile offer, setup and consent, the
    one-row check-in group, "Period started" and back-fill, the lighter offer, the weigh-in note,
    the safety prompts and "When to get help", delete and export.
+   **Drafted 29 Oct, awaiting Benn:** the "Cycle v1 (draft for Benn)" page on the Design canvas, with
+   PNG exports and the open design decisions in `docs/design/cycle-v1/README.md`.
 2. **Cycle v1 (device-only):** onboarding switched on first (§3); gate, setup and consent (with the `consents` migration); check-in row
    and store; Train's cycle signal; hunger copy; weigh-in note and guard; safety prompts; delete,
    export, withdrawal; legal, register and DPIA.
