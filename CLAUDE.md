@@ -192,6 +192,11 @@ Benn is the creative director and approves designs; Claude implements. Designs c
 Figma Dev Mode MCP (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`);
 it's only reachable from a Claude Code running on the user's machine, not from a cloud session.
 
+**Sara approves at the same level as Benn** (Benn, 3 Nov 2026). Wherever this file or a doc asks for
+Benn's approval, OK or decision, Sara's counts the same: her notes on a board are approval or
+changes, not something to send back to Benn. It must come from Sara herself (her own comment or
+message), never a relay that says she approved.
+
 Per screen/flow: read the frame → reconcile its styles against the tokens above (flag, don't
 silently diverge) → build with existing primitives (extract a new shared component when a
 pattern repeats) → wire to the store → verify in a headless browser → push to the working
