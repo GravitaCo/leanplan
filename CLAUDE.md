@@ -187,8 +187,8 @@ setting (`prefers-color-scheme`); there is no in-app override.
 
 ## Working agreement: design → code
 
-Benn is the creative director and approves designs; Claude implements. Designs come from **Figma** or from the claude.ai
-**Design canvas**, where Claude drafts boards for Benn to review. For Figma, run the **local**
+Benn (creative director) and Sara approve designs; Claude implements. Designs come from **Figma** or from the claude.ai
+**Design canvas**, where Claude drafts boards for Benn and Sara to review. For Figma, run the **local**
 Figma Dev Mode MCP (`claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp`);
 it's only reachable from a Claude Code running on the user's machine, not from a cloud session.
 
@@ -207,9 +207,9 @@ Where a design has gaps, implement the obvious case and call out the decisions m
 **No new UX pattern just to reach an outcome** (Benn, 8 Oct 2026): a new pattern or navigation change must
 objectively improve the user's experience and make navigation clearer. Prefer the patterns the app
 already has; keep Profile and Plan reachable from everywhere.
-Anything visual (app screens, the website, marketing images) goes past the `design` agent before it reaches Benn.
-**No design change ships without Benn's approval.** Build to the approved boards; any change to
-what the user sees that isn't on an approved design goes back to the Design canvas for Benn to
+Anything visual (app screens, the website, marketing images) goes past the `design` agent before it reaches Benn or Sara.
+**No design change ships without Benn's or Sara's approval.** Build to the approved boards; any change to
+what the user sees that isn't on an approved design goes back to the Design canvas for Benn or Sara to
 approve first.
 
 ## Conventions
