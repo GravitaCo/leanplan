@@ -144,7 +144,7 @@ For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed
   phone from their own logged starts and is never shown as a date, a count or a forecast;
 - with no period logged yet, or for any other answer: every check-in, as before (Tali can't tell
   when a period is due, and the long-gap prompt in §5.1 relies on check-ins).
-- a logged period ends at the first "None", or after 2 days with no bleeding answer.
+- a logged period ends at the first "Stopped", or after 2 days with no menstrual flow answer.
 - the estimate is never shown, never used for notifications or fertility features; the offer
   screen says Tali uses logged starts to bring the question back early, and won't show a date for
   the next period.
@@ -152,7 +152,7 @@ For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed
   back-filled more than a day late, and how many land outside the window. Over 15% late: widen the
   window or stop hiding the row.
 
-- **Menstrual flow** (label renamed from "Bleeding", Sara, 4 Nov): none / spotting / light / medium / heavy.
+- **Menstrual flow** (label renamed from "Bleeding", Sara, 4 Nov): stopped / spotting / light / medium / heavy. "Stopped" (was "None") marks the end of a period or a dry day within one.
 - **Pain:** No pain / A bit / A lot (same wording as the soreness scale).
 - **Optional chips:** cramps, bloating, headache, breast tenderness, upset stomach. No "PMS" or
   "moody" chip; mood is already asked.
