@@ -22,6 +22,10 @@ a regulatory adviser and a clinician.
 | 29 Oct | **No under-18s.** | Benn |
 | 29 Oct | **Tali will never claim to be a medical device or give medical advice.** | Benn |
 | 29 Oct | Existing users reach the offer through Profile › "Set up my plan" only; Cycle's launch doesn't point them there. | Benn |
+| 4 Nov | **Design change approved: the check-in row (C1)** shows "Period today?" only during a logged period and a few days either side, not every day. Boards and §4 still to update. | Sara |
+| 4 Nov | **Design change approved: the setup question (B2)** asks about bleeding, not contraception: Periods, usually regular / Irregular or unpredictable periods / Periods changing with age (perimenopause) / My periods often stop or skip, for example with some contraception / I don't have periods / Prefer not to say. B3b lines change to match; the "often stop or skip" answer takes over the contraception answer's job in §5.1. Still needs `compliance` and a clinician on the wording. | Sara |
+| 4 Nov | **Design change approved: the safety prompts (G1/G2)** start from what's usual for the person ("You know what's usual for your periods. If this is different from usual, or getting in the way of things…") and offer "This is usual for me", which stops that prompt unless the pattern changes. The bleeding-over-a-week prompt, "When to get help" and urgent advice still show. Still needs `mental-performance`, and a clinician to define "changes". | Sara |
+| 4 Nov | **Check-in options (C2) stay as drafted:** no flow rename and no extra symptom chips. | Sara |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
 non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
@@ -341,6 +345,7 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    the safety prompts and "When to get help", delete and export.
    **Drafted 29 Oct, awaiting Benn:** the "Cycle v1 (draft for Benn)" page on the Design canvas, with
    PNG exports and the open design decisions in `docs/design/cycle-v1/README.md`.
+   **4 Nov:** Sara approved changes to C1, B2/B3b and G1/G2 (§0); those boards are to be redrawn.
 2. **Cycle v1 (device-only):** onboarding switched on first (§3); gate, setup and consent (with the `consents` migration); check-in row
    and store; Train's cycle signal; hunger copy; weigh-in note and guard; safety prompts; delete,
    export, withdrawal; legal, register and DPIA.
