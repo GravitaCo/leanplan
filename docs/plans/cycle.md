@@ -25,7 +25,7 @@ a regulatory adviser and a clinician.
 | 4 Nov | **Design change approved: the check-in row (C1)** shows "Period today?" only during a logged period and a few days either side, not every day. Boards and §4 updated 4 Nov. | Sara |
 | 4 Nov | **Design change approved: the setup question (B2)** asks about bleeding, not contraception: Periods, usually regular / Irregular or unpredictable periods / Periods changing with age (perimenopause) / My periods often stop or skip, for example with some contraception / I don't have periods / Prefer not to say. B3b lines change to match; the "often stop or skip" answer takes over the contraception answer's job in §5.1. Still needs `compliance` and a clinician on the wording. | Sara |
 | 4 Nov | **Design change approved: the safety prompts (G1/G2)** start from what's usual for the person ("You know what's usual for your periods. If this is different from usual, or getting in the way of things…") and offer "This is usual for me", which stops that prompt unless the pattern changes. "This is usual for me" works on the bleeding-over-a-week, heavy and pain prompts alike (§5.1); "When to get help" and urgent advice are never switched off. Still needs `mental-performance`, and a clinician to define "changes". | Sara |
-| 4 Nov | **Check-in options (C2) stay as drafted:** no flow rename and no extra symptom chips. | Sara |
+| 4 Nov | **Check-in options (C2) stay as drafted:** no extra symptom chips and the same five options. The field label changes from "Bleeding" to "Menstrual flow" (C2, D3, G1). | Sara |
 | 4 Nov | **Alpha runs without a clinician** (Benn's call, relayed by Sara): `compliance` and `mental-performance` check instead, and every "clinician to set" value below is a provisional alpha default until a clinician signs it off before beta. Their fixes (B1, B3b, A2, C1, D4, G1, G2) approved and applied the same day. | Sara |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
@@ -152,7 +152,7 @@ For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed
   back-filled more than a day late, and how many land outside the window. Over 15% late: widen the
   window or stop hiding the row.
 
-- **Bleeding:** none / spotting / light / medium / heavy.
+- **Menstrual flow** (label renamed from "Bleeding", Sara, 4 Nov): none / spotting / light / medium / heavy.
 - **Pain:** No pain / A bit / A lot (same wording as the soreness scale).
 - **Optional chips:** cramps, bloating, headache, breast tenderness, upset stomach. No "PMS" or
   "moody" chip; mood is already asked.
