@@ -144,7 +144,7 @@ For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed
   phone from their own logged starts and is never shown as a date, a count or a forecast;
 - with no period logged yet, or for any other answer: every check-in, as before (Tali can't tell
   when a period is due, and the long-gap prompt in §5.1 relies on check-ins).
-- a logged period ends at the first "Stopped", or after 2 days with no menstrual flow answer.
+- a logged period ends at the first "Stopped", or after 2 days with no menstrual flow answer. Flow logged again within 2 days of "Stopped" carries on the same period (a dry day in the middle), so "Day N" and the safety prompts aren't reset.
 - the estimate is never shown, never used for notifications or fertility features; the offer
   screen says Tali uses logged starts to bring the question back early, and won't show a date for
   the next period.
