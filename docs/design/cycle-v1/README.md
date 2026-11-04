@@ -5,7 +5,7 @@
 - Plan: [`docs/plans/cycle.md`](../../plans/cycle.md)
 - Live boards, with notes and both modes side by side: the claude.ai Design canvas, page "Cycle v1 (draft for Benn)": https://claude.ai/artifact/EYDHM6mLouqwPsWxcDsWEb (opens only for people the canvas is shared with)
 - These PNGs are 390 px exports of the same boards, light and dark. Dashed tags on a board mark notes and items still pending.
-- **4 Nov:** Sara approved changes to C1, B2/B3b and G1/G2 (plan §0) and the canvas was redrawn. The PNGs for A2, B2, B3, B3b, C1, D1, D1g, G1, G2 and G4 predate that: the canvas is the current version.
+- **4 Nov:** Sara approved changes to C1, B2/B3b and G1/G2 (plan §0) and the canvas was redrawn. The PNGs for A2, B2, B3, B3b, C1, D1, D1g, D5, G1, G2 and G4 predate that: the canvas is the current version.
 
 ## Open decisions for Benn
 
