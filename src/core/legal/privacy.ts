@@ -37,11 +37,12 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
     // safeguard named on 11 Oct 2026
     // with onboarding on: the conditions and medicines question asked for every goal, and its two
     // settings (protein at the everyday amount, or a capped range), 24 Oct 2026
-    updated: onboarding ? '2026-10-24' : products ? '2026-10-11' : mind ? '2026-10-10' : '2026-10-09',
+    updated: '2026-11-05',
     intro:
       `This explains what Tilo collects, why, who else handles it and the rights you have. It covers the Tilo app ` +
       `(app.tilo.fit) and the Tilo website (www.tilo.fit). Tilo is run by ${who()} ("we", "us"). We are the controller ` +
-      `of your personal data under the UK GDPR, the Data Protection Act 2018 and, for people in the EU, the EU GDPR.`,
+      `of your personal data under the UK GDPR, the Data Protection Act 2018 and, for people in the EU, the EU GDPR. ` +
+      `Tilo was called Tali until November 2026, at app.tali.fit and www.tali.fit; nothing about how we handle your data changed with the name.`,
     sections: [
       {
         h: 'Who we are',
@@ -245,7 +246,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
                 `Products on the shared list are kept for as long as the list exists, unless we remove them after a report or a check. Because nothing links them to you, deleting your account doesn't remove them, and we can't find the ones you added. Products still waiting on your phone are removed if you turn sharing off, withdraw consent for health data, or someone else signs in on that phone.`,
               ]
             : []),
-          `Data on your device stays until you delete it in the app, clear your browser data or remove Tilo.`,
+          `Data on your device stays until you delete it in the app, clear your browser data or remove Tilo. Anything the app saved in your browser at the old address (app.tali.fit) stays in that browser until you remove it there or clear your browser data.`,
           `Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
           `Emails you send us are kept only as long as needed to deal with them.`,
         ],

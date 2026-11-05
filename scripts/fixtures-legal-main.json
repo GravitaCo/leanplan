@@ -2,8 +2,8 @@
   "source": "git show origin/main:src/core/legal/* at d404a34, rendered with no arguments",
   "privacy": {
     "title": "Privacy policy",
-    "updated": "2026-10-24",
-    "intro": "This explains what Tilo collects, why, who else handles it and the rights you have. It covers the Tilo app (app.tilo.fit) and the Tilo website (www.tilo.fit). Tilo is run by Gravita Creative Ltd (\"we\", \"us\"). We are the controller of your personal data under the UK GDPR, the Data Protection Act 2018 and, for people in the EU, the EU GDPR.",
+    "updated": "2026-11-05",
+    "intro": "This explains what Tilo collects, why, who else handles it and the rights you have. It covers the Tilo app (app.tilo.fit) and the Tilo website (www.tilo.fit). Tilo is run by Gravita Creative Ltd (\"we\", \"us\"). We are the controller of your personal data under the UK GDPR, the Data Protection Act 2018 and, for people in the EU, the EU GDPR. Tilo was called Tali until November 2026, at app.tali.fit and www.tali.fit; nothing about how we handle your data changed with the name.",
     "sections": [
       {
         "h": "Who we are",
@@ -107,7 +107,7 @@
           "If you withdraw consent for health data, we delete your log, profile, settings and reminders from your account straight away (or as soon as your phone next connects), and keep your account and your consent choices.",
           "If you used Tilo before we asked for consent and haven't agreed by 28 October 2026 (whether you chose \"Not now\" or haven't opened the app since), we delete your log, profile, settings and reminders from your account on that date, and keep your account. What's on your phone stays there.",
           "When we delete data from your account for either of these reasons, copies in our database provider's backups are deleted as they expire on its regular cycle.",
-          "Data on your device stays until you delete it in the app, clear your browser data or remove Tilo.",
+          "Data on your device stays until you delete it in the app, clear your browser data or remove Tilo. Anything the app saved in your browser at the old address (app.tali.fit) stays in that browser until you remove it there or clear your browser data.",
           "Early access emails are kept until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.",
           "Emails you send us are kept only as long as needed to deal with them."
         ]
@@ -160,7 +160,7 @@
   },
   "terms": {
     "title": "Terms and conditions",
-    "updated": "2026-10-24",
+    "updated": "2026-11-05",
     "intro": "These terms are the agreement between you and Gravita Creative Ltd (\"we\", \"us\") for using the Tilo app and website. Gravita Creative Ltd is registered in England and Wales, company number 08348225, registered office 64 Carlton Lane, Rothwell, Leeds, LS26 0SX. By using Tilo you accept these terms. Please read the health section in particular.",
     "sections": [
       {
@@ -253,8 +253,8 @@
   },
   "cookies": {
     "title": "Cookie policy",
-    "updated": "2026-09-28",
-    "intro": "This explains the cookies and other storage the Tilo app (app.tilo.fit) and website (www.tilo.fit) use on your device. The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. Tilo is run by Gravita Creative Ltd.",
+    "updated": "2026-11-05",
+    "intro": "This explains the cookies and other storage the Tilo app (app.tilo.fit) and website (www.tilo.fit) use on your device. The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. Tilo is run by Gravita Creative Ltd. Tilo was called Tali until November 2026, at app.tali.fit and www.tali.fit.",
     "sections": [
       {
         "h": "Why there is no cookie banner",

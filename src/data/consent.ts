@@ -32,6 +32,8 @@ export type ConsentType = (typeof CONSENT_TYPES)[number]
  * first health grant at this version is also the record of those two. After a withdrawal,
  * Profile → Privacy can grant it again (see docs/compliance/README.md).
  */
+// The 5 Nov 2026 rename changed only "Tali" to "Tilo" in these wordings, not the controller, purposes,
+// data or recipients, so the versions stay (compliance; register item 48).
 export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   health: '2026-09-v1',
   ai: '2026-09-v1',

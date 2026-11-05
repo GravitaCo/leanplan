@@ -7,7 +7,7 @@ const who = () => fact('controller', 'legal name')
  * review first (cancellation rights, subscription rules, app store terms).
  * The setup-questions paragraph is gated on `onboarding` (ONBOARDING_ENABLED, src/data/onboardingFlag.ts)
  * and the Mind paragraph on `mind` (WELLBEING_ENABLED): `npm run legal:html` publishes with both
- * flags. With both off, the text matches the page live on www.tilo.fit (checked 2026-10-10), so the
+ * flags. With both off, the text matches the page live on www.tali.fit (checked 2026-10-10, before the rename to Tilo), so the
  * date stays; with onboarding on and Mind off, it's main's as of 2026-10-09
  * (scripts/fixtures-legal-onboarding.json). Label photos and the shared product list are gated on
  * `products` (LABEL_SCAN_ENABLED): the licence for shared products, its fair-use lines and the
@@ -20,7 +20,7 @@ export function termsOfUse({ onboarding = false, mind = false, products = false 
     // (MIND_REVIEWED on by default since 10 Oct 2026, compliance the same day), so the not-therapy
     // line covers them; a VITE_MIND_REVIEWED=0 build over-describes, as the privacy policy does
     // with onboarding on: the setup questions also decide how much protein Tilo shows, 24 Oct 2026
-    updated: onboarding ? '2026-10-24' : mind || products ? '2026-10-10' : '2026-09-28',
+    updated: '2026-11-05',
     intro:
       `These terms are the agreement between you and ${who()} ("we", "us") for using the Tilo app and website. ` +
       `${who()} is registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +

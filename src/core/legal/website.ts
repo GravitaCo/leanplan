@@ -16,9 +16,10 @@ const company = () =>
 export function sitePrivacy(): LegalDoc {
   return {
     title: 'Privacy policy',
-    updated: '2026-09-24',
+    updated: '2026-11-05',
     intro:
       `This explains how we handle personal data on the Tilo website (www.tilo.fit), including the early access list. ` +
+      `Tilo was called Tali until November 2026, at www.tali.fit. ` +
       `The Tilo app is still in testing and will have its own, fuller privacy policy here before it opens to the public.`,
     sections: [
       {
@@ -99,7 +100,7 @@ export function sitePrivacy(): LegalDoc {
 export function siteCookies(): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: '2026-09-24',
+    updated: '2026-11-05',
     intro:
       `This explains the cookies and similar technology used on the Tilo website (www.tilo.fit). The short version: only what's needed to deliver the site and keep it safe. ` +
       `No advertising cookies, no analytics, no tracking. The site is run by ${who()}.`,
@@ -136,7 +137,7 @@ export function siteCookies(): LegalDoc {
 export function siteTerms(): LegalDoc {
   return {
     title: 'Terms and conditions',
-    updated: '2026-09-24',
+    updated: '2026-11-05',
     intro:
       `These terms cover your use of the Tilo website (www.tilo.fit). It is run by ${company()} ("we", "us"). ` +
       `The Tilo app is still in testing and will have its own, fuller terms here before it opens to the public.`,

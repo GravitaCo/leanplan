@@ -7,6 +7,11 @@ professional review the legal texts and this register.
 
 Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), trading as Tilo.
 
+Name: the product was called Tali (app.tali.fit, www.tali.fit) until the rename to Tilo (item 48).
+The rename replaced the old name in this register and `dpia.md` mechanically, including in dated
+entries: anything recorded before 2026-11-05 as checked "live on www.tilo.fit" or "at
+app.tilo.fit" was checked on www.tali.fit or app.tali.fit under the name Tali.
+
 ## What's in the app
 
 | Requirement | Where |
@@ -642,6 +647,45 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     claim results for people on prescription weight-loss medicines (ASA/CAP 12, 12.12). Texts
     dated 2026-10-24 in their onboarding-on versions; the published (onboarding-off) texts are
     unchanged.
+
+48. Rename to Tilo (2026-11-05, compliance; branch `rename/tilo`, `docs/plans/rename-tilo.md`).
+    Same controller, purposes, data, processors and transfers; only the product name and the
+    addresses change (www.tilo.fit, app.tilo.fit). Decided: no `CONSENT_VERSIONS` bump. Consent
+    must be informed about who the controller is and what for (Art. 4(11), 7; EDPB Guidelines
+    05/2020 on consent, para. 64), and neither changes, so a yes recorded as `2026-09-v1` (or
+    `2026-10-v1`) to the Tali wording is a yes to the same thing. A change of company (item 15)
+    still needs a bump. Owed before or with the switch:
+    (a) Privacy and cookie policies: while app.tali.fit still serves the app (the hand-over), the
+        policy must cover it (Art. 13): add a line to the privacy intro and the cookie intro, e.g.
+        "Tilo was called Tali until [month year]. Until [date], the app also runs at app.tali.fit,
+        and www.tali.fit sends you here." Bump `updated` on every variant of all three texts to the
+        publish date and regenerate the fixtures; the device-data retention line should say data
+        left at the old address stays in that browser until it is removed there or browser data is
+        cleared.
+    (b) Hand-over at app.tali.fit (security-data, ship-critic): sync first; offer the existing
+        export to anyone with device-only data (declined or paused health consent, unsynced
+        entries), and let them import it at app.tilo.fit; never move device-only health data
+        through the server, a URL or query string (that would be processing without the
+        Art. 9(2)(a) consent they declined); offer "remove this device's log" at the old address
+        before it becomes a redirect; remove the old origin's push subscriptions
+        (`push_subscriptions`) and reminders (Art. 5(1)(c), (e)). Delete account must keep working
+        from both addresses until the end (Art. 17; both origins are allowed in `delete-account`).
+    (c) Tell the testers (a service message about their account, not direct marketing: PECR
+        reg. 22 doesn't apply; ICO direct marketing guidance) in the app at app.tali.fit and by
+        email: the new address, sign in again, switch reminders back on, export device-only data.
+    (d) Early-access list: put the new name in the invite itself (the purpose they agreed to). A
+        separate "we're now Tilo" email should be factual only, with no promotion, and carry the
+        unsubscribe (item 2); anything promotional is marketing under PECR reg. 22 and goes beyond
+        "we use your email for nothing else".
+    (e) Republish all three Legals items (`npm run legal:html`) on the Webflow site under
+        www.tilo.fit as drafts, ship-critic, then Benn publishes; keep 301s from
+        www.tali.fit/legals/* so links in cached apps still reach the policies.
+    (f) ICO fee (item 1): register Gravita Creative Ltd with Tilo as a trading name.
+    (g) Turnstile and Webflow form: allow www.tilo.fit; the cookie list (`_cfuvid`) is unchanged.
+        Supabase Auth emails and the Google OAuth consent screen (item 5) carry the new name and
+        links.
+    (h) Not compliance, but before the name goes public: a trade mark clearance search and filing
+        for Tilo (not legal advice; a trade mark attorney should confirm).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

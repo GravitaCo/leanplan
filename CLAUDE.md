@@ -106,7 +106,7 @@ setting (`prefers-color-scheme`); there is no in-app override.
   `.tile`, `.banner`, `.toast`.
 - **Logo:** the Tilo mark (plum #3A2734; masters in `docs/brand/`: `Logo.svg`, `Logo-Light.svg`, and the
   framed `Logo-On-Mauve.svg`, `Logo-On-Light.svg`). `Tilo-App.svg` is the app icon: plum frame, white mark;
-  `public/favicon.svg` switches to a mauve #CD7FAD frame with a plum mark in light system mode. The PWA PNGs in
+  `public/favicon.svg` switches to a mauve #CD7FAE frame with a plum mark in light system mode. The PWA PNGs in
   `public/` are generated from `Tilo-App.svg`. In the app, `TaliMark` draws the mark in `--mark` (plum on light,
   white on dark).
 

@@ -18,11 +18,11 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
 export function cookiePolicy({ onboarding = false, mind = false, products = false }: { onboarding?: boolean; mind?: boolean; products?: boolean } = {}): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: products ? '2026-10-10' : mind ? '2026-10-09' : '2026-09-28',
+    updated: '2026-11-05',
     intro:
       `This explains the cookies and other storage the Tilo app (app.tilo.fit) and website (www.tilo.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
-      `Tilo is run by ${fact('controller', 'legal name')}.`,
+      `Tilo is run by ${fact('controller', 'legal name')}. Tilo was called Tali until November 2026, at app.tali.fit and www.tali.fit.`,
     sections: [
       {
         h: 'Why there is no cookie banner',
