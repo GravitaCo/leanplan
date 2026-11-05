@@ -55,7 +55,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   // ("how things are lately" has no row: answerRows)
   const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
   // Redo setup (compliance item 32) once setup has been finished, or Set up my plan for someone who
-  // never ran it (they used Tali before onboarding); behind the wizard. Both open it prefilled
+  // never ran it (they used Tilo before onboarding); behind the wizard. Both open it prefilled
   const onboarded = useStore((s) => !!s.data.profile.onboardedAt)
   const answersRow = hasAnswers && !!onAnswers, redoRow = ONBOARDING_ENABLED && !!onRedo
 
@@ -79,10 +79,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   return (
     <Sheet title="Health data" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
-        {status === 'on' ? 'Tali keeps your log, including your weight, check-ins and body details, to run the app and build your plan and targets.'
+        {status === 'on' ? 'Tilo keeps your log, including your weight, check-ins and body details, to run the app and build your plan and targets.'
           : status === 'paused' ? 'Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. ' + unconsentedCopyLine()
-          : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tali uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
-          : 'To build your plan, Tali asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
+          : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tilo uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
+          : 'To build your plan, Tilo asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
       </div>
       <Ticks items={HEALTH_TICKS} />
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
@@ -144,7 +144,7 @@ export function AiSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="AI features" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
-        Some features, like reading a food label from a photo or describing a meal in words, send what you share to Anthropic, the company that makes the AI Tali uses.
+        Some features, like reading a food label from a photo or describing a meal in words, send what you share to Anthropic, the company that makes the AI Tilo uses.
       </div>
       <Ticks items={AI_TICKS} />
       <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>What's sent, and where</button>
@@ -217,7 +217,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   return (
     <BareSheet label="Delete everything?" onClose={onClose} className="delconf">
       <h2 className="cs-t">Delete everything?</h2>
-      <div className="cs-lead">Your account and all your data will be deleted from Tali and this phone. You can sign up again any time, but it starts fresh.</div>
+      <div className="cs-lead">Your account and all your data will be deleted from Tilo and this phone. You can sign up again any time, but it starts fresh.</div>
       {stale && google && (
         <>
           <div className="cs-msg">{DELETE_MESSAGES.reauth}</div>

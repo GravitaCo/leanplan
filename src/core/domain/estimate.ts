@@ -47,7 +47,7 @@ export const CAPTURE_LABEL: Record<CaptureMethod, string> = {
 export const OWN_LABEL_ERR = 0.03
 
 /**
- * The margin for a food from Tali's shared list: the capture margin, the label margin and the
+ * The margin for a food from Tilo's shared list: the capture margin, the label margin and the
  * tier's extra (its source's err) all add (nutrition-accuracy, Oct 2026).
  */
 export const sharedErr = (how: CaptureMethod, tierExtra: number): number => +(CAPTURE_ERR[how] + OWN_LABEL_ERR + tierExtra).toFixed(2)

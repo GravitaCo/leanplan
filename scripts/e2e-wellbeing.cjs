@@ -524,8 +524,8 @@ async function wp5FlagOffHeaders({ page }) {
     const shout = sheet.locator('a.wz-sp', { hasText: 'Shout' })
     expect((await shout.getAttribute('href')) === 'sms:85258?&body=SHOUT', 'Shout sms link')
     await shout.getByText('Text SHOUT to 85258 · 24 hours, every day').waitFor()
-    await sheet.getByText('Tali isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.').waitFor()
-    await sheet.getByText('Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.').waitFor()
+    await sheet.getByText('Tilo isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.').waitFor()
+    await sheet.getByText('Opening this page is private. Tilo doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.').waitFor()
     await shot(page, 'wp6-support')
     // England: NHS 111 and option 2 come back
     await sheet.getByRole('button', { name: 'Choose', exact: true }).click()
@@ -598,15 +598,15 @@ async function wp5FlagOffHeaders({ page }) {
     const sec = await openProfileWb(page)
     // between "You and your goal" and "Tracking"
     const order = await page.evaluate(() => [...document.querySelectorAll('.screen .lbl')].map((x) => x.textContent.trim()))
-    const i = order.indexOf('What do you want Tali for?')
-    expect(order[i - 1] === 'You and your goal' && order[i + 1] === 'How often Tali asks' && order[i + 2] === 'Tracking', 'group order: ' + order.join(' | '))
+    const i = order.indexOf('What do you want Tilo for?')
+    expect(order[i - 1] === 'You and your goal' && order[i + 1] === 'How often Tilo asks' && order[i + 2] === 'Tracking', 'group order: ' + order.join(' | '))
     const rows = (await sec.locator('.list.icons .li .t').allTextContents()).map((s) => s.trim())
     expect(JSON.stringify(rows) === JSON.stringify(['Mind', 'Food', 'Move']), 'rows: ' + rows.join(', '))
     for (const p of ['Mind', 'Food', 'Move']) expect((await sw(sec, p).getAttribute('aria-checked')) === 'true' && await sw(sec, p).isEnabled(), p + ' on and enabled')
     await sec.getByText("Keep at least one on. One that's off leaves Today and stops its prompts. Nothing is deleted, and you can switch it back any time.").waitFor()
     await sec.getByRole('radio', { name: 'Usual' }).waitFor()
     expect((await sec.getByRole('radio', { name: 'Usual' }).getAttribute('aria-checked')) === 'true', 'Usual selected')
-    await sec.getByText("Usual: up to 3 suggestions or prompts a day. Fewer prompts: 1. On a harder day, Tali asks for less either way. Anything you open yourself doesn't count.").waitFor()
+    await sec.getByText("Usual: up to 3 suggestions or prompts a day. Fewer prompts: 1. On a harder day, Tilo asks for less either way. Anything you open yourself doesn't count.").waitFor()
     await shot(page, 'wp9-all-on')
 
     // Food off: B1.14 replaces B1.8; not on the at-risk route, so no B1.16
@@ -688,7 +688,7 @@ async function wp5FlagOffHeaders({ page }) {
     await tab(page, 'Profile')
     await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
     await page.getByText('Tracking', { exact: true }).waitFor()
-    expect(!(await page.getByText('What do you want Tali for?').count()) && !(await page.getByText('How often Tali asks').count()), 'no B1 group with the flag off')
+    expect(!(await page.getByText('What do you want Tilo for?').count()) && !(await page.getByText('How often Tilo asks').count()), 'no B1 group with the flag off')
     const order = await page.evaluate(() => [...document.querySelectorAll('.screen .lbl')].map((x) => x.textContent.trim()))
     const i = order.indexOf('You and your goal')
     expect(order[i + 1] === 'Tracking', 'flag off: ' + order.join(' | '))
@@ -704,7 +704,7 @@ async function wp5FlagOffHeaders({ page }) {
     await sheet.getByText('How are you feeling?').waitFor()
     return sheet
   }
-  const B10_13 = "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter options."
+  const B10_13 = "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tilo asks for less and offers lighter options."
   /** scrolls the check-in so the disclosure sits near the top of the sheet */
   const toDisclosure = (page) => page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); const m = document.querySelector('.ck-more'); if (bd && m) bd.scrollTop = m.offsetTop - 140 })
 
@@ -714,7 +714,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await more.getAttribute('aria-expanded')) === 'false', 'closed by default')
     expect(!(await sheet.getByText('Woke up around').count()) && !(await sheet.getByText('Roughly how long?').count()), 'nothing inside while closed')
     await sheet.getByText(B10_13).waitFor()
-    await sheet.getByText("Tali doesn't read your notes. If you're struggling,", { exact: false }).waitFor()
+    await sheet.getByText("Tilo doesn't read your notes. If you're struggling,", { exact: false }).waitFor()
     expect(!(await sheet.getByText('Skip anything you like.', { exact: false }).count()), 'the old foot is gone with the flag on')
     await shot(page, 'wp10-checkin-closed')
     await page.evaluate(() => { const bd = document.querySelector('.sheet .sheet-bd'); if (bd) bd.scrollTop = bd.scrollHeight })
@@ -827,9 +827,9 @@ async function wp5FlagOffHeaders({ page }) {
     const done = sheet.getByRole('button', { name: 'Done', exact: true })
     expect(await done.isDisabled(), 'Done is off while empty')
     expect((await sheet.locator('.ul-pair').count()) === 1, 'one pair to start')
-    await sheet.getByText("Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.").waitFor()
-    await sheet.getByText("Tali isn't a crisis service. In an emergency, call 999.").waitFor()
-    expect((await sheet.locator('.foot').nth(1).innerText()).trim() === "Tali doesn't read your notes. If you're struggling, support is here.", 'B8.12')
+    await sheet.getByText("Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tilo or clear this device's data, they're gone.").waitFor()
+    await sheet.getByText("Tilo isn't a crisis service. In an emergency, call 999.").waitFor()
+    expect((await sheet.locator('.foot').nth(1).innerText()).trim() === "Tilo doesn't read your notes. If you're struggling, support is here.", 'B8.12')
     expect(!(await sheet.getByText('Earlier notes').count()), 'no Earlier notes row before any note')
     await shot(page, 'wp13-unload-empty')
     // "support is here" and the S.1 row open Support over the sheet, and close back to it
@@ -1297,8 +1297,8 @@ async function wp5FlagOffHeaders({ page }) {
       return n ? [...n.querySelectorAll('.li .t')].map((x) => x.textContent.trim()) : []
     })) || (void lbl)
   }
-  const B11_FOOT = "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set."
-  const B11_14 = 'The last 2 check-in reminders went unopened, so Tali now sends them half as often. Nothing you need to do.'
+  const B11_FOOT = "Tilo sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set."
+  const B11_14 = 'The last 2 check-in reminders went unopened, so Tilo now sends them half as often. Nothing you need to do.'
   const swn = (page, name) => page.getByRole('switch', { name, exact: true })
 
   await run('wp17-notify-off', async ({ page }) => {
@@ -1383,7 +1383,7 @@ async function wp5FlagOffHeaders({ page }) {
         tx.oncomplete = () => { r.result.close(); res() }
       }
     }))
-    // Tali comes back to the front: it reads and empties the log
+    // Tilo comes back to the front: it reads and empties the log
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
     await page.waitForFunction(() => (JSON.parse(localStorage.getItem('leanplan.v1')).profile.mind || {}).halved?.checkin)
     const left = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('tali-notify'); r.onsuccess = () => { const q = r.result.transaction('events').objectStore('events').count(); q.onsuccess = () => { res(q.result); r.result.close() } } }))
@@ -1436,7 +1436,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect((await page.locator('.pillars > *').nth(1).evaluate((e) => e.classList.contains('lm-banner'))), 'banner directly under the Mind card')
     expect(!(await lmChips(page).count()) && !(await page.getByText("One thing for today, if you'd like:").count()), 'no one-thing chips on a signpost day')
     expect((await page.locator('.pillars > .banner, .pillars > .dayopt').count()) === 1, 'the signpost is the only banner')
-    expect(!(await page.getByText('Tali will ask for less for a while.').count()), 'no B6.14 line')
+    expect(!(await page.getByText('Tilo will ask for less for a while.').count()), 'no B6.14 line')
     // mind-coloured, not a warning: the square in --mind-fill with --mind-ink, a note role
     const tok = (v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
     const sq = await b.locator('.lm-sq').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color])
@@ -1565,7 +1565,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(!((await stored(page)).profile.plans || []).length, 'nothing saved before Save')
     await shot(page, 'wp14-plan-sheet')
     await sheet.getByRole('button', { name: 'Save', exact: true }).click()
-    await page.locator('.toast.show', { hasText: 'Plan saved. Tali will check in on it next week.' }).waitFor()
+    await page.locator('.toast.show', { hasText: 'Plan saved. Tilo will check in on it next week.' }).waitFor()
     await sheet.waitFor({ state: 'detached' })
     const plans = (await stored(page)).profile.plans || []
     expect(plans.length === 1 && plans[0].kind === 'mind' && plans[0].when === 'after lunch' && plans[0].then === 'get outside for 10 minutes', 'Mind plan saved: ' + JSON.stringify(plans))
@@ -2196,7 +2196,7 @@ async function wp5FlagOffHeaders({ page }) {
     expect(JSON.stringify(uk) === JSON.stringify(['Beat', 'Your GP', 'Samaritans', 'Emergency services']), 'whole-UK rows: ' + uk.join(', '))
     expect(!/111/.test(await sheet.locator('.wz-group').innerText()), 'no 111 before a nation is picked')
     await sheet.getByText('Choose your nation above to see your local NHS services.', { exact: true }).waitFor()
-    await sheet.getByText('Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.', { exact: true }).waitFor()
+    await sheet.getByText('Opening this page is private. Tilo doesn’t record it or tell anyone. All calls are free.', { exact: true }).waitFor()
     expect(!(await sheet.locator('.wz-sp', { hasText: 'Your GP' }).locator('.n').count()), 'the GP row has no right-hand label')
     expect(!(await sheet.getByRole('button', { name: 'Change', exact: true }).count()), 'Choose, not Change, before a pick')
     await shot(page, 'support-profile-uk')

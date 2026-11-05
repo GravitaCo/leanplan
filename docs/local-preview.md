@@ -1,7 +1,7 @@
 # Previewing a change before it goes live
 
-Tali has no staging site for now. Anything pushed to `main` goes straight to
-https://app.tali.fit/, so check working branches on your own Mac first.
+Tilo has no staging site for now. Anything pushed to `main` goes straight to
+https://app.tilo.fit/, so check working branches on your own Mac first.
 
 ## First time (once)
 
@@ -45,11 +45,11 @@ and open the `https://….trycloudflare.com` address it prints on the phone. `Ct
 - **Testing needs an account, and it's the live database.** There is no guest mode, and there
   is only one Supabase project, so signing in on a preview reads and writes that account's real
   data. Use a separate test account (a second email address) for anything you don't trust yet.
-  localhost is a different site from app.tali.fit, so the preview starts with empty local data.
+  localhost is a different site from app.tilo.fit, so the preview starts with empty local data.
 - **Offline mode isn't testable over Wi-Fi.** The service worker only runs on https or
   localhost, so on the phone's Wi-Fi address the app works but won't install or cache for
   offline use. Offline behaviour can be tested on the Mac at localhost:4173.
-- **Google sign-in, sign-up confirmation and password-reset links may land on app.tali.fit instead of localhost.**
+- **Google sign-in, sign-up confirmation and password-reset links may land on app.tilo.fit instead of localhost.**
   Supabase only returns to addresses on its allowed redirect list and otherwise falls back to
   the live site. Add `http://localhost:4173` and `http://localhost:5173` to the list under
   Supabase > Authentication > URL Configuration if you need them. Signing in with email and password isn't affected.

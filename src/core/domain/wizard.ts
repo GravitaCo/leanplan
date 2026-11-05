@@ -83,7 +83,7 @@ export interface WizardDraft {
   deficitChosen?: boolean
   /** a screen opened from the summary ("Add weight"): back to the summary after it */
   ret?: 'summary'
-  /** "See other plans" (ob3-6): a Tali plan chosen instead of the suggested week (its template id) */
+  /** "See other plans" (ob3-6): a Tilo plan chosen instead of the suggested week (its template id) */
   planChoice?: string
   /**
    * Profile's "Redo setup": the first run again, prefilled from the profile (draftFromProfile).
@@ -99,7 +99,7 @@ export const newDraft = (mode: WizardMode, seed: string): WizardDraft =>
 const MOVING_BACK: Record<MovingNow, MovingAnswer> = { 'not-at-all': 'not-now', some: 'now-and-then', regularly: 'three-plus' }
 
 /**
- * Profile's "Redo setup", and "Set up my plan" for someone who used Tali before onboarding and
+ * Profile's "Redo setup", and "Set up my plan" for someone who used Tilo before onboarding and
  * never ran it (age, height, weight, sex and goal are known from Profile): a first-run draft prefilled with the current answers, opening at the
  * first question (the intro's "Skip" would drop everything). Health answers only with a local
  * health consent (without it the wizard doesn't ask them, and the profile keeps none). Training
@@ -620,7 +620,7 @@ export { exposureOf, kitOf, replacementFor } from './firstSession'
 const PLAN_KIT: Record<string, string> = { 'stronger-with-age': 'dumbbells, chair, wall' }
 
 /**
- * How a Tali plan fits the answers (ob3-6): "Fits your 3 days · needs a gym". Rules only, from
+ * How a Tilo plan fits the answers (ob3-6): "Fits your 3 days · needs a gym". Rules only, from
  * the days asked for (else the suggested week's) against the plan's lifting days, and where the
  * person trains against where the plan is built for. No board gives the rules; the lines match
  * the three drawn.

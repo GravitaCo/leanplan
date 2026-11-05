@@ -38,6 +38,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 import { DELETE_CONFIRM as CONFIRM, UNDER_AGE_REASON, USER_TABLES as TABLES, jwtPayload, newAccount, signedInRecently } from '../_shared/account.ts'
 
 const ORIGINS = [
+  /^https:\/\/app\.tilo\.fit$/,
+  // the old address, kept while installs move over to app.tilo.fit (docs/plans/rename-tilo.md)
   /^https:\/\/app\.tali\.fit$/,
   /^http:\/\/localhost(:\d+)?$/,
   /^http:\/\/127\.0\.0\.1(:\d+)?$/,

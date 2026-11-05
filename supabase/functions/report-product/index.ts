@@ -1,5 +1,5 @@
 /**
- * report-product: the sp-6 report on a version of Tali's shared product list
+ * report-product: the sp-6 report on a version of Tilo's shared product list
  * (docs/migrations/2026-10-10-shared-products.sql). Anonymous: the database never learns who
  * reported.
  *

@@ -1,5 +1,5 @@
 /**
- * submit-product: add one signed label read to Tali's shared product list
+ * submit-product: add one signed label read to Tilo's shared product list
  * (docs/migrations/2026-10-10-shared-products.sql). Anonymous by design: the database never
  * learns who sent it.
  *
@@ -74,7 +74,7 @@ async function inOpenFoodFacts(gtin: string): Promise<boolean | null> {
   try {
     for (const code of codes) {
       const res = await fetch(OFF_API + code + '.json?fields=code,nutriments', {
-        headers: { Accept: 'application/json', 'User-Agent': 'Tali/1.0 (app.tali.fit)' },
+        headers: { Accept: 'application/json', 'User-Agent': 'Tilo/1.0 (app.tilo.fit)' },
         signal: AbortSignal.timeout(OFF_TIMEOUT_MS),
       })
       if (res.status === 404) continue

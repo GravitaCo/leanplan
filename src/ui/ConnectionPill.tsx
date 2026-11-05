@@ -28,7 +28,7 @@ export function connectionLine(c: ConnectionState): { head: string; body: string
     case 'offline': return { head: 'Offline.', body: 'Logging, search, plans and workouts all still work.' }
     case 'sign-in': return { head: 'Sign in to sync.', body: 'Your data is safe on this phone. Sign in again to back it up.' }
     case 'problem': return { head: 'Sync problem.', body: 'Your data is safe on this phone. Tap to try again, or see what happened.' }
-    case 'phone-only': return { head: 'On this phone only.', body: 'Nothing you log syncs to your account or is backed up there until you agree to Tali keeping your health data (Profile, then Privacy).' }
+    case 'phone-only': return { head: 'On this phone only.', body: 'Nothing you log syncs to your account or is backed up there until you agree to Tilo keeping your health data (Profile, then Privacy).' }
   }
 }
 

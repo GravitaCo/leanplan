@@ -27,7 +27,7 @@ DROP_NAMES = re.compile(r'^Additional .*Sauce$')
 # Pizza Hut lists the current tenders and the ones replacing them "From August 2026": the booklet is
 # dated July 2026, so from August the new line is the menu; the old one is dropped
 FROM_AUG = ' (From August 2026)'
-# Tali names for rows whose booklet wording needs its section to make sense (names are stable IDs)
+# Tilo names for rows whose booklet wording needs its section to make sense (names are stable IDs)
 RENAME = {
     ('Dine In Dip Pots', 'Sour Cream'): 'Sour Cream Dip Pot', ('Dine In Dip Pots', 'Hot Honey (60ml)'): 'Hot Honey Dip Pot (60ml)',
     ('Dine In Dip Pots', 'Sweet Chilli Dip (50ml)'): 'Sweet Chilli Dip Pot (50ml)',

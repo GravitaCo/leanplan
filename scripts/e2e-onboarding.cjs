@@ -162,7 +162,7 @@ const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String
 /** The wizard from the intro to the handoff, with `a` choosing the answers; screenshots when `snap`. */
 async function wizard(page, a = {}, snap) {
   const s = async (n) => { if (snap != null) await shot(page, snap + n) }
-  await h1(page, 'A few questions, so Tali fits you'); await s('ob1-0-intro')
+  await h1(page, 'A few questions, so Tilo fits you'); await s('ob1-0-intro')
   await btn(page, 'Let’s go').click()
   await h1(page, 'What do you like to be called?')
   await page.getByPlaceholder('Sam').fill(a.name ?? 'Sam'); await s('ob1-0c-name'); await cont(page)
@@ -208,7 +208,7 @@ async function wizard(page, a = {}, snap) {
   await check(page, injection ? 'A weight-loss injection, like semaglutide or tirzepatide' : a.medical ? 'Kidney disease' : 'None of these'); await s('ob4-5-medical-q'); await cont(page)
   if (a.medical) {
     await h1(page, 'Your food range stays at maintenance')
-    await page.getByText(injection ? 'Tali keeps your food range at maintenance. It’s a guide, not a number to hit.' : 'shows protein as the everyday amount for adults', { exact: false }).first().waitFor()
+    await page.getByText(injection ? 'Tilo keeps your food range at maintenance. It’s a guide, not a number to hit.' : 'shows protein as the everyday amount for adults', { exact: false }).first().waitFor()
     expect(injection === ((await page.getByText('protein', { exact: false }).count()) === 0), 'the injection note never mentions protein; the kidney note does')
     await s(injection ? 'ob4-6-medical-injection' : 'ob4-6-medical'); await cont(page)
   }
@@ -506,7 +506,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   })
 
   await run('dark mode: intro, age, body, weight, days, summary', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you'); await shot(page, 'dark-ob1-0-intro')
+    await h1(page, 'A few questions, so Tilo fits you'); await shot(page, 'dark-ob1-0-intro')
     await btn(page, 'Let’s go').click(); await cont(page)
     await slide(page, 'Age in years', 34); await shot(page, 'dark-ob1-1-age'); await cont(page)
     for (let i = 0; i < 3; i++) await page.getByRole('radiogroup').nth(i).getByRole('radio', { name: 'No', exact: true }).click()
@@ -534,11 +534,11 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   }, { dark: true })
 
   await run('skip on the intro → age → Starter week, no calorie numbers', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you')
+    await h1(page, 'A few questions, so Tilo fits you')
     await btn(page, 'Skip, I’ll set things up myself').click()
     await h1(page, 'No problem. Just your age, then you’re in.')
     await slide(page, 'Age in years', 30); await shot(page, 'ob1-0b-skip')
-    await btn(page, 'Start using Tali').click()
+    await btn(page, 'Start using Tilo').click()
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.getByLabel('Finish your setup').waitFor(); await shot(page, 'ob2-0b-card')
     const st = await stored(page)
@@ -796,7 +796,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   // Onboarding 10 (ob9-6, ob9-7): Support and helplines from Profile, for everyone, offline too,
   // and opening it sends nothing anywhere
   const SUPPORT_LEAD = 'People you can talk to about food, eating, mood or how things are going. You don’t need a reason to get in touch.'
-  const SUPPORT_FOOT = 'Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.'
+  const SUPPORT_FOOT = 'Opening this page is private. Tilo doesn’t record it or tell anyone. All calls are free.'
   const openSupport = async (page, snap) => {
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).first().click()
@@ -860,7 +860,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
       expect(!reqs.length, 'opening it sent nothing: ' + reqs.join(', '))
       const after = await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.entries(localStorage))))
       expect(before === after, 'opening it stored nothing')
-      // offline: no connection to Tali's server, then none at all
+      // offline: no connection to Tilo's server, then none at all
       net.block = true
       await page.reload()
       await ctx.setOffline(true)
@@ -906,7 +906,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await page.locator('.sm-food').screenshot({ path: path.join(OUT, 'ob4-7-maint.png') })
     await btn(page, 'What this means').click()
     await page.getByRole('dialog', { name: 'Eating at maintenance' }).waitFor()
-    await page.getByText('Based on something you told us, Tali isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.').waitFor()
+    await page.getByText('Based on something you told us, Tilo isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.').waitFor()
     expect((await page.getByRole('dialog').getByText(/weigh-in/i).count()) === 0, 'the sheet shows no weigh-ins')
     await shot(page, 'ob4-8-maint')
     await btn(page, 'See your health check answers').click()
@@ -925,7 +925,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   await run('safety: medical (goal lose fat) → held at maintenance', async ({ page }) => {
     await wizard(page, { medical: true }, 'route-medical/')
     await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
-    await page.getByText('Tali keeps this at maintenance for now, to keep things safe.').waitFor()
+    await page.getByText('Tilo keeps this at maintenance for now, to keep things safe.').waitFor()
     const dr = await draft(page)
     expect(dr.outcomes.medical === 'flagged' && !JSON.stringify(dr).match(/kidney/i), 'outcome only')
   })
@@ -943,7 +943,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
 
   await run('safety: under 18 → kind stop → Close deletes the account and this device’s data', async ({ page, net }) => {
     await wizard(page, { age: 17 }, 'route-under18/')
-    await h1(page, 'Tali is for 18+'); await shot(page, 'ob4-1-under18')
+    await h1(page, 'Tilo is for 18+'); await shot(page, 'ob4-1-under18')
     await btn(page, 'I typed my age wrong').click(); await h1(page, 'How old are you?')
     await slide(page, 'Age in years', 16); await cont(page)
     await btn(page, 'Close').click()
@@ -956,7 +956,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
 
   await run('safety: under 18, account over 24 h (re-auth refused) → stops, wipes, asks to sign in again', async ({ page, net }) => {
     await wizard(page, { age: 15 })
-    await h1(page, 'Tali is for 18+')
+    await h1(page, 'Tilo is for 18+')
     await btn(page, 'Close').click()
     await page.getByText('Please sign in again to finish removing your account.').waitFor({ timeout: 8000 })
     await shot(page, 'route-under18/reauth-sign-in')
@@ -970,7 +970,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
 
   await run('safety: under 18 offline → device wiped now, account deleted on the next connection', async ({ page, ctx, net }) => {
     await wizard(page, { age: 14 })
-    await h1(page, 'Tali is for 18+')
+    await h1(page, 'Tilo is for 18+')
     await ctx.setOffline(true)
     await btn(page, 'Close').click()
     await page.waitForFunction(() => !!localStorage.getItem('tali.pendingDelete'))
@@ -996,7 +996,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     await page.reload()
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(500)
-    expect((await page.getByText('Tali is for 18+').count()) === 0, 'no stop screen for another account')
+    expect((await page.getByText('Tilo is for 18+').count()) === 0, 'no stop screen for another account')
   }, { state: { ...newAccount(), profile: { name: 'Sam', sex: 'F', age: 34, height: 170, weight: 70, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z', activityMult: 1.3 } } })
 
   await run('health data off: a height saved on Profile says it isn’t kept', async ({ page }) => {
@@ -1011,14 +1011,14 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     profile: { name: 'Sam', sex: 'F', age: 34, height: null, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } } })
 
   await run('no health data consent: the Food card asks for the OK (ob4-9)', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you'); await btn(page, 'Let’s go').click(); await cont(page)
+    await h1(page, 'A few questions, so Tilo fits you'); await btn(page, 'Let’s go').click(); await cont(page)
     await slide(page, 'Age in years', 34); await cont(page)
     await h1(page, 'What would make this worth it for you?'); await cont(page)
     await tap(page, 'Lose fat')
     await h1(page, 'How you like to train')
     await btn(page, 'Skip for now, start with a simple week').click(); await summaryUp(page)
     await page.getByText('Targets need your OK').waitFor()
-    await page.getByText('Logging works in full. To set targets from your height, weight and age, Tali needs your OK to keep health data.').waitFor()
+    await page.getByText('Logging works in full. To set targets from your height, weight and age, Tilo needs your OK to keep health data.').waitFor()
     await page.locator('.sm-food').screenshot({ path: path.join(OUT, 'ob4-9-noconsent.png') })
     await btn(page, 'Turn on health data').click()
     await btn(page, 'Yes, keep it').waitFor()
@@ -1027,7 +1027,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   }, { state: { ...newAccount(), consents: { records: [GRANTED.records[0], { id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab', type: 'health', version: '2026-09-v1', granted: false, at: '2026-09-21T08:00:00.000Z' }], healthCleared: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000ab' } } })
 
   // The if-then offer (ob5-4) is due after the first workout since setup, and goes through the asks
-  // budget: it isn't an early-weeks ask, so it waits until someone has used Tali for 14 days
+  // budget: it isn't an early-weeks ask, so it waits until someone has used Tilo for 14 days
   // (EARLY_DAYS in core/domain/asks.ts, counted from their first logged day). So the seed is someone
   // who set up 3 weeks ago, logged a weigh-in that day, and logs their first workout today.
   const IF_THEN_START = (() => { const d = new Date(); d.setDate(d.getDate() - 21); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
@@ -1085,13 +1085,13 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   })
 
   await run('offline mid-wizard, reload, resume, finish offline, sync on reconnect', async ({ page, ctx, net }) => {
-    await h1(page, 'A few questions, so Tali fits you'); await btn(page, 'Let’s go').click(); await cont(page)
+    await h1(page, 'A few questions, so Tilo fits you'); await btn(page, 'Let’s go').click(); await cont(page)
     await slide(page, 'Age in years', 41); await cont(page)
     await ctx.setOffline(true)
     for (let i = 0; i < 3; i++) await page.getByRole('radiogroup').nth(i).getByRole('radio', { name: 'No', exact: true }).click()
     await cont(page); await cont(page); await tap(page, 'Increase strength')
     await h1(page, 'How are things lately?')
-    // reload with no connection to Tali's server (the app shell itself comes from the preview)
+    // reload with no connection to Tilo's server (the app shell itself comes from the preview)
     net.block = true
     await ctx.setOffline(false)
     await page.reload()
@@ -1133,7 +1133,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
 
   await run('second device: onboarded elsewhere → no wizard', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
-    expect((await page.getByText('A few questions, so Tali fits you').count()) === 0, 'no wizard')
+    expect((await page.getByText('A few questions, so Tilo fits you').count()) === 0, 'no wizard')
   }, { state: { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }, rows: { settings: [{ user_id: UID, target: { kcal: 2000, p: 150, c: 200, f: 70 }, schedule: {}, profile: { name: 'Sam', sex: 'F', age: 34, height: 172, activityLevel: 'light', supplements: [], notificationsEnabled: false, onboardedAt: '2026-09-20T08:00:00.000Z' } }] } })
 
   // ─── Onboarding 7: Health check answers and the 12-week check-in (boards ob7-1 to ob7-4) ───
@@ -1376,7 +1376,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   // ─── the first-run wait (Benn's device test): no flash of the wizard before the first pull ───
   const usedBeforeRows = { settings: [{ user_id: UID, target: { kcal: 1800, p: 140, c: 180, f: 60 }, schedule: {}, profile: { name: 'Pat', sex: 'F', age: 44, height: 168, activityLevel: 'light', supplements: [], notificationsEnabled: false, goal: 'lose-fat' } }] }
   const unpulled = { ...newAccount(), _meta: { ...newAccount()._meta, lastPull: null } }
-  const wizardUp = (page) => page.getByRole('heading', { name: 'A few questions, so Tali fits you', exact: true }).count()
+  const wizardUp = (page) => page.getByRole('heading', { name: 'A few questions, so Tilo fits you', exact: true }).count()
   await run('slow pull (4 s), used before: loading, then the app; the wizard never shows', async ({ page }) => {
     for (let i = 0; i < 60; i++) {
       expect((await wizardUp(page)) === 0, 'the wizard flashed up at ' + i * 100 + ' ms')
@@ -1387,11 +1387,11 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect((await wizardUp(page)) === 0, 'no wizard after the pull')
   }, { state: unpulled, rows: usedBeforeRows, pullDelay: 4000 })
   await run('pull slower than the wait (13 s): the wizard shows; untouched, the pull switches to the app', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you')
+    await h1(page, 'A few questions, so Tilo fits you')
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor({ timeout: 20000 })
   }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
   await run('pull slower than the wait (13 s): once started, the wizard stays', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you')
+    await h1(page, 'A few questions, so Tilo fits you')
     await btn(page, 'Let’s go').click()
     await h1(page, 'What do you like to be called?')
     await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('leanplan.v1'))._meta.lastPull, null, { timeout: 20000 })
@@ -1400,7 +1400,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
     expect((await stored(page)).profile.goal === 'lose-fat', 'the pulled profile is in')
   }, { state: unpulled, rows: usedBeforeRows, pullDelay: 13000 })
 
-  // ─── Set up my plan: someone who used Tali before and never onboarded ───
+  // ─── Set up my plan: someone who used Tilo before and never onboarded ───
   await run('set up my plan: prefilled from Profile; Start offers the rebuild; setup is then done', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     const before = await stored(page)
@@ -1436,7 +1436,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   await run('flag off: nothing new shows', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
     await page.waitForTimeout(600)
-    expect((await page.getByText('A few questions, so Tali fits you').count()) === 0, 'no wizard')
+    expect((await page.getByText('A few questions, so Tilo fits you').count()) === 0, 'no wizard')
     expect((await page.getByLabel('Finish your setup').count()) === 0, 'no setup card')
     await tab(page, 'Plan'); await page.locator('.hdr .ltitle', { hasText: 'Plan' }).waitFor()
     expect((await page.locator('.buildplan').count()) === 0, 'no Build my plan card')

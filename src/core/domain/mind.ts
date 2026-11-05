@@ -236,7 +236,7 @@ export function lowMoodDue(days: Days, today: string, lastShown?: string): boole
 /**
  * The banner's line for every nation (deck B6.10): true in all four, since it names no NHS route.
  * NHS 111 and NHS 24 stay one tap away under "See support", where the sheet has a nation picker
- * (mental-performance close-out, change 2: Tali stores no nation, and England's line would name
+ * (mental-performance close-out, change 2: Tilo stores no nation, and England's line would name
  * NHS 111 in Northern Ireland).
  */
 export const LOW_MOOD_LINE_ANY_NATION = 'Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.'

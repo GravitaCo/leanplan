@@ -377,7 +377,7 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
           {ticks.map((x, i) => <span key={x} className={'tk num' + (i === 0 ? ' first' : i === ticks.length - 1 ? ' last' : '')} style={{ left: at(x) }}>{fmt(x)}</span>)}
         </div>
         <div className="d num">Narrower than the starting estimate of {fmt(r.start.lo)} to {fmt(r.start.hi)}, which came from your answers. It’s what keeps you steady going by what you log, so it works as a target even if some things go unlogged.</div>
-        {next?.floored && <div className="d">Tali keeps your target at a safe minimum, so it starts a little higher than this.</div>}
+        {next?.floored && <div className="d">Tilo keeps your target at a safe minimum, so it starts a little higher than this.</div>}
       </section>
       <SideBySide week={week} span={span} cap={`Based on the last ${Math.round(r.days / 7)} weeks`}
         food={<><b>{r.loggedDays} complete days</b> logged, averaging {fmt(r.avgKcal)} kcal</>}
@@ -418,7 +418,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
   const showToast = useStore((s) => s.showToast)
   const remind = async () => {
     const ok = await setReviewPush(true)
-    showToast(ok ? 'Weekly reminder on' : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'Notifications are off for Tali in your settings' : 'Couldn’t turn the reminder on. Try again when you’re online')
+    showToast(ok ? 'Weekly reminder on' : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'Notifications are off for Tilo in your settings' : 'Couldn’t turn the reminder on. Try again when you’re online')
   }
   return (
     <LoopSheet label="Your weekly review" onClose={onClose}>

@@ -15,7 +15,7 @@ const DAYS: [NonNullable<PlanFilters['days']>[number], string][] = [['2-3', 'Up 
 const EXPERIENCE: [PlanExperience, string][] = [['new', 'Just starting'], ['comfortable', 'Getting comfortable'], ['confident', 'Confident']]
 const WHERE: [PlanWhere, string][] = [['gym', 'Gym'], ['home', 'Home, some kit'], ['none', 'No equipment']]
 const LENGTH: [NonNullable<PlanFilters['length']>[number], string][] = [['6', 'Up to 6 weeks'], ['8', '7 to 9 weeks'], ['12', '10 weeks or more']]
-const MADE: [NonNullable<PlanFilters['madeBy']>[number], string][] = [['tali', 'Tali'], ['me', 'Me']]
+const MADE: [NonNullable<PlanFilters['madeBy']>[number], string][] = [['tali', 'Tilo'], ['me', 'Me']]
 
 const toggle = <T,>(list: T[] | undefined, v: T): T[] => (list?.includes(v) ? list.filter((x) => x !== v) : [...(list ?? []), v])
 
@@ -49,7 +49,7 @@ function FilterSheet({ value, onChange, onClose, count }: { value: PlanFilters; 
 }
 
 /**
- * Every plan in one list (Plans 1, step 2): Tali's and the person's own, no categories to manage.
+ * Every plan in one list (Plans 1, step 2): Tilo's and the person's own, no categories to manage.
  * The plan that fits their goal leads; search, goal chips and filters narrow it.
  */
 export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onOpen: (e: CatalogueEntry) => void; onNew: () => void }) {
@@ -249,7 +249,7 @@ export function MaintenanceCard({ onClose }: { onClose: () => void }) {
   const steps: [string, string][] = [
     ['What maintenance is', "A lighter way to train once a plan ends. You keep doing the same workouts, just with fewer sets. It's for busy spells, a breather between plans, or whenever you'd like to hold steady."],
     ['Why it works', 'People who had trained for a few months kept most of their strength and muscle for months on about a third of their usual sets, sometimes training just once a week. Older adults kept more when they did a bit more, so Stronger with age keeps about two thirds.'],
-    ['What changes in Tali', 'Your workouts open on the shorter version, usually 2 sets instead of 3, on two or three days a week. Light cardio and balance sessions stay if you want them. You can do the full workout any day.'],
+    ['What changes in Tilo', 'Your workouts open on the shorter version, usually 2 sets instead of 3, on two or three days a week. Light cardio and balance sessions stay if you want them. You can do the full workout any day.'],
     ['The one thing to keep: the weight', "Lift the same weights you finished the plan on, and stop a couple of reps before you couldn't do another. Fewer sets is fine. Much lighter weights is what lets progress slip."],
     ["How long, and what's next", "As long as you need. We'll check in after about 8 weeks and suggest a new plan around 12, whenever you're ready. A week or two off along the way won't undo your work."],
   ]

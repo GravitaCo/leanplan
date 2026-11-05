@@ -42,9 +42,9 @@ export interface ReminderCopy { title: string; body: string; tag: string }
 
 /** The only words a reminder carries. One tag per type, so a new one replaces an unread one. */
 export const REMINDER_COPY: Record<MindKind | 'supp', ReminderCopy> = {
-  checkin: { title: 'Tali', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
-  'wind-down': { title: 'Tali', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
-  plan: { title: 'Tali', body: 'How are your plans going?', tag: 'tali-plan' },
+  checkin: { title: 'Tilo', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
+  'wind-down': { title: 'Tilo', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
+  plan: { title: 'Tilo', body: 'How are your plans going?', tag: 'tali-plan' },
   // main's lock-screen fix (2026-10-09): no supplement name unless the person turned names on (B11b)
   supp: { title: 'Time for your supplements', body: 'Time for your supplements', tag: 'tali-supp' },
 }

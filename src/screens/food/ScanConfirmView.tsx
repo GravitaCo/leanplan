@@ -8,7 +8,7 @@
  * per-serving figures, the misread checks (core/domain/label.ts) re-run as the user edits, and a
  * suspected misread offers its one suggested fix to accept with a tap.
  *
- * Tali's shared product list (boards sp-1 to sp-6): a product found there opens here with where
+ * Tilo's shared product list (boards sp-1 to sp-6): a product found there opens here with where
  * it came from (sp-2, sp-3, sp-3b), its margin and Report this product (sp-6). A label read that
  * may join the list (core/domain/sharedProduct.ts shareEligible) asks the one-time opt-in at its
  * first save (sp-1); either answer saves the food. A yes queues the signed read, sent later.

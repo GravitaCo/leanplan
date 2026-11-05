@@ -69,7 +69,7 @@ const GUARDRAIL_TEXT: Record<string, string> = {
   'days-cap': 'Up to 3 days to start, so there is room to recover. You can add more later.',
   'readiness': "You mentioned something about your health, so we've started gently and kept it low-impact. It's worth checking with your GP or a health professional before you start.",
   'hold-volume': 'Sets stay the same for the first 4 weeks while you settle in.',
-  'no-volume-increase': "Sets stay steady. Tali won't suggest adding more.",
+  'no-volume-increase': "Sets stay steady. Tilo won't suggest adding more.",
   'deficit': "While you're eating less, sets stay at the lower end and weights hold steady.",
   'no-stall-checks': "Holding steady while you're eating less is a good result.",
   'lose-fat-six': 'Six days is a lot while losing fat, so the sixth is a light, optional session.',
@@ -235,7 +235,7 @@ export const WELLBEING_BANNED: RegExp[] = [/\bskip(s|ped|ping)?\b/i, /\breadines
  * - B8.11 (Unload foot, final): "only" says where the notes are kept, not a judgement.
  */
 export const COPY_ALLOWED: ReadonlySet<string> = new Set<string>([
-  "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.",
+  "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tilo or clear this device's data, they're gone.",
 ])
 
 /**

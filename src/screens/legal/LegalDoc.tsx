@@ -8,7 +8,7 @@ export const LEGAL_LABEL: Record<LegalDocId, string> = {
 }
 
 /**
- * Link to a legal document on the website (www.tali.fit/legals/…). Opens outside the app,
+ * Link to a legal document on the website (www.tilo.fit/legals/…). Opens outside the app,
  * so reading it never loses the screen the person is on. The text is written in
  * src/core/legal and published to Webflow (docs/compliance/README.md, "Publishing").
  */

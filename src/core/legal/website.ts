@@ -1,7 +1,7 @@
 import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
 
 /**
- * Interim, website-only versions of the three documents, published on www.tali.fit while
+ * Interim, website-only versions of the three documents, published on www.tilo.fit while
  * the app is in testing (decided 2026-09-24). They describe only what the Webflow site does
  * today: the early-access form, Cloudflare and Webflow. The full app + website versions
  * (privacy.ts, terms.ts, cookies.ts) replace them at go-live, once the app on main has the
@@ -18,12 +18,12 @@ export function sitePrivacy(): LegalDoc {
     title: 'Privacy policy',
     updated: '2026-09-24',
     intro:
-      `This explains how we handle personal data on the Tali website (www.tali.fit), including the early access list. ` +
-      `The Tali app is still in testing and will have its own, fuller privacy policy here before it opens to the public.`,
+      `This explains how we handle personal data on the Tilo website (www.tilo.fit), including the early access list. ` +
+      `The Tilo app is still in testing and will have its own, fuller privacy policy here before it opens to the public.`,
     sections: [
       {
         h: 'Who we are',
-        p: [`Tali is run by ${company()} ("we", "us"). We are the controller of your personal data. Questions and requests: ${email()}.`],
+        p: [`Tilo is run by ${company()} ("we", "us"). We are the controller of your personal data. Questions and requests: ${email()}.`],
       },
       {
         h: 'What we collect',
@@ -36,7 +36,7 @@ export function sitePrivacy(): LegalDoc {
       {
         h: 'Why we use it, and our legal basis',
         ul: [
-          `To invite you to try Tali early access. Basis: your consent, given when you join the list. We use your email for nothing else.`,
+          `To invite you to try Tilo early access. Basis: your consent, given when you join the list. We use your email for nothing else.`,
           `To keep the site secure and free of spam. Basis: our legitimate interest in running a secure website.`,
           `To answer your requests and meet legal duties. Basis: legal obligation.`,
         ],
@@ -101,7 +101,7 @@ export function siteCookies(): LegalDoc {
     title: 'Cookie policy',
     updated: '2026-09-24',
     intro:
-      `This explains the cookies and similar technology used on the Tali website (www.tali.fit). The short version: only what's needed to deliver the site and keep it safe. ` +
+      `This explains the cookies and similar technology used on the Tilo website (www.tilo.fit). The short version: only what's needed to deliver the site and keep it safe. ` +
       `No advertising cookies, no analytics, no tracking. The site is run by ${who()}.`,
     sections: [
       {
@@ -126,7 +126,7 @@ export function siteCookies(): LegalDoc {
         h: 'Your choices',
         p: [
           `You can block or delete cookies in your browser settings. Blocking them may stop the sign-up form working.`,
-          `The Tali app will have its own section here before it opens to the public. Questions: ${email()}. How we handle personal data: ${LEGAL_URLS.privacy}.`,
+          `The Tilo app will have its own section here before it opens to the public. Questions: ${email()}. How we handle personal data: ${LEGAL_URLS.privacy}.`,
         ],
       },
     ],
@@ -138,8 +138,8 @@ export function siteTerms(): LegalDoc {
     title: 'Terms and conditions',
     updated: '2026-09-24',
     intro:
-      `These terms cover your use of the Tali website (www.tali.fit). It is run by ${company()} ("we", "us"). ` +
-      `The Tali app is still in testing and will have its own, fuller terms here before it opens to the public.`,
+      `These terms cover your use of the Tilo website (www.tilo.fit). It is run by ${company()} ("we", "us"). ` +
+      `The Tilo app is still in testing and will have its own, fuller terms here before it opens to the public.`,
     sections: [
       {
         h: 'Early access',
@@ -151,7 +151,7 @@ export function siteTerms(): LegalDoc {
       {
         h: 'Not medical advice',
         p: [
-          `Tali offers general wellness information. It is not a medical device and does not diagnose, treat or prevent any condition. ` +
+          `Tilo offers general wellness information. It is not a medical device and does not diagnose, treat or prevent any condition. ` +
             `Nothing on this site is a substitute for advice from a doctor, dietitian or other qualified professional.`,
         ],
       },
@@ -159,7 +159,7 @@ export function siteTerms(): LegalDoc {
         h: 'Using the site',
         p: [
           `Please don't misuse the site: no attempts to disrupt it, get around its security, or submit other people's details. ` +
-            `The name Tali, the design and the content belong to us, and you may not copy them except to share a link or for your own reference.`,
+            `The name Tilo, the design and the content belong to us, and you may not copy them except to share a link or for your own reference.`,
         ],
       },
       {

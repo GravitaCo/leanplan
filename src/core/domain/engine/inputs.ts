@@ -7,7 +7,7 @@ import type { BodyArea, Equipment, Experience, Goal, Modality, MovingNow, Profil
  * `default` WhyCode. With no training details at all the engine returns the Starter week.
  */
 /**
- * 'under-18' is a backstop only: Tali is strictly 18+ and the stop happens before the engine
+ * 'under-18' is a backstop only: Tilo is strictly 18+ and the stop happens before the engine
  * (core/domain/age.ts), but if an under-18 age ever reached it, it gets no AI and words only.
  */
 export type AgeBand = 'under-18' | '18-54' | '55-64' | '65+'
@@ -86,7 +86,7 @@ export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
 export function ageBandOf(age: number | null | undefined): AgeBand | undefined {
   if (age == null || !Number.isFinite(age)) return undefined
-  // the kind stop happens before the engine ("Tali is for 18+"); this is the backstop
+  // the kind stop happens before the engine ("Tilo is for 18+"); this is the backstop
   if (isUnderAge(age)) return 'under-18'
   return age < 55 ? '18-54' : age < 65 ? '55-64' : '65+'
 }

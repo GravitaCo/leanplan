@@ -146,7 +146,7 @@ export function TodayScreen() {
   const wRow = isToday ? weightRow(data, cur, 0, wSafety) : null
   // ml-e3: the review waits under Mind from the review day until it's opened or hidden
   const reviewDue = isToday && reviewWaiting(data, cur, consent)
-  // ml-d2: after 3 unopened the reminder pauses itself and Tali asks once, here
+  // ml-d2: after 3 unopened the reminder pauses itself and Tilo asks once, here
   const keepReviewPush = useStore((s) => s.keepReviewPush)
   const setReviewPush = useStore((s) => s.setReviewPush)
   // a week a safety signal fired (care tier): the coming reminder is skipped. Only the date goes to

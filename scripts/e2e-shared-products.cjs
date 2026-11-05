@@ -1,5 +1,5 @@
 /**
- * Headless end-to-end check of Tali's shared product list (boards sp-1 to sp-6), in Chromium with
+ * Headless end-to-end check of Tilo's shared product list (boards sp-1 to sp-6), in Chromium with
  * a fake camera, in light and dark. Every Supabase request is intercepted: the session is a fake
  * one, the lookup-product, report-product, ai-read-label and submit-product functions are
  * mocked per scenario, and Open Food Facts answers "not found". Nothing real is called.
@@ -80,12 +80,12 @@ const cell = (t) => ({ text: t || '', confidence: 'high' })
 const READ = {
   readable: true, basis: '100g', serving_text: '30g', ri_basis: 'none',
   rows: Object.fromEntries(ROWS.map((k) => [k, { per100: cell(GRANOLA[k]?.[0]), serving: cell(GRANOLA[k]?.[1]), ri: cell('') }])),
-  front: { brand: 'Tali Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' },
+  front: { brand: 'Tilo Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' },
 }
 /** What ai-read-label signs for this read (the app checks its shape; the server checks the HMAC). */
 const SHARE = {
   barcode: '0' + CODE, iat: Math.floor(Date.now() / 1000), sig: 'A'.repeat(43),
-  values: { name: 'Tali Test Crunchy Granola Honey', k: 390, p: 9, c: 66, f: 7.1, fibre: 7.5, sugars: 21, sat: 1.2, salt: 0.05, ml: false, serving_g: 30 },
+  values: { name: 'Tilo Test Crunchy Granola Honey', k: 390, p: 9, c: 66, f: 7.1, fibre: 7.5, sugars: 21, sat: 1.2, salt: 0.05, ml: false, serving_g: 30 },
 }
 /** The board's flapjack, as lookup_product returns it. */
 const FLAPJACK = (reads, audited) => ({
@@ -220,16 +220,16 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await readLabelForCode(page)
       expect(calls.read[0]?.barcode === CODE, 'the barcode went with the photo, to be signed')
       await page.getByRole('button', { name: 'Save food' }).click()
-      await page.getByText('Add new products you scan to Tali’s shared list?').waitFor()
+      await page.getByText('Add new products you scan to Tilo’s shared list?').waitFor()
       await page.getByText('We save the barcode, name and figures, never who added them. Because of that, we can’t remove one you added later. Turn this off any time in Profile, Privacy.').waitFor()
       const terms = page.locator('.sp-optin .sp-terms a')
-      expect((await terms.textContent()) === 'Terms and conditions' && (await terms.getAttribute('href')) === 'https://www.tali.fit/legals/terms' && (await terms.getAttribute('target')) === '_blank', 'the opt-in links to the terms')
+      expect((await terms.textContent()) === 'Terms and conditions' && (await terms.getAttribute('href')) === 'https://www.tilo.fit/legals/terms' && (await terms.getAttribute('target')) === '_blank', 'the opt-in links to the terms')
       await page.waitForTimeout(400)
       await shot(page, scheme, 'sp-1-optin')
       expect(!(await outbox(page)), 'nothing queued before the answer')
       await page.getByRole('button', { name: 'Yes, share new products' }).click()
       // saved either way: the portion view opens for the new food
-      await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
+      await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
       const ob = await outbox(page)
       expect(ob && ob.owner === UID && ob.items.length === 1 && ob.items[0].barcode === '0' + CODE, 'queued with the owner on the device: ' + JSON.stringify(ob))
       expect((await page.getByText('Share this product', { exact: true }).count()) === 0, 'shared on save: no "Share this product" row on the new food')
@@ -263,7 +263,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await readLabelForCode(page)
       await page.getByRole('button', { name: 'Save food' }).click()
       await page.getByRole('button', { name: 'Not now' }).click()
-      await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
+      await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
       expect(!(await outbox(page)), 'nothing queued after Not now')
       const c = await consentsOf(page, 'shared-products')
       expect(c.length === 1 && c[0].granted === false, 'a no recorded (asked once): ' + JSON.stringify(c))
@@ -274,7 +274,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
     results.push(await scenario(browser, 'found, not yet checked (sp-2) → report (sp-6)', scheme, async ({ page, calls, state }) => {
       state.lookup = [FLAPJACK(1)]
       await scanCode(page)
-      await page.getByText('Added by a Tali user, not yet checked. Check against your pack.').waitFor()
+      await page.getByText('Added by a Tilo user, not yet checked. Check against your pack.').waitFor()
       // a pack serving: "Eat as it is", the serving filled in
       expect((await page.locator('#sc_g').inputValue()) === '65', 'the pack serving is filled in')
       expect(await page.getByText('Eaten as it comes, like a ready meal, crisps or a drink. Logged by the serving.').isVisible(), 'opens as Eat as it is')
@@ -318,7 +318,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       expect(calls.submit.length === 0 && !(await outbox(page)), 'a found product saved is never re-submitted')
     }))
 
-    results.push(await scenario(browser, 'read from the pack 3 times (sp-3) and checked by Tali (sp-3b)', scheme, async ({ page, state }) => {
+    results.push(await scenario(browser, 'read from the pack 3 times (sp-3) and checked by Tilo (sp-3b)', scheme, async ({ page, state }) => {
       state.lookup = [FLAPJACK(3)]
       await scanCode(page)
       await page.getByText('Read from the pack 3 times', { exact: true }).waitFor()
@@ -333,8 +333,8 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       state.lookup = [FLAPJACK(7, true)]
       await page.locator('#bc_num').fill(CODE)
       await page.getByRole('button', { name: 'Look up' }).click()
-      await page.getByText('Checked by Tali, Oct 2026').waitFor()
-      await page.getByText('Only Tali’s own checks set this.').waitFor()
+      await page.getByText('Checked by Tilo, Oct 2026').waitFor()
+      await page.getByText('Only Tilo’s own checks set this.').waitFor()
       await page.locator('#sc_g').fill('65')
       await page.getByText(MARGIN.verified).waitFor()
       expect(((await page.locator('.sp-serv').textContent()) || '').includes('±\u00a043'), '± 43')
@@ -350,7 +350,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
     await ctx.setOffline(true)
     await page.getByRole('button', { name: 'Save food' }).click()
     await page.getByRole('button', { name: 'Yes, share new products' }).click()
-    await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
+    await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
     expect((await outbox(page))?.items.length === 1, 'queued offline')
     await page.clock.runFor(120_000)
     expect(calls.submit.length === 0 && (await outbox(page))?.items.length === 1, 'nothing sent offline; still queued')
@@ -369,7 +369,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
     await readLabelForCode(page)
     await page.getByRole('button', { name: 'Save food' }).click()
     await page.getByRole('button', { name: 'Yes, share new products' }).click()
-    await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
+    await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
     await page.clock.runFor(95_000)
     await page.waitForTimeout(500)
     expect(calls.submit.length >= 1 && (await outbox(page))?.items.length === 1, 'kept after a 503')

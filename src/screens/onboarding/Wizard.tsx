@@ -272,7 +272,7 @@ function SkipAge({ d, patch }: Common) {
       <div className="wz-lead">{c.lead}</div>
       <AgeWheel value={v} onChange={setV} />
       <div className="wz-card quiet">{c.note}</div>
-      <div className="ob-cta"><Cta label="Start using Tali" disabled={v == null} onClick={start} /></div>
+      <div className="ob-cta"><Cta label="Start using Tilo" disabled={v == null} onClick={start} /></div>
     </div>
   )
 }
@@ -357,7 +357,7 @@ function Why({ d, go, back }: Common) {
   )
 }
 
-/** r1-goal: each goal with its pictogram from Tali's icon set. */
+/** r1-goal: each goal with its pictogram from Tilo's icon set. */
 const GOAL_ICON: Record<Goal, IconName> = { 'lose-fat': 'leaf', maintain: 'steady', 'build-muscle': 'dumbbell', 'increase-strength': 'bolt', 'increase-endurance': 'heart', 'feel-better': 'smile' }
 
 function GoalQ({ d, go, back }: Common) {

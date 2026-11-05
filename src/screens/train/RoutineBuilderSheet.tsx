@@ -64,7 +64,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
             return (
               <div className="li rb-slot" key={i}>
                 <div className="m">
-                  <div className="t">{x?.n ?? 'Exercise not in this version of Tali'}</div>
+                  <div className="t">{x?.n ?? 'Exercise not in this version of Tilo'}</div>
                   <input className="rb-rx" value={s.rx ?? ''} placeholder={x?.defaultRx ?? 'Sets and reps'} aria-label={`Sets and reps for ${x?.n ?? 'this exercise'}`}
                     onChange={(e) => setSlots((p) => p.map((y, j) => (j === i ? { ...y, rx: e.target.value || undefined } : y)))} />
                 </div>

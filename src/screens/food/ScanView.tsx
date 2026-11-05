@@ -1,7 +1,7 @@
 /**
  * Scan a pack's barcode: live camera, a photo of the barcode (the most reliable path on iOS), or
  * the number typed in. A valid code is looked up on the device first (a food saved from an
- * earlier scan opens at once, offline too), then on Tali's shared product list (when it's on),
+ * earlier scan opens at once, offline too), then on Tilo's shared product list (when it's on),
  * then on Open Food Facts; anything else goes to "Create a food" with the barcode filled in.
  * Logging never waits on the network.
  */
@@ -21,14 +21,14 @@ import { startRearCamera, stopCamera as stopStream } from './camera'
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }
   | { kind: 'found'; draft: ScanDraft }
-  /** on Tali's shared product list (sp-2, sp-3, sp-3b) */
+  /** on Tilo's shared product list (sp-2, sp-3, sp-3b) */
   | { kind: 'shared'; draft: ScanDraft }
   | { kind: 'missing'; barcode: string; why: 'not-found' | 'offline' | 'error' }
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
 
 const CAMERA_NOTE: Record<Exclude<Camera, 'starting' | 'on'>, string> = {
-  denied: 'Tali can’t use the camera. That’s fine: take a photo of the barcode, or type the number below.',
+  denied: 'Tilo can’t use the camera. That’s fine: take a photo of the barcode, or type the number below.',
   none: 'No camera is available here. Take a photo of the barcode, or type the number below.',
   noscan: 'The scanner needs a connection the first time it opens. Type the number below, or try again later.',
 }
@@ -69,7 +69,7 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     setBusy(norm.code)
     const ctl = new AbortController()
     lookupRef.current = ctl
-    // Tali's shared list first (it never holds Open Food Facts products); no connection there
+    // Tilo's shared list first (it never holds Open Food Facts products); no connection there
     // means none for Open Food Facts either
     if (SHARED_PRODUCTS_ENABLED) {
       const sh = await lookupShared(norm, { signal: ctl.signal })

@@ -1,5 +1,5 @@
 /**
- * The device-only store (wellbeing Phase 1, security-data H1): what Tali keeps on this phone and
+ * The device-only store (wellbeing Phase 1, security-data H1): what Tilo keeps on this phone and
  * never syncs. It lives inside `leanplan.v1` as `PersistedState.deviceOnly`, a sibling of `_meta`
  * and `consents`, never in `profile` or `days`, so no sync path can carry it: sync sends listed
  * fields only (src/data/sync.ts), and a unit test checks a sentinel note never reaches a payload.
@@ -39,7 +39,7 @@ export interface DeviceOnly {
 
 /** A note's text, all its pairs and the "went OK" line together, in characters. */
 export const UNLOAD_NOTE_MAX_CHARS = 2000
-/** Notes kept on a phone. Past it Tali refuses a new note (with a message); it never prunes. */
+/** Notes kept on a phone. Past it Tilo refuses a new note (with a message); it never prunes. */
 export const UNLOAD_MAX_NOTES = 200
 /** Pairs in one note ("Add another"). */
 export const UNLOAD_MAX_PAIRS = 20

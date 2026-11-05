@@ -23,7 +23,7 @@ ITEM = f'_type, _id, "name": name.en, {NUT}'
 QUERY = ('*[_type=="menu" && name.en=="BK Menu"][0]{_id,_updatedAt,"sections": options[]->{_id,"name":name.en,'
          '"options": options[]->{' + ITEM + ', "options": options[]{"option": option->{' + ITEM + '}}}}}')
 
-# existing Tali names are stable IDs (learned usuals match by name): keep them
+# existing Tilo names are stable IDs (learned usuals match by name): keep them
 LEGACY = {'item_1852': 'Burger King Whopper', 'item_1853': 'Burger King Chicken Royale'}
 # BK's own wording tidied into an item name (names are stable IDs: settle them before shipping)
 RENAME = {

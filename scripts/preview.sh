@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preview any branch of Tali on this Mac before it goes live (see docs/local-preview.md).
+# Preview any branch of Tilo on this Mac before it goes live (see docs/local-preview.md).
 #
 #   bash scripts/preview.sh                 # the branch you're on
 #   bash scripts/preview.sh <branch-name>   # switch to that branch first
@@ -20,7 +20,7 @@ if ! command -v node >/dev/null 2>&1; then
   fi
 fi
 if [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
-  echo "Node.js $(node -v) is too old; Tali needs 20 or newer. Update it from https://nodejs.org."
+  echo "Node.js $(node -v) is too old; Tilo needs 20 or newer. Update it from https://nodejs.org."
   exit 1
 fi
 

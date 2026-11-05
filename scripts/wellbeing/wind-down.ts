@@ -176,7 +176,7 @@ export function windDownSuite(): number {
   const self = {
     addEventListener: (t: string, f: (e: unknown) => void) => { handlers[t] = f },
     registration: { showNotification: (title: string, o: { body: string; tag: string }) => { shown.push({ title, body: o.body, tag: o.tag }); return Promise.resolve() } },
-    location: { href: 'https://app.tali.fit/sw.js', origin: 'https://app.tali.fit' },
+    location: { href: 'https://app.tilo.fit/sw.js', origin: 'https://app.tilo.fit' },
     clients: { claim: () => Promise.resolve() },
   }
   try {

@@ -248,7 +248,7 @@ const tab = async (page, name) => {
     for (const id of ['c_health', 'c_terms', 'c_age']) await page.locator(`label[for="${id}"]`).click()
     await page.getByRole('button', { name: 'Continue' }).click()
     // then, someone new: the first-run wizard (e2e-onboarding.cjs covers it)
-    await page.getByRole('heading', { name: 'A few questions, so Tali fits you' }).waitFor()
+    await page.getByRole('heading', { name: 'A few questions, so Tilo fits you' }).waitFor()
     await shot(page, 'flag-on-consent-then-wizard')
   }, { url: ON, state: deviceState({ consents: NONE }) })
 
@@ -256,7 +256,7 @@ const tab = async (page, name) => {
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Health data/ }).click()
     await page.getByRole('button', { name: 'Stop keeping my health data' }).click()
-    await page.getByText('Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
+    await page.getByText('Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
     await page.getByText('On this phone: 1 weigh-in, 1 check-in.').waitFor()
     await shot(page, 'withdraw-export')
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download a copy' }).click()])
@@ -311,7 +311,7 @@ const tab = async (page, name) => {
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Privacy/ }).click()
     await page.getByRole('button', { name: 'Withdraw consent for health data' }).click()
-    await page.getByText('Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
+    await page.getByText('Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
     await page.getByRole('button', { name: 'Download a copy' }).waitFor()
     await page.getByRole('button', { name: 'Back' }).first().click().catch(() => {})
     await page.keyboard.press('Escape').catch(() => {})
@@ -379,7 +379,7 @@ const tab = async (page, name) => {
 
   await run('flag on, existing user: no wizard, and Build my plan on Plan', async ({ page }) => {
     await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
-    expect((await page.getByText('A few questions, so Tali fits you').count()) === 0, 'no wizard')
+    expect((await page.getByText('A few questions, so Tilo fits you').count()) === 0, 'no wizard')
     await tab(page, 'Plan')
     await page.locator('.buildplan').waitFor() // ob6-4, behind the flag
     await shot(page, 'ob6-4-buildplan')

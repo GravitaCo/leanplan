@@ -1,7 +1,7 @@
 /**
  * Consent screens (Design canvas row "Onboarding 6", note s-ob6; onboarding plan §8, §12–14):
  * ob6-1 health data, ob6-2 AI features (names Anthropic), ob6-3 the one-time sheet for people who
- * used Tali before consent was asked, and ob6-4 the "Build my plan" card on Plan.
+ * used Tilo before consent was asked, and ob6-4 the "Build my plan" card on Plan.
  *
  * The first-run entry (ob6-1 → ob6-2) and the Build my plan card only show behind
  * ONBOARDING_ENABLED: the wizard they lead into ships later. The existing-user sheet (ob6-3) goes
@@ -44,7 +44,7 @@ export { usedBefore } from '@/data/firstRun'
 /**
  * The first-run wizard is due (behind ONBOARDING_ENABLED): data/firstRun.ts wizardDueFor. Online
  * and signed in it waits for the first full pull (`_meta.lastPull`), so a second device, or
- * someone who used Tali before, never sees the wizard flash up; once it's on screen and the person
+ * someone who used Tilo before, never sees the wizard flash up; once it's on screen and the person
  * has started, it stays.
  */
 export function wizardDue(s: PersistedState, x: { online: boolean; signedIn: boolean; showing: boolean }): boolean | 'wait' {
@@ -87,11 +87,11 @@ export const HEALTH_TICKS = [
 ]
 export const AI_TICKS = [
   'Nothing is sent unless you use one of these features.',
-  'Everything else in Tali works without it, offline too.',
+  'Everything else in Tilo works without it, offline too.',
   'Turn it off any time in Profile.',
 ]
 
-/** "Read the privacy notice" / "What's sent, and where": the privacy text Tali has today
+/** "Read the privacy notice" / "What's sent, and where": the privacy text Tilo has today
  *  (the full notice is still to be written, plan §8). */
 export function PrivacySheet({ onClose }: { onClose: () => void }) {
   return (
@@ -125,7 +125,7 @@ export function HealthConsentScreen() {
   const [privacy, setPrivacy] = useState(false)
   return (
     <Screen eyebrow="Before we start" title="Your health data"
-      lead="To build your plan, Tali asks about things like your weight, sleep, stress and health. That's health data, so we need your OK to keep it."
+      lead="To build your plan, Tilo asks about things like your weight, sleep, stress and health. That's health data, so we need your OK to keep it."
       cta={<>
         {/* "Not now" isn't on board ob6-1 (the gap in note s-ob6); added per Benn's decision (plan §14) */}
         <button className="btn ob-btn" disabled={!agree} onClick={() => grant('health')}>Continue</button>
@@ -135,7 +135,7 @@ export function HealthConsentScreen() {
       <label className="agree">
         <input type="checkbox" className="sr" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
         <span className={'agree-box' + (agree ? ' on' : '')} aria-hidden="true">{agree && <Icon name="check" size={14} stroke={2.6} />}</span>
-        <span>I agree to Tali keeping my health data to build my plan and targets.</span>
+        <span>I agree to Tilo keeping my health data to build my plan and targets.</span>
       </label>
       <button className="linkbtn ob-link" onClick={() => setPrivacy(true)}>Read the privacy notice</button>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
@@ -151,7 +151,7 @@ export function AiConsentScreen() {
   const [privacy, setPrivacy] = useState(false)
   return (
     <Screen eyebrow="Optional" title="AI features"
-      lead="Some features, like reading a food label from a photo or describing a meal in words, send what you share to Anthropic, the company that makes the AI Tali uses."
+      lead="Some features, like reading a food label from a photo or describing a meal in words, send what you share to Anthropic, the company that makes the AI Tilo uses."
       cta={<>
         <button className="btn ob-btn" onClick={() => grant('ai')}>Turn on AI features</button>
         <button className="linkbtn ob-alt" onClick={() => decline('ai')}>Not now</button>
@@ -179,7 +179,7 @@ export function ExistingConsentSheet() {
   return (
     <BareSheet label="Is it OK to keep your health data?" onClose={notNow} className="consent">
       <h2 className="cs-t">Is it OK to keep your health data?</h2>
-      <div className="cs-lead">We now ask before keeping things like your weight, check-ins and training notes. You already have some in Tali. Nothing about your week or targets changes.</div>
+      <div className="cs-lead">We now ask before keeping things like your weight, check-ins and training notes. You already have some in Tilo. Nothing about your week or targets changes.</div>
       <Ticks tight items={['Private to your account, never sold or used for ads.', 'Download or delete it any time in Profile.']} />
       <button className="btn ob-btn" onClick={() => grant('health')}>Yes, keep it</button>
       <button className="linkbtn ob-alt" onClick={notNow}>Not now</button>
@@ -196,7 +196,7 @@ export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
     <section className="card buildplan" aria-label="Build my plan">
       <div className="bp-new">New</div>
       <div className="bp-t">Build my plan</div>
-      <div className="bp-s">Answer a few questions about your time, kit and what you enjoy, and Tali builds a week from your answers. Your current week stays until you choose.</div>
+      <div className="bp-s">Answer a few questions about your time, kit and what you enjoy, and Tilo builds a week from your answers. Your current week stays until you choose.</div>
       <button className="btn gray bp-btn" onClick={onBuild}>Build my plan</button>
     </section>
   )

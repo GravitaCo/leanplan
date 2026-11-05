@@ -150,11 +150,11 @@ const STOP = '[data-testid="age-stop"]'
 /** the stop's copy (board "Age 18+ · 1"), and its signposts with the checked numbers */
 async function stopCopy(page, { saved }) {
   await page.locator(STOP).waitFor()
-  await h1(page, 'Tali is for 18+')
+  await h1(page, 'Tilo is for 18+')
   const text = await page.locator(STOP).innerText()
   for (const t of [
-    'Thanks for using Tali. It’s made for people aged 18 and over, so we need to close your account. That’s about how Tali is built, not about you or anything you’ve logged.',
-    'Tali’s food and activity targets are made for adults, not for bodies that are still growing.',
+    'Thanks for using Tilo. It’s made for people aged 18 and over, so we need to close your account. That’s about how Tilo is built, not about you or anything you’ve logged.',
+    'Tilo’s food and activity targets are made for adults, not for bodies that are still growing.',
     'Childline', 'Free and confidential for anyone under 19. Call or chat online, any time.', '0800 1111',
     'Beat', 'If food, eating or your body feel hard to think about. 3pm–8pm, Monday to Friday. Webchat too.',
     '0808 801 0677', '0808 801 0432', '0808 801 0433', '0808 801 0434',
@@ -410,16 +410,16 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
   }, { url: ON })
 
   await run('wizard stop (flag on): Childline, Beat and 999, the new copy', async ({ page }) => {
-    await h1(page, 'A few questions, so Tali fits you')
+    await h1(page, 'A few questions, so Tilo fits you')
     await btn(page, 'Let’s go').click()
     await h1(page, 'What do you like to be called?')
     await page.getByPlaceholder('Sam').fill('Sam'); await btn(page, 'Continue').click()
     await h1(page, 'How old are you?')
     await slide(page, 'Age in years', 15); await btn(page, 'Continue').click()
-    await h1(page, 'Tali is for 18+')
+    await h1(page, 'Tilo is for 18+')
     const text = await page.locator('[data-testid="age-stop-wizard"]').innerText()
     for (const t of [
-      'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.',
+      'Thanks for giving it a try. Tilo is made for people aged 18 and over, so we can’t set you up just yet.',
       'If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.',
       'Childline', '0800 1111', 'Beat', '0808 801 0677', '0808 801 0434', 'Emergency', '999',
       'We haven’t kept any of your answers. Closing deletes your new account.', 'Close', 'I typed my age wrong',

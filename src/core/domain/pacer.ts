@@ -4,7 +4,7 @@
  * passes the elapsed milliseconds (requestAnimationFrame), so the maths is testable and the
  * reduced-motion view reads the same words and counts with the scale ignored.
  *
- * The timings themselves live in core/data/skills.ts: a Tali pacing choice (no published fixed
+ * The timings themselves live in core/data/skills.ts: a Tilo pacing choice (no published fixed
  * counts), approved by Benn on 9 Oct 2026 (`PacerPattern.placeholder` false); nothing here presents
  * them as sourced values.
  */

@@ -7,13 +7,13 @@ import type { WizardDraft } from '@/core/domain/wizard'
 import { hasExistingData } from './consent'
 
 /**
- * How long the first run waits for the first pull (a second device, or someone who used Tali
+ * How long the first run waits for the first pull (a second device, or someone who used Tilo
  * before) before showing the wizard anyway. Counted from when the wait starts, not from launch.
  */
 export const FIRST_PULL_WAIT_MS = 10_000
 
 /**
- * Someone who used Tali before onboarding (plan §12): anything logged or saved, a plan, or a goal
+ * Someone who used Tilo before onboarding (plan §12): anything logged or saved, a plan, or a goal
  * or age set in Profile. They keep their current week and targets, and get the Build my plan card.
  */
 export function usedBefore(s: PersistedState): boolean {

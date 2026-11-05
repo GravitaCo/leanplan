@@ -9,11 +9,11 @@ import strongerAge from '@/assets/plans/stronger-with-age.jpg'
 import fullBody from '@/assets/plans/full-body-system.jpg'
 
 /**
- * Shared pieces of the plan screens (design canvas, Plans 1 to 4): each Tali plan's photograph,
+ * Shared pieces of the plan screens (design canvas, Plans 1 to 4): each Tilo plan's photograph,
  * the week timeline strip and the plan tiles.
  */
 
-/** Each Tali plan's photograph (generated to match the demo footage). Own plans have none. */
+/** Each Tilo plan's photograph (generated to match the demo footage). Own plans have none. */
 const ART: Record<string, string> = {
   'pure-muscle-growth': pureMuscle,
   'stronger-with-age': strongerAge,
@@ -89,7 +89,7 @@ export function PlanTile({ name, line, art, artAt, fits, big, onClick }: {
   )
 }
 
-/** A Tali plan's tile line, or an own plan's ("8 weeks · 3 workouts · yours"). */
+/** A Tilo plan's tile line, or an own plan's ("8 weeks · 3 workouts · yours"). */
 export const tileLine = (t: PlanTemplate) => t.tagline
 
 /**

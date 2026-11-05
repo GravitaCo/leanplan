@@ -163,7 +163,7 @@ export function coreSuite(): number {
   /* ---------- pacer ---------- */
   const P = RESET_PATTERN
   ok('pacer timings: 3/1/6, approved by Benn 9 Oct 2026, no longer a placeholder', P.placeholder === false && P.phases.map((p) => p.s).join('/') === '3/1/6')
-  ok('pacer source: a Tali pacing choice approved by Benn, never Balban counts', P.source === 'Tali pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.' && !P.source.includes('PENDING'))
+  ok('pacer source: a Tilo pacing choice approved by Benn, never Balban counts', P.source === 'Tilo pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.' && !P.source.includes('PENDING'))
   ok('pacer: the breath out is longer than both breaths in together, the second in shorter', P.phases[2].s > P.phases[0].s + P.phases[1].s && P.phases[1].s < P.phases[0].s)
   ok('pacer: Reset lengths 1, 2 and 5 minutes', RESET_LENGTHS.join() === '1,2,5')
   const at = (ms: number) => pacerAt(P, ms, 1)
@@ -188,7 +188,7 @@ export function coreSuite(): number {
   ok('new bans: skip, readiness, recovery debt, you should rest', ['Skip today', 'You skipped a day', 'Your readiness', 'Recovery debt', 'You should rest'].every((t) => mindCopyIssues(t).length > 0))
   ok('approved setup copy keeps "skip" (engine and wizard lint unchanged)', !copyIssues('Skip any question you like.').length && BANNED_COPY.every((r) => !WELLBEING_BANNED.includes(r)))
   const b317 = 'After a rough night, the shorter version swaps running, jump rope and loaded single-leg moves for steadier ones, and keeps cardio at an easy, steady pace.'
-  const b811 = "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone."
+  const b811 = "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tilo or clear this device's data, they're gone."
   ok('one allowed exception, the exact B8.11 line; the accepted B3.17 ("jump rope") passes on its own', COPY_ALLOWED.size === 1 && COPY_ALLOWED.has(b811) && mindCopyIssues(b811).length === 0 && mindCopyIssues(b317).length === 0)
   ok('"only" stays banned outside that exact string', mindCopyIssues(b811.replace('device only', 'device')).length === 0 && mindCopyIssues(b811 + ' ').length > 0 && mindCopyIssues('Only 2 check-ins this week').length > 0)
   ok('the old "skipping" B3.17 wording is no longer allowed', mindCopyIssues(b317.replace('jump rope', 'skipping')).length > 0 && mindCopyIssues('Try skipping today').length > 0)
@@ -213,7 +213,7 @@ export function coreSuite(): number {
   ok('R1: not when that meal already has something today', sameAsYesterdayRow(S2, '2026-10-08', 'breakfast') === null)
   ok('R3: no kcal in gentle mode', sameAsYesterdayRow(S, '2026-10-08', 'breakfast', { gentle: true })?.sub === 'Porridge, made with milk and Banana (1 ~118g)')
   ok('R3: too long names the first and counts the rest', sameAsYesterdayRow(S, '2026-10-08', 'breakfast', { max: 20 })?.sub === 'Porridge, made with milk and 1 more · 306 kcal')
-  const gone: LoggedFood = { n: 'A food no longer in Tali', grams: 100, k: 100, p: 0, c: 0, f: 0, meal: 'breakfast', src: 'db' }
+  const gone: LoggedFood = { n: 'A food no longer in Tilo', grams: 100, k: 100, p: 0, c: 0, f: 0, meal: 'breakfast', src: 'db' }
   const fat: LoggedFood = { n: 'Olive oil', grams: 5, k: 45, p: 0, c: 0, f: 5, meal: 'breakfast', src: 'fat', fatFor: gone.n }
   const S3 = { days: { '2026-10-07': day(null, [porridge, gone, fat]) } } as Pick<AppState, 'days'>
   const rep = entriesToRepeat(S3, '2026-10-08', 'breakfast')

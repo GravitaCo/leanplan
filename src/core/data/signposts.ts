@@ -1,7 +1,7 @@
 /**
- * Helplines and services Tali points to (first-run-onboarding §3, §14). Numbers were checked on
+ * Helplines and services Tilo points to (first-run-onboarding §3, §14). Numbers were checked on
  * 27 Sept 2026 and are approved in §14; re-check them before wider launch and whenever this file
- * changes. Tali offers general wellness guidance, never medical advice: these are where the
+ * changes. Tilo offers general wellness guidance, never medical advice: these are where the
  * person gets real help.
  */
 

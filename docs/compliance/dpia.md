@@ -1,4 +1,4 @@
-# Tali: Data Protection Impact Assessment (UK GDPR Art. 35)
+# Tilo: Data Protection Impact Assessment (UK GDPR Art. 35)
 
 **Status: DRAFT for review. Not signed.** Prepared on 30 September 2026 by the `compliance` agent
 (an AI assistant) for Benn, director of Gravita Creative Ltd, from the code on branch
@@ -8,7 +8,7 @@ Updated 1 October 2026 for Onboarding 9 (section 4.2, the wellbeing answer, and 
 code at `6430472` (`claude/onboarding-release`).
 
 **This is not legal advice.** It was drafted with AI help and has not been reviewed by a lawyer.
-It records how Tali works and the judgement calls still open, so that Benn, and his solicitor if
+It records how Tilo works and the judgement calls still open, so that Benn, and his solicitor if
 he wants one, can check it, change it and sign it. Where a fact could not be checked it says
 "Unknown:" and what would settle it.
 
@@ -29,8 +29,8 @@ Open judgement calls, each with a recommendation. Section 7 has the sign-off tab
 | D3 | Pay the ICO data protection fee for Gravita Creative Ltd. | **Pay it now.** Processing of real people's health data is already happening; the fee is owed now, not at launch. Add the number to `LEGAL.icoNumber`. |
 | D4 | Processor contracts (Art. 28) and transfer terms: Supabase, Webflow, Bunny.net, Google Workspace, GitHub, Cloudflare Turnstile (register item 4). | **Accept or confirm each DPA now, and record the transfer mechanism for each US provider in the register.** Real health data is already stored with Supabase. |
 | D5 | `ai-read-label` (Anthropic) is deployed, but label reading is switched off in the app and not in the privacy policy. A signed-in person who writes their own label-photo consent record could still call it. | **Disable the function (or add a server-side off switch) until register item 24 is done**, and route the change through `security-data`. Low risk (it sends a pack photo, not health data), but it is an undisclosed processor that can be reached. |
-| D6 | Dormant accounts: after a purge, or when someone stops using Tali, the account (email, consent records) is kept with no end date (register item 30(c)). | **Set an inactivity period with notice before public launch.** A starting point to discuss with the solicitor: delete accounts with no sign-in for 24 months, after one email 30 days before. The length is a judgement for Benn, not a legal fixed figure. |
-| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx:64`), so health consent is a condition of using Tali. Art. 7(4) asks whether consent is freely given when a service depends on it. | **Keep the design** (the log is the service, and no other Art. 9(2) condition fits a consumer wellness app), **but ask the solicitor to confirm** this is defensible, and keep the unbundling from terms and marketing as it is. |
+| D6 | Dormant accounts: after a purge, or when someone stops using Tilo, the account (email, consent records) is kept with no end date (register item 30(c)). | **Set an inactivity period with notice before public launch.** A starting point to discuss with the solicitor: delete accounts with no sign-in for 24 months, after one email 30 days before. The length is a judgement for Benn, not a legal fixed figure. |
+| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx:64`), so health consent is a condition of using Tilo. Art. 7(4) asks whether consent is freely given when a service depends on it. | **Keep the design** (the log is the service, and no other Art. 9(2) condition fits a consumer wellness app), **but ask the solicitor to confirm** this is defensible, and keep the unbundling from terms and marketing as it is. |
 | D8 | Age assurance: the live app relies on a self-declared "I'm 18 or over" box (`ConsentScreen.tsx:48`); the stronger age question and stop are behind the wizard flag. | **Accept self-declaration for now**, and record a short "likely to be accessed by children" assessment for the ICO Children's Code before public launch (marketing, app store listing, content). Revisit if the marketing could appeal to teenagers. |
 | D9 | ICO prior consultation (Art. 36). | **Not needed, on the conditions in section 7.3**: the measures marked "recommended" for R1, R3 and R7 are done before the relevant feature or launch, and D1 is done before the wizard goes on. If Benn decides to switch the wizard on for the public without D1, the residual risk for R3 is high and prior consultation should be considered. |
 | D10 | Legal basis for the consent records: the register says 6(1)(c) (and 9(2)(f) if a record counts as special category); the privacy policy says "legal obligation" (`privacy.ts:82`). | **Keep it, but ask the solicitor.** Art. 7(1) requires the controller to be able to show consent, which supports 6(1)(c); some advisers prefer 6(1)(f). A record that someone said yes to health processing may itself reveal health information, hence 9(2)(f) (legal claims). |
@@ -52,7 +52,7 @@ DPIA is needed where an item on its list combines with another WP248 criterion. 
 | Tracking: software offering fitness, lifestyle or health monitoring | Yes | The whole product: food, weight, workouts, mood and hunger check-ins, supplements (`src/core/types.ts:224` `DayLog`). |
 | Sensitive data (special category, Art. 9) | Yes | Health data throughout; the diet pattern may reveal beliefs (`privacy.ts:65`). Food and workout logs are treated as health data (register, "Not now" row; CJEU C-184/20 and C-21/23 as cited there). |
 | Data about vulnerable people | Possibly | People with or recovering from eating disorders, pregnant or breastfeeding people and people with conditions such as diabetes may use a diet and weight app. The wizard asks about all three (section 2.2). |
-| Evaluation or scoring, including from health aspects | Yes, in a limited form | The safety routing evaluates onboarding answers and changes what Tali suggests (`routeSafety`, `src/core/domain/onboarding.ts:286`). Behind `ONBOARDING_ENABLED` (off: `src/screens/onboarding/Consent.tsx:22`). |
+| Evaluation or scoring, including from health aspects | Yes, in a limited form | The safety routing evaluates onboarding answers and changes what Tilo suggests (`routeSafety`, `src/core/domain/onboarding.ts:286`). Behind `ONBOARDING_ENABLED` (off: `src/screens/onboarding/Consent.tsx:22`). |
 | Automated decision with legal or similarly significant effect | No (reasoned in 4.7) | The routing only makes suggestions more cautious; it denies nothing and the person can change the inputs. |
 | Innovative technology (including AI) | Partly | A client-side training and nutrition engine; an AI label reader is built but off (`LABEL_SCAN_ENABLED`, `src/data/labelReader.ts:16`); further AI features are planned (`docs/plans/ai-platform-plan.md`). |
 | Large scale | Not yet | 10 accounts on 30 Sept 2026 (section 2.2). Expected to grow at public launch. |
@@ -71,8 +71,8 @@ reasons syncing, on-phone processing (register item 27), the purge and the accep
 
 ### 2.1 Nature of the processing
 
-**Surfaces.** The app at app.tali.fit (a PWA built from this repo, hosted on GitHub Pages:
-`public/CNAME`, `.github/workflows/deploy.yml`) and the website at www.tali.fit (Webflow, delivered
+**Surfaces.** The app at app.tilo.fit (a PWA built from this repo, hosted on GitHub Pages:
+`public/CNAME`, `.github/workflows/deploy.yml`) and the website at www.tilo.fit (Webflow, delivered
 through Cloudflare, with an early-access email form protected by Cloudflare Turnstile). This DPIA
 is mainly about the app. The website's processing (early-access emails, `_cfuvid`, Turnstile) is
 low risk and recorded in the register; it is included in R7 for transfers.
@@ -270,17 +270,17 @@ expected number of users at public launch (Unknown: Benn's launch plan).
 - **Vulnerable people:** likely to include some. A diet and weight app attracts people with a
   difficult relationship with food. Pregnant and breastfeeding people may use it. People with
   diabetes on insulin or sulfonylureas are at risk of hypoglycaemia if they eat less. The terms tell
-  these groups to see a GP and not to use Tali to guide their eating (`terms.ts:26` to `37`). The
-  wizard, when on, detects some of them and makes Tali more cautious (section 4.7).
+  these groups to see a GP and not to use Tilo to guide their eating (`terms.ts:26` to `37`). The
+  wizard, when on, detects some of them and makes Tilo more cautious (section 4.7).
 - **Children:** not intended (18+), but a diet app can appeal to teenagers (R4, D8).
 - **State of the art and concerns:** health and fitness apps are a known area of public concern
-  about data sharing with advertisers and data brokers. Tali shares with neither. Offline-first
+  about data sharing with advertisers and data brokers. Tilo shares with neither. Offline-first
   storage with owner-only RLS and consent enforced on the server is above the norm for a small
   app. Weaker than the state of the art: no client-side encryption of local data or exports, no
   multi-factor sign-in option, no independent security test yet.
 - **Relevant codes and guidance:** ICO guidance on special category data and on DPIAs; ICO
   Children's Code (not applicable while under-18s are excluded and the service is not likely to be
-  accessed by them: D8); MHRA guidance on software as a medical device (Tali positions itself as
+  accessed by them: D8); MHRA guidance on software as a medical device (Tilo positions itself as
   general wellness: `terms.ts:28`); ASA/CAP Code sections 12 and 15 for marketing claims.
 - **Controller change ahead:** a separate company is planned before public launch (register item
   15). That means a new controller, new texts, re-consent, and a review of this DPIA.
@@ -357,14 +357,14 @@ they are not independent professional reviews.
 **Is explicit consent valid?** The screen is explicit (a separate, unticked box for health data),
 specific, and unbundled from marketing (there is no marketing). It is bundled in one screen with
 the terms and the age box, but as separate boxes. It is as easy to withdraw as to give (Profile →
-Privacy). Informed: the live privacy policy at www.tali.fit/legals/privacy (checked 30 Sept) is
+Privacy). Informed: the live privacy policy at www.tilo.fit/legals/privacy (checked 30 Sept) is
 the consent-release text and matches what the live app does; the onboarding sections on this
 branch are not yet published, which is right while the wizard is off, and must go live with the
 release that turns it on (register item 38). The open question is conditionality (D7).
 
 ### 4.2 Data minimisation
 
-- **Outcomes-only storage** for the readiness, medical and lately questions: Tali stores "flagged"
+- **Outcomes-only storage** for the readiness, medical and lately questions: Tilo stores "flagged"
   or "clear" (and, for medical, "no-deficit"), never the condition, medicine or symptom. This is the
   single most important minimisation measure and it is tested (`scripts/e2e-onboarding.cjs:268`).
   Residual inference (24 Oct 2026, register item 47): the medical "flagged" setting comes from a
@@ -380,7 +380,7 @@ release that turns it on (register item 38). The open question is conditionality
 - Kept after withdrawal on the phone only: name, age, legacy `sex`, units, goal, Gentle mode,
   `onboardedAt` (`consent.ts:321`). Note that Gentle mode being on can hint at the wellbeing answer;
   it stays only on the person's own phones.
-- Things Tali could keep but doesn't: no location, no contacts, no device identifiers, no
+- Things Tilo could keep but doesn't: no location, no contacts, no device identifiers, no
   analytics.
 - Could go further: the wellbeing answer is stored as given (flagged, sometimes, clear or undisclosed) because
   the Profile screen shows and edits it and routing depends on it. That is justified, but it
@@ -422,7 +422,7 @@ The safety routing (`routeSafety`, `src/core/domain/onboarding.ts:286` to `350`)
 processing of health data that changes what the person is offered: a gentler start, no calorie
 deficit, no calorie number, Gentle mode, and signposting. It is not a decision "based solely on
 automated processing which produces legal effects or similarly significantly affects" the person,
-because: it only ever makes Tali more cautious; it refuses no service, product or price; the
+because: it only ever makes Tilo more cautious; it refuses no service, product or price; the
 person can see, change or clear the answers that drive it (Profile › Health data); and the policy
 says it has no legal or similarly significant effect and nobody makes decisions about them from it
 (`privacy.ts:91`). Even so, it relies on 9(2)(a) explicit consent, which is also the Art. 22(4)
@@ -432,16 +432,16 @@ solicitor.
 ### 4.8 Medical device boundary
 
 The routing does not diagnose, predict disease or adjust medication; it withholds a deficit and
-signposts. That keeps Tali on the general-wellness side (terms "Not medical advice",
+signposts. That keeps Tilo on the general-wellness side (terms "Not medical advice",
 `terms.ts:26`). Unknown: whether MHRA would agree for this exact design; a short qualification
 note against MHRA's software and AI as a medical device guidance before public launch would
 settle it. Any future feature that interprets symptoms, flags a condition or suggests medication
 changes needs a fresh assessment.
 
-For the kidney answer Tali withholds higher protein targets and shows the general adult reference
+For the kidney answer Tilo withholds higher protein targets and shows the general adult reference
 (0.75 g/kg, "the everyday amount for adults"); it does not set a condition-specific intake, and no
 condition or guideline is named next to the figure. For diabetes or a weight-loss injection the
-protein range is presented as Tali's ordinary range, never as something for the medicine
+protein range is presented as Tilo's ordinary range, never as something for the medicine
 (24 Oct 2026, register item 47).
 
 ### 4.9 Processors and transfers
@@ -468,16 +468,16 @@ the measures in section 6.
 | R1 | **Breach or unauthorised access to health data in the cloud**: an RLS mistake, a leaked service role key, a flaw in an Edge Function, a compromised admin account, or a stolen user session exposes logs, pregnancy status or the wellbeing answer. The anon key is public by design, so RLS is the only barrier for API access. | Possible | Severe | High |
 | R1b | **Exposure on the phone or in exports**: a shared or lost phone, or a backup JSON file (unencrypted, in Downloads or shared by mistake) reveals the log. | Possible | Significant | Medium |
 | R2 | **Health data reaching the cloud without consent**: a bug, an old app version, or a second phone that hasn't heard of a withdrawal uploads data; and data that synced before the consent screen existed is held without an Art. 9 condition. | Possible (historically it happened) | Significant | Medium |
-| R3 | **Wrong safety routing or advice harms someone**: a person with an eating disorder is given a deficit or weight focus; a pregnant person or someone on insulin or sulfonylureas is steered to eat less; someone treats Tali as medical advice. Routing depends on self-report and on the wizard being on (it is off today, so the live app has no screener at all and relies on the terms' warning). | Possible | Severe | High |
-| R4 | **An under-18 uses Tali**: diet and weight features used by a child, whose data then needs the Children's Code protections. | Possible | Significant | Medium |
+| R3 | **Wrong safety routing or advice harms someone**: a person with an eating disorder is given a deficit or weight focus; a pregnant person or someone on insulin or sulfonylureas is steered to eat less; someone treats Tilo as medical advice. Routing depends on self-report and on the wizard being on (it is off today, so the live app has no screener at all and relies on the terms' warning). | Possible | Severe | High |
+| R4 | **An under-18 uses Tilo**: diet and weight features used by a child, whose data then needs the Children's Code protections. | Possible | Significant | Medium |
 | R5 | **Data loss for users**: data kept only on a phone (after "Not now", withdrawal, or before sync) is lost with the phone; the 28 October purge deletes the account copy of the 2 accounts with no answer, with no email to warn them; no user-level restore from backups. | Possible | Significant | Medium |
 | R6 | **Withdrawal not fully honoured**: other phones keep health fields until they next connect; Supabase backups keep deleted rows until they expire (window unknown); exported files and a `resumeCopy` on the phone keep a copy; some fields are kept by design. | Possible | Significant | Medium |
 | R7 | **Transfers to US processors** without a recorded mechanism or DPA, leaving data open to access under laws with weaker protection and no enforceable contract terms. | Possible | Significant | Medium |
 | R8 | **Function creep, including AI**: planned AI features send health data to an AI provider, or data is reused for purposes people didn't agree to. `ai-read-label` is already deployed. | Possible | Significant | Medium |
-| R9 | **On-phone processing treated as outside the GDPR**: Tali's code processes data on the phone even when nothing syncs (register item 27: CJEU C-25/17, C-210/16; Recital 18), so the phone-only paths still need a basis, notice and rights. If treated as out of scope, those protections could be missed. | Possible | Minimal | Low |
+| R9 | **On-phone processing treated as outside the GDPR**: Tilo's code processes data on the phone even when nothing syncs (register item 27: CJEU C-25/17, C-210/16; Recital 18), so the phone-only paths still need a basis, notice and rights. If treated as out of scope, those protections could be missed. | Possible | Minimal | Low |
 | R10 | **No ICO fee paid**: a legal requirement for the controller, not a direct harm to individuals, but a sign of weak governance and a regulatory exposure. | Probable (it is unpaid today) | Minimal | Medium (compliance) |
-| R11 | **Dormant accounts kept with no end date**: email and consent records (which reveal use of a health app) kept indefinitely after someone stops using Tali or after a purge. | Probable | Minimal | Low |
-| R12 | **Consent not freely given**: new users can only use Tali if they agree (D7), which a regulator could see as conditional consent. | Possible | Significant | Medium |
+| R11 | **Dormant accounts kept with no end date**: email and consent records (which reveal use of a health app) kept indefinitely after someone stops using Tilo or after a purge. | Probable | Minimal | Low |
+| R12 | **Consent not freely given**: new users can only use Tilo if they agree (D7), which a regulator could see as conditional consent. | Possible | Significant | Medium |
 | R13 | **Controller change**: when the new company takes over, consents given to Gravita Creative Ltd do not carry over automatically and data could be moved without a basis. | Probable (planned) | Significant | Medium |
 
 ---
@@ -526,8 +526,8 @@ items are not done.
 - **Residual:** remote, significant: **low**.
 
 ### R3 Wrong routing or advice
-- **In place:** terms say Tali is not medical advice and list who should see a GP and not use Tali
-  to guide their eating (`terms.ts:26` to `47`); the routing only ever makes Tali more cautious
+- **In place:** terms say Tilo is not medical advice and list who should see a GP and not use Tilo
+  to guide their eating (`terms.ts:26` to `47`); the routing only ever makes Tilo more cautious
   (`routeSafety`); skipped answers give cautious defaults (a gentler start, maintenance pre-selected,
   quiet signposting: `onboarding.ts:322` to `346`); pregnancy holds food at maintenance with no
   calorie number; the medical flag removes the deficit and adds a GP note, with protein at the
@@ -710,7 +710,7 @@ behind `MIND_REVIEWED`). Benn signs this section before the flag goes on. The re
 - **Synced inside the check-in** (`supps._checkin` on `day_logs`): the sleep band and wake time
   (`night`), the Mind skills used as ids and times (`skills`), and the one thing for the day as a
   key from a fixed list and when it was done (`thing`).
-- **Synced in `profile.mind`:** which pillars are on, how often Tali asks (`asks`), usual wake and
+- **Synced in `profile.mind`:** which pillars are on, how often Tilo asks (`asks`), usual wake and
   wind-down times, which reminder types are on and their back-off (`notify`, `halved`), and the
   IANA time zone (`tz`). Mind plans are if-then plans marked with `IfThenPlan.kind`.
 - **Server:** `notify_sent` (the last day a Mind reminder was sent, and the last day per type),
@@ -743,7 +743,7 @@ Scores using the scale in section 5, confirmed by Benn at sign-off (10 October 2
 | # | Risk to individuals | Likelihood | Severity | Overall |
 |---|---|---|---|---|
 | R14 | **Unload notes exposed** on a shared or lost phone, or in an export file. | Possible | Significant | Medium |
-| R15 | **People treat Tali as a crisis service**, and rely on it when they need urgent help. | Possible | Severe | High |
+| R15 | **People treat Tilo as a crisis service**, and rely on it when they need urgent help. | Possible | Severe | High |
 | R16 | **Which reminders someone gets reveals Mind use**, for example on a lock screen or through the server record. | Possible | Minimal | Low |
 | R17 | **Inaccurate signposting by nation**: a person in Northern Ireland is told to call NHS 111, which doesn't run there (register item 44). | Probable (as built) | Significant | Medium |
 
@@ -753,7 +753,7 @@ Scores using the scale in section 5, confirmed by Benn at sign-off (10 October 2
   phone asks whose data it is (`ownerCheck`); cleared on withdrawal of health consent; the privacy
   policy warns that exports include them. Residual: **low**.
 - **R15 Crisis service.** In place: the B6.7 copy in the app (the Support and Unload sheets say
-  Tali isn't a crisis service and to call 999 in danger); the terms paragraph on the Mind part
+  Tilo isn't a crisis service and to call 999 in danger); the terms paragraph on the Mind part
   (`termsOfUse({ mind: true })`); 999 first in the Support sheet; the low-mood signpost;
   clinician review before `MIND_REVIEWED` goes on. Residual: **medium**, and
   only with the clinician review done; without it, treat as high (see 7.3).
@@ -768,7 +768,7 @@ Scores using the scale in section 5, confirmed by Benn at sign-off (10 October 2
 
 ### 8.6 Medical device boundary
 
-The skills are general wellness (breathing, journalling, wind-down). Tali shows no diagnosis,
+The skills are general wellness (breathing, journalling, wind-down). Tilo shows no diagnosis,
 score or risk prediction, and the low-mood rule only signposts (most mood answers Low or Rough
 over two weeks, at least five answers, at most once a month on each phone; `lowMoodDue` in
 `src/core/domain/mind.ts`). This view stays subject to the clinician review (the Mind analogue of
@@ -832,9 +832,9 @@ with the clinician review moved to a gate before public launch. Four things to r
   names the skills and the low-mood signpost again from 10 October), "Need support now?" on the
   Mind page and in the check-in, the Support sheet with 999 and the not-a-crisis-service line, and
   the low-mood signpost. Proposed residual: **medium, only while testing is closed**: a small
-  group of known testers who have been told Tali isn't a crisis service, which lowers the
+  group of known testers who have been told Tilo isn't a crisis service, which lowers the
   likelihood to unlikely. That reasoning holds only if sign-up is not open to the public in
-  practice; Benn to confirm who can create an account at app.tali.fit today. If anyone can, the
+  practice; Benn to confirm who can create an account at app.tilo.fit today. If anyone can, the
   closed-testing argument doesn't hold and R15 stays high, so 7.3 (Art. 36 prior consultation)
   applies until the clinician review is done. Before public launch: the clinician review, then
   Benn confirms a residual for what is live; if R15 is still high then, 7.3 applies.
@@ -851,7 +851,7 @@ with the clinician review moved to a gate before public launch. Four things to r
 
 | Item | Name and date | Notes |
 |---|---|---|
-| 8.9 noted by | Benn, 10 October 2026 (in the build conversation) | Benn's words: "switch on once live then update the DPIA and when we have the money a clinician will review. again no public access yet". Benn rates R15 medium while access stays non-public. Recorded fact: sign-up at app.tali.fit is technically open to anyone with the link (`src/screens/AuthScreen.tsx`, plain sign-up); the app isn't publicised. Recommended, not done: turn off "Allow new users to sign up" in Supabase Auth and add testers by invite, so "non-public" is enforced rather than relied on. If the app is publicised or sign-ups from unknown people appear before the clinician review, R15 is high and 7.3 applies. |
+| 8.9 noted by | Benn, 10 October 2026 (in the build conversation) | Benn's words: "switch on once live then update the DPIA and when we have the money a clinician will review. again no public access yet". Benn rates R15 medium while access stays non-public. Recorded fact: sign-up at app.tilo.fit is technically open to anyone with the link (`src/screens/AuthScreen.tsx`, plain sign-up); the app isn't publicised. Recommended, not done: turn off "Allow new users to sign up" in Supabase Auth and add testers by invite, so "non-public" is enforced rather than relied on. If the app is publicised or sign-ups from unknown people appear before the clinician review, R15 is high and 7.3 applies. |
 
 ## 9. Addendum: label photos (Anthropic) and the shared product list
 
@@ -894,7 +894,7 @@ This section supersedes D5 and the Anthropic row in section 2.1 once signed.
 
 ### 9.2 Lawful basis
 
-- **Label photos:** Art. 6(1)(b). The person asks Tali to read a label; a pack photo is not health
+- **Label photos:** Art. 6(1)(b). The person asks Tilo to read a label; a pack photo is not health
   data and nothing about the person goes with it. The `label-photo` record is the notice and the
   server's gate, not consent in the Art. 7 sense, so no withdrawal toggle is owed: not taking a
   photo is the opt-out, and typing the label in is always offered.
@@ -908,7 +908,7 @@ This section supersedes D5 and the Anthropic row in section 2.1 once signed.
 
 ### 9.3 Why the stored list is anonymous, and the rule that keeps it so
 
-The test is whether a person is identifiable by means reasonably likely to be used, by Tali or
+The test is whether a person is identifiable by means reasonably likely to be used, by Tilo or
 anyone else, taking account of cost, time and technology (UK GDPR Recital 26; ICO guidance on
 anonymisation, identifiability).
 
@@ -921,12 +921,12 @@ anonymisation, identifiability).
 - **Timing is blurred.** The phone sends after a random delay, not at the moment of the save, and
   a product can be confirmed by several people over a month, so a row's counters don't map to one
   request.
-- **The one route back is a join Tali must never make.** A person's own `custom_foods` row holds
+- **The one route back is a join Tilo must never make.** A person's own `custom_foods` row holds
   the same barcode, name and figures (it's their copy). Matching `products` against
-  `custom_foods` would suggest who probably added a product. **Rule: Tali never joins `products`
+  `custom_foods` would suggest who probably added a product. **Rule: Tilo never joins `products`
   (or `product_sigs_seen`) with `custom_foods` or any other user table, by barcode, name, figures
   or time, in SQL, scripts, analytics or support work.** Even if someone did, it would tell them
-  only that a person has that food in their log, which Tali already holds with their consent:
+  only that a person has that food in their log, which Tilo already holds with their consent:
   the list adds nothing new about them. That is why the residual risk is low, not why the join
   is allowed.
 - **Closed (register item 46).** `products.id` was a sequential identity that, with
@@ -937,7 +937,7 @@ Consequences: account deletion, health withdrawal and the purge don't touch the 
 not in `USER_TABLES`, `clear_log_after_withdrawal()` or `purge_unconsented_logs()`); withdrawing
 `shared-products` stops future sharing and drops the outbox but can't recall what was added
 (Art. 7(3) affects only processing of personal data); and rights requests about contributions
-fall under Art. 11(2), since Tali can't identify whose they were. The opt-in copy and the
+fall under Art. 11(2), since Tilo can't identify whose they were. The opt-in copy and the
 privacy policy say so. A version can still be taken down after a report.
 
 ### 9.4 Transfer to Anthropic (short TIA)
@@ -945,7 +945,7 @@ privacy policy say so. A version can still be taken down after a report.
 - **What goes:** one or two downscaled photos of a food pack. No identifiers. Incidental content
   in the frame (a hand, a kitchen) is possible but not sought.
 - **Who and where:** the `ANTHROPIC_API_KEY` in `ai-read-label` was created in the Anthropic
-  Console, in a workspace called "Tali" in an API organisation, not a consumer Claude.ai account
+  Console, in a workspace called "Tilo" in an API organisation, not a consumer Claude.ai account
   (Benn, 11 Oct 2026). The Commercial Terms (effective 17 June 2025) "govern Customer's use of
   Anthropic API keys", and "Anthropic" means Anthropic Ireland, Limited where the customer
   resides in the EEA, Switzerland or UK. They incorporate the DPA (s. C) and say Anthropic "may
@@ -960,7 +960,7 @@ privacy policy say so. A version can still be taken down after a report.
   is incorporated (s. I.2, Sch. 3 Part B), and Anthropic as importer may end it under its
   Table 4 terms. The importer is "the Anthropic entity that executed the Agreement" (Sch. 1
   A.2). The DPA does not mention the Data Privacy Framework, its UK Extension (the UK-US data
-  bridge) or the IDTA itself; Tali does not rely on them for Anthropic. Anthropic must give the
+  bridge) or the IDTA itself; Tilo does not rely on them for Anthropic. Anthropic must give the
   information needed for a TIA (s. I.4); subprocessors listed at anthropic.com/subprocessors
   (Sch. 4; not read: the page didn't render without a browser).
 - **Gap noted, accepted at this risk level:** the UK to Ireland leg is covered by UK adequacy
@@ -987,7 +987,7 @@ privacy policy say so. A version can still be taken down after a report.
 ### 9.6 Measures
 
 - **R19.** Photos only, no identifiers; DPA (SCCs with the UK Addendum) and no-training terms;
-  30-day deletion; nothing stored by Tali. Residual: **low**.
+  30-day deletion; nothing stored by Tilo. Residual: **low**.
 - **R20.** The design in 9.3, the no-join rule, the random send delay; to do: the `security-data`
   fix in item 46. Residual: **low**.
 - **R21.** Name rules refuse links, `@`, markup, long digit runs and claims before storage; a name
@@ -1013,7 +1013,7 @@ privacy policy say so. A version can still be taken down after a report.
 - Register: `docs/compliance/README.md` (last reviewed 2026-09-28).
 - Live Supabase project `exvblofwiwbvycomxvmj`, 30 Sept 2026: region, RLS status, trigger count,
   cron job, security advisors, and row counts only (no row content read).
-- Live privacy page, www.tali.fit/legals/privacy, 30 Sept 2026: the consent-release text, without
+- Live privacy page, www.tilo.fit/legals/privacy, 30 Sept 2026: the consent-release text, without
   the onboarding sections.
 - ICO, "Examples of processing likely to result in high risk" (ico.org.uk), 30 Sept 2026.
 - Section 9 (10 Oct 2026): code on `shared-products-legal` (from `e8ac601`); Anthropic Commercial

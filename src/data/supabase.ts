@@ -60,7 +60,7 @@ export function sbFetch(path: string, opts: RequestInit = {}, token?: string): P
   return fetch(SB_REST + path, opts)
 }
 
-/** POST JSON to one of Tali's Edge Functions as the current session (`name`: e.g. 'lookup-product'). */
+/** POST JSON to one of Tilo's Edge Functions as the current session (`name`: e.g. 'lookup-product'). */
 export function fnFetch(name: string, opts: RequestInit = {}): Promise<Response> {
   opts.headers = {
     apikey: SB_KEY,

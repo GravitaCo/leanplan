@@ -67,7 +67,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
     ...(onAdd && mine.length ? [{ id: 'mine', label: 'My workouts', items: mine.map((r) => r.id), color: 'var(--btn)', sub: 'Ones you made or saved' }] : []),
     ...CATEGORIES.map((c) => ({ ...c, items: c.items.filter((t) => !have.includes(t)) as WorkoutKey[] })).filter((c) => c.items.length),
   ]
-  // a plan's day can also hold Tali's plan workouts (Full body A…, Strength & Balance A…), by kind
+  // a plan's day can also hold Tilo's plan workouts (Full body A…, Strength & Balance A…), by kind
   if (onAdd) {
     const tali = taliWorkouts().filter((r) => !have.includes(r.id))
     const weights = cats.find((c) => c.id === 'weights')
@@ -265,11 +265,11 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   const openTrain = useStore((s) => s.openTrain)
   const setDate = useStore((s) => s.setDate)
   const r = routineFor(type, routines)
-  // Tali's plan workouts read like the ready-made cards; only the person's own say "Your workout"
+  // Tilo's plan workouts read like the ready-made cards; only the person's own say "Your workout"
   const own = r && r.source === 'custom' ? r : undefined
   const v = keyVideo(type, routines)
   const [failed, setFailed] = useState(false)
-  // the days it's planned this week: the plan's week (several a day, own and Tali's) or the schedule's
+  // the days it's planned this week: the plan's week (several a day, own and Tilo's) or the schedule's
   const data = useStore((s) => s.data)
   const thisWeek = weekOf(todayStr())
   const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
@@ -284,7 +284,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
         <button className="wv-back" aria-label="Back" onClick={onBack}><Icon name="chevL" size={18} stroke={2.6} /></button>
         <div className="wv-t">
           <h1>{keyTitle(type, routines)}</h1>
-          <div className="s num">{own ? `Your workout · ${sub}` : r ? `Tali workout · ${sub}` : `${when} · ${sub}`}</div>
+          <div className="s num">{own ? `Your workout · ${sub}` : r ? `Tilo workout · ${sub}` : `${when} · ${sub}`}</div>
         </div>
       </div>
       <div className="screen" style={{ paddingTop: 16 }}>

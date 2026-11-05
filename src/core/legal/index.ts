@@ -4,7 +4,7 @@
  */
 
 /**
- * Who runs Tali. `null` means not yet confirmed: it renders as a visible placeholder and
+ * Who runs Tilo. `null` means not yet confirmed: it renders as a visible placeholder and
  * `npm run check:legal` fails until every value is filled. Never guess these.
  */
 export const LEGAL = {
@@ -17,7 +17,7 @@ export const LEGAL = {
   /** inbox for privacy requests and complaints; must be monitored */
   contactEmail: 'benn@gravita.co' as string | null,
   /** ICO data protection fee registration number (ico.org.uk/fee). Not printed in the
-   *  policies, but Tali must not go public until the fee is paid, so check:legal needs it. */
+   *  policies, but Tilo must not go public until the fee is paid, so check:legal needs it. */
   icoNumber: null as string | null,
   /** law and courts that govern the terms (the company is registered in England and Wales) */
   jurisdiction: 'England and Wales' as string | null,
@@ -30,14 +30,14 @@ export const LEGAL = {
  */
 export const UNCONSENTED_DELETION = { iso: '2026-10-28', long: '28 October 2026', short: '28 October' } as const
 
-/** Minimum age to use Tali (Benn, 28 Sept 2026: strictly 18+). The one source for every age check: see isUnderAge in core/domain/age.ts. */
+/** Minimum age to use Tilo (Benn, 28 Sept 2026: strictly 18+). The one source for every age check: see isUnderAge in core/domain/age.ts. */
 export const MIN_AGE = 18
 
 /** Consent wording versions live with the consent records: CONSENT_VERSIONS in src/data/consent.ts. */
 
 /** Where the documents are published: the Webflow site's "Legals" collection. The text is
  *  written here and pushed there (see docs/compliance/README.md, "Publishing"). */
-export const SITE = 'https://www.tali.fit'
+export const SITE = 'https://www.tilo.fit'
 export const LEGAL_URLS: Record<LegalDocId, string> = {
   privacy: SITE + '/legals/privacy',
   terms: SITE + '/legals/terms',

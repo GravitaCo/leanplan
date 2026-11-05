@@ -1,7 +1,7 @@
 # Clinical review: hard-week and care-week thresholds (weekly review)
 
 Prepared 23 Oct 2026 for an independent clinical reviewer. Status: **awaiting a reviewer**. Nothing
-here has been reviewed by a clinician yet. The thresholds were set by Tali's `mental-performance`
+here has been reviewed by a clinician yet. The thresholds were set by Tilo's `mental-performance`
 specialist from the research in `docs/research/maintenance-psychology-2026-10.md` (8 Oct 2026) and
 are live in the weekly review today.
 
@@ -9,12 +9,12 @@ are live in the weekly review today.
 
 Someone qualified to judge disordered-eating and low-mood risk in a self-guided wellness app: for
 example a registered dietitian with eating-disorder experience, or a clinical or counselling
-psychologist. Tali offers general wellness guidance, never medical advice or therapy, so the
+psychologist. Tilo offers general wellness guidance, never medical advice or therapy, so the
 question is whether these rules are safe and sensible for that frame, not whether they diagnose.
 
 ## What the reviewer is looking at
 
-Once a week Tali shows a review of the past week across mind, food, movement and body. The person
+Once a week Tilo shows a review of the past week across mind, food, movement and body. The person
 may answer an optional daily check-in. Its answers are the only inputs to the rules below.
 
 | Check-in question | Answers (stored as 1 to 5 or 1 to 3) |
@@ -55,7 +55,7 @@ A care week has no minimum number of check-ins.
 - No pattern lines (for example "on 4 of your 6 short-sleep days you were hungrier").
 - A care week also hides weight and the follow-up sheets.
 - The weekly review reminder is skipped after a hard or care week.
-- **There is no support pointer in a care week yet.** Separately, Tali already shows a support
+- **There is no support pointer in a care week yet.** Separately, Tilo already shows a support
   sheet (NHS 111, Samaritans, Beat) when most mood answers over 14 days are Low or Rough, at most
   once a month.
 

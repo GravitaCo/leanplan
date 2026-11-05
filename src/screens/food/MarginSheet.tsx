@@ -14,7 +14,7 @@ export function MarginSheet({ onClose }: { onClose: () => void }) {
         <div className="sub">today's margin</div>
       </div>
       <div className="prose" style={{ padding: '0 4px' }}>
-        <p>No food log is exact. Portions are guessed, labels round, and cooking changes things. Instead of pretending, Tali shows how sure it is.</p>
+        <p>No food log is exact. Portions are guessed, labels round, and cooking changes things. Instead of pretending, Tilo shows how sure it is.</p>
         <p>Weighed food is very close. Servings and your usual portions are close. Hand estimates and quick estimates are rougher. The margin combines them all.</p>
         {top && <p><b>Biggest source today:</b> {CAPTURE_LABEL[top].toLowerCase()} entries.</p>}
         <p className="muted">For context, careful manual logging typically misses 20% or more. Roughly right every day beats precise now and then.</p>

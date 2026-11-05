@@ -295,7 +295,7 @@ export function weekFromSchedule(s: Schedule): PlanWeek {
 export type PlanExperience = 'new' | 'comfortable' | 'confident'
 export type PlanWhere = 'gym' | 'home' | 'none'
 
-/** One of Tali's plans (source 'recommended'), as the plan library shows it (design canvas, Plans 1). */
+/** One of Tilo's plans (source 'recommended'), as the plan library shows it (design canvas, Plans 1). */
 export interface PlanTemplate {
   id: string
   name: string
@@ -335,10 +335,10 @@ const SBA = 'tali-strength-balance-a', SBB = 'tali-strength-balance-b', BM = 'ta
 const FBA = 'tali-full-body-a', FBB = 'tali-full-body-b', FBC = 'tali-full-body-c'
 
 /**
- * Tali's three interim plans (design canvas, Plans 1; defined by fitness-workouts and approved by
+ * Tilo's three interim plans (design canvas, Plans 1; defined by fitness-workouts and approved by
  * Benn, 27 Sept 2026). Each has a set length (no variants). Maintenance comes after a plan, when the
  * person chooses it: each plan's maintenance week, on the shorter version (Bickel et al. 2011, Med
- * Sci Sports Exerc; Spiering et al. 2021, J Strength Cond Res). Benn's principle: Tali's plans
+ * Sci Sports Exerc; Spiering et al. 2021, J Strength Cond Res). Benn's principle: Tilo's plans
  * follow the profile's recommended goals and the science, and people are free to choose any plan.
  */
 export const PLAN_TEMPLATES: PlanTemplate[] = [
@@ -396,7 +396,7 @@ export const fitOf = (p: Pick<Profile, 'goal' | 'age' | 'training'> | undefined)
 const EXP: Record<Experience, PlanExperience> = { beginner: 'new', intermediate: 'comfortable', advanced: 'confident' }
 
 /**
- * Whether a Tali plan fits the person ("Fits your goal"): their goal is one it names, and their
+ * Whether a Tilo plan fits the person ("Fits your goal"): their goal is one it names, and their
  * experience (when given) is one it's for. Never a gate: every plan stays open to everyone.
  */
 export function fits(t: Pick<PlanTemplate, 'goals' | 'experience'>, p: Fit | undefined): boolean {
@@ -417,7 +417,7 @@ export function fitsFirst<T extends Pick<PlanTemplate, 'id' | 'goals' | 'experie
   return [...list].sort((a, b) => fitScore(b, p) - fitScore(a, p))
 }
 
-/** Tali plans to suggest when one ends: the one that suits the person first, never the one just done. */
+/** Tilo plans to suggest when one ends: the one that suits the person first, never the one just done. */
 export function nextSuggestions(done: TrainingPlan | undefined, p?: Fit): PlanTemplate[] {
   return fitsFirst(PLAN_TEMPLATES.filter((t) => t.id !== done?.baseTemplateId), p)
 }
@@ -446,7 +446,7 @@ export function eatingLine(t: Pick<PlanTemplate, 'nutritionGoal' | 'eatingExtra'
     : `For ${GOAL_WORDS[g]}, Food targets suggest ${figures}. Yours follow your own goal; you can change it in Profile if you like.`
 }
 
-/** A workout key a plan may hold: a built-in type, a Tali or own workout id (letters, digits, - and _). */
+/** A workout key a plan may hold: a built-in type, a Tilo or own workout id (letters, digits, - and _). */
 const KEY_RE = /^[A-Za-z0-9_-]{1,64}$/
 
 /** A week made valid: each day a list of up to four well-formed keys. */
@@ -522,7 +522,7 @@ export function weekSource(p: Pick<TrainingPlan, 'phases'>, i: number): number {
   return -1
 }
 
-/** A plan in the library: one of Tali's, or one of the person's own (design canvas, Plans 1). */
+/** A plan in the library: one of Tilo's, or one of the person's own (design canvas, Plans 1). */
 export interface CatalogueEntry {
   key: string
   name: string
@@ -541,7 +541,7 @@ export interface CatalogueEntry {
 const maxDays = (phases: Pick<PlanPhase, 'week' | 'maintain' | 'after'>[]) => Math.max(0, ...phases.filter((x) => !x.maintain && !x.after).map((x) => trainingDays(x.week)))
 
 /**
- * Every plan in one list, Tali's and the person's own (their saved ones and those they've run,
+ * Every plan in one list, Tilo's and the person's own (their saved ones and those they've run,
  * newest first, one per name); the one that fits their goal leads. Nothing is locked.
  */
 export function catalogue(s: Pick<AppState, 'trainingPlans'>, fit?: Fit): CatalogueEntry[] {
@@ -587,7 +587,7 @@ export function workoutsDone(s: Pick<AppState, 'days'>, p: Pick<TrainingPlan, 's
   return n
 }
 
-/** The week maintenance runs after a plan: the Tali plan's own, else the plan's last build week. */
+/** The week maintenance runs after a plan: the Tilo plan's own, else the plan's last build week. */
 export function maintenanceWeekOf(p: Pick<TrainingPlan, 'phases' | 'baseTemplateId'>): PlanWeek {
   const t = templateById(p.baseTemplateId)
   if (t) return copyWeek(t.maintenance)

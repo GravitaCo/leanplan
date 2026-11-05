@@ -26,9 +26,9 @@ export const CHECKIN_SLEEP = {
   /** B10.9, the foot under the disclosure */
   foot: 'A rough idea is plenty. Leave it blank if you like.',
   /** B10.12, under the note; "support is here" opens the Support sheet (B6) */
-  noteFoot: { before: "Tali doesn't read your notes. If you're struggling, ", link: 'support is here', after: '.' },
+  noteFoot: { before: "Tilo doesn't read your notes. If you're struggling, ", link: 'support is here', after: '.' },
   /** B10.13, the sheet's foot (flag on; flag off keeps the old line) */
-  sheetFoot: "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter options.",
+  sheetFoot: "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tilo asks for less and offers lighter options.",
 }
 
 /** Every B10 string above plus the band labels, for the copy lint. */

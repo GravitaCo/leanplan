@@ -194,7 +194,7 @@ export function AuthScreen() {
 
             {mode === 'signup' && (
               <p className="auth2-legal">
-                Tali is for people aged {MIN_AGE} and over. Read the{' '}
+                Tilo is for people aged {MIN_AGE} and over. Read the{' '}
                 <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> and{' '}
                 <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy notice</a>. You’ll be asked to agree after you sign up.
               </p>
@@ -205,7 +205,7 @@ export function AuthScreen() {
                 <button type="button" className="linkbtn" onClick={() => setMode('signin')}>Back to sign in</button>
               ) : (
                 <>
-                  {mode === 'signup' ? 'Already have an account?' : 'New to Tali?'}{' '}
+                  {mode === 'signup' ? 'Already have an account?' : 'New to Tilo?'}{' '}
                   <button type="button" className="linkbtn" onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
                     {mode === 'signup' ? 'Sign in' : 'Create an account'}
                   </button>
@@ -251,7 +251,7 @@ export function OwnerChoiceScreen() {
     <div className="auth auth-owner">
       <div className="auth-brand">
         <TaliMark width={112} />
-        <h1>Tali</h1>
+        <h1>Tilo</h1>
         <p>Signed in as {who}</p>
       </div>
       {ask?.checking ? (

@@ -16,7 +16,7 @@ SNAP = 'docs/data/snapshots/nandos-2026-09-25.json'
 OUT = 'src/core/data/chains/nandos.ts'
 URL = 'https://www.nandos.co.uk/food/menu/page-data/index/page-data.json'
 
-# existing Tali names are stable IDs (learned usuals match by name): keep them
+# existing Tilo names are stable IDs (learned usuals match by name): keep them
 LEGACY = {
     ('1/4 Chicken', ''): "Nando's Quarter Chicken (plain)", ('1/2 Chicken', ''): "Nando's Half Chicken (plain)",
     ('PERi-Salted Chips', 'Regular'): "Nando's Peri-Peri Chips", ('Grilled Chicken Pitta', ''): "Nando's Chicken Pitta",
@@ -126,7 +126,7 @@ def main():
             # per item, exactly as published: one serving (1 item) is Nando's own line
             assert round(food['k'] * food['g']) == round(f['energyKcal']), f'serving kcal mismatch: {n}'
             out.append(food)
-    # the half chicken is two quarters: kept only because it's a long-standing Tali food
+    # the half chicken is two quarters: kept only because it's a long-standing Tilo food
     half = next(x for x in out if x['_raw'] == ('1/2 Chicken', ''))
     quarter = next(x for x in out if x['_raw'] == ('1/4 Chicken', ''))
     assert half['k'] == 2 * quarter['k'], 'half chicken is not two quarters'

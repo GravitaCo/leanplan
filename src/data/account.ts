@@ -44,8 +44,8 @@ export const DELETE_MESSAGES: Record<Exclude<DeleteResult['status'], 'ok'>, stri
   'no-session': 'Sign in again to delete your account. Nothing has been deleted.',
   reauth: 'To delete your account, confirm it’s you: enter your password, or sign in with Google again.',
   'wrong-account': 'This phone’s data isn’t settled for this account yet, so it can’t be deleted from here. Nothing has been deleted.',
-  busy: 'Tali is still syncing. Try again in a moment. Nothing has been deleted.',
-  unavailable: 'Couldn’t reach Tali just now. Nothing has been deleted. Try again later.',
+  busy: 'Tilo is still syncing. Try again in a moment. Nothing has been deleted.',
+  unavailable: 'Couldn’t reach Tilo just now. Nothing has been deleted. Try again later.',
   error: 'Something went wrong, so nothing has been deleted. Try again later.',
 }
 

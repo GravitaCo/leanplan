@@ -10,7 +10,7 @@ import { cleanToken, type ShareToken } from '../../supabase/functions/_shared/sh
 import { getToken, hasSession, supabase } from './supabase'
 
 /**
- * Label photo scanning, and with it Tali's shared product list (SHARED_PRODUCTS_ENABLED). On once
+ * Label photo scanning, and with it Tilo's shared product list (SHARED_PRODUCTS_ENABLED). On once
  * ai-read-label (with PRODUCT_SIGNING_KEY), submit-product, lookup-product and report-product are
  * deployed, the shared-products migration is applied and the privacy policy describes both
  * (Compliance). Set back to false to hide every entry point again.
@@ -21,7 +21,7 @@ export const LABEL_TIMEOUT_MS = 20_000
 export const LABEL_FUNCTION = 'ai-read-label'
 
 export type LabelReadResult =
-  /** `share`: the read's values signed for Tali's shared list, when a barcode went with the photo
+  /** `share`: the read's values signed for Tilo's shared list, when a barcode went with the photo
    *  and the read parsed cleanly (ai-read-label); shared only if the user saves them unchanged */
   | { status: 'ok'; read: LabelRead; share?: ShareToken }
   /** no connection, or too slow */

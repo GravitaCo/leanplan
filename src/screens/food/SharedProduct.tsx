@@ -1,5 +1,5 @@
 /**
- * Tali's shared product list in the add-food flow (Design canvas, "Shared products", approved by
+ * Tilo's shared product list in the add-food flow (Design canvas, "Shared products", approved by
  * Benn 10 Oct 2026): the source card a found product opens with (sp-2, sp-3, sp-3b), its margin
  * (One serving), the one-time opt-in at the first save of a new label-read product (sp-1, copy
  * from compliance, word for word) and the report sheet (sp-6).
@@ -50,7 +50,7 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
 /** sp-1: compliance's copy, word for word, then a link to the terms (where the sharing licence
  *  lives). Either answer saves the food; no never blocks anything. */
 export const OPT_IN = {
-  title: 'Add new products you scan to Tali’s shared list?',
+  title: 'Add new products you scan to Tilo’s shared list?',
   body: 'We save the barcode, name and figures, never who added them. Because of that, we can’t remove one you added later. Turn this off any time in Profile, Privacy.',
   yes: 'Yes, share new products',
   no: 'Not now',

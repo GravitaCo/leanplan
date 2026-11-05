@@ -35,7 +35,7 @@ export const HEALTH_ANSWERS_ROW = 'Health check answers'
 
 /** Profile › Health data's row to redo the first-run setup, prefilled (compliance item 32). */
 export const REDO_ROW = 'Redo setup'
-/** The same place, for someone who used Tali before onboarding and never ran it (Benn approved). */
+/** The same place, for someone who used Tilo before onboarding and never ran it (Benn approved). */
 export const SETUP_ROW = 'Set up my plan'
 
 const SLOT_WORD = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'a snack', other: 'something else' } as const
@@ -98,7 +98,7 @@ export const SUPPORT = {
   /** under the list in the whole-UK view (Benn, 10 Oct 2026) */
   chooseNation: 'Choose your nation above to see your local NHS services.',
   /** only true while opening the sheet is never logged, synced or sent (s-ob10) */
-  foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. All calls are free.',
+  foot: 'Opening this page is private. Tilo doesn’t record it or tell anyone. All calls are free.',
   beat: 'Eating disorder support',
   beatWeb: 'Webchat and email too',
   mentalHealth: 'Mental health crisis line',

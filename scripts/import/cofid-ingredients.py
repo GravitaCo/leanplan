@@ -8,7 +8,7 @@ Input:  CoFID 2021 proximates as JSON rows {code, name, k, p, c, f, ...}, all pe
 Writes: src/core/data/ingredients.ts          (INGREDIENTS: Food[])
         docs/data/food-audit-2026-09-ingredients.json  (the audit records check-foods locks to)
 
-Deterministic: every food below is a hand-picked CoFID code with a Tali name that states its
+Deterministic: every food below is a hand-picked CoFID code with a Tilo name that states its
 form, a category, a default serving and the cooking-fat flag. Values are copied exactly as
 CoFID gives them (kcal whole, macros to 0.1 g, Tr/N as 0). A code whose energy CoFID leaves
 blank (N) is refused, never estimated. Names must not clash with src/core/data/foods.ts, and a
@@ -17,7 +17,7 @@ Re-run after a CoFID update and review the diff; the output must pass `npm run c
 """
 import json, math, re, sys
 
-# (code, Tali name, cat, default serving g, cook)
+# (code, Tilo name, cat, default serving g, cook)
 # cook = plain food usually cooked in fat (gets the one cooking-fat question when logged)
 FOODS = [
     # ---- Beef, raw
@@ -293,7 +293,7 @@ FOODS = [
 ]
 
 # USDA SR Legacy fallback, only where CoFID has no match or leaves energy blank (N).
-# (FDC ID, Tali name, cat, default serving g, cook). USDA spice carbs include fibre, so kcal sits
+# (FDC ID, Tilo name, cat, default serving g, cook). USDA spice carbs include fibre, so kcal sits
 # below 4/4/9 of the macros; the energy value is used exactly as USDA gives it.
 USDA_FOODS = [
     # ---- Spices and dried herbs (CoFID: energy N)

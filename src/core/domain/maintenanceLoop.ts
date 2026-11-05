@@ -593,7 +593,7 @@ export function reviewWaiting(s: AppState, today: string, healthConsent: boolean
 
 /* ---------------- the review reminder (ml-d1, ml-d2) ---------------- */
 
-/** Reminders stop after this many review days in a row pass unopened, and Tali asks once in the app (ml-d2, Benn 8 Oct). */
+/** Reminders stop after this many review days in a row pass unopened, and Tilo asks once in the app (ml-d2, Benn 8 Oct). */
 export const REMINDER_UNOPENED_STOP = 3
 export const REMINDER_TEXT = { title: 'Your week is ready', body: 'Take a look whenever suits you.' } as const
 
@@ -622,7 +622,7 @@ export function reminderDue(p: AppState['profile'], today: string): boolean {
 
 /**
  * "Keep the weekly reminder?", asked once (ml-d2): from the pause until the next review day passes.
- * Unanswered by then, the reminder goes off quietly and Tali never asks again (`reminderLapsed`).
+ * Unanswered by then, the reminder goes off quietly and Tilo never asks again (`reminderLapsed`).
  */
 export const reminderAskDue = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) === REMINDER_UNOPENED_STOP
 export const reminderLapsed = (p: AppState['profile'], today: string) => !!p.reviewPush && unopenedReviews(p, today) > REMINDER_UNOPENED_STOP

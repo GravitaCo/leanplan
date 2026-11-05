@@ -38,9 +38,9 @@ export function checkinSuite(): number {
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every B10 string passes mindCopyIssues', issues.length === 0, issues)
   ok('no em dashes', strings.every((s) => !s.includes('—')))
-  ok('B10.13 verbatim (as approved)', CHECKIN_SLEEP.sheetFoot === "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tali asks for less and offers lighter options.")
+  ok('B10.13 verbatim (as approved)', CHECKIN_SLEEP.sheetFoot === "Answer what you like, and leave the rest. There's no right answer. Sleep and stress often show up in hunger and energy, so these help you spot patterns. On a tough day, Tilo asks for less and offers lighter options.")
   ok('B10.9 and B10.12 verbatim', CHECKIN_SLEEP.foot === 'A rough idea is plenty. Leave it blank if you like.'
-    && strings.includes("Tali doesn't read your notes. If you're struggling, support is here."))
+    && strings.includes("Tilo doesn't read your notes. If you're struggling, support is here."))
   ok('B10.4, B10.5, B10.8', CHECKIN_SLEEP.more === 'More about sleep' && CHECKIN_SLEEP.howLong === 'Roughly how long?' && CHECKIN_SLEEP.woke === 'Woke up around')
 
   /* ---------- the night patch ---------- */
@@ -80,7 +80,7 @@ export function checkinSuite(): number {
 
   /* ---------- the sheet's source: flag-gated, flag-off foot unchanged ---------- */
   const src = readFileSync('src/screens/today/CheckinSheet.tsx', 'utf8')
-  ok('flag off keeps the old foot', src.includes("Skip anything you like. There's no right answer.") && src.includes('Tali can offer a lighter option for training.'))
+  ok('flag off keeps the old foot', src.includes("Skip anything you like. There's no right answer.") && src.includes('Tilo can offer a lighter option for training.'))
   ok('every B10 part sits behind WELLBEING_ENABLED', /WELLBEING_ENABLED && <SleepMore/.test(src) && /WELLBEING_ENABLED\s*\n?\s*\? <CheckinFeet/.test(src) && /WELLBEING_ENABLED \? nightPatch/.test(src))
 
   /* ---------- through the store: mood kept, the open state device-only ---------- */

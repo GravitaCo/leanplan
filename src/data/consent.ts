@@ -35,10 +35,10 @@ export type ConsentType = (typeof CONSENT_TYPES)[number]
 export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   health: '2026-09-v1',
   ai: '2026-09-v1',
-  // 2026-10-v1: the notice now says Anthropic reads the photo for Tali only and doesn't train on it
+  // 2026-10-v1: the notice now says Anthropic reads the photo for Tilo only and doesn't train on it
   // (compliance register item 24). An older yes is asked again with the new notice.
   'label-photo': '2026-10-v1',
-  // the opt-in to add new label-read products to Tali's shared list (sp-1; Profile › Privacy sp-5).
+  // the opt-in to add new label-read products to Tilo's shared list (sp-1; Profile › Privacy sp-5).
   // Checked by the server too (shared_products_allowed, docs/migrations/2026-10-10-shared-products.sql)
   'shared-products': '2026-10-v1',
 }
@@ -109,7 +109,7 @@ export interface HealthHeld {
 }
 
 /**
- * "Not now" from someone who already had health data in Tali before consent was asked (plan §14;
+ * "Not now" from someone who already had health data in Tilo before consent was asked (plan §14;
  * security-data review SAFE WITH FIXES, applied). New health data stays on this phone and its
  * upload is paused: a sync sends day logs without `weight` (the server keeps what it has) and with
  * the server's own check-in in `supps._checkin`, and settings with the server's own health fields
@@ -228,7 +228,7 @@ export function healthLoggingAllowed(s: PersistedState): boolean {
 
 /**
  * Whether the person has answered the current health consent screen: a grant at the current
- * version, or a withdrawal (they chose to use Tali without health data; withdrawing isn't asked
+ * version, or a withdrawal (they chose to use Tilo without health data; withdrawing isn't asked
  * again). Until then the app shows the consent screen and syncs nothing but consent records.
  */
 export function healthConsentAnswered(s: PersistedState): boolean {
@@ -237,7 +237,7 @@ export function healthConsentAnswered(s: PersistedState): boolean {
 }
 
 /**
- * The person said no to keeping health data (declined, or withdrew). Tali still works (food,
+ * The person said no to keeping health data (declined, or withdrew). Tilo still works (food,
  * workouts) but shows no weight, check-ins or calorie numbers until they agree (plan §14).
  */
 export function healthDeclined(s: PersistedState): boolean {
@@ -675,7 +675,7 @@ export function healthSyncPaused(s: PersistedState): boolean {
   return !!s.consents?.healthPause && !latestConsent(s, 'health')
 }
 
-/** Someone who used Tali before consent was asked (anything logged or saved on this device). */
+/** Someone who used Tilo before consent was asked (anything logged or saved on this device). */
 export function hasExistingData(s: PersistedState): boolean {
   return Object.values(s.days || {}).some((d) => d && ((d.foods || []).length > 0 || d.weight != null || !!d.checkin || !!d.workout || (d.sessions || []).length > 0)) ||
     (s.customFoods || []).length > 0 || (s.recipes || []).length > 0 || (s.routines || []).length > 0
@@ -862,7 +862,7 @@ export async function pullConsents(s: PersistedState): Promise<void> {
 /* ---------------- export before withdrawing health consent ---------------- */
 
 /** Copy for the withdrawal step in Profile's Health data sheet (Benn approved both halves, Sept 2026). */
-export const HEALTH_WITHDRAW_PROMPT = 'Tali will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?'
+export const HEALTH_WITHDRAW_PROMPT = 'Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?'
 
 /**
  * The backup to offer before a health withdrawal: the whole device state as the JSON backup

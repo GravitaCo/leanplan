@@ -67,7 +67,7 @@ RENAME = {'Mango & Lime': 'Mango & Lime Fruit Pot', 'Super Fruit': 'Super Fruit 
           'Soup White Baguette with Butter': 'White Baguette with Butter (for soup)'}
 # subsections whose items Pret names without saying what they are ("Coronation Chicken")
 SUFFIX = {'Sandwiches': 'Sandwich', 'Super Plates': 'Super Plate'}
-# Pret's code for each milk, as named in Tali. A drink's default is the milk in its ingredients list;
+# Pret's code for each milk, as named in Tilo. A drink's default is the milk in its ingredients list;
 # Pret marks its matcha lattes' coconut drink NO_MILK (their ingredients: "Coconut Drink ...").
 MILK = {'SEMI_SKIMMED': 'semi-skimmed milk', 'SKIMMED': 'skimmed milk', 'OAT': 'oat drink', 'SOYA': 'soya drink'}
 DEFAULT_NO_MILK = {'Matcha Latte': 'coconut drink', 'Iced Matcha Latte': 'coconut drink', 'Americano': 'black',

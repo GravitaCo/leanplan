@@ -20,7 +20,7 @@ export const NOTIFY_COPY = {
   wakeAt: 'Usually up around',
   windDownAt: 'Wind down from',
   /** B11.12, as Benn reworded it on 10 Oct 2026 (wind-down outside the one-a-day cap) */
-  foot: "Tali sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.",
+  foot: "Tilo sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.",
   /** B11b (FINAL): the toggle under Supplement reminders, and the foot under the list */
   names: 'Show supplement names in reminders',
   namesFoot: 'With this off, reminders just say “Time for your supplements”. With it on, they name the supplement, and anyone who can see your screen may read it, even when it\'s locked.',
@@ -35,7 +35,7 @@ const BACKOFF_NAME: Record<NotifyKind, string> = { checkin: 'check-in', 'wind-do
 /** B11.14 (with mental-performance's "Nothing you need to do."). The board draws check-in; the
  *  other two types use the same sentence with their own name. */
 export const backoffLine = (kind: NotifyKind): string =>
-  `The last 2 ${BACKOFF_NAME[kind]} reminders went unopened, so Tali now sends them half as often. Nothing you need to do.`
+  `The last 2 ${BACKOFF_NAME[kind]} reminders went unopened, so Tilo now sends them half as often. Nothing you need to do.`
 
 /** Every string above, for the copy lint. */
 export function notifyStrings(): string[] {

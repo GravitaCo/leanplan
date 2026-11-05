@@ -156,7 +156,7 @@ export function thingPlan(t: Thing | undefined, ctx: { windDownAt?: string } = {
 
 /**
  * Reset's breath (deck B7.4, B7.8a to c: a breath in, a small second breath on top, a long breath
- * out). The seconds are a Tali pacing choice, not sourced values: Balban et al. 2023's cyclic
+ * out). The seconds are a Tilo pacing choice, not sourced values: Balban et al. 2023's cyclic
  * sighing was self-paced with no fixed counts (mental-performance, WP3 review). The constraint is a
  * slow inhale, a shorter second inhale, and a breath out longer than both inhales together.
  * 3 s in, 1 s in again, 6 s out (mental-performance's suggestion), approved by Benn on 9 Oct 2026
@@ -168,7 +168,7 @@ export const RESET_PATTERN: PacerPattern = {
     { motion: 'in-again', word: 'And in again', s: 1 },
     { motion: 'out', word: 'Breathe out', s: 6 },
   ],
-  source: 'Tali pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.',
+  source: 'Tilo pacing choice, approved by Benn 9 Oct 2026. Balban et al. 2023 (Cell Rep Med 4:100895) cyclic sighing was self-paced: slow inhale, short second inhale, long slow exhale; no fixed counts.',
   placeholder: false,
 }
 

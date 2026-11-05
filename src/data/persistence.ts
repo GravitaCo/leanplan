@@ -195,7 +195,7 @@ export function saveState(s: PersistedState): boolean {
   }
 }
 
-/** Ask the browser to keep Tali's storage rather than clear it under pressure (Safari clears
+/** Ask the browser to keep Tilo's storage rather than clear it under pressure (Safari clears
  *  site data it thinks is unused). Harmless if unsupported or refused. */
 export async function requestPersistentStorage(): Promise<void> {
   try {
@@ -213,7 +213,7 @@ export function saveKitchen(have: string[]): void {
   try { localStorage.setItem(KITCHEN_KEY, JSON.stringify(have)) } catch { /* blocked */ }
 }
 
-/** How this device last used Tali, so launch never needs the network to decide: 'account'
+/** How this device last used Tilo, so launch never needs the network to decide: 'account'
  *  (signed in; works offline, syncs when back online). 'guest' is only read, from devices that
  *  used the retired guest mode; launch sends them to the sign-in screen. */
 export type SessionMode = 'guest' | 'account'

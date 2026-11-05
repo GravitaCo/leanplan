@@ -19,7 +19,7 @@ export function WeekStrip() {
     <div className="week">
       {weekOf(cur).map((d, i) => {
         const st = dayStat(data, d)
-        // what's planned that day: the plan's workouts (several, own and Tali's too) or the schedule's one
+        // what's planned that day: the plan's workouts (several, own and Tilo's too) or the schedule's one
         const keys = plannedKeys(data, d)
         const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : 'Rest'
         const f = fmtDate(d)

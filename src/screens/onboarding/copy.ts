@@ -15,20 +15,20 @@ export { FIRST_SESSION, IF_THEN, SETUP_CARD }
 export interface ScreenCopy { title: string; lead?: string; line?: string; why?: string; note?: string; hint?: string; unit?: string }
 
 export const COPY: Partial<Record<StepId, ScreenCopy>> = {
-  intro: { title: 'A few questions, so Tali fits you', lead: 'Everything we ask is used for something you’ll see. First, a little about you.',
+  intro: { title: 'A few questions, so Tilo fits you', lead: 'Everything we ask is used for something you’ll see. First, a little about you.',
     /** not on ob1-0, kept: compliance item 32 (Benn's wording) needs the Redo setup line */
     note: 'Skip any question you like. Your answers are private to your account. You can redo setup any time from Profile.' },
-  'skip-age': { title: 'No problem. Just your age, then you’re in.', lead: 'It’s the one thing we need to keep Tali safe for you.', note: 'You’ll start on a simple starter week with no calorie numbers. Build your own plan whenever you like from Today or Plan.' },
-  name: { title: 'What do you like to be called?', why: 'so Tali can greet you. Your first name is plenty.' },
-  age: { title: 'How old are you?', line: 'Tali is for people aged 18 and over.', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tali is for people aged 18 and over. We keep your age, never your date of birth.' },
-  ready: { title: 'A few health questions', lead: 'Do any of these apply to you right now?', why: 'a yes just means we start more gently. It never stops you using Tali.', note: 'We keep a short note of what applies (like pregnancy), never a medical record.' },
+  'skip-age': { title: 'No problem. Just your age, then you’re in.', lead: 'It’s the one thing we need to keep Tilo safe for you.', note: 'You’ll start on a simple starter week with no calorie numbers. Build your own plan whenever you like from Today or Plan.' },
+  name: { title: 'What do you like to be called?', why: 'so Tilo can greet you. Your first name is plenty.' },
+  age: { title: 'How old are you?', line: 'Tilo is for people aged 18 and over.', why: 'it keeps your plan safe and sets your energy needs.', note: 'Tilo is for people aged 18 and over. We keep your age, never your date of birth.' },
+  ready: { title: 'A few health questions', lead: 'Do any of these apply to you right now?', why: 'a yes just means we start more gently. It never stops you using Tilo.', note: 'We keep a short note of what applies (like pregnancy), never a medical record.' },
   why: { title: 'What would make this worth it for you?', lead: 'Pick any that feel true.', why: 'we’ll remind you of it in your weekly look-back.' },
   goal: { title: 'What’s your main goal?', line: 'It shapes your training and your food.', why: 'it shapes both your training and your food targets. You can change it any time.' },
   lately: { title: 'How are things lately?', lead: 'Thinking about the last two weeks.', why: 'when sleep or stress is hard going, we start lighter. You can update this by redoing setup.' },
-  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tali hides your weight, never suggests eating less and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more. You can change it in Profile any time.' },
+  wellbeing: { title: 'How food and weight feel for you', why: 'if it’s a yes or sometimes, Tilo hides your weight, never suggests eating less and keeps things gentle. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more. You can change it in Profile any time.' },
   body: { title: 'About your body', why: 'your height and sex set your energy needs.', note: 'Sex changes the energy estimate a little. "Prefer not to say" uses a middle estimate with a wider range.' },
   medical: { title: 'Does any of this apply to you?', lead: 'Pick any that apply.', why: 'some conditions and medicines change how much food and protein are right for you, whatever your goal. We keep only what your answer changes in your plan, not which one you picked, though that can still hint at it. You can see, change or clear it in Profile.' },
-  weight: { title: 'What do you weigh?', line: 'Roughly is fine. It stays private.', hint: 'Drag to set. Skip it and we won’t show calorie numbers yet.', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tali never shows it back.' },
+  weight: { title: 'What do you weigh?', line: 'Roughly is fine. It stays private.', hint: 'Drag to set. Skip it and we won’t show calorie numbers yet.', why: 'with your height and age, it gives your starting calorie range. Skip it and we won’t show calorie numbers until you add it.', note: 'Roughly is fine. It stays private to your account, and in gentle mode Tilo never shows it back.' },
   move: { title: 'How much do you move on a normal day?', lead: 'Not counting workouts.', why: 'it sets your everyday energy use. Workouts are counted separately.' },
   handoff: { title: 'How you like to train', lead: 'So your week fits your life. You can change any of it later.' },
   'plan-intro': { title: 'Your plan is ready', lead: 'We’ve built a week from your answers, and a starting point for food.' },
@@ -90,13 +90,13 @@ export const ONE_DAY_NOTE = 'One day is a great start. Two gets you the full ben
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
   // board "Age 18+ · 2": the wizard's stop (first run)
-  under16: { title: 'Tali is for 18+', lead: 'Thanks for giving it a try. Tali is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.', note: 'We haven’t kept any of your answers. Closing deletes your new account.' },
+  under16: { title: 'Tilo is for 18+', lead: 'Thanks for giving it a try. Tilo is made for people aged 18 and over, so we can’t set you up just yet.', more: 'If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.', note: 'We haven’t kept any of your answers. Closing deletes your new account.' },
   // board "Age 18+ · 1": the app's stop, when an under-18 age comes in from Profile, a backup,
   // sync or this phone's saved data. `notSaved` only when the age wasn't stored (Profile, a backup)
   underAge: {
-    title: 'Tali is for 18+',
-    lead: 'Thanks for using Tali. It’s made for people aged 18 and over, so we need to close your account. That’s about how Tali is built, not about you or anything you’ve logged.',
-    more: 'Tali’s food and activity targets are made for adults, not for bodies that are still growing. If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.',
+    title: 'Tilo is for 18+',
+    lead: 'Thanks for using Tilo. It’s made for people aged 18 and over, so we need to close your account. That’s about how Tilo is built, not about you or anything you’ve logged.',
+    more: 'Tilo’s food and activity targets are made for adults, not for bodies that are still growing. If you’d like help with food, being active or how you’re feeling, a parent or carer, another adult you trust, your school or college nurse, or your GP is a good place to start.',
     note: 'Closing deletes your account and everything logged in it, on this phone and on our servers.',
     notSaved: 'Your age hasn’t been saved.',
     close: 'Close and delete',
@@ -104,11 +104,11 @@ export const NOTES = {
   },
   wellbeing: { eyebrow: 'Food and weight', title: 'Thanks for telling us', lead: 'We’ll keep things gentle: no weight on screen and nothing asking you to eat less. You can still log food and train, and change this in Profile any time.', h: 'If you’d like to talk to someone', note: 'This stays private to you. We keep your answer (yes, sometimes, no or rather not say) to keep things gentle. Nothing more.' },
   readiness: { eyebrow: 'Your health check', title: 'We’ll start gently', lead: 'Because of your answer, your plan starts with lighter, low-impact sessions. It’s a good idea to check with your GP before you build up.', h: 'If you need advice', note: 'Chest pain during a workout? Stop and call 999. Feeling faint? Stop, sit down, and call 999 if it doesn’t pass quickly.' },
-  pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tali won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
+  pregnancy: { eyebrow: 'Pregnancy and breastfeeding', title: 'We’ll keep things gentle', lead: 'While you’re pregnant or breastfeeding, Tilo won’t suggest eating less, and there’s no calorie number. Training stays gentle. Your midwife, health visitor or GP can tell you what’s right for you.', h: 'If you need advice', note: 'In 12 weeks we’ll check whether this still applies. You can clear this in Profile any time.' },
   /** Protein split 2 (ml-e5d): kidney disease, any mix with it, and answers from before the split */
-  medical: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat, or to how much protein you aim for, are best planned with your GP or care team. Tali keeps your food range at maintenance and shows protein as the everyday amount for adults. Both are guides, not numbers to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
+  medical: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat, or to how much protein you aim for, are best planned with your GP or care team. Tilo keeps your food range at maintenance and shows protein as the everyday amount for adults. Both are guides, not numbers to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
   /** Protein split 1 (ml-e5c): diabetes or a weight-loss injection, no kidney tick; never names a medicine */
-  medicalNoDeficit: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat are best planned with your GP or care team. Tali keeps your food range at maintenance. It’s a guide, not a number to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
+  medicalNoDeficit: { eyebrow: 'Your health', title: 'Your food range stays at maintenance', lead: 'With what you’ve told us, changes to how much you eat are best planned with your GP or care team. Tilo keeps your food range at maintenance. It’s a guide, not a number to hit. Training works as normal.', h: 'If you need advice', note: 'You can update this in Profile any time.' },
 }
 
 const kc = (n: number) => n.toLocaleString('en-GB')
@@ -140,7 +140,7 @@ export const SUMMARY = {
   maintMore: 'What this means',
   /** ob4-9: no health data consent */
   noConsentT: 'Targets need your OK',
-  noConsentS: 'Logging works in full. To set targets from your height, weight and age, Tali needs your OK to keep health data.',
+  noConsentS: 'Logging works in full. To set targets from your height, weight and age, Tilo needs your OK to keep health data.',
   noConsentGo: 'Turn on health data',
   /** ob4-9: no age saved */
   noAgeT: 'Add your age for a starting estimate',
@@ -165,7 +165,7 @@ export const SUMMARY = {
       ? `That’s around our best estimate of what you burn (about ${kc(e.estimate)} a day).`
       : `That’s about ${kc(Math.abs(e.diff))} ${e.direction} than our best estimate of what you burn (around ${kc(e.estimate)} a day).`) +
     (e.floored ? ` ${FLOOR_LINE}` : '') +
-    ` Estimates like this can be ${pct}% out either way, so Tali checks it against your weigh-ins after ${review} and adjusts.`,
+    ` Estimates like this can be ${pct}% out either way, so Tilo checks it against your weigh-ins after ${review} and adjusts.`,
   /** ob9-1 and ob4-9: Sometimes */
   sometimesT: 'A steady range to eat around',
   sometimesS: 'With no deficit and no weight. For your first two weeks it’s one tap away on Food, then we’ll ask if you’d like it on Today.',
@@ -193,12 +193,12 @@ export const SUMMARY = {
       return line
     },
     nextT: 'What happens next',
-    next: (review: string) => `After ${review} of weigh-ins, Tali compares what happened with what we expected and suggests an adjustment. Nothing changes without your OK.`,
+    next: (review: string) => `After ${review} of weigh-ins, Tilo compares what happened with what we expected and suggests an adjustment. Nothing changes without your OK.`,
   },
 }
 
 /** when a calorie floor set the start (ob9-1, ob9-5) */
-export const FLOOR_LINE = 'Tali doesn’t go below a safe minimum.'
+export const FLOOR_LINE = 'Tilo doesn’t go below a safe minimum.'
 
 /** 0.25 → "a quarter of a kilo", 0.5 → "half a kilo", otherwise "0.4 kg" */
 function paceWords(kg: number): string {
@@ -213,18 +213,18 @@ export const MAINT_SHEET = {
   title: 'Eating at maintenance',
   rows: [
     ['What it means', 'Eating to meet what your body needs each day, with no weight goal. You don’t need to count anything. Log food if it helps you, or not at all.'],
-    ['Why Tali does this', 'Based on something you told us, Tali isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.'],
+    ['Why Tilo does this', 'Based on something you told us, Tilo isn’t setting a weight goal for now. Training carries on at a pace that feels comfortable.'],
     ['How long it lasts', 'While you’re pregnant or breastfeeding. We’ll check in every 12 weeks, and you can change it any time in Profile.'],
-    ['What happens next', 'Tali asks before changing anything, and nothing changes on its own.'],
+    ['What happens next', 'Tilo asks before changing anything, and nothing changes on its own.'],
   ] as [string, string][],
   answers: 'See your health check answers',
 }
 
-/** ob3-6: "See other plans". GAP: "Suggested for you" and "In use" once a Tali plan is chosen. */
+/** ob3-6: "See other plans". GAP: "Suggested for you" and "In use" once a Tilo plan is chosen. */
 export const OTHERS = {
   title: 'Other plans',
   close: 'Close',
-  lead: 'Ready-made plans by Tali. Pick one to use instead of your suggested week. Your answers stay saved, so you can switch back.',
+  lead: 'Ready-made plans by Tilo. Pick one to use instead of your suggested week. Your answers stay saved, so you can switch back.',
   mineK: 'Suggested for you · in use',
   mineOff: 'Suggested for you',
   mine: 'Your week, built from your answers',

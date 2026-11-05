@@ -40,9 +40,9 @@ export const MIND = {
 /** WP6: the Support sheet in the Mind context (board B6 frame 1). Lead and nation line are SUPPORT's. */
 export const SUPPORT_MIND = {
   /** B6.7 */
-  notCrisis: 'Tali isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.',
+  notCrisis: 'Tilo isn’t a crisis service and doesn’t monitor what you write. If you or someone else is in danger now, call 999.',
   /** B6.8: true only while opening the sheet is never recorded, counted or synced (tested) */
-  foot: 'Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.',
+  foot: 'Opening this page is private. Tilo doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.',
   /** register item 44: the nation line before a nation is picked ("Showing services for the whole UK") */
   anyNation: 'the whole UK',
   /** register item 44: Northern Ireland's GP row (no NHS 111 there; nidirect "GP out of hours
@@ -71,13 +71,13 @@ export const UNLOAD = {
   wentOkHint: 'Optional',
   /** B8.11 (final, mental-performance with compliance). "only" is banned elsewhere: this exact
    *  string is in COPY_ALLOWED (why.ts). */
-  local: "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone.",
+  local: "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tilo or clear this device's data, they're gone.",
   /** B8.12, with "support is here" linked to the Support sheet */
-  notRead: "Tali doesn't read your notes. If you're struggling, support is here.",
-  notReadLead: "Tali doesn't read your notes. If you're struggling, ",
+  notRead: "Tilo doesn't read your notes. If you're struggling, support is here.",
+  notReadLead: "Tilo doesn't read your notes. If you're struggling, ",
   notReadLink: 'support is here',
   /** B8.13 */
-  notCrisis: "Tali isn't a crisis service. In an emergency, call 999.",
+  notCrisis: "Tilo isn't a crisis service. In an emergency, call 999.",
   /** B8.14, the toast after Done */
   saved: 'Saved on this device',
   /** B8.15, B8.16 */

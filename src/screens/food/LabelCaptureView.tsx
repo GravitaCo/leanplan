@@ -31,9 +31,9 @@ const FRONT_EDGE = 1024
 const MAX_BYTES = 1_500_000
 const CHECK_EVERY_MS = 350
 
-/** Compliance's wording (register item 24, Oct 2026): Anthropic acts on Tali's instructions under
+/** Compliance's wording (register item 24, Oct 2026): Anthropic acts on Tilo's instructions under
  *  the DPA. Changing it bumps CONSENT_VERSIONS['label-photo'] (src/data/consent.ts). */
-export const CONSENT = 'Tali doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.'
+export const CONSENT = 'Tilo doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.'
 export const GUIDANCE = 'Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.'
 
 type Shot = { blob: Blob; url: string; issue: QualityIssue | null }
@@ -50,7 +50,7 @@ const FAIL_NOTE: Record<Exclude<LabelReadResult['status'], 'ok'>, string> = {
 }
 
 const CAMERA_NOTE: Record<CameraFail, string> = {
-  denied: 'Tali can’t use the camera. That’s fine: choose a photo of the label instead.',
+  denied: 'Tilo can’t use the camera. That’s fine: choose a photo of the label instead.',
   none: 'No camera is available here. Choose a photo of the label instead.',
 }
 
@@ -187,7 +187,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     try {
       // a photo goes to the server: not before the health answer (its consent record can't sync yet)
       if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
-      // an under-18 age is on screen (Tali is 18+): no photo leaves the phone
+      // an under-18 age is on screen (Tilo is 18+): no photo leaves the phone
       if (useStore.getState().underAge) throw new Error('under age')
       // the server checks the label-photo consent itself: send a yes given moments ago first
       await useStore.getState().flushConsents()
@@ -260,7 +260,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
         <div className="stack">
           <button className="btn tinted" onClick={() => void read()}>Read the label</button>
         </div>
-        <div className="foot">Your photo is read once, then Tali doesn’t keep it.</div>
+        <div className="foot">Your photo is read once, then Tilo doesn’t keep it.</div>
       </Sheet>
     )
   }

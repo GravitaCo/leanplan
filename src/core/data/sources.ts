@@ -58,19 +58,19 @@ export const SOURCES: Record<string, Source> = {
   'pret-uk': { label: 'Pret A Manger UK, Oct 2026', url: 'https://www.pret.co.uk/en-GB/products', err: MENU_ERR },
   'chopstix-uk': { label: 'Chopstix UK, Sep 2026', url: 'https://chopstixnoodles.co.uk/wp-content/uploads/2026/09/NUTRITIONAL-TABLE-V22-SEPT-26.pdf', err: MENU_ERR },
   'costa-uk': { label: 'Costa Coffee UK in-store allergen & nutrition guide, Autumn 2026', url: 'https://www.costa.co.uk/nutrition', err: MENU_ERR },
-  // Tali's shared product list (docs/migrations/2026-10-10-shared-products.sql): a pack label read
-  // by another Tali user's label photo, saved as `<key>:<barcode>` with the tier it had when saved.
+  // Tilo's shared product list (docs/migrations/2026-10-10-shared-products.sql): a pack label read
+  // by another Tilo user's label photo, saved as `<key>:<barcode>` with the tier it had when saved.
   // Here `err` is the tier's EXTRA margin, added on top of the capture margin and the label margin
   // (estimate.ts buildEntry: CAPTURE_ERR[how] + OWN_LABEL_ERR + err; margins add, nutrition-accuracy
   // Oct 2026). Unchecked +9% (weighed ±20%, a serving ±24%, by hand ±32%); read from the pack
-  // COUNTED_READS times +4% (±15%, ±19%, ±27%); checked by Tali's own audit +0, the same as a food
+  // COUNTED_READS times +4% (±15%, ±19%, ±27%); checked by Tilo's own audit +0, the same as a food
   // you add yourself (±11%, ±15%, ±23%). Never cited by a built-in food.
-  'shared-unchecked': { label: 'Tali’s shared list: added by a Tali user, not yet checked', url: '', err: 0.09, perHundred: true },
-  'shared-counted': { label: 'Tali’s shared list: read from the pack by several Tali users', url: '', err: 0.04 },
-  'shared-verified': { label: 'Tali’s shared list: checked by Tali', url: '', err: 0 },
+  'shared-unchecked': { label: 'Tilo’s shared list: added by a Tilo user, not yet checked', url: '', err: 0.09, perHundred: true },
+  'shared-counted': { label: 'Tilo’s shared list: read from the pack by several Tilo users', url: '', err: 0.04 },
+  'shared-verified': { label: 'Tilo’s shared list: checked by Tilo', url: '', err: 0 },
 }
 
-/** A food saved from Tali's shared product list. Its tier's extra margin (sourceErr) is added to
+/** A food saved from Tilo's shared product list. Its tier's extra margin (sourceErr) is added to
  *  the capture and label margins, although it's the user's own saved food. */
 export const isSharedSource = (src: string | undefined): boolean => !!src && src.startsWith('shared-') && !!SOURCES[src.split(':')[0]]
 
