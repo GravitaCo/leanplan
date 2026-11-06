@@ -74,7 +74,7 @@ function readOf(cells) {
   return {
     readable: true, basis: '100g', serving_text: '30g', ri_basis: 'none',
     rows: Object.fromEntries(ROWS.map((k) => [k, { per100: cell(cells[k]?.[0]), serving: cell(cells[k]?.[1]), ri: cell('') }])),
-    front: { brand: 'Tali Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' },
+    front: { brand: 'Tilo Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' },
   }
 }
 const GRANOLA = {
@@ -154,7 +154,7 @@ async function captureLabel(page, { consent = true } = {}) {
   await page.getByRole('button', { name: 'Add food' }).first().click()
   await page.getByRole('button', { name: /Scan the label/ }).click()
   if (consent) {
-    await page.getByText('Tali doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.').waitFor()
+    await page.getByText('Tilo doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.').waitFor()
     await page.getByRole('button', { name: 'OK, take a photo' }).click()
   }
   await page.getByText('Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.').waitFor()
@@ -194,7 +194,7 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     expect(/^Bearer .+\..+\..+$/.test(b.auth), 'sent with the session token')
     expect((await page.locator('#sc_f').inputValue()) === '7.1', 'fat per 100 g')
     expect((await page.locator('#sc_k').inputValue()) === '390', 'kcal per 100 g')
-    expect((await page.locator('#sc_n').inputValue()) === 'Tali Test Crunchy Granola Honey', 'name from the front photo')
+    expect((await page.locator('#sc_n').inputValue()) === 'Tilo Test Crunchy Granola Honey', 'name from the front photo')
     expect((await page.locator('#sc_g').inputValue()) === '30', 'serving from the label')
     expect((await page.locator('.nserv[data-f="f"]').textContent()) === '2.1', 'per-serving from the label’s own column')
     expect((await page.locator('.nserv[data-f="f"]').getAttribute('data-read')) === 'true', 'per-serving marked as read')
@@ -202,8 +202,8 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     await shot(page, 'confirm')
     await page.getByRole('button', { name: 'Save food' }).click()
     // saved: the portion view opens for the new food
-    await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).customFoods.find((f) => f.n === 'Tali Test Crunchy Granola Honey'))
+    await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).customFoods.find((f) => f.n === 'Tilo Test Crunchy Granola Honey'))
     expect(saved && saved.src === 'label' && saved.f === 7.1 && saved.g === 30 && !saved.barcode, 'saved as src label: ' + JSON.stringify(saved))
   }))
 
@@ -269,8 +269,8 @@ const expect = (ok, msg) => { if (!ok) throw new Error(msg) }
     await captureLabel(page)
     await page.getByRole('button', { name: 'Read the label' }).click()
     await page.getByRole('button', { name: 'Save food' }).click()
-    await page.getByText('Tali Test Crunchy Granola Honey').first().waitFor()
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).customFoods.find((f) => f.n === 'Tali Test Crunchy Granola Honey'))
+    await page.getByText('Tilo Test Crunchy Granola Honey').first().waitFor()
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')).customFoods.find((f) => f.n === 'Tilo Test Crunchy Granola Honey'))
     expect(saved.ref && saved.ref.g === 30 && saved.ref.k === 117 && saved.ref.f === 2.1, 'ref saved: ' + JSON.stringify(saved.ref))
   }))
 

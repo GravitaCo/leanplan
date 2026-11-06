@@ -7,7 +7,7 @@ import { setHealthAnswerIn } from './onboarding'
 /**
  * Onboarding 9, "Food: less emphasis to start, never hidden" (boards ob9-1 to ob9-5, note s-ob9).
  * The food rules that follow the wellbeing answer. Logging always works in full in every mode;
- * what changes is what Tali shows back. Pure: no React, no clock (dates are passed in).
+ * what changes is what Tilo shows back. Pure: no React, no clock (dates are passed in).
  *
  * - Sometimes: a maintenance range only, never a single number (±15% around the best estimate,
  *   to the nearest 50). Never a deficit, whatever the goal (the goal applies to training): not in
@@ -171,7 +171,7 @@ export function mealWords(foods: LoggedFood[]): MealWords {
  * HOOK, not built: a check-in sign of restriction, purging or compulsive exercise would move the
  * person to the Yes rules and show the support screen. No check-in asks anything that signals
  * this today (mood, hunger, sleep, stress, energy and soreness only), so this never fires and
- * Tali infers nothing. Wire a real signal here only with mental-performance and Benn's approval.
+ * Tilo infers nothing. Wire a real signal here only with mental-performance and Benn's approval.
  */
 export function restrictionSignal(_day: DayLog | undefined): boolean {
   return false

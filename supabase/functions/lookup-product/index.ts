@@ -1,5 +1,5 @@
 /**
- * lookup-product: a barcode's visible versions on Tali's shared product list
+ * lookup-product: a barcode's visible versions on Tilo's shared product list
  * (docs/migrations/2026-10-10-shared-products.sql), for signed-in users. The only way to read the
  * list: lookup_product() is executable by service_role only, so the per-caller limit here can't
  * be stepped around, and nobody can walk the barcode space at database speed.

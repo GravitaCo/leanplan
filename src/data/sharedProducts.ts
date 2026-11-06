@@ -1,5 +1,5 @@
 /**
- * Tali's shared product list on the device (docs/migrations/2026-10-10-shared-products.sql):
+ * Tilo's shared product list on the device (docs/migrations/2026-10-10-shared-products.sql):
  *
  * - lookupShared(): asked before Open Food Facts when a barcode isn't on the device, with the same
  *   timeout and offline handling. A POST to the `lookup-product` Edge Function (which limits each

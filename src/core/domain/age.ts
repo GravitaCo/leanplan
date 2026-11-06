@@ -1,7 +1,7 @@
 import { MIN_AGE } from '@/core/legal'
 
 /**
- * Tali is strictly 18+ (Benn, Sept 2026). The one rule for every path an age can come in by:
+ * Tilo is strictly 18+ (Benn, Sept 2026). The one rule for every path an age can come in by:
  * the wizard, Profile, a restored backup, cloud sync and the launch check. A missing age is not
  * under age (it takes the safe defaults instead). A numeric string (a hand-edited backup) counts
  * as its number; anything else that isn't a finite number is ignored.

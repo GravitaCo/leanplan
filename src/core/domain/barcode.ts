@@ -163,16 +163,16 @@ export interface ScanDraft {
   /** the year OFF last saw an edit, when that's more than three years ago */
   staleYear?: number
   /** where the numbers came from: Open Food Facts (the default), the user's photo of the label,
-   *  or Tali's shared product list */
+   *  or Tilo's shared product list */
   source?: 'off' | 'label' | 'shared'
   /** a label photo's read: the texts, the suggested fix and what to highlight (core/domain/label.ts) */
   label?: LabelInfo
   /** a label read signed for the shared list (ai-read-label): shared only if saved unchanged */
   share?: ShareToken
-  /** Open Food Facts answered "not found" for this barcode (or it's on Tali's shared list, which
+  /** Open Food Facts answered "not found" for this barcode (or it's on Tilo's shared list, which
    *  never holds OFF products): only then may a label read join the shared list */
   offMissing?: boolean
-  /** found on Tali's shared list: its tier and counts (core/domain/sharedProduct.ts) */
+  /** found on Tilo's shared list: its tier and counts (core/domain/sharedProduct.ts) */
   shared?: SharedInfo
 }
 

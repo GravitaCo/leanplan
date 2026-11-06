@@ -43,7 +43,7 @@ export interface Food {
    *  their words match like the name's, after foods whose name matches (core/domain/search.ts) */
   aka?: string[]
   /** "Share this product" is done for this saved food (board sp-7): Open Food Facts already has it
-   *  ('in-off'), or its label read was queued for Tali's shared list ('shared'). On this device
+   *  ('in-off'), or its label read was queued for Tilo's shared list ('shared'). On this device
    *  only, never synced: the shared list never learns who added a product, so the account doesn't
    *  record it either */
   shareDone?: 'in-off' | 'shared'
@@ -275,7 +275,7 @@ export type NotifyKind = 'checkin' | 'wind-down' | 'plan'
 export interface MindPrefs {
   /** pillars switched off; absent = all on; never all three */
   off?: Pillar[]
-  /** how often Tali asks */
+  /** how often Tilo asks */
   asks?: 'usual' | 'fewer'
   /** usual wake time, "HH:MM" */
   wakeAt?: string
@@ -668,7 +668,7 @@ export interface TrainingPlan {
   startedAt?: string
   completedAt?: string
   reflection?: { at: string; good?: string; change?: string }
-  /** the Tali plan it came from ("Suggested next" skips it) */
+  /** the Tilo plan it came from ("Suggested next" skips it) */
   baseTemplateId?: string
   /** a generated plan's reasons (engine §3.6): codes and data only, text rendered at display time */
   why?: Why[]

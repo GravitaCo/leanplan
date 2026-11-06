@@ -1,7 +1,7 @@
 import { parseYmd } from './date'
 
 /**
- * The asks budget (wellbeing plan §7.3, §10a; build plan WP3): how many things Tali asks of
+ * The asks budget (wellbeing plan §7.3, §10a; build plan WP3): how many things Tilo asks of
  * someone on Summary in a day, and which ones. Every number here is a judgement call (plan §7.3,
  * mental-performance), unvalidated, like dayOptions.ts. Pure: the screen gathers what is due and
  * passes it in; this decides what shows today and what waits.

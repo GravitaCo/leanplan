@@ -235,7 +235,7 @@ export function startingTargets(
  * than the estimate). A gap of SAME_GAP or less reads as "around" the estimate. The pace is a
  * loss's gap over a week at KCAL_PER_KG_LOST, kg a week to the nearest 0.05; null for a gain
  * (that figure is for fat loss, so a gain says "slowly"), for "around" and when a floor set the
- * start (`floored`: the copy says Tali doesn't go below a safe minimum instead).
+ * start (`floored`: the copy says Tilo doesn't go below a safe minimum instead).
  */
 export interface StartExplained { start: number; estimate: number; diff: number; paceKg: number | null; direction: 'less' | 'more' | 'same'; floored: boolean }
 export const SAME_GAP = 50

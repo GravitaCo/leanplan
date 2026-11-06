@@ -1144,7 +1144,7 @@ function legacyAndGuest(): void {
   checks.push(['a move the session already has isn’t repeated in its warm-up', !ids(yoga).includes('half-sun-salutation') && !ids(yoga).includes('cat-cow'), ids(yoga).join(',')])
   const walk = buildWarmup({ kind: 'cardio', mins: 5, activity: 'cardio-walk' }), run = buildWarmup({ kind: 'cardio', mins: 6, activity: 'cardio-run' })
   checks.push(['cardio: the activity at an easy pace, then leg swings and hip circles (a walk isn’t only more walking)', ids(walk).join() === 'cardio-walk,leg-swings,hip-circles' && ids(run)[0] === 'cardio-run' && ids(run).includes('leg-swings') && ids(run).includes('hip-circles'), ids(walk).join()])
-  // ship-critic 1: Tali's plan workouts and Push/Pull/Legs get exactly 6, whatever the person's session length
+  // ship-critic 1: Tilo's plan workouts and Push/Pull/Legs get exactly 6, whatever the person's session length
   {
     const t = { sessionRange: '20-30', minutesPerSession: 30 } as never
     const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
@@ -1155,7 +1155,7 @@ function legacyAndGuest(): void {
       const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t, true)! - estMins(slots, { warmup: true, mins: 0 })
       return !(b?.mins === 6 && fromEst === 6 && row === 6 && SUMMARY.warmLine(PLAN_WARMUP_MINUTES).includes(`${b.mins}-minute`) && !isEngineKey(k, []))
     })
-    checks.push(['Tali plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
+    checks.push(['Tilo plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
     const gen = { id: 'b4d5f1e2-0000-4000-8000-000000000001', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
     const own = { id: 'b4d5f1e2-0000-4000-8000-000000000002', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
     const sl = [{ exId: 'goblet-squat', rx: '3 × 10' }]
@@ -1165,7 +1165,7 @@ function legacyAndGuest(): void {
     // the warm-up waits behind the onboarding switch: off, rows read the stored estMins as before
     checks.push(['switch off: row estimates are the stored estMins, as before the warm-up', routineEstMins(own, [own], t) === 10 && routineEstMins(gen, [gen], t, false) === 10 && routineEstMins({ ...(own as object), estMins: undefined } as never, [], t) === null])
   }
-  // ship-critic 2: no move in both the block and the session, for every Tali and Push/Pull/Legs workout
+  // ship-critic 2: no move in both the block and the session, for every Tilo and Push/Pull/Legs workout
   {
     const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
     const both: string[] = []
@@ -1994,7 +1994,7 @@ async function timeouts(): Promise<void> {
 }
 
 {
-  // Tali's three plans: every key resolves, the new workouts use library exercises, fit and eating lines follow the profile
+  // Tilo's three plans: every key resolves, the new workouts use library exercises, fit and eating lines follow the profile
   const [pmg, swa, fbs] = PLAN_TEMPLATES
   const keys = PLAN_TEMPLATES.flatMap((t) => [...t.phases.flatMap((ph) => Object.values(ph.week ?? {}).flat()), ...Object.values(t.maintenance).flat()])
   const unresolved = keys.filter((k) => !isBuiltinKey(k) && !routineFor(k, []))
@@ -2010,7 +2010,7 @@ async function timeouts(): Promise<void> {
   const want = ['0', '0', 'true', 'false', 'hard', 'true', 'true', 'false', 'true', 'false', 'full,pure,stronger', 'stronger,pure,full', 'true', 'false',
     'Protein about 1.8 g per kg a day and a small surplus. Your Food targets for building muscle cover this.', 'true', 'Set a goal in Profile and your Food targets will follow it.', 'false'].join(' | ')
   const ok = got === want; if (!ok) bad++
-  console.log(ok ? 'PASS' : 'FAIL', 'plans: Tali plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: Tilo plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
 {
   // the eating line matches "Fits your goal": a plan that fits the person's goal speaks for that goal
@@ -2078,9 +2078,9 @@ function feedbackForm(): void {
   const checks: [string, boolean][] = [
     ['nothing answered: nothing to send', !hasFeedback(empty) && hasFeedback(a) && hasFeedback({ ...empty, other: 'hi' })],
     ['a skipped area is left out, answered ones keep their order', e.body.indexOf('Logging food: Needs work') === 0 && e.body.includes('Planning your week: Works well') && !e.body.includes('Workouts')],
-    ['notes are trimmed and wishes follow the areas', e.body.includes('\nBarcode missed my yoghurt\n') && e.body.indexOf('What I’d like to see in Tali:\nRecipes from a photo') > e.body.indexOf('Planning')],
+    ['notes are trimmed and wishes follow the areas', e.body.includes('\nBarcode missed my yoghurt\n') && e.body.indexOf('What I’d like to see in Tilo:\nRecipes from a photo') > e.body.indexOf('Planning')],
     ['app and device at the end', e.body.endsWith('---\nApp: tali-v55\nDevice: iPhone')],
-    ['mailto addressed to Benn, subject and body encoded', url.startsWith('mailto:benn@gravita.co?subject=Tali%20tester%20feedback&body=') && decodeURIComponent(url.split('&body=')[1]) === e.body],
+    ['mailto addressed to Benn, subject and body encoded', url.startsWith('mailto:benn@gravita.co?subject=Tilo%20tester%20feedback&body=') && decodeURIComponent(url.split('&body=')[1]) === e.body],
   ]
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
 }
@@ -2096,12 +2096,12 @@ function legalOnboardingGate(): void {
   const off = render(false, false)
   const offMind = render(false, true)
   const text = (d: object) => JSON.stringify(d)
-  const onlyOnboarding = ['setup', 'set Tali up', 'Health check answers', 'Health data, then', 'tali.onboarding', 'tali.setupCardHidden', 'tali.pendingDelete', 'body fat', 'worth it', 'reasons Tali gives', 'training preferences', 'pregnan']
+  const onlyOnboarding = ['setup', 'set Tilo up', 'Health check answers', 'Health data, then', 'tali.onboarding', 'tali.setupCardHidden', 'tali.pendingDelete', 'body fat', 'worth it', 'reasons Tilo gives', 'training preferences', 'pregnan']
   // terms keep the general GP advice for pregnancy; only the setup paragraph goes
   const leaksIn = (docs: typeof off) => (Object.keys(docs) as (keyof typeof docs)[]).flatMap((k) =>
     onlyOnboarding.filter((w) => !(k === 'terms' && w === 'pregnan') && text(docs[k]).includes(w)).map((w) => `${k}: ${w}`))
   const leaks = leaksIn(off), leaksMind = leaksIn(offMind)
-  const live = ['Weekly review: the day you picked', 'a weekly review reminder', 'Train offers lighter options', 'You can withdraw that consent', 'If Tali learns that you\'re under']
+  const live = ['Weekly review: the day you picked', 'a weekly review reminder', 'Train offers lighter options', 'You can withdraw that consent', 'If Tilo learns that you\'re under']
   const checks: [string, boolean][] = [
     ['onboarding is off in this build', ONBOARDING_ENABLED === false],
     ['on: privacy equals the fixture (main, 2026-10-09)', text(on.privacy) === text(LEGAL_ONBOARDING.privacy)],
@@ -2110,12 +2110,12 @@ function legalOnboardingGate(): void {
     ['no option means off', text(privacyPolicy()) === text(off.privacy) && text(termsOfUse()) === text(off.terms) && text(cookiePolicy()) === text(off.cookies)],
     ['off: no onboarding-only wording' + (leaks.length ? ` (${leaks.join(', ')})` : ''), !leaks.length],
     ['off with Mind on: no onboarding-only wording' + (leaksMind.length ? ` (${leaksMind.join(', ')})` : ''), !leaksMind.length],
-    ['off: dates (privacy 2026-10-09, terms and cookies 2026-09-28)', off.privacy.updated === '2026-10-09' && off.terms.updated === '2026-09-28' && off.cookies.updated === '2026-09-28'],
-    ['off with Mind on: dates (privacy and terms 2026-10-10, cookies 2026-10-09)', offMind.privacy.updated === '2026-10-10' && offMind.terms.updated === '2026-10-10' && offMind.cookies.updated === '2026-10-09'],
+    ['off: dates (all 2026-11-05, the Tilo rename)', off.privacy.updated === '2026-11-05' && off.terms.updated === '2026-11-05' && off.cookies.updated === '2026-11-05'],
+    ['off with Mind on: dates (all 2026-11-05, the Tilo rename)', offMind.privacy.updated === '2026-11-05' && offMind.terms.updated === '2026-11-05' && offMind.cookies.updated === '2026-11-05'],
     ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)', live.every((w) => text(off.privacy).includes(w))],
     ['off with Mind on: the live passages stay', live.every((w) => text(offMind.privacy).includes(w))],
     ['off with Mind on: the Mind passages are there (privacy, cookies, terms)',
-      ['a rough band for how long you slept', 'Mind settings: which parts of Tali you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times and your wind-down routine; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
+      ['a rough band for how long you slept', 'Mind settings: which parts of Tilo you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times and your wind-down routine; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
         ['It also holds things that are never synced', 'tali-notify'].every((w) => text(offMind.cookies).includes(w)) &&
         text(offMind.terms).includes("it isn't a crisis service")],
     ['off with Mind on: the Health data list keeps injuries', text(offMind.privacy).includes('any injuries you mention')],

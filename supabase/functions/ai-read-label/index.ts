@@ -45,6 +45,8 @@ const MAX_TOKENS = 3000
 const MODEL_TIMEOUT_MS = 17_000
 
 const ORIGINS = [
+  /^https:\/\/app\.tilo\.fit$/,
+  // the old address, kept while installs move over to app.tilo.fit (docs/plans/rename-tilo.md)
   /^https:\/\/app\.tali\.fit$/,
   /^http:\/\/localhost(:\d+)?$/,
   /^http:\/\/127\.0\.0\.1(:\d+)?$/,

@@ -1,11 +1,11 @@
-/* Tali service worker — bump CACHE on each deploy to refresh clients.
+/* Tilo service worker — bump CACHE on each deploy to refresh clients.
  *
- * Offline-first: the app shell and its hashed assets are cached at install, so Tali opens
+ * Offline-first: the app shell and its hashed assets are cached at install, so Tilo opens
  * with no connection after a single visit. Hashed assets are immutable (cache-first); the
  * page itself is network-first with a short timeout, so a weak signal never stalls launch.
  * User data never goes through here: it lives on the device (localStorage) and syncs to
  * Supabase (cross-origin, not cached) when online. */
-const CACHE = 'tali-v123'
+const CACHE = 'tali-v125'
 const SHELL = './'
 const NAV_TIMEOUT_MS = 3000
 
@@ -72,9 +72,9 @@ const NOTIFY_MAX = 60
 /* The only words a Mind reminder shows, whatever the payload says (supabase/functions/_shared/
  * reminders.ts REMINDER_COPY; npm test checks they agree). One tag per type. */
 const MIND_COPY = {
-  checkin: { title: 'Tali', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
-  'wind-down': { title: 'Tali', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
-  plan: { title: 'Tali', body: 'How are your plans going?', tag: 'tali-plan' },
+  checkin: { title: 'Tilo', body: 'How are you today? A quick check-in, if you have a moment.', tag: 'tali-checkin' },
+  'wind-down': { title: 'Tilo', body: "Your wind-down starts now, if you'd like it.", tag: 'tali-wind-down' },
+  plan: { title: 'Tilo', body: 'How are your plans going?', tag: 'tali-plan' },
 }
 const mindKindOf = (tag) => Object.keys(MIND_COPY).find((k) => MIND_COPY[k].tag === tag) || null
 
@@ -126,7 +126,7 @@ self.addEventListener('push', (e) => {
   const named = data.tag === 'tali-supp-named' && typeof data.body === 'string' && data.body.trim() !== ''
   const supp = named || !data.tag || data.tag === 'tali-supp' || String(data.tag).startsWith('tali-supp') || String(data.tag).startsWith('supp-')
   e.waitUntil(
-    self.registration.showNotification(named ? 'Supplement reminder' : supp ? 'Time for your supplements' : data.title || 'Tali', {
+    self.registration.showNotification(named ? 'Supplement reminder' : supp ? 'Time for your supplements' : data.title || 'Tilo', {
       body: named ? data.body.slice(0, 400) : supp ? 'Time for your supplements' : data.body || '',
       tag: supp ? 'tali-supp' : data.tag,
       // a later reminder replacing an unread one still sounds (Safari ignores this)
@@ -173,7 +173,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
-  // the parked vanilla app has its own worker; never let it replace Tali's cached shell
+  // the parked vanilla app has its own worker; never let it replace Tilo's cached shell
   if (url.pathname.startsWith('/legacy/')) return
   // demo clips stream with Range requests (Safari needs 206 responses), so leave them to the
   // network; the app shows a "needs a connection" note when a clip can't load offline

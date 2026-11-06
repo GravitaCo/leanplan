@@ -94,7 +94,7 @@ export function oneThingSuite(): number {
   const issues = copy.flatMap((s) => mindCopyIssues(s).map((i) => `${s}: ${i}`))
   ok('Mind plan copy passes mindCopyIssues', issues.length === 0, issues.join('; '))
   ok('no em dashes', copy.every((s) => !s.includes('—')))
-  ok('B9.17 toast verbatim', MIND_PLAN.saved === 'Plan saved. Tali will check in on it next week.')
+  ok('B9.17 toast verbatim', MIND_PLAN.saved === 'Plan saved. Tilo will check in on it next week.')
 
   let bad = 0
   for (const [n, v, info] of checks) {

@@ -17,7 +17,7 @@ COLS = ['portion', 'kj100', 'kjp', 'k100', 'kp', 'k_ri', 'f100', 'fp', 'f_ri', '
         'su100', 'sup', 'su_ri', 'fi100', 'fip', 'p100', 'pp', 'p_ri', 'salt100', 'saltp', 'salt_ri']
 DRINK = re.compile(r'\b(Americano|Cappuccino|Latte|Flat White|Espresso|Mocha|Tea|Coffee|Hot Chocolate (Large|Regular)|'
                    r'Iced Chocolate|Iced Caramel Chocolate|Lemonade|Cooler|Juice|Water|Matcha)\b', re.I)
-# existing Tali names are stable IDs (learned usuals match by name): keep them
+# existing Tilo names are stable IDs (learned usuals match by name): keep them
 LEGACY = {'Sausage Roll(s)': 'Greggs Sausage Roll', 'Steak Bake': 'Greggs Steak Bake',
           'Cheese & Onion Bake': 'Greggs Cheese & Onion Bake', 'Yum Yum': 'Greggs Yum Yum'}
 # single items the PDF names in the plural (names are stable IDs: settle them before shipping)

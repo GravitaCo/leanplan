@@ -47,7 +47,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
       right={step > 0 ? <span className="sub num">{step} of {STEPS - 1}</span> : undefined}>
       {step === 0 && (
         <div className="prose">
-          <p className="fb-q">Help shape Tali</p>
+          <p className="fb-q">Help shape Tilo</p>
           <p className="sub">A few quick questions about each part of the app, then what you’d like to see next. It takes about two minutes, and you can skip anything.</p>
           <p className="sub">Your answers go to {FEEDBACK_TO} from your own email app, so you’ll see exactly what’s sent.</p>
         </div>
@@ -70,7 +70,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
 
       {step === FEEDBACK_AREAS.length + 1 && (
         <>
-          <label className="fb-q" htmlFor="fb-wishes" style={{ display: 'block' }}>What would you like to see in Tali?</label>
+          <label className="fb-q" htmlFor="fb-wishes" style={{ display: 'block' }}>What would you like to see in Tilo?</label>
           <div className="foot" style={{ padding: '0 0 12px' }}>Features, foods, workouts, anything that would make it more useful for you.</div>
           <textarea id="fb-wishes" rows={5} value={a.wishes} placeholder="Optional" onChange={(e) => setA({ ...a, wishes: e.target.value })} />
           <label className="lbl" htmlFor="fb-other" style={{ display: 'block' }}>Anything else?</label>

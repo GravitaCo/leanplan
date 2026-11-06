@@ -5,7 +5,7 @@ import { hasExistingData, healthSyncPaused, latestConsent, unconsentedCopyLine }
 import { LegalLink } from './LegalDoc'
 
 /**
- * Explicit consent before Tali stores anyone's health data (UK/EU GDPR Art. 9(2)(a)). Shown after
+ * Explicit consent before Tilo stores anyone's health data (UK/EU GDPR Art. 9(2)(a)). Shown after
  * sign-in until the person has answered the current version (healthConsentAnswered); sync waits
  * for it. Each statement is its own unticked box: consent has to be a clear, specific act, never
  * pre-ticked or bundled with anything else. The health box records the `health` consent; the
@@ -17,7 +17,7 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
   const signOut = useStore((s) => s.signOut)
   const notNow = useStore((s) => s.notNowHealth)
   const setConsentOpen = useStore((s) => s.setConsentOpen)
-  // someone who used Tali before consent was asked may say "Not now": everything stays on this
+  // someone who used Tilo before consent was asked may say "Not now": everything stays on this
   // phone and nothing syncs until they agree (asked once more after 2 weeks); for someone new,
   // "Not now" is signing out, since there's nothing to keep
   const existing = useStore((s) => hasExistingData(s.data) && !latestConsent(s.data, 'health'))
@@ -37,14 +37,14 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
     <div className="screen consent-screen">
       <h1>Before you start</h1>
       <p className="sub">
-        What you log in Tali, like your weight, food, workouts, sleep, stress, mood and any injuries, is health
+        What you log in Tilo, like your weight, food, workouts, sleep, stress, mood and any injuries, is health
         information. It’s stored on this phone and in a database in Ireland (EU) that’s private to your
         account. It’s never sold, shared for marketing or used for ads.
       </p>
 
       <div className="list">
-        {box(health, setHealth, 'c_health', <>I agree to Tali storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time in Profile, then Privacy.</>)}
-        {box(terms, setTerms, 'c_terms', <>I accept the <LegalLink id="terms">terms and conditions</LegalLink>, and understand Tali gives general wellness information, not medical advice.</>)}
+        {box(health, setHealth, 'c_health', <>I agree to Tilo storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time in Profile, then Privacy.</>)}
+        {box(terms, setTerms, 'c_terms', <>I accept the <LegalLink id="terms">terms and conditions</LegalLink>, and understand Tilo gives general wellness information, not medical advice.</>)}
         {box(adult, setAdult, 'c_age', <>I’m {MIN_AGE} or over.</>)}
       </div>
 
@@ -64,10 +64,10 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
         <button className="btn gray" onClick={() => signOut()}>Not now, sign out</button>
       )}
       <div className="foot">
-        Already have data in Tali and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.
+        Already have data in Tilo and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.
       </div>
       <div className="foot">
-        If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tali to guide your eating.
+        If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tilo to guide your eating.
       </div>
     </div>
   )

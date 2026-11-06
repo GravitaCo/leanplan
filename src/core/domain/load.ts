@@ -3,7 +3,7 @@ import { shiftDay } from './date'
 import { isHardSession, workoutsOf } from './sessions'
 
 /**
- * Load guardrails (workout plan §0.5, §3.3). Tali never coaches toward more. When training gets
+ * Load guardrails (workout plan §0.5, §3.3). Tilo never coaches toward more. When training gets
  * very heavy it offers one gentle note, at most once a week. Thresholds are judgement calls,
  * flagged as unvalidated by mental-performance.
  */

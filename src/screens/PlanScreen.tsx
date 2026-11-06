@@ -101,7 +101,7 @@ export function PlanScreen() {
   )
   if (workout && !gone) {
     const r = routineFor(workout, routines)
-    // Tali's plan workouts copy like the built-in cards; only the person's own are edited in place
+    // Tilo's plan workouts copy like the built-in cards; only the person's own are edited in place
     const own = r && r.source === 'custom' ? r : undefined
     return (
       <>

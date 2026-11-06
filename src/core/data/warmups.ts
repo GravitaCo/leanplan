@@ -1,5 +1,5 @@
 /**
- * The warm-up that opens every Tali session (fitness-workouts; boards ob5-0, ob3-5, note s-ob8
+ * The warm-up that opens every Tilo session (fitness-workouts; boards ob5-0, ob3-5, note s-ob8
  * point 4): a 1–2 minute pulse raiser, then moving stretches for the joints the session uses.
  * `core/domain/warmup.ts` builds the block from these lists; this file is data only.
  *

@@ -1,5 +1,5 @@
 /* ============================================================
-   Tali design tokens + base styles
+   Tilo design tokens + base styles
    "Studio" (Sept 2026): warm stone and paper surfaces in light mode, iOS black and
    graphite in dark, one mauve accent, and three pillar colours (mind, food, move)
    for labels, dots and charts. Type is Geist, bundled locally so it works offline.
@@ -510,7 +510,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
   padding: calc(env(safe-area-inset-top) + 32px) 16px calc(28px + env(safe-area-inset-bottom));
 }
 .auth-brand { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 28px; }
-/* the Tali mark, no frame: plum on light surfaces, white on dark (see --mark) */
+/* the Tilo mark, no frame: plum on light surfaces, white on dark (see --mark) */
 .tali-mark { display: block; color: var(--mark); }
 .auth-brand h1 { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 22px 0 2px; }
 .auth-brand p { font-size: 15px; color: var(--label2); margin: 0; }

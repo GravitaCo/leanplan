@@ -89,7 +89,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
       {WELLBEING_ENABLED
         ? <CheckinFeet onSupport={() => setSupport(true)} />
         : <div className="foot">Skip anything you like. There's no right answer. Sleep and stress often show up in hunger and energy, so these
-        help you spot patterns. On a tough day, Tali can offer a lighter option for training.</div>}
+        help you spot patterns. On a tough day, Tilo can offer a lighter option for training.</div>}
     </Sheet>
     {support && <SupportSheet onClose={() => setSupport(false)} />}
     </>

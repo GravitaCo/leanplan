@@ -193,14 +193,14 @@ export type WorkoutKey = string
 // own property only: a synced key like "constructor" is never taken for a built-in
 export const isBuiltinKey = (key: WorkoutKey): boolean => typeof key === 'string' && Object.prototype.hasOwnProperty.call(WORKOUTS, key)
 
-/** Tali's own workouts for its plans, with their time estimates worked out like the user's. */
+/** Tilo's own workouts for its plans, with their time estimates worked out like the user's. */
 const TALI: Record<string, Routine> = Object.fromEntries(TALI_WORKOUTS.map((r) => [r.id, { ...r, estMins: estMins(slotsOf(r)) }]))
 
-/** One of Tali's plan workouts (Full body A, Strength & Balance A…): built in, never edited. */
+/** One of Tilo's plan workouts (Full body A, Strength & Balance A…): built in, never edited. */
 export const isTaliKey = (key: WorkoutKey): boolean => typeof key === 'string' && Object.prototype.hasOwnProperty.call(TALI, key)
 export const taliWorkouts = (): Routine[] => Object.values(TALI)
 
-/** The workout a key names beyond the four built-in cards: the user's own (archived ones too, so a logged day still opens), or one of Tali's plan workouts. */
+/** The workout a key names beyond the four built-in cards: the user's own (archived ones too, so a logged day still opens), or one of Tilo's plan workouts. */
 export function routineFor(key: WorkoutKey, routines: Routine[] | undefined): Routine | undefined {
   if (isBuiltinKey(key)) return undefined
   return (routines || []).find((r) => r.id === key) ?? (isTaliKey(key) ? TALI[key] : undefined)
@@ -241,7 +241,7 @@ export function kitOf(t: TrainingPrefs | undefined): Equipment[] {
 /**
  * A workout the engine generated for the person: one of their own stored routines marked
  * 'recommended' (the engine's are the only ones it writes that way; their ids are seeded uuids, so
- * the stored row is the mark). Tali's plan workouts are 'recommended' too but are built-ins, never
+ * the stored row is the mark). Tilo's plan workouts are 'recommended' too but are built-ins, never
  * stored, and Push/Pull/Legs aren't routines at all.
  */
 export function isEngineKey(key: WorkoutKey, routines: Routine[] | undefined): boolean {
@@ -256,7 +256,7 @@ export const warmupMinsForKey = (key: WorkoutKey, routines: Routine[] | undefine
 /**
  * The warm-up block a workout opens with (s-ob8 point 4): a generated workout's follows the
  * person's session length, the same minutes onboarding promised (warmupMinutesFor); the
- * Push/Pull/Legs cards, Tali's plan workouts and the person's own get the ready-made 6. Kit from
+ * Push/Pull/Legs cards, Tilo's plan workouts and the person's own get the ready-made 6. Kit from
  * the person's answers, plus anything the workout itself uses.
  */
 export function warmupForKey(key: WorkoutKey, routines: Routine[] | undefined, training: TrainingPrefs | undefined): WarmupBlock | null {

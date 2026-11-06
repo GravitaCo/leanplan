@@ -1,5 +1,5 @@
 /**
- * Tali's shared product list, the pure part: what a lookup row means (its tier and margin), the
+ * Tilo's shared product list, the pure part: what a lookup row means (its tier and margin), the
  * confirm view's starting point for a found product (boards sp-2, sp-3, sp-3b), and whether a
  * label read the user is saving may join the list. No DOM, no network.
  *
@@ -27,7 +27,7 @@ export interface SharedProduct {
   status: 'unverified' | 'verified' | 'disputed'
   /** signed label reads counted for this version */
   reads: number
-  /** the month of Tali's own check, "2026-10", when there was one */
+  /** the month of Tilo's own check, "2026-10", when there was one */
   audited?: string
 }
 
@@ -69,7 +69,7 @@ export function cleanLookupRow(x: unknown): SharedProduct | null {
   return { version, values: v, status, reads, ...(audited ? { audited } : {}) }
 }
 
-/** Checked by Tali's own audit; else read from the pack enough times; else not yet checked. */
+/** Checked by Tilo's own audit; else read from the pack enough times; else not yet checked. */
 export function tierOf(p: Pick<SharedProduct, 'status' | 'reads' | 'audited'>): SharedTier {
   if (p.status === 'verified' && p.audited) return 'verified'
   return p.reads >= COUNTED_READS ? 'counted' : 'unchecked'
@@ -86,10 +86,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function sourceCard(s: Pick<SharedInfo, 'tier' | 'reads' | 'audited'>): { title: string; sub?: string } {
   if (s.tier === 'verified' && s.audited) {
     const [y, m] = s.audited.split('-')
-    return { title: `Checked by Tali, ${MONTHS[Number(m) - 1]} ${y}`, sub: 'Only Tali’s own checks set this.' }
+    return { title: `Checked by Tilo, ${MONTHS[Number(m) - 1]} ${y}`, sub: 'Only Tilo’s own checks set this.' }
   }
   if (s.tier === 'counted') return { title: `Read from the pack ${s.reads} times`, sub: 'Check against your pack.' }
-  return { title: 'Added by a Tali user, not yet checked. Check against your pack.' }
+  return { title: 'Added by a Tilo user, not yet checked. Check against your pack.' }
 }
 
 /** The line under "One serving" that explains its margin. */
@@ -168,7 +168,7 @@ export function shareDecision(eligible: boolean, latest: { granted: boolean } | 
 
 /**
  * The "Share this product" row on a saved food's sheet: only on the user's own saved food with a
- * barcode, whose figures didn't come from Open Food Facts (`off:…`) or Tali's shared list
+ * barcode, whose figures didn't come from Open Food Facts (`off:…`) or Tilo's shared list
  * (`shared-…`), and that isn't done yet (shared, or Open Food Facts turned out to have it). Offline
  * it stays in view, off (sp-7b). `enabled`: SHARED_PRODUCTS_ENABLED and LABEL_SCAN_ENABLED.
  */

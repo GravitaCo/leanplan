@@ -190,7 +190,7 @@ function summary(): void {
     })()],
     ['week row line', sessionLine({ slots: new Array(5), mins: 30 }, false) === 'Warm-up, then 5 exercises · about 30 min' && sessionLine({ slots: new Array(5), mins: 30 }, true) === 'Warm-up, then 5 exercises · no equipment'],
   ])
-  // ob3-6: how each Tali plan fits 3 days at home (the lines drawn)
+  // ob3-6: how each Tilo plan fits 3 days at home (the lines drawn)
   const fit = Object.fromEntries(PLAN_TEMPLATES.map((t) => [t.id, planFitLine(t, full(), 3)]))
   report('other plans', [
     ['Full body system', fit['full-body-system'] === 'Fits your 3 days · needs a gym', fit['full-body-system']],
@@ -658,7 +658,7 @@ function redo(): void {
     ['keeps when setup was first finished', fin.onboardedAt === base.onboardedAt && !!base.onboardedAt],
     ['the summary offers the rebuild: two plain choices, linted', !!REDO.offerT && !!REDO.rebuild && !!REDO.keep && REDO.row === 'Redo setup'],
   ])
-  // Set up my plan: someone who used Tali before and never onboarded
+  // Set up my plan: someone who used Tilo before and never onboarded
   const legacy: Profile = { ...DEFAULT_PROFILE, age: 44, height: 168, sex: 'F', goal: 'lose-fat' }
   const ld = draftFromProfile(legacy, 's', { healthConsent: true, weight: 70 })
   const lfin = finishedProfile(summaryFor(legacy, ld, ctx), ld, AT, TODAY, legacy)

@@ -1,7 +1,7 @@
 import type { Routine, RoutineSlot } from '@/core/types'
 
 /**
- * Tali's own workouts for its plans (design canvas, Plans 1: "Stronger with age" and "Full body
+ * Tilo's own workouts for its plans (design canvas, Plans 1: "Stronger with age" and "Full body
  * system", defined by fitness-workouts, approved by Benn 27 Sept 2026). They're built-ins in the
  * shape of the user's own workouts, so the builder, Train and logging treat them alike; they're
  * never edited or archived. Ids are stable (plans and logged sessions name them): never rename.

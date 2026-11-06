@@ -20,7 +20,7 @@ const WARMUP: Record<SessionRange, number> = { '15-20': 4, '20-30': 5, '30-45': 
 /** Minutes of warm-up at the start of a session of this length. */
 export const warmupMinutes = (r: SessionRange): number => WARMUP[r]
 
-/** The warm-up of a Tali ready-made plan's sessions. */
+/** The warm-up of a Tilo ready-made plan's sessions. */
 export const PLAN_WARMUP_MINUTES = 6
 
 /**

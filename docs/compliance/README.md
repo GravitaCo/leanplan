@@ -1,19 +1,24 @@
-# Tali compliance register
+# Tilo compliance register
 
 Owned by the `compliance` agent (`.claude/agents/compliance.md`). This is the working
-record of how Tali meets UK GDPR / EU GDPR, PECR and related rules, and what is still open.
+record of how Tilo meets UK GDPR / EU GDPR, PECR and related rules, and what is still open.
 It is not legal advice. Before launch to the public, have a UK solicitor or privacy
 professional review the legal texts and this register.
 
-Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), trading as Tali.
+Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), trading as Tilo.
+
+Name: the product was called Tali (app.tali.fit, www.tali.fit) until the rename to Tilo (item 48).
+The rename replaced the old name in this register and `dpia.md` mechanically, including in dated
+entries: anything recorded before 2026-11-05 as checked "live on www.tilo.fit" or "at
+app.tilo.fit" was checked on www.tali.fit or app.tali.fit under the name Tali.
 
 ## What's in the app
 
 | Requirement | Where |
 |---|---|
-| Privacy policy (Art. 13), app and website | `src/core/legal/privacy.ts` → https://www.tali.fit/legals/privacy (interim website-only text until the consent release: item 16) |
-| Terms and conditions | `src/core/legal/terms.ts` → https://www.tali.fit/legals/terms |
-| Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tali.fit/legals/cookie-policy |
+| Privacy policy (Art. 13), app and website | `src/core/legal/privacy.ts` → https://www.tilo.fit/legals/privacy (interim website-only text until the consent release: item 16) |
+| Terms and conditions | `src/core/legal/terms.ts` → https://www.tilo.fit/legals/terms |
+| Cookie policy (PECR reg. 6) | `src/core/legal/cookies.ts` → https://www.tilo.fit/legals/cookie-policy |
 | Explicit consent for health data (Art. 9(2)(a)), terms, age | `screens/legal/ConsentScreen.tsx`, shown after sign-in until `healthConsentAnswered` (`src/data/consent.ts`): three unticked boxes; Continue records a `health` consent at `CONSENT_VERSIONS.health`. The screen can't be submitted without the terms and age boxes, so the account's first health grant at a version is also the record of those two (no separate `terms`/`age` consent types yet: adding them needs a migration of the `consents` type check). Records are append-only in the `consents` table (owner-only RLS, applied). |
 | "Not now" (existing users, decided 2026-09-27) | The live consent screen offers "Not now, keep it on this phone" to someone who already has data on the device (`hasExistingData`). It sets a device-only pause (`consents.healthPause`); `consentLetsSync` stays false, so the whole log stays on the phone (food and workouts are treated as health data here: Art. 4(15), CJEU C-184/20 and C-21/23). The screen comes back once after 2 weeks (`liveConsentDue`); a second "Not now" isn't asked again. New users' "Not now" signs out. What was already in the account is deleted on `UNCONSENTED_DELETION` (28 Oct 2026) if there's still no yes (row below) |
 | Server-side enforcement (2026-09-28) | `docs/migrations/2026-09-28-health-consent-server.sql`: a trigger on every log table refuses a signed-in person's insert or update unless their latest health consent is a yes (so a phone that hasn't heard of a withdrawal, or an old app version, can't upload); `clear_log_after_withdrawal()` deletes the account's copy in one transaction, only while the latest answer is a no, serialised with uploads by a per-person lock. `send-supplement-reminders` skips anyone without a current yes. Migration applied and function v4 deployed 2026-09-28 |
@@ -28,7 +33,7 @@ Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), 
 | Access and portability (Art. 15, 20) | Profile → Back up and restore → Export |
 | Erasure (Art. 17) | Profile → Privacy → Delete account → `delete-account` Edge Function (deployed; recent sign-in required; `USER_TABLES` in `supabase/functions/_shared/account.ts`), then the device is wiped |
 | Rectification (Art. 16) | Most fields are editable in the app; the setup health answers in Profile › Health data › Health check answers (with the flag on). The lately baseline, motivations and daily movement change through Profile › Health data › Redo setup (the wizard again, prefilled; skipping a question deletes that answer). Not editable in the app: going back to "prefer not to say" for sex: by email |
-| Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tali.fit/?doc=…` links redirect there |
+| Links from the app | Sign-up line, consent screen and Profile → Privacy open the website pages (`screens/legal/LegalDoc.tsx`); old `app.tilo.fit/?doc=…` links redirect there |
 | Storage and PECR | Only strictly necessary local storage (see `cookies.ts`). No cookies, analytics, ads or trackers in the app |
 | Release gate | `npm run check:legal` (in the deploy workflow) fails on any placeholder the texts print; a missing ICO number only warns |
 
@@ -37,7 +42,7 @@ Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), 
 | Data | Purpose | Lawful basis | Where | Kept |
 |---|---|---|---|---|
 | Email, password hash, Google identity (email, name, avatar URL) | Account and sign-in | 6(1)(b) contract | Supabase Auth, eu-west-1 | Until account deletion |
-| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans and their `kind` (Mind plans: health data by inference, cleared on withdrawal), Mind settings (`profile.mind`: pillars switched off, how often Tali asks, usual wake and wind-down times (health data, cleared on withdrawal), reminder types, reminder back-off start times, IANA time zone from the device (saved when reminder settings are saved while a Mind reminder is on), the wind-down routine (`routine`: keys from a fixed list, never text; health data by inference, it reveals sleep behaviour: cleared on withdrawal through `HEALTH_FIELDS`; board B12, built behind the flag, item 45), and whether supplement reminders show names (`lockNames`, off unless turned on; a preference, kept on withdrawal; board B11b, item 45)), `answeredAt` stamps, weekly review settings (`reviewDay`, `reviewWeight`, `lastReviewAt`, `reviewHidden`, `targetSetAt`, `maintainFrom`, `loopChoice`), `steadyRef` and `patternShown` (health data by inference, with `loopChoice`: cleared on withdrawal through `HEALTH_FIELDS`; compliance 2026-10-08) | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
+| Profile: name, sex and `sexAnswer`, age, height, weight, body fat, daily movement and `activityMult`, activity, goal, pace, motivations, training prefs (confidence, moving now, days, weekdays, minutes, place, kit, enjoy, cardio, emphasis, liked/disliked), injuries/limitations and note, supplements, targets, prefs, hand sizes, if-then plans and their `kind` (Mind plans: health data by inference, cleared on withdrawal), Mind settings (`profile.mind`: pillars switched off, how often Tilo asks, usual wake and wind-down times (health data, cleared on withdrawal), reminder types, reminder back-off start times, IANA time zone from the device (saved when reminder settings are saved while a Mind reminder is on), the wind-down routine (`routine`: keys from a fixed list, never text; health data by inference, it reveals sleep behaviour: cleared on withdrawal through `HEALTH_FIELDS`; board B12, built behind the flag, item 45), and whether supplement reminders show names (`lockNames`, off unless turned on; a preference, kept on withdrawal; board B11b, item 45)), `answeredAt` stamps, weekly review settings (`reviewDay`, `reviewWeight`, `lastReviewAt`, `reviewHidden`, `targetSetAt`, `maintainFrom`, `loopChoice`), `steadyRef` and `patternShown` (health data by inference, with `loopChoice`: cleared on withdrawal through `HEALTH_FIELDS`; compliance 2026-10-08) | Run the service, calculate targets | 6(1)(b) + 9(2)(a) explicit consent | `settings` table (profile jsonb) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Onboarding outcomes: readiness, medical (clear, flagged or no-deficit; 'flagged' can suggest kidney disease by inference, item 47) and lately results (outcomes only), wellbeing (flagged for Yes, sometimes, clear, undisclosed), the food-range answers that follow a Yes or Sometimes (`profile.foodOptIn`: `today`, `range`, `rangeAt` for the week-4 answer only; Onboarding 9; health data by inference, since only people who answered Yes or Sometimes are asked), pregnancy flag with `askedAt` and, after an "Ask me later" on the 12-week re-ask, `snoozedAt`, `deficitChosen` | Safety routing: gentler start, no deficit, no calorie number, Gentle mode (wellbeing Yes only; Sometimes gets a maintenance range instead), signposting (`routeSafety`); the 12-week re-ask; the day-14 and week-4 range asks, a range shown only if the person opts in | 6(1)(b) + 9(2)(a) explicit consent (per-question notice on each screen; every question skippable) | `settings` (profile jsonb) | Until changed or cleared in Profile › Health data › Health check answers, health consent is withdrawn (cleared on phones and account, `snoozedAt` with the pregnancy object, `foodOptIn` and its stamp with the profile health fields: checked 2026-10-01, item 34), or the account is deleted |
 | Day logs: foods, weight, workout, supplements taken, the check-in (mood, hunger, sleep, stress, energy, soreness, note, and the Mind fields nested in it: `night` sleep band and wake time, `skills` used as id and time, `thing` as a key and when done) | Run the service | 6(1)(b) + 9(2)(a) | `day_logs` (check-in rides in `supps._checkin`) | Until health consent is withdrawn (account copy cleared) or the account is deleted |
 | Custom foods, recipes, workouts you create (`routines`, with slot reasons in `blocks`), weekly plans (`training_plans`, with plan reasons in `why`) | Run the service | 6(1)(b) + 9(2)(a) (treated as health data) | `custom_foods`, `recipes`, `routines`, `training_plans` | Until health consent is withdrawn (account copy cleared) or the account is deleted |
@@ -48,14 +53,14 @@ Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), 
 | Unload notes (device only): "On my mind" and "Next step" pairs and an optional "went OK" line, with an id and time (`deviceOnly.unload`, stamped with the device's owner account); the day the low-mood signpost last showed (`deviceOnly.lowMoodShown`, health by inference); reminder delivery events (`deviceOnly.notify`: kind, time, shown, opened or closed) and whether "More about sleep" was left open (`deviceOnly.ui`), neither health data | Unload: let the person write down what's on their mind; the marker: show the signpost at most once per 30 days; the log: send a reminder less often when it's ignored | 6(1)(b) for all of it; + 9(2)(a) for the notes and the marker; PECR reg. 6(4)(b) strictly necessary | Device only, inside `leanplan.v1` (never synced, sent to AI, put in a notification or the service worker, or logged); in the JSON export (the whole store, notes, marker and log); a restore merges the backup's notes by id under this device's owner (none while health consent is withdrawn or with no owner recorded, and `unloadImportResult` reports how many it left out and why) and never restores the marker, log or UI state | Notes and marker: until the person deletes a note, health consent is withdrawn (here or pulled from another device), the device's log is removed (sign out and remove, start fresh, keep for another account, account deletion) or browser data is cleared. Notes stamped with another account, or with no owner recorded, are dropped on load; while a "whose data is this?" question is pending they are hidden, not deleted. Caps: 2,000 characters a note, 20 pairs a note, 200 notes; refused past any of them (never pruned). Log and UI state: until the device's log is removed |
 | Onboarding draft (`tali.onboarding`), setup card hidden (`tali.setupCardHidden`), pending under-age deletion (`tali.pendingDelete`: uid, time, tries, next try, stage) | Resume the wizard; remember a choice; finish an under-age deletion offline or after a fresh sign-in | 6(1)(b) (+ 9(2)(a) for the draft's health answers); PECR strictly necessary | Device only (`cookies.ts` lists them) | Draft: until setup finishes, a health withdrawal (here or pulled from another device), remove-this-device, or account deletion. Pending: until the deletion succeeds (or the device's data is cleared) |
 | IP address, user agent, request logs | Deliver the site, security | 6(1)(f) legitimate interests | GitHub Pages, Supabase logs | Provider's log retention |
-| Label photos (pack nutrition table, optional front), with the pack's barcode if one was scanned (items 24, 46) | Read the numbers and name the person asks Tali to read | 6(1)(b) contract (the person asks for the read). The `label-photo` record (`LabelCaptureView` "OK, take a photo") is the notice and the server's gate, not the lawful basis: a pack photo is not health data, and nothing about the person goes with it | Phone → `ai-read-label` (Supabase, eu-west-1) → Anthropic (US). The barcode stops at the function (used only to sign a shareable read, never sent to the model or logged) | Tali: not stored (memory only; function logs hold counts, sizes and timings). Anthropic: deleted within 30 days of receipt unless kept longer to enforce its usage policy or by law (privacy.claude.com, "How long do you store my organization's data", checked 2026-10-10); no training on Customer Content (Commercial Terms §B) |
+| Label photos (pack nutrition table, optional front), with the pack's barcode if one was scanned (items 24, 46) | Read the numbers and name the person asks Tilo to read | 6(1)(b) contract (the person asks for the read). The `label-photo` record (`LabelCaptureView` "OK, take a photo") is the notice and the server's gate, not the lawful basis: a pack photo is not health data, and nothing about the person goes with it | Phone → `ai-read-label` (Supabase, eu-west-1) → Anthropic (US). The barcode stops at the function (used only to sign a shareable read, never sent to the model or logged) | Tilo: not stored (memory only; function logs hold counts, sizes and timings). Anthropic: deleted within 30 days of receipt unless kept longer to enforce its usage policy or by law (privacy.claude.com, "How long do you store my organization's data", checked 2026-10-10); no training on Customer Content (Commercial Terms §B) |
 | `ai_usage` (user id, day, count of label reads) | Daily cap on label reads | 6(1)(b) | `ai_usage` (owner SELECT only; in `USER_TABLES`) | 60 days, then deleted daily by pg_cron (`tali-ai-usage-cleanup`, `docs/migrations/2026-10-10-shared-products.sql` §10), or sooner on account deletion (item 24) |
-| Barcode lookups on the shared list (`lookup_product`, POST body) | Find a product another user added | 6(1)(b) | Supabase, as the signed-in caller | Not stored by Tali. Platform request logs (no body) on Supabase's retention |
+| Barcode lookups on the shared list (`lookup_product`, POST body) | Find a product another user added | 6(1)(b) | Supabase, as the signed-in caller | Not stored by Tilo. Platform request logs (no body) on Supabase's retention |
 | Shared product submission: barcode (GTIN-14), name read from the pack, per-100 figures, serving, sent with the caller's JWT (item 46) | Add a new product to the shared list | 6(1)(a) consent (`shared-products`, `CONSENT_VERSIONS` 2026-10-v1, its own opt-in sp-1, withdrawn with the Profile › Privacy toggle sp-5) + 9(2)(a) health consent (the server needs both: `shared_products_allowed()`) | `submit-product` (Supabase) → `submit_product()` (service role). The caller's `sub` is held in function memory for at most an hour for the rate limit, never logged or stored | Personal data only in transit. What's stored is not linked to anyone (next row) |
 | Shared product list (`products`, `product_sigs_seen`, `product_quota`): barcode, version, name, figures, counters, month dates; SHA-256 of each accepted signature (month only, purged after 2 months); global daily counters | Shown to every signed-in user who scans the barcode | Not personal data once stored (UK GDPR Recital 26; reasoning in `dpia.md` §9). Moderation: 6(1)(f) for anything that turns out to be personal (a person's details in a product name) | `products` and the two helper tables, RLS on, no policies, no table grants; writes only by `submit_product()` | As long as the list exists, or until removed after a report or audit (`shared-products-moderation.md`). Not in `USER_TABLES`, `clear_log_after_withdrawal()` or `purge_unconsented_logs()`, by design |
 | Product reports: barcode, version, reason | Hide and review wrong or abusive entries | 6(1)(f) (no reporter kept) | `report_product()` counts on `products`; global daily cap in `product_quota` | Until the version is reviewed |
 | `tali.products` (device cache of up to 200 looked-up products, with the account that filled it), `tali.productOutbox` (signed reads waiting to be shared, with the queuing account's id) | Open looked-up products offline; send shared reads later, off the save path | Cache 6(1)(b); outbox 6(1)(a). PECR reg. 6(4)(b) strictly necessary | Device only (`cookies.ts`, `products` gate) | Cache: until another account signs in, or wipe (remove this device's log, delete account, clear browser data). Outbox: until sent, sharing or health consent withdrawn, another account sends, or wipe |
-| Early access email (website form) | Invite people to try Tali | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
+| Early access email (website form) | Invite people to try Tilo | 6(1)(a) consent | Webflow form submissions | Until invited after launch, or unsubscribed |
 | Turnstile signals | Stop bots on the form | 6(1)(f) | Cloudflare | Cloudflare's retention |
 
 ## Processors and transfers
@@ -70,14 +75,14 @@ Last reviewed: 2026-10-10. Controller: Gravita Creative Ltd (company 08348225), 
 | Google (Workspace) | Processor: gravita.co email (rights requests, early-access invites) | US / global | Accept Google Workspace's data processing terms; record |
 | Amazon CloudFront | Webflow's sub-processor for page code | US / global | Covered through Webflow |
 | Open Food Facts (openfoodfacts.org, non-profit) | Independent controller, not a processor: the phone asks it for a scanned barcode, so it sees the barcode and IP address (privacy policy discloses this; item 23). `submit-product` also asks it, from the server, whether it has a barcode before a product is shared: the barcode only, no user data (disclosed, `products` gate) | France (EU) | None beyond disclosure; proxying would stop the IP reaching it (item 23) |
-| Anthropic (Anthropic Ireland, Limited contracts with UK/EEA customers under the Commercial Terms; Anthropic, PBC is US-based) | Processor: reads label photos (`ai-read-label`). Receives the photos only: no user id, email or barcode. The Commercial Terms incorporate the Anthropic DPA by reference and bar training on Customer Content (checked 2026-10-10) | US | Benn: confirm Tali's API key sits in an Anthropic Console organisation on the Commercial Terms (so the DPA applies), record the transfer mechanism the DPA uses (not confirmed: the DPA itself wasn't read), and decide whether to ask for zero data retention. TIA in `dpia.md` §9.4 (item 24) |
+| Anthropic (Anthropic Ireland, Limited contracts with UK/EEA customers under the Commercial Terms; Anthropic, PBC is US-based) | Processor: reads label photos (`ai-read-label`). Receives the photos only: no user id, email or barcode. The Commercial Terms incorporate the Anthropic DPA by reference and bar training on Customer Content (checked 2026-10-10) | US | Benn: confirm Tilo's API key sits in an Anthropic Console organisation on the Commercial Terms (so the DPA applies), record the transfer mechanism the DPA uses (not confirmed: the DPA itself wasn't read), and decide whether to ask for zero data retention. TIA in `dpia.md` §9.4 (item 24) |
 | Google | Independent controller for Google sign-in | Global | Add the privacy policy and terms URLs to the Google OAuth consent screen |
 | Apple / Google / Mozilla push services | Deliver encrypted push payloads | Global | None beyond disclosure (payload is end-to-end encrypted and carries no supplement name: the fixed text "Time for your supplements" for a supplement reminder (from 2026-10-09, item 41; once the generalised function is deployed, the supplement names only for someone who turned on "Show supplement names in reminders", item 45), or the fixed text "Your week is ready" / "Take a look whenever suits you." for the review reminder; the Mind reminders, once deployed (item 42), carry fixed text too: "How are you today? A quick check-in, if you have a moment.", "Your wind-down starts now, if you'd like it.", "How are your plans going?") |
 
 ## Publishing the legal pages
 
 The text is written in `src/core/legal/` and rendered with `npm run legal:html`
-(output `node_modules/.cache/legal-html.json`), then written to the Webflow site "Tali",
+(output `node_modules/.cache/legal-html.json`), then written to the Webflow site "Tilo",
 collection "Legals" (`content` rich text, `last-updated` date), as drafts via the Webflow MCP.
 Publishing is a separate, explicit step. When the full texts get published is still undecided
 (Benn, 28 Sept 2026; see item 16). Don't edit the pages in Webflow: the next push from
@@ -108,7 +113,7 @@ Build and test phase. Gravita Creative Ltd is the controller for now (decided 20
 a separate company will be formed before public launch (see item 15). Closed-group testing
 with the consent screen from 2026-09-27 (which texts are live: item 16).
 
-While testing: anyone other than Benn using Tali with real data is still covered by GDPR.
+While testing: anyone other than Benn using Tilo with real data is still covered by GDPR.
 Keep testers few, tell them it's a test build, and delete their data when testing ends.
 
 ## Open items (Benn)
@@ -126,7 +131,7 @@ Owed now (processing is happening whether or not the texts are live):
    `delete_my_account()` SQL was never applied and is removed.
 4. Accept the Supabase, Webflow and Bunny.net DPAs, confirm GitHub's and Cloudflare Turnstile's
    terms, and record them here.
-5. Add https://www.tali.fit/legals/privacy and /legals/terms to the Google OAuth consent screen.
+5. Add https://www.tilo.fit/legals/privacy and /legals/terms to the Google OAuth consent screen.
 6. Have a solicitor review the privacy policy, terms and this register.
 
 Should fix:
@@ -143,7 +148,7 @@ Should fix:
 13. (Superseded 2026-09-27: "keep" now drops the consent log, so a new account answers the
     consent screen itself.)
 14. (Superseded 2026-09-27: a missing ICO number now warns, it no longer blocks deploys.)
-15. Moving Tali to its own company later changes the controller: update `LEGAL`, the three
+15. Moving Tilo to its own company later changes the controller: update `LEGAL`, the three
     texts, bump `CONSENT_VERSIONS` (`src/data/consent.ts`) so everyone consents to the new company, and tell the
     early-access list.
 
@@ -170,7 +175,7 @@ Added 2026-09-27 (consent release):
     screen on their next launch and nothing more syncs until they answer; if anyone declines,
     delete their account on request. Now see item 29 (6 accounts with cloud data, 0 consent
     records, 2026-09-28) and item 30(a) (no notice emails for now, Benn's decision).
-21. DECIDED (Benn, 28 Sept 2026): Tali is strictly 18+ (`MIN_AGE` in `src/core/legal/index.ts`,
+21. DECIDED (Benn, 28 Sept 2026): Tilo is strictly 18+ (`MIN_AGE` in `src/core/legal/index.ts`,
     one rule: `isUnderAge` in `src/core/domain/age.ts`). Enforced by self-declaration at the consent
     screen ("I'm 18 or over"), the wizard (its age stop), Profile save (an under-18 age saves
     nothing), backup import (a backup with an under-18 age isn't loaded), cloud sync (a pulled
@@ -199,7 +204,7 @@ Added 2026-09-27 (consent release):
     weigh-ins, check-ins and body details but keep food and workout logs, which the policy also
     calls health data; it now keeps the whole log on the phone and deletes the account's copy.
 23. Open Food Facts: barcode lookups go from the phone, so OFF sees users' IP addresses
-    (disclosed). Proxying them through an Edge Function would stop that, but Tali's server would
+    (disclosed). Proxying them through an Edge Function would stop that, but Tilo's server would
     then see every barcode a signed-in user scans (a new flow needing privacy text). Deferred
     (Benn, 2026-10-01): revisit before public launch.
 24. Label photo scanning (Anthropic) goes on with the shared product list (commit e8ac601,
@@ -213,7 +218,7 @@ Added 2026-09-27 (consent release):
       withdrawal toggle is owed: not taking a photo is the opt-out, and "Type it in instead" is
       always there. The `label-photo` record stays as the notice and the server gate.
     - Closed 2026-10-11: Benn confirmed the `ANTHROPIC_API_KEY` was created in the Anthropic
-      Console (workspace "Tali", an API organisation, not a consumer Claude.ai account), so the
+      Console (workspace "Tilo", an API organisation, not a consumer Claude.ai account), so the
       Commercial Terms (effective 2025-06-17) apply: they govern API keys, the contracting
       entity is Anthropic Ireland, Limited for UK/EEA/Swiss customers, and they incorporate the
       DPA. Transfer mechanism, from the DPA (effective 2025-02-24, read 2026-10-11 at
@@ -225,7 +230,7 @@ Added 2026-09-27 (consent release):
     - Done 2026-10-11: Benn (Gravita Creative Ltd) approved DPIA §9, label photo scanning and the
       shared product list.
     - Done 2026-10-10 (Benn: wording changes need no board): the on-screen notice now reads
-      "Tali doesn't keep your photo. It's sent to Anthropic, the AI service we use, only to read
+      "Tilo doesn't keep your photo. It's sent to Anthropic, the AI service we use, only to read
       the numbers, and isn't used to train its AI. You can check the numbers before anything is
       saved." (it said "under their data policy"; Anthropic acts on our instructions under the
       DPA). `CONSENT_VERSIONS['label-photo']` is now `2026-10-v1`: an older yes sees the new
@@ -248,7 +253,7 @@ Added 2026-09-28 (server-side enforcement):
     can't see when someone was actually asked). They're offered consent again when they return.
     As built, with the withdrawal backstop and re-upload: the "Unconsented cloud copy" row above.
     Still worth a solicitor's view on whether the 30-day hold itself needs a basis.
-27. On-phone processing while phone-only is still processing by Tali's code (CJEU C-25/17,
+27. On-phone processing while phone-only is still processing by Tilo's code (CJEU C-25/17,
     C-210/16; Recital 18), so "phone-only" lowers risk but may not take it outside GDPR. Record
     this in the DPIA; it's also why withdrawal still clears weigh-ins, check-ins and body details.
 28. Done 2026-09-28: `ai-read-label` is deployed with a server-side consent check. `ai_usage_take`
@@ -267,8 +272,8 @@ Added 2026-09-28 (server-side enforcement):
         open the app before 28 Oct, and no longer has the phone that holds their log, loses it.
         Revisited 2026-10-01 (Benn): the date stays 28 Oct; 2 of the 6 accounts with cloud data
         had no health yes on that day. If emails are sent later: each account with cloud data and no
-        consent (6 on 2026-09-28), before the first purge, one by one from Google Workspace, no health details: "We've changed how Tali
-        handles health data: we now ask before keeping it in your account. Open Tali and choose
+        consent (6 on 2026-09-28), before the first purge, one by one from Google Workspace, no health details: "We've changed how Tilo
+        handles health data: we now ask before keeping it in your account. Open Tilo and choose
         whether it's OK. If you haven't agreed by 28 October 2026, we'll delete the copy in your
         account. What's on your phone stays there. To have your account deleted instead, reply to
         this email." If they go out after release day, move PURGE_FROM (and
@@ -341,7 +346,7 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
       - Should fix (copy untrue, Art. 5(1)(a), 13): weight is only off Today. Tapping the Today tile
         opens `WeightSheet` with a 30-entry trend, "kg vs last week" and a list of weights
         (`WeightSheet.tsx:35`, `50` to `76`), and Profile › Body and goal shows "NN kg"
-        (`ProfileScreen.tsx:190`). So "Tali hides your weight" (`COPY.wellbeing.why`), "no weight on
+        (`ProfileScreen.tsx:190`). So "Tilo hides your weight" (`COPY.wellbeing.why`), "no weight on
         screen" (`NOTES.wellbeing.lead`), "no weight" (`FOOD9`/`ob9-1` `yesS`, `sometimesS`,
         `HEALTH_ANSWERS.does.wellbeing`) and "weight is hidden" (`does.wellbeingSometimes`) are
         untrue as built. Either hide weight in those places for Yes and Sometimes (with
@@ -444,7 +449,7 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     function is deployed, so running the migration first keeps that sentence true.
 
 43. Owed now (2026-10-09, compliance close-out): the live Webflow privacy page
-    (www.tali.fit/legals/privacy) is several versions behind `main`. It lacks the "Weekly review"
+    (www.tilo.fit/legals/privacy) is several versions behind `main`. It lacks the "Weekly review"
     bullet, the review reminder in "Reminders" and its push text, the lighter-session and
     pattern-line sentences and the current withdrawal paragraph, and it still says "A reminder
     carries only the supplement name", which is no longer true (item 41). The live app already
@@ -494,7 +499,7 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     on these conditions: chosen in Profile only, never saved from the Support sheet or the banner
     (that would record that the person opened Support and make B6.8 false); never inferred from
     `tz`; added to the privacy "Profile" bullet ("the UK nation you live in, if you choose one,
-    so Tali shows the right helplines"); a register row; and a design board for Benn.
+    so Tilo shows the right helplines"); a register row; and a design board for Benn.
     Compliance 2026-10-10 (Mind on, `MIND_REVIEWED` off): the published Mind texts still describe
     things only the reviewed build does: privacy names the Mind skills used, the wind-down routine,
     the Unload notes, the low-mood signpost (Automatic calculations) and its device marker, and the
@@ -628,11 +633,11 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     every answer from before the split stay `'flagged'` (food at maintenance, protein at the
     everyday amount for adults, 0.75 g/kg, shown as "about"); diabetes or a weight-loss injection
     with no kidney tick is `'no-deficit'` (food at maintenance, protein 1.2 to 1.6 g/kg on a weight
-    capped at a BMI of 25, as Tali's ordinary range). The ticks stay in component state. Because
+    capped at a BMI of 25, as Tilo's ordinary range). The ticks stay in component state. Because
     only kidney disease always gives `'flagged'`, that value can suggest it: lawful under the same
     Art. 6(1)(b) + 9(2)(a) consent and purpose, and the minimum that still computes the target
     (data minimisation met); the per-question notice ("Why we ask") and the privacy policy now say
-    so, and the terms say the setup answers decide how much protein Tali shows. No consent version
+    so, and the terms say the setup answers decide how much protein Tilo shows. No consent version
     bump (the tick wording and purpose are unchanged). Earlier `'flagged'` answers are not rewritten
     (that would infer kidney disease where there may be none, Art. 5(1)(d)); the question is asked
     once more on each phone (`medicalReaskDue`; the "asked" marker is device only,
@@ -642,6 +647,45 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     claim results for people on prescription weight-loss medicines (ASA/CAP 12, 12.12). Texts
     dated 2026-10-24 in their onboarding-on versions; the published (onboarding-off) texts are
     unchanged.
+
+48. Rename to Tilo (2026-11-05, compliance; branch `rename/tilo`, `docs/plans/rename-tilo.md`).
+    Same controller, purposes, data, processors and transfers; only the product name and the
+    addresses change (www.tilo.fit, app.tilo.fit). Decided: no `CONSENT_VERSIONS` bump. Consent
+    must be informed about who the controller is and what for (Art. 4(11), 7; EDPB Guidelines
+    05/2020 on consent, para. 64), and neither changes, so a yes recorded as `2026-09-v1` (or
+    `2026-10-v1`) to the Tali wording is a yes to the same thing. A change of company (item 15)
+    still needs a bump. Owed before or with the switch:
+    (a) Privacy and cookie policies: while app.tali.fit still serves the app (the hand-over), the
+        policy must cover it (Art. 13): add a line to the privacy intro and the cookie intro, e.g.
+        "Tilo was called Tali until [month year]. Until [date], the app also runs at app.tali.fit,
+        and www.tali.fit sends you here." Bump `updated` on every variant of all three texts to the
+        publish date and regenerate the fixtures; the device-data retention line should say data
+        left at the old address stays in that browser until it is removed there or browser data is
+        cleared.
+    (b) Hand-over at app.tali.fit (security-data, ship-critic): sync first; offer the existing
+        export to anyone with device-only data (declined or paused health consent, unsynced
+        entries), and let them import it at app.tilo.fit; never move device-only health data
+        through the server, a URL or query string (that would be processing without the
+        Art. 9(2)(a) consent they declined); offer "remove this device's log" at the old address
+        before it becomes a redirect; remove the old origin's push subscriptions
+        (`push_subscriptions`) and reminders (Art. 5(1)(c), (e)). Delete account must keep working
+        from both addresses until the end (Art. 17; both origins are allowed in `delete-account`).
+    (c) Tell the testers (a service message about their account, not direct marketing: PECR
+        reg. 22 doesn't apply; ICO direct marketing guidance) in the app at app.tali.fit and by
+        email: the new address, sign in again, switch reminders back on, export device-only data.
+    (d) Early-access list: put the new name in the invite itself (the purpose they agreed to). A
+        separate "we're now Tilo" email should be factual only, with no promotion, and carry the
+        unsubscribe (item 2); anything promotional is marketing under PECR reg. 22 and goes beyond
+        "we use your email for nothing else".
+    (e) Republish all three Legals items (`npm run legal:html`) on the Webflow site under
+        www.tilo.fit as drafts, ship-critic, then Benn publishes; keep 301s from
+        www.tali.fit/legals/* so links in cached apps still reach the policies.
+    (f) ICO fee (item 1): register Gravita Creative Ltd with Tilo as a trading name.
+    (g) Turnstile and Webflow form: allow www.tilo.fit; the cookie list (`_cfuvid`) is unchanged.
+        Supabase Auth emails and the Google OAuth consent screen (item 5) carry the new name and
+        links.
+    (h) Not compliance, but before the name goes public: a trade mark clearance search and filing
+        for Tilo (not legal advice; a trade mark attorney should confirm).
 
 Future changes that need the compliance agent first: any AI feature
 (`docs/plans/ai-platform-plan.md`), analytics or error tracking, email marketing (PECR

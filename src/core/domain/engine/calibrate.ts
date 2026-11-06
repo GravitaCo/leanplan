@@ -3,7 +3,7 @@ import type { PlannedSlot, Range } from './generate'
 
 /**
  * "Find your weight" (engine §3.3 step 7, §5): sessions 1–2 of a loaded exercise start from no
- * number at all. Tali never guesses a starting load from anyone else. The person picks a weight
+ * number at all. Tilo never guesses a starting load from anyone else. The person picks a weight
  * that leaves about 3–4 reps to spare and logs how it felt; from session 3 the usual targets
  * (guided.targetFor, and nextTargets in E2) take over from their own sets.
  */

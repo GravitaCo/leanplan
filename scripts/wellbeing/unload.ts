@@ -39,9 +39,9 @@ export function unloadSuite(): number {
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every Unload string passes mindCopyIssues', !issues.length, issues)
   ok('no em dashes', strings.every((s) => !s.includes('—')))
-  ok('B8.11 verbatim, and it is the exact COPY_ALLOWED entry', UNLOAD.local === "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tali or clear this device's data, they're gone." && COPY_ALLOWED.has(UNLOAD.local))
-  ok('B8.12 is its lead, link and full stop', UNLOAD.notReadLead + UNLOAD.notReadLink + '.' === UNLOAD.notRead && UNLOAD.notRead === "Tali doesn't read your notes. If you're struggling, support is here.")
-  ok('B8.13, B8.14 and S.1 verbatim', UNLOAD.notCrisis === "Tali isn't a crisis service. In an emergency, call 999." && UNLOAD.saved === 'Saved on this device' && SHARED.support === 'Need support now?')
+  ok('B8.11 verbatim, and it is the exact COPY_ALLOWED entry', UNLOAD.local === "Your notes stay on this device only. They aren't synced or sent anywhere, so if you remove Tilo or clear this device's data, they're gone." && COPY_ALLOWED.has(UNLOAD.local))
+  ok('B8.12 is its lead, link and full stop', UNLOAD.notReadLead + UNLOAD.notReadLink + '.' === UNLOAD.notRead && UNLOAD.notRead === "Tilo doesn't read your notes. If you're struggling, support is here.")
+  ok('B8.13, B8.14 and S.1 verbatim', UNLOAD.notCrisis === "Tilo isn't a crisis service. In an emergency, call 999." && UNLOAD.saved === 'Saved on this device' && SHARED.support === 'Need support now?')
 
   /* ---------- when Done is off ---------- */
   const yes = { signedIn: true, ownerAsk: false, healthAllowed: true, owner: true }
@@ -88,7 +88,7 @@ export function unloadSuite(): number {
     ok('the sheet: lead, one pair, Add another, went OK, the three feet in order, then the support row', at(UNLOAD.lead) > 0 && at('>On my mind<') > at(UNLOAD.lead)
       && at('>Next step<') > at('>On my mind<') && at(UNLOAD.addAnother) > at('>Next step<') && at(UNLOAD.wentOk) > at(UNLOAD.addAnother)
       && at("Your notes stay on this device only.") > at(UNLOAD.wentOk) && at(UNLOAD.notReadLink) > at("Your notes stay on this device only.")
-      && at("Tali isn't a crisis service.") > at(UNLOAD.notReadLink) && at(SHARED.support) > at("Tali isn't a crisis service."))
+      && at("Tilo isn't a crisis service.") > at(UNLOAD.notReadLink) && at(SHARED.support) > at("Tilo isn't a crisis service."))
     ok('empty and signed out: Done is off, and no Earlier notes row', /<button class="navbtn b" disabled="">Done<\/button>/.test(empty) && !empty.includes(UNLOAD.earlier))
     ok('no count, no character limit shown', !/\d+\s*(notes?|characters?)\b/i.test(empty.replace(/<[^>]+>/g, ' ')))
 

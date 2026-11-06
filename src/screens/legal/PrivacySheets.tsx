@@ -19,12 +19,12 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="Health data" onClose={onClose}>
       <div className="card prose">
-        <p style={{ margin: 0 }}>Turning this back on lets Tali save your weigh-ins, check-ins and body details again, and uploads your whole log from this phone to your account.</p>
+        <p style={{ margin: 0 }}>Turning this back on lets Tilo save your weigh-ins, check-ins and body details again, and uploads your whole log from this phone to your account.</p>
       </div>
       <div className="list">
         <div className="li consent-row">
           <input id="c_regrant" type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} />
-          <label htmlFor="c_regrant">I agree to Tali storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time.</label>
+          <label htmlFor="c_regrant">I agree to Tilo storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time.</label>
         </div>
       </div>
       <button className="btn" disabled={!on} onClick={() => { grant(); onClose() }}>Turn health data back on</button>

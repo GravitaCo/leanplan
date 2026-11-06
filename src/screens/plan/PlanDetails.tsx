@@ -150,7 +150,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
   step0?: 1 | 2
   onClose: () => void
   onMaintenance: () => void
-  /** a suggested Tali plan's preview, with the look back to keep */
+  /** a suggested Tilo plan's preview, with the look back to keep */
   onPreview: (templateId: string, reflection: { good?: string; change?: string }) => void
   onAgain: (reflection: { good?: string; change?: string }) => void
   onBuild: (reflection: { good?: string; change?: string }) => void

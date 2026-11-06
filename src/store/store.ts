@@ -85,7 +85,7 @@ export type MindView = 'reset' | 'unload' | 'wind-down' | 'outside'
 export const TRAIN_LOG_WALK = '@log-easy-walk'
 
 /**
- * Where an under-18 age came from (Tali is strictly 18+). 'profile': typed on Profile and not
+ * Where an under-18 age came from (Tilo is strictly 18+). 'profile': typed on Profile and not
  * saved; 'import': in a backup that wasn't loaded; 'sync': pulled from the account; 'launch': in
  * this device's saved data. Only 'sync' and 'launch' mean an under-18 age is stored.
  */
@@ -327,7 +327,7 @@ export interface StoreState {
   /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
    *  the reads waiting to be sent */
   setShareProducts: (on: boolean) => void
-  /** queue a signed label read for Tali's shared list (only with a yes to sharing); it's sent
+  /** queue a signed label read for Tilo's shared list (only with a yes to sharing); it's sent
    *  later, after a random delay, never on this save path */
   queueSharedProduct: (t: ShareToken) => boolean
   /** "Share this product" on a saved food (sp-9): queue its signed label read (as
@@ -611,7 +611,7 @@ function clearSavedSession() {
 let signingOut = false
 /** shared-list sends that left reads waiting, this app session: a few more tries, then the next save or reconnect */
 let shareRetries = 0
-const GUEST_GONE_MSG = 'Tali now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
+const GUEST_GONE_MSG = 'Tilo now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
 /** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
 const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
 /** Shown when a height isn't kept because health consent was withdrawn. */
@@ -877,12 +877,12 @@ export const useStore = create<StoreState>()(
       repeatYesterday: (meal) => {
         const { data, cur } = get()
         // the same entries the Summary's "Same as yesterday" row adds up (insights.entriesToRepeat;
-        // nutrition-accuracy R2), so its kcal is exactly what this adds. Foods no longer in Tali
+        // nutrition-accuracy R2), so its kcal is exactly what this adds. Foods no longer in Tilo
         // (removed as unverified) aren't copied, nor their cooking fat
         const { entries, gone } = entriesToRepeat(data, cur, meal)
         if (!entries.length && !gone) return
-        const note = gone ? ` · ${gone} food${gone > 1 ? 's' : ''} no longer in Tali, not copied` : ''
-        if (!entries.length) { get().showToast(`Not copied: ${gone > 1 ? 'those foods are' : 'that food is'} no longer in Tali`); return }
+        const note = gone ? ` · ${gone} food${gone > 1 ? 's' : ''} no longer in Tilo, not copied` : ''
+        if (!entries.length) { get().showToast(`Not copied: ${gone > 1 ? 'those foods are' : 'that food is'} no longer in Tilo`); return }
         get().logEntries(entries, 'Copied from yesterday' + note)
       },
 
@@ -1440,7 +1440,7 @@ export const useStore = create<StoreState>()(
           if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
           p._dirty = true; p._u = nowIso()
           // no plan left running: the week the person had before plans comes back (the mirror only
-          // holds one ready-made workout a day, so keeping it would turn Tali's plan workouts into cardio)
+          // holds one ready-made workout a day, so keeping it would turn Tilo's plan workouts into cardio)
           putBackWeek(st.data)
         })
         saved(state === 'completed' ? 'Plan finished' : 'Plan put away')
@@ -1472,7 +1472,7 @@ export const useStore = create<StoreState>()(
       },
 
       saveProfileMetrics: (patch) => {
-        // Tali is 18+: an under-18 age saves nothing (no change, no dirty flag, no sync), it stops
+        // Tilo is 18+: an under-18 age saves nothing (no change, no dirty flag, no sync), it stops
         if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return false
         // health consent withdrawn: the health fields (weight, body fat, height …) aren't saved, the
         // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)

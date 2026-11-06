@@ -7,7 +7,7 @@ export const FEEDBACK_AREAS = [
   { id: 'train', label: 'Workouts', question: 'How are workouts going?', hint: 'Train, following a workout, logging sets' },
   { id: 'plan', label: 'Planning your week', question: 'How is planning your week going?', hint: 'Plan and your weekly schedule' },
   { id: 'summary', label: 'Summary and check-ins', question: 'How are the Summary and check-ins working for you?', hint: 'Your day at a glance, how you’re feeling' },
-  { id: 'feel', label: 'Look and feel', question: 'How does Tali look and feel to use?', hint: 'Speed, layout, how easy it is to use' },
+  { id: 'feel', label: 'Look and feel', question: 'How does Tilo look and feel to use?', hint: 'Speed, layout, how easy it is to use' },
 ] as const
 
 export type FeedbackAreaId = (typeof FEEDBACK_AREAS)[number]['id']
@@ -36,10 +36,10 @@ export function feedbackEmail(a: FeedbackAnswers, meta: { version?: string; devi
     if (note) out.push(note)
     out.push('')
   }
-  if (a.wishes.trim()) out.push('What I’d like to see in Tali:', a.wishes.trim(), '')
+  if (a.wishes.trim()) out.push('What I’d like to see in Tilo:', a.wishes.trim(), '')
   if (a.other.trim()) out.push('Anything else:', a.other.trim(), '')
   out.push('---', `App: ${meta.version || 'unknown'}`, `Device: ${meta.device || 'unknown'}`)
-  return { subject: 'Tali tester feedback', body: out.join('\n') }
+  return { subject: 'Tilo tester feedback', body: out.join('\n') }
 }
 
 export function feedbackMailto(e: { subject: string; body: string }): string {

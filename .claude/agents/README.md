@@ -1,4 +1,4 @@
-# Tali subagents
+# Tilo subagents
 
 Project-scoped Claude Code subagents. Each `.md` file = one agent (frontmatter + system
 prompt). They're committed so the whole team/repo shares the same specialists.
@@ -11,7 +11,7 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 | `nutrition-accuracy` | How true the calorie/macro numbers are: audits data, sources, portions, cooking yields, error model | Evidence-first, read-only |
 | `mental-performance` | Mental performance and wellbeing (sleep, stress, motivation, habits) and how they drive nutrition and fitness goals; tone; psychological safety; the wellness-not-therapy boundary | Evidence-first, read-only |
 | `compliance` | UK/EU GDPR, health-data consent, privacy policy and terms, data rights, processors, PECR, medical-claim and consumer-law boundaries | Precise, conservative, cites the law |
-| `marketing-research` | Market validity, who Tali is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief; writes reports to `docs/research/` only |
+| `marketing-research` | Market validity, who Tilo is for, the niche and wedge, competitors, positioning, pricing, ethical growth | Evidence-first, sceptical of its own brief; writes reports to `docs/research/` only |
 | `design` | Brand consistency and UX/UI quality across the app, the website and marketing material; reviews real renders, drafts on the Design canvas | Exacting, visual, verifies before it claims |
 | `cfo` | Monetisation, pricing, costs, unit economics, revenue and go-to-market spend; owns `docs/plans/monetisation-plan.md`; decides on pricing evidence from `marketing-research` | Numbers-first, no invented figures, fair-pricing rules |
 | `ship-critic` | Pre-ship gate — challenges every change | Adversarial, read-only |
@@ -25,9 +25,9 @@ prompt). They're committed so the whole team/repo shares the same specialists.
 ## The ship workflow (convention)
 The specialist agents **build, research or propose but never push**: pushing is Benn's call
 (`commit/push only when asked`). Before anything goes live, run **`ship-critic`**: it
-reviews the diff against intent, verifies it runs, checks Tali's hard constraints, and
+reviews the diff against intent, verifies it runs, checks Tilo's hard constraints, and
 returns **SHIP / DON'T SHIP** (no "ship with fixes": fixes are resolved and re-checked first). Nothing merges to `main` (which
-auto-deploys to app.tali.fit) until it passes — **even when Benn asks to push live or merge**
+auto-deploys to app.tilo.fit) until it passes — **even when Benn asks to push live or merge**
 (his standing instruction, Sept 2026): wait for the verdict, fix, re-check, then merge. **Food data changes also need
 `nutrition-accuracy` sign-off.** `ship-critic` is read-only on purpose — it
 judges, it can't quietly fix a thing to make it pass.

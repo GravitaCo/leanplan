@@ -1,7 +1,7 @@
 # Shared products: reports and takedowns
 
-Tali's shared product list (`public.products`, docs/migrations/2026-10-10-shared-products.sql)
-holds product names and per-100 figures read from pack labels by Tali users. Every name is shown to
+Tilo's shared product list (`public.products`, docs/migrations/2026-10-10-shared-products.sql)
+holds product names and per-100 figures read from pack labels by Tilo users. Every name is shown to
 everyone who scans that barcode, so we act on reports quickly. Nothing in the list says who added a
 product, so a takedown never involves contacting or identifying a user.
 
@@ -53,13 +53,13 @@ For each row, decide:
 A product a user saved to their own foods before the takedown stays in their own log (it's their
 copy); only the shared list changes.
 
-## Requests from outside Tali
+## Requests from outside Tilo
 
 A brand or person asking for a product or name to be removed: check the row, and if the request
 is about personal data, the name, or a trademark used misleadingly, delete it as in step 1. We
 can't tell anyone who added a product: that information doesn't exist.
 
-## Audits ("Checked by Tali")
+## Audits ("Checked by Tilo")
 
 `verified` is set only by a nutrition-accuracy audit against the pack (never by counts):
 

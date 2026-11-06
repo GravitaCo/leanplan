@@ -16,9 +16,9 @@ import pdfplumber
 
 NUMW = re.compile(r'^<?\d+(?:\.\d+)?$')
 COLS = ['kj', 'k', 'f', 'sat', 'c', 'su', 'p', 'salt']
-# existing Tali names are stable IDs (learned usuals match by name): keep them
+# existing Tilo names are stable IDs (learned usuals match by name): keep them
 LEGACY = {'Zinger Burger': 'KFC Zinger Burger', 'Original Recipe Chicken (per piece, average)': 'KFC Original Recipe Chicken piece'}
-# output names that must keep an existing Tali name (the old generic row is replaced by KFC's own figures)
+# output names that must keep an existing Tilo name (the old generic row is replaced by KFC's own figures)
 LEGACY_OUT = {'KFC Signature Fries (regular)': 'KFC Fries (regular)'}
 # the PDF's own wording, tidied into a singular item name (names are stable IDs: settle them before shipping)
 RENAME = {

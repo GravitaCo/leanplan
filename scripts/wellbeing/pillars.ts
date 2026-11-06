@@ -35,10 +35,10 @@ export function pillarsSuite(): number {
   }
 
   /* ---------- copy: verbatim from the deck, linted ---------- */
-  ok('B1.1, B1.8, B1.9, B1.13 and B1.14 verbatim', C.heading === 'What do you want Tali for?'
+  ok('B1.1, B1.8, B1.9, B1.13 and B1.14 verbatim', C.heading === 'What do you want Tilo for?'
     && C.foot === "Keep at least one on. One that's off leaves Today and stops its prompts. Nothing is deleted, and you can switch it back any time."
     && C.lastOn === 'At least one stays on'
-    && C.asksFoot === "Usual: up to 3 suggestions or prompts a day. Fewer prompts: 1. On a harder day, Tali asks for less either way. Anything you open yourself doesn't count."
+    && C.asksFoot === "Usual: up to 3 suggestions or prompts a day. Fewer prompts: 1. On a harder day, Tilo asks for less either way. Anything you open yourself doesn't count."
     && C.foodOff === "Food is off. Today won't show calories, ranges or food prompts. Your food log is kept.")
   ok('B1.16 reads whole across its two links', pillarsStrings().includes(B116))
   const issues = pillarsStrings().map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)

@@ -5,7 +5,7 @@ import { isUnderAge, MIN_AGE } from './age'
 
 /**
  * First-run onboarding: safety routing (first-run-onboarding.md §3) and the skipped-answer
- * defaults (§2.1). Nobody is blocked except under-18s (Tali is strictly 18+); every other signal makes the plan safer.
+ * defaults (§2.1). Nobody is blocked except under-18s (Tilo is strictly 18+); every other signal makes the plan safer.
  * Pure: the store decides what to save, and only outcomes are ever saved (§8).
  */
 
@@ -36,7 +36,7 @@ export type RoutingReason =
 export type DefaultField = 'age' | 'readiness' | 'baseline' | 'wellbeing' | 'weight' | 'height' | 'sex' | 'movement'
 
 export interface SafetyRouting {
-  /** kind stop: "Tali is for 18+" (§14: the account and the device's data are then deleted). The id is internal and predates 18+. */
+  /** kind stop: "Tilo is for 18+" (§14: the account and the device's data are then deleted). The id is internal and predates 18+. */
   stop?: 'under16'
   /** never below maintenance, whatever the goal */
   noDeficit: boolean
@@ -184,7 +184,7 @@ export interface HealthAnswersView {
 export const healthAnswerField = (k: HealthAnswerKind): 'pregnancy' | `outcomes.${Exclude<HealthAnswerKind, 'pregnancy'>}` =>
   k === 'pregnancy' ? 'pregnancy' : `outcomes.${k}`
 
-/** What Tali keeps from the health check, for the Profile "Health check answers" control. Pure. */
+/** What Tilo keeps from the health check, for the Profile "Health check answers" control. Pure. */
 export function healthAnswersView(p: Pick<Profile, 'outcomes' | 'pregnancy' | 'answeredAt'>, today?: string): HealthAnswersView {
   const rows: HealthAnswerRow[] = []
   for (const kind of HEALTH_ANSWER_KINDS) {
@@ -321,7 +321,7 @@ function lowBmi(kg: number | null | undefined, cm: number | null | undefined): b
 
 /**
  * Safety routing, first-run-onboarding §3 with the §2.1 skipped-answer defaults:
- * - under 18: kind stop (Tali is strictly 18+)
+ * - under 18: kind stop (Tilo is strictly 18+)
  * - age missing: no deficit, weight hidden, no AI, no calorie number
  * - pregnant or breastfeeding: maintenance only, no calorie number, gentle training, midwife/GP
  * - BMI under 18.5: no deficit (a gate only)

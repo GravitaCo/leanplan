@@ -329,7 +329,7 @@ function profileMatchesSummary(): void {
     ['no note when the floor note shows', (() => {
       const x = suggestedTargets({ ...legacy, height: 150, activityLevel: 'sedentary' }, 35, profileRouting({ ...legacy, height: 150 }, 35, true)) as any
       return x.floored && !x.heldAtMaintenance })()],
-    ['the note never says why', HELD_AT_MAINTENANCE_NOTE === 'Tali keeps this at maintenance for now, to keep things safe.' && !/age|bmi|weight|16|17|18/i.test(HELD_AT_MAINTENANCE_NOTE)],
+    ['the note never says why', HELD_AT_MAINTENANCE_NOTE === 'Tilo keeps this at maintenance for now, to keep things safe.' && !/age|bmi|weight|16|17|18/i.test(HELD_AT_MAINTENANCE_NOTE)],
     ['summary and Profile agree on the note', (() => {
       const p = done({ height: 200 }); const t = startingTargets(p, lift3, routeSafety(safetyAnswersFrom(p, kg, true)), kg)
       const p1 = { ...p, activityMult: t.effectiveMultiplier! }

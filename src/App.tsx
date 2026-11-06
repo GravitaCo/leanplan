@@ -66,7 +66,7 @@ function TaliApp() {
 
   // a tap on a Mind reminder opens ./?n=<kind> (public/sw.js): the worker recorded the open, so
   // the parameter only goes from the address. The reminder delivery log the worker keeps in
-  // IndexedDB is read and emptied on launch and whenever Tali comes back to the front (security-
+  // IndexedDB is read and emptied on launch and whenever Tilo comes back to the front (security-
   // data H3): two ignored in a row start that type's back-off. Not while the device's data may
   // belong to someone else (the owner question clears the log instead).
   useEffect(() => {
@@ -90,7 +90,7 @@ function TaliApp() {
   const openSetup = useStore((s) => s.openSetup)
   const redoOpen = useStore((s) => s.redoOpen)
   const openRedo = useStore((s) => s.openRedo)
-  // the first-run wizard waits for the first pull (a second device, or someone who used Tali
+  // the first-run wizard waits for the first pull (a second device, or someone who used Tilo
   // before), at most FIRST_PULL_WAIT_MS from when the wait starts (not from launch: the sign-in and
   // consent screens can take longer than that). Once it's on screen, `showing` keeps a run the
   // person has started from being pulled away by a late pull.

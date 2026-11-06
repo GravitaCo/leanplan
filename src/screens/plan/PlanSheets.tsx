@@ -21,7 +21,7 @@ export const MIND_PLAN = {
   /** B9.15, under the fields */
   savedUnder: 'Saved under Mind plans on Plan',
   /** B9.17, the toast after saving */
-  saved: 'Plan saved. Tali will check in on it next week.',
+  saved: 'Plan saved. Tilo will check in on it next week.',
   /** B9.14's empty field, as drawn */
   optional: 'Optional',
 } as const

@@ -301,7 +301,7 @@ export function ProfileScreen() {
       </div>
       <div className="foot">Your weekly training schedule lives on Plan.</div>
 
-      {/* WP9, board B1: pillars and how often Tali asks (flag on only) */}
+      {/* WP9, board B1: pillars and how often Tilo asks (flag on only) */}
       {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} />}
 
       <div className="lbl">Tracking</div>
@@ -384,7 +384,7 @@ export function ProfileScreen() {
       </div>
       {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesFoot />}
       {WELLBEING_ENABLED && <YourTimes />}
-      <div className="foot">iPhone needs iOS 16.4 or later, with Tali added to your Home Screen from Safari.</div>
+      <div className="foot">iPhone needs iOS 16.4 or later, with Tilo added to your Home Screen from Safari.</div>
 
       <div className="lbl">Account and data</div>
       <div className="list icons">
@@ -399,8 +399,8 @@ export function ProfileScreen() {
         {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />}
         <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
-            ? 'Your log is only on this phone until you agree to Tali keeping your health data, so export a copy now and then.'
-            : <>Your log is stored on this device, so Tali works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</>}</div>
+            ? 'Your log is only on this phone until you agree to Tilo keeping your health data, so export a copy now and then.'
+            : <>Your log is stored on this device, so Tilo works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</>}</div>
           <div className="grid2">
             <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
             <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>
@@ -408,7 +408,7 @@ export function ProfileScreen() {
           {resumeCopy && (
             <div style={{ marginTop: 12 }}>
               <div className="sub" style={{ marginBottom: 8 }}>
-                When sync started again, {resumeList} had changed on another device, so Tali kept those. This phone’s earlier version is saved here: download it as a backup you can import.
+                When sync started again, {resumeList} had changed on another device, so Tilo kept those. This phone’s earlier version is saved here: download it as a backup you can import.
               </div>
               <button className="btn gray" onClick={() => exportBackup(withResumeCopy(resumeCopy))}>Download this phone’s earlier version</button>
             </div>
@@ -430,16 +430,16 @@ export function ProfileScreen() {
       </div>
 
       <div className="list icons" style={{ marginTop: 24 }}>
-        <Disclosure icon="info" color={GRAY} soft label="About Tali" open={open === 'about'} onToggle={() => toggle('about')}>
+        <Disclosure icon="info" color={GRAY} soft label="About Tilo" open={open === 'about'} onToggle={() => toggle('about')}>
           <div className="prose sub">
-            <p><b>Tali</b> is a personal health and fitness tracker.</p>
+            <p><b>Tilo</b> is a personal health and fitness tracker.</p>
             <p style={{ margin: 0 }}>General fitness information only, not medical advice. Talk to a GP before starting a new diet or exercise programme.</p>
           </div>
         </Disclosure>
         <Disclosure icon="key" color={GRAY} soft label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? <>You agreed to Tali using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so your log is on your phones only and Tali doesn’t keep your weigh-ins, check-ins or body details. </> : null}
+              {health.granted && healthAt ? <>You agreed to Tilo using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so your log is on your phones only and Tilo doesn’t keep your weigh-ins, check-ins or body details. </> : null}
               {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
             </p>
           </div>
@@ -470,7 +470,7 @@ export function ProfileScreen() {
       </div>
 
       <button className="btn signout" onClick={() => setSignOutOpen(true)}>Sign out</button>
-      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>Tali offers general wellness guidance, not medical advice.</div>
+      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>Tilo offers general wellness guidance, not medical advice.</div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
@@ -519,7 +519,7 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Sign out" onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         {phoneOnly ? (
-          <p>What you log now is only on this phone: nothing syncs to your account until you agree to Tali keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</p>
+          <p>What you log now is only on this phone: nothing syncs to your account until you agree to Tilo keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</p>
         ) : <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>}
         {!phoneOnly && unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
       </div>

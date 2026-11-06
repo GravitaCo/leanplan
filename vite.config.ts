@@ -23,7 +23,7 @@ function lazyAssetList(): Plugin {
   }
 }
 
-// Served from the custom domain https://app.tali.fit/ (GitHub Pages). Base is '/' because the
+// Served from the custom domain https://app.tilo.fit/ (GitHub Pages). Base is '/' because the
 // app now lives at the domain root, not under a /leanplan/ project path. The previous
 // LeanPlan build is parked at /legacy/ and can be removed once the new app is settled.
 export default defineConfig({

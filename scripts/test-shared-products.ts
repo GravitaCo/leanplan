@@ -1,4 +1,4 @@
-/* Tali's shared product list (docs/migrations/2026-10-10-shared-products.sql, boards sp-1 to sp-6):
+/* Tilo's shared product list (docs/migrations/2026-10-10-shared-products.sql, boards sp-1 to sp-6):
    barcode check digits, name filtering, the signed read, share eligibility, tiers and margins, the
    device cache and outbox rules, and consent gating. Run from scripts/test-core.ts (npm test);
    returns the number of failures. */
@@ -44,7 +44,7 @@ const withCheck = (body: string) => {
 }
 
 const ROWS = ['kj', 'kcal', 'fat', 'saturates', 'carbohydrate', 'sugars', 'fibre', 'protein', 'salt', 'alcohol'] as const
-function readOf(cells: Partial<Record<(typeof ROWS)[number], string>>, front = { brand: 'Tali Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' }, basis: LabelRead['basis'] = '100g'): LabelRead {
+function readOf(cells: Partial<Record<(typeof ROWS)[number], string>>, front = { brand: 'Tilo Test', product: 'Crunchy Granola', variety: 'Honey', pack_size: '500g' }, basis: LabelRead['basis'] = '100g'): LabelRead {
   const cell = (t: string) => ({ text: t, confidence: 'high' as const })
   return {
     readable: true, basis, serving_text: '30g', ri_basis: 'none',
@@ -101,9 +101,9 @@ async function signedReads() {
   const verify = (x: ShareToken, at = now) => verifyShare(KEY, x, at)
   const lt = valuesFromRead(readOf({ ...GRANOLA, sugars: '<0.5g' }))
   report('signed reads', [
-    ['a clean read gives the front name and per-100 values', !!v && v.name === 'Tali Test Crunchy Granola Honey' && v.k === 390 && v.f === 7.1 && v.c === 66 && v.salt === 0.05 && v.serving_g === 30 && v.ml === false, v],
+    ['a clean read gives the front name and per-100 values', !!v && v.name === 'Tilo Test Crunchy Granola Honey' && v.k === 390 && v.f === 7.1 && v.c === 66 && v.salt === 0.05 && v.serving_g === 30 && v.ml === false, v],
     ['no front photo (no name): nothing to share', valuesFromRead(readOf(GRANOLA, { brand: '', product: '', variety: '', pack_size: '' })) === null],
-    ['a free-from name on the pack: nothing to share', valuesFromRead(readOf(GRANOLA, { brand: 'Tali', product: 'Gluten Free Granola', variety: '', pack_size: '' })) === null],
+    ['a free-from name on the pack: nothing to share', valuesFromRead(readOf(GRANOLA, { brand: 'Tilo', product: 'Gluten Free Granola', variety: '', pack_size: '' })) === null],
     ['a flagged cell (kJ in the kcal row, a doubled decimal point) or a missing required figure: nothing', valuesFromRead(readOf({ ...GRANOLA, kcal: '1640kJ' })) === null && valuesFromRead(readOf({ ...GRANOLA, fat: '7.1.1g' })) === null && valuesFromRead(readOf({ ...GRANOLA, protein: '' })) === null],
     ['an alcohol row or no per-100 basis: nothing', valuesFromRead(readOf({ ...GRANOLA, alcohol: '4.5%' })) === null && valuesFromRead(readOf(GRANOLA, undefined, 'unknown')) === null],
     ['kJ and kcal that disagree (more than max(2.5%, 1 kcal)): nothing', valuesFromRead(readOf({ ...GRANOLA, kcal: '90kcal' })) === null && valuesFromRead(readOf({ ...GRANOLA, kj: '1700kJ' })) === null],
@@ -151,7 +151,7 @@ function eligibility(t: ShareToken | null) {
     ['Open Food Facts has it, or wasn’t asked (offline): not shared', !shareEligible({ ...draft, offMissing: false }, conf()) && !shareEligible({ ...draft, offMissing: undefined }, conf())],
     ['no signed read (typed in, or no barcode): not shared', !shareEligible({ ...draft, share: undefined }, conf()) && !shareEligible({ ...draft, barcode: '' }, conf())],
     ['a token for another barcode: not shared', !shareEligible({ ...draft, barcode: '036000291452' }, conf())],
-    ['a "(2)" name for a second copy, from the same front name, still counts as unchanged', shareEligible({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: ['Tali Test Crunchy Granola Honey'] }), share: t!, offMissing: true }, { name: 'Tali Test Crunchy Granola Honey (2)', values: draft.values, ml: false })],
+    ['a "(2)" name for a second copy, from the same front name, still counts as unchanged', shareEligible({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: ['Tilo Test Crunchy Granola Honey'] }), share: t!, offMissing: true }, { name: 'Tilo Test Crunchy Granola Honey (2)', values: draft.values, ml: false })],
   ])
 }
 
@@ -167,21 +167,21 @@ async function shareSavedFood(t: ShareToken | null) {
     online: () => online,
   })
   const found = await off('found')
-  const draft = draftForShare({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: [mine.n, 'Tali Test Crunchy Granola Honey'] }), share: t ?? undefined }, mine)
+  const draft = draftForShare({ ...draftFromLabel(readOf(GRANOLA), { barcode: '5000157024671', taken: [mine.n, 'Tilo Test Crunchy Granola Honey'] }), share: t ?? undefined }, mine)
   const def = foodFromConfirmed({ barcode: draft.barcode, name: draft.name, values: draft.values, ml: draft.ml, kind: draft.kind, g: 40, source: 'label' })
   const after = withSharedFigures(mine, def)
   const server = toServerFood({ ...after, shareDone: 'shared' }, 'u') as { meta: Record<string, unknown> }
   report('share this product', [
     ['the row shows on a saved food with a barcode (typed or label source)', row({}) === 'on' && row({ src: 'label' }) === 'on'],
     ['not on a built-in food, or one with no barcode', row({ id: undefined }) === 'hidden' && row({ barcode: undefined }) === 'hidden'],
-    ['not on a food from Open Food Facts, or from Tali’s shared list', row({ src: 'off:5000157024671' }) === 'hidden' && row({ src: 'shared-counted:5000157024671' }) === 'hidden'],
+    ['not on a food from Open Food Facts, or from Tilo’s shared list', row({ src: 'off:5000157024671' }) === 'hidden' && row({ src: 'shared-counted:5000157024671' }) === 'hidden'],
     ['not once shared, or once Open Food Facts turned out to have it', row({ shareDone: 'shared' }) === 'hidden' && row({ shareDone: 'in-off' }) === 'hidden'],
     ['not when shared products or label scanning are off', row({}, { enabled: false, online: true }) === 'hidden'],
     ['offline it stays in view, off (sp-7b)', row({}, { enabled: true, online: false }) === 'offline' && row({ src: 'off:1' }, { enabled: true, online: false }) === 'hidden'],
     ['Open Food Facts has it: sp-8a, asked with the scanner’s lookup and the code as saved', found === 'in-off' && asked[0]?.code === '5000157024671'],
     ['not found, or an error while online: on to the label camera', (await off('not-found')) === 'label' && (await off('error', true)) === 'label'],
     ['offline, or an error offline: it wasn’t asked, nothing goes on', (await off('offline')) === 'offline' && (await off('error', false)) === 'offline' && afterOffLookup('offline', true) === 'offline'],
-    ['the read for sharing is named as read, with offMissing set, and may be shared unchanged', draft.name === 'Tali Test Crunchy Granola Honey' && draft.offMissing === true && !!t && shareEligible(draft, { name: draft.name, values: draft.values, ml: draft.ml })],
+    ['the read for sharing is named as read, with offMissing set, and may be shared unchanged', draft.name === 'Tilo Test Crunchy Granola Honey' && draft.offMissing === true && !!t && shareEligible(draft, { name: draft.name, values: draft.values, ml: draft.ml })],
     ['it keeps the saved food’s kind, and its serving where the label prints none', draft.kind === 'eat' && (draft.serving.eat ?? 0) > 0],
     ['shared, the saved food takes the read’s figures and keeps its name, id, barcode and category', after.n === 'Oat & raisin flapjack' && after.id === mine.id && after.barcode === mine.barcode && after.cat === 'snacks'
       && after.k === draft.values.k && after.p === draft.values.p && after.c === draft.values.c && after.f === draft.values.f && after.src === 'label' && after.shareDone === 'shared'],
@@ -351,17 +351,17 @@ function tiersAndMargins() {
   const d = draftFromShared(cleanLookupRow(row)!, '5012345678900', [])
   const saved = foodFromConfirmed({ barcode: d.barcode, name: d.name, values: d.values, ml: d.ml, kind: 'eat', g: 65, source: 'label', sharedSrc: `${TIER_SOURCE[d.shared!.tier]}:${d.barcode}` })
   report('tiers and margins', [
-    ['tiers: verified only by Tali’s audit; counted from COUNTED_READS reads; else unchecked', tierOf(p(1)) === 'unchecked' && tierOf(p(COUNTED_READS - 1)) === 'unchecked' && tierOf(p(COUNTED_READS)) === 'counted' && tierOf(p(50, 'verified', '2026-10')) === 'verified' && tierOf(p(50, 'verified')) === 'counted' && tierOf(p(1, 'disputed')) === 'unchecked'],
+    ['tiers: verified only by Tilo’s audit; counted from COUNTED_READS reads; else unchecked', tierOf(p(1)) === 'unchecked' && tierOf(p(COUNTED_READS - 1)) === 'unchecked' && tierOf(p(COUNTED_READS)) === 'counted' && tierOf(p(50, 'verified', '2026-10')) === 'verified' && tierOf(p(50, 'verified')) === 'counted' && tierOf(p(1, 'disputed')) === 'unchecked'],
     ['source keys hold each tier’s extra margin: +0.09 (per-100), +0.04, +0', SOURCES['shared-unchecked'].err === 0.09 && SOURCES['shared-unchecked'].perHundred === true && SOURCES['shared-counted'].err === 0.04 && SOURCES['shared-verified'].err === 0],
     ['One serving margins add (0.12 + 0.03 + extra): 0.24, 0.19, 0.15', tierErr('unchecked') === 0.24 && tierErr('counted') === 0.19 && tierErr('verified') === 0.15],
     ['sp-2/3/3b One serving: 287 kcal ± 69, ± 55, ± 43', Math.round(287 * tierErr('unchecked')) === 69 && Math.round(287 * tierErr('counted')) === 55 && Math.round(287 * tierErr('verified')) === 43],
     ['margin lines', marginNote('unchecked') === '±\u00a024% while a shared product is unchecked, against ±\u00a015% for a food you add yourself.' && marginNote('counted') === '±\u00a019% once it’s been read from the pack 3 times, against ±\u00a015% for a food you add yourself.' && marginNote('verified') === '±\u00a015%, the same as a food you add yourself.'],
     ['pct keeps "±" and the figure together (a non-breaking space)', pct(0.15) === '±\u00a015%' && !/± /.test(marginNote('unchecked'))],
-    ['source cards as on the boards', sourceCard({ tier: 'unchecked', reads: 1 }).title === 'Added by a Tali user, not yet checked. Check against your pack.' && sourceCard({ tier: 'counted', reads: 3 }).title === 'Read from the pack 3 times' && sourceCard({ tier: 'counted', reads: 3 }).sub === 'Check against your pack.' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).title === 'Checked by Tali, Oct 2026' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).sub === 'Only Tali’s own checks set this.'],
+    ['source cards as on the boards', sourceCard({ tier: 'unchecked', reads: 1 }).title === 'Added by a Tilo user, not yet checked. Check against your pack.' && sourceCard({ tier: 'counted', reads: 3 }).title === 'Read from the pack 3 times' && sourceCard({ tier: 'counted', reads: 3 }).sub === 'Check against your pack.' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).title === 'Checked by Tilo, Oct 2026' && sourceCard({ tier: 'verified', reads: 9, audited: '2026-10' }).sub === 'Only Tilo’s own checks set this.'],
     ['margins add, by capture: weighed 0.20 / 0.15 / 0.11, serving 0.24 / 0.19 / 0.15, hand 0.32 / 0.27 / 0.23', (['unchecked', 'counted', 'verified'] as const).map((t) => [entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'g'), entryErr(TIER_SOURCE[t] + ':5012345678900'), entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'hand')].join('/')).join(' ') === '0.2/0.24/0.32 0.15/0.19/0.27 0.11/0.15/0.23',
       (['unchecked', 'counted', 'verified'] as const).map((t) => [entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'g'), entryErr(TIER_SOURCE[t] + ':5012345678900'), entryErr(TIER_SOURCE[t] + ':5012345678900', true, 'hand')].join('/')).join(' ')],
     ['a typed label is unchanged (serving 0.15, weighed 0.11); a shared food adds the label margin even as a built-in path', entryErr('label') === 0.15 && entryErr('label', true, 'g') === 0.11 && entryErr('shared-counted:1', false) === 0.19],
-    ['a saved shared food cites the list', sourceErr(food('shared-unchecked:1')) === 0.09 && sourceOf(food('shared-verified:5012345678900'))?.text === 'Tali’s shared list: checked by Tali · 5012345678900'],
+    ['a saved shared food cites the list', sourceErr(food('shared-unchecked:1')) === 0.09 && sourceOf(food('shared-verified:5012345678900'))?.text === 'Tilo’s shared list: checked by Tilo · 5012345678900'],
     ['found product → confirm draft: values, serving, tier, never in OFF', d.source === 'shared' && d.values.k === 442 && d.serving.eat === 65 && d.shared?.tier === 'counted' && d.offMissing === true],
     ['with a pack serving it opens as "Eat as it is"; without one, "For cooking"', d.kind === 'eat' && draftFromShared(cleanLookupRow({ ...row, serving_g: null })!, '5012345678900', []).kind === 'cook'],
     ['kJ is worked out from kcal for display (kcal × 4.184, rounded)', kjFromKcal(442) === 1849 && kjFromKcal(0) === 0 && kjFromKcal(390) === 1632 && d.values.kj === undefined],

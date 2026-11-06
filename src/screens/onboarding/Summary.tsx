@@ -38,7 +38,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   d: WizardDraft; onEdit: () => void; onPersonalise: () => void; onAddWeight: () => void; onAddHeight: () => void; onAddAge: () => void
   /** "See your health check answers" (ob4-8): before Start they're the wizard's own question */
   onAnswers: () => void
-  /** "See other plans" (ob3-6): a Tali plan instead of the suggested week, or undefined to switch back */
+  /** "See other plans" (ob3-6): a Tilo plan instead of the suggested week, or undefined to switch back */
   onChoosePlan: (templateId: string | undefined) => void
   onClose?: () => void
 }) {
@@ -64,7 +64,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   const plan = r.plan
   const rows = whyRows(m, d)
   const first = d.mode === 'first'
-  // a Tali plan chosen instead of the suggested week (the answers are saved either way)
+  // a Tilo plan chosen instead of the suggested week (the answers are saved either way)
   const chosen = templateById(d.planChoice)
 
   const start = (rebuild = true, then?: () => void) => {
@@ -133,7 +133,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
           <div className="w">{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</div>
         </section>
 
-        {/* the reasons are the generated week's: a chosen Tali plan has its own (Plan tab) */}
+        {/* the reasons are the generated week's: a chosen Tilo plan has its own (Plan tab) */}
         {!chosen && chips.length > 0 && (
           <section className="sm-reasons">
             <div className="hd"><span className="t">{SUMMARY.whyH}</span><button className="linkbtn" onClick={() => setAll(true)}>{SUMMARY.allReasons}</button></div>
@@ -318,7 +318,7 @@ function MaintSheet({ onClose, onAnswers }: { onClose: () => void; onAnswers: ()
   )
 }
 
-/** ob3-6: the suggested week at the top, then Tali's ready-made plans with how each fits. */
+/** ob3-6: the suggested week at the top, then Tilo's ready-made plans with how each fits. */
 function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: SummaryModel; chosen?: PlanTemplate; onPick: (id: string | undefined) => void; onClose: () => void }) {
   const plan = m.result.plan
   const n = plan.sessions.filter((s) => !s.optional).length

@@ -391,7 +391,7 @@ export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
 
 /**
  * What "Same as yesterday" copies into `meal` on `day`: yesterday's entries for that meal,
- * re-logged at today's data (relog), leaving out foods no longer in Tali and their cooking fat.
+ * re-logged at today's data (relog), leaving out foods no longer in Tilo and their cooking fat.
  * The store's repeatYesterday and the Summary row both use this, so the row's kcal is exactly
  * what the tap adds. `gone` counts the foods left out.
  */

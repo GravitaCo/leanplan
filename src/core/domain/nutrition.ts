@@ -159,7 +159,7 @@ export function mifflinBmr(kg: number, cm: number, age: number, sex: SexAnswer):
 export const SEX_FLOOR: Record<SexAnswer, number> = { male: 1500, female: 1200, unspecified: 1200 }
 export const ABSOLUTE_FLOOR = 800
 
-/** The lowest target Tali suggests: max(BMR, the sex floor), never below 800. Shared by both engines. */
+/** The lowest target Tilo suggests: max(BMR, the sex floor), never below 800. Shared by both engines. */
 export function calorieFloor(bmr: number, sex: SexAnswer): number {
   return Math.max(ABSOLUTE_FLOOR, bmr, SEX_FLOOR[sex])
 }
@@ -191,7 +191,7 @@ export interface EnergyTarget {
  * Benn's approved line under the number when `heldAtMaintenance` (not shown when the floor note
  * is). It never says why: age, BMI and screener answers are never shown back.
  */
-export const HELD_AT_MAINTENANCE_NOTE = 'Tali keeps this at maintenance for now, to keep things safe.'
+export const HELD_AT_MAINTENANCE_NOTE = 'Tilo keeps this at maintenance for now, to keep things safe.'
 /** Under Profile's protein figure after a 'flagged' medical answer (Protein split 3, ml-e5e) */
 export const PROTEIN_EVERYDAY_NOTE = 'The everyday amount for adults.'
 

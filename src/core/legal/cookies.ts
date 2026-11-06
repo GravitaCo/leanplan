@@ -18,11 +18,11 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
 export function cookiePolicy({ onboarding = false, mind = false, products = false }: { onboarding?: boolean; mind?: boolean; products?: boolean } = {}): LegalDoc {
   return {
     title: 'Cookie policy',
-    updated: products ? '2026-10-10' : mind ? '2026-10-09' : '2026-09-28',
+    updated: '2026-11-05',
     intro:
-      `This explains the cookies and other storage the Tali app (app.tali.fit) and website (www.tali.fit) use on your device. ` +
+      `This explains the cookies and other storage the Tilo app (app.tilo.fit) and website (www.tilo.fit) use on your device. ` +
       `The short version: we only use what's needed to make them work. No advertising cookies, no analytics, no tracking. ` +
-      `Tali is run by ${fact('controller', 'legal name')}.`,
+      `Tilo is run by ${fact('controller', 'legal name')}. Tilo was called Tali until November 2026, at app.tali.fit and www.tali.fit.`,
     sections: [
       {
         h: 'Why there is no cookie banner',
@@ -39,24 +39,24 @@ export function cookiePolicy({ onboarding = false, mind = false, products = fals
         ul: [
           `leanplan.v1: your log, profile, settings and consent choices. Kept until you remove this device's log when signing out, delete your account, or clear your browser data.` +
             (mind
-              ? ` It also holds things that are never synced to your account: your Unload notes and the day Tali last showed you where to find support after a run of low moods (both also deleted if you withdraw consent for health data), a record of when reminders arrived and whether you opened them, and whether you left "More about sleep" open in the check-in.`
+              ? ` It also holds things that are never synced to your account: your Unload notes and the day Tilo last showed you where to find support after a run of low moods (both also deleted if you withdraw consent for health data), a record of when reminders arrived and whether you opened them, and whether you left "More about sleep" open in the check-in.`
               : ''),
           ...(mind
-            ? [`tali-notify (the browser's IndexedDB storage, used by the app's background worker): when a check-in, wind-down or plan check-in reminder arrived, and whether you opened it or swiped it away, so Tali can send one less often if you don't open them. No message text and nothing you logged. The app moves it into leanplan.v1 each time it opens. Never synced. Deleted when you remove this device's log, delete your account or clear your browser data, or when someone else signs in on this device.`]
+            ? [`tali-notify (the browser's IndexedDB storage, used by the app's background worker): when a check-in, wind-down or plan check-in reminder arrived, and whether you opened it or swiped it away, so Tilo can send one less often if you don't open them. No message text and nothing you logged. The app moves it into leanplan.v1 each time it opens. Never synced. Deleted when you remove this device's log, delete your account or clear your browser data, or when someone else signs in on this device.`]
             : []),
           `tali.mode: which kind of account this device's log belongs to. Kept until you sign out.`,
           `tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.`,
           `tali.sound: whether the workout player plays sounds. Kept until you change it or clear your data.`,
           ...(onboarding
             ? [
-                `tali.onboarding: your answers so far while you set Tali up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.`,
+                `tali.onboarding: your answers so far while you set Tilo up, so you can pick up where you left off. Removed when you finish setup, withdraw consent for health data, remove this device's log or delete your account. Never leaves your device.`,
                 `tali.setupCardHidden: that you hid the "Finish your setup" card on Today. Kept until you remove this device's log, delete your account or clear your browser data.`,
-                `tali.pendingDelete: if you tell Tali during setup that you're under ${MIN_AGE} and the account can't be deleted straight away: which account to delete, and how many tries Tali has made. Tali tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tali clears this device's data, until Tali sees that account has been deleted, or, once it's 30 days old, the next time Tali opens; you can also remove it by clearing your browser data.`,
+                `tali.pendingDelete: if you tell Tilo during setup that you're under ${MIN_AGE} and the account can't be deleted straight away: which account to delete, and how many tries Tilo has made. Tilo tries again when you connect, or, if it has asked you to, when you sign in again. Kept on this device, even when Tilo clears this device's data, until Tilo sees that account has been deleted, or, once it's 30 days old, the next time Tilo opens; you can also remove it by clearing your browser data.`,
               ]
             : []),
           ...(products
             ? [
-                `tali.products: up to 200 products you've looked up on Tali's shared product list, so they still open with no connection, with a note of which account looked them up. That note never leaves your device. Kept until someone else signs in, you remove this device's log, delete your account or clear your browser data.`,
+                `tali.products: up to 200 products you've looked up on Tilo's shared product list, so they still open with no connection, with a note of which account looked them up. That note never leaves your device. Kept until someone else signs in, you remove this device's log, delete your account or clear your browser data.`,
                 `tali.productOutbox: new products you agreed to share that haven't been sent yet, with a note of which account added them. That note never leaves your device. Each is removed once it's sent, or if you turn sharing off, withdraw consent for health data, someone else signs in, you remove this device's log or delete your account.`,
               ]
             : []),
@@ -83,7 +83,7 @@ export function cookiePolicy({ onboarding = false, mind = false, products = fals
       {
         h: 'Your choices',
         p: [
-          `You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. If you haven't agreed to Tali keeping your health data, or have withdrawn it, your log is kept only on your phones, so clearing this device's data can delete it for good. ` +
+          `You can block or delete cookies and site data in your browser settings. Blocking the app's storage stops it working, and clearing it deletes any log that hasn't synced to an account. If you haven't agreed to Tilo keeping your health data, or have withdrawn it, your log is kept only on your phones, so clearing this device's data can delete it for good. ` +
             `In the app, Sign out, then "Sign out and remove this device's log" deletes your log from this device, and Profile, then Privacy, then Delete account deletes everything.`,
           `Questions: ${fact('contactEmail', 'contact email')}. More about how we handle personal data: ${LEGAL_URLS.privacy}.`,
         ],

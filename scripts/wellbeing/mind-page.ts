@@ -86,7 +86,7 @@ export function mindPageSuite(): number {
   const issues = strings.map((s) => [s, mindCopyIssues(s)] as const).filter(([, i]) => i.length)
   ok('every Mind page and Support string passes mindCopyIssues', issues.length === 0, issues)
   ok('no em dashes', strings.every((s) => !s.includes('—')))
-  ok('B6.8 foot verbatim', SUPPORT_MIND.foot === 'Opening this page is private. Tali doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.')
+  ok('B6.8 foot verbatim', SUPPORT_MIND.foot === 'Opening this page is private. Tilo doesn’t record it or tell anyone. Calls to these numbers are free. Texting Shout is free from the main UK networks.')
   ok('S.1 and S.2 verbatim', SHARED.support === 'Need support now?' && SHARED.wellness === 'For everyday wellbeing. Not a treatment for any condition.')
 
   /* ---------- icons ---------- */

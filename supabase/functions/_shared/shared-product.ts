@@ -1,5 +1,5 @@
 /**
- * Tali's shared product list: the rules every side applies the same way. Used by the app
+ * Tilo's shared product list: the rules every side applies the same way. Used by the app
  * (src/core/domain/sharedProduct.ts, src/data/sharedProducts.ts), the `ai-read-label` Edge
  * Function (which signs what it read), the `submit-product` Edge Function (which checks a
  * submission before the database sees it) and the tests. The database repeats the checks in SQL
