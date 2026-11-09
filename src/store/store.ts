@@ -53,6 +53,7 @@ import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAcc
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
+import { onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
@@ -1747,7 +1748,7 @@ export const useStore = create<StoreState>()(
           }
           get().runSync()
         })
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) { get().syncPlanMirror(); get().runSync() } })
+        onForeground(() => { get().syncPlanMirror(); get().runSync() })
         get().syncPlanMirror()
       },
 

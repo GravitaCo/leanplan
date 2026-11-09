@@ -1,0 +1,32 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "moduleSuffixes": [
+      ".native",
+      ""
+    ],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": [
+        "../../src/*"
+      ],
+      "react-native": [
+        "./node_modules/react-native/types_generated/index.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "app",
+    "lib",
+    "modules",
+    "index.ts",
+    "env.d.ts"
+  ]
+}

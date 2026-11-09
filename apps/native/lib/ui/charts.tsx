@@ -1,0 +1,144 @@
+/**
+ * Native ports of src/ui/charts.tsx (same maths, same sizes; N1 owns the full set). The KcalBar
+ * fill moves over 0.3 s like the web's `transition: width 0.3s`, on the UI thread (Reanimated), and
+ * holds still with the system's Reduce Motion on: the spike's micro animation.
+ */
+import { useEffect, useState } from 'react'
+import { Text, View, type LayoutChangeEvent } from 'react-native'
+import Svg, { Circle, G, Line, Rect, Text as SvgText } from 'react-native-svg'
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, Easing } from 'react-native-reanimated'
+import type { DayStat } from '@/core/domain/insights'
+import { DOW } from '@/core/domain/date'
+import { font, num, useTokens, GEIST } from '../theme'
+
+/** Concentric rings, outermost first. Progress caps at a full ring: never an "over" state. */
+export function Rings({ items, size, stroke }: { items: { pct: number; color: string }[]; size: number; stroke?: number }) {
+  const sw = stroke ?? Math.round(size * 0.105)
+  const c = size / 2
+  const gap = Math.max(1.5, sw * 0.2)
+  let r = c - sw / 2
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <G rotation={-90} origin={`${c}, ${c}`}>
+        {items.map((it, i) => {
+          const rr = r
+          r -= sw + gap
+          const C = 2 * Math.PI * rr
+          const p = Math.max(0, Math.min(1, it.pct || 0))
+          return (
+            <G key={i}>
+              <Circle cx={c} cy={c} r={rr} fill="none" stroke={it.color} strokeOpacity={0.22} strokeWidth={sw} />
+              {p > 0.005 && (
+                <Circle cx={c} cy={c} r={rr} fill="none" stroke={it.color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={`${C} ${C}`} strokeDashoffset={C * (1 - p)} />
+              )}
+            </G>
+          )
+        })}
+      </G>
+    </Svg>
+  )
+}
+
+/** Thin progress bar (0 to 1), capped at full. */
+export function Meter({ pct }: { pct: number }) {
+  const t = useTokens()
+  return (
+    <View style={{ height: 4, borderRadius: 2, backgroundColor: t.fill, overflow: 'hidden' }}>
+      <View style={{ width: `${Math.max(0, Math.min(100, (pct || 0) * 100))}%`, height: 4, backgroundColor: t.food, borderRadius: 2 }} />
+    </View>
+  )
+}
+
+/** The day's energy against its range: fill, with the range as a soft band behind it. */
+export function KcalBar({ k, lo, hi }: { k: number; lo: number; hi: number }) {
+  const t = useTokens()
+  const reduce = useReducedMotion()
+  const max = hi * 1.1 || 1
+  const P = (v: number) => Math.max(0, Math.min(100, (v / max) * 100))
+  const [w, setW] = useState(0)
+  const fill = useSharedValue(0)
+  useEffect(() => {
+    const to = (P(k) / 100) * w
+    fill.value = reduce || !w ? to : withTiming(to, { duration: 300, easing: Easing.inOut(Easing.ease) })
+  }, [k, w, reduce]) // eslint-disable-line react-hooks/exhaustive-deps
+  const style = useAnimatedStyle(() => ({ width: fill.value }))
+  return (
+    <View onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)} style={{ position: 'relative', height: 10, borderRadius: 5, backgroundColor: t.fill, overflow: 'hidden' }}>
+      <View style={{ position: 'absolute', top: 0, bottom: 0, left: `${P(lo)}%`, width: `${P(hi) - P(lo)}%`, backgroundColor: t.band }} />
+      <Animated.View style={[{ position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 5, backgroundColor: t.food }, style]} />
+    </View>
+  )
+}
+
+/** Protein, carbs and fat against their targets (Studio: value, bar, "of N g"). */
+export function MacroTrio({ p, c, f, tp, tc, tf }: { p: number; c: number; f: number; tp: number; tc: number; tf: number }) {
+  const t = useTokens()
+  const col = (label: string, v: number, goal: number) => (
+    <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+      <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>{label}</Text>
+      <Text style={[font(600), num, { fontSize: 20, lineHeight: 22, color: t.label }]}>
+        {Math.round(v)}<Text style={[font(500), { fontSize: 13, color: t.label2 }]}> g</Text>
+      </Text>
+      <Meter pct={goal ? v / goal : 0} />
+      <Text style={[font(400), num, { fontSize: 12, color: t.label2 }]}>of {goal} g</Text>
+    </View>
+  )
+  return (
+    <View style={{ flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 14 }}>
+      {col('Protein', p, tp)}{col('Carbs', c, tc)}{col('Fat', f, tf)}
+    </View>
+  )
+}
+
+/** Week bars on 1 px rows at round kcal values (the web's WeekBars, same geometry). */
+export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[]; lo: number; hi: number; cur: string; numbers?: boolean }) {
+  const t = useTokens()
+  const W = 320, H = 138, base = H - 20, top0 = 18, bw = 24
+  const PW = numbers ? W - 34 : W
+  const max = Math.max(...rows.map((x) => Math.max(x.t.k, x.r.hi)), hi) * 1.04 || 1
+  const y = (v: number) => base - (v / max) * (base - top0)
+  const step = PW / 7
+  const gstep = Math.max(1, Math.ceil(max / 3000)) * 1000
+  const grid = Array.from({ length: Math.floor(max / gstep) + 1 }, (_, i) => i * gstep)
+  const gy = (v: number) => (v ? Math.round(y(v)) : base) + 0.5
+  const label = `Energy this week${numbers ? `, range ${Math.round(lo)} to ${Math.round(hi)} kcal${rows.some((x) => x.r.hi !== hi) ? ', higher on workout days' : ''}` : ''}: ` +
+    (rows.filter((x) => x.logged).map((x) => `${new Date(x.d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })} ${numbers ? Math.round(x.t.k) + ' kcal' : 'logged'}`).join(', ') || 'nothing logged yet')
+  const lift = (ly: number) => {
+    for (const v of grid) {
+      const g = gy(v)
+      if (v && ly - 9 < g + 2.5 && ly + 1 > g - 2.5) return g - 3.5
+    }
+    return ly
+  }
+  const txt = (w: 500 | 600) => ({ fontFamily: GEIST[w], fontSize: 11 })
+  return (
+    <View accessible accessibilityRole="image" accessibilityLabel={label} style={{ width: '100%', aspectRatio: W / H }}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
+        {grid.map((v) => (
+          <G key={'g' + v}>
+            <Line x1={0} x2={PW} y1={gy(v)} y2={gy(v)} stroke={t.grid} strokeWidth={1} />
+            {numbers && <SvgText x={W} y={gy(v) + 3.5} textAnchor="end" fill={t.label2} {...txt(500)} fontSize={10}>{v.toLocaleString('en-GB')}</SvgText>}
+          </G>
+        ))}
+        {rows.map((x, i) => {
+          const cx = step * i + step / 2
+          const top = y(x.t.k)
+          const on = x.d === cur
+          return (
+            <G key={x.d}>
+              {x.logged ? (
+                <>
+                  <Rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={on ? t.energyInk : t.energy} />
+                  {numbers && <SvgText x={cx} y={lift(top - 5)} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(500)}>{Math.round(x.t.k).toLocaleString('en-GB')}</SvgText>}
+                </>
+              ) : !x.future ? (
+                <Rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill={t.fill3} />
+              ) : null}
+              <SvgText x={cx} y={H - 4} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(600)}>{DOW[i]}</SvgText>
+            </G>
+          )
+        })}
+      </Svg>
+    </View>
+  )
+}
