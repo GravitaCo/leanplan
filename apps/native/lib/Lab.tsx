@@ -37,8 +37,9 @@ export function Lab() {
     const out: string[] = []
     const raw = localStorage.getItem('leanplan.v1') || ''
     out.push(`leanplan.v1: ${(raw.length / 1024).toFixed(1)} KB, ${days} days`)
-    let a = performance.now(); const s = loadState(); out.push(`load (read + parse + migrate): ${ms(a)}`)
-    a = performance.now(); saveState(s); out.push(`save (stringify + write): ${ms(a)}`)
+    let a = performance.now(); loadState(); out.push(`load (read + parse + migrate): ${ms(a)}`)
+    // saves the store's current state (what its own save would write), never an older copy from disk
+    a = performance.now(); saveState(useStore.getState().data); out.push(`save (stringify + write): ${ms(a)}`)
     a = performance.now(); for (let i = 0; i < 20; i++) localStorage.getItem('leanplan.v1'); out.push(`20 raw reads: ${ms(a)}`)
     setStore(out)
   }
@@ -93,7 +94,7 @@ export function Lab() {
         <H>Sleep and walking (Apple Health)</H>
         {night === null && <L>No sleep recorded last night.</L>}
         {night && <>
-          <L>Your watch: {night.words}, up around {night.wakeAt}.</L>
+          <L>Apple Health: {night.words}, up around {night.wakeAt}.</L>
           <S>Your own answer is what Tilo goes by.</S>
         </>}
         {walk && <>

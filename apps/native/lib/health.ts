@@ -55,7 +55,9 @@ export async function lastNight(now = new Date()): Promise<NightRead | null> {
   const rows = await queryCategorySamples(SLEEP, { limit: 0, ascending: true, filter: { date: { startDate: start, endDate: end } } })
   const spans = rows
     .filter((r) => ASLEEP.has(Number(r.value)))
-    .map((r) => [new Date(r.startDate).getTime(), new Date(r.endDate).getTime()] as [number, number])
+    // clipped to the window, so a stretch that began before 18:00 (a long nap) doesn't count in full
+    .map((r) => [Math.max(new Date(r.startDate).getTime(), start.getTime()), Math.min(new Date(r.endDate).getTime(), end.getTime())] as [number, number])
+    .filter(([a, b]) => b > a)
     .sort((a, b) => a[0] - b[0])
   if (!spans.length) return null
   const merged: [number, number][] = []

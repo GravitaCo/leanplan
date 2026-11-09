@@ -13,7 +13,6 @@
     },
     "spike": {
       "distribution": "internal",
-      "channel": "spike",
       "ios": {
         "resourceClass": "m-medium"
       }
