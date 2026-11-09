@@ -101,7 +101,7 @@ Built on `claude/native-build`, in `apps/native` (how it is wired: `apps/native/
 | 5. HealthKit read | **Built, not yet run on a phone.** Last night's sleep as a band with a wake time ("Your watch: about 6 to 7 hours, up around 7:10."), today's steps and the week's walks, in the lab screen only; nothing saved or synced, so nothing new is collected. |
 | 6. Micro animation and haptic | **Built.** The Food bar's fill moves over 0.3 s like the web's transition, on the UI thread, still with Reduce Motion. The haptic is only in the lab screen until a board approves it (brief §4). |
 | 7. On-device AI | **Built, not yet run.** A small Swift module calling Apple's Foundation Models, tried on ai-platform-plan task A (parse a typed meal into foods), on the phone only. Needs iOS 26 on an Apple Intelligence iPhone (iPhone 15 Pro or later [I]); the lab says why when it can't run. |
-| 8. EAS build to Benn's phone | **Waiting for `EXPO_TOKEN`** (and the bundle identifier approval, the iPhone model, Developer Mode). `eas.json` has `development` and `spike` profiles, both internal distribution. |
+| 8. EAS build to Benn's phone | **Waiting for Apple** to approve Gravita's Developer Program enrolment (Benn enrolled 9 Nov). Bundle identifier **`fit.tilo.app` approved by Benn (9 Nov)**; test iPhone is an iPhone 18 Pro Max on iOS 27.0.1; Benn has created the Expo token (it reaches a new cloud session, not the one it was added in). Developer Mode and phone registration come with the first build. `eas.json` has `development` and `spike` profiles, both internal distribution. |
 
 Not in the spike, by design: the owner question, the 18+ stop and the consent screen (N2). The
 native gate stops at a plain message for each and never goes past them, and the store's own rules
