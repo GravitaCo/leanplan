@@ -206,22 +206,26 @@ the link domain set up for both (the association files on app.tilo.fit) and land
 
 ## 9. Decisions for Benn
 
-1. **Store name** (Benn, 10 Oct: the app stays Tali). Proposed listing: **Tali Wellbeing**, subtitle
-   "Food, movement and mind" (alternatives: "Tali: Food, Move, Mind"; "Tali Daily"). Reserve it in
-   App Store Connect as soon as the account exists; App Store names must be unique. Trademark check
-   before submission. Benn to choose.
+1. **Store name: "Tilo: Food, Move, Mind" (Benn, 9 Nov 2026**, after the rename to Tilo). Reserve
+   it in App Store Connect when the app record is created; App Store names must be unique. Trademark
+   check before submission.
 2. **Developer accounts** under Gravita Creative Ltd: **yes (Benn, 10 Oct)**. Apple Developer Program
    (about $99 a year) and Google Play (about $25 once) [I: check current prices].
-3. **Test devices:** an Apple Watch to start (Benn, 10 Oct); a low-end Android phone and a Fitbit
-   later, for phases 1 and 4.
+3. **Test devices:** Benn's iPhone and Apple Watch, and a MacBook Pro with Xcode (Benn, 9 Nov). Which
+   iPhone model is still to confirm (on-device AI needs iPhone 15 Pro or later [I]). A low-end
+   Android phone and a Fitbit later, for phases 1 and 4. **Testers for now: Benn and Sara.**
 4. **First HealthKit data: sleep and walking (Benn, 10 Oct).** Walking means steps and walking
    workouts; `nutrition-accuracy` reviews how they may affect anything numeric, `mental-performance`
    how sleep sits beside the check-in. The other rows in section 3.1 wait.
 5. **Watch calories:** not now (`nutrition-accuracy`, 10 Oct, section 3.4); only after a validation
    against weigh-ins.
-6. **The web app:** kept running alongside native for good, or retired once native is in both stores.
-7. **Budget:** EAS build minutes, a device cloud (for example BrowserStack) for phones we don't own,
-   and AI costs per the ai-platform-plan (`cfo` to cost).
+6. **The web app (Benn, 9 Nov):** runs alongside native until native is live on iPhone and Android,
+   then it is retired. Until then every web change is mirrored in native.
+7. **Budget (Benn, 9 Nov):** the build work comes from Gravita's existing Claude plan; the other
+   costs are as originally planned (developer accounts, EAS build minutes, a device cloud for
+   phones we don't own, AI costs per the ai-platform-plan; `cfo` to cost).
+8. **Apple Developer account:** Benn is signed in (9 Nov). Next steps are in `native-build-plan.md`
+   §7.1.
 
 ## 10. Why the database and hosting stay (decided 10 Oct)
 

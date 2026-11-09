@@ -348,6 +348,48 @@ Also needed before the related streams (not before the spike): the Bunny referre
 (`security-data`, N7); recipe-sharing decisions in its §10 and §11 (N13); boards for every
 improvement candidate in brief §4.
 
+### 7.1 Benn's answers (9 Nov 2026) and the account set-up
+
+Answers: store name **"Tilo: Food, Move, Mind"**; test devices Benn's iPhone and Apple Watch, with a
+MacBook Pro and Xcode; the web app runs alongside native until native is live on iPhone and
+Android, then it is retired; the build work comes from Gravita's existing Claude plan and other
+costs are as originally planned; testers are Benn and Sara. The build moves to a fresh lead-engineer
+session.
+
+Benn is signed in to the Apple Developer account. Steps for Benn (items marked [I] to confirm on
+the screen):
+
+1. **Membership.** developer.apple.com › Account › Membership details should show the Apple
+   Developer Program, entity type **Organization**, name **Gravita Creative Ltd**, active. If it
+   shows an individual or no programme, enrol as an organisation: it needs Gravita's D-U-N-S number
+   (Apple offers a free look-up and request; it can take some days) and the yearly fee [I].
+2. **Agreements.** App Store Connect › Business: accept any pending agreements. A free app needs no
+   paid-apps agreement [I].
+3. **Sara.** App Store Connect › Users and Access: invite sara@gravita.co (role Developer or App
+   Manager), so she can test.
+4. **An API key for the builds.** App Store Connect › Users and Access › Integrations › App Store
+   Connect API: create a team key (role App Manager [I]), download the .p8 file (Apple shows it
+   once) and note the Key ID and Issuer ID. Never paste it into a chat. It goes into Expo (step 5),
+   so builds don't need Benn's phone for two-factor codes each time.
+5. **Expo.** Create an Expo account and an organisation for Gravita at expo.dev; add the API key from
+   step 4 to its iOS credentials; create an access token for builds. The token goes into the Claude
+   cloud environment's settings (the environment menu in the session title bar, then Edit), under
+   Network secrets where offered, otherwise as the environment variable **`EXPO_TOKEN`**. The lead
+   engineer confirms the environment can reach expo.dev.
+6. **The Mac.** Open Xcode once, accept the licence, and install the iOS platform and Simulator
+   (Xcode › Settings › Components). With cloud builds (EAS) the Mac is for the Simulator and for
+   watching the app on a cable when debugging, not for building.
+7. **The iPhone (Benn's and Sara's).** Settings › Privacy & Security › Developer Mode on (needed for
+   internal test builds). Each phone is registered once through a link the lead engineer sends
+   (`eas device:create`). Benn to say which iPhone model it is: on-device AI needs iPhone 15 Pro or
+   later [I].
+8. **Bundle identifier.** The lead engineer proposes one (for example `fit.tilo.app`); Benn approves.
+   It can't be changed after the first store submission. Then the app record is created in App
+   Store Connect with the name "Tilo: Food, Move, Mind", which reserves it.
+
+Google Play waits for the Android phase: a Play Console organisation account for Gravita (also
+needs the D-U-N-S number).
+
 ## 8. Risks
 
 - **Parity drift while the web keeps moving.** Every web change during the build becomes native
