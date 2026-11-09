@@ -14,9 +14,10 @@ export function useGate(fontsLoaded = true) {
   const signedIn = useStore((s) => s.signedIn)
   const ownerAsk = useStore((s) => s.ownerAsk)
   const underAge = useStore((s) => s.underAge)
+  const signOut = useStore((s) => s.signOut)
   const consentDue = useStore((s) => !healthConsentAnswered(s.data) && liveConsentDue(s.data))
   if (!fontsLoaded || !authReady) return <Notice title="Loading…" />
-  if (ownerAsk) return <Notice title="This phone has someone else's Tilo data" body="The spike doesn't ask whose it is yet. Use the web app for this account for now." />
+  if (ownerAsk) return <Notice title="This phone has someone else's Tilo data" body="The spike doesn't ask whose it is yet. Sign out, or use the web app for this account for now." action={{ title: 'Sign out', onPress: () => void signOut() }} />
   if (!signedIn) return <SignIn />
   if (underAge) return <Notice title="Tilo is for people 18 and over" />
   if (consentDue) return <Notice title="One more step on the web" body="Answer the health data question at app.tilo.fit, then open this again. The native consent screen comes with the account work." />
