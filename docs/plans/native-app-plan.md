@@ -200,6 +200,10 @@ switches and disconnects in the first 30 days, and "Did your watch data ever wor
 
 Micro animations run through phases 1 to 3, board by board.
 
+Recipe sharing by link (Benn, 9 Nov 2026; `recipe-sharing.md` §11.5) belongs to the native app:
+universal links (iPhone) and app links (Android) open a shared recipe straight in the app. It needs
+the link domain set up for both (the association files on app.tilo.fit) and lands after parity.
+
 ## 9. Decisions for Benn
 
 1. **Store name** (Benn, 10 Oct: the app stays Tali). Proposed listing: **Tali Wellbeing**, subtitle

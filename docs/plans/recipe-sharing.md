@@ -1,7 +1,8 @@
 # Recipe sharing: send a recipe as a link, open it in Tilo, add it
 
 Status: **plan, 9 Nov 2026, for Benn and Sara.** Nothing is built. Decided so far: a confirm tap
-with an acceptance clause (§4.2, Benn, 9 Nov).
+with an acceptance clause (§4.2), and recipes and ingredients online, private unless shared, in
+the native app (§11) (Benn, 9 Nov).
 Labels: **[E]** checked (in the code or a spec), **[I]** inference, **[G]** judgement call,
 **[V]** to verify on real phones before the boards are drawn.
 
@@ -161,3 +162,78 @@ iPhone and an Android phone before the boards are finalised.
 3. iPhone route: (a), (b) or both, after the phone test.
 4. Where it sits on the roadmap: it is not yet placed. It touches food data, so it can run inside
    the food clean-up stream or after it.
+5. Decided (9 Nov): recipes and ingredients kept online, private unless shared, existing
+   ingredients reused silently, sharing in the native app (§11). Open: does the web app get
+   sharing before the native app; does adding a new ingredient say so; the "Not backed up yet"
+   state (§11.2).
+
+## 11. Recipes and their ingredients on the server (Benn, 9 Nov 2026)
+
+Benn's direction: every person's recipes and ingredients are kept online, so changing or resetting
+a phone loses nothing; adding a recipe reuses ingredients the person already has, silently;
+recipes stay private unless shared; sharing is a feature of the native app.
+
+### 11.1 What is already true [E: checked in the code, 9 Nov]
+
+- **Recipes are already stored on the server, per person.** Each recipe is a row in the
+  `recipes` table, and its ingredients travel inside it (the `items` column holds each
+  ingredient's name, figures and amount: `toServerRecipe` in `src/data/sync.ts`).
+- **Saved foods are already stored on the server** (`custom_foods`), including the per-item
+  setting in `meta`.
+- **A new or reset phone gets them back:** signing in pulls recipes, saved foods, days, workouts
+  and plans from the account (`pullAll`, `sync.ts`). Sync already runs when a connection returns.
+- **They are already private:** row-level security keeps every row to its owner
+  (`docs/security-rls.sql`).
+- The built-in food database ships inside the app, so it never needs storing per person.
+
+### 11.2 Where data can still be lost today
+
+1. **Changes made offline and not yet synced** when the phone is lost or wiped. They live only on
+   the phone until the next sync. Possible fix [G]: a quiet "Not backed up yet" state on the
+   existing connection indicator when unsynced changes are older than a day; a visible change, so
+   boards first.
+2. **Nothing uploads until the health consent yes is on the server** (`sync.ts`, by design: GDPR
+   Art. 9). Someone who never said yes has nothing in the account. That stays.
+3. **Unload notes are kept on the phone only, by design** (`src/data/deviceOnly.ts`,
+   security-data H1), and are lost with the phone unless exported. That stays unless Benn or Sara
+   and `security-data` reopen it.
+4. **A health consent withdrawal clears the account's copy** (`clear_log_after_withdrawal()`),
+   by design.
+
+### 11.3 Checking ingredients when a recipe is added
+
+When a recipe is added (built by the person, saved from a meal, or received through a link), each
+ingredient is checked against what the person already has, in this order:
+
+1. **A built-in food with the same name:** used as is. Nothing new is saved.
+2. **One of their saved foods that matches:** reused, using the duplicate-food rule already in the
+   app (`likelySaved` and `figuresMatch` in `src/core/domain/duplicates.ts`, set by
+   `nutrition-accuracy` in Oct 2026). Nothing new is saved.
+3. **Otherwise:** saved as a new saved food (synced through `custom_foods`), so it can be searched,
+   logged and reused in the next recipe.
+
+The person isn't told about steps 1 and 2 (Benn, 9 Nov). Whether step 3 says anything (for
+example "2 new ingredients added to your foods" on the receive sheet) is open.
+
+Each recipe ingredient keeps its own copy of the figures, as today, so logging a recipe never
+changes because a saved food was edited later. It also gains an optional link to the food it was
+matched to; this is a new field inside the existing `items` column, so no migration [I:
+`security-data` to confirm]. Old recipes are checked the same way the next time they are edited,
+never in the background [G].
+
+`nutrition-accuracy` signs off the match order (step 1 matches by name only) and what happens when
+a shared ingredient's figures differ from the person's matching saved food.
+
+### 11.4 Private unless shared
+
+A shared link carries a copy of the recipe. It never gives anyone access to the sender's account
+or to the recipe in it, and changes on either side don't reach the other. There is no public
+recipe page (§8).
+
+### 11.5 Native app
+
+Recipe sharing is part of the native app (`native-app-plan.md`). There, universal links (iPhone)
+and app links (Android) open the app straight from WhatsApp, which removes the problem in §6, and
+the app's own share sheet sends the link. Open: whether the web app also gets sharing now (with
+the §6 fallbacks), or it waits for the native app. The ingredient check (§11.3) does not depend on
+native and can be built in the web app first.
