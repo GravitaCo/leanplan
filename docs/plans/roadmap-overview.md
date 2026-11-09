@@ -31,6 +31,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | Later | Native spike, then wearables | Unlocks wellbeing Phase 3 and on-device reading | |
 | Later | Monetisation | After AI Phase 1; not before Jan 2027 | |
 | Not yet placed | Cycle (§3, "Cycle") | Plan only; needs onboarding switched on first, plus demand research and a clinician; Benn to place it | |
+| Not yet placed | Recipe sharing by link (§3, "Recipe sharing") | New idea (Benn, 9 Nov); plan only; phone test of links into an installed web app first | |
 
 ## Fixed dates
 
@@ -247,6 +248,16 @@ Switching it on is its own change with its own `ship-critic` pass, and carries t
 (DPIA §§1–7, register #34, clinician review for anyone beyond closed testers: §3, First-run
 onboarding). Existing users answer only through Profile › "Set up my plan" and won't see the Cycle
 offer until they run it. Cycle's launch won't point them there (Benn, 29 Oct; `cycle.md` 31767fa).
+
+### Recipe sharing (`recipe-sharing.md`, plan of 9 Nov 2026)
+
+Send a recipe as a link (WhatsApp or any messenger); the receiver taps it, Tilo shows the recipe
+and one tap adds it. Recommended: the recipe travels inside the link after `#`, so nothing is
+stored on a server and it works offline. Built-in foods are re-matched by name on arrival; other
+items keep the sender's values with a margin `nutrition-accuracy` sets. Biggest risk: on iPhone a
+Home Screen web app doesn't open from links, so the receiver lands in the browser, signed out
+(to verify on real phones first). Needs boards, `nutrition-accuracy`, `compliance`,
+`security-data`, `mental-performance` and `ship-critic`. Nothing built.
 
 ## 4. Compliance items that affect the schedule
 

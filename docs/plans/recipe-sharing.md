@@ -1,0 +1,144 @@
+# Recipe sharing: send a recipe as a link, open it in Tilo, add it
+
+Status: **plan, 9 Nov 2026, for Benn and Sara.** Nothing is built and nothing here is approved.
+Labels: **[E]** checked (in the code or a spec), **[I]** inference, **[G]** judgement call,
+**[V]** to verify on real phones before the boards are drawn.
+
+## 1. What it does
+
+Someone opens one of their recipes, taps Share, picks WhatsApp (or Messages, email, anything the
+phone offers) and sends a link. The person who gets it taps the link, Tilo opens and shows the
+recipe, and one tap adds it to their own recipes. From then on it is theirs: they can edit it and
+log a serving like any recipe they built.
+
+## 2. Recommended approach: the recipe travels inside the link
+
+A recipe is small and self-contained. Each item already carries its name and its kcal, protein,
+carbs and fat per 100 g (or ml, or per item) [E: `RecipeItem`, `src/core/types.ts`], so nothing
+has to be looked up on a server to rebuild it.
+
+- The link is `https://app.tilo.fit/#r=<data>`, where `<data>` is the recipe as JSON, compressed
+  and URL-safe encoded. A curry with rice and 8 ingredients comes to about **420 characters**
+  [E: measured with deflate and base64url], which WhatsApp and every messenger handle.
+- **Nothing is stored anywhere.** No new table, no server function, no short-link service. The
+  part after `#` is never sent to a server by a browser [E: RFC 3986 §3.5], so neither GitHub
+  Pages nor WhatsApp's link-preview fetch sees the recipe.
+- **Works offline.** The sender can build the link with no connection, and the receiver's app
+  reads it from the address without the network, in line with the offline-first rule.
+
+Rejected for v1 [G]: storing shared recipes on the server behind a short id. It gives shorter
+links and a preview card with the recipe name, but it adds a public table, abuse handling,
+retention rules, a privacy-policy change and a `security-data` review, for little gain at alpha
+size. It stays an option for later (§8).
+
+## 3. Sending
+
+- A **Share** action on a saved recipe (in Recipes, `food/MealsSheet.tsx`).
+- It opens the phone's own share sheet (Web Share API) with a short message and the link, for
+  example "Chicken curry with rice, from my Tilo recipes" plus the link. Where the share sheet
+  isn't available, it copies the link and says so.
+- WhatsApp's preview card shows Tilo's general card, not the recipe name, because the name lives
+  after `#` [I]. The message text carries the name instead.
+- Only the recipe name, servings and items are shared: never the sender's name, logs, targets or
+  anything else from their account [G].
+
+## 4. Receiving
+
+1. The app reads `#r=` on launch, removes it from the address at once (the app already tidies the
+   address this way for query parameters, `App.tsx`), and checks it (§5).
+2. A sheet shows the recipe: name, servings, per-serving kcal and macros with the usual ± margin,
+   and the ingredient list. **One tap, "Add to my recipes", saves it** [G: a confirm tap rather
+   than adding silently, so a link can never put something in someone's account without them
+   seeing it; Benn or Sara to confirm].
+3. It is saved as a new recipe with a new id and syncs like any other.
+4. **Same name already saved:** recipe names must be unique per person [E: `MealsSheet.tsx`], so
+   the sheet offers "Add as Chicken curry with rice (2)" or "Replace mine" [G].
+5. **Not signed in** (or a new device): sign in first, then the sheet appears. The link is kept on
+   the device only until then.
+6. **Someone without a Tilo account:** the link opens the sign-in screen. While Tilo is an invited
+   alpha, the sheet needs a line saying Tilo is invite-only for now [G; wording for the boards].
+
+## 5. Accuracy and safety of the numbers
+
+The numbers in a link come from the sender's phone and can be edited by anyone who edits the link,
+so the receiving app never trusts them blindly.
+
+- **Built-in foods are re-matched by name.** Food names are stable ids [E: CLAUDE.md], so an item
+  whose name matches a built-in food takes the receiver's own database values and source. A stale
+  or edited figure can't come in that way.
+- **Other items** (the sender's saved foods, label scans, shared products) keep the sender's
+  values and are marked as coming from a shared recipe, with their own margin. The source key and
+  the margin are for `nutrition-accuracy` to set; nothing here picks a number.
+- **Checks before the sheet shows:** a version number, a cap on items (for example 60) and on name
+  length, every value a finite number in a sane range (the same style of checks as
+  `validateFoods`), and the existing recipe checks (`checkRecipe`). A link that fails shows "This
+  link doesn't contain a recipe Tilo can read" and nothing is saved.
+- Text from the link is shown as plain text only, never as HTML.
+- Gentle mode and the food display settings apply to the sheet as they do to any recipe.
+
+## 6. The hard part: links and an installed web app [V]
+
+This is the biggest risk, and it decides how good the feature feels.
+
+- **iPhone:** a web app added to the Home Screen does not open from links [I, widely documented;
+  V]. Tapping the link in WhatsApp opens WhatsApp's own browser or Safari, and on iPhone the Home
+  Screen app keeps its storage apart from Safari [I; V]. So the person lands in a Tilo page that
+  isn't signed in, even if they use Tilo every day.
+- **Android:** an installed web app can take over links to its own address in Chrome [I; V], but
+  WhatsApp may still open them in its own browser [V].
+
+Options for iPhone, to choose from once tested:
+
+- **(a) Add in the browser, sync to the app.** The person signs in on that page, taps Add, and the
+  recipe syncs to their account, so it appears in the Home Screen app on its next sync. It works
+  with today's code; the cost is a sign-in in Safari. It needs a connection, which a link from
+  WhatsApp implies anyway.
+- **(b) Copy and paste.** The page offers "Copy recipe" and tells them to open Tilo; Tilo's add
+  recipe screen notices a recipe link on paste and shows the same sheet. No sign-in, but more
+  steps.
+- **(c) The native app.** Universal links (iOS) and app links (Android) open the app directly.
+  That waits for `native-app-plan.md`, so it's later.
+
+Recommendation [G]: build (a) with (b) as the fallback on the same page, and test both on an
+iPhone and an Android phone before the boards are finalised.
+
+## 7. Privacy and compliance
+
+- Tilo stores nothing new and sends nothing to a new service. Sharing is the sender's own act
+  through the messenger they choose. The received recipe is saved like any recipe they create.
+- Still a `compliance` question before the build: whether the privacy policy and terms should say
+  that shared recipes travel in the link and what Tilo does with a received one, and whether a
+  recipe can count as health data (for example, a recipe a person shares can hint at a diet). A
+  short line in the policy is likely [I].
+- `security-data` reviews the parsing of untrusted input (§5) and the "kept until sign-in"
+  storage (§4.5).
+
+## 8. Not in v1
+
+- Public recipe pages, a recipe library or feed, likes or comments.
+- Short links or a server copy (§2), and a preview card with the recipe name.
+- Photos, method steps or cooking times (recipes don't hold these today).
+- Knowing who opened a link, or how many times: no tracking.
+- Sharing workouts or plans the same way (a natural follow-on, same pattern).
+
+## 9. Build order
+
+1. **Phone test** of §6 on a real iPhone and Android phone: a throwaway link that only shows
+   what opened (browser or app) and whether the person is signed in. No user data.
+2. **Boards** on the Design canvas for Benn or Sara, past the `design` agent: the Share action,
+   the receive sheet (normal, name clash, invalid link, gentle mode), the signed-out landing with
+   the iPhone fallback, light and dark.
+3. **Reviews before code:** `nutrition-accuracy` (§5 source key and margin), `compliance` (§7),
+   `security-data` (§5, §4.5), `mental-performance` (sheet and share copy).
+4. **Build:** encode and decode in `src/core/` (no React, so the native app can reuse it) with
+   unit tests (round trip, size cap, bad input, re-matching by name); the Share action; the
+   receive sheet; e2e in a headless browser; bump the service worker `CACHE`.
+5. **`ship-critic`**, then `main`.
+
+## 10. Decisions for Benn and Sara
+
+1. Confirm tap before adding (recommended), or add straight away?
+2. Name clash: "(2)" suffix and "Replace mine", or something else?
+3. iPhone route: (a), (b) or both, after the phone test.
+4. Where it sits on the roadmap: it is not yet placed. It touches food data, so it can run inside
+   the food clean-up stream or after it.
