@@ -1,6 +1,7 @@
 # Recipe sharing: send a recipe as a link, open it in Tilo, add it
 
-Status: **plan, 9 Nov 2026, for Benn and Sara.** Nothing is built and nothing here is approved.
+Status: **plan, 9 Nov 2026, for Benn and Sara.** Nothing is built. Decided so far: a confirm tap
+with an acceptance clause (§4.2, Benn, 9 Nov).
 Labels: **[E]** checked (in the code or a spec), **[I]** inference, **[G]** judgement call,
 **[V]** to verify on real phones before the boards are drawn.
 
@@ -47,9 +48,18 @@ size. It stays an option for later (§8).
 1. The app reads `#r=` on launch, removes it from the address at once (the app already tidies the
    address this way for query parameters, `App.tsx`), and checks it (§5).
 2. A sheet shows the recipe: name, servings, per-serving kcal and macros with the usual ± margin,
-   and the ingredient list. **One tap, "Add to my recipes", saves it** [G: a confirm tap rather
-   than adding silently, so a link can never put something in someone's account without them
-   seeing it; Benn or Sara to confirm].
+   and the ingredient list. **One tap, "Add to my recipes", saves it**, and the confirm tap is
+   required (Benn, 9 Nov 2026), so a link can never put something in someone's account without
+   them seeing it.
+   - **Acceptance clause (Benn, 9 Nov 2026):** adding the recipe includes accepting the
+     nutritional information it brings. A line sits directly above the button, for example:
+     "Some of these numbers come from the person who shared this recipe, not from Tilo. By adding
+     it, you accept them as they are. You can edit any ingredient after." Final wording is for
+     `compliance` and `mental-performance` (§7). Tapping Add is the acceptance; no separate
+     checkbox, and nothing pre-ticked [G].
+   - The clause names only what it covers: ingredients re-matched to Tilo's own foods (§5) use
+     Tilo's sourced values, so the line is about the sender's values. If every ingredient matched,
+     the line can say the numbers are Tilo's own [G].
 3. It is saved as a new recipe with a new id and syncs like any other.
 4. **Same name already saved:** recipe names must be unique per person [E: `MealsSheet.tsx`], so
    the sheet offers "Add as Chicken curry with rice (2)" or "Replace mine" [G].
@@ -112,6 +122,14 @@ iPhone and an Android phone before the boards are finalised.
   short line in the policy is likely [I].
 - `security-data` reviews the parsing of untrusted input (§5) and the "kept until sign-in"
   storage (§4.5).
+- **The acceptance clause (§4.2)** needs `compliance` to word it and to add the matching paragraph
+  to the terms (`src/core/legal/terms.ts`, published with `npm run legal:html`). Under UK consumer
+  law a clause like this can't take away rights a person has by law, and an unfair term doesn't
+  bind them (Consumer Rights Act 2015, Part 2) [I: for `compliance` and later the solicitor to
+  confirm], so it works as a clear notice of where the numbers come from rather than a waiver.
+  `mental-performance` checks the tone so it reads as information, not a warning.
+- Whether to keep a record that someone accepted (for example the time, on the saved recipe) is a
+  `compliance` question; nothing is recorded by default [G].
 
 ## 8. Not in v1
 
@@ -126,7 +144,7 @@ iPhone and an Android phone before the boards are finalised.
 1. **Phone test** of §6 on a real iPhone and Android phone: a throwaway link that only shows
    what opened (browser or app) and whether the person is signed in. No user data.
 2. **Boards** on the Design canvas for Benn or Sara, past the `design` agent: the Share action,
-   the receive sheet (normal, name clash, invalid link, gentle mode), the signed-out landing with
+   the receive sheet with the acceptance line (normal, name clash, invalid link, gentle mode), the signed-out landing with
    the iPhone fallback, light and dark.
 3. **Reviews before code:** `nutrition-accuracy` (§5 source key and margin), `compliance` (§7),
    `security-data` (§5, §4.5), `mental-performance` (sheet and share copy).
@@ -137,7 +155,8 @@ iPhone and an Android phone before the boards are finalised.
 
 ## 10. Decisions for Benn and Sara
 
-1. Confirm tap before adding (recommended), or add straight away?
+1. Decided (9 Nov): a confirm tap, with a clause that adding accepts the nutritional information
+   (§4.2). Still open: the exact wording (after `compliance`), and whether the acceptance is recorded.
 2. Name clash: "(2)" suffix and "Replace mine", or something else?
 3. iPhone route: (a), (b) or both, after the phone test.
 4. Where it sits on the roadmap: it is not yet placed. It touches food data, so it can run inside
