@@ -7,6 +7,7 @@
  */
 import type { ReactNode } from 'react'
 import { Alert, ScrollView, Text, View } from 'react-native'
+import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectAskCtx, useStore } from '@/store/store'
 import { healthLoggingAllowed, quietNumbers } from '@/data/consent'
@@ -126,13 +127,14 @@ export function Summary() {
         ? <Text style={[font(600), num, { fontSize: 26, letterSpacing: -0.5, color: t.label, marginTop: 2 }]}>{r1(data.days[lastW].weight!)}<Text style={[font(600), { fontSize: 15, color: t.label2 }]}>kg</Text></Text>
         : T([font(600), { fontSize: 19, color: t.label, marginTop: 2 }], 'Add')}
       {T([font(400), { fontSize: 12, color: t.label2 }], lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you')}
-      {wRow && !hard ? T([font(400), { fontSize: 12, color: t.label2, marginTop: 4 }], weightTileWords(wRow)) : null}
+      {/* .wt-trend (loop.css) */}
+      {wRow && !hard ? T([font(500), { fontSize: 13, lineHeight: 17, color: t.label, marginTop: 6 }], weightTileWords(wRow)) : null}
     </Tile>
   )
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={later('Profile')} />
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={() => router.push('/lab')} />
       <WeekStrip />
 
       <View style={{ gap: 14 }}>

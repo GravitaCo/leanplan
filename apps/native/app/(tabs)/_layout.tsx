@@ -1,26 +1,21 @@
-// Spike tabs: Summary and the Spike lab. The real tab bar (Summary, Mind, Food, Train, Plan, and the
-// Profile avatar) is N0, built to match ui/BottomNav.tsx.
+// The tab shell (native-build-plan N0): Summary, Mind, Food, Train, Plan, drawn by lib/ui/TabBar to
+// match the web's bar. Profile is the avatar beside each title; in the spike it opens the lab screen.
 import { Tabs } from 'expo-router'
-import { useTokens, GEIST } from '../../lib/theme'
 import { useStore } from '@/store/store'
 import { useGate } from '../../lib/gate'
+import { TabBar } from '../../lib/ui/TabBar'
 
 export default function TabsLayout() {
-  const t = useTokens()
   const gated = useGate() !== null
   const ready = useStore((s) => s.authReady)
   if (gated || !ready) return null
   return (
-    <Tabs screenOptions={{
-      headerShown: false,
-      tabBarActiveTintColor: t.tint,
-      tabBarInactiveTintColor: t.label2,
-      tabBarStyle: { backgroundColor: t.card, borderTopColor: t.sep },
-      tabBarLabelStyle: { fontFamily: GEIST[600], fontSize: 11 },
-      tabBarIconStyle: { display: 'none' },
-    }}>
-      <Tabs.Screen name="index" options={{ title: 'Summary' }} />
-      <Tabs.Screen name="lab" options={{ title: 'Spike' }} />
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="mind" />
+      <Tabs.Screen name="food" />
+      <Tabs.Screen name="train" />
+      <Tabs.Screen name="plan" />
     </Tabs>
   )
 }
