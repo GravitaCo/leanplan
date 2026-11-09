@@ -1,0 +1,34 @@
+name: Native
+
+# The native app (apps/native) on the native branches: its typecheck (which also typechecks every
+# shared src/ file it imports), the Studio tokens against theme.css, and a full iOS JavaScript
+# bundle, so a shared-code change that breaks the phone shows up red. The web's own checks run in
+# checks.yml as before. EAS builds per push come later (native-build-plan N0 task 7), once the
+# Expo token is set as a repository secret.
+on:
+  push:
+    branches: ['claude/native-build', 'native', 'native/**']
+    paths: ['apps/native/**', 'src/**', 'supabase/functions/_shared/**', '.github/workflows/native.yml']
+  pull_request:
+    paths: ['apps/native/**']
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/native/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run check:tokens
+      - run: npx expo export --platform ios --output-dir /tmp/native-bundle

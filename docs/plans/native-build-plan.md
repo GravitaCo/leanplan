@@ -2,7 +2,7 @@
 
 Written 9 Nov 2026 by the lead engineer, from `native-build-brief.md` (streams, owners,
 approvals), `native-app-plan.md` (framework, architecture, phases) and `recipe-sharing.md` §11.
-Status: **for Benn and Sara to read. Nothing is built, and the spike waits for their go-ahead.**
+Status: **the spike is under way on `claude/native-build` (Benn's go-ahead, 9 Nov 2026); progress in §3.1.**
 
 Labels: **[E]** checked in the code or a source on 9 Nov; **[I]** inference to confirm; **[G]**
 judgement call.
@@ -87,6 +87,35 @@ Purpose: prove the architecture and measure. Not shipped to anyone but Benn and 
 
 Exit: Benn and Sara try it; I report the measured estimate per stream (from how long the Summary
 rebuild took against its size), and anything the spike proved wrong in this plan.
+
+### 3.1 Spike status (9 Nov 2026)
+
+Built on `claude/native-build`, in `apps/native` (how it is wired: `apps/native/README.md`).
+
+| Spike item | State |
+|---|---|
+| 1. Expo app reusing `src/core` | **Done.** Expo SDK 58 with Expo Router [G: Router, as Expo recommends; the brief's tab shell maps onto its tab layout]. The app runs the web's `src/core`, `src/data` **and `src/store`** unchanged (finding 3 confirmed: the store needed no refactor to run, only two browser touchpoints moved into `src/data/platform.ts`, with web behaviour unchanged and the web's 2,135 tests passing). Not an npm workspace, so the web's lockfile is untouched. The iOS bundle holds 96 shared files and nothing from the web's `node_modules` (one React). |
+| 2. Storage adapter | **Done, timings to measure on the phone.** MMKV, chosen over SQLite because it is synchronous like `localStorage`, so `persistence.ts` runs as it is: same keys, same JSON, a backup moves between web and native unchanged. The lab screen measures load and save on Benn's real data. |
+| 3. Sign-in, session in secure storage | **Done (email).** The Supabase session sits in an encrypted MMKV store whose key is in the Keychain, this device only (`security-data` reviewing). Google sign-in, sign-up and reset are N2. |
+| 4. Summary from the shared store | **Done for the main cards:** header, week strip, Mind row, Food (all three food views), Move and Weight, This week. `scripts/e2e-summary-parity.cjs` compares it with the web for the same account: 31 of 31 checks pass (figures and words, normal and gentle, light and dark). Left for N1 and N4: icons, the connection pill, the wellbeing Mind card, banners and the asks budget, quick checks, usuals, supplements, the review, every sheet. |
+| 5. HealthKit read | **Built, not yet run on a phone.** Last night's sleep as a band with a wake time ("Your watch: about 6 to 7 hours, up around 7:10."), today's steps and the week's walks, in the lab screen only; nothing saved or synced, so nothing new is collected. |
+| 6. Micro animation and haptic | **Built.** The Food bar's fill moves over 0.3 s like the web's transition, on the UI thread, still with Reduce Motion. The haptic is only in the lab screen until a board approves it (brief §4). |
+| 7. On-device AI | **Built, not yet run.** A small Swift module calling Apple's Foundation Models, tried on ai-platform-plan task A (parse a typed meal into foods), on the phone only. Needs iOS 26 on an Apple Intelligence iPhone (iPhone 15 Pro or later [I]); the lab says why when it can't run. |
+| 8. EAS build to Benn's phone | **Waiting for `EXPO_TOKEN`** (and the bundle identifier approval, the iPhone model, Developer Mode). `eas.json` has `development` and `spike` profiles, both internal distribution. |
+
+Not in the spike, by design: the owner question, the 18+ stop and the consent screen (N2). The
+native gate stops at a plain message for each and never goes past them, and the store's own rules
+still keep sync off until the health yes.
+
+CI: `.github/workflows/native.yml` runs the native typecheck (which covers every shared file the app
+imports), the token check and a full iOS bundle on the native branches.
+
+**Estimate:** to follow once the build runs on Benn's iPhone (the exit criterion). What the spike has
+measured so far: all of `src/core`, `src/data` and `src/store` (about 57,000 lines with the food
+data) is reused without a fork; what is rebuilt is the screens and UI kit, about 13,500 lines of
+TSX and 1,900 of CSS on the web. The Summary's main cards took about 530 native lines (screen,
+kit, charts, week strip) for roughly 400 web lines plus their CSS, so rebuilding runs close to one
+native line per web line plus styles.
 
 ## 4. Streams
 
