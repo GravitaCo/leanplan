@@ -28,7 +28,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | Next | Sign DPIA §§1–7, fix register #34, then turn onboarding on for the alpha | Brings the training engine (E1) to testers | |
 | Next | Training engine E2, then E3 | Builds on onboarding being on | |
 | Later | AI Phase 0 close-out, then AI Phase 1 (type a meal) | Paid plans wait on this | |
-| Now | Native app build (Benn, 9 Nov): spike, then parity streams; brief in `native-build-brief.md` | Benn started the native build; recipe sharing is part of it | |
+| Now | Native app build (Benn, 9 Nov): spike, then parity streams; brief in `native-build-brief.md`, build plan in `native-build-plan.md` (branch `claude/maintenance-loop-build`, 5adeced); spike waits on Benn and Sara | Benn started the native build; recipe sharing is part of it | |
 | Later | Monetisation | After AI Phase 1; not before Jan 2027 | |
 | Not yet placed | Cycle (§3, "Cycle") | Plan only; needs onboarding switched on first, plus demand research and a clinician; Benn to place it | |
 | Not yet placed | Recipe sharing by link (§3, "Recipe sharing") | Benn, 9 Nov: a native app feature; the ingredient check on adding a recipe can come first in the web app | |
