@@ -52,6 +52,7 @@
     "web": {
       "output": "single",
       "bundler": "metro"
-    }
+    },
+    "owner": "gravita-co"
   }
 }
