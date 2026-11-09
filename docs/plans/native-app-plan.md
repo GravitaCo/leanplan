@@ -211,8 +211,9 @@ the link domain set up for both (the association files on app.tilo.fit) and land
    check before submission.
 2. **Developer accounts** under Gravita Creative Ltd: **yes (Benn, 10 Oct)**. Apple Developer Program
    (about $99 a year) and Google Play (about $25 once) [I: check current prices].
-3. **Test devices:** Benn's iPhone and Apple Watch, and a MacBook Pro with Xcode (Benn, 9 Nov). Which
-   iPhone model is still to confirm (on-device AI needs iPhone 15 Pro or later [I]). A low-end
+3. **Test devices:** Benn's iPhone and Apple Watch, and a MacBook Pro with Xcode (Benn, 9 Nov). Benn's
+   iPhone is an iPhone 18 Pro Max on iOS 27.0.1 (Benn, 9 Nov), which is past the on-device AI minimum
+   (iPhone 15 Pro or later [I]); the spike's lab screen reports what the phone actually offers. A low-end
    Android phone and a Fitbit later, for phases 1 and 4. **Testers for now: Benn and Sara.**
 4. **First HealthKit data: sleep and walking (Benn, 10 Oct).** Walking means steps and walking
    workouts; `nutrition-accuracy` reviews how they may affect anything numeric, `mental-performance`
