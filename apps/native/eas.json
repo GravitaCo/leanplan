@@ -9,13 +9,15 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "autoIncrement": true
     },
     "spike": {
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "autoIncrement": true
     },
     "production": {
       "autoIncrement": true
