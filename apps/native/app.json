@@ -13,7 +13,8 @@
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "M8R77TCYF8"
     },
     "android": {
       "package": "fit.tilo.app",
