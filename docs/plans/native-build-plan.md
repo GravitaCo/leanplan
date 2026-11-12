@@ -180,6 +180,7 @@ Carries over: e2e-foundations (consent, withdrawal, existing user, delete accoun
 e2e-under-age (all 14, with N12 for the reminder cases).
 Improvements: none planned (identical by the brief).
 Reviewers: `compliance`, `security-data`. Depends on: N0, N1 for screens.
+**Store blocker (security-data, 12 Nov):** with Google sign-in in the app, App Store guideline 4.8 requires Sign in with Apple as well (a Supabase OAuth provider, same flow as Google); `compliance` to note it. The spike's Google sign-in returns to `tilo://auth-callback` (exactly that entry in Supabase's redirect list) with PKCE S256.
 
 ### N3 Sync and data
 

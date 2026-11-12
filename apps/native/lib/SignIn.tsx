@@ -35,7 +35,9 @@ export function SignIn() {
       if (res.type !== 'success') return
       const back = new URL(res.url)
       const code = back.searchParams.get('code')
-      const why = back.searchParams.get('error_description') || back.searchParams.get('error')
+      // some error redirects carry the reason after # rather than in the query
+      const frag = new URLSearchParams(back.hash.replace(/^#/, ''))
+      const why = back.searchParams.get('error_description') || frag.get('error_description') || back.searchParams.get('error') || frag.get('error')
       if (!code) throw new Error(why || 'Google sign-in did not finish.')
       const { error: ex } = await supabase.auth.exchangeCodeForSession(code)
       if (ex) throw ex
