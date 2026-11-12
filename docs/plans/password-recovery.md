@@ -41,7 +41,17 @@ usually first, but not guaranteed, and auth-js removes the hash from the URL bef
 - `src/App.tsx`: render the set-password step when `recovery` is set, before the owner check and the
   sign-in screen. The owner check still runs as usual once the step is done or skipped.
 - `src/screens/AuthScreen.tsx`: a `SetPasswordScreen` in the same `auth2` layout (two fields, same rules
-  and wording as sign-up: 8+ characters, matching), and the expired-link banner on the forgot screen.
+  and wording as sign-up: 8+ characters, matching), both `type="password"` `autocomplete="new-password"`,
+  plus a visually hidden read-only email input with `autocomplete="username"` so password managers save
+  the new password against the right account.
+- Expired or used link: the URL doesn't say whether it was a sign-up or a reset link, so the notice goes
+  on the Sign in screen in neutral words ("That link has expired or was already used. Sign in, or ask
+  for a new one."), through the existing `authNotice` banner. If the person is already signed in, nothing
+  shows. A recovery session that has timed out when they save goes the same way.
+- Server errors (wording on the boards for approval): `same_password` "That's your current password.
+  Choose a new one."; `weak_password` "Choose a longer or less common password."; offline "Saving a new
+  password needs a connection. Try again when you're online."
+- The foot links on the auth screens are 31 px tall; bring them to 44 px with padding (no visible change).
 - Sync: the recovery session is a normal session for the same user, so sync and consent behave as
   after any sign-in. `security-data` to confirm, plus: no password ever stored or logged; Supabase's
   "Secure password change" setting (needs a recent sign-in; a recovery session counts) and the project's
