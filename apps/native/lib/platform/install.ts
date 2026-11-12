@@ -14,7 +14,7 @@
  */
 import 'react-native-url-polyfill/auto'
 import { Platform } from 'react-native'
-import { getRandomValues } from 'expo-crypto'
+import { getRandomValues, digest, CryptoDigestAlgorithm } from 'expo-crypto'
 import NetInfo from '@react-native-community/netinfo'
 import { memoryStorage, nativeLocalStorage } from './storage'
 
@@ -25,6 +25,17 @@ const native = Platform.OS !== 'web'
 // ---- crypto ----
 if (!g.crypto) g.crypto = {}
 if (!g.crypto.getRandomValues) g.crypto.getRandomValues = getRandomValues
+// SHA-256 for supabase-js's PKCE sign-in (Google): without crypto.subtle it falls back to the weaker
+// "plain" method (security-data, 9 Nov). Only SHA-256 is offered; anything else fails loudly.
+if (!g.crypto.subtle) {
+  g.crypto.subtle = {
+    digest: (alg: string | { name: string }, data: BufferSource) => {
+      const name = typeof alg === 'string' ? alg : alg?.name
+      if (name !== 'SHA-256') return Promise.reject(new Error('Only SHA-256 is available'))
+      return digest(CryptoDigestAlgorithm.SHA256, data)
+    },
+  }
+}
 
 // ---- structuredClone (the shared code clones plain JSON-shaped state) ----
 if (typeof g.structuredClone !== 'function') {

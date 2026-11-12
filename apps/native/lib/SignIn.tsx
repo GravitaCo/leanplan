@@ -4,10 +4,13 @@
  */
 import { useState } from 'react'
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TextInput, View } from 'react-native'
+import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { Btn } from './ui/kit'
 import { font, useTokens } from './theme'
+
+const REDIRECT = 'tilo://auth-callback'
 
 export function SignIn() {
   const t = useTokens()
@@ -17,6 +20,31 @@ export function SignIn() {
   const [busy, setBusy] = useState(false)
   const beginSignIn = useStore((s) => s.beginSignIn)
   const notice = useStore((s) => s.authNotice)
+
+  /** "Continue with Google", as on the web: Supabase's Google sign-in in the system's sign-in sheet,
+   *  back to the app at tilo://auth-callback (allowed in Supabase's redirect list), then the code is
+   *  exchanged for a session on this phone (PKCE). */
+  async function google() {
+    setErr('')
+    beginSignIn()
+    setBusy(true)
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT, skipBrowserRedirect: true } })
+      if (error || !data?.url) throw error ?? new Error('Google sign-in could not start.')
+      const res = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT)
+      if (res.type !== 'success') return
+      const back = new URL(res.url)
+      const code = back.searchParams.get('code')
+      const why = back.searchParams.get('error_description') || back.searchParams.get('error')
+      if (!code) throw new Error(why || 'Google sign-in did not finish.')
+      const { error: ex } = await supabase.auth.exchangeCodeForSession(code)
+      if (ex) throw ex
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function submit() {
     setErr('')
@@ -40,6 +68,8 @@ export function SignIn() {
       <View style={{ marginTop: 8 }}>
         {busy ? <ActivityIndicator color={t.label2} /> : <Btn title="Sign in" onPress={submit} />}
       </View>
+      <Text style={[font(400), { fontSize: 13, color: t.label2, textAlign: 'center', marginVertical: 4 }]}>or</Text>
+      <Btn kind="gray" title="Continue with Google" onPress={google} disabled={busy} />
     </KeyboardAvoidingView>
   )
 }
