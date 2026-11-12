@@ -49,8 +49,8 @@ usually first, but not guaranteed, and auth-js removes the hash from the URL bef
   for a new one."), through the existing `authNotice` banner. If the person is already signed in, nothing
   shows. A recovery session that has timed out when they save goes the same way.
 - Server errors (wording on the boards for approval): `same_password` "That's your current password.
-  Choose a new one."; `weak_password` "Choose a longer or less common password."; offline "Saving a new
-  password needs a connection. Try again when you're online."
+  Choose a new one."; `weak_password` "Choose a longer or less common password."; offline "Needs a connection.
+  Try again when you're online."
 - The foot links on the auth screens are 31 px tall; bring them to 44 px with padding (no visible change).
 - Sync: the recovery session is a normal session for the same user, so sync and consent behave as
   after any sign-in. `security-data` to confirm, plus: no password ever stored or logged; Supabase's
