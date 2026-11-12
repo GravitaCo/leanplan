@@ -53,6 +53,16 @@
       "output": "single",
       "bundler": "metro"
     },
-    "owner": "gravita-co"
+    "owner": "gravita-co",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "4a22860f-a4a9-4472-99a2-6a4d22426b23"
+      }
+    }
   }
 }
