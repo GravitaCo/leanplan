@@ -23,7 +23,7 @@ const ms = (a: number) => `${(performance.now() - a).toFixed(1)} ms`
 
 const PARSE_INSTRUCTIONS = 'You turn a short description of a meal into a list of foods. Reply with JSON only: an array of objects with "name" (a plain food name), "amount" (a number) and "unit" (one of g, ml, slice, item, tbsp, tsp, cup, portion). Only list foods the person mentioned. Never comment on health, calories or choices.'
 
-export function Lab() {
+export function Lab({ inSheet = false }: { inSheet?: boolean } = {}) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
   const sync = useStore((s) => s.sync)
@@ -74,7 +74,7 @@ export function Lab() {
   const S = ({ children }: { children: ReactNode }) => <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2 }]}>{children}</Text>
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 18, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ padding: 16, paddingTop: inSheet ? 4 : insets.top + 18, paddingBottom: insets.bottom + 24, gap: 14 }}>
       <Text accessibilityRole="header" style={[font(600), { fontSize: 34, letterSpacing: -0.85, color: t.label }]}>Spike</Text>
       <S>Build {Constants.expoConfig?.version} · For testing only, not part of the app.</S>
 

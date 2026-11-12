@@ -7,7 +7,7 @@
  */
 import type { ReactNode } from 'react'
 import { Alert, ScrollView, Text, View } from 'react-native'
-import { router } from 'expo-router'
+import { openLab } from './labSheet'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectAskCtx, useStore } from '@/store/store'
 import { healthLoggingAllowed, quietNumbers } from '@/data/consent'
@@ -134,7 +134,7 @@ export function Summary() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={() => router.push('/lab')} />
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={openLab} />
       <WeekStrip />
 
       <View style={{ gap: 14 }}>
