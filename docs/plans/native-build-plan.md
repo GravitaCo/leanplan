@@ -110,6 +110,17 @@ still keep sync off until the health yes.
 CI: `.github/workflows/native.yml` runs the native typecheck (which covers every shared file the app
 imports), the token check and a full iOS bundle on the native branches.
 
+**On Benn's iPhone (12 Nov, build 0.1.0 (1) and (2), iPhone 18 Pro Max, iOS 27.0.1):** installed through
+Expo internal distribution (the phone registered by UDID; the web registration link failed on iOS
+with "An unknown error occurred"). Google sign-in works (after `tilo://auth-callback` was added to
+Supabase's redirect list); Summary shows his real data and matches the web apart from the missing
+icons (N1); sync reads "synced". Storage on his real data (19.5 KB, 22 days): load with migrations
+1.4 ms, save 0.8 ms, 20 raw reads 4.2 ms. HealthKit: steps read (4,542 today); no sleep yet because
+sleep tracking was off (switched on 12 Nov, to re-test the next morning). On-device AI: Apple
+Intelligence available; "two eggs and a slice of toast with butter" parsed correctly into eggs 2
+item, toast 1 slice, butter 1 tsp in 2.4 s, on the phone. Haptic felt. Still to do: the sleep read,
+staying signed in after a restart, and Sara's phone (her UDID).
+
 **Estimate:** to follow once the build runs on Benn's iPhone (the exit criterion). What the spike has
 measured so far: all of `src/core`, `src/data` and `src/store` (about 57,000 lines with the food
 data) is reused without a fork; what is rebuilt is the screens and UI kit, about 13,500 lines of
