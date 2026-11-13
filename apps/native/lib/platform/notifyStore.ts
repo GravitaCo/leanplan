@@ -6,10 +6,10 @@
  * and deletes it on wipe, sign-out-and-remove and when the device changes hands
  * (deviceOnly.clearNotifyStore). Never synced.
  *
- * Its own MMKV store named like the web's database, not inside `leanplan.v1`: the notification
+ * Its own store named like the web's database, not inside `leanplan.v1`: the notification
  * handler (N12) records events whether or not the store is loaded, as the service worker does.
  * Not encrypted: delivery records, not health data (deviceOnly.ts). Pure over an injected store,
- * so scripts/test-platform.mjs runs it in Node; ./notifyMMKV.ts gives it the real MMKV.
+ * so scripts/test-platform.mjs runs it in Node; ./notifyKV.ts gives it the real store.
  */
 
 /** Same name as the web's IndexedDB (NOTIFY_DB in src/data/deviceOnly.ts). */
@@ -23,7 +23,7 @@ const EVS = ['shown', 'opened', 'closed']
  *  scripts/test-platform.mjs checks this list against. */
 export const NOTIFY_KINDS = ['checkin', 'wind-down', 'plan']
 
-/** The part of MMKV this needs. */
+/** The part of the store this needs. */
 export interface KV {
   getString(key: string): string | undefined
   set(key: string, value: string): void

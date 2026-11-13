@@ -26,7 +26,7 @@ No library in the app is paid (rule 4 holds). Licences are MIT or OFL (the font)
 | Library | What it does for us | Replacement | Owner |
 |---|---|---|---|
 | `@kingstinct/react-native-healthkit` (+ `react-native-nitro-modules`) | Asks for HealthKit access; reads sleep, steps, walking workouts | `modules/tilo-health` on HealthKit: authorisation, a sleep category query, step statistics, workout query; later background delivery (phase 2). Our use is small and fully known | Lead (N0) |
-| `react-native-mmkv` (+ `react-native-nitro-modules`) | Synchronous storage under the web's `localStorage` keys; the encrypted session store; N3's reminder log | `modules/tilo-store`: synchronous get, set, remove and keys over atomic file writes in Application Support with iOS Data Protection; the Supabase session in the Keychain (Security framework, this device only). Same `Storage` interface, so shared code doesn't change. Test installs re-sign-in once (their data is synced) | Lead (N0) |
+| ~~`react-native-mmkv`~~ **replaced 13 Nov** (`react-native-nitro-modules` goes with HealthKit) | Synchronous storage under the web's `localStorage` keys; the encrypted session store; N3's reminder log | `modules/tilo-store`: synchronous get, set, remove and keys over atomic file writes in Application Support with iOS Data Protection; the Supabase session in the Keychain (Security framework, this device only). Same `Storage` interface, so shared code doesn't change. Test installs re-sign-in once (their data is synced) | Lead (N0) |
 | ~~`@react-native-community/netinfo`~~ **replaced 13 Nov** | Online and offline for `navigator.onLine` | `modules/tilo-network` on Apple's `NWPathMonitor` (satisfied or not, as a browser means online). Also guarantees no reachability request to any third party | Lead (N0) |
 | `expo-camera` (on N6's branch) | Camera, barcodes | `modules/tilo-camera` on AVFoundation and Vision (Benn, 13 Nov) | N6 |
 | `expo-image-picker`, `expo-image-manipulator` (N6's branch) | Choose a photo; resize label photos | Fold into `tilo-camera`: PHPickerViewController for the library, ImageIO/Core Graphics for the 1600/1024 px and 1.5 MB rules | N6 |
@@ -53,8 +53,7 @@ Removing the first two also removes `react-native-nitro-modules`.
 `expo-linking`, `expo-status-bar`, `expo-system-ui`, `expo-web-browser`, `expo-build-properties`,
 `babel-preset-expo`; on stream branches `expo-file-system`, `expo-sharing`, `expo-document-picker` (N2),
 `expo-video` (N7), `expo-notifications`, `expo-application` (N12), and the proposed `expo-audio` (N7's
-chime) and `expo-clipboard` (N10). `expo-secure-store` goes once `tilo-store` holds the session in the
-Keychain itself.
+chime) and `expo-clipboard` (N10). `expo-secure-store` removed 13 Nov: `tilo-store` holds the session in the Keychain itself.
 
 ## How new dependencies are added from now on
 
@@ -68,3 +67,9 @@ Benn.
 Each own module above needs a Kotlin twin in the Android phase (Health Connect, CameraX with ML Kit or
 a platform decoder, ConnectivityManager, files and the Keystore, the platform date picker). That work
 is listed in the Android phase, not done now.
+
+## Decisions
+
+- **Android (Benn, 13 Nov):** the costs are accepted for when the Android project starts; the approach
+  (own Kotlin twins, or Expo's first-party modules on Android behind the same interfaces) is decided
+  then, with both options costed by `cfo`.
