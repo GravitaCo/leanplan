@@ -8,6 +8,16 @@ public class TiloPickersModule: Module {
   public func definition() -> ModuleDefinition {
     Name("TiloPickers")
 
+    /// "HH:mm" as this phone shows a time (its 12 or 24 hour setting, as Safari shows a time input)
+    Function("formatTime") { (hhmm: String) -> String in
+      guard let d = TiloDateWheelView.parseTime(hhmm) else { return hhmm }
+      let f = DateFormatter()
+      f.locale = .autoupdatingCurrent
+      f.dateStyle = .none
+      f.timeStyle = .short
+      return f.string(from: d)
+    }
+
     View(TiloDateWheelView.self) {
       Events("onPick")
 
@@ -48,6 +58,7 @@ final class TiloDateWheelView: ExpoView {
   private static let timeFormat = formatter("HH:mm")
   private static let dateFormat = formatter("yyyy-MM-dd")
   private var format: DateFormatter { mode == "date" ? Self.dateFormat : Self.timeFormat }
+  static func parseTime(_ v: String) -> Date? { timeFormat.date(from: v) }
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)

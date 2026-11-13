@@ -6,7 +6,7 @@
  */
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { DateWheel } from '../../modules/tilo-pickers'
+import { DateWheel, formatTime } from '../../modules/tilo-pickers'
 import { Input } from './fields'
 import { NavBtn, Sheet } from './primitives'
 import { num, tx, BTN, useTokens } from '../theme'
@@ -55,7 +55,8 @@ export function PickerSheet({ mode, value, start, min, max, label, onDone, onClo
 }
 
 /**
- * `.frow input[type=time]`: the time in an FRow's `right` (17 pt, tabular, right-aligned); a tap
+ * `.frow input[type=time]`: the time in an FRow's `right` (17 pt, tabular, right-aligned), shown
+ * as the phone shows times (12 or 24 hour, `formatTime`); a tap
  * opens the wheels. `muted` is `.nf-times` (in --label2); `disabled` is the
  * web's disabled input (at 40%: how WebKit dims it is unconfirmed).
  */
@@ -68,11 +69,11 @@ export function TimeField({ value, onChange, label, muted, disabled, start }: {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={value ? { text: value } : undefined}
+      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={value ? { text: formatTime(value) } : undefined}
         accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={() => setOpen(true)}
         // the rest of the row is the touch area; the time sits at its end either way
         style={({ pressed }) => ({ flex: 1, minWidth: 60, paddingVertical: 11, opacity: disabled ? 0.4 : pressed ? 0.6 : 1 })}>
-        <Text style={[tx(17, 400, 1.3, BTN), num, { color: muted ? t.label2 : t.label, textAlign: 'right' }]}>{value}</Text>
+        <Text style={[tx(17, 400, 1.3, BTN), num, { color: muted ? t.label2 : t.label, textAlign: 'right' }]}>{formatTime(value)}</Text>
       </Pressable>
       {open && <PickerSheet mode="time" value={value} start={start} label={label} onDone={onChange} onClose={() => setOpen(false)} />}
     </>

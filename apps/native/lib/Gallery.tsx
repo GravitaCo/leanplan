@@ -427,10 +427,14 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </List>
       </Sec>
 
-      <Sec id="pickers" title="Time fields (tap for the wheels) · a date in a sheet">
+      <Sec id="pickers" title="Time fields (tap for the wheels; both disabled) · a date in a sheet">
         <List>
           <FRow label="Wake time" right={<TimeField muted label="Wake time" value={wake} onChange={setWake} />} />
-          <FRow label="Wind down" right={<TimeField muted disabled label="Wind down" value="21:30" onChange={() => {}} />} />
+          <FRow label="Wind down" right={<TimeField muted label="Wind down" value="21:30" onChange={() => {}} />} />
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <FRow label="Wake up" right={<TimeField muted disabled label="Wake up" value="07:00" onChange={() => {}} />} />
+          <FRow label="Wind-down" right={<TimeField muted disabled label="Wind-down" value="21:30" onChange={() => {}} />} />
         </List>
         <View style={{ marginTop: 10 }}><Btn kind="gray" label="Pick a start date" title={day ? `Starts ${day}` : 'Pick a date'} onPress={() => setDateOpen(true)} /></View>
         {dateOpen && <PickerSheet mode="date" value={day} min="2026-11-13" max="2027-11-13" label="Pick a start date" onDone={setDay} onClose={() => setDateOpen(false)} />}

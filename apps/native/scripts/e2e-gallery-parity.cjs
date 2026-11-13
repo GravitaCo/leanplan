@@ -39,7 +39,9 @@ async function measure(page, sel) {
     // a <select> shows only its chosen option (innerText would list them all), and a time input
     // shows its value (innerText has none): swap in the words each shows
     const swaps = [...el.querySelectorAll('select, input[type="time"]')].map((s) => {
-      const span = document.createElement('span'); span.textContent = s.tagName === 'SELECT' ? s.selectedOptions[0]?.text ?? '' : s.value
+      const span = document.createElement('span'); span.textContent = s.tagName === 'SELECT' ? s.selectedOptions[0]?.text ?? ''
+        // a time as the browser shows it (its locale's 12 or 24 hour form), as native formats it
+        : s.value ? new Date(2000, 0, 1, ...s.value.split(':').map(Number)).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''
       s.after(span); const d = s.style.display; s.style.display = 'none'
       return () => { span.remove(); s.style.display = d }
     })
@@ -102,8 +104,8 @@ async function run() {
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       // Chromium draws <input type="time"> 46 px tall (its own datetime edit fields), 2 more than
-      // the row: two time rows may be 4 px apart. Every other section within 2.
-      const tol = id === 'pickers' ? 4 : 2
+      // the row: the four time rows may be 8 px apart. Every other section within 2.
+      const tol = id === 'pickers' ? 8 : 2
       check(`${id}: height within ${tol} px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= tol, { web: mw.h, native: mn.h })
     }
     // the sheets, full screen
@@ -195,8 +197,8 @@ async function run() {
       const outOfRange = await sheetBtn('Done').isDisabled()
       await p.locator('[data-testid="sheet"] input').first().fill('2026-12-01'); await sheetBtn('Done').click(); await p.waitForTimeout(400)
       const dateShown = await sec.locator('[aria-label="Pick a start date"]').innerText()
-      check('the time field: Done keeps 06:45, Cancel keeps it, a date past max is refused, 1 Dec is kept',
-        afterDone === '06:45' && afterCancel === '06:45' && outOfRange && dateShown.includes('2026-12-01'), { afterDone, afterCancel, outOfRange, dateShown })
+      check('the time field: Done keeps 06:45 (shown in the locale\'s form), Cancel keeps it, a date past max is refused, 1 Dec is kept',
+        afterDone.startsWith('06:45') && afterCancel.startsWith('06:45') && outOfRange && dateShown.includes('2026-12-01'), { afterDone, afterCancel, outOfRange, dateShown })
     }
     // a sheet drawn over a full-screen view (the guided player): overlay mode on native, the same look
     if (!ONLY || ONLY.includes('sheets')) {

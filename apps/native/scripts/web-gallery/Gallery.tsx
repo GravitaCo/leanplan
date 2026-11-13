@@ -462,10 +462,14 @@ export function Gallery() {
         </div>
       </Sec>
 
-      <Sec id="pickers" title="Time fields (tap for the wheels) · a date in a sheet">
+      <Sec id="pickers" title="Time fields (tap for the wheels; both disabled) · a date in a sheet">
         <div className="list nf-times">
           <div className="frow"><label htmlFor="g-wake">Wake time</label><input id="g-wake" type="time" className="num" value={wake} onChange={(e) => setWake(e.target.value)} /></div>
-          <div className="frow"><label htmlFor="g-wind">Wind down</label><input id="g-wind" type="time" className="num" value="21:30" disabled onChange={() => {}} /></div>
+          <div className="frow"><label htmlFor="g-wind">Wind down</label><input id="g-wind" type="time" className="num" value="21:30" onChange={() => {}} /></div>
+        </div>
+        <div className="list nf-times" style={{ marginTop: 10 }}>
+          <div className="frow"><label htmlFor="g-wake2">Wake up</label><input id="g-wake2" type="time" className="num" value="07:00" disabled onChange={() => {}} /></div>
+          <div className="frow"><label htmlFor="g-wind2">Wind-down</label><input id="g-wind2" type="time" className="num" value="21:30" disabled onChange={() => {}} /></div>
         </div>
         <div style={{ marginTop: 10 }}>
           <label className="btn gray" style={{ position: 'relative', overflow: 'hidden' }}>{day ? `Starts ${day}` : 'Pick a date'}

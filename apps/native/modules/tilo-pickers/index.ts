@@ -19,3 +19,14 @@ export interface DateWheelProps extends ViewProps {
 }
 
 export const DateWheel: ComponentType<DateWheelProps> | null = TiloPickers ? requireNativeView<DateWheelProps>('TiloPickers') : null
+
+/**
+ * "HH:mm" as the phone shows a time: its 12 or 24 hour setting on iOS (DateFormatter), the locale's
+ * two-digit form elsewhere (as a browser's time input shows it). Empty stays empty.
+ */
+export function formatTime(hhmm: string): string {
+  if (!/^\d{2}:\d{2}$/.test(hhmm)) return hhmm
+  if (TiloPickers) return TiloPickers.formatTime(hhmm)
+  const [h, m] = hhmm.split(':').map(Number)
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}

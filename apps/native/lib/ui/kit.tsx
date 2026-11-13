@@ -319,7 +319,7 @@ export function ToastHost({ sheet }: { sheet?: number } = {}) {
   useEffect(() => { if (top && toast && Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(toast) }, [toast, top])
   if (!top) return null
   return (
-    <Animated.View pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
+    <Animated.View testID="toast" pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
       accessibilityElementsHidden={!toast} importantForAccessibility={toast ? 'auto' : 'no-hide-descendants'}
       style={[{ position: 'absolute', left: 0, right: 0, bottom: 72 + insets.bottom, alignItems: 'center' }, style]}>
       {toast && action
