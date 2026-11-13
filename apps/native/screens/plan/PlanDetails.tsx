@@ -96,7 +96,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
 
       {sheet === 'rename' && (
         <Sheet title="Rename" onClose={() => setSheet(null)} right={<NavBtn bold title="Save" onPress={() => { updatePlan(plan.id, { name }); setSheet(null) }} />}>
-          <Input sheetInput label="Plan name" value={name} maxLength={120} onChangeText={setName} autoFocus />
+          <Input sheetInput label="Plan name" value={name} maxLength={120} onChangeText={setName} />
         </Sheet>
       )}
       {sheet === 'add' && (
