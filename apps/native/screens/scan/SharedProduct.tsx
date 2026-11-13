@@ -43,7 +43,13 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
 /** The terms link under the opt-in (the web opens the website's page in a new tab).
  *  TODO(N2): use N2's legal link once it exists, so every legal link opens the same way. */
 function TermsLink() {
-  return <LinkBtn title={LEGAL_LABEL.terms} onPress={() => { void WebBrowser.openBrowserAsync(LEGAL_URLS.terms) }} style={{ paddingHorizontal: 0, fontSize: 13, lineHeight: 18 }} />
+  // `.sp-terms a`: 13 pt, underlined; the link's own 6 pt padding stays out of the layout
+  return (
+    <View style={{ marginVertical: -6 }}>
+      <LinkBtn title={LEGAL_LABEL.terms} onPress={() => { void WebBrowser.openBrowserAsync(LEGAL_URLS.terms) }}
+        style={{ paddingHorizontal: 0, fontSize: 13, lineHeight: 18, textDecorationLine: 'underline' }} />
+    </View>
+  )
 }
 
 /** sp-1: compliance's copy, word for word, then a link to the terms (where the sharing licence
@@ -51,11 +57,11 @@ function TermsLink() {
 export function ShareOptInSheet({ onAnswer }: { onAnswer: (yes: boolean) => void }) {
   return (
     <BareSheet label={OPT_IN.title} onClose={() => onAnswer(false)}>
-      <View style={{ paddingTop: 2, paddingHorizontal: 4 }}>
+      <View style={{ paddingHorizontal: 4, paddingBottom: 10 }}>
         <SpTile icon="people" size={20} />
         <SheetTitle>{OPT_IN.title}</SheetTitle>
         <SheetBody>{OPT_IN.body}</SheetBody>
-        <View style={{ marginTop: 2, alignItems: 'flex-start' }}><TermsLink /></View>
+        <View style={{ marginTop: 8, alignItems: 'flex-start' }}><TermsLink /></View>
         <Btn title={OPT_IN.yes} onPress={() => onAnswer(true)} style={{ marginTop: 24 }} />
         <Btn kind="gray" title={OPT_IN.no} onPress={() => onAnswer(false)} style={{ marginTop: 8 }} />
       </View>
@@ -106,7 +112,7 @@ export function ShareProductRow({ state, busy, onShare }: { state: 'on' | 'offli
 export function InOffSheet({ onOk }: { onOk: () => void }) {
   return (
     <BareSheet label={IN_OFF.title} onClose={onOk}>
-      <View style={{ paddingTop: 2, paddingHorizontal: 4 }}>
+      <View style={{ paddingHorizontal: 4, paddingBottom: 10 }}>
         <SpTile icon="bars" size={22} />
         <SheetTitle>{IN_OFF.title}</SheetTitle>
         <SheetBody>{IN_OFF.body}</SheetBody>

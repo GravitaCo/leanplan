@@ -298,9 +298,10 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
           const s = suggFor(f)
           const own = (rowIssues.get(f) || []).find(oneRow)
           const note = s ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            // the web's `.flagnote .btn.sm { margin-left: 8px }`, wrapping under the sentence
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
               <FlagNote>{CONFIRM.didYouMean} <Text style={[tx(13, 700), num]}>{s.display}</Text>{s.cell === cellId(f, 'serving') ? CONFIRM.perServingSuffix : ''}? {s.because}</FlagNote>
-              <Btn small kind="tinted" title={CONFIRM.accept} label={`Use ${s.display}`} onPress={accept} />
+              <Btn small kind="tinted" title={CONFIRM.accept} label={`Use ${s.display}`} onPress={accept} style={{ marginLeft: 8 }} />
             </View>
           ) : own ? <FlagNote>{own.msg}</FlagNote>
             : odd.has(f) ? <FlagNote>{lowConf.has(f) && !rowIssues.has(f) ? CONFIRM.hard : CONFIRM.second}</FlagNote>

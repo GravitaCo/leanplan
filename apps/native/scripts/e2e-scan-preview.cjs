@@ -53,6 +53,20 @@ async function shows(page, text) {
     }
   }
 
+  // the label's capture step after the consent: guidance, the camera note (no camera in a browser),
+  // Choose a photo, Type it in instead; light and dark
+  for (const scheme of ['light', 'dark']) {
+    const { ctx, page, errors } = await open(browser, `${NATIVE}scan-preview?s=label`, state(), scheme, (p) => p.getByTestId('scan-preview-label').waitFor({ timeout: 20000 }))
+    await page.getByRole('button', { name: 'OK, take a photo' }).click()
+    const words = ['Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.', 'No camera is available here. Choose a photo of the label instead.', 'Choose a photo', 'Of the nutrition table, from your photos', 'Type it in instead']
+    const missing = []
+    for (const w of words) if (!(await shows(page, w))) missing.push(w)
+    check(`label panel (${scheme}): the web's words`, missing.length === 0, missing)
+    check(`label panel (${scheme}): no page errors`, errors.length === 0, errors)
+    await page.screenshot({ path: path.join(OUT, `label-panel-${scheme}.png`) })
+    await ctx.close()
+  }
+
   // the barcode screen's behaviour: a bad check digit says so; a valid code shows "Looking up"
   const { ctx, page } = await open(browser, `${NATIVE}scan-preview?s=scan`, state(), 'light', (p) => p.getByTestId('scan-preview-scan').waitFor({ timeout: 20000 }))
   await ctx.route(/openfoodfacts\.org/, (r) => new Promise((res) => setTimeout(() => res(r.fulfill({ status: 404, body: '{"status":0}' })), 1500)))
