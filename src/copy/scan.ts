@@ -38,6 +38,15 @@ export const MISSING_NOTE = {
   error: 'Couldn’t look it up right now. Enter it from the label: per 100 g column.',
 } as const
 export const LABEL_OFFLINE = 'Label photos need a connection the first time they open.'
+/** Add food's two scan rows and the search bar's scan button */
+export const SCAN_ENTRY = {
+  barcode: 'Scan barcode',
+  barcodeSub: 'Packaged food, from the pack',
+  barcodeSubOffline: 'Works for products you’ve scanned before',
+  label: 'Scan the label',
+  labelSub: 'A photo of the nutrition table',
+  opening: 'Opening the camera…',
+} as const
 
 /* common.tsx */
 export const LABEL_PHOTO = 'Photo of the label'
