@@ -119,9 +119,11 @@ const check = (name, ok, detail) => { if (!ok) bad++; console.log(ok ? 'PASS' : 
 
 /** the two apps, as selectors over the same page shapes */
 const APPS = {
-  web: { url: WEB, screen: '.screen', sheet: '.sheet', titles: '.sheet .li .t', search: 'Search foods' },
-  native: { url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[data-testid="sheet"]', titles: '[data-testid="sheet"] [data-testid="row-title"]', search: 'Search foods' },
+  web: { kind: 'web', url: WEB, screen: '.screen', sheet: '.sheet', titles: '.sheet .li .t', search: 'Search foods' },
+  native: { kind: 'native', url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[data-testid="sheet"]', titles: '[data-testid="sheet"] [data-testid="row-title"]', search: 'Search foods' },
 }
+// NATIVE_KIND=web puts a second web build in the native slot: a before/after check of a web change
+if (process.env.NATIVE_KIND === 'web') APPS.native = { ...APPS.web, url: NATIVE }
 
 async function open(browser, which, st, scheme = 'light') {
   const app = APPS[which]
@@ -169,7 +171,7 @@ async function open(browser, which, st, scheme = 'light') {
   page.on('dialog', (d) => d.accept())
   await page.goto(app.url)
   await page.getByText('This week', { exact: true }).first().waitFor({ timeout: 30000 })
-  const tab = which === 'web' ? page.locator('nav.tabbar').getByRole('button', { name: 'Food', exact: true }) : page.getByRole('tab', { name: 'Food', exact: true })
+  const tab = app.kind === 'web' ? page.locator('nav.tabbar').getByRole('button', { name: 'Food', exact: true }) : page.getByRole('tab', { name: 'Food', exact: true })
   await tab.click()
   await page.locator(app.screen).first().waitFor({ timeout: 15000 })
   await page.waitForTimeout(400)
@@ -183,10 +185,10 @@ const sheetOpen = (a) => a.page.locator(a.app.sheet).last().waitFor({ timeout: 1
 const sheetGone = async (a) => { await a.page.waitForFunction((s) => !document.querySelector(s), a.app.sheet, { timeout: 10000 }) }
 const btn = (a, name, exact = true) => a.page.getByRole('button', { name, exact })
 /** a row in the open sheet with this title (web: `.li` with that `.t`; native: the row's label) */
-const sheetRow = (a, title) => a.which === 'web'
+const sheetRow = (a, title) => a.app.kind === 'web'
   ? a.page.locator('.sheet .li').filter({ has: a.page.locator('.t', { hasText: new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }) }).first()
   : a.page.locator(a.app.sheet).last().getByRole('button', { name: title, exact: true }).first()
-const close = async (a) => { await a.page.keyboard.press('Escape').catch(() => {}); if (a.which === 'native' || await a.page.locator(a.app.sheet).count()) { const c = btn(a, 'Cancel'); if (await c.count()) await c.last().click(); else { const d = btn(a, 'Done'); if (await d.count()) await d.last().click() } } await sheetGone(a).catch(() => {}) }
+const close = async (a) => { await a.page.keyboard.press('Escape').catch(() => {}); if (a.app.kind === 'native' || await a.page.locator(a.app.sheet).count()) { const c = btn(a, 'Cancel'); if (await c.count()) await c.last().click(); else { const d = btn(a, 'Done'); if (await d.count()) await d.last().click() } } await sheetGone(a).catch(() => {}) }
 
 async function same(name, w, n, fn) {
   const [a, b] = [await fn(w), await fn(n)]
@@ -296,10 +298,12 @@ async function run() {
         await a.page.getByLabel(a.app.search).fill(food)
         const row = sheetRow(a, food)
         if (!(await row.count())) { entries.push({ missing: food }); await close(a); continue }
-        await row.click()
-        await a.page.locator(a.app.sheet).last().getByText(food, { exact: true }).first().waitFor()
-        await btn(a, 'Add to Lunch').click()
-        await sheetGone(a)
+        try {
+          await row.click()
+          await a.page.locator(a.app.sheet).last().getByText(food, { exact: true }).first().waitFor()
+          await btn(a, 'Add to Lunch').click()
+          await sheetGone(a)
+        } catch (err) { entries.push({ error: String(err).slice(0, 160) }); await close(a); continue }
         const fs0 = (await stored(a)).days[today].foods
         entries.push(fs0.slice(before).map(({ n: nm, k, p, c, f, grams, unit, how, meal, serv }) => ({ n: nm, k, p, c, f, grams, unit, how, meal, serv })))
       }
