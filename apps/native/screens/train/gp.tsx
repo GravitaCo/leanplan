@@ -50,13 +50,17 @@ export function GpPill({ children, plain }: { children: ReactNode; plain?: boole
     </View>
   )
 }
+/** A line height at or above Geist's 1.3 em, an even number of points above `size`. */
+export const geistLine = (size: number) => { const l = Math.ceil(size * 1.3); return l + ((l - size) % 2) }
 /** `.gp-clock`: 64 px light figures and a smaller line beside them */
 /** `light`: the web's 300 (200 in the warm-up), Geist Light and ExtraLight */
 export function GpClock({ big, small, label, size = 64, light = 300 }: { big: string; small?: string; label: string; size?: number; light?: 200 | 300 }) {
   return (
     <View accessible accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-      {/* room for the glyphs (iOS clips them when lineHeight equals the size), the box kept at line-height 1 */}
-      <Text style={[font(light), num, { fontSize: size, lineHeight: Math.round(size * 1.2), marginVertical: -Math.round(size * 0.1), letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
+      {/* lineHeight at least Geist's own line height (1.3 em) so iOS centres the glyphs instead of
+          clipping them, kept an even step above the size so the negative margins bring the box back
+          to exactly `size` (the web's line-height: 1) */}
+      <Text style={[font(light), num, { fontSize: size, lineHeight: geistLine(size), marginVertical: -(geistLine(size) - size) / 2, letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
       {!!small && <Text style={[font(400), num, { flexShrink: 1, fontSize: 15, color: 'rgba(255,255,255,0.85)' }]}>{small}</Text>}
     </View>
   )
