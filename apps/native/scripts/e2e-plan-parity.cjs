@@ -125,7 +125,7 @@ const CASES = [
   ['build · step 1', 'none', [tapText('Browse all plans'), tapText('New plan')]],
   ['build · step 2', 'none', [tapText('Browse all plans'), tapText('New plan'), tapText('Next: your week')]],
   ['none · add-workout sheet', 'none', [tap(/^Monday: /), tapText('Change workout')]],
-  ['none · add-workout category', 'none', [tap(/^Monday: /), tapText('Change workout'), tapText('Weights')]],
+  ['none · add-workout category', 'none', [tap(/^Monday: /), tapText('Change workout'), async (p) => { await p.getByRole('button', { name: /^Weights/ }).locator('visible=true').last().click(); await p.waitForTimeout(500) }]],
   ['none · copy from sheet', 'none', [tap(/^Monday: /), tapText('Copy another day')]],
   ['choosing · a goal chosen', 'none', [tapText('Browse all plans'), tapText('Get stronger')]],
   ['build · step 3', 'none', [tapText('Browse all plans'), tapText('New plan'), tapText('Next: your week'), tapText('Copy it'), tapText('Next: when to start')]],
