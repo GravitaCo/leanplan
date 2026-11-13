@@ -62,8 +62,10 @@ export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger' | 'signout'
 
 /** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, `.signout` (Profile's: a card-coloured
  *  block, radius 16, red 16 pt, 24 above), and `.sm` (36 high, as wide as its words). */
-export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style, textStyle, label }: {
-  title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode; disabled?: boolean
+export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disabled, style, textStyle, label }: {
+  title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode
+  /** an icon after the words (the sign-in arrow) */
+  iconAfter?: IconName | ReactNode; disabled?: boolean
   /** a context's own size (`.pcard .btn.gray` 48, `.mv .btn.sm` 40): the web's per-screen rules */
   style?: StyleProp<ViewStyle>; textStyle?: StyleProp<TextStyle>; label?: string
 }) {
@@ -81,6 +83,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
       <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
+      {typeof iconAfter === 'string' ? <Icon name={iconAfter as IconName} color={fg} /> : iconAfter}
     </Pressable>
   )
   // .btn.signout's 24 above sits outside the button, as a CSS margin does
@@ -165,10 +168,14 @@ export const initials = (name: string) => name.trim().split(/\s+/).filter(Boolea
  * `.list`: an inset grouped list (radius 18) whose rows are split by 1 px --sep lines starting 16 pt
  * in, or 58 pt in with `icons` (rows that start with a settings icon).
  */
-export function List({ children, icons = false, wrap = false, style }: {
+export function List({ children, icons = false, wrap = false, inset, style }: {
   children: ReactNode; icons?: boolean
   /** `.nf-rows` (Profile's notification rows): a row's sub wraps and its value is never cut */
-  wrap?: boolean; style?: StyleProp<ViewStyle>
+  wrap?: boolean
+  /** where the separators start, when not 16 (58 with `icons`): 72 for the exercise library's
+   *  thumbnail rows (`.list .lib-row`), 0 for Train's Today list (`.tlist`, radius 20 in `style`) */
+  inset?: number
+  style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const bg = useSurface(t)
@@ -180,7 +187,7 @@ export function List({ children, icons = false, wrap = false, style }: {
       {rows.map((c, i) => (
         <View key={i}>
           {i > 0 && rows[i - 1] && !(isValidElement(c) && (c.props as { noSep?: boolean }).noSep) && (
-            <View style={{ position: 'absolute', top: 0, left: icons ? 58 : 16, right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
+            <View style={{ position: 'absolute', top: 0, left: inset ?? (icons ? 58 : 16), right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
           )}
           {c}
         </View>
@@ -206,14 +213,15 @@ function flat(children: ReactNode): ReactNode[] {
  * 24 pt `.x` circle, in a 44 pt touch area). Tappable as a whole when given `onPress`.
  */
 export function Banner({ icon, iconColor, title, body, onPress, onDismiss, children }: {
-  icon: IconName; iconColor: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
+  /** optional: a banner can be words only */
+  icon?: IconName; iconColor?: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
 }) {
   const t = useTokens()
   // a tappable banner is a <button> on the web, whose text the browser doesn't track
   const track = onPress ? BTN : undefined
   const inner = (
     <>
-      <Icon name={icon} color={iconColor} />
+      {icon && <Icon name={icon} color={iconColor ?? t.label2} />}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[tx(15, 700, 1.35, track), { color: t.label }]}>{title}</Text>
         {body != null && <Text style={[tx(15, 400, 1.35, track), { color: t.label2 }]}>{body}</Text>}
