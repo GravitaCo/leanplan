@@ -13,15 +13,15 @@ import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persis
 import { IMPORT, PROFILE as P, SIGN_OUT } from '@/copy/profile'
 import { dayName } from '@/screens/review/reviewModel'
 import { tx, useTokens } from '../../lib/theme'
+import { Sub } from '../../lib/ui/text'
 import { Btn, Chip, Chips } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
-import { sub } from './text'
+import { PROSE } from './text'
 import { exportBackup } from './n2'
 import { pushReady } from './n12'
 
 /** Weigh one of each once; after that "a palm" is a measurement, not a guess. */
 export function HandsSheet({ onClose }: { onClose: () => void }) {
-  const t = useTokens()
   const profile = useStore((s) => s.data.profile)
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
@@ -36,7 +36,7 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
   }
   return (
     <Sheet title={P.hands.title} onClose={onClose} right={<NavBtn title={P.hands.save} bold onPress={save} />}>
-      <Text style={[sub(t), { paddingHorizontal: 4, paddingBottom: 12 }]}>{P.hands.lead}</Text>
+      <Sub style={[PROSE, { paddingHorizontal: 4, paddingBottom: 12 }]}>{P.hands.lead}</Sub>
       {/* TODO(N1-followup) item 1, `.frow` number fields in a List: one per HANDS type (label, hint, grams, P.hands.unit), editing `vals` (src/screens/ProfileScreen.tsx HandsSheet) */}
     </Sheet>
   )
@@ -44,7 +44,6 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
 
 /** Sign out, optionally removing this device's log (shared phones). It stays in the account. */
 export function SignOutSheet({ onClose }: { onClose: () => void }) {
-  const t = useTokens()
   const signOut = useStore((s) => s.signOut)
   const data = useStore((s) => s.data)
   const [busy, setBusy] = useState<'keep' | 'remove' | null>(null)
@@ -58,12 +57,11 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
     setBusy(remove ? 'remove' : 'keep')
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
-  const p = [sub(t), { marginBottom: 10 }]
   return (
     <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
-        <Text style={p}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.keeps}</Text>
-        {!phoneOnly && unsynced > 0 && <Text style={p}>{SIGN_OUT.unsynced(unsynced)}</Text>}
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.keeps}</Sub>
+        {!phoneOnly && unsynced > 0 && <Sub style={[PROSE, { marginBottom: 10 }]}>{SIGN_OUT.unsynced(unsynced)}</Sub>}
       </View>
       <View style={{ gap: 8, marginTop: 6 }}>
         <Btn kind="tinted" disabled={!!busy} title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.go} onPress={() => void go(false)} />
@@ -77,16 +75,14 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
 
 /** Confirm step before a backup replaces data: say what's in it and what changes. */
 export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
-  const t = useTokens()
   const b = backupSummary(backup)
   const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
-  const p = [sub(t), { marginBottom: 10 }]
   return (
     <Sheet title={IMPORT.title} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
-        <Text style={p}>{IMPORT.has(n(b.days, 'day', 'days'), span, n(b.foods, 'saved food', 'saved foods'), n(b.recipes, 'recipe', 'recipes'), n(b.workouts, 'workout', 'workouts'))}</Text>
-        <Text style={p}>{IMPORT.replaces(b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : '', !!(b.foods || b.recipes), !!b.workouts)}</Text>
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{IMPORT.has(n(b.days, 'day', 'days'), span, n(b.foods, 'saved food', 'saved foods'), n(b.recipes, 'recipe', 'recipes'), n(b.workouts, 'workout', 'workouts'))}</Sub>
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{IMPORT.replaces(b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : '', !!(b.foods || b.recipes), !!b.workouts)}</Sub>
       </View>
       <View style={{ marginTop: 6 }}><Btn kind="tinted" title={IMPORT.go} onPress={onImport} /></View>
     </Sheet>

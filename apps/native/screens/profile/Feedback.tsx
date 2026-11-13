@@ -12,9 +12,10 @@ import { useStore } from '@/store/store'
 import { FEEDBACK_AREAS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers } from '@/core/domain/feedback'
 import { FEEDBACK as F } from '@/copy/profile'
 import { num, tx, useTokens } from '../../lib/theme'
+import { Foot, Sub } from '../../lib/ui/text'
+import { PROSE } from './text'
 import { Btn, Card } from '../../lib/ui/kit'
 import { BackButton, Sheet } from '../../lib/ui/primitives'
-import { foot, sub } from './text'
 
 const STEPS = FEEDBACK_AREAS.length + 3 // intro, the areas, open questions, review
 const EMPTY: FeedbackAnswers = { areas: {}, wishes: '', other: '' }
@@ -45,23 +46,23 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   }
   const ready = hasFeedback(a)
   const q = [tx(22, 600, 28, -0.01), { color: t.label, marginTop: 4, marginBottom: 6 }]
-  const hint = [foot(t), { paddingTop: 0, paddingHorizontal: 0, paddingBottom: 12 }]
+  const hint = { paddingTop: 0, paddingHorizontal: 0, paddingBottom: 12 }
 
   return (
     <Sheet title={F.title} tall onClose={onClose} left={step > 0 ? <BackButton onPress={back} /> : undefined}
-      right={step > 0 ? <Text style={[sub(t), num]}>{F.of(step, STEPS - 1)}</Text> : undefined}>
+      right={step > 0 ? <Sub style={num}>{F.of(step, STEPS - 1)}</Sub> : undefined}>
       {step === 0 && (
         <View>
           <Text style={q}>{F.introT}</Text>
-          <Text style={[sub(t), { marginBottom: 10 }]}>{F.intro}</Text>
-          <Text style={[sub(t), { marginBottom: 10 }]}>{F.goesTo(FEEDBACK_TO)}</Text>
+          <Sub style={[PROSE, { marginBottom: 10 }]}>{F.intro}</Sub>
+          <Sub style={[PROSE, { marginBottom: 10 }]}>{F.goesTo(FEEDBACK_TO)}</Sub>
         </View>
       )}
 
       {area && (
         <View>
           <Text style={q}>{area.question}</Text>
-          <Text style={hint}>{area.hint}</Text>
+          <Foot style={hint}>{area.hint}</Foot>
           {/* TODO(N1-followup): the `.scale` rating radios (FEEDBACK_RATINGS, tap again to clear) setting a.areas[area.id].rating (src/screens/profile/FeedbackSheet.tsx) */}
           {/* TODO(N1-followup) item 1, textarea: F.note, placeholder F.optional, setting a.areas[area.id].note */}
         </View>
@@ -70,7 +71,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
       {step === FEEDBACK_AREAS.length + 1 && (
         <View>
           <Text style={q}>{F.wishesT}</Text>
-          <Text style={hint}>{F.wishesHint}</Text>
+          <Foot style={hint}>{F.wishesHint}</Foot>
           {/* TODO(N1-followup) item 1, textareas: a.wishes (5 rows), then F.other with a.other (3 rows), placeholders F.optional */}
         </View>
       )}
@@ -80,7 +81,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
           <Text style={q}>{F.readyT}</Text>
           {/* `.card.fb-preview` */}
           <Card style={{ marginBottom: 12 }}><Text style={[tx(13, 400, 1.4), { color: t.label2 }]}>{email.body}</Text></Card>
-          <Text style={hint}>{opened ? F.opened(FEEDBACK_TO) : (ready ? F.opens(FEEDBACK_TO) : F.answerOne) + F.included}</Text>
+          <Foot style={hint}>{opened ? F.opened(FEEDBACK_TO) : (ready ? F.opens(FEEDBACK_TO) : F.answerOne) + F.included}</Foot>
           <View style={{ gap: 8, marginTop: 4 }}>
             {opened
               ? <Btn title={F.done} onPress={() => { draft = { step: 0, a: EMPTY }; onClose() }} />

@@ -31,17 +31,18 @@ import { profileKcal, suggestionWeight } from '@/screens/profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, HEALTH_STATUS_LABEL, directionLabel, healthStatusOf } from '@/screens/profile/profileModel'
 import { dayName } from '@/screens/review/reviewModel'
 import { GEIST, num, tx, useTokens } from '../../lib/theme'
+import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Btn, Card, Chip, Chips, LinkBtn, List, initials as initialsOf } from '../../lib/ui/kit'
-import { Disclosure, PageHeader, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
+import { Disclosure, PageHeader, Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
 import { Chevron, Icon } from '../../lib/ui/icons'
-import { foot, lbl, note, sub } from './text'
+import { FLAT_FOOT, NOTE, PROSE } from './text'
 import { BackoffNotices, MindReminderRows, PillarsSettings, SuppNamesRow, YourTimes } from './Settings'
 import { HealthAnswersScreen } from './HealthAnswers'
 import { HealthDataSheet } from './HealthData'
 import { SupportSheet } from './Support'
 import { FeedbackSheet } from './Feedback'
 import { HandsSheet, ImportSheet, ReviewDaySheet, SignOutSheet } from './Sheets'
-import { agreeHealth, exportBackup, openDeleteAccount, pickBackup, withdrawHealth } from './n2'
+import { LEGAL_DOCS, LEGAL_LABEL, agreeHealth, exportBackup, openDeleteAccount, openLegal, pickBackup, withdrawHealth } from './n2'
 import { pushReady } from './n12'
 
 type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
@@ -85,8 +86,6 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const importBackup = useStore((s) => s.importBackup)
   const showToast = useStore((s) => s.showToast)
   const openRedo = useStore((s) => s.openRedo)
-  // Privacy's "Share new products I scan" switch waits on N1's plain row (TODO below)
-  void setShareProducts; void SHARED_PRODUCTS_ENABLED
 
   const pr = data.profile
   const weight = latestWeight(data, todayStr())
@@ -162,7 +161,6 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const body = [tx(15, 400, 1.45), { color: t.label }]
   const b = (x: string) => <Text style={[tx(15, 700, 1.45), num, { color: t.label }]}>{x}</Text>
   const muted = { color: t.label2 }
-  const flatFoot = [foot(t), { paddingHorizontal: 0, paddingTop: 10 }]
 
   // ob7-1: back goes to the Health data sheet it came from
   if (view === 'answers') return <HealthAnswersScreen onBack={() => { setView('main'); setHealthOpen(true) }} />
@@ -197,13 +195,13 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           </View>
         </List>
 
-        <Text accessibilityRole="header" style={lbl(t)}>{P.groups.goal}</Text>
+        <Lbl>{P.groups.goal}</Lbl>
         <List icons>
           <Disclosure soft icon="scale" color={FOODF} label={P.body.row} value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
             open={open === 'metrics'} onToggle={() => toggle('metrics')}>
             {/* TODO(N1-followup) items 1 and 2: Sex and Activity level selects, Age, Height (cm) and Weight (kg) number fields in `.grid2`, then
                 "Save metrics" with weightPatch, the activity cool-down and sexAnswer as src/screens/ProfileScreen.tsx does */}
-            <Text style={[lbl(t), { paddingLeft: 0 }]}>{P.body.mainGoal}</Text>
+            <Lbl>{P.body.mainGoal}</Lbl>
             <Chips>{GOALS.map((g) => <Chip key={g.value} title={g.label} on={pr.goal === g.value} onPress={() => saveProfileMetrics({ goal: g.value })} />)}</Chips>
             {sug || pk.kind === 'none' ? (
               <View onLayout={mark('sug')} testID="sug-targets">
@@ -222,9 +220,9 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
                         <Text style={muted}>({directionLabel(sug.adjustPct)})</Text>{'\n'}
                         {P.sug.protein}{b(`${sug.proteinEveryday ? P.sug.about : ''}${sug.p} g`)} · {P.sug.carbs}{b(`${sug.c} g`)} · {P.sug.fat}{b(`${sug.f} g`)}
                       </Text>
-                      {sug.proteinEveryday && <Text style={[note(t), { marginTop: 6 }]}>{PROTEIN_EVERYDAY_NOTE}</Text>}
-                      {sug.floored && <Text style={[note(t), { marginTop: 6 }]}>{P.sug.floored}</Text>}
-                      {sug.heldAtMaintenance && <Text style={[note(t), { marginTop: 6 }]}>{HELD_AT_MAINTENANCE_NOTE}</Text>}
+                      {sug.proteinEveryday && <Sub style={[NOTE, { marginTop: 6 }]}>{PROTEIN_EVERYDAY_NOTE}</Sub>}
+                      {sug.floored && <Sub style={[NOTE, { marginTop: 6 }]}>{P.sug.floored}</Sub>}
+                      {sug.heldAtMaintenance && <Sub style={[NOTE, { marginTop: 6 }]}>{HELD_AT_MAINTENANCE_NOTE}</Sub>}
                       <Btn title={P.sug.use} style={{ marginTop: 10 }} onPress={() => {
                         saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
                         setTargets({ ...targets, kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })
@@ -233,11 +231,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
                   )}
                 </Card>
               </View>
-            ) : <Text style={flatFoot}>{sugWeight && !weightBack ? P.sug.needAgeHeight : P.sug.needAll}</Text>}
+            ) : <Foot style={FLAT_FOOT}>{sugWeight && !weightBack ? P.sug.needAgeHeight : P.sug.needAll}</Foot>}
           </Disclosure>
           {pk.kind === 'range' && (
             <Disclosure soft icon="target" color={FOODF} label={P.targets.row} value={kcalText} open={open === 'targets'} onToggle={() => toggle('targets')}>
-              <Text style={[foot(t), { paddingHorizontal: 0, paddingTop: 0 }]}>{P.targets.rangeOnly}</Text>
+              <Foot style={{ paddingHorizontal: 0, paddingTop: 0 }}>{P.targets.rangeOnly}</Foot>
             </Disclosure>
           )}
           {pk.kind === 'target' && (
@@ -252,17 +250,17 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
                 const st = useStore.getState().data
                 setTargets({ kcal: String(st.target.kcal), p: String(st.target.p), c: String(st.target.c), f: String(st.target.f), range: String(rangeWidth(st.profile)) })
               }} />
-              <Text style={flatFoot}>{P.targets.foot}</Text>
+              <Foot style={FLAT_FOOT}>{P.targets.foot}</Foot>
             </Disclosure>
           )}
           <SettingRow soft icon="dumbbell" color={MOVEF} label={P.training.row} value={P.training.days(trainDays)} onPress={() => (onOpenTab ? onOpenTab('plan') : setTab('plan'))} />
         </List>
-        <Text style={foot(t)}>{P.training.foot}</Text>
+        <Foot>{P.training.foot}</Foot>
 
         {/* WP9, board B1: pillars and how often Tilo asks (flag on only) */}
         {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} onSupport={() => setSupportOpen('mind')} />}
 
-        <Text accessibilityRole="header" style={lbl(t)}>{P.groups.tracking}</Text>
+        <Lbl>{P.groups.tracking}</Lbl>
         <List icons>
           <Disclosure soft icon="pill" color={MINDF} label={P.supps.row} value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
             {(pr.supplements || []).map((s) => (
@@ -292,31 +290,31 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           </Disclosure>
           <Disclosure soft icon="leaf" color={FOODF} label={P.diet.row} value={dietLabel} open={open === 'diet'} onToggle={() => toggle('diet')}>
             <Seg<DietPattern> options={DIETS.map(([d, l]): [DietPattern, string] => [d, d === 'none' ? P.diet.none : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
-            <Text style={note(t)}>{P.diet.note}</Text>
+            <Sub style={NOTE}>{P.diet.note}</Sub>
           </Disclosure>
           <SettingRow soft icon="hand" color={FOODF} label={P.hands.row} value={P.hands.value(handGrams(pr, 'palm'))} onPress={() => setHandsOpen(true)} />
           <Disclosure soft icon="target" color={FOODF} label={P.accuracy.row} value={accuracyOf(pr).label} open={open === 'accuracy'} onToggle={() => toggle('accuracy')}>
             <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k): [AccuracyMode, string] => [k, ACCURACY[k].label])} value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
-            <Text style={note(t)}>{accuracyOf(pr).desc}</Text>
+            <Sub style={NOTE}>{accuracyOf(pr).desc}</Sub>
           </Disclosure>
           <View onLayout={mark('display')}>
             <Disclosure soft icon="smile" color={MINDF} label={P.display.row} value={pr.gentle ? P.display.gentle : P.display.standard} open={open === 'display'} onToggle={() => toggle('display')}>
               <Seg<'std' | 'gentle'> options={[['std', P.display.standard], ['gentle', P.display.gentle]]} value={pr.gentle ? 'gentle' : 'std'} onChange={(v) => setPrefs({ gentle: v === 'gentle' })} />
-              <Text style={note(t)}>{pr.gentle ? P.display.gentleNote : P.display.standardNote}</Text>
+              <Sub style={NOTE}>{pr.gentle ? P.display.gentleNote : P.display.standardNote}</Sub>
             </Disclosure>
           </View>
         </List>
 
         {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
-        <Text accessibilityRole="header" style={lbl(t)}>{P.groups.review}</Text>
+        <Lbl>{P.groups.review}</Lbl>
         <List icons>
           <SettingRow soft icon="review" color={MINDF} label={P.review.day} value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
           <SettingRow soft icon="weight" color={FOODF} label={P.review.weight}
             right={<Toggle label={P.review.weight} on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
         </List>
-        <Text style={foot(t)}>{P.review.foot}</Text>
+        <Foot>{P.review.foot}</Foot>
 
-        <View onLayout={mark('nf')}><Text accessibilityRole="header" style={lbl(t)}>{P.groups.notifications}</Text></View>
+        <View onLayout={mark('nf')}><Lbl>{P.groups.notifications}</Lbl></View>
         {WELLBEING_ENABLED && <BackoffNotices />}
         <List icons>
           {WELLBEING_ENABLED && <MindReminderRows />}
@@ -326,21 +324,21 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           <SettingRow soft icon="bell" color={MINDF} label={P.notify.weekly} sub={P.notify.weeklySub(dayName(pr.reviewDay ?? 0))}
             right={<Toggle label={P.notify.weekly} on={!!pr.reviewPush} disabled={!notifReady} onChange={() => undefined /* N12 wires push */} />} />
         </List>
-        {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <Text style={foot(t)}>{NOTIFY_COPY.namesFoot}</Text>}
+        {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <Foot>{NOTIFY_COPY.namesFoot}</Foot>}
         {WELLBEING_ENABLED && <YourTimes />}
-        <Text style={foot(t)}>{P.notify.iphone}</Text>
+        <Foot>{P.notify.iphone}</Foot>
 
-        <Text accessibilityRole="header" style={lbl(t)}>{P.groups.account}</Text>
+        <Lbl>{P.groups.account}</Lbl>
         <List icons>
           <Disclosure soft icon="person" color={GRAY} label={P.account.row} open={open === 'account'} onToggle={() => toggle('account')}>
             <Text style={[tx(13), { color: t.label2 }]}>{P.account.signedInAs}</Text>
             <Text style={[tx(17), { color: t.label }]}>{syncPaused ? P.account.notSyncing : email}</Text>
-            {authed && <Text style={[foot(t), { paddingHorizontal: 0, paddingTop: 8 }]}>{P.account.changeHint}</Text>}
+            {authed && <Foot style={{ paddingHorizontal: 0, paddingTop: 8 }}>{P.account.changeHint}</Foot>}
           </Disclosure>
           <SettingRow soft icon="heart" color={MINDF} label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen(true)} />
           {AI_FEATURES_LIVE && <SettingRow soft icon="bulb" color={GRAY} label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => undefined} />}
           <Disclosure soft icon="cloud" color={GRAY} label={P.backup.row} value={P.backup.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
-            <Text style={[sub(t), { marginBottom: 10 }]}>{!consentLetsSync(data) ? P.backup.phoneOnly : P.backup.stored + (authed ? P.backup.syncs : syncPaused ? P.backup.paused : '') + P.backup.exportNote}</Text>
+            <Sub style={[PROSE, { marginBottom: 10 }]}>{!consentLetsSync(data) ? P.backup.phoneOnly : P.backup.stored + (authed ? P.backup.syncs : syncPaused ? P.backup.paused : '') + P.backup.exportNote}</Sub>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}><Btn kind="gray" title={P.backup.export} onPress={() => exportBackup(data)} /></View>
               <View style={{ flex: 1 }}><Btn kind="gray" title={P.backup.import} onPress={async () => {
@@ -349,7 +347,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             </View>
             {resumeCopy && (
               <View style={{ marginTop: 12 }}>
-                <Text style={[sub(t), { marginBottom: 8 }]}>{P.backup.resume(resumeList)}</Text>
+                <Sub style={[PROSE, { marginBottom: 8 }]}>{P.backup.resume(resumeList)}</Sub>
                 <Btn kind="gray" title={P.backup.resumeBtn} onPress={() => exportBackup(withResumeCopy(resumeCopy))} />
               </View>
             )}
@@ -357,23 +355,33 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           <SettingRow soft icon="x" color={GRAY} label={P.deleteRow} onPress={openDeleteAccount} />
         </List>
 
-        <Text accessibilityRole="header" style={lbl(t)}>{P.groups.testing}</Text>
+        <Lbl>{P.groups.testing}</Lbl>
         <List icons>
           <SettingRow soft icon="mail" color={MINDF} label={P.feedbackRow.label} sub={P.feedbackRow.sub} onPress={() => setFeedbackOpen(true)} />
         </List>
 
         <List icons style={{ marginTop: 24 }}>
           <Disclosure soft icon="info" color={GRAY} label={P.about.row} open={open === 'about'} onToggle={() => toggle('about')}>
-            <Text style={[sub(t), { marginBottom: 10 }]}><Text style={{ fontFamily: GEIST[700] }}>{P.about.name}</Text>{P.about.lead}</Text>
-            <Text style={sub(t)}>{P.about.body}</Text>
+            <Sub style={[PROSE, { marginBottom: 10 }]}><Text style={{ fontFamily: GEIST[700] }}>{P.about.name}</Text>{P.about.lead}</Sub>
+            <Sub style={PROSE}>{P.about.body}</Sub>
           </Disclosure>
           <Disclosure soft icon="key" color={GRAY} label={P.privacy.row} value={health.granted ? undefined : P.privacy.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
-            <Text style={[sub(t), { marginBottom: 10 }]}>
+            <Sub style={[PROSE, { marginBottom: 10 }]}>
               {health.granted && healthAt ? P.privacy.agreedOn(healthAt) : healthStatus === 'off' ? P.privacy.withdrawn : ''}
               {consentLetsSync(data) ? P.privacy.stored : P.privacy.phoneOnly}{P.privacy.neverSold}
-            </Text>
-            {/* TODO(N1-followup) item 6, plain rows: with SHARED_PRODUCTS_ENABLED, P.privacy.shareProducts with a Toggle (setShareProducts) and
-                its foot P.privacy.shareFoot; then the three legal rows (Privacy policy, Terms and conditions, Cookie policy) opening n2's openLegal */}
+            </Sub>
+            {SHARED_PRODUCTS_ENABLED && (
+              // sp-5: on after a yes at the first shared product (sp-1), off after Not now
+              <>
+                <List>
+                  <Row title={P.privacy.shareProducts} right={<Toggle label={P.privacy.shareProducts} on={hasConsent(data, 'shared-products')} onChange={() => setShareProducts(!hasConsent(data, 'shared-products'))} />} />
+                </List>
+                <Foot style={{ marginBottom: 16 }}>{P.privacy.shareFoot}</Foot>
+              </>
+            )}
+            <List style={{ marginBottom: 8 }}>
+              {LEGAL_DOCS.map((id) => <Row key={id} title={LEGAL_LABEL[id]} onPress={() => openLegal(id)} />)}
+            </List>
             {health.granted
               ? <Btn kind="gray" title={P.privacy.withdraw} onPress={withdrawHealth} />
               : <Btn kind="gray" title={P.privacy.turnOn} onPress={agree} />}
@@ -381,9 +389,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           </Disclosure>
         </List>
 
-        {/* `.btn.signout`. TODO(N1-followup) item 8: a Btn kind for it; until then Btn danger in the web's card, radius and type */}
-        <Btn kind="danger" title={P.signOut} onPress={() => setSignOutOpen(true)} style={{ marginTop: 24, backgroundColor: t.card, borderRadius: 16 }} textStyle={tx(16, 500, 1.3, 0)} />
-        <Text style={[foot(t), { textAlign: 'center', paddingTop: 12 }]}>{P.wellness}</Text>
+        <Btn kind="signout" title={P.signOut} onPress={() => setSignOutOpen(true)} />
+        <Foot style={{ textAlign: 'center', paddingTop: 12 }}>{P.wellness}</Foot>
       </ScrollView>
 
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}

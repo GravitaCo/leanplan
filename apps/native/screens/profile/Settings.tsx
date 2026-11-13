@@ -7,7 +7,7 @@
  * Push is stream N12: until it lands pushReady() (./n12) is false, so every reminder switch shows the
  * web's no-push state and nothing here switches a reminder on or off on the account.
  */
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import type { NotifyKind, Pillar } from '@/core/types'
 import { useStore } from '@/store/store'
 import { NOTIFY_KINDS, PILLARS } from '@/core/domain/checkin'
@@ -16,11 +16,11 @@ import { kindTimes } from '../../../../supabase/functions/_shared/reminders'
 import { PILLARS_COPY as PC } from '@/copy/pillars'
 import { NOTIFY_COPY as NC, backoffLine } from '@/copy/notify'
 import { atRiskRoute, offAfter, pillarsOnList } from '@/screens/profile/profileModel'
-import { useTokens, type Tokens } from '../../lib/theme'
+import { tx, useTokens, type Tokens } from '../../lib/theme'
+import { Foot, Lbl } from '../../lib/ui/text'
 import { Banner, Btn, LinkBtn, List } from '../../lib/ui/kit'
-import { Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
+import { Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
 import type { IconName } from '../../lib/ui/icons'
-import { foot, lbl } from './text'
 import { pushReady } from './n12'
 
 const PILLAR_ICON: Record<Pillar, [IconName, keyof Tokens]> = {
@@ -38,7 +38,7 @@ export function PillarsSettings({ onDisplay, onSupport }: { onDisplay: () => voi
   const foodOff = !on.includes('food')
   return (
     <View accessibilityLabel={PC.heading}>
-      <Text accessibilityRole="header" style={lbl(t)}>{PC.heading}</Text>
+      <Lbl>{PC.heading}</Lbl>
       <List icons>
         {PILLARS.map((p) => {
           const isOn = on.includes(p)
@@ -49,21 +49,21 @@ export function PillarsSettings({ onDisplay, onSupport }: { onDisplay: () => voi
           )
         })}
       </List>
-      <Text style={foot(t)}>{foodOff && on.length > 1 ? PC.foodOff : PC.foot}</Text>
+      <Foot>{foodOff && on.length > 1 ? PC.foodOff : PC.foot}</Foot>
       {foodOff && atRiskRoute({ gentle, outcomes }) && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', paddingTop: 7, paddingHorizontal: 16 }}>
-          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.lead}</Text>
-          <LinkBtn title={PC.hard.display} onPress={onDisplay} style={[foot(t), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
-          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.mid}</Text>
-          <LinkBtn title={PC.hard.support} onPress={onSupport} style={[foot(t), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
-          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.end}</Text>
+          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.lead}</Foot>
+          <LinkBtn title={PC.hard.display} onPress={onDisplay} style={[tx(13, 400, 1.38), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
+          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.mid}</Foot>
+          <LinkBtn title={PC.hard.support} onPress={onSupport} style={[tx(13, 400, 1.38), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
+          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.end}</Foot>
         </View>
       )}
-      <Text accessibilityRole="header" style={lbl(t)}>{PC.asksHeading}</Text>
+      <Lbl>{PC.asksHeading}</Lbl>
       <List style={{ paddingVertical: 12, paddingHorizontal: 16 }}>
         <Seg<'usual' | 'fewer'> options={[['usual', PC.asks.usual], ['fewer', PC.asks.fewer]]} value={mind?.asks ?? 'usual'} onChange={(v) => { setMindPrefs({ asks: v }) }} />
       </List>
-      <Text style={foot(t)}>{PC.asksFoot}</Text>
+      <Foot>{PC.asksFoot}</Foot>
     </View>
   )
 }
@@ -92,19 +92,19 @@ export function MindReminderRows() {
 
 /** B11b's names switch, under Supplement reminders while they're on (SUPP_NAMES_ENABLED). */
 export function SuppNamesRow() {
-  // TODO(N1-followup) item 6, plain row `.li.nf-sub`: NC.names with a Toggle on profile.mind.lockNames, written through setMindPrefs (src/screens/profile/NotificationsSettings.tsx SuppNamesRow)
-  return null
+  const on = useStore((s) => s.data.profile.mind?.lockNames === true)
+  const setMindPrefs = useStore((s) => s.setMindPrefs)
+  return <Row nested title={NC.names} right={<Toggle label={NC.names} on={on} onChange={() => { setMindPrefs({ lockNames: !on }) }} />} />
 }
 
 /** B11.9 to B11.12: "Your times" and the foot. */
 export function YourTimes() {
-  const t = useTokens()
   return (
     <>
-      <Text accessibilityRole="header" style={lbl(t)}>{NC.timesHeading}</Text>
+      <Lbl>{NC.timesHeading}</Lbl>
       {/* TODO(N1-followup) items 1 and 2, `.frow` with the TimePicker: NC.wakeAt and NC.windDownAt from usualTimes(mind), disabled unless
           healthLoggingAllowed(data); '' saves null, a valid HH:MM saves it (src/screens/profile/NotificationsSettings.tsx YourTimes) */}
-      <Text style={foot(t)}>{NC.foot}</Text>
+      <Foot>{NC.foot}</Foot>
     </>
   )
 }
