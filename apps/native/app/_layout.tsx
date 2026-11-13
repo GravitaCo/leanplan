@@ -7,6 +7,7 @@ import { useFonts, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_7
 import { useStore } from '@/store/store'
 import { supabase } from '@/data/supabase'
 import { useGate } from '../lib/gate'
+import '../lib/e2eHook'
 
 // supabase-js on React Native: refresh the session only while the app is in front
 AppState.addEventListener('change', (s) => {
