@@ -69,6 +69,7 @@ import { consentSuite } from './test-consent'
 import { onboardingSuite } from './test-onboarding'
 import { engineSuite } from './test-engine'
 import { wizardSuite } from './test-wizard'
+import { wizardAnswersSuite } from './test-wizard-answers'
 import { wellbeingSuite } from './test-wellbeing'
 import { loopSuite } from './test-loop'
 import { duplicatesSuite } from './test-duplicates'
@@ -2123,4 +2124,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += wizardAnswersSuite() }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
