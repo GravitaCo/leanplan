@@ -14,6 +14,7 @@ import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
 import { useConsent } from '@/store/hooks'
 import { hasExistingData, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
+import { CONSENT, PRIVACY_SHEET, REGRANT } from '@/copy/account'
 import { useTokens } from '../theme'
 import { Button, CheckRow, Foot, InlineLink, LinkButton, List, NavButton, Sheet, T } from './kit'
 import { openLegal } from './legal'
@@ -37,40 +38,38 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 12, paddingHorizontal: 16, paddingTop: Math.max(24, ins.top), paddingBottom: 24 + ins.bottom }}>
-      <T role="heading" size={28} w={700}>Before you start</T>
+      <T role="heading" size={28} w={700}>{CONSENT.title}</T>
       <T size={15} lh={1.45} color={t.label2} style={{ marginBottom: 4 }}>
-        What you log in Tilo, like your weight, food, workouts, sleep, stress, mood and any injuries, is health
-        information. It’s stored on this phone and in a database in Ireland (EU) that’s private to your
-        account. It’s never sold, shared for marketing or used for ads.
+        {CONSENT.lead}
       </T>
 
       <List>
         <CheckRow first id="c_health" on={health} onChange={setHealth}>
-          I agree to Tilo storing and using my health information to run the app for me, as the <InlineLink onPress={() => openLegal('privacy')}>privacy policy</InlineLink> explains. I can withdraw this at any time in Profile, then Privacy.
+          {CONSENT.health.before}<InlineLink onPress={() => openLegal('privacy')}>{CONSENT.health.link}</InlineLink>{CONSENT.health.after}
         </CheckRow>
         <CheckRow id="c_terms" on={terms} onChange={setTerms}>
-          I accept the <InlineLink onPress={() => openLegal('terms')}>terms and conditions</InlineLink>, and understand Tilo gives general wellness information, not medical advice.
+          {CONSENT.terms.before}<InlineLink onPress={() => openLegal('terms')}>{CONSENT.terms.link}</InlineLink>{CONSENT.terms.after}
         </CheckRow>
-        <CheckRow id="c_age" on={adult} onChange={setAdult}>I’m {MIN_AGE} or over.</CheckRow>
+        <CheckRow id="c_age" on={adult} onChange={setAdult}>{CONSENT.adult(MIN_AGE)}</CheckRow>
       </List>
 
-      <Button title="Continue" disabled={!(health && terms && adult)} onPress={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }} />
+      <Button title={CONSENT.cont} disabled={!(health && terms && adult)} onPress={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }} />
       {fromProfile ? (
-        <Button kind="gray" title="Back" onPress={() => setConsentOpen(false)} />
+        <Button kind="gray" title={CONSENT.back} onPress={() => setConsentOpen(false)} />
       ) : existing ? (
         <>
-          <Button kind="gray" title="Not now, keep it on this phone" onPress={notNow} />
+          <Button kind="gray" title={CONSENT.notNowKeep} onPress={notNow} />
           <Foot center>
-            Until you agree, nothing you log syncs to your account or is backed up there. {unconsentedCopyLine()}{' '}
-            {reasked ? 'We won’t ask again: you can agree any time in Profile, then Privacy.' : 'We’ll ask once more in 2 weeks.'}
+            {CONSENT.notNowFoot} {unconsentedCopyLine()}{' '}
+            {reasked ? CONSENT.reasked : CONSENT.askAgain}
           </Foot>
-          <LinkButton title="Sign out" muted onPress={() => void signOut()} />
+          <LinkButton title={CONSENT.signOut} muted onPress={() => void signOut()} />
         </>
       ) : (
-        <Button kind="gray" title="Not now, sign out" onPress={() => void signOut()} />
+        <Button kind="gray" title={CONSENT.notNowSignOut} onPress={() => void signOut()} />
       )}
-      <Foot center>Already have data in Tilo and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.</Foot>
-      <Foot center>If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tilo to guide your eating.</Foot>
+      <Foot center>{CONSENT.deleteFoot(LEGAL.contactEmail)}</Foot>
+      <Foot center>{CONSENT.gpFoot}</Foot>
     </ScrollView>
   )
 }
@@ -84,16 +83,16 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
   const { grant } = useConsent('health')
   const [on, setOn] = useState(false)
   return (
-    <Sheet title="Health data" onClose={onClose} gap={10}>
+    <Sheet title={REGRANT.title} onClose={onClose} gap={10}>
       <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16 }}>
-        <T size={15} lh={1.45}>Turning this back on lets Tilo save your weigh-ins, check-ins and body details again, and uploads your whole log from this phone to your account.</T>
+        <T size={15} lh={1.45}>{REGRANT.lead}</T>
       </View>
       <List bg={t.elev}>
         <CheckRow first id="c_regrant" on={on} onChange={setOn}>
-          I agree to Tilo storing and using my health information to run the app for me, as the <InlineLink onPress={() => openLegal('privacy')}>privacy policy</InlineLink> explains. I can withdraw this at any time.
+          {REGRANT.box.before}<InlineLink onPress={() => openLegal('privacy')}>{REGRANT.box.link}</InlineLink>{REGRANT.box.after}
         </CheckRow>
       </List>
-      <Button title="Turn health data back on" disabled={!on} onPress={() => { grant(); onClose() }} />
+      <Button title={REGRANT.cta} disabled={!on} onPress={() => { grant(); onClose() }} />
     </Sheet>
   )
 }
@@ -102,10 +101,10 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
 export function PrivacySheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
   return (
-    <Sheet title="Privacy" onClose={onClose} left={null} right={<NavButton bold title="Done" onPress={onClose} />}>
+    <Sheet title={PRIVACY_SHEET.title} onClose={onClose} left={null} right={<NavButton bold title="Done" onPress={onClose} />}>
       <View style={{ paddingHorizontal: 4, gap: 10 }}>
-        <P color={t.label2}>Your log is stored on this phone and, once you agree, synced to a private database tied to your account. It’s never sold or used for ads.</P>
-        <P color={t.label2}>The full details are in the <InlineLink onPress={() => openLegal('privacy')}>privacy policy</InlineLink>.</P>
+        <P color={t.label2}>{PRIVACY_SHEET.p1}</P>
+        <P color={t.label2}>{PRIVACY_SHEET.p2.before}<InlineLink onPress={() => openLegal('privacy')}>{PRIVACY_SHEET.p2.link}</InlineLink>{PRIVACY_SHEET.p2.after}</P>
       </View>
     </Sheet>
   )

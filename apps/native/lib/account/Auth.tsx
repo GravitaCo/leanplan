@@ -16,6 +16,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { unsyncedCount } from '@/data/persistence'
 import { consentLetsSync, hasExistingData } from '@/data/consent'
 import { MIN_AGE } from '@/core/legal'
+import { AUTH, OWNER } from '@/copy/account'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { font, useTokens } from '../theme'
@@ -27,12 +28,7 @@ import { coverFrame, photoHeight } from './rules'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
-const COPY = {
-  signin: { t: 'Welcome back', s: 'Eat well, move often, feel better.', cta: 'Sign in' },
-  signup: { t: 'Create your account', s: 'Two minutes to set up, then it works offline.', cta: 'Create account' },
-  forgot: { t: 'Reset your password', s: 'Enter your email and we’ll send you a link to set a new one.', cta: 'Send reset link' },
-  'check-email': { t: 'Check your email', s: '', cta: '' },
-}
+const COPY = AUTH.modes
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const HERO = require('../../assets/auth-hero.jpg')
@@ -60,7 +56,7 @@ export function AuthScreen() {
     setErr('')
     beginSignIn()
     if (mode === 'forgot') {
-      if (!email) return setErr('Please enter your email.')
+      if (!email) return setErr(AUTH.errEmail)
       setBusy(true)
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: emailRedirect() })
       setBusy(false)
@@ -69,10 +65,10 @@ export function AuthScreen() {
       setModeRaw('check-email')
       return
     }
-    if (!email || !pw) return setErr('Please fill in all fields.')
+    if (!email || !pw) return setErr(AUTH.errFields)
     if (mode === 'signup') {
-      if (pw !== pw2) return setErr('Passwords do not match.')
-      if (pw.length < 8) return setErr('Password must be at least 8 characters.')
+      if (pw !== pw2) return setErr(AUTH.errMatch)
+      if (pw.length < 8) return setErr(AUTH.errShort)
       setBusy(true)
       const { error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: emailRedirect() } })
       setBusy(false)
@@ -104,7 +100,7 @@ export function AuthScreen() {
     setBusy(false)
     if (!error) return setResent(true)
     setResent(false)
-    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? 'Give it a minute, then try again.' : error.message)
+    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? AUTH.errRate : error.message)
   }
 
   const copy = COPY[mode]
@@ -141,13 +137,13 @@ export function AuthScreen() {
               <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><Ico name="mail" size={26} color={t.tint} /></View>
               <View>
                 <T role="heading" size={30} w={600} style={{ lineHeight: 36, letterSpacing: -0.6 }}>{copy.t}</T>
-                <T size={16} lh={1.45} color={t.label2} style={{ marginTop: 4 }}>We sent a link to {email || 'your inbox'}. Open it on this phone to continue.</T>
+                <T size={16} lh={1.45} color={t.label2} style={{ marginTop: 4 }}>{AUTH.sent(email)}</T>
               </View>
               {errLine}
-              <Button kind="gray" title="Back to sign in" height={54} onPress={() => { setResent(false); setMode('signin') }} />
+              <Button kind="gray" title={AUTH.back} height={54} onPress={() => { setResent(false); setMode('signin') }} />
               <Text role="status" style={[font(400), { marginTop: 'auto', textAlign: 'center', fontSize: 15, color: t.label2 }]}>
-                {resent ? 'Sent again. It can take a minute or two. ' : 'Nothing yet? Check your spam folder, or '}
-                <Text role="button" aria-disabled={busy || undefined} onPress={busy ? undefined : resend} style={[font(600), { color: t.tint }]}>{resent ? 'Send another' : 'send it again'}</Text>{resent ? '' : '.'}
+                {resent ? AUTH.resentLead : AUTH.resendLead}
+                <Text role="button" aria-disabled={busy || undefined} onPress={busy ? undefined : resend} style={[font(600), { color: t.tint }]}>{resent ? AUTH.sendAnother : AUTH.sendAgain}</Text>{resent ? '' : '.'}
               </Text>
             </>
           ) : (
@@ -159,23 +155,23 @@ export function AuthScreen() {
 
               <View style={{ backgroundColor: t.card, borderRadius: 22, overflow: 'hidden' }}>
                 <View style={fieldBox(true)}>
-                  <Text style={label}>Email</Text>
-                  <TextInput aria-label="Email" style={field} value={email} onChangeText={(v) => setEmail(v.trim())} placeholder="you@example.com" placeholderTextColor={t.label3}
+                  <Text style={label}>{AUTH.email}</Text>
+                  <TextInput aria-label={AUTH.email} style={field} value={email} onChangeText={(v) => setEmail(v.trim())} placeholder={AUTH.emailPlaceholder} placeholderTextColor={t.label3}
                     autoCapitalize="none" autoCorrect={false} autoComplete="email" keyboardType="email-address" textContentType="emailAddress" inputMode="email"
                     returnKeyType={mode === 'forgot' ? 'send' : 'next'} onSubmitEditing={mode === 'forgot' ? submit : undefined} />
                 </View>
                 {mode !== 'forgot' && (
                   <View style={fieldBox(false)}>
-                    <Text style={label}>Password</Text>
-                    <TextInput aria-label="Password" style={[field, mode === 'signin' && { paddingRight: 92 }]} value={pw} onChangeText={setPw} secureTextEntry
-                      placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'} placeholderTextColor={t.label3}
+                    <Text style={label}>{AUTH.password}</Text>
+                    <TextInput aria-label={AUTH.password} style={[field, mode === 'signin' && { paddingRight: 92 }]} value={pw} onChangeText={setPw} secureTextEntry
+                      placeholder={mode === 'signup' ? AUTH.passwordNew : AUTH.passwordCurrent} placeholderTextColor={t.label3}
                       autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} textContentType={mode === 'signup' ? 'newPassword' : 'password'}
                       returnKeyType={mode === 'signin' ? 'go' : 'next'} onSubmitEditing={mode === 'signin' ? submit : undefined} />
                     {mode === 'signin' && (
                       <View style={{ position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' }}>
-                        <Pressable role="button" aria-label="Forgot?" onPress={() => setMode('forgot')} hitSlop={6}
+                        <Pressable role="button" aria-label={AUTH.forgot} onPress={() => setMode('forgot')} hitSlop={6}
                           style={({ pressed }) => ({ backgroundColor: t.fill, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16, opacity: pressed ? 0.6 : 1 })}>
-                          <Text style={[font(600), { fontSize: 14, color: t.tint }]}>Forgot?</Text>
+                          <Text style={[font(600), { fontSize: 14, color: t.tint }]}>{AUTH.forgot}</Text>
                         </Pressable>
                       </View>
                     )}
@@ -183,8 +179,8 @@ export function AuthScreen() {
                 )}
                 {mode === 'signup' && (
                   <View style={fieldBox(false)}>
-                    <Text style={label}>Confirm password</Text>
-                    <TextInput aria-label="Confirm password" style={field} value={pw2} onChangeText={setPw2} secureTextEntry placeholder="Repeat password" placeholderTextColor={t.label3}
+                    <Text style={label}>{AUTH.confirm}</Text>
+                    <TextInput aria-label={AUTH.confirm} style={field} value={pw2} onChangeText={setPw2} secureTextEntry placeholder={AUTH.confirmPlaceholder} placeholderTextColor={t.label3}
                       autoComplete="new-password" textContentType="newPassword" returnKeyType="go" onSubmitEditing={submit} />
                   </View>
                 )}
@@ -192,33 +188,32 @@ export function AuthScreen() {
 
               {errLine}
 
-              <Button title={busy ? 'Please wait…' : copy.cta} height={54} disabled={busy} onPress={submit} after={busy ? null : <ArrowIcon color={t.btnInk} />} />
+              <Button title={busy ? AUTH.wait : copy.cta} height={54} disabled={busy} onPress={submit} after={busy ? null : <ArrowIcon color={t.btnInk} />} />
 
               {mode !== 'forgot' && (
                 <>
                   {mode === 'signin' && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4 }}>
-                      <View style={{ flex: 1, height: 1, backgroundColor: t.sep }} /><T size={13} color={t.label2}>or</T><View style={{ flex: 1, height: 1, backgroundColor: t.sep }} />
+                      <View style={{ flex: 1, height: 1, backgroundColor: t.sep }} /><T size={13} color={t.label2}>{AUTH.or}</T><View style={{ flex: 1, height: 1, backgroundColor: t.sep }} />
                     </View>
                   )}
-                  <Button kind="google" title="Continue with Google" height={54} onPress={google}><GoogleG /></Button>
+                  <Button kind="google" title={AUTH.google} height={54} onPress={google}><GoogleG /></Button>
                 </>
               )}
 
               {mode === 'signup' && (
                 <T size={13} lh={1.45} color={t.label2} center>
-                  Tilo is for people aged {MIN_AGE} and over. Read the <InlineLink underline onPress={() => openLegal('terms')}>Terms</InlineLink> and{' '}
-                  <InlineLink underline onPress={() => openLegal('privacy')}>Privacy notice</InlineLink>. You’ll be asked to agree after you sign up.
+                  {AUTH.legal.lead(MIN_AGE)}<InlineLink underline onPress={() => openLegal('terms')}>{AUTH.legal.terms}</InlineLink>{AUTH.legal.and}<InlineLink underline onPress={() => openLegal('privacy')}>{AUTH.legal.privacy}</InlineLink>{AUTH.legal.after}
                 </T>
               )}
 
               <View style={{ marginTop: 'auto', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
                 {mode === 'forgot' ? (
-                  <LinkButton title="Back to sign in" w={600} onPress={() => setMode('signin')} style={{ paddingHorizontal: 2 }} />
+                  <LinkButton title={AUTH.back} w={600} onPress={() => setMode('signin')} style={{ paddingHorizontal: 2 }} />
                 ) : (
                   <>
-                    <T size={15} color={t.label2}>{mode === 'signup' ? 'Already have an account? ' : 'New to Tilo? '}</T>
-                    <LinkButton title={mode === 'signup' ? 'Sign in' : 'Create an account'} w={600} onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')} style={{ paddingHorizontal: 2 }} />
+                    <T size={15} color={t.label2}>{(mode === 'signup' ? AUTH.haveAccount : AUTH.newHere) + ' '}</T>
+                    <LinkButton title={mode === 'signup' ? AUTH.toSignIn : AUTH.toSignUp} w={600} onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')} style={{ paddingHorizontal: 2 }} />
                   </>
                 )}
               </View>
@@ -245,7 +240,7 @@ export function OwnerChoiceScreen() {
   // the log here that "Start fresh" would remove: changes never uploaded, or a log kept on this phone only
   const atRisk = unsyncedCount(data) > 0 || (!consentLetsSync(data) && hasExistingData(data))
   const [sure, setSure] = useState(false)
-  const who = ask?.email || 'this account'
+  const who = ask?.email || OWNER.thisAccount
   const pick = async (c: 'keep' | 'fresh' | 'cancel') => {
     if (busy) return
     if (c === 'fresh' && atRisk && !sure) { setSure(true); return } // losing a log takes a second tap
@@ -259,28 +254,28 @@ export function OwnerChoiceScreen() {
       <View style={{ alignItems: 'center', marginBottom: 28 }}>
         <Mark width={112} color={t.mark} />
         <T role="heading" size={34} w={600} style={{ lineHeight: 40, letterSpacing: -0.85, marginTop: 22, marginBottom: 2 }}>Tilo</T>
-        <T size={15} color={t.label2} center>Signed in as {who}</T>
+        <T size={15} color={t.label2} center>{OWNER.signedInAs(who)}</T>
       </View>
       {ask?.checking ? (
-        <View role="status" style={card}>{p('Checking the log on this device…')}</View>
+        <View role="status" style={card}>{p(OWNER.checking)}</View>
       ) : (
         <View style={{ gap: 10 }}>
-          <T role="heading" size={22} w={600} center style={{ letterSpacing: -0.2 }}>This device has another log</T>
+          <T role="heading" size={22} w={600} center style={{ letterSpacing: -0.2 }}>{OWNER.title}</T>
           <View style={card}>
-            {p(`The log on this device was made in a different account, or before it was linked to ${who}.`)}
-            {p(`Starting fresh removes it from this device and loads ${who}’s own data. If the log is yours from another account, cancel and sign in to that one instead: anything that hadn’t synced yet is still there.`)}
-            {p(`Keeping it adds it to ${who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.`)}
+            {p(OWNER.p1(who))}
+            {p(OWNER.p2(who))}
+            {p(OWNER.p3(who))}
           </View>
-          {sure && <View role="alert" style={card}>{p('Some of the log on this device isn’t in any account, so starting fresh deletes it for good. Export a copy first if you might want it.')}</View>}
+          {sure && <View role="alert" style={card}>{p(OWNER.sure)}</View>}
           <View style={{ gap: 8, marginTop: 16 }}>
-            {sure && <Button kind="gray" title="Export a copy" disabled={busy} onPress={() => exportBackup(data)} />}
-            <Button title={sure ? 'Start fresh and delete it' : `Start fresh with ${who}`} disabled={busy} onPress={() => void pick('fresh')} />
-            <Button kind="gray" title={`Keep this log in ${who}`} disabled={busy} onPress={() => void pick('keep')} />
+            {sure && <Button kind="gray" title={OWNER.exportCopy} disabled={busy} onPress={() => exportBackup(data)} />}
+            <Button title={sure ? OWNER.freshSure : OWNER.fresh(who)} disabled={busy} onPress={() => void pick('fresh')} />
+            <Button kind="gray" title={OWNER.keep(who)} disabled={busy} onPress={() => void pick('keep')} />
           </View>
         </View>
       )}
       <View style={{ marginTop: 18 }}>
-        <LinkButton title="Cancel and sign out" muted disabled={busy} onPress={() => void pick('cancel')} />
+        <LinkButton title={OWNER.cancel} muted disabled={busy} onPress={() => void pick('cancel')} />
       </View>
     </ScrollView>
   )

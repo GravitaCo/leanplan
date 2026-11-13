@@ -20,9 +20,9 @@ import { font, useTokens } from '../theme'
 import { Button, Chevron, LinkButton, List, NavButton, Row, Sheet, T } from './kit'
 import { exportBackup } from '@/data/backup'
 import { typedOk } from './rules'
+import { DELETE } from '@/copy/account'
 
 
-const GOES = ['Your food log, meals and recipes', 'Workouts and sets', 'Weight, check-ins and notes', 'Plans and settings', 'Your login']
 
 export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onBack: () => void; confirmOpen: boolean; setConfirmOpen: (x: boolean) => void }) {
   const t = useTokens()
@@ -32,16 +32,16 @@ export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onB
   const { reason, deleting } = useAccountDeletion()
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: ins.top + 18, paddingBottom: ins.bottom + 24, gap: 16 }}>
-      <View style={{ alignSelf: 'flex-start', marginLeft: -6 }}><NavButton back title="Profile" size={16} onPress={onBack} /></View>
-      <T role="heading" size={32} w={600} style={{ lineHeight: 38, letterSpacing: -0.64 }}>Delete your account</T>
-      <T size={16} lh={1.5} color={t.label2} style={{ marginTop: -6 }}>This deletes everything, from our servers and from this phone. It can't be undone.</T>
-      <Text role="heading" style={[font(500), { fontSize: 13, color: t.label2, paddingHorizontal: 4, marginBottom: -6 }]}>What gets deleted</Text>
-      <List>{GOES.map((x, i) => <Row key={x} first={i === 0} title={x} wrap />)}</List>
+      <View style={{ alignSelf: 'flex-start', marginLeft: -6 }}><NavButton back title={DELETE.back} size={16} onPress={onBack} /></View>
+      <T role="heading" size={32} w={600} style={{ lineHeight: 38, letterSpacing: -0.64 }}>{DELETE.title}</T>
+      <T size={16} lh={1.5} color={t.label2} style={{ marginTop: -6 }}>{DELETE.lead}</T>
+      <Text role="heading" style={[font(500), { fontSize: 13, color: t.label2, paddingHorizontal: 4, marginBottom: -6 }]}>{DELETE.goesHeading}</Text>
+      <List>{DELETE.goes.map((x, i) => <Row key={x} first={i === 0} title={x} wrap />)}</List>
       <List>
-        <Row first wrap title="Download a copy first" sub="A file with everything you've logged" right={<Chevron />} onPress={() => exportBackup(data)} />
+        <Row first wrap title={DELETE.copyRow} sub={DELETE.copySub} right={<Chevron />} onPress={() => exportBackup(data)} />
       </List>
-      <Button kind="cardRed" title="Delete account" height={52} radius={16} disabled={!online || deleting} onPress={() => setConfirmOpen(true)} />
-      <T size={12} lh={1.4} color={t.label2} style={{ paddingHorizontal: 4 }}>{online && reason ? reason : 'Needs a connection, so it deletes everywhere at once.'}</T>
+      <Button kind="cardRed" title={DELETE.button} height={52} radius={16} disabled={!online || deleting} onPress={() => setConfirmOpen(true)} />
+      <T size={12} lh={1.4} color={t.label2} style={{ paddingHorizontal: 4 }}>{online && reason ? reason : DELETE.needsConnection}</T>
       {confirmOpen && <DeleteConfirmSheet onClose={() => setConfirmOpen(false)} />}
     </ScrollView>
   )
@@ -68,7 +68,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
       setBusy(true)
       const r = await reauth({ password })
       setBusy(false)
-      if (r === 'wrong-password') { setMsg('That password doesn’t match this account. Nothing has been deleted.'); return }
+      if (r === 'wrong-password') { setMsg(DELETE.wrongPassword); return }
       if (r === 'offline') { setMsg(DELETE_MESSAGES.offline); return }
       if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     }
@@ -96,29 +96,29 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   const box = { backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 13, paddingHorizontal: 16, gap: 4 } as const
   const input = [font(400), { fontSize: 17, color: t.label, padding: 0, minHeight: 24 }]
   return (
-    <Sheet title="Delete everything?" header={false} onClose={onClose} gap={14}>
-      <T role="heading" size={24} w={600} style={{ lineHeight: 30, marginTop: 4 }}>Delete everything?</T>
-      <T size={16} lh={1.5} color={t.label2}>Your account and all your data will be deleted from Tilo and this phone. You can sign up again any time, but it starts fresh.</T>
+    <Sheet title={DELETE.confirmTitle} header={false} onClose={onClose} gap={14}>
+      <T role="heading" size={24} w={600} style={{ lineHeight: 30, marginTop: 4 }}>{DELETE.confirmTitle}</T>
+      <T size={16} lh={1.5} color={t.label2}>{DELETE.confirmLead}</T>
       {stale && google && (
         <>
           <T size={15} lh={1.45} color={t.label2} style={{ paddingHorizontal: 4 }}>{DELETE_MESSAGES.reauth}</T>
-          <Button kind="gray" title="Sign in with Google again" disabled={!online || busy} onPress={() => void googleAgain()} />
+          <Button kind="gray" title={DELETE.googleAgain} disabled={!online || busy} onPress={() => void googleAgain()} />
         </>
       )}
       {needPw && (
         <View style={box}>
-          <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>Your password, to confirm it’s you</Text>
-          <TextInput aria-label="Your password, to confirm it’s you" style={input} value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" />
+          <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>{DELETE.password}</Text>
+          <TextInput aria-label={DELETE.password} style={input} value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" />
         </View>
       )}
       <View style={box}>
-        <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>Type DELETE to confirm</Text>
-        <TextInput aria-label="Type DELETE to confirm" style={input} value={typed} onChangeText={setTyped} autoCapitalize="characters" autoComplete="off" autoCorrect={false} spellCheck={false} />
+        <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>{DELETE.typed}</Text>
+        <TextInput aria-label={DELETE.typed} style={input} value={typed} onChangeText={setTyped} autoCapitalize="characters" autoComplete="off" autoCorrect={false} spellCheck={false} />
       </View>
       {msg ? <T role="status" size={15} lh={1.45} color={t.label2} style={{ paddingHorizontal: 4 }}>{msg}</T> : null}
       {!online && !msg ? <T role="status" size={15} lh={1.45} color={t.label2} style={{ paddingHorizontal: 4 }}>{DELETE_MESSAGES.offline}</T> : null}
-      <Button kind="red" title={deleting ? 'Deleting…' : 'Delete everything'} height={54} disabled={!ready || (stale && google)} onPress={() => void go()} />
-      <LinkButton title="Cancel" size={16} w={500} onPress={onClose} />
+      <Button kind="red" title={deleting ? DELETE.deleting : DELETE.confirm} height={54} disabled={!ready || (stale && google)} onPress={() => void go()} />
+      <LinkButton title={DELETE.cancel} size={16} w={500} onPress={onClose} />
     </Sheet>
   )
 }

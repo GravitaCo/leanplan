@@ -23,6 +23,7 @@ import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW, SUPPORT } from '@/screens/onboarding/copyApp'
 import { supportList } from '@/screens/profile/supportRows'
 import { SUPPORT_MIND } from '@/screens/mind/copy'
+import { ACCOUNT_ROW, BACKUP, HEALTH_DATA, HEALTH_TICKS, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
 import { font, useTokens } from '../theme'
 import { Button, Chevron, Foot, LinkButton, List, NavButton, Row, Sheet, T, Ticks } from './kit'
 import { ConsentScreen, P, PrivacySheet, RegrantHealthSheet } from './Consent'
@@ -32,13 +33,6 @@ import { LEGAL_LABEL, openLegal } from './legal'
 import { exportBackup } from '@/data/backup'
 import { pickBackup } from './backupFile'
 
-/** The lines on the health data sheet (onboarding/Consent.tsx HEALTH_TICKS). */
-export const HEALTH_TICKS = [
-  'It’s private to your account. Nobody else can see it.',
-  'It’s never sold or used for ads.',
-  'Download it or delete it any time in Profile.',
-  'Saved on this phone first, so this works offline too.',
-]
 
 export type HealthStatus = 'on' | 'paused' | 'off' | 'unasked'
 export function useHealthStatus(): HealthStatus {
@@ -47,7 +41,7 @@ export function useHealthStatus(): HealthStatus {
     return r ? (r.granted ? 'on' : 'off') : healthSyncPaused(s.data) ? 'paused' : 'unasked'
   })
 }
-export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', paused: 'Paused', off: 'Off', unasked: 'Not asked yet' }
+export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = HEALTH_DATA.status
 
 /* ---------------- health data ---------------- */
 
@@ -65,41 +59,36 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   const [privacy, setPrivacy] = useState(false)
   const [support, setSupport] = useState(false)
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
-  const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
   const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
   const onboarded = useStore((s) => !!s.data.profile.onboardedAt)
   const answersRow = hasAnswers && !!onAnswers, redoRow = ONBOARDING_ENABLED && !!onRedo
 
   if (step) {
-    const s = step.summary
-    const parts = [s.weighIns ? n(s.weighIns, 'weigh-in', 'weigh-ins') : '', s.checkins ? n(s.checkins, 'check-in', 'check-ins') : '', s.profileFields ? n(s.profileFields, 'body detail', 'body details') : '', s.trainingPrefs ? n(s.trainingPrefs, 'training preference', 'training preferences') : ''].filter(Boolean)
+    const onPhone = HEALTH_DATA.onPhone(step.summary)
     return (
-      <Sheet title="Health data" onClose={onClose} left={<NavButton back title="Back" onPress={() => setStep(null)} />}>
+      <Sheet title={HEALTH_DATA.title} onClose={onClose} left={<NavButton back title="Back" onPress={() => setStep(null)} />}>
         <View style={{ paddingHorizontal: 4, gap: 10 }}>
           <P color={t.label2}>{step.prompt}</P>
-          {parts.length > 0 && <P color={t.label2}>On this phone: {parts.join(', ')}.</P>}
+          {onPhone && <P color={t.label2}>{onPhone}</P>}
         </View>
         <View style={{ gap: 8, marginTop: 16 }}>
           {/* the same file the web downloads (the whole log), through the share sheet. Unlike the web it
               never turns to "Downloaded": the share sheet can't say whether the copy was saved or the
               person closed it (compliance, 13 Nov) */}
-          <Button kind="gray" title="Download a copy" onPress={download} />
-          <Button kind="danger" title="Remove my health data" onPress={() => { withdraw(); showToast('Health data removed'); onClose() }} />
+          <Button kind="gray" title={HEALTH_DATA.download} onPress={download} />
+          <Button kind="danger" title={HEALTH_DATA.remove} onPress={() => { withdraw(); showToast(HEALTH_DATA.removed); onClose() }} />
         </View>
       </Sheet>
     )
   }
 
   return (
-    <Sheet title="Health data" onClose={onClose} left={null} right={<NavButton bold title="Done" onPress={onClose} />}>
+    <Sheet title={HEALTH_DATA.title} onClose={onClose} left={null} right={<NavButton bold title="Done" onPress={onClose} />}>
       <T size={15} lh={1.45} color={t.label2} style={{ paddingHorizontal: 4, paddingBottom: 12 }}>
-        {status === 'on' ? 'Tilo keeps your log, including your weight, check-ins and body details, to run the app and build your plan and targets.'
-          : status === 'paused' ? 'Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. ' + unconsentedCopyLine()
-          : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tilo uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
-          : 'To build your plan, Tilo asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
+        {status === 'on' ? HEALTH_DATA.on : status === 'paused' ? HEALTH_DATA.paused + unconsentedCopyLine() : status === 'off' ? HEALTH_DATA.off : HEALTH_DATA.unasked}
       </T>
       <Ticks items={HEALTH_TICKS} />
-      <LinkButton title="Read the privacy notice" onPress={() => setPrivacy(true)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
+      <LinkButton title={HEALTH_DATA.readPrivacy} onPress={() => setPrivacy(true)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
       {(answersRow || redoRow) && (
         <List bg={t.elev} style={{ marginTop: 12 }}>
           {answersRow && <Row first title={HEALTH_ANSWERS_ROW} right={<Chevron />} onPress={onAnswers} />}
@@ -110,8 +99,8 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
         <Row first title={SUPPORT.row} sub={SUPPORT.rowSub} right={<Chevron />} onPress={() => setSupport(true)} />
       </List>
       <View style={{ gap: 8, marginTop: 16 }}>
-        {status !== 'on' && <Button title="Yes, keep it" onPress={onAgree} />}
-        {(status === 'on' || (status !== 'off' && canRemove)) && <Button kind="danger" title="Stop keeping my health data" onPress={() => setStep(prepare())} />}
+        {status !== 'on' && <Button title={HEALTH_DATA.agree} onPress={onAgree} />}
+        {(status === 'on' || (status !== 'off' && canRemove)) && <Button kind="danger" title={HEALTH_DATA.stop} onPress={() => setStep(prepare())} />}
       </View>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
       {support && <SupportSheet onClose={() => setSupport(false)} />}
@@ -157,15 +146,14 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
 export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
   const t = useTokens()
   const b = backupSummary(backup)
-  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
-    <Sheet title="Import backup" onClose={onClose}>
+    <Sheet title={BACKUP.importTitle} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 12, gap: 10 }}>
-        <P color={t.label2}>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')}, {n(b.recipes, 'recipe', 'recipes')} and {n(b.workouts, 'workout', 'workouts')}.</P>
-        <P color={t.label2}>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''}{b.workouts ? ', and adds its workouts' : ''} on all your devices. Anything else here stays as it is.</P>
+        <P color={t.label2}>{BACKUP.has(b, span)}</P>
+        <P color={t.label2}>{BACKUP.replaces(b)}</P>
       </View>
-      <View style={{ marginTop: 16 }}><Button kind="tinted" title="Import" onPress={onImport} /></View>
+      <View style={{ marginTop: 16 }}><Button kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
     </Sheet>
   )
 }
@@ -187,18 +175,18 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
   return (
-    <Sheet title="Sign out" onClose={onClose}>
+    <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 12, gap: 10 }}>
         {phoneOnly
-          ? <P color={t.label2}>What you log now is only on this phone: nothing syncs to your account until you agree to Tilo keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</P>
-          : <P color={t.label2}>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</P>}
-        {!phoneOnly && unsynced > 0 && <P color={t.label2}>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</P>}
+          ? <P color={t.label2}>{SIGN_OUT.phoneOnly}</P>
+          : <P color={t.label2}>{SIGN_OUT.stays}</P>}
+        {!phoneOnly && unsynced > 0 && <P color={t.label2}>{SIGN_OUT.unsynced(unsynced)}</P>}
       </View>
       <View style={{ gap: 8, marginTop: 16 }}>
-        <Button kind="tinted" title={busy === 'keep' ? 'Signing out…' : 'Sign out'} disabled={!!busy} onPress={() => void go(false)} />
-        {phoneOnly && <Button kind="gray" title="Export a copy" disabled={!!busy} onPress={() => exportBackup(data)} />}
+        <Button kind="tinted" title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title} disabled={!!busy} onPress={() => void go(false)} />
+        {phoneOnly && <Button kind="gray" title={SIGN_OUT.exportCopy} disabled={!!busy} onPress={() => exportBackup(data)} />}
         <Button kind="danger" disabled={!!busy} onPress={() => void go(true)}
-          title={busy === 'remove' ? 'Signing out…' : sure && phoneOnly ? 'Remove anyway and delete your log' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'} />
+          title={busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeSure : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove} />
       </View>
     </Sheet>
   )
@@ -253,7 +241,7 @@ export function AccountSection() {
     else useStore.getState().setConsentOpen(true)
   }
   const pick = async () => {
-    try { const b = await pickBackup(); if (b) setPendingBackup(b) } catch { showToast("That isn't a valid backup file") }
+    try { const b = await pickBackup(); if (b) setPendingBackup(b) } catch { showToast(BACKUP.invalid) }
   }
   const lbl = [font(500), { fontSize: 13, color: t.label2, paddingTop: 18, paddingHorizontal: 4, paddingBottom: 8 }]
 
@@ -263,30 +251,30 @@ export function AccountSection() {
 
   return (
     <View>
-      <Text style={lbl}>Account and data</Text>
+      <Text style={lbl}>{ACCOUNT_ROW.heading}</Text>
       <List>
-        <Disclosure first label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
-          <T size={13} color={t.label2}>Signed in as</T>
-          <T size={17}>{syncPaused ? 'Your account (not syncing right now)' : email}</T>
+        <Disclosure first label={ACCOUNT_ROW.account} open={open === 'account'} onToggle={() => toggle('account')}>
+          <T size={13} color={t.label2}>{ACCOUNT_ROW.signedInAs}</T>
+          <T size={17}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</T>
         </Disclosure>
-        <Row title="Health data" right={<><Text style={[font(400), { fontSize: 15, color: t.label2 }]}>{HEALTH_STATUS_LABEL[healthStatus]}</Text><Chevron /></>} label={`Health data, ${HEALTH_STATUS_LABEL[healthStatus]}`} onPress={() => setHealthOpen('main')} />
-        <Disclosure label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
+        <Row title={HEALTH_DATA.title} right={<><Text style={[font(400), { fontSize: 15, color: t.label2 }]}>{HEALTH_STATUS_LABEL[healthStatus]}</Text><Chevron /></>} label={`${HEALTH_DATA.title}, ${HEALTH_STATUS_LABEL[healthStatus]}`} onPress={() => setHealthOpen('main')} />
+        <Disclosure label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
           <T size={15} lh={1.4} color={t.label2} style={{ marginBottom: 10 }}>{!consentLetsSync(data)
-            ? 'Your log is only on this phone until you agree to Tilo keeping your health data, so export a copy now and then.'
-            : `Your log is stored on this device, so Tilo works without a connection${authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.`}</T>
+            ? BACKUP.phoneOnly
+            : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</T>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}><Button kind="gray" title="Export" onPress={() => exportBackup(data)} /></View>
-            <View style={{ flex: 1 }}><Button kind="gray" title="Import" onPress={() => void pick()} /></View>
+            <View style={{ flex: 1 }}><Button kind="gray" title={BACKUP.exportBtn} onPress={() => exportBackup(data)} /></View>
+            <View style={{ flex: 1 }}><Button kind="gray" title={BACKUP.importBtn} onPress={() => void pick()} /></View>
           </View>
         </Disclosure>
-        <Row title="Delete account" onPress={() => setView('delete')} />
+        <Row title={ACCOUNT_ROW.deleteRow} onPress={() => setView('delete')} />
       </List>
 
       <List style={{ marginTop: 24 }}>
-        <Disclosure first label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+        <Disclosure first label={PRIVACY_ROW.label} value={health.granted ? undefined : PRIVACY_ROW.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <T size={15} lh={1.45} color={t.label2} style={{ marginBottom: 10 }}>
-            {health.granted && healthAt ? `You agreed to Tilo using your health information on ${healthAt}. ` : healthStatus === 'off' ? 'You’ve withdrawn consent, so your log is on your phones only and Tilo doesn’t keep your weigh-ins, check-ins or body details. ' : ''}
-            {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
+            {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : ''}
+            {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
           </T>
           <List bg={t.bg} style={{ marginBottom: 8 }}>
             {(['privacy', 'terms', 'cookies'] as LegalDocId[]).map((id, i) => (
@@ -294,14 +282,14 @@ export function AccountSection() {
             ))}
           </List>
           {health.granted
-            ? <Button kind="gray" title="Withdraw consent for health data" onPress={() => setHealthOpen('withdraw')} />
-            : <Button kind="gray" title="Turn health data back on" onPress={agree} />}
-          <Button kind="danger" title="Delete account" style={{ marginTop: 6 }} onPress={() => setView('delete')} />
+            ? <Button kind="gray" title={PRIVACY_ROW.withdraw} onPress={() => setHealthOpen('withdraw')} />
+            : <Button kind="gray" title={PRIVACY_ROW.turnBackOn} onPress={agree} />}
+          <Button kind="danger" title={ACCOUNT_ROW.deleteRow} style={{ marginTop: 6 }} onPress={() => setView('delete')} />
         </Disclosure>
       </List>
 
-      <Button kind="cardRed" title="Sign out" radius={16} style={{ marginTop: 24 }} onPress={() => setSignOutOpen(true)} />
-      <Foot center style={{ paddingTop: 12 }}>Tilo offers general wellness guidance, not medical advice.</Foot>
+      <Button kind="cardRed" title={SIGN_OUT.title} radius={16} style={{ marginTop: 24 }} onPress={() => setSignOutOpen(true)} />
+      <Foot center style={{ paddingTop: 12 }}>{PRIVACY_ROW.wellness}</Foot>
 
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }} />}

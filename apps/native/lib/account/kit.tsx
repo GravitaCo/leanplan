@@ -171,7 +171,7 @@ export function CheckRow({ on, onChange, id, children, first }: { on: boolean; o
 }
 
 /** `.ticks`: the card of ticked lines on the consent sheets. */
-export function Ticks({ items, bg }: { items: string[]; bg?: string }) {
+export function Ticks({ items, bg }: { items: readonly string[]; bg?: string }) {
   const t = useTokens()
   return (
     <View style={{ backgroundColor: bg ?? t.card, borderRadius: t.radius, padding: 16, gap: 10 }}>
