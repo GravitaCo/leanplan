@@ -325,6 +325,13 @@ export function Gallery() {
             <button className="chip on" role="radio" aria-checked>Small</button>
             <button className="chip" role="radio" aria-checked={false}>Large</button>
           </div>
+          {/* .pl-goals .chip and .pl-starts .chip (14 pt, padding 8 14; the starts radius 16) */}
+          <div className="chips">
+            <button className="chip on" style={{ fontSize: 14, padding: '8px 14px' }}>Get stronger</button>
+            <button className="chip" style={{ fontSize: 14, padding: '8px 14px' }}>Feel better</button>
+            <button className="chip ink" role="radio" aria-checked style={{ fontSize: 14, padding: '8px 14px', borderRadius: 16 }}>Today</button>
+            <button className="chip plain" role="radio" aria-checked={false} style={{ fontSize: 14, padding: '8px 14px', borderRadius: 16 }}>Mon 16 Nov</button>
+          </div>
         </div>
       </Sec>
 
