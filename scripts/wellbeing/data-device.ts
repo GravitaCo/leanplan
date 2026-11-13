@@ -12,6 +12,7 @@ import {
   addUnloadNote, clearNotifyStore, deleteUnloadNote, lowMoodShownOn, markLowMoodShown, notifyLog, recordNotifyEvents, setSleepMoreOpen, sleepMoreOpen, unloadCount, unloadNotes,
   NOTE_ACCESSORS, PERSISTENCE_ONLY, NOTIFY_DB, NOTIFY_LOG_MAX, UNLOAD_MAX_NOTES, UNLOAD_MAX_PAIRS, UNLOAD_NOTE_MAX_CHARS, type NotesContext,
 } from '@/data/deviceOnly'
+import { UNLOAD_SCREEN_ACCESSORS } from '@/screens/mind/unloadNotes'
 import { pushDirty, toServerDay, toServerFood, toServerPlan } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
 
@@ -36,8 +37,33 @@ async function withFetch<T>(f: typeof fetch, run: () => Promise<T>): Promise<T> 
   try { return await run() } finally { globalThis.fetch = real }
 }
 
-const NOTES_ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/UnloadSheet.tsx']
+const NOTES_ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/unloadNotes.ts']
+/** the Unload screens: the only files that may import unloadNotes' read, add and delete functions (UNLOAD_SCREEN_ACCESSORS) */
+const UNLOAD_SCREENS = ['src/screens/mind/UnloadSheet.tsx', 'apps/native/screens/mind/UnloadSheet.tsx']
+/** what each Unload screen may export: its component, and on the web the pure helpers it re-exports for its tests */
+const UNLOAD_SCREEN_EXPORTS: Record<string, string[]> = {
+  'src/screens/mind/UnloadSheet.tsx': ['UnloadSheet', 'noteDay', 'noteLines', 'unloadBlocked'],
+  'apps/native/screens/mind/UnloadSheet.tsx': ['UnloadSheet'],
+}
+/** every value a file exports by name ('default' for a default export); type-only exports are left out */
+export function exportedNames(code: string): string[] {
+  const out: string[] = []
+  for (const m of code.matchAll(/export\s+(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|var|class|enum)\s+([A-Za-z_$][\w$]*)/g)) out.push(m[1])
+  for (const m of code.matchAll(/export\s+(?:const|let|var)\s+\{([^}]*)\}\s*=/g)) out.push(...m[1].split(',').map((x) => x.split(':').pop()!.trim()).filter(Boolean))
+  if (/export\s+default\b/.test(code)) out.push('default')
+  for (const m of code.matchAll(/export\s*(type\s+)?\{([^}]*)\}/g)) {
+    if (m[1]) continue
+    for (const part of m[2].split(',')) {
+      const x = part.trim()
+      if (!x || x.startsWith('type ')) continue
+      out.push(x.split(/\s+as\s+/).pop()!.trim())
+    }
+  }
+  return out
+}
 const isDeviceOnly = (spec: string) => /(^|\/)deviceOnly(\.tsx?|\.js)?$/.test(spec)
+const isUnloadNotes = (spec: string) => /(^|\/)unloadNotes(\.tsx?|\.js)?$/.test(spec)
+const isUnloadSheet = (spec: string) => /(^|\/)UnloadSheet(\.tsx?|\.js)?$/.test(spec)
 const namesIn = (clause: string): string[] =>
   clause.trim().startsWith('*') ? ['*'] : clause.replace(/[{}]/g, '').split(',').map((x) => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean)
 
@@ -50,17 +76,31 @@ const namesIn = (clause: string): string[] =>
 export function boundaryIssues(rel: string, code: string): string[] {
   if (rel === 'src/data/deviceOnly.ts') return []
   const out: string[] = []
-  for (const m of code.matchAll(/import\s+(?:type\s+)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
-    if (!isDeviceOnly(m[2])) continue
+  const screen = UNLOAD_SCREENS.includes(rel)
+  // `import X, { a }` and `import X, * as Y` too: the default name is skipped, the rest checked
+  for (const m of code.matchAll(/import\s+(?:type\s+)?(?:[A-Za-z_$][\w$]*\s*,\s*)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
     const names = namesIn(m[1])
-    if (names.some((n) => n === '*' || (NOTE_ACCESSORS as readonly string[]).includes(n)) && !NOTES_ALLOWED.includes(rel)) out.push(rel)
-    if (names.some((n) => n === '*' || (PERSISTENCE_ONLY as readonly string[]).includes(n)) && rel !== 'src/data/persistence.ts') out.push(rel + ' (load or restore helper)')
+    if (isDeviceOnly(m[2])) {
+      if (names.some((n) => n === '*' || (NOTE_ACCESSORS as readonly string[]).includes(n)) && !NOTES_ALLOWED.includes(rel)) out.push(rel)
+      if (names.some((n) => n === '*' || (PERSISTENCE_ONLY as readonly string[]).includes(n)) && rel !== 'src/data/persistence.ts') out.push(rel + ' (load or restore helper)')
+    }
+    // the second tier: unloadNotes' read, add and delete functions, for the Unload screens only
+    if (isUnloadNotes(m[2]) && !screen && names.some((n) => n === '*' || (UNLOAD_SCREEN_ACCESSORS as readonly string[]).includes(n))) out.push(rel + ' (unloadNotes accessor)')
+    if (isUnloadSheet(m[2]) && names.some((n) => n === '*' || (UNLOAD_SCREEN_ACCESSORS as readonly string[]).includes(n))) out.push(rel + ' (notes through UnloadSheet)')
   }
   for (const m of code.matchAll(/export\s+(?:type\s+)?(\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
     if (isDeviceOnly(m[2])) out.push(rel + ' (re-exports deviceOnly)')
+    if (isUnloadNotes(m[2])) out.push(rel + ' (re-exports unloadNotes)')
   }
-  for (const m of code.matchAll(/import\(\s*['"`]([^'"`]+)['"`]\s*\)/g)) {
-    if (isDeviceOnly(m[1])) out.push(rel + ' (dynamic import of deviceOnly)')
+  for (const m of code.matchAll(/(?:import|require)\(\s*['"`]([^'"`]+)['"`]\s*\)/g)) {
+    if (isDeviceOnly(m[1])) out.push(rel + ' (dynamic import or require of deviceOnly)')
+    if (isUnloadNotes(m[1]) && !screen) out.push(rel + ' (dynamic import or require of unloadNotes)')
+  }
+  // an Unload screen exports only its allowed names (UNLOAD_SCREEN_EXPORTS), so it can't pass a note accessor on
+  // under another name, wrapped in a function, or inside an object
+  if (screen) {
+    const extra = exportedNames(code).filter((n) => !UNLOAD_SCREEN_EXPORTS[rel].includes(n))
+    if (extra.length) out.push(rel + ' (exports ' + extra.join(', ') + ')')
   }
   if (/deviceOnly\??\.unload\b/.test(code)) out.push(rel + ' (deviceOnly.unload)')
   if (/deviceOnly\s*(\?\.)?\s*\[\s*['"`]unload['"`]\s*\]/.test(code)) out.push(rel + " (deviceOnly['unload'])")
@@ -68,13 +108,14 @@ export function boundaryIssues(rel: string, code: string): string[] {
   return out
 }
 
-/** Every .ts/.tsx/.js file under a directory. */
-function files(dir: string): string[] {
+function files(dir: string, native = false): string[] {
   const out: string[] = []
+  if (!existsSync(dir)) return out
   for (const n of readdirSync(dir)) {
     const p = join(dir, n)
-    if (statSync(p).isDirectory()) out.push(...files(p))
-    else if (/\.(tsx?|js)$/.test(n)) out.push(p)
+    // skipped by exact name: dependencies, build output, hidden folders, and (in the native app) the native-code folders
+    if (statSync(p).isDirectory()) { if (!/^(node_modules|dist|dist-check|dist-web|\.[^.].*)$/.test(n) && !(native && /^(ios|android)$/.test(n))) out.push(...files(p, native)) }
+    else if (/\.(m|c)?[jt]sx?$/.test(n)) out.push(p)
   }
   return out
 }
@@ -121,10 +162,13 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
   /* ---------- the import boundary ---------- */
   {
     const root = process.cwd()
-    const src = files(join(root, 'src'))
+    // the whole native app too (it reaches notes only through unloadNotes.ts, from its Unload screen)
+    // the e2e scripts (Playwright, never bundled into the app) read the browser's saved state to prove
+    // notes stay on the device, as the web's scripts/e2e-*.cjs do, so they are left out like those
+    const src = [...files(join(root, 'src')), ...files(join(root, 'apps/native'), true).filter((f) => !/[\\/]apps[\\/]native[\\/]scripts[\\/]e2e-[^\\/]+\.cjs$/.test(f))]
     const ALLOWED = NOTES_ALLOWED
     const offenders = src.flatMap((f) => boundaryIssues(relative(root, f).split('\\').join('/'), readFileSync(f, 'utf8')))
-    checks.push(['import graph: only persistence, backup, deviceOnly and UnloadSheet use the notes accessors, only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
+    checks.push(['import graph: only persistence, backup, deviceOnly and mind/unloadNotes use the notes accessors, only the Unload screens its read, add and delete (src and apps/native), only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
     // the checker itself catches each way round it
     const caught = (code: string, rel = 'src/screens/X.tsx') => boundaryIssues(rel, code).length > 0
     checks.push(['boundary check catches a re-export, a dynamic import, bracket access and destructuring', [
@@ -138,7 +182,35 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
       "import { unloadNotes } from '@/data/deviceOnly'",
     ].every((c) => caught(c))])
     checks.push(['boundary check: the load and restore helpers are persistence.ts only', caught("import { mergeUnloadForImport } from './deviceOnly'", 'src/data/backup.ts') && caught("import { cleanDeviceOnly } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx') && !caught("import { cleanDeviceOnly, mergeUnloadForImport } from './deviceOnly'", 'src/data/persistence.ts')])
-    checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
+    checks.push(['boundary check catches a native screen and the web sheet reaching the accessors directly', caught("import { unloadNotes } from '@/data/deviceOnly'", 'apps/native/screens/mind/UnloadSheet.tsx') && caught("import { addUnloadNote } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
+    checks.push(['boundary check: unloadNotes\' read, add and delete are for the Unload screens only, which can\'t pass them on', [
+      ["import { notesFor } from '@/screens/mind/unloadNotes'", 'src/data/sync.ts'],
+      ["export { notesFor } from '@/screens/mind/unloadNotes'", 'apps/native/screens/Anything.tsx'],
+      ["import { saveUnload, deleteUnload } from '@/screens/mind/UnloadSheet'", 'src/data/labelReader.ts'],
+      ["import * as u from '@/screens/mind/unloadNotes'", 'apps/native/lib/x.ts'],
+      ["const u = require('@/screens/mind/unloadNotes')", 'apps/native/lib/x.js'],
+      ["const d = require('@/data/deviceOnly')", 'apps/native/lib/x.js'],
+    ].every(([c, r]) => caught(c, r))
+      && [
+        "import { notesFor } from './unloadNotes'\nexport { notesFor as list }",
+        "import { notesFor } from './unloadNotes'\nexport {\n  saveUnload,\n}",
+        "import { notesFor } from './unloadNotes'\nexport const list = notesFor",
+        "import { saveUnload } from './unloadNotes'\nexport default saveUnload",
+        "import { notesFor } from './unloadNotes'\nexport const api = {\n  list: notesFor,\n}",
+        "import { notesFor } from './unloadNotes'\nexport function list(d, c) { return notesFor(d, c) }",
+        "import { notesFor } from './unloadNotes'\nexport const list = (d, c) => notesFor(d, c)",
+        "import { notesFor } from './unloadNotes'\nconst list = notesFor\nexport { list }",
+      ].every((c) => caught(c, 'src/screens/mind/UnloadSheet.tsx'))
+      && [
+        ["import X, { notesFor } from './unloadNotes'", 'src/data/sync.ts'],
+        ["import X, * as u from '@/screens/mind/unloadNotes'", 'apps/native/lib/x.ts'],
+        ["import X, { unloadNotes } from '@/data/deviceOnly'", 'src/data/sync.ts'],
+      ].every(([c, r]) => caught(c, r))
+      && !caught("import { notesFor, saveUnload, deleteUnload } from '@/screens/mind/unloadNotes'\nexport function UnloadSheet() { const n = notesFor(d, c); saveUnload(x) }\nexport type { UnloadPair }", 'apps/native/screens/mind/UnloadSheet.tsx')
+      && !caught("import { notesFor } from './unloadNotes'\nexport { noteDay, noteLines, unloadBlocked }\nexport function UnloadSheet() { notesFor(d, c) }", 'src/screens/mind/UnloadSheet.tsx')
+      && caught("export function UnloadSheet() {}\nexport { noteDay }", 'apps/native/screens/mind/UnloadSheet.tsx')
+      && !caught("import { noteDay, noteLines, unloadBlocked } from '@/screens/mind/unloadNotes'", 'apps/native/screens/mind/model.ts')])
+    checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/unloadNotes.ts')])
     const quiet = ALLOWED.filter((f) => existsSync(join(root, f))).filter((f) => /console\.\w+\([^)]*(note|pairs|unload|mind|next)/i.test(readFileSync(join(root, f), 'utf8')))
     checks.push(['no console call in those files takes a note', !quiet.length])
     const elsewhere = ['src/data/sync.ts', 'src/data/push.ts', 'src/data/labelReader.ts', 'public/sw.js', 'supabase/functions/send-supplement-reminders/index.ts']

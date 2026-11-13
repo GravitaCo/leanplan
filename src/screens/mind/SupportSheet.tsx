@@ -4,7 +4,7 @@ import { NATIONS, type UkNation } from '@/core/data/signposts'
 import { SUPPORT } from '../onboarding/copyApp'
 import { Opts } from '../onboarding/Opts'
 import { supportList, type SupportRow } from '../profile/supportRows'
-import { SUPPORT_MIND } from './copy'
+import { MIND_UI, SUPPORT_MIND } from './copy'
 
 /**
  * Support and helplines in the Mind context (wellbeing board B6 frame 1): Samaritans and Shout
@@ -24,11 +24,11 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
   const [picking, setPicking] = useState(false)
   const name = nation ? NATIONS.find(([k]) => k === nation)![1] : SUPPORT_MIND.anyNation
   return (
-    <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>{MIND_UI.done}</button>}>
       <div className="sp-sheet">
         <div className="sp-lead">{SUPPORT.lead}</div>
         {picking
-          ? <Opts label="Nation" opts={NATIONS} value={nation ?? undefined} onPick={(k) => { setNation(k); setPicking(false) }} />
+          ? <Opts label={MIND_UI.nation} opts={NATIONS} value={nation ?? undefined} onPick={(k) => { setNation(k); setPicking(false) }} />
           : <div className="sp-nation"><span>{SUPPORT.showing(name)}</span><button className="linkbtn" onClick={() => setPicking(true)}>{nation ? SUPPORT.change : SUPPORT.choose}</button></div>}
         <SupportRows list={supportList(nation, { context: 'mind' })} />
         {!nation && <div className="sp-foot">{SUPPORT.chooseNation}</div>}
@@ -48,19 +48,19 @@ function SupportRows({ list }: { list: SupportRow[] }) {
     <div className="wz-group">
       {list.map((s) => {
         const text = <span className="m"><span className="t">{s.name}</span><span className="s">{s.desc}</span>
-          {s.web && <a className="wz-sp-web" href={s.web} target="_blank" rel="noopener noreferrer">{s.webLabel ?? 'Webchat and email'}</a>}</span>
+          {s.web && <a className="wz-sp-web" href={s.web} target="_blank" rel="noopener noreferrer">{s.webLabel ?? MIND_UI.webFallback}</a>}</span>
         if (s.sms) {
-          return <a key={s.name} className="wz-sp" href={s.sms} aria-label={`${s.name}: text ${s.num}`}>{text}<span className="n num">{s.num}</span></a>
+          return <a key={s.name} className="wz-sp" href={s.sms} aria-label={MIND_UI.text(s.name, s.num!)}>{text}<span className="n num">{s.num}</span></a>
         }
         if (s.tel && s.web) {
           return (
             <div key={s.name} className="wz-sp">{text}
-              <a className="n num" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{s.num}</a>
+              <a className="n num" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={MIND_UI.call(s.name, s.num!)}>{s.num}</a>
             </div>
           )
         }
         return s.tel
-          ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={`${s.name}: call ${s.num}`}>{text}<span className="n num">{s.num}</span></a>
+          ? <a key={s.name} className="wz-sp" href={'tel:' + s.tel.replace(/\s/g, '')} aria-label={MIND_UI.call(s.name, s.num!)}>{text}<span className="n num">{s.num}</span></a>
           : <div key={s.name} className="wz-sp">{text}{s.num && <span className="n num">{s.num}</span>}</div>
       })}
     </div>
