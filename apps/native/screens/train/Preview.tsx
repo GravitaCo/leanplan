@@ -26,13 +26,13 @@ import { SwapSheet } from './SwapSheet'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './media'
 import { WarmupCard } from './WarmupCard'
-import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
+import { Btn, Card, LinkBtn, List, Stack } from '../../lib/ui/kit'
 import { BackButton, Row, TitleRow } from '../../lib/ui/primitives'
+import { Select } from '../../lib/ui/controls'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
-import { FSelect, Stack, TextLink } from './ui'
 import { TrainNav } from './nav'
 
 /** `.card.ex`: name, the prescription tag, the cue */
@@ -157,8 +157,9 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {warm && <WarmupCard block={warm} />}
           <ExCard n={WORKOUTS.Cardio.ex[0].n} tg={shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t} cue={WORKOUTS.Cardio.ex[0].cue} />
-          <List style={{ marginBottom: 8 }}>
-            <FRow label="Type" right={<FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} />} />
+          {/* no 8 below: on the web it collapses into the stack's 16 above */}
+          <List>
+            <FRow label="Type" right={<Select row label="Type" value={cardioType} onChange={setCardioType} options={(CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]).map((o) => [o, o] as const)} />} />
             <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder="25" onChangeText={setMins} />
           </List>
           <Stack><Btn title="Save cardio" onPress={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }} /></Stack>
@@ -202,7 +203,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                         </Pressable>
                       </View>
                     )}
-                    {s.x && <TextLink title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
+                    {s.x && <LinkBtn title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
                   </View>} />
               )
             })}

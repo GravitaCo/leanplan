@@ -22,12 +22,11 @@ import { SwapSheet } from './SwapSheet'
 import { HoldTimer } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
 import { ExCard } from './Preview'
-import { Btn } from '../../lib/ui/kit'
+import { Btn, LinkBtn, Stack } from '../../lib/ui/kit'
 import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
-import { Stack, TextLink } from './ui'
 import { TrainNav, toPoint } from './nav'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
@@ -140,8 +139,8 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
             <View style={{ flexDirection: 'row', gap: 18, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 10 }}>
               {shown.video
                 ? <Pressable accessibilityRole="button" onPress={() => setDemo(exi)} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="play" size={15} color={t.tint} fill /><Text style={[tx(15, 400), { color: t.tint }]}>Watch example</Text></Pressable>
-                : <TextLink flat title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
-              {x && <TextLink flat title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
+                : <LinkBtn flat title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
+              {x && <LinkBtn flat title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
             </View>
             {!!lastTxt && <Text style={[tx(13, 600), num, { color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
             {shape === 'reps' && loadOn && (
@@ -179,8 +178,8 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
               )
             })}
             <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap', paddingTop: 6 }}>
-              <TextLink flat title="Add set" onPress={() => addSet(exi)} />
-              {shape === 'reps' && !loadOn && <TextLink flat title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
+              <LinkBtn flat title="Add set" onPress={() => addSet(exi)} />
+              {shape === 'reps' && !loadOn && <LinkBtn flat title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
             </View>
           </ExCard>
         )

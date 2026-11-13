@@ -7,11 +7,10 @@ import { useEffect, useState } from 'react'
 import { AccessibilityInfo, Text, View } from 'react-native'
 import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { RED_FLAG } from '@/copy/train'
-import { Btn } from '../../lib/ui/kit'
+import { Btn, Stack } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
 import { num, tx, useTokens } from '../../lib/theme'
 import { Foot } from '../../lib/ui/text'
-import { Stack } from './ui'
 
 export function HoldTimer({ name, rx, perSide, onDone, onClose, overlay }: {
   name: string

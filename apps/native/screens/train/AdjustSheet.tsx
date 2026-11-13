@@ -9,11 +9,10 @@ import { Pressable, Text, TextInput, View } from 'react-native'
 import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
-import { Btn, LinkBtn, List } from '../../lib/ui/kit'
+import { Btn, LinkBtn, List, Stack } from '../../lib/ui/kit'
 import { BareSheet, Row, Seg, Toggle } from '../../lib/ui/primitives'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot } from '../../lib/ui/text'
-import { Stack, TextLink } from './ui'
 import { toPoint } from './nav'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
@@ -157,8 +156,8 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
         <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
           <Text style={[tx(16, 400), { lineHeight: 22, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
-            {onGentler && <TextLink flat title="Try a gentler option" onPress={onGentler} />}
-            <TextLink flat expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
+            {onGentler && <LinkBtn flat title="Try a gentler option" onPress={onGentler} />}
+            <LinkBtn flat expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
           </View>
           {help && <Foot style={{ paddingTop: 8, paddingHorizontal: 0 }}>{PAIN_HELP} {RED_FLAG}</Foot>}
         </View>
