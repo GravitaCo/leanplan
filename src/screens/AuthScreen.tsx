@@ -7,6 +7,7 @@ import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { TaliMark } from '@/ui/brand'
 import { Icon } from '@/ui/icons'
+import { AUTH, OWNER } from '@/copy/account'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -33,7 +34,7 @@ export function AuthScreen() {
     setErr('')
     beginSignIn()
     if (mode === 'forgot') {
-      if (!email) return setErr('Please enter your email.')
+      if (!email) return setErr(AUTH.errEmail)
       setBusy(true)
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect() })
       setBusy(false)
@@ -42,10 +43,10 @@ export function AuthScreen() {
       setModeRaw('check-email')
       return
     }
-    if (!email || !pw) return setErr('Please fill in all fields.')
+    if (!email || !pw) return setErr(AUTH.errFields)
     if (mode === 'signup') {
-      if (pw !== pw2) return setErr('Passwords do not match.')
-      if (pw.length < 8) return setErr('Password must be at least 8 characters.')
+      if (pw !== pw2) return setErr(AUTH.errMatch)
+      if (pw.length < 8) return setErr(AUTH.errShort)
       setBusy(true)
       const { error } = await supabase.auth.signUp({
         email,
@@ -80,15 +81,10 @@ export function AuthScreen() {
     setBusy(false)
     if (!error) return setResent(true)
     setResent(false)
-    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? 'Give it a minute, then try again.' : error.message)
+    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? AUTH.errRate : error.message)
   }
 
-  const copy = {
-    signin: { t: 'Welcome back', s: 'Eat well, move often, feel better.', cta: 'Sign in' },
-    signup: { t: 'Create your account', s: 'Two minutes to set up, then it works offline.', cta: 'Create account' },
-    forgot: { t: 'Reset your password', s: 'Enter your email and we\u2019ll send you a link to set a new one.', cta: 'Send reset link' },
-    'check-email': { t: 'Check your email', s: '', cta: '' },
-  }[mode]
+  const copy = AUTH.modes[mode]
 
   return (
     <div className={'auth2 m-' + mode}>
@@ -105,13 +101,13 @@ export function AuthScreen() {
             <div className="auth2-ico"><Icon name="mail" /></div>
             <div>
               <h1 className="auth2-t">{copy.t}</h1>
-              <p className="auth2-s">We sent a link to {email || 'your inbox'}. Open it on this phone to continue.</p>
+              <p className="auth2-s">{AUTH.sent(email)}</p>
             </div>
             {err && <div className="auth-err" role="alert">{err}</div>}
-            <button className="btn gray" onClick={() => { setResent(false); setMode('signin') }}>Back to sign in</button>
+            <button className="btn gray" onClick={() => { setResent(false); setMode('signin') }}>{AUTH.back}</button>
             <p className="auth2-foot" role="status">
-              {resent ? 'Sent again. It can take a minute or two. ' : 'Nothing yet? Check your spam folder, or '}
-              <button type="button" className="linkbtn" disabled={busy} onClick={resend}>{resent ? 'Send another' : 'send it again'}</button>{resent ? '' : '.'}
+              {resent ? AUTH.resentLead : AUTH.resendLead}
+              <button type="button" className="linkbtn" disabled={busy} onClick={resend}>{resent ? AUTH.sendAnother : AUTH.sendAgain}</button>{resent ? '' : '.'}
             </p>
           </>
         ) : (
@@ -129,7 +125,7 @@ export function AuthScreen() {
 
             <div className="auth2-fields">
               <div className="auth2-f">
-                <label htmlFor="auth-email">Email</label>
+                <label htmlFor="auth-email">{AUTH.email}</label>
                 <input
                   id="auth-email"
                   type="email"
@@ -138,35 +134,35 @@ export function AuthScreen() {
                   autoCapitalize="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
-                  placeholder="you@example.com"
+                  placeholder={AUTH.emailPlaceholder}
                 />
               </div>
               {mode !== 'forgot' && (
                 <div className={'auth2-f' + (mode === 'signin' ? ' has-forgot' : '')}>
-                  <label htmlFor="auth-pw">Password</label>
+                  <label htmlFor="auth-pw">{AUTH.password}</label>
                   <input
                     id="auth-pw"
                     type="password"
                     autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
-                    placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
+                    placeholder={mode === 'signup' ? AUTH.passwordNew : AUTH.passwordCurrent}
                   />
                   {mode === 'signin' && (
-                    <button type="button" className="auth2-forgot" onClick={() => setMode('forgot')}>Forgot?</button>
+                    <button type="button" className="auth2-forgot" onClick={() => setMode('forgot')}>{AUTH.forgot}</button>
                   )}
                 </div>
               )}
               {mode === 'signup' && (
                 <div className="auth2-f">
-                  <label htmlFor="auth-pw2">Confirm password</label>
+                  <label htmlFor="auth-pw2">{AUTH.confirm}</label>
                   <input
                     id="auth-pw2"
                     type="password"
                     autoComplete="new-password"
                     value={pw2}
                     onChange={(e) => setPw2(e.target.value)}
-                    placeholder="Repeat password"
+                    placeholder={AUTH.confirmPlaceholder}
                   />
                 </div>
               )}
@@ -179,35 +175,35 @@ export function AuthScreen() {
             )}
 
             <button type="submit" className="btn auth2-go" disabled={busy}>
-              {busy ? 'Please wait\u2026' : <>{copy.cta}<Arrow /></>}
+              {busy ? AUTH.wait : <>{copy.cta}<Arrow /></>}
             </button>
 
             {mode !== 'forgot' && (
               <>
-                {mode === 'signin' && <div className="auth-or">or</div>}
+                {mode === 'signin' && <div className="auth-or">{AUTH.or}</div>}
                 <button type="button" className="btn auth2-google" onClick={google}>
                   <GoogleG />
-                  Continue with Google
+                  {AUTH.google}
                 </button>
               </>
             )}
 
             {mode === 'signup' && (
               <p className="auth2-legal">
-                Tilo is for people aged {MIN_AGE} and over. Read the{' '}
-                <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">Terms</a> and{' '}
-                <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">Privacy notice</a>. You’ll be asked to agree after you sign up.
+                {AUTH.legal.lead(MIN_AGE)}
+                <a href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">{AUTH.legal.terms}</a>{AUTH.legal.and}
+                <a href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">{AUTH.legal.privacy}</a>{AUTH.legal.after}
               </p>
             )}
 
             <p className="auth2-foot">
               {mode === 'forgot' ? (
-                <button type="button" className="linkbtn" onClick={() => setMode('signin')}>Back to sign in</button>
+                <button type="button" className="linkbtn" onClick={() => setMode('signin')}>{AUTH.back}</button>
               ) : (
                 <>
-                  {mode === 'signup' ? 'Already have an account?' : 'New to Tilo?'}{' '}
+                  {mode === 'signup' ? AUTH.haveAccount : AUTH.newHere}{' '}
                   <button type="button" className="linkbtn" onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}>
-                    {mode === 'signup' ? 'Sign in' : 'Create an account'}
+                    {mode === 'signup' ? AUTH.toSignIn : AUTH.toSignUp}
                   </button>
                 </>
               )}
@@ -240,7 +236,7 @@ export function OwnerChoiceScreen() {
   // the log here that "Start fresh" would remove: changes never uploaded, or a log kept on this phone only
   const atRisk = unsyncedCount(data) > 0 || (!consentLetsSync(data) && hasExistingData(data))
   const [sure, setSure] = useState(false)
-  const who = ask?.email || 'this account'
+  const who = ask?.email || OWNER.thisAccount
   const pick = async (c: 'keep' | 'fresh' | 'cancel') => {
     if (busy) return
     if (c === 'fresh' && atRisk && !sure) { setSure(true); return } // losing a log takes a second tap
@@ -252,30 +248,30 @@ export function OwnerChoiceScreen() {
       <div className="auth-brand">
         <TaliMark width={112} />
         <h1>Tilo</h1>
-        <p>Signed in as {who}</p>
+        <p>{OWNER.signedInAs(who)}</p>
       </div>
       {ask?.checking ? (
-        <div className="card prose" role="status">Checking the log on this device…</div>
+        <div className="card prose" role="status">{OWNER.checking}</div>
       ) : (
         <>
-          <h2 className="auth-t">This device has another log</h2>
+          <h2 className="auth-t">{OWNER.title}</h2>
           <div className="card prose">
-            <p>The log on this device was made in a different account, or before it was linked to {who}.</p>
-            <p>Starting fresh removes it from this device and loads {who}’s own data. If the log is yours from another account, cancel and sign in to that one instead: anything that hadn’t synced yet is still there.</p>
-            <p style={{ margin: 0 }}>Keeping it adds it to {who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.</p>
+            <p>{OWNER.p1(who)}</p>
+            <p>{OWNER.p2(who)}</p>
+            <p style={{ margin: 0 }}>{OWNER.p3(who)}</p>
           </div>
           {sure && (
             <div className="card prose" role="alert">
-              <p style={{ margin: 0 }}>Some of the log on this device isn’t in any account, so starting fresh deletes it for good. Export a copy first if you might want it.</p>
+              <p style={{ margin: 0 }}>{OWNER.sure}</p>
             </div>
           )}
-          {sure && <button className="btn gray" disabled={busy} onClick={() => exportBackup(data)}>Export a copy</button>}
-          <button className="btn" disabled={busy} onClick={() => pick('fresh')}>{sure ? 'Start fresh and delete it' : `Start fresh with ${who}`}</button>
-          <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>Keep this log in {who}</button>
+          {sure && <button className="btn gray" disabled={busy} onClick={() => exportBackup(data)}>{OWNER.exportCopy}</button>}
+          <button className="btn" disabled={busy} onClick={() => pick('fresh')}>{sure ? OWNER.freshSure : OWNER.fresh(who)}</button>
+          <button className="btn gray" disabled={busy} onClick={() => pick('keep')}>{OWNER.keep(who)}</button>
         </>
       )}
       <div className="auth-links">
-        <button type="button" className="linkbtn muted" disabled={busy} onClick={() => pick('cancel')}>Cancel and sign out</button>
+        <button type="button" className="linkbtn muted" disabled={busy} onClick={() => pick('cancel')}>{OWNER.cancel}</button>
       </div>
     </div>
   )

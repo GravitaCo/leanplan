@@ -87,6 +87,64 @@ export const DAYS_SPREAD = (spread: string) => `Not sure? Leave these and we’l
 
 export const ONE_DAY_NOTE = 'One day is a great start. Two gets you the full benefit when you’re ready.'
 
+/**
+ * The wizard's controls, labels and spoken values that were written inline in the web screens
+ * (lifted for the native app, lead approved 13 Nov 2026): both apps read them from here, and the
+ * copy lint covers them. VoiceOver labels are the same as the web's `aria` labels.
+ */
+export const WIZ = {
+  back: 'Back', skip: 'Skip', cont: 'Continue', done: 'Done',
+  progress: (at: number, of: number) => `Question ${at} of ${of}`,
+  part: (n: number) => `Part ${n} of 3`,
+  startUsing: 'Start using Tilo',
+  firstName: 'First name', namePlaceholder: 'Sam',
+  somethingElse: 'Something else',
+  yes: 'Yes', no: 'No',
+  mainGoal: 'Main goal',
+  age: { label: 'Age in years', unit: 'years', value: (v: number) => `${v} years` },
+  lately: {
+    sleep: { k: 'Sleep', opts: [['good', 'Mostly well'], ['mixed', 'Mixed'], ['poor', 'Mostly poorly']] as [('good' | 'mixed' | 'poor'), string][] },
+    stress: { k: 'Stress', opts: [['low', 'Low'], ['some', 'Some'], ['high', 'A lot']] as [('low' | 'some' | 'high'), string][] },
+    room: { k: 'Room for change right now', opts: [['plenty', 'Plenty'], ['some', 'A little'], ['little', 'Not much']] as [('plenty' | 'some' | 'little'), string][] },
+  },
+  foodAndWeight: 'Food and weight',
+  height: {
+    unitLabel: 'Height unit', units: [['cm', 'cm'], ['ft-in', 'ft in']] as [('cm' | 'ft-in'), string][], label: 'Height',
+    cm: (v: number) => `${v} centimetres`, ftIn: (ft: number, inches: number) => `${ft} feet ${inches} inches`, tick: (ft: number) => `${ft} ft`,
+  },
+  sex: { k: 'Sex', s: 'for the energy estimate', label: 'Sex for the energy estimate', opts: [['female', 'Female'], ['male', 'Male'], ['unspecified', 'Prefer not to say']] as [('female' | 'male' | 'unspecified'), string][] },
+  medicalLabel: 'Conditions and medicines',
+  noneOfThese: 'None of these',
+  weight: {
+    unitLabel: 'Weight unit', units: [['kg', 'kg'], ['st-lb', 'st lb'], ['lb', 'lb']] as [('kg' | 'st-lb' | 'lb'), string][], label: 'Weight',
+    kg: (v: number) => `${v} kilograms`, stLb: (st: number, lb: number) => `${st} stone ${lb} pounds`, lb: (v: number) => `${v} pounds`, tick: (st: number) => `${st} st`,
+  },
+  move: { jobTitle: 'What’s a normal day like?', jobLabel: 'A normal day', toSteps: 'Use steps instead', stepsLabel: 'Steps on a normal day', toJob: 'Not sure? Describe your day instead' },
+  days: { label: 'Days a week', which1: 'Which day?', which: 'Which days?', whichLabel: 'Which days' },
+  minutes: { label: 'Minutes a session', value: (range: string) => `${range} minutes` },
+  areas: { label: 'Areas to go easy on', build: 'Build my week' },
+}
+
+/** The summary's controls and labels that were inline (Onboarding 3). */
+export const SUMMARY_UI = {
+  personalise: 'Personalise it',
+  week: 'Your week',
+  /** a training day on the strip: "Monday: Full body A. Why each part is here" */
+  dayOpen: (day: string, name: string) => `${day}: ${name}. Why each part is here`,
+  day: (day: string, name: string) => `${day}: ${name}`,
+  food: 'Food',
+  addWeight: 'Add weight', addHeight: 'Add height',
+  how: 'How we worked this out',
+  done: 'Done',
+}
+
+/** ob6-4: Plan's "Build my plan" card. */
+export const BUILD_PLAN = {
+  k: 'New', t: 'Build my plan',
+  s: 'Answer a few questions about your time, kit and what you enjoy, and Tilo builds a week from your answers. Your current week stays until you choose.',
+  go: 'Build my plan',
+}
+
 /** Onboarding 4: the signposting screens. */
 export const NOTES = {
   // board "Age 18+ · 2": the wizard's stop (first run)
@@ -333,6 +391,6 @@ export function allCopy(): string[] {
     else if (Array.isArray(x)) x.forEach(walk)
     else if (x && typeof x === 'object') Object.values(x).forEach(walk)
   }
-  walk([COPY, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, FOOD9, SUPPORT, HEALTH_ANSWERS, REDO, CHECKIN])
+  walk([COPY, WIZ, SUMMARY_UI, BUILD_PLAN, TAP, TAP_GOAL, WHY_LINK, DAYS_SPREAD, PARTS, MINUTES_WARMUP, MINUTES_WARMUP_S, MAINT_SHEET, OTHERS, IF_THEN, READINESS_ITEMS, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, PREGNANCY_REASK, WELLBEING_STATEMENT, WELLBEING_OPTIONS, MEDICAL_ITEMS, ONE_DAY_NOTE, NOTES, SUMMARY, SETUP_CARD, FIRST_SESSION, FOOD9, SUPPORT, HEALTH_ANSWERS, REDO, CHECKIN])
   return out
 }

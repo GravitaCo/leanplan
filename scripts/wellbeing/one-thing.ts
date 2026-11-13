@@ -11,7 +11,7 @@ import { thingOptions, type ThingCtx } from '@/core/domain/mind'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { MIND_PLAN, PlanEditSheet, planGroups, whenLine } from '@/screens/plan/PlanSheets'
 import { ThingPlanSheet } from '@/screens/today/ThingPlanSheet'
-import { thingView } from '@/screens/today/MindCard'
+import { thingView } from '@/screens/today/summary'
 
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim()
 
@@ -44,9 +44,12 @@ export function oneThingSuite(): number {
   ok('a finished Reset ticks a Reset thing, and only one not yet done', resetTicksThing({ key: 'reset-2' }) && resetTicksThing({ key: 'reset-before-session' })
     && !resetTicksThing({ key: 'reset-2', done: '2026-10-10T09:00:00.000Z' }) && !resetTicksThing({ key: 'outside-lunch' }) && !resetTicksThing({ key: 'wind-down-from' }) && !resetTicksThing(undefined) && !resetTicksThing({ key: 'nope' }))
   {
+    // the finish path is the shared onPacerDone (resetStages.ts, web and native); the screen never calls doneThing
     const src = readFileSync('src/screens/mind/ResetScreen.tsx', 'utf8')
-    const fin = (src.match(/const finish = \(\) => \{([\s\S]*?)\n  \}/) || [])[1] ?? ''
-    ok('only the finish path calls doneThing (a stop changes nothing)', /resetTicksThing\([\s\S]*?checkin\?\.thing\)\) doneThing\(\)/.test(fin) && (src.match(/doneThing\(\)/g) || []).length === 1, fin)
+    const stages = readFileSync('src/screens/mind/resetStages.ts', 'utf8')
+    const fin = (stages.match(/export function onPacerDone[\s\S]*?\n\}/) || [])[0] ?? ''
+    ok('only the finish path calls doneThing (a stop changes nothing)', /if \(cur\.stage !== 'running'\) return cur/.test(fin) && /resetTicksThing\([\s\S]*?checkin\?\.thing\)\) st\.doneThing\(\)/.test(fin)
+      && (stages.match(/doneThing\(\)/g) || []).length === 1 && !/doneThing\(/.test(src), fin)
   }
 
   /* ---------- Make it a plan (B9.10 to B9.15) ---------- */

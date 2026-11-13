@@ -50,7 +50,7 @@ import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
 import { alternativesFor, fmtSet, holdAt, holdLabel, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
 import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
-import { buildLogged, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
+import { buildLogged, findWeightAim, findWeightStep, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
 import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
 import { loadStateFrom } from '@/data/persistence'
 import { checkDigitOk, classifyProduct, confirmLiveRead, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
@@ -69,9 +69,13 @@ import { consentSuite } from './test-consent'
 import { onboardingSuite } from './test-onboarding'
 import { engineSuite } from './test-engine'
 import { wizardSuite } from './test-wizard'
+import { wizardAnswersSuite } from './test-wizard-answers'
+import { summaryModelSuite } from './test-summary-model'
 import { wellbeingSuite } from './test-wellbeing'
 import { loopSuite } from './test-loop'
+import { planSuite } from './test-plan'
 import { duplicatesSuite } from './test-duplicates'
+import { foodModelSuite } from './test-food-model'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -1379,6 +1383,8 @@ async function routinesMissing(): Promise<void> {
     ['week: no rest day warns', weekWarnings({ 0: 'Cardio', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).some((w) => w.kind === 'no-rest')],
     ['week: swapDays', JSON.stringify(swapDays({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any, 1, 3)[1]) === '"Push"'],
     ['tempo: countOf is the phase count', (() => { const s = tempoAt(DEMOS.barbellSquat, 5); return s.kind === 'lower' && s.countOf === 8 && s.count === 3 })()],
+    ['find your weight: 1 kg steps to 10 kg, then 2.5 kg; never below 0; nothing picked is 0', findWeightStep(null, 'heavier') === 1 && findWeightStep(9, 'heavier') === 10 && findWeightStep(10, 'heavier') === 12.5 && findWeightStep(12.5, 'lighter') === 10 && findWeightStep(10, 'lighter') === 9 && findWeightStep(0.5, 'lighter') === 0 && findWeightStep(null, 'lighter') === 0],
+    ['find your weight: aim for the top reps (10 without a range) with the reps to spare', JSON.stringify(findWeightAim({ reps: { lo: 8, hi: 12 }, rir: { lo: 2, hi: 3 } })) === '{"reps":12,"rirLo":2,"rirHi":3}' && findWeightAim({ reps: null, rir: { lo: 2, hi: 3 } }).reps === 10],
     ['persistence: guided fields kept, malformed ones dropped', (() => {
       const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', note: 5, ex: [{ name: 'x', rx: 3, sets: [{ w: '1', reps: '2', feel: 'meh', warmup: 'yes' }, { w: '1', reps: '2', feel: 'struggle', warmup: true }] }] }] } } } as any)
       const x: any = st.days['2026-09-20'].sessions![0]
@@ -2123,4 +2129,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += wizardAnswersSuite() }).then(() => { bad += summaryModelSuite() }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => { bad += planSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => { bad += foodModelSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

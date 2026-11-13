@@ -10,7 +10,7 @@ import { FIRST_SESSION } from '../onboarding/copyApp'
 import { mediaUrl } from '@/core/data/media'
 import { PHASE_LABEL, tempoAt } from '@/core/domain/tempo'
 import { todayStr } from '@/core/domain/date'
-import { buildLogged, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { buildLogged, findWeightAim, findWeightStep, fmtClock, fmtTarget, lastTime, later, parseRx, readyToStepUp, restFor, restHint, setsLine, splitLogged, stintMins, swapInto, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { sessionsOf, warmupOnly } from '@/core/domain/sessions'
 import { exById, holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { howToLink } from '@/core/domain/workout'
@@ -18,28 +18,22 @@ import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { AdjustSheet } from './AdjustSheet'
 import { FinishSheet } from './FinishSheet'
-import { HoldTimer, RED_FLAG } from './HoldTimer'
+import { HoldTimer } from './HoldTimer'
+import { RED_FLAG } from '@/copy/train'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 import type { ShorterKind } from '@/core/domain/dayOptions'
 import { easierAim } from './hardDay'
+import { warmupCopy } from '@/copy/train'
+import { bareName, firstLine } from './trainModel'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
 const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false } }
 
-/** "Romanian deadlift (dumbbell or barbell)" → "Romanian deadlift" */
-export const bareName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '')
-/** The first sentence of a cue, for the line under the name. */
-const firstLine = (cue: string) => (cue.match(/^.*?[.!?](\s|$)/)?.[0] ?? cue).trim()
-
-/**
- * The warm-up line (fitness-workouts), shared with the preview card: with the warm-up block
- * (`mins`), the lighter sets that follow it; without it, as before the block.
- */
-export const warmupCopy = (name: string, mins?: number) =>
-  `${mins ? `After the ${mins}-minute warm-up, do` : '5 minutes of easy movement, then'} one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
+export { warmupCopy } from '@/copy/train'
+export { bareName } from './trainModel'
 
 /** A short chime at the end of rest, only when sound is on. */
 function chime() {
@@ -169,6 +163,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   }, [generated, slot.i, slot.swapped, slot.shape, slot.x, slot.sets, slot.rx, days, cur])
   const [found, setFound] = useState<Record<number, string>>({})
   const [findW, setFindW] = useState<number | null>(null)
+  const aim = calib ? findWeightAim(calib.t) : null
   const finding = !!calib && setNo === 0 && found[slot.i] === undefined && !complete
   const lastW = calib?.lastW && +calib.lastW ? +calib.lastW : null
   useEffect(() => { setFindW(lastW) }, [slot.i, lastW])
@@ -413,11 +408,11 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             <p className="lead">{FIRST_SESSION.find}</p>
           </div>
           <div className="gp-step">
-            <button aria-label="Lighter" onClick={() => setFindW(Math.max(0, (findW ?? 0) - ((findW ?? 0) > 10 ? 2.5 : 1)))}>−</button>
+            <button aria-label="Lighter" onClick={() => setFindW(findWeightStep(findW, 'lighter'))}>−</button>
             <span className="v num" aria-live="polite">{findW == null ? '–' : findW}<small>kg</small></span>
-            <button aria-label="Heavier" onClick={() => setFindW((findW ?? 0) + ((findW ?? 0) >= 10 ? 2.5 : 1))}>+</button>
+            <button aria-label="Heavier" onClick={() => setFindW(findWeightStep(findW, 'heavier'))}>+</button>
           </div>
-          <div className="gp-aim num">Aim for {calib.t.reps?.hi ?? 10} reps with {calib.t.rir.lo} or {calib.t.rir.hi} to spare</div>
+          <div className="gp-aim num">Aim for {aim!.reps} reps with {aim!.rirLo} or {aim!.rirHi} to spare</div>
           <button className="gp-main" disabled={findW == null} onClick={() => setFound({ ...found, [slot.i]: String(findW) })}>Start set 1</button>
           <button className="gp-know" onClick={() => { setFound({ ...found, [slot.i]: '' }); setSheet('adjust') }}>{FIRST_SESSION.know}</button>
         </section>

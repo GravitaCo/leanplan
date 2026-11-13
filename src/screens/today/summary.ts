@@ -3,7 +3,8 @@
  * so scripts/wellbeing/summary.ts can test them. TodayScreen gathers the facts and renders.
  */
 import type { CheckIn, DayLog, IfThenPlan, Pillar } from '@/core/types'
-import { thingPlan, type Thing } from '@/core/data/skills'
+import { skillById, thingPlan, type Thing } from '@/core/data/skills'
+import type { MindView } from '@/store/store'
 import type { AskId } from '@/core/domain/asks'
 import { parseYmd } from '@/core/domain/date'
 import { WEIGH_IN } from './summaryCopy'
@@ -112,4 +113,34 @@ export function summaryDue(due: SummaryDue, on: Record<Pillar, boolean>): AskId[
 export function makePlanOffered(thing: Thing | undefined, plans: readonly IfThenPlan[] | undefined, today: string, ctx: { windDownAt?: string } = {}): boolean {
   if (!thingPlan(thing, ctx)) return false
   return !(plans ?? []).some((p) => p.kind === 'mind' && p.created?.slice(0, 10) === today)
+}
+
+/** The Mind view a picked thing's "Today:" line opens: its skill, when that skill has a reviewed
+ *  screen; else none (the line is plain text). Shared by the web and native Mind cards. */
+export function thingView(t: Thing, reviewed: boolean): MindView | null {
+  const sk = t.skill ? skillById(t.skill) : undefined
+  return reviewed && sk?.screen && (sk.id === 'reset' || sk.id === 'unload') ? sk.id : null
+}
+
+/**
+ * The low-mood signpost's showing rules (WP15), with no React; lowMoodSignpost.ts's hooks run them.
+ * `session` is the day the signpost showed in this app session and whether it was dismissed: it
+ * stays up across tab switches that day until dismissed, and a relaunch doesn't bring it back.
+ */
+export interface SignpostSession { day: string; dismissed: boolean }
+
+/** Due today and not yet marked for today (`shownOn`: the stored device-only day it last showed). */
+export function signpostFresh(due: boolean, today: string, shownOn: string | undefined): boolean {
+  return due && shownOn !== today
+}
+
+/** Mark it shown now (the banner has just been drawn): not already shown in this session today. */
+export function signpostMarkNow(today: string, session: SignpostSession): boolean {
+  return session.day !== today
+}
+
+/** It shows when due and fresh, or when it already showed in this session today and wasn't dismissed. */
+export function signpostShows(due: boolean, fresh: boolean, today: string, session: SignpostSession): boolean {
+  const here = session.day === today
+  return due && !(here && session.dismissed) && (fresh || here)
 }

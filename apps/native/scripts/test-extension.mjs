@@ -1,0 +1,221 @@
+/**
+ * The Notification Service Extension (N12) without a Mac: the config plugin run against Expo's own
+ * iOS project template, the files it writes, the EAS declaration, and the Swift sources' constants
+ * against the shared reminder rules. The extension itself runs only on an iPhone (device test).
+ *   (apps/native) npm run test:extension
+ */
+import { createRequire } from 'node:module'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { MIND_KINDS } from '../../../supabase/functions/_shared/reminders.ts'
+import { fromExtension, keyOf } from '../lib/platform/notifyReconcile.ts'
+
+const require = createRequire(import.meta.url)
+const xcode = require('xcode')
+const plugin = require('../plugins/withNotifyExtension.js')
+const { addExtensionTarget, infoPlist, entitlements, privacyManifest, withEasDeclaration, groupOf, extIdOf } = plugin._test
+
+let failed = 0
+let passed = 0
+const check = (name, ok, detail) => { if (ok) passed++; else { failed++; console.error('FAIL', name, detail === undefined ? '' : JSON.stringify(detail)) } }
+
+const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo
+const BUNDLE = app.ios.bundleIdentifier
+
+/* ---------- the app config ---------- */
+check('app.json runs the plugin', app.plugins.includes('./plugins/withNotifyExtension'))
+check('app group and extension id follow the bundle id', groupOf(BUNDLE) === 'group.fit.tilo.app' && extIdOf(BUNDLE) === 'fit.tilo.app.NotifyExtension')
+{
+  const c = withEasDeclaration({ ios: { bundleIdentifier: BUNDLE }, extra: { eas: { projectId: 'x' } } })
+  const list = c.extra.eas.build.experimental.ios.appExtensions
+  check('EAS knows the extension before the build (credentials), with its app group, projectId kept',
+    c.extra.eas.projectId === 'x' && list.length === 1 && list[0].targetName === plugin.NAME && list[0].bundleIdentifier === 'fit.tilo.app.NotifyExtension'
+    && JSON.stringify(list[0].entitlements) === JSON.stringify({ 'com.apple.security.application-groups': ['group.fit.tilo.app'] }))
+  check('declared once however often the plugin runs', withEasDeclaration(c).extra.eas.build.experimental.ios.appExtensions.length === 1)
+}
+
+/* ---------- the files ---------- */
+const plist = infoPlist('0.1.0', '7')
+check('Info.plist: a notification service extension, principal class NotificationService',
+  plist.includes('<string>com.apple.usernotifications.service</string>') && plist.includes('<string>$(PRODUCT_MODULE_NAME).NotificationService</string>'))
+check('Info.plist: the app\'s version and build number (the App Store requires them to match)',
+  plist.includes('<key>CFBundleShortVersionString</key>\n  <string>0.1.0</string>') && plist.includes('<key>CFBundleVersion</key>\n  <string>7</string>'))
+check('entitlements: the app group only', /<key>com\.apple\.security\.application-groups<\/key>\s*<array>\s*<string>group\.fit\.tilo\.app<\/string>\s*<\/array>/.test(entitlements('group.fit.tilo.app'))
+  && (entitlements('group.fit.tilo.app').match(/<key>/g) || []).length === 1)
+
+/* ---------- the Xcode project, from Expo's own template ---------- */
+const dir = mkdtempSync(join(tmpdir(), 'tilo-ext-'))
+try {
+  execFileSync('tar', ['-xzf', require.resolve('expo/template.tgz'), '-C', dir, 'package/ios/HelloWorld.xcodeproj/project.pbxproj'])
+  const proj = xcode.project(join(dir, 'package/ios/HelloWorld.xcodeproj/project.pbxproj'))
+  proj.parseSync()
+  const added = addExtensionTarget(proj, { bundleId: BUNDLE, version: '0.1.0', buildNumber: '7', teamId: 'M8R77TCYF8' })
+  // written and read back, as prebuild does
+  const text = proj.writeSync()
+  const re = xcode.project(join(dir, 'x.pbxproj'))
+  re.hash = require('xcode/lib/parser/pbxproj').parse(text)
+  const objs = re.hash.project.objects
+  const targets = Object.entries(objs.PBXNativeTarget).filter(([k]) => !k.endsWith('_comment')).map(([k, t]) => ({ k, ...t }))
+  const ext = targets.find((t) => String(t.name).replace(/"/g, '') === plugin.NAME)
+  const main = targets.find((t) => t !== ext)
+  check('the extension target is added, as an app extension', added === true && !!ext && String(ext.productType).replace(/"/g, '') === 'com.apple.product-type.app-extension')
+  const settings = Object.values(objs.XCBuildConfiguration).filter((c) => c && c.buildSettings && String(c.buildSettings.PRODUCT_NAME).replace(/"/g, '') === plugin.NAME).map((c) => c.buildSettings)
+  const un = (v) => String(v).replace(/"/g, '')
+  check('Debug and Release: bundle id, Info.plist, entitlements, team, iOS 17, iPhone, the app\'s version',
+    settings.length === 2 && settings.every((b) => un(b.PRODUCT_BUNDLE_IDENTIFIER) === 'fit.tilo.app.NotifyExtension' && un(b.INFOPLIST_FILE) === 'TiloNotifyExtension/Info.plist'
+      && un(b.CODE_SIGN_ENTITLEMENTS) === 'TiloNotifyExtension/TiloNotifyExtension.entitlements' && un(b.DEVELOPMENT_TEAM) === 'M8R77TCYF8'
+      && un(b.IPHONEOS_DEPLOYMENT_TARGET) === '17.0' && un(b.TARGETED_DEVICE_FAMILY) === '1' && un(b.MARKETING_VERSION) === '0.1.0' && un(b.CURRENT_PROJECT_VERSION) === '7'), settings)
+  const phase = (id) => objs.PBXSourcesBuildPhase?.[id] ?? objs.PBXResourcesBuildPhase?.[id] ?? objs.PBXFrameworksBuildPhase?.[id] ?? objs.PBXCopyFilesBuildPhase?.[id]
+  const extPhases = ext.buildPhases.map((p) => ({ id: p.value, comment: p.comment, files: (phase(p.value)?.files || []).map((f) => f.comment) }))
+  check('the extension compiles NotificationService.swift',
+    extPhases.some((p) => p.comment === 'Sources' && p.files.length === 1 && /NotificationService\.swift"? in Sources/.test(p.files[0])), extPhases)
+  const embed = main.buildPhases.map((p) => objs.PBXCopyFilesBuildPhase?.[p.value]).filter(Boolean)
+  check('the app embeds it in PlugIns', embed.some((p) => String(p.dstSubfolderSpec) === '13' && (p.files || []).some((f) => /TiloNotifyExtension\.appex/.test(f.comment))))
+  const deps = (main.dependencies || []).map((d) => objs.PBXTargetDependency?.[d.value])
+  check('the app depends on it, so Xcode builds it first', deps.some((d) => d && d.target === ext.k))
+  check('no stray resource entries for Info.plist or the entitlements', !/(Info\.plist|\.entitlements) in Resources/.test(text.split('/* Begin PBXBuildFile section */')[1]?.split('/* End PBXBuildFile section */')[0] ?? 'x'))
+  const groups = Object.entries(objs.PBXGroup).filter(([k, g]) => !k.endsWith('_comment') && typeof g === 'object')
+  const extGroup = groups.find(([, g]) => String(g.name).replace(/"/g, '') === plugin.NAME)
+  const mainGroup = groups.find(([, g]) => g.name === undefined && g.path === undefined)
+  check('the extension\'s files sit in the project\'s main group', !!extGroup && !!mainGroup && (mainGroup[1].children || []).some((c) => c.value === extGroup[0]))
+  const resPhase = extPhases.find((p) => p.comment === 'Resources')
+  check('the extension bundles its privacy manifest (and no other resource)', !!resPhase && resPhase.files.length === 1 && /PrivacyInfo\.xcprivacy"? in Resources/.test(resPhase.files[0]), resPhase)
+  check('running it again changes nothing', addExtensionTarget(re, { bundleId: BUNDLE, version: '0.1.0', buildNumber: '7', teamId: 'M8R77TCYF8' }) === false)
+} finally {
+  rmSync(dir, { recursive: true, force: true })
+}
+
+/* ---------- privacy manifests (Apple's required-reason APIs) ---------- */
+// Apple's approved reasons (developer.apple.com, NSPrivacyAccessedAPITypeReasons, read 13 Nov 2026)
+const APPLE_REASONS = {
+  FileTimestamp: ['DDA9.1', 'C617.1', '3B52.1', '0A2A.1'],
+  SystemBootTime: ['35F9.1', '8FFB.1', '3D61.1'],
+  DiskSpace: ['85F4.1', 'E174.1', '7D9E.1', 'B728.1'],
+  ActiveKeyboards: ['3EC4.1', '54BD.1'],
+  UserDefaults: ['CA92.1', '1C8F.1', 'C56D.1', 'AC6B.1'],
+}
+const SDK_ONLY = ['0A2A.1', 'C56D.1']
+const appPM = app.ios.privacyManifests
+const declared = Object.fromEntries((appPM?.NSPrivacyAccessedAPITypes ?? []).map((t) => [t.NSPrivacyAccessedAPIType.replace('NSPrivacyAccessedAPICategory', ''), t.NSPrivacyAccessedAPITypeReasons]))
+check('app manifest: tracks nothing', appPM?.NSPrivacyTracking === false && Array.isArray(appPM?.NSPrivacyTrackingDomains) && appPM.NSPrivacyTrackingDomains.length === 0)
+check('app manifest: every reason is one of Apple\'s for its category, none reserved for SDKs',
+  Object.entries(declared).every(([c, rs]) => APPLE_REASONS[c] && rs.length > 0 && rs.every((r) => APPLE_REASONS[c].includes(r) && !SDK_ONLY.includes(r))), declared)
+check('app manifest: user defaults for the app and its app group, file metadata in its own container, boot time for in-app timing',
+  JSON.stringify(declared) === JSON.stringify({ UserDefaults: ['CA92.1', '1C8F.1'], FileTimestamp: ['C617.1'], SystemBootTime: ['35F9.1'] }), declared)
+const ext = privacyManifest()
+check('extension manifest: user defaults in the app group only, no tracking, nothing collected',
+  /NSPrivacyAccessedAPICategoryUserDefaults<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>\s*<string>1C8F\.1<\/string>\s*<\/array>/.test(ext)
+  && (ext.match(/NSPrivacyAccessedAPICategory/g) || []).length === 1 && /<key>NSPrivacyTracking<\/key>\s*<false\/>/.test(ext) && /<key>NSPrivacyCollectedDataTypes<\/key>\s*<array\/>/.test(ext))
+// What ships: at pod install, React Native merges every linked pod's PrivacyInfo.xcprivacy into the
+// app's (Podfile :privacy_file_aggregation_enabled, on by default; ship-critic 13 Nov 2026). So the
+// app's manifest on the phone is app.json's declarations plus every release pod's. This rebuilds that
+// merge from Expo's autolinking and React Native's own manifests, and checks it against SHIPPED, the
+// list apps/native/docs/privacy-manifest.md states (and compliance signed off).
+const SHIPPED = {
+  UserDefaults: ['1C8F.1', 'CA92.1'],
+  FileTimestamp: ['0A2A.1', '3B52.1', 'C617.1'],
+  SystemBootTime: ['35F9.1'],
+  DiskSpace: ['85F4.1', 'E174.1'],
+}
+{
+  const { readdirSync, statSync } = await import('node:fs')
+  const findPI = (dir, out = []) => {
+    let names = []
+    try { names = readdirSync(dir) } catch { return out }
+    for (const n of names) {
+      const p = join(dir, n)
+      if (n === 'node_modules') continue
+      let st; try { st = statSync(p) } catch { continue }
+      if (st.isDirectory()) findPI(p, out); else if (n === 'PrivacyInfo.xcprivacy') out.push(p)
+    }
+    return out
+  }
+  const reasonsIn = (xml) => {
+    const out = {}
+    for (const m of xml.matchAll(/<key>NSPrivacyAccessedAPIType<\/key>\s*<string>NSPrivacyAccessedAPICategory(\w+)<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>([\s\S]*?)<\/array>/g))
+      out[m[1]] = [...m[2].matchAll(/<string>([^<]+)<\/string>/g)].map((x) => x[1])
+    return out
+  }
+  const resolved = JSON.parse(execFileSync(process.execPath, [require.resolve('expo-modules-autolinking/bin/expo-modules-autolinking.js'), 'resolve', '-p', 'apple', '--json'], { cwd: new URL('..', import.meta.url).pathname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  // React Native's aggregator reads every pod's manifest, community ones included: so every
+  // PrivacyInfo.xcprivacy under node_modules, except debug-only Expo modules' and the Expo template's
+  const debugDirs = resolved.modules.filter((m) => m.debugOnly).flatMap((m) => m.pods.map((p) => p.podspecDir))
+  const nm = join(new URL('..', import.meta.url).pathname, 'node_modules')
+  const all = []
+  const walkAll = (dir) => {
+    let names = []
+    try { names = readdirSync(dir) } catch { return }
+    for (const n of names) {
+      const p = join(dir, n)
+      let st; try { st = statSync(p) } catch { continue }
+      if (st.isDirectory()) { if (n !== '.cache' && n !== '.bin') walkAll(p) } else if (n === 'PrivacyInfo.xcprivacy') all.push(p)
+    }
+  }
+  walkAll(nm)
+  const files = all.filter((f) => !debugDirs.some((d) => f.startsWith(d)) && !/\/template\//.test(f))
+  check('the merge reads every pod manifest, community ones included', files.length >= 11 && files.some((f) => f.includes('react-native/React')) && files.some((f) => f.includes('expo-file-system')), files.length)
+  const merged = {}
+  for (const [c, rs] of [...Object.entries(declared), ...files.flatMap((f) => Object.entries(reasonsIn(readFileSync(f, 'utf8'))))]) merged[c] = [...new Set([...(merged[c] ?? []), ...rs])].sort()
+  check('what ships: app.json plus every linked release pod\'s manifest equals the documented list', JSON.stringify(merged) === JSON.stringify(SHIPPED), { merged, files: files.map((f) => f.split('node_modules/')[1]) })
+  check('what ships: every merged reason is one of Apple\'s for its category', Object.entries(merged).every(([c, rs]) => rs.every((r) => APPLE_REASONS[c]?.includes(r))))
+  const doc = readFileSync(new URL('../docs/privacy-manifest.md', import.meta.url), 'utf8')
+  const docRow = (c) => (doc.split('\n').find((l) => l.startsWith('| ' + c + ' |')) ?? '').split('|')[2] ?? ''
+  check('the doc states the shipped list, each code under its category',
+    Object.entries(SHIPPED).every(([c, rs]) => JSON.stringify((docRow(c).match(/[0-9A-F]{4}\.1/g) ?? []).sort()) === JSON.stringify(rs)) && /privacy_file_aggregation_enabled/.test(doc),
+    Object.fromEntries(Object.keys(SHIPPED).map((c) => [c, docRow(c)])))
+  const bp = (app.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties') ?? [])[1]
+  check('aggregation stays on (nothing turns it off)', bp?.ios?.privacyManifestAggregationEnabled !== false)
+}
+
+// our own Swift: a required-reason API appearing without its category declared fails here
+{
+  const { readdirSync, statSync } = await import('node:fs')
+  const swift = []
+  const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (/\.(swift|m|mm|h|c|cpp)$/.test(p)) swift.push(p) } }
+  for (const d of ['modules', 'targets']) walk(new URL('../' + d, import.meta.url).pathname)
+  const PATTERNS = {
+    UserDefaults: /\bUserDefaults\b|NSUserDefaults/,
+    FileTimestamp: /creationDate|modificationDate|ModificationDate|CreationDate|DateKey\b|f?getattrlist|\b(?:[fl]?stat|fstatat)\(|attributesOfItem/,
+    SystemBootTime: /systemUptime|mach_absolute_time/,
+    DiskSpace: /volumeAvailableCapacity|FileSystemFreeSize|FileSystemSize|statv?fs|fstatv?fs|volumeTotalCapacity|systemFreeSize|systemSize\b/,
+    ActiveKeyboards: /activeInputModes/,
+  }
+  const used = {}
+  for (const f of swift) {
+    const src = readFileSync(f, 'utf8').replace(/\/\/[^\n]*/g, '')
+    for (const [c, re] of Object.entries(PATTERNS)) if (re.test(src)) (used[c] ??= []).push(f.split('/apps/native/')[1])
+  }
+  check('our Swift calls only required-reason APIs the app manifest declares', Object.keys(used).every((c) => declared[c]), used)
+  // the extension has its own manifest: its code may only use what that declares
+  const extDeclared = [...privacyManifest().matchAll(/NSPrivacyAccessedAPICategory(\w+)/g)].map((m) => m[1])
+  const extUsed = Object.entries(used).filter(([, fs]) => fs.some((f) => f.startsWith('targets/'))).map(([c]) => c)
+  check('the extension\'s code uses only what the extension\'s manifest declares', extUsed.every((c) => extDeclared.includes(c)), { extUsed, extDeclared })
+  check('the app-group defaults are only used by the extension and its module (1C8F.1)', (used.UserDefaults ?? []).every((f) => /tilo-notify|notify-extension/.test(f)), used.UserDefaults)
+}
+
+/* ---------- the Swift sources against the shared rules ---------- */
+const nse = readFileSync(new URL('../targets/notify-extension/NotificationService.swift', import.meta.url), 'utf8')
+const mod = readFileSync(new URL('../modules/tilo-notify/ios/TiloNotifyModule.swift', import.meta.url), 'utf8')
+const swiftKinds = (nse.match(/mindKinds: Set<String> = \[([^\]]*)\]/)?.[1] ?? '').match(/"([^"]+)"/g)?.map((x) => x.slice(1, -1)).sort()
+check('the extension records exactly the Mind types (reminders.ts MIND_KINDS)', JSON.stringify(swiftKinds) === JSON.stringify([...MIND_KINDS].sort()), swiftKinds)
+for (const [name, re] of [['app group', /appGroup = "([^"]+)"/], ['key', /key = "([^"]+)"/]]) {
+  const a = nse.match(re)?.[1], b = mod.match(re)?.[1]
+  check(`extension and module share the ${name}`, !!a && a === b, [a, b])
+}
+check('the module\'s app group is the plugin\'s', mod.match(/appGroup = "([^"]+)"/)?.[1] === groupOf(BUNDLE))
+check('the extension hands the content back unchanged', /contentHandler\(request\.content\)/.test(nse) && !/bestAttemptContent|mutableCopy/.test(nse))
+check('the extension keeps at most 60 and records no text', /maxKept = 60/.test(nse) && !/alert|title|\.body\b/.test(nse.replace(/\/\/\/[^\n]*/g, '')))
+check('the extension source is outside the module (the module\'s pod must not compile it)', !mod.includes('UNNotificationServiceExtension'))
+
+/* ---------- the app's side ---------- */
+const ID = '0b7f3c2e-4d1a-4f6e-9a2b-3c4d5e6f7a8b'
+check('deliveries: keyed by the send\'s id, as the app keys the same notification',
+  JSON.stringify(fromExtension([{ id: ID, kind: 'checkin', at: 5 }])) === JSON.stringify([{ key: keyOf({ id: ID }, 'whatever', 9), kind: 'checkin', at: 5 }]))
+check('deliveries: malformed, other types and missing ids dropped, oldest first',
+  JSON.stringify(fromExtension([{ id: ID, kind: 'plan', at: 9 }, { id: ID, kind: 'supp', at: 1 }, { kind: 'checkin', at: 1 }, { id: 'nope!', kind: 'checkin', at: 1 }, { id: ID, kind: 'checkin', at: 'x' }, 3, null, { id: ID.replace('0b', '1b'), kind: 'wind-down', at: 2 }]).map((p) => p.kind)) === JSON.stringify(['wind-down', 'plan']))
+check('deliveries: nothing is nothing', fromExtension(null).length === 0 && fromExtension({}).length === 0)
+
+console.log(`notification extension: ${passed} passed, ${failed} failed`)
+process.exit(failed ? 1 : 0)
