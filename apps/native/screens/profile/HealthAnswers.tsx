@@ -34,12 +34,9 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
   const shows = foodShows(profile)
   const onClear = (r: AnswerRow) => { if (r.confirm) setOpen({ sheet: 'confirm', row: r }); else clear(r.kind) }
   const small = [tx(13, 400, 1.4), { color: t.label2 }]
-  // `.ha-act`: 15 pt 600 tinted, padding 8 6, named as the web's aria-label ("Clear pregnant or breastfeeding").
-  // TODO(N1-followup): LinkBtn has no `label` prop yet, so this wrapper carries the name and VoiceOver's tap
+  // `.ha-act`: 15 pt 600 tinted, padding 8 6, named as the web's aria-label ("Clear pregnant or breastfeeding")
   const act = (title: string, label: string, onPress: () => void) => (
-    <View key={title} accessible accessibilityRole="button" accessibilityLabel={label} onAccessibilityTap={onPress}>
-      <LinkBtn title={title} onPress={onPress} style={{ fontFamily: GEIST[600], paddingVertical: 8, paddingHorizontal: 6 }} />
-    </View>
+    <LinkBtn key={title} title={title} label={label} onPress={onPress} style={{ fontFamily: GEIST[600], paddingVertical: 8, paddingHorizontal: 6 }} />
   )
   const sep = (i: number) => ({ borderTopWidth: i ? 1 : 0, borderTopColor: t.sep })
   const row = (key: string, label: string, value: string, does: string, acts: ReactNode, i: number) => (

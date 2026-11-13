@@ -9,10 +9,11 @@ import { Linking, Platform, Text, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import Constants from 'expo-constants'
 import { useStore } from '@/store/store'
-import { FEEDBACK_AREAS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers } from '@/core/domain/feedback'
+import { FEEDBACK_AREAS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers, type FeedbackRating } from '@/core/domain/feedback'
 import { FEEDBACK as F } from '@/copy/profile'
 import { num, tx, useTokens } from '../../lib/theme'
-import { Foot, Sub } from '../../lib/ui/text'
+import { Foot, Lbl, Sub } from '../../lib/ui/text'
+import { Input } from '../../lib/ui/fields'
 import { PROSE } from './text'
 import { Btn, Card } from '../../lib/ui/kit'
 import { BackButton, Sheet } from '../../lib/ui/primitives'
@@ -33,7 +34,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
   const showToast = useStore((s) => s.showToast)
   const [step, setStep] = useState(draft.step)
-  const [a] = useState<FeedbackAnswers>(draft.a)
+  const [a, setA] = useState<FeedbackAnswers>(draft.a)
   useEffect(() => { draft = { step, a } }, [step, a])
   const [opened, setOpened] = useState(false)
 
@@ -41,6 +42,9 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1))
   const back = () => { setOpened(false); setStep((s) => Math.max(0, s - 1)) }
   const area = step >= 1 && step <= FEEDBACK_AREAS.length ? FEEDBACK_AREAS[step - 1] : null
+  const cur = area ? a.areas[area.id] ?? {} : {}
+  const setArea = (patch: { rating?: FeedbackRating; note?: string }) =>
+    area && setA((x) => ({ ...x, areas: { ...x.areas, [area.id]: { ...x.areas[area.id], ...patch } } }))
   const copy = async () => {
     try { await Clipboard.setStringAsync(email.body); showToast(F.copied(FEEDBACK_TO)) } catch { showToast(F.copyFailed) }
   }
@@ -64,7 +68,8 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
           <Text style={q}>{area.question}</Text>
           <Foot style={hint}>{area.hint}</Foot>
           {/* TODO(N1-followup): the `.scale` rating radios (FEEDBACK_RATINGS, tap again to clear) setting a.areas[area.id].rating (src/screens/profile/FeedbackSheet.tsx) */}
-          {/* TODO(N1-followup) item 1, textarea: F.note, placeholder F.optional, setting a.areas[area.id].note */}
+          <Lbl style={{ paddingHorizontal: 4 }}>{F.note}</Lbl>
+          <Input label={F.note} multiline numberOfLines={4} value={cur.note ?? ''} placeholder={F.optional} onChangeText={(v) => setArea({ note: v })} style={{ minHeight: 110 }} />
         </View>
       )}
 
@@ -72,7 +77,9 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
         <View>
           <Text style={q}>{F.wishesT}</Text>
           <Foot style={hint}>{F.wishesHint}</Foot>
-          {/* TODO(N1-followup) item 1, textareas: a.wishes (5 rows), then F.other with a.other (3 rows), placeholders F.optional */}
+          <Input label={F.wishesT} multiline numberOfLines={5} value={a.wishes} placeholder={F.optional} onChangeText={(v) => setA({ ...a, wishes: v })} style={{ minHeight: 132 }} />
+          <Lbl style={{ paddingHorizontal: 4 }}>{F.other}</Lbl>
+          <Input label={F.other} multiline numberOfLines={3} value={a.other} placeholder={F.optional} onChangeText={(v) => setA({ ...a, other: v })} style={{ minHeight: 88 }} />
         </View>
       )}
 

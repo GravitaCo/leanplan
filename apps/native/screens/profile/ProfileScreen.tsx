@@ -29,7 +29,7 @@ import { PROFILE as P } from '@/copy/profile'
 import { ACCOUNT_ROW, BACKUP, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
 import { LEGAL_LABEL } from '@/copy/legal'
 import { NOTIFY_COPY } from '@/copy/notify'
-import { profileKcal, suggestionWeight } from '@/screens/profile/profileTargets'
+import { profileKcal, suggestionWeight, weightPatch } from '@/screens/profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, HEALTH_STATUS_LABEL, directionLabel, healthStatusOf } from '@/screens/profile/profileModel'
 import { dayName } from '@/screens/review/reviewModel'
 import { GEIST, num, tx, useTokens } from '../../lib/theme'
@@ -37,6 +37,7 @@ import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Btn, Card, Chip, Chips, LinkBtn, List, initials as initialsOf } from '../../lib/ui/kit'
 import { Disclosure, PageHeader, Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
 import { Chevron, Icon } from '../../lib/ui/icons'
+import { Field, Input } from '../../lib/ui/fields'
 import { FLAT_FOOT, NOTE, PROSE } from './text'
 import { BackoffNotices, MindReminderRows, PillarsSettings, SuppNamesRow, YourTimes } from './Settings'
 import { HealthAnswersScreen } from './HealthAnswers'
@@ -78,6 +79,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const authed = useStore((s) => s.authed)
   const syncPaused = useStore((s) => s.syncPaused)
   const saveProfileMetrics = useStore((s) => s.saveProfileMetrics)
+  const updateEmail = useStore((s) => s.updateEmail)
   const saveTargets = useStore((s) => s.saveTargets)
   const setTab = useStore((s) => s.setTab)
   const setPrefs = useStore((s) => s.setPrefs)
@@ -135,8 +137,9 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
     if (y != null) scroll.current?.scrollTo({ y: Math.max(0, y - 200), animated: true })
   }
 
-  // the form fields wait on N1's text fields and pickers (TODO below); their state is the web's
-  const [metrics] = useState({ age: pr.age?.toString() || '', height: pr.height?.toString() || '', weight: foodView(pr).weightBack ? weight?.toString() || '' : '' })
+  const [name, setName] = useState(pr.name || '')
+  const [emailField, setEmailField] = useState(email || '')
+  const [metrics, setMetrics] = useState({ age: pr.age?.toString() || '', height: pr.height?.toString() || '', weight: foodView(pr).weightBack ? weight?.toString() || '' : '' })
   const [targets, setTargets] = useState({
     kcal: data.target.kcal.toString(), p: data.target.p.toString(), c: data.target.c.toString(), f: data.target.f.toString(),
     range: rangeWidth(pr).toString(),
@@ -189,9 +192,15 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             </Pressable>
             {open === 'profile' && (
               <View style={{ paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>
-                {/* TODO(N1-followup) item 1, `.field` inputs: P.id.displayName (placeholder P.id.namePh) and, signed in, P.id.email; then the
-                    button saves the name and, for a new email, calls updateEmail and toasts P.id.emailError(err) or P.id.checkEmail (src/screens/ProfileScreen.tsx) */}
-                <Btn title={P.id.save} onPress={() => saveProfileMetrics({ name: pr.name })} />
+                <Field label={P.id.displayName}><Input label={P.id.displayName} value={name} onChangeText={setName} placeholder={P.id.namePh} autoComplete="name" autoCapitalize="words" /></Field>
+                {authed && <Field label={P.id.email}><Input label={P.id.email} value={emailField} onChangeText={(v) => setEmailField(v.trim())} autoComplete="email" keyboardType="email-address" autoCapitalize="none" /></Field>}
+                <Btn title={P.id.save} onPress={async () => {
+                  saveProfileMetrics({ name })
+                  if (authed && emailField && emailField !== email) {
+                    const err = await updateEmail(emailField)
+                    showToast(err ? P.id.emailError(err) : P.id.checkEmail)
+                  }
+                }} />
               </View>
             )}
           </View>
@@ -201,9 +210,14 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <List icons>
           <Disclosure soft icon="scale" color={FOODF} label={P.body.row} value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
             open={open === 'metrics'} onToggle={() => toggle('metrics')}>
-            {/* TODO(N1-followup) items 1 and 2: Sex and Activity level selects, Age, Height (cm) and Weight (kg) number fields in `.grid2`, then
-                "Save metrics" with weightPatch, the activity cool-down and sexAnswer as src/screens/ProfileScreen.tsx does */}
-            <Lbl>{P.body.mainGoal}</Lbl>
+            {/* TODO(N1-followup) item 2, selects: Sex (P.body.male, P.body.female) and Activity level (ACTIVITY labels), presented as iOS presents a select; until then they keep the stored values */}
+            <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.agePh} keyboardType="number-pad" /></Field></View><View style={{ flex: 1 }} /></View>
+            <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.heightPh} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.weightPh} keyboardType="decimal-pad" /></Field></View></View>
+            {/* 18+: checked on Save, never while typing; an under-18 age saves nothing and the app's stop shows (store) */}
+            <Btn kind="gray" title={P.body.save} onPress={() => saveProfileMetrics({
+              age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null, ...weightPatch(metrics.weight),
+            })} />
+            <Lbl style={{ paddingLeft: 0 }}>{P.body.mainGoal}</Lbl>
             <Chips>{GOALS.map((g) => <Chip key={g.value} title={g.label} on={pr.goal === g.value} onPress={() => saveProfileMetrics({ goal: g.value })} />)}</Chips>
             {sug || pk.kind === 'none' ? (
               <View onLayout={mark('sug')} testID="sug-targets">
@@ -242,7 +256,9 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           )}
           {pk.kind === 'target' && (
             <Disclosure soft icon="target" color={FOODF} label={P.targets.row} value={kcalText} open={open === 'targets'} onToggle={() => toggle('targets')}>
-              {/* TODO(N1-followup) item 1, `.field` number fields in `.grid2`: P.targets.kcal, range, p, c, f editing `targets` (src/screens/ProfileScreen.tsx) */}
+              <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.kcal}><Input label={P.targets.kcal} value={targets.kcal} onChangeText={(v) => setTargets({ ...targets, kcal: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.range}><Input label={P.targets.range} value={targets.range} onChangeText={(v) => setTargets({ ...targets, range: v })} keyboardType="number-pad" /></Field></View></View>
+              <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.p}><Input label={P.targets.p} value={targets.p} onChangeText={(v) => setTargets({ ...targets, p: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.c}><Input label={P.targets.c} value={targets.c} onChangeText={(v) => setTargets({ ...targets, c: v })} keyboardType="number-pad" /></Field></View></View>
+              <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.f}><Input label={P.targets.f} value={targets.f} onChangeText={(v) => setTargets({ ...targets, f: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1 }} /></View>
               <Btn title={P.targets.save} onPress={() => {
                 saveTargets({
                   kcal: parseInt(targets.kcal) || data.target.kcal, p: parseInt(targets.p) || data.target.p,
@@ -277,7 +293,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             ))}
             {suppForm ? (
               <View style={{ paddingTop: 10 }}>
-                {/* TODO(N1-followup) items 1 and 2: P.supps.name field (placeholder P.supps.namePh) and P.supps.time with the TimePicker, editing suppForm */}
+                <Field label={P.supps.name}><Input label={P.supps.name} value={suppForm.name} placeholder={P.supps.namePh} onChangeText={(v) => setSuppForm({ ...suppForm, name: v })} /></Field>
+                {/* TODO(N1-followup) item 2, the TimePicker: P.supps.time editing suppForm.time (a new one starts at 08:00) */}
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <View style={{ flex: 1 }}><Btn title={suppForm.id ? P.supps.update : P.supps.add} onPress={() => {
                     if (!suppForm.name || !suppForm.time) return
@@ -320,10 +337,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         {WELLBEING_ENABLED && <BackoffNotices />}
         <List icons>
           {WELLBEING_ENABLED && <MindReminderRows />}
-          <SettingRow soft icon="bell" color={MINDF} label={P.notify.supps} sub={notifStatus}
+          <Row wrapSub square={{ icon: 'bell', fill: MINDF, soft: true }} title={P.notify.supps} sub={notifStatus}
             right={<Toggle label={P.notify.supps} on={pr.notificationsEnabled} disabled={!notifReady} onChange={() => undefined /* N12 wires push */} />} />
           {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
-          <SettingRow soft icon="bell" color={MINDF} label={P.notify.weekly} sub={P.notify.weeklySub(dayName(pr.reviewDay ?? 0))}
+          <Row wrapSub square={{ icon: 'bell', fill: MINDF, soft: true }} title={P.notify.weekly} sub={P.notify.weeklySub(dayName(pr.reviewDay ?? 0))}
             right={<Toggle label={P.notify.weekly} on={!!pr.reviewPush} disabled={!notifReady} onChange={() => undefined /* N12 wires push */} />} />
         </List>
         {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <Foot>{NOTIFY_COPY.namesFoot}</Foot>}

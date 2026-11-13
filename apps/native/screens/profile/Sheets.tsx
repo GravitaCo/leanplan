@@ -15,7 +15,8 @@ import { BACKUP, SIGN_OUT } from '@/copy/account'
 import { dayName } from '@/screens/review/reviewModel'
 import { tx, useTokens } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
-import { Btn, Chip, Chips } from '../../lib/ui/kit'
+import { Btn, Chip, Chips, List } from '../../lib/ui/kit'
+import { FRow } from '../../lib/ui/fields'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { PROSE } from './text'
 import { exportBackup } from './n2'
@@ -27,7 +28,7 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
   const setPrefs = useStore((s) => s.setPrefs)
   const showToast = useStore((s) => s.showToast)
   const types = Object.keys(HANDS) as HandPortion[]
-  const [vals] = useState<Record<HandPortion, string>>(
+  const [vals, setVals] = useState<Record<HandPortion, string>>(
     Object.fromEntries(types.map((k) => [k, String(handGrams(profile, k))])) as Record<HandPortion, string>,
   )
   const save = () => {
@@ -38,7 +39,12 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={P.hands.title} onClose={onClose} right={<NavBtn title={P.hands.save} bold onPress={save} />}>
       <Sub style={[PROSE, { paddingHorizontal: 4, paddingBottom: 12 }]}>{P.hands.lead}</Sub>
-      {/* TODO(N1-followup) item 1, `.frow` number fields in a List: one per HANDS type (label, hint, grams, P.hands.unit), editing `vals` (src/screens/ProfileScreen.tsx HandsSheet) */}
+      {/* TODO(N1-followup): FRow has no slot for the 13 pt hint under each label (HANDS[k].hint on the web) */}
+      <List>
+        {types.map((k) => (
+          <FRow key={k} label={HANDS[k].label} unit={P.hands.unit} keyboardType="number-pad" value={vals[k]} onChangeText={(v) => setVals({ ...vals, [k]: v })} />
+        ))}
+      </List>
     </Sheet>
   )
 }

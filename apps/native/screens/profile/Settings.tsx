@@ -75,13 +75,12 @@ export function MindReminderRows() {
   const t = useTokens()
   const mind = useStore((s) => s.data.profile.mind)
   const at = kindTimes(mind)
-  // TODO(N1-followup) item 7: SettingRow's wrapping sub and fixed value (`.list.nf-rows`)
   return (
     <>
       {NOTIFY_KINDS.map((k) => {
         const on = mind?.notify?.[k] === true
         return (
-          <SettingRow key={k} soft icon={NOTIFY_ICON[k]} color={t.mindFill} label={NC.rows[k].label} sub={NC.rows[k].sub}
+          <Row key={k} wrapSub square={{ icon: NOTIFY_ICON[k], fill: t.mindFill, soft: true }} title={NC.rows[k].label} sub={NC.rows[k].sub}
             value={on && k !== 'plan' ? at[k] : undefined}
             right={<Toggle label={NC.rows[k].aria} on={on} disabled={!pushReady()} onChange={() => undefined /* N12 wires the reminders */} />} />
         )
