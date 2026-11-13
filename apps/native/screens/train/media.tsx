@@ -6,13 +6,14 @@
  * range request. Nothing waits on the network: a clip that can't load falls back to its still, then
  * to the caller's placeholder.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { AccessibilityInfo, Image, Platform, Text, View, useColorScheme, type ImageStyle, type StyleProp } from 'react-native'
 import { useVideoPlayer, VideoView, type VideoPlayer, type VideoSource } from 'expo-video'
 import { useEvent } from 'expo'
 import type { ExerciseMedia, LogShape } from '@/core/types'
 import { mediaUrl, previewUrls } from '@/core/data/media'
 import { Icon } from '../../lib/ui/icons'
+import { InSheet } from '../../lib/ui/kit'
 import { tx, useTokens } from '../../lib/theme'
 
 /** The Referer the web app sends (app.tilo.fit is its origin). security-data owns this choice. */
@@ -58,10 +59,12 @@ export function useClipPreview(m: ExerciseMedia | undefined, motion: boolean): {
  * is one, else a typographic tile ("Cue", "Hold", "Time") or the dumbbell. The animated preview is
  * 320×180 with the vertical clip pillarboxed in the middle, so it's cropped as the web's `img.lb`.
  */
-/** `.thumb.ph`: the placeholder tile is the page colour in light, `--elev` in dark */
+/** `.thumb.ph`: the placeholder tile is the page colour in light, `--elev` in dark; `--fill` in a sheet (`.sheet .thumb.ph`) */
 export function usePhBg(): string {
   const t = useTokens()
-  return useColorScheme() === 'dark' ? t.elev : t.bg
+  const dark = useColorScheme() === 'dark'
+  if (useContext(InSheet)) return t.fill
+  return dark ? t.elev : t.bg
 }
 
 export function Thumb({ video, shape, play, big, size }: {
