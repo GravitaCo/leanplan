@@ -5,6 +5,7 @@
  * plan, then the setup card on its own (Today's "Finish your setup", Plan's "Build my plan").
  *
  * For lib/gate.tsx (the lead's): after its consent check, `const ob = useOnboardingGate(); if (ob) return ob`.
+ * Until then the e2e checks reach it through app/onboarding-e2e.tsx (EXPO_PUBLIC_E2E builds only).
  * Hooks run every render, so call it before the gate's early returns and use the result after them.
  * `underAgeInWizard` is the one case where it shows over the 18+ stop: Redo setup's own stop
  * (App.tsx: `underAge.inWizard && redoOpen`).
@@ -21,6 +22,7 @@ import { Notice } from '../../lib/SignIn'
 export function useOnboardingGate(opts: { ageStop?: AgeStopRender } = {}): ReactNode | null {
   const data = useStore((s) => s.data)
   const online = useStore((s) => s.online)
+  const authReady = useStore((s) => s.authReady)
   const signedIn = useStore((s) => s.signedIn)
   const redoOpen = useStore((s) => s.redoOpen)
   const setupOpen = useStore((s) => s.setupOpen)
@@ -31,7 +33,8 @@ export function useOnboardingGate(opts: { ageStop?: AgeStopRender } = {}): React
   const due = signedIn ? wizardDue(data, { online, signedIn, showing: showing.current }) : false
   const waiting = due === 'wait'
   useEffect(() => { if (!waiting) return; const t = setTimeout(() => setWaited(true), FIRST_PULL_WAIT_MS); return () => clearTimeout(t) }, [waiting])
-  if (!ONBOARDING_ENABLED || !signedIn) return null
+  // nothing before the app knows who is signed in (the root shows its own loading)
+  if (!ONBOARDING_ENABLED || !authReady || !signedIn) return null
   if (due === 'wait' && !waited) return <Notice title="Loading…" />
   showing.current = !!due
   if (due) return <Onboarding mode="first" ageStop={opts.ageStop} />
