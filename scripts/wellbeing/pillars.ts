@@ -98,9 +98,9 @@ export function pillarsSuite(): number {
 
   /* ---------- wiring ---------- */
   const profile = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
-  const iGoal = profile.indexOf('<div className="lbl">You and your goal</div>')
+  const iGoal = profile.indexOf('<div className="lbl">{P.groups.goal}</div>')
   const iPill = profile.indexOf('<PillarsSettings')
-  const iTrack = profile.indexOf('<div className="lbl">Tracking</div>')
+  const iTrack = profile.indexOf('<div className="lbl">{P.groups.tracking}</div>')
   ok('Profile mounts it between "You and your goal" and "Tracking", behind WELLBEING_ENABLED',
     iGoal > 0 && iGoal < iPill && iPill < iTrack && /\{WELLBEING_ENABLED && <PillarsSettings /.test(profile))
   const src = readFileSync('src/screens/profile/PillarsSettings.tsx', 'utf8')

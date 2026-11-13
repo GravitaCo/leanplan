@@ -22,7 +22,7 @@ import type { IfThenPlan } from '@/core/types'
 import { BareSheet } from '@/ui/primitives'
 import { Icon, type IconName } from '@/ui/icons'
 import { PlanEditSheet } from '../plan/PlanSheets'
-import { DAYS, dayName } from '../profile/profileLogic'
+import { DAYS, dayName } from './reviewModel'
 
 /** "28 Sept to 4 Oct", or "5 to 11 Oct" within a month. */
 export function spanText(a: string, b: string): string {

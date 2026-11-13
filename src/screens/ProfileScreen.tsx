@@ -22,7 +22,8 @@ import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHe
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
-import { GOALS, GOAL_TARGET_LABEL, directionLabel } from './profile/profileLogic'
+import { GOALS, GOAL_TARGET_LABEL, directionLabel } from './profile/profileModel'
+import { IMPORT, PROFILE as P, SIGN_OUT } from '@/copy/profile'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
@@ -148,9 +149,9 @@ export function ProfileScreen() {
   // the same safety routing as the onboarding summary, so the two never disagree
   const sug = suggestedTargets(sugProfile, sugWeight, profileRouting(sugProfile, sugWeight, healthConsent))
   const notifReady = pushSupported()
-  const notifStatus = !notifReady ? 'Not supported in this browser'
-    : Notification.permission === 'denied' ? 'Blocked in your phone settings'
-    : pr.notificationsEnabled ? 'On' : 'Off'
+  const notifStatus = !notifReady ? P.notify.unsupported
+    : Notification.permission === 'denied' ? P.notify.blocked
+    : pr.notificationsEnabled ? P.notify.on : P.notify.off
   const initials = (pr.name || '').trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
   const field = (label: string, input: ReactNode) => <div className="field"><label>{label}</label>{input}</div>
@@ -161,7 +162,7 @@ export function ProfileScreen() {
   const kcalText = pk.kind === 'none' ? '' : `${fmt(pk.lo)}–${fmt(pk.hi)} kcal`
   const goalLabel = GOALS.find((g) => g.value === pr.goal)?.label
   const trainDays = Object.values(data.schedule).filter((x) => x && x !== 'Rest').length
-  const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : 'None'
+  const dietLabel = pr.diet && pr.diet !== 'none' ? DIETS.find(([d]) => d === pr.diet)?.[1] : P.diet.none
   const FOODF = 'var(--food-fill)', MINDF = 'var(--mind-fill)', MOVEF = 'var(--move-fill)', GRAY = 'var(--fill2)'
 
   // ob7-1: back goes to the Health data sheet it came from
@@ -170,44 +171,44 @@ export function ProfileScreen() {
 
   return (
     <div className="screen">
-      <PageHeader title="Profile" profile={false} />
+      <PageHeader title={P.title} profile={false} />
 
       {/* identity: tap to edit your name and email */}
       <div className="list idcard">
         <button className="li" onClick={() => toggle('profile')} aria-expanded={open === 'profile'}>
           <span className={WELLBEING_ENABLED ? 'avatar lg soft' : 'avatar lg'}>{initials || <Icon name="person" size={28} />}</span>
           <div className="m">
-            <div className="idn">{pr.name || 'Add your name'}</div>
-            {(goalLabel || kcalText) && <div className="s num">{[goalLabel, kcalText && kcalText + ' a day'].filter(Boolean).join(' · ')}</div>}
-            <div className="s">{syncPaused ? 'Account · not syncing right now' : email}</div>
+            <div className="idn">{pr.name || P.id.addName}</div>
+            {(goalLabel || kcalText) && <div className="s num">{[goalLabel, kcalText && kcalText + P.id.perDay].filter(Boolean).join(' · ')}</div>}
+            <div className="s">{syncPaused ? P.id.notSyncing : email}</div>
           </div>
           <Chevron rotate={open === 'profile' ? 90 : 0} />
         </button>
         {open === 'profile' && <div className="acc-bd">
-          {field('Display name', <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" />)}
-          {authed && field('Email', <input type="email" value={emailField} onChange={(e) => setEmailField(e.target.value.trim())} autoComplete="email" />)}
+          {field(P.id.displayName, <input value={name} onChange={(e) => setName(e.target.value)} placeholder={P.id.namePh} autoComplete="name" />)}
+          {authed && field(P.id.email, <input type="email" value={emailField} onChange={(e) => setEmailField(e.target.value.trim())} autoComplete="email" />)}
           <button className="btn" onClick={async () => {
             saveProfileMetrics({ name })
             if (authed && emailField && emailField !== email) {
               const err = await updateEmail(emailField)
-              showToast(err ? 'Email error: ' + err : 'Check your email to confirm')
+              showToast(err ? P.id.emailError(err) : P.id.checkEmail)
             }
-          }}>Save profile</button>
+          }}>{P.id.save}</button>
         </div>}
       </div>
 
-      <div className="lbl">You and your goal</div>
+      <div className="lbl">{P.groups.goal}</div>
       <div className="list icons">
-        <Disclosure icon="scale" color={FOODF} soft label="Body and goal" value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
+        <Disclosure icon="scale" color={FOODF} soft label={P.body.row} value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
           open={open === 'metrics'} onToggle={() => toggle('metrics')}>
           <div className="grid2">
-            {field('Sex', <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
-              <option value="M">Male</option><option value="F">Female</option></select>)}
-            {field('Age', <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder="35" onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
-            {field('Height (cm)', <input type="number" value={metrics.height} placeholder="178" onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
-            {field('Weight (kg)', <input type="number" step="0.1" value={metrics.weight} placeholder="82.5" onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
+            {field(P.body.sex, <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
+              <option value="M">{P.body.male}</option><option value="F">{P.body.female}</option></select>)}
+            {field(P.body.age, <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder={P.body.agePh} onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
+            {field(P.body.height, <input type="number" value={metrics.height} placeholder={P.body.heightPh} onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
+            {field(P.body.weight, <input type="number" step="0.1" value={metrics.weight} placeholder={P.body.weightPh} onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
           </div>
-          {field('Activity level', <select value={metrics.activityLevel} onChange={(e) => setMetrics({ ...metrics, activityLevel: e.target.value as ActivityLevel })}>
+          {field(P.body.activity, <select value={metrics.activityLevel} onChange={(e) => setMetrics({ ...metrics, activityLevel: e.target.value as ActivityLevel })}>
             {Object.entries(ACTIVITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>)}
           {/* 18+: checked on Save, never while typing; an under-18 age saves nothing and the app's stop shows (store) */}
           <button className="btn gray" onClick={() => saveProfileMetrics({
@@ -219,9 +220,9 @@ export function ProfileScreen() {
             ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr(), activityMult: undefined } : {}),
             // picking Male or Female here is a real answer; leaving it keeps the onboarding one
             ...(metrics.sex !== pr.sex ? { sexAnswer: metrics.sex === 'M' ? 'male' as const : 'female' as const } : {}),
-          })}>Save metrics</button>
+          })}>{P.body.save}</button>
 
-          <div className="lbl" style={{ paddingLeft: 0 }}>Main goal</div>
+          <div className="lbl" style={{ paddingLeft: 0 }}>{P.body.mainGoal}</div>
           <div className="chips">
             {GOALS.map((g) => (
               <button key={g.value} className={'chip' + (pr.goal === g.value ? ' on' : '')} onClick={() => saveProfileMetrics({ goal: g.value })}>{g.label}</button>
@@ -230,43 +231,43 @@ export function ProfileScreen() {
           {sug || pk.kind === 'none' ? (
             <div className="card" id="sug-targets" style={{ marginTop: 12, background: 'var(--fill)', fontSize: 15, lineHeight: 1.45 }}>
               {!sug || 'hidden' in sug || pk.kind === 'none' ? (
-                <span className="muted">Calorie suggestions are off for now, so there's no number here.</span>
+                <span className="muted">{P.sug.off}</span>
               ) : pk.kind === 'range' ? (
                 // Sometimes: Food's range, never a single number or a target to use
-                <>Your food range is about <b className="num">{kcalText}</b> a day, around maintenance.</>
+                <>{P.sug.range[0]}<b className="num">{kcalText}</b>{P.sug.range[1]}</>
               ) : 'goalNeeded' in sug ? (
-                <>Maintenance about <b className="num">{fmt(sug.maint)} kcal</b>.<br /><span className="muted">Choose your main goal to see a suggested daily target.</span></>
+                <>{P.sug.maintAbout[0]}<b className="num">{fmt(sug.maint)} kcal</b>{P.sug.maintAbout[1]}<br /><span className="muted">{P.sug.chooseGoal}</span></>
               ) : (
                 <>
-                  Maintenance <b className="num">{fmt(sug.maint)} kcal</b> · {GOAL_TARGET_LABEL[sug.goal]} <b className="num">{fmt(sug.kcal)} kcal</b>{' '}
+                  {P.sug.maint}<b className="num">{fmt(sug.maint)} kcal</b> · {GOAL_TARGET_LABEL[sug.goal]} <b className="num">{fmt(sug.kcal)} kcal</b>{' '}
                   <span className="muted">({directionLabel(sug.adjustPct)})</span><br />
-                  Protein <b className="num">{sug.proteinEveryday ? 'about ' : ''}{sug.p} g</b> · Carbs <b className="num">{sug.c} g</b> · Fat <b className="num">{sug.f} g</b>
+                  {P.sug.protein}<b className="num">{sug.proteinEveryday ? P.sug.about : ''}{sug.p} g</b> · {P.sug.carbs}<b className="num">{sug.c} g</b> · {P.sug.fat}<b className="num">{sug.f} g</b>
                   {sug.proteinEveryday && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{PROTEIN_EVERYDAY_NOTE}</div>}
-                  {sug.floored && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>Held at a safe minimum. We never suggest eating below your resting metabolic rate.</div>}
+                  {sug.floored && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{P.sug.floored}</div>}
                   {sug.heldAtMaintenance && <div className="sub" style={{ fontSize: 13, marginTop: 6 }}>{HELD_AT_MAINTENANCE_NOTE}</div>}
                   <button className="btn" style={{ marginTop: 10 }} onClick={() => {
                     saveTargets({ kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f })
                     setTargets({ ...targets, kcal: sug.kcal.toString(), p: sug.p.toString(), c: sug.c.toString(), f: sug.f.toString() })
-                  }}>Use these targets</button>
+                  }}>{P.sug.use}</button>
                 </>
               )}
             </div>
-          ) : <div className="foot" style={{ padding: '10px 0 0' }}>{sugWeight && !weightBack ? 'Add age and height to see suggested targets.' : 'Add age, height and weight to see suggested targets.'}</div>}
+          ) : <div className="foot" style={{ padding: '10px 0 0' }}>{sugWeight && !weightBack ? P.sug.needAgeHeight : P.sug.needAll}</div>}
         </Disclosure>
         {pk.kind === 'range' && (
-          <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={kcalText}
+          <Disclosure icon="target" color={FOODF} soft label={P.targets.row} value={kcalText}
             open={open === 'targets'} onToggle={() => toggle('targets')}>
-            <div className="foot" style={{ padding: 0 }}>A range around maintenance, worked out from your body and activity level, so there's no calorie target to set.</div>
+            <div className="foot" style={{ padding: 0 }}>{P.targets.rangeOnly}</div>
           </Disclosure>
         )}
-        {pk.kind === 'target' && <Disclosure icon="target" color={FOODF} soft label="Daily targets" value={kcalText}
+        {pk.kind === 'target' && <Disclosure icon="target" color={FOODF} soft label={P.targets.row} value={kcalText}
           open={open === 'targets'} onToggle={() => toggle('targets')}>
           <div className="grid2">
-            {field('Calories', <input type="number" value={targets.kcal} onChange={(e) => setTargets({ ...targets, kcal: e.target.value })} />)}
-            {field('Range ±', <input type="number" value={targets.range} onChange={(e) => setTargets({ ...targets, range: e.target.value })} />)}
-            {field('Protein (g)', <input type="number" value={targets.p} onChange={(e) => setTargets({ ...targets, p: e.target.value })} />)}
-            {field('Carbs (g)', <input type="number" value={targets.c} onChange={(e) => setTargets({ ...targets, c: e.target.value })} />)}
-            {field('Fat (g)', <input type="number" value={targets.f} onChange={(e) => setTargets({ ...targets, f: e.target.value })} />)}
+            {field(P.targets.kcal, <input type="number" value={targets.kcal} onChange={(e) => setTargets({ ...targets, kcal: e.target.value })} />)}
+            {field(P.targets.range, <input type="number" value={targets.range} onChange={(e) => setTargets({ ...targets, range: e.target.value })} />)}
+            {field(P.targets.p, <input type="number" value={targets.p} onChange={(e) => setTargets({ ...targets, p: e.target.value })} />)}
+            {field(P.targets.c, <input type="number" value={targets.c} onChange={(e) => setTargets({ ...targets, c: e.target.value })} />)}
+            {field(P.targets.f, <input type="number" value={targets.f} onChange={(e) => setTargets({ ...targets, f: e.target.value })} />)}
           </div>
           <button className="btn" onClick={() => {
             saveTargets({
@@ -276,125 +277,124 @@ export function ProfileScreen() {
             // show what was actually stored (the calorie floor and range cap may have applied)
             const st = useStore.getState().data
             setTargets({ kcal: String(st.target.kcal), p: String(st.target.p), c: String(st.target.c), f: String(st.target.f), range: String(rangeWidth(st.profile)) })
-          }}>Save targets</button>
+          }}>{P.targets.save}</button>
           <div className="foot" style={{ padding: '10px 0 0' }}>
-            Your day is judged against a range (up to ± 400), not a single number. Calories won't go below 1,200 here. Going lower is something to do with medical support.
+            {P.targets.foot}
           </div>
         </Disclosure>}
-        <SettingRow icon="dumbbell" color={MOVEF} soft label="Training" value={trainDays === 1 ? '1 day a week' : `${trainDays} days a week`} onPress={() => setTab('plan')} />
+        <SettingRow icon="dumbbell" color={MOVEF} soft label={P.training.row} value={P.training.days(trainDays)} onPress={() => setTab('plan')} />
       </div>
-      <div className="foot">Your weekly training schedule lives on Plan.</div>
+      <div className="foot">{P.training.foot}</div>
 
       {/* WP9, board B1: pillars and how often Tilo asks (flag on only) */}
       {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} />}
 
-      <div className="lbl">Tracking</div>
+      <div className="lbl">{P.groups.tracking}</div>
       <div className="list icons">
-        <Disclosure icon="pill" color={MINDF} soft label="Supplements" value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
+        <Disclosure icon="pill" color={MINDF} soft label={P.supps.row} value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
           {(pr.supplements || []).map((s) => (
             <div className="li" key={s.id} style={{ padding: '8px 0' }}>
               <div className="m"><div className="t">{s.name}</div><div className="s num">{s.time}</div></div>
-              <button className="navbtn" onClick={() => setSuppForm({ id: s.id, name: s.name, time: s.time })}>Edit</button>
-              <button className="navbtn" style={{ color: 'var(--red)', marginLeft: 12 }} onClick={() => removeSupplement(s.id)}>Delete</button>
+              <button className="navbtn" onClick={() => setSuppForm({ id: s.id, name: s.name, time: s.time })}>{P.supps.edit}</button>
+              <button className="navbtn" style={{ color: 'var(--red)', marginLeft: 12 }} onClick={() => removeSupplement(s.id)}>{P.supps.del}</button>
             </div>
           ))}
           {suppForm ? (
             <div style={{ paddingTop: 10 }}>
-              {field('Name', <input value={suppForm.name} placeholder="Creatine 5 g" onChange={(e) => setSuppForm({ ...suppForm, name: e.target.value })} />)}
-              {field('Time', <input type="time" value={suppForm.time} onChange={(e) => setSuppForm({ ...suppForm, time: e.target.value })} />)}
+              {field(P.supps.name, <input value={suppForm.name} placeholder={P.supps.namePh} onChange={(e) => setSuppForm({ ...suppForm, name: e.target.value })} />)}
+              {field(P.supps.time, <input type="time" value={suppForm.time} onChange={(e) => setSuppForm({ ...suppForm, time: e.target.value })} />)}
               <div className="grid2">
                 <button className="btn" onClick={() => {
                   if (!suppForm.name || !suppForm.time) return
                   if (suppForm.id) updateSupplement(suppForm.id, suppForm.name, suppForm.time)
                   else addSupplement(suppForm.name, suppForm.time)
                   setSuppForm(null)
-                }}>{suppForm.id ? 'Update' : 'Add'}</button>
-                <button className="btn gray" onClick={() => setSuppForm(null)}>Cancel</button>
+                }}>{suppForm.id ? P.supps.update : P.supps.add}</button>
+                <button className="btn gray" onClick={() => setSuppForm(null)}>{P.supps.cancel}</button>
               </div>
             </div>
-          ) : <button className="btn tinted" style={{ marginTop: 8 }} onClick={() => setSuppForm({ id: null, name: '', time: '08:00' })}>Add supplement</button>}
+          ) : <button className="btn tinted" style={{ marginTop: 8 }} onClick={() => setSuppForm({ id: null, name: '', time: '08:00' })}>{P.supps.addRow}</button>}
         </Disclosure>
-        <Disclosure icon="leaf" color={FOODF} soft label="Diet" value={dietLabel} open={open === 'diet'} onToggle={() => toggle('diet')}>
-          <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? 'None' : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
-          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>Meal suggestions offer swaps for ingredients that don't fit. Nothing is hidden.</div>
+        <Disclosure icon="leaf" color={FOODF} soft label={P.diet.row} value={dietLabel} open={open === 'diet'} onToggle={() => toggle('diet')}>
+          <Seg<DietPattern> options={DIETS.map(([d, l]) => [d, d === 'none' ? P.diet.none : l])} value={pr.diet ?? 'none'} onChange={(v) => setPrefs({ diet: v })} />
+          <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{P.diet.note}</div>
         </Disclosure>
-        <SettingRow icon="hand" color={FOODF} soft label="Hand portions" value={`palm ${handGrams(pr, 'palm')} g`} onPress={() => setHandsOpen(true)} />
-        <Disclosure icon="target" color={FOODF} soft label="Accuracy" value={accuracyOf(pr).label} open={open === 'accuracy'} onToggle={() => toggle('accuracy')}>
+        <SettingRow icon="hand" color={FOODF} soft label={P.hands.row} value={P.hands.value(handGrams(pr, 'palm'))} onPress={() => setHandsOpen(true)} />
+        <Disclosure icon="target" color={FOODF} soft label={P.accuracy.row} value={accuracyOf(pr).label} open={open === 'accuracy'} onToggle={() => toggle('accuracy')}>
           <Seg<AccuracyMode> options={(Object.keys(ACCURACY) as AccuracyMode[]).map((k) => [k, ACCURACY[k].label])}
             value={pr.accuracy ?? 'balanced'} onChange={(v) => setPrefs({ accuracy: v })} />
           <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>{accuracyOf(pr).desc}</div>
         </Disclosure>
-        <Disclosure icon="smile" color={MINDF} soft label="Display" value={pr.gentle ? 'Gentle' : 'Standard'} open={open === 'display'} onToggle={() => toggle('display')}>
-          <Seg<'std' | 'gentle'> options={[['std', 'Standard'], ['gentle', 'Gentle']]} value={pr.gentle ? 'gentle' : 'std'}
+        <Disclosure icon="smile" color={MINDF} soft label={P.display.row} value={pr.gentle ? P.display.gentle : P.display.standard} open={open === 'display'} onToggle={() => toggle('display')}>
+          <Seg<'std' | 'gentle'> options={[['std', P.display.standard], ['gentle', P.display.gentle]]} value={pr.gentle ? 'gentle' : 'std'}
             onChange={(v) => setPrefs({ gentle: v === 'gentle' })} />
           <div className="sub" style={{ fontSize: 13, marginTop: 8 }}>
-            {pr.gentle ? 'Calorie numbers are hidden while you log and review your day, and body weight is off your Summary. You see how the day is going in words, and protein stays visible. Targets stay editable here.'
-              : 'Full numbers, with a ± margin on anything estimated.'}
+            {pr.gentle ? P.display.gentleNote : P.display.standardNote}
           </div>
         </Disclosure>
       </div>
 
       {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
-      <div className="lbl">Weekly review</div>
+      <div className="lbl">{P.groups.review}</div>
       <div className="list icons">
-        <SettingRow icon="review" color={MINDF} soft label="Review day" value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
-        <SettingRow icon="weight" color={FOODF} soft label="Include weight in reviews"
-          right={<Toggle label="Include weight in reviews" on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
+        <SettingRow icon="review" color={MINDF} soft label={P.review.day} value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
+        <SettingRow icon="weight" color={FOODF} soft label={P.review.weight}
+          right={<Toggle label={P.review.weight} on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
       </div>
-      <div className="foot">Your review shows how often you weighed in and, after 4 weeks, the trend in words. Summary shows your latest weigh-in. Never with gentle display. Change it any time.</div>
+      <div className="foot">{P.review.foot}</div>
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
 
-      <div className="lbl" id="nf-h">Notifications</div>
+      <div className="lbl" id="nf-h">{P.groups.notifications}</div>
       {/* wellbeing (B11): the back-off notice, then the Mind reminder types above supplements */}
       {WELLBEING_ENABLED && <BackoffNotices />}
       <div className={'list icons' + (WELLBEING_ENABLED ? ' nf-rows' : '')}>
         {WELLBEING_ENABLED && <MindReminderRows />}
-        <SettingRow icon="bell" color={MINDF} soft label="Supplement reminders" sub={notifStatus}
-          right={<Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
+        <SettingRow icon="bell" color={MINDF} soft label={P.notify.supps} sub={notifStatus}
+          right={<Toggle label={P.notify.supps} on={pr.notificationsEnabled} disabled={!notifReady} onChange={async () => {
               const ok = await setNotifications(!pr.notificationsEnabled)
-              const done = pr.notificationsEnabled ? 'Reminders off' : 'Reminders on'
-              showToast(ok === 'unsaved' ? done + ', but this device couldn’t save the setting. Storage may be full.'
-                : ok ? done : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn reminders on. Try again when you’re online')
+              const done = pr.notificationsEnabled ? P.notify.remindersOff : P.notify.remindersOn
+              showToast(ok === 'unsaved' ? done + P.notify.unsaved
+                : ok ? done : Notification.permission === 'denied' ? P.notify.denied : !authed ? P.notify.signIn : P.notify.failed)
             }} />} />
         {/* wellbeing (B11b): whether supplement reminders name the supplement, off by default */}
         {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
         {/* ml-e4: the weekly review reminder, switched on separately (off unless someone turns it on) */}
-        <SettingRow icon="bell" color={MINDF} soft label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
-          right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
+        <SettingRow icon="bell" color={MINDF} soft label={P.notify.weekly} sub={P.notify.weeklySub(dayName(pr.reviewDay ?? 0))}
+          right={<Toggle label={P.notify.weekly} on={!!pr.reviewPush} disabled={!notifReady} onChange={async () => {
               const on = !pr.reviewPush
               const ok = await setReviewPush(on)
-              showToast(ok ? (on ? 'Weekly reminder on' : 'Weekly reminder off') : Notification.permission === 'denied' ? 'Permission denied' : !authed ? 'Sign in to get reminders' : 'Couldn’t turn the reminder on. Try again when you’re online')
+              showToast(ok ? (on ? P.notify.weeklyOn : P.notify.weeklyOff) : Notification.permission === 'denied' ? P.notify.denied : !authed ? P.notify.signIn : P.notify.weeklyFailed)
             }} />} />
       </div>
       {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesFoot />}
       {WELLBEING_ENABLED && <YourTimes />}
-      <div className="foot">iPhone needs iOS 16.4 or later, with Tilo added to your Home Screen from Safari.</div>
+      <div className="foot">{P.notify.iphone}</div>
 
-      <div className="lbl">Account and data</div>
+      <div className="lbl">{P.groups.account}</div>
       <div className="list icons">
-        <Disclosure icon="person" color={GRAY} soft label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
-          <div className="sub" style={{ fontSize: 13 }}>Signed in as</div>
-          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? 'Your account (not syncing right now)' : email}</div>
-          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>Change your name or email from the card at the top.</div>}
+        <Disclosure icon="person" color={GRAY} soft label={P.account.row} open={open === 'account'} onToggle={() => toggle('account')}>
+          <div className="sub" style={{ fontSize: 13 }}>{P.account.signedInAs}</div>
+          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? P.account.notSyncing : email}</div>
+          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>{P.account.changeHint}</div>}
         </Disclosure>
-        <SettingRow icon="heart" color={MINDF} soft label="Health data" value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
+        <SettingRow icon="heart" color={MINDF} soft label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
         {/* AI features: hidden until one ships (the privacy policy doesn't describe AI processing yet,
             so a consent given here wouldn't be informed) */}
-        {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />}
-        <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
+        {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => setAiOpen(true)} />}
+        <Disclosure icon="cloud" color={GRAY} soft label={P.backup.row} value={P.backup.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
-            ? 'Your log is only on this phone until you agree to Tilo keeping your health data, so export a copy now and then.'
-            : <>Your log is stored on this device, so Tilo works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</>}</div>
+            ? P.backup.phoneOnly
+            : <>{P.backup.stored}{authed ? P.backup.syncs : syncPaused ? P.backup.paused : ''}{P.backup.exportNote}</>}</div>
           <div className="grid2">
-            <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
-            <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>
+            <button className="btn gray" onClick={() => exportBackup(data)}>{P.backup.export}</button>
+            <button className="btn gray" onClick={() => fileRef.current?.click()}>{P.backup.import}</button>
           </div>
           {resumeCopy && (
             <div style={{ marginTop: 12 }}>
               <div className="sub" style={{ marginBottom: 8 }}>
-                When sync started again, {resumeList} had changed on another device, so Tilo kept those. This phone’s earlier version is saved here: download it as a backup you can import.
+                {P.backup.resume(resumeList)}
               </div>
-              <button className="btn gray" onClick={() => exportBackup(withResumeCopy(resumeCopy))}>Download this phone’s earlier version</button>
+              <button className="btn gray" onClick={() => exportBackup(withResumeCopy(resumeCopy))}>{P.backup.resumeBtn}</button>
             </div>
           )}
           <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={async (e) => {
@@ -402,29 +402,29 @@ export function ProfileScreen() {
             const file = input.files?.[0]
             input.value = '' // so picking the same file again still fires onChange
             if (!file) return
-            try { setPendingBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
+            try { setPendingBackup(await readBackup(file)) } catch { showToast(P.backup.invalid) }
           }} />
         </Disclosure>
-        <SettingRow icon="x" color={GRAY} soft label="Delete account" onPress={() => setView('delete')} />
+        <SettingRow icon="x" color={GRAY} soft label={P.deleteRow} onPress={() => setView('delete')} />
       </div>
 
-      <div className="lbl">Testing</div>
+      <div className="lbl">{P.groups.testing}</div>
       <div className="list icons">
-        <SettingRow icon="mail" color={MINDF} soft label="Send feedback" sub="What’s working, and what you’d like to see" onPress={() => setFeedbackOpen(true)} />
+        <SettingRow icon="mail" color={MINDF} soft label={P.feedbackRow.label} sub={P.feedbackRow.sub} onPress={() => setFeedbackOpen(true)} />
       </div>
 
       <div className="list icons" style={{ marginTop: 24 }}>
-        <Disclosure icon="info" color={GRAY} soft label="About Tilo" open={open === 'about'} onToggle={() => toggle('about')}>
+        <Disclosure icon="info" color={GRAY} soft label={P.about.row} open={open === 'about'} onToggle={() => toggle('about')}>
           <div className="prose sub">
-            <p><b>Tilo</b> is a personal health and fitness tracker.</p>
-            <p style={{ margin: 0 }}>General fitness information only, not medical advice. Talk to a GP before starting a new diet or exercise programme.</p>
+            <p><b>{P.about.name}</b>{P.about.lead}</p>
+            <p style={{ margin: 0 }}>{P.about.body}</p>
           </div>
         </Disclosure>
-        <Disclosure icon="key" color={GRAY} soft label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+        <Disclosure icon="key" color={GRAY} soft label={P.privacy.row} value={health.granted ? undefined : P.privacy.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? <>You agreed to Tilo using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so your log is on your phones only and Tilo doesn’t keep your weigh-ins, check-ins or body details. </> : null}
-              {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
+              {health.granted && healthAt ? P.privacy.agreedOn(healthAt) : healthStatus === 'off' ? P.privacy.withdrawn : null}
+              {consentLetsSync(data) ? P.privacy.stored : P.privacy.phoneOnly}{P.privacy.neverSold}
             </p>
           </div>
           {SHARED_PRODUCTS_ENABLED && (
@@ -432,11 +432,11 @@ export function ProfileScreen() {
             <>
               <div className="list" style={{ margin: 0 }}>
                 <div className="li">
-                  <div className="m"><div className="t">Share new products I scan</div></div>
-                  <Toggle label="Share new products I scan" on={hasConsent(data, 'shared-products')} onChange={() => setShareProducts(!hasConsent(data, 'shared-products'))} />
+                  <div className="m"><div className="t">{P.privacy.shareProducts}</div></div>
+                  <Toggle label={P.privacy.shareProducts} on={hasConsent(data, 'shared-products')} onChange={() => setShareProducts(!hasConsent(data, 'shared-products'))} />
                 </div>
               </div>
-              <div className="foot" style={{ marginBottom: 16 }}>Barcode, name and figures only, never who added them.</div>
+              <div className="foot" style={{ marginBottom: 16 }}>{P.privacy.shareFoot}</div>
             </>
           )}
           <div className="list legal-rows" style={{ margin: '0 0 8px' }}>
@@ -447,14 +447,14 @@ export function ProfileScreen() {
           {/* the same flows as the Health data and Delete account rows above (one of each; the
               legal texts point here, at Profile, then Privacy) */}
           {health.granted
-            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>Withdraw consent for health data</button>
-            : <button className="btn gray" onClick={agree}>Turn health data back on</button>}
-          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>Delete account</button>
+            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>{P.privacy.withdraw}</button>
+            : <button className="btn gray" onClick={agree}>{P.privacy.turnOn}</button>}
+          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>{P.privacy.del}</button>
         </Disclosure>
       </div>
 
-      <button className="btn signout" onClick={() => setSignOutOpen(true)}>Sign out</button>
-      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>Tilo offers general wellness guidance, not medical advice.</div>
+      <button className="btn signout" onClick={() => setSignOutOpen(true)}>{P.signOut}</button>
+      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>{P.wellness}</div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
@@ -474,12 +474,12 @@ function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; on
   const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
-    <Sheet title="Import backup" onClose={onClose}>
+    <Sheet title={IMPORT.title} onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
-        <p>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')}, {n(b.recipes, 'recipe', 'recipes')} and {n(b.workouts, 'workout', 'workouts')}.</p>
-        <p>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''}{b.workouts ? ', and adds its workouts' : ''} on all your devices. Anything else here stays as it is.</p>
+        <p>{IMPORT.has(n(b.days, 'day', 'days'), span, n(b.foods, 'saved food', 'saved foods'), n(b.recipes, 'recipe', 'recipes'), n(b.workouts, 'workout', 'workouts'))}</p>
+        <p>{IMPORT.replaces(b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : '', !!(b.foods || b.recipes), !!b.workouts)}</p>
       </div>
-      <div className="stack"><button className="btn tinted" onClick={onImport}>Import</button></div>
+      <div className="stack"><button className="btn tinted" onClick={onImport}>{IMPORT.go}</button></div>
     </Sheet>
   )
 }
@@ -500,17 +500,17 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
   return (
-    <Sheet title="Sign out" onClose={onClose}>
+    <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         {phoneOnly ? (
-          <p>What you log now is only on this phone: nothing syncs to your account until you agree to Tilo keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</p>
-        ) : <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>}
-        {!phoneOnly && unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
+          <p>{SIGN_OUT.phoneOnly}</p>
+        ) : <p>{SIGN_OUT.keeps}</p>}
+        {!phoneOnly && unsynced > 0 && <p>{SIGN_OUT.unsynced(unsynced)}</p>}
       </div>
       <div className="stack">
-        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
-        {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>Export a copy</button>}
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure && phoneOnly ? 'Remove anyway and delete your log' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
+        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.go}</button>
+        {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>{SIGN_OUT.exportCopy}</button>}
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeDelete : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove}</button>
       </div>
     </Sheet>
   )
@@ -528,19 +528,19 @@ function HandsSheet({ onClose }: { onClose: () => void }) {
   const save = () => {
     const hands: Partial<Record<HandPortion, number>> = { ...profile.hands }
     for (const k of types) { const v = parseFloat(vals[k]); if (v > 0) hands[k] = Math.round(v) }
-    setPrefs({ hands }); showToast('Hand portions saved'); onClose()
+    setPrefs({ hands }); showToast(P.hands.saved); onClose()
   }
   return (
-    <Sheet title="Hand portions" onClose={onClose} right={<button className="navbtn b" onClick={save}>Save</button>}>
+    <Sheet title={P.hands.title} onClose={onClose} right={<button className="navbtn b" onClick={save}>{P.hands.save}</button>}>
       <div className="sub" style={{ padding: '0 4px 12px' }}>
-        Hands scale with the person, which is why they work. Weigh one of each once and enter it here. After that, "a palm" is a measurement, not a guess.
+        {P.hands.lead}
       </div>
       <div className="list">
         {types.map((k) => (
           <div className="frow" key={k}>
             <label htmlFor={'hand_' + k}>{HANDS[k].label}<div className="sub" style={{ fontSize: 13 }}>{HANDS[k].hint}</div></label>
             <input id={'hand_' + k} type="number" inputMode="numeric" value={vals[k]} onChange={(e) => setVals({ ...vals, [k]: e.target.value })} />
-            <span className="u">g</span>
+            <span className="u">{P.hands.unit}</span>
           </div>
         ))}
       </div>

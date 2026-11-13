@@ -8,7 +8,8 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
 import { healthDataSummary, unconsentedCopyLine } from '@/data/consent'
-import { HEALTH_STATUS_LABEL, healthStatusOf, type HealthStatus } from './profileLogic'
+import { HEALTH_STATUS_LABEL, healthStatusOf, type HealthStatus } from './profileModel'
+import { HEALTH_DATA as HD } from '@/copy/profile'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -61,7 +62,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
     const s = step.summary
     const parts = [s.weighIns ? n(s.weighIns, 'weigh-in', 'weigh-ins') : '', s.checkins ? n(s.checkins, 'check-in', 'check-ins') : '', s.profileFields ? n(s.profileFields, 'body detail', 'body details') : '', s.trainingPrefs ? n(s.trainingPrefs, 'training preference', 'training preferences') : ''].filter(Boolean)
     return (
-      <Sheet title="Health data" onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
+      <Sheet title={HD.title} onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
         <div className="prose sub" style={{ padding: '0 4px' }}>
           <p>{step.prompt}</p>
           {parts.length > 0 && <p style={{ margin: 0 }} className="num">On this phone: {parts.join(', ')}.</p>}
@@ -75,15 +76,12 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   }
 
   return (
-    <Sheet title="Health data" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={HD.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>{HD.done}</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
-        {status === 'on' ? 'Tilo keeps your log, including your weight, check-ins and body details, to run the app and build your plan and targets.'
-          : status === 'paused' ? 'Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. ' + unconsentedCopyLine()
-          : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tilo uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
-          : 'To build your plan, Tilo asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
+        {status === 'on' ? HD.on : status === 'paused' ? HD.paused + unconsentedCopyLine() : status === 'off' ? HD.off : HD.unasked}
       </div>
       <Ticks items={HEALTH_TICKS} />
-      <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>Read the privacy notice</button>
+      <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>{HD.privacyNotice}</button>
       {(answersRow || redoRow) && (
         <div className="list" style={{ marginTop: 12 }}>
           {answersRow && <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>}
@@ -95,10 +93,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
         <button className="li" onClick={() => setSupport(true)}><div className="m"><div className="t">{SUPPORT.row}</div><div className="s">{SUPPORT.rowSub}</div></div><Chevron /></button>
       </div>
       <div className="stack">
-        {status !== 'on' && <button className="btn" onClick={onAgree}>Yes, keep it</button>}
+        {status !== 'on' && <button className="btn" onClick={onAgree}>{HD.agree}</button>}
         {/* withdraw (download first) whenever there's health data to remove: on, or paused / not
             asked with data on this phone or (after a sync) in the account */}
-        {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>Stop keeping my health data</button>}
+        {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>{HD.stop}</button>}
       </div>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
       {support && <SupportSheet onClose={() => setSupport(false)} />}

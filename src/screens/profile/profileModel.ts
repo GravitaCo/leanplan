@@ -1,13 +1,15 @@
 /**
  * Profile's pure helpers, React-free so the web screens and the native app (apps/native) share
- * them instead of copying them. Moved unchanged from ProfileScreen.tsx, profile/PillarsSettings.tsx,
- * profile/AccountData.tsx and review/WeeklyReview.tsx, which import or re-export them from here.
+ * them instead of copying them. Moved unchanged from ProfileScreen.tsx, profile/PillarsSettings.tsx
+ * and profile/AccountData.tsx, which import or re-export them from here.
  */
 import type { Goal, MindPrefs, Pillar, Profile } from '@/core/types'
 import { PILLARS } from '@/core/domain/checkin'
 import { wellbeingRouted } from '@/core/domain/onboarding'
+import { pillarsOn } from '@/screens/today/summary'
 import { healthSyncPaused, latestConsent } from '@/data/consent'
 import type { PersistedState } from '@/data/persistence'
+import { PROFILE } from '@/copy/profile'
 
 export const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -29,8 +31,8 @@ export function directionLabel(pct: number): string {
 /** Someone the at-risk route (B1.16) is for: Gentle display on, or wellbeing routing from onboarding. */
 export const atRiskRoute = (p: Pick<Profile, 'gentle' | 'outcomes'>): boolean => !!p.gentle || wellbeingRouted(p.outcomes?.wellbeing)
 
-/** The pillars still on, in board order. Absent `off` means all on. */
-export const pillarsOn = (m: MindPrefs | undefined): Pillar[] => PILLARS.filter((p) => !m?.off?.includes(p))
+/** The pillars still on, as a list in board order (Summary's pillarsOn, which says which are on). Absent `off` means all on. */
+export const pillarsOnList = (m: MindPrefs | undefined): Pillar[] => { const on = pillarsOn(m?.off); return PILLARS.filter((p) => on[p]) }
 
 /** `off` after flipping one pillar; null (the key removed) when all are on again. */
 export function offAfter(m: MindPrefs | undefined, p: Pillar): Pillar[] | null {
@@ -40,14 +42,10 @@ export function offAfter(m: MindPrefs | undefined, p: Pillar): Pillar[] | null {
   return next.length ? next : null
 }
 
-/** Review days, Monday first: [day number, initial, name]. */
-export const DAYS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
-export const dayName = (d: number) => DAYS.find((x) => x[0] === d)![2]
-
 export type HealthStatus = 'on' | 'paused' | 'off' | 'unasked'
 /** Health data's state for Profile's row: the latest health record, else paused or not asked. */
 export function healthStatusOf(data: PersistedState): HealthStatus {
   const r = latestConsent(data, 'health')
   return r ? (r.granted ? 'on' : 'off') : healthSyncPaused(data) ? 'paused' : 'unasked'
 }
-export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', paused: 'Paused', off: 'Off', unasked: 'Not asked yet' }
+export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = PROFILE.healthStatus

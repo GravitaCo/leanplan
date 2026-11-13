@@ -6,7 +6,7 @@ import { Seg, SettingRow, Toggle } from '@/ui/primitives'
 import type { IconName } from '@/ui/icons'
 import { SupportSheet } from '../mind/SupportSheet'
 import { PILLARS_COPY as C } from './pillarsCopy'
-import { atRiskRoute, offAfter, pillarsOn } from './profileLogic'
+import { atRiskRoute, offAfter, pillarsOnList as pillarsOn } from './profileModel'
 
 const ICON: Record<Pillar, [IconName, string]> = {
   mind: ['smile', 'var(--mind-fill)'],

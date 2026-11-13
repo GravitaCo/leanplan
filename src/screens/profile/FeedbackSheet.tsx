@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '@/store/store'
 import { FEEDBACK_AREAS, FEEDBACK_RATINGS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers } from '@/core/domain/feedback'
 import { BackButton, Sheet } from '@/ui/primitives'
+import { FEEDBACK as F } from '@/copy/profile'
 
 const STEPS = FEEDBACK_AREAS.length + 3 // intro, the areas, open questions, review
 const EMPTY: FeedbackAnswers = { areas: {}, wishes: '', other: '' }
@@ -37,19 +38,19 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   const setArea = (patch: { rating?: (typeof FEEDBACK_RATINGS)[number]; note?: string }) =>
     area && setA((x) => ({ ...x, areas: { ...x.areas, [area.id]: { ...x.areas[area.id], ...patch } } }))
   const copy = async () => {
-    try { await navigator.clipboard.writeText(email.body); showToast('Copied. Paste it into an email to ' + FEEDBACK_TO) }
-    catch { showToast('Couldn’t copy on this device') }
+    try { await navigator.clipboard.writeText(email.body); showToast(F.copied(FEEDBACK_TO)) }
+    catch { showToast(F.copyFailed) }
   }
   const ready = hasFeedback(a)
 
   return (
-    <Sheet title="Feedback" tall onClose={onClose} left={step > 0 ? <BackButton onClick={back} /> : undefined}
-      right={step > 0 ? <span className="sub num">{step} of {STEPS - 1}</span> : undefined}>
+    <Sheet title={F.title} tall onClose={onClose} left={step > 0 ? <BackButton onClick={back} /> : undefined}
+      right={step > 0 ? <span className="sub num">{F.of(step, STEPS - 1)}</span> : undefined}>
       {step === 0 && (
         <div className="prose">
-          <p className="fb-q">Help shape Tilo</p>
-          <p className="sub">A few quick questions about each part of the app, then what you’d like to see next. It takes about two minutes, and you can skip anything.</p>
-          <p className="sub">Your answers go to {FEEDBACK_TO} from your own email app, so you’ll see exactly what’s sent.</p>
+          <p className="fb-q">{F.introT}</p>
+          <p className="sub">{F.intro}</p>
+          <p className="sub">{F.goesTo(FEEDBACK_TO)}</p>
         </div>
       )}
 
@@ -63,42 +64,42 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
                 onClick={() => setArea({ rating: cur.rating === r ? undefined : r })}>{r}</button>
             ))}
           </div>
-          <label className="lbl" htmlFor="fb-note" style={{ display: 'block' }}>What worked, or what got in the way?</label>
-          <textarea id="fb-note" rows={4} value={cur.note ?? ''} placeholder="Optional" onChange={(e) => setArea({ note: e.target.value })} />
+          <label className="lbl" htmlFor="fb-note" style={{ display: 'block' }}>{F.note}</label>
+          <textarea id="fb-note" rows={4} value={cur.note ?? ''} placeholder={F.optional} onChange={(e) => setArea({ note: e.target.value })} />
         </>
       )}
 
       {step === FEEDBACK_AREAS.length + 1 && (
         <>
-          <label className="fb-q" htmlFor="fb-wishes" style={{ display: 'block' }}>What would you like to see in Tilo?</label>
-          <div className="foot" style={{ padding: '0 0 12px' }}>Features, foods, workouts, anything that would make it more useful for you.</div>
-          <textarea id="fb-wishes" rows={5} value={a.wishes} placeholder="Optional" onChange={(e) => setA({ ...a, wishes: e.target.value })} />
-          <label className="lbl" htmlFor="fb-other" style={{ display: 'block' }}>Anything else?</label>
-          <textarea id="fb-other" rows={3} value={a.other} placeholder="Optional" onChange={(e) => setA({ ...a, other: e.target.value })} />
+          <label className="fb-q" htmlFor="fb-wishes" style={{ display: 'block' }}>{F.wishesT}</label>
+          <div className="foot" style={{ padding: '0 0 12px' }}>{F.wishesHint}</div>
+          <textarea id="fb-wishes" rows={5} value={a.wishes} placeholder={F.optional} onChange={(e) => setA({ ...a, wishes: e.target.value })} />
+          <label className="lbl" htmlFor="fb-other" style={{ display: 'block' }}>{F.other}</label>
+          <textarea id="fb-other" rows={3} value={a.other} placeholder={F.optional} onChange={(e) => setA({ ...a, other: e.target.value })} />
         </>
       )}
 
       {step === STEPS - 1 && (
         <>
-          <p className="fb-q">Ready to send</p>
+          <p className="fb-q">{F.readyT}</p>
           <div className="card fb-preview">{email.body}</div>
           {opened ? (
-            <div className="foot" style={{ padding: '0 0 12px' }}>Your email app should now be open with this ready to send. Didn’t open? Copy it instead and paste it into an email to {FEEDBACK_TO}.</div>
+            <div className="foot" style={{ padding: '0 0 12px' }}>{F.opened(FEEDBACK_TO)}</div>
           ) : (
             <div className="foot" style={{ padding: '0 0 12px' }}>
-              {ready ? `Opens your email app, addressed to ${FEEDBACK_TO}.` : 'Answer at least one question to send.'} The app version and device type are included to help track down bugs.
+              {ready ? F.opens(FEEDBACK_TO) : F.answerOne}{F.included}
             </div>
           )}
           <div className="stack">
             {opened
-              ? <button className="btn" onClick={() => { draft = { step: 0, a: EMPTY }; onClose() }}>Done</button>
-              : <button className="btn" disabled={!ready} onClick={() => { window.location.href = feedbackMailto(email); setOpened(true); draft = { step: 0, a: EMPTY } }}>Send by email</button>}
-            <button className="btn gray" disabled={!ready} onClick={copy}>Copy instead</button>
+              ? <button className="btn" onClick={() => { draft = { step: 0, a: EMPTY }; onClose() }}>{F.done}</button>
+              : <button className="btn" disabled={!ready} onClick={() => { window.location.href = feedbackMailto(email); setOpened(true); draft = { step: 0, a: EMPTY } }}>{F.send}</button>}
+            <button className="btn gray" disabled={!ready} onClick={copy}>{F.copy}</button>
           </div>
         </>
       )}
 
-      {step < STEPS - 1 && <div className="sheet-cta"><button className="btn" onClick={next}>{step === 0 ? 'Start' : 'Next'}</button></div>}
+      {step < STEPS - 1 && <div className="sheet-cta"><button className="btn" onClick={next}>{step === 0 ? F.start : F.next}</button></div>}
     </Sheet>
   )
 }

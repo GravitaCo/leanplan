@@ -249,7 +249,7 @@ export function windDownSuite(): number {
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
   ok('Profile mounts the names row and its foot only with SUPP_NAMES_ENABLED (DPIA 8.8), under Supplement reminders',
     /SUPP_NAMES_ENABLED && pr\.notificationsEnabled && <SuppNamesRow \/>/.test(prof) && /SUPP_NAMES_ENABLED && pr\.notificationsEnabled && <SuppNamesFoot \/>/.test(prof)
-    && prof.indexOf('<SuppNamesRow />') > prof.indexOf('label="Supplement reminders"') && prof.indexOf('<SuppNamesRow />') < prof.indexOf('label="Weekly review reminder"'))
+    && prof.indexOf('<SuppNamesRow />') > prof.indexOf('label={P.notify.supps}') && prof.indexOf('<SuppNamesRow />') < prof.indexOf('label={P.notify.weekly}'))
   const mp = readFileSync('src/screens/mind/MindPage.tsx', 'utf8')
   ok('the skill screens open only from the Skills list (MIND_REVIEWED) or a reviewed one-thing hand-off', /skillsOn=\{MIND_REVIEWED\}/.test(mp) && /if \(MIND_REVIEWED\) setViews\(\[mindOpen\]\)/.test(mp))
   return bad
