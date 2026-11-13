@@ -173,8 +173,6 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
   const art = planArt(tp?.id ?? entry.plan?.baseTemplateId)
   const fitsHere = !!tp && fits(tp, fitOf(profile))
   const fact = [tx(14), { color: t.label }]
-  // TODO(N1-P3): `.catsq.sm` (30, radius 8), the plain colour square
-  const sq = (c: string) => <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: c }} />
   return (
     <PlanPage footer={
       // .pp-cta: fixed at the bottom on --bg with a top rule
@@ -205,9 +203,10 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
           <WeekRows week={weeks[shown].week} routines={routines} />
         </>
       )}
+      {/* TODO(N1): `.catsq.sm` leads these rows once lib/ui has it (asked N1) */}
       <List style={{ marginTop: 8, marginBottom: 8 }} wrap>
-        <Row wrapSub title="After the plan: maintenance" sub="When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need." lead={sq(t.fill)} onPress={onMaintenance} />
-        {tp && <Row wrapSub title="Eating for this plan" sub={eatingLine(tp, profile.goal, quiet)} lead={sq(t.foodFill)} />}
+        <Row wrapSub title="After the plan: maintenance" sub="When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need." onPress={onMaintenance} />
+        {tp && <Row wrapSub title="Eating for this plan" sub={eatingLine(tp, profile.goal, quiet)} />}
       </List>
       {tp && (
         <List style={{ marginBottom: 8 }}>

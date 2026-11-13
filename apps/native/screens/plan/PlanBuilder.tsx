@@ -99,9 +99,8 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         </View>
         <View style={{ paddingTop: 4, paddingHorizontal: 4, paddingBottom: 16 }}><Timeline cells={cells} /></View>
         <List wrap style={{ marginBottom: 8 }}>
-          {/* TODO(N1-P3): `.catsq.sm` */}
-          <Row wrapSub title="When it ends: maintenance, if you choose it" sub="The same workouts with fewer sets, to keep what you built. Read how it works"
-            lead={<View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: t.fill }} />} onPress={onMaintenance} />
+          {/* TODO(N1): `.catsq.sm` leads this row once lib/ui has it (asked N1) */}
+          <Row wrapSub title="When it ends: maintenance, if you choose it" sub="The same workouts with fewer sets, to keep what you built. Read how it works" onPress={onMaintenance} />
         </List>
         <Foot style={{ paddingTop: 0, paddingHorizontal: 4 }}>Most plans run 6 to 12 weeks. You can add a lighter week later in Plan details, and an easier first week until the plan starts.</Foot>
       </PlanPage>

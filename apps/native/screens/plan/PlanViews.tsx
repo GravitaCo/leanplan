@@ -24,6 +24,7 @@ import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Row, Sheet, TitleRow } from '../../lib/ui/primitives'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
+import { Check } from '../../lib/ui/choices'
 import { num, tx, useTokens } from '../../lib/theme'
 import { LibrarySheet, Thumb } from '../train'
 import { PlanNote } from './PlanParts'
@@ -82,7 +83,6 @@ type Cat = { id: string; label: string; items: WorkoutKey[]; sub?: string }
 export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
   idx: number; onClose: () => void; onAdd?: (k: WorkoutKey) => void; have?: WorkoutKey[]; notesFor?: (k: WorkoutKey) => string[]
 }) {
-  const t = useTokens()
   const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
   const training = useStore((s) => s.data.profile.training)
@@ -125,10 +125,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
           {cat.items.map((k) => (
             <Row key={k} pv title={keyTitle(k, routines)} sub={subOf(k) + (!onAdd && schedule[idx] === k ? ' · on ' + day + ' now' : '')} onPress={() => setSel(k)}
               lead={<Thumb video={keyVideo(k, routines)} shape={k === 'Cardio' ? 'duration' : undefined} />}
-              // TODO(N1-P3): `.chk`, lib/ui's radio circle
-              right={<View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: sel === k ? t.tint : t.dash, backgroundColor: sel === k ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                {sel === k && <Icon name="check" size={14} stroke={3} color={t.onTint} />}
-              </View>} />
+              right={<Check on={sel === k} />} />
           ))}
         </List>
         {sel && sel !== 'Cardio' && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={`See what's in ${keyTitle(sel, routines)}`} onPress={() => setSee(sel)} /></View>}
@@ -145,11 +142,9 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
       </Sheet>
     )
   }
-  const color = (c: Cat) => (c.id === 'mine' ? t.btn : c.id === 'weights' ? t.moveFill : t.mindFill)
   const row = (c: Cat) => (
-    // TODO(N1-P3): `.catsq`, the plain colour square (36, radius 10); lib/ui's square has an icon
-    <Row key={c.id} pv title={c.label} sub={c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`}
-      lead={<View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: color(c) }} />} onPress={() => setCat(c)} />
+    // TODO(N1): `.catsq` (a plain colour square, 36 radius 10) leads this row once lib/ui has it (asked N1)
+    <Row key={c.id} pv title={c.label} sub={c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`} onPress={() => setCat(c)} />
   )
   const ready = cats.filter((c) => c.id !== 'mine')
   const own = cats.find((c) => c.id === 'mine')
