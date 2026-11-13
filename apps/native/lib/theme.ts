@@ -3,7 +3,6 @@
  * or dark from the device's appearance setting, as on web. Geist is bundled with the app.
  */
 import { useColorScheme, type TextStyle } from 'react-native'
-import { Geist_200ExtraLight, Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold } from '@expo-google-fonts/geist'
 import { dark, light, type Tokens } from './tokens.generated'
 
 export type { Tokens }
@@ -11,8 +10,18 @@ export function useTokens(): Tokens {
   return useColorScheme() === 'dark' ? dark : light
 }
 
-/** Every bundled Geist face, for `useFonts(FONTS)` at the root: the one list of what ships. */
-export const FONTS = { Geist_200ExtraLight, Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold }
+/**
+ * Every bundled Geist face, for `useFonts(FONTS)` at the root: the one list of what ships. The static
+ * TTFs in assets/fonts, under the SIL Open Font License (assets/fonts/OFL.txt), no package needed.
+ */
+export const FONTS = {
+  Geist_200ExtraLight: require('../assets/fonts/Geist-ExtraLight.ttf'),
+  Geist_300Light: require('../assets/fonts/Geist-Light.ttf'),
+  Geist_400Regular: require('../assets/fonts/Geist-Regular.ttf'),
+  Geist_500Medium: require('../assets/fonts/Geist-Medium.ttf'),
+  Geist_600SemiBold: require('../assets/fonts/Geist-SemiBold.ttf'),
+  Geist_700Bold: require('../assets/fonts/Geist-Bold.ttf'),
+} as const
 
 /** Geist by weight (the bundled static faces; the web uses the variable font). */
 export const GEIST = {
