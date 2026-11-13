@@ -27,7 +27,7 @@ const day = shortDateOf
 /** `.grp-h.sm`: a 13 pt label heading a list. */
 export function SmallHead({ children }: { children: string }) {
   const t = useTokens()
-  return <Text accessibilityRole="header" style={[tx(13, 500), { color: t.label2, paddingHorizontal: 4, marginTop: 4, marginBottom: 8 }]}>{children}</Text>
+  return <Text accessibilityRole="header" style={[tx(13, 500), { color: t.label2, paddingHorizontal: 4, marginBottom: 8 }]}>{children}</Text>
 }
 
 /** A card holding a timeline (`.card.pp-weeks`). */
@@ -83,7 +83,8 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
         <Row wrapSub title={carrying ? 'Carrying on' : 'Then maintenance'} lead={<Cell kind="after" state="" width={14} />} onPress={onMaintenance} right={<RowLink title="Read" />}
           sub={carrying ? 'Your last week at the full version, for as long as you like' : inMaint ? 'Now, for as long as you like' : end ? `From ${day(end)}, if you choose it` : 'If you choose it'} />
       </List>
-      <List style={{ marginTop: 16, marginBottom: 8 }}>
+      {/* .list margins collapse on the web: 8 below the weeks, 16 above the actions, 16 between */}
+      <List style={{ marginTop: 8, marginBottom: 8 }}>
         {editRow && <Row title={cur ? "Edit this week's workouts" : 'Edit the workouts'} onPress={() => onEditWeek(editRow.index)} />}
         {inMaint && <Row title="Choose a new plan" onPress={onChoose} />}
         {!inMaint && !pos?.ended && <Row title="Add an easier or lighter week" onPress={() => setSheet('add')} />}
@@ -100,7 +101,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
       )}
       {sheet === 'add' && (
         <Sheet title="Add a week" onClose={() => setSheet(null)}>
-          <List wrap>
+          <List wrap style={{ marginBottom: 8 }}>
             {!started && !plan.phases[0]?.easier && (
               <Row wrapSub chevron={false} title="An easier first week" sub="To find your weights before the plan builds" onPress={() => { updatePlan(plan.id, { phases: withEasierStart(plan.phases) }); setSheet(null) }} />
             )}
@@ -202,8 +203,9 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
       <Sub style={{ marginTop: -4, marginBottom: 16 }}>No rush. Until you choose, your last week carries on as it was.</Sub>
       {!afterPhase(plan) && (
         // .pe-rec: a card ringed in the tint
-        <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 12, marginBottom: 16, borderWidth: 2, borderColor: t.tint }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        // the web's 2 pt ring is an inset shadow inside the padding: the border takes 2 off the padding
+        <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14, gap: 12, marginBottom: 16, borderWidth: 2, borderColor: t.tint }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <Text style={[tx(13, 600), { color: t.tint }]}>Recommended</Text>
             <LinkBtn title="How it works" onPress={onMaintenance} style={{ paddingVertical: 0, paddingHorizontal: 0 }} />
           </View>
@@ -220,7 +222,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
           <PlanTile name={suggest.name} line={suggest.tagline} art={planArt(suggest.id)} fits={fits(suggest, fitOf(data.profile))} big onPress={() => onPreview(suggest.id, reflection)} />
         </View>
       )}
-      <List wrap>
+      <List wrap style={{ marginBottom: 8 }}>
         <Row wrapSub title={`Run ${plan.name} again`} sub={`From ${day(again)}, the same ${n} weeks`} onPress={() => onAgain(reflection)} />
         <Row wrapSub title="Build your own" sub="Pick the length, then fill the week" onPress={() => onBuild(reflection)} />
         <Row wrapSub title="Keep going without a plan" sub="Your last week repeats at the full version, for as long as you like" onPress={() => { carryOn(plan.id, reflection); onClose() }} />

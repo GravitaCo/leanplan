@@ -69,7 +69,8 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
         </List>
       )}
 
-      <GrpH>This week</GrpH>
+      {/* the web's <h2 class="grp-h"> keeps the browser's h2 margins (about 16.6 pt), collapsing with the card's above */}
+      <View style={{ marginTop: 5, marginBottom: 16 }}><GrpH>This week</GrpH></View>
       <WeekList rows={m.week} onDay={(d) => go({ v: 'day', d })} />
       {m.notes.map((n) => <PlanNote key={n}>{n}</PlanNote>)}
       <Foot>
@@ -78,10 +79,10 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
           : 'Tap a day to change it. Changes repeat every week. Aim for three lifts a week with a rest day between where you can. Legs, then Push, then Pull means back-to-back sessions train different muscles. Daily steps burn more across a week than the gym sessions do.'}
       </Foot>
 
-      {/* .tiles.plantiles: stacked on the web today (theme.css:1162 overrides the two columns; flagged) */}
-      <View style={{ gap: 10, marginTop: 16 }}>
+      {/* .tiles.plantiles: two columns */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
         {([['workouts', m.workouts, 'Workouts'], ['exercises', m.exercises, 'Exercise library']] as const).map(([k, n, label]) => (
-          <Tile key={k} onPress={() => go({ v: k })} style={{ gap: 2 }}>
+          <Tile key={k} onPress={() => go({ v: k })} style={{ flex: 1, gap: 2 }}>
             <Text style={[tx(26, 400, 1.1, 0), num, { color: t.label }]}>{n}</Text>
             <Text style={[tx(15, 500, 1.3, 0), { color: t.label }]}>{label}</Text>
           </Tile>

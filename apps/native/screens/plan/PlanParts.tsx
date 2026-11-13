@@ -114,7 +114,8 @@ export function PlanTile({ name, line, art, fits, big, onPress, style }: {
   const t = useTokens()
   const surface = useSurface(t)
   const h = big ? 230 : 196
-  const nameText = tx(big ? 20 : 16, 600, 1.2)
+  // a tile is a web <button>: no letter spacing
+  const nameText = tx(big ? 20 : 16, 600, 1.2, 0)
   if (art == null) {
     return (
       <Pressable accessibilityRole="button" onPress={onPress}
@@ -179,7 +180,7 @@ export function PlanNote({ children, style }: { children: ReactNode; style?: Sty
   const t = useTokens()
   const surface = useSurface(t)
   return (
-    <View style={[{ backgroundColor: surface, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, marginTop: 8, marginBottom: 10 }, style]}>
+    <View style={[{ backgroundColor: surface, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, marginTop: 8 }, style]}>
       {typeof children === 'string' ? <Text style={[tx(14, 400, 1.4), { color: t.label }]}>{children}</Text> : children}
     </View>
   )
@@ -203,9 +204,9 @@ export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress
         {names.length === 0
           ? emptyAdd
             ? <Text style={[tx(17, 500), { color: t.tint }]}>+ Add</Text>
-            : <Text numberOfLines={1} style={[tx(17), { color: t.label2 }]}>Rest · recovery counts too</Text>
+            : <Text numberOfLines={1} style={[tx(17, today ? 600 : 400, 1.3, onPress ? 0 : undefined), { color: t.label2 }]}>Rest · recovery counts too</Text>
           : <>
-            <Text numberOfLines={1} style={[tx(17, today ? 600 : 400), { color: t.label }]}>{names.join(' + ')}</Text>
+            <Text numberOfLines={1} style={[tx(17, today ? 600 : 400, 1.3, onPress ? 0 : undefined), { color: t.label }]}>{names.join(' + ')}</Text>
             {!!sub && <Text numberOfLines={1} style={[tx(13), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
           </>}
       </View>
@@ -224,7 +225,7 @@ export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress
 /** `.list.wk` (radius 20): the seven rows, Monday first. */
 export function WeekList({ rows, onDay, emptyAdd }: { rows: WeekRowModel[]; onDay?: (d: number) => void; emptyAdd?: boolean }) {
   return (
-    <List style={{ borderRadius: 20 }}>
+    <List style={{ borderRadius: 20, marginBottom: 8 }}>
       {rows.map((r) => <WeekRow key={r.d} row={r} emptyAdd={emptyAdd} onPress={onDay ? () => onDay(r.d) : undefined} />)}
     </List>
   )

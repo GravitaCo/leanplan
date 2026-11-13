@@ -212,7 +212,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
         <List style={{ marginBottom: 8 }}>
           {([['For', tp.forWho], ['Kit', tp.kit], ['Time', tp.time]] as const).map(([k, v]) => (
             // .pp-facts .li: 14 pt, padding 12 16, the key 72 wide
-            <View key={k} style={{ flexDirection: 'row', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
+            <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
               <Text style={[...fact, { color: t.label2, width: 72 }]}>{k}</Text>
               <Text style={[...fact, { flex: 1 }]}>{v}</Text>
             </View>

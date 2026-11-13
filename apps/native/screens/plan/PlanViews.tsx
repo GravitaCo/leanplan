@@ -70,7 +70,7 @@ export function RowLink({ title }: { title: string }) {
  * action row, so the view works.
  */
 export function AddRow({ title, onPress }: { title: string; onPress: () => void }) {
-  return <List style={{ marginTop: 12 }}><Row act icon="plus" title={title} onPress={onPress} /></List>
+  return <List style={{ marginTop: 12, marginBottom: 8 }}><Row act icon="plus" title={title} onPress={onPress} /></List>
 }
 
 type Cat = { id: string; label: string; items: WorkoutKey[]; sub?: string }
@@ -121,9 +121,9 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
   if (cat) {
     return (
       <Sheet title={cat.label} onClose={onClose} tall animate={false} left={<BackButton label="Categories" onPress={() => { setCat(null); setSel(null) }} />} right={cancel}>
-        <List>
+        <List style={{ marginBottom: 8 }}>
           {cat.items.map((k) => (
-            <Row key={k} pv title={keyTitle(k, routines)} sub={subOf(k) + (!onAdd && schedule[idx] === k ? ' · on ' + day + ' now' : '')} onPress={() => setSel(k)}
+            <Row key={k} pv title={keyTitle(k, routines)} sub={<Text style={num}>{subOf(k) + (!onAdd && schedule[idx] === k ? ' · on ' + day + ' now' : '')}</Text>} onPress={() => setSel(k)}
               lead={<Thumb video={keyVideo(k, routines)} shape={k === 'Cardio' ? 'duration' : undefined} />}
               right={<Check on={sel === k} />} />
           ))}
@@ -152,7 +152,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
     <Sheet title={`Add to ${day}`} onClose={onClose} tall left={null} right={cancel}>
       {own && <List style={{ marginBottom: 4 }}>{row(own)}</List>}
       <Lbl style={own ? undefined : { paddingTop: 0 }}>Ready-made</Lbl>
-      <List>{ready.map(row)}</List>
+      <List style={{ marginBottom: 8 }}>{ready.map(row)}</List>
       <Foot style={{ paddingTop: 14, paddingHorizontal: 4 }}>
         {cats.some((c) => c.id === 'mobility') ? 'Bodyweight, Yoga and Pilates' : 'Bodyweight, Yoga, Pilates and Mobility'} appear here once they have ready-made workouts.
       </Foot>
@@ -165,7 +165,7 @@ function DayPick({ idx, title, onPick, onClose }: { idx: number; title: string; 
   const schedule = useStore((s) => s.data.schedule)
   return (
     <Sheet title={title} onClose={onClose}>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {WEEK_ORDER.filter((d) => d !== idx).map((d) => {
           const v = plannedOn(schedule, d)
           return <Row key={d} title={DAY_NAME[d]} sub={v === 'Rest' ? 'Rest' : shortTitle(v)} onPress={() => onPick(d)} />
@@ -189,14 +189,14 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
       <TitleRow title={day} />
       <Sub style={{ marginTop: 2, marginBottom: 16 }}>{v === 'Rest' ? 'Rest day · recovery counts too' : 'Every week'}</Sub>
       {v !== 'Rest' && (
-        <List>
-          <Row pv title={shortTitle(v)} sub={`${workoutKind(v)} · ${workoutSub(v)}`} onPress={() => onOpenWorkout(v)}
+        <List style={{ marginBottom: 8 }}>
+          <Row pv title={shortTitle(v)} sub={<Text style={num}>{`${workoutKind(v)} · ${workoutSub(v)}`}</Text>} onPress={() => onOpenWorkout(v)}
             lead={<Thumb video={firstVideo(v)} shape={v === 'Cardio' ? 'duration' : undefined} />} right={<RowLink title="View" />} />
         </List>
       )}
       <AddRow title={v === 'Rest' ? 'Add a workout' : 'Change workout'} onPress={() => setSheet('add')} />
       {v === 'Rest' && <Lbl>Or</Lbl>}
-      <List style={{ marginTop: v === 'Rest' ? 0 : 12 }}>
+      <List style={{ marginTop: v === 'Rest' ? 0 : 12, marginBottom: 8 }}>
         {v !== 'Rest' && <Row title={`Make ${day} a rest day`} sub="Rest is part of the plan" chevron={false} onPress={() => change({ ...schedule, [idx]: 'Rest' }, `${day} is a rest day now`)} />}
         <Row title="Copy another day" sub="Pick a day to copy from" onPress={() => setSheet('copy')} />
         <Row title="Swap with another day" onPress={() => setSheet('swap')} />
@@ -223,7 +223,7 @@ export function ExerciseList({ type }: { type: WorkoutKey }) {
   return (
     <>
       {/* TODO(N7): Train's WarmupCard here when ONBOARDING_ENABLED (off, as on the web) */}
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {(templateFor(type, routines)?.ex ?? []).map((e, i) => {
           const x = exById(e.id)
           return (

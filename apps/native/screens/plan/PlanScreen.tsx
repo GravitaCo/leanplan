@@ -4,6 +4,8 @@
  * opens. Mount it in app/(tabs)/plan.tsx.
  */
 import { useEffect, useState } from 'react'
+import { Text } from 'react-native'
+import { num } from '../../lib/theme'
 import { useStore } from '@/store/store'
 import type { WorkoutType } from '@/core/types'
 import { SESSIONS, LIFTS, firstVideo } from '@/core/data/workouts'
@@ -175,16 +177,16 @@ export function PlanScreen() {
       {sheet === 'workouts' && (
         <Sheet title="Workouts" onClose={() => setSheet(null)} left={null} right={<NavBtn bold title="Done" onPress={() => setSheet(null)} />}>
           <Lbl style={{ paddingTop: 0 }}>Ready-made</Lbl>
-          <List>
+          <List style={{ marginBottom: 8 }}>
             {SESSIONS.filter((x): x is WorkoutType => x !== 'Rest').map((w) => (
-              <Row key={w} pv title={shortTitle(w)} sub={workoutSub(w)} onPress={() => { setSheet(null); setWorkout(w) }}
+              <Row key={w} pv title={shortTitle(w)} sub={<Text style={num}>{workoutSub(w)}</Text>} onPress={() => { setSheet(null); setWorkout(w) }}
                 lead={<Thumb video={firstVideo(w)} shape={w === 'Cardio' ? 'duration' : 'weight-reps'} />} />
             ))}
           </List>
           <Lbl>Yours</Lbl>
-          <List>
+          <List style={{ marginBottom: 8 }}>
             {mine.map((r) => (
-              <Row key={r.id} pv title={r.name} sub={routineLine(r, routines, profile.training, ONBOARDING_ENABLED)} onPress={() => { setSheet(null); setWorkout(r.id) }}
+              <Row key={r.id} pv title={r.name} sub={<Text style={num}>{routineLine(r, routines, profile.training, ONBOARDING_ENABLED)}</Text>} onPress={() => { setSheet(null); setWorkout(r.id) }}
                 lead={<Thumb video={keyVideo(r.id, routines)} shape={r.modality === 'cardio' ? 'duration' : 'weight-reps'} />} />
             ))}
             {build && <Row act icon="plus" title="Build a workout" onPress={() => setBuilder({})} />}

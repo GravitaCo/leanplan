@@ -25,7 +25,7 @@ Status key: ☐ to build on N1, ◐ built once on stand-ins (history, 4f1a13a) a
 | 1.6 | A next plan waiting: "Next: …" row, "Starts …. Until then, this week carries on." | `upcomingPlan` | `[next · the week]` |
 | 1.7 | This week: with a plan, its week (`planWeekRows`, "Today · shorter" on a lighter week); without, the repeating week (`scheduleWeekRows`). Today's row tinted, its day in tint; rest rows "Rest · recovery counts too"; a thumbnail, or the cardio dot | `WeekRows`, `wk-row` | ◐ `[none · the week]`, `[active · the week]` |
 | 1.8 | Week notes as cards (`planWeekNotes` / `weekWarnings`), then the foot (plan or no-plan wording) | | ◐ |
-| 1.9 | Tiles: Workouts (count) and Exercise library (count). The web renders them **stacked** today (theme.css:1162 overrides `.plantiles`; flagged as a possible web bug): match the web | `plantiles` | ◐ |
+| 1.9 | Tiles: Workouts (count) and Exercise library (count), side by side (`.tiles.plantiles`, theme.css:913) | `plantiles` | ◐ |
 | 1.10 | If–then plans: rows (`whenLine`, "I'll … · Worked", "Backup: …"), + New plan, the foot | `planGroups` | ◐ |
 | 1.11 | Mind plans group, only with WELLBEING_ENABLED and at least one Mind plan | `MIND_PLAN.group` | ◐ (flag-off case to add) |
 | 1.12 | Guides: How the split works, The honest basics (icon squares activity and mind), each opens a tall sheet with Done | `PLAN_GUIDES` | `[none · guide: the honest basics]` |

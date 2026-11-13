@@ -3,7 +3,8 @@
  * a plan's week (Flow 3), over a running plan's week (saved with Undo) or a plan being built.
  */
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Text, View } from 'react-native'
+import { num } from '../../lib/theme'
 import { useStore } from '@/store/store'
 import type { PlanPhase, PlanWeek } from '@/core/types'
 import { DAY_NAME } from '@/core/domain/date'
@@ -43,7 +44,7 @@ function PlanDayPick({ week, idx, title, onPick, onClose }: { week: PlanWeek; id
   const routines = useStore((s) => s.data.routines)
   return (
     <Sheet title={title} onClose={onClose}>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {WEEK_ORDER.filter((d) => d !== idx).map((d) => {
           const keys = knownKeys(week[d], routines)
           return <Row key={d} title={DAY_NAME[d]} sub={keys.length ? keys.map((k) => keyTitle(k, routines)).join(' + ') : 'Rest'} onPress={() => onPick(d)} />
@@ -91,9 +92,9 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
       <Sub style={{ marginTop: 2, marginBottom: 16 }}>{rest ? 'Rest day · recovery counts too' : `Every week of ${phase}`}</Sub>
 
       {!rest && (
-        <List>
+        <List style={{ marginBottom: 8 }}>
           {keys.map((k, i) => (
-            <Row key={k + i} pv title={keyTitle(k, routines)} sub={keyLine(k, routines, training, ONBOARDING_ENABLED, true)} label={`View ${keyTitle(k, routines)}`}
+            <Row key={k + i} pv title={keyTitle(k, routines)} sub={<Text style={num}>{keyLine(k, routines, training, ONBOARDING_ENABLED, true)}</Text>} label={`View ${keyTitle(k, routines)}`}
               onPress={() => onOpenWorkout(k)} lead={<Thumb video={keyVideo(k, routines)} shape={k === 'Cardio' ? 'duration' : undefined} />}
               right={<LinkBtn title="Remove" label={`Remove ${keyTitle(k, routines)} from ${day}`}
                 onPress={() => setDay(keys.filter((_, j) => j !== i), `${keyTitle(k, routines)} removed from ${day}`)} />} />
@@ -103,7 +104,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
       {keys.length < MAX_A_DAY && <AddRow title={rest ? 'Add a workout' : 'Add another'} onPress={() => setSheet('add')} />}
 
       {rest && <Lbl>Or</Lbl>}
-      <List style={{ marginTop: rest ? 0 : 12 }}>
+      <List style={{ marginTop: rest ? 0 : 12, marginBottom: 8 }}>
         {!rest && <Row title={`Make ${day} a rest day`} sub="Rest is part of the plan" chevron={false} onPress={() => setDay([], `${day} is a rest day now`)} />}
         <Row title="Copy another day" sub="Pick a day to copy from" onPress={() => setSheet('copy')} />
         <Row title="Swap with another day" onPress={() => setSheet('swap')} />
