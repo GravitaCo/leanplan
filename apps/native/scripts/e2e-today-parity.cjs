@@ -204,21 +204,31 @@ async function open(browser, url, seed, scheme, tall) {
 /** Lines of text, whitespace normalised (the two renderers break lines in different places). */
 const norm = (s) => s.replace(/[\u00a0\u2009\u202f]/g, ' ').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').replace(/(\d) kg\b/g, '$1kg')
 
+/**
+ * The week bars' labels (day letters, bar values and the axis) in a fixed order: the web's SVG and
+ * native's draw the same labels in a different document order, which says nothing about what shows.
+ */
+function canonBars(s) {
+  return s.replace(/((?:in your range\.|this week\.|fills in here\. Averages say far more than any single day\.) )([\s\S]*?)( Eaten)/, (_, a, mid, b) => a + mid.split(' ').sort().join(' ') + b)
+}
+
 /** Summary's pillars: from the first pillar to the end of This week (the header, week strip and tab bar differ by design). */
 async function pillarsText(page, web) {
-  if (web) return norm(await page.locator('.pillars').innerText())
+  if (web) return canonBars(norm(await page.locator('.pillars').innerText()))
   const all = await page.innerText('body')
   const start = all.search(/\n(Mind|Food|Move|Weight|Supplements|This week)\n/)
   const wk = all.indexOf('\nThis week\n', start)
   const tail = all.slice(wk)
   const m = tail.match(/\nLogged\n[^\n]+\n/) || tail.match(/\nWorkouts\n[^\n]+\n[^\n]+\n/)
-  return norm(all.slice(start, wk + (m ? m.index + m[0].length : tail.length)))
+  return canonBars(norm(all.slice(start, wk + (m ? m.index + m[0].length : tail.length))))
 }
 
 /** The open sheet's text (the web's .sheet; the native Modal's dialog). */
 async function sheetText(page, web) {
   const loc = web ? page.locator('.sheet').last() : page.locator('[aria-modal="true"]').last()
   await loc.waitFor({ timeout: 5000 })
+  // N1's sheet slides up (Reanimated): wait until its words are drawn
+  for (let i = 0; i < 30 && !(await loc.innerText()).trim(); i++) await page.waitForTimeout(100)
   return norm(await loc.innerText())
 }
 
