@@ -45,12 +45,11 @@ export const MARGIN = {
   context: 'For context, careful manual logging typically misses 20% or more. Roughly right every day beats precise now and then.',
 } as const
 
-/** The Add food sheet */
+/** The Add food sheet (its scan entry points' words are N6's, in src/copy/scan.ts) */
 export const ADD_FOOD = {
   title: 'Add food',
   searchPlaceholder: (n: string) => `Search ${n} foods and your recipes`,
   searchLabel: 'Search foods',
-  scanBarcode: 'Scan barcode',
   yourRecipes: 'Your recipes',
   yourUsual: (meal: string) => `Your usual ${meal.toLowerCase()}`,
   oneTap: 'one tap',
@@ -67,10 +66,6 @@ export const ADD_FOOD = {
   eatingOut: 'Eating out? A quick estimate is better than nothing.',
   quickEstimate: 'Quick estimate',
   quickEstimateS: 'Restaurant or unknown food',
-  scanBarcodeS: 'Packaged food, from the pack',
-  scanBarcodeOffline: 'Works for products you’ve scanned before',
-  scanLabel: 'Scan the label',
-  scanLabelS: 'A photo of the nutrition table',
   createFood: 'Create a food',
   createFoodS: 'From the label on the packet',
 } as const
