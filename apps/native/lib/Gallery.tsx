@@ -15,7 +15,7 @@ import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
-import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -65,6 +65,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
   const [player, setPlayer] = useState(false)
   const [overSheet, setOverSheet] = useState(false)
+  const overlayOpen = useOverlayOpen()
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -332,7 +333,10 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
       </Sec>
 
       <Sec id="signposts" title="Signposts">
-        <Signposts list={supportList('england')} />
+        <View style={{ gap: 10 }}>
+          <Signposts list={supportList('england')} />
+          <Signposts list={G.beatLines} />
+        </View>
       </Sec>
 
       <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
@@ -416,10 +420,13 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
     </ScrollView>
     {/* Android's back closes an overlay sheet first, then the view (overlayBack) */}
     <Modal visible={player} animationType="none" onRequestClose={() => { if (!overlayBack()) setPlayer(false) }}>
-      <View style={{ flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 80, gap: 12 }}>
-        <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
-        <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
-        <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {/* the holder's own content, hidden from TalkBack while an overlay sheet is open */}
+        <View importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'} style={{ flex: 1, padding: 24, paddingTop: 80, gap: 12 }}>
+          <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
+          <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
+          <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+        </View>
         {overSheet && (
           <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
             <List icons><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>

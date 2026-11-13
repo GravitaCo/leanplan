@@ -355,7 +355,10 @@ export function Gallery() {
       </Sec>
 
       <Sec id="signposts" title="Signposts">
-        <Signposts list={supportList('england')} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Signposts list={supportList('england')} />
+          <Signposts list={G.beatLines} />
+        </div>
       </Sec>
 
       <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">

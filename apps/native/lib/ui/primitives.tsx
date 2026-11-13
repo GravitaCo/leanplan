@@ -8,9 +8,10 @@
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, BackHandler, StyleSheet, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { create } from 'zustand'
 import { useStore } from '@/store/store'
 import { useConnection } from '@/store/hooks'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
@@ -318,7 +319,9 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
     </>
   )
   const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
-  const rs: StyleProp<ViewStyle> = [s, style]
+  // a screen's spacing may raise the row's minimum height (.lib-row 64, .trow 76), never lower it
+  const own = StyleSheet.flatten(style)
+  const rs: StyleProp<ViewStyle> = [s, style, typeof own?.minHeight === 'number' && own.minHeight < (s.minHeight as number) ? { minHeight: s.minHeight } : null]
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
     : <View accessible={label != null} accessibilityLabel={label} style={rs}>{body}</View>
@@ -415,6 +418,17 @@ function useKeyboardUp() {
 
 /** Open overlay sheets' close functions, oldest first. */
 const overlays: (() => void)[] = []
+const useOverlayCount = create<{ n: number }>(() => ({ n: 0 }))
+
+/**
+ * True while an overlay sheet is open. A full-screen view that holds overlay sheets sets
+ * `importantForAccessibility={open ? 'no-hide-descendants' : 'auto'}` on its own content, so
+ * TalkBack can't reach the view behind the sheet (VoiceOver is kept out by the sheet itself),
+ * as the web's sheet is aria-modal.
+ */
+export function useOverlayOpen(): boolean {
+  return useOverlayCount((s) => s.n > 0)
+}
 
 /**
  * For a full-screen view that holds overlay sheets (the guided player's Modal): call it first in the
@@ -449,8 +463,9 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
     if (!overlay) return
     const close = () => closeRef.current()
     overlays.push(close)
+    useOverlayCount.setState({ n: overlays.length })
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { close(); return true })
-    return () => { sub.remove(); overlays.splice(overlays.indexOf(close), 1) }
+    return () => { sub.remove(); overlays.splice(overlays.indexOf(close), 1); useOverlayCount.setState({ n: overlays.length }) }
   }, [overlay])
   const body = (
     <>
@@ -477,7 +492,8 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
   // the web's .sheet-root is a fixed layer over the page (z-index 60): an overlay sheet is that layer
   // drawn inside whatever full-screen view holds it (the guided player's own Modal), not a new modal
   return overlay
-    ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, elevation: 60 }}>{body}</View>
+    // modal for VoiceOver: as the holder's last child, its siblings are the holder's own content
+    ? <View accessibilityViewIsModal style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, elevation: 60 }}>{body}</View>
     : <Modal transparent visible animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>{body}</Modal>
 }
 

@@ -117,13 +117,14 @@ export function Signposts({ list, support }: {
             <View style={{ flex: 1, minWidth: 0 }}>
               {name(s)}{desc(s)}
               {s.lines.map(([l, ln], j) => (
-                <Pressable key={l} accessibilityRole="link" accessibilityLabel={`${s.name}, ${l}: call ${ln}`} onPress={() => open(tel(ln))}
+                // each line ~29 pt drawn; the touch area reaches 44 (neighbours may share a few points)
+                <Pressable key={l} accessibilityRole="link" accessibilityLabel={`${s.name}, ${l}: call ${ln}`} onPress={() => open(tel(ln))} hitSlop={{ top: 8, bottom: 8 }}
                   style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8 }, j > 0 && { borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }]}>
                   <Text style={[tx(15), { color: t.label }]}>{l}</Text>{n(ln)}
                 </Pressable>
               ))}
               {s.web && (
-                <Pressable accessibilityRole="link" onPress={() => open(s.web!)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }}>
+                <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 8, bottom: 8 }} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }}>
                   <Text style={[tx(15), { color: t.label }]}>Webchat and email</Text>
                   <Text style={[tx(16, 600), { color: t.tint }]}>Open</Text>
                 </Pressable>
