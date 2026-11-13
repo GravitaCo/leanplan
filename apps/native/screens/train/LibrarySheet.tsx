@@ -23,7 +23,6 @@ import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, tx, useTokens } from '../../lib/theme'
 import { Foot } from '../../lib/ui/text'
-import { LIST_GAP, Li, LiText } from './pendingN1'
 import { Shade } from './gp'
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
@@ -62,10 +61,10 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         {x.targets?.length ? <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>Works on: {x.targets.map((tg) => TARGET_LABEL[tg]).join(', ')}</Foot> : null}
       </ExCard>
       {!x.video && (
-        <List style={LIST_GAP}><Row title="Watch how to do it" sub="Opens a video search" onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }} chevron={false} /></List>
+        <List style={{ marginBottom: 8 }}><Row title="Watch how to do it" sub="Opens a video search" onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }} chevron={false} /></List>
       )}
       {(easier || harder || gentler) && (
-        <List style={LIST_GAP}>
+        <List style={{ marginBottom: 8 }}>
           {easier && <Row title={easier.n} sub="Easier" onPress={() => onOpen(easier.id)} chevron={false} />}
           {harder && <Row title={harder.n} sub="Harder, when this feels steady" onPress={() => onOpen(harder.id)} chevron={false} />}
           {gentler && <Row title={gentler.n} sub="Gentler" onPress={() => onOpen(gentler.id)} chevron={false} />}
@@ -117,12 +116,10 @@ export function LibrarySheet({ onClose, initial, onPick }: {
         {LIB_KIT.map(([k, label]) => <Chip key={k} title={label} on={kit === k} onPress={() => setKit(kit === k ? null : k)} />)}
       </Chips></View>
       {list.length ? (
-        <List style={LIST_GAP}>
+        <List inset={72} style={{ marginBottom: 8 }}>
           {list.map((x) => (
-            <Li key={x.id} label={x.n} onPress={() => (onPick ? onPick(x.id) : setOpen([x.id]))} style={{ minHeight: 64 }}>
-              <Thumb video={x.video} play={!!x.video} />
-              <LiText t={x.n} s={`${MODALITY_LABEL[x.modality]} · ${LEVEL_LABEL[x.difficulty]}`} />
-            </Li>
+            <Row key={x.id} label={x.n} onPress={() => (onPick ? onPick(x.id) : setOpen([x.id]))} chevron={false} style={{ minHeight: 64 }}
+              lead={<Thumb video={x.video} play={!!x.video} />} title={x.n} sub={`${MODALITY_LABEL[x.modality]} · ${LEVEL_LABEL[x.difficulty]}`} />
           ))}
         </List>
       ) : (

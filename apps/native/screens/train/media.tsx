@@ -64,12 +64,16 @@ export function usePhBg(): string {
   return useColorScheme() === 'dark' ? t.elev : t.bg
 }
 
-export function Thumb({ video, shape, play, big }: { video?: ExerciseMedia; shape?: LogShape; play?: boolean; big?: boolean }) {
+export function Thumb({ video, shape, play, big, size }: {
+  video?: ExerciseMedia; shape?: LogShape; play?: boolean; big?: boolean
+  /** another screen's own size, e.g. Plan's week rows (`.wk-row .thumb`: 36 × 44, radius 8) */
+  size?: { width: number; height: number; radius: number }
+}) {
   const t = useTokens()
   const phBg = usePhBg()
   const { src, letterboxed, onError } = useClipPreview(video, true)
-  const w = big ? 52 : 44, h = big ? 64 : 44
-  const box = { width: w, height: h, borderRadius: 12, overflow: 'hidden' as const, backgroundColor: t.fill }
+  const w = size?.width ?? (big ? 52 : 44), h = size?.height ?? (big ? 64 : 44)
+  const box = { width: w, height: h, borderRadius: size?.radius ?? 12, overflow: 'hidden' as const, backgroundColor: t.fill }
   if (src) {
     // `.thumb img.lb`: 316.05% wide, centred, 25% down
     const lw = w * 3.1605, lh = lw * 180 / 320
@@ -152,6 +156,29 @@ export function ClipView({ player, poster, label }: { player: VideoPlayer; poste
         accessibilityLabel={label} onFirstFrameRender={() => setReady(true)} style={FILL} />
       {poster && !ready && !noPoster && <Still path={poster} onError={() => setNoPoster(true)} />}
     </>
+  )
+}
+
+/**
+ * A clip's poster filling its parent the way the web's `object-fit: cover; object-position: 50% 25%`
+ * does (Plan's workout hero, `.wv-hero img`): scaled to cover, centred across, a quarter of the
+ * overflow cut from the top. Sent with the Referer like every Bunny request. `onError` lets the
+ * caller fall back (the web's hero turns `.plain`).
+ */
+export function Poster({ path, onError }: { path: string; onError?: () => void }) {
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null)
+  const [img, setImg] = useState<{ w: number; h: number } | null>(null)
+  let style: ImageStyle = { position: 'absolute', width: '100%', height: '100%' }
+  if (box && img && img.w > 0 && img.h > 0) {
+    const k = Math.max(box.w / img.w, box.h / img.h)
+    const w = img.w * k, h = img.h * k
+    style = { position: 'absolute', width: w, height: h, left: (box.w - w) * 0.5, top: (box.h - h) * 0.25 }
+  }
+  return (
+    <View pointerEvents="none" style={[FILL, { overflow: 'hidden' }]} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      <Image source={imageSource(path)} onError={onError} resizeMode="cover" style={style} accessibilityIgnoresInvertColors
+        onLoad={(e) => { const s = e.nativeEvent.source; if (s?.width && s?.height) setImg({ w: s.width, h: s.height }) }} />
+    </View>
   )
 }
 
