@@ -8,3 +8,5 @@ export { RoutineBuilderSheet, type BuilderStart } from './RoutineBuilderSheet'
 export { LibrarySheet } from './LibrarySheet'
 export { DemoPlayer } from './DemoPlayer'
 export { Thumb } from './media'
+// for N12: is a guided session on screen, and the rest-end alert's scheduler
+export { guidedSessionOpen, onGuidedSession, setRestAlerter, type RestAlert, type RestAlerter } from './session'

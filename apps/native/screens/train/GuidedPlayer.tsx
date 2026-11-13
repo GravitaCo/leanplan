@@ -7,8 +7,11 @@
  * The same logic as the web, line for line; only the drawing is React Native.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AccessibilityInfo, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { AccessibilityInfo, AppState, Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
+import { cancelRestAlert, scheduleRestAlert, setGuidedSessionOpen } from './session'
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
@@ -42,11 +45,21 @@ const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
 
 /**
- * A short chime at the end of rest, only when sound is on. The web synthesises it with Web Audio;
- * the native app has no audio module yet (asked of the lead), so for now the vibration and the
- * announcement carry the end of rest.
+ * A short chime at the end of rest, only when sound is on: the web's own Web Audio chime, rendered
+ * to assets/sounds/chime.wav by make-chime.cjs (same note, envelope and length). It mixes with the
+ * person's music and respects the silent switch, as the web's does on an iPhone.
  */
-function chime() { /* needs an audio module: see the note above */ }
+let chimePlayer: AudioPlayer | null = null
+function chime() {
+  try {
+    if (!chimePlayer) {
+      setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers' }).catch(() => {})
+      chimePlayer = createAudioPlayer(require('../../assets/sounds/chime.wav'))
+    }
+    chimePlayer.seekTo(0).catch(() => {})
+    chimePlayer.play()
+  } catch { /* no audio */ }
+}
 
 /**
  * The demo's count for the current phase ("2 · of 3 · Lower slowly"). It follows the clip's own
@@ -164,6 +177,32 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   // a hold with its clip on screen (boards h2–h4): the timer runs over the clip, not in a sheet
   const [holdStart, setHoldStart] = useState<number | null>(null)
   useEffect(() => { setHoldStart(null) }, [slot.i, slot.shown.id, slot.shown.n])
+
+  // native (Benn, 13 Nov): the screen stays awake while the session is open (released when the player
+  // closes; the system ends it in the background), and N12 can see a session is in progress
+  useEffect(() => {
+    const tag = 'tilo-guided'
+    const on = activateKeepAwakeAsync(tag).catch(() => {})
+    setGuidedSessionOpen(true)
+    return () => {
+      setGuidedSessionOpen(false); cancelRestAlert()
+      // released after it has taken hold (releasing first throws on some platforms)
+      on.then(() => Promise.resolve(deactivateKeepAwake(tag))).catch(() => {})
+    }
+  }, [])
+  // the rest that keeps running in the background: an alert at its end, only while the app is away
+  const restLine = `${complete ? name : `Set ${setNo + 1} of ${slot.sets}, ${name}`}`
+  const restRef = useRef({ rest, restLine })
+  restRef.current = { rest, restLine }
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => {
+      const r = restRef.current
+      if (st === 'active') cancelRestAlert()
+      else if (st === 'background' && r.rest) scheduleRestAlert(r.rest.end, r.restLine)
+    })
+    return () => sub.remove()
+  }, [])
+  useEffect(() => { if (!rest) cancelRestAlert() }, [rest])
 
   // one clock for the elapsed time and the rest countdown (device clock: works offline)
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(i) }, [])

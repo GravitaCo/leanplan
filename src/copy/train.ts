@@ -62,3 +62,13 @@ export const SUPPORT_LINES: [string, string, string][] = [
 
 /** The library's kit filters: the few that decide most of what someone can do. */
 export const LIB_KIT: [Equipment | 'none', string][] = [['none', 'No equipment'], ['dumbbell', 'Dumbbells'], ['band', 'Band'], ['mat', 'Mat'], ['machine', 'Gym machines']]
+
+/**
+ * The rest-end notification when the app is in the background during a guided session (native
+ * only; Benn approved the background rest timer on 13 Nov, relayed by the lead). The body is the
+ * web's own "Rest over" announcement. Pending mental-performance's review of the wording.
+ */
+export const REST_ALERT = {
+  title: 'Rest over',
+  body: (next: string) => `${next}.`,
+}
