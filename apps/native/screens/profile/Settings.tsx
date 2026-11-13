@@ -19,9 +19,9 @@ import { TimeField } from '../../lib/ui/pickers'
 import { PILLARS_COPY as PC } from '@/copy/pillars'
 import { NOTIFY_COPY as NC, backoffLine } from '@/copy/notify'
 import { atRiskRoute, offAfter, pillarsOnList } from '@/screens/profile/profileModel'
-import { tx, useTokens, type Tokens } from '../../lib/theme'
-import { Foot, Lbl } from '../../lib/ui/text'
-import { Banner, Btn, LinkBtn, List } from '../../lib/ui/kit'
+import { useTokens, type Tokens } from '../../lib/theme'
+import { Foot, Lbl, TextLink } from '../../lib/ui/text'
+import { Banner, Btn, List } from '../../lib/ui/kit'
 import { Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
 import type { IconName } from '../../lib/ui/icons'
 import { pushReady } from './n12'
@@ -54,13 +54,7 @@ export function PillarsSettings({ onDisplay, onSupport }: { onDisplay: () => voi
       </List>
       <Foot>{foodOff && on.length > 1 ? PC.foodOff : PC.foot}</Foot>
       {foodOff && atRiskRoute({ gentle, outcomes }) && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', paddingTop: 7, paddingHorizontal: 16 }}>
-          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.lead}</Foot>
-          <LinkBtn title={PC.hard.display} onPress={onDisplay} style={[tx(13, 400, 1.38), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
-          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.mid}</Foot>
-          <LinkBtn title={PC.hard.support} onPress={onSupport} style={[tx(13, 400, 1.38), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
-          <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>{PC.hard.end}</Foot>
-        </View>
+        <Foot>{PC.hard.lead}<TextLink onPress={onDisplay}>{PC.hard.display}</TextLink>{PC.hard.mid}<TextLink onPress={onSupport}>{PC.hard.support}</TextLink>{PC.hard.end}</Foot>
       )}
       <Lbl>{PC.asksHeading}</Lbl>
       <List style={{ paddingVertical: 12, paddingHorizontal: 16 }}>

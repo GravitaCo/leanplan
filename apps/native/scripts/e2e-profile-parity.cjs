@@ -141,7 +141,11 @@ async function row(page, label) {
     let best = el, cur = el.parentElement
     while (cur && cur.getBoundingClientRect().height < 96 && cur.innerText.split('\n').filter(Boolean).length <= 4) { best = cur; cur = cur.parentElement }
     const sw = best.querySelector('[role="switch"], input[type="checkbox"]')
-    const swState = sw ? ` [switch ${(sw.checked ?? sw.getAttribute('aria-checked') === 'true') ? 'on' : 'off'}${sw.disabled || sw.getAttribute('aria-disabled') === 'true' ? ', disabled' : ''}]` : ''
+    // a web checkbox, a switch with aria-checked, or (N1's Toggle in react-native-web, which renders no
+    // aria-checked) its track in the light tint rgb(154, 74, 122)
+    const isOn = (e) => e.type === 'checkbox' ? e.checked : e.hasAttribute('aria-checked') ? e.getAttribute('aria-checked') === 'true'
+      : getComputedStyle(e.firstElementChild || e).backgroundColor === 'rgb(154, 74, 122)'
+    const swState = sw ? ` [switch ${isOn(sw) ? 'on' : 'off'}${sw.disabled || sw.getAttribute('aria-disabled') === 'true' ? ', disabled' : ''}]` : ''
     return best.innerText.replace(/\s*\n\s*/g, ' | ').trim() + swState
   }, label)
 }
@@ -178,7 +182,24 @@ async function suggestion(page) {
 }
 
 /** The values in the open section's fields, in order (Daily targets). */
-const inputs = (page) => page.evaluate(() => [...document.querySelectorAll('input:not([type=file]):not([type=checkbox]), textarea')].filter((e) => e.getClientRects().length && !e.closest('[role=switch]')).map((e) => e.value))
+// the web's time inputs (Your times) are excluded: native's TimeField is a button that opens the wheels
+const inputs = (page) => page.evaluate(() => [...document.querySelectorAll('input:not([type=file]):not([type=checkbox]):not([type=time]), textarea')].filter((e) => e.getClientRects().length && !e.closest('[role=switch]')).map((e) => e.value))
+
+/** A time: the web's <input type=time>; native's TimeField opens its picker sheet, which in a web
+ *  render (no native wheels) is a typed HH:MM field, then Done. */
+async function setTime(page, native, label, v) {
+  if (!native) {
+    // Your times' inputs are labelled (<label for>); the supplement form's time input isn't, so find it by type
+    const byLabel = page.getByLabel(label, { exact: true })
+    await ((await byLabel.count()) ? byLabel.last() : page.locator('input[type=time]').first()).fill(v)
+    return
+  }
+  await page.getByRole('button', { name: label, exact: true }).last().click()
+  const field = page.getByRole('textbox', { name: label, exact: true }).last()
+  await field.fill(v)
+  await page.getByText('Done', { exact: true }).last().click()
+  await page.waitForTimeout(250)
+}
 
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1')))
 
@@ -305,11 +326,12 @@ async function main() {
     await press(p, 'Accuracy'); await p.getByRole('radio', { name: 'Relaxed' }).click(); await press(p, 'Accuracy')
   }, async (p) => { const s = await stored(p); return { diet: s.profile.diet, acc: s.profile.accuracy, d: await row(p, 'Diet'), a: await row(p, 'Accuracy') } })))
 
-  await run('supplement add and delete', async () => same('Supplements: add and delete store the same list', await both(SCENARIOS.standard, async (p) => {
+  await run('supplement add and delete', async () => same('Supplements: add and delete store the same list', await both(SCENARIOS.standard, async (p, native) => {
     await press(p, 'Supplements')
     await p.getByText('Add supplement', { exact: true }).click()
     const f = p.locator('input:not([type=file]):not([type=checkbox])')
-    await f.nth(0).fill('Omega 3'); await f.nth(1).fill('07:15')
+    await f.nth(0).fill('Omega 3')
+    await setTime(p, native, 'Time', '07:15')
     await p.getByText('Add', { exact: true }).click()
     await p.getByText('Delete', { exact: true }).first().click()
   }, async (p) => (await stored(p)).profile.supplements.map((s) => s.name + ' ' + s.time))))
@@ -328,8 +350,7 @@ async function main() {
 
   // wp17 (settings side): Your times are shown and saved; on the phone no reminder switch moves
   await run('wp17 times', async () => same('wp17: Your times show the same and a new wake time is stored', await both(SCENARIOS['reminders on (wp17)'], async (p, native) => {
-    const f = p.getByLabel('Usually up around', { exact: true })
-    if (native) await f.fill('07:05'); else await f.fill('07:05')
+    await setTime(p, native, 'Usually up around', '07:05')
   }, async (p) => { const m = (await stored(p)).profile.mind; return { wake: m.wakeAt, wind: m.windDownAt } })))
   await run('wp17 no push on the phone', async () => {
     const { w, n, close } = await pair(browser, SCENARIOS['reminders on (wp17)'])
