@@ -260,7 +260,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         <Icon name="search" size={17} />
         <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))}
           autoComplete="off" enterKeyHint="search" aria-label={ADD_FOOD.searchLabel} />
-        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label={ADD_FOOD.scanBarcode}><Icon name="barcode" size={20} /></button>
+        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label="Scan barcode"><Icon name="barcode" size={20} /></button>
       </div>
       <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>
       {body}
@@ -271,19 +271,19 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         </button>
         <button className="li" onClick={() => go({ kind: 'scan' })}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
-          <div className="m"><div className="t">{ADD_FOOD.scanBarcode}</div><div className="s">{online ? ADD_FOOD.scanBarcodeS : ADD_FOOD.scanBarcodeOffline}</div></div><Chevron />
+          <div className="m"><div className="t">Scan barcode</div><div className="s">{online ? 'Packaged food, from the pack' : 'Works for products you’ve scanned before'}</div></div><Chevron />
         </button>
         {LABEL_SCAN_ENABLED && (
           online ? (
             <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
               <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">{ADD_FOOD.scanLabel}</div><div className="s">{ADD_FOOD.scanLabelS}</div></div><Chevron />
+              <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
             </button>
           ) : (
             // online only (ob6-8): shown, off, with the note
             <div className="li needsnet" aria-disabled="true">
               <span className="ico" style={{ background: 'var(--fill2)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">{ADD_FOOD.scanLabel}</div><div className="s">{NEEDS_NET}</div></div>
+              <div className="m"><div className="t">Scan the label</div><div className="s">{NEEDS_NET}</div></div>
             </div>
           )
         )}
