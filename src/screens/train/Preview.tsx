@@ -7,29 +7,21 @@ import { FIRST_SESSION } from '../onboarding/copyApp'
 import { WORKOUTS, SWAPS, type SwapId } from '@/core/data/workouts'
 import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { shorterPrescription, type ShorterKind } from '@/core/domain/dayOptions'
-import { exById, fmtSet } from '@/core/domain/library'
-import { fmtTarget, lastTime, parseRx, readyToStepUp, setCount, setsLine, splitLogged, targetFor, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { exById } from '@/core/domain/library'
+import { setCount, warmupSlot, working, type Slot } from '@/core/domain/guided'
 import { careList } from '@/core/data/libraryLabels'
 import { BackButton, TitleRow } from '@/ui/primitives'
-import { CARE_DISCLAIMER, SwapSheet } from './SwapSheet'
-import { RED_FLAG } from './HoldTimer'
+import { SwapSheet } from './SwapSheet'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './Thumb'
-import { bareName, warmupCopy } from './GuidedPlayer'
 import { WarmupCard } from './WarmupCard'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
-import { HARD_DAY_COPY, easierAim, swapTile } from './hardDay'
+import { HARD_DAY_COPY, swapTile } from './hardDay'
+import { CHOICES, RED_FLAG, CARE_DISCLAIMER, warmupCopy, type Choice } from '@/copy/train'
+import { bareName, previewRows } from './trainModel'
 
-/**
- * Day-of choices (plan §0.2): equal options, the planned session always one tap away. With
- * WELLBEING_ENABLED (board B3) there are three: As planned, Shorter and 'swap', the day-matched
- * swap (hardDay.swapForWorkout); without it, today's four.
- */
-export type Choice = 'planned' | 'shorter' | 'mobility' | 'walk' | 'swap'
-export const CHOICES: [Choice, string][] = WELLBEING_ENABLED
-  ? [['planned', 'As planned'], ['shorter', 'Shorter'], ['swap', 'Swap']]
-  : [['planned', 'As planned'], ['shorter', 'Shorter'], ['mobility', '10-min mobility'], ['walk', 'Easy walk']]
+export { CHOICES, type Choice } from '@/copy/train'
 
 /**
  * Session preview (Flow 1 step 2): the version for today, the exercise list with what to aim
@@ -89,22 +81,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   const [mins, setMins] = useState(cardioS?.mins != null ? String(cardioS.mins) : '')
   const [walkMins, setWalkMins] = useState('')
 
-  const rows = useMemo(() => {
-    const { bySlot } = splitLogged(session?.ex, slots)
-    return slots.map((s) => {
-      const last = lastTime(days, cur, s.x?.id, s.shown.n, s.fullRx)
-      const mine = working(bySlot[s.i])
-      const t = targetFor(s.shape, s.rx, last, 0, [], { shorter: shorterKind })
-      // a passive hint only, never on a shorter day, and nothing changes by itself
-      const up = !shorter && !mine.length && readyToStepUp(last, s.fullRx) ? ' · Top of the range last time: try a little more weight if it felt steady' : ''
-      const reps = parseRx(s.rx).reps
-      const detail = mine.length ? `Logged: ${setsLine(mine, s.shape)}`
-        : easier && reps && (s.shape === 'weight-reps' || s.shape === 'reps') ? easierAim(reps, t?.w, 'easier', !!t?.assist)
-        : t && (s.shape === 'weight-reps' || s.shape === 'reps') ? `Aim for ${fmtTarget(t, s.shape)}${up}`
-        : last ? `Last time: ${last.sets.map((r) => fmtSet(r, last.log ?? s.shape)).filter(Boolean).join(', ')}` : ''
-      return { s, detail, done: mine.length }
-    })
-  }, [slots, days, cur, session, shorter, shorterKind, easier])
+  const rows = useMemo(() => previewRows(slots, days, cur, session, shorter, shorterKind), [slots, days, cur, session, shorter, shorterKind])
 
   const sub = swap
     ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`

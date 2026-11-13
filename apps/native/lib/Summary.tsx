@@ -41,7 +41,7 @@ import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from '@/copy/summary'
 import { useLowMoodSignpost } from '@/screens/today/lowMoodSignpost'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { Banner, Btn, Card, Chip, Chips, LinkBtn, List, Tile } from './ui/kit'
-import { CatHead, PageHeader, Row } from './ui/primitives'
+import { AddC, CatHead, PageHeader, Row } from './ui/primitives'
 import { Foot, Lbl } from './ui/text'
 import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
@@ -365,7 +365,7 @@ function SummaryPage() {
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               {pk(t.foodInk, 'Food')}
-              <LinkBtn title="Open" onPress={() => setTab('food')} />
+              <LinkBtn title="Open" onPress={() => setTab('food')} style={font(500)} />
             </View>
             {yes ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
@@ -378,7 +378,7 @@ function SummaryPage() {
                   <Text style={[tx(22, 600), { color: t.label }, { lineHeight: 26 }]}>{st.gentle}</Text>
                   <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{FOOD9.slots(mw.slots, mw.withProtein)}</Text>
                 </Pressable>
-                {!p.pregnancy?.flagged && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={{ fontSize: 14, paddingVertical: 0, paddingHorizontal: 0 }} /></View>}
+                {!p.pregnancy?.flagged && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={[font(500), { fontSize: 14, paddingVertical: 0, paddingHorizontal: 0 }]} /></View>}
               </View>
             ) : (
               <>
@@ -427,18 +427,10 @@ function SummaryPage() {
           <View>
             <Lbl>Your usual {MEAL_LABEL[meal].toLowerCase()}</Lbl>
             <List style={{ marginBottom: 8 }}>
-              {same && (
-                <Pressable accessibilityRole="button" onPress={() => repeatYesterday(meal)} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{SAME_AS_YESTERDAY}</Text>
-                    <Text style={[tx(13, 400), { color: t.label2 }, [num, { marginTop: 2, lineHeight: 18 }]]}>{same.sub}</Text>
-                  </View>
-                  <AddCircle />
-                </Pressable>
-              )}
+              {same && <Row onPress={() => repeatYesterday(meal)} title={SAME_AS_YESTERDAY} sub={same.sub} wrapSub right={<AddC />} />}
               {us.map((u) => (
                 <Row key={u.n} onPress={() => logEntries(usualEntries(data, u.n, meal))} title={u.n}
-                  sub={`${portionText(u.last)}${gentle ? '' : ` · ${fmt(u.last.k)} kcal`}`} right={<AddCircle />} />
+                  sub={`${portionText(u.last)}${gentle ? '' : ` · ${fmt(u.last.k)} kcal`}`} right={<AddC />} />
               ))}
             </List>
             {us.length > 0 && <Foot>Logged {us[0].count} times recently. One tap adds your usual portion.</Foot>}
@@ -556,14 +548,4 @@ function SummaryPage() {
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} onSupport={openSupport} />}
     </View>
   )
-}
-
-/** `.li` for the Same as yesterday row, whose sub wraps (`.s.wrap`). TODO(N1-followup): N1's Row
- *  with a wrapping sub (P1b), then this goes. */
-const LI = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 } as const
-
-/** `.addc` */
-function AddCircle() {
-  const t = useTokens()
-  return <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={20} stroke={2.8} color={t.tint} /></View>
 }
