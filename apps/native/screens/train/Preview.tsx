@@ -157,7 +157,8 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {warm && <WarmupCard block={warm} />}
           <ExCard n={WORKOUTS.Cardio.ex[0].n} tg={shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t} cue={WORKOUTS.Cardio.ex[0].cue} />
-          <List style={{ marginBottom: 8 }}>
+          {/* no 8 below: on the web it collapses into the stack's 16 above */}
+          <List>
             <FRow label="Type" right={<Select row label="Type" value={cardioType} onChange={setCardioType} options={(CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]).map((o) => [o, o] as const)} />} />
             <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder="25" onChangeText={setMins} />
           </List>
