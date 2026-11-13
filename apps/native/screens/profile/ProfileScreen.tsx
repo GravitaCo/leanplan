@@ -4,7 +4,6 @@
  * You and your goal; the pillars and asks (WELLBEING_ENABLED); Tracking; Weekly review;
  * Notifications (the screen only: push is N12); Account and data; Testing; About and Privacy;
  * Sign out. N2's flows (consent, withdraw, delete, export, import) sit behind ./n2.
- * Pieces N1 hasn't built yet render nothing and say so: TODO(N1-followup).
  *
  * `onOpenTab` takes Training's row to Plan; without it the store's tab is set, as on the web.
  */
@@ -12,7 +11,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, DietPattern } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, DietPattern, Sex } from '@/core/types'
+import { ACTIVITY } from '@/core/data/constants'
 import { DIETS } from '@/core/domain/diet'
 import { fmt, todayStr } from '@/core/domain/date'
 import { HELD_AT_MAINTENANCE_NOTE, PROTEIN_EVERYDAY_NOTE, suggestedTargets } from '@/core/domain/nutrition'
@@ -38,6 +38,8 @@ import { Btn, Card, Chip, Chips, LinkBtn, List, initials as initialsOf } from '.
 import { Disclosure, PageHeader, Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { Field, Input } from '../../lib/ui/fields'
+import { Select } from '../../lib/ui/controls'
+import { TimeField } from '../../lib/ui/pickers'
 import { FLAT_FOOT, NOTE, PROSE } from './text'
 import { BackoffNotices, MindReminderRows, PillarsSettings, SuppNamesRow, YourTimes } from './Settings'
 import { HealthAnswersScreen } from './HealthAnswers'
@@ -140,7 +142,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
 
   const [name, setName] = useState(pr.name || '')
   const [emailField, setEmailField] = useState(email || '')
-  const [metrics, setMetrics] = useState({ age: pr.age?.toString() || '', height: pr.height?.toString() || '', weight: foodView(pr).weightBack ? weight?.toString() || '' : '' })
+  const [metrics, setMetrics] = useState({
+    sex: pr.sex, activityLevel: pr.activityLevel, age: pr.age?.toString() || '', height: pr.height?.toString() || '', weight: foodView(pr).weightBack ? weight?.toString() || '' : '' })
   const [targets, setTargets] = useState({
     kcal: data.target.kcal.toString(), p: data.target.p.toString(), c: data.target.c.toString(), f: data.target.f.toString(),
     range: rangeWidth(pr).toString(),
@@ -211,12 +214,25 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <List icons>
           <Disclosure soft icon="scale" color={FOODF} label={P.body.row} value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
             open={open === 'metrics'} onToggle={() => toggle('metrics')}>
-            {/* TODO(N1-followup) item 2, selects: Sex (P.body.male, P.body.female) and Activity level (ACTIVITY labels), presented as iOS presents a select; until then they keep the stored values */}
-            <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.agePh} keyboardType="number-pad" /></Field></View><View style={{ flex: 1 }} /></View>
-            <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.heightPh} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.weightPh} keyboardType="decimal-pad" /></Field></View></View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.sex}><Select<Sex> label={P.body.sex} value={metrics.sex} options={[['M', P.body.male], ['F', P.body.female]]} onChange={(v) => setMetrics({ ...metrics, sex: v })} /></Field></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.agePh} keyboardType="number-pad" /></Field></View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.heightPh} keyboardType="number-pad" /></Field></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.weightPh} keyboardType="decimal-pad" /></Field></View>
+            </View>
+            <Field label={P.body.activity}>
+              <Select<ActivityLevel> label={P.body.activity} value={metrics.activityLevel} options={(Object.keys(ACTIVITY) as ActivityLevel[]).map((k) => [k, ACTIVITY[k].label] as const)} onChange={(v) => setMetrics({ ...metrics, activityLevel: v })} />
+            </Field>
             {/* 18+: checked on Save, never while typing; an under-18 age saves nothing and the app's stop shows (store) */}
             <Btn kind="gray" title={P.body.save} onPress={() => saveProfileMetrics({
-              age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null, ...weightPatch(metrics.weight),
+              sex: metrics.sex, age: parseInt(metrics.age) || null, height: parseInt(metrics.height) || null,
+              ...weightPatch(metrics.weight), activityLevel: metrics.activityLevel,
+              // choosing a level yourself starts the suggestion's cool-down and replaces the onboarding multiplier
+              ...(metrics.activityLevel !== pr.activityLevel ? { activityAsked: todayStr(), activityMult: undefined } : {}),
+              // picking Male or Female here is a real answer; leaving it keeps the onboarding one
+              ...(metrics.sex !== pr.sex ? { sexAnswer: metrics.sex === 'M' ? 'male' as const : 'female' as const } : {}),
             })} />
             <Lbl style={{ paddingLeft: 0 }}>{P.body.mainGoal}</Lbl>
             <Chips>{GOALS.map((g) => <Chip key={g.value} title={g.label} on={pr.goal === g.value} onPress={() => saveProfileMetrics({ goal: g.value })} />)}</Chips>
@@ -295,7 +311,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             {suppForm ? (
               <View style={{ paddingTop: 10 }}>
                 <Field label={P.supps.name}><Input label={P.supps.name} value={suppForm.name} placeholder={P.supps.namePh} onChangeText={(v) => setSuppForm({ ...suppForm, name: v })} /></Field>
-                {/* TODO(N1-followup) item 2, the TimePicker: P.supps.time editing suppForm.time (a new one starts at 08:00) */}
+                <Field label={P.supps.time}><TimeField label={P.supps.time} value={suppForm.time} onChange={(v) => setSuppForm({ ...suppForm, time: v })} start="08:00" /></Field>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <View style={{ flex: 1 }}><Btn title={suppForm.id ? P.supps.update : P.supps.add} onPress={() => {
                     if (!suppForm.name || !suppForm.time) return

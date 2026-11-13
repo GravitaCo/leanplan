@@ -9,11 +9,12 @@ import { Linking, Platform, Text, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import Constants from 'expo-constants'
 import { useStore } from '@/store/store'
-import { FEEDBACK_AREAS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers, type FeedbackRating } from '@/core/domain/feedback'
+import { FEEDBACK_AREAS, FEEDBACK_RATINGS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers, type FeedbackRating } from '@/core/domain/feedback'
 import { FEEDBACK as F } from '@/copy/profile'
 import { num, tx, useTokens } from '../../lib/theme'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Input } from '../../lib/ui/fields'
+import { Scale } from '../../lib/ui/controls'
 import { PROSE } from './text'
 import { Btn, Card } from '../../lib/ui/kit'
 import { BackButton, Sheet } from '../../lib/ui/primitives'
@@ -67,7 +68,8 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
         <View>
           <Text style={q}>{area.question}</Text>
           <Foot style={hint}>{area.hint}</Foot>
-          {/* TODO(N1-followup): the `.scale` rating radios (FEEDBACK_RATINGS, tap again to clear) setting a.areas[area.id].rating (src/screens/profile/FeedbackSheet.tsx) */}
+          <Scale role="radio" label={area.question} cols={4} items={FEEDBACK_RATINGS.map((r) => ({ key: r, text: r }))} value={cur.rating}
+            onPick={(r) => setArea({ rating: cur.rating === r ? undefined : r })} />
           <Lbl style={{ paddingHorizontal: 4 }}>{F.note}</Lbl>
           <Input label={F.note} multiline numberOfLines={4} value={cur.note ?? ''} placeholder={F.optional} onChangeText={(v) => setArea({ note: v })} style={{ minHeight: 110 }} />
         </View>

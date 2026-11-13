@@ -36,10 +36,9 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={P.hands.title} onClose={onClose} right={<NavBtn title={P.hands.save} bold onPress={save} />}>
       <Sub style={[PROSE, { paddingHorizontal: 4, paddingBottom: 12 }]}>{P.hands.lead}</Sub>
-      {/* TODO(N1-followup): FRow has no slot for the 13 pt hint under each label (HANDS[k].hint on the web) */}
       <List>
         {types.map((k) => (
-          <FRow key={k} label={HANDS[k].label} unit={P.hands.unit} keyboardType="number-pad" value={vals[k]} onChangeText={(v) => setVals({ ...vals, [k]: v })} />
+          <FRow key={k} label={HANDS[k].label} hint={HANDS[k].hint} unit={P.hands.unit} keyboardType="number-pad" value={vals[k]} onChangeText={(v) => setVals({ ...vals, [k]: v })} />
         ))}
       </List>
     </Sheet>

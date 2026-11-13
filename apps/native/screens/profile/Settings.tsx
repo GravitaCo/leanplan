@@ -12,7 +12,10 @@ import type { NotifyKind, Pillar } from '@/core/types'
 import { useStore } from '@/store/store'
 import { NOTIFY_KINDS, PILLARS } from '@/core/domain/checkin'
 import { backoffDismissed } from '@/data/deviceOnly'
-import { kindTimes } from '../../../../supabase/functions/_shared/reminders'
+import { isHHMM, kindTimes, usualTimes } from '../../../../supabase/functions/_shared/reminders'
+import { healthLoggingAllowed } from '@/data/consent'
+import { FRow } from '../../lib/ui/fields'
+import { TimeField } from '../../lib/ui/pickers'
 import { PILLARS_COPY as PC } from '@/copy/pillars'
 import { NOTIFY_COPY as NC, backoffLine } from '@/copy/notify'
 import { atRiskRoute, offAfter, pillarsOnList } from '@/screens/profile/profileModel'
@@ -98,11 +101,22 @@ export function SuppNamesRow() {
 
 /** B11.9 to B11.12: "Your times" and the foot. */
 export function YourTimes() {
+  const data = useStore((s) => s.data)
+  const setMindPrefs = useStore((s) => s.setMindPrefs)
+  const times = usualTimes(data.profile.mind)
+  // health data: not editable while health logging is off
+  const allowed = healthLoggingAllowed(data)
+  const save = (k: 'wakeAt' | 'windDownAt', v: string) => {
+    if (v === '') setMindPrefs({ [k]: null })
+    else if (isHHMM(v)) setMindPrefs({ [k]: v })
+  }
   return (
     <>
       <Lbl>{NC.timesHeading}</Lbl>
-      {/* TODO(N1-followup) items 1 and 2, `.frow` with the TimePicker: NC.wakeAt and NC.windDownAt from usualTimes(mind), disabled unless
-          healthLoggingAllowed(data); '' saves null, a valid HH:MM saves it (src/screens/profile/NotificationsSettings.tsx YourTimes) */}
+      <List>
+        <FRow label={NC.wakeAt} right={<TimeField muted label={NC.wakeAt} value={times.wakeAt} disabled={!allowed} onChange={(v) => save('wakeAt', v)} />} />
+        <FRow label={NC.windDownAt} right={<TimeField muted label={NC.windDownAt} value={times.windDownAt} disabled={!allowed} onChange={(v) => save('windDownAt', v)} />} />
+      </List>
       <Foot>{NC.foot}</Foot>
     </>
   )
