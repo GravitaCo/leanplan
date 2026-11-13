@@ -20,6 +20,7 @@ import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
 import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
@@ -79,7 +80,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
   const setTab = useStore((s) => s.setTab)
   const ini = initials(name || '')
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onPress ?? (() => setTab('profile'))}
+    <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
         {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
@@ -145,7 +146,7 @@ export function CatHead({ color, icon, label }: { color: Category; icon: IconNam
 }
 
 /** `.navbtn` with a back chevron: tinted, 17 pt. `small` is `.del .navbtn` (16 pt medium, 6 pt further left). */
-export function BackButton({ onPress, label = 'Back', small }: { onPress: () => void; label?: string; small?: boolean }) {
+export function BackButton({ onPress, label = UI.back, small }: { onPress: () => void; label?: string; small?: boolean }) {
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
@@ -524,7 +525,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, overl
   const t = useTokens()
   const header = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 10 }}>
-      <View style={{ flex: 1, alignItems: 'flex-start' }}>{left === undefined ? <NavBtn title="Cancel" onPress={onClose} /> : left}</View>
+      <View style={{ flex: 1, alignItems: 'flex-start' }}>{left === undefined ? <NavBtn title={UI.cancel} onPress={onClose} /> : left}</View>
       <Text accessibilityRole="header" numberOfLines={1} style={[tx(17, 600), { color: t.label, textAlign: 'center', maxWidth: 210 }]}>{title}</Text>
       <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
     </View>

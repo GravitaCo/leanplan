@@ -10,6 +10,7 @@ import { DateWheel } from '../../modules/tilo-pickers'
 import { Input } from './fields'
 import { NavBtn, Sheet } from './primitives'
 import { num, tx, BTN, useTokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 export type PickMode = 'time' | 'date'
 
@@ -38,7 +39,7 @@ export function PickerSheet({ mode, value, start, min, max, label, onDone, onClo
   const ok = validPick(mode, v, min, max)
   const done = () => { if (ok) { onDone(v); onClose() } }
   return (
-    <Sheet title={label} onClose={onClose} right={<NavBtn bold title="Done" disabled={!ok} onPress={done} />}>
+    <Sheet title={label} onClose={onClose} right={<NavBtn bold title={UI.done} disabled={!ok} onPress={done} />}>
       {DateWheel ? (
         <View style={{ alignItems: 'center' }}>
           {/* the wheels' own height (216 pt, as UIKit draws them) */}

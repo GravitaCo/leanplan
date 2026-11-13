@@ -11,6 +11,7 @@ import type { DayStat } from '@/core/domain/insights'
 import { DOW } from '@/core/domain/date'
 import { BODY_TRACK, num, tx, useTokens, GEIST } from '../theme'
 import { InPCard } from './kit'
+import { UI } from '@/copy/ui'
 
 /** Concentric rings, outermost first. Progress caps at a full ring: never an "over" state. */
 export function Rings({ items, size, stroke }: { items: { pct: number; color: string }[]; size: number; stroke?: number }) {
@@ -86,7 +87,7 @@ export function MacroTrio({ p, c, f, tp, tc, tf }: { p: number; c: number; f: nu
   )
   return (
     <View style={{ flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 14 }}>
-      {col('Protein', p, tp)}{col('Carbs', c, tc)}{col('Fat', f, tf)}
+      {col(UI.protein, p, tp)}{col(UI.carbs, c, tc)}{col(UI.fat, f, tf)}
     </View>
   )
 }
