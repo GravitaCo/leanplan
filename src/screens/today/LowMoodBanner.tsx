@@ -39,24 +39,35 @@ const session = { day: '', dismissed: false }
 
 /**
  * Whether the banner shows now. `due`: the asks budget shows the signpost today. `shownOn`: the
- * stored device-only day it last showed. It shows when due and not yet marked for today (then it
- * is marked once, with the local date), or when it already showed in this session and wasn't
- * dismissed. Once marked, lowMoodDue keeps it away for 30 days.
+ * stored device-only day it last showed. It shows when due and not yet marked for today, or when it
+ * already showed in this session and wasn't dismissed. This hook only reads: it never marks. The
+ * marking happens in LowMoodSignpost when the banner is actually on screen, so a render path that
+ * never draws Summary (the weekly review opened by ?review=1) cannot use up the signpost's 30 days.
  */
-export function useLowMoodSignpost(due: boolean, today: string, shownOn: string | undefined, markShown: () => boolean) {
+export function useLowMoodSignpost(due: boolean, today: string, shownOn: string | undefined) {
   const [, rerender] = useState(0)
   const fresh = due && shownOn !== today
-  useEffect(() => {
-    if (!fresh || session.day === today) return
-    session.day = today
-    session.dismissed = false
-    markShown()
-    rerender((n) => n + 1)
-  }, [fresh, today]) // eslint-disable-line react-hooks/exhaustive-deps
   const here = session.day === today
   const show = due && !(here && session.dismissed) && (fresh || here)
   return {
     show,
     dismiss: () => { session.dismissed = true; rerender((n) => n + 1) },
   }
+}
+
+/** The banner plus its one write: on mount (it is really drawn), the first time this page session
+ *  that day, record the local date it showed. Mount only happens where Summary renders it. */
+export function LowMoodSignpost({ today, markShown, onSupport, onDismiss }: {
+  today: string
+  markShown: () => boolean
+  onSupport: () => void
+  onDismiss: () => void
+}) {
+  useEffect(() => {
+    if (session.day === today) return
+    session.day = today
+    session.dismissed = false
+    markShown()
+  }, [today]) // eslint-disable-line react-hooks/exhaustive-deps
+  return <LowMoodBanner onSupport={onSupport} onDismiss={onDismiss} />
 }
