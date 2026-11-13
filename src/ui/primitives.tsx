@@ -4,6 +4,7 @@ import { Icon, Chevron, type IconName } from './icons'
 import { ConnectionLine, ConnectionPill } from './ConnectionPill'
 import { ProfileButton } from './ProfileButton'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { UI } from '@/copy/ui'
 
 /** Category colour keys — each maps to --{key} and --{key}-ink tokens. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
@@ -151,7 +152,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
       <div className={'sheet' + (tall ? ' tall' : '')} role="dialog" aria-modal="true" aria-label={title} style={animate ? undefined : { animation: 'none' }}>
         <div className="grabber" />
         <div className="sheet-hd">
-          <div>{left === undefined ? <button className="navbtn" onClick={onClose}>Cancel</button> : left}</div>
+          <div>{left === undefined ? <button className="navbtn" onClick={onClose}>{UI.cancel}</button> : left}</div>
           <div className="sh-t">{title}</div>
           <div className="sh-r">{right}</div>
         </div>
@@ -161,7 +162,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
   )
 }
 
-export function BackButton({ onClick, label = 'Back' }: { onClick: () => void; label?: string }) {
+export function BackButton({ onClick, label = UI.back }: { onClick: () => void; label?: string }) {
   return (
     <button className="navbtn" onClick={onClick}>
       <Icon name="chevL" size={20} stroke={2.6} />

@@ -23,6 +23,8 @@ import { Ticks } from '@/screens/onboarding/Consent'
 import { Signposts } from '@/screens/onboarding/Signposts'
 import { supportList } from '@/screens/profile/supportRows'
 import { G } from '../../lib/galleryData'
+import { frac } from '@/core/domain/estimate'
+import heroUrl from '../../assets/auth-hero.jpg'
 
 const MARK_PATH = 'M123.57.33c-17.27,0-31.27,14-31.27,31.27s14,31.27,31.27,31.27,31.27-14,31.27-31.27S140.85.33,123.57.33ZM123.57,45.88c-7.87,0-14.27-6.4-14.27-14.27s6.4-14.27,14.27-14.27,14.27,6.4,14.27,14.27-6.4,14.27-14.27,14.27ZM65.63,28.52V.33h-17v28.19c0,18.59,15.13,33.72,33.72,33.72h9.95v-17h-9.95c-9.22,0-16.72-7.5-16.72-16.72ZM9.95,0H0v17h9.95c9.22,0,16.72,7.5,16.72,16.72v28.19h17v-28.19C43.67,15.13,28.54,0,9.95,0Z'
 
@@ -78,6 +80,15 @@ export function Gallery() {
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   const [player, setPlayer] = useState(false)
   const [overSheet, setOverSheet] = useState(false)
+  const [mult, setMult] = useState(1.5)
+  const [serv, setServ] = useState('1')
+  const [mood, setMood] = useState(3)
+  const [hand, setHand] = useState('palm')
+  const [count, setCount] = useState(1.5)
+  const [cardio, setCardio] = useState('Brisk walk')
+  const [activity, setActivity] = useState('moderate')
+  const [wake, setWake] = useState('07:00')
+  const [day, setDay] = useState('')
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -391,6 +402,110 @@ export function Gallery() {
             <button className="li"><div className="m"><div className="t">Walk</div><div className="s">30 min</div></div><Chevron /></button>
           </div>
         </div>
+      </Sec>
+
+      <Sec id="p4" title="Slider · Stepper · Scale (servings; check-in) · chips with hints · Select">
+        <div className="card" style={{ textAlign: 'center' }}>
+          <div className="big num">{Math.round(412 * mult)}<small>kcal</small></div>
+          <input type="range" min={0.25} max={3} step={0.05} value={mult} style={{ marginTop: 12 }} aria-label="Portion size" onChange={(e) => setMult(+e.target.value)} />
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div className="scale">
+            {G.serv.map((it) => <button key={it.key} className={serv === it.key ? 'on' : ''} onClick={() => setServ(it.key)}><b className="num">{it.big}</b>{it.text}</button>)}
+          </div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div className="scale ck-scale">
+            {G.moods.map((it) => <button key={it.key} className={mood === it.key ? 'on' : ''} aria-pressed={mood === it.key} onClick={() => setMood(it.key)}>{it.text}</button>)}
+          </div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div className="chips">
+            {G.hands.map(([k, l, h]) => <button key={k} className={'chip' + (hand === k ? ' on' : '')} onClick={() => setHand(k)}>{l}<small>{h}</small></button>)}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+          <span>How many</span>
+          <span className="stepper">
+            <button aria-label="Fewer" onClick={() => setCount(Math.max(0.5, count - 0.5))}>−</button>
+            <span className="num">{frac(count)}</span>
+            <button aria-label="More" onClick={() => setCount(Math.min(6, count + 0.5))}>+</button>
+          </span>
+        </div>
+        <div className="list" style={{ marginTop: 14 }}>
+          <div className="frow"><label htmlFor="g-type">Type</label>
+            <select id="g-type" value={cardio} onChange={(e) => setCardio(e.target.value)}>{G.cardio.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div className="field"><label htmlFor="g-act">Activity level</label>
+            <select id="g-act" value={activity} onChange={(e) => setActivity(e.target.value)}>{G.activity.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+        </div>
+      </Sec>
+
+      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <button className="roundbtn" aria-label="Add food"><Icon name="plus" size={22} stroke={2.4} /></button>
+          <button className="navbtn scanbtn" aria-label="Scan barcode" style={{ padding: '4px 2px' }}><Icon name="barcode" size={20} /></button>
+          <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label="Delete Oat porridge"><Icon name="x" size={17} /></button>
+        </div>
+        <button className="dash-add"><Icon name="plus" size={18} stroke={2.6} />Breakfast</button>
+        <button className="dash-add"><Icon name="plus" size={18} stroke={2.4} />Add a workout</button>
+        <div style={{ marginTop: 12 }}><button className="btn dup-link">Save as new</button></div>
+        <div className="note"><Icon name="info" size={17} /><span>The label couldn’t be read. Try again in better light.</span><button className="btn sm tinted">Try again</button></div>
+        <div className="list" style={{ marginTop: 10 }}>
+          <div className="li"><div className="m"><div className="dup-k">Yours</div><div className="dup-nm">Oat porridge</div></div></div>
+          <div className="li"><div className="m"><div className="dup-k">From the shared list</div><div className="dup-nm">Oats, porridge, made with semi-skimmed milk</div></div></div>
+        </div>
+        <div className="card" style={{ marginTop: 10 }}><div className="big num">412<small>kcal</small><span className="pm">± 40</span></div></div>
+        <div className="list" style={{ marginTop: 10 }}>
+          <div className="frow"><label htmlFor="g-palm">Palm<div className="sub" style={{ fontSize: 13 }}>Meat, fish, tofu</div></label><input id="g-palm" type="number" inputMode="numeric" defaultValue="100" /><span className="u">g</span></div>
+          <div className="frow"><label htmlFor="g-thumb">Thumb<div className="sub" style={{ fontSize: 13 }}>Oil, butter, nut butter</div></label><input id="g-thumb" type="number" inputMode="numeric" defaultValue="12" /><span className="u">g</span></div>
+        </div>
+      </Sec>
+
+      <Sec id="pickers" title="Time fields (tap for the wheels; both disabled) · a date in a sheet">
+        <div className="list nf-times">
+          <div className="frow"><label htmlFor="g-wake">Wake time</label><input id="g-wake" type="time" className="num" value={wake} onChange={(e) => setWake(e.target.value)} /></div>
+          <div className="frow"><label htmlFor="g-wind">Wind down</label><input id="g-wind" type="time" className="num" value="21:30" onChange={() => {}} /></div>
+        </div>
+        <div className="list nf-times" style={{ marginTop: 10 }}>
+          <div className="frow"><label htmlFor="g-wake2">Wake up</label><input id="g-wake2" type="time" className="num" value="07:00" disabled onChange={() => {}} /></div>
+          <div className="frow"><label htmlFor="g-wind2">Wind-down</label><input id="g-wind2" type="time" className="num" value="21:30" disabled onChange={() => {}} /></div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <label className="btn gray" style={{ position: 'relative', overflow: 'hidden' }}>{day ? `Starts ${day}` : 'Pick a date'}
+            <input type="date" aria-label="Pick a start date" min="2026-11-13" max="2027-11-13" value={day} onChange={(e) => setDay(e.target.value)}
+              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%' }} /></label>
+        </div>
+      </Sec>
+
+      <Sec id="kit2" title="Stack · flat links · XBtn with chevrons · Swatch rows">
+        <div className="stack" style={{ marginTop: 0 }}>
+          <button className="btn">Start</button>
+          <button className="btn gray">Not today</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 14 }}>
+          <button className="linkbtn" style={{ padding: 0 }}>How to do it</button>
+          <button className="linkbtn" style={{ padding: 0 }}>+ Add a set</button>
+          <button className="linkbtn" style={{ color: 'var(--red)' }}>Remove</button>
+        </div>
+        <div className="rb-acts" style={{ marginLeft: 0, marginTop: 14 }}>
+          <button className="x-btn up" aria-label="Move Goblet squat up"><Icon name="chevL" size={14} stroke={2.6} /></button>
+          <button className="x-btn down" aria-label="Move Goblet squat down"><Icon name="chevR" size={14} stroke={2.6} /></button>
+          <button className="x-btn down" disabled aria-label="Move Plank down"><Icon name="chevR" size={14} stroke={2.6} /></button>
+        </div>
+        <div className="list" style={{ marginTop: 14 }}>
+          <button className="li"><span className="catsq" style={{ background: 'var(--move-fill)' }} aria-hidden="true" /><div className="m"><div className="t">Strength</div><div className="s">Full body, lower, upper</div></div><Chevron /></button>
+          <div className="li"><span className="catsq sm" style={{ background: 'var(--food-fill)' }} aria-hidden="true" /><div className="m"><div className="t">Eating</div></div><span className="tr num">Maintenance</span></div>
+        </div>
+      </Sec>
+
+      <Sec id="cover" title="CoverImage (50% 30%) · GrpH as h2">
+        <div style={{ position: 'relative', height: 160, borderRadius: 16, overflow: 'hidden' }}>
+          <img src={heroUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 30%', display: 'block' }} />
+        </div>
+        <h2 className="grp-h">This week</h2>
+        <div className="list"><div className="li"><div className="m"><div className="t">Monday</div></div><span className="tr num">Push</span></div></div>
       </Sec>
 
       <Sec id="banner" title="Banner">

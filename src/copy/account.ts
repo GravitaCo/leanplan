@@ -149,6 +149,9 @@ export const BACKUP = {
   exportBtn: 'Export',
   importBtn: 'Import',
   invalid: "That isn't a valid backup file",
+  /** native only: the share sheet couldn't be offered (the web's download can't fail this way).
+   *  New words: to approve with the port (design, compliance). */
+  exportFailed: 'Couldn’t export a copy. Nothing was changed. Try again.',
   importTitle: 'Import backup',
   /** `span` is " (date)" or " (date to date)", or empty */
   has: (b: { days: number; foods: number; recipes: number; workouts: number }, span: string) =>
@@ -206,6 +209,9 @@ export const DELETE = {
   confirmTitle: 'Delete everything?',
   confirmLead: 'Your account and all your data will be deleted from Tilo and this phone. You can sign up again any time, but it starts fresh.',
   googleAgain: 'Sign in with Google again',
+  /** native (iOS) only, for an account that signed in with Apple (its button is Apple's own, which
+   *  says "Continue with Apple"). New words: to approve with Sign in with Apple (Benn or Sara) */
+  reauthApple: 'To delete your account, confirm it’s you: sign in with Apple again.',
   password: 'Your password, to confirm it’s you',
   typed: 'Type DELETE to confirm',
   wrongPassword: 'That password doesn’t match this account. Nothing has been deleted.',

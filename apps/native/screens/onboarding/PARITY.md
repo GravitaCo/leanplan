@@ -14,20 +14,20 @@ Checked by `scripts/e2e-onboarding-parity.cjs` (web flag-on build against the na
 in-memory Supabase stand-in): **[S]** each screen's words, **[D]** the draft, **[N]** the summary's
 numbers against `startingTargets`, **[V]** what Start saves. The screenshots it writes go to `design`.
 
-## State of the stream (13 Nov 2026)
+## State of the stream (13 Nov 2026, evening)
 
-- Done: the flow hook (`useWizardFlow.ts`); shared with the web, with tests in `npm test`: the due
-  checks (`src/data/firstRun.ts`, 5046b39), each screen's answers and the draft rules
-  (`core/domain/wizardAnswers.ts`, f88f100), the summary's view logic
-  (`src/screens/onboarding/summaryModel.ts`, 3a06c1e), find your weight's step and aim
-  (`core/domain/guided.ts`, ae1d7fe), and the words that were inline in the web screens
-  (`src/copy/onboarding.ts` WIZ, SUMMARY_UI, BUILD_PLAN, 3b40098); the parity script.
-- Waiting for N1 (`apps/native/lib/ui`): every screen. A first version built on local stand-ins
-  passed every parity check (commit 58010b7 on this branch's history, before the rebase) and was
-  withdrawn on the lead's instruction: screens compose N1's primitives only.
-- Waiting for the lead: the gate wiring (`useOnboardingGate` into `lib/gate.tsx`, with N2).
-- Waiting for N2: the 18+ stop (the wizard calls it through `ageStop`), the pending-deletion check
-  before it, Redo setup's "Close and delete".
+- M1 (shared logic and words, the flow hook): SHIP, merged into claude/native-build (53904e1).
+- M2 (the screens on N1's lib/ui): built; parity 638/638 through `app/onboarding-e2e.tsx`
+  (EXPO_PUBLIC_E2E builds only) until the lead wires `useOnboardingGate` into `lib/gate.tsx`.
+  Waiting for the gate: Redo setup's own 18+ stop (`useUnderAgeInWizard`), compared with
+  `GATE_WIRED=1`.
+- Waiting for N2: the 18+ stop (passed in as `ageStop`), the pending-deletion check, Redo setup's
+  "Close and delete".
+- For N1 (web render only): aria-checked / aria-valuenow / aria-valuetext on tiles and pickers
+  (react-native-web drops accessibilityState and accessibilityValue), arrow keys on the pickers,
+  and a second mouse drag on a picker. The parity driver works around them (PARITY driver notes in
+  the script's header).
+- For N7: Find your weight and How was that set? (core/domain/guided.ts findWeightStep, findWeightAim).
 
 ## Routes
 
