@@ -13,7 +13,8 @@
     "check:tokens": "node scripts/tokens.mjs --check",
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
     "doctor": "expo-doctor",
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "test:onboarding": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-onboarding.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
