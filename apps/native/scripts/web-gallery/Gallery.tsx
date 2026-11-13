@@ -18,6 +18,10 @@ import { Ruler } from '@/ui/Ruler'
 import { Wheel } from '@/ui/Wheel'
 import { CheckTiles, ChoiceTiles } from '@/ui/Tiles'
 import { TaliMark } from '@/ui/brand'
+import { Opts } from '@/screens/onboarding/Opts'
+import { Ticks } from '@/screens/onboarding/Consent'
+import { Signposts } from '@/screens/onboarding/Signposts'
+import { supportList } from '@/screens/profile/supportRows'
 import { G } from '../../lib/galleryData'
 
 const CONN_ICON: Record<string, IconName> = { 'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert', 'phone-only': 'cloudOff' }
@@ -67,6 +71,8 @@ export function Gallery() {
   const [areas, setAreas] = useState<string[]>(['knees'])
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
+  const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [kitOpts, setKitOpts] = useState<string[]>(['db'])
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   const [player, setPlayer] = useState(false)
   const [overSheet, setOverSheet] = useState(false)
@@ -327,6 +333,27 @@ export function Gallery() {
         </div>
         <div style={{ marginTop: 16 }}><label className="card pb-name" style={{ marginBottom: 16 }}><span className="pb-k">Name</span><input defaultValue="Strength, 3 days" /></label></div>
         <div className="searchbar"><Icon name="search" size={17} /><input placeholder="Search plans" aria-label="Search plans" /></div>
+      </Sec>
+
+      <Sec id="opts" title="Opts (one answer; several)">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Opts label="How often" opts={G.opts} value={oneOpt} onPick={setOneOpt} />
+          <Opts label="Your kit" opts={G.kit} value={kitOpts} onPick={(k) => setKitOpts((x) => flip(x, k))} multi />
+        </div>
+      </Sec>
+
+      <Sec id="ticks" title="Ticks · Check (on, off, small)">
+        <Ticks items={G.ticks} />
+        <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+          <span className="chk on" aria-hidden="true"><Icon name="check" size={14} stroke={3} /></span>
+          <span className="chk" aria-hidden="true" />
+          <span className="chk sm on" aria-hidden="true"><Icon name="check" size={11} stroke={3.6} /></span>
+          <span className="chk sm" aria-hidden="true" />
+        </div>
+      </Sec>
+
+      <Sec id="signposts" title="Signposts">
+        <Signposts list={supportList('england')} />
       </Sec>
 
       <Sec id="banner" title="Banner">

@@ -25,6 +25,8 @@ import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
 import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
+import { Check, Opts, Signposts, Ticks } from './ui/choices'
+import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -55,6 +57,8 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [areas, setAreas] = useState<string[]>(['knees'])
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
+  const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [kitOpts, setKitOpts] = useState<string[]>(['db'])
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
   const [player, setPlayer] = useState(false)
@@ -309,6 +313,24 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </List>
         <View style={{ marginTop: 16 }}><NameField label="Name" value="Strength, 3 days" onChangeText={() => {}} /></View>
         <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
+      </Sec>
+
+      <Sec id="opts" title="Opts (one answer; several)">
+        <View style={{ gap: 16 }}>
+          <Opts label="How often" opts={G.opts} value={oneOpt} onPick={setOneOpt} />
+          <Opts label="Your kit" opts={G.kit} value={kitOpts} onPick={(k) => setKitOpts((x) => flip(x, k))} multi />
+        </View>
+      </Sec>
+
+      <Sec id="ticks" title="Ticks · Check (on, off, small)">
+        <Ticks items={G.ticks} />
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+          <Check on /><Check on={false} /><Check on sm /><Check on={false} sm />
+        </View>
+      </Sec>
+
+      <Sec id="signposts" title="Signposts">
+        <Signposts list={supportList('england')} />
       </Sec>
 
       <Sec id="banner" title="Banner">
