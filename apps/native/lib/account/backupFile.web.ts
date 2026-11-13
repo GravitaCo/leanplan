@@ -3,16 +3,10 @@
  * browser's own download and file picker, as src/data/backup.ts does.
  */
 import type { PersistedState } from '@/data/persistence'
-import { exportBackup as download } from '@/data/backup'
 import { parseBackup } from './backupParse'
 
-/** Nothing is kept on the web: the browser downloads the file. */
+/** Nothing is kept on the web: the browser downloads the file (src/data/backup.ts). */
 export function clearBackupCopies(): void {}
-
-export async function exportBackup(state: PersistedState): Promise<boolean> {
-  download(state)
-  return true
-}
 
 export function pickBackup(): Promise<PersistedState | null> {
   return new Promise((resolve, reject) => {

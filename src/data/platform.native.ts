@@ -22,3 +22,12 @@ export function onForeground(fn: () => void): void {
 
 /** The native app has no push yet (N12): a reminder setting made on the web stays on. */
 export const KEEP_REMINDERS_WITHOUT_PUSH = true
+
+/** Google sign-in in the system's sign-in sheet, back at tilo://auth-callback, the code exchanged
+ *  on this phone (apps/native/lib/account/oauth.ts); the session reaches the store as any sign-in. */
+export type GoogleOAuthResult = 'redirecting' | 'ok' | 'cancelled' | 'error'
+export async function googleOAuth(_auth: unknown, queryParams?: Record<string, string>): Promise<GoogleOAuthResult> {
+  const { googleSignIn } = await import('../../apps/native/lib/account/oauth')
+  const r = await googleSignIn(queryParams)
+  return r.status
+}

@@ -29,8 +29,9 @@ export function clearBackupCopies(): void {
   } catch { /* no cache yet */ }
 }
 
-/** Writes the copy and opens the share sheet. Resolves false if it couldn't be offered. */
-export async function exportBackup(state: PersistedState): Promise<boolean> {
+/** Writes the copy and opens the share sheet (src/data/backup.native.ts exportBackup). Resolves false
+ *  if it couldn't be offered. */
+export async function exportBackupFile(state: PersistedState): Promise<boolean> {
   try {
     if (!(await Sharing.isAvailableAsync())) return false
     clearBackupCopies()

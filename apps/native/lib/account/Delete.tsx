@@ -16,15 +16,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { useAccountDeletion } from '@/store/hooks'
 import { DELETE_MESSAGES } from '@/data/account'
-import { getUid } from '@/data/supabase'
 import { font, useTokens } from '../theme'
 import { Button, Chevron, LinkButton, List, NavButton, Row, Sheet, T } from './kit'
-import { exportBackup } from './backupFile'
-import { googleSignIn } from './oauth'
+import { exportBackup } from '@/data/backup'
+import { typedOk } from './rules'
 
-/** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
-export const DELETE_WORD = 'DELETE'
-export const typedOk = (x: string) => x.trim().toUpperCase() === DELETE_WORD
 
 const GOES = ['Your food log, meals and recipes', 'Workouts and sets', 'Weight, check-ins and notes', 'Plans and settings', 'Your login']
 
@@ -42,7 +38,7 @@ export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onB
       <Text role="heading" style={[font(500), { fontSize: 13, color: t.label2, paddingHorizontal: 4, marginBottom: -6 }]}>What gets deleted</Text>
       <List>{GOES.map((x, i) => <Row key={x} first={i === 0} title={x} wrap />)}</List>
       <List>
-        <Row first wrap title="Download a copy first" sub="A file with everything you've logged" right={<Chevron />} onPress={() => void exportBackup(data)} />
+        <Row first wrap title="Download a copy first" sub="A file with everything you've logged" right={<Chevron />} onPress={() => exportBackup(data)} />
       </List>
       <Button kind="cardRed" title="Delete account" height={52} radius={16} disabled={!online || deleting} onPress={() => setConfirmOpen(true)} />
       <T size={12} lh={1.4} color={t.label2} style={{ paddingHorizontal: 4 }}>{online && reason ? reason : 'Needs a connection, so it deletes everywhere at once.'}</T>
@@ -54,7 +50,6 @@ export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onB
 export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
   const online = useStore((s) => s.online)
-  const email = useStore((s) => s.email)
   const { deleting, provider, needsReauth, reauth, run } = useAccountDeletion()
   const [typed, setTyped] = useState('')
   const [password, setPassword] = useState('')
@@ -82,20 +77,18 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     if (message) setMsg(message)
   }
 
-  /** A fresh Google sign-in for this account, in the system's sign-in sheet (Google's account chooser). */
+  /** A fresh Google sign-in for this account, in the system's sign-in sheet (the store's
+   *  reauthForDeletion: src/data/account.ts reauthWithGoogle, through the platform's googleOAuth). If
+   *  another Google account is picked, its session replaces this one and the store's owner check asks
+   *  whose data this is (the owner choice replaces this sheet); neither account can be deleted until
+   *  that's settled (tokenMatchesOwner). */
   const googleAgain = async () => {
-    if (!online) { setMsg(DELETE_MESSAGES.offline); return }
-    if (!email) { setMsg(DELETE_MESSAGES.error); return }
-    const before = getUid()
     setBusy(true)
-    const r = await googleSignIn({ prompt: 'select_account', login_hint: email })
+    const r = await reauth({ google: true })
     setBusy(false)
-    if (r.status === 'cancelled') return
-    if (r.status === 'error') { setMsg(DELETE_MESSAGES.error); return }
-    // another Google account was picked: its session has replaced this one on the phone, and the
-    // store's owner check now holds it back and asks whose data this is (the owner choice replaces
-    // this sheet); neither account can be deleted until that's settled (tokenMatchesOwner)
-    if (r.uid !== before) { setMsg(DELETE_MESSAGES['wrong-account']); return }
+    if (r === 'cancelled') return
+    if (r === 'offline') { setMsg(DELETE_MESSAGES.offline); return }
+    if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     setMsg(null)
     setStale(needsReauth())
   }

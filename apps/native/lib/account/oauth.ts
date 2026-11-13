@@ -12,21 +12,13 @@
 import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
+import { codeFrom } from './rules'
 
 export const REDIRECT = 'tilo://auth-callback'
 const web = Platform.OS === 'web'
 
 /** Where the emails' links come back to. */
 export const emailRedirect = (): string => (web ? window.location.origin + window.location.pathname : REDIRECT)
-
-/** The code from a tilo://auth-callback return, or the reason it failed. */
-export function codeFrom(url: string): { code: string | null; why: string | null } {
-  const back = new URL(url)
-  // some error redirects carry the reason after # rather than in the query
-  const frag = new URLSearchParams(back.hash.replace(/^#/, ''))
-  const why = back.searchParams.get('error_description') || frag.get('error_description') || back.searchParams.get('error') || frag.get('error')
-  return { code: back.searchParams.get('code'), why }
-}
 
 /** True while a Google sign-in sheet is open: its return is this function's to exchange. On Android the
  *  same return also arrives as a tilo:// link, so app/auth-callback.tsx leaves it alone meanwhile

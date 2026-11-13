@@ -22,7 +22,8 @@ import { font, useTokens } from '../theme'
 import { Button, GoogleG, Ico, InlineLink, LinkButton, Mark, T } from './kit'
 import { openLegal } from './legal'
 import { emailRedirect, googleSignIn } from './oauth'
-import { exportBackup } from './backupFile'
+import { exportBackup } from '@/data/backup'
+import { coverFrame, photoHeight } from './rules'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -108,7 +109,7 @@ export function AuthScreen() {
 
   const copy = COPY[mode]
   // .auth2-photo: 48% of the screen (36% creating an account, 52% for the email steps), at least 260 (200)
-  const photoH = mode === 'signup' ? Math.max(200, vh * 0.36) : mode === 'signin' ? Math.max(260, vh * 0.48) : Math.max(260, vh * 0.52)
+  const photoH = photoHeight(mode, vh)
   const field = { height: 26, padding: 0, fontSize: 17, color: t.label, fontFamily: 'Geist_400Regular' } as const
   const fieldBox = (first: boolean) => [{ paddingVertical: 11, paddingHorizontal: 16, gap: 2 }, !first && { borderTopWidth: 1, borderTopColor: t.sep }]
   const label = [font(400), { fontSize: 13, color: t.label2 }]
@@ -121,8 +122,7 @@ export function AuthScreen() {
           {/* object-fit: cover at object-position 50% 30%, as the web: the photo fills the width (or the
               height, if taller), and 30% of what overflows is cropped from the top */}
           {(() => {
-            const scale = Math.max(vw / HERO_W, photoH / HERO_H), w = HERO_W * scale, h = HERO_H * scale
-            return <Image source={HERO} accessibilityIgnoresInvertColors style={{ position: 'absolute', width: w, height: h, left: (vw - w) / 2, top: -(h - photoH) * 0.3 }} />
+            return <Image source={HERO} accessibilityIgnoresInvertColors style={{ position: 'absolute', ...coverFrame(HERO_W, HERO_H, vw, photoH) }} />
           })()}
           <Svg width="100%" height={140} style={{ position: 'absolute', top: 0, left: 0, right: 0 }} aria-hidden>
             <Defs><LinearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#000" stopOpacity={0.34} /><Stop offset="1" stopColor="#000" stopOpacity={0} /></LinearGradient></Defs>
@@ -273,7 +273,7 @@ export function OwnerChoiceScreen() {
           </View>
           {sure && <View role="alert" style={card}>{p('Some of the log on this device isn’t in any account, so starting fresh deletes it for good. Export a copy first if you might want it.')}</View>}
           <View style={{ gap: 8, marginTop: 16 }}>
-            {sure && <Button kind="gray" title="Export a copy" disabled={busy} onPress={() => void exportBackup(data)} />}
+            {sure && <Button kind="gray" title="Export a copy" disabled={busy} onPress={() => exportBackup(data)} />}
             <Button title={sure ? 'Start fresh and delete it' : `Start fresh with ${who}`} disabled={busy} onPress={() => void pick('fresh')} />
             <Button kind="gray" title={`Keep this log in ${who}`} disabled={busy} onPress={() => void pick('keep')} />
           </View>

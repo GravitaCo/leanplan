@@ -29,7 +29,8 @@ import { ConsentScreen, P, PrivacySheet, RegrantHealthSheet } from './Consent'
 import { DeleteAccountView } from './Delete'
 import { Opts, Signposts } from './AgeStop'
 import { LEGAL_LABEL, openLegal } from './legal'
-import { exportBackup, pickBackup } from './backupFile'
+import { exportBackup } from '@/data/backup'
+import { pickBackup } from './backupFile'
 
 /** The lines on the health data sheet (onboarding/Consent.tsx HEALTH_TICKS). */
 export const HEALTH_TICKS = [
@@ -58,8 +59,7 @@ export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', pau
 export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = 'main' }: { onClose: () => void; onAgree: () => void; onAnswers?: () => void; onRedo?: () => void; start?: 'main' | 'withdraw' }) {
   const t = useTokens()
   const status = useHealthStatus()
-  const data = useStore((s) => s.data)
-  const { prepare, withdraw } = useHealthWithdrawal()
+  const { prepare, download, withdraw } = useHealthWithdrawal()
   const showToast = useStore((s) => s.showToast)
   const [step, setStep] = useState<null | ReturnType<typeof prepare>>(() => (start === 'withdraw' ? prepare() : null))
   const [privacy, setPrivacy] = useState(false)
@@ -83,7 +83,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
           {/* the same file the web downloads (the whole log), through the share sheet. Unlike the web it
               never turns to "Downloaded": the share sheet can't say whether the copy was saved or the
               person closed it (compliance, 13 Nov) */}
-          <Button kind="gray" title="Download a copy" onPress={() => void exportBackup(data)} />
+          <Button kind="gray" title="Download a copy" onPress={download} />
           <Button kind="danger" title="Remove my health data" onPress={() => { withdraw(); showToast('Health data removed'); onClose() }} />
         </View>
       </Sheet>
@@ -196,7 +196,7 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
       </View>
       <View style={{ gap: 8, marginTop: 16 }}>
         <Button kind="tinted" title={busy === 'keep' ? 'Signing out…' : 'Sign out'} disabled={!!busy} onPress={() => void go(false)} />
-        {phoneOnly && <Button kind="gray" title="Export a copy" disabled={!!busy} onPress={() => void exportBackup(data)} />}
+        {phoneOnly && <Button kind="gray" title="Export a copy" disabled={!!busy} onPress={() => exportBackup(data)} />}
         <Button kind="danger" disabled={!!busy} onPress={() => void go(true)}
           title={busy === 'remove' ? 'Signing out…' : sure && phoneOnly ? 'Remove anyway and delete your log' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'} />
       </View>
@@ -275,7 +275,7 @@ export function AccountSection() {
             ? 'Your log is only on this phone until you agree to Tilo keeping your health data, so export a copy now and then.'
             : `Your log is stored on this device, so Tilo works without a connection${authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.`}</T>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}><Button kind="gray" title="Export" onPress={() => void exportBackup(data)} /></View>
+            <View style={{ flex: 1 }}><Button kind="gray" title="Export" onPress={() => exportBackup(data)} /></View>
             <View style={{ flex: 1 }}><Button kind="gray" title="Import" onPress={() => void pick()} /></View>
           </View>
         </Disclosure>
