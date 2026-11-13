@@ -1,9 +1,7 @@
 import { warmupLine, type WarmupBlock } from '@/core/domain/warmup'
+import { warmupNote } from '@/copy/train'
 
-/** The day view's note under the block (ob3-5). */
-export const warmupNote = (b: WarmupBlock) => (b.kind === 'cardio'
-  ? 'Every session starts here: a few easy minutes so your heart rate and breathing can rise gently, then moving stretches for your hips and legs. Each move has a short how-to.'
-  : 'Every session starts here: 1 to 2 minutes to raise your pulse, then moving stretches for today’s joints. Each move has a short how-to.')
+export { warmupNote } from '@/copy/train'
 
 /**
  * "First: Warm-up · N min", then "Then" over the exercises (board ob3-5), wherever a session's

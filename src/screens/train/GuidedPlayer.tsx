@@ -18,28 +18,22 @@ import { Sheet, Toggle, useScrollLock } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { AdjustSheet } from './AdjustSheet'
 import { FinishSheet } from './FinishSheet'
-import { HoldTimer, RED_FLAG } from './HoldTimer'
+import { HoldTimer } from './HoldTimer'
+import { RED_FLAG } from '@/copy/train'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 import type { ShorterKind } from '@/core/domain/dayOptions'
 import { easierAim } from './hardDay'
+import { warmupCopy } from '@/copy/train'
+import { bareName, firstLine } from './trainModel'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
 const reducedMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false } }
 
-/** "Romanian deadlift (dumbbell or barbell)" → "Romanian deadlift" */
-export const bareName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '')
-/** The first sentence of a cue, for the line under the name. */
-const firstLine = (cue: string) => (cue.match(/^.*?[.!?](\s|$)/)?.[0] ?? cue).trim()
-
-/**
- * The warm-up line (fitness-workouts), shared with the preview card: with the warm-up block
- * (`mins`), the lighter sets that follow it; without it, as before the block.
- */
-export const warmupCopy = (name: string, mins?: number) =>
-  `${mins ? `After the ${mins}-minute warm-up, do` : '5 minutes of easy movement, then'} one or two lighter ${name.toLowerCase()} sets, building up to your working weight. Log them as warm-ups: they don't count towards your targets.`
+export { warmupCopy } from '@/copy/train'
+export { bareName } from './trainModel'
 
 /** A short chime at the end of rest, only when sound is on. */
 function chime() {

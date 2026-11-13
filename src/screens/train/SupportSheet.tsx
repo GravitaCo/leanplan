@@ -1,20 +1,13 @@
 import { useStore } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
 import { Sheet, Toggle } from '@/ui/primitives'
+import { SUPPORT_LINES } from '@/copy/train'
 
 /**
  * A quiet way to support from the load note (workout plan §0.5, ai-platform-plan §4.2 item 3).
- * General wellness only: no diagnosis words. Numbers checked on 24 Sep 2026 against
- * samaritans.org and beateatingdisorders.org.uk; re-check them whenever this copy is touched.
+ * The lines and their check date live in src/copy/train.ts (SUPPORT_LINES).
  */
-const LINES: [string, string, string][] = [
-  ['Samaritans', '116 123', 'Free, any time, day or night (UK and Ireland)'],
-  ['Beat (England)', '0808 801 0677', 'Eating disorder support, 3pm to 8pm, Monday to Friday'],
-  ['Beat (Scotland)', '0808 801 0432', '3pm to 8pm, Monday to Friday'],
-  ['Beat (Wales)', '0808 801 0433', '3pm to 8pm, Monday to Friday'],
-  ['Beat (Northern Ireland)', '0808 801 0434', '3pm to 8pm, Monday to Friday'],
-  ['NHS 111', '111', 'For health advice when it isn\'t an emergency'],
-]
+const LINES = SUPPORT_LINES
 
 export function SupportSheet({ onClose }: { onClose: () => void }) {
   const gentle = useStore((s) => quietNumbers(s.data))
