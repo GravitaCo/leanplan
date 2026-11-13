@@ -4,7 +4,7 @@ import { MEALS, MEAL_LABEL } from '@/core/domain/insights'
 import { Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { useStore } from '@/store/store'
-import { NEEDS_NET } from '@/ui/ConnectionPill'
+import { NEEDS_NET } from '@/copy/connection'
 import { CREATE_FOOD, mealOption } from '@/copy/food'
 
 /** "Photo of the label": online only, so offline it stays in view, off, with the note (ob6-8). */

@@ -7,31 +7,23 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { Food, MealSlot } from '@/core/types'
+import type { MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { confirmLiveRead, draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
+import { confirmLiveRead, normalizeBarcode } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
-import { draftFromShared } from '@/core/domain/sharedProduct'
+import { resolveBarcode, type ScanOutcome } from '@/data/scanLookup'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecoder'
 import { startRearCamera, stopCamera as stopStream } from './camera'
+import { SCAN, SCAN_CAMERA_NOTE, SCAN_TITLE } from '@/copy/scan'
 
-export type ScanOutcome =
-  | { kind: 'local'; food: Food; custom: boolean }
-  | { kind: 'found'; draft: ScanDraft }
-  /** on Tilo's shared product list (sp-2, sp-3, sp-3b) */
-  | { kind: 'shared'; draft: ScanDraft }
-  | { kind: 'missing'; barcode: string; why: 'not-found' | 'offline' | 'error' }
+export type { ScanOutcome }
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
 
-const CAMERA_NOTE: Record<Exclude<Camera, 'starting' | 'on'>, string> = {
-  denied: 'Tilo can’t use the camera. That’s fine: take a photo of the barcode, or type the number below.',
-  none: 'No camera is available here. Take a photo of the barcode, or type the number below.',
-  noscan: 'The scanner needs a connection the first time it opens. Type the number below, or try again later.',
-}
+const CAMERA_NOTE: Record<Exclude<Camera, 'starting' | 'on'>, string> = SCAN_CAMERA_NOTE
 
 const SCAN_EVERY_MS = 180
 
@@ -57,41 +49,23 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     streamRef.current = null
   }
 
-  /** A code from any path: validate, then local, then Open Food Facts. */
+  /** A code from any path: validate, then the device, the shared list and Open Food Facts
+   *  (src/data/scanLookup.ts, shared with the native app). */
   const handle = async (raw: string, format?: string) => {
     if (doneRef.current) return
-    const norm = normalizeBarcode(raw, format)
-    if (!norm) { setMsg('That number doesn’t look right: the last digit doesn’t check out. Try again, or check the digits under the barcode.'); return }
+    const ctl = new AbortController()
+    const r = resolveBarcode(raw, format, {
+      all, customFoods: customFoods || [], linkBarcode, sharedEnabled: SHARED_PRODUCTS_ENABLED, lookupShared, lookupProduct,
+      signal: ctl.signal, alive: () => aliveRef.current,
+    })
+    if (r.kind === 'invalid') { setMsg(SCAN.badCheck); return }
     doneRef.current = true
     stopCamera()
-    const local = findByBarcode(all, norm.code) ?? (norm.alt ? findByBarcode(all, norm.alt) : undefined)
-    if (local) { onResult({ kind: 'local', food: local, custom: !!local.id }); return }
-    setBusy(norm.code)
-    const ctl = new AbortController()
+    if (r.kind === 'done') { onResult(r.outcome); return }
     lookupRef.current = ctl
-    // Tilo's shared list first (it never holds Open Food Facts products); no connection there
-    // means none for Open Food Facts either
-    if (SHARED_PRODUCTS_ENABLED) {
-      const sh = await lookupShared(norm, { signal: ctl.signal })
-      if (!aliveRef.current) return
-      if (sh.status === 'found') { onResult({ kind: 'shared', draft: draftFromShared(sh.product, norm.code, all.map((f) => f.n)) }); return }
-      if (sh.status === 'offline') { onResult({ kind: 'missing', barcode: norm.code, why: 'offline' }); return }
-    }
-    const res = await lookupProduct(norm, { signal: ctl.signal })
-    if (!aliveRef.current) return
-    if (res.status !== 'found') { onResult({ kind: 'missing', barcode: norm.code, why: res.status }); return }
-    let draft: ScanDraft
-    try {
-      draft = draftFromOff(res.code, res.product, all.map((f) => f.n))
-    } catch {
-      onResult({ kind: 'missing', barcode: norm.code, why: 'error' }); return
-    }
-    // the user already saved this product by hand under the same name: link the barcode to it
-    // (their own label values stay) rather than saving a "(2)" copy
-    const mine = linkableFood(customFoods || [], draft.baseName)
-    const linked = mine?.id ? linkBarcode(mine.id, res.code) : null
-    if (linked) onResult({ kind: 'local', food: linked, custom: true })
-    else onResult({ kind: 'found', draft })
+    setBusy(r.code)
+    const outcome = await r.result
+    if (outcome) onResult(outcome)
   }
   const firstValid = (hits: Hit[]) => hits.find((h) => normalizeBarcode(h.raw, h.format))
 
@@ -153,11 +127,11 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       if (!aliveRef.current) return
       setBusy(null)
       if (hit) void handle(hit.raw, hit.format)
-      else setMsg('No barcode found in that photo. Try again closer, in good light, with the whole barcode in view, or type the number.')
+      else setMsg(SCAN.noBarcode)
     } catch {
       if (!aliveRef.current) return
       setBusy(null)
-      setMsg('That photo couldn’t be read. Try another, or type the number below.')
+      setMsg(SCAN.photoUnreadable)
     }
   }
 
@@ -165,15 +139,15 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
 
   if (busy && busy !== 'photo') {
     return (
-      <Sheet title="Scan barcode" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
-        <div className="empty" role="status">Looking up <span className="num">{busy}</span>…<br />If it’s not found you can enter it from the label.</div>
+      <Sheet title={SCAN_TITLE} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+        <div className="empty" role="status">{SCAN.lookingUp} <span className="num">{busy}</span>…<br />{SCAN.lookingUpAfter}</div>
       </Sheet>
     )
   }
 
   const live = camera === 'starting' || camera === 'on'
   return (
-    <Sheet title="Scan barcode" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+    <Sheet title={SCAN_TITLE} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
       {live ? (
         <div className="scanbox">
           <video ref={videoRef} playsInline muted autoPlay aria-label="Camera view" />
@@ -182,28 +156,28 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       ) : (
         <div className="note" role="status"><Icon name="info" size={17} /><span>{CAMERA_NOTE[camera]}</span></div>
       )}
-      {live && <div className="foot" style={{ textAlign: 'center' }} role="status">{camera === 'starting' ? 'Starting the camera…' : 'Hold the barcode inside the frame.'}</div>}
+      {live && <div className="foot" style={{ textAlign: 'center' }} role="status">{camera === 'starting' ? SCAN.starting : SCAN.hold}</div>}
       {msg && <div className="note" role="alert"><Icon name="info" size={17} /><span>{msg}</span></div>}
 
       <div className="list icons" style={{ marginTop: 14 }}>
         <label className="li" style={{ cursor: 'pointer' }}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-          <div className="m"><div className="t">{busy === 'photo' ? 'Reading the photo…' : 'Take a photo'}</div><div className="s">Of the barcode, close up, or pick one from your photos</div></div>
-          <input type="file" accept="image/*" className="vh" aria-label="Take a photo of the barcode"
+          <div className="m"><div className="t">{busy === 'photo' ? SCAN.readingPhoto : SCAN.takePhoto}</div><div className="s">{SCAN.photoSub}</div></div>
+          <input type="file" accept="image/*" className="vh" aria-label={SCAN.photoAria}
             onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = '' }} />
         </label>
       </div>
 
-      <div className="lbl">Or type the number</div>
+      <div className="lbl">{SCAN.orType}</div>
       <div className="list">
         <div className="frow">
-          <label htmlFor="bc_num">Barcode</label>
-          <input id="bc_num" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" placeholder="13 digits under the bars" value={typed}
+          <label htmlFor="bc_num">{SCAN.barcode}</label>
+          <input id="bc_num" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" placeholder={SCAN.placeholder} value={typed}
             onChange={(e) => setTyped(e.target.value.replace(/[^\d]/g, '').slice(0, 14))} onKeyDown={(e) => { if (e.key === 'Enter') submitTyped() }} enterKeyHint="search" />
         </div>
       </div>
-      <div className="stack"><button className="btn tinted" disabled={typed.length < 8} onClick={submitTyped}>Look up</button></div>
-      <div className="foot">Values come from Open Food Facts, a shared database. You’ll check them against your pack before saving.</div>
+      <div className="stack"><button className="btn tinted" disabled={typed.length < 8} onClick={submitTyped}>{SCAN.lookUp}</button></div>
+      <div className="foot">{SCAN.source}</div>
     </Sheet>
   )
 }
