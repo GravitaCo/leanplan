@@ -25,7 +25,7 @@ import { todayStr, DAY_NAME } from '@/core/domain/date'
 import type { Why } from '@/core/types'
 import { BareSheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
-import { MAINT_SHEET, OTHERS, REDO, SUMMARY } from './copy'
+import { MAINT_SHEET, OTHERS, REDO, SUMMARY, SUMMARY_UI } from './copy'
 import { chosenPlan, dayNote, exerciseName, foodCardKind, heroPlan as heroOf, mineLine, reasonChips, shapeLine, slotLine, startPayload, weekStrip, whyLines } from './summaryModel'
 
 const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -93,19 +93,19 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
           <section className="sm-starter">
             <div className="t">{SUMMARY.starterCardT}</div>
             <div className="s">{SUMMARY.starterCardS}</div>
-            <button className="btn gray bp-btn" onClick={onPersonalise}>Personalise it</button>
+            <button className="btn gray bp-btn" onClick={onPersonalise}>{SUMMARY_UI.personalise}</button>
           </section>
         )}
 
-        <section className="sm-strip" aria-label="Your week">
+        <section className="sm-strip" aria-label={SUMMARY_UI.week}>
           <div className="days">
             {weekStrip(m, chosen, routines).map(({ wd, sessions: ss, on, name }) => {
               return (
                 <span className="dy" key={wd}>
                   <span className="l" aria-hidden="true">{DAY_LETTER[wd]}</span>
                   {ss.length
-                    ? <button className="c on" onClick={() => setDay(ss[0])} aria-label={`${DAY_NAME[wd]}: ${name}. Why each part is here`}><Icon name="dumbbell" size={17} stroke={2} /></button>
-                    : <span className={'c' + (on ? ' on' : '')} role="img" aria-label={on ? `${DAY_NAME[wd]}: ${name}` : `${DAY_NAME[wd]}: ${restLine(d)}`}>{on && <Icon name="dumbbell" size={17} stroke={2} />}</span>}
+                    ? <button className="c on" onClick={() => setDay(ss[0])} aria-label={SUMMARY_UI.dayOpen(DAY_NAME[wd], name)}><Icon name="dumbbell" size={17} stroke={2} /></button>
+                    : <span className={'c' + (on ? ' on' : '')} role="img" aria-label={SUMMARY_UI.day(DAY_NAME[wd], on ? name : restLine(d))}>{on && <Icon name="dumbbell" size={17} stroke={2} />}</span>}
                 </span>
               )
             })}
@@ -133,7 +133,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       {row && <WhySheet row={row} onClose={() => setRow(null)} />}
       {all && (
         <BareSheet label={SUMMARY.whyH} onClose={() => setAll(false)}>
-          <div className="feel-hd"><h2>{SUMMARY.whyH}</h2><button className="navbtn b" onClick={() => setAll(false)}>Done</button></div>
+          <div className="feel-hd"><h2>{SUMMARY.whyH}</h2><button className="navbtn b" onClick={() => setAll(false)}>{SUMMARY_UI.done}</button></div>
           <div className="sm-rows" style={{ marginTop: 12 }}>
             {rows.map((x) => (
               <button className="sm-row" key={x.key} onClick={() => { setAll(false); setRow(x) }}>
@@ -146,7 +146,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       )}
       {how && (
         <BareSheet label={SUMMARY.howT} onClose={() => setHow(false)}>
-          <div className="feel-hd"><h2>{SUMMARY.howT}</h2><button className="navbtn b" onClick={() => setHow(false)}>Done</button></div>
+          <div className="feel-hd"><h2>{SUMMARY.howT}</h2><button className="navbtn b" onClick={() => setHow(false)}>{SUMMARY_UI.done}</button></div>
           <HowRows m={m} />
         </BareSheet>
       )}
@@ -173,46 +173,46 @@ function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHea
   const kind = foodCardKind(m)
   // ob4-7 and ob4-9: no number, and the card says logging works in full, why, and how to change it
   if (kind === 'pregnancy') {
-    return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.maint}</div><div className="s ink">{SUMMARY.maintP}</div>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big h18">{SUMMARY.maint}</div><div className="s ink">{SUMMARY.maintP}</div>
       <div className="s"><b>{SUMMARY.maintLongK}</b> {SUMMARY.maintLong}</div>
       <button className="linkbtn wz-link start sm" onClick={onMaint}>{SUMMARY.maintMore}</button></section>
   }
   if (kind === 'no-consent') {
-    return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.noConsentT}</div><div className="s">{SUMMARY.noConsentS}</div>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big h18">{SUMMARY.noConsentT}</div><div className="s">{SUMMARY.noConsentS}</div>
       <button className="btn gray bp-btn" onClick={onHealth}>{SUMMARY.noConsentGo}</button></section>
   }
   if (kind === 'no-age') {
-    return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.noAgeT}</div><div className="s">{SUMMARY.noAgeS}</div>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big h18">{SUMMARY.noAgeT}</div><div className="s">{SUMMARY.noAgeS}</div>
       <button className="btn gray bp-btn" onClick={onAddAge}>{SUMMARY.noAgeGo}</button></section>
   }
   if (kind === 'no-weight') {
-    return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noWeight}</div><div className="s">{SUMMARY.noWeightS}</div>
-      <button className="btn gray bp-btn" onClick={onAddWeight}>Add weight</button></section>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big">{SUMMARY.noWeight}</div><div className="s">{SUMMARY.noWeightS}</div>
+      <button className="btn gray bp-btn" onClick={onAddWeight}>{SUMMARY_UI.addWeight}</button></section>
   }
   if (kind === 'no-height') {
-    return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noHeight}</div><div className="s">{SUMMARY.noWeightS}</div>
-      <button className="btn gray bp-btn" onClick={onAddHeight}>Add height</button></section>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big">{SUMMARY.noHeight}</div><div className="s">{SUMMARY.noWeightS}</div>
+      <button className="btn gray bp-btn" onClick={onAddHeight}>{SUMMARY_UI.addHeight}</button></section>
   }
   // ob9-1 (and ob4-9): Yes has no number; Sometimes a range on Food, no number on the summary
   if (kind === 'yes') {
-    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.yesT}</div><div className="s">{SUMMARY.yesS}</div>
+    return <section className="sm-food" aria-label={SUMMARY_UI.food}><div className="k">{SUMMARY_UI.food}</div><div className="big h20">{SUMMARY.yesT}</div><div className="s">{SUMMARY.yesS}</div>
       <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
   }
   if (kind === 'sometimes') {
-    return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.sometimesT}</div><div className="s">{SUMMARY.sometimesS}</div>
+    return <section className="sm-food" aria-label={SUMMARY_UI.food}><div className="k">{SUMMARY_UI.food}</div><div className="big h20">{SUMMARY.sometimesT}</div><div className="s">{SUMMARY.sometimesS}</div>
       <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
   }
   const e = explainStart(t)
   if (kind === 'maintenance' || t.kcal == null || !e) {
-    return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.maint}</div><div className="s">{SUMMARY.maintS}</div></section>
+    return <section className="sm-food"><div className="k">{SUMMARY_UI.food}</div><div className="big">{SUMMARY.maint}</div><div className="s">{SUMMARY.maintS}</div></section>
   }
   return (
-    <section className="sm-food" aria-label="Food">
-      <div className="k">Food</div>
+    <section className="sm-food" aria-label={SUMMARY_UI.food}>
+      <div className="k">{SUMMARY_UI.food}</div>
       <div className="big h20 num" data-kcal={t.kcal}>{SUMMARY.startT(t.kcal)}</div>
       <div className="s num" data-estimate={e.estimate} data-diff={e.diff}>{SUMMARY.startS(e, t.reviewAfter, t.marginPct ?? 15)}</div>
       {t.heldAtMaintenance && <div className="s">{HELD_AT_MAINTENANCE_NOTE}</div>}
-      <button className="linkbtn wz-link start sm" onClick={onHow}>How we worked this out</button>
+      <button className="linkbtn wz-link start sm" onClick={onHow}>{SUMMARY_UI.how}</button>
     </section>
   )
 }
@@ -241,7 +241,7 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
   const note = dayNote(s, whys)
   return (
     <BareSheet label={title} onClose={onClose}>
-      <div className="feel-hd"><h2>{title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
+      <div className="feel-hd"><h2>{title}</h2><button className="navbtn b" onClick={onClose}>{SUMMARY_UI.done}</button></div>
       <div className="sm-sheet-sub">{SUMMARY.daySub}</div>
       <div className="sm-rows">
         <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm.mins)}</span><span className="s">{SUMMARY.warmRowS(warm.moves.map((x) => x.n))}</span></span></div>
@@ -264,7 +264,7 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
 function WhySheet({ row, onClose }: { row: WhyRow; onClose: () => void }) {
   return (
     <BareSheet label={row.title} onClose={onClose}>
-      <div className="feel-hd"><h2>{row.title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
+      <div className="feel-hd"><h2>{row.title}</h2><button className="navbtn b" onClick={onClose}>{SUMMARY_UI.done}</button></div>
       <div className="sm-sheet-sub" style={{ marginTop: 2 }}>{row.sub}</div>
       <div className="sm-why">{whyLines(row).map((l) => <p key={l}>{l}</p>)}</div>
     </BareSheet>
@@ -275,7 +275,7 @@ function WhySheet({ row, onClose }: { row: WhyRow; onClose: () => void }) {
 function MaintSheet({ onClose, onAnswers }: { onClose: () => void; onAnswers: () => void }) {
   return (
     <BareSheet label={MAINT_SHEET.title} onClose={onClose}>
-      <div className="feel-hd"><h2>{MAINT_SHEET.title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
+      <div className="feel-hd"><h2>{MAINT_SHEET.title}</h2><button className="navbtn b" onClick={onClose}>{SUMMARY_UI.done}</button></div>
       <section className="sm-maint">
         {MAINT_SHEET.rows.map(([h, t]) => <div key={h}><div className="t">{h}</div><div className="s">{t}</div></div>)}
       </section>

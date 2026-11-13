@@ -17,6 +17,7 @@ import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { SETUP_CARD } from './copyApp'
+import { BUILD_PLAN } from './copy'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 export { ONBOARDING_ENABLED }
@@ -170,11 +171,11 @@ export function ExistingConsentSheet() {
 /** On Plan, above the week (behind ONBOARDING_ENABLED): opens the setup card on its own. */
 export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
   return (
-    <section className="card buildplan" aria-label="Build my plan">
-      <div className="bp-new">New</div>
-      <div className="bp-t">Build my plan</div>
-      <div className="bp-s">Answer a few questions about your time, kit and what you enjoy, and Tilo builds a week from your answers. Your current week stays until you choose.</div>
-      <button className="btn gray bp-btn" onClick={onBuild}>Build my plan</button>
+    <section className="card buildplan" aria-label={BUILD_PLAN.t}>
+      <div className="bp-new">{BUILD_PLAN.k}</div>
+      <div className="bp-t">{BUILD_PLAN.t}</div>
+      <div className="bp-s">{BUILD_PLAN.s}</div>
+      <button className="btn gray bp-btn" onClick={onBuild}>{BUILD_PLAN.go}</button>
     </section>
   )
 }
