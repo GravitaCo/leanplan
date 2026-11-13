@@ -15,7 +15,7 @@ import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
-import { AddC, Row, XBtn, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -358,14 +358,15 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </BareSheet>
       )}
     </ScrollView>
-    <Modal visible={player} animationType="none" onRequestClose={() => setPlayer(false)}>
+    {/* Android's back closes an overlay sheet first, then the view (overlayBack) */}
+    <Modal visible={player} animationType="none" onRequestClose={() => { if (!overlayBack()) setPlayer(false) }}>
       <View style={{ flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 80, gap: 12 }}>
         <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
         <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
         <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
         {overSheet && (
           <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
-            <List><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
+            <List icons><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
           </Sheet>
         )}
       </View>

@@ -7,7 +7,7 @@
  * Scroll lock: a sheet is a Modal, which already stops the screen behind it from scrolling, so
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
-import { useContext, useEffect, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AccessibilityInfo, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -403,6 +403,21 @@ function useKeyboardUp() {
   return up
 }
 
+/** Open overlay sheets' close functions, oldest first. */
+const overlays: (() => void)[] = []
+
+/**
+ * For a full-screen view that holds overlay sheets (the guided player's Modal): call it first in the
+ * view's `onRequestClose`. It closes the topmost overlay sheet and returns true, or returns false when
+ * none is open, so Android's back closes the sheet before the view, as on the web.
+ */
+export function overlayBack(): boolean {
+  const top = overlays[overlays.length - 1]
+  if (!top) return false
+  top()
+  return true
+}
+
 /** The frame both sheets share: backdrop, the sheet sliding up, the grabber, Escape/back to close. */
 function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, header, children }: {
   label: string; onClose: () => void; tall?: boolean; animate?: boolean; bare?: boolean; overlay?: boolean; header?: ReactNode; children: ReactNode
@@ -416,12 +431,17 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
   const kb = useKeyboardUp()
   const max = height - insets.top - 12
   const anim = animate && !reduce
-  // overlay: Android's back closes it, as the Modal's onRequestClose does for a modal sheet
+  // overlay: Android's back closes it. Outside a Modal, BackHandler hears it; inside one (the guided
+  // player), the holder's onRequestClose must call overlayBack() first, which closes the topmost
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
     if (!overlay) return
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => { onClose(); return true })
-    return () => sub.remove()
-  }, [overlay, onClose])
+    const close = () => closeRef.current()
+    overlays.push(close)
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { close(); return true })
+    return () => { sub.remove(); overlays.splice(overlays.indexOf(close), 1) }
+  }, [overlay])
   const body = (
     <>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
