@@ -11,7 +11,7 @@ import { mindCopyIssues } from '@/core/domain/engine/why'
 import type { CheckIn, DayLog } from '@/core/types'
 import { LowMoodBanner } from '@/screens/today/LowMoodBanner'
 import { LOW_MOOD } from '@/screens/mind/copy'
-import { pillarsOn, summaryDue } from '@/screens/today/summary'
+import { pillarsOn, signpostFresh, signpostMarkNow, signpostShows, summaryDue } from '@/screens/today/summary'
 
 const ON = pillarsOn(undefined)
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim()
@@ -20,6 +20,16 @@ const noop = () => {}
 export function signpostSuite(): number {
   const checks: [string, boolean, string?][] = []
   const ok = (n: string, v: boolean, info?: string) => checks.push([n, v, info])
+
+  /* ---------- when the banner shows (the rules the web and native hook share) ---------- */
+  const D = '2026-10-08'
+  const none = { day: '', dismissed: false }
+  ok('due and not marked today: fresh, marked now, shows', signpostFresh(true, D, '2026-09-01') && signpostMarkNow(true, D, none) && signpostShows(true, true, D, none))
+  ok('not due: never fresh, never shows', !signpostFresh(false, D, undefined) && !signpostShows(false, false, D, { day: D, dismissed: false }))
+  ok('already marked today on this device: not fresh', !signpostFresh(true, D, D))
+  ok('shown in this session today: stays up across tabs, not marked twice', signpostShows(true, false, D, { day: D, dismissed: false }) && !signpostMarkNow(true, D, { day: D, dismissed: false }))
+  ok('dismissed in this session: stays down', !signpostShows(true, true, D, { day: D, dismissed: true }))
+  ok('marked today in an earlier session (a relaunch): not shown again', !signpostShows(true, false, D, none))
 
   /* ---------- the due list and the asks budget ---------- */
   const all = { signpost: true, checkin: false, thing: true, planReview: true, banner: 'missed' as const, foodAsk: true, quickCheck: true, ifThen: true }

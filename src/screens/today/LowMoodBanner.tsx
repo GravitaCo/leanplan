@@ -10,7 +10,6 @@
  * The banner itself records nothing: opening Support from it is private (B6.8), and the only write
  * is markLowMoodShown, the local date it showed, on this device only (never synced).
  */
-import { useEffect, useState } from 'react'
 import { LOW_MOOD_LINE_ANY_NATION } from '@/core/domain/mind'
 import { Icon } from '@/ui/icons'
 import { LOW_MOOD } from '../mind/copy'
@@ -33,30 +32,5 @@ export function LowMoodBanner({ onSupport, onDismiss }: {
   )
 }
 
-/** The day the signpost showed in this page session, and whether it was dismissed: it stays up
- *  across tab switches that day until dismissed, and a reload doesn't bring it back. */
-const session = { day: '', dismissed: false }
-
-/**
- * Whether the banner shows now. `due`: the asks budget shows the signpost today. `shownOn`: the
- * stored device-only day it last showed. It shows when due and not yet marked for today (then it
- * is marked once, with the local date), or when it already showed in this session and wasn't
- * dismissed. Once marked, lowMoodDue keeps it away for 30 days.
- */
-export function useLowMoodSignpost(due: boolean, today: string, shownOn: string | undefined, markShown: () => boolean) {
-  const [, rerender] = useState(0)
-  const fresh = due && shownOn !== today
-  useEffect(() => {
-    if (!fresh || session.day === today) return
-    session.day = today
-    session.dismissed = false
-    markShown()
-    rerender((n) => n + 1)
-  }, [fresh, today]) // eslint-disable-line react-hooks/exhaustive-deps
-  const here = session.day === today
-  const show = due && !(here && session.dismissed) && (fresh || here)
-  return {
-    show,
-    dismiss: () => { session.dismissed = true; rerender((n) => n + 1) },
-  }
-}
+/** The hook lives in lowMoodSignpost.ts (shared with native); kept here for existing imports. */
+export { useLowMoodSignpost } from './lowMoodSignpost'

@@ -12,7 +12,7 @@ import { MOODS } from '@/core/domain/insights'
 import { useStore } from '@/store/store'
 import { SUMMARY_MIND } from '@/screens/today/summaryCopy'
 import { checkedIn, checkinTime, makePlanOffered } from '@/screens/today/summary'
-import { thingView } from '@/screens/today/MindCard'
+import { thingView } from '@/screens/today/summary'
 import { font, useTokens } from '../../lib/theme'
 import { Button, Chevron, Link, T, TIcon } from './ui'
 

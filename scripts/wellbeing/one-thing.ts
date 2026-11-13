@@ -11,7 +11,7 @@ import { thingOptions, type ThingCtx } from '@/core/domain/mind'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { MIND_PLAN, PlanEditSheet, planGroups, whenLine } from '@/screens/plan/PlanSheets'
 import { ThingPlanSheet } from '@/screens/today/ThingPlanSheet'
-import { thingView } from '@/screens/today/MindCard'
+import { thingView } from '@/screens/today/summary'
 
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim()
 
