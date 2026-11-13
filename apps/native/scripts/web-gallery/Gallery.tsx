@@ -474,6 +474,27 @@ export function Gallery() {
         </div>
       </Sec>
 
+      <Sec id="kit2" title="Stack · flat links · XBtn with chevrons · Swatch rows">
+        <div className="stack" style={{ marginTop: 0 }}>
+          <button className="btn">Start</button>
+          <button className="btn gray">Not today</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 14 }}>
+          <button className="linkbtn" style={{ padding: 0 }}>How to do it</button>
+          <button className="linkbtn" style={{ padding: 0 }}>+ Add a set</button>
+          <button className="linkbtn" style={{ color: 'var(--red)' }}>Remove</button>
+        </div>
+        <div className="rb-acts" style={{ marginLeft: 0, marginTop: 14 }}>
+          <button className="x-btn up" aria-label="Move Goblet squat up"><Icon name="chevL" size={14} stroke={2.6} /></button>
+          <button className="x-btn down" aria-label="Move Goblet squat down"><Icon name="chevR" size={14} stroke={2.6} /></button>
+          <button className="x-btn down" disabled aria-label="Move Plank down"><Icon name="chevR" size={14} stroke={2.6} /></button>
+        </div>
+        <div className="list" style={{ marginTop: 14 }}>
+          <button className="li"><span className="catsq" style={{ background: 'var(--move-fill)' }} aria-hidden="true" /><div className="m"><div className="t">Strength</div><div className="s">Full body, lower, upper</div></div><Chevron /></button>
+          <div className="li"><span className="catsq sm" style={{ background: 'var(--food-fill)' }} aria-hidden="true" /><div className="m"><div className="t">Eating</div></div><span className="tr num">Maintenance</span></div>
+        </div>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="banner">

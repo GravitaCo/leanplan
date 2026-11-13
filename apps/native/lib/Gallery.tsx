@@ -14,11 +14,11 @@ import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, List, Note, RoundBtn, Tile, ToastHost, ToastView } from './ui/kit'
+import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, LinkBtn, List, Note, RoundBtn, Stack, Tile, ToastHost, ToastView } from './ui/kit'
 import { Scale, Select, Slider, Stepper } from './ui/controls'
 import { PickerSheet, TimeField } from './ui/pickers'
 import { frac } from '@/core/domain/estimate'
-import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { AddC, Row, Swatch, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -434,6 +434,27 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </List>
         <View style={{ marginTop: 10 }}><Btn kind="gray" label="Pick a start date" title={day ? `Starts ${day}` : 'Pick a date'} onPress={() => setDateOpen(true)} /></View>
         {dateOpen && <PickerSheet mode="date" value={day} min="2026-11-13" max="2027-11-13" label="Pick a start date" onDone={setDay} onClose={() => setDateOpen(false)} />}
+      </Sec>
+
+      <Sec id="kit2" title="Stack · flat links · XBtn with chevrons · Swatch rows">
+        <Stack style={{ marginTop: 0 }}>
+          <Btn title="Start" onPress={() => {}} />
+          <Btn kind="gray" title="Not today" onPress={() => {}} />
+        </Stack>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 14 }}>
+          <LinkBtn flat title="How to do it" onPress={() => {}} />
+          <LinkBtn flat title="+ Add a set" onPress={() => {}} />
+          <LinkBtn title="Remove" color={t.red} onPress={() => {}} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 }}>
+          <XBtn icon="chevL" rotate={90} label="Move Goblet squat up" onPress={() => {}} />
+          <XBtn icon="chevR" rotate={90} label="Move Goblet squat down" onPress={() => {}} />
+          <XBtn icon="chevR" rotate={90} disabled label="Move Plank down" onPress={() => {}} />
+        </View>
+        <List style={{ marginTop: 14 }}>
+          <Row lead={<Swatch color={t.moveFill} />} title="Strength" sub="Full body, lower, upper" onPress={() => {}} />
+          <Row lead={<Swatch sm color={t.foodFill} />} title="Eating" value="Maintenance" />
+        </List>
       </Sec>
 
       <Sec id="banner" title="Banner">

@@ -361,15 +361,25 @@ export function AddC({ onPress, label }: { onPress?: () => void; label?: string 
   return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(28, 28)}>{dot}</Pressable> : dot
 }
 
-/** `.x-btn`: a round close button (30 pt, --fill, --label2), in a 44 pt touch area. */
-export function XBtn({ onPress, label }: { onPress: () => void; label: string }) {
+/**
+ * `.x-btn`: a round button (30 pt, --fill, a --label2 icon), in a 44 pt touch area: the x, or
+ * another `icon` turned by `rotate` (the builder's move up and down: chevL/chevR at 90). Disabled
+ * at 35%.
+ */
+export function XBtn({ onPress, label, icon = 'x', rotate = 0, disabled }: { onPress: () => void; label: string; icon?: IconName; rotate?: number; disabled?: boolean }) {
   const t = useTokens()
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(30, 30)}
-      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Icon name="x" size={20} stroke={2.6} color={t.label2} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} hitSlop={slop(30, 30)}
+      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : pressed ? 0.7 : 1 })}>
+      <View style={rotate ? { transform: [{ rotate: `${rotate}deg` }] } : undefined}><Icon name={icon} size={20} stroke={2.6} color={t.label2} /></View>
     </Pressable>
   )
+}
+
+/** `.catsq`: a plain colour square for a row's `lead` (36 pt, radius 10; `sm` 30 pt, radius 8). */
+export function Swatch({ color, sm }: { color: string; sm?: boolean }) {
+  const d = sm ? 30 : 36
+  return <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: d, height: d, borderRadius: sm ? 8 : 10, backgroundColor: color, flexShrink: 0 }} />
 }
 
 /** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */

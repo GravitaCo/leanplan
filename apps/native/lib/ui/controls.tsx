@@ -7,7 +7,8 @@
  * - Select (`select`): the chosen option's words; a tap lists the options to pick from.
  */
 import { useRef, useState, type ReactNode } from 'react'
-import { PanResponder, Pressable, Text, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native'
+import { ActionSheetIOS, PanResponder, Platform, Pressable, Text, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native'
+import { UI } from '@/copy/ui'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
 import { Sheet } from './primitives'
@@ -148,8 +149,10 @@ export function Scale<T extends string | number>({ items, value, onPick, cols = 
 /**
  * `select` (the web's, with `appearance: none`, so no arrow): the chosen option's words. `row` is
  * `.frow select` (no fill, right-aligned, padding 11 0: put it in an FRow's `right`); otherwise the
- * filled field (--fill, radius 10, padding 11 12). A tap lists the options in a sheet, the chosen
- * one ticked; picking one closes it. The label is the field's, as the web's `<label for>` names it.
+ * filled field (--fill, radius 10, padding 11 12). A tap offers the options as the system does: on
+ * iOS its action sheet (titled with the label, a Cancel last); elsewhere a sheet listing them, the
+ * chosen one ticked. The label is the field's, as the web's `<label for>` names it, and the chosen
+ * option is its value.
  */
 export function Select<T extends string>({ value, options, onChange, label, row }: {
   value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; label: string; row?: boolean
@@ -159,7 +162,11 @@ export function Select<T extends string>({ value, options, onChange, label, row 
   const shown = options.find(([k]) => k === value)?.[1] ?? value
   return (
     <>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: shown }} onPress={() => setOpen(true)}
+      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: shown }} onPress={() => {
+        if (Platform.OS !== 'ios') { setOpen(true); return }
+        ActionSheetIOS.showActionSheetWithOptions({ title: label, options: [...options.map(([, l]) => l), UI.cancel], cancelButtonIndex: options.length },
+          (i) => { if (i < options.length && options[i][0] !== value) onChange(options[i][0]) })
+      }}
         style={({ pressed }) => [row
           ? { flex: 1, minWidth: 0, paddingVertical: 11 }
           : { backgroundColor: t.fill, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12 }, { opacity: pressed ? 0.6 : 1 }]}>

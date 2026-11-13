@@ -151,16 +151,29 @@ export function Chips({ children }: { children: ReactNode }) {
   return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{children}</View>
 }
 
-/** `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2). */
-export function LinkBtn({ title, onPress, style, muted, label }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean; label?: string }) {
+/**
+ * `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2, or any `color`). `flat` drops
+ * the padding for a link on its own line in a row (`.linkbtn.inl` alone, `.ex .howto`, `.addset`),
+ * its touch area still 44 pt; `size` sets the type size, `expanded` reports a disclosure's state.
+ */
+export function LinkBtn({ title, onPress, style, muted, color, label, flat, size = 15, expanded }: {
+  title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean; color?: string; label?: string
+  flat?: boolean; size?: number; expanded?: boolean
+}) {
   const t = useTokens()
   // 15 pt regular (a pillar card's links are 500: `.pcard .linkbtn`, pass it in `style`); the 31.5 pt
-  // box reaches 44 pt with the touch padding
+  // padded box reaches 44 pt with the touch padding, a flat one (19.5 pt) with 12 each way
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 400, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
+      hitSlop={flat ? 12 : 8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(size, 400, 1.3, BTN), { color: color ?? (muted ? t.label2 : t.tint) }, !flat && { paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
+}
+
+/** `.stack`: buttons in a column, 8 apart, 16 above. */
+export function Stack({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[{ gap: 8, marginTop: 16 }, style]}>{children}</View>
 }
 
 /** "Mo"… initials as the web's ProfileButton computes them. */
