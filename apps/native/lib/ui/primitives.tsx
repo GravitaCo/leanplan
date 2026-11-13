@@ -8,7 +8,7 @@
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, StyleSheet, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { create } from 'zustand'
@@ -290,7 +290,7 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
  * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
  * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
  */
-export function Row({ k, title, bold, expanded, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
+export function Row({ k, title, bold, expanded, actions, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
   title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
   /** `.dup-k` above `.dup-nm`: a 13 pt --label2 key over the 17 pt title, which then wraps (2 between) */
   k?: string
@@ -298,6 +298,10 @@ export function Row({ k, title, bold, expanded, tag, sub, sub2, value, strong, r
   bold?: boolean
   /** a row that opens something in place reports it open or closed (the web's aria-expanded) */
   expanded?: boolean
+  /** buttons beside the row's own (the `right` slot's "Remove", the web's sibling buttons), named
+   *  by their aria labels: a tappable row groups what's inside it for VoiceOver, so they're
+   *  offered as its custom actions too */
+  actions?: { label: string; onPress: () => void }[]
   /** default: shown when the row is tappable and has no right control */
   chevron?: boolean; act?: boolean; icon?: IconName
   /** an icon square: any fill and icon colour (`RowIcon`) */
@@ -346,10 +350,14 @@ export function Row({ k, title, bold, expanded, tag, sub, sub2, value, strong, r
   const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
   // a screen's spacing may raise the row's minimum height (.lib-row 64, .trow 76), never lower it
   const own = StyleSheet.flatten(style)
+  // each extra button as a named custom action ("activate" stays the row's own)
+  const acts = actions?.map((a, i) => ({ name: `action${i}`, label: a.label }))
+  const onAction = actions ? (e: AccessibilityActionEvent) => { const m = /^action(\d+)$/.exec(e.nativeEvent.actionName); if (m) actions[+m[1]]?.onPress() } : undefined
   const rs: StyleProp<ViewStyle> = [s, style, typeof own?.minHeight === 'number' && own.minHeight < (s.minHeight as number) ? { minHeight: s.minHeight } : null]
   return onPress
-    ? <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View accessible={label != null} accessibilityLabel={label} style={rs}>{body}</View>
+    ? <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
+        accessibilityActions={acts} onAccessibilityAction={onAction} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View accessible={label != null} accessibilityLabel={label} accessibilityActions={label != null ? acts : undefined} onAccessibilityAction={onAction} style={rs}>{body}</View>
 }
 
 /** `.tag`: a small uppercase label beside a title ("Mine"), 11 pt bold on --fill. */
