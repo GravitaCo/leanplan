@@ -108,26 +108,26 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       <View style={{ paddingBottom: 6, alignSelf: 'flex-start' }}><BackButton label={isToday ? 'Today' : dayName} onPress={onBack} /></View>
-      <TitleRow title={title} />
+      <TitleRow flush title={title} />
       <Sub style={{ marginTop: 2 }}>{sub}</Sub>
 
-      {/* .vchips (and .hd-wrap with the wellbeing flag: they wrap onto lines, 44 px targets) */}
-      <ScrollView horizontal={!WELLBEING_ENABLED} showsHorizontalScrollIndicator={false} style={{ marginHorizontal: WELLBEING_ENABLED ? 0 : -16, marginTop: 16, marginBottom: 12, flexGrow: 0 }}
-        contentContainerStyle={WELLBEING_ENABLED ? { flexDirection: 'row', flexWrap: 'wrap', gap: 6 } : { paddingHorizontal: 16, gap: 8 }}>
-        <View accessibilityRole="radiogroup" accessibilityLabel="Today's version" style={{ flexDirection: 'row', flexWrap: WELLBEING_ENABLED ? 'wrap' : 'nowrap', gap: WELLBEING_ENABLED ? 6 : 8 }}>
-          {chips.map(([k, label]) => {
-            const on = choice === k
-            return (
-              <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChoice(k)}
-                style={WELLBEING_ENABLED
-                  ? { minHeight: 44, borderRadius: 22, paddingVertical: 6, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: on ? t.btn : t.card, maxWidth: '100%' }
-                  : { height: 32, borderRadius: 16, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
-                <Text style={[font(on ? (WELLBEING_ENABLED ? 600 : 500) : 400), { fontSize: 15, lineHeight: 19, color: on ? t.btnInk : t.label }]}>{k === 'swap' ? swapTile(swapId).title : label}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      </ScrollView>
+      {/* .vchips: one scrolling row; with the wellbeing flag (.hd-wrap) they wrap onto lines, 44 px targets */}
+      {(() => {
+        const row = chips.map(([k, label]) => {
+          const on = choice === k
+          return (
+            <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChoice(k)}
+              style={WELLBEING_ENABLED
+                ? { minHeight: 44, borderRadius: 22, paddingVertical: 6, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: on ? t.btn : t.card, maxWidth: '100%' }
+                : { height: 32, borderRadius: 16, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
+              <Text style={[font(on ? (WELLBEING_ENABLED ? 600 : 500) : 400), { fontSize: 15, lineHeight: 19, color: on ? t.btnInk : t.label }]}>{k === 'swap' ? swapTile(swapId).title : label}</Text>
+            </Pressable>
+          )
+        })
+        return WELLBEING_ENABLED
+          ? <View accessibilityRole="radiogroup" accessibilityLabel="Today's version" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 16, marginBottom: 12 }}>{row}</View>
+          : <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="radiogroup" accessibilityLabel="Today's version" style={{ marginHorizontal: -16, marginTop: 16, marginBottom: 12, flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>{row}</ScrollView>
+      })()}
       {!!note && <Foot style={fp}>{note}</Foot>}
       {roughNote && shorter && <Foot style={fp}>{HARD_DAY_COPY.roughNote}</Foot>}
       {swap && <Foot style={fp}>This counts as today's session. Your plan carries on as usual.</Foot>}

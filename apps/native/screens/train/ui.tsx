@@ -46,7 +46,7 @@ export function Icon({ name, size = 20, stroke = 2, color, fill }: { name: IconN
 /** `<Chevron rotate>`: the row chevron (label3), turned for open/closed */
 export function Chevron({ rotate = 0, color }: { rotate?: number; color?: string }) {
   const t = useTokens()
-  return <View style={{ transform: [{ rotate: `${rotate}deg` }] }}><Icon name="chevR" size={14} stroke={2.4} color={color ?? t.label3} /></View>
+  return <View style={{ transform: [{ rotate: `${rotate}deg` }] }}><Icon name="chevR" size={14} stroke={2.6} color={color ?? t.label3} /></View>
 }
 /** the three dots of the player's menu button */
 export function Dots({ color }: { color: string }) {
@@ -94,11 +94,11 @@ export function Sub({ children, style }: { children: ReactNode; style?: StylePro
   return <Text style={[font(400), { fontSize: 15, lineHeight: 20, color: t.label2 }, style]}>{children}</Text>
 }
 /** `.ltitle`: a pushed screen's 34 px title; with WELLBEING_ENABLED the Profile avatar sits beside it (TitleRow) */
-export function TitleRow({ title }: { title: string }) {
+export function TitleRow({ title, flush }: { title: string; flush?: boolean }) {
   const t = useTokens()
   const name = useStore((s) => s.data.profile.name)
   const onProfile = useContext(TrainNav).onProfile
-  const h = <Text accessibilityRole="header" style={[font(600), { flex: 1, fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 2 }]}>{title}</Text>
+  const h = <Text accessibilityRole="header" style={[font(600), { flex: 1, fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: flush ? 0 : 2 }]}>{title}</Text>
   if (!WELLBEING_ENABLED) return h
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
@@ -171,7 +171,7 @@ export function XBtn({ label, onPress, icon = 'x', disabled, rotate = 0 }: { lab
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} hitSlop={7}
       style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : 1, transform: [{ rotate: `${rotate}deg` }] }}>
-      <Icon name={icon} size={14} stroke={2.6} color={t.label2} />
+      <Icon name={icon} size={20} stroke={2.6} color={t.label2} />
     </Pressable>
   )
 }
@@ -270,7 +270,7 @@ export function FRow({ label, children }: { label: string; children: ReactNode }
   const t = useTokens()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 16 }}>
-      <Text style={[font(400), { fontSize: 17, minWidth: 96, color: t.label }]}>{label}</Text>
+      <Text style={[font(400), { fontSize: 17, minWidth: 96, flexShrink: 0, color: t.label }]}>{label}</Text>
       {children}
     </View>
   )
@@ -283,7 +283,7 @@ export function FInput(p: TextInputProps & { numeric?: boolean; decimal?: boolea
   const t = useTokens()
   const { numeric, decimal, style, onChangeText, ...rest } = p
   return <TextInput onChangeText={onChangeText && ((v) => onChangeText(decimal ? toPoint(v) : v))} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : numeric ? 'number-pad' : 'default'}
-    style={[font(400), { flex: 1, fontSize: 17, color: t.label, textAlign: 'right', paddingVertical: 11 }, (numeric || decimal) && num, style]} {...rest} />
+    style={[font(400), { flex: 1, minWidth: 0, fontSize: 17, color: t.label, textAlign: 'right', paddingVertical: 11 }, (numeric || decimal) && num, style]} {...rest} />
 }
 /**
  * `.frow select`: the value in label2; tapping it offers the options the way the platform shows a
@@ -299,8 +299,8 @@ export function FSelect({ value, options, onChange, title }: { value: string; op
     }
   }
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${title}: ${value}`} onPress={open} style={{ flex: 1, alignItems: 'flex-end', paddingVertical: 11 }}>
-      <Text style={[font(400), { fontSize: 17, color: t.label2 }]}>{value}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${title}: ${value}`} onPress={open} style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', paddingVertical: 11 }}>
+      <Text numberOfLines={1} style={[font(400), { fontSize: 17, color: t.label }]}>{value}</Text>
     </Pressable>
   )
 }

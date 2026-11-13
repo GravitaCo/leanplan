@@ -86,7 +86,7 @@ export function Thumb({ video, shape, play, big }: { video?: ExerciseMedia; shap
   }
   return (
     <View aria-hidden style={[box, { backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }]}>
-      {shape ? <Text style={[font(600), { fontSize: 12, color: t.label2 }]}>{shape === 'hold' ? 'Hold' : shape === 'duration' ? 'Time' : 'Cue'}</Text> : <Icon name="dumbbell" size={22} color={t.label2} />}
+      {shape ? <Text style={[font(600), { fontSize: 12, color: t.label2 }]}>{shape === 'hold' ? 'Hold' : shape === 'duration' ? 'Time' : 'Cue'}</Text> : <Icon name="dumbbell" size={20} color={t.label2} />}
     </View>
   )
 }

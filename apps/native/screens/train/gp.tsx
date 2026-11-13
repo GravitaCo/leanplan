@@ -50,10 +50,11 @@ export function GpPill({ children, plain }: { children: ReactNode; plain?: boole
   )
 }
 /** `.gp-clock`: 64 px light figures and a smaller line beside them */
-export function GpClock({ big, small, label }: { big: string; small?: string; label: string }) {
+/** `light`: the web's 300 (200 in the warm-up); needs Geist Light/ExtraLight loaded in the app shell to show on a phone */
+export function GpClock({ big, small, label, size = 64, light = 300 }: { big: string; small?: string; label: string; size?: number; light?: 200 | 300 }) {
   return (
     <View accessible accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-      <Text style={[font(400), num, { fontSize: 64, lineHeight: 68, fontWeight: '300', letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
+      <Text style={[font(400), num, { fontSize: size, lineHeight: size, fontWeight: light === 200 ? '200' : '300', letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
       {!!small && <Text style={[font(400), num, { flexShrink: 1, fontSize: 15, color: 'rgba(255,255,255,0.85)' }]}>{small}</Text>}
     </View>
   )
@@ -85,10 +86,10 @@ export function GpSec({ title, onPress }: { title: string; onPress: () => void }
   )
 }
 /** `.gp-adj`: a centred text button */
-export function GpTextBtn({ title, onPress }: { title: string; onPress: () => void }) {
+export function GpTextBtn({ title, onPress, regular }: { title: string; onPress: () => void; regular?: boolean }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={6} style={{ alignSelf: 'center', height: 32, justifyContent: 'center' }}>
-      <Text style={[font(500), { fontSize: 15, color: '#fff' }]}>{title}</Text>
+      <Text style={[font(regular ? 400 : 500), { fontSize: 15, color: '#fff' }]}>{title}</Text>
     </Pressable>
   )
 }

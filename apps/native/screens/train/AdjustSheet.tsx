@@ -148,8 +148,8 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
       )}
       {feel === 'stopped' && !warmup && (
         <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
-          <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
-          <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
+          <Text style={[font(400), { fontSize: 16, lineHeight: 22, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
             {onGentler && <LinkBtn inl title="Try a gentler option" onPress={onGentler} />}
             <LinkBtn inl expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
           </View>

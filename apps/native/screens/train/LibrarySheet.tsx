@@ -3,8 +3,8 @@
  * kind and kit, and open an entry for its cue, easier and harder steps and a gentler option. In pick
  * mode (the workout builder) tapping an exercise chooses it.
  */
-import { useMemo, useState } from 'react'
-import { Image, Pressable, Text, TextInput, View } from 'react-native'
+import { useMemo, useRef, useState } from 'react'
+import { Image, Pressable, Text, TextInput, View, type HostInstance } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import type { Equipment, Exercise, Modality } from '@/core/types'
 import { EXERCISES } from '@/core/data/exercises'
@@ -14,14 +14,20 @@ import { exById, stepOf } from '@/core/domain/library'
 import { rankByName } from '@/core/domain/search'
 import { howToLink } from '@/core/domain/workout'
 import { CARE_DISCLAIMER, LIB_KIT, RED_FLAG, fitsKit, inModality } from '@/screens/train/trainCopy'
-import { DemoPlayer } from './DemoPlayer'
+import { DemoPlayer, type Origin } from './DemoPlayer'
 import { Thumb, imageSource, useClipPreview } from './media'
 import { ExCard } from './Preview'
 import { BackButton, Chip, Chips, Foot, Icon, Li, LiText, List, NavBtn, Shade, Sheet, font, useTokens } from './ui'
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const t = useTokens()
-  const [demo, setDemo] = useState(false)
+  const [demo, setDemo] = useState<Origin | null>(null)
+  const media = useRef<HostInstance>(null)
+  const openDemo = () => {
+    const el = media.current
+    if (!el) { setDemo({ x: 0, y: 0, width: 0, height: 0 }); return }
+    el.measureInWindow((x: number, y: number, width: number, height: number) => setDemo({ x, y, width, height }))
+  }
   const still = useClipPreview(x.video, false)
   const easier = stepOf(x, -1)
   const harder = stepOf(x, 1)
@@ -31,7 +37,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
     <>
       {x.video && (
         // `.ex-media`: the poster, 4:5 up to 380 tall, focus 30% down, a shade at the foot
-        <Pressable accessibilityRole="button" accessibilityLabel={`Play the demo: ${x.n}`} onPress={() => setDemo(true)}
+        <Pressable accessibilityRole="button" accessibilityLabel={`Play the demo: ${x.n}`} ref={media} onPress={openDemo}
           style={({ pressed }) => ({ width: '100%', aspectRatio: 4 / 5, maxHeight: 380, marginBottom: 10, borderRadius: t.radius, overflow: 'hidden', backgroundColor: t.fill, opacity: pressed ? 0.9 : 1 })}>
           {still.src && <Image source={imageSource(still.src)} onError={still.onError} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />}
           <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 96 }}><Shade stops={[[0, 0], [1, 0.4]]} /></View>
@@ -62,7 +68,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>This move asks quite a lot of {careList(x.care)}.{gentler ? " If you'd like to go easier on them, the gentler option above works the same area." : ''} {CARE_DISCLAIMER}</Foot>
       ) : null}
       <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
-      {demo && x.video && <DemoPlayer back ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(false)} />}
+      {demo && x.video && <DemoPlayer back origin={demo.width ? demo : undefined} ex={{ n: x.n, t: x.defaultRx ?? '', cue: x.cue, video: x.video }} onClose={() => setDemo(null)} />}
     </>
   )
 }
@@ -93,7 +99,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
       left={cur ? <BackButton onPress={() => setOpen(open.slice(0, -1))} /> : <NavBtn title={onPick ? 'Cancel' : 'Done'} onPress={onClose} />}>
       {cur ? <Detail key={cur.id} x={cur} onOpen={(id) => setOpen([...open, id])} /> : <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.fill, borderRadius: 10, paddingHorizontal: 8, height: 38 }}>
-        <Icon name="search" size={17} color={t.label2} />
+        <Icon name="search" size={20} color={t.label2} />
         <TextInput value={q} placeholder="Search exercises" placeholderTextColor={t.label2} accessibilityLabel="Search exercises" onChangeText={setQ}
           style={[font(400), { flex: 1, fontSize: 17, color: t.label, padding: 0 }]} autoCorrect={false} />
       </View>
