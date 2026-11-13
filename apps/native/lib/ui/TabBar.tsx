@@ -32,6 +32,9 @@ export function TabBar({ state, descriptors }: BottomTabBarProps) {
   const style = focused ? StyleSheet.flatten(descriptors[focused.key]?.options.tabBarStyle as StyleProp<ViewStyle>) : undefined
   if (style?.display === 'none') return null
   return (
+    // The web's bar is fixed over the page, so its translucent --tabbar always composites over --bg.
+    // Here the bar sits below the scene, so --bg is laid under it to give the same colour.
+    <View style={{ backgroundColor: t.bg }}>
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', backgroundColor: t.tabbar, borderTopWidth: 1, borderTopColor: t.sep, paddingBottom: insets.bottom }}>
       {TABS.map(({ route, tab, label, icon }) => {
         const off = route === 'mind' && mindOff
@@ -43,11 +46,13 @@ export function TabBar({ state, descriptors }: BottomTabBarProps) {
             accessibilityState={{ selected: on, disabled: off }}
             onPress={() => setTab(tab)}
             style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 7, paddingBottom: 5 }}>
-            <Icon name={icon} size={25} stroke={on ? 2.3 : 1.9} color={color} />
+            {/* 20, not the 25 BottomNav asks for: the web's `svg.i` rule draws every icon at 20 px */}
+            <Icon name={icon} size={20} stroke={on ? 2.3 : 1.9} color={color} />
             <Text style={[font(500), { fontSize: 10, letterSpacing: 0.1, color }]}>{label}</Text>
           </Pressable>
         )
       })}
+    </View>
     </View>
   )
 }

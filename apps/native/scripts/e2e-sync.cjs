@@ -17,7 +17,7 @@
  *
  * Every Supabase request is answered by an in-memory stand-in (rows per table, as the web's
  * e2e-foundations.cjs); the real project is never reached. The web render keeps the browser's own
- * connection events: the phone's NetInfo wiring (lib/platform/connection.ts) is unit-tested in
+ * connection events: the phone's network wiring (lib/platform/connection.ts) is unit-tested in
  * scripts/test-platform.mjs instead.
  */
 const { chromium } = require('playwright')

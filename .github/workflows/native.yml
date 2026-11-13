@@ -27,7 +27,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/native/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            apps/native/package-lock.json
+      # Shared src/ resolves some packages from the root install, so it goes first.
+      - name: Root install (shared src)
+        run: npm ci
+        working-directory: .
       - run: npm ci
       - run: npm run typecheck
       - run: npm run test:platform
