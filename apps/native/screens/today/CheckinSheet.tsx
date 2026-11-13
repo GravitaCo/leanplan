@@ -19,7 +19,7 @@ import { bandLabel } from '@/core/domain/sleep'
 import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/checkinNight'
 import { BTN, num, tx, useTokens } from '../../lib/theme'
 import { normTime } from './wakeTime'
-import { List, slop } from '../../lib/ui/kit'
+import { List } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { Chevron } from '../../lib/ui/icons'
@@ -27,7 +27,8 @@ import { Chevron } from '../../lib/ui/icons'
 /* TODO(N1-followup): `.scale` is a shared class N1's kit doesn't have yet (P4); until it lands it is
    drawn here from the web markup (theme.css) and swapped when it does. */
 
-/** `.scale` in a sheet: five equal buttons on --elev, the chosen one in the tint (or `onStyle`). */
+/** `.scale.ck-scale` in a sheet: five equal buttons, 44 pt tall at least (Benn, 13 Nov 2026), on
+ *  --elev, the chosen one in the tint (or `onStyle`). */
 function Scale({ labels, value, onChange, renderLabel, onStyle }: {
   labels: readonly string[]; value: number; onChange: (v: number) => void
   renderLabel?: (l: string, on: boolean) => ReactNode; onStyle?: ViewStyle
@@ -38,8 +39,8 @@ function Scale({ labels, value, onChange, renderLabel, onStyle }: {
       {labels.map((l, i) => {
         const on = value === i + 1
         return (
-          <Pressable key={l} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(on ? 0 : i + 1)} hitSlop={slop(0, 32)}
-            style={[{ flex: 1, minWidth: 0, borderRadius: 10, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: on && !onStyle ? t.tint : t.elev }, on && onStyle]}>
+          <Pressable key={l} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(on ? 0 : i + 1)}
+            style={[{ flex: 1, minWidth: 0, minHeight: 44, borderRadius: 10, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: on && !onStyle ? t.tint : t.elev }, on && onStyle]}>
             {renderLabel ? renderLabel(l, on) : <Text style={[tx(13, 400, 1.2, BTN), { textAlign: 'center', color: on ? t.onTint : t.label }]}>{l}</Text>}
           </Pressable>
         )

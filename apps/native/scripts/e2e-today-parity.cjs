@@ -465,6 +465,17 @@ async function run() {
     return { closed, opened, summary: s }
   })
 
+  // the check-in's scale buttons are 44 pt tall at least (Benn, 13 Nov 2026), on both apps
+  await scenario(browser, 'wp10-scale-44', (() => { const s = wp7Hard(); delete s.state.days[HARD_DAY].checkin; return s })(), async (page, web, l) => {
+    await click(page, 'Check in')
+    const sheet = await sheetText(page, web)
+    for (const word of ['Great', 'Rough', 'Hungry']) {
+      const h = await page.getByText(word, { exact: true }).first().evaluate((e) => { let x = e; while (x && x.tagName !== 'BUTTON' && x.getAttribute('role') !== 'button') x = x.parentElement; return x ? x.getBoundingClientRect().height : 0 })
+      rule(l, `"${word}" button at least 44 tall`, h >= 44, h)
+    }
+    return { sheet }
+  })
+
   /* ---------- wp14: the one thing on an ordinary day ---------- */
   await scenario(browser, 'wp14-ordinary', wp14Ordinary(), async (page, web, l) => {
     const s = await pillarsText(page, web)
