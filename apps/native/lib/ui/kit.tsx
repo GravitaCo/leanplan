@@ -17,6 +17,8 @@ import { BTN, tx, useTokens, type Tokens } from '../theme'
 export const InSheet = createContext(false)
 /** Inside a `.list.icons`, where a row's label keeps its width and its value takes the rest. */
 export const InIconList = createContext(false)
+/** Inside a `.list.nf-rows`: subs wrap, the label takes the row and the value never truncates. */
+export const InWrapList = createContext(false)
 /** Inside a pillar card (`.pcard`), where some components drop their outer margins (`.pcard svg.bars`). */
 export const InPCard = createContext(false)
 export function useSurface(t: Tokens) {
@@ -56,29 +58,33 @@ function touchHeight(style: StyleProp<ViewStyle>, fallback: number): number {
   return h
 }
 
-export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger'
+export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger' | 'signout'
 
-/** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, and `.sm` (36 high, as wide as its words). */
+/** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, `.signout` (Profile's: a card-coloured
+ *  block, radius 16, red 16 pt, 24 above), and `.sm` (36 high, as wide as its words). */
 export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style, textStyle, label }: {
   title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode; disabled?: boolean
   /** a context's own size (`.pcard .btn.gray` 48, `.mv .btn.sm` 40): the web's per-screen rules */
   style?: StyleProp<ViewStyle>; textStyle?: StyleProp<TextStyle>; label?: string
 }) {
   const t = useTokens()
-  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : 'transparent'
+  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : kind === 'signout' ? t.card : 'transparent'
   const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' ? t.tint : t.red
+  const so = kind === 'signout'
   const h = small ? 36 : 50
-  return (
+  const btn = (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       hitSlop={slop(0, touchHeight(style, h))}
       style={({ pressed }) => [{
-        minHeight: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
+        minHeight: h, borderRadius: so ? 16 : h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
-      <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
+      <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
     </Pressable>
   )
+  // .btn.signout's 24 above sits outside the button, as a CSS margin does
+  return so ? <View style={{ marginTop: 24 }}>{btn}</View> : btn
 }
 
 /**
@@ -120,12 +126,17 @@ export const initials = (name: string) => name.trim().split(/\s+/).filter(Boolea
  * `.list`: an inset grouped list (radius 18) whose rows are split by 1 px --sep lines starting 16 pt
  * in, or 58 pt in with `icons` (rows that start with a settings icon).
  */
-export function List({ children, icons = false, style }: { children: ReactNode; icons?: boolean; style?: StyleProp<ViewStyle> }) {
+export function List({ children, icons = false, wrap = false, style }: {
+  children: ReactNode; icons?: boolean
+  /** `.nf-rows` (Profile's notification rows): a row's sub wraps and its value is never cut */
+  wrap?: boolean; style?: StyleProp<ViewStyle>
+}) {
   const t = useTokens()
   const bg = useSurface(t)
   const rows = flat(children)
   return (
     <InIconList.Provider value={icons}>
+    <InWrapList.Provider value={wrap}>
     <View style={[{ backgroundColor: bg, borderRadius: t.radiusSm, overflow: 'hidden' }, style]}>
       {rows.map((c, i) => (
         <View key={i}>
@@ -136,6 +147,7 @@ export function List({ children, icons = false, style }: { children: ReactNode; 
         </View>
       ))}
     </View>
+    </InWrapList.Provider>
     </InIconList.Provider>
   )
 }
