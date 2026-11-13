@@ -19,6 +19,12 @@ export const notifications = {
   scheduleNotificationAsync: async (r: { identifier: string }) => { fake.scheduled.push(r); return r.identifier },
   cancelScheduledNotificationAsync: async (id: string) => { fake.calls.push('cancel:' + id); fake.scheduled = fake.scheduled.filter((r) => r.identifier !== id) },
   dismissNotificationAsync: async (id: string) => { fake.calls.push('dismiss:' + id) },
+  setNotificationHandler: () => undefined,
+  clearLastNotificationResponse: () => { fake.calls.push('clear-last') },
+  getLastNotificationResponse: () => null,
+  getPresentedNotificationsAsync: async () => [],
+  addNotificationResponseReceivedListener: () => ({ remove() {} }),
+  addPushTokenListener: () => ({ remove() {} }),
 }
 // the store's network: every request recorded; writes answered 201, reads empty
 ;(globalThis as any).fetch = async (url: string, o: RequestInit = {}) => {
