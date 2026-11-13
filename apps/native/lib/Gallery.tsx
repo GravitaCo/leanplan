@@ -7,7 +7,7 @@
  * For Benn, Sara and the team only (opened from the Spike sheet); never part of the app.
  */
 import { useState, type ReactNode } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Modal, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { connectionLabel } from '@/core/domain/connection'
@@ -15,7 +15,7 @@ import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
-import { AddC, Row, XBtn, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -25,6 +25,8 @@ import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
 import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
+import { Check, ConsentRow, Opts, Signposts, Ticks } from './ui/choices'
+import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -55,7 +57,15 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [areas, setAreas] = useState<string[]>(['knees'])
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
+  const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [consentA, setConsentA] = useState(true)
+  const [consentB, setConsentB] = useState(false)
+  const [kitOpts, setKitOpts] = useState<string[]>(['db'])
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
+  // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
+  const [player, setPlayer] = useState(false)
+  const [overSheet, setOverSheet] = useState(false)
+  const overlayOpen = useOverlayOpen()
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -308,6 +318,59 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
       </Sec>
 
+      <Sec id="opts" title="Opts (one answer; several)">
+        <View style={{ gap: 16 }}>
+          <Opts label="How often" opts={G.opts} value={oneOpt} onPick={setOneOpt} />
+          <Opts label="Your kit" opts={G.kit} value={kitOpts} onPick={(k) => setKitOpts((x) => flip(x, k))} multi />
+        </View>
+      </Sec>
+
+      <Sec id="ticks" title="Ticks · Check (on, off, small)">
+        <Ticks items={G.ticks} />
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+          <Check on /><Check on={false} /><Check on sm /><Check on={false} sm />
+        </View>
+      </Sec>
+
+      <Sec id="signposts" title="Signposts">
+        <View style={{ gap: 10 }}>
+          <Signposts list={supportList('england')} />
+          <Signposts list={G.beatLines} />
+        </View>
+      </Sec>
+
+      <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
+        <List>
+          <ConsentRow on={consentA} onChange={setConsentA} label="I agree to Tilo storing and using my health information, as the privacy policy explains.">
+            I agree to Tilo storing and using my health information, as the <TextLink onPress={() => {}}>privacy policy</TextLink> explains.
+          </ConsentRow>
+          <ConsentRow on={consentB} onChange={setConsentB} label="I’m 18 or over.">I’m 18 or over.</ConsentRow>
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <Row wrap title="Delete your account and everything in it, on every device" sub="This can’t be undone. Download a copy first if you want one." />
+          <SettingRow icon="camera" color={t.tint} label="Take a photo" accessibilityLabel="Take a photo of the barcode" onPress={() => {}} />
+        </List>
+        <View style={{ marginTop: 10, gap: 10 }}>
+          <BackButton small onPress={() => {}} label="Profile" />
+          <Banner title="Your data is safe on this phone." body="Sign in again to back it up." />
+          <Btn title="Continue" iconAfter="chevR" onPress={() => {}} />
+          <View style={{ backgroundColor: t.tint, borderRadius: t.radius, padding: 16, alignItems: 'center' }}><TaliMark width={90} color="#ffffff" /></View>
+        </View>
+      </Sec>
+
+      <Sec id="insets" title="List inset (72: library rows; 0: Today list)">
+        <View style={{ gap: 10 }}>
+          <List inset={72}>
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Goblet squat" sub="Legs · dumbbell" style={{ minHeight: 64 }} onPress={() => {}} />
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Push-up" sub="Chest · body weight" style={{ minHeight: 64 }} onPress={() => {}} />
+          </List>
+          <List inset={0} style={{ borderRadius: 20 }}>
+            <Row title="Full body" sub="6 exercises" onPress={() => {}} />
+            <Row title="Walk" sub="30 min" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <View style={{ gap: 10 }}>
           <Banner icon="leaf" iconColor={t.mindInk} title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." onDismiss={() => {}} />
@@ -330,6 +393,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <View style={{ gap: 8 }}>
           <Btn kind="gray" title="Open a sheet" onPress={() => setSheet('sheet')} />
           <Btn kind="gray" title="Open a bare sheet" onPress={() => setSheet('bare')} />
+          <Btn kind="gray" title="Open a full-screen view" onPress={() => setPlayer(true)} />
         </View>
       </Sec>
 
@@ -354,6 +418,22 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </BareSheet>
       )}
     </ScrollView>
+    {/* Android's back closes an overlay sheet first, then the view (overlayBack) */}
+    <Modal visible={player} animationType="none" onRequestClose={() => { if (!overlayBack()) setPlayer(false) }}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {/* the holder's own content, hidden from TalkBack while an overlay sheet is open */}
+        <View importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'} style={{ flex: 1, padding: 24, paddingTop: 80, gap: 12 }}>
+          <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
+          <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
+          <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+        </View>
+        {overSheet && (
+          <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
+            <List icons><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
+          </Sheet>
+        )}
+      </View>
+    </Modal>
     {standalone && <ToastHost />}
     </>
   )
