@@ -14,14 +14,15 @@ import { useStore, type Tab } from '@/store/store'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { Icon, type IconName } from './icons'
 import { tx, useTokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 export type TabRoute = 'index' | 'mind' | 'food' | 'train' | 'plan'
 const TABS: { route: TabRoute; tab: Tab; label: string; icon: IconName }[] = [
-  { route: 'index', tab: 'today', label: 'Summary', icon: 'heart' },
-  { route: 'mind', tab: 'mind', label: 'Mind', icon: 'mind' },
-  { route: 'food', tab: 'food', label: 'Food', icon: 'fork' },
-  { route: 'train', tab: 'train', label: 'Train', icon: 'dumbbell' },
-  { route: 'plan', tab: 'plan', label: 'Plan', icon: 'calendar' },
+  { route: 'index', tab: 'today', label: UI.tabs.today, icon: 'heart' },
+  { route: 'mind', tab: 'mind', label: UI.tabs.mind, icon: 'mind' },
+  { route: 'food', tab: 'food', label: UI.tabs.food, icon: 'fork' },
+  { route: 'train', tab: 'train', label: UI.tabs.train, icon: 'dumbbell' },
+  { route: 'plan', tab: 'plan', label: UI.tabs.plan, icon: 'calendar' },
 ]
 
 /** The bar's look: `active` tab in the tint, the Mind tab faded when the Mind pillar is off. */
@@ -31,14 +32,14 @@ export function TabBarView({ active, mindOff, onPress, bottom }: { active: strin
     // The web's bar is fixed over the page, so its translucent --tabbar always composites over --bg.
     // Here the bar sits below the scene, so --bg is laid under it to give the same colour.
     <View style={{ backgroundColor: t.bg }}>
-    <View accessibilityRole="tablist" accessibilityLabel="Main" style={{ flexDirection: 'row', backgroundColor: t.tabbar, borderTopWidth: 1, borderTopColor: t.sep, paddingBottom: bottom }}>
+    <View accessibilityRole="tablist" accessibilityLabel={UI.main} style={{ flexDirection: 'row', backgroundColor: t.tabbar, borderTopWidth: 1, borderTopColor: t.sep, paddingBottom: bottom }}>
       {TABS.map(({ route, label, icon }) => {
         const off = route === 'mind' && mindOff
         const on = !off && active === route
         const color = off ? t.label3 : on ? t.tint : t.label2
         return (
           <Pressable key={route} disabled={off} accessibilityRole="tab"
-            accessibilityLabel={off ? 'Mind, switched off in Profile' : undefined}
+            accessibilityLabel={off ? UI.mindOff : undefined}
             accessibilityState={{ selected: on, disabled: off }}
             onPress={() => onPress(route)}
             style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 7, paddingBottom: 5 }}>
