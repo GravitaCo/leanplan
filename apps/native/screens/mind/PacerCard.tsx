@@ -11,6 +11,7 @@ import { AccessibilityInfo, Platform, Text, View } from 'react-native'
 import Animated, { Easing, cancelAnimation, interpolate, useAnimatedStyle, useSharedValue, withTiming, ReduceMotion, type SharedValue } from 'react-native-reanimated'
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg'
 import type { PacerPattern } from '@/core/domain/pacer'
+import type { PacerSegment } from './pacerClock'
 import { BORDER, DIAM, KNOTS, OPAC, S_MIN } from '@/screens/mind/glow'
 import { Card } from '../../lib/ui/kit'
 import { num, tx, useTokens } from '../../lib/theme'
@@ -64,14 +65,21 @@ export function PacerCard({ pattern, minutes, run, reduced, onLeft, onDone }: {
 }) {
   const t = useTokens()
   const full = useSharedValue(0)
-  const st = usePacerClock(pattern, minutes, run, {
+  const animate = (seg: PacerSegment) => {
+    full.value = seg.from
+    full.value = withTiming(seg.to, { duration: seg.durationMs, easing: EASE, reduceMotion: ReduceMotion.Never })
+  }
+  const [st, segmentNow] = usePacerClock(pattern, minutes, run, {
     onLeft, onDone,
-    onSegment: (seg) => {
-      if (reduced) return
-      full.value = seg.from
-      full.value = withTiming(seg.to, { duration: seg.durationMs, easing: EASE, reduceMotion: ReduceMotion.Never })
-    },
+    onSegment: (seg) => { if (!reduced) animate(seg) },
   })
+  // Reduce Motion switched off mid-run: move at once from where the breath is now, as the web does
+  // (from the sphere's place now to where this phase ends, so the next phase starts in step)
+  useEffect(() => {
+    if (reduced) return
+    const seg = segmentNow()
+    if (seg) animate(seg)
+  }, [reduced]) // eslint-disable-line react-hooks/exhaustive-deps
   // a new run (or none) starts the sphere at rest
   useEffect(() => { cancelAnimation(full); full.value = 0 }, [run, full])
   // iOS has no live regions: VoiceOver hears each new word (never the count) as an announcement
