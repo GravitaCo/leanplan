@@ -16,7 +16,7 @@ import { isHardKey, plannedKeys } from '@/core/domain/plans'
 import { isBuiltinLift, workoutsOf } from '@/core/domain/sessions'
 import { SLEEP_BANDS, isHHMM } from '@/core/domain/checkin'
 import { bandLabel } from '@/core/domain/sleep'
-import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/CheckinSleep'
+import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/checkinNight'
 import { font, num, useTokens } from '../../lib/theme'
 import { Chevron, Foot, Lbl, List, NavBtn, Scale, Sheet } from './ui'
 
