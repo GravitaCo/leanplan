@@ -10,6 +10,7 @@ import { RESET, finishedLine, leftLine, lengthLabel, resetCopy } from '@/screens
 import { GLOW_MID, glowAt } from '@/screens/mind/Pacer'
 import { ResetScreen } from '@/screens/mind/ResetScreen'
 import { SHARED } from '@/screens/mind/copy'
+import { onPacerDone, resetInitial, resetReducer } from '@/screens/mind/resetStages'
 
 export function resetSuite(): number {
   let bad = 0
@@ -74,7 +75,24 @@ export function resetSuite(): number {
   ok('reset.css: mind tokens, never --tint, no hard-coded colours', !css.includes('--tint') && !/#[0-9a-f]{3,8}\b/i.test(css) && css.includes('var(--mind)') && css.includes('var(--mind-fill)') && css.includes('var(--card)'))
   const src = readFileSync('src/screens/mind/ResetScreen.tsx', 'utf8')
   const calls = src.match(/logSkill\(/g) || []
-  ok('logSkill is called once, from finish (a stopped run is never logged)', calls.length === 1 && /const finish = \(\) => \{[^}]*logSkill\('reset'\)/.test(src))
+  // the logging lives in the shared resetStages.ts (web and native): the screen only finishes through onPacerDone
+  const stages = readFileSync('src/screens/mind/resetStages.ts', 'utf8')
+  const stageCalls = stages.match(/logSkill\(/g) || []
+  ok('logSkill is called once, from onPacerDone after its running guard (a stopped run is never logged)',
+    calls.length === 0 && stageCalls.length === 1 && /if \(cur\.stage !== 'running'\) return cur\s*\n\s*st\.logSkill\('reset'\)/.test(stages)
+    && /const finish = \(\) => \{ if \(onPacerDone\(cur\.current\) !== cur\.current\) dispatch\(\{ type: 'finish' \}\) \}/.test(src))
+  {
+    const log: string[] = []
+    const st = { data: { days: {} } as never, logSkill: () => { log.push('log'); return true }, doneThing: () => { log.push('done'); return true } }
+    const running = resetReducer(resetInitial, { type: 'start' })
+    const fin = onPacerDone(running, st, '2026-10-08')
+    const n = log.length
+    const late = onPacerDone(resetReducer(running, { type: 'stop' }), st, '2026-10-08')
+    ok('onPacerDone: a running run finishes and logs once; a stopped one (done landing after Stop) logs nothing',
+      fin.stage === 'finished' && n === 1 && late.stage === 'stopped' && log.length === 1 && onPacerDone(fin, st, '2026-10-08') === fin && log.length === 1)
+    ok('stages: start only from ready, length locked while running, a length after a run is ready again',
+      resetReducer(running, { type: 'start' }) === running && resetReducer(running, { type: 'length', len: 5 }).len === running.len && resetReducer(fin, { type: 'length', len: 5 }).stage === 'ready')
+  }
   const pacer = readFileSync('src/screens/mind/Pacer.tsx', 'utf8')
   ok('pacer reads the timings (no hard-coded seconds)', !/\bs:\s*\d/.test(pacer) && src.includes('RESET_PATTERN'))
   return bad

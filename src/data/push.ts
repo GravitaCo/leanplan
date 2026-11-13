@@ -8,6 +8,23 @@ export function pushSupported(): boolean {
   return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
 }
 
+/** The reminder permission, as the browser names it ('default' until the person answers). */
+export type PushPermission = 'default' | 'granted' | 'denied'
+
+/** This device's reminder permission, read synchronously so the prompt that may follow still runs
+ *  inside the tap (Safari is strict about that): the browser's Notification.permission, exactly as
+ *  the store read it before; on a phone, a copy refreshed at launch and on each return (push.native.ts). */
+export function pushPermission(): PushPermission {
+  return pushSupported() ? Notification.permission : 'denied'
+}
+
+/** Ask for it (the browser shows its prompt only while the person hasn't answered). Call it from
+ *  the tap that turns a reminder on. */
+export async function askPushPermission(): Promise<PushPermission> {
+  if (!pushSupported()) return 'denied'
+  return Notification.requestPermission().catch(() => 'denied' as const)
+}
+
 function urlBase64ToUint8Array(b64: string): Uint8Array<ArrayBuffer> {
   const pad = '='.repeat((4 - (b64.length % 4)) % 4)
   const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/')
