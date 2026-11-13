@@ -117,15 +117,59 @@ const tick = (page, name) => page.getByRole('checkbox', { name, exact: true }).c
 const tap = async (page, name) => { await radio(page, name); await page.waitForTimeout(450) }
 const draft = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('tali.onboarding') || 'null'))
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
+/**
+ * Set a wheel or ruler (role=slider): by keyboard as the web's e2e does (one nudge so it counts as
+ * picked, then the arrow keys); a picker that doesn't take keys (N1's on a web render) is dragged
+ * with the mouse instead, one row (48 px) or tick (9.2 px) a step, as a finger would.
+ */
 async function slide(page, name, target) {
   const sl = page.getByRole('slider', { name, exact: true }).first()
-  await sl.focus()
-  await sl.press('ArrowUp'); await sl.press('ArrowDown')
-  let now = +(await sl.getAttribute('aria-valuenow'))
-  for (let i = 0; i < 400 && now !== target; i++) { await sl.press(now < target ? 'ArrowUp' : 'ArrowDown'); now = +(await sl.getAttribute('aria-valuenow')) }
-  if (now !== target) throw new Error(`slider ${name} stuck at ${now}, wanted ${target}`)
+  const hasValue = (await sl.getAttribute('aria-valuenow')) != null
+  const now = async () => (hasValue ? +(await sl.getAttribute('aria-valuenow')) : shownValue(page, name))
+  if (hasValue) {
+    await sl.focus()
+    await sl.press('ArrowUp'); await sl.press('ArrowDown')
+    let v = await now()
+    for (let i = 0; i < 400 && v !== target; i++) { await sl.press(v < target ? 'ArrowUp' : 'ArrowDown'); v = await now() }
+    if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
+    return
+  }
+  // N1's pickers on a web render take no keys and expose no aria value (TODO(N1-followup)): drag
+  // them as a finger would, one row (48 px) or tick (9.2 px) a step, and read the value they show
+  const wheel = /years/i.test(name)
+  const step = wheel ? 48 : 9.2
+  let moved = false
+  for (let i = 0; i < 14; i++) {
+    const v = await now()
+    if (v === target && moved) return
+    const n = v === target ? 1 : Math.max(-12, Math.min(12, target - v))
+    const box = await sl.boundingBox()
+    const x = box.x + box.width / 2, y = box.y + box.height / 2, d = -n * step
+    await page.mouse.move(x, y); await page.mouse.down()
+    for (let k = 1; k <= 8; k++) await page.mouse.move(wheel ? x : x + (d * k) / 8, wheel ? y + (d * k) / 8 : y)
+    await page.mouse.up(); await page.waitForTimeout(150)
+    moved = true
+  }
+  const v = await now()
+  if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
 }
-const sliderNow = async (page, name) => { const sl = page.getByRole('slider', { name, exact: true }).first(); return (await sl.getAttribute('aria-valuetext')) === 'Not set' ? null : +(await sl.getAttribute('aria-valuenow')) }
+/** The value a picker shows: the wheel's bold middle number; a ruler's figure above it (cm, kg, lb, st lb, ft in). */
+async function shownValue(page, name) {
+  return page.evaluate((nm) => {
+    const el = document.querySelector(`[role=slider][aria-label="${nm}"]`)
+    if (!el) return NaN
+    if (/years/i.test(nm)) {
+      const bold = [...el.querySelectorAll('div')].find((d) => d.children.length === 0 && /SemiBold/.test(getComputedStyle(d).fontFamily))
+      return bold ? +bold.textContent : NaN
+    }
+    // the figure is the text just before the ruler: "172 cm", "5′8", "87 kg", "192 lb", "13 st 10 lb"
+    const txt = document.body.innerText.replace(/\u00a0/g, ' ')
+    const st = txt.match(/(\d+) st (\d+) lb/); if (st) return +st[1] * 14 + +st[2]
+    const ft = txt.match(/(\d)′(\d+)/); if (ft) return +ft[1] * 12 + +ft[2]
+    const m = txt.match(/(?:^|\n)(\d+) (cm|kg|lb)(?:\n|$)/); return m ? +m[1] : NaN
+  }, name)
+}
+const sliderNow = async (page, name) => { const sl = page.getByRole('slider', { name, exact: true }).first(); if ((await sl.getAttribute('aria-valuenow')) == null) return shownValue(page, name); return (await sl.getAttribute('aria-valuetext')) === 'Not set' ? null : +(await sl.getAttribute('aria-valuenow')) }
 
 /** The screen's visible lines, for comparing words: no dialog content, whitespace normalised. */
 async function lines(page) {
