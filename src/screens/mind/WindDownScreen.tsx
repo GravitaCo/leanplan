@@ -2,11 +2,12 @@ import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { healthDeclined } from '@/data/consent'
 import { isHHMM } from '@/core/domain/checkin'
-import { routineChoices, routineItems, routineSub, routineToSave, skillById, DEFAULT_ROUTINE, type WindDownItem } from '@/core/data/skills'
+import { routineChoices, routineItems, routineSub, skillById, DEFAULT_ROUTINE, type WindDownItem } from '@/core/data/skills'
 import type { SkillId } from '@/core/types'
 import { BackButton, Sheet, Toggle, TitleRow } from '@/ui/primitives'
 import { Chevron, Icon, type IconName } from '@/ui/icons'
 import { MIND, MIND_UI, SHARED, WIND_DOWN } from './copy'
+import { routineSave } from './routine'
 import { SupportSheet } from './SupportSheet'
 
 const MIND_ICO = { background: 'var(--mind-fill)', color: 'var(--mind-ink)' }
@@ -111,9 +112,8 @@ export function RoutineSheet({ time, stored, onClose }: { time: string | undefin
   const [picked, setPicked] = useState<string[]>(() => [...(stored ?? DEFAULT_ROUTINE)])
   const flip = (k: string) => setPicked((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k]))
   const done = () => {
-    const next = routineToSave(picked, stored)
-    const same = stored ? JSON.stringify(next) === JSON.stringify(stored) : JSON.stringify(next) === JSON.stringify(DEFAULT_ROUTINE)
-    if (!same) setMindPrefs({ routine: next })
+    const next = routineSave(picked, stored)
+    if (next) setMindPrefs({ routine: next })
     onClose()
   }
   return (
