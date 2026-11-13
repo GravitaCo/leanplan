@@ -41,7 +41,6 @@ import { BANNER_ASK, checkedIn, pillarsOn, summaryDue } from '@/screens/today/su
 import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from '@/copy/summary'
 import { useLowMoodSignpost } from '@/screens/today/LowMoodBanner'
 import { FOOD9 } from '@/copy/onboardingApp'
-import { openLab } from './labSheet'
 import { Card, LinkBtn, PageHeader, Tile } from './ui/kit'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
@@ -53,7 +52,7 @@ import { CheckinSheet } from '../screens/today/CheckinSheet'
 import { WeightSheet } from '../screens/today/WeightSheet'
 import { FoodAskSheet, MedicalSheet, PregnancyCheckSheet } from '../screens/today/AskSheets'
 import { WeeklyReviewScreen } from '../screens/today/WeeklyReview'
-import { goProfile, goTab, notYet } from '../screens/today/links'
+import { notYet } from '../screens/today/links'
 
 type SheetKind = { k: 'weight' } | { k: 'checkin' } | null
 
@@ -114,6 +113,8 @@ function SummaryPage() {
   const [foodAsk, setFoodAsk] = useState<'today' | 'range' | null>(null)
   const openMind = useStore((s) => s.openMind)
   const openTrain = useStore((s) => s.openTrain)
+  const openProfile = useStore((s) => s.openProfile)
+  const setTab = useStore((s) => s.setTab)
   const noteActivityShown = useStore((s) => s.noteActivityShown)
   const markLowMoodShown = useStore((s) => s.markLowMoodShown)
   const repeatYesterday = useStore((s) => s.repeatYesterday)
@@ -234,7 +235,7 @@ function SummaryPage() {
   const lighterMove = wb && !logged && !isRest &&
     offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin))
 
-  const openCheckin = () => (healthDeclined(data) ? goProfile('health') : setSheet({ k: 'checkin' }))
+  const openCheckin = () => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))
   const pk = (color: string, label: string) => <T w={600} s={13} c={color}>{label}</T>
   const sub = { fontSize: 13, color: t.label2 }
   const psq = (bg: string, icon: ReactNode, size = 40) => <View style={{ width: size, height: size, borderRadius: size === 56 ? 14 : 12, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>{icon}</View>
@@ -244,7 +245,7 @@ function SummaryPage() {
   const showMove = on.move
   const moveIcon = (size: number) => <TIcon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={size} color={t.label} />
   const startBtn = (h: number) => !logged && !isRest
-    ? <Button title="Start" onPress={() => { openTrain(first!); goTab('train') }} h={h} size={h === 40 ? 15 : 14} align="flex-start" style={{ paddingHorizontal: h === 40 ? 18 : 14 }} />
+    ? <Button title="Start" onPress={() => openTrain(first!)} h={h} size={h === 40 ? 15 : 14} align="flex-start" style={{ paddingHorizontal: h === 40 ? 18 : 14 }} />
     : null
   const weightTile = !fv.weightBack || p.reviewWeight !== true ? (
     <Tile onPress={() => setSheet({ k: 'weight' })} label="Weight" style={{ flex: 1 }}>
@@ -267,7 +268,7 @@ function SummaryPage() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={openLab} />
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={() => setTab('profile')} />
       <WeekStrip />
       {/* ob2-0b's setup card belongs to Onboarding (N11), behind ONBOARDING_ENABLED */}
 
@@ -275,8 +276,8 @@ function SummaryPage() {
         {/* ---------- Mind ---------- */}
         {wb ? on.mind && (
           <MindCard checkin={day.checkin} isToday={isToday} hard={hard} thingSlot={shown('thing')} options={things} windDownAt={p.mind?.windDownAt}
-            onOpen={() => { openMind(); goTab('mind') }}
-            onOpenView={(v) => { openMind(v); goTab('mind') }}
+            onOpen={() => openMind()}
+            onOpenView={(v) => openMind(v)}
             onCheckIn={openCheckin}
             onMakePlan={() => notYet('Make it a plan', 'Plan')} plans={p.plans} day={cur} />
         ) : (
@@ -338,7 +339,7 @@ function SummaryPage() {
               <Chip onPress={() => {
                 setPrefs({ activityLevel: suggest.level, activityAsked: cur, activityMult: undefined })
                 showToast('Activity level updated. Your targets only change if you choose to.')
-                goProfile('metrics')
+                openProfile('metrics')
               }}>Update</Chip>
               <Chip onPress={() => setPrefs({ activityAsked: cur })}>Keep as is</Chip>
             </View>
@@ -364,24 +365,24 @@ function SummaryPage() {
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               {pk(t.foodInk, 'Food')}
-              <LinkBtn title="Open" onPress={() => goTab('food')} />
+              <LinkBtn title="Open" onPress={() => setTab('food')} />
             </View>
             {yes ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => goTab('food')} style={{ gap: 8 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
                 <T w={600} s={22} style={{ lineHeight: 26 }}>{FOOD9.meals(mw.slots.length)}</T>
                 <T s={15} c={t.label2} style={{ lineHeight: 22 }}>{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</T>
               </Pressable>
             ) : some && gentle ? (
               <View style={{ gap: 8 }}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => goTab('food')} style={{ gap: 8 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
                   <T w={600} s={22} style={{ lineHeight: 26 }}>{st.gentle}</T>
                   <T s={15} c={t.label2} style={{ lineHeight: 22 }}>{FOOD9.slots(mw.slots, mw.withProtein)}</T>
                 </Pressable>
-                {!p.pregnancy?.flagged && <LinkBtn title={FOOD9.seeRange} onPress={() => goTab('food')} style={{ fontSize: 14 }} />}
+                {!p.pregnancy?.flagged && <LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={{ fontSize: 14 }} />}
               </View>
             ) : (
               <>
-                <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => goTab('food')} style={{ gap: 14 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 14 }}>
                   {gentle
                     ? <T w={600} s={24} style={{ lineHeight: 29 }}>{st.gentle}</T>
                     : (
@@ -465,7 +466,7 @@ function SummaryPage() {
                 {pk(t.moveInk, 'Move')}
                 <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2, alignItems: 'center', justifyContent: 'center' }}>{moveIcon(18)}</View>
               </View>
-              <Pressable accessibilityRole="button" onPress={() => goTab('train')} style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
+              <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
                 <T w={600} s={19} style={{ lineHeight: 23, letterSpacing: -0.2 }}>{moveTitle}</T>
                 <T s={12} c={t.label2}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</T>
               </Pressable>
@@ -476,7 +477,7 @@ function SummaryPage() {
         ) : showMove && (
           <Card>
             {pk(t.moveInk, 'Move')}
-            <Pressable accessibilityRole="button" onPress={() => goTab('train')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {psq(t.moveFill, moveIcon(24), 56)}
               <View style={{ flex: 1 }}>
                 <T w={600} s={17}>{moveTitle}</T>
@@ -550,7 +551,7 @@ function SummaryPage() {
                 : <><T w={600} s={20} style={{ marginTop: 2 }}>None yet</T><T s={12} c={t.label2} style={{ marginTop: 1 }}>this week</T></>}
             </View>
             {on.food && (
-              <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`} onPress={() => goTab('food')}>
+              <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`} onPress={() => setTab('food')}>
                 <Text style={[font(400), sub]}>Logged</Text>
                 <T w={600} s={20} style={[num, { marginTop: 2 }]}>{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</T>
               </Pressable>
@@ -562,7 +563,7 @@ function SummaryPage() {
 
       {sheet?.k === 'weight' && <WeightSheet onClose={() => setSheet(null)} />}
       {medReask && <MedicalSheet onClose={() => { markMedicalReasked(); setMedReask(false) }} />}
-      {reask && <PregnancyCheckSheet onClose={() => setReask(false)} onAnswers={() => { setReask(false); goProfile('health-answers') }} />}
+      {reask && <PregnancyCheckSheet onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} onSupport={openSupport} />}
       <ToastHost />

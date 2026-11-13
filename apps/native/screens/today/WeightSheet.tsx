@@ -44,8 +44,9 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
   const W = 320, H = 130
   const { line, area, dots } = buildPath(points, W, H, 12)
   const delta = weightWeekDelta(data, cur)
-  // a decimal comma reads as a point, as the web's number field does on a UK keyboard
-  const save = () => { const v = parseFloat(bw.replace(',', '.')); if (v) { setWeight(v); onClose() } }
+  // only a plain number saves, as with the web's number field; a decimal comma (iOS decimal pad in
+  // comma locales) reads as a point
+  const save = () => { const x = bw.trim(); const v = /^\d*([.,]\d+)?$/.test(x) ? parseFloat(x.replace(',', '.')) : NaN; if (v) { setWeight(v); onClose() } }
 
   return (
     <Sheet title="Body weight" tall onClose={onClose} right={<NavBtn title="Save" bold onPress={save} />}>
