@@ -10,29 +10,25 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { canSaveHealthAnswers } from '@/data/consent'
-import { finishedProfile, planFitLine, restLine, summaryFor, trainingFrom, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
-import { PLAN_TEMPLATES, phasesOf, phaseWeek, templateById, type PlanTemplate } from '@/core/domain/plans'
-import { keyTitle, warmupForSlots } from '@/core/domain/routines'
+import { planFitLine, restLine, summaryFor, trainingFrom, warmupFor, whyRows, type SummaryModel, type WhyRow, type WizardDraft } from '@/core/domain/wizard'
+import { PLAN_TEMPLATES, phasesOf, type PlanTemplate } from '@/core/domain/plans'
+import { warmupForSlots } from '@/core/domain/routines'
 import { PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
 import { Icon } from '@/ui/icons'
 import { planArt } from '../plan/PlanParts'
 import { SCREEN_H } from './screenHeading'
-import { renderWhy, type PlannedSession } from '@/core/domain/engine'
-import { HELD_AT_MAINTENANCE_NOTE, suggestedTargets } from '@/core/domain/nutrition'
+import type { PlannedSession } from '@/core/domain/engine'
+import { HELD_AT_MAINTENANCE_NOTE } from '@/core/domain/nutrition'
 import { explainStart } from '@/core/domain/targets'
 import { latestWeight } from '@/core/domain/insights'
 import { todayStr, DAY_NAME } from '@/core/domain/date'
-import { EXERCISE_BY_ID } from '@/core/data/exercises'
-import { WEEK_ORDER } from '@/core/domain/engine/inputs'
 import type { Why } from '@/core/types'
 import { BareSheet } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { MAINT_SHEET, OTHERS, REDO, SUMMARY } from './copy'
+import { chosenPlan, dayNote, exerciseName, foodCardKind, heroPlan as heroOf, mineLine, reasonChips, shapeLine, slotLine, startPayload, weekStrip, whyLines } from './summaryModel'
 
 const DAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const uniq = (xs: string[]) => [...new Set(xs)]
-/** "Goblet squat: a gentler choice for the knees." → "A gentler choice for the knees." */
-const afterName = (t: string) => { const i = t.indexOf(': '); const r = i > 0 && i < 48 ? t.slice(i + 2) : t; return r.charAt(0).toUpperCase() + r.slice(1) }
 
 export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, onAddAge, onAnswers, onChoosePlan, onClose }: {
   d: WizardDraft; onEdit: () => void; onPersonalise: () => void; onAddWeight: () => void; onAddHeight: () => void; onAddAge: () => void
@@ -61,20 +57,13 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   // Redo setup: Start saves the answers, then asks before touching the week (never automatic)
   const [offer, setOffer] = useState(false)
   const r = m.result
-  const plan = r.plan
   const rows = whyRows(m, d)
   const first = d.mode === 'first'
   // a Tilo plan chosen instead of the suggested week (the answers are saved either way)
-  const chosen = templateById(d.planChoice)
+  const chosen = chosenPlan(d)
 
   const start = (rebuild = true, then?: () => void) => {
-    const at = new Date().toISOString()
-    const profile = finishedProfile(m, d, at, today, data.profile)
-    const sug = first && m.targets.kcal != null ? suggestedTargets(profile, m.kg, m.routing) : null
-    const target = sug && 'kcal' in sug ? { kcal: sug.kcal, p: sug.p, c: sug.c, f: sug.f } : null
-    // a redo's weight left as it was is no new weigh-in
-    const weightKg = !first || (d.redo && d.weight === d.redo.weight) ? null : m.kg
-    finish({ profile, plan: rebuild && !chosen ? plan : null, target, weightKg })
+    finish(startPayload(m, d, { at: new Date().toISOString(), today, base: data.profile, rebuild }))
     // the same way the Plan tab starts one (PlanScreen's begin)
     if (chosen) startPlan({ name: chosen.name, phases: phasesOf(chosen), source: 'recommended', baseTemplateId: chosen.id, startedAt: today })
     setTab('today')
@@ -82,14 +71,9 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
     then?.()
   }
 
-  const byDay = new Map<number, PlannedSession[]>()
-  for (const s of plan.sessions) byDay.set(s.weekday, [...(byDay.get(s.weekday) ?? []), s])
-  const tWeek = chosen ? phaseWeek({ phases: phasesOf(chosen) }, 0) : null
   // four reasons from the person's own answers first (r6-summary: days, sore spots, kit, a gentle start)
-  const chips = rows.filter((x) => x.key !== 'warmup').sort((x, y) => chipRank(x.key) - chipRank(y.key)).slice(0, 4)
-  // the boards' hero: a chosen plan's own photo; otherwise Full body system for the suggested week
-  // and Pure muscle growth for the starter week (ob3-1, ob3-4)
-  const heroPlan = chosen ?? templateById(r.starter ? 'pure-muscle-growth' : 'full-body-system')
+  const chips = reasonChips(rows)
+  const heroPlan = heroOf(m, chosen)
   const art = planArt(heroPlan?.id)
 
   return (
@@ -115,11 +99,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
 
         <section className="sm-strip" aria-label="Your week">
           <div className="days">
-            {WEEK_ORDER.map((wd) => {
-              const ss = tWeek ? [] : byDay.get(wd) ?? []
-              const keys = tWeek?.[wd] ?? []
-              const on = ss.length > 0 || keys.length > 0
-              const name = ss.map((x) => x.name).join(', ') || keys.map((k) => keyTitle(k, routines)).join(', ')
+            {weekStrip(m, chosen, routines).map(({ wd, sessions: ss, on, name }) => {
               return (
                 <span className="dy" key={wd}>
                   <span className="l" aria-hidden="true">{DAY_LETTER[wd]}</span>
@@ -184,58 +164,46 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
   )
 }
 
-const CHIP_ORDER = ['days', 'areas', 'kit', 'ease', 'weekdays', 'minutes', 'enjoy', 'walks', 'time', 'impact']
-const chipRank = (k: string) => { const i = CHIP_ORDER.indexOf(k); return i < 0 ? CHIP_ORDER.length : i }
-
-/** The week's shape under the hero's title (r6-summary): "3 days · about 30 min · at home". */
-function shapeLine(d: WizardDraft, m: SummaryModel): string {
-  const sessions = m.result.plan.sessions
-  const n = sessions.filter((s) => !s.optional).length
-  const mins = sessions.length ? Math.round(sessions.reduce((a, s) => a + s.mins, 0) / sessions.length / 5) * 5 : 30
-  const where = d.where === 'mix' ? 'a mix' : d.where === 'outdoors' ? 'outdoors' : d.where === 'gym' ? 'at a gym' : m.result.starter && !d.where ? 'no equipment' : 'at home'
-  return `${n} ${n === 1 ? 'day' : 'days'} · about ${mins} min · ${where}`
-}
-
 function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHealth, onAnswers }: {
   m: SummaryModel; onHow: () => void; onAddWeight: () => void; onAddHeight: () => void; onAddAge: () => void; onMaint: () => void; onHealth: () => void
   /** ob9-1's "Change in Profile › Health check answers": before Start that's the wizard's own question (as ob4-8) */
   onAnswers: () => void
 }) {
   const t = m.targets
-  const mode = m.routing.foodMode
+  const kind = foodCardKind(m)
   // ob4-7 and ob4-9: no number, and the card says logging works in full, why, and how to change it
-  if (t.hidden === 'pregnancy') {
+  if (kind === 'pregnancy') {
     return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.maint}</div><div className="s ink">{SUMMARY.maintP}</div>
       <div className="s"><b>{SUMMARY.maintLongK}</b> {SUMMARY.maintLong}</div>
       <button className="linkbtn wz-link start sm" onClick={onMaint}>{SUMMARY.maintMore}</button></section>
   }
-  if (t.hidden === 'no-consent') {
+  if (kind === 'no-consent') {
     return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.noConsentT}</div><div className="s">{SUMMARY.noConsentS}</div>
       <button className="btn gray bp-btn" onClick={onHealth}>{SUMMARY.noConsentGo}</button></section>
   }
-  if (t.hidden === 'no-age') {
+  if (kind === 'no-age') {
     return <section className="sm-food"><div className="k">Food</div><div className="big h18">{SUMMARY.noAgeT}</div><div className="s">{SUMMARY.noAgeS}</div>
       <button className="btn gray bp-btn" onClick={onAddAge}>{SUMMARY.noAgeGo}</button></section>
   }
-  if (t.hidden === 'no-weight') {
+  if (kind === 'no-weight') {
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noWeight}</div><div className="s">{SUMMARY.noWeightS}</div>
       <button className="btn gray bp-btn" onClick={onAddWeight}>Add weight</button></section>
   }
-  if (t.hidden === 'no-height') {
+  if (kind === 'no-height') {
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.noHeight}</div><div className="s">{SUMMARY.noWeightS}</div>
       <button className="btn gray bp-btn" onClick={onAddHeight}>Add height</button></section>
   }
   // ob9-1 (and ob4-9): Yes has no number; Sometimes a range on Food, no number on the summary
-  if (mode === 'yes' && t.hidden === 'gentle') {
+  if (kind === 'yes') {
     return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.yesT}</div><div className="s">{SUMMARY.yesS}</div>
       <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
   }
-  if (mode === 'sometimes' && !t.hidden) {
+  if (kind === 'sometimes') {
     return <section className="sm-food" aria-label="Food"><div className="k">Food</div><div className="big h20">{SUMMARY.sometimesT}</div><div className="s">{SUMMARY.sometimesS}</div>
       <button className="linkbtn wz-link start sm" onClick={onAnswers}>{SUMMARY.changeLink}</button></section>
   }
   const e = explainStart(t)
-  if (t.hidden || t.kcal == null || !t.maintenance || !e) {
+  if (kind === 'maintenance' || t.kcal == null || !e) {
     return <section className="sm-food"><div className="k">Food</div><div className="big">{SUMMARY.maint}</div><div className="s">{SUMMARY.maintS}</div></section>
   }
   return (
@@ -270,7 +238,7 @@ function HowRows({ m }: { m: SummaryModel }) {
 
 function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; warm: WarmupBlock; onClose: () => void }) {
   const title = `${DAY_NAME[s.weekday]} · ${s.name}`
-  const note = uniq([...s.why, ...whys.filter((w) => w.about === 'ease-in' || w.about === 'dose')].map(renderWhy)).slice(0, 3)
+  const note = dayNote(s, whys)
   return (
     <BareSheet label={title} onClose={onClose}>
       <div className="feel-hd"><h2>{title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
@@ -279,11 +247,10 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
         <div className="sm-row"><span className="m"><span className="t">{SUMMARY.warmRow(warm.mins)}</span><span className="s">{SUMMARY.warmRowS(warm.moves.map((x) => x.n))}</span></span></div>
         {s.slots.map((x, i) => {
           // the reason for the exercise itself first; sets and reps are in the note below
-          const main = [...x.why.filter((w) => w.about === 'exercise' && w.code !== 'calibration' && w.code !== 'starter'), ...x.why.filter((w) => w.about !== 'exercise' && w.code !== 'calibration')]
-          const line = main.length ? afterName(renderWhy(main[0])) : renderWhy(x.why[0] ?? { code: 'starter', about: 'exercise' })
+          const line = slotLine(x)
           return (
             <div className="sm-row" key={x.exId + i}>
-              <span className="m"><span className="t">{EXERCISE_BY_ID[x.exId]?.n.replace(/\s*\([^)]*\)\s*$/, '') ?? x.exId}</span>
+              <span className="m"><span className="t">{exerciseName(x.exId)}</span>
                 <span className="s">{line}</span><span className="s num" style={{ marginTop: 2 }}>{x.rx}</span></span>
             </div>
           )
@@ -295,12 +262,11 @@ function DaySheet({ s, whys, warm, onClose }: { s: PlannedSession; whys: Why[]; 
 }
 
 function WhySheet({ row, onClose }: { row: WhyRow; onClose: () => void }) {
-  const lines = uniq(row.whys.map(renderWhy))
   return (
     <BareSheet label={row.title} onClose={onClose}>
       <div className="feel-hd"><h2>{row.title}</h2><button className="navbtn b" onClick={onClose}>Done</button></div>
       <div className="sm-sheet-sub" style={{ marginTop: 2 }}>{row.sub}</div>
-      <div className="sm-why">{[...(row.lines ?? []), ...lines].map((l) => <p key={l}>{l}</p>)}</div>
+      <div className="sm-why">{whyLines(row).map((l) => <p key={l}>{l}</p>)}</div>
     </BareSheet>
   )
 }
@@ -320,11 +286,7 @@ function MaintSheet({ onClose, onAnswers }: { onClose: () => void; onAnswers: ()
 
 /** ob3-6: the suggested week at the top, then Tilo's ready-made plans with how each fits. */
 function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: SummaryModel; chosen?: PlanTemplate; onPick: (id: string | undefined) => void; onClose: () => void }) {
-  const plan = m.result.plan
-  const n = plan.sessions.filter((s) => !s.optional).length
-  const mins = plan.sessions.length ? Math.round(plan.sessions.reduce((a, s) => a + s.mins, 0) / plan.sessions.length) : 30
-  const where = d.where === 'mix' ? 'a mix' : d.where === 'outdoors' ? 'outdoors' : d.where ?? (m.result.starter ? 'no equipment' : 'home')
-  const mine = `${n} ${n === 1 ? 'day' : 'days'} · about ${mins} min · ${where}`
+  const { line: mine, days: n } = mineLine(d, m)
   return (
     <BareSheet label={OTHERS.title} onClose={onClose}>
       <div className="feel-hd"><h2>{OTHERS.title}</h2><button className="navbtn b" onClick={onClose}>{OTHERS.close}</button></div>
