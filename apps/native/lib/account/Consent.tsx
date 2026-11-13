@@ -133,7 +133,7 @@ export function Link({ children, onPress, underline }: { children: ReactNode; on
 function ConsentBox({ on, onChange, id, children }: { on: boolean; onChange: (v: boolean) => void; id: string; children: ReactNode }) {
   const t = useTokens()
   return (
-    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} testID={id} onPress={() => onChange(!on)}
+    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} aria-checked={on} testID={id} onPress={() => onChange(!on)}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       <View style={{ width: 22, height: 22, marginTop: 1, marginLeft: 4, marginRight: 3, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label3 }}>
         {on && <Icon name="check" size={16} stroke={2.8} color={t.onTint} />}
