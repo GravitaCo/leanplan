@@ -69,7 +69,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: 'What we collect in the app',
         p: [`Only what you enter, or what is needed to run your account:`],
         ul: [
-          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
+          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.` +
+            (native ? ` If you sign in with Apple, we receive your email address (or a private relay address, if you choose Hide My Email) and Apple's identifier for you. We don't receive your name.` : ''),
           onboarding
             ? `Profile: display name, sex (and, if you set Tilo up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tilo worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`
             : `Profile: display name, sex, age, height, weight, activity level, goal and diet pattern (such as vegetarian or vegan).`,
@@ -222,6 +223,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             : []),
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
+          ...(native ? [`Apple: only if you choose "Continue with Apple" in the iPhone app. Apple handles that sign-in under its own privacy policy.`] : []),
         ],
       },
       {

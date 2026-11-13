@@ -37,14 +37,16 @@ increments: token revocation on deletion, and the privacy policy naming Apple. L
 2. Supabase: enable the Apple provider, with the bundle ID `fit.tilo.app` as an authorised client ID
    for native ID-token sign-in [I: Supabase dashboard; the lead or Benn changes project settings, never
    this stream]. No redirect URL is needed for the native flow.
-3. Sign-in (`lib/account/oauth.ts`, beside `googleSignIn`): make a random raw nonce, pass its SHA-256
-   to `AppleAuthentication.signInAsync({ requestedScopes: [EMAIL, FULL_NAME], nonce })`, then
-   `supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken, nonce: raw })`
-   [I: Supabase's documented pattern; check the current docs when building]. The session reaches the
-   store through `onAuthStateChange` like Google's. `ERR_REQUEST_CANCELED` is a quiet cancel.
-4. Re-auth before deletion (`lib/account/Delete.tsx`): the same call; then the same check as Google's
-   that the session's user is the account being deleted. `authProvider` will read `apple`, so the
-   confirm step offers Apple, not a password.
+3. Sign-in (`lib/account/oauth.ts` appleSignIn, built): a 32-byte random raw nonce (expo-crypto),
+   its SHA-256 (hex) to Apple's sheet through `modules/tilo-auth` (`requestedScopes: [.email]` only),
+   then `supabase.auth.signInWithIdToken({ provider: 'apple', token: identityToken, nonce: raw })`
+   (Supabase's documented pattern). The session reaches the store through `onAuthStateChange` like
+   Google's. A closed sheet is a quiet cancel.
+4. Re-auth before deletion (`lib/account/Delete.tsx`, built): an account with Apple among its
+   providers (`app_metadata.providers`, not just the first) signs in with Apple again on **every**
+   deletion, even with a fresh session, because that sign-in gives the one-time code revocation needs
+   (security-data and compliance, 13 Nov). The account that comes back must be this phone's owner
+   (`rules.ts reauthMatches`). The under-18 deletion needs the same when revocation lands.
 5. Account deletion: Apple requires apps with Sign in with Apple to revoke the user's Apple token when
    the account is deleted [I: Apple's account-deletion guidance]. That means the `delete-account`
    function (or Supabase) calling Apple's `/auth/revoke` with the app's client secret: a server change
@@ -91,6 +93,16 @@ increment, not by sign-in itself; Apple asks apps to revoke on deletion):
    `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (the .p8 file's contents), `APPLE_CLIENT_ID` = `fit.tilo.app`.
    Supabase dashboard, Edge Functions, Secrets (or the lead sets them with the Supabase CLI).
 
+## Accounts and linking (security-data, 13 Nov)
+
+- Same email as an existing confirmed account: Supabase links Apple to it (one user id), so the
+  owner check passes and the account has both providers.
+- Hide My Email: a relay address is a different email, so Apple makes a separate account. The owner
+  question then asks whose data is on the phone (safe), but the person has two accounts. Worth a line
+  in the help copy before launch (new words: a board or Benn's or Sara's OK).
+- A different Apple ID picked when re-confirming before a deletion is refused; it does quietly create
+  an empty account with no consent and no sync, as a different Google account does.
+
 ## How revocation will work (increment (a), not built yet)
 
 No Apple token is stored anywhere. Deleting an Apple account already asks the person to sign in
@@ -98,12 +110,19 @@ with Apple again (the server's re-auth rule), and that sign-in returns a fresh o
 `authorizationCode`. The app sends it with the delete request; `delete-account` makes a client secret
 (an ES256 JWT signed with the key above), exchanges the code at Apple's `/auth/token` for a refresh
 token, calls `/auth/revoke` with it, and then deletes the account as now. If Apple can't be reached,
-the deletion still goes ahead and the failure is logged without personal data [G: to agree with
-`security-data` and `compliance`]. A server change, deployed through `main`.
+the deletion still goes ahead (erasure comes first), the failure is logged without personal data,
+and the person is told they can remove Tilo in Settings, Apple ID, Sign in with Apple (agreed by
+`security-data` and `compliance`, 13 Nov). Before revoking, the server checks that the `sub` in
+Apple's `/auth/token` reply is this user's Apple identity. The code is never logged. A server change,
+deployed through `main`; it must ship before any build goes to App Store review.
 
 ## Data (for `compliance`)
 
 Only the email scope is requested, not the name: the profile's name is what the person types, so
 nothing more is collected. Apple may give a private relay address (Hide My Email), which becomes the
-account's email. Apple's stable user id is kept by Supabase as the identity. The privacy policy and
-register name Apple as a sign-in provider (increment (b)).
+account's email. Apple's stable user id is kept by Supabase as the identity. Increment (b) is done:
+the privacy policy (gated on `native`, like the iPhone push text) and the register name Apple as an
+independent controller for sign-in, with the relay and revocation notes. The policy's `updated` date
+moves when `native` is turned on (the web's published text doesn't change until then). App Store
+privacy label: Email Address and User ID, linked, App Functionality. Before launch: register the
+sending domains with Apple's Private Email Relay (register).

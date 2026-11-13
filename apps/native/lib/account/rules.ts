@@ -37,3 +37,21 @@ export function coverFrame(imgW: number, imgH: number, boxW: number, boxH: numbe
 export function reauthMatches(owner: string | undefined, signedInAs: string): boolean {
   return !owner || owner === signedInAs
 }
+
+export type ReauthWay = 'password' | 'google' | 'apple'
+/**
+ * How someone re-confirms before deleting, from every way the account signs in (Supabase's
+ * app_metadata.providers, not just the first `provider`: a Google account that later linked Apple
+ * has both). An Apple account always re-confirms with Apple, even with a fresh session: that sign-in
+ * gives the one-time code the server uses to revoke Tilo's Sign in with Apple (security-data,
+ * compliance, 13 Nov). Apple only where the phone offers it (iOS).
+ */
+export function reauthWays(providers: readonly string[], appleHere: boolean): ReauthWay[] {
+  const out: ReauthWay[] = []
+  if (providers.includes('apple') && appleHere) out.push('apple')
+  if (providers.includes('google')) out.push('google')
+  if (providers.includes('email') || out.length === 0) out.push('password')
+  return out
+}
+/** An Apple account must sign in with Apple again on every deletion (see reauthWays). */
+export const appleAlways = (providers: readonly string[], appleHere: boolean): boolean => appleHere && providers.includes('apple')

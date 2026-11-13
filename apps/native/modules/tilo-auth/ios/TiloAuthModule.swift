@@ -26,7 +26,11 @@ public class TiloAuthModule: Module {
       if self.request != nil {
         promise.reject(Exception(name: "Busy", description: "Sign in with Apple is already open")); return
       }
-      let anchor = self.appContext?.utilities?.currentViewController()?.view.window
+      // no window to show the sheet over: say so, rather than a sheet that never appears and a
+      // request that stays open (every later try would then be "Busy")
+      guard let anchor = self.appContext?.utilities?.currentViewController()?.view.window else {
+        promise.reject(Exception(name: "NoScreen", description: "Nothing to show Sign in with Apple from")); return
+      }
       let request = AppleSignIn(promise: promise, anchor: anchor) { [weak self] in self?.request = nil }
       self.request = request
       request.start(nonceSha256: nonceSha256)
@@ -44,10 +48,12 @@ public class TiloAuthModule: Module {
 /// One Sign in with Apple request: the controller's delegate and presentation anchor.
 final class AppleSignIn: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
   private let promise: Promise
-  private let anchor: UIWindow?
+  private let anchor: UIWindow
   private let done: () -> Void
+  /// held for as long as the request is open (not left to the system)
+  private var controller: ASAuthorizationController?
 
-  init(promise: Promise, anchor: UIWindow?, done: @escaping () -> Void) {
+  init(promise: Promise, anchor: UIWindow, done: @escaping () -> Void) {
     self.promise = promise
     self.anchor = anchor
     self.done = done
@@ -60,15 +66,16 @@ final class AppleSignIn: NSObject, ASAuthorizationControllerDelegate, ASAuthoriz
     let controller = ASAuthorizationController(authorizationRequests: [request])
     controller.delegate = self
     controller.presentationContextProvider = self
+    self.controller = controller
     controller.performRequests()
   }
 
   func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-    anchor ?? ASPresentationAnchor()
+    anchor
   }
 
   func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-    defer { done() }
+    defer { self.controller = nil; done() }
     guard let c = authorization.credential as? ASAuthorizationAppleIDCredential,
           let tokenData = c.identityToken, let token = String(data: tokenData, encoding: .utf8) else {
       promise.reject(Exception(name: "NoToken", description: "Apple didn't return a sign-in token")); return
@@ -80,7 +87,7 @@ final class AppleSignIn: NSObject, ASAuthorizationControllerDelegate, ASAuthoriz
   }
 
   func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-    defer { done() }
+    defer { self.controller = nil; done() }
     // closing the sheet is a choice, not a failure: resolve null, as the Google sheet's cancel
     if let e = error as? ASAuthorizationError, e.code == .canceled {
       promise.resolve(nil); return

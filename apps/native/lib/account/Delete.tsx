@@ -9,7 +9,7 @@
  * the confirm step; here it happens in the system's sign-in sheet over the app, so the confirm step
  * simply stays open.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Platform, ScrollView, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
@@ -20,7 +20,9 @@ import { DELETE } from '@/copy/account'
 import { BTN, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List } from '../ui/kit'
 import { BackButton, BareSheet, Row } from '../ui/primitives'
-import { typedOk } from './rules'
+import { appleAlways, typedOk } from './rules'
+import { supabase } from '@/data/supabase'
+import { appleAvailable } from '../../modules/tilo-auth'
 import { appleReauth } from './oauth'
 import { Sub } from '../ui/text'
 import { dark } from '../tokens.generated'
@@ -60,9 +62,22 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   // re-confirm who you are when the sign-in is older than 5 minutes (the server checks too)
   const [stale, setStale] = useState(() => needsReauth())
-  const google = provider === 'google'
-  const apple = provider === 'apple'
-  const needPw = stale && !google && !apple
+  // every way this account signs in (app_metadata.providers; the store keeps only the first): an
+  // account with Apple re-confirms with Apple every time, so the server can revoke Tilo's Sign in
+  // with Apple (rules.ts appleAlways)
+  const [providers, setProviders] = useState<string[]>(provider ? [provider] : [])
+  useEffect(() => {
+    let on = true
+    void supabase.auth.getSession().then(({ data }) => {
+      const p = data.session?.user.app_metadata?.providers
+      if (on && Array.isArray(p)) setProviders(p.filter((x): x is string => typeof x === 'string'))
+    }).catch(() => {})
+    return () => { on = false }
+  }, [])
+  const [appleDone, setAppleDone] = useState(false)
+  const apple = appleAlways(providers, appleAvailable()) && !appleDone
+  const google = !apple && stale && provider === 'google'
+  const needPw = !apple && stale && provider !== 'google'
   const ready = typedOk(typed) && online && !deleting && !busy && (!needPw || password.length > 0)
 
   const go = async () => {
@@ -106,6 +121,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     if (r === 'cancelled') return
     if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     setMsg(null)
+    setAppleDone(true)
     setStale(needsReauth())
   }
 
@@ -114,13 +130,13 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
       <View style={{ gap: 14 }}>
         <Text accessibilityRole="header" style={[tx(24, 600, 30), { color: t.label, marginTop: 4 }]}>{DELETE.confirmTitle}</Text>
         <Text style={[tx(16, 400, 1.5), { color: t.label2 }]}>{DELETE.confirmLead}</Text>
-        {stale && google && (
+        {google && (
           <>
             <Message text={DELETE_MESSAGES.reauth} />
             <Btn kind="gray" title={DELETE.googleAgain} disabled={!online || busy} onPress={() => void googleAgain()} />
           </>
         )}
-        {stale && apple && (
+        {apple && (
           <>
             <Message text={DELETE.reauthApple} />
             <Btn kind="gray" title={DELETE.appleAgain} disabled={!online || busy} onPress={() => void appleAgain()} />
@@ -131,7 +147,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
         {msg ? <Message text={msg} /> : null}
         {!online && !msg ? <Message text={DELETE_MESSAGES.offline} /> : null}
         {/* .btn.delall: white on red in light, black on the lighter dark-mode red (4.5:1) */}
-        <Btn title={deleting ? DELETE.deleting : DELETE.confirm} disabled={!ready || (stale && (google || apple))} onPress={() => void go()}
+        <Btn title={deleting ? DELETE.deleting : DELETE.confirm} disabled={!ready || google || apple} onPress={() => void go()}
           style={{ minHeight: 54, borderRadius: 27, backgroundColor: t.red }} textStyle={{ color: t === dark ? '#000000' : '#ffffff' }} />
         <View style={{ alignItems: 'center' }}><LinkBtn title={DELETE.cancel} onPress={onClose} style={[tx(16, 500, 1.3, BTN), { paddingVertical: 4, paddingHorizontal: 4 }]} /></View>
       </View>
