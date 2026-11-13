@@ -48,8 +48,6 @@ export const SCAN_ENTRY = {
   opening: 'Opening the camera…',
 } as const
 
-/* common.tsx */
-export const LABEL_PHOTO = 'Photo of the label'
 
 /* ScanConfirmView.tsx */
 export const NAME_HINT = 'Brand, product and flavour, e.g. Walkers Sensations Roasted Chicken & Thyme'

@@ -2,12 +2,12 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
-import { FOODS } from '@/core/data/foods'
 import { r0 } from '@/core/domain/date'
-import { recipesByUse, recentFoods, queryWords } from '@/core/domain/insights'
-import { rankByName } from '@/core/domain/search'
-import { isMadeFood, kitchenCandidates, suggestRecipes } from '@/core/domain/suggest'
-import { DIETS, dietFit, type Swap } from '@/core/domain/diet'
+import { recipesByUse } from '@/core/domain/insights'
+import { suggestRecipes } from '@/core/domain/suggest'
+import { DIETS } from '@/core/domain/diet'
+import { allFoods, kitchenAdds, kitchenChips, swapText } from './foodModel'
+import { SUGGEST } from '@/copy/food'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
@@ -16,57 +16,50 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   const have = useStore((s) => s.kitchen)
   const setKitchen = useStore((s) => s.setKitchen)
   const [q, setQ] = useState('')
-  const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
+  const all = useMemo(() => allFoods(data.customFoods), [data.customFoods])
   const diet = data.profile.diet
   const gentle = kcalHidden(data)
   const dietLabel = DIETS.find(([d]) => d === diet)?.[1]
 
-  const candidates = useMemo(
-    () => kitchenCandidates(data.recipes, recentFoods(data, all, 20).map((f) => f.n), all),
-    [data, all],
-  )
   // stable order: candidates as found, then anything added by search; nothing that conflicts
   // with the diet (a vegetarian isn't offered beef mince)
-  const byName = useMemo(() => new Map(all.map((f) => [f.n, f])), [all])
-  const fitsDiet = (n: string) => dietFit(byName.get(n) ?? { n }, diet) !== 'conflict'
-  const chips = [...new Set([...candidates.filter(fitsDiet), ...have])].slice(0, 36)
+  const chips = useMemo(() => kitchenChips(data, all, have), [data, all, have])
   const toggle = (n: string) => setKitchen(have.includes(n) ? have.filter((x) => x !== n) : [...have, n])
-  const words = queryWords(q.trim().toLowerCase())
-  const adds = q.trim() ? rankByName(all, (f) => f.n, words.length ? words : [q.trim().toLowerCase()], (f) => f.aka).filter((f) => !chips.includes(f.n) && !isMadeFood(f)).slice(0, 6) : []
+  const adds = kitchenAdds(all, chips, q)
   const results = suggestRecipes(data.recipes, recipesByUse(data), have, diet, all)
 
   return (
-    <Sheet title="What can I make?" tall onClose={onClose} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={SUGGEST.title} tall onClose={onClose} right={<button className="navbtn b" onClick={onClose}>{SUGGEST.done}</button>}>
       {data.recipes.length === 0 ? (
         <div className="card empty">
-          Suggestions come from your recipes. Save a meal you've logged as a recipe, or build one from its ingredients.
-          <div className="stack"><button className="btn tinted" onClick={onRecipes}>Recipes</button></div>
+          {SUGGEST.noRecipes}
+          <div className="stack"><button className="btn tinted" onClick={onRecipes}>{SUGGEST.recipes}</button></div>
         </div>
       ) : (
         <>
-          <div className="lbl">I have…</div>
+          <div className="lbl">{SUGGEST.iHave}</div>
           <div className="chips">
             {chips.map((n) => (
               <button key={n} className={'chip' + (have.includes(n) ? ' on' : '')} onClick={() => toggle(n)} aria-pressed={have.includes(n)}>{n}</button>
             ))}
           </div>
           <div className="searchbar" style={{ marginTop: 10 }}><Icon name="search" size={17} />
-            <input value={q} placeholder="Add something else" aria-label="Add an ingredient you have" onChange={(e) => setQ(e.target.value)} /></div>
+            <input value={q} placeholder={SUGGEST.addPh} aria-label={SUGGEST.addLabel} onChange={(e) => setQ(e.target.value)} /></div>
           {adds.length > 0 && (
             <div className="chips" style={{ marginTop: 8 }}>
               {adds.map((f) => <button key={f.n} className="chip" onClick={() => { toggle(f.n); setQ('') }}>+ {f.n}</button>)}
             </div>
           )}
-          <div className="foot">Salt, pepper, oil, stock and dried herbs and spices are assumed. No amounts needed.</div>
+          <div className="foot">{SUGGEST.assumed}</div>
 
-          <div className="lbl">Your recipes{dietLabel && diet !== 'none' ? ` · ${dietLabel}` : ''}</div>
+          <div className="lbl">{SUGGEST.yourRecipes(dietLabel && diet !== 'none' ? dietLabel : undefined)}</div>
           <div className="list">
             {results.map((s) => (
               <button className="li" key={s.recipe.id} onClick={() => onLog(s.recipeIndex)}>
                 <div className="m">
                   <div className="t">{s.recipe.name}</div>
                   <div className="s">
-                    {s.missing.length === 0 ? 'You have everything' : `Missing: ${s.missing.slice(0, 3).join(', ')}${s.missing.length > 3 ? ` +${s.missing.length - 3}` : ''}`}
+                    {s.missing.length === 0 ? SUGGEST.haveAll : SUGGEST.missing(s.missing)}
                     {` · ${r0(s.perServing.p)} g protein`}
                   </div>
                   {s.swaps.length > 0 && (
@@ -79,18 +72,9 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
               </button>
             ))}
           </div>
-          <div className="foot">Ranked by what you have. Swaps use the same weight (oil for butter a little less). Edit the recipe to use one.</div>
+          <div className="foot">{SUGGEST.ranked}</div>
         </>
       )}
     </Sheet>
   )
-}
-
-/** "Swap Beef mince → Quorn pieces (−64 kcal, −9 g protein per serving)", or "Contains meat: …". */
-function swapText(w: Swap, gentle: boolean, servings: number): string {
-  if (!w.to) return `Contains ${w.reason}: ${w.from} (leave out or use a plant version)`
-  const sign = (x: number) => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x / servings))
-  // per serving, like the protein figure beside it
-  const d = w.delta ? ` (${gentle ? '' : `${sign(w.delta.k)} kcal, `}${sign(w.delta.p)} g protein per serving)` : ''
-  return `Swap ${w.from} → ${w.to.n}${d}`
 }
