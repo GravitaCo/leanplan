@@ -26,8 +26,9 @@ source by a reviewer; **device** = needs the dev build (not yet run).
 | Demo player | rep, phase, count, pace row; hold clips; grow from the library poster | code, device |
 | Manual log | every shape; editing a logged session, saved identically | auto (weight-reps), code (others) |
 | Sheets | Add something, Log a session (saved identically), library search and entry | auto |
+| Toasts | "Push saved" and others through N1's ToastHost | auto |
 | Native only | chime equals the web's synthesis | unit |
 | | keep-awake while the player is open; rest alert in the background (via N12) | unit (alert), device |
 | | session-open signal for N12 | unit |
-| Known gaps | toasts (no host yet: "Push saved", discard Undo) | auto fails until N1's ToastHost |
-| | primitives are a local stand-in until N1 merges | — |
+| Known gaps | sheets inside the guided player are nested Modals (lib/ui Sheet has no overlay mode yet) | device |
+| | list insets: Today full width, library 72 pt (lib/ui List has no inset yet) | code |
