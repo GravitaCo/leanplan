@@ -38,11 +38,9 @@
         }
       ],
       [
-        "@kingstinct/react-native-healthkit",
+        "./modules/tilo-health/app.plugin.js",
         {
-          "NSHealthShareUsageDescription": "Tilo reads your sleep times and your steps and walks, so it can show them next to your check-in. Nothing is shared unless you choose to.",
-          "NSHealthUpdateUsageDescription": false,
-          "background": false
+          "shareUsage": "Tilo reads your sleep times and your steps and walks, so it can show them next to your check-in. Nothing is shared unless you choose to."
         }
       ],
       "expo-web-browser"
