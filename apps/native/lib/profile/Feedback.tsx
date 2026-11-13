@@ -3,13 +3,14 @@
  * optional note), then what they'd like to see, then a review. Sending opens the email app with it
  * all filled in (core/domain/feedback.ts); every question can be skipped. Closing by accident keeps
  * the answers while the app is open; they clear once it's sent.
- * On the phone "Copy instead" opens the system share sheet (which has Copy): React Native has no
- * clipboard of its own, and expo-clipboard would need a new build. A proposal for the lead.
+ * "Copy instead" copies with expo-clipboard (first-party; allowed by docs/plans/native-dependencies.md).
  */
 import { useEffect, useState } from 'react'
-import { Linking, Platform, Pressable, Share, Text, View } from 'react-native'
+import { Linking, Platform, Pressable, Text, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import Constants from 'expo-constants'
 import { useStore } from '@/store/store'
+import { FEEDBACK as F } from '@/copy/profile'
 import { FEEDBACK_AREAS, FEEDBACK_RATINGS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers } from '@/core/domain/feedback'
 import { font, num, useTokens } from '../theme'
 import { Btn, Foot, Input, Lbl, NavBtn, Sheet, useSurface } from './ui'
@@ -41,7 +42,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
   const setArea = (patch: { rating?: (typeof FEEDBACK_RATINGS)[number]; note?: string }) =>
     area && setA((x) => ({ ...x, areas: { ...x.areas, [area.id]: { ...x.areas[area.id], ...patch } } }))
   const copy = async () => {
-    try { await Share.share({ message: email.body }) } catch { showToast('Couldn’t copy on this device') }
+    try { await Clipboard.setStringAsync(email.body); showToast(F.copied(FEEDBACK_TO)) } catch { showToast(F.copyFailed) }
   }
   const ready = hasFeedback(a)
   const q = [font(600), { fontSize: 22, lineHeight: 28, letterSpacing: -0.22, color: t.label, marginTop: 4, marginBottom: 6 }]
