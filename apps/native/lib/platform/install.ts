@@ -6,7 +6,7 @@
  *
  * - localStorage → MMKV (./storage), sessionStorage → memory
  * - crypto.getRandomValues → expo-crypto (uuid() in src/data/supabase.ts)
- * - navigator.onLine and window 'online'/'offline' events → NetInfo (./connection)
+ * - navigator.onLine and window 'online'/'offline' events → our Network-framework module (./connection)
  * - URL, structuredClone and AbortSignal.timeout where the engine lacks them
  *
  * A web render of this app (only for side-by-side checks against the web app) keeps the
@@ -15,7 +15,7 @@
 import 'react-native-url-polyfill/auto'
 import { Platform } from 'react-native'
 import { getRandomValues, digest, CryptoDigestAlgorithm } from 'expo-crypto'
-import NetInfo from '@react-native-community/netinfo'
+import { isOnline, onNetworkChange } from '../../modules/tilo-network'
 import { memoryStorage, nativeLocalStorage } from './storage'
 import { connectionEvents, onlineFrom } from './connection'
 
@@ -73,15 +73,13 @@ if (native) {
   win.removeEventListener = ev.removeEventListener
   win.dispatchEvent = ev.dispatchEvent
 
-  // ---- navigator.onLine from NetInfo ----
+  // ---- navigator.onLine from Apple's network path (modules/tilo-network) ----
   try {
     Object.defineProperty(g.navigator, 'onLine', { configurable: true, get: () => ev.online() })
   } catch {
     g.navigator = { ...(g.navigator || {}), get onLine() { return ev.online() } }
   }
-  // A browser's navigator.onLine means "on a network", with no test request. NetInfo would otherwise
-  // test reachability on iOS by fetching a Google URL on every change and every minute: a request to
-  // a third party the privacy policy doesn't name. Off, so the phone only asks the OS.
-  NetInfo.configure({ reachabilityShouldRun: () => false })
-  NetInfo.addEventListener((s) => ev.setOnline(onlineFrom(s)))
+  // A browser's navigator.onLine means "on a network", with no test request; the module sends none.
+  ev.setOnline(onlineFrom({ isConnected: isOnline() }))
+  onNetworkChange((online) => ev.setOnline(onlineFrom({ isConnected: online })))
 }
