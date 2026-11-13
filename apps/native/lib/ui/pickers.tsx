@@ -70,7 +70,7 @@ export function DateInput({ mode, value, onChange, label, shown, min, max, start
   if (SYSTEM && DatePickerNative) return (
     <View style={[{ opacity: disabled ? 0.4 : 1 }, style]}>
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{children}</View>
-      <DatePickerNative mode={mode} value={value || start || ''} min={min} max={max} label={label} enabled={!disabled}
+      <DatePickerNative mode={mode} value={value} start={start} min={min} max={max} label={label} enabled={!disabled}
         onPick={(e) => { const v = e.nativeEvent.value; if (v !== value && validPick(mode, v, min, max)) onChange(v) }}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
     </View>

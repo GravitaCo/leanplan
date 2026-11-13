@@ -14,6 +14,8 @@ import TiloPickers from './src/TiloPickersModule'
 export interface DatePickerNativeProps extends ViewProps {
   mode: 'time' | 'date'
   value: string
+  /** where an empty field's picker opens */
+  start?: string
   min?: string
   max?: string
   minuteInterval?: number

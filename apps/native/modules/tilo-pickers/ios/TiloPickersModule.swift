@@ -33,6 +33,8 @@ public class TiloPickersModule: Module {
       Prop("mode", "time") { (view: TiloDatePickerView, v: String) in view.mode = v == "date" ? "date" : "time" }
       /// the current value, "HH:mm" or "yyyy-MM-dd"; empty opens on now (or today)
       Prop("value", "") { (view: TiloDatePickerView, v: String) in view.value = v }
+      /// where an empty field's picker opens ("HH:mm" or "yyyy-MM-dd"; empty: now, or today)
+      Prop("start", "") { (view: TiloDatePickerView, v: String) in view.start = v }
       /// the date mode's earliest and latest days, "yyyy-MM-dd" (empty: none)
       Prop("min", "") { (view: TiloDatePickerView, v: String) in view.min = v }
       Prop("max", "") { (view: TiloDatePickerView, v: String) in view.max = v }
@@ -82,6 +84,7 @@ final class TiloDatePickerView: ExpoView {
 
   var mode = "time"
   var value = ""
+  var start = ""
   var min = ""
   var max = ""
   var minuteInterval = 1
@@ -97,6 +100,9 @@ final class TiloDatePickerView: ExpoView {
     // the picker takes the tap and presents its pop-up, which isn't faded
     picker.alpha = 0.02
     picker.addTarget(self, action: #selector(changed), for: .valueChanged)
+    // an empty field takes the value the pop-up opens on (Safari fills an empty input as its picker
+    // opens), so picking that same value, which fires no change, still sets it
+    picker.addTarget(self, action: #selector(began), for: .editingDidBegin)
     addSubview(picker)
   }
 
@@ -117,6 +123,22 @@ final class TiloDatePickerView: ExpoView {
     picker.minuteInterval = Swift.max(1, Swift.min(30, minuteInterval))
     picker.minimumDate = mode == "date" && !min.isEmpty ? dateFormat.date(from: min) : nil
     picker.maximumDate = mode == "date" && !max.isEmpty ? dateFormat.date(from: max) : nil
+    // no value: the picker rests on `start`, else now (today for a date), inside min and max,
+    // never on a stale pick
+    if value.isEmpty {
+      var now = Date()
+      if !start.isEmpty, let d = format.date(from: start) {
+        if mode == "time" {
+          let parts = Calendar.current.dateComponents([.hour, .minute], from: d)
+          now = Calendar.current.date(bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0, second: 0, of: Date()) ?? now
+        } else {
+          now = d
+        }
+      }
+      if let lo = picker.minimumDate, now < lo { now = lo }
+      if let hi = picker.maximumDate, now > hi { now = hi }
+      picker.setDate(now, animated: false)
+    }
     // set the picker only when the value differs from what it shows (no jump mid-change)
     if !value.isEmpty, let d = format.date(from: value), format.string(from: picker.date) != value {
       if mode == "time" {
@@ -132,6 +154,10 @@ final class TiloDatePickerView: ExpoView {
 
   @objc private func changed() {
     onPick(["value": format.string(from: picker.date)])
+  }
+
+  @objc private func began() {
+    if value.isEmpty { onPick(["value": format.string(from: picker.date)]) }
   }
 }
 
