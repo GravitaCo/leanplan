@@ -74,7 +74,8 @@ export function Check({ on, sm }: { on: boolean; sm?: boolean }) {
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
       style={{ width: d, height: d, borderRadius: d / 2, borderWidth: 1.5, borderColor: on ? t.tint : t.dash, backgroundColor: on ? t.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-      {on && <Icon name="check" size={sm ? 11 : 14} stroke={sm ? 3.6 : 3} color={t.onTint} />}
+      {/* 20 pt in both sizes: the web's svg.i rule wins over the 14 or 11 it asks for */}
+      {on && <View style={{ width: 20, height: 20, flexShrink: 0 }}><Icon name="check" size={20} stroke={sm ? 3.6 : 3} color={t.onTint} /></View>}
     </View>
   )
 }
