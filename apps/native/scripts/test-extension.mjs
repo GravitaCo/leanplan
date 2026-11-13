@@ -108,17 +108,60 @@ const ext = privacyManifest()
 check('extension manifest: user defaults in the app group only, no tracking, nothing collected',
   /NSPrivacyAccessedAPICategoryUserDefaults<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>\s*<string>1C8F\.1<\/string>\s*<\/array>/.test(ext)
   && (ext.match(/NSPrivacyAccessedAPICategory/g) || []).length === 1 && /<key>NSPrivacyTracking<\/key>\s*<false\/>/.test(ext) && /<key>NSPrivacyCollectedDataTypes<\/key>\s*<array\/>/.test(ext))
+// What ships: at pod install, React Native merges every linked pod's PrivacyInfo.xcprivacy into the
+// app's (Podfile :privacy_file_aggregation_enabled, on by default; ship-critic 13 Nov 2026). So the
+// app's manifest on the phone is app.json's declarations plus every release pod's. This rebuilds that
+// merge from Expo's autolinking and React Native's own manifests, and checks it against SHIPPED, the
+// list apps/native/docs/privacy-manifest.md states (and compliance signed off).
+const SHIPPED = {
+  UserDefaults: ['1C8F.1', 'CA92.1'],
+  FileTimestamp: ['0A2A.1', '3B52.1', 'C617.1'],
+  SystemBootTime: ['35F9.1'],
+  DiskSpace: ['85F4.1', 'E174.1'],
+}
+{
+  const { readdirSync, statSync } = await import('node:fs')
+  const findPI = (dir, out = []) => {
+    let names = []
+    try { names = readdirSync(dir) } catch { return out }
+    for (const n of names) {
+      const p = join(dir, n)
+      if (n === 'node_modules') continue
+      let st; try { st = statSync(p) } catch { continue }
+      if (st.isDirectory()) findPI(p, out); else if (n === 'PrivacyInfo.xcprivacy') out.push(p)
+    }
+    return out
+  }
+  const reasonsIn = (xml) => {
+    const out = {}
+    for (const m of xml.matchAll(/<key>NSPrivacyAccessedAPIType<\/key>\s*<string>NSPrivacyAccessedAPICategory(\w+)<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>([\s\S]*?)<\/array>/g))
+      out[m[1]] = [...m[2].matchAll(/<string>([^<]+)<\/string>/g)].map((x) => x[1])
+    return out
+  }
+  const resolved = JSON.parse(execFileSync(process.execPath, [require.resolve('expo-modules-autolinking/bin/expo-modules-autolinking.js'), 'resolve', '-p', 'apple', '--json'], { cwd: new URL('..', import.meta.url).pathname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const dirs = resolved.modules.filter((m) => !m.debugOnly).flatMap((m) => m.pods.map((p) => p.podspecDir))
+  const files = [...dirs.flatMap((d) => findPI(d)), ...findPI(join(new URL('..', import.meta.url).pathname, 'node_modules/react-native'))]
+  const merged = {}
+  for (const [c, rs] of [...Object.entries(declared), ...files.flatMap((f) => Object.entries(reasonsIn(readFileSync(f, 'utf8'))))]) merged[c] = [...new Set([...(merged[c] ?? []), ...rs])].sort()
+  check('what ships: app.json plus every linked release pod\'s manifest equals the documented list', JSON.stringify(merged) === JSON.stringify(SHIPPED), { merged, files: files.map((f) => f.split('node_modules/')[1]) })
+  check('what ships: every merged reason is one of Apple\'s for its category', Object.entries(merged).every(([c, rs]) => rs.every((r) => APPLE_REASONS[c]?.includes(r))))
+  const doc = readFileSync(new URL('../docs/privacy-manifest.md', import.meta.url), 'utf8')
+  check('the doc states the shipped list', Object.entries(SHIPPED).every(([c, rs]) => rs.every((r) => doc.includes(r))) && /privacy_file_aggregation_enabled/.test(doc))
+  const bp = (app.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties') ?? [])[1]
+  check('aggregation stays on (nothing turns it off)', bp?.ios?.privacyManifestAggregationEnabled !== false)
+}
+
 // our own Swift: a required-reason API appearing without its category declared fails here
 {
   const { readdirSync, statSync } = await import('node:fs')
   const swift = []
-  const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (p.endsWith('.swift') || p.endsWith('.m') || p.endsWith('.mm')) swift.push(p) } }
+  const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (/\.(swift|m|mm|h|c|cpp)$/.test(p)) swift.push(p) } }
   for (const d of ['modules', 'targets']) walk(new URL('../' + d, import.meta.url).pathname)
   const PATTERNS = {
     UserDefaults: /\bUserDefaults\b|NSUserDefaults/,
-    FileTimestamp: /creationDate|modificationDate|ModificationDate|CreationDate|DateKey\b|getattrlist|\b[fl]?stat\(|attributesOfItem/,
+    FileTimestamp: /creationDate|modificationDate|ModificationDate|CreationDate|DateKey\b|f?getattrlist|\b(?:[fl]?stat|fstatat)\(|attributesOfItem/,
     SystemBootTime: /systemUptime|mach_absolute_time/,
-    DiskSpace: /volumeAvailableCapacity|FileSystemFreeSize|FileSystemSize|statfs|volumeTotalCapacity/,
+    DiskSpace: /volumeAvailableCapacity|FileSystemFreeSize|FileSystemSize|statv?fs|fstatv?fs|volumeTotalCapacity|systemFreeSize|systemSize\b/,
     ActiveKeyboards: /activeInputModes/,
   }
   const used = {}
@@ -127,6 +170,10 @@ check('extension manifest: user defaults in the app group only, no tracking, not
     for (const [c, re] of Object.entries(PATTERNS)) if (re.test(src)) (used[c] ??= []).push(f.split('/apps/native/')[1])
   }
   check('our Swift calls only required-reason APIs the app manifest declares', Object.keys(used).every((c) => declared[c]), used)
+  // the extension has its own manifest: its code may only use what that declares
+  const extDeclared = [...privacyManifest().matchAll(/NSPrivacyAccessedAPICategory(\w+)/g)].map((m) => m[1])
+  const extUsed = Object.entries(used).filter(([, fs]) => fs.some((f) => f.startsWith('targets/'))).map(([c]) => c)
+  check('the extension\'s code uses only what the extension\'s manifest declares', extUsed.every((c) => extDeclared.includes(c)), { extUsed, extDeclared })
   check('the app-group defaults are only used by the extension and its module (1C8F.1)', (used.UserDefaults ?? []).every((f) => /tilo-notify|notify-extension/.test(f)), used.UserDefaults)
 }
 
