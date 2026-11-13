@@ -1,18 +1,15 @@
-import { useEffect, useState } from 'react'
-import { useStore } from '@/store/store'
-import { RESET_DEFAULT_LENGTH, RESET_LENGTHS, RESET_PATTERN, resetTicksThing } from '@/core/data/skills'
-import { todayStr } from '@/core/domain/date'
+import { useEffect, useReducer, useRef, useState } from 'react'
+import { RESET_LENGTHS, RESET_PATTERN } from '@/core/data/skills'
 import { fmtLeft, runMs } from '@/core/domain/pacer'
 import { BackButton, Seg, TitleRow } from '@/ui/primitives'
 import { Chevron } from '@/ui/icons'
 import { MIND, SHARED } from './copy'
 import { RESET, finishedLine, leftLine, lengthLabel } from './resetCopy'
 import { Pacer } from './Pacer'
+import { onPacerDone, resetInitial, resetReducer, type ResetLength } from './resetStages'
 import { SupportSheet } from './SupportSheet'
 import './reset.css'
 
-type Stage = 'ready' | 'running' | 'finished' | 'stopped'
-type Length = (typeof RESET_LENGTHS)[number]
 
 const REDUCE = '(prefers-reduced-motion: reduce)'
 
@@ -41,12 +38,12 @@ function useReducedMotion(): boolean {
  * Wind down's routine (B12) its Back reads "Wind down" and goes back there.
  */
 export function ResetScreen({ onBack, backLabel = MIND.title }: { onBack: () => void; backLabel?: string }) {
-  const logSkill = useStore((s) => s.logSkill)
-  const doneThing = useStore((s) => s.doneThing)
   const reduced = useReducedMotion()
-  const [len, setLen] = useState<Length>(RESET_DEFAULT_LENGTH as Length)
-  const [stage, setStage] = useState<Stage>('ready')
-  const [run, setRun] = useState(0)
+  // the stages are shared with native (resetStages.ts); `cur` is the stage as of now, for the pacer's done
+  const [rs, dispatch] = useReducer(resetReducer, resetInitial)
+  const cur = useRef(rs)
+  cur.current = rs
+  const { stage, len, run } = rs
   const [left, setLeft] = useState('')
   const [support, setSupport] = useState(false)
 
@@ -55,16 +52,13 @@ export function ResetScreen({ onBack, backLabel = MIND.title }: { onBack: () => 
 
   const start = () => {
     setLeft(fmtLeft(runMs(RESET_PATTERN, len)))
-    setRun((r) => r + 1)
-    setStage('running')
+    dispatch({ type: 'start' })
     window.scrollTo?.(0, 0)
   }
-  const finish = () => {
-    setStage('finished')
-    logSkill('reset')
-    if (resetTicksThing(useStore.getState().data.days[todayStr()]?.checkin?.thing)) doneThing()
-  }
-  const pickLength = (v: string) => { setLen(Number(v) as Length); if (ended) setStage('ready') }
+  // only a run still running finishes and is logged (onPacerDone reads the store now)
+  const finish = () => { if (onPacerDone(cur.current) !== cur.current) dispatch({ type: 'finish' }) }
+  const stop = () => { cur.current = resetReducer(cur.current, { type: 'stop' }); dispatch({ type: 'stop' }) }
+  const pickLength = (v: string) => dispatch({ type: 'length', len: Number(v) as ResetLength })
 
   return (
     <div className="screen mind-pushed reset">
@@ -99,7 +93,7 @@ export function ResetScreen({ onBack, backLabel = MIND.title }: { onBack: () => 
         )}
 
         {stage === 'ready' && <button className="btn" onClick={start}>{RESET.start}</button>}
-        {running && <button className="btn gray" onClick={() => setStage('stopped')}>{RESET.stop}</button>}
+        {running && <button className="btn gray" onClick={stop}>{RESET.stop}</button>}
         {ended && <button className="btn" onClick={onBack}>{RESET.done}</button>}
 
         <div className="foot">{RESET.stopAnyTime}</div>

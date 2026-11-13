@@ -26,7 +26,7 @@ const WEB = process.env.WEB_GALLERY_URL || 'http://localhost:4179/'
 const NATIVE = (process.env.NATIVE_URL || 'http://localhost:4188/') + 'gallery'
 const OUT = outDir('tilo-gallery-')
 const SECTIONS = ['header', 'pill', 'icons', 'tabbar', 'cathead', 'seg', 'toggle', 'rows', 'nav', 'buttons', 'cards', 'charts', 'macro', 'weekbars',
-  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'banner', 'toast', 'mark', 'sheets']
+  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'opts', 'ticks', 'signposts', 'extras', 'insets', 'banner', 'toast', 'mark', 'sheets']
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null
 
 const webSec = (id) => `[data-g="${id}"]`
@@ -39,6 +39,14 @@ async function measure(page, sel) {
     const words = el.innerText.replace(/\s+/g, ' ').trim()
     const labels = [...el.querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')).filter(Boolean)
     if (el.getAttribute('aria-label')) labels.unshift(el.getAttribute('aria-label'))
+    // a form field named by its <label> (for= or wrapping) has that label as its accessible name
+    for (const f of el.querySelectorAll('input, textarea, select')) {
+      if (f.getAttribute('aria-label')) continue
+      const byFor = f.id && el.querySelector(`label[for="${f.id}"]`)
+      const wrap = f.closest('label')
+      const name = byFor ? byFor.textContent : wrap ? (wrap.querySelector('span') || wrap).textContent : null
+      if (name) labels.push(name.trim())
+    }
     // icons: the 24-unit line icons only (charts and the mark have other viewBoxes)
     const icons = [...el.querySelectorAll('svg')].filter((s) => s.getAttribute('viewBox') === '0 0 24 24')
       .map((s) => { const b = s.getBoundingClientRect(); return `${Math.round(b.width)}x${Math.round(b.height)}` }).filter((x) => x !== '0x0')
@@ -76,7 +84,9 @@ async function run() {
       const mw = await measure(w.page, webSec(id)), mn = await measure(n.page, natSec(id))
       // the same words; a chart's figures drawn as text over its SVG may read in another order
       const bag = (x) => x.split(' ').sort().join(' ')
-      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words), { web: mw.words, native: mn.words })
+      // an inline .tag joins its sentence with no space on the web ("100 gMINE"): only that case is spaced
+      const tagged = (x) => x.replace(/([a-z0-9])([A-Z]{2,})\b/g, '$1 $2')
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words, { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       check(`${id}: height within 2 px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= 2, { web: mw.h, native: mn.h })
@@ -130,6 +140,25 @@ async function run() {
         seq[tag] = out.join(',')
       }
       check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
+    }
+    // a sheet drawn over a full-screen view (the guided player): overlay mode on native, the same look
+    if (!ONLY || ONLY.includes('sheets')) {
+      const dir = path.join(OUT, 'oversheet')
+      fs.mkdirSync(dir, { recursive: true })
+      for (const [x, tag] of [[w, 'web'], [n, 'native']]) {
+        await x.page.getByText('Open a full-screen view', { exact: true }).click()
+        await x.page.waitForTimeout(500)
+        await x.page.getByText('Open a sheet over it', { exact: true }).click()
+        await x.page.waitForTimeout(700)
+        await x.page.screenshot({ path: path.join(dir, `${scheme}-${tag}.png`) })
+        check(`${scheme} ${tag}: a sheet opens over the full-screen view`, await x.page.getByText('Adjust', { exact: true }).last().isVisible())
+        await x.page.getByText('Done', { exact: true }).last().click()
+        await x.page.waitForTimeout(300)
+        check(`${scheme} ${tag}: closing it leaves the full-screen view open`, await x.page.getByText('Full-screen view', { exact: true }).last().isVisible())
+        await x.page.getByText('Close the view', { exact: true }).last().click()
+        await x.page.waitForTimeout(400)
+      }
+      await sideBySide(browser, path.join(dir, `${scheme}-web.png`), path.join(dir, `${scheme}-native.png`), path.join(dir, `${scheme}-side.png`), `oversheet · ${scheme}`)
     }
     // after a toast with an action times out, no Undo is left behind (only the static demo's remains)
     if (!ONLY || ONLY.includes('sheets')) {

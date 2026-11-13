@@ -3,6 +3,7 @@ import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
 import { hasExistingData, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
 import { LegalLink } from './LegalDoc'
+import { CONSENT } from '@/copy/account'
 
 /**
  * Explicit consent before Tilo stores anyone's health data (UK/EU GDPR Art. 9(2)(a)). Shown after
@@ -35,39 +36,35 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
 
   return (
     <div className="screen consent-screen">
-      <h1>Before you start</h1>
-      <p className="sub">
-        What you log in Tilo, like your weight, food, workouts, sleep, stress, mood and any injuries, is health
-        information. It’s stored on this phone and in a database in Ireland (EU) that’s private to your
-        account. It’s never sold, shared for marketing or used for ads.
-      </p>
+      <h1>{CONSENT.title}</h1>
+      <p className="sub">{CONSENT.lead}</p>
 
       <div className="list">
-        {box(health, setHealth, 'c_health', <>I agree to Tilo storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time in Profile, then Privacy.</>)}
-        {box(terms, setTerms, 'c_terms', <>I accept the <LegalLink id="terms">terms and conditions</LegalLink>, and understand Tilo gives general wellness information, not medical advice.</>)}
-        {box(adult, setAdult, 'c_age', <>I’m {MIN_AGE} or over.</>)}
+        {box(health, setHealth, 'c_health', <>{CONSENT.health.before}<LegalLink id="privacy">{CONSENT.health.link}</LegalLink>{CONSENT.health.after}</>)}
+        {box(terms, setTerms, 'c_terms', <>{CONSENT.terms.before}<LegalLink id="terms">{CONSENT.terms.link}</LegalLink>{CONSENT.terms.after}</>)}
+        {box(adult, setAdult, 'c_age', <>{CONSENT.adult(MIN_AGE)}</>)}
       </div>
 
-      <button className="btn" disabled={!(health && terms && adult)} onClick={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }}>Continue</button>
+      <button className="btn" disabled={!(health && terms && adult)} onClick={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }}>{CONSENT.cont}</button>
       {fromProfile ? (
-        <button className="btn gray" onClick={() => setConsentOpen(false)}>Back</button>
+        <button className="btn gray" onClick={() => setConsentOpen(false)}>{CONSENT.back}</button>
       ) : existing ? (
         <>
-          <button className="btn gray" onClick={notNow}>Not now, keep it on this phone</button>
+          <button className="btn gray" onClick={notNow}>{CONSENT.notNowKeep}</button>
           <div className="foot">
-            Until you agree, nothing you log syncs to your account or is backed up there. {unconsentedCopyLine()}{' '}
-            {reasked ? 'We won’t ask again: you can agree any time in Profile, then Privacy.' : 'We’ll ask once more in 2 weeks.'}
+            {CONSENT.notNowFoot} {unconsentedCopyLine()}{' '}
+            {reasked ? CONSENT.reasked : CONSENT.askAgain}
           </div>
-          <button type="button" className="linkbtn muted" onClick={() => signOut()}>Sign out</button>
+          <button type="button" className="linkbtn muted" onClick={() => signOut()}>{CONSENT.signOut}</button>
         </>
       ) : (
-        <button className="btn gray" onClick={() => signOut()}>Not now, sign out</button>
+        <button className="btn gray" onClick={() => signOut()}>{CONSENT.notNowSignOut}</button>
       )}
       <div className="foot">
-        Already have data in Tilo and would rather it was deleted? Email {LEGAL.contactEmail} and we’ll delete your account.
+        {CONSENT.deleteFoot(LEGAL.contactEmail)}
       </div>
       <div className="foot">
-        If you’re pregnant, have a medical condition, or have had an eating disorder, talk to a GP before using Tilo to guide your eating.
+        {CONSENT.gpFoot}
       </div>
     </div>
   )

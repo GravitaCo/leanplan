@@ -17,6 +17,8 @@ import { BTN, tx, useTokens, type Tokens } from '../theme'
 export const InSheet = createContext(false)
 /** Inside a `.list.icons`, where a row's label keeps its width and its value takes the rest. */
 export const InIconList = createContext(false)
+/** Inside a `.list.nf-rows`: subs wrap, the label takes the row and the value never truncates. */
+export const InWrapList = createContext(false)
 /** Inside a pillar card (`.pcard`), where some components drop their outer margins (`.pcard svg.bars`). */
 export const InPCard = createContext(false)
 export function useSurface(t: Tokens) {
@@ -56,29 +58,36 @@ function touchHeight(style: StyleProp<ViewStyle>, fallback: number): number {
   return h
 }
 
-export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger'
+export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger' | 'signout'
 
-/** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, and `.sm` (36 high, as wide as its words). */
-export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style, textStyle, label }: {
-  title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode; disabled?: boolean
+/** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, `.signout` (Profile's: a card-coloured
+ *  block, radius 16, red 16 pt, 24 above), and `.sm` (36 high, as wide as its words). */
+export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disabled, style, textStyle, label }: {
+  title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode
+  /** an icon after the words (the sign-in arrow) */
+  iconAfter?: IconName | ReactNode; disabled?: boolean
   /** a context's own size (`.pcard .btn.gray` 48, `.mv .btn.sm` 40): the web's per-screen rules */
   style?: StyleProp<ViewStyle>; textStyle?: StyleProp<TextStyle>; label?: string
 }) {
   const t = useTokens()
-  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : 'transparent'
+  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : kind === 'signout' ? t.card : 'transparent'
   const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' ? t.tint : t.red
+  const so = kind === 'signout'
   const h = small ? 36 : 50
-  return (
+  const btn = (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       hitSlop={slop(0, touchHeight(style, h))}
       style={({ pressed }) => [{
-        minHeight: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
+        minHeight: h, borderRadius: so ? 16 : h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
-      <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
+      <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
+      {typeof iconAfter === 'string' ? <Icon name={iconAfter as IconName} color={fg} /> : iconAfter}
     </Pressable>
   )
+  // .btn.signout's 24 above sits outside the button, as a CSS margin does
+  return so ? <View style={{ marginTop: 24 }}>{btn}</View> : btn
 }
 
 /**
@@ -86,15 +95,52 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
  * `on` given makes it a toggle for VoiceOver (selected state); without it the chip is a plain button.
  * Put chips in `Chips` (as the web always puts `.chip` in `.chips`): a row stretches them to one height.
  */
-export function Chip({ title, sub, on, onPress }: { title: string; sub?: string; on?: boolean; onPress: () => void }) {
+export function Chip({ title, sub, on, onPress, size, tone, role = 'button', label }: {
+  title: string; sub?: string; on?: boolean; onPress: () => void
+  /** `.chip.sm`: 12 pt medium, padding 5 10, radius 12 (filters, week pickers) */
+  size?: 'sm'
+  /** `.chip.ink` (ink fill, 600) or `.chip.plain` (--card fill) */
+  tone?: 'ink' | 'plain'
+  /** a chip in a set reads as a radio button or a tab; on its own, a (toggle) button */
+  role?: 'button' | 'radio' | 'tab'
+  label?: string
+}) {
   const t = useTokens()
-  const fg = on ? t.onTint : t.label
+  const sm = size === 'sm'
+  const bg = tone === 'ink' ? t.btn : tone === 'plain' ? t.card : on ? t.tint : t.fill
+  const fg = tone === 'ink' ? t.btnInk : on ? t.onTint : t.label
+  const state = on === undefined ? undefined : role === 'radio' ? { checked: on } : { selected: on }
   return (
-    <Pressable accessibilityRole="button" accessibilityState={on === undefined ? undefined : { selected: on }} onPress={onPress} hitSlop={slop(0, 32)}
-      style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, justifyContent: 'center', paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 400, 1.2, BTN), { color: fg }]}>{title}</Text>
+    <Pressable accessibilityRole={role} accessibilityLabel={label} accessibilityState={state} onPress={onPress} hitSlop={slop(0, sm ? 24 : 32)}
+      style={({ pressed }) => ({ backgroundColor: bg, borderRadius: sm ? 12 : 18, justifyContent: 'center', paddingVertical: sm ? 5 : 7, paddingHorizontal: sm ? 10 : 13, opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(sm ? 12 : 15, tone === 'ink' ? 600 : sm ? 500 : 400, 1.2, BTN), { color: fg }]}>{title}</Text>
       {sub != null && <Text style={[tx(12, 400, 1.2, BTN), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
     </Pressable>
+  )
+}
+
+/**
+ * `.note`: an icon and a line on a card (15 pt, radius 22); `ok` is `.note.ok` (no card, 13 pt,
+ * the icon in the food ink); `warn` is `.note.warn` (the icon in the tint). An optional small button
+ * sits under the words, 27 pt in. `status` makes it a live region (role=status on the web).
+ */
+export function Note({ children, kind = 'info', icon, action, status, style }: {
+  children: ReactNode; kind?: 'info' | 'ok' | 'warn'; icon?: IconName | null
+  action?: { title: string; onPress: () => void }; status?: boolean; style?: StyleProp<ViewStyle>
+}) {
+  const t = useTokens()
+  const surface = useSurface(t)
+  const ok = kind === 'ok'
+  const ic = icon === null ? null : icon ?? (ok ? 'checkc' : 'info')
+  const ink = ok ? t.energyInk : kind === 'warn' ? t.tint : t.label2
+  return (
+    <View accessibilityLiveRegion={status ? 'polite' : undefined}
+      style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'flex-start', marginTop: 10 },
+        ok ? { paddingTop: 8, paddingHorizontal: 4 } : { paddingVertical: 10, paddingHorizontal: 14, borderRadius: t.radius, backgroundColor: surface }, style]}>
+      {ic && <View style={{ marginTop: 1 }}><Icon name={ic} color={ink} /></View>}
+      <Text style={[tx(ok ? 13 : 15, 400, 1.35), { color: ok ? t.label2 : t.label, flex: 1, minWidth: '60%' }]}>{children}</Text>
+      {action && <View style={{ width: '100%', paddingLeft: 27 }}><Btn small title={action.title} onPress={action.onPress} /></View>}
+    </View>
   )
 }
 
@@ -104,11 +150,13 @@ export function Chips({ children }: { children: ReactNode }) {
 }
 
 /** `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2). */
-export function LinkBtn({ title, onPress, style, muted }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean }) {
+export function LinkBtn({ title, onPress, style, muted, label }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean; label?: string }) {
   const t = useTokens()
+  // 15 pt regular (a pillar card's links are 500: `.pcard .linkbtn`, pass it in `style`); the 31.5 pt
+  // box reaches 44 pt with the touch padding
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 500, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(15, 400, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
 }
@@ -120,22 +168,32 @@ export const initials = (name: string) => name.trim().split(/\s+/).filter(Boolea
  * `.list`: an inset grouped list (radius 18) whose rows are split by 1 px --sep lines starting 16 pt
  * in, or 58 pt in with `icons` (rows that start with a settings icon).
  */
-export function List({ children, icons = false, style }: { children: ReactNode; icons?: boolean; style?: StyleProp<ViewStyle> }) {
+export function List({ children, icons = false, wrap = false, inset, style }: {
+  children: ReactNode; icons?: boolean
+  /** `.nf-rows` (Profile's notification rows): a row's sub wraps and its value is never cut */
+  wrap?: boolean
+  /** where the separators start, when not 16 (58 with `icons`): 72 for the exercise library's
+   *  thumbnail rows (`.list .lib-row`), 0 for Train's Today list (`.tlist`, radius 20 in `style`) */
+  inset?: number
+  style?: StyleProp<ViewStyle>
+}) {
   const t = useTokens()
   const bg = useSurface(t)
   const rows = flat(children)
   return (
     <InIconList.Provider value={icons}>
+    <InWrapList.Provider value={wrap}>
     <View style={[{ backgroundColor: bg, borderRadius: t.radiusSm, overflow: 'hidden' }, style]}>
       {rows.map((c, i) => (
         <View key={i}>
           {i > 0 && rows[i - 1] && !(isValidElement(c) && (c.props as { noSep?: boolean }).noSep) && (
-            <View style={{ position: 'absolute', top: 0, left: icons ? 58 : 16, right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
+            <View style={{ position: 'absolute', top: 0, left: inset ?? (icons ? 58 : 16), right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
           )}
           {c}
         </View>
       ))}
     </View>
+    </InWrapList.Provider>
     </InIconList.Provider>
   )
 }
@@ -155,14 +213,15 @@ function flat(children: ReactNode): ReactNode[] {
  * 24 pt `.x` circle, in a 44 pt touch area). Tappable as a whole when given `onPress`.
  */
 export function Banner({ icon, iconColor, title, body, onPress, onDismiss, children }: {
-  icon: IconName; iconColor: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
+  /** optional: a banner can be words only */
+  icon?: IconName; iconColor?: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
 }) {
   const t = useTokens()
   // a tappable banner is a <button> on the web, whose text the browser doesn't track
   const track = onPress ? BTN : undefined
   const inner = (
     <>
-      <Icon name={icon} color={iconColor} />
+      {icon && <Icon name={icon} color={iconColor ?? t.label2} />}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[tx(15, 700, 1.35, track), { color: t.label }]}>{title}</Text>
         {body != null && <Text style={[tx(15, 400, 1.35, track), { color: t.label2 }]}>{body}</Text>}

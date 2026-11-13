@@ -7,15 +7,15 @@
  * For Benn, Sara and the team only (opened from the Spike sheet); never part of the app.
  */
 import { useState, type ReactNode } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Modal, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastHost, ToastView } from './ui/kit'
-import { BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
+import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -23,6 +23,10 @@ import { Ruler } from './ui/Ruler'
 import { Wheel } from './ui/Wheel'
 import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
+import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
+import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
+import { Check, ConsentRow, Opts, Signposts, Ticks } from './ui/choices'
+import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -53,7 +57,15 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [areas, setAreas] = useState<string[]>(['knees'])
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
+  const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [consentA, setConsentA] = useState(true)
+  const [consentB, setConsentB] = useState(false)
+  const [kitOpts, setKitOpts] = useState<string[]>(['db'])
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
+  // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
+  const [player, setPlayer] = useState(false)
+  const [overSheet, setOverSheet] = useState(false)
+  const overlayOpen = useOverlayOpen()
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -218,6 +230,147 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </Chips>
       </Sec>
 
+      <Sec id="text" title="Lbl · GrpH · Foot · Sub · Prose">
+        <GrpH small="3 of 5">This week</GrpH>
+        <Lbl>Notifications</Lbl>
+        <List><Row title="A row under a label" /></List>
+        <Foot>Your review shows how often you weighed in. Change it any time.</Foot>
+        <Sub style={{ marginTop: 12 }}>A secondary line at 15 pt.</Sub>
+        <View style={{ marginTop: 12 }}>
+          <Prose blocks={[{ p: G.prose.p1 }, { ul: G.prose.li }, { h3: G.prose.h3 }, { p: G.prose.p2 }]} />
+        </View>
+      </Sec>
+
+      <Sec id="rows2" title="Row · act · nested · wrapping rows · sign out">
+        <View style={{ gap: 10 }}>
+          <List>
+            <Row title="Push Pull Legs" sub="3 days a week" onPress={() => {}} />
+            <Row title="Monday" value="Push" onPress={() => {}} />
+            <Row title="New plan" act icon="plus" onPress={() => {}} />
+          </List>
+          <List icons wrap>
+            <SettingRow icon="bell" color={t.mindFill} soft label="Supplement reminders" sub="On at 8:00 and 20:00, and quiet from 22:00 to 7:00" right={<Toggle on onChange={() => {}} label="Supplement reminders" />} />
+            <Row nested title="Show supplement names in reminders" right={<Toggle on={false} onChange={() => {}} label="Show supplement names in reminders" />} />
+            <SettingRow icon="moon" color={t.mindFill} soft label="Wind down" value="21:30" onPress={() => {}} />
+          </List>
+          <Btn kind="signout" title="Sign out" onPress={() => {}} />
+        </View>
+      </Sec>
+
+      <Sec id="rows3" title="Row: squares, tag, wrapping sub, trailing slots, needsnet, pv">
+        <View style={{ gap: 10 }}>
+          <List icons>
+            <Row square={{ icon: 'wind', fill: t.mindFill, ink: t.mindInk }} title="Reset" sub="Two minutes of slower breathing, whenever you need it" wrapSub onPress={() => {}} />
+            <Row square={{ icon: 'fork', fill: t.energy, ink: t.onFood }} title="Oat porridge" sub="158 kcal · 5.4 g protein per 100 g" tag="Mine" right={<AddC label="Add Oat porridge" onPress={() => {}} />} />
+            <Row title="Today" value="1,500 kcal" strong />
+            <Row title="Shared products" sub="Needs a connection. Search works offline." needsnet onPress={() => {}} />
+            <Row title="A note you can hide" right={<XBtn label="Hide this note" onPress={() => {}} />} />
+            <Row title="Weekly review" sub="Sunday" right={<Btn small title="Open" onPress={() => {}} />} />
+          </List>
+          <List>
+            <Row pv lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Full body, a longer name that wraps onto two lines" sub="Strength · 6 exercises · about 35 min" sub2="Last done Tuesday" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
+      <Sec id="notes" title="Note (info, warn, ok) · Empty">
+        <Note status>These numbers look high for this food. Check the label.</Note>
+        <Note kind="warn" action={{ title: 'Check again', onPress: () => {} }}>The camera is off for Tilo. You can still type the barcode.</Note>
+        <Note kind="ok" status>These numbers are consistent with each other.</Note>
+        <Empty>Add what went in. Don't forget the oil.</Empty>
+      </Sec>
+
+      <Sec id="chips2" title="Chip sizes and tones · radio and tab roles">
+        <View style={{ gap: 10 }}>
+          <Chips>
+            <Chip size="sm" role="tab" on title="Week 1" onPress={() => {}} />
+            <Chip size="sm" role="tab" on={false} title="Week 2" onPress={() => {}} />
+            <Chip size="sm" on label="Remove Vegetarian" title="Vegetarian ×" onPress={() => {}} />
+          </Chips>
+          <Chips>
+            <Chip tone="ink" title="Log it" onPress={() => {}} />
+            <Chip tone="plain" title="Not today" onPress={() => {}} />
+            <Chip role="radio" on title="Small" onPress={() => {}} />
+            <Chip role="radio" on={false} title="Large" onPress={() => {}} />
+          </Chips>
+        </View>
+      </Sec>
+
+      <Sec id="links" title="TextLink in a sentence · GrpH link · Lbl style">
+        <Text style={[tx(15, 400, 1.45), { color: t.label }]}>
+          Today can be lighter. <TextLink onPress={() => {}}>Change what Summary shows</TextLink>, or <TextLink onPress={() => {}} label="Open support" expanded={false}>find support</TextLink>.
+        </Text>
+        <GrpH link={{ title: 'See all', onPress: () => {} }}>Your workouts</GrpH>
+        <Lbl style={{ paddingTop: 4 }}>A label with less space above</Lbl>
+      </Sec>
+
+      <Sec id="fields" title="Field · Input · textarea · FRow · NameField · SearchBar">
+        <Field label="Email"><Input label="Email" value="sam@example.com" onChangeText={() => {}} keyboardType="email-address" autoCapitalize="none" /></Field>
+        <Field label="What would help?"><Input label="What would help?" placeholder="A short walk after lunch" onChangeText={() => {}} /></Field>
+        <Field label="Note"><Input label="Note" multiline value={'Felt strong today.\nSlept well.'} onChangeText={() => {}} style={{ minHeight: 80 }} /></Field>
+        <List>
+          <FRow label="Name" value="Oat porridge" onChangeText={() => {}} />
+          <FRow label="Serving" value="40" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Protein" need placeholder="Needed" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Energy" value="1250" unit="kcal" flag="Check this against the pack" keyboardType="number-pad" onChangeText={() => {}} />
+        </List>
+        <View style={{ marginTop: 16 }}><NameField label="Name" value="Strength, 3 days" onChangeText={() => {}} /></View>
+        <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
+      </Sec>
+
+      <Sec id="opts" title="Opts (one answer; several)">
+        <View style={{ gap: 16 }}>
+          <Opts label="How often" opts={G.opts} value={oneOpt} onPick={setOneOpt} />
+          <Opts label="Your kit" opts={G.kit} value={kitOpts} onPick={(k) => setKitOpts((x) => flip(x, k))} multi />
+        </View>
+      </Sec>
+
+      <Sec id="ticks" title="Ticks · Check (on, off, small)">
+        <Ticks items={G.ticks} />
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+          <Check on /><Check on={false} /><Check on sm /><Check on={false} sm />
+        </View>
+      </Sec>
+
+      <Sec id="signposts" title="Signposts">
+        <View style={{ gap: 10 }}>
+          <Signposts list={supportList('england')} />
+          <Signposts list={G.beatLines} />
+        </View>
+      </Sec>
+
+      <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
+        <List>
+          <ConsentRow on={consentA} onChange={setConsentA} label="I agree to Tilo storing and using my health information, as the privacy policy explains.">
+            I agree to Tilo storing and using my health information, as the <TextLink onPress={() => {}}>privacy policy</TextLink> explains.
+          </ConsentRow>
+          <ConsentRow on={consentB} onChange={setConsentB} label="I’m 18 or over.">I’m 18 or over.</ConsentRow>
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <Row wrap title="Delete your account and everything in it, on every device" sub="This can’t be undone. Download a copy first if you want one." />
+          <SettingRow icon="camera" color={t.tint} label="Take a photo" accessibilityLabel="Take a photo of the barcode" onPress={() => {}} />
+        </List>
+        <View style={{ marginTop: 10, gap: 10 }}>
+          <BackButton small onPress={() => {}} label="Profile" />
+          <Banner title="Your data is safe on this phone." body="Sign in again to back it up." />
+          <Btn title="Continue" iconAfter="chevR" onPress={() => {}} />
+          <View style={{ backgroundColor: t.tint, borderRadius: t.radius, padding: 16, alignItems: 'center' }}><TaliMark width={90} color="#ffffff" /></View>
+        </View>
+      </Sec>
+
+      <Sec id="insets" title="List inset (72: library rows; 0: Today list)">
+        <View style={{ gap: 10 }}>
+          <List inset={72}>
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Goblet squat" sub="Legs · dumbbell" style={{ minHeight: 64 }} onPress={() => {}} />
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Push-up" sub="Chest · body weight" style={{ minHeight: 64 }} onPress={() => {}} />
+          </List>
+          <List inset={0} style={{ borderRadius: 20 }}>
+            <Row title="Full body" sub="6 exercises" onPress={() => {}} />
+            <Row title="Walk" sub="30 min" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <View style={{ gap: 10 }}>
           <Banner icon="leaf" iconColor={t.mindInk} title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." onDismiss={() => {}} />
@@ -240,6 +393,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <View style={{ gap: 8 }}>
           <Btn kind="gray" title="Open a sheet" onPress={() => setSheet('sheet')} />
           <Btn kind="gray" title="Open a bare sheet" onPress={() => setSheet('bare')} />
+          <Btn kind="gray" title="Open a full-screen view" onPress={() => setPlayer(true)} />
         </View>
       </Sec>
 
@@ -264,6 +418,22 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </BareSheet>
       )}
     </ScrollView>
+    {/* Android's back closes an overlay sheet first, then the view (overlayBack) */}
+    <Modal visible={player} animationType="none" onRequestClose={() => { if (!overlayBack()) setPlayer(false) }}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {/* the holder's own content, hidden from TalkBack while an overlay sheet is open */}
+        <View importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'} style={{ flex: 1, padding: 24, paddingTop: 80, gap: 12 }}>
+          <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
+          <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
+          <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+        </View>
+        {overSheet && (
+          <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
+            <List icons><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
+          </Sheet>
+        )}
+      </View>
+    </Modal>
     {standalone && <ToastHost />}
     </>
   )

@@ -9,6 +9,7 @@ import { renderToString } from 'react-dom/server'
 import type { Profile } from '@/core/types'
 import { validMindPrefs, validRoutine, MAX_ROUTINE_ITEMS, MIND_HEALTH_KEYS } from '@/core/domain/checkin'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { routineSave } from '@/screens/mind/routine'
 import { DEFAULT_ROUTINE, WIND_DOWN_ITEMS, routineChoices, routineItems, routineSub, routineToSave, skillsWithScreen } from '@/core/data/skills'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { HEALTH_FIELDS, clearHealthData, healthDataSummary, withoutHealth } from '@/data/consent'
@@ -70,6 +71,9 @@ export function windDownSuite(): number {
   ok('a save keeps unknown keys and a stored step the sheet doesn\'t offer',
     JSON.stringify(routineToSave(['reset', 'dim-lights'], ['warm-bath', 'floor-stretches', 'unload'])) === '["dim-lights","reset","floor-stretches","warm-bath"]')
   ok('a save from the default adds nothing it wasn\'t given', JSON.stringify(routineToSave(['unload'], undefined)) === '["unload"]')
+  ok('routineSave (web and native): unchanged picks save nothing, from the default or a stored routine',
+    routineSave([...DEFAULT_ROUTINE], undefined) === null && routineSave(['unload', 'reset'], ['unload', 'reset']) === null
+    && JSON.stringify(routineSave(['unload'], undefined)) === '["unload"]' && JSON.stringify(routineSave(['unload'], ['unload', 'reset'])) === '["unload"]')
   ok('Unload and Reset rows borrow the skills\' own subs', routineSub(WIND_DOWN_ITEMS[2]) === "Write what's on your mind, and one next step for each"
     && routineSub(WIND_DOWN_ITEMS[3]) === 'A few slow breaths, with long breaths out · 1 to 5 min')
 

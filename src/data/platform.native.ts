@@ -20,5 +20,19 @@ export function onForeground(fn: () => void): void {
   AppState.addEventListener('change', (s) => { if (s === 'active') fn() })
 }
 
-/** The native app has no push yet (N12): a reminder setting made on the web stays on. */
+/** Where this phone can't take pushes (Android until it has its own reminders; iPhone has them
+ *  since N12, so there pushSupported() is true and the web's rule applies), a reminder setting made
+ *  on the web stays on rather than switching off for every device. */
 export const KEEP_REMINDERS_WITHOUT_PUSH = true
+
+/** Google sign-in in the system's sign-in sheet, back at tilo://auth-callback, the code exchanged on
+ *  this phone; the session reaches the store as any sign-in. The app registers it at startup
+ *  (apps/native/lib/account/oauth.ts calls setGoogleOAuth), so shared code never imports the native
+ *  module (and the shared-code tests that bundle this file need no fake for it). */
+export type GoogleOAuthResult = 'redirecting' | 'ok' | 'cancelled' | 'error'
+type GoogleOAuthFn = (queryParams?: Record<string, string>) => Promise<GoogleOAuthResult>
+let googleImpl: GoogleOAuthFn | null = null
+export function setGoogleOAuth(fn: GoogleOAuthFn): void { googleImpl = fn }
+export async function googleOAuth(_auth: unknown, queryParams?: Record<string, string>): Promise<GoogleOAuthResult> {
+  return googleImpl ? googleImpl(queryParams) : 'error'
+}

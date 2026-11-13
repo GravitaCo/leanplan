@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Schedule, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
+import { LIFTS, firstVideo } from '@/core/data/workouts'
 import { exById } from '@/core/domain/library'
 import { todayStr } from '@/core/domain/date'
 import { weekOf } from '@/core/domain/insights'
 import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
-import { setCount, shapeFor } from '@/core/domain/guided'
+import { shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
 import { aboutLine, routineEstMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
@@ -19,6 +19,7 @@ import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
 import { WarmupCard } from '../train/WarmupCard'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
+import { keyLine, plannedDaysLine, workoutKind as kindOf, workoutSub } from './planModel'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -28,8 +29,7 @@ const CATEGORIES: { id: 'weights' | 'cardio'; label: string; items: WorkoutType[
   { id: 'cardio', label: MODALITY_LABEL.cardio, items: ['Cardio'], color: 'var(--mind-fill)' },
 ]
 
-export const workoutSub = (t: WorkoutType) => (t === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[t].ex.length} exercises · ${setCount(WORKOUTS[t].ex)}`)
-const kindOf = (t: WorkoutType) => (t === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength)
+export { workoutSub } from './planModel'
 
 /** Change the week, with a toast that can undo it. */
 function useWeekChange() {
@@ -84,12 +84,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
   const cancel = <button className="navbtn" onClick={onClose}>Cancel</button>
   const warn = !sel ? [] : notesFor ? notesFor(sel)
     : weekWarnings({ ...schedule, [idx]: sel as WorkoutType }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)).map((w) => w.text)
-  const subOf = (k: WorkoutKey) => {
-    const r = routineFor(k, routines)
-    if (!r) return workoutSub(k as WorkoutType)
-    const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
-  }
+  const subOf = (k: WorkoutKey) => keyLine(k, routines, training, ONBOARDING_ENABLED)
 
   if (see) {
     return (
@@ -272,8 +267,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   // the days it's planned this week: the plan's week (several a day, own and Tilo's) or the schedule's
   const data = useStore((s) => s.data)
   const thisWeek = weekOf(todayStr())
-  const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
-  const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
+  const when = plannedDaysLine(WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)))
   const sub = r
     ? [`${ONBOARDING_ENABLED ? 'warm-up and ' : ''}${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
