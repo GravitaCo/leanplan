@@ -27,11 +27,12 @@ import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './media'
 import { WarmupCard } from './WarmupCard'
 import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
-import { BackButton, TitleRow } from '../../lib/ui/primitives'
+import { BackButton, Row, TitleRow } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Sub } from '../../lib/ui/text'
-import { FInput, FRow, FSelect, LIST_GAP, Li, Stack, TextLink } from './pendingN1'
+import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
+import { FRow } from '../../lib/ui/fields'
+import { FSelect, Stack, TextLink } from './ui'
 import { TrainNav } from './nav'
 
 /** `.card.ex`: name, the prescription tag, the cue */
@@ -145,8 +146,8 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           {!!swap.note && <Foot style={fp}>{swap.note}</Foot>}
           {swap.ex.map((e) => <ExCard key={e.n} n={e.n} tg={e.t} cue={e.cue} />)}
           {swapKey === 'walk' && (
-            <List style={LIST_GAP}>
-              <FRow label="Minutes"><FInput numeric value={walkMins} placeholder={swap.mins} onChangeText={setWalkMins} accessibilityLabel="Minutes" /></FRow>
+            <List style={{ marginBottom: 8 }}>
+              <FRow label="Minutes" keyboardType="number-pad" value={walkMins} placeholder={swap.mins} onChangeText={setWalkMins} />
             </List>
           )}
           <Foot style={{ paddingTop: 4, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
@@ -156,9 +157,9 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {warm && <WarmupCard block={warm} />}
           <ExCard n={WORKOUTS.Cardio.ex[0].n} tg={shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t} cue={WORKOUTS.Cardio.ex[0].cue} />
-          <List style={LIST_GAP}>
-            <FRow label="Type"><FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} /></FRow>
-            <FRow label="Minutes"><FInput numeric value={mins} placeholder="25" onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
+          <List style={{ marginBottom: 8 }}>
+            <FRow label="Type" right={<FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} />} />
+            <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder="25" onChangeText={setMins} />
           </List>
           <Stack><Btn title="Save cardio" onPress={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }} /></Stack>
           <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
@@ -175,40 +176,34 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
             </View>
           )}
           {warm && <WarmupCard block={warm} extra={wSlot >= 0 ? `Then one or two lighter ${bareName(slots[wSlot].shown.n).toLowerCase()} sets, building up to your working weight.` : undefined} />}
-          <List style={LIST_GAP}>
+          <List style={{ marginBottom: 8 }}>
             {rows.map(({ s, detail }) => {
               const gentler = !s.swapped && s.x?.gentler && (s.x.equipment[0] === 'barbell' || s.x.equipment[0] === 'trap-bar') && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
               const liked = !!s.x && !!prefs?.liked?.includes(s.x.id)
               return (
-                <Li key={s.i} style={{ paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 }}>
-                  {s.shown.video
+                <Row key={s.i} pv lead={s.shown.video
                     ? <Pressable accessibilityRole="button" accessibilityLabel={`Watch example: ${s.shown.n}`} onPress={() => setDemo(s.i)}><Thumb video={s.shown.video} shape={s.shape} play /></Pressable>
                     : <Thumb shape={s.shape} />}
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[tx(17, 400), { color: t.label }]}>{bareName(s.shown.n)}</Text>
-                    <Text style={[tx(13, 400), num, { color: t.label2, marginTop: 2 }]}>{s.rx}{detail ? ' · ' + detail : ''}</Text>
-                    {s.swapped && (
-                      <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 3 }]}>
-                        In place of {bareName(s.planned.n)}, today only. <TextLink inl size={13} title="Undo" onPress={() => onSwap(s.i, s.planned.id!)} />
-                        {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
-                      </Text>
+                  title={bareName(s.shown.n)} sub={<Text style={num}>{s.rx}{detail ? ' · ' + detail : ''}</Text>}
+                  sub2={s.swapped ? <>
+                    In place of {bareName(s.planned.n)}, today only. <InlineLink onPress={() => onSwap(s.i, s.planned.id!)}>Undo</InlineLink>
+                    {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
+                  </> : gentler ? `New to this? The ${gentler.n.toLowerCase()} is a good place to start. Tap Swap.` : undefined}
+                  right={s.x && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    {generated && s.x && !s.swapped && (
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <Pressable accessibilityRole="button" accessibilityLabel={`I like ${bareName(s.shown.n)}`} accessibilityState={{ selected: liked }} onPress={() => rate(generated.id, s.i, 'up')}
+                          style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: liked ? t.label : t.fill }}>
+                          <Icon name="thumbUp" size={17} color={liked ? t.card : t.label} />
+                        </Pressable>
+                        <Pressable accessibilityRole="button" accessibilityLabel={`Not for me: ${bareName(s.shown.n)}`} onPress={() => rate(generated.id, s.i, 'down')}
+                          style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: t.fill }}>
+                          <Icon name="thumbDown" size={17} color={t.label} />
+                        </Pressable>
+                      </View>
                     )}
-                    {gentler && <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 3 }]}>New to this? The {gentler.n.toLowerCase()} is a good place to start. Tap Swap.</Text>}
-                  </View>
-                  {generated && s.x && !s.swapped && (
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      <Pressable accessibilityRole="button" accessibilityLabel={`I like ${bareName(s.shown.n)}`} accessibilityState={{ selected: liked }} onPress={() => rate(generated.id, s.i, 'up')}
-                        style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: liked ? t.label : t.fill }}>
-                        <Icon name="thumbUp" size={17} color={liked ? t.card : t.label} />
-                      </Pressable>
-                      <Pressable accessibilityRole="button" accessibilityLabel={`Not for me: ${bareName(s.shown.n)}`} onPress={() => rate(generated.id, s.i, 'down')}
-                        style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: t.fill }}>
-                        <Icon name="thumbDown" size={17} color={t.label} />
-                      </Pressable>
-                    </View>
-                  )}
-                  {s.x && <TextLink title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
-                </Li>
+                    {s.x && <TextLink title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
+                  </View>} />
               )
             })}
           </List>

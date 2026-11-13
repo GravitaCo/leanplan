@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PanResponder, Text, View } from 'react-native'
 import Animated, { Easing, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
 import { GEIST, num, useTokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 const SIZE = [44, 30, 26, 22]
 const FADE = [1, 0.55, 0.32, 0.18]
@@ -75,7 +76,7 @@ export function Wheel({ min, max, value, initial, onChange, label, unit, valueTe
   const to = Math.min(max, Math.ceil(pos) + half + 1)
   const items: number[] = []
   for (let i = from; i <= to; i++) if (Math.abs(i - pos) <= half + 0.5) items.push(i)
-  const text = value === undefined ? 'Not set' : valueText ? valueText(value) : `${value}${unit ? ' ' + unit : ''}`
+  const text = value === undefined ? UI.notSet : valueText ? valueText(value) : `${value}${unit ? ' ' + unit : ''}`
   const color = value === undefined ? t.label3 : t.label
 
   return (

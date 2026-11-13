@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PanResponder, Text, View } from 'react-native'
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { num, tx, useTokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 export function Ruler({ min, max, value, initial, onChange, label, valueText, major = 10, mid = 5, px = 9.2, tickLabel }: {
   min: number; max: number; value: number | undefined; initial: number; onChange: (v: number) => void
@@ -60,7 +61,7 @@ export function Ruler({ min, max, value, initial, onChange, label, valueText, ma
   return (
     <View {...pan.panHandlers} onLayout={(e) => setW(e.nativeEvent.layout.width)}
       accessible accessibilityRole="adjustable" accessibilityLabel={label}
-      accessibilityValue={{ min, max, now: base, text: value === undefined ? 'Not set' : valueText(value) }}
+      accessibilityValue={{ min, max, now: base, text: value === undefined ? UI.notSet : valueText(value) }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => step(e.nativeEvent.actionName === 'increment' ? 1 : -1)}
       style={{ position: 'relative', height: 90, marginTop: 10, marginHorizontal: -20, overflow: 'hidden' }}>

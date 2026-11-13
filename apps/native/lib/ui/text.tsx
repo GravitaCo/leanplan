@@ -21,11 +21,15 @@ export function Lbl({ children, right, style }: { children: ReactNode; right?: R
 }
 
 /** `.grp-h`: a 20 pt section heading; on the right an optional `small` note at 14 pt, or a `link`. */
-export function GrpH({ children, small, link }: { children: ReactNode; small?: ReactNode; link?: { title: string; onPress: () => void; label?: string } }) {
+export function GrpH({ children, small, link, h2 }: {
+  children: ReactNode; small?: ReactNode; link?: { title: string; onPress: () => void; label?: string }
+  /** `<h2 class="grp-h">`: keeps the browser's h2 margins (0.83em of 20, 16.6 above and below) and is a heading */
+  h2?: boolean
+}) {
   const t = useTokens()
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 22, paddingHorizontal: 4, paddingBottom: 8 }}>
-      <Text style={[tx(20, 600, 1.3, -0.01), { color: t.label }]}>{children}</Text>
+    <View style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 22, paddingHorizontal: 4, paddingBottom: 8 }, h2 && { marginVertical: 16.6 }]}>
+      <Text accessibilityRole={h2 ? 'header' : undefined} style={[tx(20, 600, 1.3, -0.01), { color: t.label }]}>{children}</Text>
       {small != null && <Text style={[tx(14, 400, 1.3, 0), { color: t.label2 }]}>{small}</Text>}
       {/* a .linkbtn (padding 6 4, a 44 pt touch area), as FoodScreen's "Manage" */}
       {link && <LinkBtn title={link.title} onPress={link.onPress} label={link.label} />}

@@ -11,6 +11,7 @@ import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 import { TALI_SHORT } from '@/core/data/taliWorkouts'
 import { Rings } from './charts'
 import { BTN, font, num, tx, useTokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 /** Monday to Sunday: each day a mini energy ring and its planned session. */
 export function WeekStrip() {
@@ -24,7 +25,7 @@ export function WeekStrip() {
       {weekOf(cur).map((d, i) => {
         const st = dayStat(data, d)
         const keys = plannedKeys(data, d)
-        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : 'Rest'
+        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : UI.rest
         const f = fmtDate(d)
         const sel = d === cur
         return (
@@ -62,9 +63,9 @@ export function DayNav() {
   )
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-      {btn('Previous day', -1, 'chevL')}
-      <Text style={[tx(13, 500, 1.3, 0), { color: t.label2 }]}>{cur === todayStr() ? 'Today' : f.dow} · {short}</Text>
-      {btn('Next day', 1, 'chevR')}
+      {btn(UI.previousDay, -1, 'chevL')}
+      <Text style={[tx(13, 500, 1.3, 0), { color: t.label2 }]}>{cur === todayStr() ? UI.today : f.dow} · {short}</Text>
+      {btn(UI.nextDay, 1, 'chevR')}
     </View>
   )
 }
@@ -80,7 +81,7 @@ export function MoveStrip() {
   const setDate = useStore((s) => s.setDate)
   const today = todayStr()
   return (
-    <View accessibilityRole="list" accessibilityLabel="This week" style={{ flexDirection: 'row', gap: 4, marginTop: 4, marginBottom: 18 }}>
+    <View accessibilityRole="list" accessibilityLabel={UI.thisWeek} style={{ flexDirection: 'row', gap: 4, marginTop: 4, marginBottom: 18 }}>
       {weekOf(cur).map((d, i) => {
         const f = fmtDate(d)
         const moved = workoutsOf(days[d], d).length > 0

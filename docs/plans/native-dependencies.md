@@ -30,8 +30,8 @@ No library in the app is paid (rule 4 holds). Licences are MIT or OFL (the font)
 | ~~`@react-native-community/netinfo`~~ **replaced 13 Nov** | Online and offline for `navigator.onLine` | `modules/tilo-network` on Apple's `NWPathMonitor` (satisfied or not, as a browser means online). Also guarantees no reachability request to any third party | Lead (N0) |
 | `expo-camera` (on N6's branch) | Camera, barcodes | `modules/tilo-camera` on AVFoundation and Vision (Benn, 13 Nov) | N6 |
 | `expo-image-picker`, `expo-image-manipulator` (N6's branch) | Choose a photo; resize label photos | Fold into `tilo-camera`: PHPickerViewController for the library, ImageIO/Core Graphics for the 1600/1024 px and 1.5 MB rules | N6 |
-| `@react-native-community/datetimepicker` (proposed, not added) | The web's date and time inputs | `modules/tilo-pickers` on UIDatePicker in the wheel style iOS Safari shows for those inputs | N1 |
-| `@expo-google-fonts/geist` | Ships the Geist font files | Bundle the OFL font files from `apps/native/assets/fonts` directly; no package | N1 |
+| ~~`@react-native-community/datetimepicker`~~ (never added) **built 13 Nov** | The web's date and time inputs | `modules/tilo-pickers` on UIDatePicker | N1 |
+| ~~`@expo-google-fonts/geist`~~ **replaced 13 Nov** | Ships the Geist font files | The OFL font files are bundled in `apps/native/assets/fonts`; no package | N1 |
 
 With HealthKit and MMKV gone, `react-native-nitro-modules` is gone too.
 

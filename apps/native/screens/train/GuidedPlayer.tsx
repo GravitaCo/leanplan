@@ -7,7 +7,7 @@
  * The same logic as the web, line for line; only the drawing is React Native.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AccessibilityInfo, AppState, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { AccessibilityInfo, AppState, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { cancelRestAlert, scheduleRestAlert, setGuidedSessionOpen } from './session'
@@ -40,11 +40,11 @@ import { WarmupPlayer } from './WarmupPlayer'
 import { ClipView, Still, useClip, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Btn, List } from '../../lib/ui/kit'
-import { BareSheet, NavBtn, Row, Sheet, Toggle } from '../../lib/ui/primitives'
+import { BareSheet, NavBtn, Row, Sheet, Toggle, overlayBack, useOverlayOpen } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Sub } from '../../lib/ui/text'
-import { LIST_GAP, Li, LiText, Stack } from './pendingN1'
+import { Stack } from './ui'
 import { Dots } from './gp'
 
 const SOUND_KEY = 'tali.sound'
@@ -77,12 +77,18 @@ function TempoCount({ player, media, playing }: { player: ReturnType<typeof useC
   const [s, setS] = useState(() => tempoAt(media, player.currentTime))
   useEffect(() => {
     if (!playing) return
-    let raf = 0
-    const tick = () => {
-      const next = tempoAt(media, player.currentTime)
+    const update = (time: number) => {
+      const next = tempoAt(media, time)
       setS((cur) => (cur.kind === next.kind && cur.count === next.count && cur.countOf === next.countOf ? cur : next))
-      raf = requestAnimationFrame(tick)
     }
+    // Android: reading currentTime blocks the main thread there, so it takes the player's time events
+    if (Platform.OS === 'android') {
+      player.timeUpdateEventInterval = 0.1
+      const sub = player.addListener('timeUpdate', (e) => update(e.currentTime))
+      return () => sub.remove()
+    }
+    let raf = 0
+    const tick = () => { update(player.currentTime); raf = requestAnimationFrame(tick) }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [player, media, playing])
@@ -368,11 +374,15 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const W = { color: '#fff' }
   const dim = { color: 'rgba(255,255,255,0.85)' }
   const insets = useSafeAreaInsets()
+  const sheetOpen = useOverlayOpen()
 
   return (
-    <Modal visible animationType="fade" onRequestClose={() => { if (askFeel) setAskFeel(null); else if (sheet) { setSheet(null); setDiscard(false) } else setSheet('leave') }} statusBarTranslucent supportedOrientations={['portrait']}>
+    // Android's back closes the topmost sheet first (they're overlays inside this Modal), then asks to leave
+    <Modal visible animationType="fade" onRequestClose={() => { if (!overlayBack()) setSheet('leave') }} statusBarTranslucent supportedOrientations={['portrait']}>
       <StatusBar style="light" />
       <View accessibilityViewIsModal accessibilityLabel={inWarm ? `${title}: warm-up` : `${title}: ${name}`} style={{ flex: 1, backgroundColor: plain && !inWarm ? '#121214' : '#000' }}>
+        {/* the player itself; hidden from TalkBack while a sheet is open (VoiceOver: the sheet is modal) */}
+        <View style={FILL} importantForAccessibility={sheetOpen ? 'no-hide-descendants' : 'auto'}>
         {inWarm && block ? (
           <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
         ) : <>
@@ -474,23 +484,24 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             </GpBot>
           )}
         </>}
+        </View>
 
         {(sheet === 'adjust' || sheet === 'warmup') && (
           <AdjustSheet key={slot.i + '-' + setNo + sheet} name={name} x={slot.x} shape={slot.shape} rx={slot.rx} setNo={setNo}
             target={sheet === 'warmup' ? null : target} first={!target && sheet !== 'warmup'} warmup={sheet === 'warmup'}
             allowWarmup={slot.shape === 'weight-reps'} stepUp={!shorter && setNo === 0 && readyToStepUp(last, slot.fullRx)}
-            onLog={logSet} onGentler={slot.x ? () => setSheet('swap') : undefined} onTimer={startHold} onClose={() => setSheet(null)} />
+            onLog={logSet} onGentler={slot.x ? () => setSheet('swap') : undefined} onTimer={startHold} onClose={() => setSheet(null)} overlay />
         )}
         {sheet === 'hold' && (
           <HoldTimer name={slot.shown.n} rx={slot.rx} perSide={slot.x?.perSide}
-            onDone={(sec) => logSet({ w: '', reps: String(sec), sec: String(sec) })} onClose={() => setSheet((s) => (s === 'hold' ? null : s))} />
+            onDone={(sec) => logSet({ w: '', reps: String(sec), sec: String(sec) })} onClose={() => setSheet((s) => (s === 'hold' ? null : s))} overlay />
         )}
         {sheet === 'swap' && slot.x && (
           <SwapSheet current={slot.x} planned={slot.swapped ? exById(slot.planned.id) : undefined} shorter={shorter}
-            loggedSets={done.length} onPick={swapTo} onClose={() => setSheet(null)} />
+            loggedSets={done.length} onPick={swapTo} onClose={() => setSheet(null)} overlay />
         )}
         {sheet === 'stopped' && (
-          <Sheet title="Stopped early" onClose={() => setSheet(null)} left={null}>
+          <Sheet title="Stopped early" onClose={() => setSheet(null)} left={null} overlay>
             <Sub style={{ paddingHorizontal: 4, paddingBottom: 14 }}>That's fine. If something hurt, leave this one for today.</Sub>
             <Stack style={{ marginTop: 0 }}>
               <Btn title="Move to the next exercise" onPress={moveOn} />
@@ -500,21 +511,21 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           </Sheet>
         )}
         {sheet === 'menu' && (
-          <Sheet title={name} onClose={() => setSheet(null)} left={null} right={<NavBtn bold title="Done" onPress={() => setSheet(null)} />}>
-            <List style={LIST_GAP}>
+          <Sheet title={name} onClose={() => setSheet(null)} left={null} overlay right={<NavBtn bold title="Done" onPress={() => setSheet(null)} />}>
+            <List style={{ marginBottom: 8 }}>
               {slot.x && <Row title="Swap exercise" sub="Today only" onPress={() => setSheet('swap')} chevron={false} />}
               {!isLastSlot && <Row title="Do this later" sub="Moves it to the end of today's workout" onPress={() => { setOrder(later(order, pos)); setRest(null); setSheet(null) }} chevron={false} />}
               <Row title="Skip this exercise" sub={'It shows as "Not today"'} onPress={() => { setSheet(null); go(1) }} chevron={false} />
-              {slot.shape === 'weight-reps' && <Li onPress={() => setSheet('warmup')}><LiText wrap t="Log a warm-up set" s={slot.i === wSlot ? warmupCopy(name, block?.mins) : "Doesn't count towards your targets"} sStyle={{ lineHeight: 18 }} /></Li>}
+              {slot.shape === 'weight-reps' && <Row wrapSub title="Log a warm-up set" sub={slot.i === wSlot ? warmupCopy(name, block?.mins) : "Doesn't count towards your targets"} onPress={() => setSheet('warmup')} chevron={false} />}
               {!video && <Row title="Watch how to do it" sub="Opens a video search" onPress={() => { WebBrowser.openBrowserAsync(howToLink(slot.shown.n)).catch(() => {}) }} chevron={false} />}
-              <Li><LiText t="Sound" s="A chime when rest ends" />
-                <Toggle on={sound} label="Sound" onChange={() => { const v = !sound; setSound(v); try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch { /* blocked */ } }} /></Li>
+              <Row title="Sound" sub="A chime when rest ends"
+                right={<Toggle on={sound} label="Sound" onChange={() => { const v = !sound; setSound(v); try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch { /* blocked */ } }} />} />
             </List>
-            <List style={LIST_GAP}><Li onPress={() => setSheet('finish')}><Text style={[tx(16, 500), { color: tk.tint }]}>Finish now</Text></Li></List>
+            <List style={{ marginBottom: 8 }}><Row act title="Finish now" onPress={() => setSheet('finish')} /></List>
           </Sheet>
         )}
         {sheet === 'leave' && (
-          <Sheet title="Leave the workout?" onClose={() => { setSheet(null); setDiscard(false) }} left={null}>
+          <Sheet title="Leave the workout?" onClose={() => { setSheet(null); setDiscard(false) }} left={null} overlay>
             <Foot style={{ paddingTop: 0, paddingHorizontal: 4, paddingBottom: 12 }}>Everything you've logged is saved. You can pick it up again from Train.</Foot>
             <Stack style={{ marginTop: 0 }}>
               <Btn title="Keep going" onPress={() => setSheet(null)} />
@@ -532,7 +543,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           </Sheet>
         )}
         {askFeel && (
-          <BareSheet label={FIRST_SESSION.feelT} onClose={() => setAskFeel(null)}>
+          <BareSheet label={FIRST_SESSION.feelT} onClose={() => setAskFeel(null)} overlay>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text accessibilityRole="header" style={[tx(22, 600), { color: tk.label }]}>{FIRST_SESSION.feelT}</Text>
               <NavBtn title="Skip" onPress={() => setAskFeel(null)} />
@@ -562,7 +573,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         {sheet === 'finish' && !askFeel && (
           <FinishSheet title={title} gentle={gentle} mins={stintMins(prevMins, now - started, isToday)}
             rows={slots.map((s) => { const line = setsLine(logged[s.i], s.shape); return { name: bareName(s.swapped && s.x ? s.x.n : s.planned.n), line, none: line === 'Not today' } })}
-            effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} />
+            effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} overlay />
         )}
       </View>
     </Modal>
@@ -573,6 +584,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
 
 /** The play/pause button in the top row talks to the clip below it through this tiny store. */
 const clipCtl: { toggle?: () => void; playing: boolean; listeners: Set<() => void> } = { playing: false, listeners: new Set() }
+const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const
+
 function PlayToggle() {
   const [, force] = useState(0)
   useEffect(() => { const f = () => force((n) => n + 1); clipCtl.listeners.add(f); return () => { clipCtl.listeners.delete(f) } }, [])
