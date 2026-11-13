@@ -39,7 +39,12 @@ import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
-import { OverlaySheets, BareSheet, Button, Dots, Icon, Li, LiText, List, NavBtn, Sheet, Stack, Sub, Foot, Toggle, font, num, useTokens } from './ui'
+import { Btn, List } from '../../lib/ui/kit'
+import { BareSheet, NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
+import { Icon } from '../../lib/ui/icons'
+import { font, num, useTokens } from '../../lib/theme'
+import { Foot, Li, LiText, Stack, Sub } from './pendingN1'
+import { Dots } from './gp'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -74,7 +79,7 @@ function TempoCount({ player, media, playing }: { player: ReturnType<typeof useC
       {s.kind === 'ready'
         ? <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
         : <>
-          <Text style={[font(400), num, sh, { fontSize: 112, lineHeight: 112, fontWeight: '200', letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
+          <Text style={[font(200), num, sh, { fontSize: 112, lineHeight: 112, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
           <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
         </>}
     </View>
@@ -350,7 +355,6 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   return (
     <Modal visible animationType="fade" onRequestClose={() => { if (askFeel) setAskFeel(null); else if (sheet) { setSheet(null); setDiscard(false) } else setSheet('leave') }} statusBarTranslucent supportedOrientations={['portrait']}>
       <StatusBar style="light" />
-      <OverlaySheets.Provider value={true}>
       <View accessibilityViewIsModal accessibilityLabel={inWarm ? `${title}: warm-up` : `${title}: ${name}`} style={{ flex: 1, backgroundColor: plain && !inWarm ? '#121214' : '#000' }}>
         {inWarm && block ? (
           <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
@@ -416,7 +420,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 12 }}>
                 <StepBtn label="Lighter" sign="−" onPress={() => setFindW(Math.max(0, (findW ?? 0) - ((findW ?? 0) > 10 ? 2.5 : 1)))} />
-                <Text accessibilityLiveRegion="polite" style={[font(400), num, W, { fontSize: 34, fontWeight: '300' }]}>{findW == null ? '–' : findW}<Text style={[font(400), { fontSize: 15, color: 'rgba(255,255,255,0.8)' }]}> kg</Text></Text>
+                <Text accessibilityLiveRegion="polite" style={[font(300), num, W, { fontSize: 34 }]}>{findW == null ? '–' : findW}<Text style={[font(400), { fontSize: 15, color: 'rgba(255,255,255,0.8)' }]}> kg</Text></Text>
                 <StepBtn label="Heavier" sign="+" onPress={() => setFindW((findW ?? 0) + ((findW ?? 0) >= 10 ? 2.5 : 1))} />
               </View>
               <Text style={[font(400), num, dim, { fontSize: 13, textAlign: 'center' }]}>Aim for {calib.t.reps?.hi ?? 10} reps with {calib.t.rir.lo} or {calib.t.rir.hi} to spare</Text>
@@ -472,9 +476,9 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           <Sheet title="Stopped early" onClose={() => setSheet(null)} left={null}>
             <Sub style={{ paddingHorizontal: 4, paddingBottom: 14 }}>That's fine. If something hurt, leave this one for today.</Sub>
             <Stack style={{ marginTop: 0 }}>
-              <Button title="Move to the next exercise" onPress={moveOn} />
-              {slot.x && <Button title="Try a gentler option" kind="gray" onPress={() => setSheet('swap')} />}
-              <Button title="Carry on with this one" kind="gray" onPress={() => setSheet(null)} />
+              <Btn title="Move to the next exercise" onPress={moveOn} />
+              {slot.x && <Btn title="Try a gentler option" kind="gray" onPress={() => setSheet('swap')} />}
+              <Btn title="Carry on with this one" kind="gray" onPress={() => setSheet(null)} />
             </Stack>
           </Sheet>
         )}
@@ -496,17 +500,17 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           <Sheet title="Leave the workout?" onClose={() => { setSheet(null); setDiscard(false) }} left={null}>
             <Foot style={{ paddingTop: 0, paddingHorizontal: 4, paddingBottom: 12 }}>Everything you've logged is saved. You can pick it up again from Train.</Foot>
             <Stack style={{ marginTop: 0 }}>
-              <Button title="Keep going" onPress={() => setSheet(null)} />
-              <Button title="Finish now" kind="gray" onPress={() => setSheet('finish')} />
-              <Button title="Leave for now" kind="gray" onPress={leave} />
+              <Btn title="Keep going" onPress={() => setSheet(null)} />
+              <Btn title="Finish now" kind="gray" onPress={() => setSheet('finish')} />
+              <Btn title="Leave for now" kind="gray" onPress={leave} />
               {session && (discard
-                ? <Button title="Yes, discard this session" kind="danger" onPress={() => {
+                ? <Btn title="Yes, discard this session" kind="danger" onPress={() => {
                     const kept = session, day = cur
                     removeSession(session.id)
                     showToast(`${title} discarded`, { label: 'Undo', run: () => restoreSession(day, kept) })
                     onClose()
                   }} />
-                : <Button title="Discard this session" kind="danger" onPress={() => setDiscard(true)} />)}
+                : <Btn title="Discard this session" kind="danger" onPress={() => setDiscard(true)} />)}
             </Stack>
           </Sheet>
         )}
@@ -526,7 +530,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
               ))}
             </View>
             <Foot style={{ paddingTop: 12, paddingHorizontal: 4, paddingBottom: 14 }}>{FIRST_SESSION.feelNote}</Foot>
-            <Button title="Done" disabled={!feel} onPress={() => {
+            <Btn title="Done" disabled={!feel} onPress={() => {
               if (feel) {
                 const list = [...(logged[askFeel.i] || [])]
                 if (list[askFeel.k]) list[askFeel.k] = { ...list[askFeel.k], feel }
@@ -544,7 +548,6 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} />
         )}
       </View>
-      </OverlaySheets.Provider>
     </Modal>
   )
 }

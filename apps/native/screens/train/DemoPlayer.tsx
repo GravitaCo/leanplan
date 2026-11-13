@@ -12,7 +12,9 @@ import type { ExerciseTemplate } from '@/core/types'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
 import { exById, holdTarget } from '@/core/domain/library'
 import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
-import { Icon, Shade, font, num } from './ui'
+import { Icon } from '../../lib/ui/icons'
+import { font, num } from '../../lib/theme'
+import { Shade } from './gp'
 
 const shadow = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }
 

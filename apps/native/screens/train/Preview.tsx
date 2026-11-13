@@ -3,7 +3,7 @@
  * exercise list with what to aim for (trainModel.previewRows, shared with the web), swaps for today
  * only, then Start. Cardio days and the gentle swaps save from here.
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
@@ -26,7 +26,11 @@ import { SwapSheet } from './SwapSheet'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb } from './media'
 import { WarmupCard } from './WarmupCard'
-import { BackButton, Button, Card, FInput, FRow, FSelect, Foot, Icon, LinkBtn, Li, List, Stack, Sub, TitleRow, font, num, useTokens } from './ui'
+import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
+import { BackButton, TitleRow } from '../../lib/ui/primitives'
+import { Icon } from '../../lib/ui/icons'
+import { font, num, useTokens } from '../../lib/theme'
+import { FInput, FRow, FSelect, Foot, Li, Stack, Sub, TextLink, TrainNav } from './pendingN1'
 
 /** `.card.ex`: name, the prescription tag, the cue */
 export function ExCard({ n, tg, cue, children }: { n: string; tg?: string; cue?: string; children?: React.ReactNode }) {
@@ -71,6 +75,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
 }) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
+  const onProfile = useContext(TrainNav).onProfile
   const rate = useStore((s) => s.rateExercise)
   const prefs = useStore((s) => s.data.profile.training?.exPrefs)
   const routines = useStore((s) => s.data.routines)
@@ -109,7 +114,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       <View style={{ paddingBottom: 6, alignSelf: 'flex-start' }}><BackButton label={isToday ? 'Today' : dayName} onPress={onBack} /></View>
-      <TitleRow flush title={title} />
+      <TitleRow title={title} onProfile={onProfile} />
       <Sub style={{ marginTop: 2 }}>{sub}</Sub>
 
       {/* .vchips: one scrolling row; with the wellbeing flag (.hd-wrap) they wrap onto lines, 44 px targets */}
@@ -143,7 +148,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
             </List>
           )}
           <Foot style={{ paddingTop: 4, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
-          <Stack><Button title={`Save ${swapKey === 'walk' ? 'walk' : 'mobility'}`} onPress={() => { saveCardio(swap.cardioType, swapKey === 'walk' ? walkMins || swap.mins : swap.mins, 'swap'); onBack() }} /></Stack>
+          <Stack><Btn title={`Save ${swapKey === 'walk' ? 'walk' : 'mobility'}`} onPress={() => { saveCardio(swap.cardioType, swapKey === 'walk' ? walkMins || swap.mins : swap.mins, 'swap'); onBack() }} /></Stack>
         </>
       ) : type === 'Cardio' ? (
         <>
@@ -153,7 +158,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
             <FRow label="Type"><FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} /></FRow>
             <FRow label="Minutes"><FInput numeric value={mins} placeholder="25" onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
           </List>
-          <Stack><Button title="Save cardio" onPress={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }} /></Stack>
+          <Stack><Btn title="Save cardio" onPress={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }} /></Stack>
           <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
         </>
       ) : (
@@ -182,7 +187,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                     <Text style={[font(400), num, { fontSize: 13, color: t.label2, marginTop: 2 }]}>{s.rx}{detail ? ' · ' + detail : ''}</Text>
                     {s.swapped && (
                       <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 3 }]}>
-                        In place of {bareName(s.planned.n)}, today only. <LinkBtn inl size={13} title="Undo" onPress={() => onSwap(s.i, s.planned.id!)} />
+                        In place of {bareName(s.planned.n)}, today only. <TextLink inl size={13} title="Undo" onPress={() => onSwap(s.i, s.planned.id!)} />
                         {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
                       </Text>
                     )}
@@ -200,7 +205,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                       </Pressable>
                     </View>
                   )}
-                  {s.x && <LinkBtn title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
+                  {s.x && <TextLink title="Swap" label={`Swap ${s.shown.n}`} onPress={() => setSwapFor(s.i)} />}
                 </Li>
               )
             })}
@@ -210,7 +215,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
             Swaps here only change today. {easier ? HARD_DAY_COPY.spareEasier : 'Stop each set with two or three reps to spare.'}{slots.some((s) => s.swapped && s.x?.care?.length) ? ' ' + CARE_DISCLAIMER : ''} {RED_FLAG}
           </Foot>
           <Stack style={{ alignItems: 'center', marginTop: 20 }}>
-            <Button title={logged ? 'Continue' : 'Start'} onPress={onStart} style={{ height: 52, borderRadius: 26, alignSelf: 'stretch' }} />
+            <Btn title={logged ? 'Continue' : 'Start'} onPress={onStart} style={{ height: 52, borderRadius: 26, alignSelf: 'stretch' }} />
             <LinkBtn title={logged ? 'Edit sets by hand' : 'Log sets by hand'} onPress={onManual} />
             <LinkBtn title={`Edit ${keyTitle(type, routines)} in Plan`} onPress={onEditPlan} />
           </Stack>

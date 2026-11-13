@@ -13,7 +13,8 @@ import { fmtClock } from '@/core/domain/guided'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { ClipView, Still, useClip, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpRound, GpSec, GpMain, GpPill, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
-import { Icon, font } from './ui'
+import { Icon } from '../../lib/ui/icons'
+import { font } from '../../lib/theme'
 
 export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLeave, onProgress }: {
   block: WarmupBlock

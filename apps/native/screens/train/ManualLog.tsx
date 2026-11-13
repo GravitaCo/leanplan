@@ -3,7 +3,7 @@
  * bodyweight load choice, hold timer, add set), for logging after the fact and for editing a session
  * already logged. It saves exactly what the web form saves (buildLogged, setHasData).
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -22,7 +22,11 @@ import { SwapSheet } from './SwapSheet'
 import { HoldTimer } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
 import { ExCard } from './Preview'
-import { toPoint, BackButton, Button, Foot, Icon, LinkBtn, Seg, Stack, Sub, TitleRow, Toggle, font, num, useTokens } from './ui'
+import { Btn } from '../../lib/ui/kit'
+import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
+import { Icon } from '../../lib/ui/icons'
+import { font, num, useTokens } from '../../lib/theme'
+import { Foot, Stack, Sub, TextLink, TrainNav, toPoint } from './pendingN1'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
 
@@ -56,6 +60,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
 }) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
+  const onProfile = useContext(TrainNav).onProfile
   const cur = useStore((s) => s.cur)
   const days = useStore((s) => s.data.days)
   const saveWorkout = useStore((s) => s.saveWorkout)
@@ -110,7 +115,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       <View style={{ paddingBottom: 6, alignSelf: 'flex-start' }}><BackButton label={title} onPress={onBack} /></View>
-      <TitleRow title="Log sets by hand" />
+      <TitleRow title="Log sets by hand" onProfile={onProfile} />
       <Sub style={{ marginTop: 2, marginBottom: 16 }}>Type in what you did. Blank sets aren't saved.</Sub>
       {slots.map((sl) => {
         const exi = sl.i
@@ -125,7 +130,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
           <ExCard key={exi} n={shown.n} tg={rx}>
             {swapped && (
               <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 4, marginBottom: 10 }]}>
-                In place of {e.n}, {isToday ? 'today' : 'this day'} only. <LinkBtn inl size={13} title="Undo" label={`Undo, back to ${e.n}`} onPress={() => swapSlot(exi, e.id!)} />
+                In place of {e.n}, {isToday ? 'today' : 'this day'} only. <TextLink inl size={13} title="Undo" label={`Undo, back to ${e.n}`} onPress={() => swapSlot(exi, e.id!)} />
                 {x!.care?.length ? <> Asks quite a lot of {careList(x!.care)}. {CARE_DISCLAIMER}</> : null}
               </Text>
             )}
@@ -133,8 +138,8 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
             <View style={{ flexDirection: 'row', gap: 18, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 10 }}>
               {shown.video
                 ? <Pressable accessibilityRole="button" onPress={() => setDemo(exi)} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="play" size={15} color={t.tint} fill /><Text style={[font(400), { fontSize: 15, color: t.tint }]}>Watch example</Text></Pressable>
-                : <LinkBtn inl title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
-              {x && <LinkBtn inl title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
+                : <TextLink inl title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
+              {x && <TextLink inl title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
             </View>
             {!!lastTxt && <Text style={[font(600), num, { fontSize: 13, color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
             {shape === 'reps' && loadOn && (
@@ -172,13 +177,13 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
               )
             })}
             <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap', paddingTop: 6 }}>
-              <LinkBtn inl title="Add set" onPress={() => addSet(exi)} />
-              {shape === 'reps' && !loadOn && <LinkBtn inl title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
+              <TextLink inl title="Add set" onPress={() => addSet(exi)} />
+              {shape === 'reps' && !loadOn && <TextLink inl title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
             </View>
           </ExCard>
         )
       })}
-      <Stack><Button title={`Save ${shorter ? 'shorter ' : ''}${title}`} onPress={commit} /></Stack>
+      <Stack><Btn title={`Save ${shorter ? 'shorter ' : ''}${title}`} onPress={commit} /></Stack>
       <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>
         {easier && shorter ? HARD_DAY_COPY.spareEasier : 'Stop each set with two or three reps to spare.'}{shorter ? '' : ' When every set hits the top of the range with good form, add a little weight next time.'} {RED_FLAG}
       </Foot>

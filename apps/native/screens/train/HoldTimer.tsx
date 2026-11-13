@@ -7,7 +7,10 @@ import { useEffect, useState } from 'react'
 import { AccessibilityInfo, Text, View } from 'react-native'
 import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { RED_FLAG } from '@/copy/train'
-import { Button, Foot, Sheet, Stack, font, num, useTokens } from './ui'
+import { Btn } from '../../lib/ui/kit'
+import { Sheet } from '../../lib/ui/primitives'
+import { font, num, useTokens } from '../../lib/theme'
+import { Foot, Stack } from './pendingN1'
 
 export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
   name: string
@@ -45,8 +48,8 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
       </View>
       <Stack>
         {start == null
-          ? <Button title="Start" onPress={() => { setStart(Date.now()); setNow(Date.now()) }} />
-          : <Button title="Stop and save" kind="tinted" onPress={stop} />}
+          ? <Btn title="Start" onPress={() => { setStart(Date.now()); setNow(Date.now()) }} />
+          : <Btn title="Stop and save" kind="tinted" onPress={stop} />}
       </Stack>
       <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>Breathe steadily throughout. {RED_FLAG}</Foot>
     </Sheet>

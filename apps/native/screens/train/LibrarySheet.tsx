@@ -18,7 +18,12 @@ import { fitsKit, inModality } from '@/screens/train/trainModel'
 import { DemoPlayer, type Origin } from './DemoPlayer'
 import { Thumb, imageSource, useClipPreview } from './media'
 import { ExCard } from './Preview'
-import { BackButton, Chip, Chips, Foot, Icon, Li, LiText, List, NavBtn, Shade, Sheet, font, useTokens } from './ui'
+import { Chip, Chips, List } from '../../lib/ui/kit'
+import { BackButton, NavBtn, Sheet } from '../../lib/ui/primitives'
+import { Icon } from '../../lib/ui/icons'
+import { font, useTokens } from '../../lib/theme'
+import { Foot, Li, LiText } from './pendingN1'
+import { Shade } from './gp'
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const t = useTokens()
@@ -96,7 +101,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
 
   // the list and the entries share one sheet, as on the web (an entry opens at its top)
   return (
-    <Sheet title={cur ? cur.n : onPick ? 'Add an exercise' : 'Exercise library'} onClose={onClose} tall scrollKey={cur?.id ?? ''}
+    <Sheet title={cur ? cur.n : onPick ? 'Add an exercise' : 'Exercise library'} onClose={onClose} tall
       left={cur ? <BackButton onPress={() => setOpen(open.slice(0, -1))} /> : <NavBtn title={onPick ? 'Cancel' : 'Done'} onPress={onClose} />}>
       {cur ? <Detail key={cur.id} x={cur} onOpen={(id) => setOpen([...open, id])} /> : <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.fill, borderRadius: 10, paddingHorizontal: 8, height: 38 }}>
@@ -104,14 +109,14 @@ export function LibrarySheet({ onClose, initial, onPick }: {
         <TextInput value={q} placeholder="Search exercises" placeholderTextColor={t.label2} accessibilityLabel="Search exercises" onChangeText={setQ}
           style={[font(400), { flex: 1, fontSize: 17, color: t.label, padding: 0 }]} autoCorrect={false} />
       </View>
-      <Chips label="Kind" style={{ marginTop: 12, marginBottom: 8 }}>
+      <View accessibilityLabel="Kind" style={{ marginTop: 12, marginBottom: 8 }}><Chips>
         {MODALITIES.map((m) => <Chip key={m} title={MODALITY_LABEL[m]} on={mod === m} onPress={() => setMod(mod === m ? null : m)} />)}
-      </Chips>
-      <Chips label="Equipment" style={{ marginBottom: 12 }}>
+      </Chips></View>
+      <View accessibilityLabel="Equipment" style={{ marginBottom: 12 }}><Chips>
         {LIB_KIT.map(([k, label]) => <Chip key={k} title={label} on={kit === k} onPress={() => setKit(kit === k ? null : k)} />)}
-      </Chips>
+      </Chips></View>
       {list.length ? (
-        <List inset={72}>
+        <List>
           {list.map((x) => (
             <Li key={x.id} label={x.n} onPress={() => (onPick ? onPick(x.id) : setOpen([x.id]))} style={{ minHeight: 64 }}>
               <Thumb video={x.video} play={!!x.video} />

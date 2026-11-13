@@ -5,7 +5,8 @@
 import type { ReactNode } from 'react'
 import { Platform, Pressable, Text, Vibration, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Shade, font, num } from './ui'
+import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
+import { font, num } from '../../lib/theme'
 
 const BRAND = '#cd7fae' // --brand, the same in both modes
 
@@ -50,11 +51,11 @@ export function GpPill({ children, plain }: { children: ReactNode; plain?: boole
   )
 }
 /** `.gp-clock`: 64 px light figures and a smaller line beside them */
-/** `light`: the web's 300 (200 in the warm-up); needs Geist Light/ExtraLight loaded in the app shell to show on a phone */
+/** `light`: the web's 300 (200 in the warm-up), Geist Light and ExtraLight */
 export function GpClock({ big, small, label, size = 64, light = 300 }: { big: string; small?: string; label: string; size?: number; light?: 200 | 300 }) {
   return (
     <View accessible accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-      <Text style={[font(400), num, { fontSize: size, lineHeight: size, fontWeight: light === 200 ? '200' : '300', letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
+      <Text style={[font(light), num, { fontSize: size, lineHeight: size, letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
       {!!small && <Text style={[font(400), num, { flexShrink: 1, fontSize: 15, color: 'rgba(255,255,255,0.85)' }]}>{small}</Text>}
     </View>
   )
@@ -94,3 +95,27 @@ export function GpTextBtn({ title, onPress, regular }: { title: string; onPress:
   )
 }
 export const BRAND_COLOR = BRAND
+
+/** the three dots of the player's menu button */
+export function Dots({ color }: { color: string }) {
+  return <Svg width={18} height={18} viewBox="0 0 24 24" fill={color}><Circle cx="5" cy="12" r="2" /><Circle cx="12" cy="12" r="2" /><Circle cx="19" cy="12" r="2" /></Svg>
+}
+
+/**
+ * A vertical shade (the web's `linear-gradient` on the video screens), behind its parent's content:
+ * stops as [offset 0–1, black opacity].
+ */
+export function Shade({ stops }: { stops: [number, number][] }) {
+  const id = 'g' + stops.map((x) => x.join('_')).join('-').replace(/\./g, '')
+  return (
+    <Svg pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} width="100%" height="100%" preserveAspectRatio="none">
+      <Defs>
+        <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          {stops.map(([o, a], i) => <Stop key={i} offset={o} stopColor="#000" stopOpacity={a} />)}
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
+  )
+}
+

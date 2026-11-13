@@ -9,7 +9,10 @@ import { Pressable, Text, TextInput, View } from 'react-native'
 import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
-import { toPoint, BareSheet, Button, Foot, LinkBtn, Li, LiText, List, Seg, Stack, Toggle, font, num, useTokens } from './ui'
+import { Btn, LinkBtn, List } from '../../lib/ui/kit'
+import { BareSheet, Seg, Toggle } from '../../lib/ui/primitives'
+import { font, num, useTokens } from '../../lib/theme'
+import { Foot, Li, LiText, Stack, TextLink, toPoint } from './pendingN1'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
 const tidy = (x: number) => String(Math.round(x * 100) / 100)
@@ -150,14 +153,14 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
         <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
           <Text style={[font(400), { fontSize: 16, lineHeight: 22, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
-            {onGentler && <LinkBtn inl title="Try a gentler option" onPress={onGentler} />}
-            <LinkBtn inl expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
+            {onGentler && <TextLink inl title="Try a gentler option" onPress={onGentler} />}
+            <TextLink inl expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
           </View>
           {help && <Foot style={{ paddingTop: 8, paddingHorizontal: 0 }}>{PAIN_HELP} {RED_FLAG}</Foot>}
         </View>
       )}
       {barbell && shape === 'weight-reps' && <Foot style={{ paddingTop: 10, paddingHorizontal: 4 }}>{barOnly ? 'Barbell weight includes the bar.' : "If you're using a barbell, include the bar."}</Foot>}
-      <Stack><Button title="Log set" onPress={log} disabled={empty} /></Stack>
+      <Stack><Btn title="Log set" onPress={log} disabled={empty} /></Stack>
     </BareSheet>
   )
 }

@@ -3,7 +3,7 @@
  * session (LogSessionSheet.tsx) and Support (SupportSheet.tsx).
  */
 import { useState } from 'react'
-import { Linking, Text } from 'react-native'
+import { Linking, Text, View } from 'react-native'
 import { useStore } from '@/store/store'
 import type { Effort, Modality, WorkoutType } from '@/core/types'
 import { SESSIONS, WORKOUTS } from '@/core/data/workouts'
@@ -15,7 +15,10 @@ import { DEFAULT_MINS, EFFORTS, MODALITIES, MODALITY_LABEL } from '@/core/data/m
 import { quietNumbers } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
-import { Chip, Chips, FInput, FRow, FSelect, Foot, Ico, Lbl, Li, LiText, List, NavBtn, Sheet, Toggle, font, num, useTokens } from './ui'
+import { Chip, Chips, List } from '../../lib/ui/kit'
+import { NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
+import { font, num, useTokens } from '../../lib/theme'
+import { FInput, FRow, FSelect, Foot, Ico, Lbl, Li, LiText } from './pendingN1'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -32,7 +35,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
   const mine = (all || []).filter((r) => !r.archived && !planned?.includes(r.id))
   return (
     <Sheet title="Add something" onClose={onClose}>
-      <List inset={58}>
+      <List icons>
         <Li onPress={onLog}><Ico icon="plus" bg={t.activity} /><LiText t="Log a session" s="A walk, yoga, pilates, anything" /></Li>
       </List>
       <Lbl>Do a different workout today</Lbl>
@@ -56,7 +59,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
         </>
       )}
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 12 }}>This only changes today. To change your week or build your own workouts, go to Plan.</Foot>
-      <List inset={58}>
+      <List icons>
         <Li onPress={onLibrary}><Ico icon="book" bg={t.tint} /><LiText t="Exercise library" s="How to do each move, easier and harder options" /></Li>
       </List>
     </Sheet>
@@ -90,9 +93,9 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
   return (
     <Sheet title="Log a session" onClose={onClose} right={<NavBtn bold title="Save" onPress={save} />}>
       <Lbl>What did you do?</Lbl>
-      <Chips label="Kind of session" style={{ marginBottom: 14 }}>
+      <View accessibilityLabel="Kind of session" style={{ marginBottom: 14 }}><Chips>
         {MODALITIES.map((k) => <Chip key={k} title={MODALITY_LABEL[k]} on={modality === k} onPress={() => setModality(k)} />)}
-      </Chips>
+      </Chips></View>
       <List>
         {modality === 'cardio' && <FRow label="Type"><FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} /></FRow>}
         <FRow label="Name"><FInput value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} accessibilityLabel="Name" /></FRow>
@@ -100,9 +103,9 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
         {modality === 'cardio' && <FRow label="Distance (km)"><FInput decimal value={km} placeholder="Optional" onChangeText={setKm} accessibilityLabel="Distance (km)" /></FRow>}
       </List>
       <Lbl>How did it feel? <Text style={{ color: t.label2 }}>Optional</Text></Lbl>
-      <Chips label="Effort">
+      <View accessibilityLabel="Effort"><Chips>
         {EFFORTS.map(([k, label]) => <Chip key={k} title={label} on={effort === k} onPress={() => setEffort(effort === k ? null : k)} />)}
-      </Chips>
+      </Chips></View>
       <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>This sits alongside anything else you've logged today. Every kind of movement counts. {RED_FLAG}</Foot>
     </Sheet>
   )

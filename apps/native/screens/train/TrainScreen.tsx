@@ -4,7 +4,7 @@
  * the wellbeing flag) and what's done. The day model is the web's own (src/screens/train/
  * trainModel.ts), so every row, version, swap and note is computed by the same code.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore, TRAIN_LOG_WALK } from '@/store/store'
@@ -24,8 +24,12 @@ import { ManualLog } from './ManualLog'
 import { LibrarySheet } from './LibrarySheet'
 import { AddSomethingSheet, LogSessionSheet, SupportSheet } from './sheets'
 import { Thumb, usePhBg } from './media'
-import { MoveStrip, TrainHeader } from './strip'
-import { Button, Chevron, Chip, Chips, Foot, Icon, LinkBtn, Li, List, TrainNav, XBtn, font, num, useTokens } from './ui'
+import { DayNav, MoveStrip } from '../../lib/ui/WeekStrip'
+import { PageHeader } from '../../lib/ui/primitives'
+import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
+import { Chevron, Icon } from '../../lib/ui/icons'
+import { font, num, useTokens } from '../../lib/theme'
+import { Foot, Li, TextLink, TrainNav, XBtn } from './pendingN1'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 
@@ -35,6 +39,7 @@ export function TrainScreen({ onProfile }: { onProfile?: () => void } = {}) {
 
 function Train() {
   const t = useTokens()
+  const onProfile = useContext(TrainNav).onProfile
   const insets = useSafeAreaInsets()
   const scroll = useRef<ScrollViewInstance>(null)
   const cur = useStore((s) => s.cur)
@@ -116,7 +121,7 @@ function Train() {
       <Text style={[font(500), { fontSize: 16, color: t.label }]}>Lighter options</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
         <Text numberOfLines={1} style={[font(400), { fontSize: 14, color: t.label2, flexShrink: 1 }]}>{s}</Text>
-        <Chevron rotate={lighterOpen ? 270 : 90} />
+        <Chevron color={t.label3} rotate={lighterOpen ? 270 : 90} />
       </View>
     </Pressable>
   )
@@ -127,9 +132,9 @@ function Train() {
         ? <Text style={[font(600), { fontSize: 17, lineHeight: 22, color: t.label }]}>{m.lighterHeading}</Text>
         : foldRow('Shorter, mobility, walk')}
       {(lighterUp || lighterOpen) && (
-        <Chips label="Today's session" style={{ marginTop: 10 }}>
+        <View accessibilityLabel="Today's session" style={{ marginTop: 10 }}><Chips>
           {CHOICES.map(([k, label]) => <Chip key={k} title={label} on={!!first && choiceFor(first) === k} onPress={() => { if (first) openWorkout(first, k) }} />)}
-        </Chips>
+        </Chips></View>
       )}
     </View>
   )
@@ -157,7 +162,7 @@ function Train() {
                     <Text style={[font(600), { fontSize: 16, lineHeight: 19, marginTop: 2, color: t.label }]}>{x.t}</Text>
                     <Text style={[font(400), num, { fontSize: 12, color: t.label2, marginTop: 4 }]}>{x.d}</Text>
                   </View>
-                  <Chevron />
+                  <Chevron color={t.label3} />
                 </Pressable>
               ))}
             </View>
@@ -184,16 +189,16 @@ function Train() {
 
   return (
     <ScrollView ref={scroll} style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
-      <TrainHeader title="Train" top={insets.top} />
+      <PageHeader eyebrow={<DayNav />} title="Train" onProfile={onProfile} top={insets.top + 18} />
       <MoveStrip />
 
       {isToday && showLoadNote(data, cur) && (
         <View style={card}>
           <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
           <Chips>
-            <Chip button title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
+            <Chip title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
             {plannedKeys(data, shiftDay(cur, 1)).length > 0 && (
-              <Chip button title="Make tomorrow lighter" onPress={() => {
+              <Chip title="Make tomorrow lighter" onPress={() => {
                 const tmr = shiftDay(cur, 1)
                 const p = data.profile
                 // an easier week already covering tomorrow stays as it is, not cut to one day
@@ -212,8 +217,8 @@ function Train() {
           <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 10 }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</Foot>
           <Chips>
-            <Chip button title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
-            <Chip button title="No thanks" onPress={() => setPrefs({ welcomeAsked: cur })} />
+            <Chip title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
+            <Chip title="No thanks" onPress={() => setPrefs({ welcomeAsked: cur })} />
           </Chips>
         </View>
       )}
@@ -231,7 +236,7 @@ function Train() {
           </View>
         )}
         <Text accessibilityRole="header" style={[font(600), { paddingHorizontal: 4, fontSize: 22, letterSpacing: -0.22, color: t.label }]}>{isToday ? 'Today' : dayName}</Text>
-        <List radius={20} inset={0} style={{ marginBottom: 0 }}>
+        <List style={{ borderRadius: 20 }}>
           {rows.filter((r) => r.show).map((r) => (
             <View key={r.k}>
               <Li onPress={() => openWorkout(r.k)} label={keyTitle(r.k, routines)} style={trow}>
@@ -240,7 +245,7 @@ function Train() {
                   <Text numberOfLines={1} style={tb}>{keyTitle(r.k, routines)}</Text>
                   <Text numberOfLines={1} style={[...ts, num]}>{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</Text>
                 </View>
-                <Button sm title={r.inProgress ? 'Resume' : 'Start'} onPress={() => openWorkout(r.k)} style={{ paddingHorizontal: 18, alignSelf: 'center' }} />
+                <Btn small title={r.inProgress ? 'Resume' : 'Start'} onPress={() => openWorkout(r.k)} style={{ paddingHorizontal: 18, alignSelf: 'center' }} />
               </Li>
               {/* a lighter week or maintenance: a quiet way back to the full workout, never a nudge on a
                   low check-in day or in gentle mode, and after maintenance's first week only the link */}
@@ -248,8 +253,8 @@ function Train() {
                 <View style={{ borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 14 }}>
                   <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2 }]}>
                     {planPos?.maintenanceWeek != null
-                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <LinkBtn inl size={13} style={font(500)} title="Full workout" onPress={() => openWorkout(r.k, 'planned')} />}</>
-                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <LinkBtn inl size={13} style={font(500)} title="The full workout" onPress={() => openWorkout(r.k, 'planned')} /> is here if you'd like it.</>}</>}
+                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <TextLink inl size={13} style={font(500)} title="Full workout" onPress={() => openWorkout(r.k, 'planned')} />}</>
+                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <TextLink inl size={13} style={font(500)} title="The full workout" onPress={() => openWorkout(r.k, 'planned')} /> is here if you'd like it.</>}</>}
                   </Text>
                 </View>
               )}
@@ -310,7 +315,7 @@ function Train() {
                     ? <Pressable accessibilityRole="button" accessibilityLabel={`Open ${x.title}`} onPress={() => openWorkout(r)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, minHeight: 44 }}>{body}</Pressable>
                     : <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, minHeight: 44 }}>{body}</View>}
                   {confirmId === x.id
-                    ? <LinkBtn title="Remove" color={t.red} label={`Remove ${x.title}`} onPress={() => { removeSession(x.id); setConfirmId(null) }} />
+                    ? <TextLink title="Remove" color={t.red} label={`Remove ${x.title}`} onPress={() => { removeSession(x.id); setConfirmId(null) }} />
                     : <XBtn label={`Remove ${x.title}`} onPress={() => setConfirmId(x.id)} />}
                 </View>
               )

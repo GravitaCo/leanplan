@@ -5,7 +5,7 @@
 import { Text, View } from 'react-native'
 import { warmupLine, type WarmupBlock } from '@/core/domain/warmup'
 import { warmupNote } from '@/copy/train'
-import { font, num, useTokens } from './ui'
+import { font, num, useTokens } from '../../lib/theme'
 
 export function WarmupCard({ block, extra }: { block: WarmupBlock; extra?: string }) {
   const t = useTokens()

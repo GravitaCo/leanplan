@@ -11,7 +11,10 @@ import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKey } from '@/core/domain/routines'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { LibrarySheet } from './LibrarySheet'
-import { Button, FInput, FRow, Foot, GrpH, Ico, Li, LiText, List, NavBtn, Sheet, Stack, XBtn, font, useTokens } from './ui'
+import { Btn, List } from '../../lib/ui/kit'
+import { NavBtn, Sheet } from '../../lib/ui/primitives'
+import { font, useTokens } from '../../lib/theme'
+import { FInput, FRow, Foot, GrpH, Ico, Li, LiText, Stack, XBtn } from './pendingN1'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -85,8 +88,8 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
       {r && (
         <Stack style={{ marginTop: 18 }}>
           {confirmRemove
-            ? <Button kind="danger" title="Remove this workout" onPress={() => { archiveRoutine(r.id); onClose() }} />
-            : <Button kind="gray" title="Remove workout" onPress={() => setConfirmRemove(true)} />}
+            ? <Btn kind="danger" title="Remove this workout" onPress={() => { archiveRoutine(r.id); onClose() }} />
+            : <Btn kind="gray" title="Remove workout" onPress={() => setConfirmRemove(true)} />}
           {confirmRemove && <Foot style={{ paddingTop: 6, paddingHorizontal: 4 }}>Anything you've already logged stays in your history.</Foot>}
         </Stack>
       )}

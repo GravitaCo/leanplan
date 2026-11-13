@@ -8,7 +8,10 @@ import { Text, TextInput, View } from 'react-native'
 import type { Effort } from '@/core/types'
 import { EFFORTS } from '@/core/data/modalities'
 import { ChoiceGrid } from './AdjustSheet'
-import { BareSheet, Button, FInput, FRow, Li, List, NavBtn, Stack, Sub, font, num, useTokens } from './ui'
+import { Btn, List } from '../../lib/ui/kit'
+import { BareSheet, NavBtn } from '../../lib/ui/primitives'
+import { font, num, useTokens } from '../../lib/theme'
+import { FInput, FRow, Li, Stack, Sub } from './pendingN1'
 
 export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinish, onBack }: {
   title: string
@@ -48,7 +51,7 @@ export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinis
       </List>
       <TextInput accessibilityLabel="Note" value={note} placeholder="Add a note" placeholderTextColor={t.label3} maxLength={500} onChangeText={setNote}
         style={[font(400), { backgroundColor: t.elev, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, fontSize: 17, color: t.label, marginTop: 6 }]} />
-      <Stack><Button title="Finish" onPress={() => onFinish(effort, note.trim(), minsOut)} /></Stack>
+      <Stack><Btn title="Finish" onPress={() => onFinish(effort, note.trim(), minsOut)} /></Stack>
     </BareSheet>
   )
 }

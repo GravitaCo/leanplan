@@ -9,7 +9,10 @@ import type { Exercise } from '@/core/types'
 import { alternativesFor, exById } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { CARE_DISCLAIMER } from '@/copy/train'
-import { Button, Foot, GrpH, Li, LiText, List, Sheet, Stack, Sub, font } from './ui'
+import { Btn, List } from '../../lib/ui/kit'
+import { Sheet } from '../../lib/ui/primitives'
+import { font } from '../../lib/theme'
+import { Foot, GrpH, Li, LiText, Stack, Sub } from './pendingN1'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
@@ -45,8 +48,8 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
           You've logged {loggedSets} {loggedSets === 1 ? 'set' : 'sets'} of {current.n} today. {loggedSets === 1 ? 'It stays' : 'They stay'} in today's log, and {to.n} starts fresh.
         </Sub>
         <Stack style={{ marginTop: 0 }}>
-          <Button title={`Swap to ${to.n}`} onPress={() => { onPick(confirm); onClose() }} />
-          <Button title={`Keep ${current.n}`} kind="gray" onPress={() => setConfirm(null)} />
+          <Btn title={`Swap to ${to.n}`} onPress={() => { onPick(confirm); onClose() }} />
+          <Btn title={`Keep ${current.n}`} kind="gray" onPress={() => setConfirm(null)} />
         </Stack>
       </Sheet>
     )

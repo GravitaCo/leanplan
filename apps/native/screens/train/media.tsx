@@ -12,7 +12,8 @@ import { useVideoPlayer, VideoView, type VideoPlayer, type VideoSource } from 'e
 import { useEvent } from 'expo'
 import type { ExerciseMedia, LogShape } from '@/core/types'
 import { mediaUrl, previewUrls } from '@/core/data/media'
-import { Icon, font, useTokens } from './ui'
+import { Icon } from '../../lib/ui/icons'
+import { font, useTokens } from '../../lib/theme'
 
 /** The Referer the web app sends (app.tilo.fit is its origin). security-data owns this choice. */
 export const BUNNY_REFERER = 'https://app.tilo.fit/'
