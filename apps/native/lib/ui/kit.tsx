@@ -49,6 +49,13 @@ export function Tile({ children, onPress, label, style }: { children: ReactNode;
     : <View style={s}>{children}</View>
 }
 
+/** A button's drawn height for its touch padding: a number from its style, or its default. */
+function touchHeight(style: StyleProp<ViewStyle>, fallback: number): number {
+  const f = StyleSheet.flatten(style)
+  const h = typeof f?.height === 'number' ? f.height : typeof f?.minHeight === 'number' ? f.minHeight : fallback
+  return h
+}
+
 export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger'
 
 /** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, and `.sm` (36 high, as wide as its words). */
@@ -63,7 +70,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
   const h = small ? 36 : 50
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
-      hitSlop={slop(0, Number(StyleSheet.flatten(style)?.height ?? StyleSheet.flatten(style)?.minHeight ?? h))}
+      hitSlop={slop(0, touchHeight(style, h))}
       style={({ pressed }) => [{
         minHeight: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
@@ -227,9 +234,10 @@ export function ToastHost({ sheet }: { sheet?: number } = {}) {
   const top = useOpenSheets((s) => (s.ids.length ? Math.max(...s.ids) === sheet : sheet === undefined))
   const toast = useStore((s) => s.toast)
   const action = useStore((s) => s.toastAction)
-  // keep the last words on screen while the toast fades out (0.25 s), as the web does
-  const [last, setLast] = useState<{ text: string; action: typeof action }>({ text: '', action: null })
-  useEffect(() => { if (toast) setLast({ text: toast, action }) }, [toast, action])
+  // once a toast has shown, its pill stays mounted and fades out empty when the toast clears, as
+  // the web's `.toast` does (its words and any action go at once, so nothing stale is reachable)
+  const [used, setUsed] = useState(false)
+  useEffect(() => { if (toast) setUsed(true) }, [toast])
   const reduce = useReducedMotion()
   const shown = useSharedValue(0)
   useEffect(() => { shown.value = withTiming(toast ? 1 : 0, { duration: 250 }) }, [toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -238,8 +246,11 @@ export function ToastHost({ sheet }: { sheet?: number } = {}) {
   if (!top) return null
   return (
     <Animated.View pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
+      accessibilityElementsHidden={!toast} importantForAccessibility={toast ? 'auto' : 'no-hide-descendants'}
       style={[{ position: 'absolute', left: 0, right: 0, bottom: 72 + insets.bottom, alignItems: 'center' }, style]}>
-      {last.text ? <View style={last.action ? { alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' } : { maxWidth: '88%' }}><ToastView text={last.text} action={last.action && { label: last.action.label, run: () => { last.action?.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View> : null}
+      {toast && action
+        ? <View style={{ alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' }}><ToastView text={toast} action={{ label: action.label, run: () => { action.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View>
+        : (toast || used) && <View style={{ maxWidth: '88%' }}><ToastView text={toast ?? ''} /></View>}
     </Animated.View>
   )
 }

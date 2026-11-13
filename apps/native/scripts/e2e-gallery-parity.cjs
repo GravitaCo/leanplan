@@ -74,7 +74,9 @@ async function run() {
       await sideBySide(browser, fw, fn, path.join(dir, `${scheme}-side.png`), `${id} · ${scheme}`)
       if (scheme !== 'light') continue
       const mw = await measure(w.page, webSec(id)), mn = await measure(n.page, natSec(id))
-      check(`${id}: words match`, mw.words === mn.words, { web: mw.words, native: mn.words })
+      // the same words; a chart's figures drawn as text over its SVG may read in another order
+      const bag = (x) => x.split(' ').sort().join(' ')
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words), { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       check(`${id}: height within 2 px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= 2, { web: mw.h, native: mn.h })
@@ -128,6 +130,20 @@ async function run() {
         seq[tag] = out.join(',')
       }
       check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
+    }
+    // after a toast with an action times out, no Undo is left behind (only the static demo's remains)
+    if (!ONLY || ONLY.includes('sheets')) {
+      const undo = {}
+      for (const [x, tag] of [[w, 'web'], [n, 'native']]) {
+        await x.page.getByText('Open a sheet', { exact: true }).click()
+        await x.page.waitForTimeout(600)
+        await x.page.getByText('Show a toast', { exact: true }).click()
+        await x.page.waitForTimeout(7000)
+        await x.page.getByText('Cancel', { exact: true }).last().click()
+        await x.page.waitForTimeout(600)
+        undo[tag] = await x.page.getByRole('button', { name: 'Undo', exact: true }).count()
+      }
+      check(`${scheme}: no Undo is left reachable after the toast times out`, undo.web === 1 && undo.native === 1, undo)
     }
     // one sheet replacing another in a single change still shows the toast (the sheet stack, not a count)
     if (!ONLY || ONLY.includes('sheets')) for (const [x, tag] of [[w, 'web'], [n, 'native']]) {

@@ -124,16 +124,28 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
     }
     return ly
   }
-  // `.num`: tabular figures, no tracking
-  const tnum = { fontFeatureSettings: "'tnum' 1", letterSpacing: 0 }
   const txt = (w: 500 | 600) => ({ fontFamily: GEIST[w], fontSize: 11 })
+  // The figures are `.num` on the web (tabular, no tracking). SVG text can't be relied on for
+  // tabular figures (react-native-svg drops the feature on the web and it is unproven on iOS), so
+  // they are React Native Text laid over the chart at the SVG's scale: with a line height of 1.3 em
+  // (Geist's ascent plus descent) the baseline sits 1.005 em below the line's top on every platform.
+  const [cw, setCw] = useState(0)
+  const k = cw / W
+  const figs: { x: number; y: number; size: number; anchor: 'end' | 'middle'; color: string; text: string }[] = []
+  if (numbers) {
+    for (const v of grid) figs.push({ x: W, y: gy(v) + 3.5, size: 10, anchor: 'end', color: t.label2, text: v.toLocaleString('en-GB') })
+    rows.forEach((x, i) => {
+      if (!x.logged) return
+      figs.push({ x: step * i + step / 2, y: lift(y(x.t.k) - 5), size: 11, anchor: 'middle', color: x.d === cur ? t.label : t.label2, text: Math.round(x.t.k).toLocaleString('en-GB') })
+    })
+  }
   return (
-    <View accessible accessibilityRole="image" accessibilityLabel={label} style={{ width: '100%', aspectRatio: W / H, marginTop: inCard ? 0 : 6, marginBottom: inCard ? 0 : 2 }}>
+    <View accessible accessibilityRole="image" accessibilityLabel={label} onLayout={(e: LayoutChangeEvent) => setCw(e.nativeEvent.layout.width)}
+      style={{ width: '100%', aspectRatio: W / H, marginTop: inCard ? 0 : 6, marginBottom: inCard ? 0 : 2 }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
         {grid.map((v) => (
           <G key={'g' + v}>
             <Line x1={0} x2={PW} y1={gy(v)} y2={gy(v)} stroke={t.grid} strokeWidth={1} />
-            {numbers && <SvgText x={W} y={gy(v) + 3.5} textAnchor="end" fill={t.label2} {...txt(500)} {...tnum} fontSize={10}>{v.toLocaleString('en-GB')}</SvgText>}
           </G>
         ))}
         {rows.map((x, i) => {
@@ -145,7 +157,6 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
               {x.logged ? (
                 <>
                   <Rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={on ? t.energyInk : t.energy} />
-                  {numbers && <SvgText x={cx} y={lift(top - 5)} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(500)} {...tnum}>{Math.round(x.t.k).toLocaleString('en-GB')}</SvgText>}
                 </>
               ) : !x.future ? (
                 <Rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill={t.fill3} />
@@ -155,6 +166,15 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
           )
         })}
       </Svg>
+      {k > 0 && figs.map((f, i) => {
+        const fs = f.size * k, lh = fs * 1.3, top = (f.y - f.size * 1.005) * k
+        const box = f.anchor === 'end' ? { left: 0, width: f.x * k } : { left: (f.x - 40) * k, width: 80 * k }
+        return (
+          <Text key={i} numberOfLines={1} style={[{ position: 'absolute', top, ...box, textAlign: f.anchor === 'end' ? 'right' : 'center', fontFamily: GEIST[500], fontSize: fs, lineHeight: lh, color: f.color }, num]}>
+            {f.text}
+          </Text>
+        )
+      })}
     </View>
   )
 }
