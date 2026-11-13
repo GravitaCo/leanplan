@@ -5,7 +5,7 @@
 import { DAY_NAME, parseYmd } from '@/core/domain/date'
 import { ENERGY, MOODS, SLEEP, STRESS } from '@/core/domain/insights'
 import type { CheckIn } from '@/core/types'
-import { MIND } from './copy'
+import { MIND } from '@/copy/mind'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 

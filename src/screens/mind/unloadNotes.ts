@@ -9,7 +9,7 @@ import { useStore } from '@/store/store'
 import { addUnloadNote, deleteUnloadNote, unloadNotes, UNLOAD_MAX_NOTES, UNLOAD_MAX_PAIRS, UNLOAD_NOTE_MAX_CHARS, type AddNoteResult, type NotesContext, type UnloadNote, type UnloadPair } from '@/data/deviceOnly'
 import type { PersistedState } from '@/data/persistence'
 import { DAY_NAME } from '@/core/domain/date'
-import { UNLOAD } from './copy'
+import { UNLOAD } from '@/copy/mind'
 
 export type Refusal = Extract<AddNoteResult, { ok: false }>['reason']
 export type { NotesContext, UnloadNote, UnloadPair }

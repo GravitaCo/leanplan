@@ -3,7 +3,7 @@ import { useStore, selectNotesContext } from '@/store/store'
 import { deleteUnload, noteDay, noteLines, notesFor, saveUnload, unloadBlocked, UNLOAD_MAX_PAIRS, type UnloadPair } from './unloadNotes'
 import { BackButton, Sheet, focusOnMount } from '@/ui/primitives'
 import { Chevron, Icon } from '@/ui/icons'
-import { SHARED, UNLOAD } from './copy'
+import { MIND_UI, SHARED, UNLOAD } from './copy'
 import { SupportSheet } from './SupportSheet'
 
 export { noteDay, noteLines, unloadBlocked }
@@ -61,7 +61,7 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
                       <span className="t">{day}</span>
                       {noteLines(n).map((l, i) => <span className="s" key={i}>{l}</span>)}
                     </span>
-                    <button className="linkbtn" aria-label={`${UNLOAD.delete}, ${day}`} onClick={() => deleteUnload(n.id)}>{UNLOAD.delete}</button>
+                    <button className="linkbtn" aria-label={MIND_UI.deleteNote(day)} onClick={() => deleteUnload(n.id)}>{UNLOAD.delete}</button>
                   </div>
                 )
               })}
@@ -76,7 +76,7 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
   return (
     <>
       <Sheet title={UNLOAD.title} onClose={onClose} tall animate={!moved}
-        right={<button className="navbtn b" disabled={!!blocked} onClick={done}>Done</button>}>
+        right={<button className="navbtn b" disabled={!!blocked} onClick={done}>{MIND_UI.done}</button>}>
         <div className="unload">
           <p className="ul-lead">{UNLOAD.lead}</p>
           {pairs.map((p, i) => (

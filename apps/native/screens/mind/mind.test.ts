@@ -7,8 +7,8 @@
 import { RESET_PATTERN } from '@/core/data/skills'
 import { breathMs, pacerAt, runMs } from '@/core/domain/pacer'
 import { glowAt } from '@/screens/mind/glow'
-import { MIND, SHARED } from '@/screens/mind/copy'
-import { RESET } from '@/screens/mind/resetCopy'
+import { MIND, SHARED } from '@/copy/mind'
+import { RESET } from '@/copy/mindReset'
 import type { WeekReflection } from '@/core/domain/mind'
 import { pacerEase, pacerTick, phaseEnd, startPacerRun, type ClockEnv, type PacerSegment } from './pacerClock'
 import {

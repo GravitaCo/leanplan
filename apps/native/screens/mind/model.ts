@@ -18,9 +18,9 @@ import {
   routineToSave, skillById, skillsWithScreen, type Skill, type WindDownItem,
 } from '@/core/data/skills'
 import type { CheckIn, SkillId } from '@/core/types'
-import { MIND, REFLECTION, SUPPORT_MIND, UNLOAD, WIND_DOWN } from '@/screens/mind/copy'
-import { RESET, finishedLine, leftLine, lengthLabel } from '@/screens/mind/resetCopy'
-import { SUPPORT } from '@/screens/onboarding/copyApp'
+import { MIND, MIND_UI, REFLECTION, SUPPORT_MIND, UNLOAD, WIND_DOWN } from '@/copy/mind'
+import { RESET, finishedLine, leftLine, lengthLabel } from '@/copy/mindReset'
+import { SUPPORT } from '@/copy/onboardingApp'
 import { supportList } from '@/screens/profile/supportRows'
 import { checkinPairs, mindEyebrow } from '@/screens/mind/pageLogic'
 import { reflectionFor, reflectionSpan } from '@/screens/mind/reflection'
@@ -190,9 +190,9 @@ export function supportModel(nation: UkNation | null): SupportModel {
     pick: nation ? SUPPORT.change : SUPPORT.choose,
     nations: NATIONS,
     rows: supportList(nation, { context: 'mind' }).map((s): SupportRowModel => {
-      const web = s.web ? { href: s.web, label: s.webLabel ?? 'Webchat and email' } : undefined
-      if (s.sms) return { name: s.name, desc: s.desc, num: s.num, href: s.sms, a11y: `${s.name}: text ${s.num}`, web }
-      if (s.tel) return { name: s.name, desc: s.desc, num: s.num, href: telHref(s.tel), a11y: `${s.name}: call ${s.num}`, numOnly: !!s.web, web }
+      const web = s.web ? { href: s.web, label: s.webLabel ?? MIND_UI.webFallback } : undefined
+      if (s.sms) return { name: s.name, desc: s.desc, num: s.num, href: s.sms, a11y: MIND_UI.text(s.name, s.num!), web }
+      if (s.tel) return { name: s.name, desc: s.desc, num: s.num, href: telHref(s.tel), a11y: MIND_UI.call(s.name, s.num!), numOnly: !!s.web, web }
       return { name: s.name, desc: s.desc, num: s.num || undefined, web }
     }),
     foots: [...(nation ? [] : [SUPPORT.chooseNation]), SUPPORT_MIND.notCrisis, SUPPORT_MIND.foot],
@@ -235,7 +235,7 @@ export function unloadView(s: UnloadForm, notesKept: number) {
     earlierRow: notesKept > 0,
     /** the device-only foot, the not-reading line (its link opens Support) and the crisis line */
     foots: { local: UNLOAD.local, notReadLead: UNLOAD.notReadLead, notReadLink: UNLOAD.notReadLink, notCrisis: UNLOAD.notCrisis },
-    deleteLabel: (day: string) => `${UNLOAD.delete}, ${day}`,
+    deleteLabel: MIND_UI.deleteNote,
   }
 }
 

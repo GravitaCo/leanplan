@@ -6,7 +6,7 @@ import { routineChoices, routineItems, routineSub, routineToSave, skillById, DEF
 import type { SkillId } from '@/core/types'
 import { BackButton, Sheet, Toggle, TitleRow } from '@/ui/primitives'
 import { Chevron, Icon, type IconName } from '@/ui/icons'
-import { MIND, SHARED, WIND_DOWN } from './copy'
+import { MIND, MIND_UI, SHARED, WIND_DOWN } from './copy'
 import { SupportSheet } from './SupportSheet'
 
 const MIND_ICO = { background: 'var(--mind-fill)', color: 'var(--mind-ink)' }
@@ -117,7 +117,7 @@ export function RoutineSheet({ time, stored, onClose }: { time: string | undefin
     onClose()
   }
   return (
-    <Sheet title={WIND_DOWN.sheetTitle} onClose={onClose} right={<button className="navbtn b" onClick={done}>Done</button>}>
+    <Sheet title={WIND_DOWN.sheetTitle} onClose={onClose} right={<button className="navbtn b" onClick={done}>{MIND_UI.done}</button>}>
       <div className="wd-lead">{WIND_DOWN.sheetLead}</div>
       <div className="list icons wd-pick">
         {routineChoices().map((i) => (

@@ -143,7 +143,30 @@ export const OUTSIDE = {
   walkFoot: "Walk at a relaxed pace, one where you could chat in full sentences. Stop whenever you've had enough.",
 }
 
+/**
+ * Words the Mind screens drew inline in JSX, lifted here so the web and native screens read the
+ * same strings (native-build-plan finding 4; N9). The accessibility labels are the web's aria
+ * labels, which native's labels must equal.
+ */
+export const MIND_UI = {
+  /** the sheets' right-hand button (Support, Unload, Your routine) */
+  done: 'Done',
+  /** the Today card's accessibility label (MindPage) */
+  todayCheckin: "Today's check-in",
+  /** the nation radio group's accessibility label (SupportSheet) */
+  nation: 'Nation',
+  /** a support row's web link when the service names none */
+  webFallback: 'Webchat and email',
+  /** a support row's accessibility label: "Samaritans: call 116 123" */
+  call: (name: string, num: string) => `${name}: call ${num}`,
+  /** Shout's: "Shout: text 85258" */
+  text: (name: string, num: string) => `${name}: text ${num}`,
+  /** an earlier note's Delete: "Delete, Tuesday 6 October" */
+  deleteNote: (day: string) => `${UNLOAD.delete}, ${day}`,
+}
+
 export function mindPageCopy(): string[] {
   return [...Object.values(SHARED), ...Object.values(MIND), ...Object.values(SUPPORT_MIND), ...Object.values(UNLOAD), ...Object.values(REFLECTION), ...Object.values(LOW_MOOD),
-    ...Object.values(WIND_DOWN).map((v) => (typeof v === 'function' ? v('22:30') : v)), ...Object.values(OUTSIDE)]
+    ...Object.values(WIND_DOWN).map((v) => (typeof v === 'function' ? v('22:30') : v)), ...Object.values(OUTSIDE),
+    MIND_UI.done, MIND_UI.todayCheckin, MIND_UI.nation, MIND_UI.webFallback, MIND_UI.call('Samaritans', '116 123'), MIND_UI.text('Shout', '85258'), MIND_UI.deleteNote('Tuesday 6 October')]
 }

@@ -8,7 +8,7 @@ import type { CheckIn } from '@/core/types'
 import { PageHeader } from '@/ui/primitives'
 import { Chevron, Icon, type IconName } from '@/ui/icons'
 import { CheckinSheet } from '../today/CheckinSheet'
-import { MIND, SHARED } from './copy'
+import { MIND, MIND_UI, SHARED } from './copy'
 import { checkinPairs, mindEyebrow } from './pageLogic'
 import { SupportSheet } from './SupportSheet'
 import { ReflectionCard } from './ReflectionCard'
@@ -99,14 +99,14 @@ export function MindPageView({ today, checkin, skillsOn, onCheckin, onSupport, o
 
       <div className="lbl mind-lbl-first">{MIND.today}</div>
       {pairs.length ? (
-        <section className="card mind-today" aria-label="Today's check-in">
+        <section className="card mind-today" aria-label={MIND_UI.todayCheckin}>
           <div className="mind-g2">
             {pairs.map(([k, v]) => <div key={k}><div className="k">{k}</div><div className="v">{v}</div></div>)}
           </div>
           <button className="btn gray sm" onClick={onCheckin}>{MIND.update}</button>
         </section>
       ) : (
-        <section className="card mind-today" aria-label="Today's check-in">
+        <section className="card mind-today" aria-label={MIND_UI.todayCheckin}>
           <div>
             <div className="mind-ask">{MIND.askTitle}</div>
             <div className="mind-ask-sub">{MIND.askSub}</div>
