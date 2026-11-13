@@ -14,8 +14,8 @@ import { REFLECTION_LATER, reflectionLines, type WeekReflection } from '@/core/d
 import { todayStr } from '@/core/domain/date'
 import { NATIONS, type UkNation } from '@/core/data/signposts'
 import {
-  DEFAULT_ROUTINE, RESET_DEFAULT_LENGTH, RESET_LENGTHS, resetTicksThing, routineChoices, routineItems, routineSub,
-  routineToSave, skillById, skillsWithScreen, type Skill, type WindDownItem,
+  DEFAULT_ROUTINE, RESET_LENGTHS, routineChoices, routineItems, routineSub,
+  skillById, skillsWithScreen, type Skill, type WindDownItem,
 } from '@/core/data/skills'
 import type { CheckIn, SkillId } from '@/core/types'
 import { MIND, MIND_UI, REFLECTION, SUPPORT_MIND, UNLOAD, WIND_DOWN } from '@/copy/mind'
@@ -25,6 +25,8 @@ import { supportList } from '@/screens/profile/supportRows'
 import { checkinPairs, mindEyebrow } from '@/screens/mind/pageLogic'
 import { GLOW_MID, glowAt, type Glow } from '@/screens/mind/glow'
 import { reflectionFor, reflectionSpan } from '@/screens/mind/reflection'
+import { routineSave } from '@/screens/mind/routine'
+import type { ResetState } from '@/screens/mind/resetStages'
 import { UNLOAD_MAX_PAIRS, type UnloadPair } from '@/screens/mind/unloadNotes'
 
 /* ======================= the Mind page (B5) ======================= */
@@ -94,23 +96,7 @@ export const stackOnArrival = (open: MindView | null, reviewed: boolean): MindSt
 
 /* ======================= Reset (B7) ======================= */
 
-export type ResetStage = 'ready' | 'running' | 'finished' | 'stopped'
-export type ResetLength = (typeof RESET_LENGTHS)[number]
-
-export interface ResetState { stage: ResetStage; len: ResetLength; run: number }
-export type ResetAction = { type: 'start' } | { type: 'stop' } | { type: 'finish' } | { type: 'length'; len: ResetLength }
-
-export const resetInitial: ResetState = { stage: 'ready', len: RESET_DEFAULT_LENGTH as ResetLength, run: 0 }
-
-export function resetReducer(s: ResetState, a: ResetAction): ResetState {
-  switch (a.type) {
-    case 'start': return s.stage === 'ready' ? { ...s, stage: 'running', run: s.run + 1 } : s
-    case 'stop': return s.stage === 'running' ? { ...s, stage: 'stopped' } : s
-    case 'finish': return s.stage === 'running' ? { ...s, stage: 'finished' } : s
-    // picking a length after a run ends goes back to ready; a length can't change mid-run (it's hidden)
-    case 'length': return s.stage === 'running' ? s : { ...s, len: a.len, stage: 'ready' }
-  }
-}
+export { onPacerDone, resetInitial, resetReducer, type ResetAction, type ResetLength, type ResetStage, type ResetState } from '@/screens/mind/resetStages'
 
 /** Which parts Reset shows in each stage (the Glow boards). */
 export interface ResetView {
@@ -139,21 +125,6 @@ export function resetView(s: ResetState, reduced: boolean, left: string): ResetV
     button: s.stage === 'ready' ? { title: RESET.start, kind: 'ink', does: 'start' } : running ? { title: RESET.stop, kind: 'gray', does: 'stop' } : { title: RESET.done, kind: 'ink', does: 'back' },
     lengths: RESET_LENGTHS.map((m) => [String(m), lengthLabel(m)]),
   }
-}
-
-/**
- * The pacer reached the end of its last breath out. Only a run that is still running when this
- * lands finishes: it is logged once (logSkill) and ticks today's thing done when that's a Reset
- * thing (doneThing; Benn, 10 Oct 2026). A run already stopped (Stop in its last second, with the
- * timer's done arriving before the screen re-renders) changes nothing and logs nothing. `cur` must be
- * the stage as of now (the screen keeps it in a ref, set before dispatching Stop), and the store is
- * read at this moment (useStore.getState(), as the web's ResetScreen does), never a render's copy.
- */
-export function onPacerDone(cur: ResetState, st: Pick<StoreState, 'data' | 'logSkill' | 'doneThing'> = useStore.getState(), today = todayStr()): ResetState {
-  if (cur.stage !== 'running') return cur
-  st.logSkill('reset')
-  if (resetTicksThing(st.data.days[today]?.checkin?.thing)) st.doneThing()
-  return resetReducer(cur, { type: 'finish' })
 }
 
 /**
@@ -280,13 +251,12 @@ export const flipPick = (picked: string[], k: string): string[] => (picked.inclu
 
 /**
  * Done: saves the picks (keys only) only when they differ from what's stored (or from the default
- * when nothing is). Cancel never calls this. Returns whether it saved; setMindPrefs refuses without
- * a current health yes.
+ * when nothing is): the shared routineSave rule, as the web's sheet. Cancel never calls this.
+ * Returns whether it saved; setMindPrefs refuses without a current health yes.
  */
 export function saveRoutine(st: Pick<StoreState, 'setMindPrefs'>, picked: string[], stored: string[] | undefined): boolean {
-  const next = routineToSave(picked, stored)
-  const same = JSON.stringify(next) === JSON.stringify(stored ?? DEFAULT_ROUTINE)
-  return same ? false : st.setMindPrefs({ routine: next })
+  const next = routineSave(picked, stored)
+  return next ? st.setMindPrefs({ routine: next }) : false
 }
 
 /* ======================= Your week (B4, B5.16) ======================= */
