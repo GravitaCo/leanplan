@@ -14,8 +14,9 @@
  *   cleared with the device's log.
  * - `ui.sleepMore`: whether "More about sleep" was left open in the check-in. Not health data.
  *
- * Only this file, persistence.ts, backup.ts and screens/mind/UnloadSheet.tsx may use the notes
- * accessors (NOTE_ACCESSORS; scripts/wellbeing/data-device.ts checks the import graph). Everything
+ * Only this file, persistence.ts, backup.ts and screens/mind/unloadNotes.ts may use the notes
+ * accessors (NOTE_ACCESSORS), and only the Unload screens (web and native) may use unloadNotes.ts's
+ * read, add and delete (scripts/wellbeing/data-device.ts checks the import graph of src and apps/native). Everything
  * else uses the count, the clear and the non-note helpers. No React, no DOM beyond IndexedDB.
  */
 import type { PersistedState } from './persistence'

@@ -15,7 +15,7 @@ import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastHost, ToastView } from './ui/kit'
-import { BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { Row, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -23,6 +23,7 @@ import { Ruler } from './ui/Ruler'
 import { Wheel } from './ui/Wheel'
 import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
+import { Foot, GrpH, Lbl, Prose, Sub } from './ui/text'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -216,6 +217,33 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           <Chip title="Breakfast" sub="7 to 10 am" on onPress={() => {}} />
           <Chip title="Lunch" sub="12 to 2 pm" on={false} onPress={() => {}} />
         </Chips>
+      </Sec>
+
+      <Sec id="text" title="Lbl · GrpH · Foot · Sub · Prose">
+        <GrpH small="3 of 5">This week</GrpH>
+        <Lbl>Notifications</Lbl>
+        <List><Row title="A row under a label" /></List>
+        <Foot>Your review shows how often you weighed in. Change it any time.</Foot>
+        <Sub style={{ marginTop: 12 }}>A secondary line at 15 pt.</Sub>
+        <View style={{ marginTop: 12 }}>
+          <Prose blocks={[{ p: G.prose.p1 }, { ul: G.prose.li }, { h3: G.prose.h3 }, { p: G.prose.p2 }]} />
+        </View>
+      </Sec>
+
+      <Sec id="rows2" title="Row · act · nested · wrapping rows · sign out">
+        <View style={{ gap: 10 }}>
+          <List>
+            <Row title="Push Pull Legs" sub="3 days a week" onPress={() => {}} />
+            <Row title="Monday" value="Push" onPress={() => {}} />
+            <Row title="New plan" act icon="plus" onPress={() => {}} />
+          </List>
+          <List icons wrap>
+            <SettingRow icon="bell" color={t.mindFill} soft label="Supplement reminders" sub="On at 8:00 and 20:00, and quiet from 22:00 to 7:00" right={<Toggle on onChange={() => {}} label="Supplement reminders" />} />
+            <Row nested title="Show supplement names in reminders" right={<Toggle on={false} onChange={() => {}} label="Show supplement names in reminders" />} />
+            <SettingRow icon="moon" color={t.mindFill} soft label="Wind down" value="21:30" onPress={() => {}} />
+          </List>
+          <Btn kind="signout" title="Sign out" onPress={() => {}} />
+        </View>
       </Sec>
 
       <Sec id="banner" title="Banner">

@@ -26,7 +26,7 @@ const WEB = process.env.WEB_GALLERY_URL || 'http://localhost:4179/'
 const NATIVE = (process.env.NATIVE_URL || 'http://localhost:4188/') + 'gallery'
 const OUT = outDir('tilo-gallery-')
 const SECTIONS = ['header', 'pill', 'icons', 'tabbar', 'cathead', 'seg', 'toggle', 'rows', 'nav', 'buttons', 'cards', 'charts', 'macro', 'weekbars',
-  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'banner', 'toast', 'mark', 'sheets']
+  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'banner', 'toast', 'mark', 'sheets']
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null
 
 const webSec = (id) => `[data-g="${id}"]`

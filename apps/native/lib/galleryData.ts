@@ -16,6 +16,7 @@ export const G = {
   areas: [{ k: 'back', t: 'Lower back' }, { k: 'knees', t: 'Knees', s: 'Squats and lunges adapt' }, { k: 'none', t: 'Nothing right now' }] as const,
   enjoy: [{ k: 'walk', t: 'Walking' }, { k: 'gym', t: 'Weights' }, { k: 'yoga', t: 'Yoga and stretching' }] as const,
   three: [{ k: '1', t: 'Rarely' }, { k: '2', t: 'Sometimes' }, { k: '3', t: 'Often' }] as const,
+  prose: { p1: 'Targets are ranges, not lines to hit. A day above or below is normal.', li: ['Weigh in when it suits you', 'Your week matters more than a day'], h3: 'How it works', p2: 'Change any of it in Profile.' },
   spark: [80.4, 80.1, 80.3, 79.9, 79.8, 80.0, 79.6, 79.5],
 }
 
