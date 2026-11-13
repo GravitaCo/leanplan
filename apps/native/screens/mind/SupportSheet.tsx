@@ -7,8 +7,8 @@
  * TODO(N1-followup): N1's P3 brings the web's `.wz-sp` support rows (number in --tint on the right,
  * the web link under the description) and `Opts` (radio rows with the dot) for the nation picker.
  * Until then the rows and the picker are composed from lib/ui's List and Row; the words, order,
- * links and labels are already the web's. Not mounted until Row's sub wraps (N1 P1b): the
- * helplines' descriptions and web links must never be cut off.
+ * links and labels are already the web's. The descriptions and web links wrap (Row wrapSub), so
+ * no helpline line is ever cut off.
  */
 import { useState } from 'react'
 import { Linking, Text, View } from 'react-native'
@@ -70,9 +70,9 @@ function SupportRow({ r }: { r: SupportRowModel }) {
       {r.web && <Text accessibilityRole="link" onPress={() => open(r.web!.href)} style={[tx(13, 500), { color: t.tint }]}>{'\n' + r.web.label}</Text>}
     </>
   )
-  if (r.href && !r.numOnly) return <Row title={r.name} sub={sub} label={r.a11y} onPress={() => open(r.href!)} chevron={false} right={num} />
+  if (r.href && !r.numOnly) return <Row title={r.name} sub={sub} wrapSub label={r.a11y} onPress={() => open(r.href!)} chevron={false} right={num} />
   if (r.href && r.numOnly) {
-    return <Row title={r.name} sub={sub} right={<Text accessibilityRole="link" accessibilityLabel={r.a11y} onPress={() => open(r.href!)} style={[tx(16, 600), { color: t.tint }]}>{r.num}</Text>} />
+    return <Row title={r.name} sub={sub} wrapSub right={<Text accessibilityRole="link" accessibilityLabel={r.a11y} onPress={() => open(r.href!)} style={[tx(16, 600), { color: t.tint }]}>{r.num}</Text>} />
   }
-  return <Row title={r.name} sub={sub} right={num} />
+  return <Row title={r.name} sub={sub} wrapSub right={num} />
 }
