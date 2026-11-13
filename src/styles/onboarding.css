@@ -67,7 +67,7 @@
 .wz-big input { font: 300 64px/1 var(--font-num); letter-spacing: -0.03em; border: 0; background: none; color: var(--label); text-align: right; width: 3.1ch; padding: 0; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .wz-big input.w4 { width: 4ch; }
 .wz-big input.w2 { width: 2.2ch; }
-.wz-big input::placeholder { color: var(--label3); }
+.wz-big input::placeholder { color: var(--placeholder); }
 .wz-big input::-webkit-outer-spin-button, .wz-big input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .wz-big input:focus { outline: none; }
 .wz-big .u { font-size: 20px; color: var(--label2); }
@@ -75,13 +75,13 @@
 .wz-field .l { font-size: 13px; color: var(--label2); }
 .wz-field input { font-size: 20px; border: 0; background: none; padding: 0; color: var(--label); }
 .wz-field input:focus { outline: none; }
-.wz-field input::placeholder { color: var(--label3); }
+.wz-field input::placeholder { color: var(--placeholder); }
 .wz-meas { background: var(--card); border-radius: var(--radius); padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px; }
 .wz-meas .hd { display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
 .wz-meas .val { display: flex; align-items: baseline; gap: 6px; }
 .wz-meas .val input { font: 300 44px/1 var(--font-num); letter-spacing: -0.02em; border: 0; background: none; color: var(--label); padding: 0; width: 2.7ch; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .wz-meas .val input.w2 { width: 1.6ch; }
-.wz-meas .val input::placeholder { color: var(--label3); }
+.wz-meas .val input::placeholder { color: var(--placeholder); }
 .wz-meas .val input::-webkit-outer-spin-button, .wz-meas .val input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .wz-meas .val input:focus { outline: none; }
 .wz-meas .val .u { font-size: 18px; color: var(--label2); margin-right: 8px; }
@@ -224,7 +224,7 @@
 .ift-card label + input { margin-top: -2px; }
 .ift-card .l2 { margin-top: 6px; }
 .ift-card input { font: inherit; font-size: 17px; color: var(--label); background: none; border: 0; padding: 0; outline: none; width: 100%; }
-.ift-card input::placeholder { color: var(--label3); }
+.ift-card input::placeholder { color: var(--placeholder); }
 .ift-cues { display: flex; flex-wrap: wrap; gap: 6px; }
 .ift-cues button { padding: 9px 12px; border-radius: 18px; background: var(--card); font-size: 14px; border: 0; color: var(--label); }
 .ift-cues button.on { background: var(--label); color: var(--card); }
