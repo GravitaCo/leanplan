@@ -15,7 +15,7 @@ import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
  * tali.products and tali.productOutbox are written only with the shared product list on
  * (SHARED_PRODUCTS_ENABLED, which follows LABEL_SCAN_ENABLED), so they are gated on `products`.
  */
-export function cookiePolicy({ onboarding = false, mind = false, products = false }: { onboarding?: boolean; mind?: boolean; products?: boolean } = {}): LegalDoc {
+export function cookiePolicy({ onboarding = false, mind = false, products = false, native = false }: { onboarding?: boolean; mind?: boolean; products?: boolean; native?: boolean } = {}): LegalDoc {
   return {
     title: 'Cookie policy',
     updated: '2026-11-05',
@@ -43,6 +43,14 @@ export function cookiePolicy({ onboarding = false, mind = false, products = fals
               : ''),
           ...(mind
             ? [`tali-notify (the browser's IndexedDB storage, used by the app's background worker): when a check-in, wind-down or plan check-in reminder arrived, and whether you opened it or swiped it away, so Tilo can send one less often if you don't open them. No message text and nothing you logged. The app moves it into leanplan.v1 each time it opens. Never synced. Deleted when you remove this device's log, delete your account or clear your browser data, or when someone else signs in on this device.`]
+            : []),
+          ...(native
+            ? [
+                `tali-push (iPhone app only): your phone's reminder address from Apple (its device token), the account it was saved for and which Apple service it uses, so Tilo can update or remove it. Only kept while reminders are on, or until Tilo has removed the address from your account. Never contains anything you logged.`,
+                ...(mind
+                  ? [`tali-notify (iPhone app only): which Tilo check-in, wind-down and plan check-in reminders the app has seen in Notification Centre and whether you opened them, so Tilo can send one less often if you don't. No message text and nothing you logged. Never synced. Deleted when you remove this device's log, delete your account or delete the app.`]
+                  : []),
+              ]
             : []),
           `tali.mode: which kind of account this device's log belongs to. Kept until you sign out.`,
           `tali.kitchen: the ingredients you have at home, for meal suggestions. Never leaves your device.`,
