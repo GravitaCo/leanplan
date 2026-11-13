@@ -1,20 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, TRAIN_LOG_WALK } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
-import type { ExerciseTemplate, LoggedExercise, Session } from '@/core/types'
-import { WORKOUTS } from '@/core/data/workouts'
 import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
-import { catchUp, daysMovedThisWeek, easyUntil, welcomeBack } from '@/core/domain/training'
-import { lowSignals, offerLighter, roughNight, shorterPrescription, showRoughNightNote, type ShorterKind } from '@/core/domain/dayOptions'
-import { sessionsOf, warmupOnly, workoutsOf } from '@/core/domain/sessions'
+import { easyUntil } from '@/core/domain/training'
 import { showLoadNote } from '@/core/domain/load'
-import { exById } from '@/core/domain/library'
-import { setCount, slotsOf, working } from '@/core/domain/guided'
-import { activePlan, isEaseIn, isHardKey, maintainOn, plannedKeys, positionOn } from '@/core/domain/plans'
+import { plannedKeys } from '@/core/domain/plans'
 import { planArt } from './plan/PlanParts'
-import { MODALITY_LABEL } from '@/core/data/modalities'
-import { isBuiltinKey, keyOfSession, keyRoutineId, keyTitle, keyVideo, templateFor, type WorkoutKey } from '@/core/domain/routines'
-import { EXERCISES } from '@/core/data/exercises'
+import { keyTitle, templateFor, type WorkoutKey } from '@/core/domain/routines'
 import { PageHeader } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { DayNav, MoveStrip } from '@/ui/WeekStrip'
@@ -22,28 +14,23 @@ import { SupportSheet } from './train/SupportSheet'
 import { LogSessionSheet } from './train/LogSessionSheet'
 import { LibrarySheet } from './train/LibrarySheet'
 import { AddSomethingSheet } from './train/AddSomethingSheet'
-import { Preview, CHOICES, type Choice } from './train/Preview'
+import { Preview } from './train/Preview'
 import { GuidedPlayer } from './train/GuidedPlayer'
-import { ONBOARDING_ENABLED } from './onboarding/Consent'
 import { ManualLog } from './train/ManualLog'
 import { Thumb } from './train/Thumb'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
-import { HARD_DAY_COPY, hardDayChoices, roughShorter, swapForWorkout, swapTile } from './train/hardDay'
+import { HARD_DAY_COPY } from './train/hardDay'
+import { CHOICES, type Choice } from '@/copy/train'
+import { NO_TRAIN_UI, sessSub, trainDay, type TrainUi } from './train/trainModel'
 import './train/hardDay.css'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 
-/** The library id a logged exercise stands for, when it isn't the workout's own (a swap). */
-function loggedSwap(t: ExerciseTemplate, L: LoggedExercise | undefined): string | undefined {
-  if (!L || L.name === t.n) return undefined
-  const id = L.exId ?? EXERCISES.find((x) => x.n === L.name)?.id
-  return id && id !== t.id ? id : undefined
-}
-
 /**
  * Train: what I'm doing today (stage 4 redesign). The day's planned workout with Start, a
  * catch-up offer, "Add something", the lighter options and what's done. Planning (the week, the
- * workouts) lives in Plan; one-off changes for today happen here.
+ * workouts) lives in Plan; one-off changes for today happen here. The day model is shared with the
+ * native app (train/trainModel.ts).
  */
 export function TrainScreen() {
   const cur = useStore((s) => s.cur)
@@ -67,50 +54,17 @@ export function TrainScreen() {
   const [open, setOpen] = useState<WorkoutKey | null>(null)
   const [mode, setMode] = useState<'preview' | 'manual'>('preview')
   const [playing, setPlaying] = useState(false)
-  const [swapsBy, setSwapsBy] = useState<Record<string, Record<number, string>>>({})
-  // slots put back with Undo after a rough night's steadier swap (wellbeing flag): they stay as planned
-  const [keepBy, setKeepBy] = useState<Record<string, number[]>>({})
-  // the person's pick for today, for the workout it was made on (it never carries into another)
-  const [pick0, setPick0] = useState<{ c: Choice; k: WorkoutKey } | null>(null)
-  const setPicked = (c: Choice | null, k: WorkoutKey | null = open) => setPick0(c && k ? { c, k } : null)
+  const [ui, setUi] = useState<TrainUi>(NO_TRAIN_UI)
+  const setPicked = (c: Choice | null, k: WorkoutKey | null = open) => setUi((u) => ({ ...u, pick0: c && k ? { c, k } : null }))
   const gentle = quietNumbers(data)
-
-  const day = data.days[cur]
-  // the workouts done: a warm-up on its own is movement, not a workout done (workoutsOf)
-  const sessions = workoutsOf(day, cur)
-  const logged = sessions.length > 0
-  const routines = data.routines
-  /** the session a workout saved on this day, if any: a warm-up on its own only while it's open (Resume) */
-  const builtin = (t: WorkoutKey) => sessionsOf(day, cur).find((x) => x.routineId === keyRoutineId(t) && (!warmupOnly(x) || x.open === true))
-  const fd = fmtDate(cur)
-  // anything unknown in the schedule (a newer or broken install) reads as Rest, never a crash
-  // what's planned: the active plan's day (several workouts, own ones too) or the schedule's one
-  const planned = plannedKeys(data, cur)
-  const restDay = planned.length === 0
-  // a maintenance week of the plan: planned workouts open on the lighter version (Benn's model)
-  const maintain = maintainOn(data, cur)
-  // the plan in charge on this day, for the line above Today
-  const planNow = activePlan(data, cur)
-  const planPos = planNow ? positionOn(planNow, cur) : null
-  const isToday = cur === todayStr()
-  const dayName = fd.dow
-
-  // day-of choices: offered when two or more check-in signals are low for this person, and
-  // always available from a quiet row; never applied automatically
-  const recent = useMemo(() => Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), [data.days, cur])
-  const low = lowSignals(day?.checkin, recent)
-  // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
-  const offer = !logged && !restDay && offerLighter(day?.checkin, recent)
-  // an accepted "easier first week" pre-selects the shorter version (still just a choice), and so
-  // does a maintenance week
-  const easyWeek = !logged && !restDay && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
-  // lighter weeks shorten the hard workouts only: light cardio and mobility stay as planned
-  // (the maintenance evidence is about resistance volume; fitness-workouts)
-  const easyFor = (k: WorkoutKey) => easyWeek || (maintain && isHardKey(k, routines))
-  const easy = easyWeek || (!restDay && maintain && planned.some((k) => isHardKey(k, routines)))
   const [lighterOpen, setLighterOpen] = useState(false)
 
-  useEffect(() => { setOpen(null); setPicked(null); setSwapsBy({}); setKeepBy({}); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
+  // today's date is a dependency too, so an app left open past midnight moves "today" on
+  const today = todayStr()
+  const m = useMemo(() => trainDay(data, cur, ui), [data, cur, ui, today]) // eslint-disable-line react-hooks/exhaustive-deps
+  const { sessions, routines, planned, restDay, planNow, planPos, isToday, dayName, offer, choiceFor, planShortKind } = m
+
+  useEffect(() => { setOpen(null); setUi(NO_TRAIN_UI); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
   // Plan's "Do this today" hands a workout over; Get outside's Start (B13) hands over an Easy walk to log
   useEffect(() => {
     if (!trainOpen) return
@@ -119,57 +73,10 @@ export function TrainScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainOpen])
 
-  const pick = isToday ? catchUp(data, cur) : null
-  const pickUp = pick?.type
-  const weekCount = daysMovedThisWeek(data, cur)
-  const back = isToday && welcomeBack(data, cur)
-
-  /** today's version of a workout: its own saved session wins, then the person's pick, then the day's default */
-  const choiceFor = (t: WorkoutKey): Choice => {
-    if (pick0 && pick0.k === t) return pick0.c
-    const own = builtin(t)
-    if (own) return own.option === 'shorter' ? 'shorter' : 'planned'
-    return easyFor(t) ? 'shorter' : 'planned'
-  }
-  const swapsFor = (t: WorkoutKey): Record<number, string> => {
-    if (swapsBy[t]) return swapsBy[t]
-    const out: Record<number, string> = {}
-    const L = builtin(t)?.ex
-    const ex = templateFor(t, routines)?.ex ?? []
-    // an own workout can be reordered after it was logged: an entry that is one of its own planned
-    // exercises has only moved, so it isn't read as a swap (the sets follow it; see splitLogged)
-    const own = !isBuiltinKey(t)
-    const planned = new Set(ex.map((e) => e.id))
-    ex.forEach((e, i) => { const id = loggedSwap(e, L?.[i]); if (id && exById(id) && !(own && planned.has(id))) out[i] = id })
-    return out
-  }
   function setSwap(t: WorkoutKey, i: number, id: string) {
-    const cur0 = swapsFor(t)
-    const n = { ...cur0 }
-    const back = id === templateFor(t, routines)?.ex[i]?.id
-    if (back) delete n[i]; else n[i] = id
-    setSwapsBy((p) => ({ ...p, [t]: n }))
-    if (WELLBEING_ENABLED && back) setKeepBy((p) => ({ ...p, [t]: [...(p[t] || []).filter((k) => k !== i), i] }))
+    const n = m.withSwap(t, i, id)
+    setUi((u) => ({ ...u, ...n }))
   }
-  // the hard-day choices (board B3, wellbeing flag): after a rough night the shorter version
-  // swaps to steadier moves and leaves intervals out; "As planned" never changes
-  const rough = WELLBEING_ENABLED && roughNight(low)
-  /** a workout's version for today: the swaps, and the slots it leaves out */
-  const versionOf = (t: WorkoutKey, shorter: boolean): { swaps: Record<number, string>; leaveOut: number[]; empty: boolean } => {
-    const own = swapsFor(t)
-    if (!rough || !shorter) return { swaps: own, leaveOut: [], empty: false }
-    return roughShorter(templateFor(t, routines)?.ex ?? [], own, keepBy[t] || [], exById)
-  }
-  /** B3.17: a rough night and something in the workout (as shown) that the shorter version changes */
-  const roughNoteFor = (t: WorkoutKey): boolean => {
-    if (!rough) return false
-    const own = swapsFor(t)
-    return showRoughNightNote(low, (templateFor(t, routines)?.ex ?? []).map((e, i) => exById(own[i] ?? e.id)))
-  }
-  /** which shorter version: a maintenance week keeps the usual effort; every other Shorter is easier */
-  const shorterKindFor = (t: WorkoutKey, shorter: boolean): ShorterKind | null =>
-    !WELLBEING_ENABLED || !shorter ? null
-      : maintain && !easyWeek && !offer && isHardKey(t, routines) && planPos?.maintenanceWeek != null ? 'maintain' : 'easier'
   function openWorkout(t: WorkoutKey, c?: Choice) {
     if (!templateFor(t, routines)) return // an unknown workout (from a newer install or a bad hand-off): stay on the list
     if (c) setPicked(c, t)
@@ -177,80 +84,32 @@ export function TrainScreen() {
   }
   const closeWorkout = () => { setOpen(null); setPlaying(false); setMode('preview'); window.scrollTo(0, 0) }
 
-  // what kind of shorter week the plan is in: easing in, a lighter week, or maintenance after it
-  const planShortKind = planPos?.maintenanceWeek != null ? 'maintenance' : planNow && planPos && isEaseIn(planNow, planPos.phaseIndex) ? 'ease' : 'lighter'
-  const easyNote = !easyWeek && maintain ? (planShortKind === 'maintenance' ? 'Maintenance: the shorter version is selected. Change it any time.' : planShortKind === 'ease' ? 'Easing in: the shorter version is selected while you find your weights. Change it any time.' : 'Lighter week: the shorter version is selected. Change it any time.')
-    : easy ? (data.profile.easyFrom && data.profile.easyFrom === data.profile.easyUntil
-    ? 'Lighter day: the shorter version is selected for today. Change it any time.'
-    : `Easier week: shorter sessions are selected until ${fmtDate(data.profile.easyUntil!).dow}. Change it any time.`) : null
-
   // ---------- a workout is open: preview, the manual form, or the player ----------
   if (open) {
-    const tplEx = templateFor(open, routines)?.ex ?? []
-    // a rough night that leaves nothing in the shorter version offers the swap instead
-    const noShorter = rough && versionOf(open, true).empty
-    const choice0 = choiceFor(open)
-    const choice: Choice = noShorter && choice0 === 'shorter' ? 'swap' : choice0
-    const shorter = choice === 'shorter'
-    const v = versionOf(open, shorter)
-    const swaps = v.swaps
-    const slots = slotsOf(tplEx, swaps, shorter, exById).filter((x) => !v.leaveOut.includes(x.i))
-    const option = shorter ? 'shorter' as const : undefined
-    const kind = shorterKindFor(open, shorter)
-    const day = WELLBEING_ENABLED ? swapForWorkout(tplEx, exById) : null
-    const shorterNote = shorter ? easyNote ?? (WELLBEING_ENABLED ? (day?.day === 'cardio' ? HARD_DAY_COPY.effortCardio : HARD_DAY_COPY.preview) : null) : null
-    // a workout the engine generated (behind the onboarding flag): thumbs, find your weight, how was that set
-    const generated = ONBOARDING_ENABLED ? (routines || []).find((r) => r.id === open && r.source === 'recommended' && r.blocks.some((b) => b.slots.some((x) => x.why?.length))) : undefined
+    const v = m.openView(open)
+    const { choice, slots, swaps, option, kind } = v
     if (mode === 'manual') {
       return <ManualLog type={open} slots={slots} option={option} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)} onBack={() => { setMode('preview'); window.scrollTo(0, 0) }} easier={kind === 'easier'} />
     }
     return (
       <>
         <Preview type={open} choice={choice} onChoice={(c) => setPicked(c, open)} slots={slots} swaps={swaps} onSwap={(i, id) => setSwap(open, i, id)}
-          session={builtin(open)} note={shorterNote} dayName={dayName} isToday={isToday}
+          session={v.session} note={v.shorterNote} dayName={dayName} isToday={isToday}
           onStart={() => setPlaying(true)} onManual={() => { setMode('manual'); window.scrollTo(0, 0) }} onBack={closeWorkout}
-          onEditPlan={() => openPlan(open)} generated={generated}
-          swapId={day?.swap} shorterKind={kind} noShorter={noShorter} roughNote={roughNoteFor(open)} />
-        {playing && <GuidedPlayer type={open} slots={slots} option={option} generated={generated} shorterKind={kind} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
+          onEditPlan={() => openPlan(open)} generated={v.generated}
+          swapId={v.swapDay?.swap} shorterKind={kind} noShorter={v.noShorter} roughNote={v.roughNote} />
+        {playing && <GuidedPlayer type={open} slots={slots} option={option} generated={v.generated} shorterKind={kind} onSwap={(i, id) => setSwap(open, i, id)} onClose={() => { setPlaying(false); setPicked(null) }} onFinished={closeWorkout} />}
       </>
     )
   }
 
   // ---------- the today list ----------
-  const rowOf = (k: WorkoutKey) => {
-    const tpl = templateFor(k, routines)
-    const session = builtin(k)
-    const shorterK = choiceFor(k) === 'shorter'
-    const cardio = k === 'Cardio'
-    const vk = versionOf(k, shorterK)
-    const kSlots = tpl ? slotsOf(tpl.ex, vk.swaps, shorterK, exById).filter((x) => !vk.leaveOut.includes(x.i)) : []
-    const sets = !cardio ? kSlots.reduce((a, x) => a + x.sets, 0) : 0
-    const done = session?.ex ? session.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
-    // left part-way in the player ("Leave for now", or closed mid-session): offer Resume
-    const inProgress = !!session && !cardio && session.open === true
-    const n = WELLBEING_ENABLED && tpl ? kSlots.length : tpl?.ex.length ?? 0
-    // a plan's lighter week or maintenance opens hard workouts shorter, with a way back to the full one (Plans 3)
-    const planShort = maintain && !easyWeek && shorterK && !cardio
-    const sub = cardio ? WORKOUTS.Cardio.ex[0].t
-      : planShort ? `Shorter version · ${setCount(tpl?.ex ?? [], true)}`
-      : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(WELLBEING_ENABLED ? kSlots.map((x) => x.shown) : tpl?.ex ?? [], shorterK)}${shorterK ? ' · shorter' : ''}`
-    return { k, session, inProgress, show: !session || inProgress, sets, done, sub, planShort, video: keyVideo(k, routines) }
-  }
-  const rows = planned.map(rowOf)
-  // the lighter options apply to the day's first workout; on a lighter week, its first hard one (the one shortened)
-  const first = ((maintain ? planned.find((k) => isHardKey(k, routines)) : undefined) ?? planned[0]) as WorkoutKey | undefined
-  const allDone = rows.length > 0 && rows.every((r) => !r.show)
-  const showPick = !back && data.profile.welcomeAsked !== cur && !logged && !!pick && !!pickUp && !planned.includes(pickUp)
-  const lighterShown = !logged && !restDay
-  // a plan's lighter week says so on the workout itself, so the options card stays folded
-  const lighterUp = lighterShown && (offer || easyWeek)
+  const { rows, first, allDone, showPick, pick, pickUp, lighterShown, lighterUp, weekCount, back } = m
 
   const lighter = WELLBEING_ENABLED ? hardDayCard() : (
     <div className={'card lighter' + (lighterUp || lighterOpen ? ' open' : '')}>
       {lighterUp ? (
-        <div className="t">{offer
-          ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.'
-          : easyNote}</div>
+        <div className="t">{m.lighterHeading}</div>
       ) : (
         <button className="lh" aria-expanded={lighterOpen} onClick={() => setLighterOpen(!lighterOpen)}>
           <span className="t">Lighter options</span>
@@ -273,29 +132,14 @@ export function TrainScreen() {
    * rough-night note when it applies, and "Resting today is fine too." as a plain line.
    */
   function hardDayCard() {
-    const k = first
-    const tpl = k ? templateFor(k, routines) : null
+    const hd = m.hardDay()
+    const k = hd.k
     const up = lighterUp || lighterOpen
-    const cardio = k === 'Cardio'
-    const short = k ? versionOf(k, true) : null
-    const day = tpl ? swapForWorkout(tpl.ex, exById) : null
-    const title = k ? keyTitle(k, routines) : ''
-    const sSlots = tpl && short ? slotsOf(tpl.ex, short.swaps, true, exById).filter((x) => !short.leaveOut.includes(x.i)) : []
-    const tiles = hardDayChoices(!!short?.empty).map((c) => {
-      if (c === 'planned') {
-        const n = tpl?.ex.length ?? 0
-        return { c, k: HARD_DAY_COPY.planned, t: title, d: cardio ? WORKOUTS.Cardio.ex[0].t : `${n} ${n === 1 ? 'exercise' : 'exercises'} · ${setCount(tpl?.ex ?? [])}` }
-      }
-      if (c === 'shorter') {
-        return { c, k: HARD_DAY_COPY.shorter, t: title, d: `${cardio ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : setCount(sSlots.map((x) => x.shown), true)} · ${HARD_DAY_COPY.easierEffort}` }
-      }
-      const sw = swapTile(day?.swap ?? 'mobility')
-      return { c, k: HARD_DAY_COPY.swapKicker, t: sw.title, d: sw.detail }
-    })
+    const tiles = hd.tiles
     return (
       <div className={'card lighter hd' + (up ? ' open' : '')}>
         {lighterUp ? (
-          <div className="t">{offer ? (roughNight(low) ? HARD_DAY_COPY.roughNight : HARD_DAY_COPY.toughDay) : easyNote}</div>
+          <div className="t">{hd.heading}</div>
         ) : (
           <button className="lh" aria-expanded={lighterOpen} onClick={() => setLighterOpen(!lighterOpen)}>
             <span className="t">Lighter options</span>
@@ -313,8 +157,8 @@ export function TrainScreen() {
                 </button>
               ))}
             </div>
-            <div className="foot">{day?.day === 'cardio' ? HARD_DAY_COPY.effortCardio : HARD_DAY_COPY.effort}</div>
-            {roughNoteFor(k) && <div className="foot">{HARD_DAY_COPY.roughNote}</div>}
+            <div className="foot">{hd.effort}</div>
+            {hd.roughNote && <div className="foot">{HARD_DAY_COPY.roughNote}</div>}
             {offer && <div className="foot">{HARD_DAY_COPY.rest}</div>}
           </>
         )}
@@ -322,12 +166,7 @@ export function TrainScreen() {
     )
   }
 
-  const sessSub = (x: Session) => {
-    const n = x.ex ? x.ex.reduce((a, e) => a + working(e.sets).length, 0) : 0
-    return [MODALITY_LABEL[x.modality] ?? x.modality, x.ex ? `${n} ${n === 1 ? 'set' : 'sets'}` : '', x.mins != null && !x.ex ? `${x.mins} min` : '', x.cardio?.km ? `${x.cardio.km} km` : '', x.option === 'shorter' ? 'shorter' : '']
-      .filter(Boolean).join(' · ')
-  }
-  const routineOf = (x: Session): WorkoutKey | null => keyOfSession(x, routines)
+  const routineOf = m.routineOf
 
   return (
     <div className="screen">

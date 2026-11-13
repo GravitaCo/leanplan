@@ -266,6 +266,53 @@ export function Gallery() {
         </div>
       </Sec>
 
+      <Sec id="rows3" title="Row: squares, tag, wrapping sub, trailing slots, needsnet, pv">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="list icons">
+            <button className="li"><span className="ico" style={{ background: 'var(--mind-fill)', color: 'var(--mind-ink)' }}><Icon name="wind" size={18} /></span><div className="m"><div className="t">Reset</div><div className="s" style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>Two minutes of slower breathing, whenever you need it</div></div><Chevron /></button>
+            <div className="li"><span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="fork" size={18} /></span><div className="m"><div className="t">Oat porridge</div><div className="s">158 kcal · 5.4 g protein per 100 g<span className="tag">Mine</span></div></div><button className="addc" aria-label="Add Oat porridge"><Icon name="plus" size={16} stroke={2.8} /></button></div>
+            <div className="li"><div className="m"><div className="t">Today</div></div><span className="tr kc num">1,500 kcal</span></div>
+            <button className="li needsnet"><div className="m"><div className="t">Shared products</div><div className="s">Needs a connection. Search works offline.</div></div><Chevron /></button>
+            <div className="li"><div className="m"><div className="t">A note you can hide</div></div><button className="x-btn" aria-label="Hide this note"><Icon name="x" size={14} stroke={2.6} /></button></div>
+            <div className="li"><div className="m"><div className="t">Weekly review</div><div className="s">Sunday</div></div><button className="btn sm">Open</button></div>
+          </div>
+          <div className="list">
+            <button className="li pv-row"><span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--fill)', flex: 'none' }} /><div className="m"><div className="t">Full body, a longer name that wraps onto two lines</div><div className="s">Strength · 6 exercises · about 35 min</div><div className="s2">Last done Tuesday</div></div><Chevron /></button>
+          </div>
+        </div>
+      </Sec>
+
+      <Sec id="notes" title="Note (info, warn, ok) · Empty">
+        <div className="note" role="status"><Icon name="info" size={17} /><span>These numbers look high for this food. Check the label.</span></div>
+        <div className="note warn"><Icon name="info" size={17} /><span>The camera is off for Tilo. You can still type the barcode.</span><button className="btn sm">Check again</button></div>
+        <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers are consistent with each other.</span></div>
+        <div className="empty">Add what went in. Don't forget the oil.</div>
+      </Sec>
+
+      <Sec id="chips2" title="Chip sizes and tones · radio and tab roles">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="chips">
+            <button className="chip sm on" role="tab" aria-selected>Week 1</button>
+            <button className="chip sm" role="tab" aria-selected={false}>Week 2</button>
+            <button className="chip sm on" aria-label="Remove Vegetarian">Vegetarian ×</button>
+          </div>
+          <div className="chips">
+            <button className="chip ink">Log it</button>
+            <button className="chip plain">Not today</button>
+            <button className="chip on" role="radio" aria-checked>Small</button>
+            <button className="chip" role="radio" aria-checked={false}>Large</button>
+          </div>
+        </div>
+      </Sec>
+
+      <Sec id="links" title="TextLink in a sentence · GrpH link · Lbl style">
+        <div style={{ fontSize: 15, lineHeight: 1.45 }}>
+          Today can be lighter. <button type="button" className="linkbtn inl">Change what Summary shows</button>, or <button type="button" className="linkbtn inl" aria-label="Open support" aria-expanded={false}>find support</button>.
+        </div>
+        <div className="grp-h">Your workouts<button className="linkbtn">See all</button></div>
+        <div className="lbl" style={{ paddingTop: 4 }}>A label with less space above</div>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="banner">

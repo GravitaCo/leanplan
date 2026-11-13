@@ -17,8 +17,8 @@ import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { SETUP_CARD } from './copyApp'
-import { HEALTH_TICKS as HEALTH_TICKS_COPY, PRIVACY_SHEET } from '@/copy/account'
 import { BUILD_PLAN } from './copy'
+import { HEALTH_TICKS as HEALTH_TICKS_COPY, PRIVACY_SHEET } from '@/copy/account'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 export { ONBOARDING_ENABLED }

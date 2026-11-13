@@ -17,10 +17,10 @@ export default function Root() {
   const [fontsLoaded] = useFonts(FONTS)
   const initAuth = useStore((s) => s.initAuth)
   useEffect(() => { initAuth() }, [initAuth])
-  // a backup copy the share sheet left in the cache (N2: lib/account/backupFile.ts)
-  useEffect(() => { clearBackupCopies() }, [])
   // label and barcode photos a crash left in Caches/TiloCamera (N6; register: label photos)
   useEffect(() => { sweepPhotoCache() }, [])
+  // a backup copy the share sheet left in the cache (N2: lib/account/backupFile.ts)
+  useEffect(() => { clearBackupCopies() }, [])
   // reminders: taps, the delivery log and the push token (N12)
   useNotifications()
   // the navigator stays mounted (Expo Router needs it); its screens render nothing while gated
