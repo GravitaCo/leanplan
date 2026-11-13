@@ -45,6 +45,7 @@
     "lib",
     "screens",
     "modules",
+    "screens",
     "index.ts",
     "env.d.ts"
   ]
