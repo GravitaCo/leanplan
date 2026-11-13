@@ -125,8 +125,10 @@ async function scenario(browser, name, fn, opts = {}) {
 const btn = (page, name) => page.getByRole('button', { name, exact: true })
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
 const latest = (st, type) => (st?.consents?.records || []).filter((r) => r.type === type).sort((a, b) => a.at.localeCompare(b.at)).pop()
-/** tap a consent row's box (not the middle of its words, where a link may be) */
-const tick = (loc) => loc.click({ position: { x: 30, y: 16 } })
+/** a consent statement's own box (lib/ui ConsentRow: the box is the checkbox, named by its words) */
+const BOX = { c_health: /in Profile, then Privacy\.$/, c_terms: /^I accept the terms/, c_age: /or over\.$/, c_regrant: /at any time\.$/ }
+const box = (page, id) => page.getByRole('checkbox', { name: BOX[id] })
+const tick = (loc) => loc.click()
 const heading = (page, name) => page.getByRole('heading', { name, exact: true })
 /** the app past the gate: the avatar beside the title */
 const inApp = (page) => btn(page, 'Profile').first().waitFor({ timeout: 20000 })
@@ -239,9 +241,10 @@ async function sameWords(browser, name, opts, ready, act) {
     await page.waitForTimeout(800)
     expect(!net.posts.some((p) => p.t !== 'consents'), 'nothing but consent before the answer: ' + net.posts.map((p) => p.t).join())
     const cont = btn(page, 'Continue')
-    for (const id of ['c_health', 'c_terms']) { await tick(page.getByTestId(id)); expect(await cont.isDisabled(), 'Continue waits for all three') }
-    expect((await page.getByRole('checkbox', { checked: true }).count()) === 2, 'never pre-ticked: only what was tapped')
-    await tick(page.getByTestId('c_age'))
+    for (const id of ['c_health', 'c_terms']) { await tick(box(page, id)); expect(await cont.isDisabled(), 'Continue waits for all three') }
+    // never pre-ticked: had any box started ticked, Continue would be on after two taps (the web render
+    // can't read ConsentRow's checked state: it sets accessibilityState, which iOS reads)
+    await tick(box(page, 'c_age'))
     await cont.click()
     await inApp(page)
     for (let i = 0; i < 40 && !rows.day_logs.some((x) => x.log_date === today); i++) await page.waitForTimeout(250)
@@ -276,7 +279,7 @@ async function sameWords(browser, name, opts, ready, act) {
     await heading(page, 'Before you start').last().waitFor()
     const cont = btn(page, 'Continue').last()
     expect(await cont.isDisabled(), 'waits for all three ticks')
-    for (const id of ['c_health', 'c_terms', 'c_age']) await tick(page.getByTestId(id).last())
+    for (const id of ['c_health', 'c_terms', 'c_age']) await tick(box(page, id).last())
     await cont.click()
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
     for (let i = 0; i < 40 && !rows.day_logs.some((x) => x.log_date === today); i++) await page.waitForTimeout(250)
@@ -318,9 +321,9 @@ async function sameWords(browser, name, opts, ready, act) {
     await page.getByRole('button', { name: 'Privacy' }).click()
     await btn(page, 'Turn health data back on').click()
     // the sheet's own button: the one beside its box (the Privacy row's has the same words)
-    const on = page.getByTestId('c_regrant').locator('xpath=ancestor::*[.//button[normalize-space()="Turn health data back on"]][1]').getByRole('button', { name: 'Turn health data back on' })
+    const on = box(page, 'c_regrant').locator('xpath=ancestor::*[.//button[normalize-space()="Turn health data back on"]][1]').getByRole('button', { name: 'Turn health data back on' })
     expect(await on.isDisabled(), 'waits for the box')
-    await tick(page.getByTestId('c_regrant'))
+    await tick(box(page, 'c_regrant'))
     await on.click()
     await healthRow(page, 'On').waitFor()
   }, { rows: { consents: [{ ...GRANTED.records[0], user_id: UID, recorded_at: GRANTED.records[0].at }] }, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })

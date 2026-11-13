@@ -9,7 +9,7 @@
  * Words: src/copy/account.ts. Pieces: lib/ui (N1).
  */
 import { useState, type ReactNode } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LEGAL, MIN_AGE } from '@/core/legal'
 import { useStore } from '@/store/store'
@@ -17,11 +17,10 @@ import { useConsent } from '@/store/hooks'
 import { hasExistingData, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
 import { CONSENT, PRIVACY_SHEET, REGRANT } from '@/copy/account'
 import { BTN, tx, useTokens } from '../theme'
-import { dark } from '../tokens.generated'
 import { Btn, Card, LinkBtn, List } from '../ui/kit'
 import { Sub } from '../ui/text'
+import { ConsentRow } from '../ui/choices'
 import { NavBtn, Sheet } from '../ui/primitives'
-import { Icon } from '../ui/icons'
 import { openLegal } from './legal'
 
 export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }) {
@@ -49,13 +48,13 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
       <Text style={[tx(15, 400, 1.45), { color: t.label2, marginBottom: 4 }]}>{CONSENT.lead}</Text>
 
       <List>
-        <ConsentBox id="c_health" on={health} onChange={setHealth}>
+        <ConsentRow label={CONSENT.health.before + CONSENT.health.link + CONSENT.health.after} on={health} onChange={setHealth}>
           {CONSENT.health.before}<Link onPress={() => openLegal('privacy')}>{CONSENT.health.link}</Link>{CONSENT.health.after}
-        </ConsentBox>
-        <ConsentBox id="c_terms" on={terms} onChange={setTerms}>
+        </ConsentRow>
+        <ConsentRow label={CONSENT.terms.before + CONSENT.terms.link + CONSENT.terms.after} on={terms} onChange={setTerms}>
           {CONSENT.terms.before}<Link onPress={() => openLegal('terms')}>{CONSENT.terms.link}</Link>{CONSENT.terms.after}
-        </ConsentBox>
-        <ConsentBox id="c_age" on={adult} onChange={setAdult}>{CONSENT.adult(MIN_AGE)}</ConsentBox>
+        </ConsentRow>
+        <ConsentRow label={CONSENT.adult(MIN_AGE)} on={adult} onChange={setAdult}>{CONSENT.adult(MIN_AGE)}</ConsentRow>
       </List>
 
       <Btn title={CONSENT.cont} disabled={!(health && terms && adult)} onPress={() => { grantConsent('health'); if (fromProfile) setConsentOpen(false) }} />
@@ -92,9 +91,9 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
       <View style={{ gap: 10 }}>
         <Card plain><Text style={[tx(15, 400, 1.45), { color: t.label }]}>{REGRANT.lead}</Text></Card>
         <List>
-          <ConsentBox id="c_regrant" on={on} onChange={setOn}>
+          <ConsentRow label={REGRANT.box.before + REGRANT.box.link + REGRANT.box.after} on={on} onChange={setOn}>
             {REGRANT.box.before}<Link onPress={() => openLegal('privacy')}>{REGRANT.box.link}</Link>{REGRANT.box.after}
-          </ConsentBox>
+          </ConsentRow>
         </List>
         <Btn title={REGRANT.cta} disabled={!on} onPress={() => { grant(); onClose() }} />
       </View>
@@ -121,23 +120,4 @@ export function PrivacySheet({ onClose }: { onClose: () => void }) {
 export function Link({ children, onPress, underline }: { children: ReactNode; onPress: () => void; underline?: boolean }) {
   const t = useTokens()
   return <Text accessibilityRole="link" onPress={onPress} suppressHighlighting style={[{ color: t.tint }, underline && { textDecorationLine: 'underline' }]}>{children}</Text>
-}
-
-/**
- * `.li.consent-row`: a statement and its own unticked box (22 pt, the browser's checkbox margins),
- * tapping the box or the words ticks it, a link inside opens the link.
- * TODO(N1-followup): a checkbox row in lib/ui (fields); this is the web markup as the spec.
- */
-function ConsentBox({ on, onChange, id, children }: { on: boolean; onChange: (v: boolean) => void; id: string; children: ReactNode }) {
-  const t = useTokens()
-  return (
-    <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} aria-checked={on} testID={id} onPress={() => onChange(!on)}
-      style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
-      {/* the browser's checkbox: 3 px margins, a --label2 edge (3:1), filled with --fill in dark */}
-      <View style={{ width: 22, height: 22, marginTop: 1, marginLeft: 4, marginRight: 3, marginBottom: 3, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : t === dark ? t.fill : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label2 }}>
-        {on && <Icon name="check" size={16} stroke={2.8} color={t.onTint} />}
-      </View>
-      <Text style={[tx(15, 400, 1.4), { flex: 1, color: t.label }]}>{children}</Text>
-    </Pressable>
-  )
 }

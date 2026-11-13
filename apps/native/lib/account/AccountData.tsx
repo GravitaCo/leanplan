@@ -27,11 +27,10 @@ import { ACCOUNT_ROW, BACKUP, HEALTH_DATA, HEALTH_TICKS, PRIVACY_ROW, SIGN_OUT }
 import { BTN, num, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List, slop } from '../ui/kit'
 import { BackButton, Disclosure, NavBtn, Row, SettingRow, Sheet } from '../ui/primitives'
-import { Icon } from '../ui/icons'
 import { ConsentScreen, PrivacySheet, RegrantHealthSheet } from './Consent'
 import { Sub } from '../ui/text'
 import { DeleteAccountView } from './Delete'
-import { Opts, Signposts } from './AgeStop'
+import { Opts, Signposts, Ticks } from '../ui/choices'
 import { LEGAL_LABEL, openLegal } from './legal'
 import { pickBackup } from './backupFile'
 
@@ -88,7 +87,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
       <Text style={[tx(15, 400, 1.45), { color: t.label2, paddingHorizontal: 4, paddingBottom: 12 }]}>
         {status === 'on' ? HEALTH_DATA.on : status === 'paused' ? HEALTH_DATA.paused + unconsentedCopyLine() : status === 'off' ? HEALTH_DATA.off : HEALTH_DATA.unasked}
       </Text>
-      <Ticks items={HEALTH_TICKS} />
+      <Ticks items={[...HEALTH_TICKS]} />
       <View style={{ alignSelf: 'flex-start', marginTop: 8 }}><LinkBtn title={HEALTH_DATA.readPrivacy} onPress={() => setPrivacy(true)} style={tx(15, 400, 1.3, BTN)} /></View>
       {(answersRow || redoRow) && (
         <List style={{ marginTop: 12 }}>
@@ -106,24 +105,6 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
       {support && <SupportSheet onClose={() => setSupport(false)} />}
     </Sheet>
-  )
-}
-
-/**
- * `.ticks`: the card of ticked lines (on --card, in a sheet too).
- * TODO(N1-followup): Ticks in lib/ui; this is the web markup (onboarding/Consent.tsx Ticks) as the spec.
- */
-function Ticks({ items }: { items: readonly string[] }) {
-  const t = useTokens()
-  return (
-    <View style={{ backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 10 }}>
-      {items.map((x) => (
-        <View key={x} style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ marginTop: 2 }}><Icon name="check" size={16} stroke={2.6} color={t.tint} /></View>
-          <Text style={[tx(15, 400, 1.45), { flex: 1, color: t.label }]}>{x}</Text>
-        </View>
-      ))}
-    </View>
   )
 }
 
@@ -153,7 +134,7 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
               </Pressable>
             </View>
           )}
-        <Signposts list={supportList(nation)} />
+        <Signposts list={supportList(nation)} support />
         {!nation && <Text style={foot}>{SUPPORT.chooseNation}</Text>}
         <Text style={foot}>{SUPPORT.foot}</Text>
       </View>

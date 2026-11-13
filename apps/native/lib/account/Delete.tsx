@@ -33,14 +33,14 @@ export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onB
   const { reason, deleting } = useAccountDeletion()
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: ins.top + 18, paddingBottom: ins.bottom + 24, gap: 16 }}>
-      {/* .del .navbtn: 6 pt into the margin. TODO(N1-followup): BackButton at 16 pt medium (.del .navbtn) */}
-      <View style={{ marginLeft: -6 }}><BackButton label={DELETE.back} onPress={onBack} /></View>
+      {/* .del .navbtn: 16 pt medium, 6 pt into the margin */}
+      <BackButton small label={DELETE.back} onPress={onBack} />
       <Text accessibilityRole="header" style={[tx(32, 600, 38, -0.02), { color: t.label }]}>{DELETE.title}</Text>
       <Text style={[tx(16, 400, 1.5), { color: t.label2, marginTop: -6 }]}>{DELETE.lead}</Text>
       <Text accessibilityRole="header" style={[tx(13, 500), { color: t.label2, paddingHorizontal: 4, marginBottom: -6 }]}>{DELETE.goesHeading}</Text>
-      {/* TODO(N1-followup): Row with a wrapping title (.del .li .t { white-space: normal }) */}
-      <List>{DELETE.goes.map((x) => <Row key={x} title={x} />)}</List>
-      <List><Row title={DELETE.copyRow} sub={DELETE.copySub} onPress={() => exportBackup(data)} /></List>
+      {/* .del .li .t, .del .li .s { white-space: normal } */}
+      <List>{DELETE.goes.map((x) => <Row key={x} wrap title={x} />)}</List>
+      <List><Row wrap title={DELETE.copyRow} sub={DELETE.copySub} onPress={() => exportBackup(data)} /></List>
       {/* .btn.delbtn: a card-coloured block, radius 16, 52 high, red words */}
       <Btn kind="danger" title={DELETE.button} disabled={!online || deleting} onPress={() => setConfirmOpen(true)}
         style={{ minHeight: 52, borderRadius: 16, backgroundColor: t.card }} textStyle={tx(17, 600, 1.3, BTN)} />
@@ -145,8 +145,9 @@ function Message({ text }: { text: string }) {
 }
 
 /**
- * `label.typed`: a card with a small label over a plain input.
- * TODO(N1-followup): fields; this is the web markup as the spec (.typed is on --card in a sheet too).
+ * `label.typed` (the delete confirm's own field, theme.css .typed): a card with a small label over a
+ * borderless input, on --card in the sheet too. Not lib/ui's Field (.field is a filled input under
+ * its label, a different look); the web keeps .typed to this screen, so it stays with it.
  */
 function Typed({ label, value, onChange, secure }: { label: string; value: string; onChange: (v: string) => void; secure?: boolean }) {
   const t = useTokens()
