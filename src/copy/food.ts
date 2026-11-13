@@ -61,6 +61,9 @@ export const ADD_FOOD = {
   logServing: (serv: string, name: string) => `Log ${serv} serving of ${name}`,
   deleteFood: (name: string) => `Delete ${name}`,
   deleteFoodAsk: (name: string) => `Delete "${name}" from your foods?`,
+  /** the native confirm's buttons (the web's are the browser's own) */
+  cancel: 'Cancel',
+  delete: 'Delete',
   pairFoot: 'Shown only while two saved foods look alike. Merging or “They’re different” clears it.',
   nothingMatches: (q: string) => `Nothing matches “${q}”.`,
   eatingOut: 'Eating out? A quick estimate is better than nothing.',

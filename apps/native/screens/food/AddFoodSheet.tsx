@@ -114,7 +114,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
   const confirmDelete = (f: Food, ci: number) => {
     const msg = ADD_FOOD.deleteFoodAsk(f.n)
     if (Platform.OS === 'web') { if (window.confirm(msg)) removeCustomFood(ci); return }
-    Alert.alert(msg, undefined, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => removeCustomFood(ci) }])
+    Alert.alert(msg, undefined, [{ text: ADD_FOOD.cancel, style: 'cancel' }, { text: ADD_FOOD.delete, style: 'destructive', onPress: () => removeCustomFood(ci) }])
   }
 
   let body: ReactNode

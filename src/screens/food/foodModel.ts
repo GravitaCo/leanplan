@@ -198,7 +198,7 @@ export const asIngredient = (f: Food): RecipeItem => ({ n: f.n, k: f.k, p: f.p, 
 
 /** The draft's totals and servings (an unreadable count is 1). */
 export function draftTotals(d: RecipeDraft) {
-  const servings = parseFloat(d.servings) || 1
+  const servings = numIn(d.servings) || 1
   return { servings, totals: recipeTotals({ id: '', name: d.name, servings, items: d.items }) }
 }
 
@@ -254,7 +254,10 @@ export function numIn(v: string): number {
   const s = v.trim()
   // a thousands separator never follows a leading 0 ("0,125" is a decimal). In a comma region "1,250"
   // typed for 1.25 reads as 1250: three decimals are rare on UK labels and amounts, so the paste wins
-  const n = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.')
+  const n = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '')
+    // a pasted European "1.234,5": dots group the thousands, the comma is the decimal
+    : /^[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s) ? s.replace(/\./g, '').replace(',', '.')
+    : s.replace(',', '.')
   return parseFloat(n) || 0
 }
 
