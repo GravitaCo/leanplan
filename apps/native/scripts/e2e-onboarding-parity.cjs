@@ -69,7 +69,7 @@ const usedBefore = () => ({ ...newAccount(), target: { kcal: 1800, p: 140, c: 18
 
 let bad = 0
 const results = []
-const check = (name, ok, detail) => { if (!ok) bad++; results.push([ok, name]); console.log(ok ? 'PASS' : 'FAIL', name, !ok && detail !== undefined ? JSON.stringify(detail).slice(0, 900) : '') }
+const check = (name, ok, detail) => { if (!ok) bad++; results.push([ok, name]); console.log(ok ? 'PASS' : 'FAIL', name, !ok && detail !== undefined ? JSON.stringify(detail).slice(0, process.env.FULL ? 20000 : 900) : '') }
 
 async function open(browser, url, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, colorScheme: opts.dark ? 'dark' : 'light' })
@@ -366,7 +366,7 @@ function compareShots(route, w, n) {
     const same = A === B
     // words first: when the lines differ only in where they break, compare the words in order
     const wordsSame = a.join(' ').replace(/\s+/g, ' ') === b.join(' ').replace(/\s+/g, ' ')
-    check(`${route}: ${k} words match`, a.length >= 2 && (same || wordsSame), { web: A.slice(0, 700), native: B.slice(0, 700) })
+    check(`${route}: ${k} words match`, a.length >= 2 && (same || wordsSame), { web: process.env.FULL ? A : A.slice(0, 700), native: process.env.FULL ? B : B.slice(0, 700) })
   }
   const missing = Object.keys(w.shots).filter((k) => !n.shots[k])
   check(`${route}: native reached every screen web did`, !missing.length, missing)
