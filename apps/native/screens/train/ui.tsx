@@ -135,12 +135,13 @@ export function Stack({ children, style }: { children: ReactNode; style?: StyleP
   return <View style={[{ gap: 8, marginTop: 16 }, style]}>{children}</View>
 }
 /** `.linkbtn` (15 px tint, 6×4 padding); `muted` is `.linkbtn.muted`; `inl` is the inline one (no padding, inherits size) */
-export function LinkBtn({ title, onPress, muted, inl, color, style, label, size }: { title: string; onPress: () => void; muted?: boolean; inl?: boolean; color?: string; style?: StyleProp<TextStyle>; label?: string; size?: number }) {
+export function LinkBtn({ title, onPress, muted, inl, color, style, label, size, expanded }: { title: string; onPress: () => void; muted?: boolean; inl?: boolean; color?: string; style?: StyleProp<TextStyle>; label?: string; size?: number; expanded?: boolean }) {
+  const st = expanded === undefined ? undefined : { expanded }
   const t = useTokens()
   const s: TextStyle = { color: color ?? (muted ? t.label2 : t.tint), fontSize: size ?? 15 }
-  if (inl) return <Text accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={[s, style]}>{title}</Text>
+  if (inl) return <Text accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} style={[s, style]}>{title}</Text>
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={{ paddingVertical: 6, paddingHorizontal: 4 }}>
+    <Pressable accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} hitSlop={6} style={{ paddingVertical: 6, paddingHorizontal: 4 }}>
       <Text style={[font(400), s, style]}>{title}</Text>
     </Pressable>
   )
@@ -232,10 +233,11 @@ export function Ico({ icon, bg }: { icon: IconName; bg: string }) {
 export function Chips({ children, style, label }: { children: ReactNode; style?: StyleProp<ViewStyle>; label?: string }) {
   return <View accessibilityRole="radiogroup" accessibilityLabel={label} style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, style]}>{children}</View>
 }
-export function Chip({ title, on, onPress }: { title: string; on?: boolean; onPress: () => void }) {
+/** `button`: an action chip (the web's plain `<button className="chip">`), not a choice */
+export function Chip({ title, on, onPress, button }: { title: string; on?: boolean; onPress: () => void; button?: boolean }) {
   const t = useTokens()
   return (
-    <Pressable accessibilityRole="radio" accessibilityState={{ checked: !!on }} onPress={onPress}
+    <Pressable accessibilityRole={button ? 'button' : 'radio'} accessibilityState={button ? undefined : { checked: !!on }} onPress={onPress}
       style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
       <Text style={[font(400), { fontSize: 15, lineHeight: 18, color: on ? t.onTint : t.label }]}>{title}</Text>
     </Pressable>
@@ -273,11 +275,14 @@ export function FRow({ label, children }: { label: string; children: ReactNode }
     </View>
   )
 }
+/** A comma-decimal keypad types "12,5"; saved data always holds "12.5", as the web's number input does. */
+export const toPoint = (v: string) => v.replace(/,/g, '.')
+
 /** an input as `.frow input`: right-aligned, no box */
 export function FInput(p: TextInputProps & { numeric?: boolean; decimal?: boolean }) {
   const t = useTokens()
-  const { numeric, decimal, style, ...rest } = p
-  return <TextInput placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : numeric ? 'number-pad' : 'default'}
+  const { numeric, decimal, style, onChangeText, ...rest } = p
+  return <TextInput onChangeText={onChangeText && ((v) => onChangeText(decimal ? toPoint(v) : v))} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : numeric ? 'number-pad' : 'default'}
     style={[font(400), { flex: 1, fontSize: 17, color: t.label, textAlign: 'right', paddingVertical: 11 }, (numeric || decimal) && num, style]} {...rest} />
 }
 /**
@@ -304,6 +309,12 @@ export function FSelect({ value, options, onChange, title }: { value: string; op
 
 /** Inside a sheet, lists and cards take `--elev` (`.sheet .list`). */
 export const InSheet = createContext(false)
+/**
+ * Inside a full-screen player (itself a Modal), sheets draw as an overlay on it rather than as a
+ * second Modal: iOS can drop a modal presented while another is dismissing, and the player's
+ * sheets often hand over to each other (Adjust → Stopped early, How was that set? → Finish).
+ */
+export const OverlaySheets = createContext(false)
 
 function SheetFrame({ onClose, tall, label, children }: { onClose: () => void; tall?: boolean; label: string; children: ReactNode }) {
   const t = useTokens()
@@ -318,8 +329,8 @@ function SheetFrame({ onClose, tall, label, children }: { onClose: () => void; t
     ]).start()
   }, [fade, y])
   const max = height - insets.top - 12
-  return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+  const overlay = useContext(OverlaySheets)
+  const body = (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', opacity: fade }}>
           <Pressable accessibilityLabel="Close" style={{ flex: 1 }} onPress={onClose} />
@@ -330,8 +341,10 @@ function SheetFrame({ onClose, tall, label, children }: { onClose: () => void; t
           <InSheet.Provider value={true}>{children}</InSheet.Provider>
         </Animated.View>
       </KeyboardAvoidingView>
-    </Modal>
   )
+  return overlay
+    ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>{body}</View>
+    : <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>{body}</Modal>
 }
 
 /** `Sheet`: a bottom sheet with the iOS header (left action · title · right action); `left` defaults to Cancel, null for nothing. */

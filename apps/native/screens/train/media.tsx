@@ -21,12 +21,19 @@ const headers = Platform.OS === 'web' ? undefined : { Referer: BUNNY_REFERER }
 export const clipSource = (path: string): VideoSource => ({ uri: mediaUrl(path), headers, useCaching: false })
 export const imageSource = (path: string) => ({ uri: mediaUrl(path), headers })
 
-/** Reduce Motion, as the web's `prefers-reduced-motion`. */
+/**
+ * Reduce Motion, as the web's `prefers-reduced-motion`. The web reads it synchronously; here it's
+ * read once when the app loads and kept current, so a clip opened later already knows it and never
+ * starts playing first.
+ */
+let reducedNow = false
+AccessibilityInfo.isReduceMotionEnabled().then((v) => { reducedNow = v }).catch(() => {})
+AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => { reducedNow = v })
 export function useReducedMotion(): boolean {
-  const [r, setR] = useState(false)
+  const [r, setR] = useState(reducedNow)
   useEffect(() => {
     let live = true
-    AccessibilityInfo.isReduceMotionEnabled().then((v) => { if (live) setR(v) }).catch(() => {})
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => { reducedNow = v; if (live) setR(v) }).catch(() => {})
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setR)
     return () => { live = false; sub.remove() }
   }, [])
@@ -96,6 +103,8 @@ export function useClip(path: string | undefined, autoPlay: boolean): { player: 
     p.timeUpdateEventInterval = 0.1
     if (autoPlay) p.play()
   })
+  // Reduce Motion turning on (or resolving late) stops a clip that started on its own
+  useEffect(() => { if (!autoPlay) player.pause() }, [autoPlay, player])
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing })
   const { status } = useEvent(player, 'statusChange', { status: player.status })
   const toggle = () => { if (player.playing) player.pause(); else player.play() }

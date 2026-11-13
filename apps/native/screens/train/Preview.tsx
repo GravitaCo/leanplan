@@ -159,7 +159,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {!warm && wSlot >= 0 && (
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.tintSoft, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 12 }}>
-              <Text style={[font(400), { fontSize: 20, lineHeight: 22, color: t.label }]}>↻</Text>
+              <Text aria-hidden style={[font(400), { fontSize: 20, lineHeight: 22, color: t.label }]}>↻</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[font(500), { fontSize: 16, color: t.label }]}>Warm up first</Text>
                 <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 2 }]}>{warmupCopy(bareName(slots[wSlot].shown.n))}</Text>

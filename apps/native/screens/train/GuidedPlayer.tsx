@@ -35,7 +35,7 @@ import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
 import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
-import { BareSheet, Button, Dots, Icon, Li, LiText, List, NavBtn, Sheet, Stack, Sub, Foot, Toggle, font, num, useTokens } from './ui'
+import { OverlaySheets, BareSheet, Button, Dots, Icon, Li, LiText, List, NavBtn, Sheet, Stack, Sub, Foot, Toggle, font, num, useTokens } from './ui'
 
 const SOUND_KEY = 'tali.sound'
 const soundPref = () => { try { return localStorage.getItem(SOUND_KEY) === '1' } catch { return false } }
@@ -291,6 +291,12 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const hTarget = holdTarget(slot.rx)
   const perSide = !!slot.x?.perSide
   const h = holdStart == null ? null : holdAt((now - holdStart) / 1000, hTarget, perSide)
+  // the hold's label ("Switch sides", "Good place to stop") is spoken when it changes, as the web's
+  // aria-live does (accessibilityLiveRegion is Android only)
+  const holdSay = h ? holdLabel(h, hTarget, perSide, video?.hold === 'move') : ''
+  useEffect(() => { if (holdSay) say(holdSay) }, [holdSay]) // eslint-disable-line react-hooks/exhaustive-deps
+  const findSay = finding && findW != null ? String(findW) : ''
+  useEffect(() => { if (findSay) say(findSay + ' kg') }, [findSay]) // eslint-disable-line react-hooks/exhaustive-deps
   const stopHold = () => { const sec = h?.logSec ?? 0; setHoldStart(null); if (sec > 0 && slot.shape === 'hold') logSet({ w: '', reps: String(sec), sec: String(sec) }) }
   const wSlot = warmupSlot(slots.map((s) => s.shape))
   const W = { color: '#fff' }
@@ -298,8 +304,9 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   const insets = useSafeAreaInsets()
 
   return (
-    <Modal visible animationType="fade" onRequestClose={() => { if (!sheet) setSheet('leave') }} statusBarTranslucent supportedOrientations={['portrait']}>
+    <Modal visible animationType="fade" onRequestClose={() => { if (askFeel) setAskFeel(null); else if (sheet) { setSheet(null); setDiscard(false) } else setSheet('leave') }} statusBarTranslucent supportedOrientations={['portrait']}>
       <StatusBar style="light" />
+      <OverlaySheets.Provider value={true}>
       <View accessibilityViewIsModal accessibilityLabel={inWarm ? `${title}: warm-up` : `${title}: ${name}`} style={{ flex: 1, backgroundColor: plain && !inWarm ? '#121214' : '#000' }}>
         {inWarm && block ? (
           <WarmupPlayer block={block} after={bareName(slots[0]?.shown.n ?? '')} from={warmFrom} hold={sheet !== null} onEnd={endWarm} onLeave={() => setSheet('leave')} onProgress={onWarmProgress} />
@@ -493,6 +500,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
             effort0={session?.effort} note0={session?.note} onFinish={finish} onBack={() => setSheet(null)} />
         )}
       </View>
+      </OverlaySheets.Provider>
     </Modal>
   )
 }

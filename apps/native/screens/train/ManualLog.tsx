@@ -22,7 +22,7 @@ import { SwapSheet } from './SwapSheet'
 import { HoldTimer } from './HoldTimer'
 import { DemoPlayer } from './DemoPlayer'
 import { ExCard } from './Preview'
-import { BackButton, Button, Foot, Icon, LinkBtn, Seg, Stack, Sub, TitleRow, Toggle, font, num, useTokens } from './ui'
+import { toPoint, BackButton, Button, Foot, Icon, LinkBtn, Seg, Stack, Sub, TitleRow, Toggle, font, num, useTokens } from './ui'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
 
@@ -35,7 +35,7 @@ function toRows(sets: SetEntry[], shape: LogShape): SetEntry[] {
 function Box({ value, ph, label, onChange, decimal, w = 64 }: { value: string; ph: string; label: string; onChange: (v: string) => void; decimal?: boolean; w?: number }) {
   const t = useTokens()
   return (
-    <TextInput accessibilityLabel={label} value={value} placeholder={ph} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : 'number-pad'} onChangeText={onChange}
+    <TextInput accessibilityLabel={label} value={value} placeholder={ph} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : 'number-pad'} onChangeText={(v) => onChange(decimal ? toPoint(v) : v)}
       style={[font(400), num, { flex: 1, minWidth: w, fontSize: 17, color: t.label, backgroundColor: t.fill, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, textAlign: 'center' }]} />
   )
 }
