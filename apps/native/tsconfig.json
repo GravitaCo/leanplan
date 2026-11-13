@@ -19,6 +19,24 @@
       ],
       "react-native": [
         "./node_modules/react-native/types_generated/index.d.ts"
+      ],
+      "zustand": [
+        "./node_modules/zustand"
+      ],
+      "zustand/*": [
+        "./node_modules/zustand/*"
+      ],
+      "immer": [
+        "./node_modules/immer"
+      ],
+      "immer/*": [
+        "./node_modules/immer/*"
+      ],
+      "@supabase/supabase-js": [
+        "./node_modules/@supabase/supabase-js"
+      ],
+      "@supabase/supabase-js/*": [
+        "./node_modules/@supabase/supabase-js/*"
       ]
     }
   },

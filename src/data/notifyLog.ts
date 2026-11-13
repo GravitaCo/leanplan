@@ -5,16 +5,18 @@
  * (ingestNotifyLog), which keeps them in the device-only store and starts a back-off after two
  * ignored in a row. No text, nothing from the log; never synced. Deleted on wipe, sign-out and
  * remove, and when the device changes hands (deviceOnly.clearNotifyStore).
- * No React; IndexedDB only, injectable for tests.
+ * No React; IndexedDB, injectable for tests (the phone's MMKV log through ./platform).
  */
 import { NOTIFY_DB } from './deviceOnly'
+import { takeNativeNotifyEvents } from './platform'
 
 export const NOTIFY_STORE = 'events'
 
 /** Read every event and empty the store, in one transaction. Never throws: no IndexedDB, a
- *  blocked or missing database, or any error reads as no events. Doesn't create the database. */
+ *  blocked or missing database, or any error reads as no events. Doesn't create the database.
+ *  With no IndexedDB, the platform's own store is read instead (the phone's MMKV log; none on web). */
 export function takeNotifyEvents(idb: IDBFactory | null = typeof indexedDB === 'undefined' ? null : indexedDB): Promise<unknown[]> {
-  if (!idb) return Promise.resolve([])
+  if (!idb) return takeNativeNotifyEvents().catch(() => [])
   return new Promise((resolve) => {
     let req: IDBOpenDBRequest
     try { req = idb.open(NOTIFY_DB) } catch { resolve([]); return }
