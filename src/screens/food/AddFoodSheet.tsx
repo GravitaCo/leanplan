@@ -28,6 +28,7 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { offBeforeShare } from '@/data/sharedProducts'
 import { draftForShare } from '@/core/domain/sharedProduct'
 import { InOffSheet, SHARE_ROW } from './SharedProduct'
+import { LABEL_OFFLINE, MISSING_NOTE } from '@/copy/scan'
 import { likelyPairs } from '@/core/domain/duplicates'
 import { SameFoodView, SameFoodsRow } from './DuplicateViews'
 
@@ -41,7 +42,7 @@ type LabelProps = {
 function LabelOffline({ onBack, onClose, animate, barcode, base, onDone, forShare }: LabelProps) {
   return (
     <Sheet title="Scan the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
-      <div className="note" role="status"><Icon name="info" size={17} /><span>Label photos need a connection the first time they open.</span></div>
+      <div className="note" role="status"><Icon name="info" size={17} /><span>{LABEL_OFFLINE}</span></div>
       {!forShare && <div className="stack"><button className="btn tinted" onClick={() => onDone(base ?? emptyLabelDraft({ barcode, taken: [] }))}>Type it in instead</button></div>}
     </Sheet>
   )
@@ -49,12 +50,6 @@ function LabelOffline({ onBack, onClose, animate, barcode, base, onDone, forShar
 
 // the capture view (camera, quality checks) loads only when opened, like the barcode decoder
 const LabelCaptureView = lazy(() => import('./LabelCaptureView').catch(() => ({ default: LabelOffline })))
-
-const MISSING_NOTE = {
-  'not-found': 'Not found. Enter it from the label: per 100 g column.',
-  offline: 'Couldn’t look it up without a connection. Enter it from the label: per 100 g column.',
-  error: 'Couldn’t look it up right now. Enter it from the label: per 100 g column.',
-} as const
 
 type View =
   | { kind: 'search' }

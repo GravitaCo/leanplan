@@ -17,6 +17,7 @@ import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecoder'
 import { startRearCamera, stopCamera as stopStream } from './camera'
+import { SCAN, SCAN_CAMERA_NOTE, SCAN_TITLE } from '@/copy/scan'
 
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }
@@ -27,11 +28,7 @@ export type ScanOutcome =
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
 
-const CAMERA_NOTE: Record<Exclude<Camera, 'starting' | 'on'>, string> = {
-  denied: 'Tilo can’t use the camera. That’s fine: take a photo of the barcode, or type the number below.',
-  none: 'No camera is available here. Take a photo of the barcode, or type the number below.',
-  noscan: 'The scanner needs a connection the first time it opens. Type the number below, or try again later.',
-}
+const CAMERA_NOTE: Record<Exclude<Camera, 'starting' | 'on'>, string> = SCAN_CAMERA_NOTE
 
 const SCAN_EVERY_MS = 180
 
@@ -61,7 +58,7 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
   const handle = async (raw: string, format?: string) => {
     if (doneRef.current) return
     const norm = normalizeBarcode(raw, format)
-    if (!norm) { setMsg('That number doesn’t look right: the last digit doesn’t check out. Try again, or check the digits under the barcode.'); return }
+    if (!norm) { setMsg(SCAN.badCheck); return }
     doneRef.current = true
     stopCamera()
     const local = findByBarcode(all, norm.code) ?? (norm.alt ? findByBarcode(all, norm.alt) : undefined)
@@ -153,11 +150,11 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       if (!aliveRef.current) return
       setBusy(null)
       if (hit) void handle(hit.raw, hit.format)
-      else setMsg('No barcode found in that photo. Try again closer, in good light, with the whole barcode in view, or type the number.')
+      else setMsg(SCAN.noBarcode)
     } catch {
       if (!aliveRef.current) return
       setBusy(null)
-      setMsg('That photo couldn’t be read. Try another, or type the number below.')
+      setMsg(SCAN.photoUnreadable)
     }
   }
 
@@ -165,15 +162,15 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
 
   if (busy && busy !== 'photo') {
     return (
-      <Sheet title="Scan barcode" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
-        <div className="empty" role="status">Looking up <span className="num">{busy}</span>…<br />If it’s not found you can enter it from the label.</div>
+      <Sheet title={SCAN_TITLE} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+        <div className="empty" role="status">{SCAN.lookingUp} <span className="num">{busy}</span>…<br />{SCAN.lookingUpAfter}</div>
       </Sheet>
     )
   }
 
   const live = camera === 'starting' || camera === 'on'
   return (
-    <Sheet title="Scan barcode" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+    <Sheet title={SCAN_TITLE} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
       {live ? (
         <div className="scanbox">
           <video ref={videoRef} playsInline muted autoPlay aria-label="Camera view" />
@@ -182,28 +179,28 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
       ) : (
         <div className="note" role="status"><Icon name="info" size={17} /><span>{CAMERA_NOTE[camera]}</span></div>
       )}
-      {live && <div className="foot" style={{ textAlign: 'center' }} role="status">{camera === 'starting' ? 'Starting the camera…' : 'Hold the barcode inside the frame.'}</div>}
+      {live && <div className="foot" style={{ textAlign: 'center' }} role="status">{camera === 'starting' ? SCAN.starting : SCAN.hold}</div>}
       {msg && <div className="note" role="alert"><Icon name="info" size={17} /><span>{msg}</span></div>}
 
       <div className="list icons" style={{ marginTop: 14 }}>
         <label className="li" style={{ cursor: 'pointer' }}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-          <div className="m"><div className="t">{busy === 'photo' ? 'Reading the photo…' : 'Take a photo'}</div><div className="s">Of the barcode, close up, or pick one from your photos</div></div>
-          <input type="file" accept="image/*" className="vh" aria-label="Take a photo of the barcode"
+          <div className="m"><div className="t">{busy === 'photo' ? SCAN.readingPhoto : SCAN.takePhoto}</div><div className="s">{SCAN.photoSub}</div></div>
+          <input type="file" accept="image/*" className="vh" aria-label={SCAN.photoAria}
             onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = '' }} />
         </label>
       </div>
 
-      <div className="lbl">Or type the number</div>
+      <div className="lbl">{SCAN.orType}</div>
       <div className="list">
         <div className="frow">
-          <label htmlFor="bc_num">Barcode</label>
-          <input id="bc_num" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" placeholder="13 digits under the bars" value={typed}
+          <label htmlFor="bc_num">{SCAN.barcode}</label>
+          <input id="bc_num" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" placeholder={SCAN.placeholder} value={typed}
             onChange={(e) => setTyped(e.target.value.replace(/[^\d]/g, '').slice(0, 14))} onKeyDown={(e) => { if (e.key === 'Enter') submitTyped() }} enterKeyHint="search" />
         </div>
       </div>
-      <div className="stack"><button className="btn tinted" disabled={typed.length < 8} onClick={submitTyped}>Look up</button></div>
-      <div className="foot">Values come from Open Food Facts, a shared database. You’ll check them against your pack before saving.</div>
+      <div className="stack"><button className="btn tinted" disabled={typed.length < 8} onClick={submitTyped}>{SCAN.lookUp}</button></div>
+      <div className="foot">{SCAN.source}</div>
     </Sheet>
   )
 }

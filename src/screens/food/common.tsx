@@ -5,13 +5,14 @@ import { Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { useStore } from '@/store/store'
 import { NEEDS_NET } from '@/ui/ConnectionPill'
+import { LABEL_PHOTO } from '@/copy/scan'
 
 /** "Photo of the label": online only, so offline it stays in view, off, with the note (ob6-8). */
 export function LabelPhotoButton({ onPress }: { onPress: () => void }) {
   const online = useStore((s) => s.online)
   return (
     <>
-      <button className="btn gray" disabled={!online} onClick={onPress}><Icon name="camera" size={17} /> Photo of the label</button>
+      <button className="btn gray" disabled={!online} onClick={onPress}><Icon name="camera" size={17} /> {LABEL_PHOTO}</button>
       {!online && <div className="foot" style={{ padding: 0 }}>{NEEDS_NET}</div>}
     </>
   )
