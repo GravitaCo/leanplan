@@ -9,14 +9,15 @@ import { useState, type ReactNode } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
-import { medicalOutcome } from '@/core/domain/onboarding'
-import { CHECKIN, COPY, HEALTH_ANSWERS as H } from '@/copy/onboarding'
+import { medicalOutcome, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
+import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '@/copy/onboarding'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { answerRows, clearConfirmLine, foodShows, optInRows, type AnswerRow } from '@/screens/profile/healthAnswerRows'
 import { GEIST, tx, useTokens } from '../../lib/theme'
 import { Btn, LinkBtn } from '../../lib/ui/kit'
 import { BackButton, BareSheet, Seg } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
+import { Opts } from '../../lib/ui/choices'
 import { sheetLead, sheetTitle } from './text'
 
 type Open = { sheet: 'confirm'; row: AnswerRow } | { sheet: 'pregnancy' | 'medical' | 'wellbeing' } | null
@@ -115,8 +116,14 @@ export function MedicalSheet({ onClose }: { onClose: () => void }) {
   const setAnswer = useStore((s) => s.setHealthAnswer)
   const flagged = useStore((s) => { const m = s.data.profile.outcomes?.medical; return m === 'flagged' || m === 'no-deficit' })
   // the ticks themselves are never kept, so the sheet starts from "None of these" or nothing
-  const [ticked] = useState<number[]>([])
-  const [none] = useState(!flagged)
+  const [ticked, setTicked] = useState<number[]>([])
+  const [none, setNone] = useState(!flagged)
+  const pick = (k: string) => {
+    if (k === 'none') { setNone(!none); setTicked([]); return }
+    const i = +k
+    setNone(false)
+    setTicked(ticked.includes(i) ? ticked.filter((x) => x !== i) : [...ticked, i])
+  }
   const outcome = medicalOutcome(ticked, none)
   const title = COPY.medical?.title ?? ''
   return (
@@ -124,7 +131,8 @@ export function MedicalSheet({ onClose }: { onClose: () => void }) {
       <View style={{ gap: 12 }}>
         <Text accessibilityRole="header" style={sheetTitle(t)}>{title}</Text>
         {COPY.medical?.lead ? <Text style={sheetLead(t)}>{COPY.medical.lead}</Text> : null}
-        {/* TODO(N1-followup) item 3, Opts (multi): MEDICAL_ITEMS ticks and "None of these" (src/screens/profile/HealthAnswers.tsx MedicalSheet); picking updates `ticked` and `none` */}
+        <Opts label="Conditions and medicines" multi opts={[...MEDICAL_ITEMS.map((x, i) => [String(i), x] as const), ['none', 'None of these'] as const]}
+          value={[...ticked.map(String), ...(none ? ['none'] : [])]} onPick={pick} />
         <Btn title={CHECKIN.done} disabled={!outcome} onPress={() => { if (outcome) setAnswer({ kind: 'medical', value: outcome }); onClose() }} />
       </View>
     </BareSheet>
@@ -134,12 +142,15 @@ export function MedicalSheet({ onClose }: { onClose: () => void }) {
 /** Change for food and weight: the wizard's four answers (ob1-6); picking one saves it. */
 function WellbeingSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
+  const setAnswer = useStore((s) => s.setHealthAnswer)
   const title = COPY.wellbeing?.title ?? ''
+  const pick = (a: WellbeingAnswer) => { const v = wellbeingOutcome(a); if (v) setAnswer({ kind: 'wellbeing', value: v }); onClose() }
   return (
     <BareSheet label={title} onClose={onClose}>
       <View style={{ gap: 12 }}>
         <Text accessibilityRole="header" style={sheetTitle(t)}>{title}</Text>
-        {/* TODO(N1-followup) item 3, Opts: WELLBEING_STATEMENT as the lead and WELLBEING_OPTIONS; a pick saves setHealthAnswer({ kind: 'wellbeing', value: wellbeingOutcome(a) }) and closes (src/screens/profile/HealthAnswers.tsx WellbeingSheet) */}
+        <Text style={sheetLead(t)}>{WELLBEING_STATEMENT}</Text>
+        <Opts label="Food and weight" opts={WELLBEING_OPTIONS} value={undefined} onPick={pick} />
       </View>
     </BareSheet>
   )
@@ -151,8 +162,9 @@ function WellbeingSheet({ onClose }: { onClose: () => void }) {
  */
 export function PregnancyCheckSheet({ mode, onClose, onAnswers }: { mode: 'checkin' | 'change'; onClose: () => void; onAnswers?: () => void }) {
   const t = useTokens()
+  const confirm = useStore((s) => s.confirmPregnancy)
   const snooze = useStore((s) => s.snoozePregnancyReask)
-  const [thanks] = useState(false)
+  const [thanks, setThanks] = useState(false)
   const later = () => { snooze(); onClose() }
   if (thanks) {
     return (
@@ -168,12 +180,17 @@ export function PregnancyCheckSheet({ mode, onClose, onAnswers }: { mode: 'check
       </BareSheet>
     )
   }
+  const pick = (k: (typeof CHECKIN.options)[number][0]) => {
+    if (k === 'no-longer') { confirm('no-longer'); if (mode === 'checkin') setThanks(true); else onClose(); return }
+    confirm('still-applies')
+    onClose()
+  }
   return (
     <BareSheet label={CHECKIN.title} onClose={mode === 'checkin' ? later : onClose}>
       <View style={{ gap: 12 }}>
         <Text accessibilityRole="header" style={sheetTitle(t)}>{CHECKIN.title}</Text>
         <Text style={sheetLead(t)}>{CHECKIN.lead}</Text>
-        {/* TODO(N1-followup) item 3, Opts: CHECKIN.options; "no-longer" confirms and thanks on Today, the others confirm 'still-applies' and close (src/screens/profile/HealthAnswers.tsx PregnancyCheckSheet) */}
+        <Opts label={CHECKIN.title} opts={CHECKIN.options} value={undefined} onPick={pick} />
         {mode === 'checkin' && <Alt title={CHECKIN.later} onPress={later} />}
       </View>
     </BareSheet>

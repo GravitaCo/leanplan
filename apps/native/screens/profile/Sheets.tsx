@@ -1,9 +1,9 @@
 /**
  * Profile's own sheets, from src/screens/ProfileScreen.tsx (Hand portions, Sign out, Import's
- * confirm) and review/WeeklyReview.tsx (the review day, board ml-d1). Same words, same store actions.
+ * confirm). The review-day sheet is N4's (screens/today/WeeklyReview.tsx). Same words, same store actions.
  */
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import type { HandPortion } from '@/core/types'
 import { useStore } from '@/store/store'
 import { fmtDate } from '@/core/domain/date'
@@ -12,15 +12,12 @@ import { consentLetsSync, hasExistingData } from '@/data/consent'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
 import { PROFILE as P } from '@/copy/profile'
 import { BACKUP, SIGN_OUT } from '@/copy/account'
-import { dayName } from '@/screens/review/reviewModel'
-import { tx, useTokens } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
-import { Btn, Chip, Chips, List } from '../../lib/ui/kit'
+import { Btn, List } from '../../lib/ui/kit'
 import { FRow } from '../../lib/ui/fields'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { PROSE } from './text'
 import { exportBackup } from './n2'
-import { pushReady } from './n12'
 
 /** Weigh one of each once; after that "a palm" is a measurement, not a guess. */
 export function HandsSheet({ onClose }: { onClose: () => void }) {
@@ -91,49 +88,6 @@ export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedSt
         <Sub style={[PROSE, { marginBottom: 10 }]}>{BACKUP.replaces(b)}</Sub>
       </View>
       <View style={{ marginTop: 6 }}><Btn kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
-    </Sheet>
-  )
-}
-
-/** ml-d1: the review day, and the opt-in reminder (off unless the person says "Remind me"). */
-export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
-  const t = useTokens()
-  const day = useStore((s) => s.data.profile.reviewDay ?? 0)
-  const push = useStore((s) => s.data.profile.reviewPush)
-  const time = useStore((s) => s.data.profile.reviewPushTime ?? '09:00')
-  const setPrefs = useStore((s) => s.setPrefs)
-  const setReviewPush = useStore((s) => s.setReviewPush)
-  const showToast = useStore((s) => s.showToast)
-  const remind = async () => {
-    // push is stream N12: until it lands, the phone answers as a browser without push does
-    const ok = pushReady() && await setReviewPush(true)
-    showToast(ok ? P.notify.weeklyOn : P.notify.weeklyFailed)
-  }
-  const h3 = [tx(17, 600), { color: t.label }]
-  const d = [tx(13, 400, 1.4), { color: t.label2 }]
-  // the review sheet's words are N4's (review/WeeklyReview.tsx); they move to src/copy with Today's review
-  return (
-    <Sheet title="Your weekly review" onClose={onClose} left={null} right={<NavBtn title="Done" bold onPress={onClose} />}>
-      <View style={{ gap: 16 }}>
-        <Text style={[tx(16, 400, 1.45), { color: t.label2 }]}>A two-minute look back at your week, with everything side by side.</Text>
-        {/* TODO(N1-followup): the decorative `.lp-chipsrow` (Sleep, Stress, Mood, Hunger, Movement, Food, Weight), N4's review sheet piece */}
-        <View style={{ gap: 10 }}>
-          <Text accessibilityRole="header" style={h3}>Which day suits you?</Text>
-          {/* TODO(N1-followup): the `.lp-days` day picker (seven round radios, M to S, labels Monday to Sunday) setting setPrefs({ reviewDay }), N4's review sheet piece */}
-          <Text style={d}>It’ll be waiting on Summary from {dayName(day)} morning. No pressure to open it that day.</Text>
-        </View>
-        <View style={{ gap: 10 }}>
-          <Text accessibilityRole="header" style={h3}>Want a reminder for your weekly review?</Text>
-          <Text style={d}>One note on {dayName(day)}, nothing else.</Text>
-          {push
-            ? <Chips><Chip title="Reminder on" on onPress={() => undefined} /><Chip title="Turn it off" onPress={() => { if (pushReady()) void setReviewPush(false) }} /></Chips>
-            : <View style={{ gap: 8 }}>
-                <Btn small title="Remind me" onPress={() => void remind()} />
-                <Btn small kind="gray" title="No thanks" onPress={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }} />
-              </View>}
-          <Text style={d}>Once a week on {dayName(day)} at {time} UK time. It only says “Your week is ready”, nothing from your log. Turn it off any time in Profile.</Text>
-        </View>
-      </View>
     </Sheet>
   )
 }
