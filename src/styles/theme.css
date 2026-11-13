@@ -904,7 +904,8 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .pw-last { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 16px; }
 .pw-last span { flex: 1; }
 .plan-note { font-size: 14px; line-height: 1.4; margin: 8px 0 0; border-radius: 16px; }
-.plantiles { grid-template-columns: 1fr 1fr; margin-top: 16px; }
+/* .tiles.plantiles: outranks the later .tiles flex column (the onboarding tiles), so the two tiles sit side by side (Plans 1, step 4) */
+.tiles.plantiles { display: grid; grid-template-columns: 1fr 1fr; margin-top: 16px; }
 .plantiles .tile.st { gap: 2px; }
 .plantiles .v { font-size: 26px; font-weight: 400; margin: 0; }
 .plantiles .tt { font-size: 15px; font-weight: 500; }

@@ -50,6 +50,7 @@
           "enableBackgroundRemoteNotifications": false
         }
       ],
+      "./modules/tilo-camera/app.plugin.js",
       "./plugins/withNotifyExtension"
     ],
     "experiments": {
