@@ -1,14 +1,15 @@
 /**
- * The reminder delivery log (./notifyStore) on the phone's MMKV, opened on first use. What
+ * The reminder delivery log (./notifyStore) in the phone's own store (modules/tilo-store,
+ * namespace `tali-notify`, named like the web's database), opened on first use. What
  * src/data/platform.native.ts hands the shared code, and what the notification handler (N12)
  * records into.
  */
-import { createMMKV, type MMKV } from 'react-native-mmkv'
+import { openStore, type KV } from '../../modules/tilo-store'
 import { clearEvents, NOTIFY_STORE_ID, recordNotifyEvent as record, takeEvents } from './notifyStore'
 
-let kv: MMKV | null = null
-const store = (): MMKV | null => {
-  try { return (kv ??= createMMKV({ id: NOTIFY_STORE_ID })) } catch { return null }
+let kv: KV | null = null
+const store = (): KV | null => {
+  try { return (kv ??= openStore(NOTIFY_STORE_ID)) } catch { return null }
 }
 
 /** Read every event and empty the log (notifyLog.takeNotifyEvents on native). */
