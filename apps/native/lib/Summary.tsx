@@ -427,7 +427,7 @@ function SummaryPage() {
           <View>
             <Lbl>Your usual {MEAL_LABEL[meal].toLowerCase()}</Lbl>
             <List style={{ marginBottom: 8 }}>
-              {same && <Row onPress={() => repeatYesterday(meal)} title={SAME_AS_YESTERDAY} sub={same.sub} wrapSub right={<AddC />} />}
+              {same && <Row onPress={() => repeatYesterday(meal)} title={SAME_AS_YESTERDAY} sub={<Text style={num}>{same.sub}</Text>} wrapSub right={<AddC />} />}
               {us.map((u) => (
                 <Row key={u.n} onPress={() => logEntries(usualEntries(data, u.n, meal))} title={u.n}
                   sub={`${portionText(u.last)}${gentle ? '' : ` · ${fmt(u.last.k)} kcal`}`} right={<AddC />} />
