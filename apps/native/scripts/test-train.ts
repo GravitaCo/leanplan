@@ -1,0 +1,43 @@
+/**
+ * Train (N7) unit tests for the native-only pieces: the session-open signal, the rest-end alert
+ * hand-off to N12, and the chime rendered from the web's Web Audio parameters. Run by `npm test`.
+ */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { cancelRestAlert, guidedSessionOpen, onGuidedSession, restTimer, scheduleRestAlert, setGuidedSessionOpen } from '../screens/train/session'
+
+let bad = 0
+const ok = (name: string, v: boolean, info?: unknown) => { if (!v) bad++; console.log(v ? 'PASS' : 'FAIL', 'train:', name, v || info === undefined ? '' : JSON.stringify(info)) }
+
+async function main() {
+  // the signal N12 reads
+  const seen: boolean[] = []
+  const off = onGuidedSession((v) => seen.push(v))
+  ok('closed by default', guidedSessionOpen() === false)
+  setGuidedSessionOpen(true); setGuidedSessionOpen(true); setGuidedSessionOpen(false)
+  ok('open while the player is on screen, told once per change', seen.join() === 'true,false', seen)
+  off()
+
+  // the rest alert through N12's restTimer: one schedule with the web words; cancelled on return
+  const log: string[] = []
+  restTimer.schedule = async (seconds, copy) => { log.push(`s:${seconds}:${copy.title}|${copy.body}`); return true }
+  restTimer.cancel = async () => { log.push('c') }
+  await scheduleRestAlert(Date.now() + 75_000, 'Set 2 of 3, Barbell squat', true)
+  ok('alert at rest end with the web words', log.length === 1 && /^s:7[45]:Rest over\|Set 2 of 3, Barbell squat\.$/.test(log[0]), log)
+  await cancelRestAlert()
+  ok('cancelled when the app returns or rest ends', log[1] === 'c', log)
+  log.length = 0
+  await scheduleRestAlert(Date.now() + 1000, 'x', true)
+  ok('no alert for the last second of rest (any earlier one cancelled)', log.join() === 'c', log)
+
+  // the chime: the web's 880 Hz sine, 0.55 s, peak 0.2 at 0.02 s
+  const wav = readFileSync(join(process.cwd(), 'assets', 'sounds', 'chime.wav'))
+  const rate = wav.readUInt32LE(24), n = wav.readUInt32LE(40) / 2
+  let peak = 0, at = 0
+  for (let i = 0; i < n; i++) { const v = Math.abs(wav.readInt16LE(44 + i * 2)) / 32767; if (v > peak) { peak = v; at = i / rate } }
+  ok('chime: 44.1 kHz mono, 0.55 s', rate === 44100 && wav.readUInt16LE(22) === 1 && Math.abs(n / rate - 0.55) < 0.001, { rate, n })
+  ok('chime: peak 0.2 at about 0.02 s', Math.abs(peak - 0.2) < 0.005 && Math.abs(at - 0.02) < 0.002, { peak, at })
+  console.log(bad ? `${bad} failed` : 'train: all passed')
+  process.exit(bad ? 1 : 0)
+}
+main()

@@ -74,6 +74,18 @@ export function parseSaved(raw: string | undefined | null): SavedToken | null {
 /** The rest timer's notification data (./restTimer): not a reminder type. */
 export const REST_KIND = 'rest'
 
+/** The rest alert's content: N7's words, the player's Sound choice (default on), one alert with no
+ *  badge, interruption level `active` (Focus and Do Not Disturb win), and its non-reminder kind. */
+export function restContent(copy: { title: string; body: string; sound?: boolean }) {
+  return {
+    title: copy.title,
+    body: copy.body,
+    sound: copy.sound === false ? false : 'default',
+    interruptionLevel: 'active' as const,
+    data: { kind: REST_KIND },
+  }
+}
+
 /** A rest length iOS can schedule: whole seconds, at least 1, at most an hour; else null. */
 export function restSeconds(seconds: unknown): number | null {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return null
