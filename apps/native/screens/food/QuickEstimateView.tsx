@@ -31,7 +31,7 @@ export function QuickEstimateView({ meal, setMeal, onBack, onClose, animate }: {
     <Sheet title={QUICK.title} onClose={onClose} animate={animate} left={onBack ? <BackButton onPress={onBack} /> : undefined}
       right={<NavBtn bold title={QUICK.add} onPress={commit} />}>
       <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{QUICK.intro(CAPTURE_ERR.quick * 100)}</Sub>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {row('n', QUICK.name, '', QUICK.namePh, true)}
         {row('k', QUICK.calories, 'kcal', QUICK.required)}
         {row('p', QUICK.protein, 'g', QUICK.optional)}

@@ -6,7 +6,7 @@ import { loadStateFrom, type PersistedState } from '@/data/persistence'
 import { buildEntry, type Portion } from '@/core/domain/estimate'
 import {
   allFoods, asIngredient, browseFoods, draftProblem, draftTotals, editAmount, foodDay, gramsMax, ingredientMatches, isMine, kitchenAdds, mealGroups,
-  mealKcal, mealNames, portionModes, portionPreview, portionStart, quickEntry, recipeSteps, searchFoods, swapText,
+  mealKcal, mealNames, numIn, portionModes, portionPreview, portionStart, quickEntry, recipeSteps, searchFoods, swapText,
 } from '@/screens/food/foodModel'
 import { barcodeEnd, barcodeUpdate, duplicateSaveStep, likelySame, originLine, sameFood } from '@/screens/food/duplicateModel'
 
@@ -101,6 +101,8 @@ export function foodModelSuite(): number {
   check('quick estimate: needs calories', quickEntry({ n: '', k: '0', p: '', c: '', fat: '' }, 'lunch', 0.3) === null)
   const q = quickEntry({ n: ' ', k: '650', p: '30', c: 'x', fat: '' }, 'lunch', 0.3)
   check('quick estimate: named "Quick estimate", unreadable fields 0', q?.n === 'Quick estimate' && q.k === 650 && q.p === 30 && q.c === 0 && q.how === 'quick' && q.err === 0.3)
+
+  check('typed numbers: comma decimals, thousands, junk', numIn('12,5') === 12.5 && numIn('1,200') === 1200 && numIn('1,200.5') === 1200.5 && numIn(' 7 ') === 7 && numIn('') === 0 && numIn('x') === 0 && numIn('150') === 150)
 
   // duplicates
   const saved: Food = { id: '22222222-2222-4222-8222-222222222222', n: 'Tesco Greek Style Yogurt', k: 93, p: 5.6, c: 4.9, f: 5.7, g: 150, barcode: '5000000000017' }

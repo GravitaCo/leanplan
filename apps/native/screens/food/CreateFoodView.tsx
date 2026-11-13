@@ -62,12 +62,12 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
       )}
       <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{CREATE_FOOD.intro(unit, !!barcode)}</Sub>
       <Seg<'g' | 'ml'> options={[['g', CREATE_FOOD.grams], ['ml', CREATE_FOOD.millilitres]]} value={unit} onChange={setUnit} />
-      <List style={{ marginTop: 12 }}>
+      <List style={{ marginTop: 12, marginBottom: 8 }}>
         {row('n', CREATE_FOOD.name, '', CREATE_FOOD.namePh)}
         {row('g', CREATE_FOOD.serving, unit, '100')}
       </List>
       <Lbl>{CREATE_FOOD.per100(unit)}</Lbl>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {row('k', CREATE_FOOD.calories, 'kcal')}
         {row('p', CREATE_FOOD.protein, 'g')}
         {row('c', CREATE_FOOD.carbs, 'g')}

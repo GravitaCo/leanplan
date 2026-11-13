@@ -11,8 +11,7 @@ stand-in, never the real project). Columns: **Auto** = the script checks it; **E
 N1's primitives; the native column is ticked when the rebuilt screen passes.
 
 The script finds native elements by these test IDs, which the rebuilt screens must carry:
-`food-screen` (the Food tab's scroll view), `sheet` (each sheet's frame), `row-title` (a list row's
-title). Rows that open a food carry the food's name as their accessibility label, as the web's.
+`food-screen` (the Food tab's scroll view); a sheet is found as the open modal (`aria-modal`). Rows that open a food carry no label of their own: like the web's, they are named by their whole text (name, figures, tag), and the script finds them by their title.
 
 ## The Food tab
 

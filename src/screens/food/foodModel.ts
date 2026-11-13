@@ -245,8 +245,16 @@ export function swapText(w: Swap, gentle: boolean, servings: number): string {
 
 // ───────────────────────── quick estimate and create a food ─────────────────────────
 
-/** A typed number; anything unreadable is 0. */
-export const numIn = (v: string): number => parseFloat(v) || 0
+/**
+ * A typed number; anything unreadable is 0. A phone's decimal pad types a comma in regions that use
+ * one ("12,5" is 12.5); a pasted thousands separator ("1,200") is a thousand. The web's number
+ * fields never pass a comma, so for them this is plain parseFloat.
+ */
+export function numIn(v: string): number {
+  const s = v.trim()
+  const n = /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.')
+  return parseFloat(n) || 0
+}
 
 /** The quick estimate as an entry, or null without calories. */
 export function quickEntry(f: { n: string; k: string; p: string; c: string; fat: string }, meal: MealSlot, err: number): LoggedFood | null {

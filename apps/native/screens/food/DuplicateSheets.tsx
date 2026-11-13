@@ -47,7 +47,7 @@ function BarcodeUpdateSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answe
     <BareSheet label={v.title} onClose={dismiss}>
       <DupHead icon="refresh" title={v.title} lead={DUP.barcodeLead} />
       <Lbl>{DUP.changes(v.per)}</Lbl>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {v.name && (
           <View style={{ paddingVertical: 10, paddingHorizontal: 16 }}>
             {small(DUP.name)}
@@ -91,12 +91,12 @@ function LikelySameSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answer: 
   return (
     <BareSheet label={v.title} onClose={dismiss}>
       <DupHead icon="copy" title={v.title} lead={v.lead} />
-      <List style={{ marginTop: 18 }}>
+      <List style={{ marginTop: 18, marginBottom: 8 }}>
         <Row k={DUP.yours} title={ask.saved.n} />
         <Row k={v.theirs} title={ask.next.n} />
       </List>
       <View accessibilityLabel={DUP.tableLabel(v.theirs, v.per)} style={{ marginTop: 8 }}>
-        <List style={{ paddingHorizontal: 16 }}>
+        <List style={{ paddingHorizontal: 16, marginBottom: 8 }}>
           {tableRow('h', th(v.per.replace(/^per/, 'Per')), th(DUP.yours), th(v.theirs), true)}
           {v.rows.map((r) => tableRow(r.label,
             <Text style={[tx(17), { color: t.label }]}>{r.label}</Text>,
@@ -132,10 +132,10 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
       <Text accessibilityRole="header" style={[tx(22, 600, 28, -0.02), { color: t.label, paddingTop: 12, paddingHorizontal: 4 }]}>{DUP.pick}</Text>
       <Text style={[tx(17, 400, 1.45), { color: t.label2, marginTop: 6, paddingHorizontal: 4 }]}>{DUP.pickLead}</Text>
       <View accessibilityRole="radiogroup" accessibilityLabel={DUP.foodToKeep} style={{ marginTop: 18 }}>
-        <List>
+        <List style={{ marginBottom: 8 }}>
           {sf.rows.map(({ food: f, figures, origin, logged }, i) => (
             // TODO(N1-followup): `.dup-radio` (24 pt, 2 pt --fill3 ring; on: --tint with a 13/3.2 tick); Check is the 26 pt `.chk`
-            <Row key={f.id} title={f.n} wrap accessibilityLabel={f.n} onPress={() => setKeepIdx(i)} chevron={false} lead={<Check on={keepIdx === i} />}
+            <Row key={f.id} title={f.n} wrap onPress={() => setKeepIdx(i)} chevron={false} lead={<Check on={keepIdx === i} />}
               sub={<>{figures}</>} sub2={<>{origin ? <>{origin}{'\n'}</> : null}{logged}</>} />
           ))}
         </List>
@@ -144,7 +144,7 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
       <Card plain style={{ marginBottom: 10 }}><Text style={[tx(17), { color: t.label }]}>{what}</Text></Card>
       {switchable && (
         <>
-          <List>
+          <List style={{ marginBottom: 8 }}>
             <Row title={DUP.otherBarcode} right={<Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label={DUP.otherBarcode} />} />
           </List>
           {offBarcode && <Foot>{DUP.offBarcode}</Foot>}

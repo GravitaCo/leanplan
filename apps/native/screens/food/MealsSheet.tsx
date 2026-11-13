@@ -9,7 +9,7 @@ import { basisOf, headline, recipePerServing } from '@/core/domain/nutrition'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { mealNow } from '@/core/domain/insights'
-import { allFoods, asIngredient, draftProblem, draftTotals, ingredientMatches, type RecipeDraft } from '@/screens/food/foodModel'
+import { allFoods, asIngredient, draftProblem, draftTotals, ingredientMatches, numIn, type RecipeDraft } from '@/screens/food/foodModel'
 import { RECIPES } from '@/copy/food'
 import { Btn, Card, List } from '../../lib/ui/kit'
 import { AddC, BackButton, NavBtn, Row, Sheet, XBtn } from '../../lib/ui/primitives'
@@ -35,6 +35,8 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   const [meal, setMeal] = useState<MealSlot>(mealNow())
   const [q, setQ] = useState('')
   const [moved, setMoved] = useState(false)
+  // what's typed in an ingredient's amount box, so "0." or an empty box can be on the way to a number
+  const [aText, setAText] = useState<{ i: number; v: string } | null>(null)
 
   if (logging != null) return <RecipeLogView index={logging} meal={meal} setMeal={setMeal} onBack={() => setLogging(null)} onClose={onClose} animate={false} />
 
@@ -59,28 +61,30 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
         left={initialDraft ? undefined : <BackButton onPress={() => setDraft(null)} label={RECIPES.back} />}
         right={<NavBtn bold title={RECIPES.save} onPress={save} />}>
         {initialDraft && <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{RECIPES.fromMeal}</Sub>}
-        <List>
+        <List style={{ marginBottom: 8 }}>
           <FRow label={RECIPES.name} value={draft.name} placeholder={RECIPES.namePh} onChangeText={(v) => setDraft({ ...draft, name: v })} />
           <FRow label={RECIPES.servings} value={draft.servings} keyboardType="decimal-pad" onChangeText={(v) => setDraft({ ...draft, servings: v })} />
         </List>
         <Lbl>{RECIPES.ingredients}</Lbl>
-        <List>
+        <List style={{ marginBottom: 8 }}>
           {draft.items.length ? draft.items.map((it, ii) => (
             <Row key={ii} title={it.n} sub={[isCookedState(it.n) && RECIPES.cooked, !gentle && `${Math.round((it.k * it.grams) / basisOf(it))} kcal`].filter(Boolean).join(' · ') || undefined}
               right={
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   {/* the amount box: 72 wide, right-aligned, padding 7 8 */}
-                  <Input label={RECIPES.amountOf(it.n)} keyboardType="decimal-pad" value={String(Math.round(it.grams * 100) / 100)}
-                    onChangeText={(v) => setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: parseFloat(v) || 0 } : x)) })}
+                  <Input label={RECIPES.amountOf(it.n)} keyboardType="decimal-pad" value={aText?.i === ii ? aText.v : String(Math.round(it.grams * 100) / 100)}
+                    onChangeText={(v) => { setAText({ i: ii, v }); setDraft({ ...draft, items: draft.items.map((x, j) => (j === ii ? { ...x, grams: numIn(v) } : x)) }) }}
+                    onBlur={() => setAText(null)}
                     style={[num, { width: 72, textAlign: 'right', paddingVertical: 7, paddingHorizontal: 8 }]} />
                   <Text style={[tx(17), { color: t.label2 }]}>{it.each ? 'item' : it.ml ? 'ml' : 'g'}</Text>
                   {/* TODO(N1-followup): the web's remove is a `.navbtn` ✕ in --red, not the round `.x-btn` */}
-                  <XBtn label={RECIPES.remove(it.n)} onPress={() => setDraft({ ...draft, items: draft.items.filter((_, j) => j !== ii) })} />
+                  <XBtn label={RECIPES.remove(it.n)} onPress={() => { setAText(null); setDraft({ ...draft, items: draft.items.filter((_, j) => j !== ii) }) }} />
                 </View>
               } />
           )) : <Empty>{RECIPES.empty}</Empty>}
         </List>
-        <Card plain style={{ marginTop: 8, marginBottom: 10 }}>
+        {/* the card's 10 below and a note's 10 above collapse to 10 on the web */}
+        <Card plain style={{ marginTop: 8, marginBottom: draft.items.length > 0 ? 0 : 10 }}>
           {gentle ? line(<>{RECIPES.perServingLabel} {b(`${r0(totals.p / s)} g protein`)}</>) : <>
             {line(<>{RECIPES.wholeRecipe} {b(`${fmt(totals.k)} kcal`)} · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F</>)}
             {line(<>{RECIPES.perServingLabel} {b(`${fmt(totals.k / s)} kcal`)}{totals.k > 0 && <Text style={[num, { color: t.label2 }]}> ± {fmt((totals.k / s) * CAPTURE_ERR.recipe)}</Text>} · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F</>)}
@@ -90,9 +94,9 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
         <Lbl>{RECIPES.addIngredients}</Lbl>
         <SearchBar label={RECIPES.searchLabel} placeholder={RECIPES.searchPh} value={q} onChangeText={setQ} autoCorrect={false} autoCapitalize="none" />
         {matches.length > 0 && (
-          <List style={{ marginTop: 8 }}>
+          <List style={{ marginTop: 8, marginBottom: 8 }}>
             {matches.map((f, i) => (
-              <Row key={f.n + i} title={f.n} label={f.n} right={<AddC />} onPress={() => setDraft({ ...draft, items: [...draft.items, asIngredient(f)] })}
+              <Row key={f.n + i} title={f.n} right={<AddC />} onPress={() => setDraft({ ...draft, items: [...draft.items, asIngredient(f)] })}
                 sub={`${gentle ? `${r1(headline(f).p)} g protein` : `${Math.round(headline(f).k)} kcal`} ${headline(f).per}`} />
             ))}
           </List>
@@ -106,13 +110,13 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
     <Sheet title={RECIPES.title} tall onClose={onClose} left={null} animate={!moved} right={<NavBtn bold title={RECIPES.done} onPress={onClose} />}>
       <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{RECIPES.intro}</Sub>
       {recipes.length ? (
-        <List>
+        <List style={{ marginBottom: 8 }}>
           {recipes.map((r, ri) => {
             const per = recipePerServing(r)
             return (
               <Row key={r.id} title={r.name} sub={<Text style={num}>{+r.servings > 1 ? RECIPES.servingsLine(r.servings) : ''}{gentle ? '' : `${fmt(per.k)} kcal · `}{RECIPES.perServing(r0(per.p))}</Text>}
                 right={
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
                     <Btn small kind="tinted" title={RECIPES.log} onPress={() => { setMoved(true); setLogging(ri) }} />
                     <NavBtn title={RECIPES.edit} onPress={() => { setMoved(true); setDraft({ id: r.id, name: r.name, servings: String(r.servings), items: r.items.map((i) => ({ ...i })) }) }} />
                   </View>

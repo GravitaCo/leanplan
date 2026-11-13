@@ -14,7 +14,7 @@ import { amountText, headline } from '@/core/domain/nutrition'
 import { sourceOf } from '@/core/data/sources'
 import { CAPTURE_LABEL, FAT_OPTIONS, HANDS, frac, handGrams, type Portion } from '@/core/domain/estimate'
 import { MEAL_LABEL } from '@/core/domain/insights'
-import { SERV_STEPS, gramsMax, portionModes, portionPreview, portionStart } from '@/screens/food/foodModel'
+import { SERV_STEPS, gramsMax, numIn, portionModes, portionPreview, portionStart } from '@/screens/food/foodModel'
 import { PORTION } from '@/copy/food'
 import { Big, Btn, Card, Chip, Chips } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Seg, Sheet } from '../../lib/ui/primitives'
@@ -115,7 +115,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
             <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginTop: 6, marginBottom: 4 }}>
               <Input label={PORTION.amountIn(u)} keyboardType="decimal-pad"
                 value={gText ?? (grams ? String(Math.round(grams * 100) / 100) : '')}
-                onChangeText={(v) => { setGText(v); setGrams(parseFloat(v) || 0) }} onBlur={() => setGText(null)}
+                onChangeText={(v) => { setGText(v); setGrams(numIn(v)) }} onBlur={() => setGText(null)}
                 style={[tx(40, 600, 1.1, 0), num, { width: 112, textAlign: 'right', backgroundColor: 'transparent', padding: 0 }]} />
               <Text style={[tx(20, 600), { color: t.label2 }]}>{u}</Text>
             </View>

@@ -49,9 +49,9 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
           <Foot>{SUGGEST.assumed}</Foot>
 
           <Lbl>{SUGGEST.yourRecipes(dietLabel && diet !== 'none' ? dietLabel : undefined)}</Lbl>
-          <List>
+          <List style={{ marginBottom: 8 }}>
             {results.map((s) => (
-              <Row key={s.recipe.id} title={s.recipe.name} label={s.recipe.name} right={<AddC />} onPress={() => onLog(s.recipeIndex)}
+              <Row key={s.recipe.id} title={s.recipe.name} right={<AddC />} onPress={() => onLog(s.recipeIndex)}
                 sub={`${s.missing.length === 0 ? SUGGEST.haveAll : SUGGEST.missing(s.missing)} · ${r0(s.perServing.p)} g protein`}
                 sub2={s.swaps.length > 0 ? s.swaps.map((w) => swapText(w, gentle, +s.recipe.servings || 1)).join(' · ') : undefined} />
             ))}

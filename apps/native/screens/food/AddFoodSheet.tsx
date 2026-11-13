@@ -96,7 +96,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
   const toScan = (kind: 'scan' | 'label') => () => { if (canScan) go({ kind }) }
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
-    <Row key={f.n + idx} title={f.n} label={f.n} tag={isMine(idx) ? ADD_FOOD.mine : undefined} onPress={() => go({ kind: 'portion', food: f, custom: isMine(idx) })}
+    <Row key={f.n + idx} title={f.n} tag={isMine(idx) ? ADD_FOOD.mine : undefined} onPress={() => go({ kind: 'portion', food: f, custom: isMine(idx) })}
       sub={`${gentle ? '' : `${Math.round(headline(f).k)} kcal · `}${r1(headline(f).p)} g protein ${headline(f).per}`} right={trailing ?? <AddC />} />
   )
   // Recipes: tap the row to choose servings, tap + to log your usual serving in one go.
@@ -105,7 +105,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
     const per = recipePerServing(r)
     const serv = recipeServing(data, r.name)
     return (
-      <Row key={r.id} title={r.name} label={r.name} onPress={() => go({ kind: 'recipe', index: ri })}
+      <Row key={r.id} title={r.name} onPress={() => go({ kind: 'recipe', index: ri })}
         sub={`${FOOD.servings(frac(serv), serv)} · ${gentle ? '' : `${fmt(per.k * serv)} kcal · `}${Math.round(per.p * serv)} g protein`}
         right={<AddC label={ADD_FOOD.logServing(frac(serv), r.name)} onPress={() => { logRecipe(r, serv, meal); onClose() }} />} />
     )
@@ -122,39 +122,39 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
     const { recipes: byUse, usuals: us, recent: rc, mine: cf, pair, common } = browseFoods(data, all, cur, meal)
     body = (
       <>
-        {byUse.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List>{byUse.map(recipeRow)}</List></>}
+        {byUse.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List style={{ marginBottom: 8 }}>{byUse.map(recipeRow)}</List></>}
         {us.length > 0 && (
           <>
             <Lbl>{ADD_FOOD.yourUsual(MEAL_LABEL[meal])}</Lbl>
-            <List>
+            <List style={{ marginBottom: 8 }}>
               {us.map((u) => (
-                <Row key={u.n} title={u.n} label={u.n} sub={`${portionText(u.last)} · ${ADD_FOOD.oneTap}`} right={<AddC />}
+                <Row key={u.n} title={u.n} sub={`${portionText(u.last)} · ${ADD_FOOD.oneTap}`} right={<AddC />}
                   onPress={() => { logEntries(usualEntries(data, u.n, meal)); onClose() }} />
               ))}
             </List>
           </>
         )}
-        {rc.length > 0 && <><Lbl>{ADD_FOOD.recent}</Lbl><List>{rc.map(({ f, i }) => foodRow(f, i))}</List></>}
+        {rc.length > 0 && <><Lbl>{ADD_FOOD.recent}</Lbl><List style={{ marginBottom: 8 }}>{rc.map(({ f, i }) => foodRow(f, i))}</List></>}
         {cf.length > 0 && (
           <>
             <Lbl>{ADD_FOOD.myFoods}</Lbl>
             {/* dup-3: one quiet row while two saved foods look the same */}
-            {pair && <List><Row title={DUP.looksSame} sub={pair[0].n} square={{ icon: 'copy', fill: t.tintSoft, ink: t.tint }} onPress={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></List>}
-            <List>
+            {pair && <List style={{ marginBottom: 8 }}><Row title={DUP.looksSame} sub={pair[0].n} square={{ icon: 'copy', fill: t.tintSoft, ink: t.tint }} onPress={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></List>}
+            <List style={{ marginBottom: 8 }}>
               {cf.map((f, ci) => foodRow(f, mineIndex(ci), <NavBtn icon="x" muted label={ADD_FOOD.deleteFood(f.n)} onPress={() => confirmDelete(f, ci)} />))}
             </List>
             {pair && <Foot>{ADD_FOOD.pairFoot}</Foot>}
           </>
         )}
-        {common.length > 0 && <><Lbl>{ADD_FOOD.common}</Lbl><List>{common.map((f, i) => foodRow(f, i))}</List></>}
+        {common.length > 0 && <><Lbl>{ADD_FOOD.common}</Lbl><List style={{ marginBottom: 8 }}>{common.map((f, i) => foodRow(f, i))}</List></>}
       </>
     )
   } else {
     const { recipes, foods } = searchFoods(data, all, query)
     body = (
       <>
-        {recipes.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List>{recipes.map((o) => recipeRow(o.ri))}</List></>}
-        {foods.length > 0 && <><Lbl>{ADD_FOOD.foods}</Lbl><List>{foods.map((o) => foodRow(o.f, o.i))}</List></>}
+        {recipes.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List style={{ marginBottom: 8 }}>{recipes.map((o) => recipeRow(o.ri))}</List></>}
+        {foods.length > 0 && <><Lbl>{ADD_FOOD.foods}</Lbl><List style={{ marginBottom: 8 }}>{foods.map((o) => foodRow(o.f, o.i))}</List></>}
         {!recipes.length && !foods.length && <Empty>{ADD_FOOD.nothingMatches(q.trim())}{'\n'}{ADD_FOOD.eatingOut}</Empty>}
       </>
     )
@@ -166,7 +166,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
         right={<NavBtn icon="barcode" label={SCAN_ENTRY.barcode} onPress={toScan('scan')} style={{ paddingVertical: 4, paddingHorizontal: 2 }} />} />
       <View style={{ marginTop: 10, marginBottom: 2 }}><MealSeg value={meal} onChange={setMeal} /></View>
       {body}
-      <List icons style={{ marginTop: 18 }}>
+      <List icons style={{ marginTop: 18, marginBottom: 8 }}>
         <Row title={ADD_FOOD.quickEstimate} sub={ADD_FOOD.quickEstimateS} square={{ icon: 'bolt', fill: t.mind }} onPress={() => go({ kind: 'quick' })} />
         <Row title={SCAN_ENTRY.barcode} sub={online ? SCAN_ENTRY.barcodeSub : SCAN_ENTRY.barcodeSubOffline} square={{ icon: 'barcode', fill: t.tint }} onPress={toScan('scan')} />
         {LABEL_SCAN_ENABLED && (online
