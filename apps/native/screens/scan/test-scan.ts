@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * `npm run test:scan` (from apps/native): the scan stream's logic against the web's, with fixtures
  * and no phone. Every network call is answered in memory; the real Supabase project and Open Food
@@ -28,6 +29,8 @@ import { QUALITY_EDGE, QUALITY_LIMITS } from '@/core/domain/labelQuality'
 import { resolveBarcode, type LookupDeps, type ScanOutcome } from '@/data/scanLookup'
 import { edgeOf, jpegSteps, MAX_BYTES } from './photoSize'
 import { failNotice, readPhotos, typedDraft, type ReadDeps, type ReadInput } from '@/data/labelRead'
+
+import { readFileSync, readdirSync } from 'node:fs'
 
 let failed = 0
 let passed = 0
@@ -273,12 +276,36 @@ async function reads() {
   check('typed fallback keeps the barcode', typedDraft({ barcode: '5000157024671', taken: [] }).barcode === '5000157024671')
 }
 
+/* ---------------- 4. no EXIF or GPS leaves the phone (compliance: blocking) ---------------- */
+
+/**
+ * The strip happens in Swift (ImageIO), which can't run here, so this guards the code that does it:
+ * the bytes sent are always ImageIO's re-encode of a decoded image with no metadata, and nothing
+ * else ever reaches the read. The device build checks the result itself (README: EXIF check).
+ */
+function exifStrip() {
+  const ios = 'modules/tilo-camera/ios/'
+  const swift = readdirSync(ios).filter((f) => f.endsWith('.swift')).map((f) => readFileSync(ios + f, 'utf8')).join('\n')
+  const tmp = readFileSync(ios + 'TemporaryPhotos.swift', 'utf8')
+  const mod = readFileSync(ios + 'TiloCameraModule.swift', 'utf8')
+  const adds = [...swift.matchAll(/CGImageDestinationAddImage\w*\(([^\n]*)\)/g)]
+  check('one place encodes JPEGs: CGImageDestinationAddImage with the compression quality only', adds.length === 1 && /^dest, image, \[kCGImageDestinationLossyCompressionQuality: step\[1\]\] as CFDictionary$/.test(adds[0][1]), adds.map((m) => m[0]))
+  check('the image encoded is decoded pixels (a thumbnail), never the source with its properties', /let image = CGImageSourceCreateThumbnailAtIndex\(src/.test(tmp) && !/CGImageDestinationAddImageFromSource|CGImageDestinationCopyImageSource|CGImageDestinationAddImageAndMetadata|CGImageDestinationSetProperties/.test(swift))
+  check('no EXIF, GPS or TIFF dictionary is written anywhere', !/kCGImageProperty(Exif|GPS|TIFF|IPTC)Dictionary/.test(swift) && !/kCGImageDestinationMetadata|kCGImageMetadataShouldExclude/.test(swift))
+  check('what JS gets as base64 is that re-encode', /"base64": out\.data\.base64EncodedString\(\)/.test(mod) && (swift.match(/base64EncodedString\(/g) || []).length === 1)
+  const photo = readFileSync('screens/scan/labelPhoto.ts', 'utf8')
+  check('every photo the app sends goes through preparePhoto (camera and library alike)',
+    /return \{ uri: p\.uri, base64: p\.base64,/.test(photo) && (photo.match(/base64:/g) || []).length === 2
+      && /captureShot[\s\S]*?shotFrom\(pic\.uri, kind\)/.test(photo) && /pickShot[\s\S]*?shotFrom\(p\.uri, kind\)/.test(photo))
+}
+
 async function main() {
   formats()
   await chain()
   quality()
   sizes()
   await reads()
+  exifStrip()
   globalThis.fetch = realFetch
   console.log(`${failed ? 'FAIL' : 'PASS'} scan: ${passed} passed, ${failed} failed`)
   if (failed) throw new Error(`${failed} scan check(s) failed`)

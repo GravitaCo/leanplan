@@ -40,6 +40,10 @@ the camera's own Y (Rec. 601, as the web's `toGray`).
   written on the main thread: plain Ints, a benign race; move them behind the queue if the
   sanitizer complains.
 - The reported photo width and height follow the EXIF orientation (portrait for 5 to 8).
+- EXIF check (compliance, blocking): take a label photo with Location Services on for the Camera
+  app's own photos and pick one from the library; the base64 `preparePhoto` returns, decoded, has no
+  EXIF, GPS or TIFF block (`CGImageSourceCopyPropertiesAtIndex` shows only pixel size and colour).
+  `test:scan` guards the code path in the meantime.
 - `preparePhoto`'s ImageIO thumbnail at the full long edge keeps full detail, and a HEIC library
   photo opens (CGImageSource reads HEIC).
 - `pickPhoto` presents from `currentViewController()` while a React Native modal sheet is up.
