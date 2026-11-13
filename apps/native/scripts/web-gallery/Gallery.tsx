@@ -7,7 +7,7 @@ import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { connectionLabel } from '@/core/domain/connection'
 import { dayStat, weekOf } from '@/core/domain/insights'
-import { Icon } from '@/ui/icons'
+import { Chevron, Icon } from '@/ui/icons'
 import { ICONS, type IconName } from '@/ui/iconData'
 import { BackButton, BareSheet, CatHead, Disclosure, PageHeader, Seg, SettingRow, Sheet, Toggle } from '@/ui/primitives'
 import { connectionLine } from '@/ui/ConnectionPill'
@@ -233,6 +233,36 @@ export function Gallery() {
           <button className="chip">Turn it off</button>
           <button className="chip on" aria-pressed>Breakfast<small>7 to 10 am</small></button>
           <button className="chip" aria-pressed={false}>Lunch<small>12 to 2 pm</small></button>
+        </div>
+      </Sec>
+
+      <Sec id="text" title="Lbl · GrpH · Foot · Sub · Prose">
+        <div className="grp-h">This week<small>3 of 5</small></div>
+        <div className="lbl">Notifications</div>
+        <div className="list"><div className="li"><span className="m"><span className="t">A row under a label</span></span></div></div>
+        <div className="foot">Your review shows how often you weighed in. Change it any time.</div>
+        <div className="sub" style={{ marginTop: 12 }}>A secondary line at 15 pt.</div>
+        <div className="prose" style={{ marginTop: 12 }}>
+          <p>{G.prose.p1}</p>
+          <ul>{G.prose.li.map((x) => <li key={x}>{x}</li>)}</ul>
+          <h3>{G.prose.h3}</h3>
+          <p>{G.prose.p2}</p>
+        </div>
+      </Sec>
+
+      <Sec id="rows2" title="Row · act · nested · wrapping rows · sign out">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="list">
+            <button className="li"><div className="m"><div className="t">Push Pull Legs</div><div className="s">3 days a week</div></div><Chevron /></button>
+            <button className="li"><div className="m"><div className="t">Monday</div></div><span className="tr num">Push</span><Chevron /></button>
+            <button className="li act"><Icon name="plus" size={17} /><span>New plan</span></button>
+          </div>
+          <div className="list icons nf-rows">
+            <SettingRow icon="bell" color="var(--mind-fill)" soft label="Supplement reminders" sub="On at 8:00 and 20:00, and quiet from 22:00 to 7:00" right={<Toggle on onChange={() => {}} label="Supplement reminders" />} />
+            <div className="li nf-sub"><span className="m"><span className="t">Show supplement names in reminders</span></span><Toggle on={false} onChange={() => {}} label="Show supplement names in reminders" /></div>
+            <SettingRow icon="moon" color="var(--mind-fill)" soft label="Wind down" value="21:30" onPress={() => {}} />
+          </div>
+          <button className="btn signout">Sign out</button>
         </div>
       </Sec>
 

@@ -17,7 +17,7 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
-import { InIconList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
+import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
 import { BTN, num, tx, useTokens, type Tokens } from '../theme'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
@@ -230,18 +230,52 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
   // a tappable row is a <button> on the web, whose text the browser doesn't track
   const tr = btn ? BTN : undefined
   const icons = useContext(InIconList)
+  const wrap = useContext(InWrapList)
   const hasValue = value != null
+  // .list.icons: the label keeps its width (at most 72%) and the value takes the rest, truncating;
+  // .list.nf-rows: the label takes the row, its sub wraps, and the value keeps its full width
+  const m: ViewStyle = wrap ? { flex: 1, minWidth: 0 } : icons && hasValue ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }
   return (
     <>
-      <View style={icons && hasValue ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
+      <View style={m}>
         <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), { color: t.label }]}>{label}</Text>
-        {sub != null && <Text numberOfLines={1} style={[tx(13, 400, 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
+        {sub != null && <Text numberOfLines={wrap ? undefined : 1} style={[tx(13, 400, wrap ? 1.35 : 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
       </View>
       {hasValue && (
-        <Text numberOfLines={1} style={[tx(icons ? 15 : 17), num, { color: t.label2 }, icons && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>
+        <Text numberOfLines={1} style={[tx(icons ? 15 : 17), num, { color: t.label2 }, icons && !wrap && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>
       )}
     </>
   )
+}
+
+/**
+ * `.li`: a plain grouped-list row: a title, an optional sub, then a value, a right control or (when
+ * tappable) a chevron. `act` is `.li.act` (a tinted action row with a leading icon, "New plan");
+ * `nested` is `.li.nf-sub` (a sub-row under a settings row in a `List icons`: 58 in, title wraps).
+ */
+export function Row({ title, sub, value, right, onPress, chevron, act, icon, nested, label }: {
+  title: string; sub?: ReactNode; value?: ReactNode; right?: ReactNode; onPress?: () => void
+  /** default: shown when the row is tappable and has no right control */
+  chevron?: boolean; act?: boolean; icon?: IconName; nested?: boolean; label?: string
+}) {
+  const t = useTokens()
+  const tr = onPress ? BTN : undefined
+  const fg = act ? t.tint : t.label
+  const body = (
+    <>
+      {icon && <Icon name={icon} color={fg} />}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={nested ? undefined : 1} style={[tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
+        {sub != null && <Text numberOfLines={1} style={[tx(13, 400, 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
+      </View>
+      {value != null && <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), num, { color: t.label2 }]}>{value}</Text>}
+      {right ?? ((chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />)}
+    </>
+  )
+  const s: ViewStyle = { ...LI, ...(nested ? { paddingLeft: 58 } : null) }
+  return onPress
+    ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View style={s}>{body}</View>
 }
 
 /** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */
