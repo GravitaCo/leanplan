@@ -71,7 +71,7 @@ async function open(browser, url, state, scheme) {
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   // native opens on its Plan route, so the other tabs (kept mounted by the navigator) stay unrendered
-  const native = url === NATIVE
+  const native = url === NATIVE && !process.env.BOTH_WEB
   await page.goto(native ? url + 'plan' : url)
   if (!native) {
     await page.getByText('This week', { exact: true }).first().waitFor({ timeout: 30000 })
@@ -103,7 +103,7 @@ const CASES = [
   ['none · a day of the week', 'none', [tap(/^Monday: /)]],
   ['none · a rest day', 'none', [tap(/^Sunday: /)]],
   ['none · workouts sheet', 'none', [tapText('Workouts')]],
-  ['none · a workout', 'none', [tap(/^Monday: /), tap(/^Push/)]],
+  ['none · a workout', 'none', [tap(/^Monday: /), tapText('View')]],
   ['none · new if-then plan', 'none', [tapText('New plan')]],
   ['none · edit if-then plan', 'none', [tapText('When I get home from work hungry')]],
   ['none · guide: the honest basics', 'none', [tapText('The honest basics')]],

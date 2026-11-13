@@ -1,2 +1,2 @@
-import { PlanTab } from '../../screens/plan'
-export default function Screen() { return <PlanTab /> }
+import { Placeholder } from '../../lib/Placeholder'
+export default function Screen() { return <Placeholder title="Plan" stream="Plan" /> }
