@@ -656,4 +656,38 @@ export const DEMOS = {
       { at: 9.45, kind: 'squeeze', rep: 2 },
     ],
   },
+  // Benn's keepers from OpenArt Unsorted, uploaded to Bunny with their names. Timed by frame-to-frame motion (8 fps)
+  // and checked against frames every 0.5 s. Hammer curl: Seedance 2.5 text-to-video (demonstrator W5), side three-quarter.
+  hammerCurl: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/f61a0b3b-0e4f-4d6c-afe3-a9d70f46fb6b/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/f61a0b3b-0e4f-4d6c-afe3-a9d70f46fb6b/thumbnail.jpg',
+    durationSec: 10.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.25, kind: 'lift', rep: 1 },
+      { at: 1.9, kind: 'squeeze', rep: 1 },
+      { at: 2.6, kind: 'lower', rep: 1 },
+      { at: 5.0, kind: 'stretch', rep: 1 },
+      { at: 5.85, kind: 'lift', rep: 2 },
+      { at: 7.4, kind: 'squeeze', rep: 2 },
+      { at: 8.1, kind: 'lower', rep: 2 },
+    ],
+  },
+  // Bodyweight squat: Seedance 2.5 text-to-video, front-on, arms reaching forward for balance. About 3.4 s down.
+  bodyweightSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/b080db62-b21d-4c6c-8aee-63a1d4dcddbe/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/b080db62-b21d-4c6c-8aee-63a1d4dcddbe/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.15, kind: 'lower', rep: 1 },
+      { at: 3.5, kind: 'stretch', rep: 1 },
+      { at: 4.75, kind: 'lift', rep: 1 },
+      { at: 7.3, kind: 'ready', rep: 2 },
+      { at: 8.3, kind: 'lower', rep: 2 },
+      { at: 11.3, kind: 'stretch', rep: 2 },
+      { at: 12.4, kind: 'lift', rep: 2 },
+      { at: 14.9, kind: 'ready' },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>

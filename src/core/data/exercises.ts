@@ -292,7 +292,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'hammer-curl', n: 'Hammer curl', modality: 'strength', log: 'weight-reps',
     equipment: ['dumbbell'], difficulty: 'beginner', defaultRx: '2–3 × 10–12',
-    pattern: 'isolation', primary: 'biceps', secondary: ['forearms'],
+    pattern: 'isolation', primary: 'biceps', secondary: ['forearms'], video: DEMOS.hammerCurl,
     timeCost: { setupSec: 20, setSec: 40 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['next-weight'],
     cue: "Stand tall with dumbbells by your sides, palms facing each other. Curl them up with your elbows still, then lower slowly. Don't swing your body or let the elbows drift forward.",
@@ -446,7 +446,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'bodyweight-squat', n: 'Bodyweight squat', modality: 'calisthenics', log: 'reps',
     equipment: [], difficulty: 'beginner', defaultRx: '3 × 12–15',
-    pattern: 'squat', primary: 'quads', secondary: ['glutes'],
+    pattern: 'squat', primary: 'quads', secondary: ['glutes'], video: DEMOS.bodyweightSquat,
     progression: { chain: 'squat', step: 2 },
     timeCost: { setupSec: 10, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['reps', 'chain'], ladders: [{ chain: 'squat-home', step: 2 }],
