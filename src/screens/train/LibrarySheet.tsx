@@ -8,22 +8,12 @@ import { rankByName } from '@/core/domain/search'
 import { howToLink } from '@/core/domain/workout'
 import { BackButton, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
-import { CARE_DISCLAIMER } from './SwapSheet'
-import { RED_FLAG } from './HoldTimer'
+import { CARE_DISCLAIMER, LIB_KIT, RED_FLAG, fitsKit, inModality } from './trainCopy'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb, useClipPreview } from './Thumb'
 
-/** Kit filters: the few that decide most of what someone can do. */
-const KIT: [Equipment | 'none', string][] = [['none', 'No equipment'], ['dumbbell', 'Dumbbells'], ['band', 'Band'], ['mat', 'Mat'], ['machine', 'Gym machines']]
-
-function fits(x: Exercise, kit: Equipment | 'none' | null): boolean {
-  if (!kit) return true
-  if (kit === 'none') return x.equipment.length === 0 || x.equipment.every((q) => q === 'bodyweight' || q === 'mat')
-  if (kit === 'machine') return x.equipment.some((q) => q === 'machine' || q === 'cable' || q === 'cardio-machine')
-  return x.equipment.includes(kit)
-}
-
-const inModality = (x: Exercise, m: Modality) => x.modality === m || !!x.also?.includes(m)
+const KIT = LIB_KIT
+const fits = fitsKit
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const [demo, setDemo] = useState(false)

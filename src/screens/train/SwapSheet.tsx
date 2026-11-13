@@ -4,10 +4,9 @@ import { exById } from '@/core/domain/library'
 import { alternativesFor } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { Sheet } from '@/ui/primitives'
+import { CARE_DISCLAIMER } from './trainCopy'
 
-/** The shared part of the §4.0.4 disclaimer; each place adds its own first sentence (mental-performance). */
-export const CARE_DISCLAIMER =
-  'This is general fitness guidance, not medical advice. If you have pain, an injury or a health condition, check with your GP or a physiotherapist before starting or changing exercise. Stop any movement that causes pain.'
+export { CARE_DISCLAIMER } from './trainCopy'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'

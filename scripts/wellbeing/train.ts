@@ -7,6 +7,10 @@ import { exById } from '@/core/domain/library'
 import { setCount, slotsOf, targetFor } from '@/core/domain/guided'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { CHOICES } from '@/screens/train/Preview'
+import { CHOICES as SHARED_CHOICES } from '@/screens/train/trainCopy'
+import { NO_TRAIN_UI, previewRows, sessSub, trainDay } from '@/screens/train/trainModel'
+import { loadStateFrom } from '@/data/persistence'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { HARD_DAY_COPY, HARD_DAY_STRINGS, easierAim, hardDayChoices, roughShorter, swapForWorkout, swapTile } from '@/screens/train/hardDay'
 
 const t = (id: string, rx = '3 × 10–12'): ExerciseTemplate => ({ id, n: exById(id)?.n ?? id, t: rx, cue: '' })
@@ -56,6 +60,27 @@ export function trainSuite(): number {
   ok('hard-day strings pass mindCopyIssues', lint.length === 0, lint.join(' | '))
   ok('no em dashes', HARD_DAY_STRINGS.every((s) => !s.includes('—')))
   ok('B3.17 says jump rope (new-copy FINAL)', HARD_DAY_COPY.roughNote.includes('jump rope'))
+
+  /* ---------- the shared day model (trainModel: web and native Train read it) ---------- */
+  ok('Preview re-exports the shared choices', CHOICES === SHARED_CHOICES)
+  const S = loadStateFrom(null)
+  const MON = '2026-11-09', TUE = '2026-11-10'
+  const m0 = trainDay(S, MON, NO_TRAIN_UI)
+  ok('Monday plans Legs from the schedule', m0.planned.join() === 'Legs' && m0.dayName === 'Monday' && !m0.restDay)
+  ok('row line: exercises and sets', m0.rows[0]?.sub === '5 exercises · 14–15 sets' && m0.rows[0].show && !m0.rows[0].inProgress, m0.rows[0]?.sub)
+  ok('Cardio row line is the prescription', trainDay(S, TUE, NO_TRAIN_UI).rows[0]?.sub === WORKOUTS.Cardio.ex[0].t)
+  ok('a pick for one workout applies to it only', trainDay(S, MON, { ...NO_TRAIN_UI, pick0: { c: 'shorter', k: 'Legs' } }).choiceFor('Legs') === 'shorter'
+    && trainDay(S, MON, { ...NO_TRAIN_UI, pick0: { c: 'shorter', k: 'Push' } }).choiceFor('Legs') === 'planned')
+  const legs0 = WORKOUTS.Legs.ex[0].id!
+  const swapped = m0.withSwap('Legs', 0, 'goblet-squat')
+  const m1 = trainDay(S, MON, { ...NO_TRAIN_UI, ...swapped })
+  ok('a swap shows in the opened version', m1.openView('Legs').slots[0]?.swapped === true && m1.openView('Legs').swaps[0] === 'goblet-squat', JSON.stringify(m1.openView('Legs').swaps))
+  const back = m1.withSwap('Legs', 0, legs0)
+  ok('Undo removes the swap' + (WELLBEING_ENABLED ? ' and keeps the slot as planned' : ''), back.swapsBy.Legs[0] == null && (WELLBEING_ENABLED ? back.keepBy.Legs?.includes(0) === true : true), JSON.stringify(back))
+  const v = m0.openView('Legs')
+  const pr = previewRows(v.slots, S.days, MON, undefined, false, null)
+  ok('preview rows: one per slot, nothing logged', pr.length === v.slots.length && pr.every((r) => r.done === 0))
+  ok('a done session line', sessSub({ id: 'x', at: 0, modality: 'cardio', title: 'Brisk walk', mins: 30, cardio: { key: 'Brisk walk', km: 2.5 } } as never) === 'Cardio · 30 min · 2.5 km', sessSub({ id: 'x', at: 0, modality: 'cardio', title: 'Brisk walk', mins: 30, cardio: { key: 'Brisk walk', km: 2.5 } } as never))
 
   let bad = 0
   for (const [n, v, info] of checks) { if (!v) bad++; console.log(v ? 'PASS' : 'FAIL', 'wellbeing train: ' + n + (v || !info ? '' : ` (${info})`)) }
