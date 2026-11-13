@@ -19,12 +19,13 @@ import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LegalLink } from './legal/LegalDoc'
 import { LEGAL_LABEL } from '@/copy/legal'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
+import { ACCOUNT_ROW, BACKUP, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, directionLabel } from './profile/profileModel'
-import { IMPORT, PROFILE as P, SIGN_OUT } from '@/copy/profile'
+import { PROFILE as P } from '@/copy/profile'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
@@ -371,24 +372,24 @@ export function ProfileScreen() {
       {WELLBEING_ENABLED && <YourTimes />}
       <div className="foot">{P.notify.iphone}</div>
 
-      <div className="lbl">{P.groups.account}</div>
+      <div className="lbl">{ACCOUNT_ROW.heading}</div>
       <div className="list icons">
-        <Disclosure icon="person" color={GRAY} soft label={P.account.row} open={open === 'account'} onToggle={() => toggle('account')}>
-          <div className="sub" style={{ fontSize: 13 }}>{P.account.signedInAs}</div>
-          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? P.account.notSyncing : email}</div>
-          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>{P.account.changeHint}</div>}
+        <Disclosure icon="person" color={GRAY} soft label={ACCOUNT_ROW.account} open={open === 'account'} onToggle={() => toggle('account')}>
+          <div className="sub" style={{ fontSize: 13 }}>{ACCOUNT_ROW.signedInAs}</div>
+          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</div>
+          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>{ACCOUNT_ROW.changeFoot}</div>}
         </Disclosure>
         <SettingRow icon="heart" color={MINDF} soft label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
         {/* AI features: hidden until one ships (the privacy policy doesn't describe AI processing yet,
             so a consent given here wouldn't be informed) */}
         {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => setAiOpen(true)} />}
-        <Disclosure icon="cloud" color={GRAY} soft label={P.backup.row} value={P.backup.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
+        <Disclosure icon="cloud" color={GRAY} soft label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
-            ? P.backup.phoneOnly
-            : <>{P.backup.stored}{authed ? P.backup.syncs : syncPaused ? P.backup.paused : ''}{P.backup.exportNote}</>}</div>
+            ? BACKUP.phoneOnly
+            : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</div>
           <div className="grid2">
-            <button className="btn gray" onClick={() => exportBackup(data)}>{P.backup.export}</button>
-            <button className="btn gray" onClick={() => fileRef.current?.click()}>{P.backup.import}</button>
+            <button className="btn gray" onClick={() => exportBackup(data)}>{BACKUP.exportBtn}</button>
+            <button className="btn gray" onClick={() => fileRef.current?.click()}>{BACKUP.importBtn}</button>
           </div>
           {resumeCopy && (
             <div style={{ marginTop: 12 }}>
@@ -403,10 +404,10 @@ export function ProfileScreen() {
             const file = input.files?.[0]
             input.value = '' // so picking the same file again still fires onChange
             if (!file) return
-            try { setPendingBackup(await readBackup(file)) } catch { showToast(P.backup.invalid) }
+            try { setPendingBackup(await readBackup(file)) } catch { showToast(BACKUP.invalid) }
           }} />
         </Disclosure>
-        <SettingRow icon="x" color={GRAY} soft label={P.deleteRow} onPress={() => setView('delete')} />
+        <SettingRow icon="x" color={GRAY} soft label={ACCOUNT_ROW.deleteRow} onPress={() => setView('delete')} />
       </div>
 
       <div className="lbl">{P.groups.testing}</div>
@@ -421,11 +422,11 @@ export function ProfileScreen() {
             <p style={{ margin: 0 }}>{P.about.body}</p>
           </div>
         </Disclosure>
-        <Disclosure icon="key" color={GRAY} soft label={P.privacy.row} value={health.granted ? undefined : P.privacy.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+        <Disclosure icon="key" color={GRAY} soft label={PRIVACY_ROW.label} value={health.granted ? undefined : PRIVACY_ROW.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? P.privacy.agreedOn(healthAt) : healthStatus === 'off' ? P.privacy.withdrawn : null}
-              {consentLetsSync(data) ? P.privacy.stored : P.privacy.phoneOnly}{P.privacy.neverSold}
+              {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : null}
+              {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
             </p>
           </div>
           {SHARED_PRODUCTS_ENABLED && (
@@ -448,14 +449,14 @@ export function ProfileScreen() {
           {/* the same flows as the Health data and Delete account rows above (one of each; the
               legal texts point here, at Profile, then Privacy) */}
           {health.granted
-            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>{P.privacy.withdraw}</button>
-            : <button className="btn gray" onClick={agree}>{P.privacy.turnOn}</button>}
-          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>{P.privacy.del}</button>
+            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>{PRIVACY_ROW.withdraw}</button>
+            : <button className="btn gray" onClick={agree}>{PRIVACY_ROW.turnBackOn}</button>}
+          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>{ACCOUNT_ROW.deleteRow}</button>
         </Disclosure>
       </div>
 
-      <button className="btn signout" onClick={() => setSignOutOpen(true)}>{P.signOut}</button>
-      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>{P.wellness}</div>
+      <button className="btn signout" onClick={() => setSignOutOpen(true)}>{SIGN_OUT.title}</button>
+      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>{PRIVACY_ROW.wellness}</div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
@@ -472,15 +473,14 @@ export function ProfileScreen() {
  *  cloud copy every device pulls), so say what's in it and what changes. */
 function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
   const b = backupSummary(backup)
-  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
-    <Sheet title={IMPORT.title} onClose={onClose}>
+    <Sheet title={BACKUP.importTitle} onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
-        <p>{IMPORT.has(n(b.days, 'day', 'days'), span, n(b.foods, 'saved food', 'saved foods'), n(b.recipes, 'recipe', 'recipes'), n(b.workouts, 'workout', 'workouts'))}</p>
-        <p>{IMPORT.replaces(b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : '', !!(b.foods || b.recipes), !!b.workouts)}</p>
+        <p>{BACKUP.has(b, span)}</p>
+        <p>{BACKUP.replaces(b)}</p>
       </div>
-      <div className="stack"><button className="btn tinted" onClick={onImport}>{IMPORT.go}</button></div>
+      <div className="stack"><button className="btn tinted" onClick={onImport}>{BACKUP.importBtn}</button></div>
     </Sheet>
   )
 }
@@ -505,13 +505,13 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         {phoneOnly ? (
           <p>{SIGN_OUT.phoneOnly}</p>
-        ) : <p>{SIGN_OUT.keeps}</p>}
+        ) : <p>{SIGN_OUT.stays}</p>}
         {!phoneOnly && unsynced > 0 && <p>{SIGN_OUT.unsynced(unsynced)}</p>}
       </div>
       <div className="stack">
-        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.go}</button>
+        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title}</button>
         {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>{SIGN_OUT.exportCopy}</button>}
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeDelete : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove}</button>
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeSure : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove}</button>
       </div>
     </Sheet>
   )

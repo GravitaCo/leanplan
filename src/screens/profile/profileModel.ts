@@ -9,7 +9,7 @@ import { wellbeingRouted } from '@/core/domain/onboarding'
 import { pillarsOn } from '@/screens/today/summary'
 import { healthSyncPaused, latestConsent } from '@/data/consent'
 import type { PersistedState } from '@/data/persistence'
-import { PROFILE } from '@/copy/profile'
+import { HEALTH_DATA } from '@/copy/account'
 
 export const GOALS: { value: Goal; label: string }[] = [
   { value: 'lose-fat', label: 'Lose fat' },
@@ -48,4 +48,4 @@ export function healthStatusOf(data: PersistedState): HealthStatus {
   const r = latestConsent(data, 'health')
   return r ? (r.granted ? 'on' : 'off') : healthSyncPaused(data) ? 'paused' : 'unasked'
 }
-export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = PROFILE.healthStatus
+export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = HEALTH_DATA.status

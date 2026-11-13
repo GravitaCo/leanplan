@@ -15,6 +15,7 @@ import { setSession } from '@/data/supabase'
 import { todayStr } from '@/core/domain/date'
 import { checkPushToken, unsubscribePush } from '../lib/platform/push'
 import { toFront } from './fakes/react-native'
+import { cancelRestEnd, REST_ID, scheduleRestEnd } from '../lib/platform/restTimer'
 
 let failed = 0
 let passed = 0
@@ -167,6 +168,26 @@ async function main() {
   await checkPushToken()
   check('launch with permission turned off: nothing saved', pushWrites().length === 0)
   await unsubscribePush()
+
+  /* ---------- the rest timer for N7 (outside the reminder budget and log) ---------- */
+  reset()
+  await setPerm('undetermined')
+  check('rest timer: without permission nothing is scheduled, and it never asks',
+    (await scheduleRestEnd(90, { title: 'Rest over', body: 'Set 2 of 3' })) === false && fake.asked === 0 && fake.scheduled.length === 0)
+  await setPerm('granted')
+  const ok = await scheduleRestEnd(90, { title: 'Rest over', body: 'Set 2 of 3' })
+  const rest = fake.scheduled[0]
+  check('rest timer: one alert at the time given, sound on by default, interruption level active, no badge, its own kind',
+    ok && fake.scheduled.length === 1 && rest.identifier === REST_ID && (rest.trigger as { seconds?: number })?.seconds === 90
+    && rest.content?.sound === 'default' && rest.content?.interruptionLevel === 'active' && !('badge' in (rest.content ?? {})) && JSON.stringify(rest.content?.data) === JSON.stringify({ kind: 'rest' }), rest)
+  await scheduleRestEnd(30, { title: 'Rest over', body: 'Set 3 of 3', sound: false })
+  check('rest timer: scheduling again replaces it (one at a time); Sound off is a silent banner',
+    fake.scheduled.length === 1 && fake.scheduled[0].content?.sound === false && (fake.scheduled[0].trigger as { seconds?: number })?.seconds === 30)
+  fake.calls.length = 0
+  await cancelRestEnd()
+  check('rest timer: cancel unschedules it and clears it from the tray', fake.scheduled.length === 0 && fake.calls.join() === `cancel:${REST_ID},dismiss:${REST_ID}`)
+  check('rest timer: lengths outside 1 s to an hour, or no title, schedule nothing',
+    !(await scheduleRestEnd(0, { title: 'x', body: '' })) && !(await scheduleRestEnd(3601, { title: 'x', body: '' })) && !(await scheduleRestEnd(60, { title: ' ', body: '' })) && fake.scheduled.length === 0)
 
   console.log(`reminders through the store: ${passed} passed, ${failed} failed`)
   process.exit(failed ? 1 : 0)

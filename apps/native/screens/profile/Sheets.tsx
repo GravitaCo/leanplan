@@ -10,7 +10,8 @@ import { fmtDate } from '@/core/domain/date'
 import { HANDS, handGrams } from '@/core/domain/estimate'
 import { consentLetsSync, hasExistingData } from '@/data/consent'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
-import { IMPORT, PROFILE as P, SIGN_OUT } from '@/copy/profile'
+import { PROFILE as P } from '@/copy/profile'
+import { BACKUP, SIGN_OUT } from '@/copy/account'
 import { dayName } from '@/screens/review/reviewModel'
 import { tx, useTokens } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
@@ -60,14 +61,14 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
-        <Sub style={[PROSE, { marginBottom: 10 }]}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.keeps}</Sub>
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.stays}</Sub>
         {!phoneOnly && unsynced > 0 && <Sub style={[PROSE, { marginBottom: 10 }]}>{SIGN_OUT.unsynced(unsynced)}</Sub>}
       </View>
       <View style={{ gap: 8, marginTop: 6 }}>
-        <Btn kind="tinted" disabled={!!busy} title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.go} onPress={() => void go(false)} />
+        <Btn kind="tinted" disabled={!!busy} title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title} onPress={() => void go(false)} />
         {phoneOnly && <Btn kind="gray" disabled={!!busy} title={SIGN_OUT.exportCopy} onPress={() => exportBackup(data)} />}
         <Btn kind="danger" disabled={!!busy} onPress={() => void go(true)}
-          title={busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeDelete : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove} />
+          title={busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeSure : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove} />
       </View>
     </Sheet>
   )
@@ -76,15 +77,14 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
 /** Confirm step before a backup replaces data: say what's in it and what changes. */
 export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
   const b = backupSummary(backup)
-  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
-    <Sheet title={IMPORT.title} onClose={onClose}>
+    <Sheet title={BACKUP.importTitle} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
-        <Sub style={[PROSE, { marginBottom: 10 }]}>{IMPORT.has(n(b.days, 'day', 'days'), span, n(b.foods, 'saved food', 'saved foods'), n(b.recipes, 'recipe', 'recipes'), n(b.workouts, 'workout', 'workouts'))}</Sub>
-        <Sub style={[PROSE, { marginBottom: 10 }]}>{IMPORT.replaces(b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : '', !!(b.foods || b.recipes), !!b.workouts)}</Sub>
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{BACKUP.has(b, span)}</Sub>
+        <Sub style={[PROSE, { marginBottom: 10 }]}>{BACKUP.replaces(b)}</Sub>
       </View>
-      <View style={{ marginTop: 6 }}><Btn kind="tinted" title={IMPORT.go} onPress={onImport} /></View>
+      <View style={{ marginTop: 6 }}><Btn kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
     </Sheet>
   )
 }

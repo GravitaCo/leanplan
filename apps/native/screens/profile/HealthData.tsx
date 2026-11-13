@@ -9,7 +9,7 @@ import { useStore } from '@/store/store'
 import { healthDataSummary, unconsentedCopyLine } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { healthAnswersView } from '@/core/domain/onboarding'
-import { HEALTH_DATA as HD } from '@/copy/profile'
+import { HEALTH_DATA as HD } from '@/copy/account'
 import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW, SUPPORT } from '@/copy/onboardingApp'
 import { healthStatusOf } from '@/screens/profile/profileModel'
 import { tx, useTokens } from '../../lib/theme'
@@ -27,12 +27,12 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, onSupport
   const onboarded = useStore((s) => !!s.data.profile.onboardedAt)
   const answersRow = hasAnswers && !!onAnswers, redoRow = ONBOARDING_ENABLED && !!onRedo
   return (
-    <Sheet title={HD.title} onClose={onClose} left={null} right={<NavBtn title={HD.done} bold onPress={onClose} />}>
+    <Sheet title={HD.title} onClose={onClose} left={null} right={<NavBtn title="Done" bold onPress={onClose} />}>
       <Text style={[tx(15, 400, 1.45), { color: t.label2, paddingHorizontal: 4, paddingBottom: 12 }]}>
         {status === 'on' ? HD.on : status === 'paused' ? HD.paused + unconsentedCopyLine() : status === 'off' ? HD.off : HD.unasked}
       </Text>
       {/* TODO(N1-followup) item 4, Ticks: HEALTH_TICKS (src/screens/onboarding/Consent.tsx Ticks; N2 moves the words to src/copy) */}
-      <View style={{ alignSelf: 'flex-start', marginTop: 8 }}><LinkBtn title={HD.privacyNotice} onPress={openPrivacyNotice} style={tx(15)} /></View>
+      <View style={{ alignSelf: 'flex-start', marginTop: 8 }}><LinkBtn title={HD.readPrivacy} onPress={openPrivacyNotice} style={tx(15)} /></View>
       {(answersRow || redoRow) && (
         <List style={{ marginTop: 12 }}>
           {answersRow && <Row title={HEALTH_ANSWERS_ROW} onPress={onAnswers} />}

@@ -28,10 +28,8 @@ export function openPrivacyNotice(): void { pending('Privacy notice') }
 /** Delete account (boards ob6-5, ob6-6): the delete view and its typed confirm. */
 export function openDeleteAccount(): void { pending('Delete account') }
 
-/** Privacy's three legal rows, in the web's order, with legal/LegalDoc.tsx's labels (a TSX file the
- *  native bundle can't import; N2 owns the legal screens and moves the labels to src/copy). */
+/** Privacy's three legal rows, in the web's order (labels: src/copy/legal.ts LEGAL_LABEL). */
 export const LEGAL_DOCS: LegalDocId[] = ['privacy', 'terms', 'cookies']
-export const LEGAL_LABEL: Record<LegalDocId, string> = { privacy: 'Privacy policy', terms: 'Terms and conditions', cookies: 'Cookie policy' }
 
 /** Privacy's three legal rows: the published pages on www.tilo.fit, as the web app links out. */
 export function openLegal(id: LegalDocId): void { void Linking.openURL(LEGAL_URLS[id]) }

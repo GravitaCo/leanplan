@@ -9,7 +9,6 @@ import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
 import { healthDataSummary, unconsentedCopyLine } from '@/data/consent'
 import { HEALTH_STATUS_LABEL, healthStatusOf, type HealthStatus } from './profileModel'
-import { HEALTH_DATA as HD } from '@/copy/profile'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -22,6 +21,7 @@ import { NATIONS, type UkNation } from '@/core/data/signposts'
 import { supportList } from './supportRows'
 import { SUPPORT_MIND } from '../mind/copy'
 import { healthAnswersView } from '@/core/domain/onboarding'
+import { DELETE, HEALTH_DATA } from '@/copy/account'
 
 /** The word typed to confirm (board ob6-6). The server's own confirm phrase is sent by the data layer. */
 export const DELETE_WORD = 'DELETE'
@@ -49,7 +49,6 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   const [privacy, setPrivacy] = useState(false)
   const [support, setSupport] = useState(false)
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
-  const n = (x: number, one: string, many: string) => `${x} ${x === 1 ? one : many}`
   // Health check answers (ob7-1), behind the wizard: only when an onboarding answer is kept
   // ("how things are lately" has no row: answerRows)
   const hasAnswers = useStore((s) => ONBOARDING_ENABLED && healthAnswersView(s.data.profile).rows.some((r) => r.kind !== 'baseline'))
@@ -59,29 +58,28 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   const answersRow = hasAnswers && !!onAnswers, redoRow = ONBOARDING_ENABLED && !!onRedo
 
   if (step) {
-    const s = step.summary
-    const parts = [s.weighIns ? n(s.weighIns, 'weigh-in', 'weigh-ins') : '', s.checkins ? n(s.checkins, 'check-in', 'check-ins') : '', s.profileFields ? n(s.profileFields, 'body detail', 'body details') : '', s.trainingPrefs ? n(s.trainingPrefs, 'training preference', 'training preferences') : ''].filter(Boolean)
+    const onPhone = HEALTH_DATA.onPhone(step.summary)
     return (
-      <Sheet title={HD.title} onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
+      <Sheet title={HEALTH_DATA.title} onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
         <div className="prose sub" style={{ padding: '0 4px' }}>
           <p>{step.prompt}</p>
-          {parts.length > 0 && <p style={{ margin: 0 }} className="num">On this phone: {parts.join(', ')}.</p>}
+          {onPhone && <p style={{ margin: 0 }} className="num">{onPhone}</p>}
         </div>
         <div className="stack">
-          <button className="btn gray" onClick={() => { download(); setSaved(true) }}>{saved ? 'Downloaded' : 'Download a copy'}</button>
-          <button className="btn danger" onClick={() => { withdraw(); showToast('Health data removed'); onClose() }}>Remove my health data</button>
+          <button className="btn gray" onClick={() => { download(); setSaved(true) }}>{saved ? HEALTH_DATA.downloaded : HEALTH_DATA.download}</button>
+          <button className="btn danger" onClick={() => { withdraw(); showToast(HEALTH_DATA.removed); onClose() }}>{HEALTH_DATA.remove}</button>
         </div>
       </Sheet>
     )
   }
 
   return (
-    <Sheet title={HD.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>{HD.done}</button>}>
+    <Sheet title={HEALTH_DATA.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
-        {status === 'on' ? HD.on : status === 'paused' ? HD.paused + unconsentedCopyLine() : status === 'off' ? HD.off : HD.unasked}
+        {status === 'on' ? HEALTH_DATA.on : status === 'paused' ? HEALTH_DATA.paused + unconsentedCopyLine() : status === 'off' ? HEALTH_DATA.off : HEALTH_DATA.unasked}
       </div>
       <Ticks items={HEALTH_TICKS} />
-      <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>{HD.privacyNotice}</button>
+      <button className="linkbtn" style={{ marginTop: 8 }} onClick={() => setPrivacy(true)}>{HEALTH_DATA.readPrivacy}</button>
       {(answersRow || redoRow) && (
         <div className="list" style={{ marginTop: 12 }}>
           {answersRow && <button className="li" onClick={onAnswers}><div className="m"><div className="t">{HEALTH_ANSWERS_ROW}</div></div><Chevron /></button>}
@@ -93,10 +91,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
         <button className="li" onClick={() => setSupport(true)}><div className="m"><div className="t">{SUPPORT.row}</div><div className="s">{SUPPORT.rowSub}</div></div><Chevron /></button>
       </div>
       <div className="stack">
-        {status !== 'on' && <button className="btn" onClick={onAgree}>{HD.agree}</button>}
+        {status !== 'on' && <button className="btn" onClick={onAgree}>{HEALTH_DATA.agree}</button>}
         {/* withdraw (download first) whenever there's health data to remove: on, or paused / not
             asked with data on this phone or (after a sync) in the account */}
-        {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>{HD.stop}</button>}
+        {(status === 'on' || (status !== 'off' && canRemove)) && <button className="btn danger" onClick={() => setStep(prepare())}>{HEALTH_DATA.stop}</button>}
       </div>
       {privacy && <PrivacySheet onClose={() => setPrivacy(false)} />}
       {support && <SupportSheet onClose={() => setSupport(false)} />}
@@ -156,7 +154,7 @@ export function AiSheet({ onClose }: { onClose: () => void }) {
 
 /* ---------------- ob6-5 delete account ---------------- */
 
-const GOES = ['Your food log, meals and recipes', 'Workouts and sets', 'Weight, check-ins and notes', 'Plans and settings', 'Your login']
+const GOES = DELETE.goes
 
 export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onBack: () => void; confirmOpen: boolean; setConfirmOpen: (x: boolean) => void }) {
   const data = useStore((s) => s.data)
@@ -164,19 +162,19 @@ export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onB
   const { reason, deleting } = useAccountDeletion()
   return (
     <div className="screen del">
-      <BackButton onClick={onBack} label="Profile" />
-      <h1 className="del-t">Delete your account</h1>
-      <div className="del-lead">This deletes everything, from our servers and from this phone. It can't be undone.</div>
-      <h2 className="del-h">What gets deleted</h2>
+      <BackButton onClick={onBack} label={DELETE.back} />
+      <h1 className="del-t">{DELETE.title}</h1>
+      <div className="del-lead">{DELETE.lead}</div>
+      <h2 className="del-h">{DELETE.goesHeading}</h2>
       <div className="list">{GOES.map((x) => <div className="li" key={x}><div className="m"><div className="t">{x}</div></div></div>)}</div>
       <div className="list">
         <button className="li" onClick={() => exportBackup(data)}>
-          <div className="m"><div className="t">Download a copy first</div><div className="s">A file with everything you've logged</div></div>
+          <div className="m"><div className="t">{DELETE.copyRow}</div><div className="s">{DELETE.copySub}</div></div>
           <Chevron />
         </button>
       </div>
-      <button className="btn delbtn" disabled={!online || deleting} onClick={() => setConfirmOpen(true)}>Delete account</button>
-      <div className="del-foot">{online && reason ? reason : 'Needs a connection, so it deletes everywhere at once.'}</div>
+      <button className="btn delbtn" disabled={!online || deleting} onClick={() => setConfirmOpen(true)}>{DELETE.button}</button>
+      <div className="del-foot">{online && reason ? reason : DELETE.needsConnection}</div>
       {confirmOpen && <DeleteConfirmSheet onClose={() => setConfirmOpen(false)} />}
     </div>
   )
@@ -201,7 +199,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     setMsg(null)
     if (needPw) {
       const r = await reauth({ password })
-      if (r === 'wrong-password') { setMsg('That password doesn’t match this account. Nothing has been deleted.'); return }
+      if (r === 'wrong-password') { setMsg(DELETE.wrongPassword); return }
       if (r === 'offline') { setMsg(DELETE_MESSAGES.offline); return }
       if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     }
@@ -211,29 +209,29 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <BareSheet label="Delete everything?" onClose={onClose} className="delconf">
-      <h2 className="cs-t">Delete everything?</h2>
-      <div className="cs-lead">Your account and all your data will be deleted from Tilo and this phone. You can sign up again any time, but it starts fresh.</div>
+    <BareSheet label={DELETE.confirmTitle} onClose={onClose} className="delconf">
+      <h2 className="cs-t">{DELETE.confirmTitle}</h2>
+      <div className="cs-lead">{DELETE.confirmLead}</div>
       {stale && google && (
         <>
           <div className="cs-msg">{DELETE_MESSAGES.reauth}</div>
-          <button className="btn gray" disabled={!online} onClick={async () => { const r = await reauth({ google: true }); if (r !== 'redirecting') setMsg(r === 'offline' ? DELETE_MESSAGES.offline : DELETE_MESSAGES.error) }}>Sign in with Google again</button>
+          <button className="btn gray" disabled={!online} onClick={async () => { const r = await reauth({ google: true }); if (r !== 'redirecting') setMsg(r === 'offline' ? DELETE_MESSAGES.offline : DELETE_MESSAGES.error) }}>{DELETE.googleAgain}</button>
         </>
       )}
       {needPw && (
         <label className="typed">
-          <span>Your password, to confirm it’s you</span>
+          <span>{DELETE.password}</span>
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
       )}
       <label className="typed">
-        <span>Type DELETE to confirm</span>
+        <span>{DELETE.typed}</span>
         <input value={typed} onChange={(e) => setTyped(e.target.value)} autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} />
       </label>
       {msg && <div className="cs-msg" role="status">{msg}</div>}
       {!online && !msg && <div className="cs-msg" role="status">{DELETE_MESSAGES.offline}</div>}
-      <button className="btn delall" disabled={!ready || (stale && google)} onClick={go}>{deleting ? 'Deleting…' : 'Delete everything'}</button>
-      <button className="linkbtn ob-alt" onClick={onClose}>Cancel</button>
+      <button className="btn delall" disabled={!ready || (stale && google)} onClick={go}>{deleting ? DELETE.deleting : DELETE.confirm}</button>
+      <button className="linkbtn ob-alt" onClick={onClose}>{DELETE.cancel}</button>
     </BareSheet>
   )
 }

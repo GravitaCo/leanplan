@@ -26,6 +26,8 @@ import type { PersistedState } from '@/data/persistence'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { PROFILE as P } from '@/copy/profile'
+import { ACCOUNT_ROW, BACKUP, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
+import { LEGAL_LABEL } from '@/copy/legal'
 import { NOTIFY_COPY } from '@/copy/notify'
 import { profileKcal, suggestionWeight } from '@/screens/profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, HEALTH_STATUS_LABEL, directionLabel, healthStatusOf } from '@/screens/profile/profileModel'
@@ -42,7 +44,7 @@ import { HealthDataSheet } from './HealthData'
 import { SupportSheet } from './Support'
 import { FeedbackSheet } from './Feedback'
 import { HandsSheet, ImportSheet, ReviewDaySheet, SignOutSheet } from './Sheets'
-import { LEGAL_DOCS, LEGAL_LABEL, agreeHealth, exportBackup, openDeleteAccount, openLegal, pickBackup, withdrawHealth } from './n2'
+import { LEGAL_DOCS, agreeHealth, exportBackup, openDeleteAccount, openLegal, pickBackup, withdrawHealth } from './n2'
 import { pushReady } from './n12'
 
 type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
@@ -328,21 +330,21 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         {WELLBEING_ENABLED && <YourTimes />}
         <Foot>{P.notify.iphone}</Foot>
 
-        <Lbl>{P.groups.account}</Lbl>
+        <Lbl>{ACCOUNT_ROW.heading}</Lbl>
         <List icons>
-          <Disclosure soft icon="person" color={GRAY} label={P.account.row} open={open === 'account'} onToggle={() => toggle('account')}>
-            <Text style={[tx(13), { color: t.label2 }]}>{P.account.signedInAs}</Text>
-            <Text style={[tx(17), { color: t.label }]}>{syncPaused ? P.account.notSyncing : email}</Text>
-            {authed && <Foot style={{ paddingHorizontal: 0, paddingTop: 8 }}>{P.account.changeHint}</Foot>}
+          <Disclosure soft icon="person" color={GRAY} label={ACCOUNT_ROW.account} open={open === 'account'} onToggle={() => toggle('account')}>
+            <Text style={[tx(13), { color: t.label2 }]}>{ACCOUNT_ROW.signedInAs}</Text>
+            <Text style={[tx(17), { color: t.label }]}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</Text>
+            {authed && <Foot style={{ paddingHorizontal: 0, paddingTop: 8 }}>{ACCOUNT_ROW.changeFoot}</Foot>}
           </Disclosure>
           <SettingRow soft icon="heart" color={MINDF} label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen(true)} />
           {AI_FEATURES_LIVE && <SettingRow soft icon="bulb" color={GRAY} label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => undefined} />}
-          <Disclosure soft icon="cloud" color={GRAY} label={P.backup.row} value={P.backup.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
-            <Sub style={[PROSE, { marginBottom: 10 }]}>{!consentLetsSync(data) ? P.backup.phoneOnly : P.backup.stored + (authed ? P.backup.syncs : syncPaused ? P.backup.paused : '') + P.backup.exportNote}</Sub>
+          <Disclosure soft icon="cloud" color={GRAY} label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
+            <Sub style={[PROSE, { marginBottom: 10 }]}>{!consentLetsSync(data) ? BACKUP.phoneOnly : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</Sub>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}><Btn kind="gray" title={P.backup.export} onPress={() => exportBackup(data)} /></View>
-              <View style={{ flex: 1 }}><Btn kind="gray" title={P.backup.import} onPress={async () => {
-                try { const got = await pickBackup(); if (got) setPendingBackup(got) } catch { showToast(P.backup.invalid) }
+              <View style={{ flex: 1 }}><Btn kind="gray" title={BACKUP.exportBtn} onPress={() => exportBackup(data)} /></View>
+              <View style={{ flex: 1 }}><Btn kind="gray" title={BACKUP.importBtn} onPress={async () => {
+                try { const got = await pickBackup(); if (got) setPendingBackup(got) } catch { showToast(BACKUP.invalid) }
               }} /></View>
             </View>
             {resumeCopy && (
@@ -352,7 +354,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               </View>
             )}
           </Disclosure>
-          <SettingRow soft icon="x" color={GRAY} label={P.deleteRow} onPress={openDeleteAccount} />
+          <SettingRow soft icon="x" color={GRAY} label={ACCOUNT_ROW.deleteRow} onPress={openDeleteAccount} />
         </List>
 
         <Lbl>{P.groups.testing}</Lbl>
@@ -365,10 +367,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             <Sub style={[PROSE, { marginBottom: 10 }]}><Text style={{ fontFamily: GEIST[700] }}>{P.about.name}</Text>{P.about.lead}</Sub>
             <Sub style={PROSE}>{P.about.body}</Sub>
           </Disclosure>
-          <Disclosure soft icon="key" color={GRAY} label={P.privacy.row} value={health.granted ? undefined : P.privacy.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+          <Disclosure soft icon="key" color={GRAY} label={PRIVACY_ROW.label} value={health.granted ? undefined : PRIVACY_ROW.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
             <Sub style={[PROSE, { marginBottom: 10 }]}>
-              {health.granted && healthAt ? P.privacy.agreedOn(healthAt) : healthStatus === 'off' ? P.privacy.withdrawn : ''}
-              {consentLetsSync(data) ? P.privacy.stored : P.privacy.phoneOnly}{P.privacy.neverSold}
+              {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : ''}
+              {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
             </Sub>
             {SHARED_PRODUCTS_ENABLED && (
               // sp-5: on after a yes at the first shared product (sp-1), off after Not now
@@ -383,14 +385,14 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               {LEGAL_DOCS.map((id) => <Row key={id} title={LEGAL_LABEL[id]} onPress={() => openLegal(id)} />)}
             </List>
             {health.granted
-              ? <Btn kind="gray" title={P.privacy.withdraw} onPress={withdrawHealth} />
-              : <Btn kind="gray" title={P.privacy.turnOn} onPress={agree} />}
-            <Btn kind="danger" title={P.privacy.del} style={{ marginTop: 6 }} onPress={openDeleteAccount} />
+              ? <Btn kind="gray" title={PRIVACY_ROW.withdraw} onPress={withdrawHealth} />
+              : <Btn kind="gray" title={PRIVACY_ROW.turnBackOn} onPress={agree} />}
+            <Btn kind="danger" title={ACCOUNT_ROW.deleteRow} style={{ marginTop: 6 }} onPress={openDeleteAccount} />
           </Disclosure>
         </List>
 
-        <Btn kind="signout" title={P.signOut} onPress={() => setSignOutOpen(true)} />
-        <Foot style={{ textAlign: 'center', paddingTop: 12 }}>{P.wellness}</Foot>
+        <Btn kind="signout" title={SIGN_OUT.title} onPress={() => setSignOutOpen(true)} />
+        <Foot style={{ textAlign: 'center', paddingTop: 12 }}>{PRIVACY_ROW.wellness}</Foot>
       </ScrollView>
 
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
