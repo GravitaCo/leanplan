@@ -21,6 +21,7 @@ import { DayNav } from '../../lib/ui/WeekStrip'
 import { Foot, GrpH, Lbl } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
 import { MarginSheet } from './MarginSheet'
+import { AddFoodSheet } from './AddFoodSheet'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
@@ -165,7 +166,8 @@ export function FoodScreen() {
         </Sheet>
       )}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
-      {/* TODO(N5): Add food, Recipes, Edit entry and What can I make? sheets, as their N1 pieces land */}
+      {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
+      {/* TODO(N5): Recipes, Edit entry and What can I make? sheets, as their N1 pieces land */}
     </View>
   )
 }
