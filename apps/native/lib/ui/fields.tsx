@@ -13,6 +13,14 @@ import { tx, useTokens } from '../theme'
 
 type InputProps = Omit<TextInputProps, 'style' | 'placeholderTextColor'>
 
+/**
+ * PROVISIONAL, a release blocker: the placeholder colour. The web sets none (each browser picks its
+ * own grey), and --label3 is about 2:1 on the field fill, too faint. Benn or Sara choose one token for
+ * both apps on the Design canvas (design proposes --label2); the web's theme.css gains a ::placeholder
+ * rule in the same change. Every field here reads it from this one function.
+ */
+const placeholder = (t: ReturnType<typeof useTokens>) => t.label3
+
 function useFocus(props: InputProps) {
   const [focused, setFocused] = useState(false)
   return {
@@ -35,7 +43,7 @@ export function Input({ label, sheetInput, style, ...props }: InputProps & { lab
   const f = useFocus(props)
   const bg = inSheet && (sheetInput || props.multiline) ? t.elev : t.fill
   return (
-    <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={t.label3}
+    <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={placeholder(t)}
       style={[tx(17, 400, 1.3, 0), { color: t.label, backgroundColor: bg, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12 },
         props.multiline && { textAlignVertical: 'top' }, f.focused && { outlineColor: alpha(t.tint, '80'), outlineWidth: 2, outlineStyle: 'solid' } as TextStyle, style]} />
   )
@@ -68,7 +76,7 @@ export function FRow({ label, unit, need, flag, right, ...props }: InputProps & 
       flag != null && { boxShadow: `inset 3px 0 0 ${t.tint}` }]}>
       <Text style={[tx(17), { color: t.label, minWidth: 96 }]} importantForAccessibility="no" accessibilityElementsHidden>{label}</Text>
       {right ?? (
-        <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={need ? t.tint : t.label3}
+        <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={need ? t.tint : placeholder(t)}
           style={[tx(17, 400, 1.3, 0), { flex: 1, minWidth: 0, color: t.label, paddingVertical: 11, paddingHorizontal: 0, textAlign: 'right' }]} />
       )}
       {unit != null && <Text style={[tx(17), { color: t.label2 }]}>{unit}</Text>}
@@ -88,7 +96,7 @@ export function NameField({ label, style, ...props }: InputProps & { label: stri
   return (
     <View style={[{ backgroundColor: bg, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 4, marginBottom: 16 }, style]}>
       <Text style={[tx(13), { color: t.label2 }]} importantForAccessibility="no" accessibilityElementsHidden>{label}</Text>
-      <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={t.label3}
+      <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={placeholder(t)}
         style={[tx(props.multiline ? 16 : 17, 400, 1.3, 0), { color: t.label, padding: 0 }, props.multiline && { textAlignVertical: 'top' }]} />
     </View>
   )
@@ -104,7 +112,7 @@ export function SearchBar({ label, right, style, ...props }: InputProps & { labe
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.fill, borderRadius: 10, paddingHorizontal: 8, height: 38 }, style]}>
       <Icon name="search" color={t.label2} />
-      <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={t.label3} returnKeyType={props.returnKeyType ?? 'search'}
+      <TextInput {...props} {...f} accessibilityLabel={label} placeholderTextColor={placeholder(t)} returnKeyType={props.returnKeyType ?? 'search'}
         style={[tx(17, 400, 1.3, 0), { flex: 1, minWidth: 0, height: 38, color: t.label, padding: 0 }]} />
       {right}
     </View>
