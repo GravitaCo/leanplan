@@ -40,7 +40,7 @@ export function SleepMore({ open, onToggle, band, onBand, wakeAt, onWake }: {
       {open && (
         <div id="ck-sleep-more">
           <div className="lbl" style={{ paddingTop: 0 }} id="ck-band-l">{CHECKIN_SLEEP.howLong}</div>
-          <div className="scale ck-bands" role="group" aria-labelledby="ck-band-l">
+          <div className="scale ck-scale ck-bands" role="group" aria-labelledby="ck-band-l">
             {SLEEP_BANDS.map((b) => (
               <button type="button" key={b} aria-pressed={band === b} style={band === b ? BAND_ON : undefined} onClick={() => onBand(band === b ? '' : b)}>
                 <b className="num" style={{ fontSize: 14 }}>{bandLabel(b)}</b>{CHECKIN_SLEEP.hours}
