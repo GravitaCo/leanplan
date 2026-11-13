@@ -13,8 +13,6 @@ import { fitsKit, inModality } from './trainModel'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb, useClipPreview } from './Thumb'
 
-const KIT = LIB_KIT
-const fits = fitsKit
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const [demo, setDemo] = useState(false)
@@ -86,7 +84,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
 
   const list = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
-    const pool = EXERCISES.filter((x) => (!mod || inModality(x, mod)) && fits(x, kit))
+    const pool = EXERCISES.filter((x) => (!mod || inModality(x, mod)) && fitsKit(x, kit))
     return words.length ? rankByName(pool, (x) => x.n, words) : [...pool].sort((a, b) => a.n.localeCompare(b.n))
   }, [q, mod, kit])
 
@@ -108,7 +106,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
         ))}
       </div>
       <div className="chips" role="radiogroup" aria-label="Equipment" style={{ marginBottom: 12 }}>
-        {KIT.map(([k, label]) => (
+        {LIB_KIT.map(([k, label]) => (
           <button key={k} role="radio" aria-checked={kit === k} className={'chip' + (kit === k ? ' on' : '')} onClick={() => setKit(kit === k ? null : k)}>{label}</button>
         ))}
       </div>

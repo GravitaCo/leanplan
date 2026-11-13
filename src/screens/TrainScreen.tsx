@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, TRAIN_LOG_WALK } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
-import { fmtDate, shiftDay } from '@/core/domain/date'
+import { fmtDate, shiftDay, todayStr } from '@/core/domain/date'
 import { easyUntil } from '@/core/domain/training'
 import { showLoadNote } from '@/core/domain/load'
 import { plannedKeys } from '@/core/domain/plans'
@@ -59,7 +59,9 @@ export function TrainScreen() {
   const gentle = quietNumbers(data)
   const [lighterOpen, setLighterOpen] = useState(false)
 
-  const m = useMemo(() => trainDay(data, cur, ui), [data, cur, ui])
+  // today's date is a dependency too, so an app left open past midnight moves "today" on
+  const today = todayStr()
+  const m = useMemo(() => trainDay(data, cur, ui), [data, cur, ui, today]) // eslint-disable-line react-hooks/exhaustive-deps
   const { sessions, routines, planned, restDay, planNow, planPos, isToday, dayName, offer, choiceFor, planShortKind } = m
 
   useEffect(() => { setOpen(null); setUi(NO_TRAIN_UI); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])

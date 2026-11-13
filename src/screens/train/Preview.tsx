@@ -19,8 +19,7 @@ import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { HARD_DAY_COPY, swapTile } from './hardDay'
 import { CHOICES, RED_FLAG, CARE_DISCLAIMER, warmupCopy, type Choice } from '@/copy/train'
-import { bareName } from './trainModel'
-import { previewRows } from './trainModel'
+import { bareName, previewRows } from './trainModel'
 
 export { CHOICES, type Choice } from '@/copy/train'
 
