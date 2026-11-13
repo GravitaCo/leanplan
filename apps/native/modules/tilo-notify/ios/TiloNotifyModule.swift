@@ -11,7 +11,9 @@ public class TiloNotifyModule: Module {
   public func definition() -> ModuleDefinition {
     Name("TiloNotify")
 
-    /// Every delivery recorded since the last call, oldest first; the list is emptied.
+    /// Every delivery recorded since the last call, oldest first; the list is emptied. Not atomic
+    /// against the extension: one recorded between the read and the remove is lost, which can only
+    /// under-count for the back-off (never over-count). Accepted (ship-critic, 13 Nov 2026).
     Function("takeDelivered") { () -> [[String: Any]] in
       guard let defaults = UserDefaults(suiteName: TiloNotifyModule.appGroup) else { return [] }
       let list = defaults.array(forKey: TiloNotifyModule.key) as? [[String: Any]] ?? []

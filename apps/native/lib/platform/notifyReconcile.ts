@@ -54,6 +54,18 @@ export interface Presented { key: string; kind: string; at: number }
 export type Seen = Record<string, { kind: string; opened?: true; at?: number }>
 export interface NotifyEv { kind: string; ev: 'shown' | 'opened' | 'closed'; at: Date }
 
+/**
+ * A notification's date in milliseconds. expo-notifications gives it in seconds on iOS
+ * (timeIntervalSince1970) and in milliseconds on Android; the extension and the log use
+ * milliseconds. Mixing the two would order the log wrongly and could count a replaced reminder as
+ * closed (ship-critic, 13 Nov 2026). Anything below 1e11 is seconds (1e11 ms is 1973; 1e11 s is
+ * the year 5138). Not a finite number: null.
+ */
+export function msOf(date: unknown): number | null {
+  if (typeof date !== 'number' || !Number.isFinite(date) || date <= 0) return null
+  return date < 1e11 ? Math.round(date * 1000) : Math.round(date)
+}
+
 /** The key for one delivery. */
 export const deliveryKey = (id: string, date: number): string => id + '|' + (Number.isFinite(date) ? Math.round(date) : 0)
 
@@ -136,6 +148,16 @@ export function reconcile(seen0: Seen, presented: readonly Presented[], now: Dat
     events.push(...r.events)
   }
   return { seen: out, events }
+}
+
+/** A notification as the app sees it (its data, identifier and date as expo-notifications gives
+ *  them) → a Mind reminder sighting, or null for any other notification. `now` stands in for a
+ *  missing date. */
+export function sightingOf(data: unknown, identifier: string, date: unknown, now: number): Presented | null {
+  const kind = mindKindOf(data)
+  if (!kind) return null
+  const at = msOf(date)
+  return { key: keyOf(data, identifier, at ?? NaN), kind, at: at ?? now }
 }
 
 /** Deliveries the Notification Service Extension recorded ({id, kind, at}), as the app's own

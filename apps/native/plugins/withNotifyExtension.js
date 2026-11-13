@@ -104,7 +104,8 @@ function addExtensionTarget(proj, { bundleId, version, buildNumber, teamId }) {
   // resources (in a Resources phase Xcode would copy them into the bundle)
   const group = proj.addPbxGroup(['NotificationService.swift'], NAME, NAME)
   const groups = proj.hash.project.objects.PBXGroup
-  const main = Object.keys(groups).find((k) => groups[k] && groups[k].name === undefined && groups[k].path === undefined)
+  // the project's main group (no name, no path); skip the `_comment` entries the parser keeps beside each object
+  const main = Object.keys(groups).find((k) => !k.endsWith('_comment') && typeof groups[k] === 'object' && groups[k].name === undefined && groups[k].path === undefined)
   if (main) proj.addToPbxGroup(group.uuid, main)
 
   proj.addBuildPhase(['NotificationService.swift'], 'PBXSourcesBuildPhase', 'Sources', target.uuid)

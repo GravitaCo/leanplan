@@ -77,6 +77,10 @@ try {
   const deps = (main.dependencies || []).map((d) => objs.PBXTargetDependency?.[d.value])
   check('the app depends on it, so Xcode builds it first', deps.some((d) => d && d.target === ext.k))
   check('no stray resource entries for Info.plist or the entitlements', !/(Info\.plist|\.entitlements) in Resources/.test(text.split('/* Begin PBXBuildFile section */')[1]?.split('/* End PBXBuildFile section */')[0] ?? 'x'))
+  const groups = Object.entries(objs.PBXGroup).filter(([k, g]) => !k.endsWith('_comment') && typeof g === 'object')
+  const extGroup = groups.find(([, g]) => String(g.name).replace(/"/g, '') === plugin.NAME)
+  const mainGroup = groups.find(([, g]) => g.name === undefined && g.path === undefined)
+  check('the extension\'s files sit in the project\'s main group', !!extGroup && !!mainGroup && (mainGroup[1].children || []).some((c) => c.value === extGroup[0]))
   check('running it again changes nothing', addExtensionTarget(re, { bundleId: BUNDLE, version: '0.1.0', buildNumber: '7', teamId: 'M8R77TCYF8' }) === false)
 } finally {
   rmSync(dir, { recursive: true, force: true })

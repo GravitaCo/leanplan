@@ -9,7 +9,7 @@
 import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
 import { readFileSync } from 'node:fs'
 import { clearEvents, NOTIFY_KINDS, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
-import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX } from '../lib/platform/notifyReconcile.ts'
+import { deliveryKey, fromExtension, mindKindOf, msOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX, sightingOf } from '../lib/platform/notifyReconcile.ts'
 import { apnsPlatform, apnsToken, deletePath, parseSaved, permFrom, REST_KIND, restSeconds, tokenRow } from '../lib/platform/pushRules.ts'
 import { REMINDER_COPY, SUPP_NAMED } from '../../../supabase/functions/_shared/reminders.ts'
 
@@ -263,6 +263,31 @@ const ignored = (log, kind) => {
       const ext = { key: 'id:00000009', kind: 'wind-down', at: t0 }
       ttake(noteOpened(ttake(noteShown({}, ext)), ext, new Date(t0 + 60e3)))
       check('tap after the extension\'s record: exactly shown, opened', tlog.join() === 'shown,opened')
+    }
+    // ship-critic (13 Nov 2026): iOS gives notification dates in seconds, the extension milliseconds
+    {
+      check('dates: iOS seconds and Android milliseconds both read as milliseconds; junk is null',
+        msOf(1794817800) === 1794817800000 && msOf(1794817800.25) === 1794817800250 && msOf(1794817800000) === 1794817800000
+        && msOf(0) === null && msOf(-1) === null && msOf(NaN) === null && msOf('1') === null)
+      const slog = []
+      const stake = (r) => { for (const e of r.events) slog.push({ kind: e.kind, ev: e.ev, at: e.at.toISOString() }); return r.seen }
+      const A = '0b7f3c2e-4d1a-4f6e-9a2b-00000000000a', B = '0b7f3c2e-4d1a-4f6e-9a2b-00000000000b'
+      const tA = Date.parse('2026-11-14T08:30:00Z'), tB = Date.parse('2026-11-15T08:30:00Z')
+      // 1. A arrives with the app closed: the extension records it (milliseconds)
+      let ss = {}
+      for (const p of fromExtension([{ id: A, kind: 'checkin', at: tA + 40 }])) ss = stake(noteShown(ss, p))
+      // 2. the app opens with A in Notification Centre (iOS date in seconds)
+      const nA = sightingOf({ kind: 'checkin', tag: 'tali-checkin', id: A }, 'tali-checkin', tA / 1000, 0)
+      ss = stake(reconcile(ss, [nA], new Date(tA + 3600e3)))
+      // 3. next day B arrives with the app open and replaces A under the same tag (iOS seconds)
+      const nB = sightingOf({ kind: 'checkin', tag: 'tali-checkin', id: B }, 'tali-checkin', tB / 1000, 0)
+      ss = stake(noteShown(ss, nB))
+      for (const p of fromExtension([{ id: B, kind: 'checkin', at: tB + 30 }])) ss = stake(noteShown(ss, p))
+      // 4. background and back: only B in Notification Centre
+      ss = stake(reconcile(ss, [nB], new Date(tB + 3600e3)))
+      check('iOS seconds: every recorded time is this year, not 1970', slog.every((e) => e.at.startsWith('2026-')), slog)
+      check('iOS seconds: a replacement records no close, and the run is 1 as on the web',
+        slog.map((e) => e.ev).join() === 'shown,shown' && ignored(slog, 'checkin') === 1, slog)
     }
     check('extension: the seen list keeps arrival times', JSON.stringify(parseSeen(JSON.stringify({ a: { kind: 'plan', at: 5 } }))) === JSON.stringify({ a: { kind: 'plan', at: 5 } }))
   }

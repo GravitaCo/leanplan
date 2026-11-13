@@ -25,7 +25,7 @@ import { takeNotifyEvents } from '@/data/notifyLog'
 import { recordNotifyEvent } from './notifyStore'
 import { notifyKV } from './notifyKV'
 import { takeExtensionDeliveries } from '../../modules/tilo-notify'
-import { fromExtension, keyOf, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
+import { fromExtension, keyOf, msOf, sightingOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
 // ---- the log: N3's tali-notify store (./notifyKV), so its clear removes the seen list too ----
 const store = notifyKV
@@ -48,10 +48,8 @@ const dataOf = (n: Notifications.Notification): unknown => {
   return t?.type === 'push' ? t.payload?.body : undefined
 }
 
-const presentedOf = (n: Notifications.Notification): Presented | null => {
-  const kind = mindKindOf(dataOf(n))
-  return kind ? { key: keyOf(dataOf(n), n.request.identifier, n.date), kind, at: Number.isFinite(n.date) ? n.date : Date.now() } : null
-}
+const presentedOf = (n: Notifications.Notification): Presented | null =>
+  sightingOf(dataOf(n), n.request.identifier, n.date, Date.now())
 
 // ---- arriving while the app is open ----
 if (pushSupported()) {
@@ -71,7 +69,7 @@ let lastHandled = ''
 function handleTap(r: Notifications.NotificationResponse | null): void {
   if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return
   const n = r.notification
-  const key = keyOf(dataOf(n), n.request.identifier, n.date)
+  const key = keyOf(dataOf(n), n.request.identifier, msOf(n.date) ?? NaN)
   if (key === lastHandled) return
   lastHandled = key
   const p = presentedOf(n)
