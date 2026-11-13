@@ -8,11 +8,11 @@
  * screen closes, or a photo is retaken), then it's deleted; a launch sweep removes anything a crash
  * left behind. Tilo never keeps it (compliance register item 24).
  */
-import type { CameraView } from 'expo-camera'
+import { measureImage, type TiloCameraViewRef } from '../../modules/tilo-camera'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 import { launchImageLibraryAsync } from 'expo-image-picker'
 import { Directory, File, Paths } from 'expo-file-system'
-import type { QualityIssue } from '@/core/domain/labelQuality'
+import { QUALITY_EDGE, QUALITY_LIMITS, qualityIssue, type QualityIssue } from '@/core/domain/labelQuality'
 import { b64Bytes, edgeOf, fitLongEdge, jpegSteps, MAX_BYTES, type PhotoKind } from './photoSize'
 
 export type { PhotoKind }
@@ -26,9 +26,9 @@ export interface Shot {
 interface Source { uri: string; width: number; height: number }
 
 /** The cache folders the camera, the image manipulator and the photo picker write into (their
- *  native code names them: expo-camera "Camera", expo-image-manipulator "ImageManipulator",
- *  expo-image-picker "ImagePicker"). Only the label screen uses them. */
-export const PHOTO_CACHE_DIRS = ['Camera', 'ImageManipulator', 'ImagePicker'] as const
+ *  native code names them: modules/tilo-camera "TiloCamera", expo-image-manipulator
+ *  "ImageManipulator", expo-image-picker "ImagePicker"). Only the scan screens use them. */
+export const PHOTO_CACHE_DIRS = ['TiloCamera', 'ImageManipulator', 'ImagePicker'] as const
 
 /** Files written and not yet deleted. */
 const written = new Set<string>()
@@ -68,9 +68,11 @@ async function toJpeg(src: Source, edge: number): Promise<{ uri: string; base64:
   }
 }
 
-/** The quality check on a taken photo (proposal P2, PHOTO_QUALITY_CHECK): null until approved. */
-async function qualityOf(_src: Source): Promise<QualityIssue | null> {
-  return null
+/** The photo's quality, judged as the web judges its small copy (core labelQuality): measured
+ *  natively on a grey copy at QUALITY_EDGE, before the source is deleted. Unmeasurable = no flag. */
+async function qualityOf(src: Source): Promise<QualityIssue | null> {
+  const q = await measureImage(src.uri, QUALITY_EDGE, QUALITY_LIMITS.clip)
+  return q ? qualityIssue(q) : null
 }
 
 async function shotFrom(src: Source, kind: PhotoKind): Promise<Shot> {
@@ -79,11 +81,19 @@ async function shotFrom(src: Source, kind: PhotoKind): Promise<Shot> {
 }
 
 /** A photo from the camera view. Throws when it can't be used ("That photo couldn't be used."). */
-export async function captureShot(cam: CameraView, kind: PhotoKind): Promise<Shot> {
-  const pic = await cam.takePictureAsync({ quality: 1, exif: false })
-  if (!pic?.uri) throw new Error('no picture')
+export async function captureShot(cam: TiloCameraViewRef, kind: PhotoKind): Promise<Shot> {
+  const pic = await cam.takePhoto()
   written.add(pic.uri)
   return shotFrom(pic, kind)
+}
+
+/** A photo of a barcode from the library (the web's "Take a photo" row), or null if cancelled.
+ *  The caller decodes it and then deletes it with `deleteFile`. */
+export async function pickPhotoUri(): Promise<string | null> {
+  const r = await launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, allowsEditing: false, exif: false, base64: false })
+  if (r.canceled || !r.assets?.[0]) return null
+  written.add(r.assets[0].uri)
+  return r.assets[0].uri
 }
 
 /** A photo chosen from the library through the system picker (no library permission needed), or

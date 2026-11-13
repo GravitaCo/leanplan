@@ -20,7 +20,11 @@ import { lookupProduct } from '@/data/products'
 import { lookupShared } from '@/data/sharedProducts'
 import { readLabel } from '@/data/labelReader'
 import { setSession } from '@/data/supabase'
-import { typedDigits, webFormat, NATIVE_FORMATS } from './barcode'
+import { typedDigits } from './barcode'
+import { firstValid } from './firstValid'
+import { toFrameQuality, toHit, toPermission } from '../../modules/tilo-camera/src/mapping'
+import { captureReady, CHECK_EVERY_MS, issueFromEvent, LABEL_CAMERA_PROPS } from './labelQualityLive'
+import { QUALITY_EDGE, QUALITY_LIMITS } from '@/core/domain/labelQuality'
 import { resolveBarcode, type LookupDeps, type ScanOutcome } from '@/data/scanLookup'
 import { b64Bytes, edgeOf, fitLongEdge, jpegSteps, MAX_BYTES } from './photoSize'
 import { failNotice, readPhotos, typedDraft, type ReadDeps, type ReadInput } from '@/data/labelRead'
@@ -57,32 +61,34 @@ setSession('h.' + btoa('{}').replace(/=+$/, '') + '.s', '11111111-2222-4333-8444
 /* ---------------- 1. platform reads = web reads ---------------- */
 
 function formats() {
-  // [what the web decoder reports, what expo-camera reports for the same pack on iOS / Android]
-  const packs: { name: string; web: [string, string]; ios: [string, string]; android: [string, string] }[] = [
-    // EAN-13, UK
-    { name: 'EAN-13 (UK pack)', web: ['5000157024671', 'ean_13'], ios: ['ean13', '5000157024671'], android: ['ean13', '5000157024671'] },
-    // UPC-A: iOS reports it as an EAN-13 and strips the leading 0 (expo-camera BarcodeScannerUtils)
-    { name: 'UPC-A (US pack)', web: ['036000291452', 'upc_a'], ios: ['ean13', '036000291452'], android: ['upc_a', '036000291452'] },
-    // an EAN-13 that starts with 0: iOS strips that 0 too
-    { name: 'EAN-13 starting 0', web: ['0012345678905', 'ean_13'], ios: ['ean13', '012345678905'], android: ['ean13', '0012345678905'] },
-    // EAN-8 (the UK's short code)
-    { name: 'EAN-8', web: ['96385074', 'ean_8'], ios: ['ean8', '96385074'], android: ['ean8', '96385074'] },
+  // [what the web decoder reports, what Tilo's camera reports for the same pack: live
+  // (AVCaptureMetadataOutput) and from a still photo (Vision)]. Both name UPC-E 'upce' and report a
+  // UPC-A as a 13-digit EAN-13 with its leading 0; a reader that drops that 0 (12 digits) is
+  // covered too.
+  const packs: { name: string; web: [string, string]; live: [string, string]; still: [string, string] }[] = [
+    { name: 'EAN-13 (UK pack)', web: ['5000157024671', 'ean_13'], live: ['ean13', '5000157024671'], still: ['ean13', '5000157024671'] },
+    { name: 'UPC-A (US pack)', web: ['036000291452', 'upc_a'], live: ['ean13', '0036000291452'], still: ['ean13', '0036000291452'] },
+    { name: 'UPC-A with its 0 dropped', web: ['036000291452', 'upc_a'], live: ['ean13', '036000291452'], still: ['ean13', '036000291452'] },
+    { name: 'EAN-13 starting 0', web: ['0012345678905', 'ean_13'], live: ['ean13', '0012345678905'], still: ['ean13', '0012345678905'] },
+    { name: 'EAN-8', web: ['96385074', 'ean_8'], live: ['ean8', '96385074'], still: ['ean8', '96385074'] },
     // an 8-digit code valid as both EAN-8 and UPC-E: only the format tells them apart
-    { name: 'EAN-8 that is also a valid UPC-E', web: ['01234572', 'ean_8'], ios: ['ean8', '01234572'], android: ['ean8', '01234572'] },
-    { name: 'UPC-E that is also a valid EAN-8', web: ['01234572', 'upc_e'], ios: ['upc_e', '01234572'], android: ['upc_e', '01234572'] },
-    // UPC-E
-    { name: 'UPC-E', web: ['01234565', 'upc_e'], ios: ['upc_e', '01234565'], android: ['upc_e', '01234565'] },
+    { name: 'EAN-8 that is also a valid UPC-E', web: ['01234572', 'ean_8'], live: ['ean8', '01234572'], still: ['ean8', '01234572'] },
+    { name: 'UPC-E that is also a valid EAN-8', web: ['01234572', 'upc_e'], live: ['upce', '01234572'], still: ['upce', '01234572'] },
+    { name: 'UPC-E', web: ['01234565', 'upc_e'], live: ['upce', '01234565'], still: ['upce', '01234565'] },
   ]
   for (const p of packs) {
     const web = normalizeBarcode(p.web[0], p.web[1])
-    for (const os of ['ios', 'android'] as const) {
-      const [type, data] = p[os]
-      const nat = normalizeBarcode(data, webFormat(type, data))
-      check(`${p.name}: ${os} read looks up the web's code`, !!web && eq(nat, web), { web, nat })
+    for (const how of ['live', 'still'] as const) {
+      const [type, data] = p[how]
+      const hit = toHit({ type, data })
+      const nat = normalizeBarcode(hit.raw, hit.format)
+      check(`${p.name}: a ${how} read looks up the web's code`, !!web && eq(nat, web), { web, nat })
     }
   }
-  check('a misread (bad check digit) is refused as on web', normalizeBarcode('5000157024672', webFormat('ean13', '5000157024672')) === null)
-  check('the scanner asks only for the four retail formats', eq([...NATIVE_FORMATS].sort(), ['ean13', 'ean8', 'upc_a', 'upc_e']))
+  check('a photo: the first read whose number checks out counts (web firstValid)', eq(firstValid([{ type: 'ean13', data: '5000157024672' }, { type: 'ean8', data: '96385074' }]), { raw: '96385074', format: 'ean_8' }))
+  check('a photo with no valid read: none', firstValid([{ type: 'ean13', data: '123' }]) === null && firstValid([]) === null)
+  check('permission states', toPermission('granted') === 'granted' && toPermission('undetermined') === 'undetermined' && toPermission('restricted') === 'denied' && toPermission(undefined) === 'denied')
+  check('a misread (bad check digit) is refused as on web', normalizeBarcode(toHit({ type: 'ean13', data: '5000157024672' }).raw, toHit({ type: 'ean13', data: '5000157024672' }).format) === null)
   check('typed input: digits only, at most 14 (web filter)', typedDigits('50 0015-7024671999x') === '50001570246719')
 }
 
@@ -167,6 +173,19 @@ async function chain() {
 }
 
 /* ---------------- 3. label photos ---------------- */
+
+function quality() {
+  check('the camera gets core’s frame size and clip level, and the web’s pace', LABEL_CAMERA_PROPS.qualityEdge === QUALITY_EDGE && LABEL_CAMERA_PROPS.clip === QUALITY_LIMITS.clip && LABEL_CAMERA_PROPS.qualityIntervalMs === CHECK_EVERY_MS && CHECK_EVERY_MS === 350 && LABEL_CAMERA_PROPS.mode === 'label')
+  const L = QUALITY_LIMITS
+  const ok = { blur: L.minSharpness + 10, brightness: L.minBrightness + 40, glare: 0 }
+  check('a good frame: "Looks good.", Capture on', issueFromEvent(ok, undefined) === null && captureReady(null))
+  check('too dark: core’s threshold decides', issueFromEvent({ ...ok, brightness: L.minBrightness - 1 }, null) === 'dark' && issueFromEvent({ ...ok, brightness: L.minBrightness }, 'dark') === null)
+  check('glare over core’s share', issueFromEvent({ ...ok, glare: L.maxGlare + 0.01 }, null) === 'glare')
+  check('blur under core’s sharpness', issueFromEvent({ ...ok, blur: L.minSharpness - 1 }, null) === 'blur')
+  check('light first, then glare, then focus (core order)', issueFromEvent({ blur: 0, brightness: 0, glare: 1 }, null) === 'dark')
+  check('checking until the first frame; Capture anyway meanwhile', !captureReady(undefined) && !captureReady('blur'))
+  check('a malformed event leaves the line as it was', issueFromEvent({ blur: 'x' }, 'glare') === 'glare' && toFrameQuality(null) === null)
+}
 
 function sizes() {
   check('nutrition table sent at a 1600 px long edge, front at 1024 (web)', edgeOf('panel') === 1600 && edgeOf('front') === 1024)
@@ -260,6 +279,7 @@ async function reads() {
 async function main() {
   formats()
   await chain()
+  quality()
   sizes()
   await reads()
   globalThis.fetch = realFetch
