@@ -30,5 +30,9 @@ jobs:
           cache-dependency-path: apps/native/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run test:platform
       - run: npm run check:tokens
+      - run: npm test
       - run: npx expo export --platform ios --output-dir /tmp/native-bundle
+      # the e2e hook (lib/e2eHook.ts) exists only in a web render built with EXPO_PUBLIC_E2E=1
+      - run: "! grep -rq __tiloStore /tmp/native-bundle"

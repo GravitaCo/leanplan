@@ -26,3 +26,14 @@ export function reminderAction(o: { stopped: boolean; enabled: boolean; held: bo
   if (o.stopped) return o.held ? 'retry' : o.enabled ? 'hold' : null
   return o.held ? 'restore' : null
 }
+
+/**
+ * After 'restore' couldn't register this device again: whether the reminder setting turns off.
+ * It does, so Profile says what's true, except where this device can't take pushes at all and its
+ * platform keeps the setting (`keepWithoutPush`: the native app until it has its own reminders,
+ * N12). The setting is the account's and syncs, so turning it off there would switch reminders off
+ * on every device. Never during the stop itself.
+ */
+export function restoreTurnsOff(o: { registered: boolean; stopped: boolean; pushSupported: boolean; keepWithoutPush: boolean }): boolean {
+  return !o.registered && !o.stopped && (o.pushSupported || !o.keepWithoutPush)
+}

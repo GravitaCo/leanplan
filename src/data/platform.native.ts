@@ -5,6 +5,9 @@
  */
 import { AppState } from 'react-native'
 
+/** The reminder delivery log on MMKV `tali-notify` (the service worker's IndexedDB on web). */
+export { takeNativeNotifyEvents, clearNativeNotifyLog } from '../../apps/native/lib/platform/notifyMMKV'
+
 /** supabase-js doesn't save a session outside a browser unless it's given storage. PKCE for the
  *  Google sign-in, whose redirect comes back to the app by its tilo:// link: the one-time code in
  *  that link is useless without the verifier kept on this phone. */
@@ -16,3 +19,6 @@ export const AUTH_OPTIONS = {
 export function onForeground(fn: () => void): void {
   AppState.addEventListener('change', (s) => { if (s === 'active') fn() })
 }
+
+/** The native app has no push yet (N12): a reminder setting made on the web stays on. */
+export const KEEP_REMINDERS_WITHOUT_PUSH = true

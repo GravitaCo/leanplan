@@ -258,7 +258,7 @@ export async function notifySuite(): Promise<number> {
   ok('no em dashes in any B11 or reminder string', ![...notifyStrings(), ...Object.values(REMINDER_COPY).map((c) => c.body)].some((s) => s.includes('—')))
   ok('B11.14 verbatim for check-in', backoffLine('checkin') === 'The last 2 check-in reminders went unopened, so Tilo now sends them half as often. Nothing you need to do.')
   ok('B11.12 verbatim', NOTIFY_COPY.foot === "Tilo sends at most one check-in or plan reminder a day, and nothing after your wind-down time or before you're usually up. Wind-down and supplement reminders come at the times you set.")
-  const ui = readFileSync('src/screens/profile/NotificationsSettings.tsx', 'utf8') + readFileSync('src/screens/profile/notifyCopy.ts', 'utf8')
+  const ui = readFileSync('src/screens/profile/NotificationsSettings.tsx', 'utf8') + readFileSync('src/copy/notify.ts', 'utf8')
   ok('B11b: the names setting saves lockNames, nothing else', /setMindPrefs\(\{ lockNames: !on \}\)/.test(ui) && /NOTIFY_COPY as C/.test(ui) && /names: 'Show supplement names in reminders'/.test(ui))
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
   ok('Profile mounts the B11 parts only with the wellbeing flag', /WELLBEING_ENABLED && <BackoffNotices \/>/.test(prof) && /WELLBEING_ENABLED && <MindReminderRows \/>/.test(prof) && /WELLBEING_ENABLED && <YourTimes \/>/.test(prof))

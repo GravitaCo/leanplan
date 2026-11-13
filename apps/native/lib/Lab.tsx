@@ -2,7 +2,7 @@
  * The spike's lab (native-app-plan phase 0): measures and checks that aren't screens. For Benn,
  * Sara and the lead engineer only; never part of the app's parity build.
  *  1. storage: load and save times for this phone's real `leanplan.v1`
- *  2. sync: what the shared store reports
+ *  2. sync: what the shared store reports, with a stand-in for the connection pill (N1 builds it)
  *  3. HealthKit: last night's sleep and today's walking (read, shown, not kept)
  *  4. on-device AI: Apple Foundation Models parsing a typed meal (ai-platform-plan task A)
  *  5. a haptic (an improvement candidate: needs a board before it goes anywhere in the app)
@@ -17,6 +17,7 @@ import { loadState, saveState } from '@/data/persistence'
 import { aiAvailability, aiRespond } from '../modules/tilo-ai'
 import { askHealth, healthAvailable, lastNight, walking, type NightRead, type WalkingRead } from './health'
 import { Btn, Card } from './ui/kit'
+import { ConnectionStandIn } from './ConnectionStandIn'
 import { font, num, useTokens } from './theme'
 
 const ms = (a: number) => `${(performance.now() - a).toFixed(1)} ms`
@@ -86,6 +87,7 @@ export function Lab({ inSheet = false }: { inSheet?: boolean } = {}) {
 
       <Card>
         <H>Sync</H>
+        <ConnectionStandIn />
         <L>Signed in: {authed ? 'yes' : 'no'} · Online: {online ? 'yes' : 'no'} · Sync: {sync}</L>
         <S>Uses the web app's own sync code. Days logged on the web appear here after a pull.</S>
       </Card>

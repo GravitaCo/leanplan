@@ -1,7 +1,7 @@
 /**
  * Unit tests for the native Mind view models and the Reset pacer clock. Pure Node: run with
- * `npm run test:mind` from apps/native (bundled by the repo's esbuild with @ → src, as the web's
- * npm test). Expected values come from the web's own sources and e2e cases (scripts/e2e-wellbeing.cjs
+ * `npm run test:mind` from apps/native (Node's own TypeScript, with scripts/ts-alias-hooks.mjs
+ * resolving @ → src; nothing from the web's node_modules). Expected values come from the web's own sources and e2e cases (scripts/e2e-wellbeing.cjs
  * wp6, wp11, wp12, wp13), never retyped timings.
  */
 import { RESET_PATTERN } from '@/core/data/skills'

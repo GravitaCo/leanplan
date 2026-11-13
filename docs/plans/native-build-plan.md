@@ -454,3 +454,10 @@ needs the D-U-N-S number).
   testers for 14 days [I]) add calendar time before any store release.
 - **On-device AI availability** depends on the test iPhone; Android falls back to cloud AI with the
   AI consent.
+
+## 9. App Store launch checklist (collected from the streams, 13 Nov 2026)
+
+- Sign in with Apple (guideline 4.8, once Google sign-in is offered): a board first, then N2 (security-data, 12 Nov).
+- Push (N12): Apple's APNs terms and the transfer recorded (`compliance`); the privacy and cookie texts' `native` option switched on and republished; the App Store privacy label declares Device ID (linked, App Functionality); TestFlight "What to Test" says Apple's push service delivers reminders and can read their fixed words; DPIA 8.8 APNs addendum R19 for Benn to sign; deploy order: the migration, then the function with `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID` (an APNs key from Benn's Apple account); a Notification Service Extension so reminder back-off counts deliveries correctly on iPhone (mental-performance).
+- Permission wording (Health, camera, notifications, photos) past `compliance` and Benn or Sara.
+- Store listing, screenshots (`design`), age rating 18+, privacy labels and, for Android, Play's Data safety form and closed test.
