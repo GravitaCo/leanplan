@@ -45,8 +45,10 @@ export function apnsToken(data: unknown): string | null {
 }
 
 /** Which Apple gateway a build's token belongs to (expo-application's
- *  getIosPushNotificationServiceEnvironmentAsync): only a development build uses the sandbox. */
-export const apnsPlatform = (env: string | null | undefined): 'apns' | 'apns-sandbox' => (env === 'development' ? 'apns-sandbox' : 'apns')
+ *  getIosPushNotificationServiceEnvironmentAsync): only 'production' (TestFlight, App Store, ad hoc)
+ *  uses the production gateway. A development build says 'development'; a simulator, with no
+ *  provisioning profile, says nothing, and its token is a sandbox one too. */
+export const apnsPlatform = (env: string | null | undefined): 'apns' | 'apns-sandbox' => (env === 'production' ? 'apns' : 'apns-sandbox')
 
 /** The push_subscriptions row for this phone. */
 export function tokenRow(uid: string, token: string, platform: 'apns' | 'apns-sandbox') {

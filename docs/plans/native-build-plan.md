@@ -358,10 +358,13 @@ migration) and a row the phone can't delete is released at the next sign-in of i
 privacy and cookie text is gated on `native` (off); DPIA 8.8 APNs addendum (R19) proposed, not signed;
 supplement names never go to APNs until it is. Android (FCM) not built: `pushSupported()` is false there.
 **Blocks the App Store (not internal or TestFlight builds):** a Notification Service Extension recording
-"shown" on every delivery, so the back-off matches the web (mental-performance); N3 routing
-`clearNotifyStore` to the MMKV log (security-data: otherwise one account's log can halve the next
-account's reminders); Apple's APNs terms and transfer recorded; `native` on in the policies. Also open:
-an on-device test of delivery, taps and token refresh with a development build.
+"shown" on every delivery, so the back-off matches the web (mental-performance); the DPIA 8.8 APNs
+addendum signed; Apple's APNs terms and transfer recorded; `native` on in the policies and republished.
+Done on `claude/native-build`: `clearNotifyStore` clears the phone's `tali-notify` log (N3), which also
+removes N12's seen list. Also open: an on-device test with a development build (delivery, taps, token
+refresh, `body` arriving as the notification's data, collapse-id replacements, Focus and Scheduled
+Summary), and Deno's HTTP/2 to APNs on first deploy (watch for 429 TooManyProviderTokenUpdates).
+Reviews: security-data APPROVE, compliance APPROVE, mental-performance APPROVED (13 Nov).
 
 ### N13 Recipe sharing (native first)
 

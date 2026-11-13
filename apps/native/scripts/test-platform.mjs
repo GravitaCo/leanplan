@@ -235,7 +235,7 @@ check('perm: nothing is default', permFrom(null) === 'default')
 const tok = 'AB'.repeat(32)
 check('token: hex, lower-cased', apnsToken(tok) === 'ab'.repeat(32))
 check('token: refuses anything else', apnsToken('xyz') === null && apnsToken('ab'.repeat(31)) === null && apnsToken('a'.repeat(65)) === null && apnsToken(42) === null && apnsToken('ab'.repeat(101)) === null)
-check('gateway: only development builds use the sandbox', apnsPlatform('development') === 'apns-sandbox' && apnsPlatform('production') === 'apns' && apnsPlatform(null) === 'apns')
+check('gateway: production builds use production; development builds and simulators (no profile) the sandbox', apnsPlatform('development') === 'apns-sandbox' && apnsPlatform('production') === 'apns' && apnsPlatform(null) === 'apns-sandbox' && apnsPlatform(undefined) === 'apns-sandbox')
 check('row: token in endpoint, no Web Push keys',
   JSON.stringify(tokenRow('u1', 'ab'.repeat(32), 'apns')) === JSON.stringify({ user_id: 'u1', endpoint: 'ab'.repeat(32), platform: 'apns', p256dh: null, auth_key: null }))
 check('delete: this token and this account only', deletePath('ab'.repeat(32), 'u-1') === '/push_subscriptions?endpoint=eq.' + 'ab'.repeat(32) + '&user_id=eq.u-1')

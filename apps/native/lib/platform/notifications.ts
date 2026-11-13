@@ -85,6 +85,9 @@ function handleTap(r: Notifications.NotificationResponse | null): void {
 // ---- back to the front: Notification Centre, then the log into the store ----
 async function settleLog(): Promise<void> {
   if (!pushSupported()) return
+  // a tap that brought the app forward is recorded first, so the reminder it opened is never taken
+  // for one swiped away (ship-critic, 13 Nov 2026); handleTap records each delivery's tap once
+  try { handleTap(Notifications.getLastNotificationResponse()) } catch { /* none */ }
   try {
     const presented = (await Notifications.getPresentedNotificationsAsync()).map(presentedOf).filter((p): p is Presented => !!p)
     apply(reconcile(readSeen(), presented, new Date()))
