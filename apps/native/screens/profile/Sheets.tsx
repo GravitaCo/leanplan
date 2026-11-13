@@ -35,7 +35,7 @@ export function HandsSheet({ onClose }: { onClose: () => void }) {
   }
   return (
     <Sheet title={P.hands.title} onClose={onClose} right={<NavBtn title={P.hands.save} bold onPress={save} />}>
-      <Sub style={[PROSE, { paddingHorizontal: 4, paddingBottom: 12 }]}>{P.hands.lead}</Sub>
+      <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{P.hands.lead}</Sub>
       <List>
         {types.map((k) => (
           <FRow key={k} label={HANDS[k].label} hint={HANDS[k].hint} unit={P.hands.unit} keyboardType="number-pad" value={vals[k]} onChangeText={(v) => setVals({ ...vals, [k]: v })} />
@@ -62,11 +62,11 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
   }
   return (
     <Sheet title={SIGN_OUT.title} onClose={onClose}>
-      <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
+      <View style={{ paddingHorizontal: 4, paddingBottom: 12 }}>
         <Sub style={[PROSE, { marginBottom: 10 }]}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.stays}</Sub>
         {!phoneOnly && unsynced > 0 && <Sub style={[PROSE, { marginBottom: 10 }]}>{SIGN_OUT.unsynced(unsynced)}</Sub>}
       </View>
-      <View style={{ gap: 8, marginTop: 6 }}>
+      <View style={{ gap: 8, marginTop: 16 }}>
         <Btn kind="tinted" disabled={!!busy} title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title} onPress={() => void go(false)} />
         {phoneOnly && <Btn kind="gray" disabled={!!busy} title={SIGN_OUT.exportCopy} onPress={() => exportBackup(data)} />}
         <Btn kind="danger" disabled={!!busy} onPress={() => void go(true)}
@@ -82,11 +82,11 @@ export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedSt
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
     <Sheet title={BACKUP.importTitle} onClose={onClose}>
-      <View style={{ paddingHorizontal: 4, paddingBottom: 2 }}>
+      <View style={{ paddingHorizontal: 4, paddingBottom: 12 }}>
         <Sub style={[PROSE, { marginBottom: 10 }]}>{BACKUP.has(b, span)}</Sub>
         <Sub style={[PROSE, { marginBottom: 10 }]}>{BACKUP.replaces(b)}</Sub>
       </View>
-      <View style={{ marginTop: 6 }}><Btn kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
+      <View style={{ marginTop: 16 }}><Btn kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
     </Sheet>
   )
 }

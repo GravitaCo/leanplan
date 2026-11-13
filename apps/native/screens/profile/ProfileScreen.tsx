@@ -382,7 +382,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           <SettingRow soft icon="heart" color={MINDF} label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen(true)} />
           {AI_FEATURES_LIVE && <SettingRow soft icon="bulb" color={GRAY} label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => undefined} />}
           <Disclosure soft icon="cloud" color={GRAY} label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
-            <Sub style={[PROSE, { marginBottom: 10 }]}>{!consentLetsSync(data) ? BACKUP.phoneOnly : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</Sub>
+            <Sub style={{ marginBottom: 10 }}>{!consentLetsSync(data) ? BACKUP.phoneOnly : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</Sub>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}><Btn kind="gray" title={BACKUP.exportBtn} onPress={() => exportBackup(data)} /></View>
               <View style={{ flex: 1 }}><Btn kind="gray" title={BACKUP.importBtn} onPress={async () => {
@@ -391,7 +391,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             </View>
             {resumeCopy && (
               <View style={{ marginTop: 12 }}>
-                <Sub style={[PROSE, { marginBottom: 8 }]}>{P.backup.resume(resumeList)}</Sub>
+                <Sub style={{ marginBottom: 8 }}>{P.backup.resume(resumeList)}</Sub>
                 <Btn kind="gray" title={P.backup.resumeBtn} onPress={() => exportBackup(withResumeCopy(resumeCopy))} />
               </View>
             )}
@@ -404,7 +404,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           <SettingRow soft icon="mail" color={MINDF} label={P.feedbackRow.label} sub={P.feedbackRow.sub} onPress={() => setFeedbackOpen(true)} />
         </List>
 
-        <List icons style={[LIST, { marginTop: 24 }]}>
+        {/* the web's 8 below the list above collapses into this 24; React Native adds margins, so 16 here and none below */}
+        <List icons style={{ marginTop: 16, marginBottom: 0 }}>
           <Disclosure soft icon="info" color={GRAY} label={P.about.row} open={open === 'about'} onToggle={() => toggle('about')}>
             <Sub style={[PROSE, { marginBottom: 10 }]}><Text style={{ fontFamily: GEIST[700] }}>{P.about.name}</Text>{P.about.lead}</Sub>
             <Sub style={PROSE}>{P.about.body}</Sub>

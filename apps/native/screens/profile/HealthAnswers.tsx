@@ -43,7 +43,7 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
   const row = (key: string, label: string, value: string, does: string, acts: ReactNode, i: number) => (
     <View key={key} style={[{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 12, paddingLeft: 16, paddingRight: 10 }, sep(i)]}>
       <View style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-        <Text style={small}>{label}</Text>
+        <Text style={[tx(13), { color: t.label2 }]}>{label}</Text>
         <Text style={[tx(17), { color: t.label, marginTop: 1 }]}>{value}</Text>
         <Text style={[small, { marginTop: 3 }]}>{does}</Text>
       </View>

@@ -108,7 +108,7 @@ export function YourTimes() {
   return (
     <>
       <Lbl>{NC.timesHeading}</Lbl>
-      <List>
+      <List style={{ marginBottom: 8 }}>
         <FRow label={NC.wakeAt} right={<TimeField muted label={NC.wakeAt} value={times.wakeAt} disabled={!allowed} onChange={(v) => save('wakeAt', v)} />} />
         <FRow label={NC.windDownAt} right={<TimeField muted label={NC.windDownAt} value={times.windDownAt} disabled={!allowed} onChange={(v) => save('windDownAt', v)} />} />
       </List>

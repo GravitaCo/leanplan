@@ -268,6 +268,8 @@ async function main() {
     await run(`screenshots open ${scheme}`, async () => {
       const { w, n, close } = await pair(browser, state({ p: { ...BOARD, goal: 'lose-fat', gentle: false } }), { scheme, ob: true })
       const snap = async (name) => {
+        // let a sheet finish sliding in (0.34 s) before capturing
+        await w.page.waitForTimeout(900); await n.page.waitForTimeout(900)
         await w.page.screenshot({ path: path.join(OUT, `${name}-${scheme}-web.png`) })
         await n.page.screenshot({ path: path.join(OUT, `${name}-${scheme}-native.png`) })
       }
