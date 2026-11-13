@@ -313,6 +313,20 @@ export function Gallery() {
         <div className="lbl" style={{ paddingTop: 4 }}>A label with less space above</div>
       </Sec>
 
+      <Sec id="fields" title="Field · Input · textarea · FRow · NameField · SearchBar">
+        <div className="field"><label htmlFor="g-email">Email</label><input id="g-email" type="email" defaultValue="sam@example.com" /></div>
+        <div className="field"><label htmlFor="g-help">What would help?</label><input id="g-help" placeholder="A short walk after lunch" /></div>
+        <div className="field"><label htmlFor="g-note">Note</label><textarea id="g-note" defaultValue={'Felt strong today.\nSlept well.'} style={{ minHeight: 80, display: 'block' }} /></div>
+        <div className="list">
+          <div className="frow"><label htmlFor="g-n">Name</label><input id="g-n" defaultValue="Oat porridge" /></div>
+          <div className="frow"><label htmlFor="g-s">Serving</label><input id="g-s" inputMode="decimal" defaultValue="40" /><span className="u">g</span></div>
+          <div className="frow need"><label htmlFor="g-p">Protein</label><input id="g-p" inputMode="decimal" placeholder="Needed" /><span className="u">g</span></div>
+          <div className="frow flag"><label htmlFor="g-k">Energy</label><input id="g-k" inputMode="numeric" defaultValue="1250" /><span className="u">kcal</span><span className="flagnote">Check this against the pack</span></div>
+        </div>
+        <div style={{ marginTop: 16 }}><label className="card pb-name" style={{ marginBottom: 16 }}><span className="pb-k">Name</span><input defaultValue="Strength, 3 days" /></label></div>
+        <div className="searchbar"><Icon name="search" size={17} /><input placeholder="Search plans" aria-label="Search plans" /></div>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="banner">

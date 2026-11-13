@@ -24,6 +24,7 @@ import { Wheel } from './ui/Wheel'
 import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
+import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -291,6 +292,20 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </Text>
         <GrpH link={{ title: 'See all', onPress: () => {} }}>Your workouts</GrpH>
         <Lbl style={{ paddingTop: 4 }}>A label with less space above</Lbl>
+      </Sec>
+
+      <Sec id="fields" title="Field · Input · textarea · FRow · NameField · SearchBar">
+        <Field label="Email"><Input label="Email" value="sam@example.com" onChangeText={() => {}} keyboardType="email-address" autoCapitalize="none" /></Field>
+        <Field label="What would help?"><Input label="What would help?" placeholder="A short walk after lunch" onChangeText={() => {}} /></Field>
+        <Field label="Note"><Input label="Note" multiline value={'Felt strong today.\nSlept well.'} onChangeText={() => {}} style={{ minHeight: 80 }} /></Field>
+        <List>
+          <FRow label="Name" value="Oat porridge" onChangeText={() => {}} />
+          <FRow label="Serving" value="40" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Protein" need placeholder="Needed" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Energy" value="1250" unit="kcal" flag="Check this against the pack" keyboardType="number-pad" onChangeText={() => {}} />
+        </List>
+        <View style={{ marginTop: 16 }}><NameField label="Name" value="Strength, 3 days" onChangeText={() => {}} /></View>
+        <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
       </Sec>
 
       <Sec id="banner" title="Banner">

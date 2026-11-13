@@ -26,7 +26,7 @@ const WEB = process.env.WEB_GALLERY_URL || 'http://localhost:4179/'
 const NATIVE = (process.env.NATIVE_URL || 'http://localhost:4188/') + 'gallery'
 const OUT = outDir('tilo-gallery-')
 const SECTIONS = ['header', 'pill', 'icons', 'tabbar', 'cathead', 'seg', 'toggle', 'rows', 'nav', 'buttons', 'cards', 'charts', 'macro', 'weekbars',
-  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'banner', 'toast', 'mark', 'sheets']
+  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'banner', 'toast', 'mark', 'sheets']
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null
 
 const webSec = (id) => `[data-g="${id}"]`
@@ -39,6 +39,14 @@ async function measure(page, sel) {
     const words = el.innerText.replace(/\s+/g, ' ').trim()
     const labels = [...el.querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')).filter(Boolean)
     if (el.getAttribute('aria-label')) labels.unshift(el.getAttribute('aria-label'))
+    // a form field named by its <label> (for= or wrapping) has that label as its accessible name
+    for (const f of el.querySelectorAll('input, textarea, select')) {
+      if (f.getAttribute('aria-label')) continue
+      const byFor = f.id && el.querySelector(`label[for="${f.id}"]`)
+      const wrap = f.closest('label')
+      const name = byFor ? byFor.textContent : wrap ? (wrap.querySelector('span') || wrap).textContent : null
+      if (name) labels.push(name.trim())
+    }
     // icons: the 24-unit line icons only (charts and the mark have other viewBoxes)
     const icons = [...el.querySelectorAll('svg')].filter((s) => s.getAttribute('viewBox') === '0 0 24 24')
       .map((s) => { const b = s.getBoundingClientRect(); return `${Math.round(b.width)}x${Math.round(b.height)}` }).filter((x) => x !== '0x0')
