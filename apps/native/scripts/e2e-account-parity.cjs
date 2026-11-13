@@ -505,14 +505,25 @@ async function sameWords(browser, name, opts, ready, act) {
     expect(net.fnCalls.length === 0, 'nothing sent')
   }, { state: AGED(16), authAgoS: 3600 })
 
-  /* ---------------- screenshots of the sheets, both apps (no word check: their hosts differ) ---------------- */
-  if (!ONLY) {
+  /* ---------------- screenshots of the sheets, both apps, for `design` (no word check: their hosts differ) ---------------- */
+  if (!ONLY || ONLY.test('shots')) {
     for (const dark of [false, true]) {
-      const c = await context(browser, { dark, shots: true, state: deviceState({ days: { [today]: aDay(70) } }) })
-      await c.page.goto(NATIVE); await toProfile(c.page)
-      await c.page.getByRole('button', { name: 'Health data, On' }).click()
-      await shot(c.page, `health-sheet-${dark ? 'dark' : 'light'}-native`)
-      await c.ctx.close()
+      for (const [side, url] of [['web', WEB], ['native', NATIVE]]) {
+        const c = await context(browser, { dark, shots: true, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })
+        const p = c.page, m = dark ? 'dark' : 'light'
+        try {
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.getByRole('button', { name: /^Health data/ }).first().click()
+          await btn(p, 'Stop keeping my health data').waitFor(); await shot(p, `sheet-health-${m}-${side}`)
+          await btn(p, 'Stop keeping my health data').click()
+          await btn(p, 'Download a copy').waitFor(); await shot(p, `sheet-withdraw-${m}-${side}`)
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.getByRole('button', { name: 'Delete account' }).first().click()
+          await heading(p, 'Delete your account').waitFor(); await shot(p, `delete-${m}-${side}`)
+          await btn(p, 'Delete account').last().click()
+          await p.getByLabel('Type DELETE to confirm').fill('DELETE'); await shot(p, `delete-confirm-${m}-${side}`)
+        } catch (e) { console.log('shots', side, m, e.message.split('\n')[0]) } finally { await c.ctx.close() }
+      }
     }
   }
 
