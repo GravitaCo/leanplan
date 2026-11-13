@@ -23,14 +23,24 @@ enum TemporaryPhotos {
     return url
   }
 
-  static func contains(_ url: URL) -> Bool {
-    url.isFileURL && url.standardizedFileURL.path.hasPrefix(directory.standardizedFileURL.path + "/")
+  /// The file `uri` names when it is one of ours, else nil. Decoded first (so "%2E%2E" is "..")
+  /// and normalised with symlinks resolved, then its folder must be exactly ours and its name the
+  /// UUID.ext this module gives every file, so nothing outside the folder ever matches.
+  static func owned(_ uri: String) -> URL? {
+    guard let url = URL(string: uri), url.isFileURL else { return nil }
+    let file = URL(fileURLWithPath: url.path).standardizedFileURL.resolvingSymlinksInPath()
+    let dir = URL(fileURLWithPath: directory.path).standardizedFileURL.resolvingSymlinksInPath()
+    guard file.deletingLastPathComponent().path == dir.path else { return nil }
+    let parts = file.lastPathComponent.split(separator: ".", maxSplits: 1).map(String.init)
+    guard parts.count == 2, UUID(uuidString: parts[0]) != nil, !parts[1].isEmpty,
+          parts[1].allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }) else { return nil }
+    return file
   }
 
   /// Deletes `uri` if it's one of ours; anything else is left alone.
   static func delete(_ uri: String) {
-    guard let url = URL(string: uri), contains(url) else { return }
-    try? FileManager.default.removeItem(at: url)
+    guard let file = owned(uri) else { return }
+    try? FileManager.default.removeItem(at: file)
   }
 
   /// Deletes the whole folder (after a read, when a screen closes, and at launch).

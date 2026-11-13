@@ -36,6 +36,8 @@ the camera's own Y (Rec. 601, as the web's `toGray`).
   is assumed (a captured `var` in `requestAccess`'s callback would be a Swift 6 error).
 - The `.photo` session preset for both modes, and whether `.ean13/.ean8/.upce` are available on
   the metadata output after `addOutput` (they're filtered by `availableMetadataObjectTypes`).
+- `TemporaryPhotos.owned` refuses a URI outside Caches/TiloCamera, including `%2E%2E` and
+  symlinked forms, and on the device `/var` vs `/private/var` resolves the same on both sides.
 - `qualityEdge`, `clip`, `qualityIntervalMs` and `lastQuality` are read on the frame queue and
   written on the main thread: plain Ints, a benign race; move them behind the queue if the
   sanitizer complains.

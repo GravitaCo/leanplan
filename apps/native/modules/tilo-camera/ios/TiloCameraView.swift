@@ -72,12 +72,15 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
 
   private var shouldRun: Bool { active && window != nil && mode != "off" }
 
+  /// On the main thread: UIKit state (`window`) and the props are read here and handed to the
+  /// session queue as values.
   private func updateRunning() {
     let run = shouldRun
+    let mode = self.mode
     sessionQueue.async { [weak self] in
       guard let self else { return }
       if run {
-        guard self.ensureConfigured() else { return }
+        guard self.ensureConfigured(mode: mode) else { return }
         if !self.session.isRunning {
           self.session.startRunning()
           if !self.readySent {
@@ -92,7 +95,7 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
   }
 
   /// On the session queue. False (with onMountError sent once) when the camera can't be used.
-  private func ensureConfigured() -> Bool {
+  private func ensureConfigured(mode: String) -> Bool {
     if configured { return true }
     if failed { return false }
     switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -128,7 +131,7 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
       session.addOutput(photoOutput)
       photoOutput.maxPhotoQualityPrioritization = .quality
     }
-    applyMode()
+    applyMode(mode)
     session.commitConfiguration()
     // continuous autofocus suits both a barcode at arm's length and a label close up
     if (try? device.lockForConfiguration()) != nil {
@@ -140,8 +143,8 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
     return true
   }
 
-  /// On the session queue: which outputs deliver for the current mode.
-  private func applyMode() {
+  /// On the session queue: which outputs deliver for `mode` (read on main, passed in).
+  private func applyMode(_ mode: String) {
     let barcode = mode == "barcode"
     // the retail formats only; asked for after the output joins the session, as AVFoundation requires
     let wanted: [AVMetadataObject.ObjectType] = [.ean13, .ean8, .upce]
@@ -149,11 +152,14 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
     videoOutput.setSampleBufferDelegate(mode == "label" ? self : nil, queue: frameQueue)
   }
 
+  /// On the main thread, like updateRunning.
   private func reconfigure() {
+    let mode = self.mode
     sessionQueue.async { [weak self] in
-      guard let self, self.configured else { self?.updateRunning(); return }
+      guard let self else { return }
+      guard self.configured else { DispatchQueue.main.async { self.updateRunning() }; return }
       self.session.beginConfiguration()
-      self.applyMode()
+      self.applyMode(mode)
       self.session.commitConfiguration()
       DispatchQueue.main.async { self.updateRunning() }
     }

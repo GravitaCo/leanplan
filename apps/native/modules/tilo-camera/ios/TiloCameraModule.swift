@@ -68,7 +68,8 @@ public class TiloCameraModule: Module {
     /// ours. Resolves { uri, base64, width, height, quality }; rejects "TooLarge" when nothing fits.
     AsyncFunction("preparePhoto") { (uri: String, steps: [[Double]], maxBytes: Int, qualityEdge: Int, clip: Int) throws -> [String: Any] in
       defer { TemporaryPhotos.delete(uri) }
-      guard let url = URL(string: uri), url.isFileURL, let src = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+      // only the module's own photos (camera shots and library picks) are read
+      guard let url = TemporaryPhotos.owned(uri), let src = CGImageSourceCreateWithURL(url as CFURL, nil) else {
         throw Exception(name: "UnreadableImage", description: "The photo couldn't be opened")
       }
       let quality = TiloCameraModule.measure(src, edge: qualityEdge, clip: clip)
@@ -135,7 +136,8 @@ public class TiloCameraModule: Module {
 
   /// A photo file as a CGImage with its EXIF orientation (Vision reads the image as stored).
   private static func cgImage(_ uri: String) throws -> (cg: CGImage, orientation: CGImagePropertyOrientation) {
-    guard let url = URL(string: uri), url.isFileURL,
+    // only the module's own photos are read
+    guard let url = TemporaryPhotos.owned(uri),
           let src = CGImageSourceCreateWithURL(url as CFURL, nil),
           let cg = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
       throw Exception(name: "UnreadableImage", description: "The photo couldn't be opened")

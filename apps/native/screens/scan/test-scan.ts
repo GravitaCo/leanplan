@@ -294,6 +294,12 @@ function exifStrip() {
   check('no EXIF, GPS or TIFF dictionary is written anywhere', !/kCGImageProperty(Exif|GPS|TIFF|IPTC)Dictionary/.test(swift) && !/kCGImageDestinationMetadata|kCGImageMetadataShouldExclude/.test(swift))
   check('what JS gets as base64 is that re-encode', /"base64": out\.data\.base64EncodedString\(\)/.test(mod) && (swift.match(/base64EncodedString\(/g) || []).length === 1)
   check('every temporary file is written through TemporaryPhotos.write (complete file protection), never copied or moved', !/\b(copyItem|moveItem|linkItem)\b|createFile\(/.test(swift) && (swift.match(/\.write\(to:/g) || []).length === 1 && /data\.write\(to: url, options: \[\.atomic, \.completeFileProtection\]\)/.test(tmp))
+  const owned = /static func owned[\s\S]*?\n  }\n/.exec(tmp)?.[0] ?? ''
+  check('a URI is ours only when its decoded, normalised, symlink-resolved folder is exactly ours and its name is UUID.ext (no %2E%2E or prefix escapes)',
+    /URL\(fileURLWithPath: url\.path\)\.standardizedFileURL\.resolvingSymlinksInPath\(\)/.test(owned) && /deletingLastPathComponent\(\)\.path == dir\.path/.test(owned) && /UUID\(uuidString:/.test(owned) && !/hasPrefix/.test(tmp))
+  check('deletes and reads go only through owned(): removeItem on an owned file or the folder itself, preparePhoto and barcodesInImage read only owned files',
+    (swift.match(/removeItem\(at: (\w+)\)/g) || []).join() === 'removeItem(at: file),removeItem(at: directory)' && /guard let file = owned\(uri\) else \{ return \}/.test(tmp)
+      && (mod.match(/TemporaryPhotos\.owned\(uri\)/g) || []).length === 2 && !/URL\(string: uri\)/.test(mod))
   const photo = readFileSync('screens/scan/labelPhoto.ts', 'utf8')
   check('every photo the app sends goes through preparePhoto (camera and library alike)',
     /return \{ uri: p\.uri, base64: p\.base64,/.test(photo) && (photo.match(/base64:/g) || []).length === 2
