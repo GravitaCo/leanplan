@@ -622,4 +622,38 @@ export const DEMOS = {
       { at: 14.4, kind: 'squeeze', rep: 1 },
     ],
   },
+  // Seedance 2.5 image-to-video from a still made from Benn's reference photo, with the same still as first and last
+  // frame so the loop is seamless. Women only, warm greige studio. Timed by frame-to-frame motion (8 fps); Benn passed both.
+  // Assisted dip (demonstrator W6), three-quarter from behind: kneeling on the pad, which travels with her.
+  assistedDip: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/0aba3c71-4f3a-4fac-938f-2e58466d01f0/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/0aba3c71-4f3a-4fac-938f-2e58466d01f0/thumbnail.jpg',
+    durationSec: 10.04,
+    tempo: [
+      { at: 0, kind: 'lower', rep: 1 },
+      { at: 2.7, kind: 'stretch', rep: 1 },
+      { at: 3.4, kind: 'lift', rep: 1 },
+      { at: 4.7, kind: 'squeeze', rep: 1 },
+      { at: 5.5, kind: 'lower', rep: 2 },
+      { at: 7.55, kind: 'stretch', rep: 2 },
+      { at: 8.05, kind: 'lift', rep: 2 },
+      { at: 9.45, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Dip on parallel bars (demonstrator W9), side three-quarter: knees bent, ankles crossed, feet clear of the floor.
+  dip: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/5fa5c55c-f975-4ce0-9657-7209fdab9e86/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/5fa5c55c-f975-4ce0-9657-7209fdab9e86/thumbnail.jpg',
+    durationSec: 10.04,
+    tempo: [
+      { at: 0, kind: 'lower', rep: 1 },
+      { at: 2.8, kind: 'stretch', rep: 1 },
+      { at: 3.5, kind: 'lift', rep: 1 },
+      { at: 4.5, kind: 'squeeze', rep: 1 },
+      { at: 5.6, kind: 'lower', rep: 2 },
+      { at: 7.7, kind: 'stretch', rep: 2 },
+      { at: 8.35, kind: 'lift', rep: 2 },
+      { at: 9.45, kind: 'squeeze', rep: 2 },
+    ],
+  },
 } satisfies Record<string, ExerciseMedia>
