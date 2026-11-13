@@ -11,7 +11,7 @@ import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTimin
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { Icon, type IconName } from './icons'
-import { BTN, tx, useTokens, type Tokens } from '../theme'
+import { BTN, num, tx, useTokens, type Tokens } from '../theme'
 
 /** Inside a sheet, lists, cards and the pill sit on --elev (`.sheet .list, .sheet .card…`). */
 export const InSheet = createContext(false)
@@ -58,10 +58,11 @@ function touchHeight(style: StyleProp<ViewStyle>, fallback: number): number {
   return h
 }
 
-export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger' | 'signout'
+export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger' | 'signout' | 'link'
 
 /** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, `.signout` (Profile's: a card-coloured
- *  block, radius 16, red 16 pt, 24 above), and `.sm` (36 high, as wide as its words). */
+ *  block, radius 16, red 16 pt, 24 above), `link` (`.btn.dup-link`: no fill, tinted words, 4 pt up) and
+ *  `.sm` (36 high, as wide as its words). */
 export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disabled, style, textStyle, label }: {
   title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode
   /** an icon after the words (the sign-in arrow) */
@@ -71,7 +72,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disa
 }) {
   const t = useTokens()
   const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : kind === 'signout' ? t.card : 'transparent'
-  const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' ? t.tint : t.red
+  const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' || kind === 'link' ? t.tint : t.red
   const so = kind === 'signout'
   const h = small ? 36 : 50
   const btn = (
@@ -80,7 +81,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disa
       style={({ pressed }) => [{
         minHeight: h, borderRadius: so ? 16 : h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
-      }, style]}>
+      }, kind === 'link' && { marginTop: -4 }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
       <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
       {typeof iconAfter === 'string' ? <Icon name={iconAfter as IconName} color={fg} /> : iconAfter}
@@ -126,7 +127,8 @@ export function Chip({ title, sub, on, onPress, size, tone, role = 'button', lab
  */
 export function Note({ children, kind = 'info', icon, action, status, style }: {
   children: ReactNode; kind?: 'info' | 'ok' | 'warn'; icon?: IconName | null
-  action?: { title: string; onPress: () => void }; status?: boolean; style?: StyleProp<ViewStyle>
+  /** the small button under the words: ink, or `tinted` (`.btn.sm.tinted`) */
+  action?: { title: string; onPress: () => void; kind?: 'ink' | 'tinted' }; status?: boolean; style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const surface = useSurface(t)
@@ -139,7 +141,7 @@ export function Note({ children, kind = 'info', icon, action, status, style }: {
         ok ? { paddingTop: 8, paddingHorizontal: 4 } : { paddingVertical: 10, paddingHorizontal: 14, borderRadius: t.radius, backgroundColor: surface }, style]}>
       {ic && <View style={{ marginTop: 1 }}><Icon name={ic} color={ink} /></View>}
       <Text style={[tx(ok ? 13 : 15, 400, 1.35), { color: ok ? t.label2 : t.label, flex: 1, minWidth: '60%' }]}>{children}</Text>
-      {action && <View style={{ width: '100%', paddingLeft: 27 }}><Btn small title={action.title} onPress={action.onPress} /></View>}
+      {action && <View style={{ width: '100%', paddingLeft: 27 }}><Btn small kind={action.kind ?? 'ink'} title={action.title} onPress={action.onPress} /></View>}
     </View>
   )
 }
@@ -311,5 +313,53 @@ export function ToastHost({ sheet }: { sheet?: number } = {}) {
         ? <View style={{ alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' }}><ToastView text={toast} action={{ label: action.label, run: () => { action.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View>
         : (toast || used) && <View style={{ maxWidth: '88%' }}><ToastView text={toast ?? ''} /></View>}
     </Animated.View>
+  )
+}
+
+/** `.roundbtn`: a 44 pt ink circle with a 20 pt icon (Food's add button), named by its aria label. */
+export function RoundBtn({ icon = 'plus', stroke = 2.4, onPress, label }: { icon?: IconName; stroke?: number; onPress: () => void; label: string }) {
+  const t = useTokens()
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: t.btn, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
+      <Icon name={icon} stroke={stroke} color={t.btnInk} />
+    </Pressable>
+  )
+}
+
+/**
+ * `.dash-add`: a 56 pt add row with a 1.5 pt dashed --dash edge (radius 18), a plus and tinted
+ * words (16 pt, 600), 12 above (`after` 8: right after a pillar card). Pressed, it fills with --fill.
+ */
+export function DashAdd({ title, onPress, icon = 'plus', stroke = 2.4, label, after }: { title: string; onPress: () => void; icon?: IconName; stroke?: number; label?: string; after?: boolean }) {
+  const t = useTokens()
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 56, marginTop: after ? 8 : 12,
+        borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.dash, borderRadius: t.radiusSm, backgroundColor: pressed ? t.fill : 'transparent' })}>
+      <Icon name={icon} stroke={stroke} color={t.tint} />
+      <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{title}</Text>
+    </Pressable>
+  )
+}
+
+/**
+ * `.big` (with `.num`): a 30 pt figure (600, 1.1), its unit as `.big small` (17 pt 600 --label2, 3
+ * in) and an optional `.pm` margin pill (15 pt 600 --label2 on --fill, radius 8, padding 2 7, 6 in).
+ * `center` centres the line (Edit entry's card). `.num` sets the tracking to 0 for all three.
+ */
+export function Big({ value, unit, pm, center, style }: { value: string; unit?: string; pm?: string; center?: boolean; style?: StyleProp<ViewStyle> }) {
+  const t = useTokens()
+  return (
+    <View style={[{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: center ? 'center' : 'flex-start' }, style]}>
+      <Text style={[tx(30, 600, 1.1, 0), num, { color: t.label }]}>{value}</Text>
+      {unit != null && <Text style={[tx(17, 600, 1.1, 0), num, { color: t.label2, marginLeft: 3 }]}>{unit}</Text>}
+      {/* vertical-align: 1px on the web: the pill sits 1 pt above the baseline */}
+      {pm != null && (
+        <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 8, paddingVertical: 2, paddingHorizontal: 7 }}>
+          <Text style={[tx(15, 600, 1.1, 0), num, { color: t.label2 }]}>{pm}</Text>
+        </View>
+      )}
+    </View>
   )
 }

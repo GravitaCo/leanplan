@@ -14,7 +14,9 @@ import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
+import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, List, Note, RoundBtn, Tile, ToastHost, ToastView } from './ui/kit'
+import { Scale, Select, Slider, Stepper } from './ui/controls'
+import { frac } from '@/core/domain/estimate'
 import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
@@ -61,6 +63,13 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [consentA, setConsentA] = useState(true)
   const [consentB, setConsentB] = useState(false)
   const [kitOpts, setKitOpts] = useState<string[]>(['db'])
+  const [mult, setMult] = useState(1.5)
+  const [serv, setServ] = useState('1')
+  const [mood, setMood] = useState(3)
+  const [hand, setHand] = useState('palm')
+  const [count, setCount] = useState(1.5)
+  const [cardio, setCardio] = useState('Brisk walk')
+  const [activity, setActivity] = useState('moderate')
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
   const [player, setPlayer] = useState(false)
@@ -369,6 +378,49 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
             <Row title="Walk" sub="30 min" onPress={() => {}} />
           </List>
         </View>
+      </Sec>
+
+      <Sec id="p4" title="Slider · Stepper · Scale (servings; check-in) · chips with hints · Select">
+        <Card plain>
+          <Big center value={String(Math.round(412 * mult))} unit="kcal" />
+          <Slider min={0.25} max={3} step={0.05} value={mult} onChange={setMult} label="Portion size" style={{ marginTop: 12 }} />
+        </Card>
+        <View style={{ marginTop: 10 }}><Scale items={G.serv} value={serv} onPick={setServ} /></View>
+        <View style={{ marginTop: 10 }}><Scale tall items={G.moods} value={mood} onPick={setMood} /></View>
+        <View style={{ marginTop: 10 }}>
+          <Chips>{G.hands.map(([k, l, h]) => <Chip key={k} title={l} sub={h} on={hand === k} onPress={() => setHand(k)} />)}</Chips>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+          <Text style={[tx(17), { color: t.label }]}>How many</Text>
+          <Stepper value={frac(count)} decLabel="Fewer" incLabel="More" onDec={() => setCount(Math.max(0.5, count - 0.5))} onInc={() => setCount(Math.min(6, count + 0.5))} />
+        </View>
+        <List style={{ marginTop: 14 }}>
+          <FRow label="Type" right={<Select row label="Type" value={cardio} options={G.cardio} onChange={setCardio} />} />
+        </List>
+        <View style={{ marginTop: 10 }}>
+          <Field label="Activity level"><Select label="Activity level" value={activity} options={G.activity} onChange={setActivity} /></Field>
+        </View>
+      </Sec>
+
+      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          <RoundBtn label="Add food" onPress={() => {}} />
+          <NavBtn icon="barcode" label="Scan barcode" style={{ paddingHorizontal: 2 }} onPress={() => {}} />
+          <NavBtn icon="x" muted label="Delete Oat porridge" onPress={() => {}} />
+        </View>
+        <DashAdd title="Breakfast" stroke={2.6} onPress={() => {}} />
+        <DashAdd title="Add a workout" onPress={() => {}} />
+        <View style={{ marginTop: 12 }}><Btn kind="link" title="Save as new" onPress={() => {}} /></View>
+        <Note action={{ title: 'Try again', kind: 'tinted', onPress: () => {} }}>The label couldn’t be read. Try again in better light.</Note>
+        <List style={{ marginTop: 10 }}>
+          <Row k="Yours" title="Oat porridge" />
+          <Row k="From the shared list" title="Oats, porridge, made with semi-skimmed milk" />
+        </List>
+        <Card plain style={{ marginTop: 10 }}><Big value="412" unit="kcal" pm="± 40" /></Card>
+        <List style={{ marginTop: 10 }}>
+          <FRow label="Palm" hint="Meat, fish, tofu" value="100" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
+          <FRow label="Thumb" hint="Oil, butter, nut butter" value="12" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
+        </List>
       </Sec>
 
       <Sec id="banner" title="Banner">

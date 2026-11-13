@@ -63,10 +63,11 @@ export function Field({ label, children, hideLabel }: { label: string; children:
  * `.frow`: a form row in a List: the 17 pt label (at least 96 wide) on the left, a borderless
  * right-aligned input, and an optional unit. `need` tints the placeholder (a value still needed);
  * `flag` marks a value worth checking against the pack with a tint bar on the left and a 13 pt
- * tinted note under it (never an alarm colour).
+ * tinted note under it (never an alarm colour). `hint` is a 13 pt --label2 line under the label
+ * (Hand portions' "Meat, fish, tofu"); it joins the field's name, as it sits inside the web's label.
  */
-export function FRow({ label, unit, need, flag, right, ...props }: InputProps & {
-  label: string; unit?: string; need?: boolean; flag?: ReactNode; right?: ReactNode
+export function FRow({ label, hint, unit, need, flag, right, ...props }: InputProps & {
+  label: string; hint?: string; unit?: string; need?: boolean; flag?: ReactNode; right?: ReactNode
 }) {
   const t = useTokens()
   const [, f] = useFocus(props)
@@ -75,9 +76,12 @@ export function FRow({ label, unit, need, flag, right, ...props }: InputProps & 
     // a tap on the label focuses the field, as a web <label for> does
     <Pressable accessible={false} onPress={() => input.current?.focus()} style={[{ flexDirection: 'row', flexWrap: flag ? 'wrap' : 'nowrap', alignItems: 'center', columnGap: 12, minHeight: 44, paddingHorizontal: 16 },
       flag != null && { boxShadow: `inset 3px 0 0 ${t.tint}` }]}>
-      <Text style={[tx(17), { color: t.label, minWidth: 96 }]} importantForAccessibility="no" accessibilityElementsHidden>{label}</Text>
+      <View style={{ minWidth: 96 }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+        <Text style={[tx(17), { color: t.label }]}>{label}</Text>
+        {hint != null && <Text style={[tx(13), { color: t.label2 }]}>{hint}</Text>}
+      </View>
       {right ?? (
-        <TextInput ref={input} {...props} {...f} accessibilityLabel={label} placeholderTextColor={need ? t.tint : placeholder(t)}
+        <TextInput ref={input} {...props} {...f} accessibilityLabel={hint != null ? `${label} ${hint}` : label} placeholderTextColor={need ? t.tint : placeholder(t)}
           style={[tx(17, 400, 1.3, 0), { flex: 1, minWidth: 0, color: t.label, paddingVertical: 11, paddingHorizontal: 0, textAlign: 'right' }]} />
       )}
       {unit != null && <Text style={[tx(17), { color: t.label2 }]}>{unit}</Text>}

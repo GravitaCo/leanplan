@@ -26,7 +26,7 @@ const WEB = process.env.WEB_GALLERY_URL || 'http://localhost:4179/'
 const NATIVE = (process.env.NATIVE_URL || 'http://localhost:4188/') + 'gallery'
 const OUT = outDir('tilo-gallery-')
 const SECTIONS = ['header', 'pill', 'icons', 'tabbar', 'cathead', 'seg', 'toggle', 'rows', 'nav', 'buttons', 'cards', 'charts', 'macro', 'weekbars',
-  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'opts', 'ticks', 'signposts', 'extras', 'insets', 'banner', 'toast', 'mark', 'sheets']
+  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'opts', 'ticks', 'signposts', 'extras', 'insets', 'p4', 'n5', 'banner', 'toast', 'mark', 'sheets']
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null
 
 const webSec = (id) => `[data-g="${id}"]`
@@ -36,7 +36,14 @@ const natSec = (id) => `[data-testid="g-${id}"]`
 async function measure(page, sel) {
   return page.locator(sel).evaluate((el) => {
     const r = el.getBoundingClientRect()
+    // a <select> shows only its chosen option (innerText would list them all): swap in its words
+    const swaps = [...el.querySelectorAll('select')].map((s) => {
+      const span = document.createElement('span'); span.textContent = s.selectedOptions[0]?.text ?? ''
+      s.after(span); const d = s.style.display; s.style.display = 'none'
+      return () => { span.remove(); s.style.display = d }
+    })
     const words = el.innerText.replace(/\s+/g, ' ').trim()
+    swaps.forEach((undo) => undo())
     const labels = [...el.querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')).filter(Boolean)
     if (el.getAttribute('aria-label')) labels.unshift(el.getAttribute('aria-label'))
     // a form field named by its <label> (for= or wrapping) has that label as its accessible name
@@ -44,8 +51,9 @@ async function measure(page, sel) {
       if (f.getAttribute('aria-label')) continue
       const byFor = f.id && el.querySelector(`label[for="${f.id}"]`)
       const wrap = f.closest('label')
-      const name = byFor ? byFor.textContent : wrap ? (wrap.querySelector('span') || wrap).textContent : null
-      if (name) labels.push(name.trim())
+      // innerText, as the accessible name reads a block inside the label (FRow's hint) after a space
+      const name = byFor ? byFor.innerText : wrap ? (wrap.querySelector('span') || wrap).innerText : null
+      if (name) labels.push(name.replace(/\s+/g, ' ').trim())
     }
     // icons: the 24-unit line icons only (charts and the mark have other viewBoxes)
     const icons = [...el.querySelectorAll('svg')].filter((s) => s.getAttribute('viewBox') === '0 0 24 24')
@@ -86,7 +94,10 @@ async function run() {
       const bag = (x) => x.split(' ').sort().join(' ')
       // an inline .tag joins its sentence with no space on the web ("100 gMINE"): only that case is spaced
       const tagged = (x) => x.replace(/([a-z0-9])([A-Z]{2,})\b/g, '$1 $2')
-      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words, { web: mw.words, native: mn.words })
+      // a unit in an inline <small> joins its figure with no space on the web ("412kcal"); the
+      // pictures check the spacing, so the words may differ only in spaces
+      const bare = (x) => x.replace(/\s+/g, '')
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words || bare(mw.words) === bare(mn.words), { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       check(`${id}: height within 2 px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= 2, { web: mw.h, native: mn.h })
@@ -140,6 +151,28 @@ async function run() {
         seq[tag] = out.join(',')
       }
       check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
+    }
+    // the Slider: a tap at either end and a drag across set the same portion on both sides
+    if (!ONLY || ONLY.includes('p4')) {
+      const seq = {}
+      for (const [x, tag, sel, fig] of [
+        [w, 'web', '[data-g="p4"] input[type="range"]', '[data-g="p4"] .big'],
+        [n, 'native', '[data-testid="g-p4"] [aria-label="Portion size"]', null],
+      ]) {
+        const el = x.page.locator(sel).first()
+        await el.scrollIntoViewIfNeeded()
+        const box = await el.boundingBox(), cy = box.y + box.height / 2, l = box.x + 2, r = box.x + box.width - 2
+        // the figure above the slider: the card's first number
+        const read = () => (fig ? x.page.locator(fig).first().innerText() : el.evaluate((s) => s.parentElement.innerText)).then((v) => v.match(/\d+/)[0])
+        const out = [await read()]
+        await x.page.mouse.click(r, cy); await x.page.waitForTimeout(200); out.push(await read())
+        await x.page.mouse.click(l, cy); await x.page.waitForTimeout(200); out.push(await read())
+        await x.page.mouse.move(l, cy); await x.page.mouse.down()
+        for (let i = 1; i <= 10; i++) await x.page.mouse.move(l + ((r - l) * i) / 10, cy)
+        await x.page.mouse.up(); await x.page.waitForTimeout(200); out.push(await read())
+        seq[tag] = out.join(',')
+      }
+      check(`${scheme}: the Slider's taps and drag set the same values (×1.5, right end, left end, drag across)`, seq.web === seq.native && seq.web === '618,1236,103,1236', seq)
     }
     // a sheet drawn over a full-screen view (the guided player): overlay mode on native, the same look
     if (!ONLY || ONLY.includes('sheets')) {
