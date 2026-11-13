@@ -12,7 +12,7 @@ import * as Sharing from 'expo-sharing'
 import * as DocumentPicker from 'expo-document-picker'
 import type { PersistedState } from '@/data/persistence'
 import { todayStr } from '@/core/domain/date'
-import { parseBackup } from './backupParse'
+import { readBackup, setBackupExporter } from '@/data/backup'
 
 export const backupName = () => 'tali-backup-' + todayStr() + '.json'
 
@@ -57,7 +57,8 @@ export async function pickBackup(): Promise<PersistedState | null> {
   const res = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'public.json', 'text/plain'], copyToCacheDirectory: true, multiple: false })
   if (res.canceled || !res.assets?.[0]) return null
   const file = new File(res.assets[0].uri)
-  let text: string
-  try { text = await file.text() } catch { throw new Error('unreadable') } finally { try { file.delete() } catch { /* not ours to delete */ } }
-  return parseBackup(text)
+  try { return await readBackup(file) } finally { try { file.delete() } catch { /* not ours to delete */ } }
 }
+
+// the shared exportBackup (src/data/backup.native.ts) writes through this file and share sheet
+setBackupExporter(exportBackupFile)

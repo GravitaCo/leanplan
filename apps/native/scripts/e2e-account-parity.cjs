@@ -1,5 +1,7 @@
 /**
- * N2 parity: account, consent and legal on native, checked against the web (native-build-brief §1:
+ * N2 parity: account, consent and legal on native, checked against the web. Needs the N2 screens,
+ * which are being rebuilt on lib/ui (N1): it passed 29 of 29 on the stand-in screens (commit 27ae9d6)
+ * and runs again once the port lands (native-build-brief §1:
  * "parity is tested, not eyeballed"). Carries over scripts/e2e-foundations.cjs's consent,
  * withdrawal, existing-user and delete-account cases and scripts/e2e-under-age.cjs's launch, sync
  * and backup cases, run against the native app's code rendered for the web (react-native-web), and

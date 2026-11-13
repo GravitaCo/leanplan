@@ -1,44 +1,43 @@
 /**
- * The app's gate, in App.tsx's order: loading, whose data is on this phone (the owner choice),
- * sign-in, a pending under-18 deletion, the 18+ stop, the consent screen (after sign-in until the
- * health answer is in, or opened from Profile), then the app. Returns null once the app may show;
- * until then nothing behind it is rendered. The first-run wizard (behind ONBOARDING_ENABLED) comes
- * after consent with N11.
+ * The app's gate, in App.tsx's order (lib/account/gateModel.ts): loading, whose data is on this
+ * phone, sign-in, a pending under-18 deletion, the 18+ stop, consent, then the app. Returns null
+ * once the app may show; until then nothing behind it is rendered, and the store's own rules keep
+ * sync off until the health yes and during the 18+ stop.
+ *
+ * The N2 screens are being rebuilt on lib/ui (N1); until they land each step keeps the spike's plain
+ * message, which never goes past it.
  */
 import { useStore } from '@/store/store'
 import { healthConsentAnswered, liveConsentDue } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { pendingDeletion } from '@/data/onboardingDraft'
 import { getUid } from '@/data/supabase'
-import { Notice } from './Notice'
-import { AuthScreen, OwnerChoiceScreen } from './account/Auth'
-import { ConsentScreen } from './account/Consent'
-import { Under18, UnderAgeStop } from './account/AgeStop'
+import { Notice, SignIn } from './SignIn'
+import { gateStep, pendingFor } from './account/gateModel'
 
 export function useGate(fontsLoaded = true) {
   const authReady = useStore((s) => s.authReady)
   const signedIn = useStore((s) => s.signedIn)
   const authed = useStore((s) => s.authed)
   const owner = useStore((s) => s.data._meta?.owner)
-  const ownerAsk = useStore((s) => s.ownerAsk)
-  const underAge = useStore((s) => s.underAge)
+  const ownerAsk = useStore((s) => !!s.ownerAsk)
+  const underAge = useStore((s) => !!s.underAge)
   const consentOpen = useStore((s) => s.consentOpen)
+  const signOut = useStore((s) => s.signOut)
   const consentDue = useStore((s) => !healthConsentAnswered(s.data) && liveConsentDue(s.data))
-  if (!fontsLoaded || !authReady) return <Notice title="Loading…" />
-  if (ownerAsk) return <OwnerChoiceScreen />
-  if (!signedIn) return <AuthScreen />
-  // a new under-18 account whose deletion is still pending (the wizard's stop): only for the account
-  // it belongs to (the live session's, or offline this phone's owner); the store retries it
   const pend = ONBOARDING_ENABLED ? pendingDeletion() : null
-  if (pend && pend.uid === (authed ? getUid() : owner)) return <Under18 deleting onClose={() => {}} />
-  // 18+: an under-18 age from Profile, a backup, sync or this phone's saved data. Only the stop
-  // shows, before consent or anything else; sync stays off (the store's rule). The web shows the redo
-  // wizard's own stop in its place while that wizard is open; native has no wizard until N11, so the
-  // app's stop shows in every case: never open past an under-18 age (compliance, 13 Nov)
-  if (underAge) return <UnderAgeStop source={underAge.source} />
-  // the one consent screen until the health answer is in (after a "Not now", once more 2 weeks on);
-  // Profile opens it too, for someone who never agreed on it
-  if (consentOpen) return <ConsentScreen fromProfile />
-  if (consentDue) return <ConsentScreen />
-  return null
+  const step = gateStep({
+    ready: fontsLoaded && authReady, ownerAsk, signedIn, underAge, consentOpen, consentDue,
+    pendingDeletion: pendingFor(pend?.uid, { authed, sessionUid: authed ? getUid() : null, owner }),
+  })
+  switch (step) {
+    case null: return null
+    case 'loading': return <Notice title="Loading…" />
+    case 'owner': return <Notice title="This phone has someone else's Tilo data" body="The spike doesn't ask whose it is yet. Sign out, or use the web app for this account for now." action={{ title: 'Sign out', onPress: () => void signOut() }} />
+    case 'sign-in': return <SignIn />
+    case 'deleting':
+    case 'under-age': return <Notice title="Tilo is for people 18 and over" />
+    case 'consent':
+    case 'consent-profile': return <Notice title="One more step on the web" body="Answer the health data question at app.tilo.fit, then open this again. The native consent screen comes with the account work." />
+  }
 }

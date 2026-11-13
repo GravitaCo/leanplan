@@ -35,3 +35,6 @@ export async function googleOAuth(
   const { error } = await auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname, queryParams } })
   return error ? 'error' : 'redirecting'
 }
+
+/** Native registers its sign-in sheet here (platform.native.ts); the web needs none. */
+export function setGoogleOAuth(_fn: (queryParams?: Record<string, string>) => Promise<GoogleOAuthResult>): void {}

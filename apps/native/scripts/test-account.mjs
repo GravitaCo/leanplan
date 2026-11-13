@@ -1,24 +1,27 @@
 /**
- * Unit tests for N2's pure account logic (apps/native/lib/account): the backup check, the delete
- * confirm word, the tilo://auth-callback code, the sign-in photo's size and crop. The flows
+ * Unit tests for N2's pure account logic (apps/native/lib/account): the gate's order, the backup
+ * check, the delete confirm word, the tilo://auth-callback code, the sign-in photo's size and crop. The flows
  * themselves are checked against the web in scripts/e2e-account-parity.cjs.
  *   (apps/native) npm run test:account
  */
-import { parseBackup } from '../lib/account/backupParse.ts'
+import { readBackup } from '../../../src/data/backup.native.ts'
 import { codeFrom, coverFrame, photoHeight, typedOk } from '../lib/account/rules.ts'
+import { gateStep, pendingFor } from '../lib/account/gateModel.ts'
 
 let failed = 0
 let passed = 0
 const check = (name, ok) => { if (ok) passed++; else { failed++; console.error('FAIL', name) } }
-const throws = (fn, msg) => { try { fn(); return false } catch (e) { return e.message === msg } }
+const file = (text) => ({ text: async () => text })
+const rejects = async (p, msg) => { try { await p; return false } catch (e) { return e.message === msg } }
 
 /* ---------- backups: the web's readBackup check ---------- */
-check('backup: a state with days', parseBackup('{"days":{"2026-11-01":{}},"profile":{}}').days['2026-11-01'] !== undefined)
-check('backup: empty days is still a backup', !!parseBackup('{"days":{}}'))
-check('backup: no days is not', throws(() => parseBackup('{"hello":1}'), 'invalid'))
-check('backup: days that are not an object', throws(() => parseBackup('{"days":3}'), 'invalid'))
-check('backup: null', throws(() => parseBackup('null'), 'invalid'))
-check('backup: not JSON', throws(() => parseBackup('not json'), 'unreadable'))
+check('backup: a state with days', (await readBackup(file('{"days":{"2026-11-01":{}},"profile":{}}'))).days['2026-11-01'] !== undefined)
+check('backup: empty days is still a backup', !!(await readBackup(file('{"days":{}}'))))
+check('backup: no days is not', await rejects(readBackup(file('{"hello":1}')), 'invalid'))
+check('backup: days that are not an object', await rejects(readBackup(file('{"days":3}')), 'invalid'))
+check('backup: null', await rejects(readBackup(file('null')), 'invalid'))
+check('backup: not JSON', await rejects(readBackup(file('not json')), 'unreadable'))
+check('backup: a file that can’t be read', await rejects(readBackup({ text: async () => { throw new Error('x') } }), 'unreadable'))
 
 /* ---------- delete confirm (board ob6-6) ---------- */
 for (const ok of ['DELETE', 'delete', ' Delete ']) check(`typed: ${JSON.stringify(ok)} confirms`, typedOk(ok))
@@ -39,6 +42,24 @@ check('crop: fills the width', Math.abs(f.width - 390) < 1e-9 && f.left === 0)
 check('crop: 30% of the overflow cut from the top', Math.abs(f.top + (f.height - 405) * 0.3) < 1e-9 && f.height > 405)
 const g = coverFrame(928, 1152, 390, 600)
 check('crop: a tall box fills the height, centred', Math.abs(g.height - 600) < 1e-9 && g.left < 0 && Math.abs(g.top) < 1e-9)
+
+/* ---------- the gate, in App.tsx's order ---------- */
+const base = { ready: true, ownerAsk: false, signedIn: true, pendingDeletion: false, underAge: false, consentOpen: false, consentDue: false }
+const all = { ready: false, ownerAsk: true, signedIn: false, pendingDeletion: true, underAge: true, consentOpen: true, consentDue: true }
+check('gate: the app when nothing is due', gateStep(base) === null)
+check('gate: loading before anything', gateStep(all) === 'loading')
+check('gate: the owner question before sign-in', gateStep({ ...all, ready: true }) === 'owner')
+check('gate: sign-in next', gateStep({ ...all, ready: true, ownerAsk: false }) === 'sign-in')
+check('gate: a pending under-18 deletion before the stop', gateStep({ ...base, pendingDeletion: true, underAge: true, consentDue: true }) === 'deleting')
+check('gate: the 18+ stop before consent', gateStep({ ...base, underAge: true, consentDue: true, consentOpen: true }) === 'under-age')
+check('gate: consent from Profile', gateStep({ ...base, consentOpen: true, consentDue: true }) === 'consent-profile')
+check('gate: consent until answered', gateStep({ ...base, consentDue: true }) === 'consent')
+check('gate: signed out never reaches consent or the app', gateStep({ ...base, signedIn: false }) === 'sign-in')
+check('pending: none', !pendingFor(null, { authed: true, sessionUid: 'a', owner: 'a' }))
+check('pending: the live session’s account', pendingFor('a', { authed: true, sessionUid: 'a', owner: 'b' }))
+check('pending: not another session’s', !pendingFor('a', { authed: true, sessionUid: 'b', owner: 'a' }))
+check('pending: offline, this phone’s owner', pendingFor('a', { authed: false, sessionUid: null, owner: 'a' }))
+check('pending: offline, not another owner’s', !pendingFor('a', { authed: false, sessionUid: null, owner: 'b' }))
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} passed`)
 process.exit(failed ? 1 : 0)

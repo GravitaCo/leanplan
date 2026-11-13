@@ -1,7 +1,13 @@
 # N2 parity checklist: account, consent and legal
 
-Native code: `apps/native/lib/account/` (screens on a stand-in kit until N1's primitives land),
-`lib/gate.tsx`, `app/auth-callback.tsx`. Web sources: `src/screens/AuthScreen.tsx`,
+Native code: `apps/native/lib/account/` (logic: gate model, backup file, Google sign-in sheet, rules),
+`lib/gate.tsx`, `app/auth-callback.tsx`, `src/data/backup.native.ts`, `src/data/platform.native.ts`.
+
+**State (13 Nov, evening):** the screens below were built and passed every check on a stand-in kit
+(commit 27ae9d6: parity 29 of 29, compliance, security-data, design APPROVED, ship-critic SHIP). The
+lead doesn't merge stand-in screens, so they're off the branch head and being rebuilt on `lib/ui`
+(N1); until then the gate shows the spike's plain messages in the right order. The ✓ marks below
+are from that run, and are re-checked when the port lands. Web sources: `src/screens/AuthScreen.tsx`,
 `src/screens/legal/`, `src/screens/onboarding/AgeStop.tsx`, `src/screens/profile/AccountData.tsx`,
 Profile's account rows in `src/screens/ProfileScreen.tsx`, `src/App.tsx` (gate order).
 

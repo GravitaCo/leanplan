@@ -13,6 +13,7 @@ import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
 import { codeFrom } from './rules'
+import { setGoogleOAuth } from '@/data/platform'
 
 export const REDIRECT = 'tilo://auth-callback'
 const web = Platform.OS === 'web'
@@ -55,3 +56,6 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
     googleOpen = false
   }
 }
+
+// the shared account code (src/data/account.ts reauthWithGoogle) reaches this sheet through the platform
+setGoogleOAuth(async (q) => (await googleSignIn(q)).status)

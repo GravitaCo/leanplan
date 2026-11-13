@@ -3,7 +3,7 @@
  * browser's own download and file picker, as src/data/backup.ts does.
  */
 import type { PersistedState } from '@/data/persistence'
-import { parseBackup } from './backupParse'
+import { readBackup } from '@/data/backup'
 
 /** Nothing is kept on the web: the browser downloads the file (src/data/backup.ts). */
 export function clearBackupCopies(): void {}
@@ -18,7 +18,7 @@ export function pickBackup(): Promise<PersistedState | null> {
       const f = input.files?.[0]
       input.remove()
       if (!f) return resolve(null)
-      f.text().then((t) => { try { resolve(parseBackup(t)) } catch (e) { reject(e) } }, () => reject(new Error('unreadable')))
+      readBackup(f).then(resolve, reject)
     }
     document.body.appendChild(input)
     input.click()
