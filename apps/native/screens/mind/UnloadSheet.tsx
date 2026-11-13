@@ -50,8 +50,8 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
           {notes.map((n) => {
             const day = noteDay(n.at)
             return (
-              <Row key={n.id} title={day} wrapSub sub={noteLines(n).join('\n')}
-                right={<LinkBtn title={UNLOAD.delete} label={MIND_UI.deleteNote(day)} onPress={() => deleteUnload(n.id)} style={{ paddingVertical: 12, paddingRight: 0, paddingLeft: 8 }} />} />
+              <View key={n.id} testID="unload-note"><Row title={day} wrapSub sub={noteLines(n).join('\n')}
+                right={<LinkBtn title={UNLOAD.delete} label={MIND_UI.deleteNote(day)} onPress={() => deleteUnload(n.id)} style={{ paddingVertical: 12, paddingRight: 0, paddingLeft: 8 }} />} /></View>
             )
           })}
         </List>

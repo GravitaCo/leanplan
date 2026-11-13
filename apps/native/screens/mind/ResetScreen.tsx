@@ -56,7 +56,7 @@ export function ResetScreen({ onBack, backLabel }: { onBack: () => void; backLab
           )}
           {v.reducedLine && <Foot style={{ color: t.label, paddingTop: 0, paddingHorizontal: 4 }}>{v.reducedLine}</Foot>}
           {v.pacer && <PacerCard pattern={RESET_PATTERN} minutes={rs.len} run={rs.stage === 'running' ? rs.run : null} reduced={reduced} onLeft={setLeft} onDone={finish} />}
-          {v.left && <Foot style={[num, { textAlign: 'center', paddingTop: 0, paddingHorizontal: 4 }]}>{v.left}</Foot>}
+          {v.left && <View testID="reset-left"><Foot style={[num, { textAlign: 'center', paddingTop: 0, paddingHorizontal: 4 }]}>{v.left}</Foot></View>}
           {v.end && (
             <Card plain style={{ alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 16 }}>
               {v.end.title

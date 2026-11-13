@@ -124,6 +124,7 @@ const ADAPTERS = {
     notes: (p) => p.locator('.ul-notes .li'),
     toast: (p) => p.locator('.toast.show'),
     tabBar: (p) => p.locator('nav.tabbar'),
+    picked: async (p) => (await p.getByRole('radio', { checked: true }).first().innerText()).trim(),
   },
   native: {
     openMind: async (p) => { await p.getByRole('tab', { name: 'Mind', exact: true }).click(); await p.getByTestId('screen-mind').waitFor() },
@@ -137,13 +138,18 @@ const ADAPTERS = {
     word: (p) => p.getByTestId('reset-word'),
     left: (p) => p.getByTestId('reset-left'),
     sphere: (p) => p.getByTestId('reset-sphere'),
-    sheet: (p, title) => p.getByRole('dialog', { name: title }),
-    supportNames: (p) => p.getByTestId('support-row-name'),
+    // lib/ui's Sheet carries its title as aria-label (and aria-modal) on the web render, not role=dialog
+    sheet: (p, title) => p.locator(`[aria-label="${title}"][aria-modal="true"], [aria-modal="true"] [aria-label="${title}"]`).first(),
+    // TODO(N1-followup): Seg sets accessibilityState only, so the web render has no aria-checked; until it
+    // does, the picked segment is the raised one (on --segon)
+    picked: async (p) => p.evaluate(() => { const r = [...document.querySelectorAll('[role="radio"]')].find((e) => getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)'); return r ? r.innerText.trim() : '' }),
+    supportNames: (p) => p.getByTestId('support-row'),
     unloadMind: (p) => p.getByTestId('unload-mind'),
     unloadNext: (p) => p.getByTestId('unload-next'),
-    noteDays: (p) => p.getByTestId('unload-note-day'),
+    noteDays: (p) => p.getByTestId('unload-note'),
     notes: (p) => p.getByTestId('unload-note'),
-    toast: (p) => p.getByTestId('toast'),
+    // TODO(N1-followup): a testID on ToastHost; meanwhile its live region (the last polite one with words)
+    toast: (p) => p.locator('[aria-live="polite"]').filter({ hasText: /\S/ }).last(),
     tabBar: (p) => p.getByRole('tablist'),
   },
 }
@@ -209,7 +215,7 @@ async function supportFacts(app, opener) {
   await sheet.waitFor()
   const facts = {}
   const read = async () => ({
-    names: await texts(a.supportNames(page)),
+    names: (await a.supportNames(page).allInnerTexts()).map((x) => x.split('\n')[0].trim()),
     showing: (await sheet.getByText(/^Showing services for /).first().innerText()).trim(),
     choose: await btn(sheet, 'Choose').count(), change: await btn(sheet, 'Change').count(),
     chooseFoot: await has(page, 'Choose your nation above to see your local NHS services.'),
@@ -248,7 +254,7 @@ const SCENARIOS = [
       pairs: await texts(a.pairs(page)),
       update: await btn(scr, 'Update').count(),
       supportAboveFold: !!(box && bar && box.y + box.height <= bar.y),
-      skills: await texts(a.skills(page)),
+      skills: (await a.skills(page).allInnerTexts()).map((x) => x.split('\n')[0].trim()),
       plans: await has(page, 'If–then plans') && await has(page, 'On Plan'),
       wellness: await has(page, 'For everyday wellbeing. Not a treatment for any condition.'),
       reflectionHeld: await a.week(page).count() === 0,
@@ -301,7 +307,7 @@ const SCENARIOS = [
     await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000)
     const now = async () => ({ word: (await a.word(page).count()) ? (await a.word(page).innerText()).trim() : '', count: (await a.count(page).count()) ? (await a.count(page).innerText()).trim() : '', left: (await a.left(page).count()) ? (await a.left(page).innerText()).trim() : '' })
     const f = {}
-    f.ready = { back: await btn(page, 'Mind').count(), tabBar: await a.tabBar(page).isVisible(), sub: await has(page, 'A few slow breaths. Eyes open is fine.'), picked: (await page.getByRole('radio', { checked: true }).first().innerText()).trim(), start: await btn(page, 'Start').count(), ...(await now()) }
+    f.ready = { back: await btn(page, 'Mind').count(), tabBar: await a.tabBar(page).isVisible(), sub: await has(page, 'A few slow breaths. Eyes open is fine.'), picked: await a.picked(page), start: await btn(page, 'Start').count(), ...(await now()) }
     await shots(app, 'reset-ready')
     await btn(page, 'Start').click()
     await page.clock.runFor(1500)
@@ -370,8 +376,8 @@ const SCENARIOS = [
     f.noLeak = !net.seen.some((s) => s.includes(SENT) || s.includes('deviceOnly'))
     await page.getByRole('button', { name: /^Unload/ }).first().click()
     await btn(a.sheet(page, 'Unload'), 'Earlier notes').click()
-    f.days = await texts(a.noteDays(page))
-    f.lines = (await texts(a.notes(page))).map((t) => t.replace(/Delete$/, '').trim())
+    f.days = (await a.noteDays(page).allInnerTexts()).map((x) => x.split('\n')[0].trim())
+    f.lines = (await texts(a.notes(page))).map((t) => t.replace(/\s*Delete$/, '').trim())
     await shots(app, 'unload-earlier')
     return f
   }],
@@ -405,7 +411,13 @@ async function run() {
     const out = {}
     for (const side of ['web', 'native']) {
       const app = await open(browser, side, seedFn(), opts)
-      try { out[side] = await fn(app) } catch (e) { out[side] = { error: String(e.message || e).split('\n')[0] } }
+      try { out[side] = await fn(app) } catch (e) {
+        out[side] = { error: String(e.message || e).split('\n')[0] }
+        // what the page showed when it failed, for the person debugging it
+        await app.page.screenshot({ path: path.join(OUT, `FAIL-${name}-${side}.png`) }).catch(() => {})
+        fs.writeFileSync(path.join(OUT, `FAIL-${name}-${side}.txt`), String(e.stack || e) + '\n\n' + (await app.page.innerText('body').catch(() => '')))
+        if (process.env.DUMP_DOM) fs.writeFileSync(path.join(OUT, `FAIL-${name}-${side}.html`), await app.page.content().catch(() => ''))
+      }
       check(`${name}: no page errors on ${side}`, !app.errors.length, app.errors)
       await app.ctx.close()
     }

@@ -113,8 +113,10 @@ function MindPage({ onCheckin, onSupport, onSkill, onPlans, children }: {
             <Lbl>{MIND.skills}</Lbl>
             <List icons style={{ marginBottom: 8 }}>
               {m.skills.map((s) => (
-                <Row key={s.id} title={s.name} sub={s.sub} wrapSub onPress={() => onSkill(s.id)}
-                  square={{ icon: s.icon as IconName, fill: fillOf(t, s.pillar), ink: inkOf(t, s.pillar) }} />
+                <View key={s.id} testID="mind-skill">
+                  <Row title={s.name} sub={s.sub} wrapSub onPress={() => onSkill(s.id)}
+                    square={{ icon: s.icon as IconName, fill: fillOf(t, s.pillar), ink: inkOf(t, s.pillar) }} />
+                </View>
               ))}
             </List>
           </>

@@ -52,7 +52,7 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
             </View>
           )}
         <List>
-          {m.rows.map((r) => <SupportRow key={r.name} r={r} />)}
+          {m.rows.map((r) => <View key={r.name} testID="support-row"><SupportRow r={r} /></View>)}
         </List>
         {m.foots.map((f) => <Foot key={f} style={foot}>{f}</Foot>)}
       </View>
