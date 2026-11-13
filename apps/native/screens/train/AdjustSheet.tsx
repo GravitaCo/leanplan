@@ -9,7 +9,7 @@ import { Pressable, Text, TextInput, View } from 'react-native'
 import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { FEELS, PAIN_HELP, RED_FLAG } from '@/screens/train/trainCopy'
-import { BareSheet, Button, Foot, LinkBtn, Li, LiText, List, Seg, Stack, Toggle, font, num, useTokens } from './ui'
+import { toPoint, BareSheet, Button, Foot, LinkBtn, Li, LiText, List, Seg, Stack, Toggle, font, num, useTokens } from './ui'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
 const tidy = (x: number) => String(Math.round(x * 100) / 100)
@@ -28,7 +28,7 @@ function Stepper({ label, unit, value, step, onChange }: { label: string; unit?:
     <View style={{ flex: 1, backgroundColor: t.elev, borderRadius: 18, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 10, alignItems: 'center', gap: 4 }}>
       <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
-        <TextInput accessibilityLabel={label} value={value} placeholder="0" placeholderTextColor={t.label3} keyboardType="decimal-pad" onChangeText={onChange}
+        <TextInput accessibilityLabel={label} value={value} placeholder="0" placeholderTextColor={t.label3} keyboardType="decimal-pad" onChangeText={(v) => onChange(toPoint(v))}
           style={[font(400), num, { fontSize: 44, lineHeight: 50, color: t.label, textAlign: 'center', minWidth: 40, padding: 0 }]} />
         {unit && <Text style={[font(400), { fontSize: 17, color: t.label2 }]}>{unit}</Text>}
       </View>
@@ -151,7 +151,7 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
           <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
             {onGentler && <LinkBtn inl title="Try a gentler option" onPress={onGentler} />}
-            <LinkBtn inl title="When to get help" onPress={() => setHelp(!help)} />
+            <LinkBtn inl expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
           </View>
           {help && <Foot style={{ paddingTop: 8, paddingHorizontal: 0 }}>{PAIN_HELP} {RED_FLAG}</Foot>}
         </View>

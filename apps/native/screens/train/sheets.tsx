@@ -120,7 +120,7 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
       </Text>
       <List>
         {SUPPORT_LINES.map(([name, number, note]) => (
-          <Li key={name} label={`${name}, ${number}`} onPress={() => { Linking.openURL('tel:' + number.replace(/\s/g, '')).catch(() => {}) }}>
+          <Li key={name} label={`${name}, ${number}. ${note}`} onPress={() => { Linking.openURL('tel:' + number.replace(/\s/g, '')).catch(() => {}) }}>
             <LiText t={name} s={note} />
             <Text style={[font(400), num, { fontSize: 17, color: t.tint }]}>{number}</Text>
           </Li>

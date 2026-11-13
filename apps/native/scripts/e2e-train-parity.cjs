@@ -13,6 +13,10 @@
  *   (apps/native) npx expo export --platform web --output-dir dist-web && npx serve -s dist-web -l 4188 &
  *   WEB_URL=http://localhost:4177/ NATIVE_URL=http://localhost:4188/ node scripts/e2e-train-parity.cjs [--only=name]
  *
+ * The warm-up block is behind ONBOARDING_ENABLED, so its case runs only with ONBOARDING=1 against
+ * builds with the flag on in both apps (VITE_ONBOARDING=1 npm run build; EXPO_PUBLIC_ONBOARDING=1
+ * npx expo export …); the other cases then check the flag-on Train as well.
+ *
  * The Train tab must be wired to screens/train (app/(tabs)/train.tsx). Every Supabase request is
  * answered by an in-memory stand-in; the real project is never reached. Clips are not fetched (the
  * Bunny CDN is answered with a 404 in both apps, so both show their offline fallbacks the same way):
@@ -148,7 +152,8 @@ async function lines(page) {
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       const el = n.parentElement
-      if (!el || el.closest('option, script, style, [aria-hidden="true"]')) continue
+      // the web's screen-reader-only live region (.sr): native announces the same words instead
+      if (!el || el.closest('option, script, style, [aria-hidden="true"], .sr')) continue
       if (el.closest('select')) continue
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
       const r = el.getBoundingClientRect()
@@ -238,7 +243,12 @@ async function run() {
     await same('hard day: Shorter preview', w, n, TABBAR)
     await shot('preview-shorter')
     await each(w, n, (p) => tap(p, 'Start'))
-    await each(w, n, (p) => p.getByText('Done as planned', { exact: true }).waitFor())
+    // with the onboarding flag on, the session opens on the warm-up block: skip it (as e2e-wellbeing)
+    await each(w, n, async (p) => {
+      await p.getByText('Done as planned', { exact: true }).or(p.getByText('Skip warm-up', { exact: true })).first().waitFor()
+      if (await p.getByText('Skip warm-up', { exact: true }).count()) await tapText(p, 'Skip warm-up')
+      await p.getByText('Done as planned', { exact: true }).waitFor()
+    })
     // the elapsed clock ticks on its own in each app: compare without it
     const clock = [/^\d+ of \d+( · \d\d:\d\d)?$/, ...TABBAR]
     await same('hard day: player', w, n, clock)
@@ -313,6 +323,92 @@ async function run() {
     await each(w, n, (p) => p.getByText(/Stop if you get chest pain/).first().waitFor())
     await same('library: entry', w, n, TABBAR)
     await shot('entry')
+  })
+
+  // the player's harder paths: Adjust with Stopped early and the pain check, the Stopped sheet, a
+  // swap, Finish now with effort, minutes and a note; then Log sets by hand: the saved sessions match
+  await both(browser, 'player-paths', ordinaryDay(), async (w, n, scheme, shot) => {
+    if (scheme !== 'light') return
+    const clock = [/^\d+ of \d+( · \d\d:\d\d)?$/, /^\d:\d\d$/, /^of \d:\d\d$/, ...TABBAR]
+    await toTrain(w, n)
+    await each(w, n, (p) => tap(p, 'Start'))
+    await each(w, n, (p) => p.getByText('Log sets by hand', { exact: true }).waitFor())
+    await each(w, n, (p) => tap(p, 'Start'))
+    await each(w, n, async (p) => {
+      await p.getByText('Done as planned', { exact: true }).or(p.getByText('Log set', { exact: true })).or(p.getByText('Skip warm-up', { exact: true })).first().waitFor()
+      if (await p.getByText('Skip warm-up', { exact: true }).count()) await tapText(p, 'Skip warm-up')
+    })
+    await each(w, n, (p) => tapText(p, 'Adjust weight or reps'))
+    await each(w, n, (p) => p.getByRole('radio', { name: 'Stopped early' }).click())
+    await each(w, n, (p) => tapText(p, 'When to get help'))
+    await each(w, n, (p) => p.getByText(/speak to a GP or physiotherapist/).first().waitFor())
+    await same('player: Adjust, stopped early, when to get help', w, n, clock)
+    await shot('adjust-stopped')
+    await each(w, n, async (p) => { const f = p.locator('input:visible').and(p.getByLabel('Weight', { exact: true })).first(); if (await f.count()) await f.fill('22,5'.replace(',', isWeb(p) ? '.' : ',')) })
+    await each(w, n, async (p) => { await p.locator('input:visible').and(p.getByLabel('Reps', { exact: true })).first().fill('6') })
+    await each(w, n, (p) => p.getByRole('button', { name: 'Log set', exact: true }).last().click())
+    await each(w, n, (p) => p.getByText("That's fine. If something hurt, leave this one for today.").waitFor())
+    await same('player: the Stopped sheet', w, n, clock)
+    await shot('stopped')
+    await each(w, n, (p) => tapText(p, 'Move to the next exercise'))
+    await each(w, n, (p) => p.getByRole('button', { name: 'More: swap, do this later, skip, sound' }).click())
+    await each(w, n, (p) => p.getByText('Do this later', { exact: true }).waitFor())
+    await same('player: the menu', w, n, clock)
+    await each(w, n, (p) => tapText(p, 'Finish now'))
+    await each(w, n, (p) => p.getByText('Back to workout', { exact: true }).waitFor())
+    await same('player: Finish', w, n, clock)
+    await shot('finish')
+    await each(w, n, async (p) => {
+      await p.getByRole('radio', { name: 'Hard', exact: true }).click()
+      await p.locator('input:visible').and(p.getByLabel('Minutes', { exact: true })).last().fill('25')
+      await p.locator('input:visible').and(p.getByLabel('Note', { exact: true })).first().fill('Felt the left knee')
+      await p.getByRole('button', { name: 'Finish', exact: true }).last().click()
+    })
+    await each(w, n, (p) => p.getByText('Continue', { exact: true }).or(p.getByText(/^Done today$/)).first().waitFor())
+    let [sw, sn] = await Promise.all([stored(w), stored(n)])
+    const shape = (st) => st?.days?.[ORDINARY_DAY]?.sessions?.map((x) => ({ ...sessionShape(x), mins: x.mins }))
+    check('player: the finished session is identical (stopped set, effort, minutes, note)', JSON.stringify(shape(sw)) === JSON.stringify(shape(sn)) && !!shape(sw)?.length, { web: shape(sw), native: shape(sn) })
+    // Log sets by hand: edit the same session and save
+    // Finish goes back to the list, where the session is in Done today: open it from there
+    await each(w, n, (p) => p.getByRole('button', { name: /^Open Push/ }).first().click())
+    await each(w, n, (p) => tapText(p, 'Edit sets by hand'))
+    await each(w, n, (p) => p.getByText("Type in what you did. Blank sets aren't saved.").waitFor())
+    await same('manual: editing a logged session', w, n, TABBAR)
+    await each(w, n, async (p) => {
+      await p.locator('input:visible').and(p.getByLabel('Set 2 weight', { exact: true })).first().fill('20')
+      await p.locator('input:visible').and(p.getByLabel('Set 2 reps', { exact: true })).first().fill('10')
+      await p.getByRole('button', { name: /^Save / }).first().click()
+    })
+    await each(w, n, (p) => p.getByText(/^(Continue|Start)$/).first().waitFor())
+    ;[sw, sn] = await Promise.all([stored(w), stored(n)])
+    check('manual: the saved session is identical', JSON.stringify(shape(sw)) === JSON.stringify(shape(sn)) && !!shape(sw)?.length, { web: shape(sw), native: shape(sn) })
+  })
+
+  // e2e-onboarding's warm-up cases (flag on): the day block in the preview, the warm-up player, a
+  // move skipped, the block skipped, and the session records it (never as sets)
+  if (process.env.ONBOARDING === '1') await both(browser, 'warmup', hardDayWithLastTime(), async (w, n, scheme, shot) => {
+    await toTrain(w, n)
+    await each(w, n, (p) => tap(p, 'Start'))
+    await each(w, n, (p) => p.getByText('First', { exact: true }).waitFor())
+    await same('warm-up: preview with the block', w, n, TABBAR)
+    await shot('preview')
+    if (scheme !== 'light') return
+    await each(w, n, (p) => tap(p, 'Start'))
+    await each(w, n, (p) => p.getByText('Skip warm-up', { exact: true }).waitFor())
+    const clocks = [/^\d:\d\d$/, /^of \d:\d\d/, /^then /, ...TABBAR]
+    await same('warm-up: the player', w, n, clocks)
+    await shot('player')
+    await each(w, n, (p) => tapText(p, 'Skip this move'))
+    await each(w, n, (p) => p.getByText('Get ready', { exact: true }).waitFor())
+    await same('warm-up: get ready for the next move', w, n, clocks)
+    await each(w, n, (p) => tapText(p, 'Skip warm-up'))
+    await each(w, n, (p) => p.getByText('Done as planned', { exact: true }).waitFor())
+    await each(w, n, (p) => p.getByRole('button', { name: 'Leave the workout' }).first().click())
+    await each(w, n, (p) => tapText(p, 'Leave for now'))
+    await each(w, n, (p) => p.getByText('Continue', { exact: true }).or(p.getByText('Start', { exact: true })).first().waitFor())
+    const [sw, sn] = await Promise.all([stored(w), stored(n)])
+    const a = sw?.days?.[HARD_DAY]?.sessions?.map(sessionShape), b = sn?.days?.[HARD_DAY]?.sessions?.map(sessionShape)
+    check('warm-up: what the session saved is identical', JSON.stringify(a) === JSON.stringify(b), { web: a, native: b })
   })
 
   await browser.close()

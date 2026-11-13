@@ -4,7 +4,7 @@
  * holds with a timed target say "Switch sides" once the first side has had its time.
  */
 import { useEffect, useState } from 'react'
-import { Text, View } from 'react-native'
+import { AccessibilityInfo, Text, View } from 'react-native'
 import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { RED_FLAG } from '@/screens/train/trainCopy'
 import { Button, Foot, Sheet, Stack, font, num, useTokens } from './ui'
@@ -29,6 +29,9 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
 
   const h = holdAt(start == null ? 0 : (now - start) / 1000, target, perSide)
   const goal = target ? (target.lo === target.hi ? `${target.lo} sec` : `${target.lo}–${target.hi} sec`) : null
+  // spoken when it changes, as the web's aria-live (accessibilityLiveRegion is Android only)
+  const label = start == null ? '' : holdLabel(h, target, perSide)
+  useEffect(() => { if (label) AccessibilityInfo.announceForAccessibility(label) }, [label])
   const stop = () => { if (start != null && h.logSec > 0) onDone(h.logSec); onClose() }
 
   return (

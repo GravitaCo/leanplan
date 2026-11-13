@@ -191,9 +191,9 @@ function Train() {
         <View style={card}>
           <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
           <Chips>
-            <Chip title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
+            <Chip button title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
             {plannedKeys(data, shiftDay(cur, 1)).length > 0 && (
-              <Chip title="Make tomorrow lighter" onPress={() => {
+              <Chip button title="Make tomorrow lighter" onPress={() => {
                 const tmr = shiftDay(cur, 1)
                 const p = data.profile
                 // an easier week already covering tomorrow stays as it is, not cut to one day
@@ -212,8 +212,8 @@ function Train() {
           <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 10 }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</Foot>
           <Chips>
-            <Chip title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
-            <Chip title="No thanks" onPress={() => setPrefs({ welcomeAsked: cur })} />
+            <Chip button title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
+            <Chip button title="No thanks" onPress={() => setPrefs({ welcomeAsked: cur })} />
           </Chips>
         </View>
       )}

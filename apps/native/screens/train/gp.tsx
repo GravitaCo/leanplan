@@ -52,7 +52,7 @@ export function GpPill({ children, plain }: { children: ReactNode; plain?: boole
 /** `.gp-clock`: 64 px light figures and a smaller line beside them */
 export function GpClock({ big, small, label }: { big: string; small?: string; label: string }) {
   return (
-    <View accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+    <View accessible accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
       <Text style={[font(400), num, { fontSize: 64, lineHeight: 68, fontWeight: '300', letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
       {!!small && <Text style={[font(400), num, { flexShrink: 1, fontSize: 15, color: 'rgba(255,255,255,0.85)' }]}>{small}</Text>}
     </View>

@@ -55,7 +55,7 @@ export const CHOICES: [Choice, string][] = WELLBEING_ENABLED
 
 /**
  * The support lines from the load note (workout plan §0.5, ai-platform-plan §4.2 item 3).
- * General wellness only: no diagnosis words. Numbers checked on 24 Sep 2026 against
+ * General wellness only: no diagnosis words. Numbers checked on 13 Nov 2026 (mental-performance) against
  * samaritans.org and beateatingdisorders.org.uk; re-check them whenever this copy is touched.
  */
 export const SUPPORT_LINES: [string, string, string][] = [
