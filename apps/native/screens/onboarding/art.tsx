@@ -33,17 +33,24 @@ export const posYOf = (at: string | undefined, fallback = 0.5): number => {
  */
 export function CoverImage({ source, height, posY = 0.5, posX = 0.5, style }: { source: ImageSourcePropType; height?: number; posY?: number; posX?: number; style?: StyleProp<ViewStyle> }) {
   const [box, setBox] = useState<{ w: number; h: number } | null>(null)
-  const a = Image.resolveAssetSource(source)
+  // the photo's own size: known up front on a phone; a web render (react-native-web has no
+  // resolveAssetSource) learns it when the image loads, and shows it centred until then
+  const [nat, setNat] = useState<{ width: number; height: number } | null>(() => {
+    const a = typeof Image.resolveAssetSource === 'function' ? Image.resolveAssetSource(source) : null
+    return a?.width && a.height ? { width: a.width, height: a.height } : null
+  })
   let img: { width: number; height: number; left: number; top: number } | null = null
-  if (box && a?.width && a.height) {
-    const scale = Math.max(box.w / a.width, box.h / a.height)
-    const w = a.width * scale, h = a.height * scale
+  if (box && nat) {
+    const scale = Math.max(box.w / nat.width, box.h / nat.height)
+    const w = nat.width * scale, h = nat.height * scale
     img = { width: w, height: h, left: -(w - box.w) * posX, top: -(h - box.h) * posY }
   }
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
       style={[{ overflow: 'hidden', width: '100%' }, height == null ? { flex: 1 } : { height }, style]}>
-      {img && <Image source={source} accessibilityIgnoresInvertColors style={{ position: 'absolute', ...img }} />}
+      <Image source={source} accessibilityIgnoresInvertColors resizeMode="cover"
+        onLoad={(e) => { const s = e.nativeEvent.source; if (!nat && s?.width && s.height) setNat({ width: s.width, height: s.height }) }}
+        style={img ? { position: 'absolute', ...img } : { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
     </View>
   )
 }
