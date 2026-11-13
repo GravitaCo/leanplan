@@ -39,9 +39,11 @@ export function mindKindOf(data: unknown): string | null {
 }
 
 /** Where a tap on a reminder takes the person: the weekly review reminder opens the review (the
- *  web's ./?review=1); every other reminder opens the app at Today (the web's ./ and ./?n=<kind>). */
-export function routeFor(data: unknown): 'review' | 'today' {
+ *  web's ./?review=1); every other reminder opens the app at Today (the web's ./ and ./?n=<kind>);
+ *  the rest timer's notification (not a reminder, ./restTimer) opens Train. */
+export function routeFor(data: unknown): 'review' | 'train' | 'today' {
   const d = obj(data)
+  if (d.kind === 'rest') return 'train'
   return d.kind === 'review' || d.tag === 'tali-review' ? 'review' : 'today'
 }
 
@@ -72,7 +74,29 @@ const trim = (seen: Seen): Seen => {
 }
 
 /** A Mind reminder arrived while the app was open, or was tapped: "shown" once per delivery. */
-export function noteShown(seen: Seen, p: Presented): { seen: Seen; events: NotifyEv[] } {
+/** Two sightings of one type this close together are one delivery when either lacks the send's id. */
+export const SAME_DELIVERY_MS = 60_000
+
+/**
+ * mental-performance (13 Nov 2026): the extension keys a delivery by the send's id; if the app ever
+ * sees the same reminder without it (keyed by identifier and date), the two must not count as two
+ * reminders. An entry of the same type within SAME_DELIVERY_MS takes the sighting's key, when at
+ * least one of the two keys lacks an id (two different ids are always two sends). `taken`: keys
+ * already matched by something else, never moved.
+ */
+function alias(seen: Seen, p: Presented, taken?: ReadonlySet<string>): Seen {
+  if (seen[p.key]) return seen
+  const pid = p.key.startsWith('id:')
+  const k = Object.keys(seen).find((k) => !taken?.has(k) && (!pid || !k.startsWith('id:')) && seen[k].kind === p.kind
+    && typeof seen[k].at === 'number' && Math.abs((seen[k].at as number) - p.at) <= SAME_DELIVERY_MS)
+  if (!k) return seen
+  const out: Seen = { ...seen, [p.key]: seen[k] }
+  delete out[k]
+  return out
+}
+
+export function noteShown(seen0: Seen, p: Presented): { seen: Seen; events: NotifyEv[] } {
+  const seen = alias(seen0, p)
   if (seen[p.key]) return { seen, events: [] }
   return { seen: trim({ ...seen, [p.key]: { kind: p.kind, at: p.at } }), events: [{ kind: p.kind, ev: 'shown', at: new Date(p.at) }] }
 }
@@ -92,9 +116,11 @@ export function noteOpened(seen: Seen, p: Presented, now: Date): { seen: Seen; e
  * (the newer one's "shown" already counts the ignored one). Opened ones that are gone are simply
  * forgotten.
  */
-export function reconcile(seen: Seen, presented: readonly Presented[], now: Date): { seen: Seen; events: NotifyEv[] } {
+export function reconcile(seen0: Seen, presented: readonly Presented[], now: Date): { seen: Seen; events: NotifyEv[] } {
   const events: NotifyEv[] = []
   const here = new Set(presented.map((p) => p.key))
+  let seen = seen0
+  for (const p of presented) seen = alias(seen, p, here)
   const fresh = new Set(presented.filter((p) => !seen[p.key]).map((p) => p.kind))
   const arrivals = [...Object.values(seen), ...presented].filter((x) => typeof x.at === 'number')
   const replaced = (v: Seen[string]) => fresh.has(v.kind) || (typeof v.at === 'number' && arrivals.some((x) => x.kind === v.kind && (x.at as number) > (v.at as number)))

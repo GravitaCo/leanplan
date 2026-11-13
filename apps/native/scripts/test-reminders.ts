@@ -2,7 +2,8 @@
  * Reminders on the phone through the shared store (native-build-plan N12; the store-level part of
  * e2e-under-age's reminder cases and e2e-wellbeing's wp17-notify-on, which need N10's screens for
  * the rest). The store runs unchanged, with src/data/push.native.ts as Metro picks it, and the
- * phone's modules (expo-notifications, expo-application, MMKV, React Native) faked here.
+ * phone's modules (expo, expo-notifications, expo-application, React Native) faked here; the
+ * phone's store (modules/tilo-store) runs in memory, as it does without its native module.
  *   (apps/native) npm run test:reminders
  * Bundled by esbuild with *.native.ts first, as Metro resolves them.
  */

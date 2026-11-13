@@ -7,7 +7,7 @@
  *   ./?n=<kind>, ./ and ./?review=1. Through the store (setTab, openReview), never the router.
  * - The reminder delivery log (security-data H3) records Mind reminders only, into the same
  *   device-only store the service worker's twin uses (./notifyStore, `tali-notify`), with the
- *   rules in ./notifyReconcile. It's read and emptied by the shared takeNotifyEvents (MMKV on a
+ *   rules in ./notifyReconcile. It's read and emptied by the shared takeNotifyEvents (tilo-store on a
  *   phone, src/data/platform.native.ts) and handed to the store (ingestNotifyLog) at
  *   launch and each time the app comes back to the front, except while the owner question shows,
  *   exactly as App.tsx does; two ignored in a row start that type's back-off.
@@ -57,6 +57,8 @@ const presentedOf = (n: Notifications.Notification): Presented | null => {
 if (pushSupported()) {
   Notifications.setNotificationHandler({
     handleNotification: async (n) => {
+      // the rest timer's notification isn't shown while the app is open: the player's timer is
+      if (routeFor(dataOf(n)) === 'train') return { shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false }
       const p = presentedOf(n)
       if (p) apply(noteShown(readSeen(), p))
       return { shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }
@@ -76,8 +78,9 @@ function handleTap(r: Notifications.NotificationResponse | null): void {
   if (p) apply(noteOpened(readSeen(), p, new Date()))
   try { Notifications.clearLastNotificationResponse() } catch { /* nothing to clear */ }
   // through the store, as on the web (lib/navBridge.ts moves the router to store.tab)
-  if (routeFor(dataOf(n)) === 'review') useStore.getState().openReview()
-  else useStore.getState().setTab('today')
+  const to = routeFor(dataOf(n))
+  if (to === 'review') useStore.getState().openReview()
+  else useStore.getState().setTab(to)
 }
 
 // ---- back to the front: Notification Centre, then the log into the store ----

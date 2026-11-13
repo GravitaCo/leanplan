@@ -10,7 +10,7 @@ import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
 import { readFileSync } from 'node:fs'
 import { clearEvents, NOTIFY_KINDS, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
 import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX } from '../lib/platform/notifyReconcile.ts'
-import { apnsPlatform, apnsToken, deletePath, parseSaved, permFrom, tokenRow } from '../lib/platform/pushRules.ts'
+import { apnsPlatform, apnsToken, deletePath, parseSaved, permFrom, REST_KIND, restSeconds, tokenRow } from '../lib/platform/pushRules.ts'
 import { REMINDER_COPY, SUPP_NAMED } from '../../../supabase/functions/_shared/reminders.ts'
 
 let failed = 0
@@ -173,6 +173,10 @@ check('kind: supplement and review reminders are not recorded',
   mindKindOf({ kind: 'supp', tag: REMINDER_COPY.supp.tag }) === null && mindKindOf({ tag: SUPP_NAMED.tag }) === null && mindKindOf({ kind: 'review', tag: 'tali-review' }) === null)
 check('kind: anything else is nothing', mindKindOf(null) === null && mindKindOf('checkin') === null && mindKindOf({ kind: 'toString' }) === null && mindKindOf({ tag: 'constructor' }) === null)
 check('route: the review reminder opens the review', routeFor({ kind: 'review' }) === 'review' && routeFor({ tag: 'tali-review' }) === 'review')
+check('route: the rest timer opens Train', routeFor({ kind: REST_KIND }) === 'train')
+check('rest timer: not a reminder type, never in the delivery log', mindKindOf({ kind: REST_KIND }) === null && mindKindOf({ kind: REST_KIND, tag: 'tali-rest-end' }) === null)
+check('rest timer: whole seconds from 1 to an hour', restSeconds(90) === 90 && restSeconds(89.6) === 90 && restSeconds(1) === 1 && restSeconds(3600) === 3600
+  && restSeconds(0) === null && restSeconds(-5) === null && restSeconds(3601) === null && restSeconds(NaN) === null && restSeconds('90') === null)
 check('route: everything else opens Today', routeFor({ kind: 'checkin' }) === 'today' && routeFor({ kind: 'supp' }) === 'today' && routeFor(undefined) === 'today')
 
 /* ---------- the delivery log without a service worker ---------- */
@@ -235,6 +239,31 @@ const ignored = (log, kind) => {
     check('extension: a replaced delivery records no close (the newer one already counts it), as the web', elog.map((e) => e.ev).join() === 'shown,shown' && ignored(elog, 'checkin') === 1)
     es = etake(reconcile(es, [], new Date(t0 + 2 * day)))
     check('extension: the newest swiped away unopened counts, as the web', elog.map((e) => e.ev).join() === 'shown,shown,closed' && ignored(elog, 'checkin') === 2)
+    // a sighting without the send's id and the extension's record of the same reminder are one delivery
+    {
+      const glog = []
+      const gtake = (r) => { for (const e of r.events) glog.push({ kind: e.kind, ev: e.ev, at: e.at.toISOString() }); return r.seen }
+      const ext = { key: 'id:00000007', kind: 'checkin', at: t0 + 20 }
+      const nc = { key: deliveryKey('tali-checkin', t0), kind: 'checkin', at: t0 }       // same reminder, 20 ms apart
+      let g = gtake(noteShown({}, ext))
+      g = gtake(reconcile(g, [nc], new Date(t0 + 3600e3)))
+      check('guard: id-keyed record and id-less sighting of one reminder count once, no close', glog.map((e) => e.ev).join() === 'shown' && Object.keys(g).join() === nc.key)
+      g = gtake(noteShown(g, ext))
+      check('guard: the extension\'s record arriving after the id-less sighting adds nothing', glog.map((e) => e.ev).join() === 'shown')
+      const far = { key: deliveryKey('tali-checkin', t0 + 2 * 60e3), kind: 'checkin', at: t0 + 2 * 60e3 }
+      g = gtake(noteShown(g, far))
+      check('guard: two minutes apart is another delivery', glog.map((e) => e.ev).join() === 'shown,shown')
+      const two = gtake(noteShown(gtake(noteShown({}, { key: 'id:0000000a', kind: 'plan', at: t0 })), { key: 'id:0000000b', kind: 'plan', at: t0 + 5 }))
+      check('guard: two different send ids are always two deliveries', Object.keys(two).length === 2)
+    }
+    // a tap after the extension recorded the reminder: shown once, then opened
+    {
+      const tlog = []
+      const ttake = (r) => { for (const e of r.events) tlog.push(e.ev); return r.seen }
+      const ext = { key: 'id:00000009', kind: 'wind-down', at: t0 }
+      ttake(noteOpened(ttake(noteShown({}, ext)), ext, new Date(t0 + 60e3)))
+      check('tap after the extension\'s record: exactly shown, opened', tlog.join() === 'shown,opened')
+    }
     check('extension: the seen list keeps arrival times', JSON.stringify(parseSeen(JSON.stringify({ a: { kind: 'plan', at: 5 } }))) === JSON.stringify({ a: { kind: 'plan', at: 5 } }))
   }
   check('key: tells deliveries apart', deliveryKey('x', 1) !== deliveryKey('x', 2) && deliveryKey('x', NaN) === 'x|0')

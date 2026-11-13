@@ -70,3 +70,13 @@ export function parseSaved(raw: string | undefined | null): SavedToken | null {
     return { token, uid: v.uid, platform: v.platform }
   } catch { return null }
 }
+
+/** The rest timer's notification data (./restTimer): not a reminder type. */
+export const REST_KIND = 'rest'
+
+/** A rest length iOS can schedule: whole seconds, at least 1, at most an hour; else null. */
+export function restSeconds(seconds: unknown): number | null {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return null
+  const s = Math.round(seconds)
+  return s >= 1 && s <= 3600 ? s : null
+}

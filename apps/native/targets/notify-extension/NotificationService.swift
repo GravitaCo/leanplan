@@ -32,7 +32,7 @@ class NotificationService: UNNotificationServiceExtension {
       let body = userInfo["body"] as? [String: Any],
       let kind = body["kind"] as? String, mindKinds.contains(kind),
       let id = body["id"] as? String, id.count >= 8, id.count <= 64,
-      id.allSatisfy({ $0.isHexDigit || $0 == "-" }),
+      id.allSatisfy({ $0.isASCII && ($0.isHexDigit || $0 == "-") }),
       let defaults = UserDefaults(suiteName: appGroup)
     else { return }
     var list = defaults.array(forKey: key) as? [[String: Any]] ?? []

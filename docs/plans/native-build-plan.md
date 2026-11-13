@@ -369,6 +369,9 @@ removes N12's seen list. Also open: an on-device test with a development build (
 refresh, `body` arriving as the notification's data, collapse-id replacements, Focus and Scheduled
 Summary), and Deno's HTTP/2 to APNs on first deploy (watch for 429 TooManyProviderTokenUpdates).
 Reviews: security-data APPROVE, compliance APPROVE, mental-performance APPROVED (13 Nov).
+For N7: `apps/native/lib/platform/restTimer.ts` schedules and cancels the background rest timer's local
+notification (Benn approved, 13 Nov); outside the reminder budget and the delivery log, never asks for
+permission, not shown while the app is open, a tap opens Train; N7 supplies the words.
 
 ### N13 Recipe sharing (native first)
 
