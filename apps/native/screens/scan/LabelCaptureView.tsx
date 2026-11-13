@@ -24,14 +24,13 @@ import type { ScanDraft } from '@/core/domain/barcode'
 import { QUALITY_PROMPT } from '@/core/domain/labelQuality'
 import { CONSENT, GUIDANCE, LABEL, LABEL_CAMERA_NOTE, LABEL_TITLE, SHARE_LABEL_NOTE } from '@/copy/scan'
 import { tx, useTokens } from '../../lib/theme'
-import { BackButton, NavBtn, Row, Sheet, SettingRow } from '../../lib/ui/primitives'
-import { Btn, Card, List } from '../../lib/ui/kit'
-import { Foot, Sub } from '../../lib/ui/text'
+import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
+import { Btn, Card, List, Note } from '../../lib/ui/kit'
+import { Empty, Foot, Sub } from '../../lib/ui/text'
 import { TiloCameraView } from '../../modules/tilo-camera'
 import { useLabelCamera } from './useLabelCamera'
 import { discardAll, discardShot, type Shot } from './labelPhoto'
-import { ScanBox, ThumbRow } from './parts'
-import { Empty, Note } from './pending'
+import { LabelThumb, ScanBox } from './parts'
 
 type Step = 'consent' | 'panel' | 'front' | 'review' | 'reading'
 
@@ -115,7 +114,7 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
   if (step === 'reading') {
     return (
       <Sheet title={LABEL_TITLE} onClose={onClose} animate={animate} left={left}>
-        <Empty>{LABEL.reading}</Empty>
+        <Empty status>{LABEL.reading}</Empty>
       </Sheet>
     )
   }
@@ -124,13 +123,13 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
     return (
       <Sheet title={LABEL_TITLE} onClose={onClose} animate={animate} left={left}>
         <List icons>
-          <ThumbRow uri={panel.uri} alt={LABEL.tableAlt} title={LABEL.table}
+          <Row lead={<LabelThumb uri={panel.uri} label={LABEL.tableAlt} />} title={LABEL.table}
             sub={panel.issue ? LABEL.hardToRead + QUALITY_PROMPT[panel.issue].toLowerCase() : LABEL.ready}
             right={<NavBtn title={LABEL.retake} onPress={() => setStep('panel')} />} />
           {front
-            ? <ThumbRow uri={front.uri} alt={LABEL.frontAlt} title={LABEL.front} sub={LABEL.forName}
+            ? <Row lead={<LabelThumb uri={front.uri} label={LABEL.frontAlt} />} title={LABEL.front} sub={LABEL.forName}
                 right={<NavBtn title={LABEL.remove} onPress={() => { discardShot(front); setFront(null) }} />} />
-            : <SettingRow icon="camera" color={t.fill} soft label={LABEL.addFront} sub={LABEL.addFrontSub} onPress={() => setStep('front')} />}
+            : <Row square={{ icon: 'camera', fill: t.fill, soft: true }} title={LABEL.addFront} sub={LABEL.addFrontSub} onPress={() => setStep('front')} />}
         </List>
         <View style={{ marginTop: 16 }}><Btn kind="tinted" title={LABEL.read} onPress={() => void read()} /></View>
         <Foot>{LABEL.readOnce}</Foot>
@@ -143,17 +142,17 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
   const error = cam.error === 'unusable' ? LABEL.unusable : cam.error === 'unopenable' ? LABEL.unopenable : null
   return (
     <Sheet title={LABEL_TITLE} onClose={onClose} animate={animate} left={isFront ? <BackButton onPress={() => setStep('review')} /> : left}>
-      {forShare && !isFront && <Note style={{ marginTop: 0 }}>{SHARE_LABEL_NOTE}</Note>}
+      {forShare && !isFront && <Note status style={{ marginTop: 0 }}>{SHARE_LABEL_NOTE}</Note>}
       <Foot style={{ paddingTop: forShare && !isFront ? 12 : 0, paddingHorizontal: 4, paddingBottom: 10 }}>{isFront ? LABEL.fitFront : GUIDANCE}</Foot>
       {showLive ? (
         <ScanBox tall>
           <TiloCameraView ref={cam.ref} style={{ flex: 1 }} accessibilityLabel="Camera view" {...cam.cameraProps} />
         </ScanBox>
       ) : (
-        <Note>{LABEL_CAMERA_NOTE[cam.camera === 'denied' ? 'denied' : 'none']}</Note>
+        <Note status>{LABEL_CAMERA_NOTE[cam.camera === 'denied' ? 'denied' : 'none']}</Note>
       )}
       {showLive && <Foot style={{ textAlign: 'center' }}>{prompt}</Foot>}
-      {error && <Note alert>{error}</Note>}
+      {error && <Note status>{error}</Note>}
       {cam.camera === 'on' && (
         <View style={{ gap: 8, marginTop: 16 }}>
           <Btn kind="tinted" title={LABEL.capture} disabled={!cam.ready || cam.busy} onPress={() => void cam.capture().then(keep)} />
@@ -161,8 +160,8 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
         </View>
       )}
       <List icons style={{ marginTop: 14 }}>
-        <SettingRow icon="camera" color={t.tint} label={LABEL.choose} sub={isFront ? LABEL.chooseFrontSub : LABEL.choosePanelSub}
-          onPress={() => void cam.choose().then(keep)} />
+        <Row square={{ icon: 'camera', fill: t.tint }} title={LABEL.choose} sub={isFront ? LABEL.chooseFrontSub : LABEL.choosePanelSub}
+          chevron={false} label={isFront ? LABEL.chooseFrontAria : LABEL.choosePanelAria} onPress={() => void cam.choose().then(keep)} />
         {!isFront && !forShare ? <Row title={LABEL.typeInstead} onPress={() => typeInstead()} /> : null}
       </List>
     </Sheet>

@@ -13,13 +13,13 @@ import type { MealSlot } from '@/core/types'
 import type { ScanOutcome } from '@/data/scanLookup'
 import { SCAN, SCAN_CAMERA_NOTE, SCAN_TITLE } from '@/copy/scan'
 import { num, useTokens } from '../../lib/theme'
-import { BackButton, Sheet, SettingRow } from '../../lib/ui/primitives'
-import { Btn, List } from '../../lib/ui/kit'
-import { Foot, Lbl } from '../../lib/ui/text'
+import { BackButton, Row, Sheet } from '../../lib/ui/primitives'
+import { Btn, List, Note } from '../../lib/ui/kit'
+import { Empty, Foot, Lbl } from '../../lib/ui/text'
+import { FRow } from '../../lib/ui/fields'
 import { TiloCameraView, type TiloCameraViewRef } from '../../modules/tilo-camera'
 import { useBarcodeScanner, type ScanMessage } from './useBarcodeScanner'
 import { ScanBox } from './parts'
-import { Empty, FRow, Note } from './pending'
 
 const MESSAGE: Record<ScanMessage, string> = { 'bad-check': SCAN.badCheck, 'no-barcode': SCAN.noBarcode, 'photo-unreadable': SCAN.photoUnreadable }
 
@@ -48,7 +48,7 @@ export function ScanView({ onBack, onClose, animate = true, onResult }: {
   if (s.busy) {
     return (
       <Sheet title={SCAN_TITLE} onClose={onClose} animate={animate} left={left}>
-        <Empty>{SCAN.lookingUp} <Text style={num}>{s.busy}</Text>…{'\n'}{SCAN.lookingUpAfter}</Empty>
+        <Empty status>{SCAN.lookingUp} <Text style={num}>{s.busy}</Text>…{'\n'}{SCAN.lookingUpAfter}</Empty>
       </Sheet>
     )
   }
@@ -60,19 +60,19 @@ export function ScanView({ onBack, onClose, animate = true, onResult }: {
           <TiloCameraView ref={camRef} style={{ flex: 1 }} accessibilityLabel="Camera view" {...s.cameraProps} />
         </ScanBox>
       ) : (
-        <Note>{SCAN_CAMERA_NOTE[s.camera === 'denied' ? 'denied' : 'none']}</Note>
+        <Note status>{SCAN_CAMERA_NOTE[s.camera === 'denied' ? 'denied' : 'none']}</Note>
       )}
       {live && <Foot style={{ textAlign: 'center' }}>{s.camera === 'starting' ? SCAN.starting : SCAN.hold}</Foot>}
-      {s.message && <Note alert>{MESSAGE[s.message]}</Note>}
+      {s.message && <Note status>{MESSAGE[s.message]}</Note>}
 
       <List icons style={{ marginTop: 14 }}>
-        <SettingRow icon="camera" color={t.tint} label={s.readingPhoto ? SCAN.readingPhoto : SCAN.takePhoto} sub={SCAN.photoSub} onPress={choosePhoto} />
+        <Row square={{ icon: 'camera', fill: t.tint }} title={s.readingPhoto ? SCAN.readingPhoto : SCAN.takePhoto} sub={SCAN.photoSub} onPress={choosePhoto} chevron={false} label={SCAN.photoAria} />
       </List>
 
       <Lbl>{SCAN.orType}</Lbl>
       <List>
-        <FRow label={SCAN.barcode} value={s.typed} onChange={s.setTyped} placeholder={SCAN.placeholder}
-          inputProps={{ keyboardType: 'number-pad', autoComplete: 'off', autoCorrect: false, returnKeyType: 'search', onSubmitEditing: s.submitTyped }} />
+        <FRow label={SCAN.barcode} value={s.typed} onChangeText={s.setTyped} placeholder={SCAN.placeholder}
+          keyboardType="number-pad" autoComplete="off" autoCorrect={false} returnKeyType="search" onSubmitEditing={s.submitTyped} />
       </List>
       <View style={{ marginTop: 16 }}><Btn kind="tinted" title={SCAN.lookUp} disabled={!s.canSubmit} onPress={s.submitTyped} /></View>
       <Foot>{SCAN.source}</Foot>

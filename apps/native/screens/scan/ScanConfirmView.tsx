@@ -27,12 +27,12 @@ import { CREATE_FOOD } from '@/copy/food'
 import { NEEDS_NET } from '@/copy/connection'
 import { num, tx, BTN, useTokens } from '../../lib/theme'
 import { BackButton, NavBtn, Seg, Sheet } from '../../lib/ui/primitives'
-import { Btn, List } from '../../lib/ui/kit'
+import { Btn, List, Note } from '../../lib/ui/kit'
+import { FRow } from '../../lib/ui/fields'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { useDuplicateSave, type DuplicateAnswer, type DuplicateAsk } from '../food/useDuplicateSave'
 import { ReportProductSheet, ShareOptInSheet, SharedServing, SharedSourceCard } from './SharedProduct'
 import { FlagNote, NutritionRow, NutritionTable } from './parts'
-import { FRow, Note } from './pending'
 
 /** UK label order. `sub` rows are the "of which" lines; `unit` is shown beside the name. */
 const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: number }[] = [
@@ -241,7 +241,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
       right={shareFor
         ? <NavBtn bold title={SHARE_CHECK.share} onPress={share} disabled={!canShare} />
         : <NavBtn bold title={CONFIRM.save} onPress={save} disabled={missing} />}>
-      {notice ? <Note style={{ marginTop: 0, marginBottom: 12 }}>{notice}</Note> : null}
+      {notice ? <Note status style={{ marginTop: 0, marginBottom: 12 }}>{notice}</Note> : null}
       {shared ? (
         <SharedSourceCard info={shared} barcode={draft.barcode} onReport={() => setReporting(true)} />
       ) : (
@@ -260,11 +260,11 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
       <Foot>{kind === 'eat' ? CONFIRM.eatNote : CONFIRM.cookNote}</Foot>
 
       <List style={{ marginTop: 12 }}>
-        <FRow label={CONFIRM.name} value={name} onChange={setName} placeholder={CONFIRM.needed} need={!name.trim()} flag={vague}
-          note={vague ? CONFIRM.addFlavour : undefined} inputProps={{ autoFocus: !!draft.vague }} />
-        <FRow label={CONFIRM.serving} value={serving} onChange={(v) => { setServing(v); setServingTouched(true) }} unit={unit} placeholder={CONFIRM.servingPh}
-          need={!(g > 0)} flag={odd.has('serving')} inputProps={{ keyboardType: 'decimal-pad' }}
-          note={odd.has('serving') ? (productNotes.some((n) => n.msg === SERVING_NEEDED) ? CONFIRM.servingNeeded : CONFIRM.servingCheck) : undefined} />
+        <FRow label={CONFIRM.name} value={name} onChangeText={setName} placeholder={CONFIRM.needed} need={!name.trim()}
+          flag={vague ? CONFIRM.addFlavour : undefined} autoFocus={!!draft.vague} />
+        <FRow label={CONFIRM.serving} value={serving} onChangeText={(v) => { setServing(v); setServingTouched(true) }} unit={unit} placeholder={CONFIRM.servingPh}
+          need={!(g > 0)} keyboardType="decimal-pad"
+          flag={odd.has('serving') ? (productNotes.some((n) => n.msg === SERVING_NEEDED) ? CONFIRM.servingNeeded : CONFIRM.servingCheck) : undefined} />
       </List>
       {fromLabel && !name.trim() && <Foot>{NAME_HINT}</Foot>}
       {shared && <SharedServing info={shared} kcal={values.k !== undefined && g > 0 ? (values.k * g) / 100 : 0} />}
@@ -315,8 +315,8 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
       <Foot>{CONFIRM.grams(unit)}</Foot>
       {info && info.marks.length > 0 && <Foot>{info.marks.join(' ')}</Foot>}
 
-      {notes.length > 0 && <View>{notes.map((m) => <Note key={m}>{m}</Note>)}</View>}
-      {allGood && !shareFor && <Note ok>{CONFIRM.consistent}</Note>}
+      {notes.length > 0 && <View>{notes.map((m) => <Note key={m} status>{m}</Note>)}</View>}
+      {allGood && !shareFor && <Note kind="ok" status>{CONFIRM.consistent}</Note>}
       {shareFor ? (
         <>
           <View style={{ marginTop: 16 }}><Btn title={SHARE_CHECK.button} onPress={share} disabled={!canShare} /></View>

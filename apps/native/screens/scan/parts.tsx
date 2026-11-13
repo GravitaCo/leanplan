@@ -4,7 +4,7 @@
  * (src/styles/theme.css) in React Native:
  *
  * - ScanBox: `.scanbox` (4:3; `.tall` 3:4 at most 56% of the screen) with `.scanframe` over it.
- * - LabelThumb: `.labelthumb`; ThumbRow: the label review's `.li` led by one.
+ * - LabelThumb: `.labelthumb` (the lead of the label review's rows).
  * - NutritionTable / NutritionRow: `.list.ntab` and `.nrow` (label, per-100 input, per-serving
  *   figure, the flag bar and its `.flagnote`).
  * - SourceCard: `.sp-src` (shared product source with Report this product).
@@ -50,21 +50,6 @@ export function ScanBox({ tall, children }: { tall?: boolean; children: ReactNod
 export function LabelThumb({ uri, label }: { uri: string; label: string }) {
   const t = useTokens()
   return <Image source={{ uri }} accessibilityLabel={label} style={{ width: 52, height: 52, borderRadius: 8, marginRight: 12, backgroundColor: t.fill2 }} />
-}
-
-/** A `.li` row led by a `.labelthumb` (the label review): title, sub, and the Retake/Remove button. */
-export function ThumbRow({ uri, alt, title, sub, right }: { uri: string; alt: string; title: string; sub: string; right: ReactNode }) {
-  const t = useTokens()
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }}>
-      <LabelThumb uri={uri} label={alt} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={[tx(17), { color: t.label }]}>{title}</Text>
-        <Text numberOfLines={1} style={[tx(13), { color: t.label2, marginTop: 2 }]}>{sub}</Text>
-      </View>
-      {right}
-    </View>
-  )
 }
 
 /* ---------------------------------------------------------------- nutrition table */

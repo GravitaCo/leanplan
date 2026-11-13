@@ -16,7 +16,7 @@ import { reportShared, type ReportReason } from '@/data/sharedProducts'
 import { IN_OFF, ONE_SERVING, OPT_IN, REPORT, REPORT_TOAST, SHARE_ROW } from '@/copy/scan'
 import { LEGAL_LABEL } from '@/copy/legal'
 import { useTokens } from '../../lib/theme'
-import { BareSheet, Sheet, SettingRow } from '../../lib/ui/primitives'
+import { BareSheet, Row, Sheet } from '../../lib/ui/primitives'
 import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { Foot } from '../../lib/ui/text'
 import { ReasonList, ReportHead, ServingMargin, SheetBody, SheetTitle, SourceCard, SpTile } from './parts'
@@ -87,15 +87,15 @@ export function ReportProductSheet({ name, barcode, version, onClose }: { name: 
 }
 
 /** sp-7: at the foot of a saved food's sheet, under Add (N5's portion view). Offline it stays in
- *  view, off, with its line (sp-7b). TODO(N1-followup): the dim `.li.needsnet` row from P1b. */
+ *  view, off (`.li.needsnet`), with its line (sp-7b). */
 export function ShareProductRow({ state, busy, onShare }: { state: 'on' | 'offline'; busy?: boolean; onShare: () => void }) {
   const t = useTokens()
   return (
     <>
       <List icons style={{ marginTop: 18 }}>
         {state === 'on'
-          ? <SettingRow icon="people" color={t.tint} label={SHARE_ROW.title} sub={SHARE_ROW.sub} onPress={busy ? undefined : onShare} />
-          : <SettingRow icon="people" color={t.fill2} soft label={SHARE_ROW.title} sub={SHARE_ROW.sub} />}
+          ? <Row square={{ icon: 'people', fill: t.tint }} title={SHARE_ROW.title} sub={SHARE_ROW.sub} onPress={busy ? undefined : onShare} />
+          : <Row needsnet square={{ icon: 'people', fill: t.fill2, ink: t.label2 }} title={SHARE_ROW.title} sub={SHARE_ROW.sub} />}
       </List>
       {state === 'offline' && <Foot>{SHARE_ROW.offline}</Foot>}
     </>
