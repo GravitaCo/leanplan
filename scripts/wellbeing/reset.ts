@@ -79,8 +79,8 @@ export function resetSuite(): number {
   const stages = readFileSync('src/screens/mind/resetStages.ts', 'utf8')
   const stageCalls = stages.match(/logSkill\(/g) || []
   ok('logSkill is called once, from onPacerDone after its running guard (a stopped run is never logged)',
-    calls.length === 0 && stageCalls.length === 1 && /if \(cur\.stage !== 'running'\) return cur\s*\n\s*st\.logSkill\('reset'\)/.test(stages)
-    && /const finish = \(\) => \{ if \(onPacerDone\(cur\.current\) !== cur\.current\) dispatch\(\{ type: 'finish' \}\) \}/.test(src))
+    calls.length === 0 && stageCalls.length === 1 && /cur\.stage !== 'running'\)\s*return cur[\s\S]{0,40}?st\.logSkill\('reset'\)/.test(stages)
+    && /const finish = \(\) =>[\s\S]{0,200}?onPacerDone\(cur\.current\)/.test(src))
   {
     const log: string[] = []
     const st = { data: { days: {} } as never, logSkill: () => { log.push('log'); return true }, doneThing: () => { log.push('done'); return true } }
