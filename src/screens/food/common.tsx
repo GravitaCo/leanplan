@@ -4,14 +4,15 @@ import { MEALS, MEAL_LABEL } from '@/core/domain/insights'
 import { Seg } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { useStore } from '@/store/store'
-import { NEEDS_NET } from '@/ui/ConnectionPill'
+import { NEEDS_NET } from '@/copy/connection'
+import { CREATE_FOOD, mealOption } from '@/copy/food'
 
 /** "Photo of the label": online only, so offline it stays in view, off, with the note (ob6-8). */
 export function LabelPhotoButton({ onPress }: { onPress: () => void }) {
   const online = useStore((s) => s.online)
   return (
     <>
-      <button className="btn gray" disabled={!online} onClick={onPress}><Icon name="camera" size={17} /> Photo of the label</button>
+      <button className="btn gray" disabled={!online} onClick={onPress}><Icon name="camera" size={17} /> {CREATE_FOOD.labelPhoto}</button>
       {!online && <div className="foot" style={{ padding: 0 }}>{NEEDS_NET}</div>}
     </>
   )
@@ -36,7 +37,7 @@ export function Checks({ checks, ok, onFix }: { checks: Check[]; ok?: string; on
   )
 }
 
-const MEAL_OPTIONS: [MealSlot, string][] = MEALS.map((m) => [m, m === 'snack' ? 'Snack' : MEAL_LABEL[m]])
+const MEAL_OPTIONS: [MealSlot, string][] = MEALS.map((m) => [m, mealOption(m, MEAL_LABEL[m])])
 
 /** Meal picker. `value` may be undefined for legacy entries logged without a meal. */
 export function MealSeg({ value, onChange }: { value: MealSlot | undefined; onChange: (m: MealSlot) => void }) {

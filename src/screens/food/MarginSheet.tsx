@@ -1,6 +1,7 @@
 import { useStore } from '@/store/store'
 import { CAPTURE_LABEL, biggestMarginSource, dayMargin } from '@/core/domain/estimate'
 import { Sheet } from '@/ui/primitives'
+import { MARGIN } from '@/copy/food'
 
 /** Explains the ± on the day total: honest about what the log knows. */
 export function MarginSheet({ onClose }: { onClose: () => void }) {
@@ -8,16 +9,16 @@ export function MarginSheet({ onClose }: { onClose: () => void }) {
   const margin = dayMargin(foods)
   const top = biggestMarginSource(foods)
   return (
-    <Sheet title="About this estimate" left={null} onClose={onClose} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={MARGIN.title} left={null} onClose={onClose} right={<button className="navbtn b" onClick={onClose}>{MARGIN.done}</button>}>
       <div className="card" style={{ textAlign: 'center' }}>
         <div className="big num">± {margin}<small>kcal</small></div>
-        <div className="sub">today's margin</div>
+        <div className="sub">{MARGIN.todaysMargin}</div>
       </div>
       <div className="prose" style={{ padding: '0 4px' }}>
-        <p>No food log is exact. Portions are guessed, labels round, and cooking changes things. Instead of pretending, Tilo shows how sure it is.</p>
-        <p>Weighed food is very close. Servings and your usual portions are close. Hand estimates and quick estimates are rougher. The margin combines them all.</p>
-        {top && <p><b>Biggest source today:</b> {CAPTURE_LABEL[top].toLowerCase()} entries.</p>}
-        <p className="muted">For context, careful manual logging typically misses 20% or more. Roughly right every day beats precise now and then.</p>
+        <p>{MARGIN.p1}</p>
+        <p>{MARGIN.p2}</p>
+        {top && <p><b>{MARGIN.biggest}</b> {MARGIN.biggestWhat(CAPTURE_LABEL[top])}</p>}
+        <p className="muted">{MARGIN.context}</p>
       </div>
     </Sheet>
   )

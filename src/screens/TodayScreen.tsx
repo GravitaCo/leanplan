@@ -47,7 +47,7 @@ import { offerLighter } from '@/core/domain/dayOptions'
 import { thingByKey, type Thing } from '@/core/data/skills'
 import { MindCard } from './today/MindCard'
 import { ThingPlanSheet } from './today/ThingPlanSheet'
-import { LowMoodBanner, useLowMoodSignpost } from './today/LowMoodBanner'
+import { LowMoodSignpost, useLowMoodSignpost } from './today/LowMoodBanner'
 import { SupportSheet } from './mind/SupportSheet'
 import { lowMoodShownOn, medicalReasked } from '@/data/deviceOnly'
 import { BANNER_ASK, checkedIn, pillarsOn, summaryDue } from './today/summary'
@@ -222,7 +222,7 @@ export function TodayScreen() {
   const foodAskGo = foodAsk0 && shown('food-ask') ? foodAsk0 : null
   const suggestVisible = suggestShown && shown('activity') ? suggestShown : null
   // WP15 (board B6 frame 2): the only ask on its day; shown once, marked with the local date
-  const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data), markLowMoodShown)
+  const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data))
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
   // one sheet at a time: the medical re-ask waits for a pregnancy re-ask due the same day
   useEffect(() => { if (medReaskGo && !reaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -275,7 +275,7 @@ export function TodayScreen() {
           <Chevron />
         </button>}
 
-        {signpost.show && <LowMoodBanner onSupport={() => setSheet({ k: 'support' })} onDismiss={signpost.dismiss} />}
+        {signpost.show && <LowMoodSignpost today={cur} markShown={markLowMoodShown} onSupport={() => setSheet({ k: 'support' })} onDismiss={signpost.dismiss} />}
         {/* the review card and the keep ask go through the asks budget (mental-performance close-out,
             change 1); a ?review=1 tap still opens the review, because the person chose it */}
         {reviewDue && shown('review') && (

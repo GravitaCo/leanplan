@@ -42,6 +42,7 @@ export function TabBarView({ active, mindOff, onPress, bottom }: { active: strin
             accessibilityState={{ selected: on, disabled: off }}
             onPress={() => onPress(route)}
             style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 7, paddingBottom: 5 }}>
+            {/* 20, not the 25 BottomNav asks for: the web's `svg.i` rule draws every icon at 20 px */}
             <Icon name={icon} size={20} stroke={on ? 2.3 : 1.9} color={color} />
             <Text style={[tx(10, 500, 1.3, 0.01), { color }]}>{label}</Text>
           </Pressable>

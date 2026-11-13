@@ -14,34 +14,34 @@ import { clearDraft, loadDraft, saveDraft } from '@/data/onboardingDraft'
 import { uuid } from '@/data/supabase'
 import {
   AREA_OPTIONS, CONFIDENCE_OPTIONS, ENJOY_OPTIONS, GOAL_OPTIONS, HEALTH_STEPS, afterAnswer, JOB_OPTIONS, KIT_OPTIONS, MOVING_OPTIONS,
-  STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, baselineOutcome, canSkip, defaultSpread, medicalOutcome, newDraft, prevStep,
-  progressOf, readinessOutcome, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
+  STEP_OPTIONS, WHERE_OPTIONS, WHY_CHIPS, canSkip, defaultSpread, newDraft, prevStep,
+  progressOf, stepsFor, summaryFor, WIZARD_MIN_AGE, finishedProfile, draftFromProfile, type StepId, type WizardDraft, type WizardMode,
 } from '@/core/domain/wizard'
+import {
+  areasAnswer, areasInit, daysAnswer, daysInit, daysPickN, daysSkip, daysToggle, keptDraft, latelyAnswer, latelyInit, mayKeep, medicalAnswer, medicalInit, medicalPick,
+  minutesAnswer, minutesContinue, readinessAnswer, readinessInit, readinessSkip, stopReset, toggleExclusive, whyAnswer, whyInit, withoutOutcome, type DaysPicks, type MedicalPicks, type ReadinessPicks,
+} from '@/core/domain/wizardAnswers'
 import { latestWeight } from '@/core/domain/insights'
 import { wellbeingAnswerOf, wellbeingOutcome, type WellbeingAnswer } from '@/core/domain/onboarding'
 import { todayStr } from '@/core/domain/date'
 import { CM_PER_IN, cmFromIn, ftInFromCm, kgFromLb, lbFromKg, stLbFromKg } from '@/core/domain/units'
 import type { Lately } from '@/core/domain/engine'
-import type { Goal, OnboardingOutcomes } from '@/core/types'
+import type { Goal } from '@/core/types'
 import { Icon, type IconName } from '@/ui/icons'
 import { BareSheet, useScrollLock } from '@/ui/primitives'
 import { ChoiceTiles, CheckTiles, type TileOpt } from '@/ui/Tiles'
 import { Wheel } from '@/ui/Wheel'
 import { Ruler } from '@/ui/Ruler'
-import { warmupMinutesFor, rangeEngineMinutes, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
+import { warmupMinutesFor, rangeLabel, SESSION_RANGES, type SessionRange } from '@/core/domain/warmup'
 import partOnePhoto from '@/assets/onboarding/part-1-about-you.jpg'
 import partTwoPhoto from '@/assets/plans/pure-muscle-growth.jpg'
 import partThreePhoto from '@/assets/onboarding/part-3-your-plan.jpg'
-import { COPY, DAYS_SPREAD, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, TAP, TAP_GOAL, WHY_LINK, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from './copy'
+import { COPY, DAYS_SPREAD, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, TAP, TAP_GOAL, WHY_LINK, PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT, WIZ } from './copy'
 import { Summary } from './Summary'
 import { SCREEN_H } from './screenHeading'
 import { SPS, Signposts, Under16, UnderAgeStop } from './AgeStop'
 
 const WD_LETTERS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
-
-/** Anything health-related in the draft (plan §8: never kept without a local health consent). */
-const hasHealth = (d: WizardDraft) => Object.keys(d.outcomes).length > 0 || d.pregnant !== undefined || d.height != null || d.weight != null ||
-  !!d.sexAnswer || !!d.movement || !!d.areas
 
 /**
  * The wizard, full screen. `mode` 'first' is the whole first run; 'setup' the setup card on its
@@ -75,10 +75,9 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
   }, [d.step])
   const put = (next: WizardDraft) => {
     setD(next)
-    // never keep health answers on the device without the local consent record (plan §8)
-    // Redo setup's age stop keeps no under-18 age on the device: a reload asks the age again
-    const keep = next.redo && next.step === 'under16' ? { ...next, age: undefined, step: 'age' as const } : next
-    if (health || !hasHealth(keep)) saveDraft(keep)
+    // never keep health answers on the device without the local consent record (plan §8), nor
+    // Redo setup's under-18 age (core/domain/wizardAnswers)
+    if (mayKeep(next, health)) saveDraft(keptDraft(next))
   }
   const patch = (x: Partial<WizardDraft>) => put({ ...d, ...x })
   // `ret` (from the summary's "Add weight", "Add age", "See your health check answers") goes back to
@@ -101,7 +100,8 @@ export function Onboarding({ mode, redo, onClose }: { mode: WizardMode; redo?: b
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
   useEffect(() => {
-    if (d.step === 'under16' && !d.redo && (d.name !== undefined || d.motivations || Object.keys(d.outcomes).length)) put({ ...newDraft(mode, d.seed), step: 'under16', age: d.age, skipped: d.skipped, ...(d.redo ? { redo: { training: {} } } : {}) })
+    const reset = stopReset(d, mode)
+    if (reset) put(reset)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
   const common = { d, go, back, patch, closable }
@@ -170,9 +170,9 @@ function Frame({ step, back, onSkip, cta, children, title, lead }: { step: StepI
   return (
     <div className="wz">
       <div className="wz-top">
-        {back ? <button className="wz-back" aria-label="Back" onClick={back}><Icon name="chevL" size={18} stroke={2.4} /></button> : <span className="wz-back none" aria-hidden="true" />}
-        {p ? <div className="wz-bar" role="img" aria-label={`Question ${p.at} of ${p.of}`}><span style={{ width: `${(p.at / p.of) * 100}%` }} /></div> : <span className="wz-bar none" />}
-        {skip ? <button className="wz-skip" onClick={onSkip}>Skip</button> : <span className="wz-skip none" aria-hidden="true" />}
+        {back ? <button className="wz-back" aria-label={WIZ.back} onClick={back}><Icon name="chevL" size={18} stroke={2.4} /></button> : <span className="wz-back none" aria-hidden="true" />}
+        {p ? <div className="wz-bar" role="img" aria-label={WIZ.progress(p.at, p.of)}><span style={{ width: `${(p.at / p.of) * 100}%` }} /></div> : <span className="wz-bar none" />}
+        {skip ? <button className="wz-skip" onClick={onSkip}>{WIZ.skip}</button> : <span className="wz-skip none" aria-hidden="true" />}
       </div>
       {c && <h1 className="wz-h" {...SCREEN_H}>{c.title}</h1>}
       {(line || whyText.length > 0) && (
@@ -184,14 +184,14 @@ function Frame({ step, back, onSkip, cta, children, title, lead }: { step: StepI
       <div className="ob-cta">{cta}</div>
       {why && (
         <BareSheet label={WHY_LINK} onClose={() => setWhy(false)}>
-          <div className="feel-hd"><h2>{WHY_LINK}</h2><button className="navbtn b" onClick={() => setWhy(false)}>Done</button></div>
+          <div className="feel-hd"><h2>{WHY_LINK}</h2><button className="navbtn b" onClick={() => setWhy(false)}>{WIZ.done}</button></div>
           <div className="sm-why" style={{ marginTop: 12 }}>{whyText.map((t) => <p key={t}>{t}</p>)}</div>
         </BareSheet>
       )}
     </div>
   )
 }
-const Cta = ({ label = 'Continue', onClick, disabled }: { label?: string; onClick: () => void; disabled?: boolean }) =>
+const Cta = ({ label = WIZ.cont, onClick, disabled }: { label?: string; onClick: () => void; disabled?: boolean }) =>
   <button className="btn ob-btn" onClick={onClick} disabled={disabled}>{label}</button>
 /** The foot of a tap-to-advance screen (note s-r): no Continue. */
 const TapFoot = ({ text = TAP }: { text?: string }) => <div className="wz-tap">{text}</div>
@@ -226,7 +226,7 @@ function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | '
     <div className="wz part">
       {photo ? <img className="wz-photo" src={photo} alt="" /> : <div className="wz-photo ph" aria-hidden="true" />}
       <section className="wz-part">
-        <div className="wz-bars" role="img" aria-label={`Part ${p.n} of 3`} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 0 }}>
+        <div className="wz-bars" role="img" aria-label={WIZ.part(p.n)} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 0 }}>
           {[1, 2, 3].map((i) => <span key={i} className={i <= p.n ? 'on' : ''} />)}
         </div>
         <div className="wz-part-k"><span className="k">{partLabel(p.n, p.k)}</span>{p.time && <span className="r">{p.time}</span>}</div>
@@ -245,7 +245,7 @@ function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | '
 
 /** r2-age: the age wheel. Untouched it answers nothing, so Continue waits for a pick. */
 const AgeWheel = ({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) =>
-  <Wheel label="Age in years" unit="years" min={AGE_MIN} max={AGE_MAX} initial={30} value={value} onChange={onChange} valueText={(v) => `${v} years`} />
+  <Wheel label={WIZ.age.label} unit={WIZ.age.unit} min={AGE_MIN} max={AGE_MAX} initial={30} value={value} onChange={onChange} valueText={WIZ.age.value} />
 const AGE_MIN = 1
 const AGE_MAX = 120
 
@@ -272,7 +272,7 @@ function SkipAge({ d, patch }: Common) {
       <div className="wz-lead">{c.lead}</div>
       <AgeWheel value={v} onChange={setV} />
       <div className="wz-card quiet">{c.note}</div>
-      <div className="ob-cta"><Cta label="Start using Tilo" disabled={v == null} onClick={start} /></div>
+      <div className="ob-cta"><Cta label={WIZ.startUsing} disabled={v == null} onClick={start} /></div>
     </div>
   )
 }
@@ -281,8 +281,8 @@ function Name({ d, go, back, closable }: Common) {
   const [v, setV] = useState(d.name ?? '')
   return (
     <Frame step="name" back={closable ? back : null} onSkip={() => go({ name: undefined })} cta={<Cta onClick={() => go({ name: v.trim() || undefined })} />}>
-      <label className="wz-field"><span className="l">First name</span>
-        <input value={v} maxLength={40} autoComplete="given-name" onChange={(e) => setV(e.target.value)} placeholder="Sam" /></label>
+      <label className="wz-field"><span className="l">{WIZ.firstName}</span>
+        <input value={v} maxLength={40} autoComplete="given-name" onChange={(e) => setV(e.target.value)} placeholder={WIZ.namePlaceholder} /></label>
     </Frame>
   )
 }
@@ -299,26 +299,21 @@ function Age({ d, go, back }: Common) {
 function YesNo({ value, onChange, label }: { value: boolean | undefined; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="wz-seg" role="radiogroup" aria-label={label}>
-      <button role="radio" aria-checked={value === true} className={value === true ? 'on' : ''} onClick={() => onChange(true)}>Yes</button>
-      <button role="radio" aria-checked={value === false} className={value === false ? 'on' : ''} onClick={() => onChange(false)}>No</button>
+      <button role="radio" aria-checked={value === true} className={value === true ? 'on' : ''} onClick={() => onChange(true)}>{WIZ.yes}</button>
+      <button role="radio" aria-checked={value === false} className={value === false ? 'on' : ''} onClick={() => onChange(false)}>{WIZ.no}</button>
     </div>
   )
 }
 
 function Ready({ d, go, back }: Common) {
   // the answers stay on this screen: only the outcome is kept (§8)
-  const clear = d.outcomes.readiness === 'clear'
-  const [items, setItems] = useState<(boolean | undefined)[]>(clear ? [false, false, false] : [undefined, undefined, d.pregnant ? true : undefined])
   // which of the third item it is: pregnant or breastfeeding route to ob4-4, recent surgery to ob4-3
-  const [which, setWhich] = useState<'pregnant' | 'breastfeeding' | 'surgery' | undefined>(d.pregnant ? 'pregnant' : undefined)
-  const set = (i: number, v: boolean) => setItems(items.map((x, j) => (j === i ? v : x)))
-  const done = () => {
-    const readiness = readinessOutcome(items) ?? (d.outcomes.readiness === 'flagged' && items.every((x) => x === undefined) ? 'flagged' : undefined)
-    const outcomes: OnboardingOutcomes = { ...d.outcomes, readiness }
-    if (!readiness) delete outcomes.readiness
-    go({ outcomes, pregnant: items[2] === true ? (which ? which !== 'surgery' : d.pregnant) : items[2] === false ? false : undefined })
-  }
-  const skip = () => { const o = { ...d.outcomes }; delete o.readiness; go({ outcomes: o, pregnant: undefined }) }
+  const [r, setR] = useState<ReadinessPicks>(() => readinessInit(d))
+  const { items, which } = r
+  const set = (i: number, v: boolean) => setR({ ...r, items: items.map((x, j) => (j === i ? v : x)) })
+  const setWhich = (w: ReadinessPicks['which']) => setR({ ...r, which: w })
+  const done = () => go(readinessAnswer(d, r))
+  const skip = () => go(readinessSkip(d))
   return (
     <Frame step="ready" back={back} onSkip={skip} cta={<Cta onClick={done} />}>
       <div className="wz-group">
@@ -344,15 +339,14 @@ function Ready({ d, go, back }: Common) {
 const tiles = <T extends string>(opts: readonly (readonly [T, string, string?])[]): TileOpt<T>[] => opts.map(([k, t, s]) => ({ k, t, s }))
 
 function Why({ d, go, back }: Common) {
-  const known = new Set(WHY_CHIPS.map(([k]) => k))
-  const [picked, setPicked] = useState<string[]>((d.motivations ?? []).filter((x) => known.has(x)))
-  const [other, setOther] = useState((d.motivations ?? []).find((x) => !known.has(x)) ?? '')
+  const [init] = useState(() => whyInit(d, WHY_CHIPS.map(([k]) => k)))
+  const [picked, setPicked] = useState<string[]>(init.picked)
+  const [other, setOther] = useState(init.other)
   const toggle = (k: string) => setPicked(picked.includes(k) ? picked.filter((x) => x !== k) : [...picked, k])
-  const all = [...picked, ...(other.trim() ? [other.trim().slice(0, 60)] : [])]
   return (
-    <Frame step="why" back={back} onSkip={() => go({ motivations: undefined })} cta={<Cta onClick={() => go({ motivations: all.length ? all : undefined })} />}>
+    <Frame step="why" back={back} onSkip={() => go({ motivations: undefined })} cta={<Cta onClick={() => go(whyAnswer(picked, other))} />}>
       <CheckTiles grid label={COPY.why!.title} opts={tiles(WHY_CHIPS)} value={picked} onToggle={toggle} />
-      <label className="wz-field"><input value={other} maxLength={60} placeholder="Something else" aria-label="Something else" onChange={(e) => setOther(e.target.value)} /></label>
+      <label className="wz-field"><input value={other} maxLength={60} placeholder={WIZ.somethingElse} aria-label={WIZ.somethingElse} onChange={(e) => setOther(e.target.value)} /></label>
     </Frame>
   )
 }
@@ -365,7 +359,7 @@ function GoalQ({ d, go, back }: Common) {
   const advance = useAdvance()
   return (
     <Frame step="goal" back={back} cta={<TapFoot text={TAP_GOAL} />}>
-      <ChoiceTiles label="Main goal" opts={GOAL_OPTIONS.map(([k, t, s]) => ({ k, t, s, icon: GOAL_ICON[k] }))} value={g} onPick={(v) => { setG(v); advance(() => go({ goal: v })) }} />
+      <ChoiceTiles label={WIZ.mainGoal} opts={GOAL_OPTIONS.map(([k, t, s]) => ({ k, t, s, icon: GOAL_ICON[k] }))} value={g} onPick={(v) => { setG(v); advance(() => go({ goal: v })) }} />
     </Frame>
   )
 }
@@ -382,16 +376,16 @@ function Three<T extends string>({ k, opts, value, onPick }: { k: string; opts: 
 
 function LatelyQ({ d, go, back }: Common) {
   // only the outcome (ok or low) is kept; the three answers stay on this screen
-  const [l, setL] = useState<Lately>(d.outcomes.baseline === 'ok' ? { sleep: 'good', stress: 'low', room: 'plenty' } : {})
   // a kept 'low' (back, or Redo setup) can't be shown as picks: nothing picked keeps it
-  const done = () => { const o = { ...d.outcomes, baseline: baselineOutcome(l) ?? (d.outcomes.baseline === 'low' ? 'low' : undefined) }; if (!o.baseline) delete o.baseline; go({ outcomes: o }) }
-  const skip = () => { const o = { ...d.outcomes }; delete o.baseline; go({ outcomes: o }) }
+  const [l, setL] = useState<Lately>(() => latelyInit(d))
+  const done = () => go(latelyAnswer(d, l))
+  const skip = () => go(withoutOutcome(d, 'baseline'))
   return (
     <Frame step="lately" back={back} onSkip={skip} cta={<Cta onClick={done} />}>
       <div className="wz-lately">
-        <Three k="Sleep" opts={[['good', 'Mostly well'], ['mixed', 'Mixed'], ['poor', 'Mostly poorly']]} value={l.sleep} onPick={(v) => setL({ ...l, sleep: v })} />
-        <Three k="Stress" opts={[['low', 'Low'], ['some', 'Some'], ['high', 'A lot']]} value={l.stress} onPick={(v) => setL({ ...l, stress: v })} />
-        <Three k="Room for change right now" opts={[['plenty', 'Plenty'], ['some', 'A little'], ['little', 'Not much']]} value={l.room} onPick={(v) => setL({ ...l, room: v })} />
+        <Three k={WIZ.lately.sleep.k} opts={WIZ.lately.sleep.opts} value={l.sleep} onPick={(v) => setL({ ...l, sleep: v })} />
+        <Three k={WIZ.lately.stress.k} opts={WIZ.lately.stress.opts} value={l.stress} onPick={(v) => setL({ ...l, stress: v })} />
+        <Three k={WIZ.lately.room.k} opts={WIZ.lately.room.opts} value={l.room} onPick={(v) => setL({ ...l, room: v })} />
       </div>
     </Frame>
   )
@@ -407,11 +401,11 @@ function Wellbeing({ d, go, back }: Common) {
     const o = { ...d.outcomes, wellbeing: wellbeingOutcome(v) }
     advance(() => go({ outcomes: o }))
   }
-  const skip = () => { const o = { ...d.outcomes }; delete o.wellbeing; go({ outcomes: o }) }
+  const skip = () => go(withoutOutcome(d, 'wellbeing'))
   return (
     <Frame step="wellbeing" back={back} onSkip={skip} cta={<TapFoot />}>
       <div className="wz-card wz-state">{WELLBEING_STATEMENT}</div>
-      <ChoiceTiles label="Food and weight" opts={tiles(WELLBEING_OPTIONS)} value={a} onPick={pick} />
+      <ChoiceTiles label={WIZ.foodAndWeight} opts={tiles(WELLBEING_OPTIONS)} value={a} onPick={pick} />
     </Frame>
   )
 }
@@ -429,15 +423,15 @@ function Body({ d, go, back }: Common) {
   return (
     <Frame step="body" back={back} onSkip={() => go({ height: undefined, sexAnswer: undefined })}
       cta={<Cta onClick={() => go({ height: cm ? Math.round(cm * 10) / 10 : undefined, heightUnit: unit, sexAnswer: sex })} />}>
-      <UnitSeg label="Height unit" opts={[['cm', 'cm'], ['ft-in', 'ft in']]} value={unit} onChange={setUnit} />
+      <UnitSeg label={WIZ.height.unitLabel} opts={WIZ.height.units} value={unit} onChange={setUnit} />
       <div className={'pick-fig num' + (cm == null ? ' unset' : '')} aria-hidden="true"><span className="v h76">{f.v}</span>{f.u && <span className="u"> {f.u}</span>}</div>
       {unit === 'cm'
-        ? <Ruler label="Height" min={100} max={250} initial={170} value={cm == null ? undefined : Math.round(cm)} onChange={setCm}
-            valueText={(v) => `${v} centimetres`} />
-        : <Ruler label="Height" min={inches(100) + 1} max={inches(250) - 1} initial={67} value={cm == null ? undefined : inches(cm)} onChange={(v) => setCm(cmFromIn(v))}
-            major={12} mid={6} tickLabel={(v) => `${v / 12} ft`} valueText={(v) => { const x = ftInFromCm(cmFromIn(v), 1); return `${x.ft} feet ${x.in} inches` }} />}
-      <div className="wz-sub"><b>Sex</b> <span>for the energy estimate</span></div>
-      <ChoiceTiles className="three" label="Sex for the energy estimate" opts={[{ k: 'female', t: 'Female' }, { k: 'male', t: 'Male' }, { k: 'unspecified', t: 'Prefer not to say' }]} value={sex} onPick={setSex} />
+        ? <Ruler label={WIZ.height.label} min={100} max={250} initial={170} value={cm == null ? undefined : Math.round(cm)} onChange={setCm}
+            valueText={WIZ.height.cm} />
+        : <Ruler label={WIZ.height.label} min={inches(100) + 1} max={inches(250) - 1} initial={67} value={cm == null ? undefined : inches(cm)} onChange={(v) => setCm(cmFromIn(v))}
+            major={12} mid={6} tickLabel={(v) => WIZ.height.tick(v / 12)} valueText={(v) => { const x = ftInFromCm(cmFromIn(v), 1); return WIZ.height.ftIn(x.ft, x.in) }} />}
+      <div className="wz-sub"><b>{WIZ.sex.k}</b> <span>{WIZ.sex.s}</span></div>
+      <ChoiceTiles className="three" label={WIZ.sex.label} opts={WIZ.sex.opts.map(([k, t]) => ({ k, t }))} value={sex} onPick={setSex} />
     </Frame>
   )
 }
@@ -451,27 +445,15 @@ function UnitSeg<T extends string>({ label, opts, value, onChange }: { label: st
 }
 
 function Medical({ d, go, back }: Common) {
-  const stored = d.outcomes.medical
-  const [ticked, setTicked] = useState<number[]>([])
-  const [none, setNone] = useState(d.outcomes.medical === 'clear')
-  const pick = (k: string) => {
-    if (k === 'none') { setNone(!none); setTicked([]); return }
-    const i = +k
-    setNone(false)
-    setTicked(ticked.includes(i) ? ticked.filter((x) => x !== i) : [...ticked, i])
-  }
-  const done = () => {
-    // back here with nothing ticked: the stored yes stays (the ticks themselves were never kept)
-    const medical = medicalOutcome(ticked, none) ?? (stored && stored !== 'clear' && !none ? stored : undefined)
-    const o = { ...d.outcomes, medical }
-    if (!medical) delete o.medical
-    go({ outcomes: o })
-  }
-  const skip = () => { const o = { ...d.outcomes }; delete o.medical; go({ outcomes: o }) }
-  const value = [...ticked.map(String), ...(none ? ['none'] : [])]
+  // back here with nothing ticked: the stored yes stays (the ticks themselves were never kept)
+  const [m, setM] = useState<MedicalPicks>(() => medicalInit(d))
+  const pick = (k: string) => setM(medicalPick(m, k === 'none' ? 'none' : +k))
+  const done = () => go(medicalAnswer(d, m))
+  const skip = () => go(withoutOutcome(d, 'medical'))
+  const value = [...m.ticked.map(String), ...(m.none ? ['none'] : [])]
   return (
     <Frame step="medical" back={back} onSkip={skip} cta={<Cta onClick={done} />}>
-      <CheckTiles label="Conditions and medicines" opts={[...MEDICAL_ITEMS.map((t, i) => ({ k: String(i), t })), { k: 'none', t: 'None of these' }]} value={value} onToggle={pick} />
+      <CheckTiles label={WIZ.medicalLabel} opts={[...MEDICAL_ITEMS.map((t, i) => ({ k: String(i), t })), { k: 'none', t: WIZ.noneOfThese }]} value={value} onToggle={pick} />
     </Frame>
   )
 }
@@ -489,17 +471,17 @@ function Weight({ d, go, back }: Common) {
   return (
     <Frame step="weight" back={back} onSkip={() => go({ weight: undefined })}
       cta={<Cta onClick={() => go({ weight: kg ? Math.round(kg * 10) / 10 : undefined, weightUnit: unit })} />}>
-      <UnitSeg label="Weight unit" opts={[['kg', 'kg'], ['st-lb', 'st lb'], ['lb', 'lb']]} value={unit} onChange={setUnit} />
+      <UnitSeg label={WIZ.weight.unitLabel} opts={WIZ.weight.units} value={unit} onChange={setUnit} />
       <div className={'pick-fig num' + (kg == null ? ' unset' : '')} aria-hidden="true" style={{ marginTop: 18 }}>
         {unit === 'st-lb'
           ? <><span className="v">{sl.st}</span><span className="u"> st </span><span className="v">{sl.lb}</span><span className="u"> lb</span></>
           : <><span className="v">{unit === 'kg' ? Math.round(shown) : lb(shown)}</span><span className="u"> {unit}</span></>}
       </div>
       {unit === 'kg'
-        ? <Ruler label="Weight" min={25} max={350} initial={70} value={kg == null ? undefined : Math.round(kg)} onChange={setKg} valueText={(v) => `${v} kilograms`} />
-        : <Ruler label="Weight" min={lb(25)} max={lb(350)} initial={lb(70)} value={kg == null ? undefined : lb(kg)} onChange={(v) => setKg(kgFromLb(v))}
-            {...(unit === 'st-lb' ? { major: 14, mid: 7, tickLabel: (v: number) => `${Math.round(v / 14)} st`, valueText: (v: number) => { const x = stLbFromKg(kgFromLb(v), 1); return `${x.st} stone ${x.lb} pounds` } }
-              : { valueText: (v: number) => `${v} pounds` })} />}
+        ? <Ruler label={WIZ.weight.label} min={25} max={350} initial={70} value={kg == null ? undefined : Math.round(kg)} onChange={setKg} valueText={WIZ.weight.kg} />
+        : <Ruler label={WIZ.weight.label} min={lb(25)} max={lb(350)} initial={lb(70)} value={kg == null ? undefined : lb(kg)} onChange={(v) => setKg(kgFromLb(v))}
+            {...(unit === 'st-lb' ? { major: 14, mid: 7, tickLabel: (v: number) => WIZ.weight.tick(Math.round(v / 14)), valueText: (v: number) => { const x = stLbFromKg(kgFromLb(v), 1); return WIZ.weight.stLb(x.st, x.lb) } }
+              : { valueText: WIZ.weight.lb })} />}
       {c.hint && <div className="wz-hint">{c.hint}</div>}
     </Frame>
   )
@@ -512,16 +494,16 @@ function Move({ d, go, back }: Common) {
   const pick = (x: NonNullable<WizardDraft['movement']>) => { setM(x); advance(() => go({ movement: x })) }
   if (job) {
     return (
-      <Frame step="move" back={back} onSkip={() => go({ movement: undefined })} cta={<TapFoot />} title="What’s a normal day like?" lead={null}>
-        <ChoiceTiles label="A normal day" opts={tiles(JOB_OPTIONS)} value={m?.kind === 'job' ? m.job : undefined} onPick={(j) => pick({ kind: 'job', job: j })} />
-        <button className="wz-link sm" onClick={() => setJob(false)}>Use steps instead</button>
+      <Frame step="move" back={back} onSkip={() => go({ movement: undefined })} cta={<TapFoot />} title={WIZ.move.jobTitle} lead={null}>
+        <ChoiceTiles label={WIZ.move.jobLabel} opts={tiles(JOB_OPTIONS)} value={m?.kind === 'job' ? m.job : undefined} onPick={(j) => pick({ kind: 'job', job: j })} />
+        <button className="wz-link sm" onClick={() => setJob(false)}>{WIZ.move.toSteps}</button>
       </Frame>
     )
   }
   return (
     <Frame step="move" back={back} onSkip={() => go({ movement: undefined })} cta={<TapFoot />}>
-      <ChoiceTiles label="Steps on a normal day" opts={tiles(STEP_OPTIONS)} value={m?.kind === 'steps' ? m.band : undefined} onPick={(b) => pick({ kind: 'steps', band: b })} />
-      <button className="wz-link sm" onClick={() => setJob(true)}>Not sure? Describe your day instead</button>
+      <ChoiceTiles label={WIZ.move.stepsLabel} opts={tiles(STEP_OPTIONS)} value={m?.kind === 'steps' ? m.band : undefined} onPick={(b) => pick({ kind: 'steps', band: b })} />
+      <button className="wz-link sm" onClick={() => setJob(true)}>{WIZ.move.toJob}</button>
     </Frame>
   )
 }
@@ -541,7 +523,7 @@ function Radio<T extends string>({ go, back, step, opts, value, set, clear }: Co
 /** Kit and enjoy: a two-column grid. Enjoy's "Not sure yet" is a link under it (r5-enjoy). */
 function Chips<T extends string>({ go, back, step, opts, value, none, clear }: Common & { step: StepId; opts: [T, string][]; value: T[] | undefined; none: T; clear: Partial<WizardDraft> }) {
   const [v, setV] = useState<T[]>(value ?? [])
-  const toggle = (k: T) => setV(k === none ? (v.includes(none) ? [] : [none]) : v.includes(k) ? v.filter((x) => x !== k) : [...v.filter((x) => x !== none), k])
+  const toggle = (k: T) => setV(toggleExclusive(v, k, none))
   const field = step === 'kit' ? 'kit' : 'enjoy'
   const noneLink = step === 'enjoy'
   const shown = noneLink ? opts.filter(([k]) => k !== none) : opts
@@ -558,26 +540,21 @@ const WD_SHORT: Record<number, string> = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed
 
 /** r4-days: large 1–6 buttons, then the week as day circles with the chosen days spelled out. */
 function Days({ d, go, back }: Common) {
-  const [n, setN] = useState<WizardDraft['daysPerWeek']>((d.weekdays?.length || d.daysPerWeek) as WizardDraft['daysPerWeek'])
-  const [wd, setWd] = useState<number[]>(d.weekdays ?? [])
-  const pickN = (x: number) => { setN(x as WizardDraft['daysPerWeek']); if (wd.length && wd.length !== x) setWd([]) }
-  const toggle = (k: number) => {
-    const next = wd.includes(k) ? wd.filter((x) => x !== k) : wd.length >= 6 ? wd : [...wd, k]
-    setWd(next)
-    setN(next.length ? (next.length as WizardDraft['daysPerWeek']) : n)
-  }
+  const [p, setP] = useState<DaysPicks>(() => daysInit(d))
+  const { n, weekdays: wd } = p
+  const pickN = (x: number) => setP(daysPickN(p, x))
+  const toggle = (k: number) => setP(daysToggle(p, k))
   const one = n === 1
   const chosen = WD_LETTERS.filter(([k]) => wd.includes(k)).map(([k]) => WD_SHORT[k]).join(', ')
   return (
-    <Frame step="days" back={back} onSkip={() => go({ daysPerWeek: undefined, weekdays: undefined })}
-      cta={<Cta onClick={() => go(wd.length ? { weekdays: wd, daysPerWeek: undefined } : { daysPerWeek: n as WizardDraft['daysPerWeek'], weekdays: undefined })} />}>
-      <div className="wz-nums days" role="radiogroup" aria-label="Days a week">
+    <Frame step="days" back={back} onSkip={() => go(daysSkip)} cta={<Cta onClick={() => go(daysAnswer(p))} />}>
+      <div className="wz-nums days" role="radiogroup" aria-label={WIZ.days.label}>
         {[1, 2, 3, 4, 5, 6].map((x) => <button key={x} role="radio" aria-checked={n === x} className={'num' + (n === x ? ' on' : '')} onClick={() => pickN(x)}>{x}</button>)}
       </div>
       {one && <div className="wz-card quiet ink">{ONE_DAY_NOTE}</div>}
       <section className="wz-week">
-        <div className="hd"><span className="t">{one ? 'Which day?' : 'Which days?'}</span>{chosen && <span className="s">{chosen}</span>}</div>
-        <div className="wz-wd" role="group" aria-label="Which days">
+        <div className="hd"><span className="t">{one ? WIZ.days.which1 : WIZ.days.which}</span>{chosen && <span className="s">{chosen}</span>}</div>
+        <div className="wz-wd" role="group" aria-label={WIZ.days.whichLabel}>
           {WD_LETTERS.map(([k, l, name]) => <button key={k} role="checkbox" aria-checked={wd.includes(k)} aria-label={name} className={wd.includes(k) ? 'on' : ''} onClick={() => toggle(k)}>{l}</button>)}
         </div>
         {!wd.length && <div className="s">{DAYS_SPREAD(defaultSpread(n))}</div>}
@@ -589,11 +566,10 @@ function Days({ d, go, back }: Common) {
 /** ob2-4: the length as a range; the engine gets its nearest length (core/domain/warmup). */
 function Minutes({ d, go, back }: Common) {
   const [r, setR] = useState<SessionRange | undefined>(d.sessionRange)
-  const pick = (x: SessionRange | undefined) => (x ? { sessionRange: x, minutes: rangeEngineMinutes(x) } : { sessionRange: undefined, minutes: undefined })
   return (
-    <Frame step="minutes" back={back} onSkip={() => go(pick(undefined))} cta={<Cta onClick={() => go(r ? pick(r) : { sessionRange: d.sessionRange, minutes: d.minutes })} />}>
-      <div className="wz-nums rng" role="radiogroup" aria-label="Minutes a session">
-        {SESSION_RANGES.map((x) => <button key={x} role="radio" aria-checked={r === x} aria-label={`${rangeLabel(x)} minutes`} className={'num' + (r === x ? ' on' : '')} onClick={() => setR(x)}>{rangeLabel(x)}</button>)}
+    <Frame step="minutes" back={back} onSkip={() => go(minutesAnswer(undefined))} cta={<Cta onClick={() => go(minutesContinue(d, r))} />}>
+      <div className="wz-nums rng" role="radiogroup" aria-label={WIZ.minutes.label}>
+        {SESSION_RANGES.map((x) => <button key={x} role="radio" aria-checked={r === x} aria-label={WIZ.minutes.value(rangeLabel(x))} className={'num' + (r === x ? ' on' : '')} onClick={() => setR(x)}>{rangeLabel(x)}</button>)}
       </div>
       <div className="wz-unit">{COPY.minutes!.unit}</div>
       {r && (
@@ -607,12 +583,12 @@ function Minutes({ d, go, back }: Common) {
 }
 
 function Areas({ d, go, back }: Common) {
-  const [v, setV] = useState<string[]>(d.areas ? (d.areas.length ? d.areas : ['none']) : [])
-  const pick = (k: string) => setV(k === 'none' ? (v.includes('none') ? [] : ['none']) : v.includes(k) ? v.filter((x) => x !== k) : [...v.filter((x) => x !== 'none'), k])
-  const done = () => go({ areas: v.length ? (v.filter((x) => x !== 'none') as WizardDraft['areas']) : undefined })
+  const [v, setV] = useState<string[]>(() => areasInit(d))
+  const pick = (k: string) => setV(toggleExclusive(v, k, 'none'))
+  const done = () => go(areasAnswer(v))
   return (
-    <Frame step="areas" back={back} onSkip={() => go({ areas: undefined })} cta={<Cta label="Build my week" onClick={done} />}>
-      <CheckTiles label="Areas to go easy on" opts={[...tiles(AREA_OPTIONS), { k: 'none', t: 'None of these' }]} value={v} onToggle={pick} />
+    <Frame step="areas" back={back} onSkip={() => go({ areas: undefined })} cta={<Cta label={WIZ.areas.build} onClick={done} />}>
+      <CheckTiles label={WIZ.areas.label} opts={[...tiles(AREA_OPTIONS), { k: 'none', t: WIZ.noneOfThese }]} value={v} onToggle={pick} />
     </Frame>
   )
 }
