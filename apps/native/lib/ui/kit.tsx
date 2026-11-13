@@ -1,46 +1,84 @@
 /**
- * The few Studio pieces the spike's Summary needs (card, tile, buttons, page header). N1 builds the
- * full primitive set (Sheet, Seg, Toggle, Disclosure, SettingRow…) with `design` review.
+ * Studio's shared classes on native (theme.css): `.card` and `.card.pcard`, `.tile`, `.btn` and its
+ * variants, `.linkbtn`, `.list` with its rows, `.banner` and `.toast`. Sizes and colours are read
+ * from the CSS; every tappable thing has at least a 44 pt touch area (hitSlop where the web's box is
+ * smaller), and the pressed state is the web's `:active` one.
  */
-import type { ReactNode } from 'react'
+import { createContext, useContext, useEffect, Children, Fragment, isValidElement, type ReactNode } from 'react'
 import { Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
-import { font, useTokens } from '../theme'
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useStore } from '@/store/store'
+import { Icon, type IconName } from './icons'
+import { tx, useTokens, type Tokens } from '../theme'
 
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  const t = useTokens()
-  // .card.pcard: radius 22, padding 16, a 14 px gap between rows
-  return <View style={[{ backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 14 }, style]}>{children}</View>
+/** Inside a sheet, lists, cards and the pill sit on --elev (`.sheet .list, .sheet .card…`). */
+export const InSheet = createContext(false)
+/** Inside a `.list.icons`, where a row's label keeps its width and its value takes the rest. */
+export const InIconList = createContext(false)
+/** Inside a pillar card (`.pcard`), where some components drop their outer margins (`.pcard svg.bars`). */
+export const InPCard = createContext(false)
+export function useSurface(t: Tokens) {
+  return useContext(InSheet) ? t.elev : t.card
 }
 
+/** A touch area padded out to 44 pt around a box of `w` × `h`. */
+export function slop(w: number, h: number) {
+  const x = Math.max(0, Math.ceil((44 - w) / 2)), y = Math.max(0, Math.ceil((44 - h) / 2))
+  return { top: y, bottom: y, left: x, right: x }
+}
+
+/** `.card` (padding 14 16), or with `pcard` a pillar card (padding 16, rows 14 apart). */
+export function Card({ children, style, plain = false }: { children: ReactNode; style?: StyleProp<ViewStyle>; plain?: boolean }) {
+  const t = useTokens()
+  const bg = useSurface(t)
+  return (
+    <InPCard.Provider value={!plain}>
+      <View style={[{ backgroundColor: bg, borderRadius: t.radius }, plain ? { paddingVertical: 14, paddingHorizontal: 16 } : { padding: 16, gap: 14 }, style]}>{children}</View>
+    </InPCard.Provider>
+  )
+}
+
+/** `.tile.st` (padding 16, rows 4 apart); tappable when given `onPress`. */
 export function Tile({ children, onPress, label, style }: { children: ReactNode; onPress?: () => void; label?: string; style?: StyleProp<ViewStyle> }) {
   const t = useTokens()
-  // .tile.st
-  const s: StyleProp<ViewStyle> = [{ minWidth: 0, backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 4 }, style]
+  const s: StyleProp<ViewStyle> = [{ minWidth: 0, backgroundColor: useSurface(t), borderRadius: t.radius, padding: 16, gap: 4 }, style]
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { opacity: 0.7 }]}>{children}</Pressable>
     : <View style={s}>{children}</View>
 }
 
-/** `.btn` (ink pill), `.btn.gray`, `.btn.sm` */
-export function Btn({ title, onPress, kind = 'ink', small, icon, disabled }: { title: string; onPress: () => void; kind?: 'ink' | 'gray' | 'tinted'; small?: boolean; icon?: ReactNode; disabled?: boolean }) {
+export type BtnKind = 'ink' | 'tinted' | 'gray' | 'danger'
+
+/** `.btn` (the ink pill, 50 high), `.tinted`, `.gray`, `.danger`, and `.sm` (36 high, as wide as its words). */
+export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style, textStyle, label }: {
+  title: string; onPress: () => void; kind?: BtnKind; small?: boolean; icon?: IconName | ReactNode; disabled?: boolean
+  /** a context's own size (`.pcard .btn.gray` 48, `.mv .btn.sm` 40): the web's per-screen rules */
+  style?: StyleProp<ViewStyle>; textStyle?: StyleProp<TextStyle>; label?: string
+}) {
   const t = useTokens()
-  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : t.tintSoft
-  const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : t.tint
-  const h = small ? 32 : kind === 'gray' ? 48 : 50
+  const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : kind === 'tinted' ? t.tintSoft : 'transparent'
+  const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' ? t.tint : t.red
+  const h = small ? 36 : 50
   return (
-    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
-      style={({ pressed }) => ({ height: h, borderRadius: h / 2, paddingHorizontal: small ? 14 : 16, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
-      {icon}
-      <Text style={[font(600), { color: fg, fontSize: small ? 14 : kind === 'gray' ? 16 : 17 }]}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
+      hitSlop={small ? slop(0, 36) : undefined}
+      style={({ pressed }) => [{
+        height: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+      }, style]}>
+      {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
+      <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600), { color: fg }, textStyle]}>{title}</Text>
     </Pressable>
   )
 }
 
-export function LinkBtn({ title, onPress, style }: { title: string; onPress: () => void; style?: StyleProp<TextStyle> }) {
+/** `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2). */
+export function LinkBtn({ title, onPress, style, muted }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean }) {
   const t = useTokens()
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}>
-      <Text style={[font(500), { fontSize: 15, color: t.tint }, style]}>{title}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(15, 500), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
 }
@@ -48,20 +86,105 @@ export function LinkBtn({ title, onPress, style }: { title: string; onPress: () 
 /** "Mo"… initials as the web's ProfileButton computes them. */
 export const initials = (name: string) => name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
-/** `.hdr`: eyebrow, 34 pt title, the Profile avatar beside it (`.avatar.soft`: soft mauve, mauve
- *  letters; Benn, 10 Oct 2026), in a 44 pt tap area. */
-export function PageHeader({ eyebrow, title, name, onAvatar }: { eyebrow: string; title: string; name: string; onAvatar?: () => void }) {
+/**
+ * `.list`: an inset grouped list (radius 18) whose rows are split by 1 px --sep lines starting 16 pt
+ * in, or 58 pt in with `icons` (rows that start with a settings icon).
+ */
+export function List({ children, icons = false, style }: { children: ReactNode; icons?: boolean; style?: StyleProp<ViewStyle> }) {
   const t = useTokens()
+  const bg = useSurface(t)
+  const rows = flat(children)
   return (
-    <View style={{ paddingTop: 18, paddingBottom: 12, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+    <InIconList.Provider value={icons}>
+    <View style={[{ backgroundColor: bg, borderRadius: t.radiusSm, overflow: 'hidden' }, style]}>
+      {rows.map((c, i) => (
+        <View key={i}>
+          {i > 0 && rows[i - 1] && !(isValidElement(c) && (c.props as { noSep?: boolean }).noSep) && (
+            <View style={{ position: 'absolute', top: 0, left: icons ? 58 : 16, right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
+          )}
+          {c}
+        </View>
+      ))}
+    </View>
+    </InIconList.Provider>
+  )
+}
+/** Children without fragments or empty slots, so separators fall only between real rows. */
+function flat(children: ReactNode): ReactNode[] {
+  const out: ReactNode[] = []
+  Children.forEach(children, (c) => {
+    if (c == null || c === false || c === true) return
+    if (isValidElement(c) && c.type === Fragment) out.push(...flat((c.props as { children?: ReactNode }).children))
+    else out.push(c)
+  })
+  return out
+}
+
+/**
+ * `.banner`: an icon in a pillar ink, a bold line and a muted line, and an optional dismiss (the
+ * 24 pt `.x` circle, in a 44 pt touch area). Tappable as a whole when given `onPress`.
+ */
+export function Banner({ icon, iconColor, title, body, onPress, onDismiss, children }: {
+  icon: IconName; iconColor: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
+}) {
+  const t = useTokens()
+  const inner = (
+    <>
+      <Icon name={icon} color={iconColor} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[font(500), { fontSize: 13, color: t.label2, minHeight: 20 }]}>{eyebrow}</Text>
-        <Text accessibilityRole="header" style={[font(600), { fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 2 }]}>{title}</Text>
+        <Text style={[tx(15, 700, 1.35), { color: t.label }]}>{title}</Text>
+        {body != null && <Text style={[tx(15, 400, 1.35), { color: t.label2 }]}>{body}</Text>}
+        {children}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onAvatar} hitSlop={2}
-        style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={[font(600), { fontSize: 16, color: t.tint }]}>{initials(name) || '·'}</Text>
+      {onDismiss && (
+        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={onDismiss} hitSlop={slop(24, 24)}
+          style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="x" size={20} stroke={3} color={t.label2} />
+        </Pressable>
+      )}
+    </>
+  )
+  const s: ViewStyle = { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }
+  return onPress
+    ? <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s, pressed && { opacity: 0.7 }]}>{inner}</Pressable>
+    : <View accessibilityRole="summary" style={s}>{inner}</View>
+}
+
+/** The toast's look (`.toast.show`, or `.toast.act` with an action such as Undo). */
+export function ToastView({ text, action }: { text: string; action?: { label: string; run: () => void } | null }) {
+  const t = useTokens()
+  if (action) return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
+      <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
+      <Pressable accessibilityRole="button" onPress={action.run} hitSlop={slop(0, 26)}>
+        <Text style={[tx(16, 600), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
     </View>
+  )
+  return (
+    <View style={{ backgroundColor: t.elev, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
+      <Text style={[tx(15, 500), { color: t.label, textAlign: 'center' }]}>{text}</Text>
+    </View>
+  )
+}
+
+/**
+ * The app's one toast (App.tsx's `.toast`), from the store's `toast` and `toastAction`: 72 pt above
+ * the bottom safe area, fading and rising 10 pt over 0.25 s (no movement with Reduce Motion on).
+ * Announced politely to VoiceOver, as the web's role=status.
+ */
+export function ToastHost() {
+  const insets = useSafeAreaInsets()
+  const toast = useStore((s) => s.toast)
+  const action = useStore((s) => s.toastAction)
+  const reduce = useReducedMotion()
+  const shown = useSharedValue(0)
+  useEffect(() => { shown.value = withTiming(toast ? 1 : 0, { duration: 250 }) }, [toast]) // eslint-disable-line react-hooks/exhaustive-deps
+  const style = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateY: reduce ? 0 : (1 - shown.value) * 10 }] }))
+  return (
+    <Animated.View pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
+      style={[{ position: 'absolute', left: 0, right: 0, bottom: 72 + insets.bottom, alignItems: 'center' }, style]}>
+      {toast ? <View style={action ? { alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' } : { maxWidth: '88%' }}><ToastView text={toast} action={action && { label: action.label, run: () => { action.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View> : null}
+    </Animated.View>
   )
 }
