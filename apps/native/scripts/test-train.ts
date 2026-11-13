@@ -19,20 +19,20 @@ async function main() {
   off()
 
   // the rest alert: nothing without N12's scheduler; one alert, cancelled when rest is over
-  await scheduleRestAlert(Date.now() + 60_000, 'Set 2 of 3, Barbell squat')
+  await scheduleRestAlert(Date.now() + 60_000, 'Set 2 of 3, Barbell squat', true)
   ok('nothing scheduled before N12 registers', true)
   const log: string[] = []
   let got: RestAlert | null = null
   setRestAlerter({ schedule: async (a) => { got = a; log.push('s'); return 'id1' }, cancel: async (id) => { log.push('c:' + id) } })
-  await scheduleRestAlert(Date.now() + 75_000, 'Set 2 of 3, Barbell squat')
+  await scheduleRestAlert(Date.now() + 75_000, 'Set 2 of 3, Barbell squat', false)
   const a = got as RestAlert | null
-  ok('alert at rest end with the web words', !!a && a.title === 'Rest over' && a.body === 'Set 2 of 3, Barbell squat.' && a.kind === 'tilo-rest' && Math.abs(a.seconds - 75) <= 1, a)
-  await scheduleRestAlert(Date.now() + 30_000, 'Barbell squat')
+  ok('alert at rest end with the web words, silent when Sound is off', !!a && a.title === 'Rest over' && a.body === 'Set 2 of 3, Barbell squat.' && a.kind === 'tilo-rest' && a.sound === false && Math.abs(a.seconds - 75) <= 1, a)
+  await scheduleRestAlert(Date.now() + 30_000, 'Barbell squat', true)
   ok('a new rest replaces the old alert', log.join() === 's,c:id1,s', log)
   await cancelRestAlert(); await cancelRestAlert()
   ok('cancelled once when rest ends or the app returns', log.join() === 's,c:id1,s,c:id1', log)
   log.length = 0
-  await scheduleRestAlert(Date.now() + 1000, 'x')
+  await scheduleRestAlert(Date.now() + 1000, 'x', true)
   ok('no alert for the last second of rest', log.length === 0, log)
   setRestAlerter(null)
 

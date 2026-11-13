@@ -53,7 +53,6 @@ let chimePlayer: AudioPlayer | null = null
 function chime() {
   try {
     if (!chimePlayer) {
-      setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers' }).catch(() => {})
       chimePlayer = createAudioPlayer(require('../../assets/sounds/chime.wav'))
     }
     chimePlayer.seekTo(0).catch(() => {})
@@ -183,6 +182,8 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   useEffect(() => {
     const tag = 'tilo-guided'
     const on = activateKeepAwakeAsync(tag).catch(() => {})
+    // the chime mixes with music and follows the silent switch: set before any chime plays
+    setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers' }).catch(() => {})
     setGuidedSessionOpen(true)
     return () => {
       setGuidedSessionOpen(false); cancelRestAlert()
@@ -192,13 +193,13 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   }, [])
   // the rest that keeps running in the background: an alert at its end, only while the app is away
   const restLine = `${complete ? name : `Set ${setNo + 1} of ${slot.sets}, ${name}`}`
-  const restRef = useRef({ rest, restLine })
-  restRef.current = { rest, restLine }
+  const restRef = useRef({ rest, restLine, sound })
+  restRef.current = { rest, restLine, sound }
   useEffect(() => {
     const sub = AppState.addEventListener('change', (st) => {
       const r = restRef.current
       if (st === 'active') cancelRestAlert()
-      else if (st === 'background' && r.rest) scheduleRestAlert(r.rest.end, r.restLine)
+      else if (st === 'background' && r.rest) scheduleRestAlert(r.rest.end, r.restLine, r.sound)
     })
     return () => sub.remove()
   }, [])
@@ -210,7 +211,10 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
   useEffect(() => {
     if (!rest || now < rest.end) return
     // never counts past zero: rest ends, it's announced once, and the set is back
+    // back after rest ended away from the app: the notification already said so, no second cue
+    const late = now - rest.end > 3000
     setRest(null)
+    if (late) return
     say(`Rest over. ${complete ? name : `Set ${setNo + 1} of ${slot.sets}, ${name}`}.`)
     vibrate(180)
     if (sound) chime()
