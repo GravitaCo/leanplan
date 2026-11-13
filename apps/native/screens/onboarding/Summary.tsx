@@ -352,7 +352,7 @@ function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: Sum
     <BareSheet label={OTHERS.title} onClose={onClose}>
       <SheetHead title={OTHERS.title} done={OTHERS.close} onDone={onClose} />
       <Sub top={0}>{OTHERS.lead}</Sub>
-      <Pressable accessibilityRole="button" accessibilityState={{ selected: !chosen }} onPress={() => onPick(undefined)}
+      <Pressable accessibilityRole="button" aria-pressed={!chosen} onPress={() => onPick(undefined)}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16 }}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[tx(13, 600, 1.3, BTN), { color: t.tint }]}>{chosen ? OTHERS.mineOff : OTHERS.mineK}</Text>
@@ -369,7 +369,7 @@ function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: Sum
           const on = chosen?.id === p.id
           const img = planArt(p.id)
           return (
-            <Pressable key={p.id} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onPick(p.id)}
+            <Pressable key={p.id} accessibilityRole="button" aria-pressed={on} onPress={() => onPick(p.id)}
               style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 }, i < PLAN_TEMPLATES.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.sep }]}>
               <View style={{ width: 72, height: 88, borderRadius: 12, overflow: 'hidden', backgroundColor: t.fill2 }}>{img != null && <CoverImage source={img} height={88} posY={posYOf(p.artAt)} />}</View>
               <View style={{ flex: 1, minWidth: 0 }}>

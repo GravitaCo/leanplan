@@ -134,21 +134,39 @@ async function slide(page, name, target) {
     if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
     return
   }
-  // N1's pickers on a web render take no keys and expose no aria value (TODO(N1-followup)): drag
-  // them as a finger would, one row (48 px) or tick (9.2 px) a step, and read the value they show
-  const wheel = /years/i.test(name)
-  const step = wheel ? 48 : 9.2
-  let moved = false
-  for (let i = 0; i < 14; i++) {
-    const v = await now()
-    if (v === target && moved) return
-    const n = v === target ? 1 : Math.max(-12, Math.min(12, target - v))
-    const box = await sl.boundingBox()
-    const x = box.x + box.width / 2, y = box.y + box.height / 2, d = -n * step
-    await page.mouse.move(x, y); await page.mouse.down()
-    for (let k = 1; k <= 8; k++) await page.mouse.move(wheel ? x : x + (d * k) / 8, wheel ? y + (d * k) / 8 : y)
-    await page.mouse.up(); await page.waitForTimeout(150)
-    moved = true
+  // N1's pickers on a web render take no keys and expose no aria value (TODO(N1-followup)), and
+  // react-native-web's responder takes only the first mouse drag after a picker mounts. So, as a
+  // finger would: tap wheel rows (each tap moves up to 3 rows; taps always register), and set a
+  // ruler with one drag the exact length, from whichever edge leaves room. Values are read off screen.
+  const box = await sl.boundingBox()
+  if (/years/i.test(name)) {
+    for (let i = 0; i < 40; i++) {
+      const v = await now()
+      if (v === target && i > 0) return
+      const r = Math.max(-3, Math.min(3, target - v))
+      // rows are 48 tall, the middle (row 3 of 7) is the value shown; a tap on row 3 + r picks v + r
+      await page.mouse.click(box.x + box.width / 2, box.y + (3 + r) * 48 + 24)
+      await page.waitForTimeout(260)
+    }
+  } else {
+    for (let i = 0; i < 5; i++) {
+      const v = await now()
+      if (process.env.DEBUG_SLIDE) console.log('ruler', name, i, v, target)
+      if (v === target && i > 0) break
+      if (i > 0) {
+        // a fresh ruler for the next drag: the unit away and back (each unit's ruler is its own, keyed)
+        const grp = page.getByRole('radiogroup', { name: name + ' unit', exact: true })
+        const cur = grp.getByRole('radio', { checked: true }).first()
+        const other = grp.getByRole('radio', { checked: false }).first()
+        await other.click(); await page.waitForTimeout(150); await cur.click(); await page.waitForTimeout(200)
+      }
+      const b = await sl.boundingBox()
+      const d = -((target - (await now())) || 1) * 9.2
+      const x0 = d < 0 ? b.x + b.width - 12 : b.x + 12, y = b.y + b.height / 2
+      await page.mouse.move(x0, y); await page.mouse.down()
+      for (let k = 1; k <= 12; k++) { await page.mouse.move(x0 + (d * k) / 12, y); await page.waitForTimeout(12) }
+      await page.mouse.up(); await page.waitForTimeout(300)
+    }
   }
   const v = await now()
   if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)

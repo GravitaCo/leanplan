@@ -286,7 +286,7 @@ function WzSeg<T extends string | boolean>({ label, opts, value, onChange }: { l
       {opts.map(([k, x]) => {
         const on = value === k
         return (
-          <Pressable key={String(k)} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(k)} hitSlop={slop(0, 38)}
+          <Pressable key={String(k)} accessibilityRole="radio" aria-checked={on} onPress={() => onChange(k)} hitSlop={slop(0, 38)}
             style={{ flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: 9, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
             <Text style={[tx(15, 500, 1.25, BTN), { color: on ? t.label : t.label2, textAlign: 'center' }]}>{x}</Text>
           </Pressable>
@@ -361,7 +361,7 @@ function Three<T extends string>({ k, opts, value, onPick }: { k: string; opts: 
         {opts.map(([v, x]) => {
           const on = value === v
           return (
-            <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onPick(on ? undefined : v)}
+            <Pressable key={v} accessibilityRole="radio" aria-checked={on} onPress={() => onPick(on ? undefined : v)}
               style={{ flex: 1, minHeight: 52, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.bg }}>
               <Text style={[tx(15, 500, 1.25, BTN), { textAlign: 'center', color: on ? t.btnInk : t.label }]}>{x}</Text>
             </Pressable>
@@ -412,7 +412,7 @@ function UnitSeg<T extends string>({ label, opts, value, onChange }: { label: st
       {opts.map(([k, x]) => {
         const on = value === k
         return (
-          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(k)} hitSlop={slop(0, 28)}
+          <Pressable key={k} accessibilityRole="radio" aria-checked={on} onPress={() => onChange(k)} hitSlop={slop(0, 28)}
             style={{ flex: 1, borderRadius: 9, paddingVertical: 6, paddingHorizontal: 12, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
             <Text style={[tx(13, 500, 1.3, BTN), { color: on ? t.label : t.label2 }]}>{x}</Text>
           </Pressable>
@@ -569,7 +569,7 @@ function Days({ f }: P) {
     <Frame step="days" back={back} onSkip={() => go(daysSkip)} cta={<Cta onClick={() => go(daysAnswer(p))} />}>
       <View accessibilityRole="radiogroup" accessibilityLabel={WIZ.days.label} style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
         {[1, 2, 3, 4, 5, 6].map((x) => (
-          <Pressable key={x} accessibilityRole="radio" accessibilityState={{ checked: n === x }} onPress={() => setP(daysPickN(p, x))}
+          <Pressable key={x} accessibilityRole="radio" aria-checked={n === x} onPress={() => setP(daysPickN(p, x))}
             style={{ flex: 1, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: n === x ? t.btn : t.card }}>
             <Text style={[tx(26, n === x ? 600 : 400, 1.2, BTN), num, { color: n === x ? t.btnInk : t.label }]}>{x}</Text>
           </Pressable>
@@ -585,7 +585,7 @@ function Days({ f }: P) {
           {WD_LETTERS.map(([k, l, name]) => {
             const on = wd.includes(k)
             return (
-              <Pressable key={k} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={name} onPress={() => setP(daysToggle(p, k))}
+              <Pressable key={k} accessibilityRole="checkbox" aria-checked={on} accessibilityLabel={name} onPress={() => setP(daysToggle(p, k))}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
                 <Text style={[tx(16, 600, 1.3, BTN), { color: on ? t.btnInk : t.label }]}>{l}</Text>
               </Pressable>
@@ -609,7 +609,7 @@ function Minutes({ f }: P) {
     <Frame step="minutes" back={back} onSkip={() => go(minutesAnswer(undefined))} cta={<Cta onClick={() => go(minutesContinue(d, r))} />}>
       <View accessibilityRole="radiogroup" accessibilityLabel={WIZ.minutes.label} onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {SESSION_RANGES.map((x) => (
-          <Pressable key={x} accessibilityRole="radio" accessibilityState={{ checked: r === x }} accessibilityLabel={WIZ.minutes.value(rangeLabel(x))} onPress={() => setR(x)}
+          <Pressable key={x} accessibilityRole="radio" aria-checked={r === x} accessibilityLabel={WIZ.minutes.value(rangeLabel(x))} onPress={() => setR(x)}
             style={{ width: cell, flexBasis: cell === undefined ? '30%' : undefined, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: r === x ? t.btn : t.card }}>
             <Text style={[tx(18, r === x ? 600 : 500, 1.2, BTN), num, { color: r === x ? t.btnInk : t.label }]}>{rangeLabel(x)}</Text>
           </Pressable>

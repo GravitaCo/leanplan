@@ -15,7 +15,7 @@ export function Opts<T extends string>({ opts, value, onPick, label, multi, onEl
   return (
     <View accessibilityRole={multi ? undefined : 'radiogroup'} role={multi ? 'group' : undefined} accessibilityLabel={label} style={{ backgroundColor: onElev ? t.elev : t.card, borderRadius: t.radius, overflow: 'hidden' }}>
       {opts.map(([k, tt, s], i) => (
-        <Pressable key={k} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ checked: on(k) }} onPress={() => onPick(k)}
+        <Pressable key={k} accessibilityRole={multi ? 'checkbox' : 'radio'} aria-checked={on(k)} onPress={() => onPick(k)}
           style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16 },
             i < opts.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.sep }, on(k) && { backgroundColor: t.tintSoft }]}>
           <View style={{ flex: 1, minWidth: 0 }}>

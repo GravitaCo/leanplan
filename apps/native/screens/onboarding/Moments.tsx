@@ -87,7 +87,7 @@ export function FirstPlanSheet({ onDone }: { onDone: () => void }) {
           {IF_THEN.cues.map((c) => {
             const on = after === c
             return (
-              <Pressable key={c} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setAfter(c)}
+              <Pressable key={c} accessibilityRole="button" aria-pressed={on} onPress={() => setAfter(c)}
                 style={{ paddingVertical: 9, paddingHorizontal: 12, borderRadius: 18, backgroundColor: on ? t.label : t.elev }}>
                 <Text style={[tx(14, 400, 1.3, BTN), { color: on ? t.card : t.label }]}>After {c}</Text>
               </Pressable>
