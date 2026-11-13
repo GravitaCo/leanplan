@@ -135,7 +135,8 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
         <List style={{ marginBottom: 8 }}>
           {sf.rows.map(({ food: f, figures, origin, logged }, i) => (
             // TODO(N1-followup): `.dup-radio` (24 pt, 2 pt --fill3 ring; on: --tint with a 13/3.2 tick); Check is the 26 pt `.chk`
-            <Row key={f.id} title={f.n} wrap onPress={() => setKeepIdx(i)} chevron={false} lead={<Check on={keepIdx === i} />}
+            // `.li.dup-opt`: top-aligned, padding 13 16, at least 52 tall
+            <Row key={f.id} title={f.n} wrap onPress={() => setKeepIdx(i)} chevron={false} lead={<Check on={keepIdx === i} />} style={{ alignItems: 'flex-start', paddingVertical: 13, minHeight: 52 }}
               sub={<>{figures}</>} sub2={<>{origin ? <>{origin}{'\n'}</> : null}{logged}</>} />
           ))}
         </List>
@@ -152,6 +153,7 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
           {offBarcode && <Foot>{DUP.offBarcode}</Foot>}
         </>
       )}
+      {/* TODO(N1-followup): the web's `.dup-grow` spacer puts these at the foot of the tall sheet; N1's Sheet content doesn't grow */}
       <View style={{ gap: 8, marginTop: 16 }}>
         <Btn title={DUP.keepThis} onPress={() => done(() => merge(keep.id!, drop.id!, switchable && takeBarcode))} />
         <Btn kind="gray" title={DUP.different} onPress={() => done(() => different(pair[0].id!, pair[1].id!))} />
