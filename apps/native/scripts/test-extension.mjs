@@ -139,14 +139,32 @@ const SHIPPED = {
     return out
   }
   const resolved = JSON.parse(execFileSync(process.execPath, [require.resolve('expo-modules-autolinking/bin/expo-modules-autolinking.js'), 'resolve', '-p', 'apple', '--json'], { cwd: new URL('..', import.meta.url).pathname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
-  const dirs = resolved.modules.filter((m) => !m.debugOnly).flatMap((m) => m.pods.map((p) => p.podspecDir))
-  const files = [...dirs.flatMap((d) => findPI(d)), ...findPI(join(new URL('..', import.meta.url).pathname, 'node_modules/react-native'))]
+  // React Native's aggregator reads every pod's manifest, community ones included: so every
+  // PrivacyInfo.xcprivacy under node_modules, except debug-only Expo modules' and the Expo template's
+  const debugDirs = resolved.modules.filter((m) => m.debugOnly).flatMap((m) => m.pods.map((p) => p.podspecDir))
+  const nm = join(new URL('..', import.meta.url).pathname, 'node_modules')
+  const all = []
+  const walkAll = (dir) => {
+    let names = []
+    try { names = readdirSync(dir) } catch { return }
+    for (const n of names) {
+      const p = join(dir, n)
+      let st; try { st = statSync(p) } catch { continue }
+      if (st.isDirectory()) { if (n !== '.cache' && n !== '.bin') walkAll(p) } else if (n === 'PrivacyInfo.xcprivacy') all.push(p)
+    }
+  }
+  walkAll(nm)
+  const files = all.filter((f) => !debugDirs.some((d) => f.startsWith(d)) && !/\/template\//.test(f))
+  check('the merge reads every pod manifest, community ones included', files.length >= 11 && files.some((f) => f.includes('react-native/React')) && files.some((f) => f.includes('expo-file-system')), files.length)
   const merged = {}
   for (const [c, rs] of [...Object.entries(declared), ...files.flatMap((f) => Object.entries(reasonsIn(readFileSync(f, 'utf8'))))]) merged[c] = [...new Set([...(merged[c] ?? []), ...rs])].sort()
   check('what ships: app.json plus every linked release pod\'s manifest equals the documented list', JSON.stringify(merged) === JSON.stringify(SHIPPED), { merged, files: files.map((f) => f.split('node_modules/')[1]) })
   check('what ships: every merged reason is one of Apple\'s for its category', Object.entries(merged).every(([c, rs]) => rs.every((r) => APPLE_REASONS[c]?.includes(r))))
   const doc = readFileSync(new URL('../docs/privacy-manifest.md', import.meta.url), 'utf8')
-  check('the doc states the shipped list', Object.entries(SHIPPED).every(([c, rs]) => rs.every((r) => doc.includes(r))) && /privacy_file_aggregation_enabled/.test(doc))
+  const docRow = (c) => (doc.split('\n').find((l) => l.startsWith('| ' + c + ' |')) ?? '').split('|')[2] ?? ''
+  check('the doc states the shipped list, each code under its category',
+    Object.entries(SHIPPED).every(([c, rs]) => JSON.stringify((docRow(c).match(/[0-9A-F]{4}\.1/g) ?? []).sort()) === JSON.stringify(rs)) && /privacy_file_aggregation_enabled/.test(doc),
+    Object.fromEntries(Object.keys(SHIPPED).map((c) => [c, docRow(c)])))
   const bp = (app.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties') ?? [])[1]
   check('aggregation stays on (nothing turns it off)', bp?.ios?.privacyManifestAggregationEnabled !== false)
 }
