@@ -7,7 +7,7 @@
  *   web decoder's reads of the same pack, and so the same lookups.
  * - The lookup chain (src/data/scanLookup.ts) in the web's order, with every outcome, and the requests it sends
  *   through the shared src/data functions (lookup-product body, Open Food Facts URL).
- * - Label photos: the web's sizes and JPEG tries; the read (labelRead.ts) carries over
+ * - Label photos: the web's sizes and JPEG tries; the read (src/data/labelRead.ts) carries over
  *   e2e-label-scan's outcomes: a good read, a function error, offline, the function missing
  *   (unavailable), the consent sent before the photo, a 403 consent refusal, the daily cap, an
  *   unreadable photo, and the gates (no health answer, under 18) that keep the photo on the phone.
@@ -23,7 +23,7 @@ import { setSession } from '@/data/supabase'
 import { typedDigits, webFormat, NATIVE_FORMATS } from './barcode'
 import { resolveBarcode, type LookupDeps, type ScanOutcome } from '@/data/scanLookup'
 import { b64Bytes, edgeOf, fitLongEdge, jpegSteps, MAX_BYTES } from './photoSize'
-import { readBody, readPhotos, thenKey, typedDraft, type ReadDeps } from './labelRead'
+import { failNotice, readPhotos, typedDraft, type ReadDeps, type ReadInput } from '@/data/labelRead'
 
 let failed = 0
 let passed = 0
@@ -192,7 +192,7 @@ const READ: LabelRead = {
 async function reads() {
   const PANEL = '/9j/' + 'A'.repeat(200)
   const FRONT = '/9j/' + 'B'.repeat(200)
-  check('request body as the web builds it', eq(readBody({ panel: PANEL, front: FRONT, barcode: '5000157024671' }), { panel: PANEL, front: FRONT, barcode: '5000157024671' }) && eq(readBody({ panel: PANEL }), { panel: PANEL }))
+  const photos = (front?: string): ReadInput['photos'] => async () => ({ panel: PANEL, ...(front ? { front } : {}) })
   const order: string[] = []
   const d = (over: Partial<ReadDeps> = {}): ReadDeps => ({
     consentLetsSync: () => true, underAge: () => false,
@@ -201,13 +201,12 @@ async function reads() {
     discard: () => { order.push('discard') },
     ...over,
   })
-  const note = (s: string, then: string) => `${s}|${then}`
   const base: ScanDraft = { name: 'From OFF' } as unknown as ScanDraft
 
   // a good read, through the real readLabel and the function stand-in
   calls.length = 0
   answer = (c) => (c.url.includes('/functions/v1/ai-read-label') ? json({ ok: true, read: READ }) : json({}, 404))
-  const good = await readPhotos({ panel: PANEL, front: FRONT, barcode: '5000157024671', taken: [] }, d(), note)
+  const good = await readPhotos({ photos: photos(FRONT), barcode: '5000157024671', taken: [] }, d())
   const fn = calls.find((c) => c.url.includes('ai-read-label'))
   check('good read → confirm with the label draft', good.kind === 'confirm' && !good.notice && good.draft.source === 'label' && good.draft.values.k === 390, good)
   check('ai-read-label gets the web’s body, with the session', !!fn && eq(JSON.parse(fn.body), { panel: PANEL, front: FRONT, barcode: '5000157024671' }) && fn.headers.authorization?.startsWith('Bearer '), fn && { body: fn.body.slice(0, 80), auth: fn.headers.authorization })
@@ -215,44 +214,47 @@ async function reads() {
 
   const fail = async (status: number, body: unknown, withBase = false) => {
     answer = (c) => (c.url.includes('ai-read-label') ? json(body, status) : json({}, 404))
-    return readPhotos({ panel: PANEL, taken: [], ...(withBase ? { base } : {}) }, d(), note)
+    return readPhotos({ photos: photos(), taken: [], ...(withBase ? { base } : {}) }, d())
   }
   order.length = 0
   const e500 = await fail(500, { error: 'model' })
   check('a failed read deletes the photo too', order.join() === 'flush,read,discard', order)
-  check('function error → type it in, with the web’s note', e500.kind === 'confirm' && e500.notice === 'error|type' && e500.draft.source === 'label', e500)
+  check('function error → type it in, with the web’s note', e500.kind === 'confirm' && e500.notice === 'Couldn’t read the photo right now. Type the numbers from the pack below.' && e500.draft.source === 'label', e500)
   const e404 = await fail(404, {})
-  check('function missing → unavailable, "Type it in instead"', e404.kind === 'confirm' && e404.notice === 'unavailable|unavailable', e404)
+  check('function missing → unavailable, "Type it in instead"', e404.kind === 'confirm' && e404.notice === 'Photo reading isn’t available right now. Type it in instead.', e404)
   const e403 = await fail(403, { error: 'consent' })
-  check('server refuses for consent → its note, typed fallback', e403.kind === 'confirm' && e403.notice === 'consent|type', e403)
+  check('server refuses for consent → its note, typed fallback', e403.kind === 'confirm' && e403.notice === 'Couldn’t confirm your OK to read photos yet. Try again in a moment. Type the numbers from the pack below.', e403)
   const e429 = await fail(429, {})
-  check('daily cap → limit note', e429.kind === 'confirm' && e429.notice === 'limit|type', e429)
+  check('daily cap → limit note', e429.kind === 'confirm' && e429.notice === 'You’ve used today’s photo reads. They reset tomorrow. Type the numbers from the pack below.', e429)
   const e422 = await fail(422, { error: 'unreadable' })
-  check('unreadable photo → its note', e422.kind === 'confirm' && e422.notice === 'unreadable|type', e422)
+  check('unreadable photo → its note', e422.kind === 'confirm' && e422.notice === 'The photo couldn’t be read. A flatter, brighter shot often helps. Type the numbers from the pack below.', e422)
   const withBase = await fail(500, {}, true)
-  check('after Open Food Facts: back to its figures, "check them against your pack"', withBase.kind === 'confirm' && withBase.notice === 'error|off' && (withBase.draft as unknown as { name: string }).name === 'From OFF', withBase)
+  check('after Open Food Facts: back to its figures, "check them against your pack"', withBase.kind === 'confirm' && withBase.notice === 'Couldn’t read the photo right now. The Open Food Facts figures are below: check them against your pack.' && (withBase.draft as unknown as { name: string }).name === 'From OFF', withBase)
 
   const nav = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
   Object.defineProperty(globalThis, 'navigator', { value: { onLine: false }, configurable: true })
   calls.length = 0
-  const offline = await readPhotos({ panel: PANEL, taken: [] }, d(), note)
-  check('offline → offline note, nothing sent', offline.kind === 'confirm' && offline.notice === 'offline|type' && !calls.some((c) => c.url.includes('ai-read-label')), offline)
+  const offline = await readPhotos({ photos: photos(), taken: [] }, d())
+  check('offline → offline note, nothing sent', offline.kind === 'confirm' && offline.notice === 'Couldn’t read the photo without a connection, or it took too long. Type the numbers from the pack below.' && !calls.some((c) => c.url.includes('ai-read-label')), offline)
   if (nav) Object.defineProperty(globalThis, 'navigator', nav)
   else Reflect.deleteProperty(globalThis, 'navigator')
 
   calls.length = 0
-  const noHealth = await readPhotos({ panel: PANEL, taken: [] }, d({ consentLetsSync: () => false }), note)
-  check('no health answer yet → the photo never leaves the phone', noHealth.kind === 'confirm' && noHealth.notice === 'error|type' && calls.length === 0, { noHealth, calls: calls.length })
+  const noHealth = await readPhotos({ photos: photos(), taken: [] }, d({ consentLetsSync: () => false }))
+  check('no health answer yet → the photo never leaves the phone', noHealth.kind === 'confirm' && noHealth.notice === 'Couldn’t read the photo right now. Type the numbers from the pack below.' && calls.length === 0, { noHealth, calls: calls.length })
   order.length = 0
-  const under = await readPhotos({ panel: PANEL, taken: [] }, d({ underAge: () => true }), note)
+  const under = await readPhotos({ photos: photos(), taken: [] }, d({ underAge: () => true }))
   check('a photo that never left the phone is deleted too', order.join() === 'discard', order)
   check('under 18 on screen → the photo never leaves the phone', under.kind === 'confirm' && calls.length === 0)
 
   answer = () => json({}, 500)
-  const share = await readPhotos({ panel: PANEL, barcode: '5000157024671', taken: [], forShare: true }, d(), note)
-  check('sharing a saved food: a failed read goes back (nothing shared)', eq(share, { kind: 'share-failed', status: 'error' }), share)
+  const share = await readPhotos({ photos: photos(), barcode: '5000157024671', taken: [], forShare: true }, d())
+  check('sharing a saved food: a failed read goes back (nothing shared)', eq(share, { kind: 'share-failed', status: 'error', note: 'Couldn’t read the photo right now.' }), share)
+  order.length = 0
+  const badPhoto = await readPhotos({ photos: async () => { throw new Error('unreadable file') }, taken: [] }, d())
+  check('a photo that can’t be encoded → error fallback, deleted, nothing sent', badPhoto.kind === 'confirm' && badPhoto.notice === 'Couldn’t read the photo right now. Type the numbers from the pack below.' && order.join() === 'flush,discard', { badPhoto, order })
+  check('failNotice composes the web’s two lines', failNotice('unavailable', false) === 'Photo reading isn’t available right now. Type it in instead.')
   check('typed fallback keeps the barcode', typedDraft({ barcode: '5000157024671', taken: [] }).barcode === '5000157024671')
-  check('fallback wording keys follow the web', thenKey('unavailable', false) === 'unavailable' && thenKey('unavailable', true) === 'off' && thenKey('limit', false) === 'type')
 }
 
 async function main() {

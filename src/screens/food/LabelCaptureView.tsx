@@ -16,13 +16,14 @@ import { useStore } from '@/store/store'
 import { consentLetsSync, hasCurrentConsent } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
-import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
+import { emptyLabelDraft } from '@/core/domain/label'
 import { measureFrame, qualityIssue, toGray, QUALITY_EDGE, QUALITY_PROMPT, type QualityIssue } from '@/core/domain/labelQuality'
-import { readLabel, type LabelReadResult } from '@/data/labelReader'
+import { readLabel } from '@/data/labelReader'
+import { readPhotos } from '@/data/labelRead'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { scaledCanvas, startRearCamera, stopCamera, type CameraFail } from './camera'
-import { CONSENT, FAIL_NOTE, GUIDANCE, LABEL, LABEL_CAMERA_NOTE, LABEL_TITLE, SHARE_LABEL_NOTE } from '@/copy/scan'
+import { CONSENT, GUIDANCE, LABEL, LABEL_CAMERA_NOTE, LABEL_TITLE, SHARE_LABEL_NOTE } from '@/copy/scan'
 
 /** Long edge of the photo that's sent: enough for small print, well under the 1.5 MB cap. */
 const PANEL_EDGE = 1600
@@ -168,27 +169,19 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     setStep('reading')
     const ctl = new AbortController()
     readRef.current = ctl
-    let res: LabelReadResult
-    try {
-      // a photo goes to the server: not before the health answer (its consent record can't sync yet)
-      if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
-      // an under-18 age is on screen (Tilo is 18+): no photo leaves the phone
-      if (useStore.getState().underAge) throw new Error('under age')
-      // the server checks the label-photo consent itself: send a yes given moments ago first
-      await useStore.getState().flushConsents()
-      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}), ...(barcode ? { barcode } : {}) }, { signal: ctl.signal })
-    } catch {
-      res = { status: 'error' }
-    }
+    const st = useStore.getState
+    // src/data/labelRead.ts, shared with the native app. The photos live only in memory here
+    // (their object URLs are revoked when the view closes), so there's nothing more to discard.
+    const out = await readPhotos({
+      photos: async () => ({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }),
+      barcode, base, taken: taken(), forShare: !!(forShare && onFail),
+    }, {
+      consentLetsSync: () => consentLetsSync(st().data), underAge: () => !!st().underAge, flushConsents: () => st().flushConsents(),
+      readLabel, discard: () => {}, signal: ctl.signal,
+    })
     if (!aliveRef.current) return
-    if (res.status === 'ok') {
-      const draft = draftFromLabel(res.read, { barcode, base, taken: taken() })
-      onDone(res.share ? { ...draft, share: res.share } : draft)
-      return
-    }
-    if (forShare && onFail) { onFail(FAIL_NOTE[res.status]); return }
-    const then = base ? LABEL.thenOff : res.status === 'unavailable' ? LABEL.thenUnavailable : LABEL.thenType
-    typeInstead(FAIL_NOTE[res.status] + then)
+    if (out.kind === 'share-failed') { onFail?.(out.note); return }
+    onDone(out.draft, out.notice)
   }
 
   const left = onBack ? <BackButton onClick={onBack} /> : undefined
