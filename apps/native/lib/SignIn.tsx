@@ -4,13 +4,11 @@
  */
 import { useState } from 'react'
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TextInput, View } from 'react-native'
-import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
+import { googleSignIn } from './account/oauth'
 import { useStore } from '@/store/store'
 import { Btn } from './ui/kit'
 import { font, useTokens } from './theme'
-
-const REDIRECT = 'tilo://auth-callback'
 
 export function SignIn() {
   const t = useTokens()
@@ -21,31 +19,14 @@ export function SignIn() {
   const beginSignIn = useStore((s) => s.beginSignIn)
   const notice = useStore((s) => s.authNotice)
 
-  /** "Continue with Google", as on the web: Supabase's Google sign-in in the system's sign-in sheet,
-   *  back to the app at tilo://auth-callback (allowed in Supabase's redirect list), then the code is
-   *  exchanged for a session on this phone (PKCE). */
+  /** "Continue with Google", as on the web: the system's sign-in sheet (lib/account/oauth.ts). */
   async function google() {
     setErr('')
     beginSignIn()
     setBusy(true)
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT, skipBrowserRedirect: true } })
-      if (error || !data?.url) throw error ?? new Error('Google sign-in could not start.')
-      const res = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT)
-      if (res.type !== 'success') return
-      const back = new URL(res.url)
-      const code = back.searchParams.get('code')
-      // some error redirects carry the reason after # rather than in the query
-      const frag = new URLSearchParams(back.hash.replace(/^#/, ''))
-      const why = back.searchParams.get('error_description') || frag.get('error_description') || back.searchParams.get('error') || frag.get('error')
-      if (!code) throw new Error(why || 'Google sign-in did not finish.')
-      const { error: ex } = await supabase.auth.exchangeCodeForSession(code)
-      if (ex) throw ex
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
-    } finally {
-      setBusy(false)
-    }
+    const r = await googleSignIn()
+    setBusy(false)
+    if (r.status === 'error') setErr(r.message)
   }
 
   async function submit() {

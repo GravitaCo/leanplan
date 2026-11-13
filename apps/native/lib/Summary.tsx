@@ -160,7 +160,7 @@ export function Summary() {
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               {pk(t.foodInk, 'Food')}
-              <LinkBtn title="Open" onPress={later('Food')} />
+              <LinkBtn title="Open" onPress={later('Food')} style={font(500)} />
             </View>
             {yes ? (
               <View>
@@ -171,7 +171,7 @@ export function Summary() {
               <View>
                 {T([font(600), { fontSize: 24, lineHeight: 29, color: t.label }], st.gentle)}
                 {T([font(400), { fontSize: 15, color: t.label2, marginTop: 4 }], FOOD9.slots(mw.slots, mw.withProtein))}
-                {!p.pregnancy?.flagged && <LinkBtn title={FOOD9.seeRange} onPress={later('Food')} style={{ fontSize: 14, marginTop: 8 }} />}
+                {!p.pregnancy?.flagged && <LinkBtn title={FOOD9.seeRange} onPress={later('Food')} style={[font(500), { fontSize: 14, marginTop: 8 }]} />}
               </View>
             ) : (
               <>

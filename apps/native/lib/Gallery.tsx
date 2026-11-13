@@ -14,8 +14,8 @@ import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastHost, ToastView } from './ui/kit'
-import { Row, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
+import { AddC, Row, XBtn, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -23,7 +23,8 @@ import { Ruler } from './ui/Ruler'
 import { Wheel } from './ui/Wheel'
 import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
-import { Foot, GrpH, Lbl, Prose, Sub } from './ui/text'
+import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
+import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -244,6 +245,67 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           </List>
           <Btn kind="signout" title="Sign out" onPress={() => {}} />
         </View>
+      </Sec>
+
+      <Sec id="rows3" title="Row: squares, tag, wrapping sub, trailing slots, needsnet, pv">
+        <View style={{ gap: 10 }}>
+          <List icons>
+            <Row square={{ icon: 'wind', fill: t.mindFill, ink: t.mindInk }} title="Reset" sub="Two minutes of slower breathing, whenever you need it" wrapSub onPress={() => {}} />
+            <Row square={{ icon: 'fork', fill: t.energy, ink: t.onFood }} title="Oat porridge" sub="158 kcal · 5.4 g protein per 100 g" tag="Mine" right={<AddC label="Add Oat porridge" onPress={() => {}} />} />
+            <Row title="Today" value="1,500 kcal" strong />
+            <Row title="Shared products" sub="Needs a connection. Search works offline." needsnet onPress={() => {}} />
+            <Row title="A note you can hide" right={<XBtn label="Hide this note" onPress={() => {}} />} />
+            <Row title="Weekly review" sub="Sunday" right={<Btn small title="Open" onPress={() => {}} />} />
+          </List>
+          <List>
+            <Row pv lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Full body, a longer name that wraps onto two lines" sub="Strength · 6 exercises · about 35 min" sub2="Last done Tuesday" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
+      <Sec id="notes" title="Note (info, warn, ok) · Empty">
+        <Note status>These numbers look high for this food. Check the label.</Note>
+        <Note kind="warn" action={{ title: 'Check again', onPress: () => {} }}>The camera is off for Tilo. You can still type the barcode.</Note>
+        <Note kind="ok" status>These numbers are consistent with each other.</Note>
+        <Empty>Add what went in. Don't forget the oil.</Empty>
+      </Sec>
+
+      <Sec id="chips2" title="Chip sizes and tones · radio and tab roles">
+        <View style={{ gap: 10 }}>
+          <Chips>
+            <Chip size="sm" role="tab" on title="Week 1" onPress={() => {}} />
+            <Chip size="sm" role="tab" on={false} title="Week 2" onPress={() => {}} />
+            <Chip size="sm" on label="Remove Vegetarian" title="Vegetarian ×" onPress={() => {}} />
+          </Chips>
+          <Chips>
+            <Chip tone="ink" title="Log it" onPress={() => {}} />
+            <Chip tone="plain" title="Not today" onPress={() => {}} />
+            <Chip role="radio" on title="Small" onPress={() => {}} />
+            <Chip role="radio" on={false} title="Large" onPress={() => {}} />
+          </Chips>
+        </View>
+      </Sec>
+
+      <Sec id="links" title="TextLink in a sentence · GrpH link · Lbl style">
+        <Text style={[tx(15, 400, 1.45), { color: t.label }]}>
+          Today can be lighter. <TextLink onPress={() => {}}>Change what Summary shows</TextLink>, or <TextLink onPress={() => {}} label="Open support" expanded={false}>find support</TextLink>.
+        </Text>
+        <GrpH link={{ title: 'See all', onPress: () => {} }}>Your workouts</GrpH>
+        <Lbl style={{ paddingTop: 4 }}>A label with less space above</Lbl>
+      </Sec>
+
+      <Sec id="fields" title="Field · Input · textarea · FRow · NameField · SearchBar">
+        <Field label="Email"><Input label="Email" value="sam@example.com" onChangeText={() => {}} keyboardType="email-address" autoCapitalize="none" /></Field>
+        <Field label="What would help?"><Input label="What would help?" placeholder="A short walk after lunch" onChangeText={() => {}} /></Field>
+        <Field label="Note"><Input label="Note" multiline value={'Felt strong today.\nSlept well.'} onChangeText={() => {}} style={{ minHeight: 80 }} /></Field>
+        <List>
+          <FRow label="Name" value="Oat porridge" onChangeText={() => {}} />
+          <FRow label="Serving" value="40" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Protein" need placeholder="Needed" unit="g" keyboardType="decimal-pad" onChangeText={() => {}} />
+          <FRow label="Energy" value="1250" unit="kcal" flag="Check this against the pack" keyboardType="number-pad" onChangeText={() => {}} />
+        </List>
+        <View style={{ marginTop: 16 }}><NameField label="Name" value="Strength, 3 days" onChangeText={() => {}} /></View>
+        <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
       </Sec>
 
       <Sec id="banner" title="Banner">
