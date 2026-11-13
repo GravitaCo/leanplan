@@ -28,6 +28,9 @@ const TABS: { route: TabRoute; tab: Tab; label: string; icon: IconName }[] = [
 export function TabBarView({ active, mindOff, onPress, bottom }: { active: string | undefined; mindOff: boolean; onPress: (r: TabRoute) => void; bottom: number }) {
   const t = useTokens()
   return (
+    // The web's bar is fixed over the page, so its translucent --tabbar always composites over --bg.
+    // Here the bar sits below the scene, so --bg is laid under it to give the same colour.
+    <View style={{ backgroundColor: t.bg }}>
     <View accessibilityRole="tablist" accessibilityLabel="Main" style={{ flexDirection: 'row', backgroundColor: t.tabbar, borderTopWidth: 1, borderTopColor: t.sep, paddingBottom: bottom }}>
       {TABS.map(({ route, label, icon }) => {
         const off = route === 'mind' && mindOff
@@ -39,11 +42,13 @@ export function TabBarView({ active, mindOff, onPress, bottom }: { active: strin
             accessibilityState={{ selected: on, disabled: off }}
             onPress={() => onPress(route)}
             style={{ flex: 1, alignItems: 'center', gap: 2, paddingTop: 7, paddingBottom: 5 }}>
+            {/* 20, not the 25 BottomNav asks for: the web's `svg.i` rule draws every icon at 20 px */}
             <Icon name={icon} size={20} stroke={on ? 2.3 : 1.9} color={color} />
             <Text style={[tx(10, 500, 1.3, 0.01), { color }]}>{label}</Text>
           </Pressable>
         )
       })}
+    </View>
     </View>
   )
 }
