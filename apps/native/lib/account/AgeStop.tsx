@@ -109,7 +109,7 @@ export function Under18({ onWrong, onClose, deleting, source }: { onWrong?: () =
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }} testID={app ? 'age-stop' : 'age-stop-wizard'}>
       <ScrollView contentContainerStyle={{ paddingTop: ins.top + 110, paddingHorizontal: 20, paddingBottom: ins.bottom + 170, gap: 18 }}>
-        <Text accessibilityRole="header" style={[tx(34, 700, 40, -0.03), { color: t.label, marginTop: -8 }]}>{c.title}</Text>
+        <Text accessibilityRole="header" style={[tx(34, 700, 40, -0.03), { color: t.label }]}>{c.title}</Text>
         <Text style={[tx(17, 400, 1.5), { color: t.label }]}>{c.lead}</Text>
         <Text style={[tx(17, 400, 1.5), { color: t.label2 }]}>{c.more}</Text>
         <Signposts list={UNDER18_SIGNPOSTS} />
@@ -119,7 +119,7 @@ export function Under18({ onWrong, onClose, deleting, source }: { onWrong?: () =
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 12, paddingHorizontal: 16, paddingBottom: ins.bottom + 34, backgroundColor: t.bg, gap: 10 }}>
           {/* .btn.ob-btn: 54 high */}
           <Btn title={app ? NOTES.underAge.close : 'Close'} disabled={busy} onPress={onClose} style={{ minHeight: 54, borderRadius: 27 }} />
-          {onWrong && <View style={{ alignItems: 'center' }}><LinkBtn title={NOTES.underAge.wrong} onPress={onWrong} style={tx(16, 500, 1.3, BTN)} /></View>}
+          {onWrong && <View style={{ alignItems: 'center' }}><LinkBtn title={NOTES.underAge.wrong} onPress={onWrong} style={[tx(16, 500, 1.3, BTN), { paddingVertical: 4, paddingHorizontal: 4 }]} /></View>}
         </View>
       )}
     </View>

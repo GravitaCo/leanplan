@@ -16,7 +16,8 @@ import { useStore } from '@/store/store'
 import { useConsent } from '@/store/hooks'
 import { hasExistingData, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
 import { CONSENT, PRIVACY_SHEET, REGRANT } from '@/copy/account'
-import { tx, useTokens } from '../theme'
+import { BTN, tx, useTokens } from '../theme'
+import { dark } from '../tokens.generated'
 import { Btn, Card, LinkBtn, List } from '../ui/kit'
 import { NavBtn, Sheet } from '../ui/primitives'
 import { Icon } from '../ui/icons'
@@ -66,7 +67,7 @@ export function ConsentScreen({ fromProfile = false }: { fromProfile?: boolean }
             {CONSENT.notNowFoot} {unconsentedCopyLine()}{' '}
             {reasked ? CONSENT.reasked : CONSENT.askAgain}
           </Text>
-          <View style={{ alignItems: 'center' }}><LinkBtn title={CONSENT.signOut} muted onPress={() => void signOut()} /></View>
+          <View style={{ alignItems: 'center' }}><LinkBtn title={CONSENT.signOut} muted onPress={() => void signOut()} style={tx(15, 400, 1.3, BTN)} /></View>
         </>
       ) : (
         <Btn kind="gray" title={CONSENT.notNowSignOut} onPress={() => void signOut()} />
@@ -135,7 +136,8 @@ function ConsentBox({ on, onChange, id, children }: { on: boolean; onChange: (v:
   return (
     <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} aria-checked={on} testID={id} onPress={() => onChange(!on)}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
-      <View style={{ width: 22, height: 22, marginTop: 1, marginLeft: 4, marginRight: 3, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label3 }}>
+      {/* the browser's checkbox: 3 px margins, a --label2 edge (3:1), filled with --fill in dark */}
+      <View style={{ width: 22, height: 22, marginTop: 1, marginLeft: 4, marginRight: 3, marginBottom: 3, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : t === dark ? t.fill : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label2 }}>
         {on && <Icon name="check" size={16} stroke={2.8} color={t.onTint} />}
       </View>
       <Text style={[tx(15, 400, 1.4), { flex: 1, color: t.label }]}>{children}</Text>

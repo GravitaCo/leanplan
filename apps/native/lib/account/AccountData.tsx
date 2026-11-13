@@ -24,7 +24,7 @@ import { HEALTH_ANSWERS_ROW, REDO_ROW, SETUP_ROW, SUPPORT } from '@/screens/onbo
 import { supportList } from '@/screens/profile/supportRows'
 import { SUPPORT_MIND } from '@/screens/mind/copy'
 import { ACCOUNT_ROW, BACKUP, HEALTH_DATA, HEALTH_TICKS, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
-import { BTN, tx, useTokens } from '../theme'
+import { BTN, num, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List, slop } from '../ui/kit'
 import { BackButton, Disclosure, NavBtn, Row, SettingRow, Sheet } from '../ui/primitives'
 import { Icon } from '../ui/icons'
@@ -69,7 +69,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
       <Sheet title={HEALTH_DATA.title} onClose={onClose} left={<BackButton onPress={() => setStep(null)} />}>
         <View style={{ paddingHorizontal: 4, gap: 10 }}>
           <P color={t.label2}>{step.prompt}</P>
-          {onPhone && <P color={t.label2}>{onPhone}</P>}
+          {onPhone && <Text style={[tx(15, 400, 1.45), num, { color: t.label2 }]}>{onPhone}</Text>}
         </View>
         <View style={{ gap: 8, marginTop: 16 }}>
           {/* the same file the web downloads (the whole log), through the share sheet. Unlike the web it
@@ -88,7 +88,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
         {status === 'on' ? HEALTH_DATA.on : status === 'paused' ? HEALTH_DATA.paused + unconsentedCopyLine() : status === 'off' ? HEALTH_DATA.off : HEALTH_DATA.unasked}
       </Text>
       <Ticks items={HEALTH_TICKS} />
-      <View style={{ alignSelf: 'flex-start', marginTop: 8 }}><LinkBtn title={HEALTH_DATA.readPrivacy} onPress={() => setPrivacy(true)} /></View>
+      <View style={{ alignSelf: 'flex-start', marginTop: 8 }}><LinkBtn title={HEALTH_DATA.readPrivacy} onPress={() => setPrivacy(true)} style={tx(15, 400, 1.3, BTN)} /></View>
       {(answersRow || redoRow) && (
         <List style={{ marginTop: 12 }}>
           {answersRow && <Row title={HEALTH_ANSWERS_ROW} onPress={onAnswers} />}

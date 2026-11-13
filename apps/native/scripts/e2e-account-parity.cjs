@@ -141,7 +141,8 @@ async function toProfile(page) {
 /** the Health data row, showing its status ("On", "Paused", "Off") */
 const healthRow = (page, status) => page.getByRole('button', { name: new RegExp('^Health data\\s*' + (status || '')) })
 const shot = async (page, name) => { await page.waitForTimeout(500); await page.screenshot({ path: path.join(OUT, name + '.png') }) }
-const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').trim()
+// a full stop after an inline button reads as " ." from native's row of boxes: the same words
+const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').replace(/ \./g, '.').trim()
 
 /** The same state on web and native: the screen's words must match, and both are photographed. */
 async function sameWords(browser, name, opts, ready, act) {

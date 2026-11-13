@@ -10,7 +10,7 @@
  * simply stays open.
  */
 import { useState } from 'react'
-import { ScrollView, Text, TextInput, View } from 'react-native'
+import { Platform, ScrollView, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { useAccountDeletion } from '@/store/hooks'
@@ -112,7 +112,7 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
         {/* .btn.delall: white on red in light, black on the lighter dark-mode red (4.5:1) */}
         <Btn title={deleting ? DELETE.deleting : DELETE.confirm} disabled={!ready || (stale && google)} onPress={() => void go()}
           style={{ minHeight: 54, borderRadius: 27, backgroundColor: t.red }} textStyle={{ color: t === dark ? '#000000' : '#ffffff' }} />
-        <View style={{ alignItems: 'center' }}><LinkBtn title={DELETE.cancel} onPress={onClose} style={tx(16, 500, 1.3, BTN)} /></View>
+        <View style={{ alignItems: 'center' }}><LinkBtn title={DELETE.cancel} onPress={onClose} style={[tx(16, 500, 1.3, BTN), { paddingVertical: 4, paddingHorizontal: 4 }]} /></View>
       </View>
     </BareSheet>
   )
@@ -133,7 +133,7 @@ function Typed({ label, value, onChange, secure }: { label: string; value: strin
   return (
     <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 13, paddingHorizontal: 16, gap: 4 }}>
       <Text style={[tx(13), { color: t.label2 }]}>{label}</Text>
-      <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} style={[tx(17, 400, 24), { color: t.label, padding: 0, minHeight: 24 }]}
+      <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} style={[tx(17, 400, 24), { color: t.label, padding: 0, minHeight: 24 }, Platform.OS === 'web' && { outlineWidth: 0 }]}
         {...(secure
           ? { secureTextEntry: true, autoComplete: 'current-password' as const, textContentType: 'password' as const }
           : { autoCapitalize: 'characters' as const, autoComplete: 'off' as const, autoCorrect: false, spellCheck: false })} />

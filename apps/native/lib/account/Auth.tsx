@@ -106,7 +106,8 @@ export function AuthScreen() {
   const copy = AUTH.modes[mode]
   const photoH = photoHeight(mode, vh)
   // TODO(N1-followup): fields. .auth2-fields / .auth2-f as the spec: a card of labelled inputs
-  const field = [tx(17, 400, 26), { height: 26, padding: 0, color: t.label }]
+  // (the web render only: react-native-web's focus outline, which the phone doesn't draw)
+  const field = [tx(17, 400, 26), { height: 26, padding: 0, color: t.label }, Platform.OS === 'web' && { outlineWidth: 0 }]
   const fieldBox = (first: boolean) => [{ paddingVertical: 11, paddingHorizontal: 16, gap: 2 }, !first && { borderTopWidth: 1, borderTopColor: t.sep }]
   const label = [tx(13), { color: t.label2 }]
   const title = [tx(30, 600, 36, -0.02), { color: t.label }]
@@ -142,10 +143,15 @@ export function AuthScreen() {
               </View>
               {errLine}
               <Btn kind="gray" title={AUTH.back} style={big} onPress={() => { setResent(false); setMode('signin') }} />
-              <Text accessibilityLiveRegion="polite" style={[tx(15), { marginTop: 'auto', textAlign: 'center', color: t.label2 }]}>
-                {resent ? AUTH.resentLead : AUTH.resendLead}
-                <Text accessibilityRole="button" accessibilityState={{ disabled: busy }} onPress={busy ? undefined : resend} style={[tx(15, 600, 1.3, BTN), { color: t.tint }]}>{resent ? AUTH.sendAnother : AUTH.sendAgain}</Text>{resent ? '' : '.'}
-              </Text>
+              {/* .auth2-foot: the words, then the .linkbtn (6 2 padding, 600) and its full stop */}
+              <View accessibilityLiveRegion="polite" style={{ marginTop: 'auto', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={[tx(15), { color: t.label2, textAlign: 'center' }]}>{resent ? AUTH.resentLead : AUTH.resendLead}</Text>
+                <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={resend} hitSlop={slop(0, 31)}
+                  style={({ pressed }) => ({ paddingVertical: 6, paddingHorizontal: 2, opacity: busy ? 0.4 : pressed ? 0.7 : 1 })}>
+                  <Text style={[tx(15, 600, 1.3, BTN), { color: t.tint }]}>{resent ? AUTH.sendAnother : AUTH.sendAgain}</Text>
+                </Pressable>
+                {!resent && <Text style={[tx(15), { color: t.label2 }]}>.</Text>}
+              </View>
             </>
           ) : (
             <>
@@ -319,7 +325,7 @@ export function OwnerChoiceScreen() {
         </View>
       )}
       <View style={{ marginTop: 18, alignItems: 'center' }}>
-        <LinkBtn title={OWNER.cancel} muted onPress={() => { if (!busy) void pick('cancel') }} />
+        <LinkBtn title={OWNER.cancel} muted onPress={() => { if (!busy) void pick('cancel') }} style={tx(15, 400, 1.3, BTN)} />
       </View>
     </ScrollView>
   )
