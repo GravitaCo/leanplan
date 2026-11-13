@@ -12,9 +12,8 @@ import { useStore } from '@/store/store'
 import { freshForAccount } from '@/data/persistence'
 import { setSession } from '@/data/supabase'
 import { todayStr } from '@/core/domain/date'
-import { installNotificationGlobal } from '../lib/platform/notificationGlobal'
-import { toFront } from './fakes/react-native'
 import { checkPushToken, unsubscribePush } from '../lib/platform/push'
+import { toFront } from './fakes/react-native'
 
 let failed = 0
 let passed = 0
@@ -30,12 +29,11 @@ const until = async (cond: () => boolean, ms = 3000) => {
 
 const UID = '11111111-2222-3333-4444-555555555555'
 const TOKEN = 'ab'.repeat(32)
-const g = globalThis as any
-installNotificationGlobal(g)
 const st = () => useStore.getState()
 const pushWrites = () => fake.requests.filter((r) => r.path.startsWith('/push_subscriptions') && r.method !== 'GET')
 
-/** The permission changes (in Settings) and the app comes back to the front, so the stand-in reads it again. */
+/** The permission changes in Settings and the app comes back to the front, so the push adapter's
+ *  copy is read again (pushPermission is synchronous, as the browser's). */
 async function setPerm(p: typeof fake.perm) {
   fake.perm = p
   toFront()
@@ -53,7 +51,7 @@ function reset(o: { reminders?: boolean; age?: number } = {}) {
 }
 
 async function main() {
-  check('Notification stand-in: iPhone only, reads the phone\'s permission', typeof g.Notification?.requestPermission === 'function')
+  check('no browser Notification global: the store asks through the push adapter', typeof (globalThis as Record<string, unknown>).Notification === 'undefined')
 
   /* ---------- wp17-notify-on: turning a reminder on asks in the tap, then registers this phone ---------- */
   reset()

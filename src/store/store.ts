@@ -56,7 +56,7 @@ import { withTimeout } from '@/data/timeout'
 import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
-import { pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
+import { askPushPermission, pushPermission, pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
@@ -1176,11 +1176,9 @@ export const useStore = create<StoreState>()(
           // reminders read the profile on the server: never before the health yes (B11 [C])
           if (!consentLetsSync(get().data)) return 'consent'
           if (!pushSupported()) return 'unsupported'
-          if (Notification.permission === 'denied') return 'denied'
-          if (Notification.permission !== 'granted') {
-            const perm = await Notification.requestPermission().catch(() => 'denied' as NotificationPermission)
-            if (perm !== 'granted') return 'denied'
-          }
+          const perm = pushPermission()
+          if (perm === 'denied') return 'denied'
+          if (perm !== 'granted' && (await askPushPermission()) !== 'granted') return 'denied'
         }
         if (!get().setMindPrefs({ notify: { [kind]: on } })) return 'unsaved'
         if (on) {

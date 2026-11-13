@@ -1,6 +1,6 @@
 /**
  * Reminders on a phone: the native side of src/data/push.ts (the shared store reaches it through
- * src/data/push.native.ts, under the same four names, so its rules run unchanged: the health yes
+ * src/data/push.native.ts, under the same names, so its rules run unchanged: the health yes
  * first, the 18+ stop ends this phone's registration, deletion does too).
  *
  * iPhone only for now: Apple's push service (APNs) with this phone's device token, saved in
@@ -20,12 +20,14 @@
  * to one account (docs/migrations/2026-11-13-native-push.sql, push_token_one_account), so the next
  * account to turn reminders on replaces it.
  */
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import { getIosPushNotificationServiceEnvironmentAsync } from 'expo-application'
-import { createMMKV, type MMKV } from 'react-native-mmkv'
 import { sbFetch, getUid, hasSession } from '@/data/supabase'
+import { pushKV } from './pushStore'
 import { apnsPlatform, apnsToken, ASK, deletePath, parseSaved, permFrom, tokenRow, type Perm, type SavedToken } from './pushRules'
+
+export type { Perm as PushPermission }
 
 /** The browser's PushManager check: true on iPhone. */
 export function pushSupported(): boolean {
@@ -33,10 +35,7 @@ export function pushSupported(): boolean {
 }
 
 // ---- what this phone registered (device-only, not health data: a token and an account id) ----
-let kv: MMKV | null = null
-const store = (): MMKV | null => {
-  try { return (kv ??= createMMKV({ id: 'tali-push' })) } catch { return null }
-}
+const store = pushKV
 const KEY = 'token'
 export const savedToken = (): SavedToken | null => {
   try { return parseSaved(store()?.getString(KEY)) } catch { return null }
@@ -73,16 +72,31 @@ const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> =>
   Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))])
 
 // ---- permission ----
-/** The phone's notification permission as the browser names it. */
-export async function pushPermission(): Promise<Perm> {
+// The store reads the permission synchronously (as the browser's Notification.permission), so this
+// is a copy, refreshed at launch and each time the app comes back to the front (the person may have
+// changed it in Settings meanwhile). A stale copy only leads to a re-ask or a failed registration,
+// both of which the store already handles. Paths that register read the live value (livePermission).
+let cached: Perm = 'default'
+async function livePermission(): Promise<Perm> {
   if (!pushSupported()) return 'denied'
-  try { return permFrom(await Notifications.getPermissionsAsync()) } catch { return 'default' }
+  try { cached = permFrom(await Notifications.getPermissionsAsync()) } catch { /* keep the last known */ }
+  return cached
+}
+if (pushSupported()) {
+  void livePermission()
+  AppState.addEventListener('change', (s) => { if (s === 'active') void livePermission() })
+}
+
+/** The phone's notification permission as the browser names it (the copy above). */
+export function pushPermission(): Perm {
+  return pushSupported() ? cached : 'denied'
 }
 
 /** Ask (the system shows its prompt only while the person hasn't answered). */
 export async function askPushPermission(): Promise<Perm> {
   if (!pushSupported()) return 'denied'
-  try { return permFrom(await Notifications.requestPermissionsAsync(ASK)) } catch { return 'denied' }
+  try { cached = permFrom(await Notifications.requestPermissionsAsync(ASK)) } catch { /* keep the last known */ }
+  return cached
 }
 
 // ---- registration ----
@@ -119,7 +133,7 @@ async function register(): Promise<boolean> {
 
 /** Register this phone again without asking (only where reminders are already allowed). */
 export async function resubscribePush(): Promise<boolean> {
-  if (!pushSupported() || (await pushPermission()) !== 'granted') return false
+  if (!pushSupported() || (await livePermission()) !== 'granted') return false
   return register()
 }
 
@@ -151,7 +165,7 @@ export async function checkPushToken(): Promise<void> {
   if (!pushSupported() || !hasSession()) return
   await settleReleases()
   const saved = savedToken()
-  if (!saved || saved.uid !== getUid() || (await pushPermission()) !== 'granted') return
+  if (!saved || saved.uid !== getUid() || (await livePermission()) !== 'granted') return
   try {
     const t = await withTimeout(Notifications.getDevicePushTokenAsync(), 10000)
     const token = t ? apnsToken(t.data) : null

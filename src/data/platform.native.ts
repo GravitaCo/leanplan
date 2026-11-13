@@ -20,5 +20,7 @@ export function onForeground(fn: () => void): void {
   AppState.addEventListener('change', (s) => { if (s === 'active') fn() })
 }
 
-/** The native app has no push yet (N12): a reminder setting made on the web stays on. */
+/** Where this phone can't take pushes (Android until it has its own reminders; iPhone has them
+ *  since N12, so there pushSupported() is true and the web's rule applies), a reminder setting made
+ *  on the web stays on rather than switching off for every device. */
 export const KEEP_REMINDERS_WITHOUT_PUSH = true

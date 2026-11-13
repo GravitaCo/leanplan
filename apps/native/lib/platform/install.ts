@@ -8,8 +8,6 @@
  * - crypto.getRandomValues → expo-crypto (uuid() in src/data/supabase.ts)
  * - navigator.onLine and window 'online'/'offline' events → NetInfo (./connection)
  * - URL, structuredClone and AbortSignal.timeout where the engine lacks them
- * - Notification.permission and requestPermission → the phone's notification permission (iPhone,
- *   ./notificationGlobal)
  *
  * A web render of this app (only for side-by-side checks against the web app) keeps the
  * browser's own storage, events and connection state.
@@ -20,7 +18,6 @@ import { getRandomValues, digest, CryptoDigestAlgorithm } from 'expo-crypto'
 import NetInfo from '@react-native-community/netinfo'
 import { memoryStorage, nativeLocalStorage } from './storage'
 import { connectionEvents, onlineFrom } from './connection'
-import { installNotificationGlobal } from './notificationGlobal'
 
 const g = globalThis as unknown as Record<string, any>
 const native = Platform.OS !== 'web'
@@ -87,7 +84,4 @@ if (native) {
   // a third party the privacy policy doesn't name. Off, so the phone only asks the OS.
   NetInfo.configure({ reachabilityShouldRun: () => false })
   NetInfo.addEventListener((s) => ev.setOnline(onlineFrom(s)))
-
-  // ---- Notification (the store's reminder permission) ----
-  installNotificationGlobal(g)
 }

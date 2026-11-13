@@ -19,18 +19,15 @@
 import { useEffect } from 'react'
 import { AppState } from 'react-native'
 import * as Notifications from 'expo-notifications'
-import { createMMKV, type MMKV } from 'react-native-mmkv'
 import { useStore } from '@/store/store'
 import { checkPushToken, pushSupported, pushTokenChanged } from './push'
 import { takeNotifyEvents } from '@/data/notifyLog'
-import { NOTIFY_STORE_ID, recordNotifyEvent } from './notifyStore'
+import { recordNotifyEvent } from './notifyStore'
+import { notifyKV } from './notifyMMKV'
 import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
-// ---- the log: the same MMKV store as ./notifyMMKV, so its clear removes the seen list too ----
-let kv: MMKV | null = null
-const store = (): MMKV | null => {
-  try { return (kv ??= createMMKV({ id: NOTIFY_STORE_ID })) } catch { return null }
-}
+// ---- the log: N3's tali-notify store (./notifyMMKV), so its clear removes the seen list too ----
+const store = notifyKV
 const SEEN = 'seen'
 const readSeen = (): Seen => { try { return parseSeen(store()?.getString(SEEN)) } catch { return {} } }
 
