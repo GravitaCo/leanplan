@@ -40,7 +40,8 @@ export function PillarsSettings({ onDisplay, onSupport }: { onDisplay: () => voi
   const on = pillarsOnList(mind)
   const foodOff = !on.includes('food')
   return (
-    <View accessibilityLabel={PC.heading}>
+    // `.pillars`: a column 14 apart, its lists without their usual margin
+    <View accessibilityLabel={PC.heading} style={{ gap: 14 }}>
       <Lbl>{PC.heading}</Lbl>
       <List icons>
         {PILLARS.map((p) => {

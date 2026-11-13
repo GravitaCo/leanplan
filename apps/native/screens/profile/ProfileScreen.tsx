@@ -51,6 +51,9 @@ import { ReviewDaySheet } from '../today/WeeklyReview'
 import { LEGAL_DOCS, agreeHealth, exportBackup, openDeleteAccount, openLegal, pickBackup, withdrawHealth } from './n2'
 import { pushReady } from './n12'
 
+/** `.list`'s 8 pt below, which N1's List leaves to the screen */
+const LIST = { marginBottom: 8 }
+
 type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
 
 /** No AI feature is live (label reading is off): the AI consent row stays hidden until one is. */
@@ -180,7 +183,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <PageHeader title={P.title} profile={false} />
 
         {/* identity (`.idcard`): a Profile-only row, the large avatar (`.avatar.lg`, soft with the wellbeing flag), name and two lines */}
-        <List style={{ marginBottom: 8 }}>
+        <List style={LIST}>
           <View>
             <Pressable accessibilityRole="button" accessibilityState={{ expanded: open === 'profile' }} onPress={() => toggle('profile')}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, backgroundColor: pressed ? t.fill : 'transparent' })}>
@@ -211,9 +214,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         </List>
 
         <Lbl>{P.groups.goal}</Lbl>
-        <List icons>
+        <List icons style={LIST}>
           <Disclosure soft icon="scale" color={FOODF} label={P.body.row} value={[weight && weightBack ? `${weight} kg` : '', goalLabel].filter(Boolean).join(' · ') || undefined}
             open={open === 'metrics'} onToggle={() => toggle('metrics')}>
+            {/* `.grid2`: 10 between rows as well as columns */}
+            <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.sex}><Select<Sex> label={P.body.sex} value={metrics.sex} options={[['M', P.body.male], ['F', P.body.female]]} onChange={(v) => setMetrics({ ...metrics, sex: v })} /></Field></View>
               <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.agePh} keyboardType="number-pad" /></Field></View>
@@ -221,6 +226,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.heightPh} keyboardType="number-pad" /></Field></View>
               <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.weightPh} keyboardType="decimal-pad" /></Field></View>
+            </View>
             </View>
             <Field label={P.body.activity}>
               <Select<ActivityLevel> label={P.body.activity} value={metrics.activityLevel} options={(Object.keys(ACTIVITY) as ActivityLevel[]).map((k) => [k, ACTIVITY[k].label] as const)} onChange={(v) => setMetrics({ ...metrics, activityLevel: v })} />
@@ -273,9 +279,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
           )}
           {pk.kind === 'target' && (
             <Disclosure soft icon="target" color={FOODF} label={P.targets.row} value={kcalText} open={open === 'targets'} onToggle={() => toggle('targets')}>
+              <View style={{ gap: 10 }}>
               <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.kcal}><Input label={P.targets.kcal} value={targets.kcal} onChangeText={(v) => setTargets({ ...targets, kcal: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.range}><Input label={P.targets.range} value={targets.range} onChangeText={(v) => setTargets({ ...targets, range: v })} keyboardType="number-pad" /></Field></View></View>
               <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.p}><Input label={P.targets.p} value={targets.p} onChangeText={(v) => setTargets({ ...targets, p: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.c}><Input label={P.targets.c} value={targets.c} onChangeText={(v) => setTargets({ ...targets, c: v })} keyboardType="number-pad" /></Field></View></View>
               <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1, minWidth: 0 }}><Field label={P.targets.f}><Input label={P.targets.f} value={targets.f} onChangeText={(v) => setTargets({ ...targets, f: v })} keyboardType="number-pad" /></Field></View><View style={{ flex: 1 }} /></View>
+              </View>
               <Btn title={P.targets.save} onPress={() => {
                 saveTargets({
                   kcal: parseInt(targets.kcal) || data.target.kcal, p: parseInt(targets.p) || data.target.p,
@@ -296,7 +304,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} onSupport={() => setSupportOpen('mind')} />}
 
         <Lbl>{P.groups.tracking}</Lbl>
-        <List icons>
+        <List icons style={LIST}>
           <Disclosure soft icon="pill" color={MINDF} label={P.supps.row} value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
             {(pr.supplements || []).map((s) => (
               <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
@@ -343,7 +351,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
 
         {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
         <Lbl>{P.groups.review}</Lbl>
-        <List icons>
+        <List icons style={LIST}>
           <SettingRow soft icon="review" color={MINDF} label={P.review.day} value={dayName(pr.reviewDay ?? 0)} onPress={() => setReviewDayOpen(true)} />
           <SettingRow soft icon="weight" color={FOODF} label={P.review.weight}
             right={<Toggle label={P.review.weight} on={pr.reviewWeight === true} disabled={!!pr.gentle} onChange={() => setPrefs({ reviewWeight: pr.reviewWeight !== true })} />} />
@@ -352,7 +360,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
 
         <View onLayout={mark('nf')}><Lbl>{P.groups.notifications}</Lbl></View>
         {WELLBEING_ENABLED && <BackoffNotices />}
-        <List icons>
+        <List icons style={LIST}>
           {WELLBEING_ENABLED && <MindReminderRows />}
           <Row wrapSub square={{ icon: 'bell', fill: MINDF, soft: true }} title={P.notify.supps} sub={notifStatus}
             right={<Toggle label={P.notify.supps} on={pr.notificationsEnabled} disabled={!notifReady} onChange={() => undefined /* N12 wires push */} />} />
@@ -365,7 +373,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <Foot>{P.notify.iphone}</Foot>
 
         <Lbl>{ACCOUNT_ROW.heading}</Lbl>
-        <List icons>
+        <List icons style={LIST}>
           <Disclosure soft icon="person" color={GRAY} label={ACCOUNT_ROW.account} open={open === 'account'} onToggle={() => toggle('account')}>
             <Text style={[tx(13), { color: t.label2 }]}>{ACCOUNT_ROW.signedInAs}</Text>
             <Text style={[tx(17), { color: t.label }]}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</Text>
@@ -392,11 +400,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         </List>
 
         <Lbl>{P.groups.testing}</Lbl>
-        <List icons>
+        <List icons style={LIST}>
           <SettingRow soft icon="mail" color={MINDF} label={P.feedbackRow.label} sub={P.feedbackRow.sub} onPress={() => setFeedbackOpen(true)} />
         </List>
 
-        <List icons style={{ marginTop: 24 }}>
+        <List icons style={[LIST, { marginTop: 24 }]}>
           <Disclosure soft icon="info" color={GRAY} label={P.about.row} open={open === 'about'} onToggle={() => toggle('about')}>
             <Sub style={[PROSE, { marginBottom: 10 }]}><Text style={{ fontFamily: GEIST[700] }}>{P.about.name}</Text>{P.about.lead}</Sub>
             <Sub style={PROSE}>{P.about.body}</Sub>
