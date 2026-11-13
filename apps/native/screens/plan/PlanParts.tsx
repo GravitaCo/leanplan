@@ -103,14 +103,22 @@ export function Shade({ stops, color = '#000' }: { stops: [number, number][]; co
   )
 }
 
+/** The y of a CSS `object-position` ("50% 35%" → 0.35), else `dflt`. */
+export const posY = (at: string | undefined, dflt: number) => {
+  const m = at?.match(/^\s*[\d.]+%\s+([\d.]+)%\s*$/)
+  return m ? Number(m[1]) / 100 : dflt
+}
+
 /** The photograph filling its box, cropped where the web puts it (`object-position`: tiles 50% 40%, heroes 50% 45%). */
 export const Photo = ({ art, y = 0.4 }: { art: PlanArt; y?: number }) => (
   <CoverImage source={art} y={y} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
 )
 
 /** `.ptile`: a plan's photograph with its name (Fits your goal on the best fit), or an own plan's card with a dot. */
-export function PlanTile({ name, line, art, fits, big, onPress, style }: {
-  name: string; line: string; art?: PlanArt; fits?: boolean; big?: boolean; onPress: () => void; style?: StyleProp<ViewStyle>
+export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: {
+  name: string; line: string; art?: PlanArt
+  /** a template's own `object-position` ("50% 35%"); the CSS default is 50% 40% */
+  artAt?: string; fits?: boolean; big?: boolean; onPress: () => void; style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const surface = useSurface(t)
@@ -132,23 +140,24 @@ export function PlanTile({ name, line, art, fits, big, onPress, style }: {
   return (
     <Pressable accessibilityRole="button" onPress={onPress}
       style={({ pressed }) => [{ height: h, borderRadius: 22, overflow: 'hidden', backgroundColor: t.sep, opacity: pressed ? 0.85 : 1 }, style]}>
-      <Photo art={art} />
+      <Photo art={art} y={posY(artAt, 0.4)} />
       <Shade stops={[[0, 0], [0.45, 0], [1, 0.72]]} />
-      {fits && <FitsBadge text="Fits your goal" style={{ position: 'absolute', left: 12, top: 12 }} />}
+      {fits && <FitsBadge big={big} text="Fits your goal" style={{ position: 'absolute', left: 12, top: 12 }} />}
       <View style={{ position: 'absolute', left: 12, right: 12, bottom: 11 }}>
         <Text style={[nameText, { color: '#fff' }]}>{name}</Text>
-        <Text style={[tx(12), num, { color: 'rgba(255,255,255,0.85)', marginTop: 2 }]}>{line}</Text>
+        {/* `.ptile.big` also matches the global `.big` (600, line-height 1.1) on the web, so a big tile's line is bold */}
+        <Text style={[big ? tx(12, 600, 1.1) : tx(12), num, { color: 'rgba(255,255,255,0.85)', marginTop: 2 }]}>{line}</Text>
       </View>
     </Pressable>
   )
 }
 
 /** `.fits`: the tint badge on a plan's photograph. */
-export function FitsBadge({ text, style }: { text: string; style?: StyleProp<ViewStyle> }) {
+export function FitsBadge({ text, style, big }: { text: string; style?: StyleProp<ViewStyle>; big?: boolean }) {
   const t = useTokens()
   return (
     <View style={[{ alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 12, backgroundColor: t.tint }, style]}>
-      <Text style={[tx(12, 600), { color: '#fff' }]}>{text}</Text>
+      <Text style={[tx(12, 600, big ? 1.1 : 1.3), { color: '#fff' }]}>{text}</Text>
     </View>
   )
 }
@@ -158,12 +167,12 @@ export function FitsBadge({ text, style }: { text: string; style?: StyleProp<Vie
  * round back button (`.pp-back`) and its caption at the bottom. Full bleed: it sits outside the
  * screen's 16 pt gutter.
  */
-export function PlanHero({ art, height, onBack, children }: { art?: PlanArt; height?: number; onBack: () => void; children: ReactNode }) {
+export function PlanHero({ art, artAt, height, onBack, children }: { art?: PlanArt; artAt?: string; height?: number; onBack: () => void; children: ReactNode }) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
   return (
     <View style={{ height: height ?? (art != null ? 380 : 240), marginHorizontal: -16, marginBottom: 18, backgroundColor: art != null ? t.sep : t.hero }}>
-      {art != null && <Photo art={art} y={0.45} />}
+      {art != null && <Photo art={art} y={posY(artAt, 0.45)} />}
       {art != null && <Shade stops={[[0, 0.3], [0.22, 0], [0.5, 0], [1, 0.65]]} />}
       <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack}
         style={({ pressed }) => ({ position: 'absolute', left: 16, top: insets.top + 14, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>

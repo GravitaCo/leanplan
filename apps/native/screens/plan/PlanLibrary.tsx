@@ -79,7 +79,7 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
     ...(f.madeBy ?? []).map((x) => ({ label: MADE.find(([k]) => k === x)![1], clear: () => setF({ ...f, madeBy: f.madeBy!.filter((y) => y !== x) }) })),
   ] : []
   const tile = (e: CatalogueEntry, big = false) => (
-    <PlanTile key={e.key} name={e.name} line={e.line} art={planArt(e.template?.id ?? e.plan?.baseTemplateId)} fits={!!best && e.template === best} big={big} onPress={() => onOpen(e)}
+    <PlanTile key={e.key} name={e.name} line={e.line} art={planArt(e.template?.id ?? e.plan?.baseTemplateId)} artAt={e.template?.artAt} fits={!!best && e.template === best} big={big} onPress={() => onOpen(e)}
       style={big ? { marginBottom: 12 } : { width: '48.5%' }} />
   )
   const goalChip = (g: Goal | null, label: string) => {
@@ -186,7 +186,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
         <Btn title="Start plan" onPress={() => onStart(start)} style={{ minHeight: 54, borderRadius: 27 }} />
       </View>
     }>
-      <PlanHero art={art} onBack={onBack}>
+      <PlanHero art={art} artAt={tp?.artAt} onBack={onBack}>
         {fitsHere && <FitsBadge text={`Fits your goal: ${goalLabel(profile.goal)}`} style={{ marginBottom: 8 }} />}
         <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.02), { color: '#fff' }]}>{entry.name}</Text>
         <Text style={[tx(15), num, { color: 'rgba(255,255,255,0.92)' }]}>{entry.line}</Text>
