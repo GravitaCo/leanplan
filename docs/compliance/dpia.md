@@ -813,6 +813,30 @@ settings (register item 45, branch `claude/wellbeing-b12-b13`), both behind `WEL
 |---|---|---|
 | 8.8 approved by | | Before `WELLBEING_ENABLED` goes on with B11b. |
 
+**Proposed APNs addendum to 8.8 (compliance, 13 November 2026, not signed; native-build-plan N12).**
+The iPhone app gets its reminders through Apple's push service (APNs), where the alert is protected
+in transit (TLS) but not end to end: Apple can read it. So 8.8's measure "the payload is encrypted
+end to end, so the push service can't read it" holds for the web only. Proposed new risk:
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R19 | **Through Apple's push service the reminder text** (and supplement names, if they were sent) **and its timing are readable by Apple**, which can link them to the person's Apple ID. The wind-down reminder's timing says something about the person's sleep routine. | Remote | Significant | Low to medium |
+
+  Proposed measures, all built on `native/n12-notifications`: fixed copy only, the same as the web
+  (`_shared/apns.ts` `shownCopy`, checked against `public/sw.js` in `npm test`); supplement names are
+  never sent to APNs (`forApns`) unless the function's `APNS_SUPP_NAMES` secret is set to "on",
+  which waits for this addendum to be signed and for the toggle's footer to say that in the iPhone
+  app Apple's push service can read the names (copy for Benn or Sara, through `design`);
+  `apns-expiration` one hour, so Apple holds a reminder's text for an hour at most; the function
+  logs status codes only; the privacy policy says Apple can read iPhone reminders (gated on
+  `native`). Open: Apple's role and data terms for APNs under the Apple Developer Program License
+  Agreement, and the transfer mechanism (Apple Inc., US). An alternative that removes R19 is a
+  Notification Service Extension that decrypts an encrypted payload on the phone (noted only).
+
+| Item | Name and date | Notes |
+|---|---|---|
+| APNs addendum approved by | | Before the iPhone app reaches anyone outside Gravita's core team, and before `APNS_SUPP_NAMES` is set. |
+
 ### 8.9 Mind on, then skills on for testing (compliance, 10 October 2026; approved by Benn the same day)
 
 Sections 8.1 to 8.7 are as signed and are not changed by this note. On 10 October 2026 Benn turned
