@@ -17,7 +17,7 @@ import { NATIONS, SIGNPOSTS, beatFor } from '@/core/data/signposts'
 import { NOTES } from '@/screens/onboarding/copy'
 import type { SP } from '@/screens/onboarding/Signposts'
 import { BTN, num, tx, useTokens } from '../theme'
-import { Btn, LinkBtn, useSurface } from '../ui/kit'
+import { Btn, LinkBtn } from '../ui/kit'
 import { Icon } from '../ui/icons'
 import { openLink } from './legal'
 import { DeleteConfirmSheet } from './Delete'
@@ -45,7 +45,8 @@ const tel = (n: string) => 'tel:' + n.replace(/\s/g, '')
  */
 export function Signposts({ list }: { list: (SP & { sms?: string })[] }) {
   const t = useTokens()
-  const bg = useSurface(t)
+  // .wz-group is on --card, in a sheet too (only .sheet .list and .card move to --elev)
+  const bg = t.card
   const name = [tx(16), { color: t.label }]
   const desc = [tx(13, 400, 1.35), { color: t.label2 }]
   const n = [tx(16, 600), num, { color: t.tint }]
@@ -149,7 +150,7 @@ export function UnderAgeStop({ source, onWrong }: { source: UnderAgeSource; onWr
  */
 export function Opts<K extends string>({ opts, value, onPick, label }: { opts: readonly (readonly [K, string])[]; value: K | undefined; onPick: (v: K) => void; label: string }) {
   const t = useTokens()
-  const bg = useSurface(t)
+  const bg = t.card // .wz-opts, as .wz-group
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ backgroundColor: bg, borderRadius: t.radius, overflow: 'hidden' }}>
       {opts.map(([k, l], i) => {
