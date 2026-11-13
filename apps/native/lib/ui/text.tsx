@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react'
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
-import { tx, useTokens } from '../theme'
+import { BODY_TRACK, BTN, tx, useTokens } from '../theme'
 import { LinkBtn } from './kit'
 
 /** `.lbl`: 13 pt medium, --label2, padding 18 4 8. `style` for a screen's own padding (`.mind-lbl-first`). */
@@ -21,11 +21,15 @@ export function Lbl({ children, right, style }: { children: ReactNode; right?: R
 }
 
 /** `.grp-h`: a 20 pt section heading; on the right an optional `small` note at 14 pt, or a `link`. */
-export function GrpH({ children, small, link }: { children: ReactNode; small?: ReactNode; link?: { title: string; onPress: () => void; label?: string } }) {
+export function GrpH({ children, small, link, h2 }: {
+  children: ReactNode; small?: ReactNode; link?: { title: string; onPress: () => void; label?: string }
+  /** `<h2 class="grp-h">`: keeps the browser's h2 margins (0.83em of 20, 16.6 above and below) and is a heading */
+  h2?: boolean
+}) {
   const t = useTokens()
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 22, paddingHorizontal: 4, paddingBottom: 8 }}>
-      <Text style={[tx(20, 600, 1.3, -0.01), { color: t.label }]}>{children}</Text>
+    <View style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 22, paddingHorizontal: 4, paddingBottom: 8 }, h2 && { marginVertical: 16.6 }]}>
+      <Text accessibilityRole={h2 ? 'header' : undefined} style={[tx(20, 600, 1.3, -0.01), { color: t.label }]}>{children}</Text>
       {small != null && <Text style={[tx(14, 400, 1.3, 0), { color: t.label2 }]}>{small}</Text>}
       {/* a .linkbtn (padding 6 4, a 44 pt touch area), as FoodScreen's "Manage" */}
       {link && <LinkBtn title={link.title} onPress={link.onPress} label={link.label} />}
@@ -86,13 +90,15 @@ export function Empty({ children, status }: { children: ReactNode; status?: bool
  * A web `<button>`, so a button for VoiceOver, with the web's aria-label and expanded state when
  * it opens something in place.
  */
-export function TextLink({ children, onPress, label, expanded, style }: {
+export function TextLink({ children, onPress, label, expanded, style, inButton }: {
   children: ReactNode; onPress: () => void; label?: string; expanded?: boolean; style?: StyleProp<TextStyle>
+  /** inside a web <button>, whose text the browser doesn't track */
+  inButton?: boolean
 }) {
   const t = useTokens()
   return (
     <Text accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }}
-      onPress={onPress} suppressHighlighting={false} style={[{ color: t.tint }, style]}>{children}</Text>
+      onPress={onPress} suppressHighlighting={false} style={[{ color: t.tint, letterSpacing: inButton ? BTN : BODY_TRACK }, style]}>{children}</Text>
   )
 }
 

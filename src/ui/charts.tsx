@@ -2,6 +2,7 @@
 import type { DayStat } from '@/core/domain/insights'
 
 import { DOW } from '@/core/domain/date'
+import { UI } from '@/copy/ui'
 
 /** Concentric rings, outermost first. Progress caps at a full ring — never an "over" state. */
 export function Rings({ items, size, stroke }: { items: { pct: number; color: string }[]; size: number; stroke?: number }) {
@@ -63,7 +64,7 @@ export function MacroTrio({ p, c, f, tp, tc, tf }: { p: number; c: number; f: nu
       <span className="s num">of {goal} g</span>
     </div>
   )
-  return <div className="mtrio">{col('Protein', p, tp)}{col('Carbs', c, tc)}{col('Fat', f, tf)}</div>
+  return <div className="mtrio">{col(UI.protein, p, tp)}{col(UI.carbs, c, tc)}{col(UI.fat, f, tf)}</div>
 }
 
 export function Sparkline({ values, w, h, color }: { values: number[]; w: number; h: number; color: string }) {

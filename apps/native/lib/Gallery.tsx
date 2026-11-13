@@ -7,15 +7,19 @@
  * For Benn, Sara and the team only (opened from the Spike sheet); never part of the app.
  */
 import { useState, type ReactNode } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Modal, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, Chip, Chips, List, Note, Tile, ToastHost, ToastView } from './ui/kit'
-import { AddC, Row, XBtn, BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
+import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, LinkBtn, List, Note, RoundBtn, Stack, Tile, ToastHost, ToastView } from './ui/kit'
+import { Scale, Select, Slider, Stepper } from './ui/controls'
+import { PickerSheet, TimeField } from './ui/pickers'
+import { CoverImage } from './ui/CoverImage'
+import { frac } from '@/core/domain/estimate'
+import { AddC, Row, Swatch, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
 import { TabBarView } from './ui/TabBar'
@@ -25,6 +29,8 @@ import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
 import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
+import { Check, ConsentRow, Opts, Signposts, Ticks } from './ui/choices'
+import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -55,7 +61,25 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [areas, setAreas] = useState<string[]>(['knees'])
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
+  const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [consentA, setConsentA] = useState(true)
+  const [consentB, setConsentB] = useState(false)
+  const [kitOpts, setKitOpts] = useState<string[]>(['db'])
+  const [mult, setMult] = useState(1.5)
+  const [serv, setServ] = useState('1')
+  const [mood, setMood] = useState(3)
+  const [hand, setHand] = useState('palm')
+  const [count, setCount] = useState(1.5)
+  const [cardio, setCardio] = useState('Brisk walk')
+  const [activity, setActivity] = useState('moderate')
+  const [wake, setWake] = useState('07:00')
+  const [day, setDay] = useState('')
+  const [dateOpen, setDateOpen] = useState(false)
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
+  // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
+  const [player, setPlayer] = useState(false)
+  const [overSheet, setOverSheet] = useState(false)
+  const overlayOpen = useOverlayOpen()
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -308,6 +332,142 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <SearchBar label="Search plans" placeholder="Search plans" onChangeText={() => {}} />
       </Sec>
 
+      <Sec id="opts" title="Opts (one answer; several)">
+        <View style={{ gap: 16 }}>
+          <Opts label="How often" opts={G.opts} value={oneOpt} onPick={setOneOpt} />
+          <Opts label="Your kit" opts={G.kit} value={kitOpts} onPick={(k) => setKitOpts((x) => flip(x, k))} multi />
+        </View>
+      </Sec>
+
+      <Sec id="ticks" title="Ticks · Check (on, off, small)">
+        <Ticks items={G.ticks} />
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+          <Check on /><Check on={false} /><Check on sm /><Check on={false} sm />
+        </View>
+      </Sec>
+
+      <Sec id="signposts" title="Signposts">
+        <View style={{ gap: 10 }}>
+          <Signposts list={supportList('england')} />
+          <Signposts list={G.beatLines} />
+        </View>
+      </Sec>
+
+      <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
+        <List>
+          <ConsentRow on={consentA} onChange={setConsentA} label="I agree to Tilo storing and using my health information, as the privacy policy explains.">
+            I agree to Tilo storing and using my health information, as the <TextLink onPress={() => {}}>privacy policy</TextLink> explains.
+          </ConsentRow>
+          <ConsentRow on={consentB} onChange={setConsentB} label="I’m 18 or over.">I’m 18 or over.</ConsentRow>
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <Row wrap title="Delete your account and everything in it, on every device" sub="This can’t be undone. Download a copy first if you want one." />
+          <SettingRow icon="camera" color={t.tint} label="Take a photo" accessibilityLabel="Take a photo of the barcode" onPress={() => {}} />
+        </List>
+        <View style={{ marginTop: 10, gap: 10 }}>
+          <BackButton small onPress={() => {}} label="Profile" />
+          <Banner title="Your data is safe on this phone." body="Sign in again to back it up." />
+          <Btn title="Continue" iconAfter="chevR" onPress={() => {}} />
+          <View style={{ backgroundColor: t.tint, borderRadius: t.radius, padding: 16, alignItems: 'center' }}><TaliMark width={90} color="#ffffff" /></View>
+        </View>
+      </Sec>
+
+      <Sec id="insets" title="List inset (72: library rows; 0: Today list)">
+        <View style={{ gap: 10 }}>
+          <List inset={72}>
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Goblet squat" sub="Legs · dumbbell" style={{ minHeight: 64 }} onPress={() => {}} />
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Push-up" sub="Chest · body weight" style={{ minHeight: 64 }} onPress={() => {}} />
+          </List>
+          <List inset={0} style={{ borderRadius: 20 }}>
+            <Row title="Full body" sub="6 exercises" onPress={() => {}} />
+            <Row title="Walk" sub="30 min" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
+      <Sec id="p4" title="Slider · Stepper · Scale (servings; check-in) · chips with hints · Select">
+        <Card plain>
+          <Big center value={String(Math.round(412 * mult))} unit="kcal" />
+          <Slider min={0.25} max={3} step={0.05} value={mult} onChange={setMult} label="Portion size" style={{ marginTop: 12 }} />
+        </Card>
+        <View style={{ marginTop: 10 }}><Scale items={G.serv} value={serv} onPick={setServ} /></View>
+        <View style={{ marginTop: 10 }}><Scale tall items={G.moods} value={mood} onPick={setMood} /></View>
+        <View style={{ marginTop: 10 }}>
+          <Chips>{G.hands.map(([k, l, h]) => <Chip key={k} title={l} sub={h} on={hand === k} onPress={() => setHand(k)} />)}</Chips>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+          <Text style={[tx(17), { color: t.label }]}>How many</Text>
+          <Stepper value={frac(count)} decLabel="Fewer" incLabel="More" onDec={() => setCount(Math.max(0.5, count - 0.5))} onInc={() => setCount(Math.min(6, count + 0.5))} />
+        </View>
+        <List style={{ marginTop: 14 }}>
+          <FRow label="Type" right={<Select row label="Type" value={cardio} options={G.cardio} onChange={setCardio} />} />
+        </List>
+        <View style={{ marginTop: 10 }}>
+          <Field label="Activity level"><Select label="Activity level" value={activity} options={G.activity} onChange={setActivity} /></Field>
+        </View>
+      </Sec>
+
+      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          <RoundBtn label="Add food" onPress={() => {}} />
+          <NavBtn icon="barcode" label="Scan barcode" style={{ paddingHorizontal: 2 }} onPress={() => {}} />
+          <NavBtn icon="x" muted label="Delete Oat porridge" onPress={() => {}} />
+        </View>
+        <DashAdd title="Breakfast" stroke={2.6} onPress={() => {}} />
+        <DashAdd title="Add a workout" onPress={() => {}} />
+        <View style={{ marginTop: 12 }}><Btn kind="link" title="Save as new" onPress={() => {}} /></View>
+        <Note action={{ title: 'Try again', kind: 'tinted', onPress: () => {} }}>The label couldn’t be read. Try again in better light.</Note>
+        <List style={{ marginTop: 10 }}>
+          <Row k="Yours" title="Oat porridge" />
+          <Row k="From the shared list" title="Oats, porridge, made with semi-skimmed milk" />
+        </List>
+        <Card plain style={{ marginTop: 10 }}><Big value="412" unit="kcal" pm="± 40" /></Card>
+        <List style={{ marginTop: 10 }}>
+          <FRow label="Palm" hint="Meat, fish, tofu" value="100" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
+          <FRow label="Thumb" hint="Oil, butter, nut butter" value="12" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
+        </List>
+      </Sec>
+
+      <Sec id="pickers" title="Time fields (tap for the wheels; both disabled) · a date in a sheet">
+        <List>
+          <FRow label="Wake time" right={<TimeField muted label="Wake time" value={wake} onChange={setWake} />} />
+          <FRow label="Wind down" right={<TimeField muted label="Wind down" value="21:30" onChange={() => {}} />} />
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <FRow label="Wake up" right={<TimeField muted disabled label="Wake up" value="07:00" onChange={() => {}} />} />
+          <FRow label="Wind-down" right={<TimeField muted disabled label="Wind-down" value="21:30" onChange={() => {}} />} />
+        </List>
+        <View style={{ marginTop: 10 }}><Btn kind="gray" label="Pick a start date" title={day ? `Starts ${day}` : 'Pick a date'} onPress={() => setDateOpen(true)} /></View>
+        {dateOpen && <PickerSheet mode="date" value={day} min="2026-11-13" max="2027-11-13" label="Pick a start date" onDone={setDay} onClose={() => setDateOpen(false)} />}
+      </Sec>
+
+      <Sec id="kit2" title="Stack · flat links · XBtn with chevrons · Swatch rows">
+        <Stack style={{ marginTop: 0 }}>
+          <Btn title="Start" onPress={() => {}} />
+          <Btn kind="gray" title="Not today" onPress={() => {}} />
+        </Stack>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 14 }}>
+          <LinkBtn flat title="How to do it" onPress={() => {}} />
+          <LinkBtn flat title="+ Add a set" onPress={() => {}} />
+          <LinkBtn title="Remove" color={t.red} onPress={() => {}} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 }}>
+          <XBtn icon="chevL" rotate={90} label="Move Goblet squat up" onPress={() => {}} />
+          <XBtn icon="chevR" rotate={90} label="Move Goblet squat down" onPress={() => {}} />
+          <XBtn icon="chevR" rotate={90} disabled label="Move Plank down" onPress={() => {}} />
+        </View>
+        <List style={{ marginTop: 14 }}>
+          <Row lead={<Swatch color={t.moveFill} />} title="Strength" sub="Full body, lower, upper" onPress={() => {}} />
+          <Row lead={<Swatch sm color={t.foodFill} />} title="Eating" value="Maintenance" />
+        </List>
+      </Sec>
+
+      <Sec id="cover" title="CoverImage (50% 30%) · GrpH as h2">
+        <CoverImage source={require('../assets/auth-hero.jpg')} x={0.5} y={0.3} style={{ height: 160, borderRadius: 16 }} />
+        <GrpH h2>This week</GrpH>
+        <List><Row title="Monday" value="Push" /></List>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <View style={{ gap: 10 }}>
           <Banner icon="leaf" iconColor={t.mindInk} title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." onDismiss={() => {}} />
@@ -330,6 +490,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <View style={{ gap: 8 }}>
           <Btn kind="gray" title="Open a sheet" onPress={() => setSheet('sheet')} />
           <Btn kind="gray" title="Open a bare sheet" onPress={() => setSheet('bare')} />
+          <Btn kind="gray" title="Open a full-screen view" onPress={() => setPlayer(true)} />
         </View>
       </Sec>
 
@@ -354,6 +515,22 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </BareSheet>
       )}
     </ScrollView>
+    {/* Android's back closes an overlay sheet first, then the view (overlayBack) */}
+    <Modal visible={player} animationType="none" onRequestClose={() => { if (!overlayBack()) setPlayer(false) }}>
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {/* the holder's own content, hidden from TalkBack while an overlay sheet is open */}
+        <View importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'} style={{ flex: 1, padding: 24, paddingTop: 80, gap: 12 }}>
+          <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
+          <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
+          <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+        </View>
+        {overSheet && (
+          <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
+            <List icons><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
+          </Sheet>
+        )}
+      </View>
+    </Modal>
     {standalone && <ToastHost />}
     </>
   )

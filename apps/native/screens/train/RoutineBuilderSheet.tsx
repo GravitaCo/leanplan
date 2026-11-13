@@ -4,7 +4,7 @@
  * length are suggestions and never stop a save. Exported for Plan (stream N8), which opens it.
  */
 import { useState } from 'react'
-import { TextInput, View } from 'react-native'
+import { Text, TextInput, View } from 'react-native'
 import { useStore } from '@/store/store'
 import type { Routine, RoutineSlot } from '@/core/types'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
@@ -12,10 +12,11 @@ import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKe
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { LibrarySheet } from './LibrarySheet'
 import { Btn, List } from '../../lib/ui/kit'
-import { NavBtn, SettingRow, Sheet } from '../../lib/ui/primitives'
-import { font, useTokens } from '../../lib/theme'
+import { NavBtn, SettingRow, Sheet, XBtn as RemoveBtn } from '../../lib/ui/primitives'
+import { font, tx, useTokens } from '../../lib/theme'
 import { Foot, GrpH } from '../../lib/ui/text'
-import { FInput, FRow, LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
+import { FRow } from '../../lib/ui/fields'
+import { Stack, XBtn } from './ui'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -53,29 +54,31 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
   }
   return (
     <Sheet title={r ? 'Edit workout' : 'New workout'} onClose={onClose} tall right={<NavBtn bold title="Save" onPress={save} disabled={!slots.length} />}>
-      <List style={LIST_GAP}>
-        <FRow label="Name"><FInput value={name} placeholder="My workout" maxLength={120} onChangeText={setName} accessibilityLabel="Name" /></FRow>
+      <List style={{ marginBottom: 8 }}>
+        <FRow label="Name" value={name} placeholder="My workout" maxLength={120} onChangeText={setName} />
       </List>
 
       <GrpH>{`Exercises${slots.length ? ` · about ${aboutMins(estMins(normalised, { warmup: ONBOARDING_ENABLED, mins: r ? warmupMinsForKey(r.id, routines, training) : undefined }))} min` : ''}`}</GrpH>
       {slots.length > 0 && (
-        <List style={LIST_GAP}>
+        <List style={{ marginBottom: 8 }}>
           {slots.map((s, i) => {
             const x = EXERCISE_BY_ID[s.exId]
             const nm = x?.n ?? 'exercise'
             return (
-              <Li key={i}>
-                <LiText t={x?.n ?? 'Exercise not in this version of Tilo'}>
+              // `.li` with a field under the name, so not lib/ui's Row (its sub is text)
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{x?.n ?? 'Exercise not in this version of Tilo'}</Text>
                   <TextInput value={s.rx ?? ''} placeholder={x?.defaultRx ?? 'Sets and reps'} placeholderTextColor={t.label3} accessibilityLabel={`Sets and reps for ${x?.n ?? 'this exercise'}`}
                     onChangeText={(v) => setSlots((p) => p.map((y, j) => (j === i ? { ...y, rx: v || undefined } : y)))}
                     style={[font(400), { marginTop: 6, fontSize: 15, color: t.label, backgroundColor: t.fill, borderRadius: 10, paddingVertical: 7, paddingHorizontal: 10 }]} />
-                </LiText>
+                </View>
                 <View style={{ flexDirection: 'row', gap: 6, marginLeft: 8 }}>
                   <XBtn icon="chevL" rotate={90} label={`Move ${nm} up`} disabled={i === 0} onPress={() => move(i, -1)} />
                   <XBtn icon="chevR" rotate={90} label={`Move ${nm} down`} disabled={i === slots.length - 1} onPress={() => move(i, 1)} />
-                  <XBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
+                  <RemoveBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
                 </View>
-              </Li>
+              </View>
             )
           })}
         </List>
