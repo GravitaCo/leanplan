@@ -50,7 +50,8 @@ function chainFoods() {
     const one = (f) => f.ref && f.ref.g === f.g
     console.log(JSON.stringify(chain.map((f) => ({ n: f.n, src: f.src, each: !!f.each,
       published: Math.round(one(f) ? f.ref.k : derived(f, 'k')),
-      macros: one(f) ? { p: f.ref.p, c: f.ref.c, f: f.ref.f } : null }))))`
+      // only the macros the chain publishes (some refs carry kcal alone)
+      macros: one(f) ? Object.fromEntries(['p', 'c', 'f'].filter((x) => typeof f.ref[x] === 'number').map((x) => [x, f.ref[x]])) : null }))))`
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tilo-chain-'))
   const out = path.join(dir, 'chain.cjs')
   fs.writeFileSync(path.join(dir, 'chain.ts'), src)
@@ -253,7 +254,8 @@ async function run() {
       if (after) await after()
       for (const a of [w, n]) await close(a)
     }
-    await sheet('margin', (a) => btn(a, 'About this estimate').click())
+    // the ± is shown only with numbers
+    if (view === 'numbers') await sheet('margin', (a) => btn(a, 'About this estimate').click())
     await sheet('same as yesterday', (a) => a.page.getByText('Same as yesterday', { exact: true }).click())
     await sheet('log a recipe', async (a) => {
       await a.page.getByText('What can I make?', { exact: true }).click(); await sheetOpen(a); await a.page.waitForTimeout(450)
@@ -329,7 +331,7 @@ async function run() {
       // kcal to the whole number shown, macros to the 0.1 g the entry keeps (within rounding)
       const e1 = entries[1]?.[0]
       const near = (a, b) => Math.abs(Math.round(a * 10) / 10 - Math.round(b * 10) / 10) <= 0.1
-      const pub = ch ? Math.round(e1?.k) === ch.published && (!ch.macros || (near(e1.p, ch.macros.p) && near(e1.c, ch.macros.c) && near(e1.f, ch.macros.f))) : true
+      const pub = ch ? Math.round(e1?.k) === ch.published && (!ch.macros || Object.entries(ch.macros).every(([x, v]) => near(e1[x], v))) : true
       if (!ok || !pub) check(`log one serving of ${food}`, false, { web: entries[0], native: entries[1], published: ch?.published })
       else logged++
     }
@@ -435,7 +437,8 @@ async function run() {
       await same('recipe builder: type 0.5 as an amount', w, n, async (a) => {
         const box = a.page.getByLabel('Olive oil amount')
         await box.fill(''); await box.pressSequentially('0.5'); await a.page.waitForTimeout(200)
-        return { box: await box.inputValue(), sheet: await text(a, a.app.sheet) }
+        // the web's number box shows a cleared 0 before the typing ("00.5"); both read 0.5, so compare what follows from it
+        return text(a, a.app.sheet)
       })
       await done(w, n, 'builder search')
     }
