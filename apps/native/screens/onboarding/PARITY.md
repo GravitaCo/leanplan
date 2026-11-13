@@ -20,7 +20,8 @@ numbers against `startingTargets`, **[V]** what Start saves. The screenshots it 
   checks (`src/data/firstRun.ts`, 5046b39), each screen's answers and the draft rules
   (`core/domain/wizardAnswers.ts`, f88f100), the summary's view logic
   (`src/screens/onboarding/summaryModel.ts`, 3a06c1e), find your weight's step and aim
-  (`core/domain/guided.ts`, ae1d7fe); the parity script.
+  (`core/domain/guided.ts`, ae1d7fe), and the words that were inline in the web screens
+  (`src/copy/onboarding.ts` WIZ, SUMMARY_UI, BUILD_PLAN, 3b40098); the parity script.
 - Waiting for N1 (`apps/native/lib/ui`): every screen. A first version built on local stand-ins
   passed every parity check (commit 58010b7 on this branch's history, before the rebase) and was
   withdrawn on the lead's instruction: screens compose N1's primitives only.
