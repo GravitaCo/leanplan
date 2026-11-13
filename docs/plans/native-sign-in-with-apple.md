@@ -14,7 +14,7 @@ increments: token revocation on deletion, and the privacy policy naming Apple. L
   privacy-focused login, which Sign in with Apple meets (security-data, 12 Nov; native-build-plan §4
   N2 "store blocker"). Without it the iOS build is likely to be rejected at review [I: the guideline
   allows other equivalents; Apple's own is the common route].
-- Android doesn't need it, and `expo-apple-authentication` is iOS only [E: Expo SDK 58 docs].
+- Android doesn't need it, and Apple's framework is iOS only.
 
 ## What the person sees (for the board)
 
@@ -31,9 +31,10 @@ increments: token revocation on deletion, and the privacy policy naming Apple. L
 
 ## Technical plan
 
-1. `npx expo install expo-apple-authentication`; `ios.usesAppleSignIn: true` in app.json (adds the
-   `com.apple.developer.applesignin` entitlement; needs the capability on the `fit.tilo.app` App ID,
-   which EAS can sync [I]). A new dev build.
+1. `modules/tilo-auth` (built): our own Swift on AuthenticationServices (ASAuthorizationController
+   and the system ASAuthorizationAppleIDButton), with a config plugin adding the
+   `com.apple.developer.applesignin` entitlement (in app.json's plugins). The capability on the
+   `fit.tilo.app` App ID: EAS can sync it [I]. Needs a new dev build.
 2. Supabase: enable the Apple provider, with the bundle ID `fit.tilo.app` as an authorised client ID
    for native ID-token sign-in [I: Supabase dashboard; the lead or Benn changes project settings, never
    this stream]. No redirect URL is needed for the native flow.
