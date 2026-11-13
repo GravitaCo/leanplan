@@ -102,7 +102,7 @@ export function Signposts({ list, support }: {
   const desc = (s: SupportRow) => <Text style={[tx(13, 400, 1.35), { color: t.label2 }]}>{s.desc}</Text>
   const n = (s: string) => <Text style={[tx(16, 600), num, { color: t.tint }]}>{s}</Text>
   const webLink = (s: SupportRow) => s.web ? (
-    <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 10, bottom: 10 }} style={{ alignSelf: 'flex-start', marginTop: 2 }}>
+    <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 14, bottom: 14 }} style={{ alignSelf: 'flex-start', marginTop: 2 }}>
       <Text style={[tx(13, 500), { color: t.tint }]}>{s.webLabel ?? 'Webchat and email'}</Text>
     </Pressable>
   ) : null
