@@ -287,7 +287,7 @@ function WzSeg<T extends string | boolean>({ label, opts, value, onChange }: { l
         const on = value === k
         return (
           <Pressable key={String(k)} accessibilityRole="radio" aria-checked={on} onPress={() => onChange(k)} hitSlop={slop(0, 38)}
-            style={{ flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: 9, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
+            style={{ flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
             <Text style={[tx(15, 500, 1.25, BTN), { color: on ? t.label : t.label2, textAlign: 'center' }]}>{x}</Text>
           </Pressable>
         )
@@ -398,7 +398,8 @@ function Wellbeing({ f }: P) {
   const pick = (v: WellbeingAnswer) => { setA(v); const o = { ...d.outcomes, wellbeing: wellbeingOutcome(v) }; advance(() => go({ outcomes: o })) }
   return (
     <Frame step="wellbeing" back={back} onSkip={() => go(withoutOutcome(d, 'wellbeing'))} cta={<TapFoot />}>
-      <WzCard style={{ paddingVertical: 18 }}><Text style={[tx(19, 500, 1.4), { color: t.label }]}>{WELLBEING_STATEMENT}</Text></WzCard>
+      {/* `.wz-state`'s 18 loses to `.wz-card`'s 14 on web */}
+      <WzCard><Text style={[tx(19, 500, 1.4), { color: t.label }]}>{WELLBEING_STATEMENT}</Text></WzCard>
       <ChoiceTiles label={WIZ.foodAndWeight} opts={tiles(WELLBEING_OPTIONS)} value={a} onPick={pick} />
     </Frame>
   )
@@ -503,8 +504,15 @@ function Weight({ f }: P) {
 }
 
 /** `.wz-link.sm`: a centred tinted link under the tiles. */
-const SmLink = ({ title, onPress }: { title: string; onPress: () => void }) =>
-  <LinkBtn title={title} onPress={onPress} style={{ fontSize: 15, textAlign: 'center', paddingVertical: 4 }} />
+function SmLink({ title, onPress, pressed }: { title: string; onPress: () => void; pressed?: boolean }) {
+  const t = useTokens()
+  // a LinkBtn that can carry aria-pressed (enjoy's "Not sure yet", as on web)
+  return (
+    <Pressable accessibilityRole="button" aria-pressed={pressed} onPress={onPress} hitSlop={8} style={({ pressed: p }) => ({ alignSelf: 'center', opacity: p ? 0.7 : 1 })}>
+      <Text style={[tx(15, 500, 1.3, BTN), { color: t.tint, textAlign: 'center', paddingVertical: 4, paddingHorizontal: 4 }]}>{title}</Text>
+    </Pressable>
+  )
+}
 
 function Move({ f }: P) {
   const { d, go, back } = f
@@ -552,7 +560,7 @@ function Chips<T extends string>({ f, step, opts, value, none, clear }: P & { st
   return (
     <Frame step={step} back={f.back} onSkip={() => f.go(clear)} cta={<Cta onClick={() => f.go(v.length ? { [field]: v } as Partial<WizardDraft> : clear)} />}>
       <CheckTiles grid tall={step === 'enjoy'} label={COPY[step]?.title ?? step} opts={tiles(shown)} value={v} onToggle={(k) => setV(toggleExclusive(v, k, none))} />
-      {noneLink && <SmLink title={noneLabel} onPress={() => f.go({ [field]: [none] } as Partial<WizardDraft>)} />}
+      {noneLink && <SmLink title={noneLabel} pressed={v.includes(none)} onPress={() => f.go({ [field]: [none] } as Partial<WizardDraft>)} />}
     </Frame>
   )
 }

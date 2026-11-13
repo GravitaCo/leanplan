@@ -26,7 +26,7 @@ function Stub({ redo, onWrong, onClose }: { redo: boolean; onWrong: () => void; 
   return (
     <Page top={110} cta={<>
       <Btn title={redo ? NOTES.underAge.close : 'Close'} onPress={redo ? () => {} : onClose} disabled={busy} style={OB_BTN} />
-      <LinkBtn title={NOTES.underAge.wrong} onPress={() => { if (redo) underAgeMistake(); onWrong() }} style={{ fontSize: 16, textAlign: 'center' }} />
+      <LinkBtn title={NOTES.underAge.wrong} onPress={() => { if (redo) underAgeMistake(); onWrong() }} style={{ fontSize: 16, textAlign: 'center', paddingVertical: 4 }} />
     </>}>
       <ScreenH style={{ marginTop: 0 }}>{c.title}</ScreenH>
       <Lead body ink>{c.lead}</Lead>

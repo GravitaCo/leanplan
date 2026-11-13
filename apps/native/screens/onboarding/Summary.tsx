@@ -111,7 +111,8 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
                 )
               })}
             </View>
-            <Text style={[tx(14), { color: t.label2, textAlign: 'center' }]}>{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</Text>
+            {/* `.sm-strip .w`: theme.css's global `.w` makes it 600 on web */}
+            <Text style={[tx(14, 600), { color: t.label2, textAlign: 'center' }]}>{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</Text>
           </View>
 
           {/* the reasons are the generated week's: a chosen Tilo plan has its own (Plan tab) */}
@@ -124,7 +125,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {chips.map((x) => (
                   <Pressable key={x.key} accessibilityRole="button" onPress={() => setRow(x)} style={{ paddingVertical: 9, paddingHorizontal: 12, borderRadius: 16, backgroundColor: t.bg }}>
-                    <Text style={[tx(14, 500, 1.3, BTN), { color: t.label }]}>{x.title}</Text>
+                    <Text style={[tx(14, 500, 18, BTN), { color: t.label }]}>{x.title}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -359,7 +360,7 @@ function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: Sum
           <Text style={[tx(16, 600, 1.3, BTN), { color: t.label }]}>{OTHERS.mine}</Text>
           <Text style={[tx(13, 400, 1.3, BTN), num, { color: t.label2 }]}>{mine}</Text>
         </View>
-        {!chosen && <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.label, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={14} stroke={2.6} color={t.card} /></View>}
+        {!chosen && <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.label, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={20} stroke={2.6} color={t.card} /></View>}
         {/* `.sm-mine.on`: an inset 2 pt ring that doesn't move the layout */}
         {!chosen && <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: t.radius, borderWidth: 2, borderColor: t.tint }} />}
       </Pressable>

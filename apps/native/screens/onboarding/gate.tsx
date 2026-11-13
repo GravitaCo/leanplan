@@ -38,7 +38,9 @@ export function useOnboardingGate(opts: { ageStop?: AgeStopRender } = {}): React
   if (due === 'wait' && !waited) return <Notice title="Loading…" />
   showing.current = !!due
   if (due) return <Onboarding mode="first" ageStop={opts.ageStop} />
-  if (redoOpen) return <Onboarding mode="first" redo ageStop={opts.ageStop} onClose={() => openRedo(false)} />
+  // Redo setup can reach the 18+ stop on an existing account, which needs N2's stop (the account
+  // deletion): without one it never opens (mental-performance, compliance)
+  if (redoOpen && opts.ageStop) return <Onboarding mode="first" redo ageStop={opts.ageStop} onClose={() => openRedo(false)} />
   if (setupOpen) return <Onboarding mode="setup" ageStop={opts.ageStop} onClose={() => openSetup(false)} />
   return null
 }

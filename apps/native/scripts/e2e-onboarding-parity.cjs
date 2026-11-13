@@ -341,10 +341,10 @@ async function summary(page, rec, { sheets } = {}) {
     return { kcal: g('kcal'), estimate: g('estimate'), diff: g('diff') }
   })
   if (sheets) {
-    if (await btn(page, 'How we worked this out').count()) { await btn(page, 'How we worked this out').click(); await page.getByRole('heading', { name: 'How we worked this out' }).first().waitFor(); await rec('31-how'); await btn(page, 'Done').click() }
-    await btn(page, 'All reasons').click(); await page.getByRole('heading', { name: 'Why this week', exact: true }).first().waitFor(); await rec('32-all-reasons'); await btn(page, 'Done').click()
-    await btn(page, 'See other plans').click(); await page.getByRole('heading', { name: 'Other plans', exact: true }).first().waitFor(); await rec('33-others'); await btn(page, 'Close').click()
-    await page.getByRole('button', { name: /Why each part is here$/ }).first().click(); await page.getByText('Why each part is here', { exact: true }).waitFor(); await rec('34-day'); await btn(page, 'Done').click()
+    if (await btn(page, 'How we worked this out').count()) { await btn(page, 'How we worked this out').click(); await page.getByRole('heading', { name: 'How we worked this out' }).first().waitFor(); await page.waitForTimeout(450); await rec('31-how'); await btn(page, 'Done').click() }
+    await btn(page, 'All reasons').click(); await page.getByRole('heading', { name: 'Why this week', exact: true }).first().waitFor(); await page.waitForTimeout(450); await rec('32-all-reasons'); await btn(page, 'Done').click()
+    await btn(page, 'See other plans').click(); await page.getByRole('heading', { name: 'Other plans', exact: true }).first().waitFor(); await page.waitForTimeout(450); await rec('33-others'); await btn(page, 'Close').click()
+    await page.getByRole('button', { name: /Why each part is here$/ }).first().click(); await page.getByText('Why each part is here', { exact: true }).waitFor(); await page.waitForTimeout(450); await rec('34-day'); await btn(page, 'Done').click()
   }
   return nums
 }
@@ -432,6 +432,8 @@ const firstRun = (name, a = {}, o = {}) => ROUTES.push({
     if (o.noNumber) check(`${name}: no number on the summary, by design (startingTargets ${e.kcal})`, x.kcal == null && w.extra?.nums?.kcal == null, { native: x, web: w.extra?.nums })
     else check(`${name}: native summary kcal equals startingTargets`, x.kcal === e.kcal && (e.kcal == null || x.estimate === e.estimate) && (e.kcal == null || x.diff === e.estimate - e.kcal), { native: x, startingTargets: { kcal: e.kcal, estimate: e.estimate }, hidden: e.hidden })
     check(`${name}: web and native show the same numbers`, JSON.stringify(w.extra?.nums) === JSON.stringify(x), { web: w.extra?.nums, native: x })
+    // Start saves the kcal the card shows (nutrition-accuracy): a number shown is the target saved
+    if (x.kcal != null) check(`${name}: the saved target is the kcal shown`, n.state?.target?.kcal === x.kcal, { shown: x.kcal, saved: n.state?.target })
     if (o.expect) o.expect(e, x, n)
   },
 })

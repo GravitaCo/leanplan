@@ -46,7 +46,7 @@ export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
   const t = useTokens()
   const openSetup = useStore((s) => s.openSetup)
   return (
-    <Card style={{ padding: 18, gap: 12 }}>
+    <Card style={{ padding: 18, gap: 12, marginBottom: 10 }}>
       <View accessibilityLabel={BUILD_PLAN.t} style={{ gap: 12 }}>
         <Text style={[tx(13, 600), { color: t.tint }]}>{BUILD_PLAN.k}</Text>
         <Text style={[tx(20, 600, 1.25, -0.01), { color: t.label }]}>{BUILD_PLAN.t}</Text>

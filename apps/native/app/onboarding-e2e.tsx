@@ -2,20 +2,21 @@
  * For the native e2e checks only (scripts/e2e-onboarding-parity.cjs): in a web render built with
  * EXPO_PUBLIC_E2E=1, this route shows onboarding through useOnboardingGate, as the app's gate will
  * once the lead wires it into lib/gate.tsx (the root's gate overlay still covers sign-in, the 18+
- * stop and consent first). EXPO_PUBLIC_* is inlined at build time, so in any other build, phone
- * builds included, the route renders nothing.
+ * stop and consent first). Web renders only, and EXPO_PUBLIC_* is inlined at build time, so in any
+ * other build, phone builds included, the route renders nothing.
  */
-import { View } from 'react-native'
-import { useOnboardingGate } from '../screens/onboarding'
+import { Platform, View } from 'react-native'
+import { AgeStopStub, useOnboardingGate } from '../screens/onboarding'
 import { Notice } from '../lib/SignIn'
 
-const E2E = process.env.EXPO_PUBLIC_E2E === '1'
+const E2E = Platform.OS === 'web' && process.env.EXPO_PUBLIC_E2E === '1'
 
 export default function OnboardingE2E() {
   return E2E ? <Live /> : null
 }
 
 function Live() {
-  const ob = useOnboardingGate()
+  // the e2e checks pass the stub for Redo setup's 18+ stop; the app's gate passes N2's
+  const ob = useOnboardingGate({ ageStop: AgeStopStub })
   return <View style={{ flex: 1 }}>{ob ?? <Notice title="Onboarding isn’t due" />}</View>
 }

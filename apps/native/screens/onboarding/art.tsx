@@ -49,7 +49,13 @@ export function CoverImage({ source, height, posY = 0.5, posX = 0.5, style }: { 
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
       style={[{ overflow: 'hidden', width: '100%' }, height == null ? { flex: 1 } : { height }, style]}>
       <Image source={source} accessibilityIgnoresInvertColors resizeMode="cover"
-        onLoad={(e) => { const s = e.nativeEvent.source; if (!nat && s?.width && s.height) setNat({ width: s.width, height: s.height }) }}
+        onLoad={(e) => {
+          if (nat) return
+          // a phone reports the size on `source`; react-native-web passes the DOM load event
+          const ev = e.nativeEvent as unknown as { source?: { width?: number; height?: number }; target?: { naturalWidth?: number; naturalHeight?: number } }
+          const w = ev.source?.width ?? ev.target?.naturalWidth, h = ev.source?.height ?? ev.target?.naturalHeight
+          if (w && h) setNat({ width: w, height: h })
+        }}
         style={img ? { position: 'absolute', ...img } : { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
     </View>
   )
