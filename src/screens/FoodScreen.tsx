@@ -4,14 +4,12 @@
  */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import { quietNumbers } from '@/data/consent'
-import type { LoggedFood, MealSlot, RecipeItem } from '@/core/types'
-import { fmt, shiftDay } from '@/core/domain/date'
-import { dayTotals } from '@/core/domain/nutrition'
-import { dayMargin, frac, isEstimate, portionText } from '@/core/domain/estimate'
-import { foodView, mealWords, proteinRangeFor } from '@/core/domain/foodMode'
+import type { MealSlot, RecipeItem } from '@/core/types'
+import { fmt } from '@/core/domain/date'
+import { frac, isEstimate, portionText } from '@/core/domain/estimate'
 import { FOOD9 } from './onboarding/copyApp'
-import { MEALS, MEAL_LABEL, dayOf, energyStatus, latestWeight, mealEntries, mealNow, rangeFor, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
+import { MEALS, MEAL_LABEL, mealNow, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
+import { foodDay, mealKcal, mealNames, type LoggedRow } from './food/foodModel'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { KcalBar, MacroTrio } from '@/ui/charts'
@@ -36,34 +34,19 @@ export function FoodScreen() {
   const [sheet, setSheet] = useState<SheetKind>(null)
   const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
-  const gentle = quietNumbers(data)
-  // Onboarding 9: Sometimes has its range here from day one; Yes only after its own yes, and no target
-  const fv = foodView(data.profile)
-  const yes = fv.mode === 'yes'
-  const some = fv.mode === 'sometimes' && !gentle
-  // Yes: no kcal on rows or meal headings whatever the Display setting (ob9-2); portions still show
-  const noKcal = gentle || yes
-  const day = dayOf(data, cur)
-  const t = dayTotals(day)
-  const tg = data.target
-  const r = rangeFor(data, cur)
-  const st = energyStatus(t.k, r)
-  const margin = dayMargin(day.foods)
-  const mw = mealWords(day.foods)
-  const pRange = some ? proteinRangeFor(data.profile, latestWeight(data, cur)) : null
-
-  const groups: Record<MealSlot | 'other', (LoggedFood & { _i: number })[]> = { breakfast: [], lunch: [], dinner: [], snack: [], other: [] }
-  day.foods.forEach((x, i) => { (x.meal ? groups[x.meal] : groups.other).push({ ...x, _i: i }) })
-  const yesterday = shiftDay(cur, -1)
+  // the day card, the meal groups and the shortcuts (foodModel, shared with native)
+  const fd = foodDay(data, cur)
+  const { gentle, fv, noKcal, totals: t, target: tg, range: r, status: st, margin, words: mw, proteinRange: pRange, groups } = fd
+  const yes = fd.card === 'yes'
+  const some = fd.card === 'sometimes'
 
   // shortcuts that act on one meal: offered only when a meal qualifies, and when more than one
   // does, a small chooser asks which
-  const sameAsYesterday = MEALS.filter((m) => !groups[m].length).map((m) => ({ m, yd: mealEntries(data, yesterday, m) })).filter((x) => x.yd.length)
-  const saveable = MEALS.filter((m) => groups[m].length > 1)
+  const { sameAsYesterday, saveable } = fd
   const saveRecipe = (m: MealSlot) => setSheet({ k: 'recipes', draft: { name: '', items: recipeItemsFrom(groups[m]) } })
-  const names = (xs: { n: string }[]) => xs.slice(0, 3).map((x) => x.n).join(', ') + (xs.length > 3 ? '…' : '')
+  const names = mealNames
 
-  const row = (x: LoggedFood & { _i: number }) => (
+  const row = (x: LoggedRow) => (
     <button className="li" key={x._i} onClick={() => setSheet({ k: 'edit', i: x._i })}>
       <div className="m"><div className="t">{x.n}</div><div className="s num">{portionText(x)}</div></div>
       {!noKcal && <div className="tr num kc">{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</div>}
@@ -137,7 +120,7 @@ export function FoodScreen() {
 
       {MEALS.map((m) => {
         const items = groups[m]
-        const kcal = items.reduce((s, x) => s + x.k, 0)
+        const kcal = mealKcal(items)
         if (!items.length) {
           return (
             <button key={m} className="dash-add" onClick={() => setSheet({ k: 'add', meal: m })}>

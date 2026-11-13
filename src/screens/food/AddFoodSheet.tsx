@@ -5,13 +5,13 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
-import { rankByName } from '@/core/domain/search'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
+import { allFoods, browseFoods, isMine, searchFoods } from './foodModel'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
-import { MEAL_LABEL, mealNow, queryWords, recentFoods, recipeServing, recipesByUse, usualEntries, usuals } from '@/core/domain/insights'
+import { MEAL_LABEL, mealNow, recipeServing, usualEntries } from '@/core/domain/insights'
 import { Sheet, BackButton, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
@@ -28,7 +28,6 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { offBeforeShare } from '@/data/sharedProducts'
 import { draftForShare } from '@/core/domain/sharedProduct'
 import { InOffSheet, SHARE_ROW } from './SharedProduct'
-import { likelyPairs } from '@/core/domain/duplicates'
 import { SameFoodView, SameFoodsRow } from './DuplicateViews'
 
 type LabelProps = {
@@ -170,16 +169,16 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   const logEntries = useStore((s) => s.logEntries)
   const logRecipe = useStore((s) => s.logRecipe)
   const removeCustomFood = useStore((s) => s.removeCustomFood)
-  const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
+  const all = useMemo(() => allFoods(data.customFoods), [data.customFoods])
   const query = q.trim().toLowerCase()
   const gentle = kcalHidden(data)
   const online = useStore((s) => s.online)
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
-    <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: idx >= FOODS.length }))}>
+    <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: isMine(idx) }))}>
       <div className="m">
         <div className="t">{f.n}</div>
-        <div className="s num">{gentle ? '' : `${Math.round(headline(f).k)} kcal · `}{r1(headline(f).p)} g protein {headline(f).per}{idx >= FOODS.length && <span className="tag">Mine</span>}</div>
+        <div className="s num">{gentle ? '' : `${Math.round(headline(f).k)} kcal · `}{r1(headline(f).p)} g protein {headline(f).per}{isMine(idx) && <span className="tag">Mine</span>}</div>
       </div>
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
@@ -205,12 +204,8 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
 
   let body: ReactNode
   if (!query) {
-    const us = usuals(data, cur, meal)
-    const rc = recentFoods(data, all)
-    const cf = data.customFoods || []
-    // one quiet row while two saved foods look the same (board dup-3)
-    const pair = likelyPairs(cf)[0]
-    const byUse = recipesByUse(data)
+    // your recipes, your usual, recent, my foods (one quiet row while two look the same, dup-3)
+    const { recipes: byUse, usuals: us, recent: rc, mine: cf, pair, common } = browseFoods(data, all, cur, meal)
     body = (
       <>
         {byUse.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{byUse.map(recipeRow)}</div></>}
@@ -227,7 +222,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             </div>
           </>
         )}
-        {rc.length > 0 && <><div className="lbl">Recent</div><div className="list">{rc.map((f) => foodRow(f, all.indexOf(f)))}</div></>}
+        {rc.length > 0 && <><div className="lbl">Recent</div><div className="list">{rc.map(({ f, i }) => foodRow(f, i))}</div></>}
         {cf.length > 0 && (
           <>
             <div className="lbl">My foods</div>
@@ -242,15 +237,11 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             {pair && <div className="foot dup-listfoot">Shown only while two saved foods look alike. Merging or “They’re different” clears it.</div>}
           </>
         )}
-        {!rc.length && !cf.length && <><div className="lbl">Common</div><div className="list">{FOODS.slice(0, 8).map((f, i) => foodRow(f, i))}</div></>}
+        {common.length > 0 && <><div className="lbl">Common</div><div className="list">{common.map((f, i) => foodRow(f, i))}</div></>}
       </>
     )
   } else {
-    const meaningful = queryWords(query)
-    const words = meaningful.length ? meaningful : [query]
-    const recipes = recipesByUse(data).map((ri) => ({ r: data.recipes[ri], ri }))
-      .filter((o) => words.every((w) => o.r.name.toLowerCase().includes(w)))
-    const foods = rankByName(all.map((f, i) => ({ f, i })), (o) => o.f.n, words, (o) => o.f.aka).slice(0, 50)
+    const { recipes, foods } = searchFoods(data, all, query)
     body = (
       <>
         {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}

@@ -2,12 +2,11 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
-import { FOODS } from '@/core/data/foods'
 import { r0 } from '@/core/domain/date'
-import { recipesByUse, recentFoods, queryWords } from '@/core/domain/insights'
-import { rankByName } from '@/core/domain/search'
-import { isMadeFood, kitchenCandidates, suggestRecipes } from '@/core/domain/suggest'
-import { DIETS, dietFit, type Swap } from '@/core/domain/diet'
+import { recipesByUse } from '@/core/domain/insights'
+import { suggestRecipes } from '@/core/domain/suggest'
+import { DIETS } from '@/core/domain/diet'
+import { allFoods, kitchenAdds, kitchenChips, swapText } from './foodModel'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
@@ -16,23 +15,16 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   const have = useStore((s) => s.kitchen)
   const setKitchen = useStore((s) => s.setKitchen)
   const [q, setQ] = useState('')
-  const all = useMemo(() => FOODS.concat(data.customFoods || []), [data.customFoods])
+  const all = useMemo(() => allFoods(data.customFoods), [data.customFoods])
   const diet = data.profile.diet
   const gentle = kcalHidden(data)
   const dietLabel = DIETS.find(([d]) => d === diet)?.[1]
 
-  const candidates = useMemo(
-    () => kitchenCandidates(data.recipes, recentFoods(data, all, 20).map((f) => f.n), all),
-    [data, all],
-  )
   // stable order: candidates as found, then anything added by search; nothing that conflicts
   // with the diet (a vegetarian isn't offered beef mince)
-  const byName = useMemo(() => new Map(all.map((f) => [f.n, f])), [all])
-  const fitsDiet = (n: string) => dietFit(byName.get(n) ?? { n }, diet) !== 'conflict'
-  const chips = [...new Set([...candidates.filter(fitsDiet), ...have])].slice(0, 36)
+  const chips = useMemo(() => kitchenChips(data, all, have), [data, all, have])
   const toggle = (n: string) => setKitchen(have.includes(n) ? have.filter((x) => x !== n) : [...have, n])
-  const words = queryWords(q.trim().toLowerCase())
-  const adds = q.trim() ? rankByName(all, (f) => f.n, words.length ? words : [q.trim().toLowerCase()], (f) => f.aka).filter((f) => !chips.includes(f.n) && !isMadeFood(f)).slice(0, 6) : []
+  const adds = kitchenAdds(all, chips, q)
   const results = suggestRecipes(data.recipes, recipesByUse(data), have, diet, all)
 
   return (
@@ -84,13 +76,4 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
       )}
     </Sheet>
   )
-}
-
-/** "Swap Beef mince → Quorn pieces (−64 kcal, −9 g protein per serving)", or "Contains meat: …". */
-function swapText(w: Swap, gentle: boolean, servings: number): string {
-  if (!w.to) return `Contains ${w.reason}: ${w.from} (leave out or use a plant version)`
-  const sign = (x: number) => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x / servings))
-  // per serving, like the protein figure beside it
-  const d = w.delta ? ` (${gentle ? '' : `${sign(w.delta.k)} kcal, `}${sign(w.delta.p)} g protein per serving)` : ''
-  return `Swap ${w.from} → ${w.to.n}${d}`
 }

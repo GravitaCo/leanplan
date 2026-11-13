@@ -3,12 +3,11 @@ import { useStore } from '@/store/store'
 import { hasConsent, kcalHidden } from '@/data/consent'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
-import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
+import { amountText, headline } from '@/core/domain/nutrition'
 import { sourceOf } from '@/core/data/sources'
-import {
-  CAPTURE_LABEL, FAT_OPTIONS, HANDS, handsAllowed, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
-} from '@/core/domain/estimate'
-import { MEAL_LABEL, entryAmount, lastFatFor, lastUse } from '@/core/domain/insights'
+import { CAPTURE_LABEL, FAT_OPTIONS, HANDS, frac, handGrams, type Portion } from '@/core/domain/estimate'
+import { MEAL_LABEL } from '@/core/domain/insights'
+import { SERV_STEPS, gramsMax, portionModes, portionPreview, portionStart } from './foodModel'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 import { shareRowState } from '@/core/domain/sharedProduct'
@@ -17,7 +16,6 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { ShareProductRow } from './SharedProduct'
 
 type Mode = Portion['mode']
-const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
 
 /**
  * Pick how much. Defaults to what the user had last time (learned portion), asks the
@@ -37,34 +35,25 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const logEntries = useStore((s) => s.logEntries)
   const profile = data.profile
   const gentle = kcalHidden(data)
-  const u = unitOf(food)
-
-  const last = lastUse(data, food.n)
-  // what the last entry meant in today's data (a live-era 120 g roll is today's 119.5 g serving)
-  const learned = last ? entryAmount(last, food) : null
-  const each = u === 'item'
-  // per-item foods are counted, never weighed or hand-sized; a food last logged as servings
-  // opens in servings, at the same count
-  const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) && SERV_STEPS.includes(last.serv) ? last.serv : null
-  const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' && handsAllowed(food) ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  // where it opens: last time's amount, in the way it was given (foodModel, shared with native);
+  // per-item foods are counted, never weighed or hand-sized
+  const [start] = useState(() => portionStart(data, food))
+  const { unit: u, each, learned } = start
+  const [mode, setMode] = useState<Mode>(start.mode)
   const source = sourceOf(food)
   const head = headline(food)
-  const [serv, setServ] = useState(lastServ ?? 1)
-  const [grams, setGrams] = useState<number>(learned ?? food.g)
-  const [hand, setHand] = useState<{ type: HandPortion; count: number }>(last?.hand ? { ...last.hand } : { type: handFor(food), count: 1 })
-  // remembered per food: last time's answer for this food, never another food's
-  const [fat, setFat] = useState<FatChoice | null>(() => lastFatFor(data, food.n))
+  const [serv, setServ] = useState(start.serv)
+  const [grams, setGrams] = useState<number>(start.grams)
+  const [hand, setHand] = useState<{ type: HandPortion; count: number }>(start.hand)
+  const [fat, setFat] = useState<FatChoice | null>(start.fat)
 
   const portion: Portion =
     mode === 'serv' ? { mode, serv } : mode === 'hand' ? { mode, type: hand.type, count: hand.count } : { mode, grams, learned }
-  const sized = buildEntry(food, portion, meal, profile, { custom, fat: null, askFat: false }).entry.grams
-  const askFat = accuracyOf(profile).askFat && isCookable(food, sized)
-  const { entry, fat: fatEntry } = buildEntry(food, portion, meal, profile, { custom, fat, askFat })
-  const kcal = entry.k + (fatEntry?.k ?? 0)
+  const { entry, fatEntry, askFat, kcal, margin, toLog } = portionPreview(food, portion, meal, profile, custom, fat)
 
   const commit = () => {
-    if (!entry.grams) return
-    logEntries(fatEntry ? [entry, fatEntry] : [entry], `${food.n} added`)
+    if (!toLog) return
+    logEntries(toLog, `${food.n} added`)
     onClose()
   }
 
@@ -75,7 +64,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const shareOk = SHARED_PRODUCTS_ENABLED && LABEL_SCAN_ENABLED && hasConsent(data, 'health') && !underAge
   const shareRow = saved ? shareRowState(saved, { enabled: shareOk, online }) : 'hidden'
 
-  const maxG = Math.max(50, Math.round(food.g * 4))
+  const maxG = gramsMax(food)
   return (
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
@@ -88,8 +77,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">How much?</div>
-      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : handsAllowed(food) ? [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']] : [['serv', 'Servings'], ['g', 'Grams']]}
-        value={mode} onChange={setMode} />}
+      {!each && <Seg<Mode> options={portionModes(food)!} value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
@@ -159,7 +147,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       )}
 
       <div className="card" style={{ marginTop: 14 }}>
-        {!gentle && <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {combinedMargin(entry, fatEntry)}</span></div>}
+        {!gentle && <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {margin}</span></div>}
         <div className={gentle ? 'big num' : 'sub num'} style={gentle ? { fontSize: 22 } : { marginTop: 4 }}>
           {r1(entry.p + (fatEntry?.p ?? 0))} g protein · {r1(entry.c)} g carbs · {r1(entry.f + (fatEntry?.f ?? 0))} g fat
         </div>
