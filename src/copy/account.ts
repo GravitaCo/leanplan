@@ -209,9 +209,8 @@ export const DELETE = {
   confirmTitle: 'Delete everything?',
   confirmLead: 'Your account and all your data will be deleted from Tilo and this phone. You can sign up again any time, but it starts fresh.',
   googleAgain: 'Sign in with Google again',
-  /** native (iOS) only, for an account that signed in with Apple. New words: to approve with Sign in
-   *  with Apple (design, compliance, Benn or Sara) */
-  appleAgain: 'Sign in with Apple again',
+  /** native (iOS) only, for an account that signed in with Apple (its button is Apple's own, which
+   *  says "Continue with Apple"). New words: to approve with Sign in with Apple (Benn or Sara) */
   reauthApple: 'To delete your account, confirm it’s you: sign in with Apple again.',
   password: 'Your password, to confirm it’s you',
   typed: 'Type DELETE to confirm',

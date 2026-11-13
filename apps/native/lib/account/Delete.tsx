@@ -22,7 +22,7 @@ import { Btn, LinkBtn, List } from '../ui/kit'
 import { BackButton, BareSheet, Row } from '../ui/primitives'
 import { appleAlways, typedOk } from './rules'
 import { supabase } from '@/data/supabase'
-import { appleAvailable } from '../../modules/tilo-auth'
+import { AppleButton, appleAvailable } from '../../modules/tilo-auth'
 import { appleReauth } from './oauth'
 import { Sub } from '../ui/text'
 import { dark } from '../tokens.generated'
@@ -142,7 +142,10 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
         {apple && (
           <>
             <Message text={DELETE.reauthApple} />
-            <Btn kind="gray" title={DELETE.appleAgain} disabled={!online || busy} onPress={() => void appleAgain()} />
+            {/* Apple's own button wherever its sign-in is offered (HIG); off while busy or offline */}
+            <View pointerEvents={!online || busy ? 'none' : 'auto'} style={{ opacity: !online || busy ? 0.4 : 1 }}>
+              <AppleButton appearance={t === dark ? 'white' : 'black'} cornerRadius={27} onPress={() => void appleAgain()} style={{ height: 54, alignSelf: 'stretch' }} />
+            </View>
           </>
         )}
         {needPw && <Typed label={DELETE.password} value={password} onChange={setPassword} secure />}

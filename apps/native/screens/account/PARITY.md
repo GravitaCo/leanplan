@@ -84,7 +84,7 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | Typed DELETE; wrong words keep it off | ✓ | E2E, U |
 | Old sign-in: password first; wrong password says nothing was deleted | ✓ | E2E |
 | Google account: sign in with Google again in the system sheet (stays on the confirm) | ✓ | Phone |
-| Apple account (any account with Apple among its providers): Sign in with Apple again on every deletion; another Apple ID refused. New words "Sign in with Apple again", "To delete your account, confirm it’s you: sign in with Apple again." (compliance approved; with Benn's approval of Apple) | ✓ | U, Phone |
+| Apple account (any account with Apple among its providers): Sign in with Apple again on every deletion; another Apple ID refused. Apple's own button (HIG); new words "To delete your account, confirm it’s you: sign in with Apple again." (compliance approved; the lead takes them to Benn) | ✓ | U, Phone |
 | Deleted: device wiped, sign-in shown | ✓ | E2E |
 
 ## 18+ stop

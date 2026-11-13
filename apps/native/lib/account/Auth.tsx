@@ -93,9 +93,12 @@ export function AuthScreen() {
   }
 
   async function apple() {
+    if (busy) return
     setErr('')
     beginSignIn()
+    setBusy(true)
     const r = await appleSignIn()
+    setBusy(false)
     if (r.status === 'error') setErr(r.message)
   }
 
@@ -217,7 +220,9 @@ export function AuthScreen() {
 
               {mode !== 'forgot' && (
                 <>
-                  {mode === 'signin' && (
+                  {/* the "or" rule: sign-in only, as the web; also creating an account on iOS, where Apple's black
+                      pill would otherwise sit right under the ink one (design, 13 Nov) */}
+                  {(mode === 'signin' || appleAvailable()) && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4 }}>
                       <View style={{ flex: 1, height: 1, backgroundColor: t.sep }} /><Text style={[tx(13), { color: t.label2 }]}>{AUTH.or}</Text><View style={{ flex: 1, height: 1, backgroundColor: t.sep }} />
                     </View>
