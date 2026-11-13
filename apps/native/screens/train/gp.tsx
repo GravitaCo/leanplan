@@ -55,7 +55,8 @@ export function GpPill({ children, plain }: { children: ReactNode; plain?: boole
 export function GpClock({ big, small, label, size = 64, light = 300 }: { big: string; small?: string; label: string; size?: number; light?: 200 | 300 }) {
   return (
     <View accessible accessibilityRole="timer" accessibilityLabel={label} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-      <Text style={[font(light), num, { fontSize: size, lineHeight: size, letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
+      {/* room for the glyphs (iOS clips them when lineHeight equals the size), the box kept at line-height 1 */}
+      <Text style={[font(light), num, { fontSize: size, lineHeight: Math.round(size * 1.2), marginVertical: -Math.round(size * 0.1), letterSpacing: -1.9, color: '#fff' }]}>{big}</Text>
       {!!small && <Text style={[font(400), num, { flexShrink: 1, fontSize: 15, color: 'rgba(255,255,255,0.85)' }]}>{small}</Text>}
     </View>
   )
