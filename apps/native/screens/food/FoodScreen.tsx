@@ -16,8 +16,7 @@ import { FOOD } from '@/copy/food'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { KcalBar, MacroTrio } from '../../lib/ui/charts'
 import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
-import { Icon } from '../../lib/ui/icons'
-import { PageHeader, Row, Sheet } from '../../lib/ui/primitives'
+import { AddC, PageHeader, Row, Sheet } from '../../lib/ui/primitives'
 import { DayNav } from '../../lib/ui/WeekStrip'
 import { Foot, GrpH, Lbl } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
@@ -43,7 +42,7 @@ export function FoodScreen() {
   // `.li` with its `.tr.kc` kcal (16 pt medium, --label): a logged entry opens its edit sheet
   const row = (x: LoggedRow) => (
     <Row key={x._i} title={x.n} sub={<Text style={num}>{portionText(x)}</Text>} chevron={false} onPress={() => setSheet({ k: 'edit', i: x._i })}
-      right={noKcal ? undefined : <Text style={[tx(16, 500, 1.3, 0), num, { color: t.label }]}>{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</Text>} />
+      strong value={noKcal ? undefined : `${isEstimate(x) ? '≈ ' : ''}${fmt(x.k)}`} />
   )
   // `.pline`: 13 pt --label2, a split row when it has two ends
   const pline = (a: ReactNode, b?: ReactNode) => (
@@ -99,9 +98,8 @@ export function FoodScreen() {
                 const rc = data.recipes[ri]
                 const serv = recipeServing(data, rc.name)
                 return (
-                  // TODO(N1-followup): the `.addc` trailing slot
-                  <Row key={rc.id} title={rc.name} sub={`${FOOD.servings(frac(serv), serv)} · ${FOOD.addsTo(MEAL_LABEL[mealNow()])}`} chevron={false}
-                    onPress={() => logRecipe(rc, serv, mealNow())} right={<Icon name="plus" size={16} stroke={2.8} color={t.tint} />} />
+                  <Row key={rc.id} title={rc.name} sub={`${FOOD.servings(frac(serv), serv)} · ${FOOD.addsTo(MEAL_LABEL[mealNow()])}`}
+                    onPress={() => logRecipe(rc, serv, mealNow())} right={<AddC />} />
                 )
               })}
             </List>
@@ -154,9 +152,7 @@ export function FoodScreen() {
         <Sheet title={FOOD.sameAsYesterday} onClose={() => setSheet(null)}>
           <List>
             {sameAsYesterday.map(({ m, yd }) => (
-              // TODO(N1-followup): the `.addc` trailing slot
-              <Row key={m} title={MEAL_LABEL[m]} sub={mealNames(yd)} chevron={false} right={<Icon name="plus" size={16} stroke={2.8} color={t.tint} />}
-                onPress={() => { repeatYesterday(m); setSheet(null) }} />
+              <Row key={m} title={MEAL_LABEL[m]} sub={mealNames(yd)} right={<AddC />} onPress={() => { repeatYesterday(m); setSheet(null) }} />
             ))}
           </List>
         </Sheet>
@@ -183,8 +179,7 @@ function KcalHead({ kcal, margin, onMargin }: { kcal: number; margin: number; on
         <Text style={[tx(44, 600, 1, -0.03), num, { color: t.label }]}>{fmt(kcal)}</Text>
         <Text style={[tx(15), { color: t.label2 }]}>{FOOD.kcalEaten}</Text>
       </View>
-      {/* TODO(N1-followup): LinkBtn `label` prop, so this reads FOOD.aboutEstimate as the web's aria-label */}
-      {kcal > 0 && <LinkBtn title={`± ${margin}`} onPress={onMargin} style={num} />}
+      {kcal > 0 && <LinkBtn title={`± ${margin}`} label={FOOD.aboutEstimate} onPress={onMargin} style={num} />}
     </View>
   )
 }
