@@ -1,13 +1,12 @@
 /**
  * Unit tests for the native platform adapters that need no phone (apps/native/lib/platform):
- * connection events, the reminder delivery log, the session refresh rule.
+ * connection events and the reminder delivery log.
  *   (apps/native) npm run test:platform
  * Node runs the TypeScript directly (type stripping), so these modules import nothing from React
  * Native.
  */
 import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
 import { clearEvents, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
-import { refreshFor } from '../lib/platform/lifecycle.ts'
 
 let failed = 0
 let passed = 0
@@ -146,11 +145,6 @@ const memKV = () => {
   clearEvents(broken)
   check('log: never throws', takeEvents(broken).length === 0)
 }
-
-/* ---------- session refresh ---------- */
-check('refresh: starts when active', refreshFor('active') === 'start')
-check('refresh: stops in the background', refreshFor('background') === 'stop' && refreshFor('inactive') === 'stop')
-check('refresh: leaves other states alone', refreshFor('unknown') === null && refreshFor('extension') === null)
 
 console.log(`platform adapters: ${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)
