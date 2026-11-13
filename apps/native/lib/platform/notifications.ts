@@ -24,8 +24,9 @@ import { checkPushToken, pushSupported, pushTokenChanged } from './push'
 import { takeNotifyEvents } from '@/data/notifyLog'
 import { recordNotifyEvent } from './notifyStore'
 import { notifyKV } from './notifyKV'
+import { guidedSessionOpen } from '../../screens/train/session'
 import { takeExtensionDeliveries } from '../../modules/tilo-notify'
-import { fromExtension, keyOf, msOf, sightingOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
+import { fromExtension, keyOf, msOf, sightingOf, tapRoute, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
 // ---- the log: N3's tali-notify store (./notifyKV), so its clear removes the seen list too ----
 const store = notifyKV
@@ -66,7 +67,9 @@ if (pushSupported()) {
 
 // ---- a tap ----
 let lastHandled = ''
-function handleTap(r: Notifications.NotificationResponse | null): void {
+/** A tap on a notification (exported for scripts/test-reminders.ts; the app calls it from the
+ *  response listener and at launch). */
+export function handleTap(r: Notifications.NotificationResponse | null): void {
   if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return
   const n = r.notification
   const key = keyOf(dataOf(n), n.request.identifier, msOf(n.date) ?? NaN)
@@ -75,8 +78,10 @@ function handleTap(r: Notifications.NotificationResponse | null): void {
   const p = presentedOf(n)
   if (p) apply(noteOpened(readSeen(), p, new Date()))
   try { Notifications.clearLastNotificationResponse() } catch { /* nothing to clear */ }
-  // through the store, as on the web (lib/navBridge.ts moves the router to store.tab)
-  const to = routeFor(dataOf(n))
+  // through the store, as on the web (lib/navBridge.ts moves the router to store.tab); never away
+  // from a guided session in progress
+  const to = tapRoute(dataOf(n), guidedSessionOpen())
+  if (!to) return
   if (to === 'review') useStore.getState().openReview()
   else useStore.getState().setTab(to)
 }

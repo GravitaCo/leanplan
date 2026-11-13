@@ -93,10 +93,10 @@ function TempoCount({ player, media, playing }: { player: ReturnType<typeof useC
       {s.kind === 'ready'
         ? <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
         : <>
-          {/* A fixed-width box so the centred figure never shifts between digits, and room above and
-              below the glyphs (iOS clips them when lineHeight equals the size), pulled back with
-              negative margins so the layout keeps the web's line-height: 1. */}
-          <Text style={[font(200), num, { width: 160, textAlign: 'center', fontSize: 112, lineHeight: 134, marginVertical: -11, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
+          {/* A fixed-width box so the centred figure never shifts between digits. lineHeight at least
+              Geist's own line height (1.3 em), so iOS centres the glyphs instead of clipping them
+              (RCTAttributedTextUtils), pulled back with negative margins to the web's 112 box. */}
+          <Text style={[font(200), num, { width: 160, textAlign: 'center', fontSize: 112, lineHeight: 146, marginVertical: -17, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
           <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
         </>}
     </View>
