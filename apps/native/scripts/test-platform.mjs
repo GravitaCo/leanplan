@@ -1,6 +1,7 @@
 /**
  * Unit tests for the native platform adapters that need no phone (apps/native/lib/platform):
- * connection events, the reminder delivery log, the session refresh rule.
+ * connection events, the reminder delivery log, the session refresh rule, and reminders on the
+ * phone (which reminder, where a tap goes, the delivery log without a service worker, push tokens).
  *   (apps/native) npm run test:platform
  * Node runs the TypeScript directly (type stripping), so these modules import nothing from React
  * Native.
@@ -8,6 +9,9 @@
 import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
 import { clearEvents, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
 import { refreshFor } from '../lib/platform/lifecycle.ts'
+import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX } from '../lib/platform/notifyReconcile.ts'
+import { apnsPlatform, apnsToken, deletePath, parseSaved, permFrom, tokenRow } from '../lib/platform/pushRules.ts'
+import { REMINDER_COPY, SUPP_NAMED } from '../../../supabase/functions/_shared/reminders.ts'
 
 let failed = 0
 let passed = 0
@@ -146,6 +150,83 @@ const memKV = () => {
   clearEvents(broken)
   check('log: never throws', takeEvents(broken).length === 0)
 }
+
+/* ---------- reminders on the phone (N12): which reminder, where a tap goes ---------- */
+check('kind: from data.kind', mindKindOf({ kind: 'checkin' }) === 'checkin' && mindKindOf({ kind: 'wind-down' }) === 'wind-down')
+check('kind: from the tag', mindKindOf({ tag: 'tali-plan' }) === 'plan')
+check('kind: the tags are reminders.ts REMINDER_COPY', ['checkin', 'wind-down', 'plan'].every((k) => mindKindOf({ tag: REMINDER_COPY[k].tag }) === k))
+check('kind: supplement and review reminders are not recorded',
+  mindKindOf({ kind: 'supp', tag: REMINDER_COPY.supp.tag }) === null && mindKindOf({ tag: SUPP_NAMED.tag }) === null && mindKindOf({ kind: 'review', tag: 'tali-review' }) === null)
+check('kind: anything else is nothing', mindKindOf(null) === null && mindKindOf('checkin') === null && mindKindOf({ kind: 'toString' }) === null && mindKindOf({ tag: 'constructor' }) === null)
+check('route: the review reminder opens the review', routeFor({ kind: 'review' }) === 'review' && routeFor({ tag: 'tali-review' }) === 'review')
+check('route: everything else opens Today', routeFor({ kind: 'checkin' }) === 'today' && routeFor({ kind: 'supp' }) === 'today' && routeFor(undefined) === 'today')
+
+/* ---------- the delivery log without a service worker ---------- */
+// the store's rule (src/store/store.ts ignoredInARow), to check the phone's events give the web's counts
+const ignored = (log, kind) => {
+  let run = 0, open = false
+  for (const e of [...log].filter((x) => x.kind === kind).sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
+    if (e.ev === 'opened') { run = 0; open = false }
+    else if (e.ev === 'closed') { if (open) run++; open = false }
+    else { if (open) run++; open = true }
+  }
+  return run
+}
+{
+  const t0 = Date.parse('2026-11-10T08:30:00Z'), day = 864e5
+  const p = (i, kind = 'checkin') => ({ key: deliveryKey('tali-' + kind, t0 + i * day), kind, at: t0 + i * day })
+  const log = []
+  const take = (r) => { for (const e of r.events) log.push({ kind: e.kind, ev: e.ev, at: e.at.toISOString() }); return r.seen }
+  let seen = {}
+  // day 0: in Notification Centre at the next look
+  seen = take(reconcile(seen, [p(0)], new Date(t0 + 3600e3)))
+  check('reconcile: a new one is shown, at its delivery time', log.length === 1 && log[0].ev === 'shown' && log[0].at === new Date(t0).toISOString())
+  seen = take(reconcile(seen, [p(0)], new Date(t0 + 7200e3)))
+  check('reconcile: seen once only', log.length === 1)
+  // day 1 replaces day 0 under the same tag: day 0 gone unopened, day 1 new
+  seen = take(reconcile(seen, [p(1)], new Date(t0 + day + 3600e3)))
+  check('reconcile: replaced under the same tag records no close (as the web), the new one shown', log.slice(1).map((e) => e.ev).join() === 'shown')
+  check('back-off: two ignored in a row, as on the web', ignored(log, 'checkin') === 1)
+  seen = take(reconcile(seen, [], new Date(t0 + 2 * day)))
+  check('back-off: swiped away unopened counts', ignored(log, 'checkin') === 2)
+  // day 3: tapped
+  seen = take(noteOpened(seen, p(3), new Date(t0 + 3 * day + 60e3)))
+  check('tap: an unseen one is shown then opened', log.slice(-2).map((e) => e.ev).join() === 'shown,opened')
+  check('back-off: an open ends the run', ignored(log, 'checkin') === 0)
+  const n = log.length
+  seen = take(noteOpened(seen, p(3), new Date(t0 + 3 * day + 120e3)))
+  check('tap: the same tap twice records once', log.length === n)
+  seen = take(reconcile(seen, [], new Date(t0 + 3 * day + 180e3)))
+  check('reconcile: an opened one that is gone is just forgotten', log.length === n && Object.keys(seen).length === 0)
+  // arriving with the app open, then seen in Notification Centre
+  seen = take(noteShown(seen, p(4, 'plan')))
+  seen = take(reconcile(seen, [p(4, 'plan')], new Date(t0 + 4 * day + 60e3)))
+  check('foreground: shown once, not again at the next look', log.filter((e) => e.kind === 'plan').length === 1)
+  check('per type: one type never counts for another', ignored(log, 'checkin') === 0 && ignored(log, 'wind-down') === 0)
+  // the seen list stays small
+  let big = {}
+  for (let i = 0; i < SEEN_MAX + 10; i++) big = noteShown(big, p(i)).seen
+  check('seen: newest 60 kept', Object.keys(big).length === SEEN_MAX && !!big[p(SEEN_MAX + 9).key] && !big[p(0).key])
+  check('seen: round-trips, malformed dropped', JSON.stringify(parseSeen(JSON.stringify({ a: { kind: 'plan' }, b: { kind: 'plan', opened: true }, c: { kind: 'x' }, d: 3 }))) === JSON.stringify({ a: { kind: 'plan' }, b: { kind: 'plan', opened: true } }))
+  check('seen: damaged reads as empty', Object.keys(parseSeen('{oops')).length === 0 && Object.keys(parseSeen(undefined)).length === 0)
+  check('key: tells deliveries apart', deliveryKey('x', 1) !== deliveryKey('x', 2) && deliveryKey('x', NaN) === 'x|0')
+}
+
+/* ---------- push registration rules ---------- */
+check('perm: iOS authorised, provisional, ephemeral are granted', [2, 3, 4].every((s) => permFrom({ ios: { status: s } }) === 'granted'))
+check('perm: iOS denied', permFrom({ ios: { status: 1 }, status: 'denied' }) === 'denied')
+check('perm: iOS not asked yet', permFrom({ ios: { status: 0 }, status: 'undetermined' }) === 'default')
+check('perm: Android style', permFrom({ granted: true, status: 'granted' }) === 'granted' && permFrom({ status: 'denied' }) === 'denied' && permFrom({ status: 'undetermined' }) === 'default')
+check('perm: nothing is default', permFrom(null) === 'default')
+const tok = 'AB'.repeat(32)
+check('token: hex, lower-cased', apnsToken(tok) === 'ab'.repeat(32))
+check('token: refuses anything else', apnsToken('xyz') === null && apnsToken('ab'.repeat(31)) === null && apnsToken('a'.repeat(65)) === null && apnsToken(42) === null && apnsToken('ab'.repeat(101)) === null)
+check('gateway: only development builds use the sandbox', apnsPlatform('development') === 'apns-sandbox' && apnsPlatform('production') === 'apns' && apnsPlatform(null) === 'apns')
+check('row: token in endpoint, no Web Push keys',
+  JSON.stringify(tokenRow('u1', 'ab'.repeat(32), 'apns')) === JSON.stringify({ user_id: 'u1', endpoint: 'ab'.repeat(32), platform: 'apns', p256dh: null, auth_key: null }))
+check('delete: this token and this account only', deletePath('ab'.repeat(32), 'u-1') === '/push_subscriptions?endpoint=eq.' + 'ab'.repeat(32) + '&user_id=eq.u-1')
+check('saved: round-trips', JSON.stringify(parseSaved(JSON.stringify({ token: tok, uid: 'u1', platform: 'apns-sandbox' }))) === JSON.stringify({ token: 'ab'.repeat(32), uid: 'u1', platform: 'apns-sandbox' }))
+check('saved: malformed is nothing', parseSaved('{') === null && parseSaved(null) === null && parseSaved(JSON.stringify({ token: tok, uid: '', platform: 'apns' })) === null && parseSaved(JSON.stringify({ token: tok, uid: 'u', platform: 'web' })) === null)
 
 /* ---------- session refresh ---------- */
 check('refresh: starts when active', refreshFor('active') === 'start')
