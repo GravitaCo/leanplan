@@ -12,6 +12,7 @@ export function useTokens(): Tokens {
 
 /** Geist by weight (the bundled static faces; the web uses the variable font). */
 export const GEIST = {
+  300: 'Geist_300Light',
   400: 'Geist_400Regular',
   500: 'Geist_500Medium',
   600: 'Geist_600SemiBold',
