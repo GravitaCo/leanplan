@@ -4,6 +4,7 @@ import type { MealSlot } from '@/core/types'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
+import { quickEntry } from './foodModel'
 
 /** For meals out or anything without a label. Logged as an estimate so the total stays honest. */
 export function QuickEstimateView({ meal, setMeal, onBack, onClose, animate }: {
@@ -12,11 +13,10 @@ export function QuickEstimateView({ meal, setMeal, onBack, onClose, animate }: {
   const logEntries = useStore((s) => s.logEntries)
   const showToast = useStore((s) => s.showToast)
   const [f, setF] = useState({ n: '', k: '', p: '', c: '', fat: '' })
-  const num = (v: string) => parseFloat(v) || 0
   const commit = () => {
-    const k = num(f.k)
-    if (k <= 0) { showToast('Enter the calories'); return }
-    logEntries([{ n: f.n.trim() || 'Quick estimate', grams: 0, k, p: num(f.p), c: num(f.c), f: num(f.fat), meal, src: 'quick', how: 'quick', err: CAPTURE_ERR.quick }], 'Estimate added')
+    const entry = quickEntry(f, meal, CAPTURE_ERR.quick)
+    if (!entry) { showToast('Enter the calories'); return }
+    logEntries([entry], 'Estimate added')
     onClose()
   }
   const row = (key: keyof typeof f, label: string, unit: string, ph: string, mode: 'text' | 'decimal' = 'decimal') => (

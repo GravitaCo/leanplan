@@ -4,11 +4,10 @@ import { kcalHidden } from '@/data/consent'
 import type { MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { CAPTURE_LABEL, entryErr, isFlagged } from '@/core/domain/estimate'
-import { amountText, roundAmount } from '@/core/domain/nutrition'
+import { amountText } from '@/core/domain/nutrition'
 import { Sheet } from '@/ui/primitives'
 import { MealSeg } from './common'
-
-const STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+import { EDIT_STEPS as STEPS, editAmount } from './foodModel'
 
 /** Correcting an entry is a slider on the entry itself — never a trip back to search. */
 export function EditEntrySheet({ index, onClose }: { index: number; onClose: () => void }) {
@@ -22,10 +21,8 @@ export function EditEntrySheet({ index, onClose }: { index: number; onClose: () 
   const [meal, setMeal] = useState<MealSlot | undefined>(x?.meal)
   if (!x) return null
   const gentle = useStore((s) => kcalHidden(s.data))
-  const u = x.unit ?? 'g'
   // items snap to quarters, and the multiplier follows the snapped count so kcal and count agree
-  const amount = roundAmount((x.grams || 0) * mult, u)
-  const m = u === 'item' && x.grams ? amount / x.grams : mult
+  const { unit: u, amount, mult: m } = editAmount(x, mult)
   const flagged = isFlagged(x, profile)
   const save = () => { updateEntry(index, m, meal); onClose() }
 

@@ -8,6 +8,7 @@ import { CAPTURE_ERR, frac } from '@/core/domain/estimate'
 import { MEAL_LABEL, recipeServing } from '@/core/domain/insights'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
+import { recipeSteps } from './foodModel'
 
 /** Log a serving (or several) of a saved recipe. */
 export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }: {
@@ -27,7 +28,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
       <MealSeg value={meal} onChange={setMeal} />
       <div className="lbl">Servings</div>
       <div className="scale">
-        {([0.5, 1, 1.5, 2, 3].includes(q) ? [0.5, 1, 1.5, 2, 3] : [0.5, 1, 1.5, 2, q].sort((a, b) => a - b)).map((v) => (
+        {recipeSteps(q).map((v) => (
           <button key={v} className={q === v ? 'on' : ''} onClick={() => setQ(v)}>
             <b className="num">{frac(v)}</b>{gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal`}
           </button>

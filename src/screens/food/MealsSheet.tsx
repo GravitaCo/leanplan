@@ -3,12 +3,10 @@ import { useMemo, useState } from 'react'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
 import type { MealSlot, RecipeItem } from '@/core/types'
-import { FOODS } from '@/core/data/foods'
 import { fmt, r0, r1 } from '@/core/domain/date'
-import { basisOf, headline, recipePerServing, recipeTotals } from '@/core/domain/nutrition'
-import { mealNow, queryWords } from '@/core/domain/insights'
-import { rankByName } from '@/core/domain/search'
-import { ingredientsFirst } from '@/core/domain/suggest'
+import { basisOf, headline, recipePerServing } from '@/core/domain/nutrition'
+import { mealNow } from '@/core/domain/insights'
+import { allFoods, asIngredient, draftProblem, draftTotals, ingredientMatches, type RecipeDraft } from './foodModel'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
 import { Sheet, BackButton } from '@/ui/primitives'
@@ -16,7 +14,7 @@ import { Icon } from '@/ui/icons'
 import { RecipeLogView } from './RecipeLogView'
 import { Checks } from './common'
 
-interface Draft { id?: string; name: string; servings: string; items: RecipeItem[] }
+type Draft = RecipeDraft
 
 /** `initialDraft` opens straight into the builder, e.g. "Save as recipe" from a logged meal. */
 export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; initialDraft?: { name: string; items: RecipeItem[] } }) {
@@ -26,7 +24,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   const deleteRecipe = useStore((s) => s.deleteRecipe)
   const showToast = useStore((s) => s.showToast)
   const gentle = useStore((s) => kcalHidden(s.data))
-  const all = useMemo(() => FOODS.concat(customFoods || []), [customFoods])
+  const all = useMemo(() => allFoods(customFoods), [customFoods])
 
   const [draft, setDraft] = useState<Draft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)
   const [logging, setLogging] = useState<number | null>(null)
@@ -37,17 +35,15 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   if (logging != null) return <RecipeLogView index={logging} meal={meal} setMeal={setMeal} onBack={() => setLogging(null)} onClose={onClose} animate={false} />
 
   if (draft) {
-    const s = parseFloat(draft.servings) || 1
-    const totals = recipeTotals({ id: '', name: draft.name, servings: s, items: draft.items })
-    const query = q.trim().toLowerCase()
-    const words = queryWords(query)
+    const { servings: s, totals } = draftTotals(draft)
     // ready meals and menu items stay addable, but after the ingredients that match
-    const matches = query ? ingredientsFirst(rankByName(all, (f) => f.n, words.length ? words : [query], (f) => f.aka), (f) => f).slice(0, 30) : []
+    const matches = ingredientMatches(all, q)
     const idx = draft.id ? recipes.findIndex((r) => r.id === draft.id) : -1
     const save = () => {
-      if (!draft.name.trim()) { showToast('Give the recipe a name'); return }
-      if (!draft.items.length) { showToast('Add at least one ingredient'); return }
-      if (draft.id && recipes.some((r) => r.id !== draft.id && r.name.toLowerCase() === draft.name.trim().toLowerCase())) { showToast('You already have a recipe with that name'); return }
+      const problem = draftProblem(draft, recipes)
+      if (problem === 'name') { showToast('Give the recipe a name'); return }
+      if (problem === 'items') { showToast('Add at least one ingredient'); return }
+      if (problem === 'taken') { showToast('You already have a recipe with that name'); return }
       saveRecipe({ id: draft.id, name: draft.name.trim(), servings: s, items: draft.items })
       if (initialDraft) onClose()
       else setDraft(null)
@@ -97,7 +93,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
         {matches.length > 0 && (
           <div className="list" style={{ marginTop: 8 }}>
             {matches.map((f, i) => (
-              <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, { n: f.n, k: f.k, p: f.p, c: f.c, f: f.f, grams: f.g, ml: f.ml, each: f.each }] })}>
+              <button className="li" key={f.n + i} onClick={() => setDraft({ ...draft, items: [...draft.items, asIngredient(f)] })}>
                 <div className="m"><div className="t">{f.n}</div><div className="s">{gentle ? `${r1(headline(f).p)} g protein` : `${Math.round(headline(f).k)} kcal`} {headline(f).per}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
               </button>

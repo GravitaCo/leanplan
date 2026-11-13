@@ -9,21 +9,13 @@
  */
 import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { Food, MealSlot } from '@/core/types'
-import { foodChanges, hasChanges, likelySaved, nameAfterUpdate, savedWithBarcode, timesLogged, type ChangeField } from '@/core/domain/duplicates'
+import type { Food } from '@/core/types'
 import { uniqueName } from '@/core/domain/barcode'
-import { MEAL_LABEL, usuals } from '@/core/domain/insights'
-import { r1 } from '@/core/domain/date'
+import { barcodeUpdate, duplicateSaveStep, likelySame, sameFood, type NewFrom } from './duplicateModel'
 import { BareSheet, BackButton, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 
-/** Where the food being saved came from: a barcode or label scan, or typed in. */
-export type NewFrom = 'scan' | 'typed'
-
-const per = (f: Pick<Food, 'ml' | 'each'>) => (f.each ? 'per item' : `per 100 ${f.ml ? 'ml' : 'g'}`)
-const unitOf = (f: Pick<Food, 'ml' | 'each'>) => (f.each ? '' : f.ml ? ' ml' : ' g')
-const ends = (code?: string) => (code ? '…' + code.slice(-4) : '—')
-const FIELD: Record<ChangeField, string> = { k: 'Energy (kcal)', g: 'Serving', p: 'Protein', f: 'Fat', c: 'Carbs' }
+export type { NewFrom }
 
 /**
  * Save a food through the duplicate checks: the same barcode asks to update (dup-1), a likely
@@ -35,16 +27,11 @@ export function useDuplicateSave(onSaved: (f: Food) => void, from: NewFrom) {
   const [ask, setAsk] = useState<{ kind: 'barcode' | 'like'; saved: Food; next: Omit<Food, 'id'> } | null>(null)
 
   const save = (next: Omit<Food, 'id'>) => {
-    const foods = customFoods || []
-    const same = savedWithBarcode(foods, next.barcode)
-    if (same) {
-      // nothing would change: it's the saved food, opened as it is
-      if (!hasChanges(foodChanges(same, { ...next, n: nameAfterUpdate(foods, same, next) }))) { onSaved(same); return }
-      setAsk({ kind: 'barcode', saved: same, next }); return
-    }
-    const like = likelySaved(foods, next as Food)
-    if (like) { setAsk({ kind: 'like', saved: like, next }); return }
-    onSaved(saveCustomFood(next))
+    const step = duplicateSaveStep(customFoods || [], next)
+    // nothing would change: it's the saved food, opened as it is
+    if (step.kind === 'open') onSaved(step.food)
+    else if (step.kind === 'save') onSaved(saveCustomFood(next))
+    else setAsk({ kind: step.kind, saved: step.saved, next })
   }
   const done = (f: Food | null) => { setAsk(null); if (f) onSaved(f) }
 
@@ -58,11 +45,8 @@ export function useDuplicateSave(onSaved: (f: Food) => void, from: NewFrom) {
 function BarcodeUpdateSheet({ saved, next, onClose, onDone }: { saved: Food; next: Omit<Food, 'id'>; onClose: () => void; onDone: (f: Food | null) => void }) {
   const update = useStore((s) => s.updateCustomFood)
   const customFoods = useStore((s) => s.data.customFoods)
-  // the name it will really have: a name another saved food holds isn't taken
-  const ch = foodChanges(saved, { ...next, n: nameAfterUpdate(customFoods || [], saved, next) })
-  const title = `Update your saved ${saved.n}?`
-  const val = (field: ChangeField, v: number) => (field === 'g' ? `${r1(v)}${unitOf(next)}` : field === 'k' ? String(Math.round(v)) : String(r1(v)))
-  const same = ch.same.map((f, i) => (i === 0 ? FIELD[f].replace(' (kcal)', '') : FIELD[f].replace(' (kcal)', '').toLowerCase())).join(', ')
+  const v = barcodeUpdate(customFoods || [], saved, next)
+  const { title, name, same } = v
   return (
     <BareSheet label={title} onClose={onClose} className="dup">
       <div className="dup-hd">
@@ -70,23 +54,23 @@ function BarcodeUpdateSheet({ saved, next, onClose, onDone }: { saved: Food; nex
         <h2 className="dup-t">{title}</h2>
         <p className="dup-lead">You’ve saved this barcode before. This is what would change.</p>
       </div>
-      <div className="lbl">Changes, {per(next)}</div>
+      <div className="lbl">Changes, {v.per}</div>
       <div className="list">
-        {ch.name && (
+        {name && (
           <div className="li dup-name">
             <div className="m">
               <div className="dup-k">Name</div>
-              <div className="dup-was"><small>Was</small> {ch.name[0]}</div>
-              <div className="dup-now"><small>Now</small> {ch.name[1]}</div>
+              <div className="dup-was"><small>Was</small> {name[0]}</div>
+              <div className="dup-now"><small>Now</small> {name[1]}</div>
             </div>
           </div>
         )}
-        {ch.figures.map(({ field, was, now }) => (
+        {v.figures.map(({ field, label, was, now }) => (
           <div className="li" key={field}>
-            <span className="m">{FIELD[field]}</span>
-            <span className="num dup-old">{val(field, was)}</span>
+            <span className="m">{label}</span>
+            <span className="num dup-old">{was}</span>
             <span className="dup-arrow" aria-label="changes to">→</span>
-            <span className="num dup-new">{val(field, now)}</span>
+            <span className="num dup-new">{now}</span>
           </div>
         ))}
         {same && (
@@ -111,16 +95,7 @@ function LikelySameSheet({ saved, next, from, onClose, onDone }: { saved: Food; 
   const saveCustomFood = useStore((s) => s.saveCustomFood)
   const customFoods = useStore((s) => s.data.customFoods)
   // a scan (barcode or label photo) reads as "Scanned"; a typed food as "New"
-  const theirs = from === 'scan' ? 'Scanned' : 'New'
-  const title = `Looks like your saved ${saved.n}.`
-  const barcodes = !!(saved.barcode || next.barcode)
-  const cell = (a: string, b: string) => [a, b, a !== b] as const
-  const rows: [string, readonly [string, string, boolean]][] = [
-    ['Energy (kcal)', cell(String(Math.round(saved.k)), String(Math.round(next.k)))],
-    ['Protein', cell(String(r1(saved.p)), String(r1(next.p)))],
-    ['Serving', cell(`${r1(saved.g)}${unitOf(saved)}`, `${r1(next.g)}${unitOf(next)}`)],
-    ...(barcodes ? [['Barcode ends', cell(ends(saved.barcode), ends(next.barcode))] as [string, readonly [string, string, boolean]]] : []),
-  ]
+  const { theirs, title, lead, per, rows } = likelySame(saved, next, from)
   const asNew = () => {
     const n = uniqueName(next.n.trim(), (customFoods || []).map((f) => f.n))
     onDone(saveCustomFood({ ...next, n }))
@@ -130,15 +105,15 @@ function LikelySameSheet({ saved, next, from, onClose, onDone }: { saved: Food; 
       <div className="dup-hd">
         <span className="dup-ico"><Icon name="copy" size={22} stroke={1.8} /></span>
         <h2 className="dup-t">{title}</h2>
-        <p className="dup-lead">The name and figures are very close.{from === 'scan' && next.barcode ? ' If a barcode was misread, using the scanned one fixes it.' : ''}</p>
+        <p className="dup-lead">{lead}</p>
       </div>
       <div className="list dup-names">
         <div className="li"><div className="m"><div className="dup-k">Yours</div><div className="dup-nm">{saved.n}</div></div></div>
         <div className="li"><div className="m"><div className="dup-k">{theirs}</div><div className="dup-nm">{next.n}</div></div></div>
       </div>
-      <div className="list dup-tab" role="table" aria-label={`Yours and the ${theirs.toLowerCase()} one, ${per(saved)}`}>
-        <div className="dup-row dup-th" role="row"><span role="columnheader">{per(saved).replace(/^per/, 'Per')}</span><span role="columnheader">Yours</span><span role="columnheader">{theirs}</span></div>
-        {rows.map(([label, [a, b, diff]]) => (
+      <div className="list dup-tab" role="table" aria-label={`Yours and the ${theirs.toLowerCase()} one, ${per}`}>
+        <div className="dup-row dup-th" role="row"><span role="columnheader">{per.replace(/^per/, 'Per')}</span><span role="columnheader">Yours</span><span role="columnheader">{theirs}</span></div>
+        {rows.map(({ label, yours: a, theirs: b, differs: diff }) => (
           <div className="dup-row" role="row" key={label}>
             <span role="rowheader">{label}</span>
             <span className="num dup-old" role="cell">{a}</span>
@@ -167,32 +142,17 @@ export function SameFoodsRow({ pair, onOpen }: { pair: [Food, Food]; onOpen: () 
   )
 }
 
-/** A food's origin line on the dup-4 rows: label photo or Open Food Facts, and its barcode. */
-function originLine(f: Food): string {
-  const from = f.src === 'label' ? 'From your label photo' : f.src?.startsWith('off:') ? 'From Open Food Facts' : ''
-  if (!f.barcode) return from
-  return from ? `${from} · barcode ${ends(f.barcode)}` : `Barcode ${ends(f.barcode)}`
-}
-
 /** dup-4: pick the one to keep. A pushed view in the Add food sheet. */
 export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [Food, Food]; onBack: () => void; onClose: () => void; animate: boolean; cur: string }) {
   const data = useStore((s) => s.data)
   const merge = useStore((s) => s.mergeCustomFoods)
   const different = useStore((s) => s.markFoodsDifferent)
-  const logs = pair.map((f) => timesLogged(data.days, f))
+  const sf = sameFood(data, cur, pair)
   // the one with more logs is kept by default (the first on a tie)
-  const [keepIdx, setKeepIdx] = useState(logs[1] > logs[0] ? 1 : 0)
+  const [keepIdx, setKeepIdx] = useState(sf.defaultKeep)
   // off by default (Benn, 11 Oct 2026): both barcodes may be real, e.g. a multipack
   const [takeBarcode, setTakeBarcode] = useState(false)
-  const keep = pair[keepIdx], drop = pair[1 - keepIdx]
-  const usualMeal = (f: Food): MealSlot | undefined => (['breakfast', 'lunch', 'dinner', 'snack'] as MealSlot[]).find((m) => usuals(data, cur, m).some((u) => u.n === f.n))
-  const usualText = (m: MealSlot) => `your usual ${MEAL_LABEL[m].toLowerCase()}`
-  const n = logs[1 - keepIdx]
-  const dropUsual = usualMeal(drop)
-  const what = n > 0
-    ? `The ${n} log${n === 1 ? '' : 's'} of ${drop.n} move${n === 1 ? 's' : ''} to ${keep.n}. ${n === 1 ? 'Its calories stay' : 'Their calories stay'} as logged.${dropUsual ? ` ${usualText(dropUsual).replace(/^y/, 'Y')} keeps working.` : ''}`
-    : `${drop.n} has no logs to move.`
-  const switchable = !!drop.barcode && drop.barcode !== keep.barcode
+  const { keep, drop, what, switchable, offBarcode } = sf.outcome(keepIdx)
   const done = (fn: () => void) => { fn(); onBack() }
   return (
     <Sheet title="Same food?" tall onClose={onClose} animate={animate} left={<BackButton onClick={onBack} />}>
@@ -202,18 +162,16 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
         <fieldset className="dup-fs">
           <legend className="sr">Food to keep</legend>
           <div className="list">
-            {pair.map((f, i) => {
-              const m = usualMeal(f)
-              const origin = originLine(f)
+            {sf.rows.map(({ food: f, figures, origin, logged }, i) => {
               return (
                 <label className="li dup-opt" key={f.id}>
                   <input type="radio" name="dup-keep" className="sr" checked={keepIdx === i} onChange={() => setKeepIdx(i)} />
                   <span className={'dup-radio' + (keepIdx === i ? ' on' : '')} aria-hidden="true">{keepIdx === i && <Icon name="check" size={13} stroke={3.2} />}</span>
                   <span className="m">
                     <span className="dup-nm">{f.n}</span>
-                    <span className="num dup-sub">{Math.round(f.k)} kcal · {r1(f.p)} g protein {per(f)}{f.each ? '' : ` · ${r1(f.g)}${unitOf(f)} serving`}</span>
+                    <span className="num dup-sub">{figures}</span>
                     {origin && <span className="num dup-sub">{origin}</span>}
-                    <span className="num dup-sub">Logged {logs[i]} time{logs[i] === 1 ? '' : 's'}{m ? ` · in ${usualText(m)}` : ''}</span>
+                    <span className="num dup-sub">{logged}</span>
                   </span>
                 </label>
               )
@@ -230,7 +188,7 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
                 <Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label="Use the other barcode" />
               </div>
             </div>
-            {drop.src?.startsWith('off:') && <div className="foot">Its barcode came from Open Food Facts, so scanning the pack finds this food.</div>}
+            {offBarcode && <div className="foot">Its barcode came from Open Food Facts, so scanning the pack finds this food.</div>}
           </>
         )}
         <div className="dup-grow" />
