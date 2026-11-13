@@ -91,8 +91,8 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
               </Pressable>
             : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{dot(picked.pillar, 10)}<Text style={[tx(17, 400), { color: t.label }, { flex: 1 }]}>{SUMMARY_MIND.today(txt(picked.label))}</Text></View>}
           <View style={{ flexDirection: 'row', gap: 20, marginTop: -8 }}>
-            <LinkBtn title={SUMMARY_MIND.done} onPress={() => { doneThing() }} style={{ paddingVertical: 12, paddingHorizontal: 0 }} />
-            <LinkBtn title={SUMMARY_MIND.change} onPress={clearThing} style={{ paddingVertical: 12, paddingHorizontal: 0 }} />
+            <LinkBtn title={SUMMARY_MIND.done} onPress={() => { doneThing() }} style={[tx(15, 500, 1.3, BTN), { paddingVertical: 12, paddingHorizontal: 0 }]} />
+            <LinkBtn title={SUMMARY_MIND.change} onPress={clearThing} style={[tx(15, 500, 1.3, BTN), { paddingVertical: 12, paddingHorizontal: 0 }]} />
           </View>
         </>
       )}
@@ -102,7 +102,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
             <Icon name="check" size={20} stroke={2.6} color={t.mindInk} />
             <Text style={[tx(15, 400), { color: t.label2 }, { flex: 1 }]}>{txt(picked.done)}</Text>
           </View>
-          {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><LinkBtn title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} style={{ paddingVertical: 12, paddingHorizontal: 0 }} /></View>}
+          {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><LinkBtn title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} style={[tx(15, 500, 1.3, BTN), { paddingVertical: 12, paddingHorizontal: 0 }]} /></View>}
         </>
       )}
     </Card></View>
