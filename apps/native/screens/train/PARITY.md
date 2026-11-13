@@ -30,5 +30,5 @@ source by a reviewer; **device** = needs the dev build (not yet run).
 | Native only | chime equals the web's synthesis | unit |
 | | keep-awake while the player is open; rest alert in the background (via N12) | unit (alert), device |
 | | session-open signal for N12 | unit |
-| Known gaps | sheets inside the guided player are nested Modals (lib/ui Sheet has no overlay mode yet) | device |
+| Sheets in the player | overlay sheets inside the player's Modal; Android back closes the top sheet first; the player is hidden from TalkBack and VoiceOver under a sheet | device |
 | | list insets: Today full width, library 72 pt (lib/ui List has no inset yet) | code |

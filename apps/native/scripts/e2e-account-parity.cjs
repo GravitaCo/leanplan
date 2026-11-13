@@ -1,7 +1,5 @@
 /**
- * N2 parity: account, consent and legal on native, checked against the web. Needs the N2 screens,
- * which are being rebuilt on lib/ui (N1): it passed 29 of 29 on the stand-in screens (commit 27ae9d6)
- * and runs again once the port lands (native-build-brief §1:
+ * N2 parity: account, consent and legal on native, checked against the web (native-build-brief §1:
  * "parity is tested, not eyeballed"). Carries over scripts/e2e-foundations.cjs's consent,
  * withdrawal, existing-user and delete-account cases and scripts/e2e-under-age.cjs's launch, sync
  * and backup cases, run against the native app's code rendered for the web (react-native-web), and
@@ -127,8 +125,10 @@ async function scenario(browser, name, fn, opts = {}) {
 const btn = (page, name) => page.getByRole('button', { name, exact: true })
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('leanplan.v1') || 'null'))
 const latest = (st, type) => (st?.consents?.records || []).filter((r) => r.type === type).sort((a, b) => a.at.localeCompare(b.at)).pop()
-/** tap a consent row's box (not the middle of its words, where a link may be) */
-const tick = (loc) => loc.click({ position: { x: 30, y: 16 } })
+/** a consent statement's own box (lib/ui ConsentRow: the box is the checkbox, named by its words) */
+const BOX = { c_health: /in Profile, then Privacy\.$/, c_terms: /^I accept the terms/, c_age: /or over\.$/, c_regrant: /at any time\.$/ }
+const box = (page, id) => page.getByRole('checkbox', { name: BOX[id] })
+const tick = (loc) => loc.click()
 const heading = (page, name) => page.getByRole('heading', { name, exact: true })
 /** the app past the gate: the avatar beside the title */
 const inApp = (page) => btn(page, 'Profile').first().waitFor({ timeout: 20000 })
@@ -136,10 +136,15 @@ const inApp = (page) => btn(page, 'Profile').first().waitFor({ timeout: 20000 })
 async function toProfile(page) {
   await inApp(page)
   await btn(page, 'Profile').first().click()
+  // Profile's account rows sit behind Account in the avatar's sheet until N10's Profile
+  await btn(page, 'Account').first().click()
   await page.getByText('Account and data', { exact: true }).waitFor()
 }
+/** the Health data row, showing its status ("On", "Paused", "Off") */
+const healthRow = (page, status) => page.getByRole('button', { name: new RegExp('^Health data\\s*' + (status || '')) })
 const shot = async (page, name) => { await page.waitForTimeout(500); await page.screenshot({ path: path.join(OUT, name + '.png') }) }
-const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').trim()
+// a full stop after an inline button reads as " ." from native's row of boxes: the same words
+const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').replace(/ \./g, '.').trim()
 
 /** The same state on web and native: the screen's words must match, and both are photographed. */
 async function sameWords(browser, name, opts, ready, act) {
@@ -236,9 +241,10 @@ async function sameWords(browser, name, opts, ready, act) {
     await page.waitForTimeout(800)
     expect(!net.posts.some((p) => p.t !== 'consents'), 'nothing but consent before the answer: ' + net.posts.map((p) => p.t).join())
     const cont = btn(page, 'Continue')
-    for (const id of ['c_health', 'c_terms']) { await tick(page.getByTestId(id)); expect(await cont.isDisabled(), 'Continue waits for all three') }
-    expect((await page.getByRole('checkbox', { checked: true }).count()) === 2, 'never pre-ticked: only what was tapped')
-    await tick(page.getByTestId('c_age'))
+    for (const id of ['c_health', 'c_terms']) { await tick(box(page, id)); expect(await cont.isDisabled(), 'Continue waits for all three') }
+    // never pre-ticked: had any box started ticked, Continue would be on after two taps (the web render
+    // can't read ConsentRow's checked state: it sets accessibilityState, which iOS reads)
+    await tick(box(page, 'c_age'))
     await cont.click()
     await inApp(page)
     for (let i = 0; i < 40 && !rows.day_logs.some((x) => x.log_date === today); i++) await page.waitForTimeout(250)
@@ -267,13 +273,13 @@ async function sameWords(browser, name, opts, ready, act) {
     await inApp(page)
     expect((await heading(page, 'Before you start').count()) === 0, 'not asked again within 2 weeks')
     await toProfile(page)
-    await page.getByRole('button', { name: 'Health data, Paused' }).click()
+    await healthRow(page, 'Paused').click()
     await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there.', { exact: false }).waitFor()
     await btn(page, 'Yes, keep it').click()
     await heading(page, 'Before you start').last().waitFor()
     const cont = btn(page, 'Continue').last()
     expect(await cont.isDisabled(), 'waits for all three ticks')
-    for (const id of ['c_health', 'c_terms', 'c_age']) await tick(page.getByTestId(id).last())
+    for (const id of ['c_health', 'c_terms', 'c_age']) await tick(box(page, id).last())
     await cont.click()
     await page.waitForFunction(() => !JSON.parse(localStorage.getItem('leanplan.v1')).consents.healthPause)
     for (let i = 0; i < 40 && !rows.day_logs.some((x) => x.log_date === today); i++) await page.waitForTimeout(250)
@@ -289,7 +295,7 @@ async function sameWords(browser, name, opts, ready, act) {
 
   await run('withdraw health consent in Profile: a copy offered first', async ({ page, rows, net }) => {
     await toProfile(page)
-    await page.getByRole('button', { name: 'Health data, On' }).click()
+    await healthRow(page, 'On').click()
     await btn(page, 'Stop keeping my health data').click()
     await page.getByText('Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
     await page.getByText('On this phone: 1 weigh-in, 1 check-in.').waitFor()
@@ -311,14 +317,15 @@ async function sameWords(browser, name, opts, ready, act) {
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
     expect(!rows.day_logs.some((x) => x.user_id === UID), 'the account’s copy of the log is deleted')
     // turning it back on: the one-box sheet, never a bare tap
-    await page.getByRole('button', { name: 'Health data, Off' }).waitFor()
+    await healthRow(page, 'Off').waitFor()
     await page.getByRole('button', { name: 'Privacy' }).click()
     await btn(page, 'Turn health data back on').click()
-    const on = btn(page, 'Turn health data back on').last()
+    // the sheet's own button: the one beside its box (the Privacy row's has the same words)
+    const on = box(page, 'c_regrant').locator('xpath=ancestor::*[.//button[normalize-space()="Turn health data back on"]][1]').getByRole('button', { name: 'Turn health data back on' })
     expect(await on.isDisabled(), 'waits for the box')
-    await tick(page.getByTestId('c_regrant'))
+    await tick(box(page, 'c_regrant'))
     await on.click()
-    await page.getByRole('button', { name: 'Health data, On' }).waitFor()
+    await healthRow(page, 'On').waitFor()
   }, { rows: { consents: [{ ...GRANTED.records[0], user_id: UID, recorded_at: GRANTED.records[0].at }] }, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })
 
   await run('Profile, then Privacy: the legal documents, and the same withdraw and delete flows', async ({ page }) => {
@@ -517,12 +524,12 @@ async function sameWords(browser, name, opts, ready, act) {
         const c = await context(browser, { dark, shots: true, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })
         const p = c.page, m = dark ? 'dark' : 'light'
         try {
-          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click(); if (side === 'native') await btn(p, 'Account').first().click()
           await p.getByRole('button', { name: /^Health data/ }).first().click()
           await btn(p, 'Stop keeping my health data').waitFor(); await shot(p, `sheet-health-${m}-${side}`)
           await btn(p, 'Stop keeping my health data').click()
           await btn(p, 'Download a copy').waitFor(); await shot(p, `sheet-withdraw-${m}-${side}`)
-          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click(); if (side === 'native') await btn(p, 'Account').first().click()
           await p.getByRole('button', { name: 'Delete account' }).first().click()
           await heading(p, 'Delete your account').waitFor(); await shot(p, `delete-${m}-${side}`)
           await btn(p, 'Delete account').last().click()

@@ -91,7 +91,7 @@ export function PregnancyCheckSheet({ onClose, onAnswers }: { onClose: () => voi
         </View>
         <Title style={{ marginTop: 0 }}>{CHECKIN.doneT}</Title>
         {/* .linkbtn.ha-link: 16 pt, 500, no padding */}
-        <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={CHECKIN.seeAnswers} onPress={onAnswers} style={{ fontSize: 16, lineHeight: 21, padding: 0, paddingVertical: 0, paddingHorizontal: 0 }} /></View>
+        <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={CHECKIN.seeAnswers} onPress={onAnswers} style={[tx(16, 500, 1.3, BTN), { paddingVertical: 0, paddingHorizontal: 0 }]} /></View>
         <Btn title={CHECKIN.done} onPress={onClose} style={OB_BTN} />
       </Consent></BareSheet>
     )

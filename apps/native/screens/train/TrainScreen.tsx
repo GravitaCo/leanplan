@@ -4,8 +4,8 @@
  * the wellbeing flag) and what's done. The day model is the web's own (src/screens/train/
  * trainModel.ts), so every row, version, swap and note is computed by the same code.
  */
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native'
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Pressable, ScrollView, Text, View, type ScrollViewInstance, type StyleProp, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore, TRAIN_LOG_WALK } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
@@ -25,12 +25,12 @@ import { LibrarySheet } from './LibrarySheet'
 import { AddSomethingSheet, LogSessionSheet, SupportSheet } from './sheets'
 import { Thumb, usePhBg } from './media'
 import { DayNav, MoveStrip } from '../../lib/ui/WeekStrip'
-import { PageHeader } from '../../lib/ui/primitives'
+import { PageHeader, XBtn } from '../../lib/ui/primitives'
 import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot } from '../../lib/ui/text'
-import { Li, TextLink, XBtn } from './pendingN1'
+import { Foot, TextLink as InlineLink } from '../../lib/ui/text'
+import { TextLink } from './ui'
 import { TrainNav } from './nav'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -238,44 +238,44 @@ function Train() {
           </View>
         )}
         <Text accessibilityRole="header" style={[font(600), { paddingHorizontal: 4, fontSize: 22, letterSpacing: -0.22, color: t.label }]}>{isToday ? 'Today' : dayName}</Text>
-        <List style={{ borderRadius: 20 }}>
+        <List inset={0} style={{ borderRadius: 20 }}>
           {rows.filter((r) => r.show).map((r) => (
             <View key={r.k}>
-              <Li onPress={() => openWorkout(r.k)} label={keyTitle(r.k, routines)} style={trow}>
+              <TRow onPress={() => openWorkout(r.k)} label={keyTitle(r.k, routines)} style={trow}>
                 <Thumb video={r.video} big />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={tb}>{keyTitle(r.k, routines)}</Text>
                   <Text numberOfLines={1} style={[...ts, num]}>{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</Text>
                 </View>
                 <Btn small title={r.inProgress ? 'Resume' : 'Start'} onPress={() => openWorkout(r.k)} style={{ paddingHorizontal: 18, alignSelf: 'center' }} />
-              </Li>
+              </TRow>
               {/* a lighter week or maintenance: a quiet way back to the full workout, never a nudge on a
                   low check-in day or in gentle mode, and after maintenance's first week only the link */}
               {r.planShort && !r.inProgress && (
                 <View style={{ borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 14 }}>
                   <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2 }]}>
                     {planPos?.maintenanceWeek != null
-                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <TextLink inl size={13} style={font(500)} title="Full workout" onPress={() => openWorkout(r.k, 'planned')} />}</>
-                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <TextLink inl size={13} style={font(500)} title="The full workout" onPress={() => openWorkout(r.k, 'planned')} /> is here if you'd like it.</>}</>}
+                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <InlineLink style={font(500)} onPress={() => openWorkout(r.k, 'planned')}>Full workout</InlineLink>}</>
+                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <InlineLink style={font(500)} onPress={() => openWorkout(r.k, 'planned')}>The full workout</InlineLink> is here if you'd like it.</>}</>}
                   </Text>
                 </View>
               )}
             </View>
           ))}
           {restDay && (
-            <Li style={trow}>
+            <TRow style={trow}>
               {ph('leaf')}
               <View style={{ flex: 1 }}><Text style={tb}>Rest day</Text><Text style={ts}>Recovery counts too. A gentle walk is fine.</Text></View>
-            </Li>
+            </TRow>
           )}
           {allDone && !showPick && (
-            <Li style={trow}>
+            <TRow style={trow}>
               {doneChk(30)}
               <View style={{ flex: 1 }}><Text style={tb}>All done for today</Text><Text style={ts}>{rows.length === 1 ? `${keyTitle(rows[0].k, routines)} is` : 'Your workouts are'} in Done today</Text></View>
-            </Li>
+            </TRow>
           )}
           {showPick && pickUp && (
-            <Li style={trow}>
+            <TRow style={trow}>
               {ph('dumbbell')}
               <View style={{ flex: 1 }}>
                 <Text style={[tx(16, 400), { color: t.label2 }]}>{keyTitle(pickUp, routines)}, from {fmtDate(pick!.d).dow}</Text>
@@ -283,12 +283,12 @@ function Train() {
               </View>
               <LinkBtn title="Add" onPress={() => openWorkout(pickUp)} />
               <XBtn label="Not this time" onPress={() => setPrefs({ pickUpDismissed: pick!.d })} />
-            </Li>
+            </TRow>
           )}
-          <Li onPress={() => setAddOpen(true)} style={{ paddingVertical: 14, paddingHorizontal: 14, gap: 12 }}>
+          <TRow onPress={() => setAddOpen(true)} style={{ paddingVertical: 14, paddingHorizontal: 14, gap: 12 }}>
             <Icon name="plus" size={20} color={t.tint} />
             <Text style={[tx(16, 500), { color: t.tint }]}>Add something</Text>
-          </Li>
+          </TRow>
         </List>
       </View>
 
@@ -339,4 +339,15 @@ function Train() {
       {supportOpen && <SupportSheet onClose={() => setSupportOpen(false)} />}
     </ScrollView>
   )
+}
+
+/**
+ * `.trow`: Today's own row (a 17 pt semibold title, a big thumbnail or a placeholder, a button at the
+ * end), so not lib/ui's Row; on `.li`'s base, pressable as a whole when `onPress` is set.
+ */
+function TRow({ children, onPress, style, label }: { children: ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; label?: string }) {
+  const t = useTokens()
+  const base: StyleProp<ViewStyle> = [{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }, style]
+  if (!onPress) return <View style={base}>{children}</View>
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [base, pressed && { backgroundColor: t.fill }]}>{children}</Pressable>
 }

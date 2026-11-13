@@ -20,6 +20,7 @@ import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
 import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { UI } from '@/copy/ui'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
@@ -79,7 +80,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
   const setTab = useStore((s) => s.setTab)
   const ini = initials(name || '')
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onPress ?? (() => setTab('profile'))}
+    <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
         {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
@@ -145,7 +146,7 @@ export function CatHead({ color, icon, label }: { color: Category; icon: IconNam
 }
 
 /** `.navbtn` with a back chevron: tinted, 17 pt. `small` is `.del .navbtn` (16 pt medium, 6 pt further left). */
-export function BackButton({ onPress, label = 'Back', small }: { onPress: () => void; label?: string; small?: boolean }) {
+export function BackButton({ onPress, label = UI.back, small }: { onPress: () => void; label?: string; small?: boolean }) {
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
@@ -157,13 +158,25 @@ export function BackButton({ onPress, label = 'Back', small }: { onPress: () => 
 }
 
 /** `.navbtn`: a sheet header's Cancel or Done (`bold` is `.navbtn.b`). */
-export function NavBtn({ title, onPress, bold, disabled }: { title: string; onPress: () => void; bold?: boolean; disabled?: boolean }) {
+export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, style }: {
+  /** the words; an icon-only navbtn (the search bar's scan button, a row's delete ✕) gives `icon` and `label` */
+  title?: string; onPress: () => void; bold?: boolean; disabled?: boolean; icon?: IconName
+  /** the web's aria label */
+  label?: string
+  /** in --label3 (a My foods row's delete) instead of the tint */
+  muted?: boolean
+  /** a context's own padding (`.searchbar .scanbtn`: 4 2) */
+  style?: StyleProp<ViewStyle>
+}) {
   const t = useTokens()
+  // .navbtn:disabled is --label3 at full strength
+  const fg = disabled || muted ? t.label3 : t.tint
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }} hitSlop={slop(0, 30)}
-      style={({ pressed }) => ({ paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
-      {/* .navbtn:disabled is --label3 at full strength */}
-      <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: disabled ? t.label3 : t.tint }]}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }}
+      hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
+      style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
+      {icon && <Icon name={icon} color={fg} />}
+      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: fg }]}>{title}</Text>}
     </Pressable>
   )
 }
@@ -178,7 +191,7 @@ export function Seg<T extends string>({ options, value, onChange, label }: { opt
       {options.map(([v, l]) => {
         const on = v === value
         return (
-          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(v)} hitSlop={slop(0, 28.9)}
+          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, 28.9)}
             style={{ flex: 1, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
             <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
@@ -272,8 +285,14 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
  * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
  * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
  */
-export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
+export function Row({ k, title, bold, expanded, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
   title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
+  /** `.dup-k` above `.dup-nm`: a 13 pt --label2 key over the 17 pt title, which then wraps (2 between) */
+  k?: string
+  /** the title at 600 (`.li.go-walk .t`) */
+  bold?: boolean
+  /** a row that opens something in place reports it open or closed (the web's aria-expanded) */
+  expanded?: boolean
   /** default: shown when the row is tappable and has no right control */
   chevron?: boolean; act?: boolean; icon?: IconName
   /** an icon square: any fill and icon colour (`RowIcon`) */
@@ -291,7 +310,7 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
   const tr = onPress ? BTN : undefined
   const fg = act ? t.tint : needsnet ? t.label2 : t.label
   const label = label0 ?? accessibilityLabel
-  const wrapTitle = nested || pv || wrap
+  const wrapTitle = nested || pv || wrap || k != null
   const icons = useContext(InIconList)
   // a pv sub wraps at the body's 1.3; wrapSub (.mind-skills, .wd-steps) wraps at 1.35
   const subWraps = wrapSub || pv || wrap
@@ -302,8 +321,9 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
       {square && <RowIcon icon={square.icon} color={square.fill} ink={square.ink} soft={square.soft} />}
       {icon && <Icon name={icon} color={fg} />}
       <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
+        {k != null && <Text style={[tx(13, 400, 1.3, tr), { color: t.label2 }]}>{k}</Text>}
         {/* .li.act: 16 pt medium */}
-        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
+        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
         {(sub != null || tag != null) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
             {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
@@ -323,7 +343,7 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
   const own = StyleSheet.flatten(style)
   const rs: StyleProp<ViewStyle> = [s, style, typeof own?.minHeight === 'number' && own.minHeight < (s.minHeight as number) ? { minHeight: s.minHeight } : null]
   return onPress
-    ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    ? <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
     : <View accessible={label != null} accessibilityLabel={label} style={rs}>{body}</View>
 }
 
@@ -345,15 +365,25 @@ export function AddC({ onPress, label }: { onPress?: () => void; label?: string 
   return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(28, 28)}>{dot}</Pressable> : dot
 }
 
-/** `.x-btn`: a round close button (30 pt, --fill, --label2), in a 44 pt touch area. */
-export function XBtn({ onPress, label }: { onPress: () => void; label: string }) {
+/**
+ * `.x-btn`: a round button (30 pt, --fill, a --label2 icon), in a 44 pt touch area: the x, or
+ * another `icon` turned by `rotate` (the builder's move up and down: chevL/chevR at 90). Disabled
+ * at 35%.
+ */
+export function XBtn({ onPress, label, icon = 'x', rotate = 0, disabled }: { onPress: () => void; label: string; icon?: IconName; rotate?: number; disabled?: boolean }) {
   const t = useTokens()
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(30, 30)}
-      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Icon name="x" size={20} stroke={2.6} color={t.label2} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} hitSlop={slop(30, 30)}
+      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : pressed ? 0.7 : 1 })}>
+      <View style={rotate ? { transform: [{ rotate: `${rotate}deg` }] } : undefined}><Icon name={icon} size={20} stroke={2.6} color={t.label2} /></View>
     </Pressable>
   )
+}
+
+/** `.catsq`: a plain colour square for a row's `lead` (36 pt, radius 10; `sm` 30 pt, radius 8). */
+export function Swatch({ color, sm }: { color: string; sm?: boolean }) {
+  const d = sm ? 30 : 36
+  return <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: d, height: d, borderRadius: sm ? 8 : 10, backgroundColor: color, flexShrink: 0 }} />
 }
 
 /** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */
@@ -474,7 +504,7 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
           <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
         </Animated.View>
         <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
-          <Animated.View testID="sheet" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
+          <Animated.View testID="sheet" role="dialog" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
             style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb ? 0 : insets.bottom }}>
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
@@ -509,7 +539,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, overl
   const t = useTokens()
   const header = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 10 }}>
-      <View style={{ flex: 1, alignItems: 'flex-start' }}>{left === undefined ? <NavBtn title="Cancel" onPress={onClose} /> : left}</View>
+      <View style={{ flex: 1, alignItems: 'flex-start' }}>{left === undefined ? <NavBtn title={UI.cancel} onPress={onClose} /> : left}</View>
       <Text accessibilityRole="header" numberOfLines={1} style={[tx(17, 600), { color: t.label, textAlign: 'center', maxWidth: 210 }]}>{title}</Text>
       <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
     </View>

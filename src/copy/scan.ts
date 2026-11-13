@@ -24,6 +24,8 @@ export const SCAN = {
   photoAria: 'Take a photo of the barcode',
   noBarcode: 'No barcode found in that photo. Try again closer, in good light, with the whole barcode in view, or type the number.',
   photoUnreadable: 'That photo couldn’t be read. Try another, or type the number below.',
+  /** the native app's choice where Safari's file input shows its own menu (Safari's words) */
+  photoSource: { take: 'Take Photo', library: 'Photo Library', cancel: 'Cancel' },
   orType: 'Or type the number',
   barcode: 'Barcode',
   placeholder: '13 digits under the bars',
@@ -47,7 +49,6 @@ export const SCAN_ENTRY = {
   labelSub: 'A photo of the nutrition table',
   opening: 'Opening the camera…',
 } as const
-
 
 /* ScanConfirmView.tsx */
 export const NAME_HINT = 'Brand, product and flavour, e.g. Walkers Sensations Roasted Chicken & Thyme'

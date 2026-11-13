@@ -27,7 +27,9 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false, native = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean; native?: boolean } = {}): LegalDoc {
   // The iPhone app's reminders through Apple's push service (native-build-plan N12, compliance
   // 13 Nov 2026): `native` stays off until the iPhone app reaches anyone outside Gravita's core team
-  // (an external TestFlight group, or the App Store). With it off the text is unchanged.
+  // (an external TestFlight group, or the App Store). With it off the text is unchanged. It also
+  // carries Sign in with Apple (N2). Turning `native` on changes the text: bump `updated` below in the
+  // same change (compliance, 13 Nov 2026).
   // B11b's "Show supplement names in reminders" is built but hidden until DPIA 8.8 is signed
   // (SUPP_NAMES_ENABLED, register item 45): its sentences need Mind on as well.
   const names = mind && suppNames
@@ -69,7 +71,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: 'What we collect in the app',
         p: [`Only what you enter, or what is needed to run your account:`],
         ul: [
-          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
+          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.` +
+            (native ? ` If you sign in with Apple, we receive your email address (or a private relay address, if you choose Hide My Email) and Apple's identifier for you. We don't receive your name.` : ''),
           onboarding
             ? `Profile: display name, sex (and, if you set Tilo up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tilo worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`
             : `Profile: display name, sex, age, height, weight, activity level, goal and diet pattern (such as vegetarian or vegan).`,
@@ -222,6 +225,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             : []),
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
+          ...(native ? [`Apple: only if you choose "Continue with Apple" in the iPhone app. Apple handles that sign-in under its own privacy policy.`] : []),
         ],
       },
       {

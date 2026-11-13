@@ -26,7 +26,7 @@ const WEB = process.env.WEB_GALLERY_URL || 'http://localhost:4179/'
 const NATIVE = (process.env.NATIVE_URL || 'http://localhost:4188/') + 'gallery'
 const OUT = outDir('tilo-gallery-')
 const SECTIONS = ['header', 'pill', 'icons', 'tabbar', 'cathead', 'seg', 'toggle', 'rows', 'nav', 'buttons', 'cards', 'charts', 'macro', 'weekbars',
-  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'opts', 'ticks', 'signposts', 'extras', 'insets', 'banner', 'toast', 'mark', 'sheets']
+  'weekstrip', 'movestrip', 'ruler', 'wheel', 'choice', 'check', 'chips', 'text', 'rows2', 'rows3', 'notes', 'chips2', 'links', 'fields', 'opts', 'ticks', 'signposts', 'extras', 'insets', 'p4', 'n5', 'pickers', 'kit2', 'cover', 'banner', 'toast', 'mark', 'sheets']
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null
 
 const webSec = (id) => `[data-g="${id}"]`
@@ -36,7 +36,17 @@ const natSec = (id) => `[data-testid="g-${id}"]`
 async function measure(page, sel) {
   return page.locator(sel).evaluate((el) => {
     const r = el.getBoundingClientRect()
+    // a <select> shows only its chosen option (innerText would list them all), and a time input
+    // shows its value (innerText has none): swap in the words each shows
+    const swaps = [...el.querySelectorAll('select, input[type="time"]')].map((s) => {
+      const span = document.createElement('span'); span.textContent = s.tagName === 'SELECT' ? s.selectedOptions[0]?.text ?? ''
+        // a time as the browser shows it (its locale's 12 or 24 hour form), as native formats it
+        : s.value ? new Date(2000, 0, 1, ...s.value.split(':').map(Number)).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''
+      s.after(span); const d = s.style.display; s.style.display = 'none'
+      return () => { span.remove(); s.style.display = d }
+    })
     const words = el.innerText.replace(/\s+/g, ' ').trim()
+    swaps.forEach((undo) => undo())
     const labels = [...el.querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')).filter(Boolean)
     if (el.getAttribute('aria-label')) labels.unshift(el.getAttribute('aria-label'))
     // a form field named by its <label> (for= or wrapping) has that label as its accessible name
@@ -44,8 +54,9 @@ async function measure(page, sel) {
       if (f.getAttribute('aria-label')) continue
       const byFor = f.id && el.querySelector(`label[for="${f.id}"]`)
       const wrap = f.closest('label')
-      const name = byFor ? byFor.textContent : wrap ? (wrap.querySelector('span') || wrap).textContent : null
-      if (name) labels.push(name.trim())
+      // innerText, as the accessible name reads a block inside the label (FRow's hint) after a space
+      const name = byFor ? byFor.innerText : wrap ? (wrap.querySelector('span') || wrap).innerText : null
+      if (name) labels.push(name.replace(/\s+/g, ' ').trim())
     }
     // icons: the 24-unit line icons only (charts and the mark have other viewBoxes)
     const icons = [...el.querySelectorAll('svg')].filter((s) => s.getAttribute('viewBox') === '0 0 24 24')
@@ -86,10 +97,17 @@ async function run() {
       const bag = (x) => x.split(' ').sort().join(' ')
       // an inline .tag joins its sentence with no space on the web ("100 gMINE"): only that case is spaced
       const tagged = (x) => x.replace(/([a-z0-9])([A-Z]{2,})\b/g, '$1 $2')
-      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words, { web: mw.words, native: mn.words })
+      // a unit in an inline <small> joins its figure with no space on the web ("412kcal"): in the
+      // sections with `.big` only, the words may differ in spaces (the pictures show the spacing)
+      const bare = (x) => x.replace(/\s+/g, '')
+      const unitJoins = ['p4', 'n5'].includes(id) && bare(mw.words) === bare(mn.words)
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words || unitJoins, { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
-      check(`${id}: height within 2 px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= 2, { web: mw.h, native: mn.h })
+      // Chromium draws <input type="time"> 46 px tall (its own datetime edit fields), 2 more than
+      // the row: the four time rows may be 8 px apart. Every other section within 2.
+      const tol = id === 'pickers' ? 8 : 2
+      check(`${id}: height within ${tol} px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= tol, { web: mw.h, native: mn.h })
     }
     // the sheets, full screen
     for (const [btn, name, close] of [['Open a sheet', 'sheet', 'Cancel'], ['Open a bare sheet', 'baresheet', null]]) {
@@ -140,6 +158,48 @@ async function run() {
         seq[tag] = out.join(',')
       }
       check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
+    }
+    // the Slider: a tap at either end and a drag across set the same portion on both sides
+    if (!ONLY || ONLY.includes('p4')) {
+      const seq = {}
+      for (const [x, tag, sel, fig] of [
+        [w, 'web', '[data-g="p4"] input[type="range"]', '[data-g="p4"] .big'],
+        [n, 'native', '[data-testid="g-p4"] [aria-label="Portion size"]', null],
+      ]) {
+        const el = x.page.locator(sel).first()
+        await el.scrollIntoViewIfNeeded()
+        const box = await el.boundingBox(), cy = box.y + box.height / 2, l = box.x + 2, r = box.x + box.width - 2
+        // the figure above the slider: the card's first number
+        const read = () => (fig ? x.page.locator(fig).first().innerText() : el.evaluate((s) => s.parentElement.innerText)).then((v) => v.match(/\d+/)[0])
+        const out = [await read()]
+        await x.page.mouse.click(r, cy); await x.page.waitForTimeout(200); out.push(await read())
+        await x.page.mouse.click(l, cy); await x.page.waitForTimeout(200); out.push(await read())
+        await x.page.mouse.move(l, cy); await x.page.mouse.down()
+        for (let i = 1; i <= 10; i++) await x.page.mouse.move(l + ((r - l) * i) / 10, cy)
+        await x.page.mouse.up(); await x.page.waitForTimeout(200); out.push(await read())
+        seq[tag] = out.join(',')
+      }
+      check(`${scheme}: the Slider's taps and drag set the same values (×1.5, right end, left end, drag across)`, seq.web === seq.native && seq.web === '618,1236,103,1236', seq)
+    }
+    // a time field opens its picker in a sheet (typed here: no wheels in a browser); Done keeps the
+    // pick, Cancel keeps the old value; a date out of range can't be kept
+    if (scheme === 'light' && (!ONLY || ONLY.includes('pickers'))) {
+      const p = n.page, sec = p.locator(natSec('pickers')), sheetBtn = (name) => p.locator('[data-testid="sheet"]').getByRole('button', { name, exact: true })
+      const shown = () => sec.locator('[aria-label="Wake time"]').innerText()
+      await sec.locator('[aria-label="Wake time"]').click()
+      const field = p.locator('[data-testid="sheet"] input').first()
+      await field.fill('06:45'); await sheetBtn('Done').click(); await p.waitForTimeout(400)
+      const afterDone = await shown()
+      await sec.locator('[aria-label="Wake time"]').click()
+      await p.locator('[data-testid="sheet"] input').first().fill('05:00'); await sheetBtn('Cancel').click(); await p.waitForTimeout(400)
+      const afterCancel = await shown()
+      await sec.locator('[aria-label="Pick a start date"]').click()
+      await p.locator('[data-testid="sheet"] input').first().fill('2028-01-01')
+      const outOfRange = await sheetBtn('Done').isDisabled()
+      await p.locator('[data-testid="sheet"] input').first().fill('2026-12-01'); await sheetBtn('Done').click(); await p.waitForTimeout(400)
+      const dateShown = await sec.locator('[aria-label="Pick a start date"]').innerText()
+      check('the time field: Done keeps 06:45 (shown in the locale\'s form), Cancel keeps it, a date past max is refused, 1 Dec is kept',
+        afterDone.startsWith('06:45') && afterCancel.startsWith('06:45') && outOfRange && dateShown.includes('2026-12-01'), { afterDone, afterCancel, outOfRange, dateShown })
     }
     // a sheet drawn over a full-screen view (the guided player): overlay mode on native, the same look
     if (!ONLY || ONLY.includes('sheets')) {

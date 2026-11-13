@@ -114,7 +114,7 @@ function files(dir: string, native = false): string[] {
   for (const n of readdirSync(dir)) {
     const p = join(dir, n)
     // skipped by exact name: dependencies, build output, hidden folders, and (in the native app) the native-code folders
-    if (statSync(p).isDirectory()) { if (!/^(node_modules|dist|dist-check|dist-web|\.[^.].*)$/.test(n) && !(native && /^(ios|android)$/.test(n))) out.push(...files(p, native)) }
+    if (statSync(p).isDirectory()) { if (!/^(node_modules|dist|dist-[\w-]+|\.[^.].*)$/.test(n) && !(native && /^(ios|android)$/.test(n))) out.push(...files(p, native)) }
     else if (/\.(m|c)?[jt]sx?$/.test(n)) out.push(p)
   }
   return out

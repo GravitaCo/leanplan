@@ -31,14 +31,23 @@ pattern two screens need that isn't here comes to N1 (through the lead), not int
 
 | File | Pieces |
 |---|---|
-| `kit.tsx` | `Card` (`.card`, `.pcard`), `Tile`, `Btn` (ink, tinted, gray, danger, small), `LinkBtn`, `Chip`/`Chips`, `List`, `Banner`, `ToastView`, `ToastHost` (mounted once in the tab shell), `slop`, `initials` |
-| `primitives.tsx` | `PageHeader`, `TitleRow`, `ProfileButton`, `ConnectionPill`/`ConnectionLine` (+ `View` forms), `CatHead`, `BackButton`, `NavBtn`, `Seg`, `Toggle`, `SettingRow`, `Disclosure`, `Sheet`, `BareSheet` |
+| `kit.tsx` | `Card` (`.card` with `plain`, `.pcard`), `Tile`, `Btn` (ink, tinted, gray, danger, signout, link, small), `LinkBtn` (padded or `flat`), `Stack`, `RoundBtn`, `DashAdd`, `Big`, `Chip`/`Chips`, `List`, `Note`, `Banner`, `ToastView`, `ToastHost` (mounted once in the tab shell), `slop`, `initials` |
+| `primitives.tsx` | `PageHeader`, `TitleRow`, `ProfileButton`, `ConnectionPill`/`ConnectionLine` (+ `View` forms), `CatHead`, `BackButton`, `NavBtn` (words or an icon), `Seg`, `Toggle`, `Row`, `Tag`, `AddC`, `XBtn`, `Swatch`, `SettingRow`, `Disclosure`, `Sheet`, `BareSheet` |
+| `controls.tsx` | `Slider`, `Stepper`, `Scale`, `Select` |
+| `pickers.tsx` | `TimeField`, `PickerSheet` (the UIDatePicker wheels from `modules/tilo-pickers`) |
+| `CoverImage.tsx` | `CoverImage`: `object-fit: cover` with the web's `object-position` |
+| `fields.tsx`, `text.tsx`, `choices.tsx` | `Input`, `Field`, `FRow` (with `hint`), `NameField`, `SearchBar`; `Lbl`, `GrpH`, `Foot`, `Sub`, `Prose`, `Empty`, `TextLink`; `Opts`, `Ticks`, `Check`, `Signposts`, `ConsentRow` |
 | `charts.tsx` | `Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`, `WeekBars` |
 | `WeekStrip.tsx` | `WeekStrip`, `DayNav`, `MoveStrip` |
 | `Ruler.tsx`, `Wheel.tsx` | the onboarding pickers |
 | `Tiles.tsx` | `ChoiceTiles` (with `three`), `CheckTiles` (stacked or `grid`) |
 | `icons.tsx`, `brand.tsx` | `Icon`, `Chevron`, `ICON_NAMES`; `TaliMark` |
 | `TabBar.tsx` | the tab bar (`TabBarView` is its look) |
+
+## Words
+
+The words a primitive brings with it (Cancel, Back, Profile, Not set, the tab names…) live in
+`src/copy/ui.ts`, shared with the web's `src/ui`. A screen's own words stay in its area's copy file.
 
 ## Checking a change
 

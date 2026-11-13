@@ -12,8 +12,11 @@
 import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
-import { codeFrom } from './rules'
+import { useStore } from '@/store/store'
+import { codeFrom, reauthMatches } from './rules'
 import { setGoogleOAuth } from '@/data/platform'
+import { CryptoDigestAlgorithm, digestStringAsync, getRandomBytes } from 'expo-crypto'
+import { appleSignInNative } from '../../modules/tilo-auth'
 
 export const REDIRECT = 'tilo://auth-callback'
 const web = Platform.OS === 'web'
@@ -57,5 +60,43 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
   }
 }
 
-// the shared account code (src/data/account.ts reauthWithGoogle) reaches this sheet through the platform
-setGoogleOAuth(async (q) => (await googleSignIn(q)).status)
+/**
+ * The shared account code (src/data/account.ts reauthWithGoogle, before deleting the account) reaches
+ * this sheet through the platform. It confirms the same account (the phone's recorded owner,
+ * rules.ts reauthMatches): a different Google account picked in the chooser is not a re-sign-in, so it reports an error (and the store's owner check then holds that
+ * other session back; ship-critic, 13 Nov).
+ */
+setGoogleOAuth(async (q) => {
+  const r = await googleSignIn(q)
+  if (r.status !== 'ok') return r.status
+  return reauthMatches(useStore.getState().data._meta?.owner, r.uid) ? 'ok' : 'error'
+})
+
+/**
+ * Sign in with Apple (iOS; Benn, 13 Nov 2026): a one-time nonce made here, its SHA-256 given to
+ * Apple's sheet, the raw nonce given to Supabase with Apple's token, so a token can't be replayed.
+ * The session reaches the store through onAuthStateChange like any sign-in. Before deleting an
+ * account (`expectOwner`), a different Apple ID is refused as the Google re-sign-in is.
+ */
+export async function appleSignIn(): Promise<GoogleResult> {
+  try {
+    const raw = hex(getRandomBytes(32))
+    const hashed = await digestStringAsync(CryptoDigestAlgorithm.SHA256, raw)
+    const cred = await appleSignInNative(hashed)
+    if (!cred) return { status: 'cancelled' }
+    const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken, nonce: raw })
+    if (error || !data.session) return { status: 'error', message: error?.message ?? 'Sign in with Apple did not finish.' }
+    return { status: 'ok', uid: data.session.user.id }
+  } catch (e) {
+    return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+/** Sign in with Apple again before deleting: 'ok' only for this phone's own account. */
+export async function appleReauth(): Promise<'ok' | 'cancelled' | 'error'> {
+  const r = await appleSignIn()
+  if (r.status !== 'ok') return r.status
+  return reauthMatches(useStore.getState().data._meta?.owner, r.uid) ? 'ok' : 'error'
+}
+
+const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')

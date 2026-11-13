@@ -39,9 +39,10 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | Sign-up and reset emails, "send it again" repeats the right one, rate-limit message | ✓ | E2E (rate limit by reading) |
 | Email links come back to the app (tilo://auth-callback, PKCE) | ✓ | U (code parsing), Phone |
 | Continue with Google (system sign-in sheet) | ✓ | Phone (worked in the spike) |
+| Continue with Apple (iOS only, not on the web: Benn approved 13 Nov; Apple's own button above Google's, same size) | ✓ built | U (re-confirm rules), Phone: needs a dev build with modules/tilo-auth; `design` reviews the screen from a phone screenshot |
 | Reset link signs in with no "set a new password" step | as web (web gap, separate task) | |
 | Banner (signed out elsewhere, guest gone) | ✓ | by reading |
-| Sign in with Apple | not built: proposal in docs/plans/native-sign-in-with-apple.md, needs a board | |
+| Sign in with Apple revocation on deletion | not built: increment (a), docs/plans/native-sign-in-with-apple.md; before App Store review | |
 
 ## Consent
 
@@ -71,7 +72,8 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | "Share new products I scan" toggle (flag off by default) | waiting for N6 | |
 | AI features row (hidden on web too) | n/a | |
 | Sign out sheet: keep, remove, the second tap, export first when phone-only | ✓ | by reading |
-| Toasts ("Health data removed", "Backup loaded", "That isn't a valid backup file") | waiting for N1's toast | |
+| Toasts ("Health data removed", "Backup loaded", "That isn't a valid backup file") | ✓ through N1's toast host | by reading |
+| "Couldn’t export a copy. Nothing was changed. Try again." (native only: the share sheet couldn't be offered) | ✓ new words: design and compliance approved; Benn approved (13 Nov, "2. approved", in the lead's session) | by reading |
 
 ## Delete account
 
@@ -82,6 +84,7 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | Typed DELETE; wrong words keep it off | ✓ | E2E, U |
 | Old sign-in: password first; wrong password says nothing was deleted | ✓ | E2E |
 | Google account: sign in with Google again in the system sheet (stays on the confirm) | ✓ | Phone |
+| Apple account (any account with Apple among its providers): Sign in with Apple again on every deletion; another Apple ID refused. Apple's own button (HIG); new words "To delete your account, confirm it’s you: sign in with Apple again." (compliance approved; the lead takes them to Benn) | ✓ | U, Phone |
 | Deleted: device wiped, sign-in shown | ✓ | E2E |
 
 ## 18+ stop

@@ -7,6 +7,7 @@
  * `value` undefined means nothing is picked yet: the ruler rests on `initial` but says "Not set".
  */
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { UI } from '@/copy/ui'
 
 export function Ruler({ min, max, value, initial, onChange, label, valueText, major = 10, mid = 5, px = 9.2, tickLabel }: {
   min: number; max: number; value: number | undefined; initial: number; onChange: (v: number) => void
@@ -55,7 +56,7 @@ export function Ruler({ min, max, value, initial, onChange, label, valueText, ma
 
   return (
     <div className={'ruler' + (value === undefined ? ' unset' : '') + (drag != null ? ' drag' : '')} role="slider" tabIndex={0} aria-label={label}
-      aria-valuemin={min} aria-valuemax={max} aria-valuenow={base} aria-valuetext={value === undefined ? 'Not set' : valueText(value)}
+      aria-valuemin={min} aria-valuemax={max} aria-valuenow={base} aria-valuetext={value === undefined ? UI.notSet : valueText(value)}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { start.current = null; setDrag(null) }} onKeyDown={key}>
       <div className="ruler-t" aria-hidden="true" style={{ transform: `translateX(${-pos * px}px)` }}>
         {ticks.map((i) => {
