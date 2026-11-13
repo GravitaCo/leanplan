@@ -21,6 +21,7 @@ import { BTN, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List } from '../ui/kit'
 import { BackButton, BareSheet, Row } from '../ui/primitives'
 import { typedOk } from './rules'
+import { appleReauth } from './oauth'
 import { Sub } from '../ui/text'
 import { dark } from '../tokens.generated'
 
@@ -60,7 +61,8 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   // re-confirm who you are when the sign-in is older than 5 minutes (the server checks too)
   const [stale, setStale] = useState(() => needsReauth())
   const google = provider === 'google'
-  const needPw = stale && !google
+  const apple = provider === 'apple'
+  const needPw = stale && !google && !apple
   const ready = typedOk(typed) && online && !deleting && !busy && (!needPw || password.length > 0)
 
   const go = async () => {
@@ -95,6 +97,18 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     setStale(needsReauth())
   }
 
+  /** Sign in with Apple again (iOS), for an account that signed in with Apple; the same account only. */
+  const appleAgain = async () => {
+    if (!online) { setMsg(DELETE_MESSAGES.offline); return }
+    setBusy(true)
+    const r = await appleReauth()
+    setBusy(false)
+    if (r === 'cancelled') return
+    if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
+    setMsg(null)
+    setStale(needsReauth())
+  }
+
   return (
     <BareSheet label={DELETE.confirmTitle} onClose={onClose}>
       <View style={{ gap: 14 }}>
@@ -106,12 +120,18 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
             <Btn kind="gray" title={DELETE.googleAgain} disabled={!online || busy} onPress={() => void googleAgain()} />
           </>
         )}
+        {stale && apple && (
+          <>
+            <Message text={DELETE.reauthApple} />
+            <Btn kind="gray" title={DELETE.appleAgain} disabled={!online || busy} onPress={() => void appleAgain()} />
+          </>
+        )}
         {needPw && <Typed label={DELETE.password} value={password} onChange={setPassword} secure />}
         <Typed label={DELETE.typed} value={typed} onChange={setTyped} />
         {msg ? <Message text={msg} /> : null}
         {!online && !msg ? <Message text={DELETE_MESSAGES.offline} /> : null}
         {/* .btn.delall: white on red in light, black on the lighter dark-mode red (4.5:1) */}
-        <Btn title={deleting ? DELETE.deleting : DELETE.confirm} disabled={!ready || (stale && google)} onPress={() => void go()}
+        <Btn title={deleting ? DELETE.deleting : DELETE.confirm} disabled={!ready || (stale && (google || apple))} onPress={() => void go()}
           style={{ minHeight: 54, borderRadius: 27, backgroundColor: t.red }} textStyle={{ color: t === dark ? '#000000' : '#ffffff' }} />
         <View style={{ alignItems: 'center' }}><LinkBtn title={DELETE.cancel} onPress={onClose} style={[tx(16, 500, 1.3, BTN), { paddingVertical: 4, paddingHorizontal: 4 }]} /></View>
       </View>

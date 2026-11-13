@@ -25,7 +25,9 @@ import { Icon } from '../ui/icons'
 import { TaliMark } from '../ui/brand'
 import { Link } from './Consent'
 import { openLegal } from './legal'
-import { emailRedirect, googleSignIn } from './oauth'
+import { appleSignIn, emailRedirect, googleSignIn } from './oauth'
+import { AppleButton, appleAvailable } from '../../modules/tilo-auth'
+import { dark } from '../tokens.generated'
 import { coverFrame, photoHeight } from './rules'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
@@ -87,6 +89,13 @@ export function AuthScreen() {
     setErr('')
     beginSignIn()
     const r = await googleSignIn()
+    if (r.status === 'error') setErr(r.message)
+  }
+
+  async function apple() {
+    setErr('')
+    beginSignIn()
+    const r = await appleSignIn()
     if (r.status === 'error') setErr(r.message)
   }
 
@@ -204,6 +213,12 @@ export function AuthScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4 }}>
                       <View style={{ flex: 1, height: 1, backgroundColor: t.sep }} /><Text style={[tx(13), { color: t.label2 }]}>{AUTH.or}</Text><View style={{ flex: 1, height: 1, backgroundColor: t.sep }} />
                     </View>
+                  )}
+                  {/* Sign in with Apple (iOS only; Benn, 13 Nov 2026): Apple's own button, the same size as
+                      Google's and above it, black in light mode and white in dark, as Apple asks */}
+                  {appleAvailable() && (
+                    <AppleButton appearance={t === dark ? 'white' : 'black'} cornerRadius={27} onPress={() => void apple()}
+                      style={{ height: 54, alignSelf: 'stretch' }} />
                   )}
                   {/* .auth2-google: a card-coloured button with a 1 px --sep ring, 16 pt, Google's own G */}
                   <Btn kind="gray" title={AUTH.google} icon={<GoogleG />} onPress={() => void google()}
