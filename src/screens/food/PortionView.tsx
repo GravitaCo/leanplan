@@ -66,6 +66,8 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const shareRow = saved ? shareRowState(saved, { enabled: shareOk, online }) : 'hidden'
 
   const maxG = gramsMax(food)
+  // per-item foods are counted only, so they have no mode to choose
+  const modes = portionModes(food)
   return (
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>{PORTION.add}</button>}>
@@ -78,7 +80,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <MealSeg value={meal} onChange={setMeal} />
 
       <div className="lbl">{PORTION.howMuch}</div>
-      {!each && <Seg<Mode> options={portionModes(food)!} value={mode} onChange={setMode} />}
+      {modes && <Seg<Mode> options={modes} value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>

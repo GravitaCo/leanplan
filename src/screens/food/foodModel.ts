@@ -27,6 +27,8 @@ export function allFoods(customFoods: Food[] | undefined): Food[] {
 
 /** A food at this index of `allFoods` is one of the user's own. */
 export const isMine = (index: number): boolean => index >= FOODS.length
+/** The `allFoods` index of the user's own food at this place in their list. */
+export const mineIndex = (i: number): number => FOODS.length + i
 
 // ───────────────────────── the Food tab ─────────────────────────
 

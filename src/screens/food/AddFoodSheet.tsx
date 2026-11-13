@@ -6,8 +6,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
 import type { Food, MealSlot } from '@/core/types'
-import { FOODS } from '@/core/data/foods'
-import { allFoods, browseFoods, isMine, searchFoods } from './foodModel'
+import { allFoods, browseFoods, isMine, mineIndex, searchFoods } from './foodModel'
 import { ADD_FOOD, FOOD } from '@/copy/food'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
@@ -229,7 +228,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             <div className="lbl">{ADD_FOOD.myFoods}</div>
             {pair && <div className="list"><SameFoodsRow pair={pair} onOpen={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></div>}
             <div className="list">
-              {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
+              {cf.map((f, ci) => foodRow(f, mineIndex(ci),
                 <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={ADD_FOOD.deleteFood(f.n)}
                   onClick={(e) => { e.stopPropagation(); if (window.confirm(ADD_FOOD.deleteFoodAsk(f.n))) removeCustomFood(ci) }}>
                   <Icon name="x" size={17} />

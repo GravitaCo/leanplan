@@ -15,7 +15,6 @@ import { Icon } from '@/ui/icons'
 import { RecipeLogView } from './RecipeLogView'
 import { Checks } from './common'
 
-type Draft = RecipeDraft
 
 /** `initialDraft` opens straight into the builder, e.g. "Save as recipe" from a logged meal. */
 export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; initialDraft?: { name: string; items: RecipeItem[] } }) {
@@ -27,7 +26,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   const gentle = useStore((s) => kcalHidden(s.data))
   const all = useMemo(() => allFoods(customFoods), [customFoods])
 
-  const [draft, setDraft] = useState<Draft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)
+  const [draft, setDraft] = useState<RecipeDraft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)
   const [logging, setLogging] = useState<number | null>(null)
   const [meal, setMeal] = useState<MealSlot>(mealNow())
   const [q, setQ] = useState('')

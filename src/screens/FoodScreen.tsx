@@ -45,7 +45,6 @@ export function FoodScreen() {
   // does, a small chooser asks which
   const { sameAsYesterday, saveable } = fd
   const saveRecipe = (m: MealSlot) => setSheet({ k: 'recipes', draft: { name: '', items: recipeItemsFrom(groups[m]) } })
-  const names = mealNames
 
   const row = (x: LoggedRow) => (
     <button className="li" key={x._i} onClick={() => setSheet({ k: 'edit', i: x._i })}>
@@ -152,7 +151,7 @@ export function FoodScreen() {
           <button className="li" onClick={() => sameAsYesterday.length === 1 ? repeatYesterday(sameAsYesterday[0].m) : setSheet({ k: 'pickYesterday' })}>
             <div className="m"><div className="t">{FOOD.sameAsYesterday}</div>
               <div className="s">{sameAsYesterday.length === 1
-                ? `${MEAL_LABEL[sameAsYesterday[0].m]}: ${names(sameAsYesterday[0].yd)}`
+                ? `${MEAL_LABEL[sameAsYesterday[0].m]}: ${mealNames(sameAsYesterday[0].yd)}`
                 : FOOD.copyAMeal}</div></div>
             <Chevron />
           </button>
@@ -184,7 +183,7 @@ export function FoodScreen() {
           <div className="list">
             {sameAsYesterday.map(({ m, yd }) => (
               <button className="li" key={m} onClick={() => { repeatYesterday(m); setSheet(null) }}>
-                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{names(yd)}</div></div>
+                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{mealNames(yd)}</div></div>
                 <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
               </button>
             ))}
@@ -196,7 +195,7 @@ export function FoodScreen() {
           <div className="list">
             {saveable.map((m) => (
               <button className="li" key={m} onClick={() => saveRecipe(m)}>
-                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{names(groups[m])}</div></div>
+                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{mealNames(groups[m])}</div></div>
                 <Chevron />
               </button>
             ))}
