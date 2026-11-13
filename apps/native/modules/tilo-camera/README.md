@@ -32,8 +32,13 @@ the camera's own Y (Rec. 601, as the web's `toGray`).
 
 ## To check on the first device build (not compiled here: no Xcode in the cloud session)
 
-- It compiles: `required init?(coder:)` is provided in case ExpoFabricView needs it; Swift 5 mode
-  is assumed (a captured `var` in `requestAccess`'s callback would be a Swift 6 error).
+- It compiles: `required init?(coder:)` is provided in case ExpoFabricView needs it; the podspec
+  pins `swift_version` 5.9 (the capture delegates run on the module's own queues, and a captured
+  `var` in `requestAccess`'s callback would be a Swift 6 error).
+- A captured photo comes out upright in portrait (the photo connection's rotation isn't set; ImageIO
+  applies the EXIF orientation when it re-encodes, so check the JPEG sent is upright).
+- Turning the camera off and on (Retake, the front step) shows the live view again and `onReady`
+  arrives each time; a photo taken as the camera stops rejects instead of hanging.
 - The `.photo` session preset for both modes, and whether `.ean13/.ean8/.upce` are available on
   the metadata output after `addOutput` (they're filtered by `availableMetadataObjectTypes`).
 - `TemporaryPhotos.owned` refuses a URI outside Caches/TiloCamera, including `%2E%2E` and

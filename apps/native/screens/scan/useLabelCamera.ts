@@ -3,13 +3,14 @@
  * the live quality line, Capture and Capture anyway, and the photo. The screen draws it once
  * N1's kit lands; the read itself is src/data/labelRead.ts.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { QualityIssue } from '@/core/domain/labelQuality'
 import { cameraPermission, requestCameraPermission, type TiloCameraViewProps, type TiloCameraViewRef } from '../../modules/tilo-camera'
 import { captureShot, pickShot, type PhotoKind, type Shot } from './labelPhoto'
 import { captureReady, issueFromEvent, LABEL_CAMERA_PROPS } from './labelQualityLive'
+import { cameraReducer, type CameraState } from './cameraState'
 
-export type LabelCamera = 'starting' | 'on' | 'denied' | 'none'
+export type LabelCamera = CameraState
 /** The web's two photo errors: a capture it couldn't use, a pick it couldn't open. */
 export type LabelPhotoError = 'unusable' | 'unopenable'
 
@@ -31,22 +32,25 @@ export interface LabelCameraState {
 export function useLabelCamera(kind: PhotoKind, active: boolean): LabelCameraState {
   const ref = useRef<TiloCameraViewRef | null>(null)
   const alive = useRef(true)
-  const [camera, setCamera] = useState<LabelCamera>('starting')
+  const [camera, dispatch] = useReducer(cameraReducer, 'starting')
   const [issue, setIssue] = useState<QualityIssue | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<LabelPhotoError | null>(null)
 
   useEffect(() => () => { alive.current = false }, [])
-  // each capture step starts afresh, as the web's effect does
+  // each time a capture step turns the camera on it starts afresh, as the web's effect does; the
+  // camera says ready again on every start (TiloCameraView), so 'starting' never sticks
   useEffect(() => {
     if (!active) return
-    setCamera('starting'); setIssue(undefined); setError(null)
+    dispatch({ type: 'activate' })
     void (async () => {
       let p = await cameraPermission()
       if (p === 'undetermined') p = await requestCameraPermission()
-      if (alive.current && p === 'denied') setCamera('denied')
+      if (alive.current && p === 'denied') dispatch({ type: 'fail', reason: 'denied' })
     })()
-  }, [active, kind])
+  }, [active])
+  // a new step (the nutrition table, then the front) checks its own frames and clears old errors
+  useEffect(() => { if (active) { setIssue(undefined); setError(null) } }, [active, kind])
 
   const run = useCallback(async (take: () => Promise<Shot | null>, err: LabelPhotoError): Promise<Shot | null> => {
     if (busy) return null
@@ -73,8 +77,8 @@ export function useLabelCamera(kind: PhotoKind, active: boolean): LabelCameraSta
     cameraProps: {
       ...LABEL_CAMERA_PROPS,
       active: active && camera !== 'denied',
-      onReady: () => { if (alive.current) setCamera('on') },
-      onMountError: (reason) => { if (alive.current) setCamera(reason) },
+      onReady: () => { if (alive.current) dispatch({ type: 'ready' }) },
+      onMountError: (reason) => { if (alive.current) dispatch({ type: 'fail', reason }) },
       onQuality: (e) => { if (alive.current) setIssue((prev) => issueFromEvent(e, prev)) },
     },
   }

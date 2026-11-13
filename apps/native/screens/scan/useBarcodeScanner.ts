@@ -9,7 +9,7 @@
  * whole, so its first valid code counts at once; a bad check digit says so and keeps scanning;
  * once a code is valid the camera stops and nothing else is read.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
 import { FOODS } from '@/core/data/foods'
 import { confirmLiveRead, normalizeBarcode } from '@/core/domain/barcode'
@@ -18,11 +18,12 @@ import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { resolveBarcode, type ScanOutcome } from '@/data/scanLookup'
 import { barcodesInImage, cameraPermission, requestCameraPermission, toHit, type NativeBarcode, type TiloCameraViewProps, type TiloCameraViewRef } from '../../modules/tilo-camera'
 import { typedDigits } from './barcode'
+import { cameraReducer, type CameraState } from './cameraState'
 import { firstValid } from './firstValid'
 import { deleteFile, pickPhotoUri } from './labelPhoto'
 
 /** The web's camera states, less 'noscan' (the web decoder's first-load download; none here). */
-export type ScanCamera = 'starting' | 'on' | 'denied' | 'none'
+export type ScanCamera = CameraState
 
 /** Why a message shows under the camera (the web's ScanView `setMsg` lines). */
 export type ScanMessage = 'bad-check' | 'no-barcode' | 'photo-unreadable'
@@ -54,7 +55,7 @@ export function useBarcodeScanner(onResult: (r: ScanOutcome) => void): BarcodeSc
   const doneRef = useRef(false)
   const seenRef = useRef<{ code: string; n: number } | null>(null)
   const lookupRef = useRef<AbortController | null>(null)
-  const [camera, setCamera] = useState<ScanCamera>('starting')
+  const [camera, dispatch] = useReducer(cameraReducer, 'starting')
   const [scanning, setScanning] = useState(true)
   const [typed, setTypedRaw] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -67,7 +68,7 @@ export function useBarcodeScanner(onResult: (r: ScanOutcome) => void): BarcodeSc
     void (async () => {
       let p = await cameraPermission()
       if (p === 'undetermined') p = await requestCameraPermission()
-      if (aliveRef.current && p === 'denied') setCamera('denied')
+      if (aliveRef.current && p === 'denied') dispatch({ type: 'fail', reason: 'denied' })
     })()
     return () => { aliveRef.current = false; lookupRef.current?.abort() }
   }, [])
@@ -143,8 +144,8 @@ export function useBarcodeScanner(onResult: (r: ScanOutcome) => void): BarcodeSc
     cameraProps: {
       mode: 'barcode',
       active: scanning && camera !== 'denied',
-      onReady: () => { if (aliveRef.current) setCamera('on') },
-      onMountError: (reason) => { if (aliveRef.current) setCamera(reason) },
+      onReady: () => { if (aliveRef.current) dispatch({ type: 'ready' }) },
+      onMountError: (reason) => { if (aliveRef.current) dispatch({ type: 'fail', reason }) },
       onBarcode: scanning ? onBarcode : undefined,
     },
   }

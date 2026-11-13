@@ -36,7 +36,6 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
   private let photoOutput = AVCapturePhotoOutput()
   private var configured = false
   private var failed = false
-  private var readySent = false
   private var lastQuality: CFTimeInterval = 0
   private var pendingPhotos: [Int64: Promise] = [:]
 
@@ -83,13 +82,14 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
         guard self.ensureConfigured(mode: mode) else { return }
         if !self.session.isRunning {
           self.session.startRunning()
-          if !self.readySent {
-            self.readySent = true
-            DispatchQueue.main.async { self.onReady() }
-          }
+          // on every start, not only the first: JS shows "Starting the camera…" each time a
+          // capture step turns the camera back on, and waits for this
+          DispatchQueue.main.async { self.onReady() }
         }
       } else if self.session.isRunning {
         self.session.stopRunning()
+        // a photo still being taken won't arrive now: settle its promise so JS never waits
+        DispatchQueue.main.async { self.rejectPendingPhotos() }
       }
     }
   }
@@ -220,6 +220,15 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
         self.pendingPhotos[settings.uniqueID] = promise
         self.sessionQueue.async { self.photoOutput.capturePhoto(with: settings, delegate: self) }
       }
+    }
+  }
+
+  /// On the main thread.
+  private func rejectPendingPhotos() {
+    let pending = pendingPhotos
+    pendingPhotos.removeAll()
+    for promise in pending.values {
+      promise.reject(Exception(name: "CameraStopped", description: "The camera stopped before the photo was taken"))
     }
   }
 

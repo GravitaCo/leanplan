@@ -8,6 +8,8 @@ Pod::Spec.new do |s|
   s.platforms      = { :ios => '17.0' }
   s.source         = { git: '' }
   s.static_framework = true
+  # Swift 5 language mode: the capture delegates run on the module's own queues (see README)
+  s.swift_version  = '5.9'
 
   s.dependency 'ExpoModulesCore'
   s.frameworks = 'AVFoundation', 'Vision', 'ImageIO', 'PhotosUI', 'UniformTypeIdentifiers'

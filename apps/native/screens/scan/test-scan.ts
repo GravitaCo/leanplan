@@ -22,6 +22,7 @@ import { lookupShared } from '@/data/sharedProducts'
 import { readLabel } from '@/data/labelReader'
 import { setSession } from '@/data/supabase'
 import { typedDigits } from './barcode'
+import { cameraReducer, type CameraEvent, type CameraState } from './cameraState'
 import { firstValid } from './firstValid'
 import { toFrameQuality, toHit, toPermission } from '../../modules/tilo-camera/src/mapping'
 import { captureReady, CHECK_EVERY_MS, issueFromEvent, LABEL_CAMERA_PROPS } from './labelQualityLive'
@@ -276,6 +277,20 @@ async function reads() {
   check('typed fallback keeps the barcode', typedDraft({ barcode: '5000157024671', taken: [] }).barcode === '5000157024671')
 }
 
+/* ---------------- camera on and off ---------------- */
+
+function cameraOnOff() {
+  const run = (events: CameraEvent[]) => events.reduce(cameraReducer, 'starting' as CameraState)
+  check('camera: starting, then on when it says ready', run([{ type: 'activate' }, { type: 'ready' }]) === 'on')
+  check('turned back on (Retake, the front step): starting again, then on again', run([{ type: 'activate' }, { type: 'ready' }, { type: 'activate' }]) === 'starting' && run([{ type: 'activate' }, { type: 'ready' }, { type: 'activate' }, { type: 'ready' }]) === 'on')
+  check('a refusal or no camera sticks (the note stays)', run([{ type: 'fail', reason: 'denied' }, { type: 'activate' }, { type: 'ready' }]) === 'denied' && run([{ type: 'fail', reason: 'none' }, { type: 'activate' }]) === 'none')
+  const view = readFileSync('modules/tilo-camera/ios/TiloCameraView.swift', 'utf8')
+  check('the camera says ready on every start, not only the first', /self\.session\.startRunning\(\)\s*\n(\s*\/\/[^\n]*\n)*\s*DispatchQueue\.main\.async \{ self\.onReady\(\) \}/.test(view) && !/readySent/.test(view))
+  check('stopping settles a photo still being taken', /stopRunning\(\)\s*\n(\s*\/\/[^\n]*\n)*\s*DispatchQueue\.main\.async \{ self\.rejectPendingPhotos\(\) \}/.test(view))
+  const hook = readFileSync('screens/scan/useLabelCamera.ts', 'utf8')
+  check('the label hook restarts the line on each activation only', /dispatch\(\{ type: 'activate' \}\)[\s\S]*?\}, \[active\]\)/.test(hook))
+}
+
 /* ---------------- 4. no EXIF or GPS leaves the phone (compliance: blocking) ---------------- */
 
 /**
@@ -313,6 +328,7 @@ async function main() {
   sizes()
   await reads()
   exifStrip()
+  cameraOnOff()
   globalThis.fetch = realFetch
   console.log(`${failed ? 'FAIL' : 'PASS'} scan: ${passed} passed, ${failed} failed`)
   if (failed) throw new Error(`${failed} scan check(s) failed`)
