@@ -127,13 +127,17 @@ her up; it doesn't hold the build.
   took longer than writing it, because of Apple enrolment and set-up.
 - *What is left to rebuild:* the screens and UI kit, about 13,500 lines of TSX and 1,900 of CSS on the web.
   The Summary cards ran at about one native line per web line, so roughly 35 Summary-sized pieces remain.
-- *Where the time goes:* not the coding. Each stream needs its specialist reviews, `design` against the web,
-  side-by-side checks, `ship-critic`, and Benn's or Sara's look on the phone; any visible difference from
-  the web is a board first. Those reviews and approvals set the pace.
-- *Calendar:* foundation (N0 to N3) about 1 to 2 weeks; feature streams in parallel about 3 to 4 weeks
-  after that; parity build in TestFlight about **5 to 6 weeks from now** if approvals keep pace. Store
-  launch then needs Sign in with Apple, the store listings, privacy labels and Apple's review (days to
-  weeks); Android adds Play's closed test (about 14 days with about 12 testers [I]).
+- *Revised 13 Nov after Benn's challenge:* the first figures (5 to 6 weeks) assumed human-paced review
+  cycles, which isn't how this team works: the specialist reviews run in minutes inside each stream, the
+  designs exist, and only visible differences from the web need Benn's or Sara's approval. The web app
+  was designed and built in about 3 weeks; native reuses all its logic and its designs.
+- *Calendar (revised):* foundation (N0 to N3) a few days; feature streams in parallel about 1 to 2 weeks
+  after that; parity build in TestFlight in about **2 to 3 weeks**. The parts that are genuinely new work
+  rather than ports, and most likely to run over: the guided player with video and timers (N7), barcode
+  scanning with the camera (N6), push through APNs with the reminder function (N12), and anything that
+  only shows up on a real phone. Re-measured when N1 lands. Store launch then needs Sign in with Apple, the
+  store listings, privacy labels and Apple's review (days to weeks); Android adds Play's closed test
+  (about 14 days with about 12 testers [I]).
 - *Running costs* (EAS build minutes, developer accounts): `cfo` to cost; builds so far fit Expo's plan.
 
 ## 4. Streams
