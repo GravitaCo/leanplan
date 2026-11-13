@@ -7,7 +7,7 @@
  * The same logic as the web, line for line; only the drawing is React Native.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AccessibilityInfo, AppState, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { AccessibilityInfo, AppState, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { cancelRestAlert, scheduleRestAlert, setGuidedSessionOpen } from './session'
@@ -77,12 +77,18 @@ function TempoCount({ player, media, playing }: { player: ReturnType<typeof useC
   const [s, setS] = useState(() => tempoAt(media, player.currentTime))
   useEffect(() => {
     if (!playing) return
-    let raf = 0
-    const tick = () => {
-      const next = tempoAt(media, player.currentTime)
+    const update = (time: number) => {
+      const next = tempoAt(media, time)
       setS((cur) => (cur.kind === next.kind && cur.count === next.count && cur.countOf === next.countOf ? cur : next))
-      raf = requestAnimationFrame(tick)
     }
+    // Android: reading currentTime blocks the main thread there, so it takes the player's time events
+    if (Platform.OS === 'android') {
+      player.timeUpdateEventInterval = 0.1
+      const sub = player.addListener('timeUpdate', (e) => update(e.currentTime))
+      return () => sub.remove()
+    }
+    let raf = 0
+    const tick = () => { update(player.currentTime); raf = requestAnimationFrame(tick) }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [player, media, playing])
