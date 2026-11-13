@@ -127,6 +127,15 @@ fake-camera capture are screen-level (the suggestion logic is shared core, alrea
 the opt-in, the source cards, the report sheet and the queue are screen-level or shared store
 behaviour, carried over when the screens are built.
 
+## Open before the screens ship
+
+- The label screen calls `discardAll()` when it closes (and passes it to `readPhotos` as `discard`);
+  the barcode screen needs nothing more (its photo goes as soon as it's decoded).
+- The lead calls `sweepPhotoCache()` at launch (merge task) and adds
+  `./modules/tilo-camera/app.plugin.js` to app.json.
+- Compliance register row 56 / item 24 gets the native retention line when this merges (lead).
+- The device checks in `modules/tilo-camera/README.md`, the EXIF one first.
+
 ## Decisions
 
 - No visible differences from the web are proposed. P1 (no Take a photo row) and P2 (quality after
