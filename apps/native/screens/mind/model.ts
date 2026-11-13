@@ -23,6 +23,7 @@ import { RESET, finishedLine, leftLine, lengthLabel } from '@/copy/mindReset'
 import { SUPPORT } from '@/copy/onboardingApp'
 import { supportList } from '@/screens/profile/supportRows'
 import { checkinPairs, mindEyebrow } from '@/screens/mind/pageLogic'
+import { GLOW_MID, glowAt, type Glow } from '@/screens/mind/glow'
 import { reflectionFor, reflectionSpan } from '@/screens/mind/reflection'
 import { UNLOAD_MAX_PAIRS, type UnloadPair } from '@/screens/mind/unloadNotes'
 
@@ -141,13 +142,25 @@ export function resetView(s: ResetState, reduced: boolean, left: string): ResetV
 }
 
 /**
- * A finished run: logged once (logSkill), and today's thing ticked done when it's a Reset thing
- * (doneThing; Benn, 10 Oct 2026). A stopped run never calls this, so it changes nothing.
+ * The pacer reached the end of its last breath out. Only a run that is still running when this
+ * lands finishes: it is logged once (logSkill) and ticks today's thing done when that's a Reset
+ * thing (doneThing; Benn, 10 Oct 2026). A run already stopped (Stop in its last second, with the
+ * timer's done arriving before the screen re-renders) changes nothing and logs nothing. `cur` must be
+ * the stage as of now (the screen keeps it in a ref, set before dispatching Stop), and the store is
+ * read at this moment (useStore.getState(), as the web's ResetScreen does), never a render's copy.
  */
-export function finishReset(st: Pick<StoreState, 'data' | 'logSkill' | 'doneThing'>, today = todayStr()): void {
+export function onPacerDone(cur: ResetState, st: Pick<StoreState, 'data' | 'logSkill' | 'doneThing'> = useStore.getState(), today = todayStr()): ResetState {
+  if (cur.stage !== 'running') return cur
   st.logSkill('reset')
   if (resetTicksThing(st.data.days[today]?.checkin?.thing)) st.doneThing()
+  return resetReducer(cur, { type: 'finish' })
 }
+
+/**
+ * What the pacer draws: with Reduce Motion on, the board's still middle frame whatever the clock
+ * says (the screen ignores segments then); otherwise the glow at the sphere's fullness.
+ */
+export const pacerGlow = (reduced: boolean, fullness: number): Glow => (reduced ? GLOW_MID : glowAt(fullness))
 
 /* ======================= Support (B6 frame 1) ======================= */
 

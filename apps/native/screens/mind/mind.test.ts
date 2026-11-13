@@ -13,7 +13,7 @@ import type { WeekReflection } from '@/core/domain/mind'
 import { pacerEase, pacerTick, phaseEnd, startPacerRun, type ClockEnv, type PacerSegment } from './pacerClock'
 import {
   flipPick, mindPageModel, popView, pushView, reflectionView, resetInitial, resetReducer, resetView, routineStart,
-  saveRoutine, stackOnArrival, stackView, supportModel, unloadInitial, unloadReducer, windDownModel, finishReset, openMindCheckin,
+  saveRoutine, stackOnArrival, stackView, supportModel, unloadInitial, unloadReducer, windDownModel, onPacerDone, pacerGlow, openMindCheckin,
 } from './model'
 
 let bad = 0
@@ -152,10 +152,20 @@ const eq = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
   const log: string[] = []
   const store = (thing?: { key: string }) => ({ data: { days: { '2026-10-08': { checkin: { thing } } } } as never, logSkill: () => { log.push('log'); return true }, doneThing: () => { log.push('done'); return true } })
-  finishReset(store({ key: 'reset-2' }), '2026-10-08')
+  const running = resetReducer(resetInitial, { type: 'start' })
+  const done1 = onPacerDone(running, store({ key: 'reset-2' }), '2026-10-08')
   const withThing = log.splice(0)
-  finishReset(store({ key: 'outside-10' }), '2026-10-08')
-  ok('a finished run is logged; a Reset thing is ticked, another thing is not', withThing.includes('log') && log.includes('log') && !log.includes('done'), { withThing, log })
+  onPacerDone(running, store({ key: 'outside-10' }), '2026-10-08')
+  const other = log.splice(0)
+  ok('a finished run is logged once and finishes; a Reset thing is ticked, another thing is not',
+    done1.stage === 'finished' && eq(withThing, ['log', 'done']) && eq(other, ['log']), { withThing, other })
+  // Stop in the last second: the timer's done lands after Stop, before a re-render
+  const late = onPacerDone(resetReducer(running, { type: 'stop' }), store({ key: 'reset-2' }), '2026-10-08')
+  ok('a stopped run is never logged, even if done lands after Stop', late.stage === 'stopped' && log.length === 0, log)
+  ok('done on a finished run does nothing (no second log)', onPacerDone(done1, store(), '2026-10-08') === done1 && log.length === 0)
+  ok('done before a start does nothing', onPacerDone(resetInitial, store(), '2026-10-08') === resetInitial && log.length === 0)
+  ok('Reduce Motion draws the still middle frame whatever the fullness', eq(pacerGlow(true, 0), pacerGlow(true, 1)) && pacerGlow(true, 0.3).sphere === 0.9)
+  ok('motion on follows the fullness', pacerGlow(false, 0).sphere === 0.8 && pacerGlow(false, 1).sphere === 1)
 }
 
 /* ---------- Support (wp6-mind) ---------- */

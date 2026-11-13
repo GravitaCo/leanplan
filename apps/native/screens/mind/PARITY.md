@@ -40,7 +40,7 @@ Dynamic Type at the largest size.
 | 2.4 | Scotland: Samaritans, Shout, NHS 24 (111) mental health option, NHS 24 (111), Beat, Emergency services | wp6-mind | logic, e2e |
 | 2.5 | Wales: same shape as England with Wales's routes and Beat's Wales number | supportRows | logic, e2e |
 | 2.6 | Northern Ireland: Samaritans, Shout, Lifeline (calls 0808 808 8000), Your GP with the out-of-hours words, Beat, Emergency services; no 111 | wp6-mind | logic, e2e |
-| 2.7 | Shout opens a text (`sms:85258?&body=SHOUT`) and its words say "Text SHOUT to 85258"; others call (`tel:`); a row with a web link keeps the number as its own target | SupportRows | logic; phone (dialler, Messages) |
+| 2.7 | Shout opens a text (`sms:85258?&body=SHOUT`) and its words say "Text SHOUT to 85258"; others call (`tel:`); a row with a web link keeps the number as its own target | SupportRows | logic; phone (dialler, Messages on iOS and Android: some Android Messages apps don't pre-fill the body, which the words cover) |
 | 2.8 | The GP row has no number on the right | wp6-mind | logic, e2e |
 | 2.9 | Accessibility labels equal the web's aria labels: "Samaritans: call 116 123", "Shout: text 85258" | SupportRows | logic, phone (VoiceOver) |
 | 2.10 | Not-a-crisis line and the private foot, verbatim, last | wp6-mind | logic, e2e |
@@ -53,12 +53,12 @@ Dynamic Type at the largest size.
 |---|---|---|---|
 | 3.1 | Pushed card screen: Back "Mind" (or "Wind down" from its routine), title, avatar; no tab bar while open, back on return | closeout-design-reset | logic, e2e |
 | 3.2 | Ready: sub-line, 1/2/5 min with 2 picked, how-to, sphere at rest (scale 0.8), Start; no count or time | wp12-reset | logic, e2e |
-| 3.3 | Running: intro hidden; count 112/200 tabular in --label, word 17/500 in --mind-ink; "m:ss left"; Stop (gray) | wp12-reset | logic, e2e |
+| 3.3 | Running: intro hidden; count 112/200 tabular in --label, word 17/500 in --mind-ink; "m:ss left"; Stop (gray). Screen readers hear the word only (web: word `aria-live="polite"`, count `aria-hidden`): `accessibilityLiveRegion="polite"` on Android, an announcement or live label for the word on iOS, the count hidden | wp12-reset | logic, e2e, phone (VoiceOver, TalkBack) |
 | 3.4 | Words Breathe in → And in again → Breathe out; counts start at 1 and go up within each phase; timings from `RESET_PATTERN` only | wp12-reset | logic, e2e |
 | 3.5 | Sphere grows on the breath in, more on the second, settles on the breath out; rings spread and thin (shared `glow.ts` keyframes), on the UI thread | Pacer | logic (ease equals pacerAt), phone (smoothness) |
-| 3.6 | Reduce Motion: B7.10 line above the card; sphere and rings hold the middle frame (0.9); words and count still step; follows a change while open | wp12-reset-reduced | logic, e2e, phone |
+| 3.6 | Reduce Motion: B7.10 line above the card; sphere and rings hold the middle frame (0.9, `pacerGlow`) and pacer segments are ignored; words and count still step; follows a change while open (`useReduceMotion`: AccessibilityInfo's reduceMotionChanged, not Reanimated's launch-time value) | wp12-reset-reduced | logic, e2e, phone |
 | 3.7 | Stop early: B7.15 only, never a time done; nothing logged | wp12-reset | logic, e2e |
-| 3.8 | Finish: "That's 1 minute." (straight apostrophe) and B7.15; logged once (`logSkill`); today's thing ticked only when it's a Reset thing; check-in answers untouched | wp12-reset-finish | logic, e2e |
+| 3.8 | Finish: "That's 1 minute." (straight apostrophe) and B7.15; logged once (`logSkill`); today's thing ticked only when it's a Reset thing; check-in answers untouched. Stop in the run's last second never logs: `onPacerDone` finishes only a run still running (the screen keeps the stage in a ref, set before Stop dispatches) and reads the store at that moment | wp12-reset-finish | logic, e2e |
 | 3.9 | Picking a length after a run goes back to ready | ResetScreen | logic |
 | 3.10 | Safety lines, support row and wellness line at the foot in every stage; the wellness line clears the bottom | closeout-design-reset | e2e |
 | 3.11 | Done and Back return to where Reset was opened from | ResetScreen | logic |
