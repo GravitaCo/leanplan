@@ -40,3 +40,22 @@ must be registered once with `npx eas-cli@latest device:create`.
 `scripts/e2e-summary-parity.cjs` opens the same seeded account in the web app and in this app's
 code rendered for the web, and compares the Summary's figures and words in light and dark (see the
 script's header for the two servers it needs). Every stream adds its screens' checks the same way.
+
+## Engineering standards (Benn, 13 Nov 2026: foundations first, built to scale)
+
+- **The design system comes first.** Every visual piece (sheets, rows, toggles, segmented controls,
+  buttons, chips, banners, toasts, icons, charts, pickers) lives once in `lib/ui`, owned by the N1
+  stream. Screens only compose those pieces; no stream builds its own.
+- **Tokens only.** Colours, sizes, radii and type come from `lib/tokens.generated.ts` (generated from
+  the web's `theme.css`) through `lib/theme.ts`. No hardcoded values in screens.
+- **One copy of the logic.** Domain rules live in `src/core`, data in `src/data`, app behaviour in
+  `src/store`, shared with the web. Native code never copies them; a change is made once in `src/`
+  with the web's tests passing. Where a browser feature differs, add a `platform.ts` /
+  `platform.native.ts` adapter behind the same names.
+- **Typed and tested.** TypeScript strict, no `any`, typed props. Logic outside JSX (view models,
+  player engines, adapters) has tests. Every screen has a parity checklist (`PARITY.md`) and a
+  native-against-web check with seeded data.
+- **Accessible.** Labels equal the web's aria labels, 44 pt targets, Dynamic Type at the largest size,
+  light and dark, Reduce Motion.
+- **Reviewed.** Each stream passes its specialist agents, `design` against the web, and `ship-critic`
+  before the lead merges it into `claude/native-build`.

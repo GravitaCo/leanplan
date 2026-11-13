@@ -127,13 +127,18 @@ her up; it doesn't hold the build.
   took longer than writing it, because of Apple enrolment and set-up.
 - *What is left to rebuild:* the screens and UI kit, about 13,500 lines of TSX and 1,900 of CSS on the web.
   The Summary cards ran at about one native line per web line, so roughly 35 Summary-sized pieces remain.
-- *Where the time goes:* not the coding. Each stream needs its specialist reviews, `design` against the web,
-  side-by-side checks, `ship-critic`, and Benn's or Sara's look on the phone; any visible difference from
-  the web is a board first. Those reviews and approvals set the pace.
-- *Calendar:* foundation (N0 to N3) about 1 to 2 weeks; feature streams in parallel about 3 to 4 weeks
-  after that; parity build in TestFlight about **5 to 6 weeks from now** if approvals keep pace. Store
-  launch then needs Sign in with Apple, the store listings, privacy labels and Apple's review (days to
-  weeks); Android adds Play's closed test (about 14 days with about 12 testers [I]).
+- *Revised 13 Nov after Benn's challenge:* the first figures (5 to 6 weeks) assumed human-paced review
+  cycles, which isn't how this team works: the specialist reviews run in minutes inside each stream, the
+  designs exist, and only visible differences from the web need Benn's or Sara's approval. The web app
+  was designed and built in about 3 weeks; native reuses all its logic and its designs.
+- *Calendar (Benn, 13 Nov):* parity coding is days, not weeks: no new designs, all logic shared. All streams
+  N1 to N12 started in parallel on 13 Nov. What does take calendar time: the new planned features and the
+  video work, plus these non-coding items: Sign in with Apple (required by Apple once Google is offered; a
+  new visible button, so a board first), native permission wording (Health, camera, notifications) past
+  compliance and Benn or Sara, the reminder function's server change shipped through main with the privacy
+  policy naming Apple's push service, the Bunny referrer question for native video (security-data), Apple's
+  App Store review, and for Android a Play Console organisation account and Play's closed test (about 14
+  days with about 12 testers [I]).
 - *Running costs* (EAS build minutes, developer accounts): `cfo` to cost; builds so far fit Expo's plan.
 
 ## 4. Streams
