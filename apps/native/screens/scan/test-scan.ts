@@ -198,6 +198,7 @@ async function reads() {
     consentLetsSync: () => true, underAge: () => false,
     flushConsents: async () => { order.push('flush') },
     readLabel: (b, o) => { order.push('read'); return readLabel(b, o) },
+    discard: () => { order.push('discard') },
     ...over,
   })
   const note = (s: string, then: string) => `${s}|${then}`
@@ -210,13 +211,15 @@ async function reads() {
   const fn = calls.find((c) => c.url.includes('ai-read-label'))
   check('good read → confirm with the label draft', good.kind === 'confirm' && !good.notice && good.draft.source === 'label' && good.draft.values.k === 390, good)
   check('ai-read-label gets the web’s body, with the session', !!fn && eq(JSON.parse(fn.body), { panel: PANEL, front: FRONT, barcode: '5000157024671' }) && fn.headers.authorization?.startsWith('Bearer '), fn && { body: fn.body.slice(0, 80), auth: fn.headers.authorization })
-  check('the label-photo consent is sent before the photo', order.join() === 'flush,read', order)
+  check('the label-photo consent is sent before the photo, the photo deleted once read', order.join() === 'flush,read,discard', order)
 
   const fail = async (status: number, body: unknown, withBase = false) => {
     answer = (c) => (c.url.includes('ai-read-label') ? json(body, status) : json({}, 404))
     return readPhotos({ panel: PANEL, taken: [], ...(withBase ? { base } : {}) }, d(), note)
   }
+  order.length = 0
   const e500 = await fail(500, { error: 'model' })
+  check('a failed read deletes the photo too', order.join() === 'flush,read,discard', order)
   check('function error → type it in, with the web’s note', e500.kind === 'confirm' && e500.notice === 'error|type' && e500.draft.source === 'label', e500)
   const e404 = await fail(404, {})
   check('function missing → unavailable, "Type it in instead"', e404.kind === 'confirm' && e404.notice === 'unavailable|unavailable', e404)
@@ -240,7 +243,9 @@ async function reads() {
   calls.length = 0
   const noHealth = await readPhotos({ panel: PANEL, taken: [] }, d({ consentLetsSync: () => false }), note)
   check('no health answer yet → the photo never leaves the phone', noHealth.kind === 'confirm' && noHealth.notice === 'error|type' && calls.length === 0, { noHealth, calls: calls.length })
+  order.length = 0
   const under = await readPhotos({ panel: PANEL, taken: [] }, d({ underAge: () => true }), note)
+  check('a photo that never left the phone is deleted too', order.join() === 'discard', order)
   check('under 18 on screen → the photo never leaves the phone', under.kind === 'confirm' && calls.length === 0)
 
   answer = () => json({}, 500)

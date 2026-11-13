@@ -6,6 +6,8 @@ The web is the spec: `src/screens/food/ScanView.tsx`, `ScanConfirmView.tsx`, `La
 checked in light and dark, gentle mode on and off, offline, small and large phones, and Dynamic
 Type at the largest size, once the screens exist.
 
+Words come from `src/copy/scan.ts` (lifted out of the web screens, which now import it too).
+
 Status key: **module** = the behaviour is in a UI-free module here and checked by
 `npm run test:scan`; **screen** = drawn once N1's kit lands (`apps/native/lib/ui`); **P1/P2** = a
 visible difference waiting on a board (`PROPOSALS.md`); **shared** = runs from `src/` unchanged;
@@ -87,7 +89,8 @@ signature).
 | Outcomes: good read → confirm; offline, unavailable (function missing), no session, consent refused, daily cap, unreadable, error → type it in with the web's note and its "then" | `readPhotos` + `thenKey` | module (tested) |
 | After Open Food Facts: back to its figures, "check them against your pack" | `typedDraft` with `base` | module (tested) |
 | Share mode: the sp-8b line; a failed read goes back to the food, nothing shared | `share-failed` | module (tested), screen |
-| Photos kept only while the screen is open, never stored | in memory; cache files deleted by `discardAll` once expo-file-system is agreed | module (deletion pending the lead) |
+| Photos never kept (the web redraws on a canvas and drops the file) | deleted from the app's private cache the moment the read has an answer (any answer: `readPhotos` calls `discard`), on Retake and Remove, and when the screen closes; the camera original, the library copy and every failed JPEG try are deleted as soon as the JPEG is made; `sweepPhotoCache()` at launch removes anything a crash left | module (tested: deleted after good, failed and gated reads); the launch call is the lead's |
+| No EXIF or location leaves the phone (the web's canvas strips it) | every photo is re-encoded by expo-image-manipulator, also when no resize is needed; `exif: false` on capture and pick | module |
 | The label camera's code can't load offline (web lazy-load fallback) | bundled in the app | n/a |
 
 ## Shared product list (web SharedProduct)

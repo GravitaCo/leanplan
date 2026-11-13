@@ -25,6 +25,8 @@ export interface ReadDeps {
   underAge: () => boolean
   flushConsents: () => Promise<unknown>
   readLabel: typeof readLabel
+  /** deletes the photos (labelPhoto discardAll): run as soon as the read has an answer, any answer */
+  discard: () => void
   signal?: AbortSignal
 }
 
@@ -62,6 +64,9 @@ export async function readPhotos(i: ReadInput, d: ReadDeps, note: (status: FailS
     res = await d.readLabel(readBody(i), { signal: d.signal })
   } catch {
     res = { status: 'error' }
+  } finally {
+    // the web keeps nothing: the photo goes the moment it has been read (or couldn't be)
+    d.discard()
   }
   if (res.status === 'ok') {
     const draft = draftFromLabel(res.read, { barcode: i.barcode, base: i.base, taken: i.taken })
