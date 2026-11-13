@@ -16,6 +16,7 @@ import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, List, Note, RoundBtn, Tile, ToastHost, ToastView } from './ui/kit'
 import { Scale, Select, Slider, Stepper } from './ui/controls'
+import { PickerSheet, TimeField } from './ui/pickers'
 import { frac } from '@/core/domain/estimate'
 import { AddC, Row, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
@@ -70,6 +71,9 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [count, setCount] = useState(1.5)
   const [cardio, setCardio] = useState('Brisk walk')
   const [activity, setActivity] = useState('moderate')
+  const [wake, setWake] = useState('07:00')
+  const [day, setDay] = useState('')
+  const [dateOpen, setDateOpen] = useState(false)
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
   const [player, setPlayer] = useState(false)
@@ -421,6 +425,15 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           <FRow label="Palm" hint="Meat, fish, tofu" value="100" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
           <FRow label="Thumb" hint="Oil, butter, nut butter" value="12" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
         </List>
+      </Sec>
+
+      <Sec id="pickers" title="Time fields (tap for the wheels) · a date in a sheet">
+        <List>
+          <FRow label="Wake time" right={<TimeField muted label="Wake time" value={wake} onChange={setWake} />} />
+          <FRow label="Wind down" right={<TimeField muted disabled label="Wind down" value="21:30" onChange={() => {}} />} />
+        </List>
+        <View style={{ marginTop: 10 }}><Btn kind="gray" label="Pick a start date" title={day ? `Starts ${day}` : 'Pick a date'} onPress={() => setDateOpen(true)} /></View>
+        {dateOpen && <PickerSheet mode="date" value={day} min="2026-11-13" max="2027-11-13" label="Pick a start date" onDone={setDay} onClose={() => setDateOpen(false)} />}
       </Sec>
 
       <Sec id="banner" title="Banner">

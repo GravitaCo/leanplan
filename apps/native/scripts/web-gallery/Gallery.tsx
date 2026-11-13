@@ -86,6 +86,8 @@ export function Gallery() {
   const [count, setCount] = useState(1.5)
   const [cardio, setCardio] = useState('Brisk walk')
   const [activity, setActivity] = useState('moderate')
+  const [wake, setWake] = useState('07:00')
+  const [day, setDay] = useState('')
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -457,6 +459,18 @@ export function Gallery() {
         <div className="list" style={{ marginTop: 10 }}>
           <div className="frow"><label htmlFor="g-palm">Palm<div className="sub" style={{ fontSize: 13 }}>Meat, fish, tofu</div></label><input id="g-palm" type="number" inputMode="numeric" defaultValue="100" /><span className="u">g</span></div>
           <div className="frow"><label htmlFor="g-thumb">Thumb<div className="sub" style={{ fontSize: 13 }}>Oil, butter, nut butter</div></label><input id="g-thumb" type="number" inputMode="numeric" defaultValue="12" /><span className="u">g</span></div>
+        </div>
+      </Sec>
+
+      <Sec id="pickers" title="Time fields (tap for the wheels) · a date in a sheet">
+        <div className="list nf-times">
+          <div className="frow"><label htmlFor="g-wake">Wake time</label><input id="g-wake" type="time" className="num" value={wake} onChange={(e) => setWake(e.target.value)} /></div>
+          <div className="frow"><label htmlFor="g-wind">Wind down</label><input id="g-wind" type="time" className="num" value="21:30" disabled onChange={() => {}} /></div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <label className="btn gray" style={{ position: 'relative', overflow: 'hidden' }}>{day ? `Starts ${day}` : 'Pick a date'}
+            <input type="date" aria-label="Pick a start date" min="2026-11-13" max="2027-11-13" value={day} onChange={(e) => setDay(e.target.value)}
+              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%' }} /></label>
         </div>
       </Sec>
 
