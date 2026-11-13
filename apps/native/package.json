@@ -11,7 +11,8 @@
     "tokens": "node scripts/tokens.mjs",
     "check:tokens": "node scripts/tokens.mjs --check",
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "test:mind": "../../node_modules/.bin/esbuild screens/mind/mind.test.ts --bundle --platform=node --alias:@=../../src --define:import.meta.env={} --log-level=error --outfile=node_modules/.cache/test-mind.cjs && node node_modules/.cache/test-mind.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
