@@ -22,6 +22,7 @@ import type { IfThenPlan } from '@/core/types'
 import { BareSheet } from '@/ui/primitives'
 import { Icon, type IconName } from '@/ui/icons'
 import { PlanEditSheet } from '../plan/PlanSheets'
+import { DAYS, dayName } from '../profile/profileLogic'
 
 /** "28 Sept to 4 Oct", or "5 to 11 Oct" within a month. */
 export function spanText(a: string, b: string): string {
@@ -405,8 +406,7 @@ function WeightAskSheet({ onAnswer }: { onAnswer: (on: boolean) => void }) {
   )
 }
 
-const DAYS: [number, string, string][] = [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']]
-export const dayName = (d: number) => DAYS.find((x) => x[0] === d)![2]
+export { dayName }
 
 /** ml-d1: the review day, and the opt-in reminder (off unless the person says "Remind me"). */
 export function ReviewDaySheet({ onClose }: { onClose: () => void }) {

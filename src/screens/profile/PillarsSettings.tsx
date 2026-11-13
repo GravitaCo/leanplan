@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import type { MindPrefs, Pillar, Profile } from '@/core/types'
+import type { MindPrefs, Pillar } from '@/core/types'
 import { PILLARS } from '@/core/domain/checkin'
-import { wellbeingRouted } from '@/core/domain/onboarding'
 import { useStore } from '@/store/store'
 import { Seg, SettingRow, Toggle } from '@/ui/primitives'
 import type { IconName } from '@/ui/icons'
 import { SupportSheet } from '../mind/SupportSheet'
 import { PILLARS_COPY as C } from './pillarsCopy'
+import { atRiskRoute, offAfter, pillarsOn } from './profileLogic'
 
 const ICON: Record<Pillar, [IconName, string]> = {
   mind: ['smile', 'var(--mind-fill)'],
@@ -14,19 +14,7 @@ const ICON: Record<Pillar, [IconName, string]> = {
   move: ['dumbbell', 'var(--move-fill)'],
 }
 
-/** Someone the at-risk route (B1.16) is for: Gentle display on, or wellbeing routing from onboarding. */
-export const atRiskRoute = (p: Pick<Profile, 'gentle' | 'outcomes'>): boolean => !!p.gentle || wellbeingRouted(p.outcomes?.wellbeing)
-
-/** The pillars still on, in board order. Absent `off` means all on. */
-export const pillarsOn = (m: MindPrefs | undefined): Pillar[] => PILLARS.filter((p) => !m?.off?.includes(p))
-
-/** `off` after flipping one pillar; null (the key removed) when all are on again. */
-export function offAfter(m: MindPrefs | undefined, p: Pillar): Pillar[] | null {
-  const off = new Set(m?.off ?? [])
-  if (off.has(p)) off.delete(p); else off.add(p)
-  const next = PILLARS.filter((x) => off.has(x))
-  return next.length ? next : null
-}
+export { atRiskRoute, offAfter, pillarsOn }
 
 export interface PillarsViewProps {
   mind: MindPrefs | undefined

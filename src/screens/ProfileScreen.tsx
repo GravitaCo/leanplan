@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
-import type { AccuracyMode, ActivityLevel, DietPattern, Goal, HandPortion, Sex } from '@/core/types'
+import type { AccuracyMode, ActivityLevel, DietPattern, HandPortion, Sex } from '@/core/types'
 import { DIETS } from '@/core/domain/diet'
 import { ACTIVITY } from '@/core/data/constants'
 import { fmt, fmtDate, todayStr } from '@/core/domain/date'
@@ -22,29 +22,13 @@ import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHe
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { ReviewDaySheet, dayName } from './review/WeeklyReview'
 import { profileKcal, suggestionWeight, weightPatch } from './profile/profileTargets'
+import { GOALS, GOAL_TARGET_LABEL, directionLabel } from './profile/profileLogic'
 import { consentLetsSync, hasConsent, hasExistingData, latestConsent } from '@/data/consent'
 import { MIN_AGE, type LegalDocId } from '@/core/legal'
 import { SUPP_NAMES_ENABLED, WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { PillarsSettings } from './profile/PillarsSettings'
 import { BackoffNotices, MindReminderRows, SuppNamesFoot, SuppNamesRow, YourTimes } from './profile/NotificationsSettings'
-
-const GOALS: { value: Goal; label: string }[] = [
-  { value: 'lose-fat', label: 'Lose fat' },
-  { value: 'maintain', label: 'Keep it steady' },
-  { value: 'build-muscle', label: 'Build muscle' },
-  { value: 'increase-strength', label: 'Increase strength' },
-  { value: 'increase-endurance', label: 'Improve endurance' },
-  { value: 'feel-better', label: 'Feel better and move more' },
-]
-const GOAL_TARGET_LABEL: Record<Goal, string> = {
-  'lose-fat': 'Fat loss', maintain: 'Steady', 'build-muscle': 'Muscle gain', 'increase-strength': 'Strength', 'increase-endurance': 'Endurance', 'feel-better': 'Feel better',
-}
-function directionLabel(pct: number): string {
-  if (pct < 0) return `${-pct}% below maintenance`
-  if (pct > 0) return `${pct}% above maintenance`
-  return 'at maintenance'
-}
 
 type Section = 'profile' | 'metrics' | 'targets' | 'supplements' | 'diet' | 'accuracy' | 'display' | 'account' | 'backup' | 'about' | 'privacy'
 

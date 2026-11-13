@@ -7,7 +7,8 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
-import { healthDataSummary, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
+import { healthDataSummary, unconsentedCopyLine } from '@/data/consent'
+import { HEALTH_STATUS_LABEL, healthStatusOf, type HealthStatus } from './profileLogic'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -25,14 +26,11 @@ import { healthAnswersView } from '@/core/domain/onboarding'
 export const DELETE_WORD = 'DELETE'
 export const typedOk = (x: string) => x.trim().toUpperCase() === DELETE_WORD
 
-export type HealthStatus = 'on' | 'paused' | 'off' | 'unasked'
+export type { HealthStatus }
+export { HEALTH_STATUS_LABEL }
 export function useHealthStatus(): HealthStatus {
-  return useStore((s) => {
-    const r = latestConsent(s.data, 'health')
-    return r ? (r.granted ? 'on' : 'off') : healthSyncPaused(s.data) ? 'paused' : 'unasked'
-  })
+  return useStore((s) => healthStatusOf(s.data))
 }
-export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = { on: 'On', paused: 'Paused', off: 'Off', unasked: 'Not asked yet' }
 
 /* ---------------- health data ---------------- */
 
