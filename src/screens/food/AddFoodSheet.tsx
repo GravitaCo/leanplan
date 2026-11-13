@@ -8,6 +8,7 @@ import { kcalHidden } from '@/data/consent'
 import type { Food, MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
 import { allFoods, browseFoods, isMine, searchFoods } from './foodModel'
+import { ADD_FOOD, FOOD } from '@/copy/food'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
 import { frac, portionText } from '@/core/domain/estimate'
@@ -178,7 +179,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     <div className="li" key={f.n + idx} {...pressable(() => go({ kind: 'portion', food: f, custom: isMine(idx) }))}>
       <div className="m">
         <div className="t">{f.n}</div>
-        <div className="s num">{gentle ? '' : `${Math.round(headline(f).k)} kcal · `}{r1(headline(f).p)} g protein {headline(f).per}{isMine(idx) && <span className="tag">Mine</span>}</div>
+        <div className="s num">{gentle ? '' : `${Math.round(headline(f).k)} kcal · `}{r1(headline(f).p)} g protein {headline(f).per}{isMine(idx) && <span className="tag">{ADD_FOOD.mine}</span>}</div>
       </div>
       {trailing ?? <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>}
     </div>
@@ -192,9 +193,9 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
       <div className="li" key={r.id} {...pressable(() => go({ kind: 'recipe', index: ri }))}>
         <div className="m">
           <div className="t">{r.name}</div>
-          <div className="s num">{frac(serv)} serving{serv !== 1 ? 's' : ''} · {gentle ? '' : `${fmt(per.k * serv)} kcal · `}{Math.round(per.p * serv)} g protein</div>
+          <div className="s num">{FOOD.servings(frac(serv), serv)} · {gentle ? '' : `${fmt(per.k * serv)} kcal · `}{Math.round(per.p * serv)} g protein</div>
         </div>
-        <button className="addc" aria-label={`Log ${frac(serv)} serving of ${r.name}`}
+        <button className="addc" aria-label={ADD_FOOD.logServing(frac(serv), r.name)}
           onClick={(e) => { e.stopPropagation(); logRecipe(r, serv, meal); onClose() }}>
           <Icon name="plus" size={16} stroke={2.8} />
         </button>
@@ -208,87 +209,87 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
     const { recipes: byUse, usuals: us, recent: rc, mine: cf, pair, common } = browseFoods(data, all, cur, meal)
     body = (
       <>
-        {byUse.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{byUse.map(recipeRow)}</div></>}
+        {byUse.length > 0 && <><div className="lbl">{ADD_FOOD.yourRecipes}</div><div className="list">{byUse.map(recipeRow)}</div></>}
         {us.length > 0 && (
           <>
-            <div className="lbl">Your usual {MEAL_LABEL[meal].toLowerCase()}</div>
+            <div className="lbl">{ADD_FOOD.yourUsual(MEAL_LABEL[meal])}</div>
             <div className="list">
               {us.map((u) => (
                 <div className="li" key={u.n} {...pressable(() => { logEntries(usualEntries(data, u.n, meal)); onClose() })}>
-                  <div className="m"><div className="t">{u.n}</div><div className="s">{portionText(u.last)} · one tap</div></div>
+                  <div className="m"><div className="t">{u.n}</div><div className="s">{portionText(u.last)} · {ADD_FOOD.oneTap}</div></div>
                   <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
                 </div>
               ))}
             </div>
           </>
         )}
-        {rc.length > 0 && <><div className="lbl">Recent</div><div className="list">{rc.map(({ f, i }) => foodRow(f, i))}</div></>}
+        {rc.length > 0 && <><div className="lbl">{ADD_FOOD.recent}</div><div className="list">{rc.map(({ f, i }) => foodRow(f, i))}</div></>}
         {cf.length > 0 && (
           <>
-            <div className="lbl">My foods</div>
+            <div className="lbl">{ADD_FOOD.myFoods}</div>
             {pair && <div className="list"><SameFoodsRow pair={pair} onOpen={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></div>}
             <div className="list">
               {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
-                <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={`Delete ${f.n}`}
-                  onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete "${f.n}" from your foods?`)) removeCustomFood(ci) }}>
+                <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={ADD_FOOD.deleteFood(f.n)}
+                  onClick={(e) => { e.stopPropagation(); if (window.confirm(ADD_FOOD.deleteFoodAsk(f.n))) removeCustomFood(ci) }}>
                   <Icon name="x" size={17} />
                 </button>))}
             </div>
-            {pair && <div className="foot dup-listfoot">Shown only while two saved foods look alike. Merging or “They’re different” clears it.</div>}
+            {pair && <div className="foot dup-listfoot">{ADD_FOOD.pairFoot}</div>}
           </>
         )}
-        {common.length > 0 && <><div className="lbl">Common</div><div className="list">{common.map((f, i) => foodRow(f, i))}</div></>}
+        {common.length > 0 && <><div className="lbl">{ADD_FOOD.common}</div><div className="list">{common.map((f, i) => foodRow(f, i))}</div></>}
       </>
     )
   } else {
     const { recipes, foods } = searchFoods(data, all, query)
     body = (
       <>
-        {recipes.length > 0 && <><div className="lbl">Your recipes</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}
-        {foods.length > 0 && <><div className="lbl">Foods</div><div className="list">{foods.map((o) => foodRow(o.f, o.i))}</div></>}
+        {recipes.length > 0 && <><div className="lbl">{ADD_FOOD.yourRecipes}</div><div className="list">{recipes.map((o) => recipeRow(o.ri))}</div></>}
+        {foods.length > 0 && <><div className="lbl">{ADD_FOOD.foods}</div><div className="list">{foods.map((o) => foodRow(o.f, o.i))}</div></>}
         {!recipes.length && !foods.length && (
-          <div className="empty">Nothing matches “{q.trim()}”.<br />Eating out? A quick estimate is better than nothing.</div>
+          <div className="empty">{ADD_FOOD.nothingMatches(q.trim())}<br />{ADD_FOOD.eatingOut}</div>
         )}
       </>
     )
   }
 
   return (
-    <Sheet title="Add food" tall onClose={onClose} animate={animate} right={online ? undefined : <ConnectionPill />}>
+    <Sheet title={ADD_FOOD.title} tall onClose={onClose} animate={animate} right={online ? undefined : <ConnectionPill />}>
       <div className="searchbar">
         <Icon name="search" size={17} />
-        <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(all.length)} foods and your recipes`}
-          autoComplete="off" enterKeyHint="search" aria-label="Search foods" />
-        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label="Scan barcode"><Icon name="barcode" size={20} /></button>
+        <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))}
+          autoComplete="off" enterKeyHint="search" aria-label={ADD_FOOD.searchLabel} />
+        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label={ADD_FOOD.scanBarcode}><Icon name="barcode" size={20} /></button>
       </div>
       <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>
       {body}
       <div className="list icons" style={{ marginTop: 18 }}>
         <button className="li" onClick={() => go({ kind: 'quick' })}>
           <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="bolt" size={18} /></span>
-          <div className="m"><div className="t">Quick estimate</div><div className="s">Restaurant or unknown food</div></div><Chevron />
+          <div className="m"><div className="t">{ADD_FOOD.quickEstimate}</div><div className="s">{ADD_FOOD.quickEstimateS}</div></div><Chevron />
         </button>
         <button className="li" onClick={() => go({ kind: 'scan' })}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
-          <div className="m"><div className="t">Scan barcode</div><div className="s">{online ? 'Packaged food, from the pack' : 'Works for products you’ve scanned before'}</div></div><Chevron />
+          <div className="m"><div className="t">{ADD_FOOD.scanBarcode}</div><div className="s">{online ? ADD_FOOD.scanBarcodeS : ADD_FOOD.scanBarcodeOffline}</div></div><Chevron />
         </button>
         {LABEL_SCAN_ENABLED && (
           online ? (
             <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
               <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
+              <div className="m"><div className="t">{ADD_FOOD.scanLabel}</div><div className="s">{ADD_FOOD.scanLabelS}</div></div><Chevron />
             </button>
           ) : (
             // online only (ob6-8): shown, off, with the note
             <div className="li needsnet" aria-disabled="true">
               <span className="ico" style={{ background: 'var(--fill2)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">Scan the label</div><div className="s">{NEEDS_NET}</div></div>
+              <div className="m"><div className="t">{ADD_FOOD.scanLabel}</div><div className="s">{NEEDS_NET}</div></div>
             </div>
           )
         )}
         <button className="li" onClick={() => go({ kind: 'create' })}>
           <span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="plus" size={18} /></span>
-          <div className="m"><div className="t">Create a food</div><div className="s">From the label on the packet</div></div><Chevron />
+          <div className="m"><div className="t">{ADD_FOOD.createFood}</div><div className="s">{ADD_FOOD.createFoodS}</div></div><Chevron />
         </button>
       </div>
     </Sheet>

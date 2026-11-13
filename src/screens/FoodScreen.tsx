@@ -10,6 +10,7 @@ import { frac, isEstimate, portionText } from '@/core/domain/estimate'
 import { FOOD9 } from './onboarding/copyApp'
 import { MEALS, MEAL_LABEL, mealNow, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
 import { foodDay, mealKcal, mealNames, type LoggedRow } from './food/foodModel'
+import { FOOD } from '@/copy/food'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { KcalBar, MacroTrio } from '@/ui/charts'
@@ -55,10 +56,10 @@ export function FoodScreen() {
 
   return (
     <div className="screen">
-      <PageHeader eyebrow={<DayNav />} title="Food"
-        right={<button className="roundbtn" aria-label="Add food" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={22} stroke={2.4} /></button>} />
+      <PageHeader eyebrow={<DayNav />} title={FOOD.title}
+        right={<button className="roundbtn" aria-label={FOOD.addFood} onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={22} stroke={2.4} /></button>} />
 
-      <section className="card pcard" aria-label="Day so far">
+      <section className="card pcard" aria-label={FOOD.daySoFar}>
         {yes ? (
           // Yes: totals in words; a range only after "Show a range" (ob9-4), never a target
           <div className="f9">
@@ -74,8 +75,8 @@ export function FoodScreen() {
           // Sometimes: the range, never a single number; protein as a range
           <>
             <div className="ph">
-              <div className="kbig"><span className="num">{fmt(t.k)}</span><small>kcal eaten</small></div>
-              {t.k > 0 && <button className="linkbtn num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
+              <div className="kbig"><span className="num">{fmt(t.k)}</span><small>{FOOD.kcalEaten}</small></div>
+              {t.k > 0 && <button className="linkbtn num" aria-label={FOOD.aboutEstimate} onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
             </div>
             <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
             <div className="pline num split"><span>{FOOD9.range(r.lo, r.hi)}</span><span>{st.gentle}</span></div>
@@ -86,13 +87,13 @@ export function FoodScreen() {
           <div className="kbig w">{st.gentle}</div>
         ) : (
           <div className="ph">
-            <div className="kbig"><span className="num">{fmt(t.k)}</span><small>kcal eaten</small></div>
-            {t.k > 0 && <button className="linkbtn num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
+            <div className="kbig"><span className="num">{fmt(t.k)}</span><small>{FOOD.kcalEaten}</small></div>
+            {t.k > 0 && <button className="linkbtn num" aria-label={FOOD.aboutEstimate} onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
           </div>
         )}
         <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
         {!gentle && (
-          <div className="pline num split"><span>Range {fmt(r.lo)}–{fmt(r.hi)}</span><span>{st.word}</span></div>
+          <div className="pline num split"><span>{FOOD.range(fmt(r.lo), fmt(r.hi))}</span><span>{st.word}</span></div>
         )}
         <MacroTrio p={t.p} c={t.c} f={t.f} tp={tg.p} tc={tg.c} tf={tg.f} />
         </>}
@@ -100,8 +101,8 @@ export function FoodScreen() {
 
       {data.recipes.length > 0 && (
         <section className="meal">
-          <div className="grp-h"><span>Your recipes</span>
-            <button className="linkbtn" onClick={() => setSheet({ k: 'recipes' })}>Manage</button></div>
+          <div className="grp-h"><span>{FOOD.yourRecipes}</span>
+            <button className="linkbtn" onClick={() => setSheet({ k: 'recipes' })}>{FOOD.manage}</button></div>
           <div className="list">
             {recipesByUse(data).slice(0, 4).map((ri) => {
               const r = data.recipes[ri]
@@ -109,7 +110,7 @@ export function FoodScreen() {
               return (
                 <button className="li" key={r.id} onClick={() => logRecipe(r, serv, mealNow())}>
                   <div className="m"><div className="t">{r.name}</div>
-                    <div className="s">{frac(serv)} serving{serv !== 1 ? 's' : ''} · adds to {MEAL_LABEL[mealNow()].toLowerCase()}</div></div>
+                    <div className="s">{FOOD.servings(frac(serv), serv)} · {FOOD.addsTo(MEAL_LABEL[mealNow()])}</div></div>
                   <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
                 </button>
               )
@@ -133,53 +134,53 @@ export function FoodScreen() {
             <div className="grp-h"><span>{MEAL_LABEL[m]}</span><small className="num">{noKcal ? '' : fmt(kcal) + ' kcal'}</small></div>
             <div className="list">
               {items.map(row)}
-              <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} stroke={2.4} /><span>Add to {MEAL_LABEL[m].toLowerCase()}</span></button>
+              <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} stroke={2.4} /><span>{FOOD.addTo(MEAL_LABEL[m])}</span></button>
             </div>
           </section>
         )
       })}
       {groups.other.length > 0 && (
         <section className="meal">
-          <div className="grp-h"><span>Other</span></div>
+          <div className="grp-h"><span>{FOOD.other}</span></div>
           <div className="list">{groups.other.map(row)}</div>
         </section>
       )}
 
-      <div className="lbl" style={{ paddingTop: 26 }}>Quicker ways to log</div>
+      <div className="lbl" style={{ paddingTop: 26 }}>{FOOD.quicker}</div>
       <div className="list">
         {sameAsYesterday.length > 0 && (
           <button className="li" onClick={() => sameAsYesterday.length === 1 ? repeatYesterday(sameAsYesterday[0].m) : setSheet({ k: 'pickYesterday' })}>
-            <div className="m"><div className="t">Same as yesterday</div>
+            <div className="m"><div className="t">{FOOD.sameAsYesterday}</div>
               <div className="s">{sameAsYesterday.length === 1
                 ? `${MEAL_LABEL[sameAsYesterday[0].m]}: ${names(sameAsYesterday[0].yd)}`
-                : 'Copy a meal in one tap'}</div></div>
+                : FOOD.copyAMeal}</div></div>
             <Chevron />
           </button>
         )}
         <button className="li" onClick={() => setSheet({ k: 'recipes' })}>
-          <div className="m"><div className="t">Your recipes</div></div><span className="tr num">{data.recipes.length || ''}</span><Chevron />
+          <div className="m"><div className="t">{FOOD.yourRecipes}</div></div><span className="tr num">{data.recipes.length || ''}</span><Chevron />
         </button>
         <button className="li" onClick={() => setSheet({ k: 'suggest' })}>
-          <div className="m"><div className="t">What can I make?</div><div className="s">Recipes that fit what you have</div></div><Chevron />
+          <div className="m"><div className="t">{FOOD.whatCanIMake}</div><div className="s">{FOOD.whatCanIMakeS}</div></div><Chevron />
         </button>
         <button className="li" onClick={() => setSheet({ k: 'add', view: 'quick' })}>
-          <div className="m"><div className="t">Quick estimate</div><div className="s">When you don't know the exact food</div></div><Chevron />
+          <div className="m"><div className="t">{FOOD.quickEstimate}</div><div className="s">{FOOD.quickEstimateS}</div></div><Chevron />
         </button>
         <button className="li" onClick={() => setSheet({ k: 'add', view: 'create' })}>
-          <div className="m"><div className="t">Create a food</div></div><Chevron />
+          <div className="m"><div className="t">{FOOD.createFood}</div></div><Chevron />
         </button>
         {saveable.length > 0 && (
           <button className="li" onClick={() => saveable.length === 1 ? saveRecipe(saveable[0]) : setSheet({ k: 'pickRecipe' })}>
-            <div className="m"><div className="t">Save as recipe</div>
-              <div className="s">{saveable.length === 1 ? `${MEAL_LABEL[saveable[0]]}: log all of this in one tap next time` : 'Log a whole meal in one tap next time'}</div></div>
+            <div className="m"><div className="t">{FOOD.saveAsRecipe}</div>
+              <div className="s">{saveable.length === 1 ? FOOD.saveAsRecipeOne(MEAL_LABEL[saveable[0]]) : FOOD.saveAsRecipeMany}</div></div>
             <Chevron />
           </button>
         )}
       </div>
-      <div className="foot">Numbers marked ≈ are estimates. Your day total shows a ± margin so it stays honest about what it knows.</div>
+      <div className="foot">{FOOD.foot}</div>
 
       {sheet?.k === 'pickYesterday' && (
-        <Sheet title="Same as yesterday" onClose={() => setSheet(null)}>
+        <Sheet title={FOOD.sameAsYesterday} onClose={() => setSheet(null)}>
           <div className="list">
             {sameAsYesterday.map(({ m, yd }) => (
               <button className="li" key={m} onClick={() => { repeatYesterday(m); setSheet(null) }}>
@@ -191,7 +192,7 @@ export function FoodScreen() {
         </Sheet>
       )}
       {sheet?.k === 'pickRecipe' && (
-        <Sheet title="Save as recipe" onClose={() => setSheet(null)}>
+        <Sheet title={FOOD.saveAsRecipe} onClose={() => setSheet(null)}>
           <div className="list">
             {saveable.map((m) => (
               <button className="li" key={m} onClick={() => saveRecipe(m)}>

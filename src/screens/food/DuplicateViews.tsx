@@ -12,6 +12,7 @@ import { useStore } from '@/store/store'
 import type { Food } from '@/core/types'
 import { uniqueName } from '@/core/domain/barcode'
 import { barcodeUpdate, duplicateSaveStep, likelySame, sameFood, type NewFrom } from './duplicateModel'
+import { DUP } from '@/copy/food'
 import { BareSheet, BackButton, Sheet, Toggle } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 
@@ -52,16 +53,16 @@ function BarcodeUpdateSheet({ saved, next, onClose, onDone }: { saved: Food; nex
       <div className="dup-hd">
         <span className="dup-ico"><Icon name="refresh" size={22} stroke={1.8} /></span>
         <h2 className="dup-t">{title}</h2>
-        <p className="dup-lead">You’ve saved this barcode before. This is what would change.</p>
+        <p className="dup-lead">{DUP.barcodeLead}</p>
       </div>
-      <div className="lbl">Changes, {v.per}</div>
+      <div className="lbl">{DUP.changes(v.per)}</div>
       <div className="list">
         {name && (
           <div className="li dup-name">
             <div className="m">
-              <div className="dup-k">Name</div>
-              <div className="dup-was"><small>Was</small> {name[0]}</div>
-              <div className="dup-now"><small>Now</small> {name[1]}</div>
+              <div className="dup-k">{DUP.name}</div>
+              <div className="dup-was"><small>{DUP.was}</small> {name[0]}</div>
+              <div className="dup-now"><small>{DUP.now}</small> {name[1]}</div>
             </div>
           </div>
         )}
@@ -69,21 +70,21 @@ function BarcodeUpdateSheet({ saved, next, onClose, onDone }: { saved: Food; nex
           <div className="li" key={field}>
             <span className="m">{label}</span>
             <span className="num dup-old">{was}</span>
-            <span className="dup-arrow" aria-label="changes to">→</span>
+            <span className="dup-arrow" aria-label={DUP.changesTo}>→</span>
             <span className="num dup-new">{now}</span>
           </div>
         ))}
         {same && (
           <div className="li dup-same">
             <span className="m">{same}</span>
-            <span>No change</span>
+            <span>{DUP.noChange}</span>
           </div>
         )}
       </div>
-      <div className="foot">Your logs and usuals follow the food. Days you’ve already logged keep their numbers.</div>
+      <div className="foot">{DUP.followFoot}</div>
       <div className="dup-acts">
-        <button className="btn" onClick={() => onDone(update(saved.id!, next))}>Update it</button>
-        <button className="btn gray" onClick={() => onDone(saved)}>Keep mine</button>
+        <button className="btn" onClick={() => onDone(update(saved.id!, next))}>{DUP.updateIt}</button>
+        <button className="btn gray" onClick={() => onDone(saved)}>{DUP.keepMine}</button>
       </div>
     </BareSheet>
   )
@@ -108,11 +109,11 @@ function LikelySameSheet({ saved, next, from, onClose, onDone }: { saved: Food; 
         <p className="dup-lead">{lead}</p>
       </div>
       <div className="list dup-names">
-        <div className="li"><div className="m"><div className="dup-k">Yours</div><div className="dup-nm">{saved.n}</div></div></div>
+        <div className="li"><div className="m"><div className="dup-k">{DUP.yours}</div><div className="dup-nm">{saved.n}</div></div></div>
         <div className="li"><div className="m"><div className="dup-k">{theirs}</div><div className="dup-nm">{next.n}</div></div></div>
       </div>
-      <div className="list dup-tab" role="table" aria-label={`Yours and the ${theirs.toLowerCase()} one, ${per}`}>
-        <div className="dup-row dup-th" role="row"><span role="columnheader">{per.replace(/^per/, 'Per')}</span><span role="columnheader">Yours</span><span role="columnheader">{theirs}</span></div>
+      <div className="list dup-tab" role="table" aria-label={DUP.tableLabel(theirs, per)}>
+        <div className="dup-row dup-th" role="row"><span role="columnheader">{per.replace(/^per/, 'Per')}</span><span role="columnheader">{DUP.yours}</span><span role="columnheader">{theirs}</span></div>
         {rows.map(({ label, yours: a, theirs: b, differs: diff }) => (
           <div className="dup-row" role="row" key={label}>
             <span role="rowheader">{label}</span>
@@ -122,11 +123,11 @@ function LikelySameSheet({ saved, next, from, onClose, onDone }: { saved: Food; 
         ))}
       </div>
       <div className="dup-acts">
-        <button className="btn" onClick={() => onDone(saved)}>Keep yours</button>
-        <button className="btn gray" onClick={() => onDone(update(saved.id!, next, true))}>Use the {theirs.toLowerCase()} one</button>
-        <button className="btn dup-link" onClick={asNew}>Save as new</button>
+        <button className="btn" onClick={() => onDone(saved)}>{DUP.keepYours}</button>
+        <button className="btn gray" onClick={() => onDone(update(saved.id!, next, true))}>{DUP.useTheirs(theirs)}</button>
+        <button className="btn dup-link" onClick={asNew}>{DUP.saveAsNew}</button>
       </div>
-      <div className="foot dup-foot">Using the {theirs.toLowerCase()} one keeps your name, so usuals and Same as yesterday still find it.</div>
+      <div className="foot dup-foot">{DUP.keepsName(theirs)}</div>
     </BareSheet>
   )
 }
@@ -136,7 +137,7 @@ export function SameFoodsRow({ pair, onOpen }: { pair: [Food, Food]; onOpen: () 
   return (
     <button className="li dup-hint" onClick={onOpen}>
       <span className="ico dup-hint-ico"><Icon name="copy" size={18} stroke={1.8} /></span>
-      <span className="m"><span className="t">2 foods look the same</span><span className="s">{pair[0].n}</span></span>
+      <span className="m"><span className="t">{DUP.looksSame}</span><span className="s">{pair[0].n}</span></span>
       <Chevron />
     </button>
   )
@@ -155,12 +156,12 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
   const { keep, drop, what, switchable, offBarcode } = sf.outcome(keepIdx)
   const done = (fn: () => void) => { fn(); onBack() }
   return (
-    <Sheet title="Same food?" tall onClose={onClose} animate={animate} left={<BackButton onClick={onBack} />}>
+    <Sheet title={DUP.sameTitle} tall onClose={onClose} animate={animate} left={<BackButton onClick={onBack} />}>
       <div className="dup-merge">
-        <h2 className="dup-t dup-pick">Pick the one to keep</h2>
-        <p className="dup-lead dup-pad">Anything you’ve logged with the other one moves to the one you keep.</p>
+        <h2 className="dup-t dup-pick">{DUP.pick}</h2>
+        <p className="dup-lead dup-pad">{DUP.pickLead}</p>
         <fieldset className="dup-fs">
-          <legend className="sr">Food to keep</legend>
+          <legend className="sr">{DUP.foodToKeep}</legend>
           <div className="list">
             {sf.rows.map(({ food: f, figures, origin, logged }, i) => {
               return (
@@ -178,23 +179,23 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
             })}
           </div>
         </fieldset>
-        <div className="lbl">What happens</div>
+        <div className="lbl">{DUP.whatHappens}</div>
         <div className="card dup-what">{what}</div>
         {switchable && (
           <>
             <div className="list dup-switch">
               <div className="li">
-                <span className="m">Use the other barcode</span>
-                <Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label="Use the other barcode" />
+                <span className="m">{DUP.otherBarcode}</span>
+                <Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label={DUP.otherBarcode} />
               </div>
             </div>
-            {offBarcode && <div className="foot">Its barcode came from Open Food Facts, so scanning the pack finds this food.</div>}
+            {offBarcode && <div className="foot">{DUP.offBarcode}</div>}
           </>
         )}
         <div className="dup-grow" />
         <div className="dup-acts">
-          <button className="btn" onClick={() => done(() => merge(keep.id!, drop.id!, switchable && takeBarcode))}>Keep this one</button>
-          <button className="btn gray" onClick={() => done(() => different(pair[0].id!, pair[1].id!))}>They’re different</button>
+          <button className="btn" onClick={() => done(() => merge(keep.id!, drop.id!, switchable && takeBarcode))}>{DUP.keepThis}</button>
+          <button className="btn gray" onClick={() => done(() => different(pair[0].id!, pair[1].id!))}>{DUP.different}</button>
         </div>
       </div>
     </Sheet>
