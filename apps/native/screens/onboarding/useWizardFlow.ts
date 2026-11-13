@@ -15,7 +15,7 @@ import { canSaveHealthAnswers } from '@/data/consent'
 import { clearDraft, loadDraft, saveDraft } from '@/data/onboardingDraft'
 import { uuid } from '@/data/supabase'
 import { HEALTH_STEPS, afterAnswer, draftFromProfile, newDraft, prevStep, stepsFor, type StepId, type WizardDraft, type WizardMode } from '@/core/domain/wizard'
-import { keptDraft, mayKeep, stopReset } from './draftRules'
+import { keptDraft, mayKeep, stopReset } from '@/core/domain/wizardAnswers'
 import { latestWeight } from '@/core/domain/insights'
 import { todayStr } from '@/core/domain/date'
 
@@ -61,7 +61,7 @@ export function useWizardFlow({ mode, redo, onClose }: { mode: WizardMode; redo?
   // Redo setup is an existing account: its stop is the app's (nothing syncs, reminders held)
   useEffect(() => {
     if (d.step === 'under16' && d.redo) raiseUnderAge('profile', { inWizard: true })
-    const reset = stopReset(d, (seed) => newDraft(mode, seed))
+    const reset = stopReset(d, mode)
     if (reset) put(reset)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.step])
