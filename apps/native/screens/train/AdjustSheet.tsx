@@ -11,7 +11,7 @@ import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
 import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { BareSheet, Seg, Toggle } from '../../lib/ui/primitives'
-import { font, num, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Li, LiText, Stack, TextLink, toPoint } from './pendingN1'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
@@ -24,16 +24,16 @@ function Stepper({ label, unit, value, step, onChange }: { label: string; unit?:
     <Pressable accessibilityRole="button" accessibilityLabel={`${d < 0 ? 'Less' : 'More'} ${label.toLowerCase()}`}
       onPress={() => onChange(tidy(d < 0 ? Math.max(0, n(value) - step) : n(value) + step))}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[font(400), { fontSize: 22, color: t.label }]}>{d < 0 ? '−' : '+'}</Text>
+      <Text style={[tx(22, 400), { color: t.label }]}>{d < 0 ? '−' : '+'}</Text>
     </Pressable>
   )
   return (
     <View style={{ flex: 1, backgroundColor: t.elev, borderRadius: 18, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 10, alignItems: 'center', gap: 4 }}>
-      <Text style={[font(400), { fontSize: 13, color: t.label2 }]}>{label}</Text>
+      <Text style={[tx(13, 400), { color: t.label2 }]}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
         <TextInput accessibilityLabel={label} value={value} placeholder="0" placeholderTextColor={t.label3} keyboardType="decimal-pad" onChangeText={(v) => onChange(toPoint(v))}
-          style={[font(400), num, { fontSize: 44, lineHeight: 50, color: t.label, textAlign: 'center', minWidth: 40, padding: 0 }]} />
-        {unit && <Text style={[font(400), { fontSize: 17, color: t.label2 }]}>{unit}</Text>}
+          style={[tx(44, 400), num, { lineHeight: 50, color: t.label, textAlign: 'center', minWidth: 40, padding: 0 }]} />
+        {unit && <Text style={[tx(17, 400), { color: t.label2 }]}>{unit}</Text>}
       </View>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>{pm(-1)}{pm(1)}</View>
     </View>
@@ -50,7 +50,7 @@ export function ChoiceGrid<T extends string>({ options, value, onPick, cols, lab
         return (
           <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onPick(k)}
             style={{ width: `${(100 - (cols - 1) * 2) / cols}%`, flexGrow: 1, minHeight: tall ? 54 : 36, borderRadius: tall ? 14 : 18, paddingVertical: tall ? 10 : 0, paddingHorizontal: tall ? 12 : 4, justifyContent: 'center', alignItems: tall ? 'flex-start' : 'center', backgroundColor: on ? t.btn : t.elev }}>
-            <Text style={[font(400), { fontSize: 14, lineHeight: 17, color: on ? t.btnInk : t.label }]}>{text}</Text>
+            <Text style={[tx(14, 400), { lineHeight: 17, color: on ? t.btnInk : t.label }]}>{text}</Text>
           </Pressable>
         )
       })}
@@ -110,7 +110,7 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
     <BareSheet label={`Adjust set ${setNo + 1}, ${name}`} onClose={onClose}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
         <Text accessibilityRole="header" style={[font(600), { flex: 1, fontSize: 22, lineHeight: 26, letterSpacing: -0.2, color: t.label }]}>{warmup ? 'Warm-up' : `Set ${setNo + 1}`} · {name}</Text>
-        {target && !warmup && <Text style={[font(400), num, { fontSize: 13, color: t.label2, paddingTop: 4, textAlign: 'right' }]}>Target {fmtTarget(target, shape)}</Text>}
+        {target && !warmup && <Text style={[tx(13, 400), num, { color: t.label2, paddingTop: 4, textAlign: 'right' }]}>Target {fmtTarget(target, shape)}</Text>}
       </View>
       {first && !warmup && (shape === 'weight-reps' || shape === 'reps') && (
         <Foot style={{ paddingTop: 0, paddingHorizontal: 4, paddingBottom: 10 }}>
@@ -139,22 +139,22 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
       </View>
       {shape === 'hold' && onTimer && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title="Use the timer" onPress={onTimer} /></View>}
       {allowWarmup && (
-        <List style={{ marginTop: 10 }}>
+        <List style={{ marginBottom: 8, marginTop: 10 }}>
           <Li><LiText t="Warm-up set" s="Doesn't count towards your targets" /><Toggle on={warmup} label="Warm-up set" onChange={() => setWarmup(!warmup)} /></Li>
         </List>
       )}
       {!warmup && shape !== 'check' && (
         <>
-          <Text style={[font(500), { fontSize: 13, color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }]}>How was that set? <Text style={{ color: t.label3 }}>Optional</Text></Text>
+          <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }]}>How was that set? <Text style={{ color: t.label3 }}>Optional</Text></Text>
           <ChoiceGrid options={FEELS} value={feel} onPick={(k) => setFeel(feel === k ? null : k)} cols={2} label="How was that set?" tall />
         </>
       )}
       {feel === 'stopped' && !warmup && (
         <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
-          <Text style={[font(400), { fontSize: 16, lineHeight: 22, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
+          <Text style={[tx(16, 400), { lineHeight: 22, color: t.label }]}>Stopping early is fine. If something hurt, stop this exercise for today: pain isn't something to push through.</Text>
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 6, flexWrap: 'wrap' }}>
-            {onGentler && <TextLink inl title="Try a gentler option" onPress={onGentler} />}
-            <TextLink inl expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
+            {onGentler && <TextLink flat title="Try a gentler option" onPress={onGentler} />}
+            <TextLink flat expanded={help} title="When to get help" onPress={() => setHelp(!help)} />
           </View>
           {help && <Foot style={{ paddingTop: 8, paddingHorizontal: 0 }}>{PAIN_HELP} {RED_FLAG}</Foot>}
         </View>

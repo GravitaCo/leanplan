@@ -42,8 +42,8 @@ import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpS
 import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, useTokens } from '../../lib/theme'
-import { Foot, Li, LiText, Stack, Sub } from './pendingN1'
+import { font, num, tx, useTokens } from '../../lib/theme'
+import { Foot, LIST_GAP, Li, LiText, Stack, Sub } from './pendingN1'
 import { Dots } from './gp'
 
 const SOUND_KEY = 'tali.sound'
@@ -368,7 +368,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
 
           {plain && !rest && (
             <ScrollView style={{ position: 'absolute', left: 20, right: 20, top: insets.top + 96, bottom: 290 }}>
-              <Text style={[font(400), { fontSize: 20, lineHeight: 28, color: 'rgba(255,255,255,0.92)' }]}>{slot.shown.cue}</Text>
+              <Text style={[tx(20, 400), { lineHeight: 28, color: 'rgba(255,255,255,0.92)' }]}>{slot.shown.cue}</Text>
             </ScrollView>
           )}
 
@@ -409,18 +409,18 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
                 <GpSec title="Cancel" onPress={() => setHoldStart(null)} />
                 <GpMain title="Stop and save" onPress={stopHold} />
               </View>
-              <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: 'rgba(255,255,255,0.8)' }]}>{RED_FLAG}</Text>
+              <Text style={[tx(13, 400), { lineHeight: 18, color: 'rgba(255,255,255,0.8)' }]}>{RED_FLAG}</Text>
             </GpBot>
           ) : finding && calib ? (
             <GpBot label={`Find your weight: ${name}`}>
               <View>
-                <Text style={[font(600), { fontSize: 13, color: BRAND_COLOR }]}>{FIRST_SESSION.findK(calib.n + 1)}</Text>
+                <Text style={[tx(13, 600), { color: BRAND_COLOR }]}>{FIRST_SESSION.findK(calib.n + 1)}</Text>
                 <Text accessibilityRole="header" style={[font(600), W, { fontSize: 28, lineHeight: 32, letterSpacing: -0.56 }]}>{name}</Text>
                 <Text style={[font(400), dim, { fontSize: 15, lineHeight: 21, marginTop: 4 }]}>{FIRST_SESSION.find}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 12 }}>
                 <StepBtn label="Lighter" sign="−" onPress={() => setFindW(Math.max(0, (findW ?? 0) - ((findW ?? 0) > 10 ? 2.5 : 1)))} />
-                <Text accessibilityLiveRegion="polite" style={[font(300), num, W, { fontSize: 34 }]}>{findW == null ? '–' : findW}<Text style={[font(400), { fontSize: 15, color: 'rgba(255,255,255,0.8)' }]}> kg</Text></Text>
+                <Text accessibilityLiveRegion="polite" style={[font(300), num, W, { fontSize: 34 }]}>{findW == null ? '–' : findW}<Text style={[tx(15, 400), { color: 'rgba(255,255,255,0.8)' }]}> kg</Text></Text>
                 <StepBtn label="Heavier" sign="+" onPress={() => setFindW((findW ?? 0) + ((findW ?? 0) >= 10 ? 2.5 : 1))} />
               </View>
               <Text style={[font(400), num, dim, { fontSize: 13, textAlign: 'center' }]}>Aim for {calib.t.reps?.hi ?? 10} reps with {calib.t.rir.lo} or {calib.t.rir.hi} to spare</Text>
@@ -484,7 +484,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         )}
         {sheet === 'menu' && (
           <Sheet title={name} onClose={() => setSheet(null)} left={null} right={<NavBtn bold title="Done" onPress={() => setSheet(null)} />}>
-            <List>
+            <List style={LIST_GAP}>
               {slot.x && <Li onPress={() => setSheet('swap')}><LiText t="Swap exercise" s="Today only" /></Li>}
               {!isLastSlot && <Li onPress={() => { setOrder(later(order, pos)); setRest(null); setSheet(null) }}><LiText t="Do this later" s="Moves it to the end of today's workout" /></Li>}
               <Li onPress={() => { setSheet(null); go(1) }}><LiText t="Skip this exercise" s={'It shows as "Not today"'} /></Li>
@@ -493,7 +493,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
               <Li><LiText t="Sound" s="A chime when rest ends" />
                 <Toggle on={sound} label="Sound" onChange={() => { const v = !sound; setSound(v); try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch { /* blocked */ } }} /></Li>
             </List>
-            <List><Li onPress={() => setSheet('finish')}><Text style={[font(500), { fontSize: 16, color: tk.tint }]}>Finish now</Text></Li></List>
+            <List style={LIST_GAP}><Li onPress={() => setSheet('finish')}><Text style={[tx(16, 500), { color: tk.tint }]}>Finish now</Text></Li></List>
           </Sheet>
         )}
         {sheet === 'leave' && (
@@ -517,15 +517,15 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         {askFeel && (
           <BareSheet label={FIRST_SESSION.feelT} onClose={() => setAskFeel(null)}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text accessibilityRole="header" style={[font(600), { fontSize: 22, color: tk.label }]}>{FIRST_SESSION.feelT}</Text>
+              <Text accessibilityRole="header" style={[tx(22, 600), { color: tk.label }]}>{FIRST_SESSION.feelT}</Text>
               <NavBtn title="Skip" onPress={() => setAskFeel(null)} />
             </View>
-            <Text style={[font(400), num, { fontSize: 15, color: tk.label2, marginTop: 2, marginBottom: 12 }]}>{askFeel.line}</Text>
+            <Text style={[tx(15, 400), num, { color: tk.label2, marginTop: 2, marginBottom: 12 }]}>{askFeel.line}</Text>
             <View accessibilityRole="radiogroup" accessibilityLabel={FIRST_SESSION.feelT} style={{ gap: 6 }}>
               {FIRST_SESSION.feels.map(([k, label]) => (
                 <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: feel === k }} onPress={() => setFeel(k)}
                   style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: feel === k ? tk.btn : tk.elev }}>
-                  <Text style={[font(400), { fontSize: 15, color: feel === k ? tk.btnInk : tk.label }]}>{label}</Text>
+                  <Text style={[tx(15, 400), { color: feel === k ? tk.btnInk : tk.label }]}>{label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -603,7 +603,7 @@ function StepBtn({ label, sign, onPress }: { label: string; sign: string; onPres
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}>
-      <Text style={[font(400), { fontSize: 24, lineHeight: 28, color: '#fff' }]}>{sign}</Text>
+      <Text style={[tx(24, 400), { lineHeight: 28, color: '#fff' }]}>{sign}</Text>
     </Pressable>
   )
 }

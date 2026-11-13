@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import { Platform, Pressable, Text, Vibration, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
-import { font, num } from '../../lib/theme'
+import { font, num, tx } from '../../lib/theme'
 
 const BRAND = '#cd7fae' // --brand, the same in both modes
 
@@ -46,7 +46,7 @@ export function GpRound({ children, label, onPress, plain }: { children: ReactNo
 export function GpPill({ children, plain }: { children: ReactNode; plain?: boolean }) {
   return (
     <View style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: plain ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.28)' }}>
-      <Text style={[font(500), num, { fontSize: 13, color: '#fff' }]}>{children}</Text>
+      <Text style={[tx(13, 500), num, { color: '#fff' }]}>{children}</Text>
     </View>
   )
 }
@@ -73,7 +73,7 @@ export function GpMain({ title, onPress, disabled }: { title: string; onPress: (
   return (
     <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
       style={({ pressed }) => ({ flex: 1, height: 56, borderRadius: 28, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.4 : pressed ? 0.75 : 1 })}>
-      <Text style={[font(600), { fontSize: 17, color: '#1d1d1f' }]}>{title}</Text>
+      <Text style={[tx(17, 600), { color: '#1d1d1f' }]}>{title}</Text>
     </Pressable>
   )
 }
@@ -82,7 +82,7 @@ export function GpSec({ title, onPress }: { title: string; onPress: () => void }
   return (
     <Pressable accessibilityRole="button" onPress={onPress}
       style={({ pressed }) => ({ width: 96, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}>
-      <Text style={[font(500), { fontSize: 17, color: '#fff' }]}>{title}</Text>
+      <Text style={[tx(17, 500), { color: '#fff' }]}>{title}</Text>
     </Pressable>
   )
 }

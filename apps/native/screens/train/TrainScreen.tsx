@@ -28,7 +28,7 @@ import { DayNav, MoveStrip } from '../../lib/ui/WeekStrip'
 import { PageHeader } from '../../lib/ui/primitives'
 import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
-import { font, num, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Li, TextLink, TrainNav, XBtn } from './pendingN1'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -118,9 +118,9 @@ function Train() {
   const foldRow = (s: string) => (
     <Pressable accessibilityRole="button" accessibilityState={{ expanded: lighterOpen }} onPress={() => setLighterOpen(!lighterOpen)}
       style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-      <Text style={[font(500), { fontSize: 16, color: t.label }]}>Lighter options</Text>
+      <Text style={[tx(16, 500), { color: t.label }]}>Lighter options</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
-        <Text numberOfLines={1} style={[font(400), { fontSize: 14, color: t.label2, flexShrink: 1 }]}>{s}</Text>
+        <Text numberOfLines={1} style={[tx(14, 400), { color: t.label2, flexShrink: 1 }]}>{s}</Text>
         <Chevron color={t.label3} rotate={lighterOpen ? 270 : 90} />
       </View>
     </Pressable>
@@ -129,7 +129,7 @@ function Train() {
   const lighter = WELLBEING_ENABLED ? hardDayCard() : (
     <View style={lighterCard}>
       {lighterUp
-        ? <Text style={[font(600), { fontSize: 17, lineHeight: 22, color: t.label }]}>{m.lighterHeading}</Text>
+        ? <Text style={[tx(17, 600), { lineHeight: 22, color: t.label }]}>{m.lighterHeading}</Text>
         : foldRow('Shorter, mobility, walk')}
       {(lighterUp || lighterOpen) && (
         <View accessibilityLabel="Today's session" style={{ marginTop: 10 }}><Chips>
@@ -148,7 +148,7 @@ function Train() {
     return (
       <View style={lighterCard}>
         {lighterUp
-          ? <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label }]}>{hd.heading}</Text>
+          ? <Text style={[tx(15, 400), { lineHeight: 21, color: t.label }]}>{hd.heading}</Text>
           : foldRow(HARD_DAY_COPY.collapsed)}
         {up && k && (
           <>
@@ -158,9 +158,9 @@ function Train() {
                   style={({ pressed }) => ({ backgroundColor: t.bg, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.move }} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[font(500), { fontSize: 12, color: t.label2 }]}>{x.k}</Text>
-                    <Text style={[font(600), { fontSize: 16, lineHeight: 19, marginTop: 2, color: t.label }]}>{x.t}</Text>
-                    <Text style={[font(400), num, { fontSize: 12, color: t.label2, marginTop: 4 }]}>{x.d}</Text>
+                    <Text style={[tx(12, 500), { color: t.label2 }]}>{x.k}</Text>
+                    <Text style={[tx(16, 600), { lineHeight: 19, marginTop: 2, color: t.label }]}>{x.t}</Text>
+                    <Text style={[tx(12, 400), num, { color: t.label2, marginTop: 4 }]}>{x.d}</Text>
                   </View>
                   <Chevron color={t.label3} />
                 </Pressable>
@@ -184,8 +184,8 @@ function Train() {
   const ph = (icon: 'leaf' | 'dumbbell') => (
     <View aria-hidden style={{ width: 52, height: 64, borderRadius: 12, backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={20} color={t.label2} /></View>
   )
-  const tb = [font(600), { fontSize: 17, color: t.label }]
-  const ts = [font(400), { fontSize: 13, color: t.label2, marginTop: 2 }]
+  const tb = [tx(17, 600), { color: t.label }]
+  const ts = [tx(13, 400), { color: t.label2, marginTop: 2 }]
 
   return (
     <ScrollView ref={scroll} style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
@@ -194,7 +194,7 @@ function Train() {
 
       {isToday && showLoadNote(data, cur) && (
         <View style={card}>
-          <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
+          <Text style={[tx(17, 600), { lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
           <Chips>
             <Chip title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
             {plannedKeys(data, shiftDay(cur, 1)).length > 0 && (
@@ -214,7 +214,7 @@ function Train() {
 
       {back && (
         <View style={card}>
-          <Text style={[font(600), { fontSize: 17, lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
+          <Text style={[tx(17, 600), { lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 10 }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</Foot>
           <Chips>
             <Chip title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
@@ -251,7 +251,7 @@ function Train() {
                   low check-in day or in gentle mode, and after maintenance's first week only the link */}
               {r.planShort && !r.inProgress && (
                 <View style={{ borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 14 }}>
-                  <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2 }]}>
+                  <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2 }]}>
                     {planPos?.maintenanceWeek != null
                       ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <TextLink inl size={13} style={font(500)} title="Full workout" onPress={() => openWorkout(r.k, 'planned')} />}</>
                       : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <TextLink inl size={13} style={font(500)} title="The full workout" onPress={() => openWorkout(r.k, 'planned')} /> is here if you'd like it.</>}</>}
@@ -276,16 +276,16 @@ function Train() {
             <Li style={trow}>
               {ph('dumbbell')}
               <View style={{ flex: 1 }}>
-                <Text style={[font(400), { fontSize: 16, color: t.label2 }]}>{keyTitle(pickUp, routines)}, from {fmtDate(pick!.d).dow}</Text>
+                <Text style={[tx(16, 400), { color: t.label2 }]}>{keyTitle(pickUp, routines)}, from {fmtDate(pick!.d).dow}</Text>
                 <Text style={ts}>If you'd like to pick it up</Text>
               </View>
               <LinkBtn title="Add" onPress={() => openWorkout(pickUp)} />
               <XBtn label="Not this time" onPress={() => setPrefs({ pickUpDismissed: pick!.d })} />
             </Li>
           )}
-          <Li onPress={() => setAddOpen(true)} style={{ padding: 14, gap: 12 }}>
+          <Li onPress={() => setAddOpen(true)} style={{ paddingVertical: 14, paddingHorizontal: 14, gap: 12 }}>
             <Icon name="plus" size={20} color={t.tint} />
-            <Text style={[font(500), { fontSize: 16, color: t.tint }]}>Add something</Text>
+            <Text style={[tx(16, 500), { color: t.tint }]}>Add something</Text>
           </Li>
         </List>
       </View>
@@ -304,7 +304,7 @@ function Train() {
                 <>
                   {doneChk(26)}
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={[font(400), { fontSize: 17, color: t.label }]}>{x.title.split(' · ')[0]}</Text>
+                    <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{x.title.split(' · ')[0]}</Text>
                     <Text numberOfLines={1} style={ts}>{sessSub(x)}</Text>
                   </View>
                 </>
@@ -323,7 +323,7 @@ function Train() {
           </List>
         ) : (
           <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: t.dash, borderRadius: 20, padding: 16 }}>
-            <Text style={[font(400), { fontSize: 14, color: t.label2 }]}>{isToday ? 'Nothing yet. Anything you do today shows here.' : `Nothing logged on ${dayName}.`}</Text>
+            <Text style={[tx(14, 400), { color: t.label2 }]}>{isToday ? 'Nothing yet. Anything you do today shows here.' : `Nothing logged on ${dayName}.`}</Text>
           </View>
         )}
       </View>

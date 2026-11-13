@@ -14,7 +14,7 @@ import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { ClipView, Still, useClip, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpRound, GpSec, GpMain, GpPill, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Icon } from '../../lib/ui/icons'
-import { font } from '../../lib/theme'
+import { tx } from '../../lib/theme'
 
 export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLeave, onProgress }: {
   block: WarmupBlock
@@ -108,12 +108,12 @@ export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLe
       </GpTop>
 
       <GpBot label={`Warm-up: ${m.n}`} style={{ gap: 10 }}>
-        <Text style={[font(600), { fontSize: 13, color: BRAND_COLOR }]}>{gap ? 'Get ready' : second ? 'Switch sides' : 'Warm-up'}</Text>
-        <Text accessibilityRole="header" style={[font(600), { fontSize: 28, lineHeight: 32, letterSpacing: -0.56, color: '#fff', marginTop: -4 }]}>{m.n}</Text>
-        <Text style={[font(400), { fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.88)' }]}>{m.cue}</Text>
+        <Text style={[tx(13, 600), { color: BRAND_COLOR }]}>{gap ? 'Get ready' : second ? 'Switch sides' : 'Warm-up'}</Text>
+        <Text accessibilityRole="header" style={[tx(28, 600), { lineHeight: 32, letterSpacing: -0.56, color: '#fff', marginTop: -4 }]}>{m.n}</Text>
+        <Text style={[tx(15, 400), { lineHeight: 22, color: 'rgba(255,255,255,0.88)' }]}>{m.cue}</Text>
         <GpClock size={56} light={200} big={fmtClock(sec)} small={gap ? `then ${upNext}` : `of ${fmtClock(m.sec)}${m.perSide ? (second ? ' · second side' : ` · switch sides at ${fmtClock(half)}`) : ''}`} label={`${fmtClock(sec)} of ${fmtClock(total)} left`} />
         <GpBar value={Math.min(1, Math.max(0, 1 - left / (total * 1000)))} />
-        {!gap && !!upNext && <Text style={[font(400), { fontSize: 14, color: 'rgba(255,255,255,0.85)' }]}>Next: {upNext}</Text>}
+        {!gap && !!upNext && <Text style={[tx(14, 400), { color: 'rgba(255,255,255,0.85)' }]}>Next: {upNext}</Text>}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <GpSec title={paused ? 'Resume' : 'Pause'} onPress={() => setPaused(!paused)} />
           {gap ? <GpMain title="Start now" onPress={start} /> : <GpMain title="Skip this move" onPress={() => next(true)} />}

@@ -10,8 +10,8 @@ import { EFFORTS } from '@/core/data/modalities'
 import { ChoiceGrid } from './AdjustSheet'
 import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn } from '../../lib/ui/primitives'
-import { font, num, useTokens } from '../../lib/theme'
-import { FInput, FRow, Li, Stack, Sub } from './pendingN1'
+import { font, num, tx, useTokens } from '../../lib/theme'
+import { FInput, FRow, LIST_GAP, Li, Stack, Sub } from './pendingN1'
 
 export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinish, onBack }: {
   title: string
@@ -34,19 +34,19 @@ export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinis
   return (
     <BareSheet label={`${title}, done`} onClose={onBack}>
       <View style={{ alignSelf: 'flex-start', marginBottom: 4 }}><NavBtn title="Back to workout" onPress={onBack} /></View>
-      <Text accessibilityRole="header" style={[font(600), { fontSize: 28, lineHeight: 32, letterSpacing: -0.56, marginTop: 4, color: t.label }]}>{title}, done.</Text>
+      <Text accessibilityRole="header" style={[tx(28, 600), { lineHeight: 32, letterSpacing: -0.56, marginTop: 4, color: t.label }]}>{title}, done.</Text>
       <Sub style={{ marginTop: 2, marginBottom: 14 }}>{[minsOut != null && !gentle ? `${Math.round(minsOut)} min` : '', `${rows.length} ${rows.length === 1 ? 'exercise' : 'exercises'}`].filter(Boolean).join(' · ')}</Sub>
-      <List>
+      <List style={LIST_GAP}>
         {rows.map((r, i) => (
           <Li key={i}>
             <Text numberOfLines={1} style={[font(400), { flex: 1, fontSize: 17, color: t.label }]}>{r.name}</Text>
-            <Text style={[font(400), num, { fontSize: 17, color: r.none ? t.label3 : t.label2 }]}>{r.line}</Text>
+            <Text style={[tx(17, 400), num, { color: r.none ? t.label3 : t.label2 }]}>{r.line}</Text>
           </Li>
         ))}
       </List>
-      <Text style={[font(500), { fontSize: 13, color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }]}>How did it feel overall? <Text style={{ color: t.label3 }}>Optional</Text></Text>
+      <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }]}>How did it feel overall? <Text style={{ color: t.label3 }}>Optional</Text></Text>
       <ChoiceGrid options={EFFORTS} value={effort} onPick={(k) => setEffort(effort === k ? null : k)} cols={4} label="Effort" />
-      <List style={{ marginTop: 14 }}>
+      <List style={{ marginBottom: 8, marginTop: 14 }}>
         <FRow label="Minutes"><FInput numeric value={m} placeholder="Optional" onChangeText={setM} accessibilityLabel="Minutes" /></FRow>
       </List>
       <TextInput accessibilityLabel="Note" value={note} placeholder="Add a note" placeholderTextColor={t.label3} maxLength={500} onChangeText={setNote}

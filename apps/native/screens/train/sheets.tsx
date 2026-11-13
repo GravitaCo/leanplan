@@ -17,8 +17,8 @@ import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
 import { Chip, Chips, List } from '../../lib/ui/kit'
 import { NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
-import { font, num, useTokens } from '../../lib/theme'
-import { FInput, FRow, FSelect, Foot, Ico, Lbl, Li, LiText } from './pendingN1'
+import { num, tx, useTokens } from '../../lib/theme'
+import { FInput, FRow, FSelect, Foot, Ico, LIST_GAP, Lbl, Li, LiText } from './pendingN1'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -35,11 +35,11 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
   const mine = (all || []).filter((r) => !r.archived && !planned?.includes(r.id))
   return (
     <Sheet title="Add something" onClose={onClose}>
-      <List icons>
+      <List icons style={LIST_GAP}>
         <Li onPress={onLog}><Ico icon="plus" bg={t.activity} /><LiText t="Log a session" s="A walk, yoga, pilates, anything" /></Li>
       </List>
       <Lbl>Do a different workout today</Lbl>
-      <List>
+      <List style={LIST_GAP}>
         {others.map((w) => (
           <Li key={w} onPress={() => onWorkout(w)}>
             <LiText t={shortTitle(w)} s={w === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[w].ex.length} exercises · ${setCount(WORKOUTS[w].ex)}`} />
@@ -49,7 +49,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
       {mine.length > 0 && (
         <>
           <Lbl>Your workouts</Lbl>
-          <List>
+          <List style={LIST_GAP}>
             {mine.map((r) => (
               <Li key={r.id} onPress={() => onWorkout(r.id)}>
                 <LiText t={r.name} s={[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')} />
@@ -59,7 +59,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
         </>
       )}
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 12 }}>This only changes today. To change your week or build your own workouts, go to Plan.</Foot>
-      <List icons>
+      <List icons style={LIST_GAP}>
         <Li onPress={onLibrary}><Ico icon="book" bg={t.tint} /><LiText t="Exercise library" s="How to do each move, easier and harder options" /></Li>
       </List>
     </Sheet>
@@ -96,7 +96,7 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
       <View accessibilityLabel="Kind of session" style={{ marginBottom: 14 }}><Chips>
         {MODALITIES.map((k) => <Chip key={k} title={MODALITY_LABEL[k]} on={modality === k} onPress={() => setModality(k)} />)}
       </Chips></View>
-      <List>
+      <List style={LIST_GAP}>
         {modality === 'cardio' && <FRow label="Type"><FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} /></FRow>}
         <FRow label="Name"><FInput value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} accessibilityLabel="Name" /></FRow>
         <FRow label="Minutes"><FInput numeric value={mins} placeholder={String(DEFAULT_MINS[modality])} onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
@@ -118,19 +118,19 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
   const setPrefs = useStore((s) => s.setPrefs)
   return (
     <Sheet title="Support" onClose={onClose} left={null} right={<NavBtn bold title="Done" onPress={onClose} />}>
-      <Text style={[font(400), { fontSize: 17, lineHeight: 24, color: t.label, marginTop: 4, marginHorizontal: 4, marginBottom: 14 }]}>
+      <Text style={[tx(17, 400), { lineHeight: 24, color: t.label, marginTop: 4, marginHorizontal: 4, marginBottom: 14 }]}>
         Finding it hard to ease off is more common than you might think, and talking to someone can help.
       </Text>
-      <List>
+      <List style={LIST_GAP}>
         {SUPPORT_LINES.map(([name, number, note]) => (
           <Li key={name} label={`${name}, ${number}. ${note}`} onPress={() => { Linking.openURL('tel:' + number.replace(/\s/g, '')).catch(() => {}) }}>
             <LiText t={name} s={note} />
-            <Text style={[font(400), num, { fontSize: 17, color: t.tint }]}>{number}</Text>
+            <Text style={[tx(17, 400), num, { color: t.tint }]}>{number}</Text>
           </Li>
         ))}
       </List>
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 14 }}>In an emergency, call 999.</Foot>
-      <List>
+      <List style={LIST_GAP}>
         <Li><LiText t="Gentle mode" s="Hides calorie numbers and body weight" /><Toggle on={gentle} label="Gentle mode" onChange={() => setPrefs({ gentle: !gentle })} /></Li>
       </List>
     </Sheet>

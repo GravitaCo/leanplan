@@ -12,7 +12,7 @@ import { CARE_DISCLAIMER } from '@/copy/train'
 import { Btn, List } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
 import { font } from '../../lib/theme'
-import { Foot, GrpH, Li, LiText, Stack, Sub } from './pendingN1'
+import { Foot, GrpH, LIST_GAP, Li, LiText, Stack, Sub } from './pendingN1'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
@@ -61,12 +61,12 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
         Instead of <Text style={font(600)}>{current.n}</Text>, today only. Your workout stays the same for next time.
       </Foot>
       {planned && planned.id !== current.id && (
-        <List><Row x={planned} tag="Back to planned" onPick={() => pick(planned.id)} /></List>
+        <List style={LIST_GAP}><Row x={planned} tag="Back to planned" onPick={() => pick(planned.id)} /></List>
       )}
       {(shown(alt.easier) || shown(alt.harder)) && (
         <>
           <GrpH>Same move, different step</GrpH>
-          <List>
+          <List style={LIST_GAP}>
             {shown(alt.easier) && <Row x={alt.easier!} tag="Easier" onPick={() => pick(alt.easier!.id)} />}
             {shown(alt.harder) && <Row x={alt.harder!} tag="Harder" onPick={() => pick(alt.harder!.id)} />}
           </List>
@@ -75,7 +75,7 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
       {alt.similar.some(shown) ? (
         <>
           <GrpH>Works the same area</GrpH>
-          <List>
+          <List style={LIST_GAP}>
             {alt.similar.filter(shown).map((x) => (
               <Row key={x.id} x={x} tag={x.id === (planned ?? current).gentler ? 'Gentler' : undefined} onPick={() => pick(x.id)} />
             ))}

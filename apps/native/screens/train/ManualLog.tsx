@@ -25,7 +25,7 @@ import { ExCard } from './Preview'
 import { Btn } from '../../lib/ui/kit'
 import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, Stack, Sub, TextLink, TrainNav, toPoint } from './pendingN1'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
@@ -45,7 +45,7 @@ function Box({ value, ph, label, onChange, decimal, w = 64 }: { value: string; p
 }
 function U({ s }: { s: string }) {
   const t = useTokens()
-  return <Text style={[font(400), { fontSize: 13, color: t.label2, width: 34 }]}>{s}</Text>
+  return <Text style={[tx(13, 400), { color: t.label2, width: 34 }]}>{s}</Text>
 }
 
 
@@ -114,7 +114,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-      <View style={{ paddingBottom: 6, alignSelf: 'flex-start' }}><BackButton label={title} onPress={onBack} /></View>
+      <View style={{ paddingBottom: 6, alignSelf: 'flex-start', marginLeft: -6 }}><BackButton label={title} onPress={onBack} /></View>
       <TitleRow title="Log sets by hand" onProfile={onProfile} />
       <Sub style={{ marginTop: 2, marginBottom: 16 }}>Type in what you did. Blank sets aren't saved.</Sub>
       {slots.map((sl) => {
@@ -129,19 +129,19 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
         return (
           <ExCard key={exi} n={shown.n} tg={rx}>
             {swapped && (
-              <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 4, marginBottom: 10 }]}>
+              <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 4, marginBottom: 10 }]}>
                 In place of {e.n}, {isToday ? 'today' : 'this day'} only. <TextLink inl size={13} title="Undo" label={`Undo, back to ${e.n}`} onPress={() => swapSlot(exi, e.id!)} />
                 {x!.care?.length ? <> Asks quite a lot of {careList(x!.care)}. {CARE_DISCLAIMER}</> : null}
               </Text>
             )}
-            <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{shown.cue}</Text>
+            <Text style={[tx(15, 400), { lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{shown.cue}</Text>
             <View style={{ flexDirection: 'row', gap: 18, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 10 }}>
               {shown.video
-                ? <Pressable accessibilityRole="button" onPress={() => setDemo(exi)} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="play" size={15} color={t.tint} fill /><Text style={[font(400), { fontSize: 15, color: t.tint }]}>Watch example</Text></Pressable>
-                : <TextLink inl title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
-              {x && <TextLink inl title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
+                ? <Pressable accessibilityRole="button" onPress={() => setDemo(exi)} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><Icon name="play" size={15} color={t.tint} fill /><Text style={[tx(15, 400), { color: t.tint }]}>Watch example</Text></Pressable>
+                : <TextLink flat title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
+              {x && <TextLink flat title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
             </View>
-            {!!lastTxt && <Text style={[font(600), num, { fontSize: 13, color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
+            {!!lastTxt && <Text style={[tx(13, 600), num, { color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
             {shape === 'reps' && loadOn && (
               <View style={{ marginBottom: 10 }}><Seg options={[['none', 'Bodyweight'], ['added', 'Added weight'], ['assist', 'Assisted']]} value={load} onChange={(v) => setLoad(exi, v)} /></View>
             )}
@@ -157,7 +157,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
                     <>
                       <Box value={r.sec ?? ''} ph="sec" label={`${label} seconds`} onChange={(v) => updateSet(exi, si, { sec: v })} /><U s="sec" />
                       <Pressable accessibilityRole="button" accessibilityLabel={`Time ${label}`} onPress={() => setTimer({ exi, si })} style={{ backgroundColor: t.fill, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10 }}>
-                        <Text style={[font(600), { fontSize: 15, color: t.tint }]}>Timer</Text>
+                        <Text style={[tx(15, 600), { color: t.tint }]}>Timer</Text>
                       </Pressable>
                     </>
                   )}
@@ -170,15 +170,15 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
                   {shape === 'check' && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <Toggle on={!!r.done} label={`${label} done`} onChange={() => updateSet(exi, si, { done: !r.done })} />
-                      <Text style={[font(400), { fontSize: 15, color: t.label }]}>Done</Text>
+                      <Text style={[tx(15, 400), { color: t.label }]}>Done</Text>
                     </View>
                   )}
                 </View>
               )
             })}
             <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap', paddingTop: 6 }}>
-              <TextLink inl title="Add set" onPress={() => addSet(exi)} />
-              {shape === 'reps' && !loadOn && <TextLink inl title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
+              <TextLink flat title="Add set" onPress={() => addSet(exi)} />
+              {shape === 'reps' && !loadOn && <TextLink flat title="Add weight or assistance" onPress={() => setLoad(exi, 'added')} />}
             </View>
           </ExCard>
         )

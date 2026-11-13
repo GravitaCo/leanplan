@@ -29,19 +29,19 @@ import { WarmupCard } from './WarmupCard'
 import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, TitleRow } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, useTokens } from '../../lib/theme'
-import { FInput, FRow, FSelect, Foot, Li, Stack, Sub, TextLink, TrainNav } from './pendingN1'
+import { font, num, tx, useTokens } from '../../lib/theme'
+import { FInput, FRow, FSelect, Foot, LIST_GAP, Li, Stack, Sub, TextLink, TrainNav } from './pendingN1'
 
 /** `.card.ex`: name, the prescription tag, the cue */
 export function ExCard({ n, tg, cue, children }: { n: string; tg?: string; cue?: string; children?: React.ReactNode }) {
   const t = useTokens()
   return (
-    <Card>
+    <Card plain style={{ marginBottom: 10 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <Text style={[font(600), { flex: 1, fontSize: 17, color: t.label }]}>{n}</Text>
-        {!!tg && <View style={{ borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, backgroundColor: tagBg(t.activity) }}><Text style={[font(600), { fontSize: 13, color: t.activityInk }]}>{tg}</Text></View>}
+        {!!tg && <View style={{ borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, backgroundColor: tagBg(t.activity) }}><Text style={[tx(13, 600), { color: t.activityInk }]}>{tg}</Text></View>}
       </View>
-      {!!cue && <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{cue}</Text>}
+      {!!cue && <Text style={[tx(15, 400), { lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{cue}</Text>}
       {children}
     </Card>
   )
@@ -113,7 +113,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-      <View style={{ paddingBottom: 6, alignSelf: 'flex-start' }}><BackButton label={isToday ? 'Today' : dayName} onPress={onBack} /></View>
+      <View style={{ paddingBottom: 6, alignSelf: 'flex-start', marginLeft: -6 }}><BackButton label={isToday ? 'Today' : dayName} onPress={onBack} /></View>
       <TitleRow title={title} onProfile={onProfile} />
       <Sub style={{ marginTop: 2 }}>{sub}</Sub>
 
@@ -143,7 +143,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           {!!swap.note && <Foot style={fp}>{swap.note}</Foot>}
           {swap.ex.map((e) => <ExCard key={e.n} n={e.n} tg={e.t} cue={e.cue} />)}
           {swapKey === 'walk' && (
-            <List>
+            <List style={LIST_GAP}>
               <FRow label="Minutes"><FInput numeric value={walkMins} placeholder={swap.mins} onChangeText={setWalkMins} accessibilityLabel="Minutes" /></FRow>
             </List>
           )}
@@ -154,7 +154,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {warm && <WarmupCard block={warm} />}
           <ExCard n={WORKOUTS.Cardio.ex[0].n} tg={shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t} cue={WORKOUTS.Cardio.ex[0].cue} />
-          <List>
+          <List style={LIST_GAP}>
             <FRow label="Type"><FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} /></FRow>
             <FRow label="Minutes"><FInput numeric value={mins} placeholder="25" onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
           </List>
@@ -165,15 +165,15 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
         <>
           {!warm && wSlot >= 0 && (
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.tintSoft, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 12 }}>
-              <Text aria-hidden style={[font(400), { fontSize: 20, lineHeight: 22, color: t.label }]}>↻</Text>
+              <Text aria-hidden style={[tx(20, 400), { lineHeight: 22, color: t.label }]}>↻</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[font(500), { fontSize: 16, color: t.label }]}>Warm up first</Text>
-                <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 2 }]}>{warmupCopy(bareName(slots[wSlot].shown.n))}</Text>
+                <Text style={[tx(16, 500), { color: t.label }]}>Warm up first</Text>
+                <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 2 }]}>{warmupCopy(bareName(slots[wSlot].shown.n))}</Text>
               </View>
             </View>
           )}
           {warm && <WarmupCard block={warm} extra={wSlot >= 0 ? `Then one or two lighter ${bareName(slots[wSlot].shown.n).toLowerCase()} sets, building up to your working weight.` : undefined} />}
-          <List>
+          <List style={LIST_GAP}>
             {rows.map(({ s, detail }) => {
               const gentler = !s.swapped && s.x?.gentler && (s.x.equipment[0] === 'barbell' || s.x.equipment[0] === 'trap-bar') && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
               const liked = !!s.x && !!prefs?.liked?.includes(s.x.id)
@@ -183,15 +183,15 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                     ? <Pressable accessibilityRole="button" accessibilityLabel={`Watch example: ${s.shown.n}`} onPress={() => setDemo(s.i)}><Thumb video={s.shown.video} shape={s.shape} play /></Pressable>
                     : <Thumb shape={s.shape} />}
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[font(400), { fontSize: 17, color: t.label }]}>{bareName(s.shown.n)}</Text>
-                    <Text style={[font(400), num, { fontSize: 13, color: t.label2, marginTop: 2 }]}>{s.rx}{detail ? ' · ' + detail : ''}</Text>
+                    <Text style={[tx(17, 400), { color: t.label }]}>{bareName(s.shown.n)}</Text>
+                    <Text style={[tx(13, 400), num, { color: t.label2, marginTop: 2 }]}>{s.rx}{detail ? ' · ' + detail : ''}</Text>
                     {s.swapped && (
-                      <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 3 }]}>
+                      <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 3 }]}>
                         In place of {bareName(s.planned.n)}, today only. <TextLink inl size={13} title="Undo" onPress={() => onSwap(s.i, s.planned.id!)} />
                         {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
                       </Text>
                     )}
-                    {gentler && <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, marginTop: 3 }]}>New to this? The {gentler.n.toLowerCase()} is a good place to start. Tap Swap.</Text>}
+                    {gentler && <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 3 }]}>New to this? The {gentler.n.toLowerCase()} is a good place to start. Tap Swap.</Text>}
                   </View>
                   {generated && s.x && !s.swapped && (
                     <View style={{ flexDirection: 'row', gap: 6 }}>

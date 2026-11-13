@@ -21,8 +21,8 @@ import { ExCard } from './Preview'
 import { Chip, Chips, List } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, useTokens } from '../../lib/theme'
-import { Foot, Li, LiText } from './pendingN1'
+import { font, tx, useTokens } from '../../lib/theme'
+import { Foot, LIST_GAP, Li, LiText } from './pendingN1'
 import { Shade } from './gp'
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
@@ -57,14 +57,14 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
       )}
       <ExCard n={x.n} tg={x.defaultRx}>
         <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 8 }}>{[MODALITY_LABEL[x.modality], LEVEL_LABEL[x.difficulty], kit, x.perSide ? 'Each side' : ''].filter(Boolean).join(' · ')}</Foot>
-        <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{x.cue}</Text>
+        <Text style={[tx(15, 400), { lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{x.cue}</Text>
         {x.targets?.length ? <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>Works on: {x.targets.map((tg) => TARGET_LABEL[tg]).join(', ')}</Foot> : null}
       </ExCard>
       {!x.video && (
-        <List><Li onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }}><LiText t="Watch how to do it" s="Opens a video search" /></Li></List>
+        <List style={LIST_GAP}><Li onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }}><LiText t="Watch how to do it" s="Opens a video search" /></Li></List>
       )}
       {(easier || harder || gentler) && (
-        <List>
+        <List style={LIST_GAP}>
           {easier && <Li onPress={() => onOpen(easier.id)}><LiText t={easier.n} s="Easier" /></Li>}
           {harder && <Li onPress={() => onOpen(harder.id)}><LiText t={harder.n} s="Harder, when this feels steady" /></Li>}
           {gentler && <Li onPress={() => onOpen(gentler.id)}><LiText t={gentler.n} s="Gentler" /></Li>}
@@ -116,7 +116,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
         {LIB_KIT.map(([k, label]) => <Chip key={k} title={label} on={kit === k} onPress={() => setKit(kit === k ? null : k)} />)}
       </Chips></View>
       {list.length ? (
-        <List>
+        <List style={LIST_GAP}>
           {list.map((x) => (
             <Li key={x.id} label={x.n} onPress={() => (onPick ? onPick(x.id) : setOpen([x.id]))} style={{ minHeight: 64 }}>
               <Thumb video={x.video} play={!!x.video} />

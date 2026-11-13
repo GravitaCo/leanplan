@@ -5,7 +5,7 @@
 import { Text, View } from 'react-native'
 import { warmupLine, type WarmupBlock } from '@/core/domain/warmup'
 import { warmupNote } from '@/copy/train'
-import { font, num, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens } from '../../lib/theme'
 
 export function WarmupCard({ block, extra }: { block: WarmupBlock; extra?: string }) {
   const t = useTokens()
@@ -16,11 +16,11 @@ export function WarmupCard({ block, extra }: { block: WarmupBlock; extra?: strin
       <View accessibilityLabel={`Warm-up, ${block.mins} minutes`} style={{ backgroundColor: t.card, borderRadius: 22, overflow: 'hidden', marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: t.sep }}>
           <View style={{ width: 44, height: 52, borderRadius: 10, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={[font(600), num, { fontSize: 13, color: t.tint }]}>{block.mins} min</Text>
+            <Text style={[tx(13, 600), num, { color: t.tint }]}>{block.mins} min</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[font(600), { fontSize: 16, color: t.label }]}>Warm-up</Text>
-            <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2 }]}>{warmupLine(block)}</Text>
+            <Text style={[tx(16, 600), { color: t.label }]}>Warm-up</Text>
+            <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2 }]}>{warmupLine(block)}</Text>
           </View>
         </View>
         <Text style={[font(400), { paddingTop: 10, paddingBottom: 12, paddingHorizontal: 14, fontSize: 13, lineHeight: 18, color: t.label2 }]}>{warmupNote(block)}{extra ? ' ' + extra : ''}</Text>

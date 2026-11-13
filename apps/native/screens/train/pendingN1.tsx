@@ -8,43 +8,55 @@
 import { createContext, type ReactNode } from 'react'
 import { ActionSheetIOS, Alert, Platform, Pressable, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from '../../lib/ui/icons'
-import { font, num, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens } from '../../lib/theme'
 
 /** `.foot`: 13 px label2, line-height 1.38 (pass the web's padding as style) */
 export function Foot({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   const t = useTokens()
-  return <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }, style]}>{children}</Text>
+  return <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }, style]}>{children}</Text>
 }
 /** `.lbl`: 13 px medium label2 over a group */
 export function Lbl({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   const t = useTokens()
-  return <Text style={[font(500), { fontSize: 13, color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }, style]}>{children}</Text>
+  return <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }, style]}>{children}</Text>
 }
 /** `.grp-h`: a 20 px group title */
 export function GrpH({ children }: { children: ReactNode }) {
   const t = useTokens()
-  return <Text accessibilityRole="header" style={[font(600), { fontSize: 20, letterSpacing: -0.2, color: t.label, paddingTop: 22, paddingBottom: 8, paddingHorizontal: 4 }]}>{children}</Text>
+  return <Text accessibilityRole="header" style={[tx(20, 600), { letterSpacing: -0.2, color: t.label, paddingTop: 22, paddingBottom: 8, paddingHorizontal: 4 }]}>{children}</Text>
 }
 /** `.sub`: 15 px label2 */
 export function Sub({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   const t = useTokens()
-  return <Text style={[font(400), { fontSize: 15, lineHeight: 20, color: t.label2 }, style]}>{children}</Text>
+  return <Text style={[tx(15, 400), { lineHeight: 20, color: t.label2 }, style]}>{children}</Text>
 }
 
 /** What the Train screens hand back to the app shell (the lead wires these in app/(tabs)/train.tsx). */
 export const TrainNav = createContext<{ onProfile?: () => void }>({})
 
 
+/** `.list`'s 8 pt below (theme.css .list); lib/ui List has no bottom margin yet. TODO(N1-followup) */
+export const LIST_GAP: ViewStyle = { marginBottom: 8 }
+
 /** `.stack`: buttons in a column, 8 apart, 16 above */
 export function Stack({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[{ gap: 8, marginTop: 16 }, style]}>{children}</View>
 }
-/** `.linkbtn` where lib/ui's LinkBtn can't: inline in a sentence (`inl`), with an aria-label, a colour or an expanded state */
-export function TextLink({ title, onPress, muted, inl, color, style, label, size, expanded }: { title: string; onPress: () => void; muted?: boolean; inl?: boolean; color?: string; style?: StyleProp<TextStyle>; label?: string; size?: number; expanded?: boolean }) {
+/**
+ * `.linkbtn` where lib/ui's LinkBtn can't: `inl` inside running text (it inherits the sentence's font),
+ * `flat` on its own in a row with no padding (`.linkbtn.inl`, `.ex .howto`, `.addset`) but a 44 pt
+ * touch area, with an aria-label, a colour or an expanded state.
+ */
+export function TextLink({ title, onPress, muted, inl, flat, color, style, label, size, expanded }: { title: string; onPress: () => void; muted?: boolean; inl?: boolean; flat?: boolean; color?: string; style?: StyleProp<TextStyle>; label?: string; size?: number; expanded?: boolean }) {
   const st = expanded === undefined ? undefined : { expanded }
   const t = useTokens()
   const s: TextStyle = { color: color ?? (muted ? t.label2 : t.tint), fontSize: size ?? 15 }
-  if (inl) return <Text accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} style={[s, style]}>{title}</Text>
+  if (inl) return <Text accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} style={[font(400), s, style]}>{title}</Text>
+  if (flat) return (
+    <Pressable accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} hitSlop={12}>
+      <Text style={[tx(size ?? 15, 400), s, style]}>{title}</Text>
+    </Pressable>
+  )
   return (
     <Pressable accessibilityRole="button" accessibilityState={st} accessibilityLabel={label} onPress={onPress} hitSlop={6} style={{ paddingVertical: 6, paddingHorizontal: 4 }}>
       <Text style={[font(400), s, style]}>{title}</Text>
@@ -75,8 +87,8 @@ export function LiText({ t: title, s, tStyle, sStyle, wrap, children }: { t: Rea
   const t = useTokens()
   return (
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Text numberOfLines={wrap ? undefined : 1} style={[font(400), { fontSize: 17, color: t.label }, tStyle]}>{title}</Text>
-      {s != null && s !== '' && <Text numberOfLines={wrap ? undefined : 1} style={[font(400), { fontSize: 13, color: t.label2, marginTop: 2 }, sStyle]}>{s}</Text>}
+      <Text numberOfLines={wrap ? undefined : 1} style={[tx(17, 400), { color: t.label }, tStyle]}>{title}</Text>
+      {s != null && s !== '' && <Text numberOfLines={wrap ? undefined : 1} style={[tx(13, 400), { color: t.label2, marginTop: 2 }, sStyle]}>{s}</Text>}
       {children}
     </View>
   )
@@ -93,7 +105,7 @@ export function FRow({ label, children }: { label: string; children: ReactNode }
   const t = useTokens()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 16 }}>
-      <Text style={[font(400), { fontSize: 17, minWidth: 96, flexShrink: 0, color: t.label }]}>{label}</Text>
+      <Text style={[tx(17, 400), { minWidth: 96, flexShrink: 0, color: t.label }]}>{label}</Text>
       {children}
     </View>
   )
@@ -123,7 +135,7 @@ export function FSelect({ value, options, onChange, title }: { value: string; op
   }
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`${title}: ${value}`} onPress={open} style={{ flex: 1, minWidth: 0, alignItems: 'flex-end', paddingVertical: 11 }}>
-      <Text numberOfLines={1} style={[font(400), { fontSize: 17, color: t.label }]}>{value}</Text>
+      <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{value}</Text>
     </Pressable>
   )
 }

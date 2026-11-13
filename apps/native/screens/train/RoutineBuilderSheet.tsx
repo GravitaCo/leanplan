@@ -14,7 +14,7 @@ import { LibrarySheet } from './LibrarySheet'
 import { Btn, List } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { font, useTokens } from '../../lib/theme'
-import { FInput, FRow, Foot, GrpH, Ico, Li, LiText, Stack, XBtn } from './pendingN1'
+import { FInput, FRow, Foot, GrpH, Ico, LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -52,13 +52,13 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
   }
   return (
     <Sheet title={r ? 'Edit workout' : 'New workout'} onClose={onClose} tall right={<NavBtn bold title="Save" onPress={save} disabled={!slots.length} />}>
-      <List>
+      <List style={LIST_GAP}>
         <FRow label="Name"><FInput value={name} placeholder="My workout" maxLength={120} onChangeText={setName} accessibilityLabel="Name" /></FRow>
       </List>
 
       <GrpH>{`Exercises${slots.length ? ` · about ${aboutMins(estMins(normalised, { warmup: ONBOARDING_ENABLED, mins: r ? warmupMinsForKey(r.id, routines, training) : undefined }))} min` : ''}`}</GrpH>
       {slots.length > 0 && (
-        <List>
+        <List style={LIST_GAP}>
           {slots.map((s, i) => {
             const x = EXERCISE_BY_ID[s.exId]
             const nm = x?.n ?? 'exercise'
@@ -79,7 +79,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
           })}
         </List>
       )}
-      <List style={{ marginTop: slots.length ? 8 : 0 }}>
+      <List style={{ marginBottom: 8, marginTop: slots.length ? 8 : 0 }}>
         <Li onPress={() => setPicking(true)}><Ico icon="plus" bg={t.tint} /><LiText t="Add an exercise" /></Li>
       </List>
       {notes.map((n) => <Foot key={n} style={{ paddingTop: 8, paddingHorizontal: 4 }}>{n}</Foot>)}
