@@ -4,13 +4,13 @@
  * (src/styles/theme.css) in React Native:
  *
  * - ScanBox: `.scanbox` (4:3; `.tall` 3:4 at most 56% of the screen) with `.scanframe` over it.
- * - LabelThumb: `.labelthumb`.
+ * - LabelThumb: `.labelthumb` (the lead of the label review's rows).
  * - NutritionTable / NutritionRow: `.list.ntab` and `.nrow` (label, per-100 input, per-serving
  *   figure, the flag bar and its `.flagnote`).
  * - SourceCard: `.sp-src` (shared product source with Report this product).
  * - ServingMargin: `.sp-serv` (One serving with its ± margin).
  * - SpTile: `.sp-tile` (the 52 pt soft-mauve tile at the top of the bare sheets).
- * - ReasonList: `.sp-why` (the report sheet's radio rows).
+ * - ReportHead: `.sp-rep-hd`; ReasonList: `.sp-why` (the report sheet's radio rows).
  */
 import type { ReactNode } from 'react'
 import { Image, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native'
@@ -22,26 +22,19 @@ import { slop, useSurface } from '../../lib/ui/kit'
  *  either; the camera view looks the same in light and dark. */
 const SHADE = 'rgba(0, 0, 0, 0.28)'
 
-/** `.scanbox` with its `.scanframe`; `children` is the camera view. `tall` for the label. */
+/** `.scanbox` with its `.scanframe`; `children` is the camera view. `tall` for the label: 3:4, at
+ *  most 56% of the screen high and narrowed to keep its shape (`max-height: 56vh; margin: 0 auto`). */
 export function ScanBox({ tall, children }: { tall?: boolean; children: ReactNode }) {
   const t = useTokens()
   const { height } = useWindowDimensions()
-  // .scanframe: inset 28% 9%; .scanframe.label: inset 5% 7%; 2 px tint border, radius 12
-  const v = tall ? '5%' : '28%'
-  const h = tall ? '7%' : '9%'
+  // .scanframe: inset 28% 9%; .scanframe.label: inset 5% 7%; 2 px tint border, radius 12, and the
+  // shade as a 999 px spread shadow around it, so it follows the frame's rounded corners
+  const inset = tall ? { top: '5%', bottom: '5%', left: '7%', right: '7%' } as const : { top: '28%', bottom: '28%', left: '9%', right: '9%' } as const
   return (
     <View style={[{ aspectRatio: tall ? 3 / 4 : 4 / 3, borderRadius: t.radius, overflow: 'hidden', backgroundColor: t.fill2, width: '100%' },
-      tall && { maxHeight: height * 0.56, alignSelf: 'center' }]}>
+      tall && { maxWidth: height * 0.56 * (3 / 4), alignSelf: 'center' }]}>
       {children}
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        <View style={{ height: v, backgroundColor: SHADE }} />
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <View style={{ width: h, backgroundColor: SHADE }} />
-          <View style={{ flex: 1, borderWidth: 2, borderColor: t.tint, borderRadius: 12 }} />
-          <View style={{ width: h, backgroundColor: SHADE }} />
-        </View>
-        <View style={{ height: v, backgroundColor: SHADE }} />
-      </View>
+      <View pointerEvents="none" style={{ position: 'absolute', ...inset, borderWidth: 2, borderColor: t.tint, borderRadius: 12, boxShadow: `0 0 0 999px ${SHADE}` }} />
     </View>
   )
 }
@@ -164,6 +157,17 @@ export function SheetBody({ children }: { children: ReactNode }) {
   return <Text style={[tx(17, 400, 1.45), { color: t.label2, marginTop: 10 }]}>{children}</Text>
 }
 
+/** `.sp-rep-hd`: the product's name (17 semibold) over its barcode (13, muted), 4 in. */
+export function ReportHead({ name, barcode }: { name: string; barcode: string }) {
+  const t = useTokens()
+  return (
+    <View style={{ paddingHorizontal: 4 }}>
+      <Text style={[tx(17, 600), { color: t.label }]}>{name}</Text>
+      <Text style={[tx(13), num, { color: t.label2, marginTop: 2 }]}>{barcode}</Text>
+    </View>
+  )
+}
+
 /** `.sp-why`: radio rows (52 high, a 24 pt dot that fills with the tint and a tick when chosen). */
 export function ReasonList<T extends string>({ options, value, onChange, label }: { options: readonly (readonly [T, string])[]; value: T | null; onChange: (v: T) => void; label: string }) {
   const t = useTokens()
@@ -179,7 +183,8 @@ export function ReasonList<T extends string>({ options, value, onChange, label }
             <View style={[{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, on ? { backgroundColor: t.tint } : { borderWidth: 2, borderColor: t.fill3 }]}>
               {on && <Icon name="check" size={13} stroke={3.2} color={t.onTint} />}
             </View>
-            <Text style={[tx(17), { flex: 1, color: t.label }]}>{l}</Text>
+            {/* 600: the web's global `.w { font-weight: 600 }` reaches `.sp-why .w` (theme.css), and it ships */}
+            <Text style={[tx(17, 600), { flex: 1, color: t.label }]}>{l}</Text>
           </Pressable>
         )
       })}

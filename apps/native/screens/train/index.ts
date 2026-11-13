@@ -7,6 +7,6 @@ export { TrainScreen } from './TrainScreen'
 export { RoutineBuilderSheet, type BuilderStart } from './RoutineBuilderSheet'
 export { LibrarySheet } from './LibrarySheet'
 export { DemoPlayer } from './DemoPlayer'
-export { Thumb } from './media'
+export { Thumb, Poster } from './media'
 // is a guided session on screen (for anything that must not navigate away from it)
 export { guidedSessionOpen, onGuidedSession } from './session'

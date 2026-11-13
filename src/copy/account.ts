@@ -149,6 +149,9 @@ export const BACKUP = {
   exportBtn: 'Export',
   importBtn: 'Import',
   invalid: "That isn't a valid backup file",
+  /** native only: the share sheet couldn't be offered (the web's download can't fail this way).
+   *  New words: to approve with the port (design, compliance). */
+  exportFailed: 'Couldn’t export a copy. Nothing was changed. Try again.',
   importTitle: 'Import backup',
   /** `span` is " (date)" or " (date to date)", or empty */
   has: (b: { days: number; foods: number; recipes: number; workouts: number }, span: string) =>

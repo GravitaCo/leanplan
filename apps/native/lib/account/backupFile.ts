@@ -13,6 +13,8 @@ import * as DocumentPicker from 'expo-document-picker'
 import type { PersistedState } from '@/data/persistence'
 import { todayStr } from '@/core/domain/date'
 import { readBackup, setBackupExporter } from '@/data/backup'
+import { useStore } from '@/store/store'
+import { BACKUP } from '@/copy/account'
 
 export const backupName = () => 'tali-backup-' + todayStr() + '.json'
 
@@ -60,5 +62,10 @@ export async function pickBackup(): Promise<PersistedState | null> {
   try { return await readBackup(file) } finally { try { file.delete() } catch { /* not ours to delete */ } }
 }
 
-// the shared exportBackup (src/data/backup.native.ts) writes through this file and share sheet
-setBackupExporter(exportBackupFile)
+// the shared exportBackup (src/data/backup.native.ts) writes through this file and share sheet; a copy
+// that couldn't be offered says so (the web's browser download can't fail this way; ship-critic, 13 Nov)
+setBackupExporter(async (state) => {
+  const ok = await exportBackupFile(state)
+  if (!ok) useStore.getState().showToast(BACKUP.exportFailed)
+  return ok
+})

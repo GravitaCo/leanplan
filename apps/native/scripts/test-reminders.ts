@@ -16,6 +16,9 @@ import { todayStr } from '@/core/domain/date'
 import { checkPushToken, unsubscribePush } from '../lib/platform/push'
 import { toFront } from './fakes/react-native'
 import { cancelRestEnd, REST_ID, scheduleRestEnd } from '../lib/platform/restTimer'
+import { handleTap } from '../lib/platform/notifications'
+import { takeNativeNotifyEvents } from '../lib/platform/notifyKV'
+import { setGuidedSessionOpen } from '../screens/train/session'
 
 let failed = 0
 let passed = 0
@@ -188,6 +191,34 @@ async function main() {
   check('rest timer: cancel unschedules it and clears it from the tray', fake.scheduled.length === 0 && fake.calls.join() === `cancel:${REST_ID},dismiss:${REST_ID}`)
   check('rest timer: lengths outside 1 s to an hour, or no title, schedule nothing',
     !(await scheduleRestEnd(0, { title: 'x', body: '' })) && !(await scheduleRestEnd(3601, { title: 'x', body: '' })) && !(await scheduleRestEnd(60, { title: ' ', body: '' })) && fake.scheduled.length === 0)
+
+  /* ---------- a tap (handleTap itself): recorded as opened, and never away from a guided session ---------- */
+  {
+    let n = 0
+    const tap = (kind: string, tag: string) => ({
+      actionIdentifier: 'expo.modules.notifications.actions.DEFAULT',
+      notification: { date: 1794817800 + n, request: { identifier: tag, content: { data: { kind, tag, id: '0b7f3c2e-4d1a-4f6e-9a2b-' + String(++n).padStart(12, '0') } }, trigger: null } },
+    }) as unknown as Parameters<typeof handleTap>[0]
+    const opened = async () => ((await takeNativeNotifyEvents()) as { ev: string; kind: string }[]).filter((e) => e.ev === 'opened').map((e) => e.kind)
+    reset()
+    await takeNativeNotifyEvents()
+    useStore.setState({ tab: 'plan' })
+    handleTap(tap('checkin', 'tali-checkin'))
+    check('tap with no session: recorded as opened, opens Today', JSON.stringify(await opened()) === '["checkin"]' && st().tab === 'today')
+    useStore.setState({ tab: 'train' })
+    setGuidedSessionOpen(true)
+    handleTap(tap('wind-down', 'tali-wind-down'))
+    check('tap during a guided session: still recorded as opened, the session stays on screen', JSON.stringify(await opened()) === '["wind-down"]' && st().tab === 'train')
+    handleTap(tap('review', 'tali-review'))
+    check('the review reminder during a session: no review sheet, no tab change', st().tab === 'train' && !st().reviewOpen)
+    setGuidedSessionOpen(false)
+    handleTap(tap('review', 'tali-review'))
+    check('after the session the review reminder opens the review', st().reviewOpen === true && st().tab === 'today')
+    const t = tap('plan', 'tali-plan')
+    handleTap(t); handleTap(t)
+    check('the same tap handled twice records one open', JSON.stringify(await opened()) === '["plan"]')
+    check('a non-default action (a dismissal) does nothing', (() => { useStore.setState({ tab: 'plan' }); handleTap({ ...(tap('checkin', 'tali-checkin') as object), actionIdentifier: 'com.apple.UNNotificationDismissActionIdentifier' } as unknown as Parameters<typeof handleTap>[0]); return st().tab === 'plan' })())
+  }
 
   console.log(`reminders through the store: ${passed} passed, ${failed} failed`)
   process.exit(failed ? 1 : 0)

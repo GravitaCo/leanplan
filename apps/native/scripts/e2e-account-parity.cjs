@@ -1,7 +1,5 @@
 /**
- * N2 parity: account, consent and legal on native, checked against the web. Needs the N2 screens,
- * which are being rebuilt on lib/ui (N1): it passed 29 of 29 on the stand-in screens (commit 27ae9d6)
- * and runs again once the port lands (native-build-brief §1:
+ * N2 parity: account, consent and legal on native, checked against the web (native-build-brief §1:
  * "parity is tested, not eyeballed"). Carries over scripts/e2e-foundations.cjs's consent,
  * withdrawal, existing-user and delete-account cases and scripts/e2e-under-age.cjs's launch, sync
  * and backup cases, run against the native app's code rendered for the web (react-native-web), and
@@ -136,10 +134,15 @@ const inApp = (page) => btn(page, 'Profile').first().waitFor({ timeout: 20000 })
 async function toProfile(page) {
   await inApp(page)
   await btn(page, 'Profile').first().click()
+  // Profile's account rows sit behind Account in the avatar's sheet until N10's Profile
+  await btn(page, 'Account').first().click()
   await page.getByText('Account and data', { exact: true }).waitFor()
 }
+/** the Health data row, showing its status ("On", "Paused", "Off") */
+const healthRow = (page, status) => page.getByRole('button', { name: new RegExp('^Health data\\s*' + (status || '')) })
 const shot = async (page, name) => { await page.waitForTimeout(500); await page.screenshot({ path: path.join(OUT, name + '.png') }) }
-const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').trim()
+// a full stop after an inline button reads as " ." from native's row of boxes: the same words
+const norm = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').replace(/ \./g, '.').trim()
 
 /** The same state on web and native: the screen's words must match, and both are photographed. */
 async function sameWords(browser, name, opts, ready, act) {
@@ -267,7 +270,7 @@ async function sameWords(browser, name, opts, ready, act) {
     await inApp(page)
     expect((await heading(page, 'Before you start').count()) === 0, 'not asked again within 2 weeks')
     await toProfile(page)
-    await page.getByRole('button', { name: 'Health data, Paused' }).click()
+    await healthRow(page, 'Paused').click()
     await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there.', { exact: false }).waitFor()
     await btn(page, 'Yes, keep it').click()
     await heading(page, 'Before you start').last().waitFor()
@@ -289,7 +292,7 @@ async function sameWords(browser, name, opts, ready, act) {
 
   await run('withdraw health consent in Profile: a copy offered first', async ({ page, rows, net }) => {
     await toProfile(page)
-    await page.getByRole('button', { name: 'Health data, On' }).click()
+    await healthRow(page, 'On').click()
     await btn(page, 'Stop keeping my health data').click()
     await page.getByText('Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
     await page.getByText('On this phone: 1 weigh-in, 1 check-in.').waitFor()
@@ -311,14 +314,15 @@ async function sameWords(browser, name, opts, ready, act) {
     expect(rows.consents.some((x) => x.type === 'health' && x.granted === false), 'withdrawal synced')
     expect(!rows.day_logs.some((x) => x.user_id === UID), 'the account’s copy of the log is deleted')
     // turning it back on: the one-box sheet, never a bare tap
-    await page.getByRole('button', { name: 'Health data, Off' }).waitFor()
+    await healthRow(page, 'Off').waitFor()
     await page.getByRole('button', { name: 'Privacy' }).click()
     await btn(page, 'Turn health data back on').click()
-    const on = btn(page, 'Turn health data back on').last()
+    // the sheet's own button: the one beside its box (the Privacy row's has the same words)
+    const on = page.getByTestId('c_regrant').locator('xpath=ancestor::*[.//button[normalize-space()="Turn health data back on"]][1]').getByRole('button', { name: 'Turn health data back on' })
     expect(await on.isDisabled(), 'waits for the box')
     await tick(page.getByTestId('c_regrant'))
     await on.click()
-    await page.getByRole('button', { name: 'Health data, On' }).waitFor()
+    await healthRow(page, 'On').waitFor()
   }, { rows: { consents: [{ ...GRANTED.records[0], user_id: UID, recorded_at: GRANTED.records[0].at }] }, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })
 
   await run('Profile, then Privacy: the legal documents, and the same withdraw and delete flows', async ({ page }) => {
@@ -517,12 +521,12 @@ async function sameWords(browser, name, opts, ready, act) {
         const c = await context(browser, { dark, shots: true, state: deviceState({ days: { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) } }) })
         const p = c.page, m = dark ? 'dark' : 'light'
         try {
-          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click(); if (side === 'native') await btn(p, 'Account').first().click()
           await p.getByRole('button', { name: /^Health data/ }).first().click()
           await btn(p, 'Stop keeping my health data').waitFor(); await shot(p, `sheet-health-${m}-${side}`)
           await btn(p, 'Stop keeping my health data').click()
           await btn(p, 'Download a copy').waitFor(); await shot(p, `sheet-withdraw-${m}-${side}`)
-          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click()
+          await p.goto(url); await inApp(p); await btn(p, 'Profile').first().click(); if (side === 'native') await btn(p, 'Account').first().click()
           await p.getByRole('button', { name: 'Delete account' }).first().click()
           await heading(p, 'Delete your account').waitFor(); await shot(p, `delete-${m}-${side}`)
           await btn(p, 'Delete account').last().click()

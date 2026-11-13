@@ -150,6 +150,13 @@ export function reconcile(seen0: Seen, presented: readonly Presented[], now: Dat
   return { seen: out, events }
 }
 
+/** Where a tap goes, or null to stay put: a tap during a guided session (N7's player on screen)
+ *  leaves the session where it is (screens/train/session.ts contract; mental-performance, 13 Nov
+ *  2026). The tap is still recorded as opened. */
+export function tapRoute(data: unknown, sessionOpen: boolean): 'review' | 'train' | 'today' | null {
+  return sessionOpen ? null : routeFor(data)
+}
+
 /** A notification as the app sees it (its data, identifier and date as expo-notifications gives
  *  them) → a Mind reminder sighting, or null for any other notification. `now` stands in for a
  *  missing date. */

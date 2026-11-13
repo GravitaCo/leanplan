@@ -1,23 +1,13 @@
 /**
- * TODO(N1-followup): what Train still needs that lib/ui doesn't have yet, each a direct port of a
- * web class: `Li`/`LiText` for rows lib/ui's Row can't hold (a thumbnail, a control, a wrapped sub),
- * `.x-btn` (`XBtn`), `.stack` (`Stack`), the inline, flat and labelled `.linkbtn` (`TextLink`),
- * `.list`'s 8 pt below (`LIST_GAP`) and the form rows (`.frow`, its input and select: N1's
- * "fields", P2). Train-only: nothing else imports this file. Emptied and deleted before the
- * screens merge.
+ * Train's own small pieces that lib/ui doesn't offer: `Stack` (`.stack`), the flat and labelled
+ * `.linkbtn` (`TextLink`; lib/ui's TextLink is the inline one inside a sentence), the round button
+ * with a chevron for the builder's move up/down (`XBtn`; lib/ui's XBtn is the x only) and the
+ * select for a form row (`FSelect`, used as lib/ui FRow's `right`). Rows are lib/ui's Row.
  */
 import type { ReactNode } from 'react'
-import { toPoint } from './nav'
-import { ActionSheetIOS, Alert, Platform, Pressable, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
+import { ActionSheetIOS, Alert, Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
-
-
-/** What the Train screens hand back to the app shell (the lead wires these in app/(tabs)/train.tsx). */
-
-
-/** `.list`'s 8 pt below (theme.css .list); lib/ui List has no bottom margin yet. TODO(N1-followup) */
-export const LIST_GAP: ViewStyle = { marginBottom: 8 }
+import { font, tx, useTokens } from '../../lib/theme'
 
 /** `.stack`: buttons in a column, 8 apart, 16 above */
 export function Stack({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -56,44 +46,6 @@ export function XBtn({ label, onPress, icon = 'x', disabled, rotate = 0 }: { lab
   )
 }
 
-
-/** `.li`: a 44 px row, 10×16 padding, 12 gap; pressable when `onPress` is set */
-export function Li({ children, onPress, style, label, disabled }: { children: ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; label?: string; disabled?: boolean }) {
-  const base: StyleProp<ViewStyle> = [{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }, style]
-  if (!onPress) return <View style={base}>{children}</View>
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={({ pressed }) => [base, pressed && { opacity: 0.6 }]}>{children}</Pressable>
-}
-/** `.li .m` with `.t` and `.s`; `wrap` lets them wrap (`.s.wrap`, `.pv-row .t`) */
-export function LiText({ t: title, s, tStyle, sStyle, wrap, children }: { t: ReactNode; s?: ReactNode; tStyle?: StyleProp<TextStyle>; sStyle?: StyleProp<TextStyle>; wrap?: boolean; children?: ReactNode }) {
-  const t = useTokens()
-  return (
-    <View style={{ flex: 1, minWidth: 0 }}>
-      <Text numberOfLines={wrap ? undefined : 1} style={[tx(17, 400), { color: t.label }, tStyle]}>{title}</Text>
-      {s != null && s !== '' && <Text numberOfLines={wrap ? undefined : 1} style={[tx(13, 400), { color: t.label2, marginTop: 2 }, sStyle]}>{s}</Text>}
-      {children}
-    </View>
-  )
-}
-
-
-/** `.frow`: label left, the value right-aligned */
-export function FRow({ label, children }: { label: string; children: ReactNode }) {
-  const t = useTokens()
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 16 }}>
-      <Text style={[tx(17, 400), { minWidth: 96, flexShrink: 0, color: t.label }]}>{label}</Text>
-      {children}
-    </View>
-  )
-}
-
-/** an input as `.frow input`: right-aligned, no box */
-export function FInput(p: TextInputProps & { numeric?: boolean; decimal?: boolean }) {
-  const t = useTokens()
-  const { numeric, decimal, style, onChangeText, ...rest } = p
-  return <TextInput onChangeText={onChangeText && ((v) => onChangeText(decimal ? toPoint(v) : v))} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : numeric ? 'number-pad' : 'default'}
-    style={[font(400), { flex: 1, minWidth: 0, fontSize: 17, color: t.label, textAlign: 'right', paddingVertical: 11 }, (numeric || decimal) && num, style]} {...rest} />
-}
 /**
  * `.frow select`: the value in label2; tapping it offers the options the way the platform shows a
  * select (an action sheet on iOS, a list on Android), as the web's select does on a phone.
