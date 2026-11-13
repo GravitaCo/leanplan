@@ -252,7 +252,9 @@ export function swapText(w: Swap, gentle: boolean, servings: number): string {
  */
 export function numIn(v: string): number {
   const s = v.trim()
-  const n = /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.')
+  // a thousands separator never follows a leading 0 ("0,125" is a decimal). In a comma region "1,250"
+  // typed for 1.25 reads as 1250: three decimals are rare on UK labels and amounts, so the paste wins
+  const n = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.')
   return parseFloat(n) || 0
 }
 
