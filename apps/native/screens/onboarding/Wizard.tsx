@@ -42,7 +42,7 @@ import { Wheel } from '../../lib/ui/Wheel'
 import { Foot, Lead, Note as NoteText, OB_BTN, Page, ScreenH, SheetHead, WzCard, focusOnMount } from './frame'
 import { Signposts, SPS } from './Signposts'
 import { Summary } from './Summary'
-import { AgeStopStub, type AgeStopRender } from './AgeStop'
+import { ageStop as n2AgeStop, type AgeStopRender } from './AgeStop'
 import { CoverImage, PHOTOS } from './art'
 import { useWizardFlow, type WizardFlow } from './useWizardFlow'
 
@@ -51,9 +51,9 @@ const WD_SHORT: Record<number, string> = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed
 
 /**
  * The wizard, full screen. `mode` 'first' is the whole first run; 'setup' the setup card alone.
- * `redo`: Profile's Redo setup (and Set up my plan). `ageStop`: N2's 18+ stop (a stub until it lands).
+ * `redo`: Profile's Redo setup (and Set up my plan). `ageStop`: N2's 18+ stop (./AgeStop).
  */
-export function Onboarding({ mode, redo, onClose, ageStop = AgeStopStub }: { mode: WizardMode; redo?: boolean; onClose?: () => void; ageStop?: AgeStopRender }) {
+export function Onboarding({ mode, redo, onClose, ageStop = n2AgeStop }: { mode: WizardMode; redo?: boolean; onClose?: () => void; ageStop?: AgeStopRender }) {
   const f = useWizardFlow({ mode, redo, onClose })
   const { d, go, put, jump } = f
   const deleteUnderAge = useStore((s) => s.deleteUnderAge)

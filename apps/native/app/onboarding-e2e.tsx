@@ -6,8 +6,8 @@
  * other build, phone builds included, the route renders nothing.
  */
 import { Platform, View } from 'react-native'
-import { AgeStopStub, useOnboardingGate } from '../screens/onboarding'
-import { Notice } from '../lib/SignIn'
+import { useOnboardingGate } from '../screens/onboarding'
+import { Notice } from '../lib/Notice'
 
 const E2E = Platform.OS === 'web' && process.env.EXPO_PUBLIC_E2E === '1'
 
@@ -16,7 +16,6 @@ export default function OnboardingE2E() {
 }
 
 function Live() {
-  // the e2e checks pass the stub for Redo setup's 18+ stop; the app's gate passes N2's
-  const ob = useOnboardingGate({ ageStop: AgeStopStub })
+  const ob = useOnboardingGate()
   return <View style={{ flex: 1 }}>{ob ?? <Notice title="Onboarding isn’t due" />}</View>
 }

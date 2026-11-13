@@ -1,16 +1,12 @@
 /**
- * The signpost list (src/screens/onboarding/Signposts.tsx and AgeStop.tsx's SPS), native (`.wz-sp`
- * rows; TODO(N1-followup) if another stream needs them: Profile's support sheet will). The rows
- * and numbers are the web's, from core/data/signposts; a number is a tel: link, as on web.
- * No store, no network, so every list shows offline.
+ * Onboarding's signpost lists (src/screens/onboarding/AgeStop.tsx SPS), word for word, drawn by
+ * N1's Signposts. The numbers are core/data/signposts'. No store, no network: every list shows
+ * offline. Proposed: move SPS to a React-free shared module so the web imports the same lists
+ * (mental-performance, compliance; a src/ change for the lead).
  */
-import { Fragment } from 'react'
-import { Linking, Pressable, Text, View } from 'react-native'
 import { NATIONS, SIGNPOSTS, beatFor } from '@/core/data/signposts'
-import { num, tx, useTokens } from '../../lib/theme'
-
-/** `webLabel`: a row with one number and its own web link (Profile's support sheet) */
-export type SP = { name: string; desc: string; num?: string; tel?: string; lines?: [string, string][]; web?: string; webLabel?: string }
+import type { SP } from '@/screens/onboarding/Signposts'
+export type { SP }
 
 /** Beat: every nation's number, labelled (Benn: no nation question), and the webchat. */
 const beat = (desc: string): SP => ({
@@ -39,59 +35,5 @@ export const SPS: Record<'wellbeing' | 'readiness' | 'pregnancy' | 'medical' | '
   ],
 }
 
-const call = (n: string) => () => { void Linking.openURL('tel:' + n.replace(/\s/g, '')) }
-const open = (u: string) => () => { void Linking.openURL(u) }
-
-export function Signposts({ list, onElev }: { list: SP[]; onElev?: boolean }) {
-  const t = useTokens()
-  const T = [tx(16), { color: t.label }]
-  const S = [tx(13, 400, 1.35), { color: t.label2 }]
-  const N = [tx(16, 600), num, { color: t.tint }]
-  const row = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingVertical: 13, paddingHorizontal: 16 }
-  return (
-    <View style={{ backgroundColor: onElev ? t.elev : t.card, borderRadius: t.radius, overflow: 'hidden' }}>
-      {list.map((s, i) => {
-        const sep = i < list.length - 1 ? { borderBottomWidth: 1, borderBottomColor: t.sep } : null
-        if (s.lines) {
-          return (
-            <View key={s.name} style={[row, { alignItems: 'flex-start' }, sep]}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={T}>{s.name}</Text><Text style={S}>{s.desc}</Text>
-                {s.lines.map(([l, n], j) => (
-                  <Pressable key={l} accessibilityRole="link" accessibilityLabel={`${s.name}, ${l}: call ${n}`} onPress={call(n)}
-                    style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8 }, j > 0 && { borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }]}>
-                    <Text style={[tx(15), { color: t.label }]}>{l}</Text><Text style={N}>{n}</Text>
-                  </Pressable>
-                ))}
-                {s.web && (
-                  <Pressable accessibilityRole="link" accessibilityLabel="Webchat and email Open" onPress={open(s.web)}
-                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }}>
-                    <Text style={[tx(15), { color: t.label }]}>Webchat and email</Text><Text style={[tx(16, 600), { color: t.tint }]}>Open</Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          )
-        }
-        if (s.tel && s.web) {
-          return (
-            <View key={s.name} style={[row, sep]}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={T}>{s.name}</Text><Text style={S}>{s.desc}</Text>
-                <Pressable accessibilityRole="link" onPress={open(s.web)}><Text style={[tx(13, 500), { color: t.tint, marginTop: 2 }]}>{s.webLabel ?? 'Webchat and email'}</Text></Pressable>
-              </View>
-              <Pressable accessibilityRole="link" accessibilityLabel={`${s.name}: call ${s.num}`} onPress={call(s.tel)}><Text style={N}>{s.num}</Text></Pressable>
-            </View>
-          )
-        }
-        const inner = <Fragment>
-          <View style={{ flex: 1, minWidth: 0 }}><Text style={T}>{s.name}</Text><Text style={S}>{s.desc}</Text></View>
-          {s.num && <Text style={N}>{s.num}</Text>}
-        </Fragment>
-        return s.tel
-          ? <Pressable key={s.name} accessibilityRole="link" accessibilityLabel={`${s.name}: call ${s.num}`} onPress={call(s.tel)} style={[row, sep]}>{inner}</Pressable>
-          : <View key={s.name} style={[row, sep]}>{inner}</View>
-      })}
-    </View>
-  )
-}
+/** The list, drawn by N1's lib/ui Signposts (`.wz-group` of `.wz-sp` rows, the web's labels). */
+export { Signposts } from '../../lib/ui/choices'

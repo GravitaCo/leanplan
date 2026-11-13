@@ -17,7 +17,7 @@ import { Onboarding } from './Wizard'
 import { wizardDue } from '@/data/firstRun'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import type { AgeStopRender } from './AgeStop'
-import { Notice } from '../../lib/SignIn'
+import { Notice } from '../../lib/Notice'
 
 export function useOnboardingGate(opts: { ageStop?: AgeStopRender } = {}): ReactNode | null {
   const data = useStore((s) => s.data)
@@ -38,9 +38,8 @@ export function useOnboardingGate(opts: { ageStop?: AgeStopRender } = {}): React
   if (due === 'wait' && !waited) return <Notice title="Loading…" />
   showing.current = !!due
   if (due) return <Onboarding mode="first" ageStop={opts.ageStop} />
-  // Redo setup can reach the 18+ stop on an existing account, which needs N2's stop (the account
-  // deletion): without one it never opens (mental-performance, compliance)
-  if (redoOpen && opts.ageStop) return <Onboarding mode="first" redo ageStop={opts.ageStop} onClose={() => openRedo(false)} />
+  // Redo setup's 18+ stop is N2's app stop, with the account deletion (./AgeStop)
+  if (redoOpen) return <Onboarding mode="first" redo ageStop={opts.ageStop} onClose={() => openRedo(false)} />
   if (setupOpen) return <Onboarding mode="setup" ageStop={opts.ageStop} onClose={() => openSetup(false)} />
   return null
 }
