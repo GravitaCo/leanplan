@@ -10,7 +10,8 @@
  *   still pending, with no buttons (the store retries the deletion on the next connection).
  */
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
+import { Text } from './Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore, type UnderAgeSource } from '@/store/store'
 import { NATIONS, SIGNPOSTS, beatFor } from '@/core/data/signposts'

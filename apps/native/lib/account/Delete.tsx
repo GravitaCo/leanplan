@@ -10,7 +10,8 @@
  * simply stays open.
  */
 import { useState } from 'react'
-import { ScrollView, Text, TextInput, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
+import { Text, TextInput } from './Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { useAccountDeletion } from '@/store/hooks'

@@ -6,7 +6,8 @@
  * them the same way on both.
  */
 import type { ReactNode } from 'react'
-import { Modal, Pressable, ScrollView, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import { Modal, Pressable, ScrollView, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import { Text } from './Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path, Rect } from 'react-native-svg'
 import { font, useTokens } from '../theme'

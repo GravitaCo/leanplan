@@ -9,7 +9,8 @@
  * data that may belong to another account. Nothing of it shows, syncs or exports until they pick.
  */
 import { useState } from 'react'
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native'
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View, useWindowDimensions } from 'react-native'
+import { Text, TextInput } from './Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { unsyncedCount } from '@/data/persistence'
