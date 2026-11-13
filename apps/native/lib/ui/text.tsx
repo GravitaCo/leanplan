@@ -56,11 +56,11 @@ export function Prose({ blocks }: { blocks: ProseBlock[] }) {
       {blocks.map((b, i) => {
         if ('h3' in b) return <Text key={i} accessibilityRole="header" style={[tx(17, 700, 1.45), { color: t.label, marginTop: i === 0 ? 0 : 6, marginBottom: 6 }]}>{b.h3}</Text>
         if ('ul' in b) return (
-          <View key={i} style={{ marginBottom: 10 }}>
+          <View key={i} role="list" style={{ marginBottom: 10 }}>
             {b.ul.map((li, j) => (
-              <View key={j} style={{ flexDirection: 'row', marginBottom: j === b.ul.length - 1 ? 0 : 5 }}>
+              <View key={j} role="listitem" style={{ flexDirection: 'row', marginBottom: j === b.ul.length - 1 ? 0 : 5 }}>
                 {/* the list's disc marker, drawn rather than typed so it isn't read or copied as text */}
-                <View style={{ width: 18, height: 15 * 1.45, justifyContent: 'center' }}><View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: t.label, marginLeft: 4 }} /></View>
+                <View style={{ width: 18, height: 15 * 1.45, justifyContent: 'center' }}><View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: t.label, marginLeft: 1, marginTop: -1 }} /></View>
                 <Text style={[body, { flex: 1 }]}>{li}</Text>
               </View>
             ))}

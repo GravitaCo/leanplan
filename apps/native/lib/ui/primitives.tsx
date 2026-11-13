@@ -265,7 +265,8 @@ export function Row({ title, sub, value, right, onPress, chevron, act, icon, nes
     <>
       {icon && <Icon name={icon} color={fg} />}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={nested ? undefined : 1} style={[tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
+        {/* .li.act: 16 pt medium */}
+        <Text numberOfLines={nested ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
         {sub != null && <Text numberOfLines={1} style={[tx(13, 400, 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
       </View>
       {value != null && <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), num, { color: t.label2 }]}>{value}</Text>}
