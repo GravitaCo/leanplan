@@ -67,7 +67,9 @@ if (pushSupported()) {
 
 // ---- a tap ----
 let lastHandled = ''
-function handleTap(r: Notifications.NotificationResponse | null): void {
+/** A tap on a notification (exported for scripts/test-reminders.ts; the app calls it from the
+ *  response listener and at launch). */
+export function handleTap(r: Notifications.NotificationResponse | null): void {
   if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return
   const n = r.notification
   const key = keyOf(dataOf(n), n.request.identifier, msOf(n.date) ?? NaN)
