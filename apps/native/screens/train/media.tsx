@@ -121,16 +121,12 @@ export function useClip(path: string | undefined, autoPlay: boolean): { player: 
  * it stopped. The player's own time events come about every 100 ms and unevenly on iOS, which made
  * the count lag and jump (Benn, 13 Nov).
  */
-export function useClipTime(player: VideoPlayer, playing: boolean): number {
+export const useClipTime: (player: VideoPlayer, playing: boolean) => number = Platform.OS === 'android' ? useClipTimeEvents : useClipTimeFrames
+
+/** iOS and the web build: read on every frame while playing, once more on pause */
+function useClipTimeFrames(player: VideoPlayer, playing: boolean): number {
   const [t, setT] = useState(() => player.currentTime)
-  // Android: reading currentTime blocks the main thread there, so it keeps the player's time events
-  const { currentTime: evT } = useEvent(player, 'timeUpdate', { currentTime: player.currentTime, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
   useEffect(() => {
-    if (Platform.OS !== 'android') return
-    setT(evT)
-  }, [evT])
-  useEffect(() => {
-    if (Platform.OS === 'android') { player.timeUpdateEventInterval = playing ? 0.1 : 0; return }
     setT(player.currentTime)
     if (!playing) return
     let raf = 0
@@ -139,6 +135,13 @@ export function useClipTime(player: VideoPlayer, playing: boolean): number {
     return () => cancelAnimationFrame(raf)
   }, [player, playing])
   return t
+}
+
+/** Android: reading currentTime blocks the main thread there, so the player's 100 ms time events, only while playing */
+function useClipTimeEvents(player: VideoPlayer, playing: boolean): number {
+  useEffect(() => { player.timeUpdateEventInterval = playing ? 0.1 : 0 }, [player, playing])
+  const { currentTime } = useEvent(player, 'timeUpdate', { currentTime: 0, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
+  return currentTime
 }
 
 const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const
