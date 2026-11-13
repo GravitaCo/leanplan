@@ -10,7 +10,7 @@ public class TiloPickersModule: Module {
 
     /// "HH:mm" as this phone shows a time (its 12 or 24 hour setting, as Safari shows a time input)
     Function("formatTime") { (hhmm: String) -> String in
-      guard let d = TiloDateWheelView.parseTime(hhmm) else { return hhmm }
+      guard let d = timeFormat.date(from: hhmm) else { return hhmm }
       let f = DateFormatter()
       f.locale = .autoupdatingCurrent
       f.dateStyle = .none
@@ -37,6 +37,19 @@ public class TiloPickersModule: Module {
   }
 }
 
+/// The web's value formats, at file level (not on the view class, so `formatTime` may use them off
+/// the main thread). The zone follows the phone's, as Calendar.current does in `apply()`.
+private func valueFormatter(_ format: String) -> DateFormatter {
+  let f = DateFormatter()
+  f.locale = Locale(identifier: "en_US_POSIX")
+  f.calendar = Calendar(identifier: .gregorian)
+  f.timeZone = .autoupdatingCurrent
+  f.dateFormat = format
+  return f
+}
+private let timeFormat = valueFormatter("HH:mm")
+private let dateFormat = valueFormatter("yyyy-MM-dd")
+
 final class TiloDateWheelView: ExpoView {
   let onPick = EventDispatcher()
   let picker = UIDatePicker()
@@ -47,18 +60,7 @@ final class TiloDateWheelView: ExpoView {
   var max = ""
   var minuteInterval = 1
 
-  private static func formatter(_ format: String) -> DateFormatter {
-    let f = DateFormatter()
-    f.locale = Locale(identifier: "en_US_POSIX")
-    f.calendar = Calendar(identifier: .gregorian)
-    f.timeZone = .current
-    f.dateFormat = format
-    return f
-  }
-  private static let timeFormat = formatter("HH:mm")
-  private static let dateFormat = formatter("yyyy-MM-dd")
-  private var format: DateFormatter { mode == "date" ? Self.dateFormat : Self.timeFormat }
-  static func parseTime(_ v: String) -> Date? { timeFormat.date(from: v) }
+  private var format: DateFormatter { mode == "date" ? dateFormat : timeFormat }
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
@@ -76,8 +78,8 @@ final class TiloDateWheelView: ExpoView {
   func apply() {
     picker.datePickerMode = mode == "date" ? .date : .time
     picker.minuteInterval = Swift.max(1, Swift.min(30, minuteInterval))
-    picker.minimumDate = mode == "date" && !min.isEmpty ? Self.dateFormat.date(from: min) : nil
-    picker.maximumDate = mode == "date" && !max.isEmpty ? Self.dateFormat.date(from: max) : nil
+    picker.minimumDate = mode == "date" && !min.isEmpty ? dateFormat.date(from: min) : nil
+    picker.maximumDate = mode == "date" && !max.isEmpty ? dateFormat.date(from: max) : nil
     // set the wheels only when the value differs from what they show (no jump mid-spin)
     if !value.isEmpty, let d = format.date(from: value), format.string(from: picker.date) != value {
       if mode == "time" {

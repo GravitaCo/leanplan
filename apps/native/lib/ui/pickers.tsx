@@ -35,7 +35,13 @@ export function PickerSheet({ mode, value, start, min, max, label, onDone, onClo
   mode: PickMode; value: string; start?: string; min?: string; max?: string; label: string
   onDone: (v: string) => void; onClose: () => void
 }) {
-  const [v, setV] = useState(value || start || (mode === 'time' ? '07:00' : min ?? ''))
+  // the wheels always show a day Done can keep: today when nothing else is given, inside min and max
+  const [v, setV] = useState(() => {
+    if (mode === 'time') return value || start || '07:00'
+    const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const v0 = value || start || today
+    return min && v0 < min ? min : max && v0 > max ? max : v0
+  })
   const ok = validPick(mode, v, min, max)
   const done = () => { if (ok) { onDone(v); onClose() } }
   return (

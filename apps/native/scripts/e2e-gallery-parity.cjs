@@ -97,10 +97,11 @@ async function run() {
       const bag = (x) => x.split(' ').sort().join(' ')
       // an inline .tag joins its sentence with no space on the web ("100 gMINE"): only that case is spaced
       const tagged = (x) => x.replace(/([a-z0-9])([A-Z]{2,})\b/g, '$1 $2')
-      // a unit in an inline <small> joins its figure with no space on the web ("412kcal"); the
-      // pictures check the spacing, so the words may differ only in spaces
+      // a unit in an inline <small> joins its figure with no space on the web ("412kcal"): in the
+      // sections with `.big` only, the words may differ in spaces (the pictures show the spacing)
       const bare = (x) => x.replace(/\s+/g, '')
-      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words || bare(mw.words) === bare(mn.words), { web: mw.words, native: mn.words })
+      const unitJoins = ['p4', 'n5'].includes(id) && bare(mw.words) === bare(mn.words)
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || tagged(mw.words) === mn.words || unitJoins, { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       // Chromium draws <input type="time"> 46 px tall (its own datetime edit fields), 2 more than

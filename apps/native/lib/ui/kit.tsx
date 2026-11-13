@@ -25,9 +25,13 @@ export function useSurface(t: Tokens) {
   return useContext(InSheet) ? t.elev : t.card
 }
 
-/** A touch area padded out to 44 pt around a box of `w` × `h`. */
+/**
+ * A touch area padded out to 44 pt around a box of `w` × `h`. `w` 0 pads the height only: a box
+ * wide enough already, set beside neighbours (segments, chips, a scale's buttons), must never reach
+ * over them, or a tap near an edge picks the next one.
+ */
 export function slop(w: number, h: number) {
-  const x = Math.max(0, Math.ceil((44 - w) / 2)), y = Math.max(0, Math.ceil((44 - h) / 2))
+  const x = w === 0 ? 0 : Math.max(0, Math.ceil((44 - w) / 2)), y = Math.max(0, Math.ceil((44 - h) / 2))
   return { top: y, bottom: y, left: x, right: x }
 }
 
@@ -162,10 +166,10 @@ export function LinkBtn({ title, onPress, style, muted, color, label, flat, size
 }) {
   const t = useTokens()
   // 15 pt regular (a pillar card's links are 500: `.pcard .linkbtn`, pass it in `style`); the 31.5 pt
-  // padded box reaches 44 pt with the touch padding, a flat one (19.5 pt) with 12 each way
+  // padded box reaches 44 pt with the touch padding, a flat one (19.5 pt) with 13 each way
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
-      hitSlop={flat ? 12 : 8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      hitSlop={flat ? 13 : 8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
       <Text style={[tx(size, 400, 1.3, BTN), { color: color ?? (muted ? t.label2 : t.tint) }, !flat && { paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
@@ -262,7 +266,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
   if (action) return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
       <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
-      <Pressable accessibilityRole="button" onPress={action.run} hitSlop={slop(0, 26)}>
+      <Pressable accessibilityRole="button" onPress={action.run} hitSlop={{ ...slop(0, 26), left: 8, right: 8 }}>
         <Text style={[tx(16, 600, 21, BTN), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
     </View>

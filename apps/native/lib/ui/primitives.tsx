@@ -173,7 +173,7 @@ export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, sty
   const fg = disabled || muted ? t.label3 : t.tint
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }}
-      hitSlop={icon && !title ? slop(20, 28) : slop(0, 30)}
+      hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
       style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
       {icon && <Icon name={icon} color={fg} />}
       {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: fg }]}>{title}</Text>}

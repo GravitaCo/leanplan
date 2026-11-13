@@ -132,7 +132,8 @@ export function Scale<T extends string | number>({ items, value, onPick, cols = 
             return (
               <Pressable key={String(it.key)} accessibilityRole={role} accessibilityLabel={it.label}
                 accessibilityState={role === 'radio' ? { checked: on } : { selected: on }} onPress={() => onPick(it.key)}
-                hitSlop={tall ? undefined : slop(0, 44)}
+                // up to 44 pt high, never sideways: the next button is 6 pt away
+                hitSlop={tall ? undefined : slop(0, 16 + (it.big != null ? 20.4 : 0) + (it.text != null ? 15.6 : 0))}
                 style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: tall ? 44 : undefined, justifyContent: 'center', alignItems: 'center', paddingVertical: 8,
                   borderRadius: 10, backgroundColor: on ? t.tint : bg, opacity: pressed ? 0.7 : 1 })}>
                 {it.big != null && <Text style={[tx(17, 700, 1.2, BTN), num, { color: fg, textAlign: 'center' }]}>{it.big}</Text>}
