@@ -1,12 +1,15 @@
-// Generates lib/tokens.generated.ts from the web's src/styles/theme.css (:root and its dark
-// block), so web and native read the same Studio tokens and can't drift (native-app-plan §2).
+// Generates lib/tokens.generated.ts from the web's style sheets (every :root block in src/styles and
+// its dark twin), so web and native read the same Studio tokens and can't drift (native-app-plan §2).
 // Run: npm run tokens. `npm run check:tokens` fails if the committed file is out of date.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const css = readFileSync(path.resolve(here, '../../../src/styles/theme.css'), 'utf8')
+// every `:root` block in every style sheet in src/styles: theme.css first (the base), then the rest
+// in name order (loop.css adds --raised; theme.css's later block adds --hero)
+const STYLES = path.resolve(here, '../../../src/styles')
+const SHEETS = ['theme.css', ...readdirSync(STYLES).filter((f) => f.endsWith('.css') && f !== 'theme.css').sort()]
 const out = path.resolve(here, '../lib/tokens.generated.ts')
 
 const block = (src) => {
@@ -14,11 +17,17 @@ const block = (src) => {
   for (const m of src.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/gi)) vars[m[1]] = m[2].trim()
   return vars
 }
-const rootStart = css.indexOf(':root {')
-const root = block(css.slice(rootStart, css.indexOf('\n}', rootStart)))
-const darkAt = css.indexOf('@media (prefers-color-scheme: dark)')
-const darkRoot = css.indexOf(':root {', darkAt)
-const dark = { ...root, ...block(css.slice(darkRoot, css.indexOf('}', darkRoot))) }
+const root = {}, darkOnly = {}
+for (const f of SHEETS) {
+  const css = readFileSync(path.join(STYLES, f), 'utf8')
+  const inDark = new Set()
+  for (const m of css.matchAll(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{([^}]*)\}/g)) {
+    Object.assign(darkOnly, block(m[1]))
+    inDark.add(m.index + m[0].indexOf(':root'))
+  }
+  for (const m of css.matchAll(/:root\s*\{([^}]*)\}/g)) if (!inDark.has(m.index)) Object.assign(root, block(m[1]))
+}
+const dark = { ...root, ...darkOnly }
 
 const resolve = (vars) => {
   const res = {}

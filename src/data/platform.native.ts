@@ -1,12 +1,12 @@
 /**
  * Native twin of platform.ts (picked by Metro for iOS and Android; the web build never sees it).
- * `localStorage` here is the MMKV-backed store apps/native installs before anything loads, with
+ * `localStorage` here is the store apps/native installs before anything loads, with
  * Supabase's `sb-*` session keys in its encrypted part (apps/native/lib/platform/storage.ts).
  */
 import { AppState } from 'react-native'
 
-/** The reminder delivery log on MMKV `tali-notify` (the service worker's IndexedDB on web). */
-export { takeNativeNotifyEvents, clearNativeNotifyLog } from '../../apps/native/lib/platform/notifyMMKV'
+/** The reminder delivery log in the phone's store `tali-notify` (the service worker's IndexedDB on web). */
+export { takeNativeNotifyEvents, clearNativeNotifyLog } from '../../apps/native/lib/platform/notifyKV'
 
 /** supabase-js doesn't save a session outside a browser unless it's given storage. PKCE for the
  *  Google sign-in, whose redirect comes back to the app by its tilo:// link: the one-time code in
@@ -20,7 +20,9 @@ export function onForeground(fn: () => void): void {
   AppState.addEventListener('change', (s) => { if (s === 'active') fn() })
 }
 
-/** The native app has no push yet (N12): a reminder setting made on the web stays on. */
+/** Where this phone can't take pushes (Android until it has its own reminders; iPhone has them
+ *  since N12, so there pushSupported() is true and the web's rule applies), a reminder setting made
+ *  on the web stays on rather than switching off for every device. */
 export const KEEP_REMINDERS_WITHOUT_PUSH = true
 
 /** Google sign-in in the system's sign-in sheet, back at tilo://auth-callback, the code exchanged

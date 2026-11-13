@@ -4,7 +4,7 @@
  * run unchanged on top of these; N0 replaces the globals with named adapters behind the same
  * function names, in small web-tested steps (src/data/platform.ts is the first).
  *
- * - localStorage → MMKV (./storage), sessionStorage → memory
+ * - localStorage → our own store module (./storage), sessionStorage → memory
  * - crypto.getRandomValues → expo-crypto (uuid() in src/data/supabase.ts)
  * - navigator.onLine and window 'online'/'offline' events → our Network-framework module (./connection)
  * - URL, structuredClone and AbortSignal.timeout where the engine lacks them
