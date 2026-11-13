@@ -15,7 +15,7 @@ import { planArt } from '@/screens/plan/planArt'
 import { Btn, Chip, Chips, DashAdd, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Row, Sheet, Swatch, TitleRow } from '../../lib/ui/primitives'
 import { SearchBar } from '../../lib/ui/fields'
-import { PickerSheet } from '../../lib/ui/pickers'
+import { DateInput } from '../../lib/ui/pickers'
 import { Empty, Foot } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
 import { num, tx, useTokens } from '../../lib/theme'
@@ -137,15 +137,16 @@ export function StartChoice({ value, onChange }: { value: string; onChange: (d: 
   const today = todayStr()
   const monday = planStart(today, 'monday')
   const picked = value !== today && value !== monday
-  const [pick, setPick] = useState(false)
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel="Starts" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <Text style={[tx(14), { color: t.label2, marginRight: 4 }]}>Starts</Text>
       <Chip role="radio" on={value === today} tone={value === today ? 'ink' : 'plain'} title="Today" onPress={() => onChange(today)} />
       <Chip role="radio" on={value === monday} tone={value === monday ? 'ink' : 'plain'} title={shortDateOf(monday)} onPress={() => onChange(monday)} />
-      <Chip role="radio" on={picked} tone={picked ? 'ink' : 'plain'} title={picked ? shortDateOf(value) : 'Pick a date'} label="Pick a start date" onPress={() => setPick(true)} />
-      {pick && <PickerSheet mode="date" label="Pick a start date" value={picked ? value : ''} min={today} max={shiftDay(today, 365)}
-        onDone={(v) => onChange(startOn(today, v))} onClose={() => setPick(false)} />}
+      {/* `.pl-date`: the chip's look with the system date input over it (the chip itself takes no touch) */}
+      <DateInput mode="date" label="Pick a start date" value={picked ? value : ''} shown={picked ? shortDateOf(value) : undefined} min={today} max={shiftDay(today, 365)}
+        onChange={(v) => onChange(startOn(today, v))}>
+        <View pointerEvents="none"><Chip role="radio" on={picked} tone={picked ? 'ink' : 'plain'} title={picked ? shortDateOf(value) : 'Pick a date'} onPress={() => {}} /></View>
+      </DateInput>
     </View>
   )
 }
