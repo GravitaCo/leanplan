@@ -300,7 +300,8 @@ async function run() {
     await toTrain(w, n)
     await each(w, n, (p) => tapText(p, 'Add something'))
     await each(w, n, (p) => tapText(p, 'Log a session'))
-    await each(w, n, (p) => p.getByRole('radio', { name: 'Cardio' }).click())
+    // a chip is a radio on the web and a selectable button in N1's Chip
+    await each(w, n, (p) => p.getByRole('radio', { name: 'Cardio', exact: true }).or(p.getByRole('button', { name: 'Cardio', exact: true })).first().click())
     await same('log a session: sheet', w, n, TABBAR)
     await shot('sheet')
     await each(w, n, async (p) => { await p.getByLabel('Minutes').fill('30'); await p.getByLabel('Distance (km)').fill('2') })
