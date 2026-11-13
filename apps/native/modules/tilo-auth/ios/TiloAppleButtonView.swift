@@ -18,10 +18,6 @@ final class TiloAppleButtonView: ExpoView {
     rebuild()
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) is not used")
-  }
-
   private func rebuild() {
     button?.removeFromSuperview()
     let b = ASAuthorizationAppleIDButton(authorizationButtonType: .continue, authorizationButtonStyle: appearance == "white" ? .white : .black)

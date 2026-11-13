@@ -102,7 +102,12 @@ increment, not by sign-in itself; Apple asks apps to revoke on deletion):
   question then asks whose data is on the phone (safe), but the person has two accounts. Worth a line
   in the help copy before launch (new words: a board or Benn's or Sara's OK).
 - A different Apple ID picked when re-confirming before a deletion is refused; it does quietly create
-  an empty account with no consent and no sync, as a different Google account does.
+  an empty account with no consent and no sync, as a different Google account does. That account
+  keeps an email nobody meant to sign up with: decide with increment (a) whether to remove it there
+  (ship-critic, 13 Nov).
+- An Apple-only account on Android or the web, signed in more than 5 minutes ago, is asked for a
+  password it doesn't have before a deletion. Narrow (Android can't sign in with Apple); test it and
+  give it a way through before Android ships.
 
 ## How revocation will work (increment (a), not built yet)
 
