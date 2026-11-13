@@ -9,8 +9,12 @@
  * - closed: a reminder seen in Notification Centre, not opened, and gone at the next look.
  *
  * Only the Mind reminder types are recorded, as on the web (never supplement or review reminders).
- * A reminder swiped away before the app next comes to the front is never seen, so it doesn't count
- * towards the back-off: the phone can under-count ignored reminders, never over-count them.
+ * A reminder swiped away, or replaced by the next one of its type (same tag), before the app next
+ * comes to the front is never seen, so it doesn't count towards the back-off: someone who doesn't
+ * open Tilo for days gets one "shown" where the web records one a day. The phone can under-count
+ * ignored reminders, never over-count them. mental-performance (13 Nov 2026): acceptable for
+ * internal and TestFlight builds, not for the App Store; the fix is a Notification Service
+ * Extension recording "shown" on every delivery (open, native-build-plan N12).
  * Pure, so scripts/test-platform.mjs runs it in Node.
  */
 

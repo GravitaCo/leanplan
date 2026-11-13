@@ -11,9 +11,14 @@
  * Matching the web's behaviour:
  * - subscribePush asks for permission (no prompt once the person has answered), registers and
  *   saves the row; resubscribePush never asks.
- * - unsubscribePush ends this phone's registration first (so reminders stop even if the delete
- *   can't reach the server: Apple then answers 410 and the reminder function removes the row),
- *   then deletes its row.
+ * - unsubscribePush ends this phone's registration and deletes its row.
+ *
+ * Unlike a browser, which gets a new address each time it subscribes, a phone keeps the same token
+ * across sign-outs (security-data, 13 Nov 2026). So a row that can't be deleted now (no session any
+ * more, as after an account switch or signing out offline, or no connection) is kept as a pending
+ * release and deleted when that account is next signed in here; and on the server a token belongs
+ * to one account (docs/migrations/2026-11-13-native-push.sql, push_token_one_account), so the next
+ * account to turn reminders on replaces it.
  */
 import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
@@ -39,6 +44,33 @@ export const savedToken = (): SavedToken | null => {
 const saveToken = (t: SavedToken | null) => {
   try { if (t) store()?.set(KEY, JSON.stringify(t)); else store()?.remove(KEY) } catch { /* unavailable */ }
 }
+/** Rows this phone still has to delete: {token, uid, platform}, newest last, at most a few. */
+const RELEASE = 'release'
+const releases = (): SavedToken[] => {
+  try {
+    const v = JSON.parse(store()?.getString(RELEASE) ?? '[]')
+    return Array.isArray(v) ? v.map((x) => parseSaved(JSON.stringify(x))).filter((x): x is SavedToken => !!x) : []
+  } catch { return [] }
+}
+const setReleases = (list: SavedToken[]) => {
+  try { if (list.length) store()?.set(RELEASE, JSON.stringify(list.slice(-5))); else store()?.remove(RELEASE) } catch { /* unavailable */ }
+}
+
+/** Delete one row while its own account is signed in; true when it's gone (or was never there). */
+async function deleteRow(t: SavedToken): Promise<boolean> {
+  if (!hasSession() || getUid() !== t.uid) return false
+  try { return (await sbFetch(deletePath(t.token, t.uid), { method: 'DELETE' })).ok } catch { return false }
+}
+
+/** Delete the rows left from before, for the account now signed in. */
+async function settleReleases(): Promise<void> {
+  const left: SavedToken[] = []
+  for (const t of releases()) if (!(await deleteRow(t))) left.push(t)
+  setReleases(left)
+}
+
+const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> =>
+  Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))])
 
 // ---- permission ----
 /** The phone's notification permission as the browser names it. */
@@ -64,20 +96,18 @@ async function saveRow(token: string, platform: 'apns' | 'apns-sandbox'): Promis
     body: JSON.stringify(tokenRow(uid, token, platform)),
   })
   if (!r.ok) throw new Error('push_subscriptions -> ' + r.status)
-  // a token Apple has since replaced: its row goes (another account's row can't be reached from
-  // this session; sign-out and deletion already removed it through unsubscribePush)
+  // wanted again: not to be released; a token Apple has since replaced: its row goes
   const before = savedToken()
   saveToken({ token, uid, platform })
-  if (before && before.uid === uid && before.token !== token) {
-    await sbFetch(deletePath(before.token, before.uid), { method: 'DELETE' }).catch(() => undefined)
-  }
+  setReleases(releases().filter((t) => !(t.token === token && t.uid === uid)))
+  if (before && before.uid === uid && before.token !== token && !(await deleteRow(before))) setReleases([...releases(), before])
   return true
 }
 
 async function register(): Promise<boolean> {
   try {
-    const t = await Notifications.getDevicePushTokenAsync()
-    const token = t.type === 'ios' ? apnsToken(t.data) : null
+    const t = await withTimeout(Notifications.getDevicePushTokenAsync(), 10000)
+    const token = t?.type === 'ios' ? apnsToken(t.data) : null
     if (!token) throw new Error('no APNs token')
     const env = await getIosPushNotificationServiceEnvironmentAsync().catch(() => null)
     return await saveRow(token, apnsPlatform(env))
@@ -99,29 +129,33 @@ export async function subscribePush(): Promise<boolean> {
   return register()
 }
 
-/** End this phone's registration and delete its row (the row only goes while a session is still
- *  set; without one, ending the registration still stops the reminders arriving). */
+/** End this phone's registration and delete its row; if the row can't be deleted now (no session
+ *  for its account, or no connection), it's kept as a pending release (see the header). */
 export async function unsubscribePush(): Promise<void> {
   if (!pushSupported()) return
   const saved = savedToken()
   if (!saved) return
-  try {
-    saveToken(null)
-    await Notifications.unregisterForNotificationsAsync().catch(() => undefined)
-    // a failed delete is ignored: the registration is already ended, so reminders stop anyway
-    if (hasSession()) await sbFetch(deletePath(saved.token, getUid()), { method: 'DELETE' })
-  } catch (e) {
-    console.error('Push unsubscribe failed:', e instanceof Error ? e.message : 'error')
-  }
+  saveToken(null)
+  setReleases([...releases().filter((t) => !(t.token === saved.token && t.uid === saved.uid)), saved])
+  await Notifications.unregisterForNotificationsAsync().catch(() => undefined)
+  await settleReleases()
 }
 
-/** At launch (Apple asks apps to register on every launch, as a token can change while the app is
- *  closed): a registered phone checks its token, without asking. */
+/**
+ * Once signed in (at launch and after each sign-in): rows left from before are deleted, and a
+ * registered phone saves its row again, without asking. Apple asks apps to register on every launch
+ * (a token can change while the app is closed), and saving again also brings back a row the
+ * reminder function removed (security-data, 13 Nov 2026). The consent trigger still decides.
+ */
 export async function checkPushToken(): Promise<void> {
-  if (!pushSupported() || !savedToken() || (await pushPermission()) !== 'granted') return
+  if (!pushSupported() || !hasSession()) return
+  await settleReleases()
+  const saved = savedToken()
+  if (!saved || saved.uid !== getUid() || (await pushPermission()) !== 'granted') return
   try {
-    const t = await Promise.race([Notifications.getDevicePushTokenAsync(), new Promise<null>((r) => setTimeout(() => r(null), 10000))])
-    if (t) await pushTokenChanged(t.data)
+    const t = await withTimeout(Notifications.getDevicePushTokenAsync(), 10000)
+    const token = t ? apnsToken(t.data) : null
+    if (token) await saveRow(token, saved.platform)
   } catch { /* offline: next launch */ }
 }
 
@@ -131,5 +165,5 @@ export async function pushTokenChanged(data: unknown): Promise<void> {
   const saved = savedToken()
   const token = apnsToken(data)
   if (!pushSupported() || !saved || !token || token === saved.token || !hasSession() || getUid() !== saved.uid) return
-  try { await saveRow(token, saved.platform) } catch { /* the next launch's resubscribe tries again */ }
+  try { await saveRow(token, saved.platform) } catch { /* the next launch saves it */ }
 }

@@ -16,6 +16,10 @@ status). Project rules are the repo's `CLAUDE.md`; Expo-specific notes are in `A
   encrypted store with a Keychain key), `navigator.onLine` from NetInfo, `crypto.getRandomValues`.
 - Where shared code must behave differently on a phone, it imports from `src/data/platform.ts`; the
   native twin `platform.native.ts` is picked by Metro and never seen by the web build.
+- Reminders (N12): `src/data/push.native.ts` hands the store the phone's push registration (APNs device
+  token in `push_subscriptions`, `lib/platform/push.ts`); `lib/platform/notifications.ts` handles
+  arrivals, taps and the delivery log; `lib/platform/notificationGlobal.ts` gives the store the
+  browser's `Notification` permission. iPhone only for now.
 - `import.meta.env.VITE_*` flags in shared code are filled at build time from `EXPO_PUBLIC_*`
   (`babel.config.js`), with the web's defaults when unset, so a flag is never on in one app only.
 - Studio tokens: `lib/tokens.generated.ts` is generated from `src/styles/theme.css`

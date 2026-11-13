@@ -30,13 +30,13 @@
 // and the APNs secrets): a phone's row in push_subscriptions has platform 'apns' or 'apns-sandbox'
 // and its device token in `endpoint`. The same reminders, claims and budget go to it, through Apple's
 // push service instead of Web Push, with the words public/sw.js would show (../_shared/apns.ts
-// shownCopy). Secrets: APNS_KEY_P8 (the .p8 key's PEM), APNS_KEY_ID, APNS_TEAM_ID. Without them,
+// forApns), except supplement names: generic text on a phone unless APNS_SUPP_NAMES is "on". Secrets: APNS_KEY_P8 (the .p8 key's PEM), APNS_KEY_ID, APNS_TEAM_ID. Without them,
 // phone rows are counted as failed and left alone; Web Push is unaffected either way.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push";
 import { dueKinds, isCapped, localNow, payloadFor, suppPayload, suppsDue, type MindKind } from "../_shared/reminders.ts";
-import { APNS_HOSTS, apnsBody, apnsGone, apnsHeaders, apnsIat, apnsJwt, apnsKey, isApns, isApnsToken, shownCopy } from "../_shared/apns.ts";
+import { APNS_HOSTS, apnsBody, apnsGone, apnsHeaders, apnsIat, apnsJwt, apnsKey, apnsTokenRefused, forApns, isApns, isApnsToken } from "../_shared/apns.ts";
 
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
@@ -44,6 +44,8 @@ const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
 const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
 const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
+// supplement names through APNs (readable by Apple): only once DPIA 8.8's APNs addendum is signed
+const APNS_SUPP_NAMES = Deno.env.get("APNS_SUPP_NAMES") === "on";
 
 // The APNs provider token, kept for its window: Apple refuses one refreshed more often than every
 // 20 minutes, and this runs every minute.
@@ -190,11 +192,11 @@ Deno.serve(async (req: Request) => {
       failed++;
       return "failed";
     }
-    const shown = shownCopy(payload);
+    const shown = forApns(payload, APNS_SUPP_NAMES);
     try {
       const res = await fetch(`${APNS_HOSTS[sub.platform]}/3/device/${sub.endpoint}`, {
         method: "POST",
-        headers: apnsHeaders(shown, jwt),
+        headers: apnsHeaders(shown, jwt, Date.now()),
         body: apnsBody(shown),
       });
       if (res.ok) {
@@ -205,6 +207,7 @@ Deno.serve(async (req: Request) => {
       try { reason = (await res.json())?.reason; } catch { /* no body */ }
       failed++;
       console.error(`apns failed: status ${res.status} ${typeof reason === "string" ? reason.slice(0, 40) : ""}`);
+      if (apnsTokenRefused(res.status, reason)) apnsToken = null;
       if (apnsGone(res.status, reason)) {
         await supabase.from("push_subscriptions").delete().eq("id", sub.id);
         return "gone";

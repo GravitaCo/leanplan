@@ -12,6 +12,7 @@
 --     push_subscriptions rows, phones included;
 --   * account deletion (USER_TABLES in supabase/functions/_shared/account.ts) and the foreign key's
 --     on delete cascade.
+-- Plus one trigger for phones (push_token_one_account, below): a token belongs to one account.
 --
 -- What changes:
 --   platform  'web' (a browser's Web Push subscription: endpoint URL plus p256dh and auth_key, as
@@ -19,8 +20,9 @@
 --             'apns' or 'apns-sandbox' (a phone: `endpoint` holds its APNs device token as lower-case
 --             hex, with no keys; sandbox for development builds only).
 --   p256dh and auth_key may be null, but only on a phone's row (the check constraint).
--- Same personal data as today (a delivery address for this device's reminders); the privacy policy
--- and the register name Apple's push service for the iPhone app.
+-- Same kind of personal data as today (a delivery address for this device's reminders). Apple can
+-- read an APNs alert (Web Push is end-to-end encrypted), so the privacy policy's iPhone text, gated
+-- on its `native` option, says so, and the register and DPIA 8.8 record it (compliance, 13 Nov 2026).
 --
 -- Order: this first, then the function (send-supplement-reminders/index.ts with ../_shared/apns.ts
 -- and the APNS_KEY_P8, APNS_KEY_ID and APNS_TEAM_ID secrets). The function also runs before this
@@ -33,6 +35,8 @@
 --
 -- Rollback (only once no phone rows are wanted):
 --   delete from public.push_subscriptions where platform <> 'web';
+--   drop trigger if exists push_token_one_account on public.push_subscriptions;
+--   drop function if exists public.push_token_one_account();
 --   alter table public.push_subscriptions drop constraint if exists push_subscriptions_keys_by_platform;
 --   alter table public.push_subscriptions alter column p256dh set not null, alter column auth_key set not null;
 --   alter table public.push_subscriptions drop column platform;
@@ -54,6 +58,37 @@ alter table public.push_subscriptions add constraint push_subscriptions_keys_by_
   or (platform in ('apns', 'apns-sandbox') and p256dh is null and auth_key is null and endpoint ~ '^[0-9a-f]{64,200}$')
 );
 
+-- One device token, one account (security-data, 13 Nov 2026, finding 1). A phone's token stays the
+-- same across sign-outs, and when the session is already gone (an account switch, signing out
+-- offline) the phone can't delete its own row. Without this, the next account to turn reminders on
+-- would sit beside the previous one under the same token, and the phone would get both accounts'
+-- reminders. The newest registration wins: saving a phone row deletes any other account's row for
+-- that token. SECURITY DEFINER because RLS hides other accounts' rows from the person saving;
+-- it deletes nothing but phone rows with exactly this token. It runs in the same statement as the
+-- consent check (require_health_consent), so a save refused for consent deletes nothing.
+-- Only someone who already holds a phone's token could use it to move that phone's reminders.
+create or replace function public.push_token_one_account()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.platform in ('apns', 'apns-sandbox') then
+    delete from public.push_subscriptions p
+      where p.endpoint = new.endpoint
+        and p.platform in ('apns', 'apns-sandbox')
+        and p.user_id <> new.user_id;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.push_token_one_account() from public, anon, authenticated;
+
+drop trigger if exists push_token_one_account on public.push_subscriptions;
+create trigger push_token_one_account before insert or update of endpoint, platform, user_id on public.push_subscriptions
+  for each row execute function public.push_token_one_account();
+
 -- Grants, as they stand (unchanged): nothing for anon; signed-in owners read and change their own
 -- rows through RLS; the reminder function and delete-account use the service role.
 revoke all on public.push_subscriptions from anon;
@@ -71,4 +106,12 @@ notify pgrst, 'reload schema';
 -- select grantee, string_agg(privilege_type, ', ' order by privilege_type) from information_schema.role_table_grants
 --   where table_schema = 'public' and table_name = 'push_subscriptions' and grantee in ('anon', 'authenticated', 'service_role') group by 1;
 --   -- no anon; authenticated and service_role: DELETE, INSERT, SELECT, UPDATE
+-- select tgname from pg_trigger where tgrelid = 'public.push_subscriptions'::regclass and not tgisinternal;
+--   -- require_health_consent and push_token_one_account
+-- One token, one account (inside a transaction, rolled back; <a> and <b> two test accounts, both with a health yes):
+--   begin;
+--   insert into public.push_subscriptions (user_id, endpoint, platform) values ('<a>', repeat('ab', 32), 'apns');
+--   insert into public.push_subscriptions (user_id, endpoint, platform) values ('<b>', repeat('ab', 32), 'apns');
+--   select user_id from public.push_subscriptions where endpoint = repeat('ab', 32);   -- only <b>
+--   rollback;
 -- After running: on the web, turn a reminder off and on again (the row is written as before, platform 'web').
