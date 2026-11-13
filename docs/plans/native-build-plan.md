@@ -131,13 +131,14 @@ her up; it doesn't hold the build.
   cycles, which isn't how this team works: the specialist reviews run in minutes inside each stream, the
   designs exist, and only visible differences from the web need Benn's or Sara's approval. The web app
   was designed and built in about 3 weeks; native reuses all its logic and its designs.
-- *Calendar (revised):* foundation (N0 to N3) a few days; feature streams in parallel about 1 to 2 weeks
-  after that; parity build in TestFlight in about **2 to 3 weeks**. The parts that are genuinely new work
-  rather than ports, and most likely to run over: the guided player with video and timers (N7), barcode
-  scanning with the camera (N6), push through APNs with the reminder function (N12), and anything that
-  only shows up on a real phone. Re-measured when N1 lands. Store launch then needs Sign in with Apple, the
-  store listings, privacy labels and Apple's review (days to weeks); Android adds Play's closed test
-  (about 14 days with about 12 testers [I]).
+- *Calendar (Benn, 13 Nov):* parity coding is days, not weeks: no new designs, all logic shared. All streams
+  N1 to N12 started in parallel on 13 Nov. What does take calendar time: the new planned features and the
+  video work, plus these non-coding items: Sign in with Apple (required by Apple once Google is offered; a
+  new visible button, so a board first), native permission wording (Health, camera, notifications) past
+  compliance and Benn or Sara, the reminder function's server change shipped through main with the privacy
+  policy naming Apple's push service, the Bunny referrer question for native video (security-data), Apple's
+  App Store review, and for Android a Play Console organisation account and Play's closed test (about 14
+  days with about 12 testers [I]).
 - *Running costs* (EAS build minutes, developer accounts): `cfo` to cost; builds so far fit Expo's plan.
 
 ## 4. Streams
