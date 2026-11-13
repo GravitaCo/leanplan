@@ -1,0 +1,53 @@
+# tilo-camera
+
+Tilo's camera for the scan screens (N6), on Apple's own frameworks: AVFoundation for the preview,
+live barcodes, frames and photos; Vision for barcodes in a still photo. No third-party camera
+library (Benn, 13 Nov 2026). iOS only in this pass.
+
+## What it offers (index.ts)
+
+| JS | Native |
+|---|---|
+| `<TiloCameraView mode="barcode">`, `onBarcode({ type, data })` | AVCaptureMetadataOutput, EAN-13, EAN-8, UPC-E (a UPC-A arrives as a 13-digit EAN-13) |
+| `<TiloCameraView mode="label">`, `onQuality({ blur, brightness, glare })` | AVCaptureVideoDataOutput, luminance plane scaled to `qualityEdge`, at most one every `qualityIntervalMs` |
+| `ref.takePhoto()` → `{ uri, width, height }` | AVCapturePhotoOutput, JPEG in Caches/TiloCamera (deleted by the screen once read) |
+| `onReady`, `onMountError('denied' or 'none')` | session started; permission refused or no rear camera |
+| `cameraPermission()`, `requestCameraPermission()` | AVCaptureDevice authorizationStatus / requestAccess |
+| `barcodesInImage(uri)` | VNDetectBarcodesRequest (the web's "Take a photo" row) |
+| `measureImage(uri, edge, clip)` | the same quality numbers for a photo file (the review row) |
+
+The quality numbers are computed the way `measureFrame` in `src/core/domain/labelQuality.ts`
+computes them (Laplacian variance, mean luminance, share of pixels at or above `clip`). The
+thresholds are not in Swift: JS passes core's `QUALITY_EDGE` and `QUALITY_LIMITS.clip` in, and
+judges the numbers with core's `qualityIssue` (`screens/scan/labelQualityLive.ts`). Two small
+differences from the web's numbers, both inside the thresholds' forgiveness: the frame is
+averaged down from the camera's luminance plane rather than drawn on a canvas, and luminance is
+the camera's own Y (Rec. 601, as the web's `toGray`).
+
+`app.plugin.js` writes `NSCameraUsageDescription` (compliance's wording). Add
+`"./modules/tilo-camera/app.plugin.js"` to app.json's plugins.
+
+## To check on the first device build (not compiled here: no Xcode in the cloud session)
+
+- It compiles: `required init?(coder:)` is provided in case ExpoFabricView needs it; Swift 5 mode
+  is assumed (a captured `var` in `requestAccess`'s callback would be a Swift 6 error).
+- The `.photo` session preset for both modes, and whether `.ean13/.ean8/.upce` are available on
+  the metadata output after `addOutput` (they're filtered by `availableMetadataObjectTypes`).
+- `qualityEdge`, `clip`, `qualityIntervalMs` and `lastQuality` are read on the frame queue and
+  written on the main thread: plain Ints, a benign race; move them behind the queue if the
+  sanitizer complains.
+- The reported photo width and height follow the EXIF orientation (portrait for 5 to 8).
+- Continuous autofocus with the near range restriction reads both a barcode and small label print.
+- The camera stops when the view leaves the window or `active` goes false (the green dot goes out).
+
+## Android (later)
+
+A Kotlin twin with the same names (module `TiloCamera`, view props and events): CameraX
+(`androidx.camera`, Google's Jetpack library) with a `PreviewView`; live barcodes through ML Kit's
+barcode scanner (`com.google.mlkit:barcode-scanning`, formats EAN-13, EAN-8, UPC-A, UPC-E: map
+UPC-A to 'ean13' with a leading 0, or report it as 'upc_a', both handled in `mapping.ts`); an
+`ImageAnalysis` use case reading the Y plane for the quality numbers, throttled the same way;
+`ImageCapture` for photos into the cache dir; ML Kit on an `InputImage.fromFilePath` for
+`barcodesInImage`; `ContextCompat.checkSelfPermission` / an activity-result request for the
+permission and `<uses-permission android:name="android.permission.CAMERA" />`. CameraX and ML Kit
+are Google libraries, not part of the OS, so they need Benn's dependency policy first.
