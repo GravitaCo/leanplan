@@ -1,10 +1,9 @@
 import type { PlanWeek, Routine, TrainingPlan } from '@/core/types'
-import { DAY_NAME } from '@/core/domain/date'
-import { WEEK_ORDER } from '@/core/domain/week'
-import { isBuiltinKey, keyTitle, keyVideo, routineFor, templateFor } from '@/core/domain/routines'
+import { keyVideo } from '@/core/domain/routines'
 import { Thumb } from '../train/Thumb'
 import { timeline, type PlanTemplate, type WeekCell } from '@/core/domain/plans'
 import { allPlanArt } from './planArt'
+import { planWeekRows } from './planModel'
 
 /**
  * Shared pieces of the plan screens (design canvas, Plans 1 to 4): each Tilo plan's photograph,
@@ -91,22 +90,16 @@ export function WeekRows({ week, routines, todayIdx, todayNote, onDay, emptyAdd 
 }) {
   return (
     <div className="list wk">
-      {WEEK_ORDER.map((d) => {
-        const keys = (week[d] || []).filter((k) => isBuiltinKey(k) || !!routineFor(k, routines))
-        const names = keys.map((k) => keyTitle(k, routines))
-        const today = d === todayIdx
-        const n = keys.length === 1 && keys[0] !== 'Cardio' ? templateFor(keys[0], routines)?.ex.length ?? 0 : 0
-        const sub = [n ? `${n} ${n === 1 ? 'exercise' : 'exercises'}` : '', today ? todayNote ?? 'Today' : ''].filter(Boolean).join(' · ')
+      {planWeekRows(week, routines, todayIdx, todayNote).map(({ d, keys, names, sub, today, label, day }) => {
         const body = (
           <>
-            <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
+            <span className="dd">{day}</span>
             {keys.length === 0
               ? emptyAdd ? <div className="m"><div className="t tint">+ Add</div></div> : <div className="m"><div className="t muted">Rest · recovery counts too</div></div>
               : <div className="m"><div className="t">{names.join(' + ')}</div>{sub && <div className="s">{sub}</div>}</div>}
             {keys.length > 0 && (keys[0] === 'Cardio' ? <span className="cdot" aria-hidden="true" /> : <Thumb video={keyVideo(keys[0], routines)} />)}
           </>
         )
-        const label = `${DAY_NAME[d]}: ${names.length ? names.join(' and ') : 'Rest'}${today ? ', today' : ''}`
         return onDay
           ? <button className={'li wk-row' + (today ? ' today' : '')} key={d} onClick={() => onDay(d)} aria-label={label}>{body}</button>
           : <div className={'li wk-row' + (today ? ' today' : '')} key={d} aria-label={label}>{body}</div>

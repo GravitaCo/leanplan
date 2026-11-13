@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '@/store/store'
 import type { WorkoutType } from '@/core/types'
-import { SESSIONS, WORKOUTS, LIFTS } from '@/core/data/workouts'
+import { SESSIONS, LIFTS } from '@/core/data/workouts'
 import { EXERCISES } from '@/core/data/exercises'
-import { WEEK_ORDER, plannedOn, shortTitle, weekWarnings } from '@/core/domain/week'
-import { DAY_NAME, shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
-import { activePlan, bestFit, catalogue, fitOf, isEaseIn, endDate, phaseRows, phasesOf, planWeekNotes, positionOn, PLAN_TEMPLATES, templateById, timeline, totalWeeks, upcomingPlan, weekSource, type CatalogueEntry } from '@/core/domain/plans'
+import { shortTitle, weekWarnings } from '@/core/domain/week'
+import { shortDateOf, todayStr } from '@/core/domain/date'
+import { activePlan, bestFit, catalogue, fitOf, endDate, phasesOf, planWeekNotes, positionOn, PLAN_TEMPLATES, templateById, timeline, totalWeeks, upcomingPlan, weekSource, type CatalogueEntry } from '@/core/domain/plans'
 import { planArt, PlanTile, Timeline, WeekRows } from './plan/PlanParts'
 import { MaintenanceCard, PlanLibrary, PlanPreview } from './plan/PlanLibrary'
 import { PlanBuilder } from './plan/PlanBuilder'
@@ -20,12 +20,11 @@ import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
 import { PlanEditSheet } from './plan/PlanSheets'
 import { MIND_PLAN, PLAN_GUIDES, PLAN_OUTCOME } from '@/copy/plan'
-import { builtPhases, planGroups, whenLine, workoutSub } from './plan/planModel'
+import { awaitingNext, builtPhases, lastPlanNote, planCardFigure, planCardNote, planGroups, routineLine, scheduleWeekRows, whenLine, workoutSub } from './plan/planModel'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { IfThenPlan } from '@/core/types'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
-import { aboutLine, routineEstMins, builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
-import { MODALITY_LABEL } from '@/core/data/modalities'
+import { builtinSlots, canBuild, isBuiltinKey, isTaliKey, keyVideo, routineFor, slotsOf as routineSlots, type WorkoutKey } from '@/core/domain/routines'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 
 type Guide = (typeof PLAN_GUIDES)[number]['id']
@@ -134,18 +133,10 @@ export function PlanScreen() {
     const src = weekSource(active, pos.phaseIndex)
     if (src >= 0) setPlanDay({ planId: active.id, phase: src, idx: d })
   }
-  const dayLabel = shortDateOf
   const suggested = bestFit(PLAN_TEMPLATES, fitOf(profile))
   // the card's line: the next lighter week, or maintenance check-ins at about 8 and 12 weeks
-  const nextLighter = active && pos && !pos.ended ? phaseRows(active, today).find((r) => r.kind === 'lighter' && r.from > pos.week) : undefined
-  const planLine = !active || !pos ? null
-    : pos.maintenanceWeek != null
-      ? pos.phase.full ? 'Your last week repeats at the full version. Choose a new plan in Plan details whenever you like.'
-        : pos.maintenanceWeek >= 12 ? "About 12 weeks holding steady. When you'd like something new, choose a plan in Plan details."
-        : pos.maintenanceWeek >= 8 ? 'About 8 weeks holding steady. Carry on as long as you like.'
-        : 'Your workouts open on the shorter version. Lift the same weights as before.'
-      : nextLighter && active.startedAt ? `Lighter week: week ${nextLighter.from}, from ${dayLabel(shiftDay(active.startedAt, (nextLighter.from - 1) * 7))}.`
-      : pos.maintain ? (isEaseIn(active, pos.phaseIndex) ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week: workouts open on the shorter version.') : null
+  const planLine = planCardNote(active, pos, today)
+  const waiting = awaitingNext(pos, next)
   // start a plan from a preview, a run-again or a build; the plan that ended keeps going until the new one starts
   const begin = (input: Parameters<typeof startPlan>[0], after?: After) => {
     if (after) { if ((input.startedAt ?? today) <= today) finishPlan(after.id, after.reflection); else notePlan(after.id, after.reflection) }
@@ -154,8 +145,8 @@ export function PlanScreen() {
   }
   const overlay = mcard && <MaintenanceCard onClose={() => setMcard(false)} />
   // the last plan's "do differently", until the person hides it
-  const lastRef = (trainingPlans || []).filter((p) => p.reflection?.change).sort((a, b) => (b.reflection!.at > a.reflection!.at ? 1 : -1))[0]?.reflection
-  const lastNote = lastRef && lastRef.at !== profile.planNoteHidden ? lastRef.change : undefined
+  const lastRef = lastPlanNote(trainingPlans, profile.planNoteHidden)
+  const lastNote = lastRef?.change
   if (flow?.v === 'library') {
     return <>{<PlanLibrary onBack={() => setFlow(null)} onOpen={(e) => setFlow({ v: 'preview', e })} onNew={() => setFlow({ v: 'build' })} />}{overlay}</>
   }
@@ -214,28 +205,20 @@ export function PlanScreen() {
         </>
       )}
       {active && (
-        <button className="card pl-card" onClick={() => setFlow(pos?.ended && !pos.maintenanceWeek && !next ? { v: 'end', planId: active.id } : { v: 'details', planId: active.id })}>
+        <button className="card pl-card" onClick={() => setFlow(waiting ? { v: 'end', planId: active.id } : { v: 'details', planId: active.id })}>
           <span className="pl-top">
             {planArt(active.baseTemplateId) ? <img src={planArt(active.baseTemplateId)} alt="" /> : <span className="pl-dot" aria-hidden="true" />}
             <span className="m"><span className="k">Your plan</span><span className="t">{active.name}</span></span>
             <Chevron />
           </span>
           <span className="pl-body">
-            {!pos ? (
-              <span className="pl-big"><span className="num b">Starts</span><span className="num s">{shortDateOf(active.startedAt!)} · {totalWeeks(active)} weeks</span></span>
-            ) : pos.maintenanceWeek != null ? (
-              <span className="pl-big"><span className="num b">{pos.phase.full ? 'Carrying on' : 'Maintenance'}</span><span className="num s">week {pos.maintenanceWeek}</span></span>
-            ) : pos.ended ? (
-              <span className="pl-big"><span className="num b">{pos.total} weeks</span><span className="num s">done</span></span>
-            ) : (
-              <span className="pl-big"><span className="num b">Week {pos.week}</span><span className="num s">of {pos.total} · {pos.phase.name}</span></span>
-            )}
+            {(() => { const f = planCardFigure(active, pos); return <span className="pl-big"><span className="num b">{f.big}</span><span className="num s">{f.small}</span></span> })()}
             <Timeline cells={timeline(active, today)} endLabel={`Week ${totalWeeks(active)}`} />
             {planLine && <span className="pl-note">{planLine}</span>}
           </span>
         </button>
       )}
-      {pos?.ended && !pos.maintenanceWeek && !next && active && (
+      {waiting && active && (
         <div className="card dayopt">
           <div className="t">You've reached the end of {active.name}.</div>
           <div className="foot" style={{ padding: '0 0 10px' }}>When you're ready, you can look back and choose what's next. Until then, your week carries on as it is.</div>
@@ -256,21 +239,20 @@ export function PlanScreen() {
         <WeekRows week={pos.planWeek} routines={routines} todayIdx={todayIdx} todayNote={pos.maintain ? 'Today · shorter' : 'Today'} onDay={editDay} />
       ) : (
         <div className="list wk">
-          {WEEK_ORDER.map((d) => {
-            const v = plannedOn(schedule, d)
-            const today = d === todayIdx
+          {scheduleWeekRows(schedule, todayIdx).map((row) => {
+            const v = row.keys[0] as WorkoutType | undefined
             return (
-              <button className={'li wk-row' + (today ? ' today' : '')} key={d} onClick={() => editDay(d)} aria-label={`${DAY_NAME[d]}: ${v === 'Rest' ? 'Rest' : shortTitle(v)}${today ? ', today' : ''}`}>
-                <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
-                {v === 'Rest' ? (
+              <button className={'li wk-row' + (row.today ? ' today' : '')} key={row.d} onClick={() => editDay(row.d)} aria-label={row.label}>
+                <span className="dd">{row.day}</span>
+                {!v ? (
                   <div className="m"><div className="t muted">Rest · recovery counts too</div></div>
                 ) : (
                   <div className="m">
-                    <div className="t">{shortTitle(v)}</div>
-                    {(v !== 'Cardio' || today) && <div className="s">{[v !== 'Cardio' ? `${WORKOUTS[v].ex.length} exercises` : '', today ? 'Today' : ''].filter(Boolean).join(' · ')}</div>}
+                    <div className="t">{row.names[0]}</div>
+                    {row.sub && <div className="s">{row.sub}</div>}
                   </div>
                 )}
-                {v !== 'Rest' && v !== 'Cardio' && <Thumb video={firstVideo(v)} />}
+                {v && v !== 'Cardio' && <Thumb video={firstVideo(v)} />}
                 {v === 'Cardio' && <span className="cdot" aria-hidden="true" />}
               </button>
             )
@@ -348,7 +330,7 @@ export function PlanScreen() {
               <button className="li pv-row" key={r.id} onClick={() => { setSheet(null); setWorkout(r.id) }}>
                 <Thumb video={keyVideo(r.id, routines)} shape={r.modality === 'cardio' ? 'duration' : 'weight-reps'} />
                 <div className="m"><div className="t">{r.name}</div>
-                  <div className="s num">{[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')}</div></div>
+                  <div className="s num">{routineLine(r, routines, training, ONBOARDING_ENABLED)}</div></div>
                 <Chevron />
               </button>
             ))}

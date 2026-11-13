@@ -19,7 +19,7 @@ import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
 import { WarmupCard } from '../train/WarmupCard'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
-import { workoutKind as kindOf, workoutSub } from './planModel'
+import { keyLine, plannedDaysLine, workoutKind as kindOf, workoutSub } from './planModel'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -84,12 +84,7 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
   const cancel = <button className="navbtn" onClick={onClose}>Cancel</button>
   const warn = !sel ? [] : notesFor ? notesFor(sel)
     : weekWarnings({ ...schedule, [idx]: sel as WorkoutType }).filter((w) => w.kind === 'back-to-back' && w.days.includes(idx)).map((w) => w.text)
-  const subOf = (k: WorkoutKey) => {
-    const r = routineFor(k, routines)
-    if (!r) return workoutSub(k as WorkoutType)
-    const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
-  }
+  const subOf = (k: WorkoutKey) => keyLine(k, routines, training, ONBOARDING_ENABLED)
 
   if (see) {
     return (
@@ -272,8 +267,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: {
   // the days it's planned this week: the plan's week (several a day, own and Tilo's) or the schedule's
   const data = useStore((s) => s.data)
   const thisWeek = weekOf(todayStr())
-  const on = WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)).map((d) => DAY_NAME[d] + 's')
-  const when = on.length ? on.length === 1 ? on[0] : on.slice(0, -1).join(', ') + ' and ' + on[on.length - 1] : 'Not in your week'
+  const when = plannedDaysLine(WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)))
   const sub = r
     ? [`${ONBOARDING_ENABLED ? 'warm-up and ' : ''}${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
