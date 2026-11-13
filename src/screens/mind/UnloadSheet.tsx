@@ -6,7 +6,7 @@ import { Chevron, Icon } from '@/ui/icons'
 import { SHARED, UNLOAD } from './copy'
 import { SupportSheet } from './SupportSheet'
 
-export { deleteUnload, noteDay, noteLines, saveUnload, unloadBlocked }
+export { noteDay, noteLines, unloadBlocked }
 
 const blank = (): UnloadPair => ({ mind: '', next: '' })
 

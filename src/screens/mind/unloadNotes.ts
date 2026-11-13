@@ -15,6 +15,13 @@ export type Refusal = Extract<AddNoteResult, { ok: false }>['reason']
 export type { NotesContext, UnloadNote, UnloadPair }
 export { UNLOAD_MAX_PAIRS }
 
+/**
+ * The names here that read, add or delete notes: only the Unload screens (web UnloadSheet.tsx and
+ * the native one) may import them (scripts/wellbeing/data-device.ts UNLOAD_SCREENS). The other
+ * exports only format or validate what the caller already has.
+ */
+export const UNLOAD_SCREEN_ACCESSORS = ['notesFor', 'saveUnload', 'deleteUnload'] as const
+
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const chars = (x: string | undefined) => [...(x ?? '').trim()].length
 
