@@ -17,6 +17,7 @@ import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, LinkBtn, List, Note, RoundBtn, Stack, Tile, ToastHost, ToastView } from './ui/kit'
 import { Scale, Select, Slider, Stepper } from './ui/controls'
 import { PickerSheet, TimeField } from './ui/pickers'
+import { CoverImage } from './ui/CoverImage'
 import { frac } from '@/core/domain/estimate'
 import { AddC, Row, Swatch, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
@@ -459,6 +460,12 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           <Row lead={<Swatch color={t.moveFill} />} title="Strength" sub="Full body, lower, upper" onPress={() => {}} />
           <Row lead={<Swatch sm color={t.foodFill} />} title="Eating" value="Maintenance" />
         </List>
+      </Sec>
+
+      <Sec id="cover" title="CoverImage (50% 30%) · GrpH as h2">
+        <CoverImage source={require('../assets/auth-hero.jpg')} x={0.5} y={0.3} style={{ height: 160, borderRadius: 16 }} />
+        <GrpH h2>This week</GrpH>
+        <List><Row title="Monday" value="Push" /></List>
       </Sec>
 
       <Sec id="banner" title="Banner">

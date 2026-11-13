@@ -35,6 +35,7 @@ pattern two screens need that isn't here comes to N1 (through the lead), not int
 | `primitives.tsx` | `PageHeader`, `TitleRow`, `ProfileButton`, `ConnectionPill`/`ConnectionLine` (+ `View` forms), `CatHead`, `BackButton`, `NavBtn` (words or an icon), `Seg`, `Toggle`, `Row`, `Tag`, `AddC`, `XBtn`, `Swatch`, `SettingRow`, `Disclosure`, `Sheet`, `BareSheet` |
 | `controls.tsx` | `Slider`, `Stepper`, `Scale`, `Select` |
 | `pickers.tsx` | `TimeField`, `PickerSheet` (the UIDatePicker wheels from `modules/tilo-pickers`) |
+| `CoverImage.tsx` | `CoverImage`: `object-fit: cover` with the web's `object-position` |
 | `fields.tsx`, `text.tsx`, `choices.tsx` | `Input`, `Field`, `FRow` (with `hint`), `NameField`, `SearchBar`; `Lbl`, `GrpH`, `Foot`, `Sub`, `Prose`, `Empty`, `TextLink`; `Opts`, `Ticks`, `Check`, `Signposts`, `ConsentRow` |
 | `charts.tsx` | `Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`, `WeekBars` |
 | `WeekStrip.tsx` | `WeekStrip`, `DayNav`, `MoveStrip` |
