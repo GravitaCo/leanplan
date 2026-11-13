@@ -120,7 +120,7 @@ const check = (name, ok, detail) => { if (!ok) bad++; console.log(ok ? 'PASS' : 
 /** the two apps, as selectors over the same page shapes */
 const APPS = {
   web: { kind: 'web', url: WEB, screen: '.screen', sheet: '.sheet', titles: '.sheet .li .t', search: 'Search foods' },
-  native: { kind: 'native', url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[data-testid="sheet"]', titles: '[data-testid="sheet"] [data-testid="row-title"]', search: 'Search foods' },
+  native: { kind: 'native', url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[aria-modal="true"]', titles: '[aria-modal="true"] [data-testid="row-title"]', search: 'Search foods' },
 }
 // NATIVE_KIND=web puts a second web build in the native slot: a before/after check of a web change
 if (process.env.NATIVE_KIND === 'web') APPS.native = { ...APPS.web, url: NATIVE }
@@ -273,11 +273,13 @@ async function run() {
   // 3. search: the same foods in the same order
   if (want('search')) {
     const [w, n] = await pair(state(VIEWS.numbers), 'light')
-    for (const a of [w, n]) { await btn(a, 'Add food').click(); await sheetOpen(a) }
-    await same('search: nothing typed (recipes, usuals, recent, my foods)', w, n, (a) => a.page.locator(a.app.titles).allInnerTexts())
+    // past the slide-up, so the sheet's text is laid out
+    for (const a of [w, n]) { await btn(a, 'Add food').click(); await sheetOpen(a); await a.page.waitForTimeout(600) }
+    await same('search: nothing typed (recipes, usuals, recent, my foods)', w, n, (a) => text(a, a.app.sheet))
     for (const q of ['chicken', 'greggs', 'sausage roll', 'milk', 'semi skimmed', 'oat', 'banana', 'rice', 'big mac', 'whopper', 'pret', 'coffee latte', 'curry', 'yogurt', 'egg', 'xyzzy']) {
       for (const a of [w, n]) { await a.page.getByLabel(a.app.search).fill(q); await a.page.waitForTimeout(200) }
-      await same(`search "${q}"`, w, n, async (a) => (await a.page.locator(a.app.titles).allInnerTexts()).map(norm))
+      // the whole sheet: every row's title and figures, in order
+      await same(`search "${q}"`, w, n, (a) => text(a, a.app.sheet))
     }
     await done(w, n, 'search')
   }
