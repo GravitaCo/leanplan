@@ -142,7 +142,7 @@ export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: 
       style={({ pressed }) => [{ height: h, borderRadius: 22, overflow: 'hidden', backgroundColor: t.sep, opacity: pressed ? 0.85 : 1 }, style]}>
       <Photo art={art} y={posY(artAt, 0.4)} />
       <Shade stops={[[0, 0], [0.45, 0], [1, 0.72]]} />
-      {fits && <FitsBadge big={big} text="Fits your goal" style={{ position: 'absolute', left: 12, top: 12 }} />}
+      {fits && <FitsBadge btn big={big} text="Fits your goal" style={{ position: 'absolute', left: 12, top: 12 }} />}
       <View style={{ position: 'absolute', left: 12, right: 12, bottom: 11 }}>
         <Text style={[nameText, { color: '#fff' }]}>{name}</Text>
         {/* `.ptile.big` also matches the global `.big` (600, line-height 1.1) on the web, so a big tile's line is bold */}
@@ -153,11 +153,13 @@ export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: 
 }
 
 /** `.fits`: the tint badge on a plan's photograph. */
-export function FitsBadge({ text, style, big }: { text: string; style?: StyleProp<ViewStyle>; big?: boolean }) {
+export function FitsBadge({ text, style, big, btn }: { text: string; style?: StyleProp<ViewStyle>; big?: boolean
+  /** on a tile (a web <button>): no letter spacing */
+  btn?: boolean }) {
   const t = useTokens()
   return (
     <View style={[{ alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 12, backgroundColor: t.tint }, style]}>
-      <Text style={[tx(12, 600, big ? 1.1 : 1.3), { color: '#fff' }]}>{text}</Text>
+      <Text style={[tx(12, 600, big ? 1.1 : 1.3, btn ? 0 : undefined), { color: '#fff' }]}>{text}</Text>
     </View>
   )
 }
