@@ -13,6 +13,7 @@ import {
   timeline, totalWeeks, weeksSpan, withEasierStart, withLighterWeek, workoutsDone,
 } from '@/core/domain/plans'
 import { Cell, planArt, PlanTile, Timeline } from './PlanParts'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { PlanHero } from './PlanLibrary'
 import { ViewLink } from './PlanViews'
 import { Btn, Card, Chevron, Field, Foot, GrpH, Li, LinkBtn, List, M, NavBtn, PvBack, Sheet, Sub, font, num, useTokens } from './ui'
@@ -186,9 +187,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
           <View style={{ height: art != null ? 330 : 160, marginHorizontal: -16, backgroundColor: art != null ? t.sep : 'transparent' }}>
             {art != null && <Image source={art} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />}
             {/* `.pe-hero .fade`: the photo fades into the page from 55% down */}
-            <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '45%' }}>
-              {Array.from({ length: 16 }, (_, i) => <View key={i} style={{ flex: 1, backgroundColor: t.bg, opacity: (i + 0.5) / 16 }} />)}
-            </View>
+            <Fade color={t.bg} />
           </View>
           <View style={{ alignItems: 'center', gap: 8, marginTop: -40, marginBottom: 16 }}>
             <Text style={[font(600), { fontSize: 13, color: t.tint }]}>{plan.name}</Text>
@@ -240,6 +239,23 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
           <Li onPress={() => { carryOn(plan.id, reflection); onClose() }}><M wrap t="Keep going without a plan" s="Your last week repeats at the full version, for as long as you like" /><Chevron /></Li>
         </List>
       </ScrollView>
+    </View>
+  )
+}
+
+/** `.pe-hero .fade`: clear to 55%, then into the page colour */
+function Fade({ color }: { color: string }) {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="pefade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset={0.55} stopColor={color} stopOpacity={0} />
+            <Stop offset={1} stopColor={color} stopOpacity={1} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width="100%" height="100%" fill="url(#pefade)" />
+      </Svg>
     </View>
   )
 }
