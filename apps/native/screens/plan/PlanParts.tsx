@@ -12,7 +12,7 @@ import type { WeekCell } from '@/core/domain/plans'
 import { planWeekRows, type WeekRowModel } from '@/screens/plan/planModel'
 import type { PlanArt } from '@/screens/plan/planArt'
 import { List, useSurface } from '../../lib/ui/kit'
-import { Icon } from '../../lib/ui/icons'
+import { Chevron, Icon } from '../../lib/ui/icons'
 import { num, tx, useTokens } from '../../lib/theme'
 
 /* ---------------------------------------------------------------- timeline */
@@ -231,4 +231,40 @@ export function WeekRows({ week, routines, todayIdx, todayNote, onDay, emptyAdd 
   week: PlanWeek; routines: Routine[] | undefined; todayIdx?: number; todayNote?: string; onDay?: (d: number) => void; emptyAdd?: boolean
 }) {
   return <WeekList rows={planWeekRows(week, routines, todayIdx, todayNote)} onDay={onDay} emptyAdd={emptyAdd} />
+}
+
+/* ---------------------------------------------------------------- the plan card */
+
+/**
+ * `.card.pl-card`: the running plan. Its photograph (56, radius 14) or the soft dot, "Your plan" and
+ * its name, the big figure (`.pl-big`: 40 pt Geist 300) and its line, the timeline, the note.
+ */
+export function PlanCardView({ name, art, big, small, cells, endLabel, note, onPress }: {
+  name: string; art?: PlanArt; big: string; small: string; cells: WeekCell[]; endLabel: string; note: string | null; onPress: () => void
+}) {
+  const t = useTokens()
+  const surface = useSurface(t)
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress}
+      style={({ pressed }) => ({ backgroundColor: surface, borderRadius: t.radius, overflow: 'hidden', marginBottom: 12, opacity: pressed ? 0.85 : 1 })}>
+      <View style={{ flexDirection: 'row', gap: 14, paddingTop: 16, paddingHorizontal: 16, alignItems: 'center' }}>
+        {art != null
+          ? <Image source={art} resizeMode="cover" style={{ width: 56, height: 56, borderRadius: 14 }} />
+          : <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.tint }} /></View>}
+        <View style={{ flex: 1 }}>
+          <Text style={[tx(13, 600, 1.3, 0), { color: t.tint }]}>Your plan</Text>
+          <Text style={[tx(20, 600, 1.3, 0), { color: t.label }]}>{name}</Text>
+        </View>
+        <Chevron color={t.label3} />
+      </View>
+      <View style={{ paddingTop: 14, paddingHorizontal: 16, paddingBottom: 16, gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text style={[tx(40, 300, 1, -0.03), num, { color: t.label }]}>{big}</Text>
+          <Text style={[tx(15, 400, 1.3, 0), num, { color: t.label2 }]}>{small}</Text>
+        </View>
+        <Timeline cells={cells} endLabel={endLabel} />
+        {note != null && <Text style={[tx(13, 400, 1.3, 0), { color: t.label2 }]}>{note}</Text>}
+      </View>
+    </Pressable>
+  )
 }
