@@ -210,7 +210,7 @@ export interface StoreState {
   /** remove today's one thing (B9.6 "Change" before a new pick) */
   clearThing: () => void
   /**
-   * Unload notes (device only, never synced). Only screens/mind/UnloadSheet imports the notes
+   * Unload notes (device only, never synced). Only screens/mind/unloadNotes.ts imports the notes
    * accessors (deviceOnly.ts NOTE_ACCESSORS), so it passes one in:
    * `writeNotes((s, ctx) => addUnloadNote(s, input, ctx))` or `deleteUnloadNote(s, id, ctx)`.
    * Runs it on the store's data with the session facts (selectNotesContext: signedIn, never

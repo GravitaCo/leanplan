@@ -77,7 +77,8 @@ export function boundaryIssues(rel: string, code: string): string[] {
   if (rel === 'src/data/deviceOnly.ts') return []
   const out: string[] = []
   const screen = UNLOAD_SCREENS.includes(rel)
-  for (const m of code.matchAll(/import\s+(?:type\s+)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
+  // `import X, { a }` and `import X, * as Y` too: the default name is skipped, the rest checked
+  for (const m of code.matchAll(/import\s+(?:type\s+)?(?:[A-Za-z_$][\w$]*\s*,\s*)?(\*\s+as\s+\w+|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/g)) {
     const names = namesIn(m[1])
     if (isDeviceOnly(m[2])) {
       if (names.some((n) => n === '*' || (NOTE_ACCESSORS as readonly string[]).includes(n)) && !NOTES_ALLOWED.includes(rel)) out.push(rel)
@@ -200,6 +201,11 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
         "import { notesFor } from './unloadNotes'\nexport const list = (d, c) => notesFor(d, c)",
         "import { notesFor } from './unloadNotes'\nconst list = notesFor\nexport { list }",
       ].every((c) => caught(c, 'src/screens/mind/UnloadSheet.tsx'))
+      && [
+        ["import X, { notesFor } from './unloadNotes'", 'src/data/sync.ts'],
+        ["import X, * as u from '@/screens/mind/unloadNotes'", 'apps/native/lib/x.ts'],
+        ["import X, { unloadNotes } from '@/data/deviceOnly'", 'src/data/sync.ts'],
+      ].every(([c, r]) => caught(c, r))
       && !caught("import { notesFor, saveUnload, deleteUnload } from '@/screens/mind/unloadNotes'\nexport function UnloadSheet() { const n = notesFor(d, c); saveUnload(x) }\nexport type { UnloadPair }", 'apps/native/screens/mind/UnloadSheet.tsx')
       && !caught("import { notesFor } from './unloadNotes'\nexport { noteDay, noteLines, unloadBlocked }\nexport function UnloadSheet() { notesFor(d, c) }", 'src/screens/mind/UnloadSheet.tsx')
       && caught("export function UnloadSheet() {}\nexport { noteDay }", 'apps/native/screens/mind/UnloadSheet.tsx')
