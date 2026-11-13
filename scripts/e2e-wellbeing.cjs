@@ -1670,6 +1670,21 @@ async function wp5FlagOffHeaders({ page }) {
     await shot(page, 'closeout-review-tap-hard-day')
   }, { url: WBS + '?review=1', seed: reviewSeed() })
 
+  // the signpost is marked shown only when it is drawn: opening straight into the review on a
+  // signpost day must not use up the 30 days; closing the review then shows it and marks it
+  await run('wp15-signpost-review-first', async ({ page }) => {
+    await page.locator('.rv-h1').waitFor()
+    await page.waitForTimeout(1500)
+    expect(!(await lmBanner(page).count()), 'review open: no signpost drawn')
+    expect(!(await stored(page)).deviceOnly?.lowMoodShown, 'review open: signpost not marked shown: ' + JSON.stringify((await stored(page)).deviceOnly))
+    const leave = page.getByRole('button', { name: 'Leave it out', exact: true })
+    if (await leave.count()) await leave.click()
+    await page.getByRole('button', { name: 'Back', exact: true }).click()
+    await lmBanner(page).getByText(LM_EN, { exact: true }).waitFor()
+    await page.waitForTimeout(1500)
+    expect((await stored(page)).deviceOnly?.lowMoodShown === HARD_DAY, 'after closing the review the signpost shows and is marked: ' + JSON.stringify((await stored(page)).deviceOnly))
+  }, { url: WB + '?review=1', seed: lmSeed(HARD_DAY) })
+
   /* ---------- Close-out (design review): fixes so the build matches the approved boards ---------- */
   const tokColor = (page, v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.color = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c }, v)
   const tokBg = (page, v) => page.evaluate((v) => { const d = document.createElement('span'); d.style.backgroundColor = `var(${v})`; document.body.appendChild(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c }, v)
