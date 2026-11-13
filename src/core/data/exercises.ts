@@ -68,10 +68,10 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'calf-raise', n: 'Calf raise', modality: 'strength', log: 'weight-reps',
     equipment: ['machine', 'dumbbell', 'bodyweight'], difficulty: 'beginner', defaultRx: '3 × 12–15',
-    pattern: 'isolation', primary: 'calves', care: ['ankles'],
+    pattern: 'isolation', primary: 'calves', care: ['ankles'], video: DEMOS.calfRaise,
     timeCost: { setupSec: 20, setSec: 45 }, skill: 1, impact: 'none', position: 'standing', systemicCost: 'low', homeFriendly: true,
     increment: ['next-stack', 'next-weight', 'reps'],
-    cue: "Push up onto the balls of your feet as high as you can, pause at the top, lower slowly for a full stretch. Don't bounce.",
+    cue: "Push up onto the balls of your feet as high as you can, pause at the top, lower slowly until your heels are level (or a little below, if you're on a step). Don't bounce.",
   },
   {
     id: 'plank', n: 'Plank', modality: 'strength', also: ['calisthenics', 'pilates'], log: 'hold',
@@ -672,7 +672,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'db-bent-over-row', n: 'Dumbbell bent-over row', modality: 'strength', log: 'weight-reps',
     equipment: ['dumbbell'], difficulty: 'intermediate', defaultRx: '3 × 8–12',
-    pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps', 'hamstrings'], care: ['lower-back'], gentler: 'chest-supported-row',
+    pattern: 'horizontal-pull', primary: 'back', secondary: ['biceps', 'hamstrings'], care: ['lower-back'], gentler: 'chest-supported-row', video: DEMOS.dbBentOverRow,
     timeCost: { setupSec: 20, setSec: 40 }, skill: 2, impact: 'none', position: 'standing', systemicCost: 'medium', homeFriendly: true,
     increment: ['next-weight'],
     cue: "Hold a dumbbell in each hand, soften your knees and hinge forward from your hips until your body is at about 45°, back flat and the weights hanging under your shoulders. Row them towards your hips, squeezing your shoulder blades, then lower slowly. Keep your back flat and your body still; if you start standing up to heave the weight, go lighter.",

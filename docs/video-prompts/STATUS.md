@@ -38,14 +38,15 @@ No retake runs without Benn's or Sara's OK.
 
 <!-- generated below: npm run video:status -->
 
-## In the app (41)
+## In the app (43)
 
 | Exercise | id | Equipment | Seen in | Bunny |
 |---|---|---|---|---|
 | Barbell squat | `back-squat` | barbell | workout | 736acf7f |
 | Leg press | `leg-press` | machine | plan | 7d511341 |
 | Romanian deadlift (dumbbell or barbell) | `romanian-deadlift` | dumbbell, barbell | workout, plan | 9375b37c |
-| Leg extension (machine) | `leg-extension` | machine | workout | fa7d30b9 |
+| Leg extension (machine) | `leg-extension` | machine | workout | 8dced0cb |
+| Calf raise | `calf-raise` | machine, dumbbell, bodyweight | workout | cf4a1757 |
 | Plank | `plank` | none | workout | 451d5867 |
 | Barbell bench press | `barbell-bench-press` | barbell | workout | df890da8 |
 | Incline dumbbell press | `incline-db-press` | dumbbell | workout, plan | 01693135 |
@@ -76,6 +77,7 @@ No retake runs without Benn's or Sara's OK.
 | Dip | `dip` | machine | - | 5fa5c55c |
 | Side plank (knees) | `side-plank-knees` | none | plan | 8dde7844 |
 | Bird-dog | `bird-dog` | none | plan | 28383feb |
+| Dumbbell bent-over row | `db-bent-over-row` | dumbbell | - | f234576f |
 | Cat–cow | `cat-cow` | none | workout, plan, warm-up | 8595906f |
 | Chair pose | `chair-pose` | none | plan | a7471b0c |
 | Tree pose | `tree-pose` | none | plan | 66fcb75a |
@@ -84,11 +86,10 @@ No retake runs without Benn's or Sara's OK.
 | Half-kneeling hip flexor stretch | `half-kneeling-hip-flexor` | none | workout, plan | 13668949 |
 | Knee to wall | `knee-to-wall` | none | plan, warm-up | e7138db7 |
 
-## Still needed, seen in a workout, plan or warm-up (23)
+## Still needed, seen in a workout, plan or warm-up (22)
 
 | Exercise | id | Equipment | Seen in | Bunny |
 |---|---|---|---|---|
-| Calf raise | `calf-raise` | machine, dumbbell, bodyweight | workout |  |
 | Cable crunch | `cable-crunch` | cable | workout |  |
 | Dead bug | `dead-bug` | none | plan |  |
 | Leg curl (machine) | `leg-curl` | machine | plan |  |
@@ -112,7 +113,7 @@ No retake runs without Benn's or Sara's OK.
 | Brisk walk | `cardio-walk` | none | workout |  |
 | Easy walk | `cardio-easy-walk` | none | workout |  |
 
-## Still needed, library only (99)
+## Still needed, library only (98)
 
 | Exercise | id | Equipment | Seen in | Bunny |
 |---|---|---|---|---|
@@ -149,7 +150,6 @@ No retake runs without Benn's or Sara's OK.
 | Towel row | `towel-row` | none | - |  |
 | Table row | `table-row` | none | - |  |
 | Band seated row | `band-row` | band | - |  |
-| Dumbbell bent-over row | `db-bent-over-row` | dumbbell | - |  |
 | Inverted row (feet raised) | `feet-elevated-inverted-row` | barbell, machine | - |  |
 | Lying towel pulldown | `lying-towel-pulldown` | none | - |  |
 | Band lat pulldown | `band-lat-pulldown` | band | - |  |

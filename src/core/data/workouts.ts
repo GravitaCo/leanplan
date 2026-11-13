@@ -31,7 +31,8 @@ export const WORKOUTS: Record<string, WorkoutTemplate> = {
       {
         "id": "calf-raise", "n": "Seated or standing calf raise",
         "t": "3 × 12–15",
-        "cue": "Push up onto the balls of your feet as high as you can, pause at the top, lower slowly for a full stretch. Don't bounce."
+        "cue": "Push up onto the balls of your feet as high as you can, pause at the top, lower slowly until your heels are level (or a little below, if you're on a step). Don't bounce.",
+        "video": DEMOS.calfRaise
       },
       {
         "id": "plank", "n": "Plank",

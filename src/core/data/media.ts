@@ -534,24 +534,26 @@ export const DEMOS = {
       { at: 12.3, kind: 'lower', rep: 2 },
     ],
   },
-  // Seedance 2.5 from a checked still (demonstrator W6), front three-quarter. Two slow extensions: about 2.3 s
-  // up, a squeeze, about 2.7 s down. Her feet leave the frame at full extension. Phases from fitness-workouts.
+  // Seedance 2.5 image-to-video from a still made from Benn's reference photo (demonstrator W3), front three-quarter,
+  // the still as first and last frame so the loop is seamless. Two extensions, feet in frame throughout. Replaced the
+  // earlier take (fa7d30b9, feet left the frame) on Benn's call. Timed by frame-to-frame motion (8 fps).
   legExtension: {
-    src: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/play_720p.mp4',
-    poster: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/thumbnail.jpg',
-    durationSec: 15.04,
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8dced0cb-2ce5-4b8a-b331-259fa681385d/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8dced0cb-2ce5-4b8a-b331-259fa681385d/thumbnail.jpg',
+    durationSec: 10.04,
     tempo: [
       { at: 0, kind: 'ready' },
-      { at: 0.3, kind: 'lift', rep: 1 },
-      { at: 2.6, kind: 'squeeze', rep: 1 },
-      { at: 3.8, kind: 'lower', rep: 1 },
-      { at: 6.5, kind: 'ready', rep: 2 },
-      { at: 8.7, kind: 'lift', rep: 2 },
-      { at: 10.7, kind: 'squeeze', rep: 2 },
-      { at: 11.8, kind: 'lower', rep: 2 },
-      { at: 14.5, kind: 'ready' },
+      { at: 0.1, kind: 'lift', rep: 1 },
+      { at: 1.8, kind: 'squeeze', rep: 1 },
+      { at: 3.0, kind: 'lower', rep: 1 },
+      { at: 4.8, kind: 'ready', rep: 2 },
+      { at: 5.6, kind: 'lift', rep: 2 },
+      { at: 6.9, kind: 'squeeze', rep: 2 },
+      { at: 8.1, kind: 'lower', rep: 2 },
+      { at: 9.5, kind: 'ready' },
     ],
   },
+
   // Seedance 2.5 from a still copied from Benn's reference photo (demonstrator W7), side-on: chest on the incline
   // pad, feet on the floor. Two rows to the hips. Her hips are cut at the left edge. Phases from fitness-workouts.
   chestSupportedRow: {
@@ -688,6 +690,41 @@ export const DEMOS = {
       { at: 11.3, kind: 'stretch', rep: 2 },
       { at: 12.4, kind: 'lift', rep: 2 },
       { at: 14.9, kind: 'ready' },
+    ],
+  },
+  // Dumbbell bent-over row: Seedance 2.5 text-to-video (demonstrator W1), side-on. Benn kept the muscular build and bare
+  // feet (Tilo shows all body types).
+  dbBentOverRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/f234576f-15fc-457c-a165-70033c589e08/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/f234576f-15fc-457c-a165-70033c589e08/thumbnail.jpg',
+    durationSec: 10.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.85, kind: 'pull', rep: 1 },
+      { at: 2.0, kind: 'squeeze', rep: 1 },
+      { at: 3.4, kind: 'return', rep: 1 },
+      { at: 4.8, kind: 'ready', rep: 2 },
+      { at: 6.0, kind: 'pull', rep: 2 },
+      { at: 7.15, kind: 'squeeze', rep: 2 },
+      { at: 8.5, kind: 'return', rep: 2 },
+    ],
+  },
+  // Calf raise: Seedance 2.5 text-to-video, side-on on a step, one hand on the wall. Each rep rises, holds, lowers past
+  // level into a stretch with the heels below the step, then returns to level (the cue Benn approved on 13 Nov).
+  calfRaise: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/cf4a1757-a34a-4ecb-a5d3-f940c9ff574f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/cf4a1757-a34a-4ecb-a5d3-f940c9ff574f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.15, kind: 'lift', rep: 1 },
+      { at: 2.1, kind: 'squeeze', rep: 1 },
+      { at: 3.75, kind: 'lower', rep: 1 },
+      { at: 6.0, kind: 'stretch', rep: 1 },
+      { at: 8.4, kind: 'lift', rep: 2 },
+      { at: 10.5, kind: 'squeeze', rep: 2 },
+      { at: 11.75, kind: 'lower', rep: 2 },
+      { at: 13.9, kind: 'stretch', rep: 2 },
     ],
   },
 } satisfies Record<string, ExerciseMedia>
