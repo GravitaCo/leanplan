@@ -30,6 +30,7 @@ import { Sheet, Seg, BackButton, focusOnMount } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { LabelPhotoButton } from './common'
 import { useDuplicateSave } from './DuplicateViews'
+import { CONFIRM, NAME_HINT } from '@/copy/scan'
 
 /** UK label order. `sub` rows are the "of which" lines; `unit` is shown beside the name. */
 const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: number }[] = [
@@ -46,7 +47,7 @@ const ROWS: { f: LabelField; label: string; unit?: string; sub?: boolean; dp: nu
 ]
 const REQUIRED: LabelField[] = ['k', 'p', 'c', 'f']
 
-export const NAME_HINT = 'Brand, product and flavour, e.g. Walkers Sensations Roasted Chicken & Thyme'
+export { NAME_HINT }
 
 const toText = (v: number | undefined) => (v === undefined ? '' : String(Math.round(v * 100) / 100))
 const round = (v: number, dp: number) => String(Math.round(v * 10 ** dp) / 10 ** dp)
@@ -223,40 +224,38 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
 
   return (
     <>
-    <Sheet title="Check the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
+    <Sheet title={CONFIRM.title} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
       right={shareFor
         ? <button className="navbtn b" onClick={share} disabled={!canShare}>{SHARE_CHECK.share}</button>
-        : <button className="navbtn b" onClick={save} disabled={missing}>Save</button>}>
+        : <button className="navbtn b" onClick={save} disabled={missing}>{CONFIRM.save}</button>}>
       {notice && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><Icon name="info" size={17} /><span>{notice}</span></div>}
       {shared ? (
         <SharedSourceCard info={shared} barcode={draft.barcode} onReport={() => setReporting(true)} />
       ) : (
         <div className="sub" style={{ padding: '0 4px 12px' }}>
-          {fromLabel ? 'Your pack label (read from your photo).' : 'Pack label via Open Food Facts: check against your pack.'}
-          {(draft.barcode || draft.kcalFromKj) && <div className="num" style={{ fontSize: 13, marginTop: 2 }}>{draft.barcode ? `Barcode ${draft.barcode}` : ''}{draft.kcalFromKj ? ' · calories worked out from kJ' : ''}</div>}
+          {fromLabel ? CONFIRM.fromLabel : CONFIRM.fromOff}
+          {(draft.barcode || draft.kcalFromKj) && <div className="num" style={{ fontSize: 13, marginTop: 2 }}>{draft.barcode ? `Barcode ${draft.barcode}` : ''}{draft.kcalFromKj ? CONFIRM.kcalFromKj : ''}</div>}
         </div>
       )}
       {onLabelPhoto && (
         <div className="stack" style={{ marginTop: shared ? 12 : 0, marginBottom: 12 }}>
           <LabelPhotoButton onPress={onLabelPhoto} />
-          {!fromLabel && <div className="foot" style={{ padding: 0 }}>If these numbers don’t match your pack, read them from a photo instead.</div>}
+          {!fromLabel && <div className="foot" style={{ padding: 0 }}>{CONFIRM.photoInstead}</div>}
         </div>
       )}
-      <Seg<FoodKind> options={[['cook', 'For cooking'], ['eat', 'Eat as it is']]} value={kind} onChange={pickKind} />
-      <div className="foot">{kind === 'eat'
-        ? 'Eaten as it comes, like a ready meal, crisps or a drink. Logged by the serving.'
-        : 'Something you cook or mix with, like pasta, milk or a sauce. Offered in recipes and What can I make?'}</div>
+      <Seg<FoodKind> options={[['cook', CONFIRM.cook], ['eat', CONFIRM.eat]]} value={kind} onChange={pickKind} />
+      <div className="foot">{kind === 'eat' ? CONFIRM.eatNote : CONFIRM.cookNote}</div>
 
       <div className="list" style={{ marginTop: 12 }}>
         <div className={'frow' + (name.trim() ? '' : ' need') + (vague ? ' flag' : '')}>
-          <label htmlFor="sc_n">Name</label>
-          {vague && <span className="flagnote">Add the flavour or variety</span>}
-          <input id="sc_n" ref={draft.vague ? focusOnMount : undefined} type="text" placeholder="Needed" value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="sc_n">{CONFIRM.name}</label>
+          {vague && <span className="flagnote">{CONFIRM.addFlavour}</span>}
+          <input id="sc_n" ref={draft.vague ? focusOnMount : undefined} type="text" placeholder={CONFIRM.needed} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className={'frow' + (g > 0 ? '' : ' need') + (odd.has('serving') ? ' flag' : '')}>
-          <label htmlFor="sc_g">Serving on the pack</label>
-          {odd.has('serving') && <span className="flagnote">{productNotes.some((n) => n.msg === SERVING_NEEDED) ? 'Needed: the serving the per-serving column is for' : 'Check the serving size on the pack'}</span>}
-          <input id="sc_g" type="number" inputMode="decimal" placeholder="e.g. 30" value={serving}
+          <label htmlFor="sc_g">{CONFIRM.serving}</label>
+          {odd.has('serving') && <span className="flagnote">{productNotes.some((n) => n.msg === SERVING_NEEDED) ? CONFIRM.servingNeeded : CONFIRM.servingCheck}</span>}
+          <input id="sc_g" type="number" inputMode="decimal" placeholder={CONFIRM.servingPh} value={serving}
             aria-invalid={g > 0 ? undefined : true} onChange={(e) => { setServing(e.target.value); setServingTouched(true) }} />
           <span className="u">{unit}</span>
         </div>
@@ -272,21 +271,21 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           <Seg<'g' | 'ml'> options={[['g', 'Per 100 g'], ['ml', 'Per 100 ml']]} value={unit} onChange={(u) => setMl(u === 'ml')} />
         </div>
       ) : (
-        <div className="foot"><button className="navbtn" style={{ fontSize: 13 }} onClick={() => setShowUnit(true)}>Label is per 100 ml?</button></div>
+        <div className="foot"><button className="navbtn" style={{ fontSize: 13 }} onClick={() => setShowUnit(true)}>{CONFIRM.per100ml}</button></div>
       )}
 
       {(draft.usLabel || draft.staleYear) && (
         <div className="foot">
-          {draft.usLabel && 'US label: carbs include fibre. '}
-          {draft.staleYear && `Last updated ${draft.staleYear}. Recipes change: check against your pack.`}
+          {draft.usLabel && CONFIRM.usLabel}
+          {draft.staleYear && CONFIRM.stale(draft.staleYear)}
         </div>
       )}
-      <div className="lbl">Nutrition</div>
+      <div className="lbl">{CONFIRM.nutrition}</div>
       <div className="list ntab" role="table" aria-label="Nutrition per 100 and per serving">
         <div className="nrow nhead" role="row">
           <span role="columnheader" />
           <span role="columnheader">Per 100 {unit}</span>
-          <span role="columnheader">Per serving{gText ? ` (${gText})` : ''}</span>
+          <span role="columnheader">{CONFIRM.perServing}{gText ? ` (${gText})` : ''}</span>
         </div>
         {rows.map(({ f, label, unit: u, sub, dp }) => {
           const need = REQUIRED.includes(f) && values[f] === undefined
@@ -303,24 +302,24 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           return (
             <div key={f} role="row" className={'nrow' + (odd.has(f) ? ' flag' : '') + (need ? ' need' : '')}>
               <label htmlFor={'sc_' + f} className={sub ? 'sub' : undefined} role="rowheader">{label}{u && <small>{u}</small>}</label>
-              <input id={'sc_' + f} className="num" type="number" inputMode="decimal" placeholder={need ? 'Needed' : f === 'kj' && kjShown !== undefined ? String(kjShown) : ''} value={text[f]}
+              <input id={'sc_' + f} className="num" type="number" inputMode="decimal" placeholder={need ? CONFIRM.needed : f === 'kj' && kjShown !== undefined ? String(kjShown) : ''} value={text[f]}
                 aria-invalid={odd.has(f) || need || undefined} onChange={(e) => setText({ ...text, [f]: e.target.value })} />
               <span className="num nserv" role="cell" data-f={f} data-read={read?.value !== undefined || undefined}>{per}</span>
               {s ? (
                 <span className="flagnote" role="status" data-suggest={f}>
-                  Did you mean <b className="num">{s.display}</b>{s.cell === cellId(f, 'serving') ? ' per serving' : ''}? {s.because}
-                  <button className="btn sm tinted" onClick={accept} aria-label={`Use ${s.display}`}>Accept</button>
+                  {CONFIRM.didYouMean} <b className="num">{s.display}</b>{s.cell === cellId(f, 'serving') ? CONFIRM.perServingSuffix : ''}? {s.because}
+                  <button className="btn sm tinted" onClick={accept} aria-label={`Use ${s.display}`}>{CONFIRM.accept}</button>
                 </span>
               ) : own ? (
                 <span className="flagnote">{own.msg}</span>
               ) : odd.has(f) ? (
-                <span className="flagnote">{lowConf.has(f) && !rowIssues.has(f) ? 'Hard to read in the photo. Check against your pack.' : 'Worth a second look. Compare with your pack.'}</span>
+                <span className="flagnote">{lowConf.has(f) && !rowIssues.has(f) ? CONFIRM.hard : CONFIRM.second}</span>
               ) : null}
             </div>
           )
         })}
       </div>
-      <div className="foot">Grams unless shown. The per 100 {unit} column is what’s saved.</div>
+      <div className="foot">{CONFIRM.grams(unit)}</div>
       {info && info.marks.length > 0 && <div className="foot">{info.marks.join(' ')}</div>}
 
       {notes.length > 0 && (
@@ -328,7 +327,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
           {notes.map((m) => <div key={m} className="note"><Icon name="info" size={17} /><span>{m}</span></div>)}
         </div>
       )}
-      {allGood && !shareFor && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>These numbers are consistent with each other.</span></div>}
+      {allGood && !shareFor && <div className="note ok" role="status"><Icon name="checkc" size={17} /><span>{CONFIRM.consistent}</span></div>}
       {shareFor ? (
         <>
           <div className="stack">
@@ -340,9 +339,9 @@ export function ScanConfirmView({ draft, onBack, onClose, animate, onSaved, noti
       ) : (
         <>
           <div className="stack">
-            <button className="btn" onClick={save} disabled={missing}>{missing ? 'Fill in the marked fields' : 'Save food'}</button>
+            <button className="btn" onClick={save} disabled={missing}>{missing ? CONFIRM.fillMarked : CONFIRM.saveFood}</button>
           </div>
-          <div className="foot">Saved foods appear in search{draft.barcode ? ' and open straight away next time you scan them, even offline' : ''}.</div>
+          <div className="foot">{CONFIRM.savedFoods(!!draft.barcode)}</div>
         </>
       )}
       {dup.sheet}

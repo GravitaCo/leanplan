@@ -4,36 +4,11 @@ import type { IfThenPlan } from '@/core/types'
 import { plansDue } from '@/core/domain/insights'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { IF_THEN } from '../onboarding/copyApp'
+import { MIND_PLAN, PLAN_OUTCOME } from '@/copy/plan'
+import { whenLine } from './planModel'
 
-/** "When I get home from work", or a plan made from a cue (ob5-4) as it was written: "After lunch". */
-export const whenLine = (when: string) => (/^after\b/i.test(when) ? when.charAt(0).toUpperCase() + when.slice(1) : `When ${when}`)
-
-export const PLAN_OUTCOME: Record<IfThenPlan['reviews'][number]['r'], string> = { worked: 'Worked', mixed: 'Mixed', no: "Didn't work" }
-
-/**
- * Mind plans (board B9, deck B9.15 and B9.17; plan `kind: 'mind'`). Every string here is linted with
- * mindCopyIssues by scripts/wellbeing/one-thing.ts. Shown only with WELLBEING_ENABLED: a Mind plan
- * is only made from the day's one thing, and Plan groups by kind only with the flag on.
- */
-export const MIND_PLAN = {
-  /** the Plan group name (board B9, approved for now by Benn, 8 Oct 2026) */
-  group: 'Mind plans',
-  /** B9.15, under the fields */
-  savedUnder: 'Saved under Mind plans on Plan',
-  /** B9.17, the toast after saving */
-  saved: 'Plan saved. Tilo will check in on it next week.',
-  /** B9.14's empty field, as drawn */
-  optional: 'Optional',
-} as const
-
-/**
- * Plan's if–then groups: with the wellbeing flag on, Mind plans get their own group; every other
- * plan (and every plan with the flag off) stays under "If–then plans", in saved order.
- */
-export function planGroups(plans: readonly IfThenPlan[], wellbeing: boolean): { ifThen: IfThenPlan[]; mind: IfThenPlan[] } {
-  if (!wellbeing) return { ifThen: [...plans], mind: [] }
-  return { ifThen: plans.filter((p) => p.kind !== 'mind'), mind: plans.filter((p) => p.kind === 'mind') }
-}
+export { whenLine, planGroups } from './planModel'
+export { MIND_PLAN, PLAN_OUTCOME } from '@/copy/plan'
 
 /**
  * Create or edit an if–then plan (implementation intention + optional coping plan). `prefill` and
