@@ -8,17 +8,19 @@ import { DAY_NAME, shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
 import { activePlan, bestFit, catalogue, fitOf, isEaseIn, endDate, phaseRows, phasesOf, planWeekNotes, positionOn, PLAN_TEMPLATES, templateById, timeline, totalWeeks, upcomingPlan, weekSource, type CatalogueEntry } from '@/core/domain/plans'
 import { planArt, PlanTile, Timeline, WeekRows } from './plan/PlanParts'
 import { MaintenanceCard, PlanLibrary, PlanPreview } from './plan/PlanLibrary'
-import { PlanBuilder, builtPhases } from './plan/PlanBuilder'
+import { PlanBuilder } from './plan/PlanBuilder'
 import { PlanDetails, PlanEnd } from './plan/PlanDetails'
 import { PlanDayView, PlanWeekView } from './plan/PlanDayViews'
 import { LibrarySheet } from './train/LibrarySheet'
 import { Thumb } from './train/Thumb'
-import { DayView, WorkoutView, workoutSub } from './plan/PlanViews'
+import { DayView, WorkoutView } from './plan/PlanViews'
 import { firstVideo } from '@/core/data/workouts'
 import { PageHeader, Sheet } from '@/ui/primitives'
 import { BuildPlanCard, buildCardDue } from './onboarding/Consent'
 import { Icon, Chevron, type IconName } from '@/ui/icons'
-import { MIND_PLAN, PlanEditSheet, PLAN_OUTCOME, planGroups, whenLine } from './plan/PlanSheets'
+import { PlanEditSheet } from './plan/PlanSheets'
+import { MIND_PLAN, PLAN_GUIDES, PLAN_OUTCOME } from '@/copy/plan'
+import { builtPhases, planGroups, whenLine, workoutSub } from './plan/planModel'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { IfThenPlan } from '@/core/types'
 import { RoutineBuilderSheet, type BuilderStart } from './train/RoutineBuilderSheet'
@@ -26,11 +28,9 @@ import { aboutLine, routineEstMins, builtinSlots, canBuild, isBuiltinKey, isTali
 import { MODALITY_LABEL } from '@/core/data/modalities'
 import { ONBOARDING_ENABLED } from './onboarding/Consent'
 
-type Guide = 'split' | 'basics'
-const GUIDES: { id: Guide; title: string; icon: IconName; color: string }[] = [
-  { id: 'split', title: 'How the split works', icon: 'dumbbell', color: 'var(--activity)' },
-  { id: 'basics', title: 'The honest basics', icon: 'info', color: 'var(--mind)' },
-]
+type Guide = (typeof PLAN_GUIDES)[number]['id']
+const GUIDE_LOOK: Record<Guide, { icon: IconName; color: string }> = { split: { icon: 'dumbbell', color: 'var(--activity)' }, basics: { icon: 'info', color: 'var(--mind)' } }
+const GUIDES = PLAN_GUIDES.map((g) => ({ ...g, ...GUIDE_LOOK[g.id] }))
 
 export function PlanScreen() {
   const schedule = useStore((s) => s.data.schedule)
@@ -364,22 +364,11 @@ export function PlanScreen() {
 }
 
 function GuideBody({ id }: { id: Guide }) {
-  if (id === 'split') return (
-    <div className="prose">
-      <p>Lifts work best in the order <b>Legs → Push → Pull</b> so back-to-back sessions hit different muscles.</p>
-      <p><b>Legs &amp; Core:</b> squats, Romanian deadlifts, leg extensions, calves and core.</p>
-      <p><b>Push:</b> chest, shoulders, triceps.</p>
-      <p><b>Pull:</b> back, rear delts, biceps.</p>
-    </div>
-  )
   return (
     <div className="prose">
-      <p><b>You can't spot-reduce.</b> Fat comes off the whole body when you eat a little less than you burn. The belly is often one of the last places to change.</p>
-      <p><b>Food does most of the work.</b> Training helps and protects muscle, but a steady, modest deficit is what moves body fat.</p>
-      <p><b>Averages beat single days.</b> One high day doesn't undo a good week. Look at the weekly view, not the daily number.</p>
-      <p><b>Estimates are fine.</b> People logging carefully still miss 20% or more. Being consistently roughly right beats being occasionally precise.</p>
-      <p><b>Feeling sick with exercise?</b> Keep effort moderate, stop two or three reps short of failure, and eat a small snack 30–45 minutes before. If nausea is severe, stop and see a GP. For chest pain or feeling faint, follow the stop signs on the workout screen.</p>
-      <p className="muted">General information, not medical advice.</p>
+      {PLAN_GUIDES.find((g) => g.id === id)!.paras.map((p, i) => (
+        <p key={i} className={p.muted ? 'muted' : undefined}>{p.runs.map(([t, b], j) => (b ? <b key={j}>{t}</b> : t))}</p>
+      ))}
     </div>
   )
 }

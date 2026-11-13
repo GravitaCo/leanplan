@@ -1,25 +1,19 @@
-import type { Goal, PlanWeek, Routine, TrainingPlan } from '@/core/types'
+import type { PlanWeek, Routine, TrainingPlan } from '@/core/types'
 import { DAY_NAME } from '@/core/domain/date'
 import { WEEK_ORDER } from '@/core/domain/week'
 import { isBuiltinKey, keyTitle, keyVideo, routineFor, templateFor } from '@/core/domain/routines'
 import { Thumb } from '../train/Thumb'
 import { timeline, type PlanTemplate, type WeekCell } from '@/core/domain/plans'
-import pureMuscle from '@/assets/plans/pure-muscle-growth.jpg'
-import strongerAge from '@/assets/plans/stronger-with-age.jpg'
-import fullBody from '@/assets/plans/full-body-system.jpg'
+import { allPlanArt } from './planArt'
 
 /**
  * Shared pieces of the plan screens (design canvas, Plans 1 to 4): each Tilo plan's photograph,
  * the week timeline strip and the plan tiles.
  */
 
-/** Each Tilo plan's photograph (generated to match the demo footage). Own plans have none. */
-const ART: Record<string, string> = {
-  'pure-muscle-growth': pureMuscle,
-  'stronger-with-age': strongerAge,
-  'full-body-system': fullBody,
-}
-export const planArt = (templateId: string | undefined): string | undefined => (templateId ? ART[templateId] : undefined)
+export { planArt } from './planArt'
+export { GOAL_CHIP } from '@/copy/plan'
+export { goalLabel } from './planModel'
 
 /**
  * Fetch the plan photographs once while online, so the service worker keeps them (hashed assets
@@ -28,14 +22,8 @@ export const planArt = (templateId: string | undefined): string | undefined => (
  */
 export function warmPlanArt(): void {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return
-  for (const u of Object.values(ART)) fetch(u).catch(() => {})
+  for (const u of allPlanArt()) fetch(u).catch(() => {})
 }
-
-/** The goal chips and filters, in the profile's own words where they exist. */
-export const GOAL_CHIP: [Goal, string][] = [
-  ['build-muscle', 'Build muscle'], ['increase-strength', 'Get stronger'], ['lose-fat', 'Lose fat'], ['feel-better', 'Feel better'], ['increase-endurance', 'Endurance'],
-]
-export const goalLabel = (g: Goal | undefined) => GOAL_CHIP.find(([k]) => k === g)?.[1]
 
 /** The weeks strip: full weeks, easier weeks striped, maintenance after outlined (fading). */
 export function Timeline({ cells, labels = true, endLabel }: { cells: WeekCell[]; labels?: boolean; endLabel?: string }) {

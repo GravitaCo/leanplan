@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { Schedule, WorkoutType } from '@/core/types'
-import { WORKOUTS, LIFTS, firstVideo } from '@/core/data/workouts'
+import { LIFTS, firstVideo } from '@/core/data/workouts'
 import { exById } from '@/core/domain/library'
 import { todayStr } from '@/core/domain/date'
 import { weekOf } from '@/core/domain/insights'
 import { plannedKeys } from '@/core/domain/plans'
 import { mediaUrl } from '@/core/data/media'
-import { setCount, shapeFor } from '@/core/domain/guided'
+import { shapeFor } from '@/core/domain/guided'
 import { WEEK_ORDER, plannedOn, shortTitle, swapDays, weekWarnings } from '@/core/domain/week'
 import { aboutLine, routineEstMins, keyTitle, keyVideo, routineFor, taliWorkouts, slotsOf as routineSlots, templateFor, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
 import { DAY_NAME } from '@/core/domain/date'
@@ -19,6 +19,7 @@ import { LibrarySheet } from '../train/LibrarySheet'
 import { bareName } from '../train/GuidedPlayer'
 import { WarmupCard } from '../train/WarmupCard'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
+import { workoutKind as kindOf, workoutSub } from './planModel'
 
 export type Planned = WorkoutType | 'Rest'
 
@@ -28,8 +29,7 @@ const CATEGORIES: { id: 'weights' | 'cardio'; label: string; items: WorkoutType[
   { id: 'cardio', label: MODALITY_LABEL.cardio, items: ['Cardio'], color: 'var(--mind-fill)' },
 ]
 
-export const workoutSub = (t: WorkoutType) => (t === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[t].ex.length} exercises · ${setCount(WORKOUTS[t].ex)}`)
-const kindOf = (t: WorkoutType) => (t === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength)
+export { workoutSub } from './planModel'
 
 /** Change the week, with a toast that can undo it. */
 function useWeekChange() {
