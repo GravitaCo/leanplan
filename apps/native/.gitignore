@@ -41,3 +41,5 @@ yarn-error.*
 /android
 dist-check/
 dist-web/
+# the onboarding-on web export for the Profile parity script
+dist-web-ob/
