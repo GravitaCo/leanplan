@@ -166,10 +166,12 @@ export function LinkBtn({ title, onPress, style, muted, color, label, flat, size
 }) {
   const t = useTokens()
   // 15 pt regular (a pillar card's links are 500: `.pcard .linkbtn`, pass it in `style`); the 31.5 pt
-  // padded box reaches 44 pt with the touch padding, a flat one (19.5 pt) with 13 each way
+  // padded box reaches 44 pt with the touch padding, a flat one (19.5 pt) with 13 above and below;
+  // sideways only 6 (a padded one 4, beside its own 4 of padding), so links in a row never reach
+  // over each other
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
-      hitSlop={flat ? 13 : 8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      hitSlop={flat ? { top: 13, bottom: 13, left: 6, right: 6 } : { top: 8, bottom: 8, left: 4, right: 4 }} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
       <Text style={[tx(size, 400, 1.3, BTN), { color: color ?? (muted ? t.label2 : t.tint) }, !flat && { paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )

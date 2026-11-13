@@ -16,7 +16,7 @@ import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
 import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, LinkBtn, List, Note, RoundBtn, Stack, Tile, ToastHost, ToastView } from './ui/kit'
 import { Scale, Select, Slider, Stepper } from './ui/controls'
-import { PickerSheet, TimeField } from './ui/pickers'
+import { DateInput, TimeField } from './ui/pickers'
 import { CoverImage } from './ui/CoverImage'
 import { frac } from '@/core/domain/estimate'
 import { AddC, Row, Swatch, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
@@ -74,7 +74,6 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [activity, setActivity] = useState('moderate')
   const [wake, setWake] = useState('07:00')
   const [day, setDay] = useState('')
-  const [dateOpen, setDateOpen] = useState(false)
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
   const [player, setPlayer] = useState(false)
@@ -437,8 +436,11 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           <FRow label="Wake up" right={<TimeField muted disabled label="Wake up" value="07:00" onChange={() => {}} />} />
           <FRow label="Wind-down" right={<TimeField muted disabled label="Wind-down" value="21:30" onChange={() => {}} />} />
         </List>
-        <View style={{ marginTop: 10 }}><Btn kind="gray" label="Pick a start date" title={day ? `Starts ${day}` : 'Pick a date'} onPress={() => setDateOpen(true)} /></View>
-        {dateOpen && <PickerSheet mode="date" value={day} min="2026-11-13" max="2027-11-13" label="Pick a start date" onDone={setDay} onClose={() => setDateOpen(false)} />}
+        {/* the web's .pl-date: the button's look with the date input over it */}
+        <DateInput mode="date" value={day} onChange={setDay} min="2026-11-13" max="2027-11-13" label="Pick a start date" shown={day || undefined}
+          style={{ marginTop: 10, height: 50, borderRadius: 25, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={[tx(17, 600, 1.3, 0), { color: t.label }]}>{day ? `Starts ${day}` : 'Pick a date'}</Text>
+        </DateInput>
       </Sec>
 
       <Sec id="kit2" title="Stack · flat links · XBtn with chevrons · Swatch rows">
