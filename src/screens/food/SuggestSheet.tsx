@@ -7,6 +7,7 @@ import { recipesByUse } from '@/core/domain/insights'
 import { suggestRecipes } from '@/core/domain/suggest'
 import { DIETS } from '@/core/domain/diet'
 import { allFoods, kitchenAdds, kitchenChips, swapText } from './foodModel'
+import { SUGGEST } from '@/copy/food'
 import { Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 
@@ -28,37 +29,37 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
   const results = suggestRecipes(data.recipes, recipesByUse(data), have, diet, all)
 
   return (
-    <Sheet title="What can I make?" tall onClose={onClose} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={SUGGEST.title} tall onClose={onClose} right={<button className="navbtn b" onClick={onClose}>{SUGGEST.done}</button>}>
       {data.recipes.length === 0 ? (
         <div className="card empty">
-          Suggestions come from your recipes. Save a meal you've logged as a recipe, or build one from its ingredients.
-          <div className="stack"><button className="btn tinted" onClick={onRecipes}>Recipes</button></div>
+          {SUGGEST.noRecipes}
+          <div className="stack"><button className="btn tinted" onClick={onRecipes}>{SUGGEST.recipes}</button></div>
         </div>
       ) : (
         <>
-          <div className="lbl">I have…</div>
+          <div className="lbl">{SUGGEST.iHave}</div>
           <div className="chips">
             {chips.map((n) => (
               <button key={n} className={'chip' + (have.includes(n) ? ' on' : '')} onClick={() => toggle(n)} aria-pressed={have.includes(n)}>{n}</button>
             ))}
           </div>
           <div className="searchbar" style={{ marginTop: 10 }}><Icon name="search" size={17} />
-            <input value={q} placeholder="Add something else" aria-label="Add an ingredient you have" onChange={(e) => setQ(e.target.value)} /></div>
+            <input value={q} placeholder={SUGGEST.addPh} aria-label={SUGGEST.addLabel} onChange={(e) => setQ(e.target.value)} /></div>
           {adds.length > 0 && (
             <div className="chips" style={{ marginTop: 8 }}>
               {adds.map((f) => <button key={f.n} className="chip" onClick={() => { toggle(f.n); setQ('') }}>+ {f.n}</button>)}
             </div>
           )}
-          <div className="foot">Salt, pepper, oil, stock and dried herbs and spices are assumed. No amounts needed.</div>
+          <div className="foot">{SUGGEST.assumed}</div>
 
-          <div className="lbl">Your recipes{dietLabel && diet !== 'none' ? ` · ${dietLabel}` : ''}</div>
+          <div className="lbl">{SUGGEST.yourRecipes(dietLabel && diet !== 'none' ? dietLabel : undefined)}</div>
           <div className="list">
             {results.map((s) => (
               <button className="li" key={s.recipe.id} onClick={() => onLog(s.recipeIndex)}>
                 <div className="m">
                   <div className="t">{s.recipe.name}</div>
                   <div className="s">
-                    {s.missing.length === 0 ? 'You have everything' : `Missing: ${s.missing.slice(0, 3).join(', ')}${s.missing.length > 3 ? ` +${s.missing.length - 3}` : ''}`}
+                    {s.missing.length === 0 ? SUGGEST.haveAll : SUGGEST.missing(s.missing)}
                     {` · ${r0(s.perServing.p)} g protein`}
                   </div>
                   {s.swaps.length > 0 && (
@@ -71,7 +72,7 @@ export function SuggestSheet({ onClose, onLog, onRecipes }: { onClose: () => voi
               </button>
             ))}
           </div>
-          <div className="foot">Ranked by what you have. Swaps use the same weight (oil for butter a little less). Edit the recipe to use one.</div>
+          <div className="foot">{SUGGEST.ranked}</div>
         </>
       )}
     </Sheet>

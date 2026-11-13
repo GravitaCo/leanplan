@@ -9,6 +9,7 @@ import { MEAL_LABEL, recipeServing } from '@/core/domain/insights'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 import { recipeSteps } from './foodModel'
+import { RECIPES } from '@/copy/food'
 
 /** Log a serving (or several) of a saved recipe. */
 export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }: {
@@ -24,9 +25,9 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
   const commit = () => { logRecipe(recipe, q, meal); onClose() }
   return (
     <Sheet title={recipe.name} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
-      right={<button className="navbtn b" onClick={commit}>Add</button>}>
+      right={<button className="navbtn b" onClick={commit}>{RECIPES.add}</button>}>
       <MealSeg value={meal} onChange={setMeal} />
-      <div className="lbl">Servings</div>
+      <div className="lbl">{RECIPES.servings}</div>
       <div className="scale">
         {recipeSteps(q).map((v) => (
           <button key={v} className={q === v ? 'on' : ''} onClick={() => setQ(v)}>
@@ -35,13 +36,13 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
         ))}
       </div>
       <div className="foot">
-        The recipe makes {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}. It's worked out from its ingredients, so it's more accurate than a photo of the plate.
+        {RECIPES.makes(recipe.servings)}
       </div>
       <div className="card" style={{ marginTop: 14 }}>
         {!gentle && <div className="big num">{fmt(per.k * q)}<small>kcal</small><span className="pm">± {fmt(per.k * q * CAPTURE_ERR.recipe)}</span></div>}
         <div className="sub num" style={{ marginTop: 4 }}>{r1(per.p * q)} g protein · {r1(per.c * q)} g carbs · {r1(per.f * q)} g fat</div>
       </div>
-      <button className="btn" onClick={commit}>Add to {MEAL_LABEL[meal]}</button>
+      <button className="btn" onClick={commit}>{RECIPES.addTo(MEAL_LABEL[meal])}</button>
     </Sheet>
   )
 }
