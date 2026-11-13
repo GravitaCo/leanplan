@@ -5,7 +5,7 @@
  * prefill) and the words are the web's own exports; only the controls are native.
  */
 import { useState, type ReactNode } from 'react'
-import { Pressable, Text, TextInput, View, type ViewStyle } from 'react-native'
+import { Keyboard, Pressable, Text, TextInput, View, type ViewStyle } from 'react-native'
 import { useStore } from '@/store/store'
 import { nowIso } from '@/data/supabase'
 import { sleepMoreOpen } from '@/data/deviceOnly'
@@ -150,7 +150,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
       {WELLBEING_ENABLED
         ? (
           <>
-            <Foot>{f.before}<Text accessibilityRole="link" onPress={() => setSupport(true)} style={{ color: t.tint }}>{f.link.replace(/ /g, '\u00a0')}</Text>{f.after}</Foot>
+            <Foot>{f.before}<Text accessibilityRole="link" onPress={() => { Keyboard.dismiss(); setSupport(true) }} style={{ color: t.tint }}>{f.link.replace(/ /g, '\u00a0')}</Text>{f.after}</Foot>
             <Foot>{CHECKIN_SLEEP.sheetFoot}</Foot>
           </>
         )
