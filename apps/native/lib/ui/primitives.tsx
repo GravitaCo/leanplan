@@ -184,15 +184,20 @@ export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, sty
 /* ---------------------------------------------------------------- controls */
 
 /** `.seg`: a segmented control (a radio group), the chosen segment raised on --segon. */
-export function Seg<T extends string>({ options, value, onChange, label }: { options: [T, string][]; value: T | undefined; onChange: (v: T) => void; label?: string }) {
+export function Seg<T extends string>({ options, value, onChange, label, minHeight }: {
+  options: [T, string][]; value: T | undefined; onChange: (v: T) => void; label?: string
+  /** each segment's minimum height (`.reset-main .seg button { min-height: 32px }`); 28.9 by default */
+  minHeight?: number
+}) {
   const t = useTokens()
+  const h = Math.max(28.9, minHeight ?? 0)
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: 'row', backgroundColor: t.fill, borderRadius: 9, padding: 2 }}>
       {options.map(([v, l]) => {
         const on = v === value
         return (
-          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, 28.9)}
-            style={{ flex: 1, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent',
+          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, h)}
+            style={{ flex: 1, minHeight: minHeight, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
             <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
           </Pressable>
