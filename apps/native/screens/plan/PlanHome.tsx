@@ -72,7 +72,8 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
       {/* the web's <h2 class="grp-h"> keeps the browser's h2 margins (about 16.6 pt), collapsing with the card's above */}
       <View style={{ marginTop: 5, marginBottom: 16 }}><GrpH>This week</GrpH></View>
       <WeekList rows={m.week} onDay={(d) => go({ v: 'day', d })} />
-      {m.notes.map((n) => <PlanNote key={n}>{n}</PlanNote>)}
+      {/* a note's 8 above collapses into the week list's 8 below */}
+      {m.notes.map((n, i) => <PlanNote key={n} style={i === 0 ? { marginTop: 0 } : undefined}>{n}</PlanNote>)}
       <Foot>
         {m.planWeek
           ? "Tap a day to change this phase's week. Daily steps burn more across a week than the gym sessions do."

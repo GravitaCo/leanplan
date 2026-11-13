@@ -204,7 +204,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
       {!afterPhase(plan) && (
         // .pe-rec: a card ringed in the tint
         // the web's 2 pt ring is an inset shadow inside the padding: the border takes 2 off the padding
-        <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14, gap: 12, marginBottom: 16, borderWidth: 2, borderColor: t.tint }}>
+        <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 14, gap: 12, marginBottom: 16, borderWidth: 2, borderColor: t.tint }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <Text style={[tx(13, 600), { color: t.tint }]}>Recommended</Text>
             <LinkBtn title="How it works" onPress={onMaintenance} style={{ paddingVertical: 0, paddingHorizontal: 0 }} />

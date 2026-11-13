@@ -101,7 +101,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
           ))}
         </List>
       )}
-      {keys.length < MAX_A_DAY && <AddRow title={rest ? 'Add a workout' : 'Add another'} onPress={() => setSheet('add')} />}
+      {keys.length < MAX_A_DAY && <AddRow top={rest ? 0 : 4} title={rest ? 'Add a workout' : 'Add another'} onPress={() => setSheet('add')} />}
 
       {rest && <Lbl>Or</Lbl>}
       <List style={{ marginTop: rest ? 0 : 12, marginBottom: 8 }}>
@@ -109,7 +109,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
         <Row title="Copy another day" sub="Pick a day to copy from" onPress={() => setSheet('copy')} />
         <Row title="Swap with another day" onPress={() => setSheet('swap')} />
       </List>
-      {notes.map((n) => <PlanNote key={n}>{n}</PlanNote>)}
+      {notes.map((n, i) => <PlanNote key={n} style={i === 0 ? { marginTop: 0 } : undefined}>{n}</PlanNote>)}
       <Foot style={{ paddingTop: 8, paddingHorizontal: 4 }}>
         Changes here repeat every week of {phase}{lighterAfter ? ', and the lighter weeks after it' : ''}. To change just this {day}, use the Train tab.
       </Foot>

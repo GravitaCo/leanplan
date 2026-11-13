@@ -69,8 +69,9 @@ export function RowLink({ title }: { title: string }) {
  * `.dash-add`. TODO(N1-P3): lib/ui's dashed add button. Until it lands, the same action as lib/ui's
  * action row, so the view works.
  */
-export function AddRow({ title, onPress }: { title: string; onPress: () => void }) {
-  return <List style={{ marginTop: 12, marginBottom: 8 }}><Row act icon="plus" title={title} onPress={onPress} /></List>
+export function AddRow({ title, onPress, top = 4 }: { title: string; onPress: () => void; top?: number }) {
+  // the web's .dash-add has 12 above and none below; after a list (8 below it) that collapses to 12, so 4 here
+  return <List style={{ marginTop: top }}><Row act icon="plus" title={title} onPress={onPress} /></List>
 }
 
 type Cat = { id: string; label: string; items: WorkoutKey[]; sub?: string }
@@ -194,14 +195,14 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
             lead={<Thumb video={firstVideo(v)} shape={v === 'Cardio' ? 'duration' : undefined} />} right={<RowLink title="View" />} />
         </List>
       )}
-      <AddRow title={v === 'Rest' ? 'Add a workout' : 'Change workout'} onPress={() => setSheet('add')} />
+      <AddRow top={v === 'Rest' ? 0 : 4} title={v === 'Rest' ? 'Add a workout' : 'Change workout'} onPress={() => setSheet('add')} />
       {v === 'Rest' && <Lbl>Or</Lbl>}
       <List style={{ marginTop: v === 'Rest' ? 0 : 12, marginBottom: 8 }}>
         {v !== 'Rest' && <Row title={`Make ${day} a rest day`} sub="Rest is part of the plan" chevron={false} onPress={() => change({ ...schedule, [idx]: 'Rest' }, `${day} is a rest day now`)} />}
         <Row title="Copy another day" sub="Pick a day to copy from" onPress={() => setSheet('copy')} />
         <Row title="Swap with another day" onPress={() => setSheet('swap')} />
       </List>
-      {warns.map((w) => <PlanNote key={w.text}>{w.text}</PlanNote>)}
+      {warns.map((w, i) => <PlanNote key={w.text} style={i === 0 ? { marginTop: 0 } : undefined}>{w.text}</PlanNote>)}
       <Foot style={{ paddingTop: 8, paddingHorizontal: 4 }}>Changes here repeat every week. To change just this {day}, use the Train tab.</Foot>
 
       {sheet === 'add' && <AddWorkoutSheet idx={idx} onClose={() => setSheet(null)} />}

@@ -122,7 +122,7 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
         )}
         {/* TODO(N1-P3): `.dash-empty`, the dashed empty box; lib/ui's Empty stands in */}
         {list.length === 0 && <Empty>{f.q && !filtered && !f.goal?.length ? `No plans called “${f.q}”.` : 'No plans match yet. Try removing a filter, or build your own.'}</Empty>}
-        <AddRow title="New plan" onPress={onNew} />
+        <AddRow top={list.length === 0 ? 12 : 0} title="New plan" onPress={onNew} />
       </ScrollView>
       {sheet && <FilterSheet value={f} onChange={(v) => { setViaSheet(true); setF(v) }} onClose={() => setSheet(false)} count={filterCatalogue(all, f).length} />}
     </View>
@@ -204,7 +204,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
         </>
       )}
       {/* TODO(N1): `.catsq.sm` leads these rows once lib/ui has it (asked N1) */}
-      <List style={{ marginTop: 8, marginBottom: 8 }} wrap>
+      <List style={{ marginBottom: 8 }} wrap>
         <Row wrapSub title="After the plan: maintenance" sub="When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need." onPress={onMaintenance} />
         {tp && <Row wrapSub title="Eating for this plan" sub={eatingLine(tp, profile.goal, quiet)} />}
       </List>
