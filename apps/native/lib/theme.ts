@@ -3,6 +3,7 @@
  * or dark from the device's appearance setting, as on web. Geist is bundled with the app.
  */
 import { useColorScheme, type TextStyle } from 'react-native'
+import { Geist_200ExtraLight, Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold } from '@expo-google-fonts/geist'
 import { dark, light, type Tokens } from './tokens.generated'
 
 export type { Tokens }
@@ -10,8 +11,12 @@ export function useTokens(): Tokens {
   return useColorScheme() === 'dark' ? dark : light
 }
 
+/** Every bundled Geist face, for `useFonts(FONTS)` at the root: the one list of what ships. */
+export const FONTS = { Geist_200ExtraLight, Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold }
+
 /** Geist by weight (the bundled static faces; the web uses the variable font). */
 export const GEIST = {
+  200: 'Geist_200ExtraLight',
   300: 'Geist_300Light',
   400: 'Geist_400Regular',
   500: 'Geist_500Medium',

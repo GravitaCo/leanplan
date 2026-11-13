@@ -3,7 +3,8 @@ import { AppState, StyleSheet, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { useFonts, Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold } from '@expo-google-fonts/geist'
+import { useFonts } from 'expo-font'
+import { FONTS } from '../lib/theme'
 import { useStore } from '@/store/store'
 import { supabase } from '@/data/supabase'
 import { useGate } from '../lib/gate'
@@ -17,7 +18,7 @@ AppState.addEventListener('change', (s) => {
 if (AppState.currentState === 'active') supabase.auth.startAutoRefresh()
 
 export default function Root() {
-  const [fontsLoaded] = useFonts({ Geist_300Light, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold })
+  const [fontsLoaded] = useFonts(FONTS)
   const initAuth = useStore((s) => s.initAuth)
   useEffect(() => { initAuth() }, [initAuth])
   // the navigator stays mounted (Expo Router needs it); its screens render nothing while gated
