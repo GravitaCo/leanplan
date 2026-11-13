@@ -93,7 +93,9 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
       const learned = adaptiveMaintenance(data, today, o)
       if (learned.kind === 'estimate' && (lastHeld || adaptiveMaintenance(data, weekAgo, o).kind !== 'estimate') && Math.abs(learned.maint - data.target.kcal) >= 100) return setAfter({ k: 'learned', r: learned })
     }
-    if (p.reviewPush === undefined) return setOffer(true)
+    // the reminder offer needs push (N12): until a phone has it, the review neither offers it nor
+    // records a "no" the person was never asked (ship-critic)
+    if (p.reviewPush === undefined && pushSupported()) return setOffer(true)
     onBack()
   }
 
@@ -556,19 +558,18 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
         </View>
         {d(LOOP.waiting(dayName(day)))}
       </View>
-      <View style={sec}>
+      {/* the reminder needs N12's native push: until a phone has it, this part isn't offered */}
+      {pushSupported() && <View style={sec}>
         <T w={600} s={17}>{LOOP.wantReminder}</T>
         {d(LOOP.oneNote(dayName(day)))}
         {push
           ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><Pill title={LOOP.reminderOn} on bg={dark ? t.elev : t.bg} /><Pill title={LOOP.turnOff} onPress={() => setReviewPush(false)} bg={dark ? t.elev : t.bg} /></View>
           : <>
-              {/* reminders need N12's native push: until then only "No thanks" is offered, never an
-                  offer the app can't keep (mental-performance) */}
-              {pushSupported() && <PillBtn kind="done" sm title={LOOP.remindMe} onPress={remind} />}
+              <PillBtn kind="done" sm title={LOOP.remindMe} onPress={remind} />
               <PillBtn kind="keep" sm title={LOOP.noThanks} onPress={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }} />
             </>}
         {d(LOOP.reminderNote(dayName(day), time))}
-      </View>
+      </View>}
     </LoopSheet>
   )
 }

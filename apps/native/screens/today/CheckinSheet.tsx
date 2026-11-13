@@ -18,6 +18,7 @@ import { SLEEP_BANDS, isHHMM } from '@/core/domain/checkin'
 import { bandLabel } from '@/core/domain/sleep'
 import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/checkinNight'
 import { font, num, useTokens } from '../../lib/theme'
+import { normTime } from './wakeTime'
 import { Chevron, Foot, Lbl, List, NavBtn, Scale, Sheet } from './ui'
 
 export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSupport: () => void }) {
@@ -122,13 +123,4 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
         help you spot patterns. On a tough day, Tilo can offer a lighter option for training.</Foot>}
     </Sheet>
   )
-}
-
-/** "7" → "07:00", "730" → "07:30", "7:5" → "07:05"; anything else is left for nightPatch to drop. */
-function normTime(v: string): string {
-  const m = v.trim().match(/^(\d{1,2})(?::?(\d{1,2}))?$/)
-  if (!m) return v
-  const h = +m[1], mi = m[2] ? +m[2] : 0
-  if (h > 23 || mi > 59) return v
-  return `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`
 }

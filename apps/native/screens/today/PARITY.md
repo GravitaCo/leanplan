@@ -42,7 +42,7 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 | Sheet | Check |
 |---|---|
 | Check-in, More about sleep, wake prefill, save | Auto `wp10-checkin-sheet` |
-| Wake time | **Open:** a 24-hour text field until N1's TimePicker (the web's time field is iOS's own wheel, so the native picker is parity). A typed "730" saves as 07:30 even without leaving the field. |
+| Wake time | **Open:** a 24-hour text field until N1's TimePicker (the web's time field is iOS's own wheel, so the native picker is parity). Typed times read as the web's field holds them ("730" 07:30, "123" 01:23): `npm run test:today` |
 | Weight sheet | Auto `weight-sheet` |
 | Food asks (ob9-3, ob9-4) | Auto `ob9-3-day14`, `ob9-4-week4` |
 | Pregnancy re-ask, Ask me later, No longer | Auto `ob7-3-pregnancy`, `ob7-4-no-longer` |
@@ -52,7 +52,7 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 | Weight ask (ml-c4) | Auto `loop-weight-ask` |
 | What follows Done (review day sheet) | Auto `loop-review-done` (light) |
 | 4-week check, Keeping it steady, Your range from your logs | Code (no seed reaches them yet; their decisions are core's, tested in `npm test`) |
-| Review day sheet "Remind me" | Native hides it until N12's push (`pushSupported()` is false on a phone); "No thanks" stays |
+| Review day sheet: the reminder | Until N12's push (`pushSupported()` is false on a phone) the review never offers the sheet after Done and the reminder part is hidden, so no "no" is recorded unasked |
 
 ## Stand-ins (other streams)
 
