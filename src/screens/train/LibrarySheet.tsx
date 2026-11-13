@@ -8,22 +8,11 @@ import { rankByName } from '@/core/domain/search'
 import { howToLink } from '@/core/domain/workout'
 import { BackButton, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
-import { CARE_DISCLAIMER } from './SwapSheet'
-import { RED_FLAG } from './HoldTimer'
+import { CARE_DISCLAIMER, LIB_KIT, RED_FLAG } from '@/copy/train'
+import { fitsKit, inModality } from './trainModel'
 import { DemoPlayer } from './DemoPlayer'
 import { Thumb, useClipPreview } from './Thumb'
 
-/** Kit filters: the few that decide most of what someone can do. */
-const KIT: [Equipment | 'none', string][] = [['none', 'No equipment'], ['dumbbell', 'Dumbbells'], ['band', 'Band'], ['mat', 'Mat'], ['machine', 'Gym machines']]
-
-function fits(x: Exercise, kit: Equipment | 'none' | null): boolean {
-  if (!kit) return true
-  if (kit === 'none') return x.equipment.length === 0 || x.equipment.every((q) => q === 'bodyweight' || q === 'mat')
-  if (kit === 'machine') return x.equipment.some((q) => q === 'machine' || q === 'cable' || q === 'cardio-machine')
-  return x.equipment.includes(kit)
-}
-
-const inModality = (x: Exercise, m: Modality) => x.modality === m || !!x.also?.includes(m)
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
   const [demo, setDemo] = useState(false)
@@ -95,7 +84,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
 
   const list = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
-    const pool = EXERCISES.filter((x) => (!mod || inModality(x, mod)) && fits(x, kit))
+    const pool = EXERCISES.filter((x) => (!mod || inModality(x, mod)) && fitsKit(x, kit))
     return words.length ? rankByName(pool, (x) => x.n, words) : [...pool].sort((a, b) => a.n.localeCompare(b.n))
   }, [q, mod, kit])
 
@@ -117,7 +106,7 @@ export function LibrarySheet({ onClose, initial, onPick }: {
         ))}
       </div>
       <div className="chips" role="radiogroup" aria-label="Equipment" style={{ marginBottom: 12 }}>
-        {KIT.map(([k, label]) => (
+        {LIB_KIT.map(([k, label]) => (
           <button key={k} role="radio" aria-checked={kit === k} className={'chip' + (kit === k ? ' on' : '')} onClick={() => setKit(kit === k ? null : k)}>{label}</button>
         ))}
       </div>

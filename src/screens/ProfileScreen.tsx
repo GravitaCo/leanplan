@@ -19,6 +19,7 @@ import { FeedbackSheet } from './profile/FeedbackSheet'
 import { LegalLink } from './legal/LegalDoc'
 import { LEGAL_LABEL } from '@/copy/legal'
 import { RegrantHealthSheet } from './legal/PrivacySheets'
+import { ACCOUNT_ROW, BACKUP, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
 import { AiSheet, DeleteAccountView, HEALTH_STATUS_LABEL, HealthDataSheet, useHealthStatus } from './profile/AccountData'
 import { LazyHealthAnswersScreen } from './profile/lazyHealthAnswers'
 import { ReviewDaySheet, dayName } from './review/WeeklyReview'
@@ -387,24 +388,24 @@ export function ProfileScreen() {
       {WELLBEING_ENABLED && <YourTimes />}
       <div className="foot">iPhone needs iOS 16.4 or later, with Tilo added to your Home Screen from Safari.</div>
 
-      <div className="lbl">Account and data</div>
+      <div className="lbl">{ACCOUNT_ROW.heading}</div>
       <div className="list icons">
-        <Disclosure icon="person" color={GRAY} soft label="Account" open={open === 'account'} onToggle={() => toggle('account')}>
-          <div className="sub" style={{ fontSize: 13 }}>Signed in as</div>
-          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? 'Your account (not syncing right now)' : email}</div>
-          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>Change your name or email from the card at the top.</div>}
+        <Disclosure icon="person" color={GRAY} soft label={ACCOUNT_ROW.account} open={open === 'account'} onToggle={() => toggle('account')}>
+          <div className="sub" style={{ fontSize: 13 }}>{ACCOUNT_ROW.signedInAs}</div>
+          <div style={{ overflowWrap: 'anywhere' }}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</div>
+          {authed && <div className="foot" style={{ padding: '8px 0 0' }}>{ACCOUNT_ROW.changeFoot}</div>}
         </Disclosure>
         <SettingRow icon="heart" color={MINDF} soft label="Health data" value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
         {/* AI features: hidden until one ships (the privacy policy doesn't describe AI processing yet,
             so a consent given here wouldn't be informed) */}
         {AI_FEATURES_LIVE && <SettingRow icon="bulb" color={GRAY} soft label="AI features" value={hasConsent(data, 'ai') ? 'On' : 'Off'} onPress={() => setAiOpen(true)} />}
-        <Disclosure icon="cloud" color={GRAY} soft label="Back up and restore" value="Export, import" open={open === 'backup'} onToggle={() => toggle('backup')}>
+        <Disclosure icon="cloud" color={GRAY} soft label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
           <div className="sub" style={{ marginBottom: 10 }}>{!consentLetsSync(data)
-            ? 'Your log is only on this phone until you agree to Tilo keeping your health data, so export a copy now and then.'
-            : <>Your log is stored on this device, so Tilo works without a connection{authed ? ', and it syncs to your private database when you’re online' : syncPaused ? '. Not syncing right now: changes sync when you’re back online, or sign in again from Account' : ''}. Export a copy now and then.</>}</div>
+            ? BACKUP.phoneOnly
+            : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</div>
           <div className="grid2">
-            <button className="btn gray" onClick={() => exportBackup(data)}>Export</button>
-            <button className="btn gray" onClick={() => fileRef.current?.click()}>Import</button>
+            <button className="btn gray" onClick={() => exportBackup(data)}>{BACKUP.exportBtn}</button>
+            <button className="btn gray" onClick={() => fileRef.current?.click()}>{BACKUP.importBtn}</button>
           </div>
           {resumeCopy && (
             <div style={{ marginTop: 12 }}>
@@ -419,10 +420,10 @@ export function ProfileScreen() {
             const file = input.files?.[0]
             input.value = '' // so picking the same file again still fires onChange
             if (!file) return
-            try { setPendingBackup(await readBackup(file)) } catch { showToast("That isn't a valid backup file") }
+            try { setPendingBackup(await readBackup(file)) } catch { showToast(BACKUP.invalid) }
           }} />
         </Disclosure>
-        <SettingRow icon="x" color={GRAY} soft label="Delete account" onPress={() => setView('delete')} />
+        <SettingRow icon="x" color={GRAY} soft label={ACCOUNT_ROW.deleteRow} onPress={() => setView('delete')} />
       </div>
 
       <div className="lbl">Testing</div>
@@ -437,11 +438,11 @@ export function ProfileScreen() {
             <p style={{ margin: 0 }}>General fitness information only, not medical advice. Talk to a GP before starting a new diet or exercise programme.</p>
           </div>
         </Disclosure>
-        <Disclosure icon="key" color={GRAY} soft label="Privacy" value={health.granted ? undefined : 'Health data off'} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
+        <Disclosure icon="key" color={GRAY} soft label={PRIVACY_ROW.label} value={health.granted ? undefined : PRIVACY_ROW.off} open={open === 'privacy'} onToggle={() => toggle('privacy')}>
           <div className="prose sub" style={{ marginBottom: 10 }}>
             <p style={{ margin: 0 }}>
-              {health.granted && healthAt ? <>You agreed to Tilo using your health information on {healthAt}. </> : healthStatus === 'off' ? <>You’ve withdrawn consent, so your log is on your phones only and Tilo doesn’t keep your weigh-ins, check-ins or body details. </> : null}
-              {consentLetsSync(data) ? 'Your data is stored on this phone and in your private account database.' : 'Your log is only on this phone until you agree.'} It’s never sold or used for ads.
+              {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : null}
+              {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
             </p>
           </div>
           {SHARED_PRODUCTS_ENABLED && (
@@ -464,14 +465,14 @@ export function ProfileScreen() {
           {/* the same flows as the Health data and Delete account rows above (one of each; the
               legal texts point here, at Profile, then Privacy) */}
           {health.granted
-            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>Withdraw consent for health data</button>
-            : <button className="btn gray" onClick={agree}>Turn health data back on</button>}
-          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>Delete account</button>
+            ? <button className="btn gray" onClick={() => setHealthOpen('withdraw')}>{PRIVACY_ROW.withdraw}</button>
+            : <button className="btn gray" onClick={agree}>{PRIVACY_ROW.turnBackOn}</button>}
+          <button className="btn danger" style={{ marginTop: 6 }} onClick={() => setView('delete')}>{ACCOUNT_ROW.deleteRow}</button>
         </Disclosure>
       </div>
 
       <button className="btn signout" onClick={() => setSignOutOpen(true)}>Sign out</button>
-      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>Tilo offers general wellness guidance, not medical advice.</div>
+      <div className="foot" style={{ textAlign: 'center', padding: '12px 16px 0' }}>{PRIVACY_ROW.wellness}</div>
 
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
@@ -488,15 +489,14 @@ export function ProfileScreen() {
  *  cloud copy every device pulls), so say what's in it and what changes. */
 function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
   const b = backupSummary(backup)
-  const n = (x: number, one: string, many: string) => x + ' ' + (x === 1 ? one : many)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
-    <Sheet title="Import backup" onClose={onClose}>
+    <Sheet title={BACKUP.importTitle} onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
-        <p>This backup has {n(b.days, 'day', 'days')}{span}, {n(b.foods, 'saved food', 'saved foods')}, {n(b.recipes, 'recipe', 'recipes')} and {n(b.workouts, 'workout', 'workouts')}.</p>
-        <p>Importing replaces your targets and profile{b.days ? (b.days === 1 ? ', that day' : ', those ' + b.days + ' days') : ''}{b.foods || b.recipes ? ' and any saved food or recipe with the same name' : ''}{b.workouts ? ', and adds its workouts' : ''} on all your devices. Anything else here stays as it is.</p>
+        <p>{BACKUP.has(b, span)}</p>
+        <p>{BACKUP.replaces(b)}</p>
       </div>
-      <div className="stack"><button className="btn tinted" onClick={onImport}>Import</button></div>
+      <div className="stack"><button className="btn tinted" onClick={onImport}>{BACKUP.importBtn}</button></div>
     </Sheet>
   )
 }
@@ -517,17 +517,17 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
   return (
-    <Sheet title="Sign out" onClose={onClose}>
+    <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <div className="prose sub" style={{ padding: '0 4px 12px' }}>
         {phoneOnly ? (
-          <p>What you log now is only on this phone: nothing syncs to your account until you agree to Tilo keeping your health data. Signing out keeps it here for when you sign back in. Removing it deletes it from this phone for good, so export a copy first.</p>
-        ) : <p>Your log stays on this device for when you sign back in. On a shared phone you can remove it instead: it stays in your account.</p>}
-        {!phoneOnly && unsynced > 0 && <p>{unsynced === 1 ? '1 change hasn’t' : unsynced + ' changes haven’t'} synced yet, so removing the log now would lose {unsynced === 1 ? 'it' : 'them'}. Connect first, or export a copy in Back up and restore.</p>}
+          <p>{SIGN_OUT.phoneOnly}</p>
+        ) : <p>{SIGN_OUT.stays}</p>}
+        {!phoneOnly && unsynced > 0 && <p>{SIGN_OUT.unsynced(unsynced)}</p>}
       </div>
       <div className="stack">
-        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? 'Signing out…' : 'Sign out'}</button>
-        {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>Export a copy</button>}
-        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? 'Signing out…' : sure && phoneOnly ? 'Remove anyway and delete your log' : sure && unsynced > 0 ? 'Remove anyway and lose ' + (unsynced === 1 ? '1 change' : unsynced + ' changes') : 'Sign out and remove this device’s log'}</button>
+        <button className="btn tinted" disabled={!!busy} onClick={() => go(false)}>{busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title}</button>
+        {phoneOnly && <button className="btn gray" disabled={!!busy} onClick={() => exportBackup(data)}>{SIGN_OUT.exportCopy}</button>}
+        <button className="btn danger" disabled={!!busy} onClick={() => go(true)}>{busy === 'remove' ? SIGN_OUT.signingOut : sure && phoneOnly ? SIGN_OUT.removeSure : sure && unsynced > 0 ? SIGN_OUT.removeLose(unsynced) : SIGN_OUT.remove}</button>
       </div>
     </Sheet>
   )

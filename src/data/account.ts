@@ -8,6 +8,7 @@
  */
 import { SB_URL, SB_KEY, getToken, hasSession, supabase } from './supabase'
 import { withTimeout } from './timeout'
+import { googleOAuth } from './platform'
 import { clearNotifyStore } from './deviceOnly'
 import { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON, jwtPayload, signedInRecently } from '../../supabase/functions/_shared/account'
 
@@ -188,7 +189,8 @@ export function sessionSignedInRecently(token: string, nowS = Math.floor(Date.no
 
 /* ---------------- re-confirming identity before deletion ---------------- */
 
-export type ReauthResult = 'ok' | 'wrong-password' | 'offline' | 'redirecting' | 'error'
+/** `redirecting`: the page left for Google (web); `cancelled`: the app's Google sheet was closed */
+export type ReauthResult = 'ok' | 'wrong-password' | 'offline' | 'redirecting' | 'cancelled' | 'error'
 
 /** Marks a Google re-sign-in started for deletion, so the app can reopen the confirm step on return. */
 export const REAUTH_FLAG = 'tali.reauthForDelete'
@@ -217,19 +219,19 @@ export function markReauth(uid: string, storage: FlagStore | null = session(), n
 }
 
 /**
- * Google accounts: a fresh Google sign-in (the page leaves and comes back to this origin).
- * `select_account` makes Google show the account chooser (Google rejects `login`), hinted to this
- * account's email; the server still decides on the sign-in time.
+ * Google accounts: a fresh Google sign-in (on web the page leaves and comes back to this origin; in
+ * the app it happens in the system's sign-in sheet: platform googleOAuth). `select_account` makes
+ * Google show the account chooser (Google rejects `login`), hinted to this account's email; the
+ * server still decides on the sign-in time.
  */
 export async function reauthWithGoogle(email: string, uid: string): Promise<ReauthResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'offline'
   markReauth(uid)
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    // dynamic, as on the sign-in screen: the allow-list lives in the Supabase dashboard
-    options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account', login_hint: email } },
-  })
-  return error ? 'error' : 'redirecting'
+  try {
+    return await googleOAuth(supabase.auth, { prompt: 'select_account', login_hint: email })
+  } catch {
+    return 'error'
+  }
 }
 
 /**
