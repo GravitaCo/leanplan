@@ -12,9 +12,10 @@ import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKe
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { LibrarySheet } from './LibrarySheet'
 import { Btn, List } from '../../lib/ui/kit'
-import { NavBtn, Sheet } from '../../lib/ui/primitives'
+import { NavBtn, SettingRow, Sheet } from '../../lib/ui/primitives'
 import { font, useTokens } from '../../lib/theme'
-import { FInput, FRow, Foot, GrpH, Ico, LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
+import { Foot, GrpH } from '../../lib/ui/text'
+import { FInput, FRow, LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -80,7 +81,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
         </List>
       )}
       <List style={{ marginBottom: 8, marginTop: slots.length ? 8 : 0 }}>
-        <Li onPress={() => setPicking(true)}><Ico icon="plus" bg={t.tint} /><LiText t="Add an exercise" /></Li>
+        <SettingRow icon="plus" color={t.tint} label="Add an exercise" onPress={() => setPicking(true)} right={<></>} />
       </List>
       {notes.map((n) => <Foot key={n} style={{ paddingTop: 8, paddingHorizontal: 4 }}>{n}</Foot>)}
       {notes.length > 0 && <Foot style={{ paddingTop: 8, paddingHorizontal: 4 }}>These are suggestions. Save whenever you're happy with it.</Foot>}

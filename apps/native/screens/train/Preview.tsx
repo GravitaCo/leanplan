@@ -30,7 +30,9 @@ import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, TitleRow } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { FInput, FRow, FSelect, Foot, LIST_GAP, Li, Stack, Sub, TextLink, TrainNav } from './pendingN1'
+import { Foot, Sub } from '../../lib/ui/text'
+import { FInput, FRow, FSelect, LIST_GAP, Li, Stack, TextLink } from './pendingN1'
+import { TrainNav } from './nav'
 
 /** `.card.ex`: name, the prescription tag, the cue */
 export function ExCard({ n, tg, cue, children }: { n: string; tg?: string; cue?: string; children?: React.ReactNode }) {

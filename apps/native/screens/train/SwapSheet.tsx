@@ -12,7 +12,8 @@ import { CARE_DISCLAIMER } from '@/copy/train'
 import { Btn, List } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
 import { font } from '../../lib/theme'
-import { Foot, GrpH, LIST_GAP, Li, LiText, Stack, Sub } from './pendingN1'
+import { Foot, GrpH, Sub } from '../../lib/ui/text'
+import { LIST_GAP, Li, LiText, Stack } from './pendingN1'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'

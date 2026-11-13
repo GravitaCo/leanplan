@@ -16,9 +16,10 @@ import { quietNumbers } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
 import { Chip, Chips, List } from '../../lib/ui/kit'
-import { NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
+import { NavBtn, SettingRow, Sheet, Toggle } from '../../lib/ui/primitives'
 import { num, tx, useTokens } from '../../lib/theme'
-import { FInput, FRow, FSelect, Foot, Ico, LIST_GAP, Lbl, Li, LiText } from './pendingN1'
+import { Foot, Lbl } from '../../lib/ui/text'
+import { FInput, FRow, FSelect, LIST_GAP, Li, LiText } from './pendingN1'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -36,7 +37,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
   return (
     <Sheet title="Add something" onClose={onClose}>
       <List icons style={LIST_GAP}>
-        <Li onPress={onLog}><Ico icon="plus" bg={t.activity} /><LiText t="Log a session" s="A walk, yoga, pilates, anything" /></Li>
+        <SettingRow icon="plus" color={t.activity} label="Log a session" sub="A walk, yoga, pilates, anything" onPress={onLog} right={<></>} />
       </List>
       <Lbl>Do a different workout today</Lbl>
       <List style={LIST_GAP}>
@@ -60,7 +61,7 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
       )}
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 12 }}>This only changes today. To change your week or build your own workouts, go to Plan.</Foot>
       <List icons style={LIST_GAP}>
-        <Li onPress={onLibrary}><Ico icon="book" bg={t.tint} /><LiText t="Exercise library" s="How to do each move, easier and harder options" /></Li>
+        <SettingRow icon="book" color={t.tint} label="Exercise library" sub="How to do each move, easier and harder options" onPress={onLibrary} right={<></>} />
       </List>
     </Sheet>
   )

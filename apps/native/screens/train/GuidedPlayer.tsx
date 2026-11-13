@@ -40,10 +40,11 @@ import { WarmupPlayer } from './WarmupPlayer'
 import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Btn, List } from '../../lib/ui/kit'
-import { BareSheet, NavBtn, Sheet, Toggle } from '../../lib/ui/primitives'
+import { BareSheet, NavBtn, Row, Sheet, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, LIST_GAP, Li, LiText, Stack, Sub } from './pendingN1'
+import { Foot, Sub } from '../../lib/ui/text'
+import { LIST_GAP, Li, LiText, Stack } from './pendingN1'
 import { Dots } from './gp'
 
 const SOUND_KEY = 'tali.sound'
@@ -485,11 +486,11 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         {sheet === 'menu' && (
           <Sheet title={name} onClose={() => setSheet(null)} left={null} right={<NavBtn bold title="Done" onPress={() => setSheet(null)} />}>
             <List style={LIST_GAP}>
-              {slot.x && <Li onPress={() => setSheet('swap')}><LiText t="Swap exercise" s="Today only" /></Li>}
-              {!isLastSlot && <Li onPress={() => { setOrder(later(order, pos)); setRest(null); setSheet(null) }}><LiText t="Do this later" s="Moves it to the end of today's workout" /></Li>}
-              <Li onPress={() => { setSheet(null); go(1) }}><LiText t="Skip this exercise" s={'It shows as "Not today"'} /></Li>
+              {slot.x && <Row title="Swap exercise" sub="Today only" onPress={() => setSheet('swap')} chevron={false} />}
+              {!isLastSlot && <Row title="Do this later" sub="Moves it to the end of today's workout" onPress={() => { setOrder(later(order, pos)); setRest(null); setSheet(null) }} chevron={false} />}
+              <Row title="Skip this exercise" sub={'It shows as "Not today"'} onPress={() => { setSheet(null); go(1) }} chevron={false} />
               {slot.shape === 'weight-reps' && <Li onPress={() => setSheet('warmup')}><LiText wrap t="Log a warm-up set" s={slot.i === wSlot ? warmupCopy(name, block?.mins) : "Doesn't count towards your targets"} sStyle={{ lineHeight: 18 }} /></Li>}
-              {!video && <Li onPress={() => { WebBrowser.openBrowserAsync(howToLink(slot.shown.n)).catch(() => {}) }}><LiText t="Watch how to do it" s="Opens a video search" /></Li>}
+              {!video && <Row title="Watch how to do it" sub="Opens a video search" onPress={() => { WebBrowser.openBrowserAsync(howToLink(slot.shown.n)).catch(() => {}) }} chevron={false} />}
               <Li><LiText t="Sound" s="A chime when rest ends" />
                 <Toggle on={sound} label="Sound" onChange={() => { const v = !sound; setSound(v); try { localStorage.setItem(SOUND_KEY, v ? '1' : '0') } catch { /* blocked */ } }} /></Li>
             </List>

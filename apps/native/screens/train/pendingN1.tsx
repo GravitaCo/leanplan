@@ -1,38 +1,19 @@
 /**
- * TODO(N1-followup): the few Studio pieces Train needs that lib/ui doesn't have yet, each a direct
- * port of a web class: `.foot`, `.lbl`, `.grp-h`, `.sub`; `.li` rows (`Li`, `LiText`) and `.ico`
- * outside SettingRow; `.x-btn`; `.stack`; inline and labelled `.linkbtn` (`TextLink`); the form rows
- * (`.frow`, its input and select: N1's "fields"). Delete each piece the day lib/ui has it. Everything
- * else on the Train screens comes from lib/ui.
+ * TODO(N1-followup): what Train still needs that lib/ui doesn't have yet, each a direct port of a
+ * web class: `Li`/`LiText` for rows lib/ui's Row can't hold (a thumbnail, a control, a wrapped sub),
+ * `.x-btn` (`XBtn`), `.stack` (`Stack`), the inline, flat and labelled `.linkbtn` (`TextLink`),
+ * `.list`'s 8 pt below (`LIST_GAP`) and the form rows (`.frow`, its input and select: N1's
+ * "fields", P2). Train-only: nothing else imports this file. Emptied and deleted before the
+ * screens merge.
  */
-import { createContext, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { toPoint } from './nav'
 import { ActionSheetIOS, Alert, Platform, Pressable, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
 
-/** `.foot`: 13 px label2, line-height 1.38 (pass the web's padding as style) */
-export function Foot({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  const t = useTokens()
-  return <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }, style]}>{children}</Text>
-}
-/** `.lbl`: 13 px medium label2 over a group */
-export function Lbl({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  const t = useTokens()
-  return <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }, style]}>{children}</Text>
-}
-/** `.grp-h`: a 20 px group title */
-export function GrpH({ children }: { children: ReactNode }) {
-  const t = useTokens()
-  return <Text accessibilityRole="header" style={[tx(20, 600), { letterSpacing: -0.2, color: t.label, paddingTop: 22, paddingBottom: 8, paddingHorizontal: 4 }]}>{children}</Text>
-}
-/** `.sub`: 15 px label2 */
-export function Sub({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  const t = useTokens()
-  return <Text style={[tx(15, 400), { lineHeight: 20, color: t.label2 }, style]}>{children}</Text>
-}
 
 /** What the Train screens hand back to the app shell (the lead wires these in app/(tabs)/train.tsx). */
-export const TrainNav = createContext<{ onProfile?: () => void }>({})
 
 
 /** `.list`'s 8 pt below (theme.css .list); lib/ui List has no bottom margin yet. TODO(N1-followup) */
@@ -93,11 +74,6 @@ export function LiText({ t: title, s, tStyle, sStyle, wrap, children }: { t: Rea
     </View>
   )
 }
-/** `.ico`: a 30 px rounded square with a white glyph */
-export function Ico({ icon, bg }: { icon: IconName; bg: string }) {
-  const t = useTokens()
-  return <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={18} color={t.onCat} /></View>
-}
 
 
 /** `.frow`: label left, the value right-aligned */
@@ -110,8 +86,6 @@ export function FRow({ label, children }: { label: string; children: ReactNode }
     </View>
   )
 }
-/** A comma-decimal keypad types "12,5"; saved data always holds "12.5", as the web's number input does. */
-export const toPoint = (v: string) => v.replace(/,/g, '.')
 
 /** an input as `.frow input`: right-aligned, no box */
 export function FInput(p: TextInputProps & { numeric?: boolean; decimal?: boolean }) {

@@ -29,7 +29,9 @@ import { PageHeader } from '../../lib/ui/primitives'
 import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Li, TextLink, TrainNav, XBtn } from './pendingN1'
+import { Foot } from '../../lib/ui/text'
+import { Li, TextLink, XBtn } from './pendingN1'
+import { TrainNav } from './nav'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
 

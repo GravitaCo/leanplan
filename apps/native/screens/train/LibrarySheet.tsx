@@ -19,10 +19,11 @@ import { DemoPlayer, type Origin } from './DemoPlayer'
 import { Thumb, imageSource, useClipPreview } from './media'
 import { ExCard } from './Preview'
 import { Chip, Chips, List } from '../../lib/ui/kit'
-import { BackButton, NavBtn, Sheet } from '../../lib/ui/primitives'
+import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, tx, useTokens } from '../../lib/theme'
-import { Foot, LIST_GAP, Li, LiText } from './pendingN1'
+import { Foot } from '../../lib/ui/text'
+import { LIST_GAP, Li, LiText } from './pendingN1'
 import { Shade } from './gp'
 
 function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
@@ -61,13 +62,13 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
         {x.targets?.length ? <Foot style={{ paddingTop: 0, paddingHorizontal: 0 }}>Works on: {x.targets.map((tg) => TARGET_LABEL[tg]).join(', ')}</Foot> : null}
       </ExCard>
       {!x.video && (
-        <List style={LIST_GAP}><Li onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }}><LiText t="Watch how to do it" s="Opens a video search" /></Li></List>
+        <List style={LIST_GAP}><Row title="Watch how to do it" sub="Opens a video search" onPress={() => { WebBrowser.openBrowserAsync(howToLink(x.n)).catch(() => {}) }} chevron={false} /></List>
       )}
       {(easier || harder || gentler) && (
         <List style={LIST_GAP}>
-          {easier && <Li onPress={() => onOpen(easier.id)}><LiText t={easier.n} s="Easier" /></Li>}
-          {harder && <Li onPress={() => onOpen(harder.id)}><LiText t={harder.n} s="Harder, when this feels steady" /></Li>}
-          {gentler && <Li onPress={() => onOpen(gentler.id)}><LiText t={gentler.n} s="Gentler" /></Li>}
+          {easier && <Row title={easier.n} sub="Easier" onPress={() => onOpen(easier.id)} chevron={false} />}
+          {harder && <Row title={harder.n} sub="Harder, when this feels steady" onPress={() => onOpen(harder.id)} chevron={false} />}
+          {gentler && <Row title={gentler.n} sub="Gentler" onPress={() => onOpen(gentler.id)} chevron={false} />}
         </List>
       )}
       {x.care?.length ? (

@@ -12,7 +12,9 @@ import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
 import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { BareSheet, Seg, Toggle } from '../../lib/ui/primitives'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Li, LiText, Stack, TextLink, toPoint } from './pendingN1'
+import { Foot } from '../../lib/ui/text'
+import { Li, LiText, Stack, TextLink } from './pendingN1'
+import { toPoint } from './nav'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
 const tidy = (x: number) => String(Math.round(x * 100) / 100)

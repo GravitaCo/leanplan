@@ -10,7 +10,8 @@ import { RED_FLAG } from '@/copy/train'
 import { Btn } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
 import { num, tx, useTokens } from '../../lib/theme'
-import { Foot, Stack } from './pendingN1'
+import { Foot } from '../../lib/ui/text'
+import { Stack } from './pendingN1'
 
 export function HoldTimer({ name, rx, perSide, onDone, onClose }: {
   name: string

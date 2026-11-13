@@ -11,7 +11,8 @@ import { ChoiceGrid } from './AdjustSheet'
 import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn } from '../../lib/ui/primitives'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { FInput, FRow, LIST_GAP, Li, Stack, Sub } from './pendingN1'
+import { Sub } from '../../lib/ui/text'
+import { FInput, FRow, LIST_GAP, Li, Stack } from './pendingN1'
 
 export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinish, onBack }: {
   title: string

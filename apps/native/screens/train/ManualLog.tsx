@@ -26,7 +26,9 @@ import { Btn } from '../../lib/ui/kit'
 import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Stack, Sub, TextLink, TrainNav, toPoint } from './pendingN1'
+import { Foot, Sub } from '../../lib/ui/text'
+import { Stack, TextLink } from './pendingN1'
+import { TrainNav, toPoint } from './nav'
 
 const blankRows = (): SetEntry[] => [{ w: '', reps: '' }, { w: '', reps: '' }]
 
