@@ -41,3 +41,4 @@ yarn-error.*
 /android
 dist-check/
 dist-web/
+dist-web-*/
