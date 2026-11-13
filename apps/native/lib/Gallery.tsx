@@ -121,8 +121,9 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </Card>
       </Sec>
 
-      <Sec id="seg" title="Seg">
+      <Sec id="seg" title="Seg (default; 32 pt segments, Reset's)">
         <Seg options={G.seg} value={seg} onChange={setSeg} />
+        <View style={{ marginTop: 10 }}><Seg options={G.seg} value={seg} onChange={setSeg} minHeight={32} /></View>
       </Sec>
 
       <Sec id="toggle" title="Toggle (on, off, disabled on, disabled off)">
