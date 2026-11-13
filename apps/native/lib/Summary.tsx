@@ -29,7 +29,7 @@ import { PageHeader } from './ui/primitives'
 import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
-import { font, num, useTokens } from './theme'
+import { font, num, tx, useTokens } from './theme'
 
 const kgOf = (s: { days: Record<string, { weight: number | null }> }, d: string | undefined) => (d ? s.days[d]?.weight ?? null : null)
 const later = (what: string) => () => Alert.alert(what, 'Not in the spike yet: it arrives with its feature stream.')
@@ -117,19 +117,20 @@ export function Summary() {
 
   const weightTile = !fv.weightBack || p.reviewWeight !== true ? (
     <Tile onPress={later('Weight')} label="Weight" style={{ flex: 1 }}>
-      {T([font(600), sub], 'Weight')}
-      {T([font(600), { fontSize: 19, color: t.label, marginTop: 2 }], day.weight ? 'Logged' : 'Add')}
-      {T([font(400), { fontSize: 12, color: t.label2 }], day.weight ? 'Today' : 'Whenever it suits you')}
+      {T([tx(13, 600), { color: t.label2 }], 'Weight')}
+      {T([tx(19, 600, 28.6, -0.02 * 26 / 19), { color: t.label, marginTop: 2 }], day.weight ? 'Logged' : 'Add')}
+      {T([tx(12), { color: t.label2 }], day.weight ? 'Today' : 'Whenever it suits you')}
     </Tile>
   ) : (
     <Tile onPress={later('Weight')} label="Weight" style={{ flex: 1 }}>
-      {T([font(600), sub], 'Weight')}
+      {/* .tile.st: .tk 13/600, .v 26/1.1 at -0.02em (its "kg" 15 pt, 2 pt off), .s 12 */}
+      {T([tx(13, 600), { color: t.label2 }], 'Weight')}
       {lastW
-        ? <Text style={[font(600), num, { fontSize: 26, letterSpacing: -0.5, color: t.label, marginTop: 2 }]}>{r1(data.days[lastW].weight!)}<Text style={[font(600), { fontSize: 15, color: t.label2 }]}>kg</Text></Text>
-        : T([font(600), { fontSize: 19, color: t.label, marginTop: 2 }], 'Add')}
-      {T([font(400), { fontSize: 12, color: t.label2 }], lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you')}
+        ? <Text style={[tx(26, 600, 1.1), num, { letterSpacing: -0.52, color: t.label, marginTop: 2 }]}>{r1(data.days[lastW].weight!)}<Text style={[tx(15, 600, 1.1), { letterSpacing: -0.52, color: t.label2 }]}>{'\u2009'}kg</Text></Text>
+        : T([tx(19, 600, 28.6, -0.02 * 26 / 19), { color: t.label, marginTop: 2 }], 'Add')}
+      {T([tx(12), { color: t.label2 }], lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you')}
       {/* .wt-trend (loop.css) */}
-      {wRow && !hard ? T([font(500), { fontSize: 13, lineHeight: 17, color: t.label, marginTop: 6 }], weightTileWords(wRow)) : null}
+      {wRow && !hard ? T([tx(13, 500), { color: t.label, marginTop: 6 }], weightTileWords(wRow)) : null}
     </Tile>
   )
 
@@ -212,8 +213,8 @@ export function Summary() {
                 <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2, alignItems: 'center', justifyContent: 'center' }}>{moveIcon}</View>
               </View>
               <View style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
-                {T([font(600), { fontSize: 19, lineHeight: 23, color: t.label }], moveTitle)}
-                {T([font(400), { fontSize: 12, color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
+                {T([tx(19, 600, 1.2, -0.01), { color: t.label }], moveTitle)}
+                {T([tx(12), { color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
               </View>
               {/* .tile.mvt .btn.sm: 32 high, 14 pt */}
               {!logged && !isRest && <View style={{ marginTop: 10 }}><Btn small title="Start" onPress={later('Train')} style={{ height: 32, borderRadius: 16, paddingHorizontal: 14 }} textStyle={{ fontSize: 14 }} /></View>}

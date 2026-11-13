@@ -25,9 +25,9 @@ const CONN_ICON: Record<string, IconName> = { 'up-to-date': 'check', pending: 'c
 const CSS = `
 .gal .card, .gal .list, .gal .banner { margin-bottom: 0; }
 .gal .tabbar { position: relative; z-index: auto; }
-.gal .toast { position: static; transform: none; opacity: 1; }
-.gal .toast:not(.act) { display: inline-block; }
-.gal .toast.act { width: 100%; }
+.gal [data-g] .toast { position: static; transform: none; opacity: 1; z-index: auto; }
+.gal [data-g] .toast:not(.act) { display: inline-block; }
+.gal [data-g] .toast.act { width: 100%; }
 `
 
 function Sec({ id, title, children, pad = true }: { id: string; title: string; children: ReactNode; pad?: boolean }) {
@@ -37,6 +37,18 @@ function Sec({ id, title, children, pad = true }: { id: string; title: string; c
       {/* its own formatting context, so a component's outer margins stay inside it, as on native */}
       <div style={{ display: 'flow-root' }}>{children}</div>
     </section>
+  )
+}
+
+/** App.tsx's toast, as the app mounts it (fixed, above sheets). */
+function AppToast() {
+  const toast = useStore((s) => s.toast)
+  const toastAction = useStore((s) => s.toastAction)
+  return (
+    <div className={'toast' + (toast ? ' show' : '') + (toastAction ? ' act' : '')} data-app-toast role="status" aria-live="polite">
+      <span>{toast}</span>
+      {toast && toastAction && <button onClick={() => { toastAction.run(); useStore.setState({ toast: null, toastAction: null }) }}>{toastAction.label}</button>}
+    </div>
   )
 }
 
@@ -264,7 +276,10 @@ export function Gallery() {
             <SettingRow icon="fork" color="var(--food)" label="Chicken and rice" value="300 g" />
             <SettingRow icon="pill" color="var(--mind-fill)" soft label="Vitamin D" value="1" />
           </div>
-          <div style={{ marginTop: 16 }}><button className="btn" onClick={() => setSheet(null)}>Save</button></div>
+          <div className="stack">
+            <button className="btn gray" onClick={() => useStore.getState().showToast('Entry deleted', { label: 'Undo', run: () => {} })}>Show a toast</button>
+            <button className="btn" onClick={() => setSheet(null)}>Save</button>
+          </div>
         </Sheet>
       )}
       {sheet === 'bare' && (
@@ -274,6 +289,7 @@ export function Gallery() {
           <div style={{ marginTop: 16 }}><button className="btn" onClick={() => setSheet(null)}>Done</button></div>
         </BareSheet>
       )}
+      <AppToast />
     </div>
   )
 }

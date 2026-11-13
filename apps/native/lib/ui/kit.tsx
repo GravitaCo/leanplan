@@ -5,12 +5,13 @@
  * smaller), and the pressed state is the web's `:active` one.
  */
 import { createContext, useContext, useEffect, Children, Fragment, isValidElement, type ReactNode } from 'react'
-import { Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import { create } from 'zustand'
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { Icon, type IconName } from './icons'
-import { tx, useTokens, type Tokens } from '../theme'
+import { BTN, tx, useTokens, type Tokens } from '../theme'
 
 /** Inside a sheet, lists, cards and the pill sit on --elev (`.sheet .list, .sheet .card…`). */
 export const InSheet = createContext(false)
@@ -68,7 +69,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
-      <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600), { color: fg }, textStyle]}>{title}</Text>
+      <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
     </Pressable>
   )
 }
@@ -84,8 +85,8 @@ export function Chip({ title, sub, on, onPress }: { title: string; sub?: string;
   return (
     <Pressable accessibilityRole="button" accessibilityState={on === undefined ? undefined : { selected: on }} onPress={onPress} hitSlop={slop(0, 32)}
       style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 400, 1.2), { color: fg }]}>{title}</Text>
-      {sub != null && <Text style={[tx(12, 400, 1.2), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
+      <Text style={[tx(15, 400, 1.2, BTN), { color: fg }]}>{title}</Text>
+      {sub != null && <Text style={[tx(12, 400, 1.2, BTN), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
     </Pressable>
   )
 }
@@ -100,7 +101,7 @@ export function LinkBtn({ title, onPress, style, muted }: { title: string; onPre
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 500), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
+      <Text style={[tx(15, 500, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
 }
@@ -150,12 +151,14 @@ export function Banner({ icon, iconColor, title, body, onPress, onDismiss, child
   icon: IconName; iconColor: string; title: string; body?: ReactNode; onPress?: () => void; onDismiss?: () => void; children?: ReactNode
 }) {
   const t = useTokens()
+  // a tappable banner is a <button> on the web, whose text the browser doesn't track
+  const track = onPress ? BTN : undefined
   const inner = (
     <>
       <Icon name={icon} color={iconColor} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[tx(15, 700, 1.35), { color: t.label }]}>{title}</Text>
-        {body != null && <Text style={[tx(15, 400, 1.35), { color: t.label2 }]}>{body}</Text>}
+        <Text style={[tx(15, 700, 1.35, track), { color: t.label }]}>{title}</Text>
+        {body != null && <Text style={[tx(15, 400, 1.35, track), { color: t.label2 }]}>{body}</Text>}
         {children}
       </View>
       {onDismiss && (
@@ -169,7 +172,7 @@ export function Banner({ icon, iconColor, title, body, onPress, onDismiss, child
   const s: ViewStyle = { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }
   return onPress
     ? <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s, pressed && { opacity: 0.7 }]}>{inner}</Pressable>
-    : <View accessibilityRole="summary" style={s}>{inner}</View>
+    : <View style={s}>{inner}</View>
 }
 
 /** The toast's look (`.toast.show`, or `.toast.act` with an action such as Undo). */
@@ -179,7 +182,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
       <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
       <Pressable accessibilityRole="button" onPress={action.run} hitSlop={slop(0, 26)}>
-        <Text style={[tx(16, 600), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
+        <Text style={[tx(16, 600, 20, BTN), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
     </View>
   )
@@ -191,18 +194,29 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
 }
 
 /**
+ * How many sheets are open. The toast sits above sheets, as on the web (`.toast` z-index 70 over
+ * `.sheet-root` 60); a sheet is a Modal, which covers everything under it, so while one is open the
+ * topmost sheet draws the toast inside its own Modal and the shell's host stands down.
+ */
+export const useOpenSheets = create<{ n: number }>(() => ({ n: 0 }))
+
+/**
  * The app's one toast (App.tsx's `.toast`), from the store's `toast` and `toastAction`: 72 pt above
  * the bottom safe area, fading and rising 10 pt over 0.25 s (no movement with Reduce Motion on).
- * Announced politely to VoiceOver, as the web's role=status.
+ * Announced politely, as the web's role=status (VoiceOver through announceForAccessibility; TalkBack
+ * through the live region). The shell mounts it once; `depth` is for sheets (see useOpenSheets).
  */
-export function ToastHost() {
+export function ToastHost({ depth = 0 }: { depth?: number } = {}) {
   const insets = useSafeAreaInsets()
+  const top = useOpenSheets((s) => s.n) === depth
   const toast = useStore((s) => s.toast)
   const action = useStore((s) => s.toastAction)
   const reduce = useReducedMotion()
   const shown = useSharedValue(0)
   useEffect(() => { shown.value = withTiming(toast ? 1 : 0, { duration: 250 }) }, [toast]) // eslint-disable-line react-hooks/exhaustive-deps
   const style = useAnimatedStyle(() => ({ opacity: shown.value, transform: [{ translateY: reduce ? 0 : (1 - shown.value) * 10 }] }))
+  useEffect(() => { if (top && toast && Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(toast) }, [toast, top])
+  if (!top) return null
   return (
     <Animated.View pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
       style={[{ position: 'absolute', left: 0, right: 0, bottom: 72 + insets.bottom, alignItems: 'center' }, style]}>

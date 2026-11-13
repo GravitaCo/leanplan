@@ -14,7 +14,7 @@ import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastView } from './ui/kit'
+import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastHost, ToastView } from './ui/kit'
 import { BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
@@ -35,7 +35,8 @@ function Sec({ id, title, children, pad = true }: { id: string; title: string; c
   )
 }
 
-export function Gallery({ top }: { top?: number } = {}) {
+/** `standalone`: opened as its own route (/gallery), outside the tab shell and its toast host. */
+export function Gallery({ top, standalone = false }: { top?: number; standalone?: boolean } = {}) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
   const data = useStore((s) => s.data)
@@ -56,6 +57,7 @@ export function Gallery({ top }: { top?: number } = {}) {
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
+    <>
     <ScrollView testID="gallery" style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingTop: top ?? insets.top, paddingBottom: insets.bottom + 24 }}>
       <Sec id="header" title="PageHeader · DayNav · ConnectionPill · ProfileButton">
         <PageHeader eyebrow={<DayNav />} title="Summary" top={18} />
@@ -247,7 +249,10 @@ export function Gallery({ top }: { top?: number } = {}) {
             <SettingRow icon="fork" color={t.food} label="Chicken and rice" value="300 g" />
             <SettingRow icon="pill" color={t.mindFill} soft label="Vitamin D" value="1" />
           </List>
-          <View style={{ marginTop: 16 }}><Btn title="Save" onPress={() => setSheet(null)} /></View>
+          <View style={{ marginTop: 16, gap: 8 }}>
+            <Btn kind="gray" title="Show a toast" onPress={() => useStore.getState().showToast('Entry deleted', { label: 'Undo', run: () => {} })} />
+            <Btn title="Save" onPress={() => setSheet(null)} />
+          </View>
         </Sheet>
       )}
       {sheet === 'bare' && (
@@ -258,5 +263,7 @@ export function Gallery({ top }: { top?: number } = {}) {
         </BareSheet>
       )}
     </ScrollView>
+    {standalone && <ToastHost />}
+    </>
   )
 }

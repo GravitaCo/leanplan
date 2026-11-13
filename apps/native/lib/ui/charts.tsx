@@ -9,7 +9,7 @@ import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from 'react-nat
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, Easing } from 'react-native-reanimated'
 import type { DayStat } from '@/core/domain/insights'
 import { DOW } from '@/core/domain/date'
-import { num, tx, useTokens, GEIST } from '../theme'
+import { BODY_TRACK, num, tx, useTokens, GEIST } from '../theme'
 import { InPCard } from './kit'
 
 /** Concentric rings, outermost first. Progress caps at a full ring: never an "over" state. */
@@ -148,7 +148,7 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
               ) : !x.future ? (
                 <Rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill={t.fill3} />
               ) : null}
-              <SvgText x={cx} y={H - 4} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(600)}>{DOW[i]}</SvgText>
+              <SvgText x={cx} y={H - 4} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(600)} letterSpacing={BODY_TRACK}>{DOW[i]}</SvgText>
             </G>
           )
         })}

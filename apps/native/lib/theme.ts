@@ -24,10 +24,15 @@ export const font = (w: keyof typeof GEIST = 400): TextStyle => ({ fontFamily: G
 export const num: TextStyle = { fontVariant: ['tabular-nums'], letterSpacing: 0 }
 
 /**
- * Text as the web sets it: `body` is 17/1.3 with -0.01em tracking, inherited by everything that
- * doesn't set its own (`.num` and `.eyebrow` set 0). `lh` is a line height in pt or, under 4, a
- * multiple of the size, as in CSS.
+ * Text as the web sets it. `lh` is a line height in pt or, under 4, a multiple of the size, as in CSS.
+ * Tracking: `body`'s -0.01em resolves once, at 17 px, so everything that inherits it is tracked a
+ * fixed -0.17 pt whatever its size (the default here). Text inside a web `<button>` is reset to 0
+ * by the browser: pass `BTN`. A class that sets its own em value (`.ltitle` -0.025em) passes it.
  */
-export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, track: number = -0.01): TextStyle {
-  return { fontFamily: GEIST[w], fontSize: size, lineHeight: lh < 4 ? Math.round(size * lh * 10) / 10 : lh, letterSpacing: track * size }
+export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, track?: number): TextStyle {
+  return { fontFamily: GEIST[w], fontSize: size, lineHeight: lh < 4 ? Math.round(size * lh * 10) / 10 : lh, letterSpacing: track === undefined ? BODY_TRACK : track * size }
 }
+/** body's -0.01em at 17 px, inherited as a length */
+export const BODY_TRACK = -0.17
+/** the tracking of text inside a web `<button>` (the browser's own button style resets it) */
+export const BTN = 0

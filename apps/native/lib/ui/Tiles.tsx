@@ -9,7 +9,7 @@
 import { useState, type ReactNode } from 'react'
 import { Pressable, Text, View, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from './icons'
-import { tx, useTokens } from '../theme'
+import { BTN, tx, useTokens } from '../theme'
 
 export interface TileOpt<T extends string> { k: T; t: string; s?: string; icon?: IconName }
 
@@ -33,8 +33,8 @@ function TileBody({ o, on, icon }: { o: TileOpt<string>; on: boolean; icon?: boo
         </View>
       )}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[tx(icon && o.icon ? 18 : 17, 600), { color: fg }]}>{o.t}</Text>
-        {o.s && <Text style={[tx(14, 400, 1.35), { color: on ? fg : t.label2, opacity: on ? 0.75 : 1, marginTop: 2 }]}>{o.s}</Text>}
+        <Text style={[tx(icon && o.icon ? 18 : 17, 600, 1.3, -0.01), { color: fg }]}>{o.t}</Text>
+        {o.s && <Text style={[tx(14, 400, 1.35, BTN), { color: on ? fg : t.label2, opacity: on ? 0.75 : 1, marginTop: 2 }]}>{o.s}</Text>}
       </View>
     </>
   )
@@ -55,7 +55,7 @@ export function ChoiceTiles<T extends string>({ label, opts, value, onPick, thre
         if (three) return (
           <Pressable key={o.k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onPick(o.k)}
             style={{ flex: 1, minHeight: 56, padding: 6, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
-            <Text style={[tx(16, 600, 1.2), { color: on ? t.btnInk : t.label, textAlign: 'center' }]}>{o.t}</Text>
+            <Text style={[tx(16, 600, 1.2, -0.01), { color: on ? t.btnInk : t.label, textAlign: 'center' }]}>{o.t}</Text>
           </Pressable>
         )
         return (
@@ -82,7 +82,7 @@ export function CheckTiles<T extends string>({ label, opts, value, onToggle, gri
   const [w, setW] = useState(0)
   const col = w ? (w - 10) / 2 : '48%'
   return (
-    <View accessibilityLabel={label} onLayout={(e) => setW(e.nativeEvent.layout.width)} style={grid ? { flexDirection: 'row', flexWrap: 'wrap', gap: 10 } : { gap: 10 }}>
+    <View role="group" accessibilityLabel={label} onLayout={(e) => setW(e.nativeEvent.layout.width)} style={grid ? { flexDirection: 'row', flexWrap: 'wrap', gap: 10 } : { gap: 10 }}>
       {opts.map((o) => {
         const on = value.includes(o.k)
         const fg = on ? t.btnInk : t.label
@@ -93,8 +93,8 @@ export function CheckTiles<T extends string>({ label, opts, value, onToggle, gri
               : { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 20, backgroundColor: on ? t.btn : t.card }}>
             {grid ? (
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[tx(tall ? 17 : 16, 600, 1.25), { color: fg, paddingRight: 28 }]}>{o.t}</Text>
-                {o.s && <Text style={[tx(14, 400, 1.35), { color: on ? fg : t.label2, opacity: on ? 0.75 : 1, marginTop: 2 }]}>{o.s}</Text>}
+                <Text style={[tx(tall ? 17 : 16, 600, 1.25, -0.01), { color: fg, paddingRight: 28 }]}>{o.t}</Text>
+                {o.s && <Text style={[tx(14, 400, 1.35, BTN), { color: on ? fg : t.label2, opacity: on ? 0.75 : 1, marginTop: 2 }]}>{o.s}</Text>}
               </View>
             ) : <TileBody o={o} on={on} />}
             <Badge on={on} ring grid={grid} />

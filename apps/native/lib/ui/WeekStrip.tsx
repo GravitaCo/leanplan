@@ -10,7 +10,7 @@ import { plannedKeys } from '@/core/domain/plans'
 import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 import { TALI_SHORT } from '@/core/data/taliWorkouts'
 import { Rings } from './charts'
-import { font, num, tx, useTokens } from '../theme'
+import { BTN, font, num, tx, useTokens } from '../theme'
 
 /** Monday to Sunday: each day a mini energy ring and its planned session. */
 export function WeekStrip() {
@@ -89,7 +89,7 @@ export function MoveStrip() {
         return (
           <Pressable key={d} onPress={() => setDate(d)} accessibilityRole="button" accessibilityLabel={`${f.dow} ${f.full}${moved ? ', moved' : ''}`} accessibilityState={{ selected: sel }}
             style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: 4 }}>
-            <Text style={[tx(12, isToday ? 600 : 500), { color: isToday ? t.tint : t.label2 }]}>{DOW[i]}</Text>
+            <Text style={[tx(12, isToday ? 600 : 500, 1.3, BTN), { color: isToday ? t.tint : t.label2 }]}>{DOW[i]}</Text>
             <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: sel ? t.btn : 'transparent' }}>
               <Text style={[tx(16, sel ? 500 : 400), num, { color: sel ? t.btnInk : t.label2 }]}>{parseYmd(d).getDate()}</Text>
             </View>

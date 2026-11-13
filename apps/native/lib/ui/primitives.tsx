@@ -8,7 +8,7 @@
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
 import { useContext, useEffect, useState, type ReactNode } from 'react'
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
@@ -17,8 +17,8 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
-import { InIconList, InSheet, initials, slop, useSurface } from './kit'
-import { num, tx, useTokens, type Tokens } from '../theme'
+import { InIconList, InSheet, ToastHost, initials, slop, useOpenSheets, useSurface } from './kit'
+import { BTN, num, tx, useTokens, type Tokens } from '../theme'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
 export type Category = 'energy' | 'activity' | 'body' | 'mind'
@@ -56,6 +56,8 @@ export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: 
 export function ConnectionLineView({ state }: { state: ConnectionState }) {
   const t = useTokens()
   const l = connectionLine(state)
+  // role=status on the web: VoiceOver hears it when it appears or changes (TalkBack: the live region)
+  useEffect(() => { if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(`${l.head} ${l.body}`) }, [l.head, l.body])
   return (
     <Text accessibilityLiveRegion="polite" style={[tx(13, 400, 1.4), { color: t.label2, paddingTop: 8, paddingHorizontal: 4 }]}>
       <Text style={[tx(13, 600, 1.4), { color: t.label }]}>{l.head}</Text> {l.body}
@@ -79,7 +81,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
     <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-        {ini ? <Text style={[tx(16, 600), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
+        {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
       </View>
     </Pressable>
   )
@@ -148,7 +150,7 @@ export function BackButton({ onPress, label = 'Back' }: { onPress: () => void; l
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
       <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
-      <Text style={[tx(17), { color: t.tint }]}>{label}</Text>
+      <Text style={[tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -158,8 +160,9 @@ export function NavBtn({ title, onPress, bold, disabled }: { title: string; onPr
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }} hitSlop={slop(0, 30)}
-      style={({ pressed }) => ({ paddingVertical: 4, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
-      <Text style={[tx(17, bold ? 600 : 400), { color: t.tint }]}>{title}</Text>
+      style={({ pressed }) => ({ paddingVertical: 4, opacity: pressed ? 0.7 : 1 })}>
+      {/* .navbtn:disabled is --label3 at full strength */}
+      <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: disabled ? t.label3 : t.tint }]}>{title}</Text>
     </Pressable>
   )
 }
@@ -177,7 +180,7 @@ export function Seg<T extends string>({ options, value, onChange, label }: { opt
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(v)} hitSlop={{ top: 6, bottom: 6 }}
             style={{ flex: 1, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
-            <Text numberOfLines={1} style={[tx(13, 600), { color: t.label }]}>{l}</Text>
+            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
           </Pressable>
         )
       })}
@@ -222,15 +225,17 @@ const LI: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 12, min
  * A row's label and value. In a `.list.icons` the label keeps its width (at most 72%) and a value
  * takes the rest, 15 pt, right-aligned and truncating; with no value the label fills the row.
  */
-function LabelValue({ label, sub, value }: { label: string; sub?: ReactNode; value?: ReactNode }) {
+function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode; value?: ReactNode; btn: boolean }) {
   const t = useTokens()
+  // a tappable row is a <button> on the web, whose text the browser doesn't track
+  const tr = btn ? BTN : undefined
   const icons = useContext(InIconList)
   const hasValue = value != null
   return (
     <>
       <View style={icons && hasValue ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={[tx(17), { color: t.label }]}>{label}</Text>
-        {sub != null && <Text numberOfLines={1} style={[tx(13), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
+        <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), { color: t.label }]}>{label}</Text>
+        {sub != null && <Text numberOfLines={1} style={[tx(13, 400, 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
       </View>
       {hasValue && (
         <Text numberOfLines={1} style={[tx(icons ? 15 : 17), num, { color: t.label2 }, icons && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>
@@ -247,7 +252,7 @@ export function SettingRow({ icon, color, soft, label, sub, value, onPress, righ
   const body = (
     <>
       <RowIcon icon={icon} color={color} soft={soft} />
-      <LabelValue label={label} sub={sub} value={value} />
+      <LabelValue label={label} sub={sub} value={value} btn={!!onPress} />
       {right ?? (onPress && <Chevron color={t.label3} />)}
     </>
   )
@@ -270,7 +275,7 @@ export function Disclosure({ icon, color, soft, label, value, open, onToggle, ch
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle}
         style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
         <RowIcon icon={icon} color={color} soft={soft} />
-        <LabelValue label={label} value={open ? undefined : value} />
+        <LabelValue label={label} value={open ? undefined : value} btn />
         <Animated.View style={turn}><Chevron color={t.label3} /></Animated.View>
       </Pressable>
       {open && <View style={{ paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>{children}</View>}
@@ -296,10 +301,16 @@ function useKeyboardUp() {
 }
 
 /** The frame both sheets share: backdrop, the sheet sliding up, the grabber, Escape/back to close. */
-function SheetFrame({ label, onClose, tall, animate = true, header, children }: {
-  label: string; onClose: () => void; tall?: boolean; animate?: boolean; header?: ReactNode; children: ReactNode
+function SheetFrame({ label, onClose, tall, animate = true, bare, header, children }: {
+  label: string; onClose: () => void; tall?: boolean; animate?: boolean; bare?: boolean; header?: ReactNode; children: ReactNode
 }) {
   const t = useTokens()
+  // this sheet's place in the stack, so the topmost one carries the toast
+  const [depth] = useState(() => useOpenSheets.getState().n + 1)
+  useEffect(() => {
+    useOpenSheets.setState((s) => ({ n: s.n + 1 }))
+    return () => useOpenSheets.setState((s) => ({ n: s.n - 1 }))
+  }, [])
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const reduce = useReducedMotion()
@@ -318,13 +329,14 @@ function SheetFrame({ label, onClose, tall, animate = true, header, children }: 
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
             <InSheet.Provider value>
-              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: 2, paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
             </InSheet.Provider>
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
+      <ToastHost depth={depth} />
     </Modal>
   )
 }
@@ -349,5 +361,5 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
 
 /** A bottom sheet without the navigation header, for sheets whose first line is their own large title. */
 export function BareSheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
-  return <SheetFrame label={label} onClose={onClose}>{children}</SheetFrame>
+  return <SheetFrame label={label} onClose={onClose} bare>{children}</SheetFrame>
 }

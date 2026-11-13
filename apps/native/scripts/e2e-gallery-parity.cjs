@@ -87,8 +87,17 @@ async function run() {
       for (const [x, tag] of [[w, 'web'], [n, 'native']]) {
         await x.page.getByText(btn, { exact: true }).click()
         await x.page.waitForTimeout(700)
+        // the app's toast sits above an open sheet (and its Undo stays tappable)
+        if (close) { await x.page.getByText('Show a toast', { exact: true }).click(); await x.page.waitForTimeout(400) }
         await x.page.screenshot({ path: path.join(dir, `${scheme}-${tag}.png`) })
-        if (close) await x.page.getByText(close, { exact: true }).last().click()
+        if (close) {
+          const count = () => x.page.getByText('Entry deleted', { exact: true }).count()
+          const before = await count()
+          await x.page.getByText('Undo', { exact: true }).last().click()
+          await x.page.waitForTimeout(400)
+          check(`${scheme} ${tag}: the app's toast shows over a sheet and its Undo works`, before === 2 && (await count()) === 1, { before, after: await count() })
+          await x.page.getByText(close, { exact: true }).last().click()
+        }
         else await x.page.mouse.click(195, 60)
         await x.page.waitForTimeout(300)
       }
