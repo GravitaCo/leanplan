@@ -141,6 +141,25 @@ async function run() {
       }
       check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
     }
+    // a sheet drawn over a full-screen view (the guided player): overlay mode on native, the same look
+    if (!ONLY || ONLY.includes('sheets')) {
+      const dir = path.join(OUT, 'oversheet')
+      fs.mkdirSync(dir, { recursive: true })
+      for (const [x, tag] of [[w, 'web'], [n, 'native']]) {
+        await x.page.getByText('Open a full-screen view', { exact: true }).click()
+        await x.page.waitForTimeout(500)
+        await x.page.getByText('Open a sheet over it', { exact: true }).click()
+        await x.page.waitForTimeout(700)
+        await x.page.screenshot({ path: path.join(dir, `${scheme}-${tag}.png`) })
+        check(`${scheme} ${tag}: a sheet opens over the full-screen view`, await x.page.getByText('Adjust', { exact: true }).last().isVisible())
+        await x.page.getByText('Done', { exact: true }).last().click()
+        await x.page.waitForTimeout(300)
+        check(`${scheme} ${tag}: closing it leaves the full-screen view open`, await x.page.getByText('Full-screen view', { exact: true }).last().isVisible())
+        await x.page.getByText('Close the view', { exact: true }).last().click()
+        await x.page.waitForTimeout(400)
+      }
+      await sideBySide(browser, path.join(dir, `${scheme}-web.png`), path.join(dir, `${scheme}-native.png`), path.join(dir, `${scheme}-side.png`), `oversheet · ${scheme}`)
+    }
     // after a toast with an action times out, no Undo is left behind (only the static demo's remains)
     if (!ONLY || ONLY.includes('sheets')) {
       const undo = {}

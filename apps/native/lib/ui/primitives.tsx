@@ -8,7 +8,7 @@
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
 import { useContext, useEffect, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
@@ -404,8 +404,8 @@ function useKeyboardUp() {
 }
 
 /** The frame both sheets share: backdrop, the sheet sliding up, the grabber, Escape/back to close. */
-function SheetFrame({ label, onClose, tall, animate = true, bare, header, children }: {
-  label: string; onClose: () => void; tall?: boolean; animate?: boolean; bare?: boolean; header?: ReactNode; children: ReactNode
+function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, header, children }: {
+  label: string; onClose: () => void; tall?: boolean; animate?: boolean; bare?: boolean; overlay?: boolean; header?: ReactNode; children: ReactNode
 }) {
   const t = useTokens()
   // this sheet's place in the stack, so the topmost one carries the toast
@@ -416,8 +416,14 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, header, childr
   const kb = useKeyboardUp()
   const max = height - insets.top - 12
   const anim = animate && !reduce
-  return (
-    <Modal transparent visible animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
+  // overlay: Android's back closes it, as the Modal's onRequestClose does for a modal sheet
+  useEffect(() => {
+    if (!overlay) return
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { onClose(); return true })
+    return () => sub.remove()
+  }, [overlay, onClose])
+  const body = (
+    <>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <Animated.View entering={anim ? FADE_IN : undefined} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
           <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
@@ -436,16 +442,23 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, header, childr
         </View>
       </KeyboardAvoidingView>
       <ToastHost sheet={sheetId} />
-    </Modal>
+    </>
   )
+  // the web's .sheet-root is a fixed layer over the page (z-index 60): an overlay sheet is that layer
+  // drawn inside whatever full-screen view holds it (the guided player's own Modal), not a new modal
+  return overlay
+    ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, elevation: 60 }}>{body}</View>
+    : <Modal transparent visible animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>{body}</Modal>
 }
 
 /**
  * A bottom sheet with a navigation header (left action · title · right action). `left` defaults to
  * Cancel; pass null for nothing. `animate={false}` when swapping views inside an open sheet.
+ * `overlay`: draw the sheet over the current full-screen view instead of opening a new modal (for a
+ * sheet over the guided player, itself a Modal); render it as that view's last child. It looks the same.
  */
-export function Sheet({ title, onClose, left, right, tall, animate = true, children }: {
-  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean; animate?: boolean; children: ReactNode
+export function Sheet({ title, onClose, left, right, tall, animate = true, overlay, children }: {
+  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean; animate?: boolean; overlay?: boolean; children: ReactNode
 }) {
   const t = useTokens()
   const header = (
@@ -455,10 +468,10 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, child
       <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
     </View>
   )
-  return <SheetFrame label={title} onClose={onClose} tall={tall} animate={animate} header={header}>{children}</SheetFrame>
+  return <SheetFrame label={title} onClose={onClose} tall={tall} animate={animate} overlay={overlay} header={header}>{children}</SheetFrame>
 }
 
 /** A bottom sheet without the navigation header, for sheets whose first line is their own large title. */
-export function BareSheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
-  return <SheetFrame label={label} onClose={onClose} bare>{children}</SheetFrame>
+export function BareSheet({ label, onClose, overlay, children }: { label: string; onClose: () => void; overlay?: boolean; children: ReactNode }) {
+  return <SheetFrame label={label} onClose={onClose} bare overlay={overlay}>{children}</SheetFrame>
 }

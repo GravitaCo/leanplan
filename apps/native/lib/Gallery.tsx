@@ -7,7 +7,7 @@
  * For Benn, Sara and the team only (opened from the Spike sheet); never part of the app.
  */
 import { useState, type ReactNode } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Modal, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { connectionLabel } from '@/core/domain/connection'
@@ -56,6 +56,9 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
+  // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
+  const [player, setPlayer] = useState(false)
+  const [overSheet, setOverSheet] = useState(false)
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -330,6 +333,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <View style={{ gap: 8 }}>
           <Btn kind="gray" title="Open a sheet" onPress={() => setSheet('sheet')} />
           <Btn kind="gray" title="Open a bare sheet" onPress={() => setSheet('bare')} />
+          <Btn kind="gray" title="Open a full-screen view" onPress={() => setPlayer(true)} />
         </View>
       </Sec>
 
@@ -354,6 +358,18 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </BareSheet>
       )}
     </ScrollView>
+    <Modal visible={player} animationType="none" onRequestClose={() => setPlayer(false)}>
+      <View style={{ flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 80, gap: 12 }}>
+        <Text style={[tx(22, 600), { color: '#fff' }]}>Full-screen view</Text>
+        <Btn title="Open a sheet over it" kind="gray" onPress={() => setOverSheet(true)} />
+        <Btn title="Close the view" kind="gray" onPress={() => setPlayer(false)} />
+        {overSheet && (
+          <Sheet overlay title="Adjust" onClose={() => setOverSheet(false)} right={<NavBtn title="Done" bold onPress={() => setOverSheet(false)} />}>
+            <List><SettingRow icon="dumbbell" color={t.moveFill} soft label="Weight" value="20 kg" /></List>
+          </Sheet>
+        )}
+      </View>
+    </Modal>
     {standalone && <ToastHost />}
     </>
   )

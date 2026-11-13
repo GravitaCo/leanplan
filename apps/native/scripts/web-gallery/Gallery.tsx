@@ -68,6 +68,8 @@ export function Gallery() {
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
+  const [player, setPlayer] = useState(false)
+  const [overSheet, setOverSheet] = useState(false)
   const flip = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x])
 
   return (
@@ -358,6 +360,7 @@ export function Gallery() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button className="btn gray" onClick={() => setSheet('sheet')}>Open a sheet</button>
           <button className="btn gray" onClick={() => setSheet('bare')}>Open a bare sheet</button>
+          <button className="btn gray" onClick={() => setPlayer(true)}>Open a full-screen view</button>
         </div>
       </Sec>
 
@@ -380,6 +383,18 @@ export function Gallery() {
           <p style={{ margin: '8px 0 0', fontSize: 17, lineHeight: 1.45, color: 'var(--label2)' }}>A word or two is plenty.</p>
           <div style={{ marginTop: 16 }}><button className="btn" onClick={() => setSheet(null)}>Done</button></div>
         </BareSheet>
+      )}
+      {player && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#000', padding: '80px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>Full-screen view</div>
+          <button className="btn gray" onClick={() => setOverSheet(true)}>Open a sheet over it</button>
+          <button className="btn gray" onClick={() => setPlayer(false)}>Close the view</button>
+          {overSheet && (
+            <Sheet title="Adjust" onClose={() => setOverSheet(false)} right={<button className="navbtn b" onClick={() => setOverSheet(false)}>Done</button>}>
+              <div className="list icons"><SettingRow icon="dumbbell" color="var(--move-fill)" soft label="Weight" value="20 kg" /></div>
+            </Sheet>
+          )}
+        </div>
       )}
       <AppToast />
     </div>
