@@ -59,6 +59,35 @@ function infoPlist(version, build) {
 `
 }
 
+/** The extension's privacy manifest: it reads and writes user defaults in the app group only
+ *  (Apple's reason 1C8F.1), tracks nothing and collects nothing. */
+function privacyManifest() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key>
+  <false/>
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>1C8F.1</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>
+`
+}
+
 function entitlements(group) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -91,6 +120,7 @@ const withExtensionFiles = (config) =>
     fs.copyFileSync(SOURCE, path.join(dir, 'NotificationService.swift'))
     fs.writeFileSync(path.join(dir, 'Info.plist'), infoPlist(c.version ?? '1.0.0', c.ios?.buildNumber ?? '1'))
     fs.writeFileSync(path.join(dir, `${NAME}.entitlements`), entitlements(groupOf(c.ios.bundleIdentifier)))
+    fs.writeFileSync(path.join(dir, 'PrivacyInfo.xcprivacy'), privacyManifest())
     return c
   }])
 
@@ -100,16 +130,17 @@ function addExtensionTarget(proj, { bundleId, version, buildNumber, teamId }) {
   if (proj.pbxTargetByName(NAME) || proj.pbxTargetByName(quote(NAME))) return false
   const target = proj.addTarget(NAME, 'app_extension', NAME, extIdOf(bundleId))
 
-  // only the source goes in the group: Info.plist and the entitlements are build settings, not
-  // resources (in a Resources phase Xcode would copy them into the bundle)
-  const group = proj.addPbxGroup(['NotificationService.swift'], NAME, NAME)
+  // the source and the privacy manifest go in the group; Info.plist and the entitlements are build
+  // settings, not resources (in a Resources phase Xcode would copy them into the bundle)
+  const group = proj.addPbxGroup(['NotificationService.swift', 'PrivacyInfo.xcprivacy'], NAME, NAME)
   const groups = proj.hash.project.objects.PBXGroup
   // the project's main group (no name, no path); skip the `_comment` entries the parser keeps beside each object
   const main = Object.keys(groups).find((k) => !k.endsWith('_comment') && typeof groups[k] === 'object' && groups[k].name === undefined && groups[k].path === undefined)
   if (main) proj.addToPbxGroup(group.uuid, main)
 
   proj.addBuildPhase(['NotificationService.swift'], 'PBXSourcesBuildPhase', 'Sources', target.uuid)
-  proj.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', target.uuid)
+  // the privacy manifest ships inside the extension's bundle, as Apple requires per executable
+  proj.addBuildPhase(['PrivacyInfo.xcprivacy'], 'PBXResourcesBuildPhase', 'Resources', target.uuid)
   proj.addBuildPhase([], 'PBXFrameworksBuildPhase', 'Frameworks', target.uuid)
   // the app builds the extension first (addTarget embeds it, but adds no dependency)
   // (the xcode library adds nothing when the project has no dependency sections yet, as a fresh
@@ -179,4 +210,4 @@ module.exports = function withNotifyExtension(config) {
 }
 module.exports.NAME = NAME
 // for scripts/test-extension.mjs
-module.exports._test = { addExtensionTarget, infoPlist, entitlements, withEasDeclaration, groupOf, extIdOf }
+module.exports._test = { addExtensionTarget, infoPlist, entitlements, privacyManifest, withEasDeclaration, groupOf, extIdOf }
