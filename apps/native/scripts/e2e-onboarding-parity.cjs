@@ -575,6 +575,20 @@ const openRedoNative = async (page) => {
   await page.waitForFunction(() => !!globalThis.__tiloStore?.getState().signedIn, null, { timeout: 15000 })
   await page.evaluate(() => globalThis.__tiloStore.getState().openRedo(true))
 }
+/**
+ * Whether a tile is chosen: aria-checked where the app sets it; N1's tiles on a web render don't
+ * (react-native-web drops accessibilityState; TODO(N1-followup)), so there the ink fill of a chosen tile.
+ */
+const isOn = (loc) => loc.evaluate((el) => {
+  const a = el.getAttribute('aria-checked'); if (a != null) return a === 'true'
+  // light mode's --btn (#1D1D1F); the routes that need this run in light mode
+  return getComputedStyle(el).backgroundColor === 'rgb(29, 29, 31)'
+})
+const chosenTile = async (page) => {
+  const all = page.locator('[role=radiogroup] [role=radio]')
+  for (let i = 0; i < await all.count(); i++) if (await isOn(all.nth(i))) return all.nth(i)
+  return null
+}
 const toSummary = async (page) => {
   for (let i = 0; i < 40; i++) {
     if (await page.getByRole('heading', { name: /^(Your first week|A simple first week)$/ }).count()) return
@@ -584,8 +598,8 @@ const toSummary = async (page) => {
       if (await b.count() && await b.isVisible() && await b.isEnabled()) { await b.click(); pressed = true; break }
     }
     if (!pressed) {
-      const on = page.locator('[role=radiogroup] [aria-checked=true]').first()
-      if (await on.count()) { await on.click(); await page.waitForTimeout(450) }
+      const on = await chosenTile(page)
+      if (on) { await on.click(); await page.waitForTimeout(450) }
       else if (await btn(page, 'Skip').count()) await btn(page, 'Skip').click()
     }
     await page.waitForTimeout(150)
@@ -613,7 +627,7 @@ for (const [label, rowName, offer, st] of [
     await h1(page, 'A few health questions'); await rec('61-redo-ready'); await btn(page, 'Continue').click()
     if (rowName === 'Redo setup') {
       await h1(page, 'What would make this worth it for you?')
-      o.extra.why = await page.getByRole('checkbox', { name: 'More energy', exact: true }).getAttribute('aria-checked')
+      o.extra.why = String(await isOn(page.getByRole('checkbox', { name: 'More energy', exact: true })))
       await btn(page, 'Continue').click()
       await h1(page, 'What’s your main goal?'); await tap(page, 'Build muscle')
     }
