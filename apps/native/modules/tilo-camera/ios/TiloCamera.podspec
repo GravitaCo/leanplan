@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'AVFoundation', 'Vision', 'CoreImage', 'ImageIO'
+  s.frameworks = 'AVFoundation', 'Vision', 'ImageIO', 'PhotosUI', 'UniformTypeIdentifiers'
 
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

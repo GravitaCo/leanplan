@@ -1,8 +1,9 @@
 # tilo-camera
 
 Tilo's camera for the scan screens (N6), on Apple's own frameworks: AVFoundation for the preview,
-live barcodes, frames and photos; Vision for barcodes in a still photo. No third-party camera
-library (Benn, 13 Nov 2026). iOS only in this pass.
+live barcodes, frames and photos; Vision for barcodes in a still photo; PhotosUI for choosing a
+photo; ImageIO for resizing and re-encoding. No outside library (Benn's dependency policy,
+docs/plans/native-dependencies.md). iOS only in this pass.
 
 ## What it offers (index.ts)
 
@@ -14,7 +15,9 @@ library (Benn, 13 Nov 2026). iOS only in this pass.
 | `onReady`, `onMountError('denied' or 'none')` | session started; permission refused or no rear camera |
 | `cameraPermission()`, `requestCameraPermission()` | AVCaptureDevice authorizationStatus / requestAccess |
 | `barcodesInImage(uri)` | VNDetectBarcodesRequest (the web's "Take a photo" row) |
-| `measureImage(uri, edge, clip)` | the same quality numbers for a photo file (the review row) |
+| `pickPhoto()` → `{ uri, width, height }` or null | PHPickerViewController (no library permission), the chosen file copied into Caches/TiloCamera |
+| `preparePhoto(uri, steps, maxBytes, qualityEdge, clip)` | ImageIO: upright, at most each step's long edge (never scaled up), JPEG at each step's quality until it fits, no metadata (no EXIF or GPS); plus the source's quality numbers; the source deleted if it's ours |
+| `deletePhoto(uri)`, `clearTemporaryPhotos()` | delete inside Caches/TiloCamera only (after a read, on close, at launch) |
 
 The quality numbers are computed the way `measureFrame` in `src/core/domain/labelQuality.ts`
 computes them (Laplacian variance, mean luminance, share of pixels at or above `clip`). The
@@ -37,6 +40,9 @@ the camera's own Y (Rec. 601, as the web's `toGray`).
   written on the main thread: plain Ints, a benign race; move them behind the queue if the
   sanitizer complains.
 - The reported photo width and height follow the EXIF orientation (portrait for 5 to 8).
+- `preparePhoto`'s ImageIO thumbnail at the full long edge keeps full detail, and a HEIC library
+  photo opens (CGImageSource reads HEIC).
+- `pickPhoto` presents from `currentViewController()` while a React Native modal sheet is up.
 - Continuous autofocus with the near range restriction reads both a barcode and small label print.
 - The camera stops when the view leaves the window or `active` goes false (the green dot goes out).
 
@@ -47,7 +53,7 @@ A Kotlin twin with the same names (module `TiloCamera`, view props and events): 
 barcode scanner (`com.google.mlkit:barcode-scanning`, formats EAN-13, EAN-8, UPC-A, UPC-E: map
 UPC-A to 'ean13' with a leading 0, or report it as 'upc_a', both handled in `mapping.ts`); an
 `ImageAnalysis` use case reading the Y plane for the quality numbers, throttled the same way;
-`ImageCapture` for photos into the cache dir; ML Kit on an `InputImage.fromFilePath` for
+`ImageCapture` for photos into the cache dir; the system Photo Picker (`ActivityResultContracts.PickVisualMedia`) for the library; `BitmapFactory` with `inSampleSize` plus `Bitmap.compress` for the resize and re-encode (no EXIF written); ML Kit on an `InputImage.fromFilePath` for
 `barcodesInImage`; `ContextCompat.checkSelfPermission` / an activity-result request for the
 permission and `<uses-permission android:name="android.permission.CAMERA" />`. CameraX and ML Kit
 are Google libraries, not part of the OS, so they need Benn's dependency policy first.

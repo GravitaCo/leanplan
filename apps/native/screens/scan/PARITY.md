@@ -29,7 +29,7 @@ and the read `src/data/labelRead.ts`, called by the web too);
 | The four retail formats only (EAN-13, EAN-8, UPC-A, UPC-E) | `NATIVE_FORMATS`; iOS's UPC-A-as-EAN-13 quirk mapped back (`webFormat`) | module (tested, every format and the 8-digit EAN-8/UPC-E overlap) |
 | Bad check digit: "That number doesn't look right…", keeps scanning | `message: 'bad-check'` | module (tested), screen |
 | Camera stops once a code is valid | `active: false`, reads ignored | module |
-| "Take a photo" row: decode a still photo; "Reading the photo…", "No barcode found in that photo…", "That photo couldn't be read…" | `scanPhoto`: a photo from the library, Vision's `barcodesInImage`, the web's `firstValid` (no second read for a still), the photo deleted at once | module (tested), device. The web's file input also offers taking a new photo; the native row picks from the library until the dependency policy settles the picker |
+| "Take a photo" row: decode a still photo; "Reading the photo…", "No barcode found in that photo…", "That photo couldn't be read…" | `scanPhoto`: Take Photo with the live camera or Photo Library (the system picker, as Safari's file input offers both), Vision's `barcodesInImage`, the web's `firstValid` (no second read for a still), the photo deleted at once | module (tested), device; the Take Photo / Photo Library choice is screen work |
 | Typed number: digits only, at most 14; Look up from 8 digits; Enter submits | `typedDigits`, `canSubmit`, `submitTyped` | module (tested), screen |
 | "Looking up <code>… If it's not found you can enter it from the label." | `busy` holds the code | module, screen |
 | Lookup order: device, then shared list (when on), then Open Food Facts | `resolveBarcode`, shared with the web | shared (tested) |
@@ -80,10 +80,10 @@ signature).
 | Guidance line; front step has its own line | | screen |
 | Live camera, 3:4 box, label frame; camera refused / none notes | `<TiloCameraView mode="label">`, `useLabelCamera` | screen, device |
 | Live quality line ("Checking the picture…", "A bit dark…", "Looks good."), checked every 350 ms; Capture off until it passes, with "Capture anyway" | the camera measures each frame (Swift, core's frame size and clip passed in); core's `qualityIssue` judges (`labelQualityLive.ts`); `ready` for Capture | module (tested: thresholds and order are core's), device |
-| Photo sent at a 1600 px long edge (front 1024), at most 1.5 MB, the web's three JPEG tries | `labelPhoto.ts` with expo-image-manipulator; sizes in `photoSize.ts` | module (sizes tested) |
+| Photo sent at a 1600 px long edge (front 1024), at most 1.5 MB, the web's three JPEG tries | rules in `photoSize.ts`; Tilo's camera applies them with ImageIO (`preparePhoto`: upright, never scaled up, each try until it fits) | module (rules tested), device |
 | "That photo couldn't be used. Try again." | `captureShot` throws | module, screen |
-| Choose a photo from the library; "That photo couldn't be opened. Try another." | `pickShot` (system picker, no permission) | module, screen |
-| Review: thumbnail, "May be hard to read: …" or "Ready to read", Retake; add or remove the front | `Shot.issue`: the same numbers measured on the photo file (`measureImage`) before it's re-encoded, judged by core | module, device, screen |
+| Choose a photo from the library; "That photo couldn't be opened. Try another." | `pickShot`: PHPickerViewController in Tilo's camera (no library permission, only the chosen photo) | module, device, screen |
+| Review: thumbnail, "May be hard to read: …" or "Ready to read", Retake; add or remove the front | `Shot.issue`: the same numbers measured on the photo file (`preparePhoto` measures the source before re-encoding), judged by core | module, device, screen |
 | "Read the label"; "Reading the label…" | `readPhotos` (shared) | shared (tested), screen |
 | No photo before the health answer, or with an under-18 age on screen | gates in `readPhotos` (shared) | shared (tested) |
 | The label-photo consent sent before the photo | `flushConsents` first | module (tested) |
@@ -91,8 +91,8 @@ signature).
 | Outcomes: good read → confirm; offline, unavailable (function missing), no session, consent refused, daily cap, unreadable, error → type it in with the web's note and its "then" | `readPhotos` + `failNotice`, shared with the web | shared (tested) |
 | After Open Food Facts: back to its figures, "check them against your pack" | `typedDraft` with `base` | module (tested) |
 | Share mode: the sp-8b line; a failed read goes back to the food, nothing shared | `share-failed` | module (tested), screen |
-| Photos never kept (the web redraws on a canvas and drops the file) | deleted from the app's private cache the moment the read has an answer (any answer: `readPhotos` calls `discard`), on Retake and Remove, and when the screen closes; a barcode photo as soon as it's decoded; the camera original, the library copy and every failed JPEG try are deleted as soon as the JPEG is made; `sweepPhotoCache()` at launch removes anything a crash left | module (tested: deleted after good, failed and gated reads); the launch call is the lead's |
-| No EXIF or location leaves the phone (the web's canvas strips it) | every photo is re-encoded by expo-image-manipulator, also when no resize is needed; `exif: false` on capture and pick | module |
+| Photos never kept (the web redraws on a canvas and drops the file) | deleted from the camera module's own temporary folder (Caches/TiloCamera, complete file protection; it deletes only there) the moment the read has an answer (any answer: `readPhotos` calls `discard`), on Retake and Remove, and when the screen closes; a barcode photo as soon as it's decoded; the camera original and the library copy as soon as the JPEG is made (failed tries never touch the disk); `sweepPhotoCache()` (the module's `clearTemporary`) at launch removes anything a crash left | module (tested: deleted after good, failed and gated reads); the launch call is the lead's |
+| No EXIF or location leaves the phone (the web's canvas strips it) | every photo is re-encoded by ImageIO with no metadata at all, also when no resize is needed | device |
 | The label camera's code can't load offline (web lazy-load fallback) | bundled in the app | n/a |
 
 ## Shared product list (web SharedProduct)

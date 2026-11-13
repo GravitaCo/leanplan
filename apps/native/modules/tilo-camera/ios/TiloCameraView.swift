@@ -224,10 +224,7 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
       result = .failure(error)
     } else if let data = photo.fileDataRepresentation() {
       do {
-        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("TiloCamera", isDirectory: true)
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let url = dir.appendingPathComponent(UUID().uuidString + ".jpg")
-        try data.write(to: url, options: [.atomic, .completeFileProtection])
+        let url = try TemporaryPhotos.write(data, ext: "jpg")
         // the stored JPEG is upright by its EXIF orientation; report the upright size
         let dims = photo.resolvedSettings.photoDimensions
         let portrait = (photo.metadata[kCGImagePropertyOrientation as String] as? UInt32).map { $0 >= 5 } ?? false

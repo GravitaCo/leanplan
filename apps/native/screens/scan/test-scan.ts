@@ -3,7 +3,7 @@
  * and no phone. Every network call is answered in memory; the real Supabase project and Open Food
  * Facts are never reached, and the model API is never called.
  *
- * - The platform scanner's reads (expo-camera's names, iOS's UPC-A quirk) give the same code as the
+ * - Tilo's camera's reads (its format names, the UPC-A-as-EAN-13 quirk) give the same code as the
  *   web decoder's reads of the same pack, and so the same lookups.
  * - The lookup chain (src/data/scanLookup.ts) in the web's order, with every outcome, and the requests it sends
  *   through the shared src/data functions (lookup-product body, Open Food Facts URL).
@@ -26,7 +26,7 @@ import { toFrameQuality, toHit, toPermission } from '../../modules/tilo-camera/s
 import { captureReady, CHECK_EVERY_MS, issueFromEvent, LABEL_CAMERA_PROPS } from './labelQualityLive'
 import { QUALITY_EDGE, QUALITY_LIMITS } from '@/core/domain/labelQuality'
 import { resolveBarcode, type LookupDeps, type ScanOutcome } from '@/data/scanLookup'
-import { b64Bytes, edgeOf, fitLongEdge, jpegSteps, MAX_BYTES } from './photoSize'
+import { edgeOf, jpegSteps, MAX_BYTES } from './photoSize'
 import { failNotice, readPhotos, typedDraft, type ReadDeps, type ReadInput } from '@/data/labelRead'
 
 let failed = 0
@@ -191,9 +191,6 @@ function sizes() {
   check('nutrition table sent at a 1600 px long edge, front at 1024 (web)', edgeOf('panel') === 1600 && edgeOf('front') === 1024)
   check('the web’s three JPEG tries', eq(jpegSteps(1600), [[1600, 0.85], [1600, 0.72], [1280, 0.72]]))
   check('1.5 MB cap (web MAX_BYTES)', MAX_BYTES === 1_500_000)
-  check('never scaled up', fitLongEdge(1200, 900, 1600) === null)
-  check('landscape scaled by width, portrait by height', eq(fitLongEdge(4032, 3024, 1600), { width: 1600 }) && eq(fitLongEdge(3024, 4032, 1600), { height: 1600 }))
-  check('base64 size counts bytes', b64Bytes('QUJD') === 3 && b64Bytes('QUI=') === 2 && b64Bytes('QQ==') === 1)
 }
 
 // the granola label of scripts/e2e-label-scan.cjs (GRANOLA, readOf)

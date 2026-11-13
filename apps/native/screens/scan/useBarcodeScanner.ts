@@ -16,7 +16,7 @@ import { confirmLiveRead, normalizeBarcode } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { resolveBarcode, type ScanOutcome } from '@/data/scanLookup'
-import { barcodesInImage, cameraPermission, requestCameraPermission, toHit, type NativeBarcode, type TiloCameraViewProps } from '../../modules/tilo-camera'
+import { barcodesInImage, cameraPermission, requestCameraPermission, toHit, type NativeBarcode, type TiloCameraViewProps, type TiloCameraViewRef } from '../../modules/tilo-camera'
 import { typedDigits } from './barcode'
 import { firstValid } from './firstValid'
 import { deleteFile, pickPhotoUri } from './labelPhoto'
@@ -39,8 +39,9 @@ export interface BarcodeScanner {
   /** Look up is enabled from 8 digits, as on web */
   canSubmit: boolean
   submitTyped: () => void
-  /** the Take a photo row */
-  scanPhoto: () => void
+  /** the Take a photo row. Safari's file input offers Take Photo or Photo Library: with the live
+   *  camera's ref it takes a photo with it, without one it opens the library */
+  scanPhoto: (camera?: TiloCameraViewRef | null) => void
   /** spread onto <TiloCameraView /> */
   cameraProps: Pick<TiloCameraViewProps, 'mode' | 'active' | 'onReady' | 'onMountError' | 'onBarcode'>
 }
@@ -98,13 +99,13 @@ export function useBarcodeScanner(onResult: (r: ScanOutcome) => void): BarcodeSc
     if (c.confirmed) handle(h.raw, h.format)
   }, [handle])
 
-  const scanPhoto = useCallback(() => {
+  const scanPhoto = useCallback((cam?: TiloCameraViewRef | null) => {
     if (readingPhoto || doneRef.current) return
     setMessage(null)
     void (async () => {
       let uri: string | null = null
       try {
-        uri = await pickPhotoUri()
+        uri = cam ? (await cam.takePhoto()).uri : await pickPhotoUri()
         if (!uri || !aliveRef.current) return
         setReadingPhoto(true)
         const hit = firstValid(await barcodesInImage(uri))

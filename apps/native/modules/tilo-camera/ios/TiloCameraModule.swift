@@ -6,8 +6,12 @@ import Vision
 
 /// Tilo's camera (N6 Scanning): AVFoundation and Vision only, no third-party camera library
 /// (Benn, 13 Nov 2026). The camera permission, barcodes from a still photo (the web's "Take a
-/// photo" row), the quality numbers of a still photo, and the preview view (TiloCameraView).
+/// photo" row), choosing a photo from the library, making a photo ready to send (resize,
+/// re-encode, quality numbers), its own temporary files, and the preview view (TiloCameraView).
 public class TiloCameraModule: Module {
+  /// the library picker while it's open (released when it finishes)
+  private var picker: PhotoPicker?
+
   public func definition() -> ModuleDefinition {
     Name("TiloCamera")
 
@@ -46,21 +50,45 @@ public class TiloCameraModule: Module {
       return out
     }
 
-    /// The quality numbers of a photo file (FrameQuality on a grey copy at most `edge` px long),
-    /// for the review row's "May be hard to read" after a capture or a pick. JS judges them.
-    AsyncFunction("measureImage") { (uri: String, edge: Int, clip: Int) throws -> [String: Any] in
-      let image = try TiloCameraModule.cgImage(uri)
-      let (w, h) = FrameQuality.scaledSize(image.cg.width, image.cg.height, edge: edge)
-      var gray = [UInt8](repeating: 0, count: w * h)
-      let drawn = gray.withUnsafeMutableBytes { buf -> Bool in
-        guard let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
-                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
-        ctx.interpolationQuality = .medium
-        ctx.draw(image.cg, in: CGRect(x: 0, y: 0, width: w, height: h))
-        return true
+    /// One photo from the library (the system picker), copied into the module's temporary folder:
+    /// { uri, width, height }, or null when the person cancels.
+    AsyncFunction("pickPhoto") { (promise: Promise) in
+      guard let vc = self.appContext?.utilities?.currentViewController() else {
+        promise.reject(Exception(name: "NoScreen", description: "Nothing to show the photo picker from")); return
       }
-      guard drawn else { throw Exception(name: "UnreadableImage", description: "The photo couldn't be read") }
-      return FrameQuality.measure(gray, w, h, clip: clip).dictionary
+      let picker = PhotoPicker()
+      self.picker = picker
+      picker.present(from: vc, promise: promise) { [weak self] in self?.picker = nil }
+    }.runOnQueue(.main)
+
+    /// A photo file made ready to send, as the web's toJpeg: upright, re-encoded with no metadata,
+    /// trying each [long edge, quality] in `steps` until it fits in `maxBytes` (the rules are JS's:
+    /// screens/scan/photoSize.ts). Also the quality numbers of the photo (FrameQuality on a grey copy
+    /// at `qualityEdge`, `clip` from core), judged in JS. The source file is deleted when it's one of
+    /// ours. Resolves { uri, base64, width, height, quality }; rejects "TooLarge" when nothing fits.
+    AsyncFunction("preparePhoto") { (uri: String, steps: [[Double]], maxBytes: Int, qualityEdge: Int, clip: Int) throws -> [String: Any] in
+      defer { TemporaryPhotos.delete(uri) }
+      guard let url = URL(string: uri), url.isFileURL, let src = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+        throw Exception(name: "UnreadableImage", description: "The photo couldn't be opened")
+      }
+      let quality = TiloCameraModule.measure(src, edge: qualityEdge, clip: clip)
+      guard let out = TemporaryPhotos.jpeg(src, steps: steps, maxBytes: maxBytes) else {
+        throw Exception(name: "TooLarge", description: "The photo couldn't be made small enough")
+      }
+      let file = try TemporaryPhotos.write(out.data, ext: "jpg")
+      var result: [String: Any] = ["uri": file.absoluteString, "base64": out.data.base64EncodedString(), "width": out.width, "height": out.height]
+      if let quality { result["quality"] = quality.dictionary }
+      return result
+    }
+
+    /// Deletes one of the module's temporary files (a retaken photo, a decoded barcode photo).
+    AsyncFunction("deleteFile") { (uri: String) in
+      TemporaryPhotos.delete(uri)
+    }
+
+    /// Deletes every temporary photo: after a read, when a scan screen closes, and at launch.
+    AsyncFunction("clearTemporary") {
+      TemporaryPhotos.clear()
     }
 
     View(TiloCameraView.self) {
@@ -78,6 +106,23 @@ public class TiloCameraModule: Module {
         view.takePhoto(promise)
       }
     }
+  }
+
+  /// FrameQuality of an image file on a grey copy at most `edge` px long (orientation doesn't
+  /// change these numbers), or nil when it can't be drawn.
+  private static func measure(_ src: CGImageSource, edge: Int, clip: Int) -> FrameQuality? {
+    let opts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: max(16, edge)]
+    guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+    let (w, h) = FrameQuality.scaledSize(cg.width, cg.height, edge: edge)
+    var gray = [UInt8](repeating: 0, count: w * h)
+    let drawn = gray.withUnsafeMutableBytes { buf -> Bool in
+      guard let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+      ctx.interpolationQuality = .medium
+      ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+      return true
+    }
+    return drawn ? FrameQuality.measure(gray, w, h, clip: clip) : nil
   }
 
   private static func status(_ s: AVAuthorizationStatus) -> String {
