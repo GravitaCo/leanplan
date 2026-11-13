@@ -21,7 +21,8 @@ function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void
   // `.li` with two `.s` lines (the care line is a second sub, one line, not lib/ui Row's wrapping sub2)
   const s = [tx(13, 400, 1.3, BTN), { color: t.label2, marginTop: 2 }]
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={x.n} onPress={onPick}
+    // no label: like the web button, it reads its text, care line included
+    <Pressable accessibilityRole="button" onPress={onPick}
       style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }, pressed && { backgroundColor: t.fill }]}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={[tx(17, 400, 1.3, BTN), { color: t.label }]}>{x.n}</Text>
