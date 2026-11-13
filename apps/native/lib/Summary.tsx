@@ -8,7 +8,6 @@
 import type { ReactNode } from 'react'
 import { Alert, ScrollView, Text, View } from 'react-native'
 import { openLab } from './labSheet'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectAskCtx, useStore } from '@/store/store'
 import { healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
@@ -26,7 +25,9 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import { pillarsOn } from '@/screens/today/summary'
 import { LIGHTER_CHOICES } from '@/screens/today/summaryCopy'
 import { FOOD9 } from '@/screens/onboarding/copyApp'
-import { Card, Btn, LinkBtn, PageHeader, Tile } from './ui/kit'
+import { Card, Btn, LinkBtn, Tile } from './ui/kit'
+import { PageHeader } from './ui/primitives'
+import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
 import { font, num, useTokens } from './theme'
@@ -44,7 +45,6 @@ function weekSpan(a: string, b: string): string {
 
 export function Summary() {
   const t = useTokens()
-  const insets = useSafeAreaInsets()
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
 
@@ -111,6 +111,8 @@ export function Summary() {
 
   const showWeight = !quiet && on.food
   const showMove = on.move
+  // .psq: the icon in --label (20 pt: the web's `svg.i` size wins over the 18 or 24 it asks for)
+  const moveIcon = <Icon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} color={t.label} />
   const pk = (color: string, label: string) => T([font(600), { fontSize: 13, color }], label)
   const sub = { fontSize: 13, color: t.label2 }
 
@@ -133,15 +135,15 @@ export function Summary() {
   )
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={openLab} />
+    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" onProfile={openLab} />
       <WeekStrip />
 
       <View style={{ gap: 14 }}>
         {/* ---------- Mind (the check-in row; the wellbeing Mind card is N4) ---------- */}
         {on.mind && (
           <Tile onPress={later('Check-in')} label="Mind" style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.mindFill }} />
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.mindFill, alignItems: 'center', justifyContent: 'center' }}><Icon name="smile" color={t.label} /></View>
             <View style={{ flex: 1, minWidth: 0 }}>
               {pk(t.mindInk, 'Mind')}
               {T([font(600), { fontSize: 17, color: t.label }], day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?')}
@@ -149,6 +151,7 @@ export function Summary() {
                 ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
                 : 'Mood, sleep, stress and energy · 20 seconds')}
             </View>
+            <Chevron color={t.label3} />
           </Tile>
         )}
 
@@ -194,7 +197,9 @@ export function Summary() {
                   : <MacroTrio p={tot.p} c={tot.c} f={tot.f} tp={tg.p} tc={tg.c} tf={tg.f} />}
               </>
             )}
-            <Btn kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={later('Add food')} icon={T([font(600), { fontSize: 20, color: t.label, marginTop: -2 }], '+')} />
+            {/* .pcard .btn.gray: 48 high, 16 pt */}
+            <Btn kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={later('Add food')} style={{ height: 48, borderRadius: 24 }} textStyle={{ fontSize: 16 }}
+              icon={<Icon name="plus" size={20} stroke={2.6} color={t.label} />} />
           </Card>
         )}
 
@@ -205,13 +210,14 @@ export function Summary() {
             <Tile style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 {pk(t.moveInk, 'Move')}
-                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2 }} />
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2, alignItems: 'center', justifyContent: 'center' }}>{moveIcon}</View>
               </View>
               <View style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
                 {T([font(600), { fontSize: 19, lineHeight: 23, color: t.label }], moveTitle)}
                 {T([font(400), { fontSize: 12, color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
               </View>
-              {!logged && !isRest && <View style={{ marginTop: 10 }}><Btn small title="Start" onPress={later('Train')} /></View>}
+              {/* .tile.mvt .btn.sm: 32 high, 14 pt */}
+              {!logged && !isRest && <View style={{ marginTop: 10 }}><Btn small title="Start" onPress={later('Train')} style={{ height: 32, borderRadius: 16, paddingHorizontal: 14 }} textStyle={{ fontSize: 14 }} /></View>}
             </Tile>
             <View style={{ flex: 1 }}>{weightTile}</View>
           </View>
@@ -219,12 +225,13 @@ export function Summary() {
           <Card>
             {pk(t.moveInk, 'Move')}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: t.moveFill }} />
+              <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: t.moveFill, alignItems: 'center', justifyContent: 'center' }}>{moveIcon}</View>
               <View style={{ flex: 1 }}>
                 {T([font(600), { fontSize: 17, color: t.label }], moveTitle)}
                 {T([font(400), { fontSize: 13, color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
               </View>
-              {!logged && !isRest && <Btn small title="Start" onPress={later('Train')} />}
+              {/* .mv .btn.sm: 40 high */}
+              {!logged && !isRest ? <Btn small title="Start" onPress={later('Train')} style={{ height: 40, borderRadius: 20, paddingHorizontal: 18 }} /> : <Chevron color={t.label3} />}
             </View>
           </Card>
         )}

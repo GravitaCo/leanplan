@@ -5,6 +5,7 @@ import { useStore } from '@/store/store'
 import { useGate } from '../../lib/gate'
 import { TabBar } from '../../lib/ui/TabBar'
 import { LabSheet } from '../../lib/labSheet'
+import { ToastHost } from '../../lib/ui/kit'
 
 export default function TabsLayout() {
   const gated = useGate() !== null
@@ -19,6 +20,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="train" />
       <Tabs.Screen name="plan" />
     </Tabs>
+    {/* the app's one toast, above the tab bar (App.tsx's .toast) */}
+    <ToastHost />
     <LabSheet />
     </>
   )
