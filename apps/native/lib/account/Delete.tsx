@@ -92,7 +92,8 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
       if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     }
     const { result, message } = await run()
-    if (result.status === 'reauth') setStale(true)
+    // the server still wants a fresh sign-in: an Apple account goes back to Sign in with Apple, never a password
+    if (result.status === 'reauth') { setStale(true); setAppleDone(false) }
     if (message) setMsg(message)
   }
 
