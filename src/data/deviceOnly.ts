@@ -10,7 +10,7 @@
  * - `lowMoodShown`: the day the low-mood signpost last showed (once per 30 days). Health data by
  *   inference: cleared on withdrawal. Device only, so it can show once per phone (build plan C12).
  * - `notify`: the reminder delivery log the app reads from the service worker's IndexedDB
- *   (`tali-notify`, security-data H3; on the phone an MMKV store of that name). Not health data;
+ *   (`tali-notify`, security-data H3; on the phone a store of that name). Not health data;
  *   cleared with the device's log.
  * - `ui.sleepMore`: whether "More about sleep" was left open in the check-in. Not health data.
  *
@@ -312,7 +312,7 @@ export function recordNotifyEvents(s: PersistedState, events: unknown[]): void {
 }
 
 /** Delete the service worker's reminder log (wipe, sign out and remove, start fresh, keep for
- *  this account), and the phone's (MMKV, through ./platform; nothing on web). Harmless when it
+ *  this account), and the phone's (its own store, through ./platform; nothing on web). Harmless when it
  *  doesn't exist or IndexedDB is unavailable. */
 export function clearNotifyStore(idb: Pick<IDBFactory, 'deleteDatabase'> | null = typeof indexedDB === 'undefined' ? null : indexedDB): void {
   try { idb?.deleteDatabase(NOTIFY_DB) } catch { /* blocked */ }

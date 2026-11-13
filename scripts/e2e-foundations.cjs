@@ -313,7 +313,7 @@ const tab = async (page, name) => {
     await page.getByRole('button', { name: 'Withdraw consent for health data' }).click()
     await page.getByText('Tilo will stop syncing your log and delete it from your account, so it stays only on your phones. Your weigh-ins, check-ins, body details and training preferences are removed from them too. Download a copy first?').waitFor()
     await page.getByRole('button', { name: 'Download a copy' }).waitFor()
-    await page.getByRole('button', { name: 'Back' }).first().click().catch(() => {})
+    await page.getByRole('button', { name: 'Back', exact: true }).first().click().catch(() => {})
     await page.keyboard.press('Escape').catch(() => {})
     await page.goto(page.url()) // close whatever is open
     await tab(page, 'Profile')

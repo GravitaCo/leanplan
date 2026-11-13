@@ -6,6 +6,7 @@ import { useStore } from '@/store/store'
 import { useGate } from '../../lib/gate'
 import { TabBar } from '../../lib/ui/TabBar'
 import { LabSheet } from '../../lib/labSheet'
+import { ToastHost } from '../../lib/ui/kit'
 import { useNavBridge } from '../../lib/navBridge'
 
 export default function TabsLayout() {
@@ -26,6 +27,8 @@ function Shell() {
         <Tabs.Screen name="train" />
         <Tabs.Screen name="plan" />
       </Tabs>
+      {/* the app's one toast, above the tab bar (App.tsx's .toast) */}
+      <ToastHost />
       <LabSheet />
     </>
   )

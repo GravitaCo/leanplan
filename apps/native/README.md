@@ -59,3 +59,9 @@ script's header for the two servers it needs). Every stream adds its screens' ch
   light and dark, Reduce Motion.
 - **Reviewed.** Each stream passes its specialist agents, `design` against the web, and `ship-critic`
   before the lead merges it into `claude/native-build`.
+
+## Dependencies
+
+Benn's policy (13 Nov 2026): Apple's frameworks through our own Swift modules where practical, Expo's
+first-party modules otherwise, any outside library only with a written reason approved by the lead,
+nothing paid without Benn. The audit and the approved exceptions: `docs/plans/native-dependencies.md`.
