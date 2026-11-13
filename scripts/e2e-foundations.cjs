@@ -122,6 +122,8 @@ async function scenario(browser, name, fn, opts = {}) {
   page.on('pageerror', (e) => errors.push(String(e)))
   try {
     if (opts.before) opts.before(net)
+    // a pinned start time for date-dependent copy; the clock keeps running from there
+    if (opts.now) await page.clock.install({ time: new Date(opts.now) })
     await page.goto(opts.url || BASE)
     await fn({ page, ctx, net, rows })
     if (errors.length) throw new Error('page errors: ' + errors.join(' | '))
@@ -324,7 +326,13 @@ const tab = async (page, name) => {
   }, { state: deviceState({ days: { [today]: aDay(70) } }) })
 
   const EXISTING = { [today]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }
+  // The pre-consent copy depends on the date (unconsentedCopyLine, UNCONSENTED_DELETION 28 October
+  // 2026), so these runs pin the browser clock on either side of it.
+  const BEFORE_DELETION = '2026-10-20T09:00:00Z', AFTER_DELETION = '2026-11-02T09:00:00Z'
+  const pinnedDay = BEFORE_DELETION.slice(0, 10)
+  const EXISTING_PINNED = { [pinnedDay]: aDay(70, { mood: 3, hunger: 2, sleep: 2 }) }
   await run('existing user: Not now keeps it all on the phone, the old account copy has a date, a later yes uploads it all', async ({ page, rows, net }) => {
+    const today = pinnedDay // the app's today under the pinned clock
     await page.getByRole('heading', { name: 'Before you start' }).waitFor()
     await page.getByText('What’s in your account from before is deleted on 28 October unless you agree; your phone keeps its copy.', { exact: false }).waitFor()
     await shot(page, 'consent-existing-not-now')
@@ -363,7 +371,19 @@ const tab = async (page, name) => {
     for (let i = 0; i < 40 && rows.day_logs.find((x) => x.log_date === today)?.supps?._checkin?.mood !== 5; i++) await page.waitForTimeout(250)
     const after = rows.day_logs.find((x) => x.log_date === today)
     expect(after.supps._checkin.mood === 5 && after.weight === 70, 'the phone’s check-in uploaded after the yes: ' + JSON.stringify(after))
-  }, { state: deviceState({ days: EXISTING, consents: NONE }), rows: { day_logs: [{ user_id: UID, log_date: today, foods: EXISTING[today].foods, supps: { _checkin: EXISTING[today].checkin }, weight: 70, workout: null }] } })
+  }, { now: BEFORE_DELETION, state: deviceState({ days: EXISTING_PINNED, consents: NONE }), rows: { day_logs: [{ user_id: UID, log_date: pinnedDay, foods: EXISTING_PINNED[pinnedDay].foods, supps: { _checkin: EXISTING_PINNED[pinnedDay].checkin }, weight: 70, workout: null }] } })
+
+  await run('existing user after the deletion date: the copy says the account copy has been deleted', async ({ page }) => {
+    const gone = 'What was in your account from before has been deleted; your phone keeps its copy.'
+    await page.getByRole('heading', { name: 'Before you start' }).waitFor()
+    await page.getByText(gone, { exact: false }).waitFor()
+    expect((await page.getByText('is deleted on', { exact: false }).count()) === 0, 'no future date once it has passed')
+    await page.getByRole('button', { name: 'Not now, keep it on this phone' }).click()
+    await page.locator('.hdr .ltitle', { hasText: 'Summary' }).waitFor()
+    await tab(page, 'Profile')
+    await page.getByRole('button', { name: /Health data/ }).filter({ hasText: 'Paused' }).click()
+    await page.getByText('Your log is on this phone only until you agree: nothing syncs to your account or is backed up there. ' + gone).waitFor()
+  }, { now: AFTER_DELETION, state: deviceState({ days: { [AFTER_DELETION.slice(0, 10)]: aDay(70) }, consents: NONE }) })
 
   await run('existing user: the live consent screen comes back once, 2 weeks after Not now', async ({ page }) => {
     await page.getByRole('heading', { name: 'Before you start' }).waitFor()
