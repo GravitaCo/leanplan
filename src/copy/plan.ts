@@ -70,3 +70,9 @@ export const PLAN_GUIDES: { id: 'split' | 'basics'; title: string; paras: GuideP
     ],
   },
 ]
+
+/** "Plan when you'll do it" (ob5-4): the cue chips' group label and each chip; the rest is IF_THEN in onboardingApp. */
+export const FIRST_PLAN_CUES = {
+  label: 'Cues',
+  chip: (cue: string) => `After ${cue}`,
+} as const

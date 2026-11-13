@@ -7,7 +7,7 @@ import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { cleanPhases, phaseRows, phasesOf, positionOn, PLAN_TEMPLATES, totalWeeks, weeksSpan } from '@/core/domain/plans'
 import { shiftDay, shortDateOf } from '@/core/domain/date'
 import { awaitingNext, dayTarget, planTabModel, builtPhases, detailsLines, goalLabel, keyLine, knownKeys, lastPlanNote, lighterWeekAt, phaseRowDetail, planCardFigure, planCardNote, planGroups, plannedDaysLine, planWeekRows, scheduleWeekRows, whenLine, workoutKind, workoutSub } from '@/screens/plan/planModel'
-import { GOAL_CHIP, MAINTENANCE_STEPS, MIND_PLAN, PLAN_FILTER_DAYS, PLAN_GUIDES, PLAN_OUTCOME } from '@/copy/plan'
+import { FIRST_PLAN_CUES, GOAL_CHIP, MAINTENANCE_STEPS, MIND_PLAN, PLAN_FILTER_DAYS, PLAN_GUIDES, PLAN_OUTCOME } from '@/copy/plan'
 import * as sheets from '@/screens/plan/PlanSheets'
 
 let bad = 0
@@ -55,6 +55,7 @@ export function planSuite(): number {
 
   // the words both apps read
   check('outcomes: three, as the rows say them', Object.values(PLAN_OUTCOME).join('|') === "Worked|Mixed|Didn't work")
+  check('first plan cues: label and chip', FIRST_PLAN_CUES.label === 'Cues' && FIRST_PLAN_CUES.chip('lunch') === 'After lunch')
   check('Mind plans: group name (B9)', MIND_PLAN.group === 'Mind plans')
   check('filters: days', PLAN_FILTER_DAYS.length === 3)
   check('maintenance: five steps', MAINTENANCE_STEPS.length === 5 && MAINTENANCE_STEPS.every(([h, p]) => !!h && !!p))
