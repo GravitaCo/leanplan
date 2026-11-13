@@ -123,19 +123,33 @@ const rowStyle = (pressed: boolean, t: Tokens, minHeight = 48): ViewStyle => ({
   backgroundColor: pressed ? t.fill : 'transparent',
 })
 
-/** `SettingRow`: icon · label (and sub) · value · chevron or a control */
-export function SettingRow({ icon, color, label, sub, value, onPress, right, testID }: {
-  icon: IconName; color: string; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode; testID?: string
+/**
+ * theme.css "settings rows": the label keeps its width (up to 72%), a value takes the rest at 15 pt,
+ * right-aligned and truncating; with no value the label fills the row.
+ */
+function RowText({ label, sub, value, wrapSub, fixedValue }: { label: string; sub?: ReactNode; value?: ReactNode; wrapSub?: boolean; fixedValue?: boolean }) {
+  const t = useTokens()
+  const has = value != null && value !== ''
+  return (
+    <>
+      <View style={has && !fixedValue ? { flexGrow: 0, flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={[font(), { fontSize: 17, color: t.label }]}>{label}</Text>
+        {sub != null && <Text numberOfLines={wrapSub ? undefined : 1} style={[font(), { fontSize: 13, color: t.label2, marginTop: 2, lineHeight: wrapSub ? 17.5 : undefined }]}>{sub}</Text>}
+      </View>
+      {has && <Text numberOfLines={1} style={[font(), num, { fontSize: 15, color: t.label2, textAlign: 'right' }, fixedValue ? { flexShrink: 0 } : { flex: 1, minWidth: 0 }]}>{value}</Text>}
+    </>
+  )
+}
+
+/** `SettingRow`: icon · label (and sub) · value · chevron or a control. `wrapSub`: Notifications' rows (`.nf-rows`). */
+export function SettingRow({ icon, color, label, sub, value, onPress, right, testID, wrapSub }: {
+  icon: IconName; color: string; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode; testID?: string; wrapSub?: boolean
 }) {
   const t = useTokens()
   const body = (
     <>
       <RowIcon icon={icon} color={color} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={[font(), { fontSize: 17, color: t.label }]}>{label}</Text>
-        {sub != null && <Text numberOfLines={1} style={[font(), { fontSize: 13, color: t.label2, marginTop: 2 }]}>{sub}</Text>}
-      </View>
-      {value != null && <Text numberOfLines={1} style={[font(), num, { fontSize: 17, color: t.label2 }]}>{value}</Text>}
+      <RowText label={label} sub={sub} value={value} wrapSub={wrapSub} fixedValue={wrapSub} />
       {right ?? (onPress && <Chevron />)}
     </>
   )
@@ -153,8 +167,7 @@ export function Disclosure({ icon, color, label, value, open, onToggle, children
     <>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={({ pressed }) => rowStyle(pressed, t)}>
         <RowIcon icon={icon} color={color} />
-        <View style={{ flex: 1, minWidth: 0 }}><Text numberOfLines={1} style={[font(), { fontSize: 17, color: t.label }]}>{label}</Text></View>
-        {value != null && value !== '' && !open && <Text numberOfLines={1} style={[font(), num, { fontSize: 17, color: t.label2, flexShrink: 1 }]}>{value}</Text>}
+        <RowText label={label} value={open ? undefined : value} />
         <Chevron rotate={open ? 90 : 0} />
       </Pressable>
       {open && <View style={{ paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>{children}</View>}
@@ -254,9 +267,8 @@ export function Select<T extends string>({ label, value, options, onChange }: { 
   return (
     <>
       <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${cur}`} onPress={() => setOpen(true)}
-        style={{ backgroundColor: t.fill, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        style={{ backgroundColor: t.fill, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' }}>
         <Text numberOfLines={1} style={[font(), { fontSize: 17, color: t.label, flex: 1 }]}>{cur}</Text>
-        <Chevron rotate={90} />
       </Pressable>
       {open && (
         <BareSheet label={label} onClose={() => setOpen(false)}>
@@ -380,15 +392,15 @@ export function Opts<T extends string>({ opts, value, onPick, label, multi }: { 
   )
 }
 
-/** `Ticks` (onboarding/Consent.tsx) */
+/** `Ticks` (onboarding/Consent.tsx): `.ticks`, on `--card` even inside a sheet, as on the web */
 export function Ticks({ items }: { items: string[] }) {
   const t = useTokens()
   return (
-    <View style={{ gap: 10, paddingVertical: 4 }}>
+    <View style={{ gap: 10, padding: 16, backgroundColor: t.card, borderRadius: t.radius }}>
       {items.map((x) => (
         <View key={x} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
           <View style={{ paddingTop: 2 }}><Icon name="check" size={16} stroke={2.6} color={t.tint} /></View>
-          <Text style={[font(), { flex: 1, fontSize: 15, lineHeight: 21, color: t.label }]}>{x}</Text>
+          <Text style={[font(), { flex: 1, fontSize: 15, lineHeight: 22, color: t.label }]}>{x}</Text>
         </View>
       ))}
     </View>

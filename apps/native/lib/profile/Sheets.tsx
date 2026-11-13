@@ -10,7 +10,7 @@ import { fmtDate } from '@/core/domain/date'
 import { HANDS, handGrams } from '@/core/domain/estimate'
 import { consentLetsSync, hasExistingData } from '@/data/consent'
 import { backupSummary, unsyncedCount, type PersistedState } from '@/data/persistence'
-import { pushSupported } from '@/data/push'
+import { pushReady } from './n12'
 import { DAYS, dayName } from '@/screens/profile/profileLogic'
 import { font, num, useTokens } from '../theme'
 import { Btn, Input, List, NavBtn, Sheet } from './ui'
@@ -117,7 +117,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
   const showToast = useStore((s) => s.showToast)
   const remind = async () => {
     // push is stream N12: until it lands, the phone answers as a browser without push does
-    const ok = pushSupported() && await setReviewPush(true)
+    const ok = pushReady() && await setReviewPush(true)
     showToast(ok ? 'Weekly reminder on' : 'Couldn’t turn the reminder on. Try again when you’re online')
   }
   const h3 = [font(600), { fontSize: 17, color: t.label }]
@@ -152,7 +152,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
           <Text accessibilityRole="header" style={h3}>Want a reminder for your weekly review?</Text>
           <Text style={d}>One note on {dayName(day)}, nothing else.</Text>
           {push
-            ? <View style={{ flexDirection: 'row', gap: 8 }}>{pill('Reminder on', true)}{pill('Turn it off', false, pushSupported() ? () => void setReviewPush(false) : undefined)}</View>
+            ? <View style={{ flexDirection: 'row', gap: 8 }}>{pill('Reminder on', true)}{pill('Turn it off', false, pushReady() ? () => void setReviewPush(false) : undefined)}</View>
             : <View style={{ gap: 8 }}>
                 <Btn small title="Remind me" onPress={() => void remind()} />
                 <Btn small kind="gray" title="No thanks" onPress={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }} />

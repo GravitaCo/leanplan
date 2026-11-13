@@ -23,7 +23,7 @@ import { foodView } from '@/core/domain/foodMode'
 import { useConsent } from '@/store/hooks'
 import { ACCURACY, accuracyOf, handGrams } from '@/core/domain/estimate'
 import { latestWeight, rangeWidth } from '@/core/domain/insights'
-import { pushSupported } from '@/data/push'
+import { pushReady } from './n12'
 import { consentLetsSync, hasConsent, latestConsent } from '@/data/consent'
 import type { PersistedState } from '@/data/persistence'
 import type { LegalDocId } from '@/core/legal'
@@ -163,7 +163,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   // the same safety routing as the onboarding summary, so the two never disagree
   const sug = suggestedTargets(sugProfile, sugWeight, profileRouting(sugProfile, sugWeight, healthConsent))
   // push is stream N12: until it lands the phone has none, so the switches show the web's no-push state
-  const notifReady = pushSupported()
+  const notifReady = pushReady()
   const notifStatus = !notifReady ? 'Not supported in this browser'
     : globalThis.Notification?.permission === 'denied' ? 'Blocked in your phone settings'
     : pr.notificationsEnabled ? 'On' : 'Off'
@@ -361,10 +361,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         {WELLBEING_ENABLED && <BackoffNotices />}
         <List icons>
           {WELLBEING_ENABLED && <MindReminderRows />}
-          <SettingRow icon="bell" color={MINDF} label="Supplement reminders" sub={notifStatus}
+          <SettingRow wrapSub icon="bell" color={MINDF} label="Supplement reminders" sub={notifStatus}
             right={<Toggle label="Supplement reminders" on={pr.notificationsEnabled} disabled={!notifReady} onChange={() => undefined /* N12 wires push; never switched from here until then */} />} />
           {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <SuppNamesRow />}
-          <SettingRow icon="bell" color={MINDF} label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
+          <SettingRow wrapSub icon="bell" color={MINDF} label="Weekly review reminder" sub={`One note on ${dayName(pr.reviewDay ?? 0)} morning`}
             right={<Toggle label="Weekly review reminder" on={!!pr.reviewPush} disabled={!notifReady} onChange={() => undefined} />} />
         </List>
         {SUPP_NAMES_ENABLED && pr.notificationsEnabled && <Foot>{NOTIFY_COPY.namesFoot}</Foot>}

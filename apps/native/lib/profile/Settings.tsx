@@ -4,7 +4,7 @@
  *   src/screens/profile/PillarsSettings.tsx; copy pillarsCopy.ts, helpers profileLogic.ts.
  * - Notifications' Mind reminder rows, the back-off notices, the supplement names row and "Your
  *   times" (board B11), from NotificationsSettings.tsx; copy notifyCopy.ts.
- * Push itself is stream N12. Until it lands, pushSupported() is false on the phone, so every
+ * Push itself is stream N12. Until it lands, pushReady() (./n12) is false, so every
  * reminder switch shows the web's no-push state (disabled, as in a browser without push) and
  * nothing here switches a reminder off on the account.
  */
@@ -15,7 +15,7 @@ import { useStore } from '@/store/store'
 import { NOTIFY_KINDS, PILLARS } from '@/core/domain/checkin'
 import { healthLoggingAllowed } from '@/data/consent'
 import { backoffDismissed } from '@/data/deviceOnly'
-import { pushSupported } from '@/data/push'
+import { pushReady } from './n12'
 import { isHHMM, kindTimes, usualTimes } from '../../../../supabase/functions/_shared/reminders'
 import { PILLARS_COPY as PC } from '@/screens/profile/pillarsCopy'
 import { NOTIFY_COPY as NC, backoffLine } from '@/screens/profile/notifyCopy'
@@ -75,7 +75,7 @@ export function MindReminderRows() {
   const setMindReminder = useStore((s) => s.setMindReminder)
   const showToast = useStore((s) => s.showToast)
   const at = kindTimes(mind)
-  const ready = pushSupported()
+  const ready = pushReady()
   const toggle = async (kind: NotifyKind) => {
     const on = mind?.notify?.[kind] !== true
     const r = await setMindReminder(kind, on)
@@ -90,7 +90,7 @@ export function MindReminderRows() {
       {NOTIFY_KINDS.map((k) => {
         const on = mind?.notify?.[k] === true
         return (
-          <SettingRow key={k} icon={NOTIFY_ICON[k]} color={t.mindFill} label={NC.rows[k].label} sub={NC.rows[k].sub}
+          <SettingRow key={k} wrapSub icon={NOTIFY_ICON[k]} color={t.mindFill} label={NC.rows[k].label} sub={NC.rows[k].sub}
             value={on && k !== 'plan' ? at[k] : undefined}
             right={<Toggle label={NC.rows[k].aria} on={on} disabled={!ready} onChange={() => void toggle(k)} />} />
         )
@@ -139,7 +139,7 @@ function TimeRow({ label, value, editable, onSave }: { label: string; value: str
       <Text style={[font(), { fontSize: 17, color: t.label, flex: 1 }]}>{label}</Text>
       <Input label={label} value={v} editable={editable} keyboardType="numbers-and-punctuation" placeholder="HH:MM"
         onChangeText={(x) => { setV(x); if (x === '' || isHHMM(x)) onSave(x) }}
-        style={[num, { backgroundColor: 'transparent', paddingHorizontal: 0, textAlign: 'right', minWidth: 80 }]} />
+        style={[num, { backgroundColor: 'transparent', paddingHorizontal: 0, textAlign: 'right', width: 80, flex: 0, color: t.label2 }]} />
     </View>
   )
 }
