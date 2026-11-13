@@ -2,7 +2,7 @@
 // Gated like the tab layout: nothing renders until sign-in, consent and the store are ready.
 import { useStore } from '@/store/store'
 import { useGate } from '../lib/gate'
-import { ProfileScreen } from '../lib/profile'
+import { ProfileScreen } from '../screens/profile'
 
 export default function Profile() {
   const gated = useGate() !== null

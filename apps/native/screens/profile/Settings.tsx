@@ -1,0 +1,130 @@
+/**
+ * Profile's wellbeing groups (WELLBEING_ENABLED only, as on the web):
+ * - "What do you want Tilo for?" and "How often Tilo asks" (board B1), from
+ *   src/screens/profile/PillarsSettings.tsx.
+ * - Notifications' Mind reminder rows, the back-off notices, the supplement names row and "Your
+ *   times" (board B11), from NotificationsSettings.tsx.
+ * Push is stream N12: until it lands pushReady() (./n12) is false, so every reminder switch shows the
+ * web's no-push state and nothing here switches a reminder on or off on the account.
+ */
+import { Text, View } from 'react-native'
+import type { NotifyKind, Pillar } from '@/core/types'
+import { useStore } from '@/store/store'
+import { NOTIFY_KINDS, PILLARS } from '@/core/domain/checkin'
+import { backoffDismissed } from '@/data/deviceOnly'
+import { kindTimes } from '../../../../supabase/functions/_shared/reminders'
+import { PILLARS_COPY as PC } from '@/copy/pillars'
+import { NOTIFY_COPY as NC, backoffLine } from '@/copy/notify'
+import { atRiskRoute, offAfter, pillarsOnList } from '@/screens/profile/profileModel'
+import { useTokens, type Tokens } from '../../lib/theme'
+import { Banner, Btn, LinkBtn, List } from '../../lib/ui/kit'
+import { Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
+import type { IconName } from '../../lib/ui/icons'
+import { foot, lbl } from './text'
+import { pushReady } from './n12'
+
+const PILLAR_ICON: Record<Pillar, [IconName, keyof Tokens]> = {
+  mind: ['smile', 'mindFill'], food: ['fork', 'foodFill'], move: ['dumbbell', 'moveFill'],
+}
+
+/** B1: three pillar switches (the last one on can't move: B1.9), the foot, B1.16's two links, the asks Seg. */
+export function PillarsSettings({ onDisplay, onSupport }: { onDisplay: () => void; onSupport: () => void }) {
+  const t = useTokens()
+  const mind = useStore((s) => s.data.profile.mind)
+  const gentle = useStore((s) => s.data.profile.gentle)
+  const outcomes = useStore((s) => s.data.profile.outcomes)
+  const setMindPrefs = useStore((s) => s.setMindPrefs)
+  const on = pillarsOnList(mind)
+  const foodOff = !on.includes('food')
+  return (
+    <View accessibilityLabel={PC.heading}>
+      <Text accessibilityRole="header" style={lbl(t)}>{PC.heading}</Text>
+      <List icons>
+        {PILLARS.map((p) => {
+          const isOn = on.includes(p)
+          const last = isOn && on.length === 1
+          return (
+            <SettingRow key={p} soft icon={PILLAR_ICON[p][0]} color={t[PILLAR_ICON[p][1]] as string} label={PC.rows[p].label} sub={last ? PC.lastOn : PC.rows[p].sub}
+              right={<Toggle label={PC.rows[p].label} on={isOn} disabled={last} onChange={() => { setMindPrefs({ off: offAfter(useStore.getState().data.profile.mind, p) }) }} />} />
+          )
+        })}
+      </List>
+      <Text style={foot(t)}>{foodOff && on.length > 1 ? PC.foodOff : PC.foot}</Text>
+      {foodOff && atRiskRoute({ gentle, outcomes }) && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', paddingTop: 7, paddingHorizontal: 16 }}>
+          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.lead}</Text>
+          <LinkBtn title={PC.hard.display} onPress={onDisplay} style={[foot(t), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
+          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.mid}</Text>
+          <LinkBtn title={PC.hard.support} onPress={onSupport} style={[foot(t), { color: t.tint, paddingTop: 0, paddingHorizontal: 0, paddingVertical: 0 }]} />
+          <Text style={[foot(t), { paddingTop: 0, paddingHorizontal: 0 }]}>{PC.hard.end}</Text>
+        </View>
+      )}
+      <Text accessibilityRole="header" style={lbl(t)}>{PC.asksHeading}</Text>
+      <List style={{ paddingVertical: 12, paddingHorizontal: 16 }}>
+        <Seg<'usual' | 'fewer'> options={[['usual', PC.asks.usual], ['fewer', PC.asks.fewer]]} value={mind?.asks ?? 'usual'} onChange={(v) => { setMindPrefs({ asks: v }) }} />
+      </List>
+      <Text style={foot(t)}>{PC.asksFoot}</Text>
+    </View>
+  )
+}
+
+const NOTIFY_ICON: Record<NotifyKind, IconName> = { checkin: 'bell', 'wind-down': 'moon', plan: 'list' }
+
+/** B11.2 to B11.7: Check-in, Wind-down and Plan check-in, above Supplement reminders. Disabled until N12. */
+export function MindReminderRows() {
+  const t = useTokens()
+  const mind = useStore((s) => s.data.profile.mind)
+  const at = kindTimes(mind)
+  // TODO(N1-followup) item 7: SettingRow's wrapping sub and fixed value (`.list.nf-rows`)
+  return (
+    <>
+      {NOTIFY_KINDS.map((k) => {
+        const on = mind?.notify?.[k] === true
+        return (
+          <SettingRow key={k} soft icon={NOTIFY_ICON[k]} color={t.mindFill} label={NC.rows[k].label} sub={NC.rows[k].sub}
+            value={on && k !== 'plan' ? at[k] : undefined}
+            right={<Toggle label={NC.rows[k].aria} on={on} disabled={!pushReady()} onChange={() => undefined /* N12 wires the reminders */} />} />
+        )
+      })}
+    </>
+  )
+}
+
+/** B11b's names switch, under Supplement reminders while they're on (SUPP_NAMES_ENABLED). */
+export function SuppNamesRow() {
+  // TODO(N1-followup) item 6, plain row `.li.nf-sub`: NC.names with a Toggle on profile.mind.lockNames, written through setMindPrefs (src/screens/profile/NotificationsSettings.tsx SuppNamesRow)
+  return null
+}
+
+/** B11.9 to B11.12: "Your times" and the foot. */
+export function YourTimes() {
+  const t = useTokens()
+  return (
+    <>
+      <Text accessibilityRole="header" style={lbl(t)}>{NC.timesHeading}</Text>
+      {/* TODO(N1-followup) items 1 and 2, `.frow` with the TimePicker: NC.wakeAt and NC.windDownAt from usualTimes(mind), disabled unless
+          healthLoggingAllowed(data); '' saves null, a valid HH:MM saves it (src/screens/profile/NotificationsSettings.tsx YourTimes) */}
+      <Text style={foot(t)}>{NC.foot}</Text>
+    </>
+  )
+}
+
+/** B11.14 to B11.16: one back-off notice per type sent less often, until closed. */
+export function BackoffNotices() {
+  const t = useTokens()
+  const data = useStore((s) => s.data)
+  const backToUsual = useStore((s) => s.backToUsual)
+  const dismissBackoff = useStore((s) => s.dismissBackoff)
+  const halved = data.profile.mind?.halved
+  const kinds = NOTIFY_KINDS.filter((k) => halved?.[k] && data.profile.mind?.notify?.[k] === true && !backoffDismissed(data, k, halved[k]))
+  if (!kinds.length) return null
+  return (
+    <View style={{ gap: 8, marginBottom: 8 }}>
+      {kinds.map((k) => (
+        <Banner key={k} icon="info" iconColor={t.mindInk} title={backoffLine(k)} onDismiss={() => dismissBackoff(k)}>
+          <View style={{ marginTop: 10 }}><Btn kind="gray" small title={NC.backToUsual} onPress={() => backToUsual(k)} /></View>
+        </Banner>
+      ))}
+    </View>
+  )
+}
