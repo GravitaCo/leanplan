@@ -9,6 +9,7 @@
  */
 import type { ReactNode } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
+import Svg, { Path } from 'react-native-svg'
 import type { SupportRow } from '@/screens/profile/supportRows'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
@@ -162,9 +163,11 @@ export function ConsentRow({ on, onChange, label, children }: { on: boolean; onC
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={() => onChange(!on)} hitSlop={slop(22, 22)}
-        style={{ width: 22, height: 22, marginTop: 1, borderRadius: 4, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: on ? t.tint : t.card, borderWidth: on ? 0 : 1, borderColor: t.label2 }}>
-        {on && <Icon name="check" size={16} stroke={3} color={t.onTint} />}
+        // the browser's checkbox margins (3 3 3 4) stay, with the CSS's margin-top 1
+        style={{ width: 22, height: 22, marginTop: 1, marginRight: 3, marginBottom: 3, marginLeft: 4, borderRadius: 4, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: on ? t.tint : t.elev, borderWidth: on ? 0 : 1, borderColor: t.label2 }}>
+        {/* the system checkbox's own tick, not one of Tilo's icons */}
+        {on && <Svg width={14} height={14} viewBox="0 0 14 14"><Path d="M2.5 7.3l3 3L11.5 4" fill="none" stroke={t.onTint} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></Svg>}
       </Pressable>
       {/* readable on its own, so VoiceOver reaches the links inside it */}
       <Text onPress={() => onChange(!on)} style={[tx(15, 400, 1.4), { color: t.label, flex: 1 }]}>{children}</Text>
