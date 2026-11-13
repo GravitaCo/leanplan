@@ -37,7 +37,7 @@ import { FinishSheet } from './FinishSheet'
 import { HoldTimer } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
-import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
+import { ClipView, Still, useClip, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Row, Sheet, Toggle } from '../../lib/ui/primitives'
@@ -71,17 +71,33 @@ function chime() {
  * clock; it never claims to count the person's reps.
  */
 function TempoCount({ player, media, playing }: { player: ReturnType<typeof useClip>['player']; media: ExerciseMedia; playing: boolean }) {
-  const t = useClipTime(player)
+  // Read the clip's clock on every frame, as the web does (requestAnimationFrame over
+  // video.currentTime), and redraw only when the count or phase changes. The player's own time
+  // events arrive about every 100 ms and unevenly on iOS, which made the count lag and lurch.
+  const [s, setS] = useState(() => tempoAt(media, player.currentTime))
+  useEffect(() => {
+    if (!playing) return
+    let raf = 0
+    const tick = () => {
+      const next = tempoAt(media, player.currentTime)
+      setS((cur) => (cur.kind === next.kind && cur.count === next.count && cur.countOf === next.countOf ? cur : next))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [player, media, playing])
   if (!playing) return null
-  const s = tempoAt(media, t)
-  const sh = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 24 }
+  // No text shadow (Benn, 13 Nov): the shade over the clip keeps the white figures readable.
   return (
     <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: 0, right: 0, top: '39%', alignItems: 'center' }}>
       {s.kind === 'ready'
-        ? <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
+        ? <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
         : <>
-          <Text style={[font(200), num, sh, { fontSize: 112, lineHeight: 112, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
-          <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
+          {/* A fixed-width box so the centred figure never shifts between digits, and room above and
+              below the glyphs (iOS clips them when lineHeight equals the size), pulled back with
+              negative margins so the layout keeps the web's line-height: 1. */}
+          <Text style={[font(200), num, { width: 160, textAlign: 'center', fontSize: 112, lineHeight: 134, marginVertical: -11, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
+          <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
         </>}
     </View>
   )
